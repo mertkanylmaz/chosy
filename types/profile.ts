@@ -27,6 +27,10 @@ export interface UserStats {
   last_mood: string | null;
   /** Son profil JSON */
   last_profile_json: unknown | null;
+  /** En uzun streak gün sayısı (gamification backend'den) */
+  longest_streak?: number;
+  /** Mevcut streak gün sayısı */
+  current_streak?: number;
 }
 
 // ─── Mood Geçmişi ─────────────────────────────────────────────────────────────

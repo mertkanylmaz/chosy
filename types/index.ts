@@ -136,3 +136,21 @@ export interface WatchlistItem {
   /** Hangi session'dan eklendiği */
   added_from_session: string;
 }
+
+// ─── Gamification ─────────────────────────────────────────────────────────
+
+/** Milestone kategori türleri */
+export type MilestoneCategory = 'films' | 'streak' | 'watchlist' | 'mood';
+
+/** Kullanıcının streak durumu (profil ekranı ve badge için) */
+export interface StreakSummary {
+  currentStreak: number;
+  longestStreak: number;
+  totalActiveDays: number;
+  lastActiveDate: string | null;
+}
+
+// ─── History ──────────────────────────────────────────────────────────────
+
+/** Swipe geçmişi filtreleme yönü */
+export type HistoryDirection = 'left' | 'right' | null;
