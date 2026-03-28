@@ -104,6 +104,8 @@ moodflix/
 │   ├── cache.ts                      # Response önbelleği
 │   ├── entryService.ts               # Entry/onboarding mantığı
 │   ├── feedback.ts                   # Geri bildirim gönderme
+│   ├── gamification.ts               # Streak + milestone servisi (P2)
+│   ├── history.ts                    # Swipe geçmişi + stats + mood timeline (P2)
 │   ├── index.ts                      # Servis export'ları
 │   ├── matchExplanation.ts           # Eşleşme skoru açıklama
 │   ├── profileService.ts             # Kullanıcı profil yönetimi
@@ -173,7 +175,9 @@ moodflix/
 │       ├── 005_enrich_films_columns.sql
 │       ├── 006_custom_lists.sql
 │       ├── 007_add_total_interactions.sql
-│       └── 008_security_rls_update.sql
+│       ├── 008_security_rls_update.sql
+│       ├── 009_gamification.sql
+│       └── 010_watch_history.sql
 │
 ├── assets/
 │   ├── fonts/
@@ -450,6 +454,8 @@ GestureHandlerRootView
 | SkeletonLoader | ✅ Aktif | `components/SkeletonLoader/` |
 | Profile/* (7 alt-component) | ✅ Aktif | `components/Profile/` |
 | Entry/* (3 alt-component) | ✅ Aktif | `components/Entry/` |
+| gamification service | ✅ Backend hazır | `services/gamification.ts` — UI CDO bekliyor |
+| history service | ✅ Backend hazır | `services/history.ts` — UI CDO bekliyor |
 
 ---
 
@@ -461,6 +467,11 @@ GestureHandlerRootView
 - Development build ile test ediliyor
 - **UI redesign tamamlandı** (design-reference/ görselleri referans alındı — Mart 2026)
 - 4 Supabase Edge Function dağıtılmış: `parse-mood`, `parse-taste`, `recommend`, `explain-match`
+- **P2 backend tamamlandı** (2026-03-28): gamification schema + history service
+  - `services/gamification.ts` — streak + milestone CRUD + `recordActivity()` swipe akışına entegre
+  - `services/history.ts` — stats, swipe geçmişi (sayfalanmış), mood timeline
+  - 4 yeni RPC: `update_streak`, `check_milestones`, `get_user_stats`, `get_swipe_history`, `get_mood_timeline`
+  - P2 UI implementasyonu CDO spec'lerini bekliyor
 
 ### UI Redesign Değişiklikleri (Mart 2026)
 - `constants/Colors.ts` — yeni gradient ve glow token'lar eklendi
@@ -509,8 +520,11 @@ Vektör kodlaması: **SADECE** `services/vectorEncoder.ts`, başka dosyada YASAK
 - `feedback`: user_id, film_id, star_rating, on_point
 - `custom_lists`: user_id, name
 - `custom_list_films`: list_id FK, film_id (unique per list)
+- `user_streaks`: user_id FK (unique), current_streak, longest_streak, last_active_date, total_active_days
+- `milestones`: slug (unique), title, description, category, threshold, icon — 15 seed kayıt
+- `user_milestones`: user_id FK + milestone_id FK (unique), achieved_at, seen
 
-### Migrasyon Durumu (8 dosya, 001–008)
+### Migrasyon Durumu (10 dosya, 001–010)
 - 001: core tablolar + pgvector
 - 002a: feedback tablosu
 - 002b: match_films() RPC (not: iki 002 var, çakışma riski)
@@ -520,6 +534,8 @@ Vektör kodlaması: **SADECE** `services/vectorEncoder.ts`, başka dosyada YASAK
 - 006: custom_lists
 - 007: total_interactions sütunu
 - 008: RLS politika güncellemesi
+- 009: gamification (user_streaks, milestones, user_milestones + update_streak/check_milestones RPC)
+- 010: watch history (user_swipe_history view + get_user_stats/get_swipe_history/get_mood_timeline RPC)
 
 ### Auth
 - Uygulama açılışında `signInAnonymously()` çağır
@@ -550,3 +566,253 @@ Vektör kodlaması: **SADECE** `services/vectorEncoder.ts`, başka dosyada YASAK
 | `Colors.ts` büyük/küçük harf | `constants/Colors.ts` (büyük C) — import buna göre yap | ✅ Netleştirildi |
 | Git: API key | `.env` dosyasına koy, asla koda gömme | ✅ Aktif kural |
 | Pre-existing TS hataları | `scripts/`, `supabase/functions/`, `ExternalLink.tsx`, `SkeletonLoader`, `watchlist.tsx:122,144`, `services/` içinde mevcut — yeni kod yazarken dokunma | ⚠️ Mevcut |
+
+---
+
+## Design Direction: Premium Bumble
+
+### Philosophy
+Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury movie theater in your pocket, not a dating app.
+
+### Color Palette
+
+#### Core
+| Token | Hex | Name | Usage |
+|-------|-----|------|-------|
+| bg-primary | #0A0A0A | zinc-950 | App background |
+| bg-card | #18181B | zinc-900 | Card surfaces |
+| bg-elevated | #27272A | zinc-800 | Modals, sheets, elevated UI |
+| bg-subtle | #3F3F46 | zinc-700 | Dividers, inactive elements |
+
+#### Accent — Dual System
+| Token | Hex | Name | Usage |
+|-------|-----|------|-------|
+| accent-primary | #8B5CF6 | violet-500 | Primary CTA, active tabs, main interactions |
+| accent-hover | #7C3AED | violet-600 | Pressed states, Flick body color |
+| accent-gold | #D4A843 | gold | Ratings, premium badges, special highlights |
+| accent-gold-dim | #B8922E | gold-dark | Gold pressed state |
+
+#### Semantic
+| Token | Hex | Usage |
+|-------|-----|-------|
+| swipe-right | #22C55E | Watchlist add (green) |
+| swipe-left | #EF4444 | Skip (red) |
+| swipe-down | #3B82F6 | Watched/seen (blue) |
+| success | #22C55E | Confirmations |
+| warning | #F59E0B | Alerts |
+| error | #EF4444 | Errors |
+
+#### Text
+| Token | Hex | Usage |
+|-------|-----|-------|
+| text-primary | #FAFAFA | Headings, main content (zinc-50) |
+| text-secondary | #A1A1AA | Meta info, subtitles (zinc-400) |
+| text-tertiary | #71717A | Timestamps, hints (zinc-500) |
+| text-on-accent | #FFFFFF | Text on violet/green/red buttons |
+
+### Typography
+| Style | Font | Size | Weight | Usage |
+|-------|------|------|--------|-------|
+| Display | PlayfairDisplay | 28-32 | Bold | Film detail title, special headings |
+| H1 | Inter | 24 | Bold | Screen titles |
+| H2 | Inter | 20 | SemiBold | Section headers |
+| H3 | Inter | 16 | SemiBold | Card titles, list headers |
+| Body | Inter | 14 | Regular | Main content |
+| Caption | Inter | 12 | Regular | Meta info, timestamps |
+| Tab Label | Inter | 11 | Bold | Active tab label |
+| Rating | PlayfairDisplay | 16 | Bold | Film scores (gold colored) |
+
+**Rule:** Inter is the workhorse. PlayfairDisplay is the "premium sprinkle" — use it ONLY for film titles in detail view and rating numbers. Never for buttons, labels, or body text.
+
+### Spacing & Radius
+| Token | Value |
+|-------|-------|
+| spacing-xs | 4px |
+| spacing-sm | 8px |
+| spacing-md | 16px |
+| spacing-lg | 24px |
+| spacing-xl | 32px |
+| radius-sm | 8px |
+| radius-md | 12px |
+| radius-lg | 16px |
+| radius-xl | 24px |
+| radius-full | 9999px |
+
+### Component Specs
+
+#### SwipeCard (Target)
+- Full-bleed poster, 3:4 aspect ratio, fills ~85% of screen height
+- Bottom 40% gradient: transparent → bg-primary
+- Film title: bottom-left, H2 white, bold
+- Meta line: year · genre · duration in text-secondary
+- Stack: 2 cards behind, scale(0.95) + scale(0.90), blur(2px)
+- Swipe overlays: green "+" / red "✕" / blue "👁" at 0→0.3 opacity
+- Flick mascot: 48px, bottom-right corner (when built)
+
+#### Action Buttons (Below Card)
+- 3 circular buttons in a row, centered
+- Skip: ✕ icon, red border, 48px diameter
+- Surprise: ★ icon, violet filled, 56px diameter (larger = emphasis)
+- Watchlist: ♡ icon, green border, 48px diameter
+- Press: scale(0.9) + haptic light
+
+#### Bottom Tab Bar
+- 4 tabs: Home / Search / Watchlist / Profile
+- Active: violet-500 icon (filled variant) + label (11px bold)
+- Inactive: zinc-500 icon (outline variant), no label
+- Tab height: 83px, position: absolute
+- Transition: outline→filled icon morph, 200ms ease
+
+#### Film Detail (Bottom Sheet)
+- Drag handle at top (zinc-700, 40x4px, radius-full)
+- 80% screen height, bg-elevated background
+- Poster: blurred background + sharp thumbnail
+- Title: PlayfairDisplay Bold (Display style)
+- Rating: PlayfairDisplay Bold, gold colored
+
+#### Empty States
+- Flick mascot centered, 120px
+- Message below in text-secondary
+- CTA button in accent-primary
+
+### Mascot: Flick
+- **Status: PLANNED, NOT BUILT** (Lumi is current placeholder)
+- Cinematic cat, violet body (#7C3AED), amber eyes
+- Rive animation with state machine
+- 8 emotion states: idle, happy, sad, thinking, excited, surprised, love, sleepy
+- 4 layers: body, eyes, tail, effects
+- Inputs: mood (0-7), is_swiping, swipe_direction, celebration
+- Sizes: 48px (card corner), 96px (loading), 120px (empty state), 256px (onboarding)
+
+### Animation Standards
+- Swipe card follow: 1:1 with finger, rotation = distance × 0.08 (max ±12°)
+- Swipe threshold: 120px horizontal, 100px vertical
+- Card transition: 0.3s spring
+- Tab morph: 200ms ease
+- Haptic: light on swipe start, medium on threshold cross, heavy on action complete
+- Skeleton shimmer: 1.5s infinite pulse
+- Milestone confetti: particle rain + Flick celebration state
+
+---
+
+## Roadmap
+
+### MVP Status: ~70% Complete
+Working: mood input → AI parsing → vector matching → swipe feed → watchlist save
+Missing for App Store: polish, onboarding, error handling, loading states, analytics
+
+### Priority Matrix
+
+#### P0 — Must Ship (Weeks 1-2)
+These block App Store submission:
+
+1. **Design Token Migration**
+   - Update Colors.ts + theme.ts to new palette (violet + zinc + gold hybrid)
+   - Update _layout.tsx tab bar colors
+   - Verify all screens render correctly with new tokens
+   - Sessions: 1-2
+
+2. **SwipeCard Polish (Incremental, NOT rewrite)**
+   - Add stack effect (2 cards behind with scale + blur)
+   - Add swipe overlays (green/red/blue opacity indicators)
+   - Improve poster gradient overlay
+   - Add 3 action buttons below card
+   - Sessions: 2-3
+
+3. **Error Handling & Edge Cases**
+   - Network failure states on all API calls
+   - Empty film results handling
+   - Auth session recovery
+   - Sessions: 1-2
+
+4. **Loading States**
+   - Skeleton shimmer for feed
+   - AI processing overlay improvements
+   - Pull-to-refresh on feed
+   - Sessions: 1
+
+#### P1 — Should Ship (Weeks 3-4)
+These make the app competitive:
+
+5. **Film Detail Bottom Sheet**
+   - 80% height sheet with drag handle
+   - Poster blur background + metadata
+   - "Why this film?" AI explanation
+   - Watchlist add from detail
+   - Sessions: 2
+
+6. **Onboarding Flow**
+   - 3-screen intro (what MoodFlix does, how swipe works, mood demo)
+   - First mood prompt guided experience
+   - Sessions: 1-2
+
+7. **Tab Bar Redesign**
+   - 4 tabs with new violet active state
+   - Outline→filled icon transition
+   - Flick mascot integration (placeholder if not ready)
+   - Sessions: 1
+
+8. **Search/Discover Tab**
+   - Genre browsing
+   - Curated mood collections ("Rainy Day", "Date Night")
+   - Sessions: 2-3
+
+#### P2 — Growth Features (Weeks 5-8)
+These drive retention:
+
+9. **Gamification System**
+   - Supabase: create user_streaks table
+   - Daily streak counter + badge
+   - Milestone celebrations (10/25/50/100 films)
+   - Confetti animation + Flick dance
+   - Sessions: 2-3
+
+10. **Flick Mascot (Rive)**
+    - Design in Rive editor (256x256, 8 states)
+    - Build FlickMascot.tsx component
+    - Integrate: card corner, empty states, loading, celebrations
+    - Sessions: 3-5 (including Rive design time)
+
+11. **Watch History & Stats**
+    - "Films you've seen" list
+    - Mood pattern visualization
+    - Genre distribution chart
+    - Sessions: 2
+
+12. **Social Features**
+    - Share film card as image
+    - "Mood of the day" shareable card
+    - Sessions: 1-2
+
+#### P3 — Scale Features (Post-Launch)
+13. Real Claude API film profiling (replace rule-based)
+14. User accounts (email/social sign-in, migrate from anonymous)
+15. Personalized recommendations (learn from swipe history)
+16. Push notifications (daily mood check-in, streak reminders)
+17. Multi-language support (TR/EN at minimum)
+18. iPad/tablet layout
+19. Revenue: premium tier with unlimited AI explanations
+
+### Sprint Cadence
+- Each sprint = 1 week
+- Daily Claude Code sessions: 1-3 hours
+- Sprint goal: 2-3 completed tasks from current priority tier
+- Friday: test full flow, update CLAUDE.md, plan next sprint
+
+### Definition of Done (Per Task)
+- [ ] Feature works in dev build
+- [ ] No regression in MVP flow (mood → films → swipe → watchlist)
+- [ ] No new TS errors (existing ones in scripts/ are OK)
+- [ ] Colors use design tokens (no hardcoded hex)
+- [ ] CLAUDE.md updated with changes
+
+---
+
+## Architecture Rules
+- Colors: `import { Colors } from '@/constants/Colors'` (capital C!)
+- Theme: `import { Theme } from '@/constants/theme'`
+- Watchlist: `import from 'services/watchlist'` (NOT watchlistService.ts)
+- Vectors: ONLY `services/vectorEncoder.ts`
+- No hardcoded user IDs
+- No expo-localization (crashes)
+- Never modify vectorEncoder dimensions without migrating Supabase
