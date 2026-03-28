@@ -190,7 +190,7 @@ const CardVisual: React.FC<CardVisualProps> = React.memo(({
         style={[styles.swipeOverlay, styles.goldOverlay, saveOverlayStyle]}
         pointerEvents="none"
       >
-        <Text style={styles.overlayText}>Saved ✓</Text>
+        <Text style={styles.overlayText}>+</Text>
       </Animated.View>
 
       {/* SKIP Overlay */}
@@ -198,7 +198,7 @@ const CardVisual: React.FC<CardVisualProps> = React.memo(({
         style={[styles.swipeOverlay, styles.greyOverlay, skipOverlayStyle]}
         pointerEvents="none"
       >
-        <Text style={styles.overlayText}>Skip</Text>
+        <Text style={styles.overlayText}>✕</Text>
       </Animated.View>
 
       {/* Sürpriz Badge */}
@@ -616,7 +616,7 @@ const styles = StyleSheet.create({
   },
   posterPlaceholder: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0D1130',
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -640,20 +640,16 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   goldOverlay: {
-    backgroundColor: 'rgba(212,168,67,0.15)',
-    borderWidth: 3,
-    borderColor: '#D4A843',
+    backgroundColor: 'rgba(34,197,94,0.15)',
     borderRadius: 20,
   },
   greyOverlay: {
-    backgroundColor: 'rgba(138,130,144,0.15)',
-    borderWidth: 3,
-    borderColor: '#8A8290',
+    backgroundColor: 'rgba(239,68,68,0.15)',
     borderRadius: 20,
   },
   overlayText: {
     color: Colors.textWhite,
-    fontSize: 40,
+    fontSize: 48,
     fontWeight: 'bold',
     textAlign: 'center',
   },

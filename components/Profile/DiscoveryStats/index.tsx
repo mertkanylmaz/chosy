@@ -38,8 +38,33 @@ interface BadgeDefinition {
   hint: string;
 }
 
-/** Tüm uygulama badge'leri — swipe, session ve genre bazlı */
+/** Tüm uygulama badge'leri — swipe, session, streak ve genre bazlı */
 const ALL_BADGES: BadgeDefinition[] = [
+  // ── Streak bazlı (gamification backend'den) ─────────────────────────────
+  {
+    id: 'streak_3',
+    label: 'Getting Started 🔥',
+    check: (s) => (s.longest_streak ?? 0) >= 3,
+    hint: 'Maintain a 3-day streak to unlock!',
+  },
+  {
+    id: 'streak_7',
+    label: 'Week Warrior 💪',
+    check: (s) => (s.longest_streak ?? 0) >= 7,
+    hint: 'Maintain a 7-day streak to unlock!',
+  },
+  {
+    id: 'streak_14',
+    label: 'Two Week Titan 🌟',
+    check: (s) => (s.longest_streak ?? 0) >= 14,
+    hint: 'Maintain a 14-day streak to unlock!',
+  },
+  {
+    id: 'streak_30',
+    label: 'Monthly Master 👑',
+    check: (s) => (s.longest_streak ?? 0) >= 30,
+    hint: 'Maintain a 30-day streak to unlock!',
+  },
   // ── Swipe bazlı ──────────────────────────────────────────────────────────
   {
     id: 'explorer',

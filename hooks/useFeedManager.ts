@@ -14,9 +14,11 @@ import { Image } from 'react-native';
 
 import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
+import { recordActivity } from '@/services/gamification';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { updateUserVector } from '@/services/userProfile';
 import { addToWatchlist, getAppUserId } from '@/services/watchlist';
+import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -41,6 +43,8 @@ export interface FeedState {
   currentIndex: number;
   isLoading: boolean;
   hasError: boolean;
+  /** Hata sınıflandırması — ErrorState'e iletilir */
+  errorType: ErrorType;
   currentPhase: FeedPhase;
   sessionId: string;
   excludeIds: string[];
@@ -52,7 +56,7 @@ type FeedAction =
   | { type: 'SWIPE_RIGHT'; filmId: string }
   | { type: 'SWIPE_LEFT'; filmId: string }
   | { type: 'SET_LOADING'; loading: boolean }
-  | { type: 'SET_ERROR'; hasError: boolean }
+  | { type: 'SET_ERROR'; hasError: boolean; errorType?: ErrorType }
   | { type: 'RESET'; sessionId: string };
 
 // ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
@@ -110,6 +114,7 @@ const initialState: FeedState = {
   currentIndex: 0,
   isLoading: false,
   hasError: false,
+  errorType: 'unknown',
   currentPhase: 'high',
   sessionId: generateSessionId(),
   excludeIds: [],
@@ -153,7 +158,12 @@ function feedReducer(state: FeedState, action: FeedAction): FeedState {
       return { ...state, isLoading: action.loading };
 
     case 'SET_ERROR':
-      return { ...state, hasError: action.hasError, isLoading: false };
+      return {
+        ...state,
+        hasError: action.hasError,
+        errorType: action.errorType ?? state.errorType,
+        isLoading: false,
+      };
 
     case 'RESET':
       return {
@@ -203,6 +213,8 @@ export interface FeedManager {
   totalSwiped: number;
   /** Son yükleme başarısız oldu mu */
   hasError: boolean;
+  /** Hata sınıflandırması — ErrorState'e doğrudan iletilir */
+  errorType: ErrorType;
   /** Hata sonrası yeniden yüklemeyi dener */
   retryLoad: () => void;
 }
@@ -305,13 +317,21 @@ export function useFeedManager(
           excludeIds,
           filtersRef.current,
         );
+
+        if (result.films.length === 0 && loadedCount === 0) {
+          // İlk batch'te 0 film — filtreler çok dar veya sonuç yok
+          dispatch({ type: 'SET_ERROR', hasError: true, errorType: 'empty' });
+          return;
+        }
+
         dispatch({ type: 'ADD_FILMS', films: result.films });
       }
     } catch (err) {
       if (__DEV__) {
         console.error('[useFeedManager] loadNextBatch hatası:', err);
       }
-      dispatch({ type: 'SET_ERROR', hasError: true });
+      const userError = toUserError(err, 'feed');
+      dispatch({ type: 'SET_ERROR', hasError: true, errorType: userError.type });
     } finally {
       isLoadingRef.current = false;
     }
@@ -431,6 +451,11 @@ export function useFeedManager(
           }
         });
       }
+
+      // Streak + milestone güncelleme (fire-and-forget, her swipe'da)
+      recordActivity().catch(() => {
+        // Gamification hataları kullanıcıyı etkilememeli
+      });
     },
     [],
   );
@@ -459,6 +484,7 @@ export function useFeedManager(
     nextFilm: state.films[state.currentIndex + 1],
     isLoading: state.isLoading,
     hasError: state.hasError,
+    errorType: state.errorType,
     retryLoad,
     onSwipe,
     onSwipeFilm,

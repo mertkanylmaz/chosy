@@ -32,7 +32,7 @@ export default function EntryScreen() {
 
   if (userType === null) {
     return (
-      <LinearGradient colors={['#0A0E27', '#0D1B2A']} style={styles.loading}>
+      <LinearGradient colors={[Colors.background, Colors.background]} style={styles.loading}>
         <ActivityIndicator color={Colors.gold} size="large" />
       </LinearGradient>
     );

@@ -1,15 +1,16 @@
 /**
- * SwipeableCard — Tek film kartı, kendi yatay swipe mekanizmasıyla.
+ * SwipeableCard — Tek film kartı, Premium Bumble tasarım.
  *
  * Mekanik:
  * - Yatay pan: Tinder tarzı sağ/sol swipe → kart ekrandan uçar → callback
  * - Dikey kaydırma: FlatList üzerinden, bu component müdahale etmez
  * - Gesture çakışması: activeOffsetX([-15,15]) + failOffsetY([-10,10])
  *
- * Animasyon:
- * - Swipe eşiği geçilince: withTiming(±SCREEN_WIDTH*1.5, 300ms) → runOnJS callback
- * - Eşik geçilmezse: withSpring(0) ile geri döner
- * - Overlay: sürüklerken fade in, bırakınca ya kalır (uçuşa eşlik eder) ya sıfırlanır
+ * Görsel:
+ * - Full-bleed poster, bottom %40 gradient overlay
+ * - Swipe overlay: yeşil "+" (sağa), kırmızı "✕" (sola)
+ * - 3 dairesel action button: Skip (✕), Surprise (★), Save (♡)
+ * - Sürpriz badge + match circle
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -42,12 +43,11 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
-import Lumi from '@/components/Lumi';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /**
- * Film için Lumi AI açıklama metni üretir.
+ * Film için AI açıklama metni üretir.
  * film.whyThisFilm varsa kullanılır; yoksa genres'ten template üretilir.
  */
 function getAIExplanation(film: Film): string {
@@ -77,6 +77,10 @@ const EXIT_X = SCREEN_WIDTH * 1.5;
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w780';
 
+/** Action button boyutları */
+const ACTION_BTN_SM = 48;
+const ACTION_BTN_LG = 56;
+
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
 export interface SwipeableCardProps {
@@ -90,7 +94,7 @@ export interface SwipeableCardProps {
 // ── Component ────────────────────────────────────────────────────────────────
 
 /**
- * Tek bir film kartı.
+ * Tek bir film kartı — Premium Bumble tasarım.
  * Kendi translateX / cardRotation / overlay shared value'larını yönetir.
  * FlatList item olarak render edilir; dikey scroll FlatList'e devredilir.
  */
@@ -119,10 +123,6 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
 
   const matchPercent = film.matchScore ?? 0;
   const rating = film.voteAverage ?? 0;
-  const metaParts: string[] = [];
-  if (film.director) metaParts.push(film.director);
-  if (film.year) metaParts.push(String(film.year));
-  const metaString = metaParts.join(' · ');
 
   /** pick_type önceliklidir; yoksa surpriseType kullanılır */
   const effectiveType = film.pick_type ?? film.surpriseType ?? null;
@@ -148,19 +148,13 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
 
   // ── JS thread callback'ler ────────────────────────────────────────────────
 
-  /**
-   * Sağa swipe tamamlandı — haptic + parent callback.
-   * runOnJS ile UI thread'den çağrılır.
-   */
+  /** Sağa swipe tamamlandı — haptic + parent callback */
   const doSwipeRight = useCallback(() => {
     hapticMedium();
     onSwipeRight(film);
   }, [film, onSwipeRight]);
 
-  /**
-   * Sola swipe tamamlandı — haptic + parent callback.
-   * runOnJS ile UI thread'den çağrılır.
-   */
+  /** Sola swipe tamamlandı — haptic + parent callback */
   const doSwipeLeft = useCallback(() => {
     hapticLight();
     onSwipeLeft(film);
@@ -171,17 +165,25 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
     hapticLight();
   }, []);
 
-  /** "Save" butonu veya alt watchlist butonu basıldı */
+  /** Save action button — sağa swipe simüle eder */
   const handleSave = useCallback(() => {
     hapticMedium();
     onSwipeRight(film);
   }, [film, onSwipeRight]);
 
+  /** Skip action button — sola swipe simüle eder */
+  const handleSkip = useCallback(() => {
+    hapticLight();
+    onSwipeLeft(film);
+  }, [film, onSwipeLeft]);
+
+  /** Karta tıklayınca film detay */
   const handlePress = useCallback(() => {
     if (!film?.id) return;
     router.push(`/film/${film.id}`);
   }, [router, film.id]);
 
+  /** Share butonu */
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
@@ -219,28 +221,28 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
       cardRotation.value = interpolate(
         event.translationX,
         [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-        [-15, 0, 15],
+        [-12, 0, 12],
         Extrapolation.CLAMP,
       );
 
-      // Saved overlay (sağa)
+      // Saved overlay (sağa) — max 0.3 opacity (Premium Bumble spec)
       savedOpacity.value =
         event.translationX > 0
           ? interpolate(
               event.translationX,
               [0, SCREEN_WIDTH * 0.15],
-              [0, 1],
+              [0, 0.3],
               Extrapolation.CLAMP,
             )
           : 0;
 
-      // Skip overlay (sola)
+      // Skip overlay (sola) — max 0.3 opacity
       skipOpacity.value =
         event.translationX < 0
           ? interpolate(
               event.translationX,
               [0, -SCREEN_WIDTH * 0.15],
-              [0, 1],
+              [0, 0.3],
               Extrapolation.CLAMP,
             )
           : 0;
@@ -252,21 +254,18 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
         Math.abs(event.velocityX) > VELOCITY_THRESHOLD;
 
       if (passed && translateX.value > 0) {
-        // Sağa uç → callback
-        savedOpacity.value = withTiming(1, { duration: 100 });
-        cardRotation.value = withTiming(15, { duration: 300 });
+        savedOpacity.value = withTiming(0.5, { duration: 100 });
+        cardRotation.value = withTiming(12, { duration: 300 });
         translateX.value = withTiming(EXIT_X, { duration: 300 }, () => {
           runOnJS(doSwipeRight)();
         });
       } else if (passed && translateX.value < 0) {
-        // Sola uç → callback
-        skipOpacity.value = withTiming(1, { duration: 100 });
-        cardRotation.value = withTiming(-15, { duration: 300 });
+        skipOpacity.value = withTiming(0.5, { duration: 100 });
+        cardRotation.value = withTiming(-12, { duration: 300 });
         translateX.value = withTiming(-EXIT_X, { duration: 300 }, () => {
           runOnJS(doSwipeLeft)();
         });
       } else {
-        // Eşik geçilmedi — geri dönsün
         translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
         cardRotation.value = withSpring(0, { damping: 20, stiffness: 200 });
         savedOpacity.value = withSpring(0, { damping: 20, stiffness: 200 });
@@ -291,6 +290,13 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   const skipOverlayStyle = useAnimatedStyle(() => ({
     opacity: skipOpacity.value,
   }));
+
+  // ── Meta string ───────────────────────────────────────────────────────────
+  const metaLine = [
+    film.year,
+    rating > 0 ? `★ ${rating.toFixed(1)}` : null,
+    ...film.moodTags.slice(0, 2),
+  ].filter(Boolean).join(' · ');
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -337,28 +343,32 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
             activeOpacity={0.97}
           />
 
-          {/* Alt gradient overlay */}
+          {/* Bottom %40 gradient overlay — daha güçlü */}
           <LinearGradient
-            colors={['transparent', 'rgba(10,14,39,0.55)', 'rgba(10,14,39,0.92)']}
-            locations={[0.3, 0.58, 1.0]}
+            colors={['transparent', 'rgba(10,10,10,0.6)', Colors.cardGradientBottom]}
+            locations={[0.45, 0.68, 1.0]}
             style={StyleSheet.absoluteFillObject}
             pointerEvents="none"
           />
 
-          {/* Saved overlay (sağa swipe) */}
+          {/* SAVE overlay (sağa swipe) — yeşil "+" */}
           <Animated.View
-            style={[styles.overlay, styles.goldOverlay, savedOverlayStyle]}
+            style={[styles.overlay, styles.saveOverlay, savedOverlayStyle]}
             pointerEvents="none"
           >
-            <Text style={styles.overlayText}>Saved ✓</Text>
+            <View style={styles.overlayIconCircle}>
+              <Ionicons name="add" size={56} color={Colors.swipeRight} />
+            </View>
           </Animated.View>
 
-          {/* Skip overlay (sola swipe) */}
+          {/* SKIP overlay (sola swipe) — kırmızı "✕" */}
           <Animated.View
-            style={[styles.overlay, styles.greyOverlay, skipOverlayStyle]}
+            style={[styles.overlay, styles.skipOverlay, skipOverlayStyle]}
             pointerEvents="none"
           >
-            <Text style={styles.overlayText}>Skip</Text>
+            <View style={styles.overlayIconCircle}>
+              <Ionicons name="close" size={56} color={Colors.swipeLeft} />
+            </View>
           </Animated.View>
 
           {/* Sürpriz badge — tip bazlı renk + FadeInDown animasyon */}
@@ -385,67 +395,64 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
             </Animated.View>
           )}
 
-          {/* Sol üst — New mood butonu */}
-          <TouchableOpacity
-            onPress={() => router.push('/(tabs)/mood')}
-            style={styles.newMoodBtn}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.newMoodBtnText}>New mood</Text>
-          </TouchableOpacity>
+          {/* ── Alt içerik ─────────────────────────────────────────────────── */}
+          <View style={styles.bottomContent} pointerEvents="box-none">
 
-          {/* Sağ kenar — Share + Save butonları (label'lı) */}
-          <View style={styles.sideButtons}>
-            <View style={styles.sideIconWrap}>
-              <TouchableOpacity onPress={handleShare} style={styles.sideIconCircle} activeOpacity={0.75}>
-                <Ionicons name="share-outline" size={22} color={Colors.textWhite} />
-              </TouchableOpacity>
-              <Text style={styles.sideIconLabel}>Share</Text>
-            </View>
-            <View style={styles.sideIconWrap}>
-              <TouchableOpacity onPress={handleSave} style={styles.sideIconCircle} activeOpacity={0.75}>
-                <Ionicons name="heart-outline" size={22} color={Colors.textWhite} />
-              </TouchableOpacity>
-              <Text style={styles.sideIconLabel}>Save</Text>
-            </View>
-          </View>
-
-          {/* Alt içerik */}
-          <View style={styles.bottomContent} pointerEvents="none">
-            {/* Film adı + match dairesi yan yana */}
+            {/* Film adı + match dairesi */}
             <View style={styles.titleRow}>
               <View style={styles.titleBlock}>
                 <Text style={styles.title} numberOfLines={2}>
                   {film.title}
                 </Text>
-                {matchPercent > 0 && (
-                  <Text style={styles.matchLabel}>Mood Match Score</Text>
-                )}
               </View>
 
-              {/* Match yüzdesi dairesi */}
               {matchPercent > 0 && (
                 <View style={styles.matchCircle}>
                   <Text style={styles.matchPercent}>{matchPercent}%</Text>
+                  <Text style={styles.matchLabel}>match</Text>
                 </View>
               )}
             </View>
 
-            {/* AI açıklama metni */}
+            {/* AI açıklama */}
             <Text style={styles.aiText} numberOfLines={2}>
               {getAIExplanation(film)}
             </Text>
 
-            {/* Meta bilgi */}
-            <Text style={styles.metaText}>
-              {[
-                film.year,
-                rating > 0 ? `★ ${rating.toFixed(1)}` : null,
-                ...film.moodTags.slice(0, 2),
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            </Text>
+            {/* Meta: yıl · rating · genre */}
+            {metaLine.length > 0 && (
+              <Text style={styles.metaText}>{metaLine}</Text>
+            )}
+
+            {/* ── 3 Action Buttons ─────────────────────────────────────────── */}
+            <View style={styles.actionRow}>
+              {/* Skip — kırmızı border */}
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnSm, styles.actionBtnSkip]}
+                onPress={handleSkip}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={24} color={Colors.swipeLeft} />
+              </TouchableOpacity>
+
+              {/* Share/Surprise — violet filled, büyük */}
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnLg, styles.actionBtnSurprise]}
+                onPress={handleShare}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="star" size={26} color={Colors.textOnAccent} />
+              </TouchableOpacity>
+
+              {/* Save — yeşil border */}
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.actionBtnSm, styles.actionBtnSave]}
+                onPress={handleSave}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="heart" size={22} color={Colors.swipeRight} />
+              </TouchableOpacity>
+            </View>
           </View>
 
         </Animated.View>
@@ -490,38 +497,36 @@ const styles = StyleSheet.create({
     shadowColor: Colors.gold,
   },
   surpriseBorderWhite: {
-    borderColor: '#FFFFFF',
-    shadowColor: '#FFFFFF',
+    borderColor: Colors.textOnAccent,
+    shadowColor: Colors.textOnAccent,
   },
   surpriseBorderPurple: {
-    borderColor: '#A78BFA',
-    shadowColor: '#A78BFA',
+    borderColor: Colors.accentPrimary,
+    shadowColor: Colors.accentPrimary,
   },
 
-  // ─── Overlay'ler ───────────────────────────────────────────────────────────
+  // ─── Swipe overlay'ler — semantic renkler ──────────────────────────────────
   overlay: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
-  goldOverlay: {
-    backgroundColor: 'rgba(212,168,67,0.25)',
-    borderWidth: 3,
-    borderColor: Colors.gold,
+  saveOverlay: {
+    backgroundColor: 'rgba(34,197,94,0.15)',
   },
-  greyOverlay: {
-    backgroundColor: 'rgba(138,130,144,0.25)',
-    borderWidth: 3,
-    borderColor: '#8A8290',
+  skipOverlay: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
   },
-  overlayText: {
-    color: Colors.textWhite,
-    fontSize: 40,
-    fontWeight: 'bold',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
+  overlayIconCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: Colors.white10,
   },
 
   // ─── Sürpriz badge (base + type varyantları) ───────────────────────────────
@@ -535,13 +540,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   surpriseBadgeGold: {
-    backgroundColor: 'rgba(212,168,67,0.92)',
+    backgroundColor: Colors.gold,
   },
   surpriseBadgeWhite: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: 'rgba(255,255,255,0.94)',
   },
   surpriseBadgePurple: {
-    backgroundColor: 'rgba(167,139,250,0.92)',
+    backgroundColor: Colors.accentPrimary,
   },
   surpriseBadgeText: {
     color: Colors.background,
@@ -549,64 +554,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   surpriseBadgeTextLight: {
-    color: '#FFFFFF',
-  },
-
-  // ─── Sol üst: New mood butonu ──────────────────────────────────────────────
-  newMoodBtn: {
-    position: 'absolute',
-    top: 54,
-    left: 20,
-    zIndex: 20,
-    borderWidth: 1,
-    borderColor: Colors.gold,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  newMoodBtnText: {
-    color: Colors.gold,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  // ─── Sağ taraf butonlar ────────────────────────────────────────────────────
-  sideButtons: {
-    position: 'absolute',
-    right: 16,
-    top: '50%',
-    zIndex: 20,
-    alignItems: 'center',
-    gap: 20,
-  },
-  sideIconWrap: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  sideIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  sideIconLabel: {
-    fontSize: 11,
-    color: Colors.textWhite,
-    fontWeight: '600',
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    color: Colors.textOnAccent,
   },
 
   // ─── Alt içerik ────────────────────────────────────────────────────────────
   bottomContent: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 20,
     left: 20,
     right: 20,
     zIndex: 20,
@@ -625,46 +579,86 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.textWhite,
     lineHeight: 34,
-    marginBottom: 2,
-  },
-  matchLabel: {
-    fontSize: 13,
-    color: Colors.gold,
-    fontWeight: '600',
-    letterSpacing: 0.2,
   },
   matchCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(10,14,39,0.7)',
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2.5,
+    borderColor: Colors.accentPrimary,
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 6,
     flexShrink: 0,
   },
   matchPercent: {
     color: Colors.textWhite,
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 16,
+    fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: -0.3,
   },
+  matchLabel: {
+    fontSize: 9,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+    letterSpacing: 0.3,
+    marginTop: -2,
+  },
   aiText: {
-    color: Colors.textLightGrey,
+    color: Colors.textTertiary,
     fontSize: 13,
     lineHeight: 19,
-    marginBottom: 8,
+    marginBottom: 6,
   },
   metaText: {
     fontSize: 12,
-    color: Colors.textGrey,
+    color: Colors.textSecondary,
     letterSpacing: 0.1,
+    marginBottom: 16,
+  },
+
+  // ─── 3 Action Buttons — Skip / Surprise / Save ────────────────────────────
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+  },
+  actionBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  actionBtnSm: {
+    width: ACTION_BTN_SM,
+    height: ACTION_BTN_SM,
+    borderRadius: ACTION_BTN_SM / 2,
+  },
+  actionBtnLg: {
+    width: ACTION_BTN_LG,
+    height: ACTION_BTN_LG,
+    borderRadius: ACTION_BTN_LG / 2,
+  },
+  actionBtnSkip: {
+    borderColor: Colors.swipeLeft,
+  },
+  actionBtnSurprise: {
+    borderColor: Colors.accentPrimary,
+    backgroundColor: Colors.accentPrimary,
+    shadowColor: Colors.accentPrimary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  actionBtnSave: {
+    borderColor: Colors.swipeRight,
   },
 });
 

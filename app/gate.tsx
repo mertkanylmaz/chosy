@@ -13,6 +13,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
+import { Colors } from '@/constants/Colors';
 import {
   incrementSessionCount,
   markEntryShown,
@@ -48,7 +49,7 @@ export default function Gate() {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator color="#D4A843" size="large" />
+      <ActivityIndicator color={Colors.accentPrimary} size="large" />
     </View>
   );
 }
@@ -56,7 +57,7 @@ export default function Gate() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0A0E27',
+    backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },

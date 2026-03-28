@@ -1,6 +1,14 @@
+/**
+ * Tab navigasyon layout'u — Premium Bumble tab bar.
+ *
+ * Sıra: Feed (Home) → Watchlist (Bookmark) → Mood (Sparkle/Lumi) → Profile (Person)
+ *
+ * Aktif tab: filled ikon (violet) + label (11px bold) + dot + bounce
+ * Pasif tab: outline ikon (zinc-500) + label yok
+ */
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 import Animated, {
@@ -18,6 +26,10 @@ import { Colors } from '@/constants/Colors';
 import Lumi from '@/components/Lumi';
 import { BOUNCE_CONFIG, SPRING_CONFIG, FAST_TIMING } from '@/constants/animations';
 
+// ─── Ionicons tip yardımcısı ─────────────────────────────────────────────────
+
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+
 // ─── Animated Tab Icon ────────────────────────────────────────────────────────
 
 interface AnimatedTabIconProps {
@@ -28,7 +40,7 @@ interface AnimatedTabIconProps {
 /**
  * Tab ikonu wrapper'ı.
  * Aktif olunca ikon scale 1→1.2→1 bounce yapar.
- * Altında küçük altın dot indicator fade in/out.
+ * Altında küçük violet dot indicator fade in/out.
  */
 function AnimatedTabIcon({ focused, children }: AnimatedTabIconProps) {
   const scale = useSharedValue(1);
@@ -44,7 +56,7 @@ function AnimatedTabIcon({ focused, children }: AnimatedTabIconProps) {
     // İkon bounce — sadece aktif olunca
     if (focused && !isReducedMotion) {
       scale.value = withSequence(
-        withSpring(1.25, BOUNCE_CONFIG),
+        withSpring(1.2, BOUNCE_CONFIG),
         withSpring(1.0, SPRING_CONFIG),
       );
     }
@@ -67,6 +79,31 @@ function AnimatedTabIcon({ focused, children }: AnimatedTabIconProps) {
   );
 }
 
+// ─── Tab Icon Renderer ───────────────────────────────────────────────────────
+
+/**
+ * Outline/filled ikon seçimi — focused durumuna göre.
+ */
+function TabIcon({
+  focused,
+  filledName,
+  outlineName,
+}: {
+  focused: boolean;
+  filledName: IoniconsName;
+  outlineName: IoniconsName;
+}) {
+  return (
+    <AnimatedTabIcon focused={focused}>
+      <Ionicons
+        name={focused ? filledName : outlineName}
+        size={24}
+        color={focused ? Colors.accentPrimary : Colors.tabInactive}
+      />
+    </AnimatedTabIcon>
+  );
+}
+
 // ─── Layout ───────────────────────────────────────────────────────────────────
 
 /**
@@ -79,11 +116,12 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.gold,
+        tabBarActiveTintColor: Colors.accentPrimary,
         tabBarInactiveTintColor: Colors.tabInactive,
         tabBarStyle: styles.tabBar,
         tabBarBackground: () => null,
         tabBarLabelStyle: styles.tabLabel,
+        tabBarItemStyle: styles.tabItem,
         headerShown: useClientOnlyValue(false, true),
         headerStyle: { backgroundColor: Colors.background },
         headerTintColor: Colors.textWhite,
@@ -94,14 +132,10 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('tabs.discover'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon focused={focused}>
-              <SymbolView
-                name={{ ios: 'house.fill', android: 'home', web: 'home' }}
-                tintColor={color}
-                size={24}
-              />
-            </AnimatedTabIcon>
+          tabBarLabel: ({ focused }) =>
+            focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} filledName="home" outlineName="home-outline" />
           ),
         }}
       />
@@ -110,14 +144,10 @@ export default function TabLayout() {
         name="watchlist"
         options={{
           title: t('tabs.watchlist'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon focused={focused}>
-              <SymbolView
-                name={{ ios: 'bookmark.fill', android: 'bookmark', web: 'bookmark' }}
-                tintColor={color}
-                size={24}
-              />
-            </AnimatedTabIcon>
+          tabBarLabel: ({ focused }) =>
+            focused ? <Text style={styles.activeLabel}>{t('tabs.watchlist')}</Text> : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} filledName="bookmark" outlineName="bookmark-outline" />
           ),
         }}
       />
@@ -126,15 +156,17 @@ export default function TabLayout() {
         name="mood"
         options={{
           title: t('tabs.home'),
+          tabBarLabel: ({ focused }) =>
+            focused ? <Text style={styles.activeLabel}>{t('tabs.home')}</Text> : null,
           tabBarIcon: ({ focused }) => (
             <AnimatedTabIcon focused={focused}>
               {focused ? (
                 <Lumi size="small" mood="idle" />
               ) : (
-                <SymbolView
-                  name={{ ios: 'sparkles', android: 'auto_awesome', web: 'auto_awesome' }}
-                  tintColor={Colors.tabInactive}
+                <Ionicons
+                  name="sparkles-outline"
                   size={24}
+                  color={Colors.tabInactive}
                 />
               )}
             </AnimatedTabIcon>
@@ -146,14 +178,10 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t('tabs.profile'),
-          tabBarIcon: ({ color, focused }) => (
-            <AnimatedTabIcon focused={focused}>
-              <SymbolView
-                name={{ ios: 'person.fill', android: 'person', web: 'person' }}
-                tintColor={color}
-                size={24}
-              />
-            </AnimatedTabIcon>
+          tabBarLabel: ({ focused }) =>
+            focused ? <Text style={styles.activeLabel}>{t('tabs.profile')}</Text> : null,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon focused={focused} filledName="person" outlineName="person-outline" />
           ),
         }}
       />
@@ -166,7 +194,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.tabBarBg,
-    borderTopColor: 'rgba(255,255,255,0.08)',
+    borderTopColor: Colors.white10,
     borderTopWidth: StyleSheet.hairlineWidth,
     position: 'absolute',
     height: 83,
@@ -174,10 +202,20 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
   tabLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.3,
     marginTop: 2,
+  },
+  tabItem: {
+    gap: 2,
+  },
+  activeLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.accentPrimary,
+    letterSpacing: 0.3,
+    marginTop: 1,
   },
 });
 
@@ -185,12 +223,12 @@ const tabIconStyles = StyleSheet.create({
   wrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 3,
   },
   dot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.gold,
+    backgroundColor: Colors.accentPrimary,
   },
 });

@@ -8,7 +8,6 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -44,6 +43,7 @@ import { getPosterUrl } from '@/services/tmdb';
 import { getAppUserId } from '@/services/watchlist';
 import { parseMood } from '@/services/tasteParser';
 import { FilmFilters, TasteProfile } from '@/types';
+import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -76,6 +76,26 @@ const RATING_CHIPS: { id: RatingChipId; label: string }[] = [
   { id: '8', label: '8+' },
   { id: 'top250', label: 'Top 250' },
   { id: '', label: 'Any' },
+];
+
+// ─── Quick Moods (Curated Collections) ───────────────────────────────────────
+
+interface QuickMoodItem {
+  id: string;
+  emoji: string;
+  label: string;
+  prompt: string;
+}
+
+const QUICK_MOODS: QuickMoodItem[] = [
+  { id: 'rainy', emoji: '🌧️', label: 'Rainy Day', prompt: 'A cozy rainy evening, something warm and contemplative' },
+  { id: 'date', emoji: '💕', label: 'Date Night', prompt: 'Romantic and engaging, perfect for watching together' },
+  { id: 'thrill', emoji: '⚡', label: 'Adrenaline', prompt: 'Heart-pounding excitement, edge of my seat thrills' },
+  { id: 'laugh', emoji: '😂', label: 'Need a Laugh', prompt: 'Something genuinely funny to lift my spirits' },
+  { id: 'deep', emoji: '🧠', label: 'Mind-Bending', prompt: 'A thought-provoking film that challenges my perspective' },
+  { id: 'nostalgia', emoji: '✨', label: 'Nostalgia Trip', prompt: 'Something that feels like a warm childhood memory' },
+  { id: 'chill', emoji: '🍿', label: 'Easy Watch', prompt: 'Light and entertaining, no heavy thinking required' },
+  { id: 'cry', emoji: '😢', label: 'Good Cry', prompt: 'An emotionally moving story that makes me feel deeply' },
 ];
 
 // ─── Mood History helpers ─────────────────────────────────────────────────────
@@ -292,6 +312,8 @@ export default function MoodScreen() {
   const [ratingChip, setRatingChip] = useState<RatingChipId>('');
   /** Lumi duygu durumu — yazarken 'thinking', durduğunda 'idle' */
   const [lumiMood, setLumiMood] = useState<'idle' | 'thinking'>('idle');
+  /** Hata durumu — inline hata mesajı göstermek için */
+  const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
 
   const pendingFilters = useRef<FilmFilters | null>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
@@ -302,7 +324,8 @@ export default function MoodScreen() {
   const style2 = useStaggeredEntry(2);
   const style3 = useStaggeredEntry(3);
   const style4 = useStaggeredEntry(4);
-  const style5 = useStaggeredEntry(5);
+  const styleQuickMoods = useStaggeredEntry(5);
+  const style5 = useStaggeredEntry(6);
   const { animatedStyle: btnAnimStyle, onPressIn: btnPressIn, onPressOut: btnPressOut } = useScalePress(0.95);
 
   /** Typing timeout cleanup */
@@ -355,6 +378,7 @@ export default function MoodScreen() {
     pendingFilters.current = filters;
 
     try {
+      setMoodError(null);
       const [profile] = await Promise.all([
         parseMood(trimmed),
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
@@ -371,8 +395,9 @@ export default function MoodScreen() {
         // eslint-disable-next-line no-console
         console.log('[MoodScreen] parseMood hatası:', err instanceof Error ? err.message : err);
       }
+      const userError = toUserError(err, 'mood');
+      setMoodError({ type: userError.type, message: userError.message });
       setPhase('input');
-      Alert.alert(t('errors.generic'), t('errors.loadRecommendations'));
     }
   }, [moodText, yearChip, ratingChip, phase, t]);
 
@@ -388,6 +413,14 @@ export default function MoodScreen() {
     setPhase('input');
     router.replace('/(tabs)');
   }, [tasteProfile, setMoodResult, router]);
+
+  /**
+   * Quick Mood koleksiyonu tıklandığında — metni doldur ve otomatik bul
+   */
+  const handleQuickMood = useCallback((text: string) => {
+    hapticSelection();
+    setMoodText(text);
+  }, []);
 
   // ── MoodProfileResult aşaması ──────────────────────────────────────────────
   if (phase === 'result' && tasteProfile) {
@@ -527,6 +560,21 @@ export default function MoodScreen() {
                 />
               </Animated.View>
 
+              {/* ── Hata mesajı (inline) ──────────────────────────────────────── */}
+              {moodError != null && (
+                <View style={styles.errorBanner}>
+                  <Ionicons
+                    name={moodError.type === 'network' ? 'cloud-offline-outline' : 'warning-outline'}
+                    size={18}
+                    color={Colors.error}
+                  />
+                  <Text style={styles.errorBannerText}>{moodError.message}</Text>
+                  <TouchableOpacity onPress={() => setMoodError(null)} activeOpacity={0.7}>
+                    <Ionicons name="close-circle" size={18} color={Colors.textGrey} />
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* ── Find Movies butonu ───────────────────────────────────────── */}
               <Animated.View style={[style4, btnAnimStyle]}>
                 <TouchableOpacity
@@ -539,6 +587,38 @@ export default function MoodScreen() {
                 >
                   <Text style={styles.findButtonText}>Find Movies</Text>
                 </TouchableOpacity>
+              </Animated.View>
+
+              {/* ── Quick Moods ──────────────────────────────────────────────── */}
+              <Animated.View style={styleQuickMoods}>
+                <View style={styles.quickSection}>
+                  <Text style={styles.quickTitle}>Quick moods</Text>
+                  <Text style={styles.quickSubtitle}>Tap to fill, then hit Find Movies</Text>
+                  <View style={styles.quickGrid}>
+                    {QUICK_MOODS.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        style={[
+                          styles.quickCard,
+                          moodText === item.prompt && styles.quickCardActive,
+                        ]}
+                        onPress={() => handleQuickMood(item.prompt)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.quickEmoji}>{item.emoji}</Text>
+                        <Text
+                          style={[
+                            styles.quickLabel,
+                            moodText === item.prompt && styles.quickLabelActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {item.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
               </Animated.View>
 
               {/* ── Mood History ─────────────────────────────────────────────── */}
@@ -686,6 +766,28 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(212,168,67,0.5)',
   },
 
+  // ─── Hata banner ──────────────────────────────────────────────────────────
+
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239,68,68,0.3)',
+  },
+  errorBannerText: {
+    flex: 1,
+    color: Colors.textWhite,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+
   // ─── Find Movies butonu ────────────────────────────────────────────────────
 
   findButton: {
@@ -704,6 +806,55 @@ const styles = StyleSheet.create({
     color: Colors.background,
     fontSize: 16,
     fontWeight: 'bold',
+  },
+
+  // ─── Quick Moods ──────────────────────────────────────────────────────────
+
+  quickSection: {
+    marginTop: 28,
+    paddingHorizontal: 20,
+  },
+  quickTitle: {
+    fontSize: 20,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: Colors.textWhite,
+    marginBottom: 4,
+  },
+  quickSubtitle: {
+    fontSize: 13,
+    color: Colors.textGrey,
+    marginBottom: 14,
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  quickCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: Colors.white05,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  quickCardActive: {
+    borderColor: Colors.accentPrimary,
+    backgroundColor: Colors.accentDim,
+  },
+  quickEmoji: {
+    fontSize: 18,
+  },
+  quickLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.textGrey,
+  },
+  quickLabelActive: {
+    color: Colors.accentPrimary,
   },
 
   // ─── History bölümü ────────────────────────────────────────────────────────

@@ -191,13 +191,17 @@ export default function WatchlistScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [loadErrorType, setLoadErrorType] = useState<import('@/utils/errorHelpers').ErrorType>('unknown');
 
   const loadWatchlist = useCallback(async () => {
     setLoadError(false);
     try {
       const data = await getWatchlist();
       setItems(data);
-    } catch {
+    } catch (err) {
+      const { toUserError } = await import('@/utils/errorHelpers');
+      const userError = toUserError(err, 'watchlist');
+      setLoadErrorType(userError.type);
       setLoadError(true);
     } finally {
       setInitialLoading(false);
@@ -326,11 +330,11 @@ export default function WatchlistScreen() {
       {/* Arama Çubuğu */}
       {searchVisible && (
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={18} color="#8A8290" />
+          <Ionicons name="search-outline" size={18} color={Colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search your watchlist..."
-            placeholderTextColor="#8A8290"
+            placeholderTextColor={Colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
@@ -379,7 +383,7 @@ export default function WatchlistScreen() {
           ))}
         </View>
       ) : loadError ? (
-        <ErrorState onRetry={loadWatchlist} />
+        <ErrorState errorType={loadErrorType} onRetry={loadWatchlist} />
       ) : items.length === 0 ? (
         <EmptyState
           lumiMood="searching"
@@ -671,7 +675,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   retryBtnText: {
-    color: '#0A0E27',
+    color: Colors.background,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -685,7 +689,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   modalCard: {
-    backgroundColor: '#1A1F35',
+    backgroundColor: Colors.cardSolid,
     borderRadius: 16,
     overflow: 'hidden',
   },
@@ -722,7 +726,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   menuContainer: {
-    backgroundColor: '#1A1F35',
+    backgroundColor: Colors.cardSolid,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: 12,

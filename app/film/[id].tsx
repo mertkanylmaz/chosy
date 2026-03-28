@@ -1,18 +1,18 @@
 /**
- * Film Detay ekranı — v2
- * Tasarım referansı: design-reference/06-film-detail.png
+ * Film Detay ekrani — Bottom Sheet tarzinda.
  *
  * Layout:
- *   - Tam ekran, arka plan #0A0E27
- *   - Backdrop (300px) + koyu gradient + position:absolute header butonları
- *   - Poster (180×270) marginTop:-100 ile backdrop'a biner
- *   - Film adı, Mood Match Score, AI açıklama (ortalanmış)
- *   - Mood Explanation bölümü, film bilgileri satırı, cast horizontal scroll
- *   - Alt sabit butonlar: Trailer (%40) + Add to watchlist (%55)
+ *   - Drag handle + rounded top corners
+ *   - Backdrop (blurred) + gradient overlay
+ *   - Poster (180x270) overlap
+ *   - Film adi, Match Score, meta bilgiler
+ *   - "Why this film?" AI aciklama (lazy loaded)
+ *   - Overview bolumu
+ *   - Cast horizontal scroll
+ *   - Sabit footer: Trailer + Add to Watchlist
  */
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   Linking,
   ScrollView,
@@ -30,24 +30,25 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticMedium } from '@/utils/haptics';
 
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 import { Film } from '@/types/film';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMood } from '@/contexts/MoodContext';
 import { supabase } from '@/services/supabase';
 import { addToWatchlist } from '@/services/watchlist';
+import { explainBatch, type FilmForExplanation } from '@/services/matchExplanation';
 import { Colors } from '@/constants/Colors';
-import { Typography } from '@/constants/theme';
 import SkeletonLoader from '@/components/SkeletonLoader';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BACKDROP_HEIGHT = 300;
+const BACKDROP_HEIGHT = 280;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const POSTER_WIDTH = 180;
-const POSTER_HEIGHT = 270;
-const POSTER_OVERLAP = 100;
+const POSTER_WIDTH = 160;
+const POSTER_HEIGHT = 240;
+const POSTER_OVERLAP = 90;
 
-// ─── DB satır tipi ────────────────────────────────────────────────────────────
+// ── DB satir tipi ────────────────────────────────────────────────────────────
 
 interface FilmDbRow {
   id: string;
@@ -64,7 +65,7 @@ interface FilmDbRow {
   cast_json: Array<{ name: string; profile_path?: string | null }> | null;
 }
 
-// ─── Yardımcılar ──────────────────────────────────────────────────────────────
+// ── Yardimcilar ──────────────────────────────────────────────────────────────
 
 /** TMDb path → tam URL */
 function toTmdbUrl(path: string | null, size = 'w780'): string {
@@ -80,14 +81,14 @@ function formatRuntime(minutes: number): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-// ─── Oyuncu avatarı ───────────────────────────────────────────────────────────
+// ── Oyuncu avatari ───────────────────────────────────────────────────────────
 
 interface CastAvatarProps {
   name: string;
   avatarUrl?: string;
 }
 
-/** Küçük yuvarlak oyuncu avatarı — fotoğraf yoksa baş harf */
+/** Kucuk yuvarlak oyuncu avatari — fotograf yoksa bas harf */
 function CastAvatar({ name, avatarUrl }: CastAvatarProps) {
   return (
     <View style={styles.castItem}>
@@ -105,44 +106,44 @@ function CastAvatar({ name, avatarUrl }: CastAvatarProps) {
   );
 }
 
-// ─── Header ikon butonu ───────────────────────────────────────────────────────
+// ── Info Chip ────────────────────────────────────────────────────────────────
 
-interface IconBtnProps {
-  name: keyof typeof Ionicons.glyphMap;
-  onPress: () => void;
-  active?: boolean;
-}
-
-/** 40px koyu daire ikon butonu */
-function IconBtn({ name, onPress, active = false }: IconBtnProps) {
+/** Bilgi satiri icin tek chip */
+function InfoChip({ icon, text, color }: { icon: string; text: string; color: string }) {
   return (
-    <TouchableOpacity onPress={onPress} style={styles.iconBtn} activeOpacity={0.75}>
-      <Ionicons name={name} size={20} color={active ? Colors.gold : Colors.textWhite} />
-    </TouchableOpacity>
+    <View style={styles.infoChip}>
+      <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={13} color={color} />
+      <Text style={[styles.infoChipText, { color }]}>{text}</Text>
+    </View>
   );
 }
 
-// ─── Ana ekran ────────────────────────────────────────────────────────────────
+// ── Ana ekran ────────────────────────────────────────────────────────────────
 
 /**
- * Film Detay ekranı.
+ * Film Detay ekrani — bottom sheet tarzinda.
  * route param: id → Supabase films.id (UUID)
  */
 export default function FilmDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useLanguage();
+  const { currentProfile } = useMood();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [film, setFilm] = useState<Film | null>(null);
   const [loading, setLoading] = useState(true);
   const [watchlistAdded, setWatchlistAdded] = useState(false);
+  const [explanation, setExplanation] = useState<string | null>(null);
+  const [explanationLoading, setExplanationLoading] = useState(false);
+
+  // ── Film verisi yukle ───────────────────────────────────────────────────────
 
   useEffect(() => {
     if (!id || id === 'undefined' || !UUID_REGEX.test(id)) {
       if (__DEV__ && id) {
         // eslint-disable-next-line no-console
-        console.warn('[FilmDetail] Geçersiz film id:', id);
+        console.warn('[FilmDetail] Gecersiz film id:', id);
       }
       setLoading(false);
       return;
@@ -157,11 +158,9 @@ export default function FilmDetailScreen() {
         .eq('id', id)
         .single();
 
-      if (__DEV__) {
-        if (error) {
-          // eslint-disable-next-line no-console
-          console.log('[FilmDetail] fetch error:', error.message);
-        }
+      if (__DEV__ && error) {
+        // eslint-disable-next-line no-console
+        console.log('[FilmDetail] fetch error:', error.message);
       }
 
       if (!error && data) {
@@ -193,6 +192,37 @@ export default function FilmDetailScreen() {
     })();
   }, [id]);
 
+  // ── "Why this film?" aciklama yukle ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (!film || !currentProfile || explanation != null) return;
+
+    let active = true;
+    setExplanationLoading(true);
+
+    const filmForExplanation: FilmForExplanation = {
+      filmId: film.id,
+      dimensions: film.dimensions ?? null,
+    };
+
+    explainBatch(currentProfile, [filmForExplanation])
+      .then((map) => {
+        if (active && map[film.id]) {
+          setExplanation(map[film.id]);
+        }
+      })
+      .catch(() => {
+        // Fallback: sessizce basa gec
+      })
+      .finally(() => {
+        if (active) setExplanationLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [film, currentProfile, explanation]);
+
+  // ── Aksiyonlar ──────────────────────────────────────────────────────────────
+
   const handleTrailer = () => {
     if (!film?.trailerUrl) return;
     Linking.openURL(film.trailerUrl).catch(() => {});
@@ -213,37 +243,36 @@ export default function FilmDetailScreen() {
     }).catch(() => {});
   };
 
-  // ── Yükleniyor ───────────────────────────────────────────────────────────────
+  // ── Yukleniyor ──────────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.root}>
-          {/* Backdrop skeleton */}
           <SkeletonLoader width="100%" height={BACKDROP_HEIGHT} borderRadius={0} />
-          {/* Poster skeleton */}
           <View style={styles.posterSection}>
             <SkeletonLoader width={POSTER_WIDTH} height={POSTER_HEIGHT} borderRadius={16} />
           </View>
-          {/* Metin skeleton'ları */}
-          <View style={{ paddingHorizontal: 20, marginTop: 16, gap: 12 }}>
-            <SkeletonLoader width="60%" height={32} borderRadius={8} style={{ alignSelf: 'center' }} />
-            <SkeletonLoader width="40%" height={16} borderRadius={6} style={{ alignSelf: 'center' }} />
-            <SkeletonLoader width="100%" height={14} borderRadius={6} />
-            <SkeletonLoader width="90%" height={14} borderRadius={6} />
-            <SkeletonLoader width="80%" height={14} borderRadius={6} />
+          <View style={styles.skeletonContent}>
+            <SkeletonLoader width="60%" height={28} borderRadius={8} style={{ alignSelf: 'center' }} />
+            <SkeletonLoader width="40%" height={14} borderRadius={6} style={{ alignSelf: 'center', marginTop: 10 }} />
+            <SkeletonLoader width="100%" height={14} borderRadius={6} style={{ marginTop: 20 }} />
+            <SkeletonLoader width="90%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
+            <SkeletonLoader width="80%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
           </View>
         </View>
       </>
     );
   }
 
-  // ── Bulunamadı ───────────────────────────────────────────────────────────────
+  // ── Bulunamadi ──────────────────────────────────────────────────────────────
+
   if (!film) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.loadingContainer}>
+        <View style={styles.notFoundContainer}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20} color={Colors.textWhite} />
           </TouchableOpacity>
@@ -255,7 +284,7 @@ export default function FilmDetailScreen() {
   }
 
   const backdropUri = film.backdropUrl || film.posterUrl;
-  const genreLabel = film.moodTags.join(', ');
+  const genreLabel = film.moodTags.join(' · ');
 
   return (
     <>
@@ -263,41 +292,46 @@ export default function FilmDetailScreen() {
 
       <View style={styles.root}>
 
-        {/* ── Kaydırılabilir içerik ── */}
+        {/* ── Kaydirilabilir icerik ── */}
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: 120 + insets.bottom }]}
           showsVerticalScrollIndicator={false}
         >
 
-          {/* ── Backdrop bölümü ── */}
+          {/* ── Backdrop bolumu ── */}
           <View style={styles.backdropContainer}>
             {backdropUri ? (
               <Image
                 source={{ uri: backdropUri }}
                 style={styles.backdropImage}
                 contentFit="cover"
-                blurRadius={18}
+                blurRadius={16}
                 cachePolicy="memory-disk"
               />
             ) : (
               <View style={[styles.backdropImage, styles.backdropPlaceholder]} />
             )}
-            {/* Altın warm tint overlay */}
+            {/* Violet tint overlay */}
             <LinearGradient
-              colors={['rgba(212,168,67,0.06)', 'transparent']}
+              colors={['rgba(139,92,246,0.08)', 'transparent']}
               style={StyleSheet.absoluteFill}
               locations={[0, 0.5]}
             />
-            {/* Gradient overlay: üst transparent → alt #0A0E27 */}
+            {/* Gradient: transparent → bg */}
             <LinearGradient
-              colors={['transparent', 'rgba(10,14,39,0.65)', Colors.background]}
+              colors={['transparent', 'rgba(10,10,10,0.7)', Colors.background]}
               style={StyleSheet.absoluteFill}
               locations={[0, 0.55, 1]}
             />
+
+            {/* Drag handle */}
+            <View style={styles.dragHandleArea}>
+              <View style={styles.dragHandle} />
+            </View>
           </View>
 
-          {/* ── Poster bölümü — backdrop'a biner, ZoomIn ile giriş ── */}
+          {/* ── Poster — ZoomIn ile giris ── */}
           <Animated.View style={styles.posterSection} entering={ZoomIn.duration(400).delay(100)}>
             <View style={styles.posterWrapper}>
               {film.posterUrl ? (
@@ -310,35 +344,62 @@ export default function FilmDetailScreen() {
                 />
               ) : (
                 <View style={[styles.poster, styles.posterPlaceholder]}>
-                  <Text style={styles.posterPlaceholderIcon}>🎬</Text>
+                  <Ionicons name="film-outline" size={48} color={Colors.textTertiary} />
                 </View>
               )}
 
-              {/* Eşleşme dairesi — poster sol alt */}
+              {/* Esleme dairesi — poster sol alt */}
               {film.matchScore > 0 && (
                 <View style={styles.matchCircle}>
-                  <Text style={styles.matchCircleText}>%{film.matchScore}</Text>
+                  <Text style={styles.matchPercent}>{film.matchScore}</Text>
+                  <Text style={styles.matchLabel}>match</Text>
                 </View>
               )}
             </View>
           </Animated.View>
 
-          {/* ── Film adı — FadeInDown ile giriş ── */}
+          {/* ── Film adi ── */}
           <Animated.Text style={styles.filmTitle} entering={FadeInDown.duration(350).delay(200)}>
             {film.title}
           </Animated.Text>
 
-          {/* ── Mood Match Score etiketi ── */}
-          {film.matchScore > 0 && (
-            <Text style={styles.moodMatchLabel}>{t('filmDetail.moodMatchScore')}</Text>
+          {/* ── Meta satiri (chips) ── */}
+          <Animated.View style={styles.metaRow} entering={FadeInDown.duration(300).delay(300)}>
+            {film.year > 0 && (
+              <InfoChip icon="calendar-outline" text={String(film.year)} color={Colors.textSecondary} />
+            )}
+            {film.runtime != null && (
+              <InfoChip icon="time-outline" text={formatRuntime(film.runtime)} color={Colors.textSecondary} />
+            )}
+            {film.voteAverage != null && (
+              <InfoChip icon="star" text={film.voteAverage.toFixed(1)} color={Colors.gold} />
+            )}
+            {!!film.director && (
+              <InfoChip icon="film-outline" text={film.director} color={Colors.textSecondary} />
+            )}
+          </Animated.View>
+
+          {/* ── Genre etiketleri ── */}
+          {!!genreLabel && (
+            <Text style={styles.genreText}>{genreLabel}</Text>
           )}
 
-          {/* ── AI açıklama (whyThisFilm) ── */}
-          {!!film.whyThisFilm && (
-            <Text style={styles.aiDescription}>{film.whyThisFilm}</Text>
+          {/* ── "Why this film?" bolumu ── */}
+          {(explanation != null || explanationLoading) && (
+            <Animated.View style={styles.whySection} entering={FadeIn.duration(400)}>
+              <View style={styles.whySectionHeader}>
+                <Ionicons name="sparkles" size={16} color={Colors.accentPrimary} />
+                <Text style={styles.whySectionTitle}>Why this film?</Text>
+              </View>
+              {explanationLoading ? (
+                <SkeletonLoader width="100%" height={40} borderRadius={8} />
+              ) : (
+                <Text style={styles.whySectionBody}>{explanation}</Text>
+              )}
+            </Animated.View>
           )}
 
-          {/* ── Mood Explanation bölümü ── */}
+          {/* ── Overview ── */}
           {!!film.overview && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>{t('filmDetail.moodExplanation')}</Text>
@@ -346,44 +407,10 @@ export default function FilmDetailScreen() {
             </View>
           )}
 
-          {/* ── Film bilgileri satırı ── */}
-          <View style={styles.infoRow}>
-            {!!film.director && (
-              <View style={styles.infoItem}>
-                <Ionicons name="film-outline" size={14} color={Colors.textWhite} />
-                <Text style={styles.infoTextWhite}>{film.director}</Text>
-              </View>
-            )}
-            {film.year > 0 && (
-              <View style={styles.infoItem}>
-                <Ionicons name="calendar-outline" size={14} color={Colors.textWhite} />
-                <Text style={styles.infoTextWhite}>{film.year}</Text>
-              </View>
-            )}
-            {film.voteAverage != null && (
-              <View style={styles.infoItem}>
-                <Ionicons name="star" size={14} color={Colors.imdbYellow} />
-                <Text style={styles.infoTextImdb}>{film.voteAverage.toFixed(1)}</Text>
-              </View>
-            )}
-            {!!genreLabel && (
-              <View style={styles.infoItem}>
-                <Ionicons name="pricetag-outline" size={14} color={Colors.textGrey} />
-                <Text style={styles.infoTextGrey}>{genreLabel}</Text>
-              </View>
-            )}
-            {film.runtime != null && (
-              <View style={styles.infoItem}>
-                <Ionicons name="time-outline" size={14} color={Colors.textGrey} />
-                <Text style={styles.infoTextGrey}>{formatRuntime(film.runtime)}</Text>
-              </View>
-            )}
-          </View>
-
-          {/* ── Başroller ── */}
+          {/* ── Basroller ── */}
           {film.cast != null && film.cast.length > 0 && (
             <View style={styles.castSection}>
-              <Text style={styles.castHeading}>{t('filmDetail.cast')}</Text>
+              <Text style={styles.sectionTitle}>{t('filmDetail.cast')}</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -401,16 +428,26 @@ export default function FilmDetailScreen() {
           )}
         </ScrollView>
 
-        {/* ── Position absolute header butonları ── */}
-        <View style={[styles.header, { top: insets.top + 16 }]}>
-          <IconBtn name="arrow-back" onPress={() => router.back()} />
+        {/* ── Position absolute header butonlari ── */}
+        <View style={[styles.header, { top: insets.top + 12 }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn} activeOpacity={0.75}>
+            <Ionicons name="chevron-down" size={22} color={Colors.textWhite} />
+          </TouchableOpacity>
           <View style={styles.headerRight}>
-            <IconBtn
-              name={watchlistAdded ? 'heart' : 'heart-outline'}
+            <TouchableOpacity
               onPress={handleAddToWatchlist}
-              active={watchlistAdded}
-            />
-            <IconBtn name="share-outline" onPress={handleShare} />
+              style={[styles.headerBtn, watchlistAdded && styles.headerBtnActive]}
+              activeOpacity={0.75}
+            >
+              <Ionicons
+                name={watchlistAdded ? 'heart' : 'heart-outline'}
+                size={20}
+                color={watchlistAdded ? Colors.accentPrimary : Colors.textWhite}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleShare} style={styles.headerBtn} activeOpacity={0.75}>
+              <Ionicons name="share-outline" size={20} color={Colors.textWhite} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -422,7 +459,7 @@ export default function FilmDetailScreen() {
               onPress={handleTrailer}
               activeOpacity={0.8}
             >
-              <Ionicons name="play" size={14} color={Colors.gold} style={styles.trailerIcon} />
+              <Ionicons name="play" size={16} color={Colors.accentPrimary} />
               <Text style={styles.trailerBtnText}>{t('filmDetail.trailer')}</Text>
             </TouchableOpacity>
           ) : null}
@@ -431,14 +468,24 @@ export default function FilmDetailScreen() {
             onPress={handleAddToWatchlist}
             activeOpacity={0.85}
             disabled={watchlistAdded}
-            style={[styles.watchlistBtnWrapper, !film.trailerUrl && styles.watchlistBtnFullWidth]}
+            style={[styles.watchlistBtnWrapper, !film.trailerUrl && styles.watchlistBtnFull]}
           >
             <LinearGradient
-              colors={watchlistAdded ? ['#3A3F55', '#2A2F45'] : [Colors.gold, Colors.goldDark]}
+              colors={
+                watchlistAdded
+                  ? [Colors.bgElevated, Colors.bgCard]
+                  : [Colors.accentPrimary, Colors.accentHover]
+              }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.watchlistBtn}
             >
+              <Ionicons
+                name={watchlistAdded ? 'checkmark' : 'bookmark-outline'}
+                size={18}
+                color={watchlistAdded ? Colors.textSecondary : Colors.textOnAccent}
+                style={styles.watchlistBtnIcon}
+              />
               <Text style={[styles.watchlistBtnText, watchlistAdded && styles.watchlistBtnTextAdded]}>
                 {watchlistAdded ? t('filmDetail.addedToWatchlist') : t('filmDetail.addToWatchlist')}
               </Text>
@@ -451,7 +498,7 @@ export default function FilmDetailScreen() {
   );
 }
 
-// ─── Stiller ──────────────────────────────────────────────────────────────────
+// ── Stiller ──────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   // Root
@@ -460,8 +507,30 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
 
-  // Loading / not found
-  loadingContainer: {
+  // Drag handle
+  dragHandleArea: {
+    position: 'absolute',
+    top: 8,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  dragHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.bgSubtle,
+  },
+
+  // Loading skeleton
+  skeletonContent: {
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+
+  // Not found
+  notFoundContainer: {
     flex: 1,
     backgroundColor: Colors.background,
     alignItems: 'center',
@@ -474,7 +543,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: Colors.white10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -485,7 +554,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   notFoundText: {
-    color: Colors.textGrey,
+    color: Colors.textSecondary,
     fontSize: 15,
   },
 
@@ -508,14 +577,14 @@ const styles = StyleSheet.create({
     height: BACKDROP_HEIGHT,
   },
   backdropPlaceholder: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.bgCard,
   },
 
-  // Poster bölümü
+  // Poster
   posterSection: {
     alignItems: 'center',
     marginTop: -POSTER_OVERLAP,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   posterWrapper: {
     width: POSTER_WIDTH,
@@ -534,113 +603,131 @@ const styles = StyleSheet.create({
     elevation: 14,
   },
   posterPlaceholder: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 16,
   },
-  posterPlaceholderIcon: {
-    fontSize: 48,
-  },
 
-  // Eşleşme dairesi
+  // Match circle — violet accent
   matchCircle: {
     position: 'absolute',
-    left: -14,
-    bottom: -14,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    left: -12,
+    bottom: -12,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     borderWidth: 2.5,
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(10,14,39,0.85)',
+    borderColor: Colors.accentPrimary,
+    backgroundColor: 'rgba(10,10,10,0.9)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 12,
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
     elevation: 8,
   },
-  matchCircleText: {
-    fontSize: 13,
-    fontWeight: '800',
+  matchPercent: {
+    fontSize: 15,
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textWhite,
     letterSpacing: -0.5,
+    lineHeight: 18,
+  },
+  matchLabel: {
+    fontSize: 8,
+    color: Colors.textTertiary,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    lineHeight: 10,
   },
 
-  // Film adı
+  // Film title
   filmTitle: {
-    fontSize: 28,
-    fontFamily: Typography.displayFont,
-    color: Colors.gold,
-    textAlign: 'center',
-    marginTop: 20,
-    paddingHorizontal: 20,
-    lineHeight: 36,
-  },
-
-  // Mood Match Score etiketi
-  moodMatchLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 26,
+    fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textWhite,
     textAlign: 'center',
-    marginTop: 4,
+    paddingHorizontal: 24,
+    lineHeight: 34,
   },
 
-  // AI açıklama
-  aiDescription: {
-    fontSize: 14,
-    color: Colors.textLightGrey,
+  // Meta row (chips)
+  metaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 12,
+    paddingHorizontal: 20,
+  },
+  infoChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: Colors.white05,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  infoChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Genre text
+  genreText: {
+    fontSize: 13,
+    color: Colors.textTertiary,
     textAlign: 'center',
-    paddingHorizontal: 24,
-    marginTop: 16,
+    marginTop: 8,
+    paddingHorizontal: 20,
+  },
+
+  // "Why this film?" section
+  whySection: {
+    marginTop: 24,
+    marginHorizontal: 20,
+    padding: 16,
+    backgroundColor: Colors.accentDim,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(139,92,246,0.2)',
+  },
+  whySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 10,
+  },
+  whySectionTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.accentPrimary,
+  },
+  whySectionBody: {
+    fontSize: 14,
+    color: Colors.textSecondary,
     lineHeight: 22,
   },
 
-  // Mood Explanation bölümü
+  // Section (Overview etc)
   section: {
     marginTop: 24,
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: Typography.displayFont,
-    color: Colors.gold,
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textWhite,
     marginBottom: 8,
   },
   sectionBody: {
     fontSize: 14,
-    color: Colors.textLightGrey,
+    color: Colors.textSecondary,
     lineHeight: 22,
-  },
-
-  // Film bilgileri satırı
-  infoRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  infoTextWhite: {
-    fontSize: 14,
-    color: Colors.textWhite,
-  },
-  infoTextImdb: {
-    fontSize: 14,
-    color: Colors.imdbYellow,
-    fontWeight: '600',
-  },
-  infoTextGrey: {
-    fontSize: 14,
-    color: Colors.textGrey,
   },
 
   // Cast
@@ -648,15 +735,10 @@ const styles = StyleSheet.create({
     marginTop: 24,
     paddingHorizontal: 20,
   },
-  castHeading: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginBottom: 12,
-  },
   castList: {
     gap: 12,
     paddingRight: 20,
+    marginTop: 4,
   },
   castItem: {
     alignItems: 'center',
@@ -668,10 +750,10 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: Colors.white10,
   },
   castPlaceholder: {
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -681,12 +763,12 @@ const styles = StyleSheet.create({
     color: Colors.textWhite,
   },
   castName: {
-    fontSize: 12,
-    color: Colors.textGrey,
+    fontSize: 11,
+    color: Colors.textTertiary,
     textAlign: 'center',
   },
 
-  // Header butonları (position absolute)
+  // Header (position absolute)
   header: {
     position: 'absolute',
     left: 0,
@@ -700,7 +782,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  iconBtn: {
+  headerBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -708,8 +790,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  headerBtnActive: {
+    backgroundColor: Colors.accentDim,
+  },
 
-  // Alt sabit butonlar
+  // Footer
   footer: {
     position: 'absolute',
     bottom: 0,
@@ -720,57 +805,59 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 16,
-    backgroundColor: 'rgba(10,14,39,0.97)',
+    backgroundColor: 'rgba(10,10,10,0.97)',
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.06)',
+    borderTopColor: Colors.white10,
   },
   trailerBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     width: '38%',
-    height: 52,
+    height: 50,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: Colors.gold,
-    backgroundColor: 'rgba(212,168,67,0.08)',
+    borderColor: Colors.accentPrimary,
+    backgroundColor: Colors.accentDim,
     gap: 6,
-  },
-  trailerIcon: {
-    marginRight: 2,
   },
   trailerBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.gold,
+    color: Colors.accentPrimary,
     letterSpacing: 0.3,
   },
   watchlistBtnWrapper: {
     flex: 1,
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 6,
   },
-  watchlistBtnFullWidth: {
+  watchlistBtnFull: {
     flex: 1,
   },
   watchlistBtn: {
-    height: 52,
+    height: 50,
     borderRadius: 14,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
+  },
+  watchlistBtnIcon: {
+    marginRight: -2,
   },
   watchlistBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: Colors.background,
+    color: Colors.textOnAccent,
     letterSpacing: 0.3,
   },
   watchlistBtnTextAdded: {
-    color: Colors.textGrey,
+    color: Colors.textSecondary,
   },
 });

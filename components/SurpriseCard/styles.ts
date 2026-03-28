@@ -26,7 +26,7 @@ export default StyleSheet.create({
   mysteryFace: {
     width: SCREEN_WIDTH,
     height: CARD_HEIGHT,
-    backgroundColor: '#0A0E27',
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -88,7 +88,7 @@ export default StyleSheet.create({
     elevation: 10,
   },
   badgeText: {
-    color: '#0A0E27',
+    color: Colors.background,
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 0.3,

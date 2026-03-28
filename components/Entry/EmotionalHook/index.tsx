@@ -52,7 +52,7 @@ export default function EmotionalHook() {
 
   return (
     <LinearGradient
-      colors={['#0A0E27', '#0D1B2A', '#131B30']}
+      colors={[Colors.background, Colors.bgCard, Colors.bgCard]}
       style={styles.container}
     >
       <SafeAreaView style={styles.safeArea}>

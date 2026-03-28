@@ -74,7 +74,7 @@ export default function InstantGratification() {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#0A0E27', '#0D1B2A']} style={styles.loadingContainer}>
+      <LinearGradient colors={[Colors.background, Colors.bgCard]} style={styles.loadingContainer}>
         <ActivityIndicator color={Colors.gold} size="large" />
       </LinearGradient>
     );
@@ -165,7 +165,7 @@ export default function InstantGratification() {
   }
 
   return (
-    <LinearGradient colors={['#0A0E27', '#0D1B2A', '#131B30']} style={styles.container}>
+    <LinearGradient colors={[Colors.background, Colors.bgCard, Colors.bgCard]} style={styles.container}>
       {content}
     </LinearGradient>
   );

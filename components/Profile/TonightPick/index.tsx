@@ -122,7 +122,7 @@ function FilmContent({ pick }: { pick: TonightPickData }) {
         </ImageBackground>
       ) : (
         <LinearGradient
-          colors={['#1A1F35', '#0A0E27']}
+          colors={[Colors.cardSolid, Colors.background]}
           style={styles.backdropAbsolute}
         />
       )}
@@ -202,7 +202,7 @@ export default function TonightPick({ pick, loading }: Props) {
   if (loading) {
     return (
       <View style={styles.card}>
-        <LinearGradient colors={['#1A1F35', '#0A0E27']} style={styles.backdropAbsolute} />
+        <LinearGradient colors={[Colors.cardSolid, Colors.background]} style={styles.backdropAbsolute} />
         <View style={styles.contentPadding}>
           <SkeletonContent />
         </View>
@@ -213,7 +213,7 @@ export default function TonightPick({ pick, loading }: Props) {
   if (!pick) {
     return (
       <View style={styles.card}>
-        <LinearGradient colors={['#1A1F35', '#0A0E27']} style={styles.backdropAbsolute} />
+        <LinearGradient colors={[Colors.cardSolid, Colors.background]} style={styles.backdropAbsolute} />
         <View style={styles.contentPadding}>
           <Text style={styles.empty}>Keep swiping to unlock your nightly pick.</Text>
         </View>

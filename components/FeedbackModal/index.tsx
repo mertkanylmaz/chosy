@@ -16,8 +16,9 @@ import {
   View,
 } from 'react-native';
 
-import { styles } from './styles';
+import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { styles } from './styles';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,7 @@ export default function FeedbackModal({ visible, filmTitle, onSubmit, onClose }:
             activeOpacity={0.8}>
             {loading ? (
               <View style={styles.loadingRow}>
-                <ActivityIndicator size="small" color="#0A0E27" />
+                <ActivityIndicator size="small" color={Colors.background} />
                 <Text style={styles.submitText}>{t('feedback.saving')}</Text>
               </View>
             ) : (

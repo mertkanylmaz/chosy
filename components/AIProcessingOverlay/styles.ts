@@ -11,7 +11,7 @@ export default StyleSheet.create({
     bottom: 0,
     left: 0,
     zIndex: 999,
-    backgroundColor: 'rgba(10, 14, 39, 0.97)',
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -25,50 +25,50 @@ export default StyleSheet.create({
     marginBottom: 40,
   },
 
-  /** Büyük dış halka */
+  /** Büyük dış halka — violet tint */
   ring1: {
     position: 'absolute',
     width: 220,
     height: 220,
     borderRadius: 110,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,168,67,0.20)',
+    borderColor: 'rgba(139,92,246,0.15)',
   },
 
-  /** Orta halka */
+  /** Orta halka — violet glow */
   ring2: {
     position: 'absolute',
     width: 170,
     height: 170,
     borderRadius: 85,
     borderWidth: 2,
-    borderColor: 'rgba(212,168,67,0.40)',
-    borderTopColor: Colors.gold,
-    shadowColor: Colors.gold,
+    borderColor: 'rgba(139,92,246,0.35)',
+    borderTopColor: Colors.accentPrimary,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
     shadowRadius: 12,
     elevation: 8,
   },
 
-  /** Küçük iç halka */
+  /** Küçük iç halka — violet+gold blend */
   ring3: {
     position: 'absolute',
     width: 120,
     height: 120,
     borderRadius: 60,
     borderWidth: 2.5,
-    borderColor: 'rgba(212,168,67,0.55)',
+    borderColor: 'rgba(139,92,246,0.45)',
     borderBottomColor: Colors.gold,
     borderLeftColor: 'transparent',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.7,
     shadowRadius: 16,
     elevation: 10,
   },
 
-  /** En içteki enerji dairesi */
+  /** En içteki enerji dairesi — gold center */
   ring4: {
     position: 'absolute',
     width: 70,
@@ -76,7 +76,7 @@ export default StyleSheet.create({
     borderRadius: 35,
     borderWidth: 2,
     borderColor: Colors.gold,
-    backgroundColor: 'rgba(212,168,67,0.12)',
+    backgroundColor: Colors.goldDim,
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.9,
@@ -84,7 +84,7 @@ export default StyleSheet.create({
     elevation: 12,
   },
 
-  /** Parlak merkez nokta */
+  /** Parlak merkez nokta — gold */
   centerDot: {
     position: 'absolute',
     width: 12,
@@ -139,15 +139,15 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /** Dönen altın yay — aktif adım */
+  /** Dönen violet yay — aktif adım */
   spinner: {
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: Colors.gold,
+    borderColor: Colors.accentPrimary,
     borderTopColor: 'transparent',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 4,
@@ -159,13 +159,13 @@ export default StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: Colors.white10,
   },
 
   /** Tamamlanan adım için ✓ */
   checkmark: {
     fontSize: 13,
-    color: Colors.gold,
+    color: Colors.success,
     fontWeight: '700',
     lineHeight: 18,
   },
@@ -173,18 +173,18 @@ export default StyleSheet.create({
   /** Adım metni — varsayılan: bekliyor */
   stepText: {
     fontSize: 14,
-    color: '#4A4260',
+    color: Colors.textTertiary,
     letterSpacing: 0.2,
   },
 
   /** Aktif adım metni */
   stepTextActive: {
-    color: Colors.textLightGrey,
+    color: Colors.textWhite,
   },
 
   /** Tamamlanan adım metni */
   stepTextCompleted: {
-    color: Colors.gold,
+    color: Colors.success,
     fontWeight: '600',
   },
 });

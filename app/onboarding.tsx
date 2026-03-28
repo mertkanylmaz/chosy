@@ -1,36 +1,39 @@
 /**
- * Onboarding ekranı — 3 sayfalı FlatList tabanlı ilk kullanım akışı.
+ * Onboarding — 3 sayfalik ilk kullanim akisi (Premium Bumble).
  *
- * Sayfa 0: Mood      — Altın halka illüstrasyonu + "Describe your mood."
- * Sayfa 1: Discover  — 3 film posteri karuseli + "Discover matching movies."
- * Sayfa 2: AI        — Spiral/halka görsel + "AI-powered recommendations"
+ * Sayfa 0: "Feel it"  — mood ring + "Describe your mood"
+ * Sayfa 1: "Swipe it" — poster carousel + "Discover matching movies"
+ * Sayfa 2: "Save it"  — collection visual + "Build your collection"
  *
  * Son sayfadan sonra AsyncStorage flag set edilir, (tabs)'a navigate edilir.
+ * Skip butonu her sayfada gorunur.
  */
 import React, { useCallback, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   ViewToken,
 } from 'react-native';
+import { Image } from 'expo-image';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
-import { Typography, Radius, Shadows } from '@/constants/theme';
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
+// ── Sabitler ─────────────────────────────────────────────────────────────────
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ONBOARDING_KEY = 'moodflix_onboarding_done';
+/** gate.tsx ile ayni key — KRITIK */
+const ONBOARDING_KEY = 'chosy_onboarded';
 const SLIDE_COUNT = 3;
 
 /** Mock film poster URL'leri (TMDb w185) */
@@ -40,24 +43,24 @@ const POSTERS = [
   'https://image.tmdb.org/t/p/w185/5MwkWH9tYHv3mV9OiQ0ZfahtXnj.jpg',
 ];
 
-// ─── Görsel Bileşenler ────────────────────────────────────────────────────────
+// ── Gorsel Bilesenler ────────────────────────────────────────────────────────
 
 /**
- * Sayfa 0 — Altın halka illüstrasyonu: dış glow, kesik orta halka, parlak iç daire.
+ * Sayfa 0 — Violet mood ring: dis glow, kesik orta halka, parlak ic daire.
  */
 function MoodRingVisual() {
   return (
     <View style={ringStyles.container}>
-      {/* Dış glow halkası */}
+      {/* Dis glow halkasi */}
       <View style={ringStyles.outerGlow} />
       {/* Kesik orta halka */}
       <View style={ringStyles.middleRing} />
-      {/* İç daire + yıldız ikon */}
+      {/* Ic daire + sparkle ikon */}
       <View style={ringStyles.innerCircle}>
-        <Text style={ringStyles.innerIcon}>✦</Text>
+        <Ionicons name="sparkles" size={36} color={Colors.accentPrimary} />
       </View>
-      {/* Yıldız süslemeleri */}
-      <Text style={[ringStyles.star, { top: 8, right: 42, fontSize: 13, opacity: 0.85 }]}>★</Text>
+      {/* Dekoratif yildizlar */}
+      <Text style={[ringStyles.star, { top: 8, right: 42, fontSize: 13, opacity: 0.85 }]}>✦</Text>
       <Text style={[ringStyles.star, { bottom: 22, right: 34, fontSize: 10, opacity: 0.65 }]}>✦</Text>
       <Text style={[ringStyles.star, { top: 42, left: 4, fontSize: 18, opacity: 0.4 }]}>·</Text>
       <Text style={[ringStyles.star, { bottom: 14, left: 50, fontSize: 10, opacity: 0.55 }]}>✦</Text>
@@ -79,11 +82,11 @@ const ringStyles = StyleSheet.create({
     height: 220,
     borderRadius: 110,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,168,67,0.6)',
-    backgroundColor: 'rgba(212,168,67,0.04)',
-    shadowColor: Colors.gold,
+    borderColor: 'rgba(139,92,246,0.4)',
+    backgroundColor: 'rgba(139,92,246,0.04)',
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
+    shadowOpacity: 0.7,
     shadowRadius: 28,
     elevation: 14,
   },
@@ -93,69 +96,75 @@ const ringStyles = StyleSheet.create({
     height: 168,
     borderRadius: 84,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.28)',
+    borderColor: 'rgba(139,92,246,0.2)',
     borderStyle: 'dashed',
   },
   innerCircle: {
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: 'rgba(212,168,67,0.14)',
+    backgroundColor: Colors.accentDim,
     borderWidth: 1.5,
-    borderColor: Colors.gold,
+    borderColor: Colors.accentPrimary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: Colors.gold,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.65,
     shadowRadius: 18,
     elevation: 10,
   },
-  innerIcon: {
-    color: Colors.gold,
-    fontSize: 38,
-  },
   star: {
     position: 'absolute',
-    color: Colors.gold,
+    color: Colors.accentPrimary,
   },
 });
 
 /**
- * Sayfa 1 — 3 film posteri karuseli: ortadaki büyük (140×210), yanlar küçük (100×150) + döndürme.
+ * Sayfa 1 — 3 film posteri karuseli: ortadaki buyuk, yanlar kucuk + dondurme.
  */
 function PosterCarousel() {
   return (
     <View style={posterStyles.container}>
-      {/* Sol poster — -5deg */}
+      {/* Sol poster */}
       <View style={[posterStyles.wrap, posterStyles.left]}>
         <Image
           source={{ uri: POSTERS[0] }}
           style={posterStyles.small}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="memory-disk"
         />
         <View style={posterStyles.dimOverlay} />
       </View>
 
-      {/* Merkez poster — büyük, altın border */}
+      {/* Merkez poster — violet border */}
       <View style={[posterStyles.wrap, posterStyles.center]}>
         <Image
           source={{ uri: POSTERS[1] }}
           style={posterStyles.large}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="memory-disk"
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.3)']}
           style={StyleSheet.absoluteFillObject}
         />
+        {/* Swipe hint overlays */}
+        <View style={posterStyles.swipeHintRight}>
+          <Ionicons name="heart" size={20} color={Colors.swipeRight} />
+        </View>
+        <View style={posterStyles.swipeHintLeft}>
+          <Ionicons name="close" size={20} color={Colors.swipeLeft} />
+        </View>
       </View>
 
-      {/* Sağ poster — +5deg */}
+      {/* Sag poster */}
       <View style={[posterStyles.wrap, posterStyles.right]}>
         <Image
           source={{ uri: POSTERS[2] }}
           style={posterStyles.small}
-          resizeMode="cover"
+          contentFit="cover"
+          cachePolicy="memory-disk"
         />
         <View style={posterStyles.dimOverlay} />
       </View>
@@ -183,15 +192,15 @@ const posterStyles = StyleSheet.create({
     shadowOpacity: 0.55,
     shadowRadius: 12,
     elevation: 6,
-    opacity: 0.78,
+    opacity: 0.75,
   },
   center: {
     zIndex: 3,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,168,67,0.45)',
-    shadowColor: Colors.gold,
+    borderColor: 'rgba(139,92,246,0.4)',
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.45,
+    shadowOpacity: 0.35,
     shadowRadius: 18,
     elevation: 14,
     marginHorizontal: 8,
@@ -204,45 +213,71 @@ const posterStyles = StyleSheet.create({
     shadowOpacity: 0.55,
     shadowRadius: 12,
     elevation: 6,
-    opacity: 0.78,
+    opacity: 0.75,
   },
   small: {
     width: 100,
     height: 150,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.bgCard,
   },
   large: {
     width: 140,
     height: 210,
-    backgroundColor: Colors.card,
+    backgroundColor: Colors.bgCard,
   },
   dimOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,14,39,0.28)',
+    backgroundColor: 'rgba(10,10,10,0.25)',
+  },
+  swipeHintRight: {
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(34,197,94,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  swipeHintLeft: {
+    position: 'absolute',
+    left: 8,
+    top: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(239,68,68,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 
 /**
- * Sayfa 2 — AI işlem spirali: iç içe halkalar + parlak merkez nokta.
+ * Sayfa 2 — Koleksiyon goerseli: bookmark ikon + ic ice halkalar.
  */
-function AIRingVisual() {
+function CollectionVisual() {
   return (
-    <View style={aiStyles.container}>
-      <View style={aiStyles.ring3} />
-      <View style={aiStyles.ring2} />
-      <View style={aiStyles.ring1} />
-      <View style={aiStyles.center}>
-        <Text style={aiStyles.centerIcon}>✦</Text>
+    <View style={collStyles.container}>
+      <View style={collStyles.ring3} />
+      <View style={collStyles.ring2} />
+      <View style={collStyles.ring1} />
+      <View style={collStyles.center}>
+        <Ionicons name="bookmark" size={28} color={Colors.gold} />
       </View>
-      <Text style={[aiStyles.dot, { top: 16, right: 56, fontSize: 8 }]}>●</Text>
-      <Text style={[aiStyles.dot, { top: 64, right: 8, fontSize: 5 }]}>●</Text>
-      <Text style={[aiStyles.dot, { bottom: 20, left: 52, fontSize: 6 }]}>●</Text>
-      <Text style={[aiStyles.dot, { bottom: 46, right: 20, fontSize: 11 }]}>★</Text>
+      {/* Film sayisi badge */}
+      <View style={collStyles.badge}>
+        <Text style={collStyles.badgeText}>12</Text>
+      </View>
+      {/* Dekoratif noktalar */}
+      <Text style={[collStyles.dot, { top: 16, right: 56, fontSize: 8 }]}>●</Text>
+      <Text style={[collStyles.dot, { top: 64, right: 8, fontSize: 5 }]}>●</Text>
+      <Text style={[collStyles.dot, { bottom: 20, left: 52, fontSize: 6 }]}>●</Text>
     </View>
   );
 }
 
-const aiStyles = StyleSheet.create({
+const collStyles = StyleSheet.create({
   container: {
     width: 240,
     height: 240,
@@ -256,7 +291,7 @@ const aiStyles = StyleSheet.create({
     height: 220,
     borderRadius: 110,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.18)',
+    borderColor: 'rgba(212,168,67,0.15)',
   },
   ring2: {
     position: 'absolute',
@@ -264,10 +299,10 @@ const aiStyles = StyleSheet.create({
     height: 165,
     borderRadius: 83,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,168,67,0.38)',
+    borderColor: 'rgba(212,168,67,0.3)',
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,
   },
@@ -277,11 +312,11 @@ const aiStyles = StyleSheet.create({
     height: 110,
     borderRadius: 55,
     borderWidth: 1.5,
-    borderColor: 'rgba(212,168,67,0.65)',
+    borderColor: 'rgba(212,168,67,0.5)',
     backgroundColor: 'rgba(212,168,67,0.05)',
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
+    shadowOpacity: 0.6,
     shadowRadius: 16,
     elevation: 10,
   },
@@ -289,33 +324,51 @@ const aiStyles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(212,168,67,0.18)',
+    backgroundColor: Colors.goldDim,
     borderWidth: 2,
     borderColor: Colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
+    shadowOpacity: 0.7,
     shadowRadius: 22,
     elevation: 12,
   },
-  centerIcon: {
-    color: Colors.gold,
-    fontSize: 30,
+  badge: {
+    position: 'absolute',
+    top: 68,
+    right: 52,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.accentPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: Colors.accentPrimary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  badgeText: {
+    color: Colors.textOnAccent,
+    fontSize: 12,
+    fontWeight: '800',
   },
   dot: {
     position: 'absolute',
     color: Colors.gold,
-    opacity: 0.6,
+    opacity: 0.5,
   },
 });
 
-// ─── Slide Tanımları ──────────────────────────────────────────────────────────
+// ── Slide Tanimlari ──────────────────────────────────────────────────────────
 
 interface SlideItem {
   key: string;
   renderVisual: () => React.ReactElement;
+  step: string;
   title: string;
   description: string;
 }
@@ -324,27 +377,30 @@ const SLIDES: SlideItem[] = [
   {
     key: 'mood',
     renderVisual: () => <MoodRingVisual />,
-    title: 'Describe your mood.',
-    description: 'Tell us how you feel and we\u2019ll find the perfect movie for you.',
+    step: 'Step 1',
+    title: 'Describe your mood',
+    description: 'Tell us how you feel — happy, nostalgic, adventurous. We\u2019ll understand.',
   },
   {
     key: 'discover',
     renderVisual: () => <PosterCarousel />,
-    title: 'Discover matching movies.',
-    description: 'Swipe through handpicked films that match your exact emotional state.',
+    step: 'Step 2',
+    title: 'Swipe to discover',
+    description: 'Swipe right to save, left to skip. Every swipe teaches us your taste.',
   },
   {
-    key: 'ai',
-    renderVisual: () => <AIRingVisual />,
-    title: 'AI-powered recommendations.',
-    description: 'Our AI maps your mood to 12 emotional dimensions for perfect matches.',
+    key: 'collect',
+    renderVisual: () => <CollectionVisual />,
+    step: 'Step 3',
+    title: 'Build your collection',
+    description: 'Your perfect watchlist, curated by AI and refined by you.',
   },
 ];
 
-// ─── Pagination Dots ──────────────────────────────────────────────────────────
+// ── Pagination Dots ──────────────────────────────────────────────────────────
 
 /**
- * Sayfa göstergesi noktaları — aktif: altın 24px genişlik, pasif: gri 8px.
+ * Sayfa gostergesi — aktif: violet 24px genislik, pasif: zinc-500 8px.
  */
 function PaginationDots({ current }: { current: number }) {
   return (
@@ -376,24 +432,24 @@ const dotsStyles = StyleSheet.create({
   },
   active: {
     width: 24,
-    backgroundColor: Colors.gold,
-    shadowColor: Colors.gold,
+    backgroundColor: Colors.accentPrimary,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.7,
+    shadowOpacity: 0.6,
     shadowRadius: 6,
     elevation: 4,
   },
   inactive: {
     width: 8,
-    backgroundColor: '#6A6270',
+    backgroundColor: Colors.tabInactive,
   },
 });
 
-// ─── Ana Ekran ────────────────────────────────────────────────────────────────
+// ── Ana Ekran ────────────────────────────────────────────────────────────────
 
 /**
- * Onboarding ana bileşeni.
- * Horizontal FlatList ile 3 sayfa — son sayfadan sonra (tabs)'a yönlendirir.
+ * Onboarding ana bileseni.
+ * Horizontal FlatList ile 3 sayfa — son sayfadan sonra (tabs)'a yonlendirir.
  */
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -410,36 +466,52 @@ export default function OnboardingScreen() {
     [],
   );
 
-  /** "Next" basıldığında sonraki sayfaya git ya da onboarding'i bitir. */
+  /** Onboarding'i tamamla ve (tabs)'a git */
+  const finishOnboarding = useCallback(async () => {
+    hapticSuccess();
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, '1');
+    } catch {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('[Onboarding] AsyncStorage write failed.');
+      }
+    }
+    router.replace('/(tabs)');
+  }, [router]);
+
+  /** "Next" → sonraki sayfaya git ya da onboarding'i bitir */
   const handleNext = useCallback(async () => {
+    hapticLight();
     if (currentSlide < SLIDE_COUNT - 1) {
       flatListRef.current?.scrollToIndex({ index: currentSlide + 1, animated: true });
     } else {
-      try {
-        await AsyncStorage.setItem(ONBOARDING_KEY, '1');
-      } catch {
-        if (__DEV__) {
-          console.error('[Onboarding] AsyncStorage write failed.');
-        }
-      }
-      router.replace('/(tabs)');
+      await finishOnboarding();
     }
-  }, [currentSlide, router]);
+  }, [currentSlide, finishOnboarding]);
+
+  /** "Skip" → dogrudan bitir */
+  const handleSkip = useCallback(async () => {
+    await finishOnboarding();
+  }, [finishOnboarding]);
 
   const isLast = currentSlide === SLIDE_COUNT - 1;
 
   return (
-    <LinearGradient
-      colors={[Colors.background, Colors.backgroundGradient]}
-      style={styles.gradient}>
+    <View style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
 
-        {/* Üst sabit "Onboarding" etiketi */}
-        <Text style={styles.topLabel}>Onboarding</Text>
-        {/* Altın accent çizgisi */}
-        <View style={styles.topLabelUnderline} />
+        {/* Ust: Skip butonu */}
+        <View style={styles.topRow}>
+          <View style={styles.topSpacer} />
+          {!isLast && (
+            <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={styles.skipBtn}>
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          )}
+        </View>
 
-        {/* Sayfa içerikleri */}
+        {/* Sayfa icerikleri */}
         <FlatList<SlideItem>
           ref={flatListRef}
           data={SLIDES}
@@ -447,6 +519,7 @@ export default function OnboardingScreen() {
           renderItem={({ item }) => (
             <View style={styles.slide}>
               {item.renderVisual()}
+              <Text style={styles.step}>{item.step}</Text>
               <Text style={styles.title}>{item.title}</Text>
               <Text style={styles.description}>{item.description}</Text>
             </View>
@@ -469,50 +542,64 @@ export default function OnboardingScreen() {
             <TouchableOpacity
               onPress={handleNext}
               activeOpacity={0.85}
-              style={[styles.button, Shadows.button]}>
+              style={styles.button}
+            >
               <LinearGradient
-                colors={[Colors.gold, Colors.goldDark]}
+                colors={[Colors.accentPrimary, Colors.accentHover]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={styles.buttonGradient}>
+                style={styles.buttonGradient}
+              >
                 <Text style={styles.buttonText}>
-                  {isLast ? 'Get Started' : 'Next'}
+                  {isLast ? 'Get Started' : 'Continue'}
                 </Text>
+                {!isLast && (
+                  <Ionicons name="arrow-forward" size={18} color={Colors.textOnAccent} />
+                )}
               </LinearGradient>
             </TouchableOpacity>
           </View>
         </View>
 
       </SafeAreaView>
-    </LinearGradient>
+    </View>
   );
 }
 
+// ── Stiller ──────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  gradient: {
+  root: {
     flex: 1,
+    backgroundColor: Colors.background,
   },
   safe: {
     flex: 1,
   },
-  topLabel: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: Colors.gold,
-    fontSize: 22,
-    textAlign: 'center',
-    paddingTop: 12,
+
+  // Top row
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 4,
-    letterSpacing: 0.5,
   },
-  topLabelUnderline: {
-    width: 40,
-    height: 2,
-    backgroundColor: Colors.gold,
-    alignSelf: 'center',
-    borderRadius: 1,
-    marginBottom: 4,
-    opacity: 0.6,
+  topSpacer: {
+    flex: 1,
   },
+  skipBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  skipText: {
+    color: Colors.textSecondary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+
+  // FlatList
   flatList: {
     flex: 1,
   },
@@ -521,24 +608,40 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
   },
+
+  // Step label
+  step: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.accentPrimary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.5,
+    marginBottom: 8,
+  },
+
+  // Title
   title: {
     color: Colors.textWhite,
-    fontSize: 24,
-    fontFamily: Typography.displayFont,
+    fontSize: 28,
+    fontFamily: 'PlayfairDisplay_700Bold',
     textAlign: 'center',
-    marginBottom: 12,
-    lineHeight: 32,
+    marginBottom: 14,
+    lineHeight: 36,
     letterSpacing: 0.2,
   },
+
+  // Description
   description: {
-    color: Colors.textGrey,
+    color: Colors.textSecondary,
     fontSize: 15,
     textAlign: 'center',
-    maxWidth: 280,
-    lineHeight: 23,
+    maxWidth: 300,
+    lineHeight: 24,
   },
+
+  // Bottom
   bottom: {
     paddingBottom: 8,
   },
@@ -549,8 +652,8 @@ const styles = StyleSheet.create({
   button: {
     borderRadius: 14,
     overflow: 'hidden',
-    height: 58,
-    shadowColor: Colors.gold,
+    height: 56,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4,
     shadowRadius: 12,
@@ -558,15 +661,16 @@ const styles = StyleSheet.create({
   },
   buttonGradient: {
     flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   buttonText: {
-    color: Colors.background,
+    color: Colors.textOnAccent,
     fontSize: 17,
     fontWeight: '700',
     letterSpacing: 0.4,
-    fontFamily: Typography.displayFont,
   },
 });
 

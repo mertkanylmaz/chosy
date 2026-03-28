@@ -11,6 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { Colors } from '@/constants/Colors';
 import LumiParticles from './LumiParticles';
 import { styles } from './styles';
 
@@ -242,7 +243,7 @@ export default function Lumi({
           <Animated.View
             style={[
               styles.glow,
-              { width: sz, height: sz, borderRadius: sz / 2, backgroundColor: '#D4A843' },
+              { width: sz, height: sz, borderRadius: sz / 2, backgroundColor: Colors.gold },
               glowStyle,
             ]}
           />
@@ -257,7 +258,7 @@ export default function Lumi({
               height: sz,
               borderRadius: sz / 2,
               borderWidth,
-              borderColor: '#D4A843',
+              borderColor: Colors.gold,
               opacity: 0.5,
             },
             ringStyle,
@@ -272,7 +273,7 @@ export default function Lumi({
               width: coreSize,
               height: coreSize,
               borderRadius: coreSize / 2,
-              backgroundColor: '#D4A843',
+              backgroundColor: Colors.gold,
             },
           ]}
         >
@@ -284,7 +285,7 @@ export default function Lumi({
                 width: innerLightSize,
                 height: innerLightSize,
                 borderRadius: innerLightSize / 2,
-                backgroundColor: '#F0D78C',
+                backgroundColor: Colors.goldLight,
                 opacity: 0.8,
               },
             ]}
@@ -293,7 +294,7 @@ export default function Lumi({
 
         {/* Katman 4: Parçacıklar (opsiyonel) */}
         {showParticles && (
-          <LumiParticles count={particleCount} radius={sz * 0.8} color="#D4A843" />
+          <LumiParticles count={particleCount} radius={sz * 0.8} color={Colors.gold} />
         )}
       </Animated.View>
     </View>

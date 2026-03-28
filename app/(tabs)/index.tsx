@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -43,9 +44,18 @@ import Lumi from '@/components/Lumi';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
+import StreakBadge from '@/components/Gamification/StreakBadge';
+import MilestoneCelebration from '@/components/Gamification/MilestoneCelebration';
+import type { MilestoneCelebrationProps } from '@/components/Gamification/MilestoneCelebration';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useFeedManager } from '@/hooks/useFeedManager';
+import {
+  getStreakInfo,
+  getUnseenMilestones,
+  markMilestoneSeen,
+} from '@/services/gamification';
+import type { StreakInfo, UserMilestone } from '@/services/gamification';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 
@@ -91,6 +101,7 @@ export default function FeedScreen() {
     films: managerFilms,
     isLoading,
     hasError,
+    errorType,
     retryLoad,
     onSwipeFilm,
     onLoadMore,
@@ -105,9 +116,22 @@ export default function FeedScreen() {
    */
   const [displayFilms, setDisplayFilms] = useState<Film[]>([]);
   const [showSaveToast, setShowSaveToast] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Milestone toast ──────────────────────────────────────────────────────
+  // ── Streak badge state ─────────────────────────────────────────────────
+  const [streakCount, setStreakCount] = useState(0);
+  const [streakLoading, setStreakLoading] = useState(true);
+
+  // ── Milestone celebration overlay state ─────────────────────────────────
+  const [celebrationMilestone, setCelebrationMilestone] = useState<
+    MilestoneCelebrationProps['milestone'] | null
+  >(null);
+  const [celebrationVisible, setCelebrationVisible] = useState(false);
+  /** Milestone kuyruğu — birden fazla unseen varsa sırayla göster */
+  const milestoneQueueRef = useRef<UserMilestone[]>([]);
+
+  // ── Milestone toast (basit metin, küçük milestone'lar için) ─────────────
   const [milestoneMsg, setMilestoneMsg] = useState<string | null>(null);
   const milestoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipeCountRef = useRef(0);
@@ -120,6 +144,59 @@ export default function FeedScreen() {
     setMilestoneMsg(msg);
     milestoneTimer.current = setTimeout(() => setMilestoneMsg(null), 2000);
   }, []);
+
+  // ── Streak bilgisini yükle ───────────────────────────────────────────────
+
+  const loadStreak = useCallback(async () => {
+    try {
+      const info = await getStreakInfo();
+      if (info) {
+        setStreakCount(info.currentStreak);
+      }
+    } catch {
+      // Streak yükleme hatası sessizce geç
+    } finally {
+      setStreakLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStreak();
+  }, [loadStreak]);
+
+  // ── Milestone celebration — sıradakini göster ─────────────────────────
+
+  /** Kuyruktan sonraki milestone'u al ve celebration overlay'ı aç */
+  const showNextCelebration = useCallback(() => {
+    const next = milestoneQueueRef.current.shift();
+    if (!next) return;
+
+    setCelebrationMilestone({
+      userMilestoneId: next.id,
+      slug: next.milestone.slug,
+      title: next.milestone.title,
+      description: next.milestone.description,
+      icon: next.milestone.icon,
+      category: next.milestone.category,
+      threshold: next.milestone.threshold,
+    });
+    setCelebrationVisible(true);
+  }, []);
+
+  /** Celebration overlay kapatıldığında: seen işaretle, sıradakine geç */
+  const handleCelebrationDismiss = useCallback(() => {
+    setCelebrationVisible(false);
+
+    // Mevcut milestone'u seen olarak işaretle
+    if (celebrationMilestone) {
+      markMilestoneSeen(celebrationMilestone.userMilestoneId).catch(() => {});
+    }
+
+    // Kuyrukta başka milestone varsa 500ms sonra göster
+    if (milestoneQueueRef.current.length > 0) {
+      setTimeout(showNextCelebration, 500);
+    }
+  }, [celebrationMilestone, showNextCelebration]);
 
   /**
    * Manager'ın kaç filmini senkronize ettiğimizi izler.
@@ -171,6 +248,38 @@ export default function FeedScreen() {
   // ── Swipe handler'lar ──────────────────────────────────────────────────────
 
   /**
+   * Swipe sonrası backend'den gelen yeni milestone'ları kontrol et.
+   * recordActivity() useFeedManager'da fire-and-forget çalışır;
+   * burada ayrıca unseen milestone sorgusu yaparız.
+   *
+   * Yeni milestone varsa:
+   * - Full celebration overlay (MilestoneCelebration) gösterilir
+   * - Birden fazla varsa sırayla gösterilir (kuyruk)
+   * - Streak badge da güncellenir
+   */
+  const checkNewMilestones = useCallback(async () => {
+    try {
+      // Kısa gecikme — recordActivity'nin DB'ye yazmasını bekle
+      await new Promise((r) => setTimeout(r, 600));
+      const unseen = await getUnseenMilestones();
+
+      if (unseen.length > 0) {
+        // Celebration overlay kuyruğuna ekle
+        milestoneQueueRef.current = [...unseen];
+        showNextCelebration();
+      }
+
+      // Streak badge'i de güncelle
+      const info = await getStreakInfo();
+      if (info) {
+        setStreakCount(info.currentStreak);
+      }
+    } catch {
+      // Milestone kontrolü başarısız olursa sessizce devam et
+    }
+  }, [showNextCelebration]);
+
+  /**
    * Sağa swipe: watchlist'e ekle + film listeden çıkar.
    * SwipeableCard'ın withTiming callback'inden (JS thread) çağrılır.
    */
@@ -182,16 +291,18 @@ export default function FeedScreen() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setShowSaveToast(true);
       toastTimer.current = setTimeout(() => setShowSaveToast(false), 1400);
-      // Milestone: her 10 swipe
+      // Local milestone — anlık geri bildirim
       swipeCountRef.current += 1;
       saveCountRef.current += 1;
       if (swipeCountRef.current % 10 === 0) {
-        showMilestone(`${swipeCountRef.current} movies explored! 🎬`);
+        showMilestone(t('discover.milestoneExplored', { count: swipeCountRef.current }));
       } else if (saveCountRef.current % 5 === 0) {
-        showMilestone('Nice taste! 5 films saved ✨');
+        showMilestone(t('discover.milestoneSaved', { count: saveCountRef.current }));
       }
+      // Backend milestone kontrolü (arka planda)
+      checkNewMilestones();
     },
-    [onSwipeFilm, showMilestone],
+    [onSwipeFilm, showMilestone, checkNewMilestones, t],
   );
 
   /**
@@ -201,13 +312,15 @@ export default function FeedScreen() {
     (film: Film) => {
       onSwipeFilm(film, 'left');
       setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
-      // Milestone: her 10 swipe
+      // Local milestone — anlık geri bildirim
       swipeCountRef.current += 1;
       if (swipeCountRef.current % 10 === 0) {
-        showMilestone(`${swipeCountRef.current} movies explored! 🎬`);
+        showMilestone(t('discover.milestoneExplored', { count: swipeCountRef.current }));
       }
+      // Backend milestone kontrolü (arka planda)
+      checkNewMilestones();
     },
-    [onSwipeFilm, showMilestone],
+    [onSwipeFilm, showMilestone, checkNewMilestones, t],
   );
 
   const { animatedStyle: newMoodAnimStyle, onPressIn: newMoodPressIn, onPressOut: newMoodPressOut } = useScalePress(0.95);
@@ -217,6 +330,17 @@ export default function FeedScreen() {
     clearMood();
     router.push('/(tabs)/mood');
   }, [clearMood, router]);
+
+  /** Pull-to-refresh — mevcut profil ile feed'i sıfırlar */
+  const handleRefresh = useCallback(async () => {
+    if (!currentProfile) return;
+    setIsRefreshing(true);
+    lastSyncedLengthRef.current = 0;
+    setDisplayFilms([]);
+    resetFeed(currentProfile, effectiveFilters);
+    // Yeni batch yüklenince isLoading false olur — kısa gecikme ile refreshing'i kapat
+    setTimeout(() => setIsRefreshing(false), 800);
+  }, [currentProfile, effectiveFilters, resetFeed]);
 
   // ── Sürpriz kart görünürlük tespiti ───────────────────────────────────────
 
@@ -229,7 +353,7 @@ export default function FeedScreen() {
       const effectiveType = film.pick_type ?? film.surpriseType ?? null;
       if (effectiveType != null && !firstSurpriseSeenRef.current) {
         firstSurpriseSeenRef.current = true;
-        showMilestone('A hidden gem found! 💎');
+        showMilestone(t('discover.milestoneHiddenGem'));
         hapticSuccess();
       }
     },
@@ -271,11 +395,24 @@ export default function FeedScreen() {
 
   if (isLoading && displayFilms.length === 0) {
     return (
-      <View style={[styles.centered, { justifyContent: 'flex-start', paddingTop: 60, gap: 16 }]}>
+      <View style={styles.container}>
         <StatusBar style="light" backgroundColor={Colors.background} />
-        <SkeletonLoader width="85%" height={CARD_HEIGHT * 0.7} borderRadius={16} />
-        <SkeletonLoader width="70%" height={20} borderRadius={6} />
-        <SkeletonLoader width="50%" height={16} borderRadius={6} />
+        <View style={styles.skeletonCard}>
+          {/* Poster alanı */}
+          <SkeletonLoader width="100%" height={CARD_HEIGHT * 0.75} borderRadius={0} />
+          {/* Alt bilgi alanı — başlık + meta */}
+          <View style={styles.skeletonInfo}>
+            <SkeletonLoader width="65%" height={22} borderRadius={6} />
+            <SkeletonLoader width="45%" height={14} borderRadius={6} style={{ marginTop: 10 }} />
+            <SkeletonLoader width="30%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
+          </View>
+          {/* Aksiyon butonları placeholder */}
+          <View style={styles.skeletonActions}>
+            <SkeletonLoader width={48} height={48} borderRadius={24} />
+            <SkeletonLoader width={56} height={56} borderRadius={28} />
+            <SkeletonLoader width={48} height={48} borderRadius={24} />
+          </View>
+        </View>
       </View>
     );
   }
@@ -284,7 +421,7 @@ export default function FeedScreen() {
     return (
       <>
         <StatusBar style="light" backgroundColor={Colors.background} />
-        <ErrorState onRetry={retryLoad} />
+        <ErrorState errorType={errorType} onRetry={retryLoad} />
       </>
     );
   }
@@ -342,6 +479,16 @@ export default function FeedScreen() {
         // Sürpriz kart görünürlük tespiti
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig.current}
+        // Pull-to-refresh
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.accentPrimary}
+            colors={[Colors.accentPrimary]}
+            progressBackgroundColor={Colors.bgCard}
+          />
+        }
         // Performans
         maxToRenderPerBatch={3}
         windowSize={5}
@@ -360,6 +507,15 @@ export default function FeedScreen() {
           <Text style={styles.newMoodBtnText}>✦ {t('discover.newMoodBtn')}</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* Streak badge — sağ üst köşe */}
+      <View style={[styles.streakBadgeContainer, { top: insets.top + 12 }]}>
+        <StreakBadge
+          currentStreak={streakCount}
+          loading={streakLoading}
+          onPress={() => router.push('/(tabs)/profile')}
+        />
+      </View>
 
       {/* Arka plan yükleme göstergesi */}
       {isLoading && displayFilms.length > 0 && (
@@ -405,6 +561,15 @@ export default function FeedScreen() {
           <Lumi size="small" mood="happy" />
           <Text style={styles.toastText}>{t('discover.savedToWatchlist')}</Text>
         </Animated.View>
+      )}
+
+      {/* Milestone celebration overlay — tam ekran */}
+      {celebrationMilestone && (
+        <MilestoneCelebration
+          milestone={celebrationMilestone}
+          visible={celebrationVisible}
+          onDismiss={handleCelebrationDismiss}
+        />
       )}
     </View>
   );
@@ -460,13 +625,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  // ─── Feed skeleton ───────────────────────────────────────────────────────
+  skeletonCard: {
+    flex: 1,
+    backgroundColor: Colors.bgCard,
+  },
+  skeletonInfo: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  skeletonActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 20,
+    marginTop: 24,
+  },
+
+  // ─── Streak badge (sağ üst) ────────────────────────────────────────────────
+  streakBadgeContainer: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+  },
+
   // ─── Floating "New mood" butonu ────────────────────────────────────────────
   newMoodBtn: {
     position: 'absolute',
     right: 16,
-    backgroundColor: 'rgba(10,14,39,0.75)',
+    backgroundColor: Colors.overlay,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.5)',
+    borderColor: Colors.goldGlow,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -498,12 +687,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: 'rgba(255,68,68,0.15)',
+    backgroundColor: 'rgba(239,68,68,0.15)',
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,68,68,0.4)',
+    borderColor: 'rgba(239,68,68,0.4)',
   },
   errorBarText: {
     color: Colors.textWhite,
@@ -526,12 +715,12 @@ const styles = StyleSheet.create({
   milestoneToast: {
     position: 'absolute',
     alignSelf: 'center',
-    backgroundColor: 'rgba(26,31,53,0.95)',
+    backgroundColor: Colors.overlay,
     borderRadius: 20,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.4)',
+    borderColor: Colors.goldGlow,
   },
   milestoneToastText: {
     color: Colors.textWhite,
@@ -547,12 +736,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(26,31,53,0.9)',
+    backgroundColor: Colors.overlay,
     borderRadius: 20,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.3)',
+    borderColor: Colors.goldDim,
     gap: 8,
   },
   toastText: {

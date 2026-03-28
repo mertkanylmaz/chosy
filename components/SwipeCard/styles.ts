@@ -45,7 +45,7 @@ export default StyleSheet.create({
   },
   posterPlaceholder: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#0D1130',
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
   },

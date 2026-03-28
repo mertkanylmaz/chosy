@@ -1,7 +1,9 @@
 import { StyleSheet } from 'react-native';
 
+import { Colors } from '@/constants/Colors';
+
 export const styles = StyleSheet.create({
   base: {
-    backgroundColor: 'rgba(212,168,67,0.06)',
+    backgroundColor: Colors.bgElevated,
   },
 });

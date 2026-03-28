@@ -43,6 +43,9 @@ import AIControls from '@/components/Profile/AIControls';
 import SwipeIntelligence from '@/components/Profile/SwipeIntelligence';
 import MoodTimeline from '@/components/Profile/MoodTimeline';
 import WatchlistPreview from '@/components/Profile/WatchlistPreview';
+import WatchHistory from '@/components/Profile/WatchHistory';
+import StreakCard from '@/components/Profile/StreakCard';
+import type { StreakCardProps } from '@/components/Profile/StreakCard';
 import {
   getLastParsedProfile,
   getMoodHistory,
@@ -51,6 +54,14 @@ import {
   getUserStats,
 } from '@/services/profileService';
 import { getWatchlist } from '@/services/watchlist';
+import {
+  getStreakInfo,
+  getAllMilestones,
+  getUserMilestones,
+} from '@/services/gamification';
+import type { StreakInfo, Milestone } from '@/services/gamification';
+import { getUserStats as getHistoryStats } from '@/services/history';
+import type { UserStats as HistoryUserStats } from '@/services/history';
 
 import type { MoodHistoryItem, SwipeInsight, TonightPick, UserStats } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
@@ -218,6 +229,13 @@ export default function ProfileScreen() {
   const [avatarEmoji, setAvatarEmoji] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
 
+  // ── Streak state ──────────────────────────────────────────────────────────
+  const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
+  const [nextMilestone, setNextMilestone] = useState<StreakCardProps['nextMilestone']>(null);
+
+  // ── History stats state ────────────────────────────────────────────────────
+  const [historyStats, setHistoryStats] = useState<HistoryUserStats | null>(null);
+
   // ─── Avatar yükleme ───────────────────────────────────────────────────────
 
   const loadAvatar = useCallback(async () => {
@@ -256,7 +274,7 @@ export default function ProfileScreen() {
       setDisplayName((userRow as { id: string; display_name: string | null }).display_name);
       setUserIdHash(authUser.id.slice(0, 8).toUpperCase());
 
-      const [statsData, historyData, pickData, insightsData, profileData, watchlistData] =
+      const [statsData, historyData, pickData, insightsData, profileData, watchlistData, streakData, allMilestonesData, userMilestonesData, historyStatsData] =
         await Promise.all([
           getUserStats(userId),
           getMoodHistory(userId),
@@ -264,6 +282,10 @@ export default function ProfileScreen() {
           getSwipeInsights(userId),
           getLastParsedProfile(userId),
           getWatchlist(),
+          getStreakInfo(),
+          getAllMilestones(),
+          getUserMilestones(),
+          getHistoryStats(),
         ]);
 
       setStats(statsData);
@@ -272,6 +294,30 @@ export default function ProfileScreen() {
       setSwipeInsights(insightsData);
       setLastProfile(profileData);
       setWatchlistItems(watchlistData);
+      setStreakInfo(streakData);
+      setHistoryStats(historyStatsData);
+
+      // Sonraki streak milestone'u hesapla
+      if (streakData && allMilestonesData.length > 0) {
+        const earnedSlugs = new Set(userMilestonesData.map((m) => m.milestone.slug));
+        const streakMilestones = allMilestonesData
+          .filter((m) => m.category === 'streak')
+          .sort((a, b) => a.threshold - b.threshold);
+
+        const nextStreakMilestone = streakMilestones.find(
+          (m) => !earnedSlugs.has(m.slug) && m.threshold > streakData.currentStreak,
+        );
+
+        if (nextStreakMilestone) {
+          setNextMilestone({
+            title: nextStreakMilestone.title,
+            threshold: nextStreakMilestone.threshold,
+            currentProgress: streakData.currentStreak,
+          });
+        } else {
+          setNextMilestone(null);
+        }
+      }
     } catch (err) {
       if (__DEV__) {
         console.error('[ProfileScreen] veri yükleme hatası:', err);
@@ -399,7 +445,15 @@ export default function ProfileScreen() {
           <Animated.View style={sectionsAnimStyle}>
           <View style={styles.sections}>
 
-            {/* 1. Taste DNA */}
+            {/* 1. Daily Streak */}
+            <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
+            <StreakCard
+              streakInfo={streakInfo}
+              loading={loading}
+              nextMilestone={nextMilestone}
+            />
+
+            {/* 2. Taste DNA */}
             <SectionHeading title={t('profile.tasteDNA')} />
             <TasteDNA
               profile={lastProfile}
@@ -407,11 +461,11 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* 2. Tonight's Pick */}
+            {/* 3. Tonight's Pick */}
             <SectionHeading title={t('profile.tonightsPick')} />
             <TonightPickCard pick={tonightPick} loading={loading} />
 
-            {/* 3. Discovery Stats */}
+            {/* 4. Discovery Stats */}
             <SectionHeading title={t('profile.discoveryStats')} />
             <DiscoveryStats
               stats={stats}
@@ -419,23 +473,27 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* 4. AI Controls */}
+            {/* 5. AI Controls */}
             <SectionHeading title={t('profile.aiPreferences')} />
             <AIControls />
 
-            {/* 5. Swipe Intelligence */}
+            {/* 6. Swipe Intelligence */}
             <SectionHeading title={t('profile.swipeIntelligence')} />
             <SwipeIntelligence insights={swipeInsights} loading={loading} />
 
-            {/* 6. Mood Timeline */}
+            {/* 7. Mood Timeline */}
             <SectionHeading title={t('profile.moodTimelineSection')} />
             <MoodTimeline history={moodHistory} loading={loading} />
 
-            {/* 7. Watchlist Preview */}
+            {/* 8. Watch History */}
+            <SectionHeading title={t('profile.watchHistory') ?? 'Watch History'} />
+            <WatchHistory historyStats={historyStats} loading={loading} />
+
+            {/* 9. Watchlist Preview */}
             <SectionHeading title={t('profile.recentlySaved')} />
             <WatchlistPreview items={watchlistItems} loading={loading} />
 
-            {/* 8. Settings */}
+            {/* 10. Settings */}
             <SectionCard title={t('profile.settingsSection')} icon="settings-outline">
               {/* Dil seçimi */}
               <View style={styles.settingsRow}>
