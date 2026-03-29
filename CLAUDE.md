@@ -467,6 +467,8 @@ GestureHandlerRootView
 - Development build ile test ediliyor
 - **UI redesign tamamlandı** (design-reference/ görselleri referans alındı — Mart 2026)
 - 4 Supabase Edge Function dağıtılmış: `parse-mood`, `parse-taste`, `recommend`, `explain-match`
+- **P0 tamamlandı** (2026-03-30): token migration, swipe polish, error handling, loading states
+- **i18n migration tamamlandı** (2026-03-30): tüm hardcoded stringler t() ile sarıldı, ~80+ key
 - **P2 backend tamamlandı** (2026-03-28): gamification schema + history service
   - `services/gamification.ts` — streak + milestone CRUD + `recordActivity()` swipe akışına entegre
   - `services/history.ts` — stats, swipe geçmişi (sayfalanmış), mood timeline
@@ -697,62 +699,55 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 
 ## Roadmap
 
-### MVP Status: ~70% Complete
+### MVP Status: ~85% Complete
 Working: mood input → AI parsing → vector matching → swipe feed → watchlist save
-Missing for App Store: polish, onboarding, error handling, loading states, analytics
+P0 tamamlandı. P1 ve i18n devam ediyor. P2 backend hazır, UI CDO bekliyor.
 
 ### Priority Matrix
 
-#### P0 — Must Ship (Weeks 1-2)
-These block App Store submission:
+#### P0 — Must Ship ✅ TAMAMLANDI
+~~App Store submission engelleyen tüm görevler tamamlandı.~~
 
-1. **Design Token Migration**
-   - Update Colors.ts + theme.ts to new palette (violet + zinc + gold hybrid)
-   - Update _layout.tsx tab bar colors
-   - Verify all screens render correctly with new tokens
-   - Sessions: 1-2
+1. **Design Token Migration** ✅ (2026-03-27)
+   - Colors.ts + theme.ts: violet + zinc + gold hybrid palette
+   - Tüm ekranlar yeni token'larla render ediliyor
 
-2. **SwipeCard Polish (Incremental, NOT rewrite)**
-   - Add stack effect (2 cards behind with scale + blur)
-   - Add swipe overlays (green/red/blue opacity indicators)
-   - Improve poster gradient overlay
-   - Add 3 action buttons below card
-   - Sessions: 2-3
+2. **SwipeCard Polish** ✅ (2026-03-27)
+   - Stack effect, swipe overlay'lar, gradient, aksiyon butonları
 
-3. **Error Handling & Edge Cases**
-   - Network failure states on all API calls
-   - Empty film results handling
-   - Auth session recovery
-   - Sessions: 1-2
+3. **Error Handling & Edge Cases** ✅ (2026-03-28)
+   - Tüm ekranlarda ErrorState, retry, network failure
 
-4. **Loading States**
-   - Skeleton shimmer for feed
-   - AI processing overlay improvements
-   - Pull-to-refresh on feed
-   - Sessions: 1
+4. **Loading States** ✅ (2026-03-30)
+   - Feed skeleton: gradient overlay + match circle + watchlist btn placeholder
+   - AI Processing Overlay: i18n desteği (t prop)
+   - Pull-to-refresh: RefreshControl (feed + watchlist)
+   - Loading more: premium pill indicator (shimmer + text)
+
+#### P0.5 — i18n Migration ✅ (2026-03-30)
+- Tüm hardcoded stringler t() ile sarıldı
+- ~80+ i18n key eklendi (en.json + tr.json)
+- Türkçe özel karakterler düzeltildi
 
 #### P1 — Should Ship (Weeks 3-4)
 These make the app competitive:
 
-5. **Film Detail Bottom Sheet**
+5. **Film Detail Bottom Sheet** ✅ (zaten mevcut)
    - 80% height sheet with drag handle
    - Poster blur background + metadata
    - "Why this film?" AI explanation
    - Watchlist add from detail
-   - Sessions: 2
 
-6. **Onboarding Flow**
+6. **Onboarding Flow** ✅ (zaten mevcut)
    - 3-screen intro (what MoodFlix does, how swipe works, mood demo)
    - First mood prompt guided experience
-   - Sessions: 1-2
 
-7. **Tab Bar Redesign**
-   - 4 tabs with new violet active state
+7. **Tab Bar Redesign** ✅ (2026-03-27)
+   - 4 tabs with violet active state
    - Outline→filled icon transition
-   - Flick mascot integration (placeholder if not ready)
-   - Sessions: 1
+   - Lumi mascot integration
 
-8. **Search/Discover Tab**
+8. **Search/Discover Tab** ⏳ Sırada
    - Genre browsing
    - Curated mood collections ("Rainy Day", "Date Night")
    - Sessions: 2-3
@@ -760,36 +755,26 @@ These make the app competitive:
 #### P2 — Growth Features (Weeks 5-8)
 These drive retention:
 
-9. **Gamification System**
-   - Supabase: create user_streaks table
-   - Daily streak counter + badge
-   - Milestone celebrations (10/25/50/100 films)
-   - Confetti animation + Flick dance
-   - Sessions: 2-3
+9. **Gamification System** ✅ (2026-03-28)
+   - Backend: user_streaks, milestones, RPC'ler
+   - UI: StreakBadge (Feed), MilestoneCelebration overlay, StreakCard (Profile)
 
-10. **Flick Mascot (Rive)**
-    - Design in Rive editor (256x256, 8 states)
-    - Build FlickMascot.tsx component
-    - Integrate: card corner, empty states, loading, celebrations
-    - Sessions: 3-5 (including Rive design time)
+10. **Flick Mascot (Rive)** ⏳ BLOCKED — .riv dosyası bekleniyor
+    - Kod altyapısı hazır (USE_RIVE flag)
 
-11. **Watch History & Stats**
-    - "Films you've seen" list
-    - Mood pattern visualization
-    - Genre distribution chart
-    - Sessions: 2
+11. **Watch History & Stats** ⏳ Liste görünümü hazır, grafikler CDO bekliyor
+    - Backend: view + RPC'ler ✅
+    - UI: mini stats + filter tabs + paginated list ✅
+    - Chart/grafik CDO spec bekliyor
 
-12. **Social Features**
-    - Share film card as image
-    - "Mood of the day" shareable card
-    - Sessions: 1-2
+12. **Social Features** ⏳ BLOCKED — CDO share template bekleniyor
 
 #### P3 — Scale Features (Post-Launch)
 13. Real Claude API film profiling (replace rule-based)
 14. User accounts (email/social sign-in, migrate from anonymous)
 15. Personalized recommendations (learn from swipe history)
 16. Push notifications (daily mood check-in, streak reminders)
-17. Multi-language support (TR/EN at minimum)
+17. Multi-language support (TR/EN at minimum) — i18n altyapısı ✅
 18. iPad/tablet layout
 19. Revenue: premium tier with unlimited AI explanations
 
