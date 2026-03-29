@@ -433,9 +433,9 @@ export default function FeedScreen() {
         <EmptyState
           lumiMood="idle"
           lumiSize="large"
-          title="Ready to discover?"
-          subtitle="Describe your mood and find matching films"
-          actionLabel="Set Your Mood"
+          title={t('discover.readyTitle')}
+          subtitle={t('discover.readySubtitle')}
+          actionLabel={t('discover.setYourMood')}
           onAction={() => router.push('/(tabs)/mood')}
         />
       </>

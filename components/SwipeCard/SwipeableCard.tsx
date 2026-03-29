@@ -43,6 +43,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   onSwipeLeft,
 }) => {
   const router = useRouter();
+  const { t } = useLanguage();
 
   // ── Shared values ─────────────────────────────────────────────────────────
   const translateX = useSharedValue(0);
@@ -187,12 +189,12 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message: `Check out "${film.title}" on Chosy.ai! ${matchPercent}% mood match.`,
+        message: t('swipeCard.shareMessage', { title: film.title, match: matchPercent }),
       });
     } catch {
       // kullanıcı iptal etti
     }
-  }, [film.title, matchPercent]);
+  }, [film.title, matchPercent, t]);
 
   // ── Gesture ───────────────────────────────────────────────────────────────
 

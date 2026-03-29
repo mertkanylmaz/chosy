@@ -37,6 +37,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
 import { useHybridSwipe, SwipeDirection } from '@/hooks/useHybridSwipe';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
 
@@ -71,6 +72,8 @@ interface CardVisualProps {
    */
   rawOverlay?: SharedValue<number>;
   onSave: () => void;
+  /** i18n translation function */
+  t: (key: string, opts?: Record<string, string | number>) => string;
 }
 
 // ── Kart Görseli ──────────────────────────────────────────────────────────────
@@ -79,7 +82,7 @@ interface CardVisualProps {
  * Film kartının görsel içeriği.
  * Gesture mantığı yoktur — SwipeCardStack tarafından sarılır.
  */
-const CardVisual: React.FC<CardVisualProps> = React.memo(({ film, rawOverlay, onSave }) => {
+const CardVisual: React.FC<CardVisualProps> = React.memo(({ film, rawOverlay, onSave, t }) => {
   const router = useRouter();
 
   const fullPosterUrl: string | null = film.posterUrl
@@ -108,12 +111,12 @@ const CardVisual: React.FC<CardVisualProps> = React.memo(({ film, rawOverlay, on
   const handleShare = useCallback(async () => {
     try {
       await Share.share({
-        message: `Check out "${film.title}" on Chosy.ai! ${matchPercent}% mood match.`,
+        message: t('swipeCard.shareMessage', { title: film.title, match: matchPercent }),
       });
     } catch {
       // kullanıcı iptal etti
     }
-  }, [film.title, matchPercent]);
+  }, [film.title, matchPercent, t]);
 
   const metaParts: string[] = [];
   if (film.director) metaParts.push(film.director);
@@ -250,7 +253,7 @@ const CardVisual: React.FC<CardVisualProps> = React.memo(({ film, rawOverlay, on
             end={{ x: 1, y: 0 }}
             style={styles.watchlistGradient}
           >
-            <Text style={styles.watchlistBtnText}>Add to Watchlist</Text>
+            <Text style={styles.watchlistBtnText}>{t('filmDetail.addToWatchlist')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -275,6 +278,8 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
   onSwipeComplete,
   onNewMood,
 }) => {
+  const { t } = useLanguage();
+
   // ── Sürpriz kart haptic ──────────────────────────────────────────────────
   useEffect(() => {
     const film = films[currentIndex];
@@ -379,8 +384,8 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIcon}>🎬</Text>
-        <Text style={styles.emptyTitle}>No movies yet</Text>
-        <Text style={styles.emptySubtitle}>Describe your mood to discover movies</Text>
+        <Text style={styles.emptyTitle}>{t('swipeCard.noMovies')}</Text>
+        <Text style={styles.emptySubtitle}>{t('swipeCard.describeToDiscover')}</Text>
         {onNewMood != null && (
           <TouchableOpacity style={styles.emptyBtn} onPress={onNewMood} activeOpacity={0.85}>
             <LinearGradient
@@ -389,7 +394,7 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
               end={{ x: 1, y: 0 }}
               style={styles.emptyBtnGradient}
             >
-              <Text style={styles.emptyBtnText}>Go to Mood</Text>
+              <Text style={styles.emptyBtnText}>{t('swipeCard.goToMood')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -401,8 +406,8 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
     return (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIcon}>✨</Text>
-        <Text style={styles.emptyTitle}>{"That's all!"}</Text>
-        <Text style={styles.emptySubtitle}>Try a new mood to discover more films</Text>
+        <Text style={styles.emptyTitle}>{t('swipeCard.thatsAll')}</Text>
+        <Text style={styles.emptySubtitle}>{t('swipeCard.tryNewMood')}</Text>
         {onNewMood != null && (
           <TouchableOpacity style={styles.emptyBtn} onPress={onNewMood} activeOpacity={0.85}>
             <LinearGradient
@@ -411,7 +416,7 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
               end={{ x: 1, y: 0 }}
               style={styles.emptyBtnGradient}
             >
-              <Text style={styles.emptyBtnText}>New Mood</Text>
+              <Text style={styles.emptyBtnText}>{t('swipeCard.newMood')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -430,10 +435,10 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
 
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Film Discovery</Text>
+        <Text style={styles.headerTitle}>{t('swipeCard.filmDiscovery')}</Text>
         {onNewMood != null && (
           <TouchableOpacity style={styles.newMoodPill} onPress={onNewMood} activeOpacity={0.8}>
-            <Text style={styles.newMoodPillText}>✦ New mood</Text>
+            <Text style={styles.newMoodPillText}>✦ {t('swipeCard.newMoodPill')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -444,14 +449,14 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
         {/* 3. kart — en arkada */}
         {film2 != null && (
           <Animated.View style={[styles.cardWrapper, { zIndex: 1 }, thirdCardStyle]}>
-            <CardVisual film={film2} onSave={() => {}} />
+            <CardVisual film={film2} onSave={() => {}} t={t} />
           </Animated.View>
         )}
 
         {/* 2. kart — ortada, ön kart sürüklendikçe büyür */}
         {film1 != null && (
           <Animated.View style={[styles.cardWrapper, { zIndex: 2 }, backCardStyle]}>
-            <CardVisual film={film1} onSave={() => {}} />
+            <CardVisual film={film1} onSave={() => {}} t={t} />
           </Animated.View>
         )}
 
@@ -462,6 +467,7 @@ export const SwipeCardStack: React.FC<SwipeCardStackProps> = ({
               film={film0}
               rawOverlay={rawOverlay}
               onSave={handleSaveButton}
+              t={t}
             />
           </Animated.View>
         </GestureDetector>

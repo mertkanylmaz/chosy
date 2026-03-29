@@ -445,7 +445,7 @@ export default function FilmDetailScreen() {
             <Animated.View style={styles.whySection} entering={FadeIn.duration(400)}>
               <View style={styles.whySectionHeader}>
                 <Ionicons name="sparkles" size={16} color={Colors.accentPrimary} />
-                <Text style={styles.whySectionTitle}>Why this film?</Text>
+                <Text style={styles.whySectionTitle}>{t('filmDetail.whyThisFilm')}</Text>
               </View>
               {explanationLoading ? (
                 <SkeletonLoader width="100%" height={40} borderRadius={8} />

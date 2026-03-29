@@ -62,20 +62,20 @@ const MIN_PROCESSING_MS = 1500;
 
 // ─── Chip sabitleri ───────────────────────────────────────────────────────────
 
-const YEAR_CHIPS: { id: YearChipId; label: string }[] = [
-  { id: 'pre1990', label: 'Classic' },
-  { id: '1990s', label: '90s' },
-  { id: '2000s', label: '2000s' },
-  { id: '2010s', label: '2010s' },
-  { id: '2020s', label: 'Recent' },
-  { id: '', label: 'Any' },
+const YEAR_CHIPS: { id: YearChipId; labelKey: string }[] = [
+  { id: 'pre1990', labelKey: 'mood.chipClassic' },
+  { id: '1990s', labelKey: 'mood.chip90s' },
+  { id: '2000s', labelKey: 'mood.chip2000s' },
+  { id: '2010s', labelKey: 'mood.chip2010s' },
+  { id: '2020s', labelKey: 'mood.chipRecent' },
+  { id: '', labelKey: 'mood.chipAny' },
 ];
 
-const RATING_CHIPS: { id: RatingChipId; label: string }[] = [
-  { id: '7', label: '7+' },
-  { id: '8', label: '8+' },
-  { id: 'top250', label: 'Top 250' },
-  { id: '', label: 'Any' },
+const RATING_CHIPS: { id: RatingChipId; labelKey: string }[] = [
+  { id: '7', labelKey: 'mood.chip7plus' },
+  { id: '8', labelKey: 'mood.chip8plus' },
+  { id: 'top250', labelKey: 'mood.chipTop250' },
+  { id: '', labelKey: 'mood.chipAny' },
 ];
 
 // ─── Quick Moods (Curated Collections) ───────────────────────────────────────
@@ -83,19 +83,19 @@ const RATING_CHIPS: { id: RatingChipId; label: string }[] = [
 interface QuickMoodItem {
   id: string;
   emoji: string;
-  label: string;
-  prompt: string;
+  labelKey: string;
+  promptKey: string;
 }
 
 const QUICK_MOODS: QuickMoodItem[] = [
-  { id: 'rainy', emoji: '🌧️', label: 'Rainy Day', prompt: 'A cozy rainy evening, something warm and contemplative' },
-  { id: 'date', emoji: '💕', label: 'Date Night', prompt: 'Romantic and engaging, perfect for watching together' },
-  { id: 'thrill', emoji: '⚡', label: 'Adrenaline', prompt: 'Heart-pounding excitement, edge of my seat thrills' },
-  { id: 'laugh', emoji: '😂', label: 'Need a Laugh', prompt: 'Something genuinely funny to lift my spirits' },
-  { id: 'deep', emoji: '🧠', label: 'Mind-Bending', prompt: 'A thought-provoking film that challenges my perspective' },
-  { id: 'nostalgia', emoji: '✨', label: 'Nostalgia Trip', prompt: 'Something that feels like a warm childhood memory' },
-  { id: 'chill', emoji: '🍿', label: 'Easy Watch', prompt: 'Light and entertaining, no heavy thinking required' },
-  { id: 'cry', emoji: '😢', label: 'Good Cry', prompt: 'An emotionally moving story that makes me feel deeply' },
+  { id: 'rainy', emoji: '🌧️', labelKey: 'mood.quickRainy', promptKey: 'mood.quickRainyPrompt' },
+  { id: 'date', emoji: '💕', labelKey: 'mood.quickDate', promptKey: 'mood.quickDatePrompt' },
+  { id: 'thrill', emoji: '⚡', labelKey: 'mood.quickThrill', promptKey: 'mood.quickThrillPrompt' },
+  { id: 'laugh', emoji: '😂', labelKey: 'mood.quickLaugh', promptKey: 'mood.quickLaughPrompt' },
+  { id: 'deep', emoji: '🧠', labelKey: 'mood.quickDeep', promptKey: 'mood.quickDeepPrompt' },
+  { id: 'nostalgia', emoji: '✨', labelKey: 'mood.quickNostalgia', promptKey: 'mood.quickNostalgiaPrompt' },
+  { id: 'chill', emoji: '🍿', labelKey: 'mood.quickChill', promptKey: 'mood.quickChillPrompt' },
+  { id: 'cry', emoji: '😢', labelKey: 'mood.quickCry', promptKey: 'mood.quickCryPrompt' },
 ];
 
 // ─── Mood History helpers ─────────────────────────────────────────────────────
@@ -440,12 +440,12 @@ export default function MoodScreen() {
 
   const lumiSpeechText =
     moodText.length === 0
-      ? 'What kind of movie experience\nare you looking for?'
+      ? t('mood.speechDefault')
       : moodText.length < 10
-        ? 'Tell me more...'
+        ? t('mood.speechShort')
         : moodText.length < 30
-          ? 'Interesting... I have some ideas'
-          : 'I know exactly what you need';
+          ? t('mood.speechMedium')
+          : t('mood.speechReady');
 
   // ── Input aşaması ──────────────────────────────────────────────────────────
   return (
@@ -484,7 +484,7 @@ export default function MoodScreen() {
               {/* ── Year filtresi ───────────────────────────────────────────── */}
               <Animated.View style={style1}>
                 <View style={styles.filterBlock}>
-                  <Text style={styles.filterLabel}>ERA</Text>
+                  <Text style={styles.filterLabel}>{t('mood.eraLabel')}</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -500,7 +500,7 @@ export default function MoodScreen() {
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                            {chip.label}
+                            {t(chip.labelKey)}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -512,7 +512,7 @@ export default function MoodScreen() {
               {/* ── IMDb filtresi ────────────────────────────────────────────── */}
               <Animated.View style={style2}>
                 <View style={styles.filterBlock}>
-                  <Text style={styles.filterLabel}>QUALITY</Text>
+                  <Text style={styles.filterLabel}>{t('mood.qualityLabel')}</Text>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
@@ -528,7 +528,7 @@ export default function MoodScreen() {
                           activeOpacity={0.7}
                         >
                           <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                            {chip.label}
+                            {t(chip.labelKey)}
                           </Text>
                         </TouchableOpacity>
                       );
@@ -553,7 +553,7 @@ export default function MoodScreen() {
                     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                     typingTimeoutRef.current = setTimeout(() => setLumiMood('idle'), 1000);
                   }}
-                  placeholder="A rainy evening mood, something contemplative..."
+                  placeholder={t('moodInput.placeholder')}
                   placeholderTextColor={Colors.textGrey}
                   multiline
                   textAlignVertical="top"
@@ -585,38 +585,41 @@ export default function MoodScreen() {
                   disabled={!canSubmit}
                   activeOpacity={1}
                 >
-                  <Text style={styles.findButtonText}>Find Movies</Text>
+                  <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
                 </TouchableOpacity>
               </Animated.View>
 
               {/* ── Quick Moods ──────────────────────────────────────────────── */}
               <Animated.View style={styleQuickMoods}>
                 <View style={styles.quickSection}>
-                  <Text style={styles.quickTitle}>Quick moods</Text>
-                  <Text style={styles.quickSubtitle}>Tap to fill, then hit Find Movies</Text>
+                  <Text style={styles.quickTitle}>{t('mood.quickMoodsTitle')}</Text>
+                  <Text style={styles.quickSubtitle}>{t('mood.quickMoodsSubtitle')}</Text>
                   <View style={styles.quickGrid}>
-                    {QUICK_MOODS.map((item) => (
-                      <TouchableOpacity
-                        key={item.id}
-                        style={[
-                          styles.quickCard,
-                          moodText === item.prompt && styles.quickCardActive,
-                        ]}
-                        onPress={() => handleQuickMood(item.prompt)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={styles.quickEmoji}>{item.emoji}</Text>
-                        <Text
+                    {QUICK_MOODS.map((item) => {
+                      const prompt = t(item.promptKey);
+                      return (
+                        <TouchableOpacity
+                          key={item.id}
                           style={[
-                            styles.quickLabel,
-                            moodText === item.prompt && styles.quickLabelActive,
+                            styles.quickCard,
+                            moodText === prompt && styles.quickCardActive,
                           ]}
-                          numberOfLines={1}
+                          onPress={() => handleQuickMood(prompt)}
+                          activeOpacity={0.7}
                         >
-                          {item.label}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                          <Text style={styles.quickEmoji}>{item.emoji}</Text>
+                          <Text
+                            style={[
+                              styles.quickLabel,
+                              moodText === prompt && styles.quickLabelActive,
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {t(item.labelKey)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
               </Animated.View>
@@ -630,8 +633,8 @@ export default function MoodScreen() {
                     <EmptyState
                       lumiMood="calm"
                       lumiSize="small"
-                      title="Your mood journey starts here"
-                      subtitle="Describe how you feel to get personalized recommendations"
+                      title={t('mood.emptyHistoryTitle')}
+                      subtitle={t('mood.emptyHistorySubtitle')}
                     />
                   ) : (
                     sessions.map((session, idx) => (

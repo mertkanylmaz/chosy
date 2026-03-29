@@ -28,6 +28,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -368,32 +369,32 @@ const collStyles = StyleSheet.create({
 interface SlideItem {
   key: string;
   renderVisual: () => React.ReactElement;
-  step: string;
-  title: string;
-  description: string;
+  stepKey: string;
+  titleKey: string;
+  descKey: string;
 }
 
 const SLIDES: SlideItem[] = [
   {
     key: 'mood',
     renderVisual: () => <MoodRingVisual />,
-    step: 'Step 1',
-    title: 'Describe your mood',
-    description: 'Tell us how you feel — happy, nostalgic, adventurous. We\u2019ll understand.',
+    stepKey: 'onboarding.step1',
+    titleKey: 'onboarding.title1',
+    descKey: 'onboarding.desc1',
   },
   {
     key: 'discover',
     renderVisual: () => <PosterCarousel />,
-    step: 'Step 2',
-    title: 'Swipe to discover',
-    description: 'Swipe right to save, left to skip. Every swipe teaches us your taste.',
+    stepKey: 'onboarding.step2',
+    titleKey: 'onboarding.title2',
+    descKey: 'onboarding.desc2',
   },
   {
     key: 'collect',
     renderVisual: () => <CollectionVisual />,
-    step: 'Step 3',
-    title: 'Build your collection',
-    description: 'Your perfect watchlist, curated by AI and refined by you.',
+    stepKey: 'onboarding.step3',
+    titleKey: 'onboarding.title3',
+    descKey: 'onboarding.desc3',
   },
 ];
 
@@ -453,6 +454,7 @@ const dotsStyles = StyleSheet.create({
  */
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const flatListRef = useRef<FlatList<SlideItem>>(null);
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
@@ -506,7 +508,7 @@ export default function OnboardingScreen() {
           <View style={styles.topSpacer} />
           {!isLast && (
             <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={styles.skipBtn}>
-              <Text style={styles.skipText}>Skip</Text>
+              <Text style={styles.skipText}>{t('common.skip')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -519,9 +521,9 @@ export default function OnboardingScreen() {
           renderItem={({ item }) => (
             <View style={styles.slide}>
               {item.renderVisual()}
-              <Text style={styles.step}>{item.step}</Text>
-              <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.description}>{item.description}</Text>
+              <Text style={styles.step}>{t(item.stepKey)}</Text>
+              <Text style={styles.title}>{t(item.titleKey)}</Text>
+              <Text style={styles.description}>{t(item.descKey)}</Text>
             </View>
           )}
           horizontal
@@ -551,7 +553,7 @@ export default function OnboardingScreen() {
                 style={styles.buttonGradient}
               >
                 <Text style={styles.buttonText}>
-                  {isLast ? 'Get Started' : 'Continue'}
+                  {isLast ? t('common.getStarted') : t('common.continue')}
                 </Text>
                 {!isLast && (
                   <Ionicons name="arrow-forward" size={18} color={Colors.textOnAccent} />
