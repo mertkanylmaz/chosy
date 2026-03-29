@@ -1,8 +1,8 @@
 # MoodFlix — Roadmap & Sprint Plan
 
-## MVP Status: ~80% Complete
+## MVP Status: ~88% Complete
 Working: mood input → AI parsing → vector matching → swipe feed → watchlist save
-P0 shipped. P1 shipped (Task 8 deferred → P3). Now entering P2.
+P0 shipped. P1 shipped (Task 8 mood tab'a entegre). i18n tamamlandı. P2 backend hazır.
 
 ---
 
@@ -24,7 +24,7 @@ These made the app competitive — shipped March 2026.
 5. ✅ **Film Detail Bottom Sheet** — drag handle, poster blur, AI explanation, watchlist add
 6. ✅ **Onboarding Flow** — 3 adım entry, first mood guided experience
 7. ✅ **Tab Bar Redesign** — 4 tab, gold active state, animasyonlu geçiş, Lumi mood tab
-8. ⏭️ **Search/Discover Tab** — DEFERRED TO P3 (P2 kapasitesiyle çakışır, App Store blocker değil)
+8. ✅ **Search/Discover → Mood Tab Entegre** (2026-03-30) — Genre browsing (12 tür) + Curated Collections (6 koleksiyon) mood tab'a eklendi. Ayrı tab gerekmez.
 
 ---
 
@@ -88,10 +88,7 @@ These drive retention. **CDO bağımlılıkları var — aşağıya bak.**
 ---
 
 ### P3 — Scale Features (Post-Launch)
-13. **Search/Discover Tab** ← P1'den defer edildi (2026-03-28)
-    - Genre browsing
-    - Curated mood collections ("Rainy Day", "Date Night")
-    - Sessions: 2-3
+13. ~~**Search/Discover Tab**~~ → ✅ Mood tab'a entegre edildi (P1.8)
 14. Real Claude API film profiling (replace rule-based)
 15. User accounts (email/social sign-in, migrate from anonymous)
 16. Personalized recommendations (learn from swipe history)
