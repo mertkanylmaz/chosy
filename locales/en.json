@@ -316,6 +316,16 @@
     "recentlySaved": "Recently Saved",
     "settingsSection": "Settings"
   },
+  "aiProcessing": {
+    "title": "AI Processing",
+    "subtitle": "Analyzing your mood...",
+    "step1": "Reading emotions",
+    "step2": "Finding patterns",
+    "step3": "Matching films"
+  },
+  "loading": {
+    "moreFilms": "Loading more films..."
+  },
   "feedback": {
     "subtitle": "How did you find this film?",
     "rating": "Rating",

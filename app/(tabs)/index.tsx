@@ -398,19 +398,38 @@ export default function FeedScreen() {
       <View style={styles.container}>
         <StatusBar style="light" backgroundColor={Colors.background} />
         <View style={styles.skeletonCard}>
-          {/* Poster alanı */}
-          <SkeletonLoader width="100%" height={CARD_HEIGHT * 0.75} borderRadius={0} />
-          {/* Alt bilgi alanı — başlık + meta */}
-          <View style={styles.skeletonInfo}>
-            <SkeletonLoader width="65%" height={22} borderRadius={6} />
-            <SkeletonLoader width="45%" height={14} borderRadius={6} style={{ marginTop: 10 }} />
-            <SkeletonLoader width="30%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
+          {/* Poster alanı — tam kart yüksekliği */}
+          <SkeletonLoader width="100%" height={CARD_HEIGHT * 0.65} borderRadius={0} />
+
+          {/* Gradient geçiş — poster'dan bilgi alanına */}
+          <LinearGradient
+            colors={['transparent', Colors.background]}
+            style={styles.skeletonGradient}
+          />
+
+          {/* Match score dairesi placeholder */}
+          <View style={styles.skeletonMatchCircle}>
+            <SkeletonLoader width={56} height={56} borderRadius={28} />
           </View>
+
+          {/* Alt bilgi alanı — başlık + meta + tagline */}
+          <View style={styles.skeletonInfo}>
+            <SkeletonLoader width="70%" height={24} borderRadius={6} />
+            <SkeletonLoader width="50%" height={14} borderRadius={6} style={{ marginTop: 10 }} />
+            <SkeletonLoader width="85%" height={12} borderRadius={6} style={{ marginTop: 12 }} />
+            <SkeletonLoader width="60%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
+          </View>
+
           {/* Aksiyon butonları placeholder */}
           <View style={styles.skeletonActions}>
             <SkeletonLoader width={48} height={48} borderRadius={24} />
             <SkeletonLoader width={56} height={56} borderRadius={28} />
             <SkeletonLoader width={48} height={48} borderRadius={24} />
+          </View>
+
+          {/* Watchlist butonu placeholder */}
+          <View style={styles.skeletonWatchlistBtn}>
+            <SkeletonLoader width="100%" height={48} borderRadius={14} />
           </View>
         </View>
       </View>
@@ -517,11 +536,17 @@ export default function FeedScreen() {
         />
       </View>
 
-      {/* Arka plan yükleme göstergesi */}
+      {/* Arka plan yükleme göstergesi — shimmer pill */}
       {isLoading && displayFilms.length > 0 && (
-        <View style={styles.loadingOverlay} pointerEvents="none">
-          <ActivityIndicator size="small" color={Colors.gold} />
-        </View>
+        <Animated.View
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(200)}
+          style={styles.loadingPill}
+          pointerEvents="none"
+        >
+          <ActivityIndicator size="small" color={Colors.accentPrimary} />
+          <Text style={styles.loadingPillText}>{t('loading.moreFilms')}</Text>
+        </Animated.View>
       )}
 
       {/* Arka plan hata durumu — retry butonu */}
@@ -630,6 +655,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.bgCard,
   },
+  skeletonGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: CARD_HEIGHT * 0.55,
+    height: CARD_HEIGHT * 0.15,
+  },
+  skeletonMatchCircle: {
+    position: 'absolute',
+    right: 20,
+    top: CARD_HEIGHT * 0.60,
+    zIndex: 2,
+  },
   skeletonInfo: {
     paddingHorizontal: 20,
     paddingTop: 20,
@@ -640,6 +678,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 20,
     marginTop: 24,
+  },
+  skeletonWatchlistBtn: {
+    marginHorizontal: 20,
+    marginTop: 16,
   },
 
   // ─── Streak badge (sağ üst) ────────────────────────────────────────────────
@@ -672,11 +714,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // ─── Arka plan yükleme ─────────────────────────────────────────────────────
-  loadingOverlay: {
+  // ─── Arka plan yükleme pill ─────────────────────────────────────────────────
+  loadingPill: {
     position: 'absolute',
     bottom: TAB_BAR_HEIGHT + 16,
     alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.overlay,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.accentDim,
+  },
+  loadingPillText: {
+    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
   },
 
   // ─── Hata bar ─────────────────────────────────────────────────────────────

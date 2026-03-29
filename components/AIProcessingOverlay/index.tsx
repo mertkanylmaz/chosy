@@ -20,16 +20,18 @@ interface AIProcessingProps {
   visible: boolean;
   /** Tüm animasyon tamamlanınca çağrılır (opsiyonel) */
   onComplete?: () => void;
+  /** i18n çeviri fonksiyonu */
+  t: (key: string, opts?: Record<string, string | number>) => string;
 }
 
 type StepState = 'waiting' | 'active' | 'completed';
 
 interface StepItem {
-  text: string;
+  key: string;
   state: StepState;
 }
 
-const STEPS_TEMPLATE = ['Reading emotions', 'Finding patterns', 'Matching films'];
+const STEP_KEYS = ['aiProcessing.step1', 'aiProcessing.step2', 'aiProcessing.step3'];
 
 /** Aktif adım için dönen altın spinner */
 function StepSpinner() {
@@ -55,9 +57,9 @@ function StepSpinner() {
  * 4 iç içe dönen halka spiral animasyonu + 3 aşamalı ilerleme listesi.
  * position: absolute — Modal kullanmaz.
  */
-export default function AIProcessingOverlay({ visible, onComplete }: AIProcessingProps) {
+export default function AIProcessingOverlay({ visible, onComplete, t }: AIProcessingProps) {
   const [steps, setSteps] = useState<StepItem[]>(
-    STEPS_TEMPLATE.map(text => ({ text, state: 'waiting' })),
+    STEP_KEYS.map(key => ({ key, state: 'waiting' })),
   );
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -96,7 +98,7 @@ export default function AIProcessingOverlay({ visible, onComplete }: AIProcessin
     rot2.value = 0;
     rot3.value = 0;
     scaleInner.value = 0.3;
-    setSteps(STEPS_TEMPLATE.map(text => ({ text, state: 'waiting' })));
+    setSteps(STEP_KEYS.map(key => ({ key, state: 'waiting' })));
   }
 
   useEffect(() => {
@@ -250,12 +252,12 @@ export default function AIProcessingOverlay({ visible, onComplete }: AIProcessin
 
       {/* Başlık */}
       <Animated.Text style={[styles.title, titleAnimStyle]}>
-        AI Processing
+        {t('aiProcessing.title')}
       </Animated.Text>
 
       {/* Alt yazı */}
       <Animated.Text style={[styles.subtitle, subtitleAnimStyle]}>
-        Analyzing your mood...
+        {t('aiProcessing.subtitle')}
       </Animated.Text>
 
       {/* Aşama listesi */}
@@ -278,7 +280,7 @@ export default function AIProcessingOverlay({ visible, onComplete }: AIProcessin
                 step.state === 'completed' && styles.stepTextCompleted,
               ]}
             >
-              {step.text}
+              {t(step.key)}
             </Text>
           </View>
         ))}

@@ -316,6 +316,16 @@
     "recentlySaved": "Son Kaydedilenler",
     "settingsSection": "Ayarlar"
   },
+  "aiProcessing": {
+    "title": "AI İşleniyor",
+    "subtitle": "Ruh halin analiz ediliyor...",
+    "step1": "Duygular okunuyor",
+    "step2": "Örüntüler bulunuyor",
+    "step3": "Filmler eşleştiriliyor"
+  },
+  "loading": {
+    "moreFilms": "Daha fazla film yükleniyor..."
+  },
   "feedback": {
     "subtitle": "Bu filmi nasıl buldun?",
     "rating": "Puan",

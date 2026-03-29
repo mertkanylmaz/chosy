@@ -648,7 +648,7 @@ export default function MoodScreen() {
         </LinearGradient>
       </SafeAreaView>
 
-      <AIProcessingOverlay visible={phase === 'processing'} />
+      <AIProcessingOverlay visible={phase === 'processing'} t={t} />
     </>
   );
 }
