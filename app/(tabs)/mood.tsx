@@ -98,6 +98,92 @@ const QUICK_MOODS: QuickMoodItem[] = [
   { id: 'cry', emoji: '😢', labelKey: 'mood.quickCry', promptKey: 'mood.quickCryPrompt' },
 ];
 
+// ─── Browse by Genre ──────────────────────────────────────────────────────────
+
+interface GenreItem {
+  id: string;
+  emoji: string;
+  labelKey: string;
+  promptKey: string;
+}
+
+const GENRES: GenreItem[] = [
+  { id: 'action', emoji: '💥', labelKey: 'mood.genreAction', promptKey: 'mood.genreActionPrompt' },
+  { id: 'drama', emoji: '🎭', labelKey: 'mood.genreDrama', promptKey: 'mood.genreDramaPrompt' },
+  { id: 'comedy', emoji: '😄', labelKey: 'mood.genreComedy', promptKey: 'mood.genreComedyPrompt' },
+  { id: 'scifi', emoji: '🚀', labelKey: 'mood.genreSciFi', promptKey: 'mood.genreSciFiPrompt' },
+  { id: 'horror', emoji: '👻', labelKey: 'mood.genreHorror', promptKey: 'mood.genreHorrorPrompt' },
+  { id: 'romance', emoji: '💗', labelKey: 'mood.genreRomance', promptKey: 'mood.genreRomancePrompt' },
+  { id: 'thriller', emoji: '🔪', labelKey: 'mood.genreThriller', promptKey: 'mood.genreThrillerPrompt' },
+  { id: 'animation', emoji: '🎨', labelKey: 'mood.genreAnimation', promptKey: 'mood.genreAnimationPrompt' },
+  { id: 'documentary', emoji: '📽️', labelKey: 'mood.genreDocumentary', promptKey: 'mood.genreDocumentaryPrompt' },
+  { id: 'mystery', emoji: '🔍', labelKey: 'mood.genreMystery', promptKey: 'mood.genreMysteryPrompt' },
+  { id: 'war', emoji: '⚔️', labelKey: 'mood.genreWar', promptKey: 'mood.genreWarPrompt' },
+  { id: 'fantasy', emoji: '🧙', labelKey: 'mood.genreFantasy', promptKey: 'mood.genreFantasyPrompt' },
+];
+
+// ─── Curated Collections ──────────────────────────────────────────────────────
+
+interface CuratedCollection {
+  id: string;
+  emoji: string;
+  labelKey: string;
+  descKey: string;
+  promptKey: string;
+  /** Opsiyonel filtre override */
+  ratingChip?: RatingChipId;
+  yearChip?: YearChipId;
+}
+
+const CURATED_COLLECTIONS: CuratedCollection[] = [
+  {
+    id: 'award_winners',
+    emoji: '🏆',
+    labelKey: 'mood.curatedAwardWinners',
+    descKey: 'mood.curatedAwardWinnersDesc',
+    promptKey: 'mood.curatedAwardWinnersPrompt',
+    ratingChip: '8',
+  },
+  {
+    id: 'cult_classics',
+    emoji: '🎬',
+    labelKey: 'mood.curatedCultClassics',
+    descKey: 'mood.curatedCultClassicsDesc',
+    promptKey: 'mood.curatedCultClassicsPrompt',
+    yearChip: 'pre1990',
+  },
+  {
+    id: 'hidden_gems',
+    emoji: '💎',
+    labelKey: 'mood.curatedHiddenGems',
+    descKey: 'mood.curatedHiddenGemsDesc',
+    promptKey: 'mood.curatedHiddenGemsPrompt',
+    ratingChip: '7',
+  },
+  {
+    id: 'feel_good',
+    emoji: '☀️',
+    labelKey: 'mood.curatedFeelGood',
+    descKey: 'mood.curatedFeelGoodDesc',
+    promptKey: 'mood.curatedFeelGoodPrompt',
+  },
+  {
+    id: 'mind_blowing',
+    emoji: '🤯',
+    labelKey: 'mood.curatedMindBlowing',
+    descKey: 'mood.curatedMindBlowingDesc',
+    promptKey: 'mood.curatedMindBlowingPrompt',
+    ratingChip: '8',
+  },
+  {
+    id: 'weekend_binge',
+    emoji: '🛋️',
+    labelKey: 'mood.curatedWeekendBinge',
+    descKey: 'mood.curatedWeekendBingeDesc',
+    promptKey: 'mood.curatedWeekendBingePrompt',
+  },
+];
+
 // ─── Mood History helpers ─────────────────────────────────────────────────────
 
 /** Bir mood oturumunun görüntüleme verisi */
@@ -415,12 +501,30 @@ export default function MoodScreen() {
   }, [tasteProfile, setMoodResult, router]);
 
   /**
-   * Quick Mood koleksiyonu tıklandığında — metni doldur ve otomatik bul
+   * Quick Mood koleksiyonu tıklandığında — metni doldur
    */
   const handleQuickMood = useCallback((text: string) => {
     hapticSelection();
     setMoodText(text);
   }, []);
+
+  /**
+   * Genre kartı tıklandığında — genre prompt'u text input'a doldur
+   */
+  const handleGenreTap = useCallback((genre: GenreItem) => {
+    hapticSelection();
+    setMoodText(t(genre.promptKey));
+  }, [t]);
+
+  /**
+   * Curated collection tıklandığında — prompt doldur + opsiyonel filtre ayarla
+   */
+  const handleCollectionTap = useCallback((collection: CuratedCollection) => {
+    hapticMedium();
+    setMoodText(t(collection.promptKey));
+    if (collection.ratingChip !== undefined) setRatingChip(collection.ratingChip);
+    if (collection.yearChip !== undefined) setYearChip(collection.yearChip);
+  }, [t]);
 
   // ── MoodProfileResult aşaması ──────────────────────────────────────────────
   if (phase === 'result' && tasteProfile) {
@@ -624,25 +728,70 @@ export default function MoodScreen() {
                 </View>
               </Animated.View>
 
-              {/* ── Mood History ─────────────────────────────────────────────── */}
+              {/* ── Browse by Genre ─────────────────────────────────────────── */}
               <Animated.View style={style5}>
-                <View style={styles.historySection}>
-                  <Text style={styles.historyTitle}>{t('profile.moodHistory')}</Text>
-
-                  {sessions.length === 0 ? (
-                    <EmptyState
-                      lumiMood="calm"
-                      lumiSize="small"
-                      title={t('mood.emptyHistoryTitle')}
-                      subtitle={t('mood.emptyHistorySubtitle')}
-                    />
-                  ) : (
-                    sessions.map((session, idx) => (
-                      <MoodHistoryCard key={session.id} session={session} index={idx} />
-                    ))
-                  )}
+                <View style={styles.genreSection}>
+                  <Text style={styles.sectionTitle}>{t('mood.browseByGenre')}</Text>
+                  <Text style={styles.sectionSubtitle}>{t('mood.browseByGenreSubtitle')}</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.genreScroll}
+                  >
+                    {GENRES.map((genre) => (
+                      <TouchableOpacity
+                        key={genre.id}
+                        style={styles.genreCard}
+                        onPress={() => handleGenreTap(genre)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.genreEmoji}>{genre.emoji}</Text>
+                        <Text style={styles.genreLabel}>{t(genre.labelKey)}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
               </Animated.View>
+
+              {/* ── Curated Collections ──────────────────────────────────────── */}
+              <View style={styles.curatedSection}>
+                <Text style={styles.sectionTitle}>{t('mood.curatedTitle')}</Text>
+                <Text style={styles.sectionSubtitle}>{t('mood.curatedSubtitle')}</Text>
+                <View style={styles.curatedGrid}>
+                  {CURATED_COLLECTIONS.map((col) => (
+                    <TouchableOpacity
+                      key={col.id}
+                      style={styles.curatedCard}
+                      onPress={() => handleCollectionTap(col)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.curatedEmoji}>{col.emoji}</Text>
+                      <View style={styles.curatedTextWrap}>
+                        <Text style={styles.curatedLabel}>{t(col.labelKey)}</Text>
+                        <Text style={styles.curatedDesc} numberOfLines={2}>{t(col.descKey)}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* ── Mood History ─────────────────────────────────────────────── */}
+              <View style={styles.historySection}>
+                <Text style={styles.historyTitle}>{t('profile.moodHistory')}</Text>
+
+                {sessions.length === 0 ? (
+                  <EmptyState
+                    lumiMood="calm"
+                    lumiSize="small"
+                    title={t('mood.emptyHistoryTitle')}
+                    subtitle={t('mood.emptyHistorySubtitle')}
+                  />
+                ) : (
+                  sessions.map((session, idx) => (
+                    <MoodHistoryCard key={session.id} session={session} index={idx} />
+                  ))
+                )}
+              </View>
             </ScrollView>
           </KeyboardAvoidingView>
         </LinearGradient>
@@ -858,6 +1007,88 @@ const styles = StyleSheet.create({
   },
   quickLabelActive: {
     color: Colors.accentPrimary,
+  },
+
+  // ─── Section başlıkları (Genre & Curated paylaşımlı) ──────────────────────
+
+  sectionTitle: {
+    fontSize: 20,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: Colors.textWhite,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    color: Colors.textGrey,
+    marginBottom: 14,
+  },
+
+  // ─── Genre bölümü ──────────────────────────────────────────────────────────
+
+  genreSection: {
+    marginTop: 28,
+    paddingLeft: 20,
+  },
+  genreScroll: {
+    paddingRight: 20,
+    gap: 10,
+  },
+  genreCard: {
+    width: 90,
+    height: 90,
+    backgroundColor: Colors.white05,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.white10,
+  },
+  genreEmoji: {
+    fontSize: 28,
+    marginBottom: 6,
+  },
+  genreLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // ─── Curated Collections bölümü ────────────────────────────────────────────
+
+  curatedSection: {
+    marginTop: 28,
+    paddingHorizontal: 20,
+  },
+  curatedGrid: {
+    gap: 10,
+  },
+  curatedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.white05,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: Colors.white10,
+    gap: 12,
+  },
+  curatedEmoji: {
+    fontSize: 32,
+  },
+  curatedTextWrap: {
+    flex: 1,
+  },
+  curatedLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: 2,
+  },
+  curatedDesc: {
+    fontSize: 12,
+    color: Colors.textGrey,
+    lineHeight: 16,
   },
 
   // ─── History bölümü ────────────────────────────────────────────────────────
