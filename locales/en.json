@@ -104,6 +104,7 @@
     "trailer": "Trailer",
     "filmNotFoundTitle": "Film Not Found",
     "filmNotFoundText": "This film is no longer available.",
+    "loadError": "Could not load film details. Check your connection and try again.",
     "shareMessage": "%{title} (%{year}) — Discovered on Chosy.ai"
   },
   "onboarding": {
@@ -182,6 +183,8 @@
     "noConnection": "No internet connection. Please try again.",
     "noMoviesFound": "No movies found. Try a different mood.",
     "watchlistSave": "Could not save to watchlist. Please try again.",
+    "watchlistRemove": "Could not remove film. Please try again.",
+    "watchlistClear": "Could not clear watchlist. Please try again.",
     "pullToRefresh": "Something went wrong. Pull to refresh.",
     "retry": "Retry"
   },

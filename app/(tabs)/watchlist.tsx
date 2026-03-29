@@ -246,10 +246,20 @@ export default function WatchlistScreen() {
   const handleRemove = useCallback(async (filmId: string) => {
     setMenuTarget(null);
     hapticWarning();
-    // Reanimated exiting prop, unmount öncesi exit animasyonu oynatır
+    // Optimistik: kaldır, hata olursa geri ekle
+    const snapshot = items;
     setItems((prev) => prev.filter((i) => i.film.id !== filmId));
-    await removeFromWatchlist(filmId);
-  }, []);
+    try {
+      await removeFromWatchlist(filmId);
+    } catch (err) {
+      if (__DEV__) {
+        console.error('[Watchlist] remove error:', err);
+      }
+      // Rollback — önceki listeyi geri yükle
+      setItems(snapshot);
+      Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
+    }
+  }, [items, t]);
 
   const handleClearAll = useCallback(() => {
     setMenuVisible(false);
@@ -262,8 +272,17 @@ export default function WatchlistScreen() {
           text: 'Clear',
           style: 'destructive',
           onPress: async () => {
+            const snapshot = items;
             setItems([]);
-            await clearWatchlist();
+            try {
+              await clearWatchlist();
+            } catch (err) {
+              if (__DEV__) {
+                console.error('[Watchlist] clear error:', err);
+              }
+              setItems(snapshot);
+              Alert.alert(t('errors.generic'), t('errors.watchlistClear'));
+            }
           },
         },
       ],

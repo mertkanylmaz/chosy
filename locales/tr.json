@@ -104,6 +104,7 @@
     "trailer": "Fragman",
     "filmNotFoundTitle": "Film Bulunamadı",
     "filmNotFoundText": "Bu film artık mevcut değil.",
+    "loadError": "Film detayları yüklenemedi. Bağlantını kontrol edip tekrar dene.",
     "shareMessage": "%{title} (%{year}) — Chosy.ai'da keşfettim"
   },
   "onboarding": {
@@ -182,6 +183,8 @@
     "noConnection": "İnternet bağlantısı yok. Lütfen tekrar dene.",
     "noMoviesFound": "Film bulunamadı. Farklı bir mood dene.",
     "watchlistSave": "İzleme listesine eklenemedi. Lütfen tekrar dene.",
+    "watchlistRemove": "Film kaldırılamadı. Lütfen tekrar dene.",
+    "watchlistClear": "İzleme listesi temizlenemedi. Lütfen tekrar dene.",
     "pullToRefresh": "Bir şeyler ters gitti. Yenilemek için çek.",
     "retry": "Tekrar Dene"
   },

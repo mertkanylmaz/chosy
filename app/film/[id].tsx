@@ -11,8 +11,9 @@
  *   - Cast horizontal scroll
  *   - Sabit footer: Trailer + Add to Watchlist
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Dimensions,
   Linking,
   ScrollView,
@@ -133,13 +134,15 @@ export default function FilmDetailScreen() {
 
   const [film, setFilm] = useState<Film | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [watchlistAdded, setWatchlistAdded] = useState(false);
+  const [watchlistError, setWatchlistError] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
 
   // ── Film verisi yukle ───────────────────────────────────────────────────────
 
-  useEffect(() => {
+  const loadFilm = useCallback(async () => {
     if (!id || id === 'undefined' || !UUID_REGEX.test(id)) {
       if (__DEV__ && id) {
         // eslint-disable-next-line no-console
@@ -149,7 +152,10 @@ export default function FilmDetailScreen() {
       return;
     }
 
-    (async () => {
+    setLoading(true);
+    setLoadError(false);
+
+    try {
       const { data, error } = await supabase
         .from('films')
         .select(
@@ -158,12 +164,20 @@ export default function FilmDetailScreen() {
         .eq('id', id)
         .single();
 
-      if (__DEV__ && error) {
-        // eslint-disable-next-line no-console
-        console.log('[FilmDetail] fetch error:', error.message);
+      if (error) {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[FilmDetail] fetch error:', error.message);
+        }
+        // PGRST116 = row not found — gercek "not found", hata degil
+        if (error.code !== 'PGRST116') {
+          setLoadError(true);
+        }
+        setLoading(false);
+        return;
       }
 
-      if (!error && data) {
+      if (data) {
         const row = data as FilmDbRow;
         const cast = (row.cast_json ?? []).map((a) => ({
           name: a.name,
@@ -187,10 +201,19 @@ export default function FilmDetailScreen() {
           cast: cast.length > 0 ? cast : undefined,
         });
       }
-
+    } catch (err) {
+      if (__DEV__) {
+        console.error('[FilmDetail] unexpected error:', err);
+      }
+      setLoadError(true);
+    } finally {
       setLoading(false);
-    })();
+    }
   }, [id]);
+
+  useEffect(() => {
+    loadFilm();
+  }, [loadFilm]);
 
   // ── "Why this film?" aciklama yukle ─────────────────────────────────────────
 
@@ -231,8 +254,20 @@ export default function FilmDetailScreen() {
   const handleAddToWatchlist = async () => {
     if (!film || watchlistAdded) return;
     hapticMedium();
-    await addToWatchlist(film);
-    setWatchlistAdded(true);
+    setWatchlistError(false);
+    try {
+      await addToWatchlist(film);
+      setWatchlistAdded(true);
+    } catch (err) {
+      if (__DEV__) {
+        console.error('[FilmDetail] watchlist add error:', err);
+      }
+      setWatchlistError(true);
+      Alert.alert(
+        t('errors.generic'),
+        t('errors.watchlistSave'),
+      );
+    }
   };
 
   const handleShare = () => {
@@ -261,6 +296,27 @@ export default function FilmDetailScreen() {
             <SkeletonLoader width="90%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
             <SkeletonLoader width="80%" height={14} borderRadius={6} style={{ marginTop: 8 }} />
           </View>
+        </View>
+      </>
+    );
+  }
+
+  // ── Hata durumu — network/server ────────────────────────────────────────────
+
+  if (loadError) {
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <View style={styles.notFoundContainer}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={20} color={Colors.textWhite} />
+          </TouchableOpacity>
+          <Ionicons name="cloud-offline-outline" size={48} color={Colors.textGrey} style={{ marginBottom: 16 }} />
+          <Text style={styles.notFoundTitle}>{t('errors.generic')}</Text>
+          <Text style={styles.notFoundText}>{t('filmDetail.loadError')}</Text>
+          <TouchableOpacity onPress={loadFilm} style={styles.retryButton} activeOpacity={0.8}>
+            <Text style={styles.retryButtonText}>{t('errors.retry')}</Text>
+          </TouchableOpacity>
         </View>
       </>
     );
@@ -556,6 +612,18 @@ const styles = StyleSheet.create({
   notFoundText: {
     color: Colors.textSecondary,
     fontSize: 15,
+  },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: Colors.gold,
+    borderRadius: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+  },
+  retryButtonText: {
+    color: Colors.background,
+    fontSize: 15,
+    fontWeight: '700',
   },
 
   // ScrollView

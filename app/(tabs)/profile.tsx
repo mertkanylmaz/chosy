@@ -44,6 +44,7 @@ import SwipeIntelligence from '@/components/Profile/SwipeIntelligence';
 import MoodTimeline from '@/components/Profile/MoodTimeline';
 import WatchlistPreview from '@/components/Profile/WatchlistPreview';
 import WatchHistory from '@/components/Profile/WatchHistory';
+import ErrorState from '@/components/ErrorState';
 import StreakCard from '@/components/Profile/StreakCard';
 import type { StreakCardProps } from '@/components/Profile/StreakCard';
 import {
@@ -225,6 +226,7 @@ export default function ProfileScreen() {
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [userIdHash, setUserIdHash] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [avatarEmoji, setAvatarEmoji] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -254,6 +256,7 @@ export default function ProfileScreen() {
   // ─── Veri yükleme ─────────────────────────────────────────────────────────
 
   const loadAll = useCallback(async () => {
+    setLoadError(false);
     try {
       const { data: authData } = await import('@/services/supabase').then((m) =>
         m.supabase.auth.getUser(),
@@ -322,6 +325,7 @@ export default function ProfileScreen() {
       if (__DEV__) {
         console.error('[ProfileScreen] veri yükleme hatası:', err);
       }
+      setLoadError(true);
     }
   }, []);
 
@@ -380,6 +384,25 @@ export default function ProfileScreen() {
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
+
+  if (loadError && !loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <StatusBar style="light" backgroundColor={Colors.background} />
+        <ErrorState
+          errorType="server"
+          title={t('errors.generic')}
+          message={t('errors.pullToRefresh')}
+          onRetry={async () => {
+            setLoading(true);
+            setLoadError(false);
+            await Promise.all([loadAll(), loadAvatar()]);
+            setLoading(false);
+          }}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
