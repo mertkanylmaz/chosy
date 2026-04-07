@@ -1,17 +1,20 @@
 /**
  * Profil ekranı — kullanıcının sinema kimliği.
  *
- * Bölüm sırası:
- *  1. Profile Header (avatar seçimi + isim + #id + son mood)
- *  2. Taste DNA (son profil özeti)
- *  3. Tonight's Pick (kişiselleştirilmiş öneri)
- *  4. Discovery Stats (genel istatistikler)
- *  5. Swipe Intelligence (davranış insight'ları)
- *  6. Mood Timeline (geçmiş mood oturumları)
- *  7. Watchlist Preview (son kaydedilenler)
- *  8. Settings (dil, watchlist temizle)
+ * P3.4 Stable Revision (2026-04-06):
+ *   Crash-prone ve P5'te kaldirilacak section'lar temizlendi.
+ *   Crash nedeni: GenreDonutChart (react-native-svg native crash) +
+ *   var olmayan RPCs (tonight_pick, get_user_stats, get_mood_timeline).
  *
- * Tasarım referansı: design-reference/05-profile.png
+ * Aktif section'lar:
+ *  1. Profile Header (avatar + isim + #id + son mood)
+ *  2. Taste DNA (son profil ozeti)
+ *  3. Daily Streak
+ *  4. Discovery Stats
+ *  5. Watchlist Preview
+ *  6. Settings (dil, watchlist temizle)
+ *
+ * Tasarim referansi: design-reference/05-profile.png
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -31,19 +34,16 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { supabase } from '@/services/supabase';
+import { logger } from '@/utils/logger';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
-import TonightPickCard from '@/components/Profile/TonightPick';
 import DiscoveryStats from '@/components/Profile/DiscoveryStats';
-import AIControls from '@/components/Profile/AIControls';
-import SwipeIntelligence from '@/components/Profile/SwipeIntelligence';
-import MoodTimeline from '@/components/Profile/MoodTimeline';
 import WatchlistPreview from '@/components/Profile/WatchlistPreview';
-import WatchHistory from '@/components/Profile/WatchHistory';
 import ErrorState from '@/components/ErrorState';
 import StreakCard from '@/components/Profile/StreakCard';
 import type { StreakCardProps } from '@/components/Profile/StreakCard';
@@ -51,22 +51,24 @@ import {
   getLastParsedProfile,
   getMoodHistory,
   getSwipeInsights,
-  getTonightPick,
   getUserStats,
 } from '@/services/profileService';
+import { computeArchetype } from '@/services/archetypeEngine';
+import { getDailyMatch } from '@/services/dailyMatch';
+import PersonaBadge from '@/components/Profile/PersonaBadge';
+import DailyMatchCard from '@/components/Profile/DailyMatchCard';
 import { getWatchlist } from '@/services/watchlist';
 import {
   getStreakInfo,
   getAllMilestones,
   getUserMilestones,
 } from '@/services/gamification';
-import type { StreakInfo, Milestone } from '@/services/gamification';
-import { getUserStats as getHistoryStats } from '@/services/history';
-import type { UserStats as HistoryUserStats } from '@/services/history';
+import type { StreakInfo } from '@/services/gamification';
 
-import type { MoodHistoryItem, SwipeInsight, TonightPick, UserStats } from '@/types/profile';
+import type { MoodHistoryItem, SwipeInsight, UserStats } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
 import type { WatchlistItem } from '@/services/watchlist';
+import type { Film } from '@/types/film';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -77,7 +79,7 @@ const LANGUAGES: { code: Locale; label: string }[] = [
   { code: 'tr', label: 'TR' },
 ];
 
-/** AsyncStorage anahtarı */
+/** AsyncStorage anahtari */
 const AVATAR_STORAGE_KEY = 'chosy_user_avatar';
 
 /** 12 preset emoji avatar */
@@ -86,7 +88,7 @@ const AVATAR_OPTIONS = ['🎬', '🎭', '🎪', '🌙', '🎵', '🎨', '🔮', 
 // ─── Section Heading ──────────────────────────────────────────────────────────
 
 /**
- * Sol altın accent çizgili bölüm başlığı.
+ * Sol altin accent cizgili bolum basligi.
  */
 function SectionHeading({ title }: { title: string }) {
   return (
@@ -100,7 +102,7 @@ function SectionHeading({ title }: { title: string }) {
 // ─── Section Card Wrapper ─────────────────────────────────────────────────────
 
 /**
- * Bölüm başlığı + içerik kart sarmalayıcı — Settings için kullanılır.
+ * Bolum basligi + icerik kart sarmalayici — Settings icin kullanilir.
  */
 function SectionCard({
   title,
@@ -125,18 +127,18 @@ function SectionCard({
 // ─── Avatar Modal ─────────────────────────────────────────────────────────────
 
 interface AvatarModalProps {
-  /** Modal görünür mü */
+  /** Modal gorunur mu */
   visible: boolean;
-  /** Mevcut seçili avatar */
+  /** Mevcut secili avatar */
   current: string | null;
   /** Kapatma callback */
   onClose: () => void;
-  /** Seçim callback */
+  /** Secim callback */
   onSelect: (emoji: string) => void;
 }
 
 /**
- * Avatar seçim modalı — 12 emoji preset, 3x4 grid, altın border seçim göstergesi.
+ * Avatar secim modali — 12 emoji preset, 3x4 grid, altin border secim gostergesi.
  */
 function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) {
   const { t } = useLanguage();
@@ -209,7 +211,9 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
 // ─── Ana Ekran ────────────────────────────────────────────────────────────────
 
 /**
- * Profil ekranı.
+ * Profil ekrani — P3.4 stable revision.
+ * Kaldirilan: TonightPick, SwipeIntelligence, MoodTimeline, WatchHistory,
+ *             GenreDonutChart, MoodPatternChart (crash-prone + P5'te kaldirilacak).
  */
 export default function ProfileScreen() {
   const { t, language, setLanguage } = useLanguage();
@@ -219,7 +223,6 @@ export default function ProfileScreen() {
 
   const [stats, setStats] = useState<UserStats | null>(null);
   const [moodHistory, setMoodHistory] = useState<MoodHistoryItem[]>([]);
-  const [tonightPick, setTonightPick] = useState<TonightPick | null>(null);
   const [swipeInsights, setSwipeInsights] = useState<SwipeInsight | null>(null);
   const [lastProfile, setLastProfile] = useState<TasteProfile | null>(null);
   const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
@@ -230,15 +233,14 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [avatarEmoji, setAvatarEmoji] = useState<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [archetypeId, setArchetypeId] = useState<number | null>(null);
+  const [dailyMatchFilm, setDailyMatchFilm] = useState<Film | null>(null);
 
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
   const [nextMilestone, setNextMilestone] = useState<StreakCardProps['nextMilestone']>(null);
 
-  // ── History stats state ────────────────────────────────────────────────────
-  const [historyStats, setHistoryStats] = useState<HistoryUserStats | null>(null);
-
-  // ─── Avatar yükleme ───────────────────────────────────────────────────────
+  // ─── Avatar yukleme ───────────────────────────────────────────────────────
 
   const loadAvatar = useCallback(async () => {
     try {
@@ -247,24 +249,19 @@ export default function ProfileScreen() {
         setAvatarEmoji(saved);
       }
     } catch (err) {
-      if (__DEV__) {
-        console.error('[ProfileScreen] avatar yükleme hatası:', err);
-      }
+      logger.error('[ProfileScreen] avatar yukleme hatasi:', err);
     }
   }, []);
 
-  // ─── Veri yükleme ─────────────────────────────────────────────────────────
+  // ─── Veri yukleme ─────────────────────────────────────────────────────────
 
   const loadAll = useCallback(async () => {
     setLoadError(false);
     try {
-      const { data: authData } = await import('@/services/supabase').then((m) =>
-        m.supabase.auth.getUser(),
-      );
+      const { data: authData } = await supabase.auth.getUser();
       const authUser = authData?.user;
       if (!authUser) return;
 
-      const { supabase } = await import('@/services/supabase');
       const { data: userRow } = await supabase
         .from('users')
         .select('id, display_name')
@@ -277,28 +274,42 @@ export default function ProfileScreen() {
       setDisplayName((userRow as { id: string; display_name: string | null }).display_name);
       setUserIdHash(authUser.id.slice(0, 8).toUpperCase());
 
-      const [statsData, historyData, pickData, insightsData, profileData, watchlistData, streakData, allMilestonesData, userMilestonesData, historyStatsData] =
-        await Promise.all([
-          getUserStats(userId),
-          getMoodHistory(userId),
-          getTonightPick(userId),
-          getSwipeInsights(userId),
-          getLastParsedProfile(userId),
-          getWatchlist(),
-          getStreakInfo(),
-          getAllMilestones(),
-          getUserMilestones(),
-          getHistoryStats(),
-        ]);
+      // 8 paralel cagri — sadece mevcut tablolar/view'ler
+      const [
+        statsData,
+        historyData,
+        insightsData,
+        profileData,
+        watchlistData,
+        streakData,
+        allMilestonesData,
+        userMilestonesData,
+      ] = await Promise.all([
+        getUserStats(userId),
+        getMoodHistory(userId),
+        getSwipeInsights(userId),
+        getLastParsedProfile(userId),
+        getWatchlist(),
+        getStreakInfo(),
+        getAllMilestones(),
+        getUserMilestones(),
+      ]);
 
       setStats(statsData);
       setMoodHistory(historyData);
-      setTonightPick(pickData);
       setSwipeInsights(insightsData);
       setLastProfile(profileData);
       setWatchlistItems(watchlistData);
       setStreakInfo(streakData);
-      setHistoryStats(historyStatsData);
+
+      // P5.2: TasteProfile'dan arketip hesapla
+      const computed = computeArchetype(profileData);
+      setArchetypeId(computed);
+
+      // P5.3: Günlük öneri — watchlist filmleri hariç tut
+      const seenIds = watchlistData.map((w) => w.film.id);
+      const dailyFilm = await getDailyMatch(userId, profileData, seenIds);
+      setDailyMatchFilm(dailyFilm);
 
       // Sonraki streak milestone'u hesapla
       if (streakData && allMilestonesData.length > 0) {
@@ -322,9 +333,7 @@ export default function ProfileScreen() {
         }
       }
     } catch (err) {
-      if (__DEV__) {
-        console.error('[ProfileScreen] veri yükleme hatası:', err);
-      }
+      logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);
     }
   }, []);
@@ -356,9 +365,7 @@ export default function ProfileScreen() {
       await AsyncStorage.setItem(AVATAR_STORAGE_KEY, emoji);
       setAvatarEmoji(emoji);
     } catch (err) {
-      if (__DEV__) {
-        console.error('[ProfileScreen] avatar kayıt hatası:', err);
-      }
+      logger.error('[ProfileScreen] avatar kayit hatasi:', err);
     }
   }
 
@@ -374,9 +381,7 @@ export default function ProfileScreen() {
           text: t('profile.clearWatchlistConfirm'),
           style: 'destructive',
           onPress: () => {
-            if (__DEV__) {
-              console.log('[Profile] Watchlist cleared');
-            }
+            logger.log('[Profile] Watchlist cleared');
           },
         },
       ],
@@ -429,7 +434,7 @@ export default function ProfileScreen() {
             colors={[Colors.profileHeaderStart, Colors.profileHeaderEnd]}
             locations={[0, 1]}
             style={styles.headerSection}>
-            {/* Avatar daire — altın gradient border simülasyonu */}
+            {/* Avatar daire — altin gradient border simulasyonu */}
             <TouchableOpacity
               style={styles.avatarCircle}
               onPress={() => { hapticLight(); setShowAvatarModal(true); }}
@@ -456,7 +461,10 @@ export default function ProfileScreen() {
               <Text style={styles.userIdHash}>#{userIdHash}</Text>
             )}
 
-            {moodHistory[0]?.mood_text && (
+            {/* P5.2: Arketip rozeti */}
+            <PersonaBadge archetypeId={archetypeId} />
+
+            {moodHistory[0]?.mood_text != null && (
               <Text style={styles.lastMood} numberOfLines={1}>
                 {t('profile.lastMoodPrefix')}{moodHistory[0].mood_text}
               </Text>
@@ -464,9 +472,17 @@ export default function ProfileScreen() {
           </LinearGradient>
           </Animated.View>
 
-          {/* ── Bölümler ─────────────────────────────────────────────── */}
+          {/* ── Bolumler ─────────────────────────────────────────────── */}
           <Animated.View style={sectionsAnimStyle}>
           <View style={styles.sections}>
+
+            {/* 0. Daily Match — P5.3 */}
+            <SectionHeading title={t('dailyMatch.sectionTitle')} />
+            <DailyMatchCard
+              film={dailyMatchFilm}
+              loading={loading}
+              archetypeId={archetypeId}
+            />
 
             {/* 1. Daily Streak */}
             <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
@@ -482,13 +498,10 @@ export default function ProfileScreen() {
               profile={lastProfile}
               insights={swipeInsights}
               loading={loading}
+              archetypeId={archetypeId}
             />
 
-            {/* 3. Tonight's Pick */}
-            <SectionHeading title={t('profile.tonightsPick')} />
-            <TonightPickCard pick={tonightPick} loading={loading} />
-
-            {/* 4. Discovery Stats */}
+            {/* 3. Discovery Stats */}
             <SectionHeading title={t('profile.discoveryStats')} />
             <DiscoveryStats
               stats={stats}
@@ -496,29 +509,13 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* 5. AI Controls */}
-            <SectionHeading title={t('profile.aiPreferences')} />
-            <AIControls />
-
-            {/* 6. Swipe Intelligence */}
-            <SectionHeading title={t('profile.swipeIntelligence')} />
-            <SwipeIntelligence insights={swipeInsights} loading={loading} />
-
-            {/* 7. Mood Timeline */}
-            <SectionHeading title={t('profile.moodTimelineSection')} />
-            <MoodTimeline history={moodHistory} loading={loading} />
-
-            {/* 8. Watch History */}
-            <SectionHeading title={t('profile.watchHistory') ?? 'Watch History'} />
-            <WatchHistory historyStats={historyStats} loading={loading} />
-
-            {/* 9. Watchlist Preview */}
+            {/* 4. Watchlist Preview */}
             <SectionHeading title={t('profile.recentlySaved')} />
             <WatchlistPreview items={watchlistItems} loading={loading} />
 
-            {/* 10. Settings */}
+            {/* 5. Settings */}
             <SectionCard title={t('profile.settingsSection')} icon="settings-outline">
-              {/* Dil seçimi */}
+              {/* Dil secimi */}
               <View style={styles.settingsRow}>
                 <View style={styles.settingsRowLeft}>
                   <Ionicons name="language-outline" size={16} color={Colors.textGrey} />
@@ -680,7 +677,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // ── Section card (Settings için) ──
+  // ── Section card (Settings icin) ──
   sectionCard: {
     backgroundColor: Colors.cardSolid,
     borderRadius: Radius.card,
@@ -844,5 +841,3 @@ const styles = StyleSheet.create({
     height: 100,
   },
 });
-
-declare const __DEV__: boolean;

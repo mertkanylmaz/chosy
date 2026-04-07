@@ -18,6 +18,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/services/supabase';
+import { configureGoogleSignIn } from '@/services/authService';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 
@@ -56,6 +57,11 @@ export default function RootLayout() {
     if (fontError) throw fontError;
   }, [fontError]);
 
+  // Google Sign-In SDK konfigürasyonu (env'den client ID okunur)
+  useEffect(() => {
+    configureGoogleSignIn();
+  }, []);
+
   // Anonim oturum — oturum yoksa signInAnonymously() ile aç
   // Auth state listener ile oturum expire olduğunda otomatik recovery
   useEffect(() => {
@@ -71,17 +77,33 @@ export default function RootLayout() {
       }
     });
 
-    // Auth state değişiklik dinleyicisi — oturum expire olursa yeniden oluştur
+    // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event) => {
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          // Token refresh başarısız olursa yeniden anonim oturum aç
+        if (event === 'TOKEN_REFRESHED') {
+          // Token yenilemesi başarısız olursa yeniden anonim oturum aç
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
               supabase.auth.signInAnonymously().catch(() => {
                 if (__DEV__) {
                   // eslint-disable-next-line no-console
                   console.error('[auth] Session recovery başarısız');
+                }
+              });
+            }
+          });
+        }
+
+        // SIGNED_OUT: yalnızca oturum tamamen yoksa anonim oluştur.
+        // Sosyal auth geçişi sırasında (Apple/Google linkIdentity)
+        // auth.tsx'teki kullanıcı akışı kendi oturumunu yönetir.
+        if (event === 'SIGNED_OUT') {
+          supabase.auth.getSession().then(({ data: { session } }) => {
+            if (!session) {
+              supabase.auth.signInAnonymously().catch(() => {
+                if (__DEV__) {
+                  // eslint-disable-next-line no-console
+                  console.error('[auth] signInAnonymously (SIGNED_OUT recovery) başarısız');
                 }
               });
             }
@@ -126,6 +148,8 @@ function RootLayoutNav() {
               <Stack.Screen name="gate" />
               <Stack.Screen name="entry" />
               <Stack.Screen name="onboarding" />
+              <Stack.Screen name="auth" />
+              <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="splash" />
               <Stack.Screen

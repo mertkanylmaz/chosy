@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 
@@ -12,6 +13,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     padding: Theme.spacing.md,
+    gap: 12,
   },
 
   // ── Header ──
@@ -19,7 +21,6 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -36,6 +37,28 @@ export const styles = StyleSheet.create({
     color: Colors.gold,
     fontSize: 12,
     fontWeight: '600',
+  },
+
+  // ── Progress bar ──
+  progressContainer: {
+    gap: 6,
+  },
+  progressLabel: {
+    color: Colors.textGrey,
+    fontSize: 11,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  progressTrack: {
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.bgElevated,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+    backgroundColor: Colors.accentPrimary,
   },
 
   // ── Horizontal scroll ──
@@ -61,6 +84,9 @@ export const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 6,
   },
+  posterWatched: {
+    opacity: 0.45,
+  },
   posterPlaceholder: {
     width: POSTER_W,
     height: POSTER_H,
@@ -76,6 +102,22 @@ export const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
     lineHeight: 14,
+  },
+
+  // ── İzlendi toggle (poster üst sağ) ──
+  watchedToggle: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watchedToggleActive: {
+    backgroundColor: 'rgba(139,92,246,0.25)',
   },
 
   // ── Boş durum ──

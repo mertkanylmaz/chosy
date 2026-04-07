@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // ── 2×2 grid ──
+  // ── 2×2 stat grid ──
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -58,41 +58,83 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Badge bölümü ──
-  badgesSection: {
+  // ── Top Genre pills ──
+  insightsSection: {
     gap: 8,
   },
-  badgesCount: {
+  insightsLabel: {
     color: Colors.textGrey,
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.2,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
-  badgesScrollContent: {
+  genreRow: {
+    flexDirection: 'row',
     gap: 8,
-    paddingVertical: 2,
   },
-  badgePill: {
+  genrePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: Theme.borderRadius.pill,
+    backgroundColor: Colors.accentDim,
+    borderWidth: 1,
+    borderColor: Colors.accentPrimary + '30',
   },
-  earnedBadge: {
-    backgroundColor: Colors.gold,
-  },
-  unearnedBadge: {
-    backgroundColor: Colors.white05,
-    opacity: 0.4,
-  },
-  badgePillText: {
-    fontSize: 12,
+  genrePillText: {
+    color: Colors.textWhite,
+    fontSize: 13,
     fontWeight: '600',
   },
-  earnedBadgeText: {
-    color: Colors.background,
+  genrePct: {
+    color: Colors.accentPrimary,
+    fontSize: 12,
+    fontWeight: '700',
   },
-  unearnedBadgeText: {
+
+  // ── Top Director row ──
+  directorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.white05,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.white10,
+  },
+  directorInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  directorLabel: {
     color: Colors.textGrey,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  directorName: {
+    color: Colors.textWhite,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  directorBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: Theme.borderRadius.pill,
+    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.gold + '40',
+  },
+  directorBadgeText: {
+    color: Colors.gold,
+    fontSize: 13,
+    fontWeight: '700',
   },
 
   // ── Boş durum ──

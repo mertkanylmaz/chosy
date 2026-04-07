@@ -322,6 +322,25 @@ const KEYWORD_MAP: Record<string, KeywordEffect> = {
   stressed: { anger: 0.5, fear: 0.5, energy_level: 0.7 },
   confused: { surprise: 0.6, fear: 0.4 },
   grateful: { joy: 0.7, trust: 0.85 },
+  // Quality / Prestige / Awards — "award-winning", "critically acclaimed" vb.
+  'award-winning': { thematic_depth: 0.85, trust: 0.7 },
+  award: { thematic_depth: 0.8, trust: 0.7 },
+  acclaimed: { thematic_depth: 0.85, trust: 0.7 },
+  critically: { thematic_depth: 0.8 },
+  cinema: { visual_style: 'cinematic', thematic_depth: 0.7 },
+  masterful: { thematic_depth: 0.85 },
+  masterfully: { thematic_depth: 0.85 },
+  crafted: { thematic_depth: 0.75 },
+  brilliant: { thematic_depth: 0.85, surprise: 0.6 },
+  intelligent: { thematic_depth: 0.85 },
+  powerful: { thematic_depth: 0.8, energy_level: 0.7 },
+  profound: { thematic_depth: 0.95, sadness: 0.4 },
+  thought: { thematic_depth: 0.8 }, // "thought-provoking" ayrılırsa
+  provoking: { thematic_depth: 0.8 },
+  nuanced: { thematic_depth: 0.85, trust: 0.6 },
+  layered: { thematic_depth: 0.85 },
+  sophisticated: { thematic_depth: 0.8, trust: 0.65 },
+  genre: { thematic_depth: 0.5 }, // genre-defining vb.
   // Türkçe keywords
   mutlu: { joy: 0.85, energy_level: 0.7 },
   hüzünlü: { sadness: 0.85, energy_level: 0.25 },
@@ -357,7 +376,8 @@ const KM_DIM_TO_SCORE: Record<string, ScoreKey> = {
  */
 function applyKeywordMap(text: string, acc: ScoreAcc, profile: TasteProfile): void {
   // Boşluk ve noktalama ile böl, heyfen koru (mind-bending, fast-paced vb.)
-  const words = text.split(/[\s.,!?;:'"()\[\]/\\]+/).filter(Boolean);
+  // Em dash (—) ve en dash (–) de ayraç olarak eklendi
+  const words = text.split(/[\s.,!?;:'"()\[\]/\\—–]+/).filter(Boolean);
 
   if (__DEV__) {
     // eslint-disable-next-line no-console

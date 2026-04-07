@@ -1,11 +1,17 @@
 /**
- * TasteDNA — Kullanıcının film zevk profili özet kartı.
+ * TasteDNA — Kullanicinin film zevk profili ozet karti.
  *
- * Özellikler:
- * - Duygu barları: react-native-reanimated ile 0→hedef genişlik animasyonu (staggered)
+ * P5.2 Revamp:
+ *   - Arketip banner eklendi (FilledContent ust kismi)
+ *   - Hardcoded strings → t() ile i18n
+ *   - Pace/energy label'lari cevrildi
+ *
+ * Ozellikler:
+ * - Arketip banner: hesaplanan sinefil tipi + aciklama
+ * - Duygu barlari: react-native-reanimated ile 0→hedef genislik animasyonu (staggered)
  * - Genre chip'leri: fade-in animasyonlu
- * - Enerji barı: aynı animasyonla açılır
- * - Başlık: "Your Taste DNA" — Playfair Display, altın, 🧬 emoji
+ * - Enerji bari: ayni animasyonla acilir
+ * - Baslik: "Taste DNA" — Playfair Display, altin, emoji
  */
 import React, { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
@@ -19,7 +25,9 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import { getArchetype } from '@/constants/archetypes';
 import type { SwipeInsight } from '@/types/profile';
 import type { EmotionalState, TasteProfile } from '@/types/index';
 
@@ -27,7 +35,7 @@ import { styles } from './styles';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
-/** Her duygu için özel renk */
+/** Her duygu icin ozel renk */
 const EMOTION_COLORS: Record<keyof EmotionalState, string> = {
   joy: '#4ADE80',
   sadness: '#60A5FA',
@@ -39,7 +47,7 @@ const EMOTION_COLORS: Record<keyof EmotionalState, string> = {
   disgust: '#6B7280',
 };
 
-/** Her duygu için emoji */
+/** Her duygu icin emoji */
 const EMOTION_EMOJI: Record<keyof EmotionalState, string> = {
   joy: '😄',
   sadness: '😢',
@@ -51,55 +59,60 @@ const EMOTION_EMOJI: Record<keyof EmotionalState, string> = {
   disgust: '😒',
 };
 
-/** Hız tercihi için ikon ve etiket */
-const PACE_OPTIONS: { key: 'slow' | 'medium' | 'fast'; icon: string; label: string }[] = [
-  { key: 'slow', icon: 'leaf-outline', label: 'Slow' },
-  { key: 'medium', icon: 'car-outline', label: 'Medium' },
-  { key: 'fast', icon: 'flash-outline', label: 'Fast' },
+/** Hiz tercihi icin ikon */
+const PACE_OPTIONS: { key: 'slow' | 'medium' | 'fast'; icon: string }[] = [
+  { key: 'slow', icon: 'leaf-outline' },
+  { key: 'medium', icon: 'car-outline' },
+  { key: 'fast', icon: 'flash-outline' },
 ];
 
-/** Bar animasyon süresi (ms) */
+/** Bar animasyon suresi (ms) */
 const BAR_DURATION = 800;
 
-/** Barlar arası gecikme (ms) */
+/** Barlar arasi gecikme (ms) */
 const BAR_STAGGER = 100;
 
-// ─── Yardımcı fonksiyonlar ────────────────────────────────────────────────────
+// ─── Yardimci Fonksiyonlar ────────────────────────────────────────────────────
 
 /**
- * TasteProfile'dan okunabilir AI özeti oluşturur.
+ * TasteProfile'dan okunabilir AI ozeti olusturur.
  */
-function buildSummary(profile: TasteProfile): string {
-  const emotionLabels: Record<string, string> = {
-    joy: 'joyful',
-    sadness: 'melancholic',
-    fear: 'tense',
-    anger: 'intense',
-    surprise: 'surprising',
-    disgust: 'edgy',
-    anticipation: 'suspenseful',
-    trust: 'warm',
+function buildSummary(profile: TasteProfile, t: (key: string) => string): string {
+  const emotionKeys: Record<string, string> = {
+    joy: 'tasteDNA.emoJoy',
+    sadness: 'tasteDNA.emoSadness',
+    fear: 'tasteDNA.emoFear',
+    anger: 'tasteDNA.emoAnger',
+    surprise: 'tasteDNA.emoSurprise',
+    disgust: 'tasteDNA.emoDisgust',
+    anticipation: 'tasteDNA.emoAnticipation',
+    trust: 'tasteDNA.emoTrust',
   };
 
   const topEmotion =
     (Object.entries(profile.emotional_state) as [string, number][])
-      .sort(([, a], [, b]) => b - a)[0]?.[0] ?? 'reflective';
+      .sort(([, a], [, b]) => b - a)[0]?.[0] ?? 'trust';
 
-  const depthLabel =
+  const depthKey =
     profile.thematic_depth > 0.6
-      ? 'philosophical depth'
+      ? 'tasteDNA.depthPhilosophical'
       : profile.thematic_depth > 0.3
-        ? 'moderate depth'
-        : 'light entertainment';
+        ? 'tasteDNA.depthModerate'
+        : 'tasteDNA.depthLight';
 
-  const pace = profile.pace_preference;
-  const emotionWord = emotionLabels[topEmotion] ?? topEmotion;
+  const paceKey =
+    profile.pace_preference === 'slow' ? 'tasteDNA.paceSlow' :
+    profile.pace_preference === 'fast' ? 'tasteDNA.paceFast' :
+    'tasteDNA.paceMedium';
 
-  return `You prefer ${pace}, ${emotionWord} films with ${depthLabel}.`;
+  return t('tasteDNA.summary')
+    .replace('%{pace}', t(paceKey))
+    .replace('%{emotion}', t(emotionKeys[topEmotion] ?? 'tasteDNA.emoTrust'))
+    .replace('%{depth}', t(depthKey));
 }
 
 /**
- * EmotionalState'den nötr (≈0.5) olmayan duyguları sıralayarak döndürür.
+ * EmotionalState'den notrol (0.5) olmayan duygulari siralanmis dondurur.
  */
 function getTopEmotions(
   state: EmotionalState,
@@ -115,30 +128,26 @@ function getTopEmotions(
 interface Props {
   /** Son oturumun 12 boyutlu profili */
   profile: TasteProfile | null;
-  /** Swipe geçmişinden hesaplanan genre dağılımı */
+  /** Swipe gecmisinden hesaplanan genre dagilimi */
   insights: SwipeInsight | null;
-  /** Veri yükleniyor mu */
+  /** Veri yukleneniyor mu */
   loading: boolean;
+  /** Hesaplanan arketip ID'si (1-12) — null ise gosterilmez */
+  archetypeId?: number | null;
 }
 
-// ─── Alt Bileşenler ───────────────────────────────────────────────────────────
+// ─── Alt Bilesenkler ─────────────────────────────────────────────────────────
 
 interface AnimatedBarProps {
-  /** Sol taraftaki emoji */
   emoji: string;
-  /** Duygu adı */
   label: string;
-  /** 0-1 arası değer */
   value: number;
-  /** Bar dolgu rengi */
   color: string;
-  /** Başlangıç gecikmesi (ms) */
   delay: number;
 }
 
 /**
- * Soldan sağa reanimated animasyonlu duygu barı.
- * onLayout ile container genişliğini ölçer, piksel bazlı genişlik animasyonu yapar.
+ * Soldan saga reanimated animasyonlu duygu bari.
  */
 function AnimatedBar({ emoji, label, value, color, delay }: AnimatedBarProps) {
   const [trackWidth, setTrackWidth] = useState(0);
@@ -197,7 +206,7 @@ function AnimatedGenreChip({ genre, delay }: { genre: string; delay: number }) {
 }
 
 /**
- * Enerji barı — aynı withTiming animasyonu.
+ * Enerji bari — withTiming animasyonu.
  */
 function AnimatedEnergyBar({ value }: { value: number }) {
   const [trackWidth, setTrackWidth] = useState(0);
@@ -225,10 +234,40 @@ function AnimatedEnergyBar({ value }: { value: number }) {
   );
 }
 
-// ─── Yükleniyor iskelet ───────────────────────────────────────────────────────
+// ─── Arketip Banner ─────────────────────────────────────────────────────────
+
+interface ArchetypeBannerProps {
+  archetypeId: number;
+}
 
 /**
- * Veri yüklenirken gösterilen iskelet içerik.
+ * TasteDNA karti ici arketip banner'i.
+ * Kullanicinin arketipini renkli arka plan + ikon + isim + aciklama ile gosterir.
+ */
+function ArchetypeBanner({ archetypeId }: ArchetypeBannerProps) {
+  const { t } = useLanguage();
+  const archetype = getArchetype(archetypeId);
+  if (!archetype) return null;
+
+  return (
+    <View style={[styles.archetypeBanner, { borderLeftColor: archetype.colorPrimary, backgroundColor: archetype.colorDim }]}>
+      <View style={styles.archetypeRow}>
+        <Text style={styles.archetypeIcon}>{archetype.icon}</Text>
+        <View style={styles.archetypeTextBlock}>
+          <Text style={[styles.archetypeName, { color: archetype.colorPrimary }]}>
+            {t(archetype.nameKey)}
+          </Text>
+          <Text style={styles.archetypeDesc}>{t(archetype.descKey)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Yukleniyor iskelet ───────────────────────────────────────────────────────
+
+/**
+ * Veri yuklenirken gosterilen iskelet icerik.
  */
 function SkeletonContent() {
   return (
@@ -242,34 +281,42 @@ function SkeletonContent() {
   );
 }
 
-// ─── Dolu içerik ─────────────────────────────────────────────────────────────
+// ─── Dolu icerik ─────────────────────────────────────────────────────────────
 
 /**
- * Profil verisi mevcutken gösterilen dolu içerik.
+ * Profil verisi mevcutken gosterilen dolu icerik.
  */
 function FilledContent({
   profile,
   insights,
+  archetypeId,
 }: {
   profile: TasteProfile;
   insights: SwipeInsight | null;
+  archetypeId: number | null | undefined;
 }) {
+  const { t } = useLanguage();
   const topEmotions = getTopEmotions(profile.emotional_state);
   const topGenres = insights?.saved_genre_distribution.slice(0, 5) ?? [];
-  const summary = buildSummary(profile);
+  const summary = buildSummary(profile, t);
 
   return (
     <>
-      {/* Duygu dağılımı */}
+      {/* Arketip banner — en uste */}
+      {archetypeId != null && (
+        <ArchetypeBanner archetypeId={archetypeId} />
+      )}
+
+      {/* Duygu dagilimi */}
       {topEmotions.length > 0 && (
         <View>
-          <Text style={styles.sectionLabel}>Mood Distribution</Text>
+          <Text style={styles.sectionLabel}>{t('tasteDNA.moodDistribution')}</Text>
           <View style={styles.emotionsBlock}>
             {topEmotions.map(({ key, value }, index) => (
               <AnimatedBar
                 key={key}
                 emoji={EMOTION_EMOJI[key]}
-                label={key}
+                label={t(`tasteDNA.emotion_${key}`)}
                 value={value}
                 color={EMOTION_COLORS[key]}
                 delay={index * BAR_STAGGER}
@@ -279,10 +326,10 @@ function FilledContent({
         </View>
       )}
 
-      {/* Genre eğilimleri */}
+      {/* Genre egilimler */}
       {topGenres.length > 0 && (
         <View>
-          <Text style={styles.sectionLabel}>Genre Tendencies</Text>
+          <Text style={styles.sectionLabel}>{t('tasteDNA.genreTendencies')}</Text>
           <View style={styles.genresBlock}>
             {topGenres.map((item, index) => (
               <AnimatedGenreChip
@@ -297,19 +344,19 @@ function FilledContent({
 
       {/* Enerji tercihi */}
       <View style={styles.energyBlock}>
-        <Text style={styles.sectionLabel}>Energy Level</Text>
+        <Text style={styles.sectionLabel}>{t('tasteDNA.energyLevel')}</Text>
         <View style={styles.energyRow}>
-          <Text style={styles.energyLabel}>Calm</Text>
+          <Text style={styles.energyLabel}>{t('tasteDNA.calm')}</Text>
           <AnimatedEnergyBar value={profile.energy_level} />
-          <Text style={styles.energyLabelRight}>High</Text>
+          <Text style={styles.energyLabelRight}>{t('tasteDNA.high')}</Text>
         </View>
       </View>
 
-      {/* Hız tercihi */}
+      {/* Hiz tercihi */}
       <View>
-        <Text style={styles.sectionLabel}>Pace Preference</Text>
+        <Text style={styles.sectionLabel}>{t('tasteDNA.pacePreference')}</Text>
         <View style={styles.paceBlock}>
-          {PACE_OPTIONS.map(({ key, icon, label }) => {
+          {PACE_OPTIONS.map(({ key, icon }) => {
             const isActive = profile.pace_preference === key;
             return (
               <View
@@ -325,7 +372,7 @@ function FilledContent({
                     styles.paceOptionText,
                     isActive && styles.paceOptionTextActive,
                   ]}>
-                  {label}
+                  {t(`tasteDNA.pace_${key}`)}
                 </Text>
               </View>
             );
@@ -333,34 +380,36 @@ function FilledContent({
         </View>
       </View>
 
-      {/* AI özeti */}
+      {/* AI ozeti */}
       <Text style={styles.summary}>{summary}</Text>
     </>
   );
 }
 
-// ─── Ana Bileşen ──────────────────────────────────────────────────────────────
+// ─── Ana Bilesen ──────────────────────────────────────────────────────────────
 
 /**
- * Kullanıcının Taste DNA kartı.
- * Animasyonlu duygu barları, genre chip'leri, enerji/hız göstergesi ve AI özeti içerir.
+ * Kullanicinin Taste DNA karti.
+ * P5.2: arketip banner + i18n tum metinler.
  */
-export default function TasteDNA({ profile, insights, loading }: Props) {
+export default function TasteDNA({ profile, insights, loading, archetypeId }: Props) {
+  const { t } = useLanguage();
+
   return (
     <View style={styles.card}>
-      {/* Başlık */}
+      {/* Baslik */}
       <View style={styles.header}>
         <Text style={styles.headerDna}>🧬</Text>
-        <Text style={styles.headerTitle}>Your Taste DNA</Text>
+        <Text style={styles.headerTitle}>{t('profile.tasteDNA')}</Text>
       </View>
 
       {loading ? (
         <SkeletonContent />
       ) : profile ? (
-        <FilledContent profile={profile} insights={insights} />
+        <FilledContent profile={profile} insights={insights} archetypeId={archetypeId} />
       ) : (
         <Text style={styles.summary}>
-          Swipe more films to build your Taste DNA.
+          {t('tasteDNA.emptyHint')}
         </Text>
       )}
     </View>

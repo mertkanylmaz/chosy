@@ -35,6 +35,36 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
+  // ── Archetype Banner ──
+  archetypeBanner: {
+    borderRadius: Theme.borderRadius.md,
+    borderLeftWidth: 3,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  archetypeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  archetypeIcon: {
+    fontSize: 28,
+  },
+  archetypeTextBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  archetypeName: {
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  archetypeDesc: {
+    color: Colors.textGrey,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+
   // ── Section label ──
   sectionLabel: {
     color: Colors.textGrey,
