@@ -11,6 +11,23 @@
         "simulator": true,
         "image": "latest"
       },
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "APP_ENV": "development"
+      }
+    },
+    "development:device": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "image": "latest"
+      },
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "APP_ENV": "development"
       }
