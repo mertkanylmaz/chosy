@@ -22,6 +22,7 @@ import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  Image,
   RefreshControl,
   StyleSheet,
   Text,
@@ -137,6 +138,8 @@ export default function FeedScreen() {
   const swipeCountRef = useRef(0);
   const saveCountRef = useRef(0);
   const firstSurpriseSeenRef = useRef(false);
+  /** Performans: milestone kontrolü max 1 kez / 5 sn — her swipe'da DB'ye gitmesin */
+  const lastMilestoneCheckRef = useRef(0);
 
   /** Milestone mesajını 2 sn göster */
   const showMilestone = useCallback((msg: string) => {
@@ -299,14 +302,19 @@ export default function FeedScreen() {
       } else if (saveCountRef.current % 5 === 0) {
         showMilestone(t('discover.milestoneSaved', { count: saveCountRef.current }));
       }
-      // Backend milestone kontrolü (arka planda)
-      checkNewMilestones();
+      // Backend milestone kontrolü — throttled: max 1 kez / 5 sn
+      const now = Date.now();
+      if (now - lastMilestoneCheckRef.current > 5000) {
+        lastMilestoneCheckRef.current = now;
+        checkNewMilestones();
+      }
     },
     [onSwipeFilm, showMilestone, checkNewMilestones, t],
   );
 
   /**
    * Sola swipe: skip logla + film listeden çıkar.
+   * Milestone kontrolü burada yapılmaz — sadece sağa swipe'ta tetiklenir.
    */
   const handleSwipeLeft = useCallback(
     (film: Film) => {
@@ -317,10 +325,9 @@ export default function FeedScreen() {
       if (swipeCountRef.current % 10 === 0) {
         showMilestone(t('discover.milestoneExplored', { count: swipeCountRef.current }));
       }
-      // Backend milestone kontrolü (arka planda)
-      checkNewMilestones();
+      // Sola swipe'ta DB sorgusu YOK — performans için
     },
-    [onSwipeFilm, showMilestone, checkNewMilestones, t],
+    [onSwipeFilm, showMilestone, t],
   );
 
   const { animatedStyle: newMoodAnimStyle, onPressIn: newMoodPressIn, onPressOut: newMoodPressOut } = useScalePress(0.95);
@@ -379,14 +386,14 @@ export default function FeedScreen() {
 
   const renderItem = useCallback(
     ({ item }: { item: Film }) => (
-      <Animated.View style={{ height: CARD_HEIGHT }} entering={FadeIn.duration(300)}>
+      <View style={{ height: CARD_HEIGHT }}>
         <SwipeableCard
           film={item}
           height={CARD_HEIGHT}
           onSwipeRight={handleSwipeRight}
           onSwipeLeft={handleSwipeLeft}
         />
-      </Animated.View>
+      </View>
     ),
     [handleSwipeRight, handleSwipeLeft],
   );
@@ -509,9 +516,10 @@ export default function FeedScreen() {
           />
         }
         // Performans
-        maxToRenderPerBatch={3}
-        windowSize={5}
-        initialNumToRender={2}
+        maxToRenderPerBatch={2}
+        windowSize={3}
+        initialNumToRender={1}
+        updateCellsBatchingPeriod={100}
         removeClippedSubviews={true}
       />
 
@@ -527,7 +535,16 @@ export default function FeedScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Streak badge — sağ üst köşe */}
+      {/* Chosy.ai logo — üst merkez */}
+      <View style={[styles.headerLogoContainer, { top: insets.top + 10 }]} pointerEvents="none">
+        <Image
+          source={require('../../assets/images/chosy.ai-logo.png')}
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Streak badge — sol üst köşe */}
       <View style={[styles.streakBadgeContainer, { top: insets.top + 12 }]}>
         <StreakBadge
           currentStreak={streakCount}
@@ -684,7 +701,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  // ─── Streak badge (sağ üst) ────────────────────────────────────────────────
+  // ─── Header logo (merkez üst) ───────────────────────────────────────────────
+  headerLogoContainer: {
+    position: 'absolute',
+    alignSelf: 'center',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 9,
+  },
+  headerLogo: {
+    width: 38,
+    height: 38,
+    borderRadius: 8,
+    opacity: 0.92,
+  },
+
+  // ─── Streak badge (sol üst) ────────────────────────────────────────────────
   streakBadgeContainer: {
     position: 'absolute',
     left: 16,

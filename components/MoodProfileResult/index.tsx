@@ -13,6 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   EmotionalState,
   PacePreference,
@@ -202,6 +203,10 @@ interface Props {
   onBrowseMovies: () => void;
   /** Geri okuna basıldığında çağrılır; sağlanmazsa router.back() çalışır */
   onBack?: () => void;
+  /** "Share Your Mood" butonuna basıldığında çağrılır (opsiyonel) */
+  onShareMood?: () => void;
+  /** Share capture devam ediyor mu */
+  isShareCapturing?: boolean;
 }
 
 /**
@@ -209,8 +214,9 @@ interface Props {
  * Kartlar staggered fade-in animasyonuyla açılır.
  * Tasarım referansı: design-reference/08-mood-profile-result.png
  */
-export default function MoodProfileResult({ profile, onBrowseMovies, onBack }: Props) {
+export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onShareMood, isShareCapturing }: Props) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const cardAnims = useRef(
     [0, 1, 2, 3].map(() => new Animated.Value(0))
@@ -333,6 +339,22 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack }: P
               </Animated.View>
             ))}
           </View>
+
+          {/* Share Your Mood button */}
+          {onShareMood && (
+            <TouchableOpacity
+              onPress={onShareMood}
+              activeOpacity={0.85}
+              style={styles.shareWrapper}
+              disabled={isShareCapturing}
+            >
+              <View style={styles.shareBtn}>
+                <Text style={styles.shareBtnText}>
+                  {isShareCapturing ? t('share.sharing') : t('share.shareYourMood')}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
           {/* Browse Movies button */}
           <TouchableOpacity

@@ -166,6 +166,26 @@ export default StyleSheet.create({
     borderRadius: 2,
   },
 
+  // ─── Share Your Mood button ─────────────────────────────────────────────────
+  shareWrapper: {
+    marginTop: 24,
+  },
+  shareBtn: {
+    height: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Theme.borderRadius.xl,
+    borderWidth: 1,
+    borderColor: Colors.accentPrimary,
+    backgroundColor: 'transparent',
+  },
+  shareBtnText: {
+    color: Colors.accentPrimary,
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter_600SemiBold',
+  },
+
   // ─── Browse Movies button ───────────────────────────────────────────────────
   browseWrapper: {
     marginTop: 32,

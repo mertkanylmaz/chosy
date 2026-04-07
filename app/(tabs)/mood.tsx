@@ -1,8 +1,8 @@
 /**
- * Mood sekmesi — duygu giriş akışı + AI Processing + Mood Profile Result + Mood History.
+ * Mood sekmesi — duygu giriş akışı + AI Processing + Mood Profile Result.
  *
  * Aşamalar:
- *   input      — Lumi + filtreler + metin girişi + "Find Movies" + Mood History
+ *   input      — Lumi + filtreler + metin girişi + "Find Movies"
  *   processing — AIProcessingOverlay (modal overlay)
  *   result     — MoodProfileResult; "Browse Movies" → Feed sekmesine geçer
  */
@@ -18,30 +18,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated from 'react-native-reanimated';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 import AIProcessingOverlay from '@/components/AIProcessingOverlay';
-import EmptyState from '@/components/EmptyState';
 import Lumi from '@/components/Lumi';
 import MoodProfileResult from '@/components/MoodProfileResult';
+import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import { Colors } from '@/constants/Colors';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useScalePress } from '@/hooks/useScalePress';
 import { hapticMedium, hapticSelection } from '@/utils/haptics';
-import { Locale } from '@/constants/i18n';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
-import { supabase } from '@/services/supabase';
-import { getPosterUrl } from '@/services/tmdb';
-import { getAppUserId } from '@/services/watchlist';
 import { parseMood } from '@/services/tasteParser';
+import { saveSession, getAppUserId } from '@/services/watchlist';
 import { FilmFilters, TasteProfile } from '@/types';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
@@ -78,7 +74,7 @@ const RATING_CHIPS: { id: RatingChipId; labelKey: string }[] = [
   { id: '', labelKey: 'mood.chipAny' },
 ];
 
-// ─── Quick Moods (Curated Collections) ───────────────────────────────────────
+// ─── Quick Moods ──────────────────────────────────────────────────────────────
 
 interface QuickMoodItem {
   id: string;
@@ -122,274 +118,20 @@ const GENRES: GenreItem[] = [
   { id: 'fantasy', emoji: '🧙', labelKey: 'mood.genreFantasy', promptKey: 'mood.genreFantasyPrompt' },
 ];
 
-// ─── Curated Collections ──────────────────────────────────────────────────────
-
-interface CuratedCollection {
-  id: string;
-  emoji: string;
-  labelKey: string;
-  descKey: string;
-  promptKey: string;
-  /** Opsiyonel filtre override */
-  ratingChip?: RatingChipId;
-  yearChip?: YearChipId;
-}
-
-const CURATED_COLLECTIONS: CuratedCollection[] = [
-  {
-    id: 'award_winners',
-    emoji: '🏆',
-    labelKey: 'mood.curatedAwardWinners',
-    descKey: 'mood.curatedAwardWinnersDesc',
-    promptKey: 'mood.curatedAwardWinnersPrompt',
-    ratingChip: '8',
-  },
-  {
-    id: 'cult_classics',
-    emoji: '🎬',
-    labelKey: 'mood.curatedCultClassics',
-    descKey: 'mood.curatedCultClassicsDesc',
-    promptKey: 'mood.curatedCultClassicsPrompt',
-    yearChip: 'pre1990',
-  },
-  {
-    id: 'hidden_gems',
-    emoji: '💎',
-    labelKey: 'mood.curatedHiddenGems',
-    descKey: 'mood.curatedHiddenGemsDesc',
-    promptKey: 'mood.curatedHiddenGemsPrompt',
-    ratingChip: '7',
-  },
-  {
-    id: 'feel_good',
-    emoji: '☀️',
-    labelKey: 'mood.curatedFeelGood',
-    descKey: 'mood.curatedFeelGoodDesc',
-    promptKey: 'mood.curatedFeelGoodPrompt',
-  },
-  {
-    id: 'mind_blowing',
-    emoji: '🤯',
-    labelKey: 'mood.curatedMindBlowing',
-    descKey: 'mood.curatedMindBlowingDesc',
-    promptKey: 'mood.curatedMindBlowingPrompt',
-    ratingChip: '8',
-  },
-  {
-    id: 'weekend_binge',
-    emoji: '🛋️',
-    labelKey: 'mood.curatedWeekendBinge',
-    descKey: 'mood.curatedWeekendBingeDesc',
-    promptKey: 'mood.curatedWeekendBingePrompt',
-  },
-];
-
-// ─── Mood History helpers ─────────────────────────────────────────────────────
-
-/** Bir mood oturumunun görüntüleme verisi */
-interface MoodSession {
-  id: string;
-  createdAt: string;
-  rawInput: string;
-  recommendationCount: number;
-  posterUrls: string[];
-}
-
-/** Supabase swipes satır tipi */
-interface SwipeRow {
-  session_id: string;
-  films: { poster_url: string | null } | { poster_url: string | null }[] | null;
-}
-
-/** ISO tarih string'ini uzun formata dönüştürür ("March 14, 2026"). */
-function formatDate(iso: string, locale: Locale): string {
-  return new Date(iso).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
-}
-
-/**
- * Kullanıcının mood oturumlarını Supabase'den çeker.
- */
-async function fetchMoodSessions(): Promise<MoodSession[]> {
-  const appUserId = await getAppUserId();
-  if (!appUserId) return [];
-
-  const { data: sessionRows, error: sessErr } = await supabase
-    .from('sessions')
-    .select('id, created_at, raw_input')
-    .eq('user_id', appUserId)
-    .order('created_at', { ascending: false })
-    .limit(50);
-
-  if (sessErr || !sessionRows || sessionRows.length === 0) return [];
-
-  const sessionIds = sessionRows.map((s) => s.id as string);
-
-  const { data: swipeRows } = await supabase
-    .from('swipes')
-    .select('session_id, films!film_id ( poster_url )')
-    .in('session_id', sessionIds);
-
-  const swipesBySession = new Map<string, SwipeRow[]>();
-  for (const row of swipeRows ?? []) {
-    const sid = row.session_id as string;
-    if (!swipesBySession.has(sid)) swipesBySession.set(sid, []);
-    swipesBySession.get(sid)!.push(row as SwipeRow);
-  }
-
-  return sessionRows.map((s) => {
-    const swipes = swipesBySession.get(s.id as string) ?? [];
-    const posterUrls = swipes
-      .slice(0, 3)
-      .map((sw) => {
-        const f = sw.films;
-        const path = Array.isArray(f) ? f[0]?.poster_url ?? null : f?.poster_url ?? null;
-        return getPosterUrl(path, 'w92');
-      })
-      .filter((url): url is string => Boolean(url));
-
-    return {
-      id: s.id as string,
-      createdAt: s.created_at as string,
-      rawInput: (s.raw_input as string | null) ?? '',
-      recommendationCount: swipes.length,
-      posterUrls,
-    };
-  });
-}
-
-// ─── PosterStack ──────────────────────────────────────────────────────────────
-
-/**
- * 2-3 film posterini fan açılmış şekilde gösterir.
- */
-function PosterStack({ urls }: { urls: string[] }) {
-  const count = Math.min(urls.length, 3);
-
-  if (count === 0) {
-    return (
-      <View style={stackStyles.empty}>
-        <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
-      </View>
-    );
-  }
-
-  const STEP = 25;
-  const containerWidth = 40 + STEP * (count - 1) + 12;
-  const rotations = [-8, -2, 5];
-
-  return (
-    <View style={[stackStyles.container, { width: containerWidth }]}>
-      {Array.from({ length: count }).map((_, i) => (
-        <Image
-          key={i}
-          source={{ uri: urls[i] }}
-          style={[
-            stackStyles.poster,
-            {
-              left: i * STEP,
-              transform: [{ rotate: `${rotations[i]}deg` }],
-              zIndex: i + 1,
-            },
-          ]}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
-      ))}
-    </View>
-  );
-}
-
-const stackStyles = StyleSheet.create({
-  container: {
-    height: 76,
-    position: 'relative',
-  },
-  poster: {
-    position: 'absolute',
-    width: 40,
-    height: 60,
-    borderRadius: 6,
-    backgroundColor: Colors.card,
-    top: 8,
-  },
-  empty: {
-    width: 52,
-    height: 76,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: Colors.white05,
-    borderRadius: 8,
-  },
-});
-
-// ─── MoodHistoryCard ──────────────────────────────────────────────────────────
-
-interface MoodHistoryCardProps {
-  session: MoodSession;
-  index: number;
-}
-
-/**
- * Tek mood geçmişi kartı — useStaggeredEntry ile kademeli giriş.
- */
-function MoodHistoryCard({ session, index }: MoodHistoryCardProps) {
-  const router = useRouter();
-  const { t, language } = useLanguage();
-  const animStyle = useStaggeredEntry(index + 6, { delay: 60 });
-
-  return (
-    <Animated.View style={animStyle}>
-      <View style={styles.card}>
-        {/* Sol: poster stack */}
-        <View style={styles.cardLeft}>
-          <PosterStack urls={session.posterUrls} />
-        </View>
-
-        {/* Orta: metin bilgileri */}
-        <View style={styles.cardBody}>
-          <Text style={styles.cardDate}>
-            {formatDate(session.createdAt, language as Locale)}
-          </Text>
-          <Text style={styles.cardMood} numberOfLines={2}>
-            {session.rawInput || '—'}
-          </Text>
-          <Text style={styles.cardStats}>
-            {t('profile.recsGenerated', { count: session.recommendationCount })}
-          </Text>
-        </View>
-
-        {/* Sağ: view butonu */}
-        <TouchableOpacity
-          style={styles.cardViewBtn}
-          onPress={() => router.navigate('/(tabs)')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.cardViewText}>{t('profile.view')}</Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
-  );
-}
-
 // ─── Ana ekran ────────────────────────────────────────────────────────────────
 
 /**
  * Mood sekmesi — yeni tasarım.
- * Lumi maskot + filtreler + metin girişi + mood geçmişi.
+ * Lumi maskot + filtreler + Quick Moods + Browse by Genre + metin girişi.
  */
 export default function MoodScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { setMoodResult } = useMood();
+  const { setMoodResult, setCurrentSessionId } = useMood();
 
   const [phase, setPhase] = useState<Phase>('input');
   const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
-  const [sessions, setSessions] = useState<MoodSession[]>([]);
-
+  const { cardRef: moodShareRef, share: shareMoodCard, isCapturing: isMoodShareCapturing } = useShareCapture();
   /** Metin giriş state'i */
   const [moodText, setMoodText] = useState('');
   /** Seçili yıl filtresi */
@@ -402,7 +144,7 @@ export default function MoodScreen() {
   const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
 
   const pendingFilters = useRef<FilmFilters | null>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Giriş animasyonları ────────────────────────────────────────────────────
   const style0 = useStaggeredEntry(0);
@@ -420,27 +162,6 @@ export default function MoodScreen() {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, []);
-
-  /** Sekmeye her odaklanıldığında geçmişi yenile */
-  useFocusEffect(
-    useCallback(() => {
-      if (phase !== 'input') return;
-      let active = true;
-      fetchMoodSessions()
-        .then((data) => {
-          if (active) setSessions(data);
-        })
-        .catch((err) => {
-          if (__DEV__) {
-            // eslint-disable-next-line no-console
-            console.error('[MoodScreen] fetchMoodSessions hatası:', err);
-          }
-        });
-      return () => {
-        active = false;
-      };
-    }, [phase]),
-  );
 
   /**
    * "Find Movies" → AI processing → profile result
@@ -476,6 +197,15 @@ export default function MoodScreen() {
 
       setTasteProfile(profile);
       setPhase('result');
+
+      // Session'ı arka planda kaydet — hata akışı engellemez
+      getAppUserId().then((userId) => {
+        if (userId) {
+          saveSession(userId, trimmed, profile).then((sessionId) => {
+            setCurrentSessionId(sessionId);
+          });
+        }
+      });
     } catch (err) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
@@ -516,16 +246,6 @@ export default function MoodScreen() {
     setMoodText(t(genre.promptKey));
   }, [t]);
 
-  /**
-   * Curated collection tıklandığında — prompt doldur + opsiyonel filtre ayarla
-   */
-  const handleCollectionTap = useCallback((collection: CuratedCollection) => {
-    hapticMedium();
-    setMoodText(t(collection.promptKey));
-    if (collection.ratingChip !== undefined) setRatingChip(collection.ratingChip);
-    if (collection.yearChip !== undefined) setYearChip(collection.yearChip);
-  }, [t]);
-
   // ── MoodProfileResult aşaması ──────────────────────────────────────────────
   if (phase === 'result' && tasteProfile) {
     return (
@@ -535,6 +255,18 @@ export default function MoodScreen() {
           profile={tasteProfile}
           onBack={() => setPhase('input')}
           onBrowseMovies={handleBrowseMovies}
+          onShareMood={shareMoodCard}
+          isShareCapturing={isMoodShareCapturing}
+        />
+        {/* Offscreen mood share card — capture icin */}
+        <MoodShareCard
+          ref={moodShareRef}
+          moodText={moodText}
+          profile={{
+            energyLevel: tasteProfile.energy_level,
+            thematicDepth: tasteProfile.thematic_depth,
+            endingPreference: tasteProfile.ending_preference,
+          }}
         />
       </>
     );
@@ -753,45 +485,6 @@ export default function MoodScreen() {
                 </View>
               </Animated.View>
 
-              {/* ── Curated Collections ──────────────────────────────────────── */}
-              <View style={styles.curatedSection}>
-                <Text style={styles.sectionTitle}>{t('mood.curatedTitle')}</Text>
-                <Text style={styles.sectionSubtitle}>{t('mood.curatedSubtitle')}</Text>
-                <View style={styles.curatedGrid}>
-                  {CURATED_COLLECTIONS.map((col) => (
-                    <TouchableOpacity
-                      key={col.id}
-                      style={styles.curatedCard}
-                      onPress={() => handleCollectionTap(col)}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.curatedEmoji}>{col.emoji}</Text>
-                      <View style={styles.curatedTextWrap}>
-                        <Text style={styles.curatedLabel}>{t(col.labelKey)}</Text>
-                        <Text style={styles.curatedDesc} numberOfLines={2}>{t(col.descKey)}</Text>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-
-              {/* ── Mood History ─────────────────────────────────────────────── */}
-              <View style={styles.historySection}>
-                <Text style={styles.historyTitle}>{t('profile.moodHistory')}</Text>
-
-                {sessions.length === 0 ? (
-                  <EmptyState
-                    lumiMood="calm"
-                    lumiSize="small"
-                    title={t('mood.emptyHistoryTitle')}
-                    subtitle={t('mood.emptyHistorySubtitle')}
-                  />
-                ) : (
-                  sessions.map((session, idx) => (
-                    <MoodHistoryCard key={session.id} session={session} index={idx} />
-                  ))
-                )}
-              </View>
             </ScrollView>
           </KeyboardAvoidingView>
         </LinearGradient>
@@ -1009,7 +702,7 @@ const styles = StyleSheet.create({
     color: Colors.accentPrimary,
   },
 
-  // ─── Section başlıkları (Genre & Curated paylaşımlı) ──────────────────────
+  // ─── Section başlıkları ────────────────────────────────────────────────────
 
   sectionTitle: {
     fontSize: 20,
@@ -1054,130 +747,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // ─── Curated Collections bölümü ────────────────────────────────────────────
-
-  curatedSection: {
-    marginTop: 28,
-    paddingHorizontal: 20,
-  },
-  curatedGrid: {
-    gap: 10,
-  },
-  curatedCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.white05,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    gap: 12,
-  },
-  curatedEmoji: {
-    fontSize: 32,
-  },
-  curatedTextWrap: {
-    flex: 1,
-  },
-  curatedLabel: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginBottom: 2,
-  },
-  curatedDesc: {
-    fontSize: 12,
-    color: Colors.textGrey,
-    lineHeight: 16,
-  },
-
-  // ─── History bölümü ────────────────────────────────────────────────────────
-
-  historySection: {
-    marginTop: 32,
-  },
-  historyTitle: {
-    fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: Colors.textWhite,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-
-  // ─── History kartı ─────────────────────────────────────────────────────────
-
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.cardSolid,
-    borderRadius: 14,
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.08)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  cardLeft: {
-    marginRight: 14,
-    flexShrink: 0,
-  },
-  cardBody: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  cardDate: {
-    fontSize: 11,
-    color: Colors.textGrey,
-    marginBottom: 4,
-    letterSpacing: 0.2,
-  },
-  cardMood: {
-    fontSize: 15,
-    color: Colors.textWhite,
-    fontWeight: '700',
-    lineHeight: 21,
-    marginBottom: 4,
-  },
-  cardStats: {
-    fontSize: 11,
-    color: Colors.textGrey,
-    lineHeight: 16,
-  },
-  cardViewBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginLeft: 8,
-    flexShrink: 0,
-  },
-  cardViewText: {
-    fontSize: 14,
-    color: Colors.gold,
-    fontWeight: '700',
-  },
-
-  // ─── Boş durum ─────────────────────────────────────────────────────────────
-
-  emptyState: {
-    marginHorizontal: 20,
-    paddingVertical: 32,
-    alignItems: 'center',
-  },
-  emptyTitle: {
-    fontSize: 16,
-    color: Colors.textWhite,
-    fontWeight: '600',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: Colors.textGrey,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
 });
