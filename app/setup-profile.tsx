@@ -50,18 +50,18 @@ interface AvatarOption {
  * avatar_url olarak emoji string'in kendisi kaydedilir.
  */
 const AVATARS: AvatarOption[] = [
-  { id: '1',  emoji: '🎬', color: '#8B5CF6' },   // Yönetmen — violet
-  { id: '2',  emoji: '🌙', color: '#3B82F6' },   // Gece kuşu — blue
-  { id: '3',  emoji: '🔥', color: '#EF4444' },   // Aksiyon — red
-  { id: '4',  emoji: '🌸', color: '#EC4899' },   // Romantik — pink
-  { id: '5',  emoji: '🏆', color: '#D4A843' },   // Ödül avcısı — gold
-  { id: '6',  emoji: '🚀', color: '#06B6D4' },   // Sci-fi — cyan
-  { id: '7',  emoji: '👻', color: '#52525B' },   // Korku — zinc-600
-  { id: '8',  emoji: '🌿', color: '#22C55E' },   // Drama — green
-  { id: '9',  emoji: '⚡', color: '#F59E0B' },   // Gerilim — amber
-  { id: '10', emoji: '🎭', color: '#7C3AED' },   // Tiyatro — violet-600
-  { id: '11', emoji: '🐉', color: '#B45309' },   // Fantezi — amber-700
-  { id: '12', emoji: '❄️', color: '#0EA5E9' },   // Sakin — sky
+  { id: '1',  emoji: '🎬', color: Colors.accentPrimary },  // Yönetmen — violet
+  { id: '2',  emoji: '🌙', color: Colors.swipeDown },      // Gece kuşu — blue
+  { id: '3',  emoji: '🔥', color: Colors.error },           // Aksiyon — red
+  { id: '4',  emoji: '🌸', color: Colors.pink },            // Romantik — pink
+  { id: '5',  emoji: '🏆', color: Colors.gold },            // Ödül avcısı — gold
+  { id: '6',  emoji: '🚀', color: Colors.swipeDown },       // Sci-fi — blue
+  { id: '7',  emoji: '👻', color: Colors.bgSubtle },        // Korku — zinc-700
+  { id: '8',  emoji: '🌿', color: Colors.success },         // Drama — green
+  { id: '9',  emoji: '⚡', color: Colors.warning },          // Gerilim — amber
+  { id: '10', emoji: '🎭', color: Colors.accentHover },     // Tiyatro — violet-600
+  { id: '11', emoji: '🐉', color: Colors.goldDark },        // Fantezi — amber-dark
+  { id: '12', emoji: '❄️', color: Colors.swipeDown },       // Sakin — blue
 ];
 
 /** Kullanıcı adı validation regex: 2-20 alfanümerik karakter */
@@ -263,7 +263,7 @@ export default function SetupProfileScreen() {
                     <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
                     {isSelected && (
                       <View style={[styles.selectedBadge, { backgroundColor: avatar.color }]}>
-                        <Ionicons name="checkmark" size={9} color="#FFFFFF" />
+                        <Ionicons name="checkmark" size={9} color={Colors.textOnAccent} />
                       </View>
                     )}
                   </TouchableOpacity>
@@ -334,11 +334,11 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.xl,
   },
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 30,
+    ...Theme.typography.h1,          // Inter Bold 24
+    fontSize: 28,                     // override
     color: Colors.textWhite,
     marginBottom: Theme.spacing.sm,
-    lineHeight: 38,
+    lineHeight: 36,
   },
   subtitle: {
     ...Theme.typography.body,
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.error,
   },
   inputWrapperValid: {
-    borderColor: Colors.success + '80',  // 50% opacity yeşil border
+    borderColor: Colors.success + '80',  // 50% opacity — success token, dim varyantı yok
   },
   inputIcon: {
     marginRight: Theme.spacing.sm,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   continueButtonText: {
     ...Theme.typography.h3,
     color: Colors.textOnAccent,
-    fontWeight: '600',
+    // fontWeight kaldırıldı — h3 zaten SemiBold
   },
   skipText: {
     ...Theme.typography.body,

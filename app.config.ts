@@ -17,7 +17,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     claudeApiKey: process.env.EXPO_PUBLIC_CLAUDE_API_KEY,
     appEnv: process.env.APP_ENV ?? 'development',
     eas: {
-      projectId: 'b45f6a58-18a9-4910-a5c0-1f4efce27a90',
+      projectId: '5c6d10a4-12a2-42cc-946b-3baecbe3bc5e',
     },
   },
 });

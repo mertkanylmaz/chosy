@@ -73,6 +73,8 @@ export const Colors = {
   error: '#EF4444',
   /** Warning / alerts */
   warning: '#F59E0B',
+  /** Pink — romantic/decorative accent */
+  pink: '#EC4899',
 
   // ─── Swipe Semantic ─────────────────────────────────────────────────────────
   /** Swipe right → watchlist add */

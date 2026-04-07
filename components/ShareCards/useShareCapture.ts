@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, TurboModuleRegistry, View } from 'react-native';
 import { requireOptionalNativeModule } from 'expo-modules-core';
 
+import { i18n } from '@/constants/i18n';
 import { logger } from '@/utils/logger';
 
 // ─── Module cache ─────────────────────────────────────────────────────────────
@@ -152,8 +153,8 @@ export function useShareCapture(): UseShareCaptureReturn {
       // Native modüller bu build'da mevcut değil — graceful degradation
       if (captureRef == null || typeof captureRef !== 'function' || Sharing == null) {
         Alert.alert(
-          'Share Not Available',
-          'The share feature requires a native build. Please rebuild the dev client with `npx expo run:android`.',
+          i18n.t('share.notAvailableTitle'),
+          i18n.t('share.notAvailableMessage'),
         );
         return;
       }

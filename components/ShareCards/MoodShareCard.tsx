@@ -11,6 +11,7 @@ import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors } from '@/constants/Colors';
+import { i18n } from '@/constants/i18n';
 
 import { styles } from './styles';
 
@@ -31,26 +32,26 @@ export interface MoodShareCardProps {
 
 /** Enerji seviyesine gore etiket */
 function getEnergyLabel(level: number): string {
-  if (level < 0.35) return '\u{1F60C} Calm';
-  if (level > 0.65) return '\u{26A1} Energetic';
-  return '\u{1F60A} Balanced';
+  if (level < 0.35) return `\u{1F60C} ${i18n.t('share.energyCalm')}`;
+  if (level > 0.65) return `\u{26A1} ${i18n.t('share.energyEnergetic')}`;
+  return `\u{1F60A} ${i18n.t('share.energyBalanced')}`;
 }
 
 /** Derinlige gore etiket */
 function getDepthLabel(depth: number): string {
-  if (depth > 0.65) return '\u{1F3AD} Deep';
-  if (depth < 0.35) return '\u{1F3AA} Light';
-  return '\u{1F4D6} Moderate';
+  if (depth > 0.65) return `\u{1F3AD} ${i18n.t('share.depthDeep')}`;
+  if (depth < 0.35) return `\u{1F3AA} ${i18n.t('share.depthLight')}`;
+  return `\u{1F4D6} ${i18n.t('share.depthModerate')}`;
 }
 
 /** Bitis tercihine gore etiket */
 function getEndingLabel(pref: string): string {
   const map: Record<string, string> = {
-    hopeful: '\u{1F3AC} Hopeful ending',
-    bittersweet: '\u{1F3AC} Bittersweet ending',
-    open: '\u{1F3AC} Open ending',
-    tragic: '\u{1F3AC} Tragic ending',
-    triumphant: '\u{1F3AC} Triumphant ending',
+    hopeful: `\u{1F3AC} ${i18n.t('share.endingHopeful')}`,
+    bittersweet: `\u{1F3AC} ${i18n.t('share.endingBittersweet')}`,
+    open: `\u{1F3AC} ${i18n.t('share.endingOpen')}`,
+    tragic: `\u{1F3AC} ${i18n.t('share.endingTragic')}`,
+    triumphant: `\u{1F3AC} ${i18n.t('share.endingTriumphant')}`,
   };
   return map[pref] ?? '\u{1F3AC} ' + pref;
 }
@@ -77,14 +78,7 @@ const MoodShareCard = React.forwardRef<View, MoodShareCardProps>(
           {/* Gradient arka plan */}
           <LinearGradient
             colors={[Colors.background, Colors.cardSolid]}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              borderRadius: 24,
-            }}
+            style={styles.moodCardGradient}
           />
 
           {/* Dekoratif parcaciklar */}
@@ -95,15 +89,15 @@ const MoodShareCard = React.forwardRef<View, MoodShareCardProps>(
           </View>
 
           {/* "Today I feel" */}
-          <Text style={styles.todayLabel}>Today I feel</Text>
+          <Text style={styles.todayLabel}>{i18n.t('share.todayIFeel')}</Text>
 
           {/* Mood metni */}
           <View style={styles.moodCardQuote}>
-            <Text style={styles.quoteOpen}>{'\u201C'}</Text>
+            <Text style={styles.moodQuoteOpen}>{'\u201C'}</Text>
             <Text style={styles.moodCardText} numberOfLines={5}>
               {moodText}
             </Text>
-            <Text style={styles.quoteClose}>{'\u201D'}</Text>
+            <Text style={styles.moodQuoteClose}>{'\u201D'}</Text>
           </View>
 
           {/* Profil ozeti */}
@@ -117,8 +111,8 @@ const MoodShareCard = React.forwardRef<View, MoodShareCardProps>(
 
           {/* Branding */}
           <View style={styles.branding}>
-            <Text style={styles.brandText}>Chosy.ai</Text>
-            <Text style={styles.tagline}>Discover movies by your mood</Text>
+            <Text style={styles.brandText}>{i18n.t('share.brand')}</Text>
+            <Text style={styles.tagline}>{i18n.t('share.tagline')}</Text>
           </View>
         </View>
       </View>

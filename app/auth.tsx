@@ -176,6 +176,7 @@ export default function AuthScreen() {
       {/* Hero — Lumi + ortam ışığı */}
       <View style={styles.heroSection}>
         <LinearGradient
+          // 16% violet glow — accentDim (12%) yerine bilinçli karar
           colors={[Colors.accentPrimary + '28', 'transparent']}
           style={styles.heroGlow}
           pointerEvents="none"
@@ -265,8 +266,8 @@ const styles = StyleSheet.create({
     top: 56,
     left: Theme.spacing.md,
     zIndex: 10,
-    width: 40,
-    height: 40,
+    width: 44,
+    height: 44,
     borderRadius: Theme.borderRadius.full,
     backgroundColor: Colors.bgElevated,
     justifyContent: 'center',
@@ -297,8 +298,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 30,
+    ...Theme.typography.h1,          // Inter Bold 24
+    fontSize: 28,                     // override — ekran başlığı biraz büyük
     color: Colors.textWhite,
     textAlign: 'center',
     marginBottom: Theme.spacing.sm,
@@ -364,9 +365,8 @@ const styles = StyleSheet.create({
     gap: Theme.spacing.xs,
   },
   skipText: {
-    ...Theme.typography.body,
+    ...Theme.typography.h3,           // Inter SemiBold 16 — CTA link için uygun
     color: Colors.accentPrimary,
-    fontWeight: '600',
   },
   skipDisabled: {
     opacity: 0.4,

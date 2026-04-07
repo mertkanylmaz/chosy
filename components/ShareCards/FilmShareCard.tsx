@@ -11,6 +11,7 @@ import { Image, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors } from '@/constants/Colors';
+import { i18n } from '@/constants/i18n';
 
 import { styles, CARD_HEIGHT } from './styles';
 
@@ -54,8 +55,8 @@ const FilmShareCard = React.forwardRef<View, FilmShareCardProps>(
               />
               <LinearGradient
                 colors={[
-                  'rgba(10,10,10,0)',
-                  'rgba(10,10,10,0.8)',
+                  Colors.cardGradientTop,
+                  Colors.cardGradientBottom,
                   Colors.background,
                 ]}
                 style={styles.posterGradient}
@@ -102,8 +103,8 @@ const FilmShareCard = React.forwardRef<View, FilmShareCardProps>(
 
           {/* Branding */}
           <View style={styles.branding}>
-            <Text style={styles.brandText}>Chosy.ai</Text>
-            <Text style={styles.tagline}>Discover movies by your mood</Text>
+            <Text style={styles.brandText}>{i18n.t('share.brand')}</Text>
+            <Text style={styles.tagline}>{i18n.t('share.tagline')}</Text>
           </View>
         </View>
       </View>

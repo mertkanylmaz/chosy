@@ -139,6 +139,15 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
   - Saat yonunde cizilme animasyonu (~800ms)
 - Her iki chart Profile ekraninda, mevcut section'lar arasina yerlesir
 
+## Home Screen (P7.1)
+- **Full spec:** `.claude/specs/HOME_SCREEN_SPEC.md`
+- **GreetingWidget:** Saat bazli selamlama + kullanici adi, Inter Bold 28px
+- **MoodCTA:** Tam genislik violet gradient buton, glow pulse (idle), scale(0.97) press
+- **DailyPickSection:** DailyMatchCard wrapper, 2.5:4 aspect, "Today's Pick" ust baslik
+- **LastSessionCard:** Son mood session ozeti, 3 mini poster + CTA link
+- Sadece `!currentProfile` durumunda gorunur — profil secilince swipe feed'e gecis
+- Stagger animasyon: 0→400ms FadeInDown, springify
+
 ## Social Share Cards
 - **Full spec:** `.claude/specs/SOCIAL_SHARE_SPEC.md`
 - **FilmShareCard:** 360x450px (3x→1080x1350 PNG), poster + title + mood text + branding
@@ -148,6 +157,23 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
   - Gradient bg: bgPrimary → bgCard
   - Gold tirnak isaretleri, uppercase "TODAY I FEEL" etiket
 - Offscreen render + react-native-view-shot + expo-sharing
+
+## Taste Calibration (P8.1)
+- **Full spec:** `.claude/specs/TASTE_CALIBRATION_SPEC.md`
+- **TasteCalibration:** 6 senaryo-bazli soru karti, FadeOutLeft/FadeInRight gecis, 400ms bekleme
+- **QuestionCard:** bgCard kart, 24px radius, 4 secenek (veya 3), secim → violet border + accentDim bg
+- **ProgressBar:** 4px bar (bgSubtle → accentPrimary dolgu), 12px glow dot, animated genislik
+- **ArchetypeReveal:** Tam ekran, arketip colorDim gradient bg, 120px emoji dairesi, parcaciklar
+  - PlayfairDisplay Bold 32px arketip adi (tek istisna — premium reveal ani)
+  - Stagger: bg(0ms) → parcacik(200ms) → emoji(400ms) → ad(700ms) → desc(900ms) → CTA(1200ms)
+  - Null fallback: "Mystery Cinephile" + violet tema
+- Mevcut 3 intro slide KORUNUR, calibration + reveal SONRASINA eklenir
+
+## Auth Screens QA
+- **Full spec:** `.claude/specs/AUTH_SCREENS_QA_SPEC.md`
+- auth.tsx + setup-profile.tsx CDO spec'siz build edildi, QA fix spec hazirlandi
+- 3 critical (PlayfairDisplay ihlali x2, hardcoded hex), 4 medium, 2 minor
+- Yeni token gerekli: `Colors.pink: '#EC4899'`
 
 ## Animation Standards
 - Swipe card follow: 1:1 with finger, rotation = distance × 0.08 (max ±12°)

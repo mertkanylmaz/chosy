@@ -1,14 +1,23 @@
 # MoodFlix (Chosy.ai) — Roadmap v3
 
 ## Durum Özeti (2026-04-07)
-- P0–P6: **TAMAMLANDI**
-- P7 Home Screen Redesign: **TAMAMLANDI**
-- P8.1 Taste Calibration (Onboarding): **TAMAMLANDI**
+- P0–P8.1: **TAMAMLANDI**
+- P8.2: **MEVCUT DEĞİL** — P8 tamamlandı
 - MVP core flow çalışıyor: mood input > AI parsing > vector matching > swipe feed > watchlist save
-- **Sonraki: P8.2 veya P9 (Payment)**
+- **Sonraki: P9 (Payment & Subscription)** — strateji detayları iletilecek
+- **Yayın planı:** P9 tamamlanınca → App Store submit
 
 > ⚠️ **Not:** Orijinal ROADMAP'te P6=Landing Page, P7=Onboarding, P8=Payment idi.
 > Share Cards sprint'i P6 numarası aldı; eski P6/P7/P8 → yeni P7/P8/P9 olarak kaydırıldı.
+
+### Yayın Öncesi Teknik Borçlar (P9 ile paralel çözülmeli)
+- [ ] Native rebuild — Share Cards için (expo-sharing + view-shot)
+- [ ] Bundle ID kararı — `com.chosy.ai` mı? (değiştirilemez, acil)
+- [ ] App Store assets — 1024×1024 icon PNG, screenshots, Privacy Policy URL
+- [ ] EAS credentials — appleId, ascAppId, appleTeamId, Google serviceAccountKey
+- [ ] Google OAuth client ID — placeholder, doldurulmalı
+- [ ] Migration 011 — Supabase'de deploy kontrolü
+- [ ] CDO QA — Share Cards + Auth ekranları (CDO'ya iletildi)
 
 ---
 
@@ -157,6 +166,7 @@
 - [ ] RevenueCat vs. native IAP — platform seçimi
 - **Owner:** COO (strateji) + CMO (fiyatlama)
 - **Est:** 1 workshop session
+- **Durum:** ⏳ Kullanıcı detaylı plan iletecek
 
 ### P9.2 Paywall & Ödeme Entegrasyonu
 - [ ] RevenueCat SDK entegrasyonu
