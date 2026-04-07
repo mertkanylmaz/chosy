@@ -17,7 +17,6 @@ import {
   Dimensions,
   Linking,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -41,6 +40,7 @@ import { addToWatchlist } from '@/services/watchlist';
 import { explainBatch, type FilmForExplanation } from '@/services/matchExplanation';
 import { Colors } from '@/constants/Colors';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import { FilmShareCard, useShareCapture } from '@/components/ShareCards';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const BACKDROP_HEIGHT = 280;
@@ -128,7 +128,7 @@ function InfoChip({ icon, text, color }: { icon: string; text: string; color: st
 export default function FilmDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { t } = useLanguage();
-  const { currentProfile } = useMood();
+  const { currentProfile, presetMoodText, currentSessionId } = useMood();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -139,6 +139,7 @@ export default function FilmDetailScreen() {
   const [watchlistError, setWatchlistError] = useState(false);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
+  const { cardRef: shareCardRef, share: shareFilmCard, isCapturing: isShareCapturing } = useShareCapture();
 
   // ── Film verisi yukle ───────────────────────────────────────────────────────
 
@@ -256,7 +257,7 @@ export default function FilmDetailScreen() {
     hapticMedium();
     setWatchlistError(false);
     try {
-      await addToWatchlist(film);
+      await addToWatchlist(film, currentSessionId);
       setWatchlistAdded(true);
     } catch (err) {
       if (__DEV__) {
@@ -272,10 +273,7 @@ export default function FilmDetailScreen() {
 
   const handleShare = () => {
     if (!film) return;
-    Share.share({
-      message: t('filmDetail.shareMessage', { title: film.title, year: film.year }),
-      title: film.title,
-    }).catch(() => {});
+    shareFilmCard();
   };
 
   // ── Yukleniyor ──────────────────────────────────────────────────────────────
@@ -550,6 +548,21 @@ export default function FilmDetailScreen() {
         </View>
 
       </View>
+
+      {/* Offscreen share card — capture icin */}
+      {film && (
+        <FilmShareCard
+          ref={shareCardRef}
+          film={{
+            title: film.title,
+            year: film.year ?? null,
+            genres: film.moodTags ?? [],
+            voteAverage: film.voteAverage ?? null,
+            posterUrl: film.posterUrl ?? null,
+          }}
+          moodText={presetMoodText ?? null}
+        />
+      )}
     </>
   );
 }

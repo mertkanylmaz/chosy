@@ -19,6 +19,7 @@ import { getRecommendations, getSurprisePicks } from '@/services/recommendations
 import { updateUserVector } from '@/services/userProfile';
 import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
+import { useMood } from '@/contexts/MoodContext';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -229,6 +230,7 @@ export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
 ): FeedManager {
+  const { currentSessionId } = useMood();
   const [state, dispatch] = useReducer(feedReducer, initialState);
 
   /** Arka plan yüklemesi devam ediyorsa duplicate isteği engeller */
@@ -445,7 +447,8 @@ export function useFeedManager(
     (film: Film, direction: 'left' | 'right') => {
       if (direction === 'right') {
         // addToWatchlist içinde updateUserVector zaten çağrılır
-        addToWatchlist(film).catch((err) => {
+        // currentSessionId ile filmin hangi mood prompt'undan geldiği kaydedilir
+        addToWatchlist(film, currentSessionId).catch((err) => {
           if (__DEV__) {
             console.error('[useFeedManager] addToWatchlist hatası:', err);
           }
@@ -457,7 +460,7 @@ export function useFeedManager(
         // Gamification hataları kullanıcıyı etkilememeli
       });
     },
-    [],
+    [currentSessionId],
   );
 
   // ─── onLoadMore (FlatList onEndReached için) ─────────────────────────────

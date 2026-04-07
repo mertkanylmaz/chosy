@@ -1,12 +1,14 @@
 /**
  * Watchlist ekranı — design-reference/04-watchlist.png piksel uyumu.
- * 2-sütunlu film grid, filtre chip'leri, arama, menü, uzun basma modal menüsü.
- * Mikro etkileşimler: giriş/çıkış animasyonları, long press wobble, pull-to-refresh.
+ * P4.2: "By Mood" görünümü — session bazlı accordion gruplar eklendi.
+ *
+ * Görünüm modları:
+ *   - "All Films" (list): 2-sütunlu flat grid, sıralama seçenekleriyle
+ *   - "By Mood" (grouped): her mood session bir accordion; ilk grup açık
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
-  Dimensions,
   FlatList,
   Modal,
   Pressable,
@@ -18,48 +20,47 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
+
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { hapticMedium } from '@/utils/haptics';
-import { hapticSelection, hapticWarning } from '@/utils/haptics';
+import Animated from 'react-native-reanimated';
 
-import Animated, {
-  FadeInDown,
-  FadeOut,
-  useAnimatedStyle,
-  useSharedValue,
-  useReducedMotion,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
-
-import { Film } from '@/types/film';
-import { clearWatchlist, getWatchlist, removeFromWatchlist, WatchlistItem } from '@/services/watchlist';
+import {
+  clearWatchlist,
+  getWatchlist,
+  getWatchlistGroupedBySessions,
+  removeFromWatchlist,
+  WatchlistGroup,
+  WatchlistItem,
+} from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
+import { hapticSelection, hapticWarning } from '@/utils/haptics';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
+import WatchlistCard from '@/components/Watchlist/WatchlistCard';
+import SessionAccordion from '@/components/Watchlist/SessionAccordion';
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
+import { CARD_WIDTH, GRID_COL_GAP, GRID_H_PAD } from '@/components/Watchlist/WatchlistCard/styles';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const GRID_H_PAD = 20;
-const GRID_COL_GAP = 12;
-const CARD_WIDTH = (SCREEN_WIDTH - GRID_H_PAD * 2 - GRID_COL_GAP) / 2;
-const POSTER_HEIGHT = CARD_WIDTH * 1.5;
+// ─── Tipler ───────────────────────────────────────────────────────────────────
+
 type SortKey = 'recently_added' | 'highest_match' | 'title' | 'year';
+type ViewMode = 'list' | 'grouped';
 
 interface LongPressTarget {
   filmId: string;
   filmTitle: string;
 }
+
+// ─── Sabitler ─────────────────────────────────────────────────────────────────
+
+const POSTER_HEIGHT = CARD_WIDTH * 1.5;
 
 /** ISO tarih → "Oct 12, 2023" */
 function formatDate(iso: string): string {
@@ -70,110 +71,11 @@ function formatDate(iso: string): string {
   });
 }
 
-// ─── WatchlistCard ────────────────────────────────────────────────────────────
-
-interface WatchlistCardProps {
-  item: WatchlistItem;
-  itemIndex: number;
-  onLongPress: (filmId: string, filmTitle: string) => void;
-}
+// ─── WatchlistScreen ──────────────────────────────────────────────────────────
 
 /**
- * Tek film kartı.
- * Giriş: FadeInDown animasyonu (stagger ile).
- * Çıkış: FadeOut (Reanimated exiting prop).
- * Long press: wobble + haptic.
- */
-const WatchlistCard = React.memo(function WatchlistCard({
-  item,
-  itemIndex,
-  onLongPress,
-}: WatchlistCardProps) {
-  const { film } = item;
-  const router = useRouter();
-  const isReducedMotion = useReducedMotion();
-  const rotation = useSharedValue(0);
-  const staggerStyle = useStaggeredEntry(itemIndex, { delay: 60, baseDelay: 0 });
-
-  const handlePress = useCallback(() => {
-    if (!film?.id) return;
-    router.push(`/film/${film.id}` as never);
-  }, [router, film.id]);
-
-  const handleLongPress = useCallback(() => {
-    onLongPress(film.id, film.title);
-    hapticMedium();
-
-    if (!isReducedMotion) {
-      rotation.value = withSequence(
-        withTiming(-4, { duration: 55 }),
-        withRepeat(
-          withSequence(
-            withTiming(4, { duration: 55 }),
-            withTiming(-4, { duration: 55 }),
-          ),
-          3,
-          false,
-        ),
-        withTiming(0, { duration: 55 }),
-      );
-    }
-  }, [onLongPress, film.id, film.title, isReducedMotion, rotation]);
-
-  const wobbleStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rotation.value}deg` }],
-  }));
-
-  const genre = film.moodTags[0] ?? null;
-  const meta = genre ? `${film.year} · ${genre}` : String(film.year);
-  const posterUri = film.posterUrl
-    ? film.posterUrl.startsWith('http')
-      ? film.posterUrl
-      : `https://image.tmdb.org/t/p/w500${film.posterUrl}`
-    : undefined;
-
-  return (
-    <Animated.View
-      exiting={isReducedMotion ? undefined : FadeOut.duration(250)}
-      style={[isReducedMotion ? undefined : staggerStyle, wobbleStyle, styles.card]}
-    >
-      <TouchableOpacity
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        activeOpacity={0.85}
-        delayLongPress={400}
-      >
-        {/* Poster */}
-        {posterUri ? (
-          <Image
-            source={{ uri: posterUri }}
-            style={styles.poster}
-            contentFit="cover"
-            transition={200}
-            cachePolicy="memory-disk"
-          />
-        ) : (
-          <View style={[styles.poster, styles.posterPlaceholder]}>
-            <Ionicons name="film-outline" size={32} color={Colors.textGrey} />
-          </View>
-        )}
-        {/* İsim */}
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {film.title}
-        </Text>
-        {/* Yıl · Tür */}
-        <Text style={styles.cardMeta} numberOfLines={1}>
-          {meta}
-        </Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-});
-
-// ─── Bileşen ──────────────────────────────────────────────────────────────────
-
-/**
- * Kullanıcının kaydettiği filmleri 2-sütunlu grid'de listeler.
+ * Kullanıcının kaydettiği filmleri listeler.
+ * İki mod: düz grid (list) veya mood session grupları (grouped).
  */
 export default function WatchlistScreen() {
   const { t } = useLanguage();
@@ -182,8 +84,17 @@ export default function WatchlistScreen() {
   const headerAnimStyle = useStaggeredEntry(0);
   const chipsAnimStyle = useStaggeredEntry(1);
 
+  // ── Flat list state ────────────────────────────────────────────────────────
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>('recently_added');
+
+  // ── Grouped state ──────────────────────────────────────────────────────────
+  const [groups, setGroups] = useState<WatchlistGroup[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(false);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
+
+  // ── Shared state ───────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [menuTarget, setMenuTarget] = useState<LongPressTarget | null>(null);
   const [searchVisible, setSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -193,6 +104,9 @@ export default function WatchlistScreen() {
   const [loadError, setLoadError] = useState(false);
   const [loadErrorType, setLoadErrorType] = useState<import('@/utils/errorHelpers').ErrorType>('unknown');
 
+  // ── Veri yükleme ──────────────────────────────────────────────────────────
+
+  /** Düz liste yükler */
   const loadWatchlist = useCallback(async () => {
     setLoadError(false);
     try {
@@ -208,17 +122,50 @@ export default function WatchlistScreen() {
     }
   }, []);
 
+  /** Session gruplarını yükler (sadece grouped mode'da çağrılır) */
+  const loadGroups = useCallback(async () => {
+    setGroupsLoading(true);
+    try {
+      const data = await getWatchlistGroupedBySessions();
+      setGroups(data);
+      setGroupsLoaded(true);
+    } catch {
+      setGroups([]);
+      setGroupsLoaded(true);
+    } finally {
+      setGroupsLoading(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadWatchlist();
     }, [loadWatchlist]),
   );
 
+  /** Görünüm modunu değiştir; grouped ilk kez açılınca yükle */
+  const handleViewModeChange = useCallback(
+    (mode: ViewMode) => {
+      hapticSelection();
+      setViewMode(mode);
+      if (mode === 'grouped' && !groupsLoaded) {
+        loadGroups();
+      }
+    },
+    [groupsLoaded, loadGroups],
+  );
+
+  /** Pull-to-refresh: her iki modda da çalışır */
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     await loadWatchlist();
+    if (viewMode === 'grouped') {
+      await loadGroups();
+    }
     setIsRefreshing(false);
-  }, [loadWatchlist]);
+  }, [loadWatchlist, loadGroups, viewMode]);
+
+  // ── Filtered / Sorted list ─────────────────────────────────────────────────
 
   const displayedItems = useMemo((): WatchlistItem[] => {
     const filtered =
@@ -243,43 +190,51 @@ export default function WatchlistScreen() {
     }
   }, [items, sortKey, searchQuery]);
 
-  const handleRemove = useCallback(async (filmId: string) => {
-    setMenuTarget(null);
-    hapticWarning();
-    // Optimistik: kaldır, hata olursa geri ekle
-    const snapshot = items;
-    setItems((prev) => prev.filter((i) => i.film.id !== filmId));
-    try {
-      await removeFromWatchlist(filmId);
-    } catch (err) {
-      if (__DEV__) {
-        console.error('[Watchlist] remove error:', err);
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  const handleRemove = useCallback(
+    async (filmId: string) => {
+      setMenuTarget(null);
+      hapticWarning();
+      const snapshot = items;
+      setItems((prev) => prev.filter((i) => i.film.id !== filmId));
+      // Grouped view'den de kaldır (optimistik)
+      setGroups((prev) =>
+        prev
+          .map((g) => ({
+            ...g,
+            films: g.films.filter((f) => f.film.id !== filmId),
+            filmCount: g.films.filter((f) => f.film.id !== filmId).length,
+          }))
+          .filter((g) => g.filmCount > 0),
+      );
+      try {
+        await removeFromWatchlist(filmId);
+      } catch {
+        setItems(snapshot);
+        Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
       }
-      // Rollback — önceki listeyi geri yükle
-      setItems(snapshot);
-      Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
-    }
-  }, [items, t]);
+    },
+    [items, t],
+  );
 
   const handleClearAll = useCallback(() => {
     setMenuVisible(false);
     Alert.alert(
-      'Clear Watchlist',
-      'Are you sure you want to remove all saved movies?',
+      t('profile.clearWatchlistTitle'),
+      t('profile.clearWatchlistMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('profile.clearWatchlistConfirm'),
           style: 'destructive',
           onPress: async () => {
             const snapshot = items;
             setItems([]);
+            setGroups([]);
             try {
               await clearWatchlist();
-            } catch (err) {
-              if (__DEV__) {
-                console.error('[Watchlist] clear error:', err);
-              }
+            } catch {
               setItems(snapshot);
               Alert.alert(t('errors.generic'), t('errors.watchlistClear'));
             }
@@ -287,7 +242,7 @@ export default function WatchlistScreen() {
         },
       ],
     );
-  }, []);
+  }, [items, t]);
 
   const handleCardLongPress = useCallback(
     (filmId: string, filmTitle: string) => {
@@ -295,6 +250,8 @@ export default function WatchlistScreen() {
     },
     [],
   );
+
+  // ── FlatList renderers ─────────────────────────────────────────────────────
 
   const renderItem = useCallback(
     ({ item, index }: { item: WatchlistItem; index: number }) => (
@@ -309,6 +266,22 @@ export default function WatchlistScreen() {
 
   const keyExtractor = useCallback((item: WatchlistItem) => item.film.id, []);
 
+  // ── Chips data ─────────────────────────────────────────────────────────────
+
+  /** Görünüm toggle chip'leri */
+  const viewChips: { key: ViewMode; label: string }[] = [
+    { key: 'list', label: t('watchlist.listView') },
+    { key: 'grouped', label: t('watchlist.groupedView') },
+  ];
+
+  /** Sıralama chip'leri (sadece list modunda) */
+  const sortChips: { key: SortKey; label: string }[] = [
+    { key: 'recently_added', label: t('watchlist.sort_recently_added') },
+    { key: 'highest_match', label: t('watchlist.sort_highest_match') },
+  ];
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar style="light" />
@@ -320,30 +293,32 @@ export default function WatchlistScreen() {
 
       {/* Header — başlık + ikonlar */}
       <Animated.View style={headerAnimStyle}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Watchlist</Text>
-        <View style={styles.headerIcons}>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            activeOpacity={0.7}
-            onPress={() => {
-              setSearchVisible((v) => !v);
-              if (searchVisible) setSearchQuery('');
-            }}>
-            <Ionicons
-              name={searchVisible ? 'close-outline' : 'search-outline'}
-              size={22}
-              color={Colors.textWhite}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            activeOpacity={0.7}
-            onPress={() => setMenuVisible(true)}>
-            <Ionicons name="reorder-three-outline" size={24} color={Colors.textWhite} />
-          </TouchableOpacity>
+        <View style={styles.header}>
+          <Text style={styles.title}>{t('tabs.watchlist')}</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => {
+                setSearchVisible((v) => !v);
+                if (searchVisible) setSearchQuery('');
+              }}
+            >
+              <Ionicons
+                name={searchVisible ? 'close-outline' : 'search-outline'}
+                size={22}
+                color={Colors.textWhite}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => setMenuVisible(true)}
+            >
+              <Ionicons name="reorder-three-outline" size={24} color={Colors.textWhite} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </Animated.View>
 
       {/* Arama Çubuğu */}
@@ -352,7 +327,7 @@ export default function WatchlistScreen() {
           <Ionicons name="search-outline" size={18} color={Colors.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search your watchlist..."
+            placeholder={t('watchlist.searchPlaceholder')}
             placeholderTextColor={Colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -366,32 +341,71 @@ export default function WatchlistScreen() {
         </View>
       )}
 
-      {/* Filtre Chip'leri */}
+      {/* Chip Satırı: Görünüm toggle + (list modunda) sıralama */}
       <Animated.View style={chipsAnimStyle}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.chipsScroll}
-          contentContainerStyle={styles.chipsContent}>
-          {(['recently_added', 'highest_match'] as SortKey[]).map((key) => {
-            const active = sortKey === key;
+          contentContainerStyle={styles.chipsContent}
+        >
+          {/* Görünüm toggle */}
+          {viewChips.map(({ key, label }) => {
+            const active = viewMode === key;
             return (
               <TouchableOpacity
                 key={key}
                 style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
-                onPress={() => { hapticSelection(); setSortKey(key); }}
-                activeOpacity={0.8}>
-                <Text style={[styles.chipText, active ? styles.chipTextActive : styles.chipTextInactive]}>
-                  {key === 'recently_added' ? 'Recently added' : 'Highest mood match'}
+                onPress={() => handleViewModeChange(key)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    active ? styles.chipTextActive : styles.chipTextInactive,
+                  ]}
+                >
+                  {label}
                 </Text>
               </TouchableOpacity>
             );
           })}
+
+          {/* Ayırıcı */}
+          <View style={styles.chipDivider} />
+
+          {/* Sıralama — sadece list modunda */}
+          {viewMode === 'list' &&
+            sortChips.map(({ key, label }) => {
+              const active = sortKey === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.chip, active ? styles.chipSortActive : styles.chipInactive]}
+                  onPress={() => {
+                    hapticSelection();
+                    setSortKey(key);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      active ? styles.chipSortTextActive : styles.chipTextInactive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
         </ScrollView>
       </Animated.View>
 
-      {/* İçerik */}
+      {/* ── İçerik ── */}
+
       {initialLoading ? (
+        /* İlk yükleme iskelet */
         <View style={styles.skeletonGrid}>
           {[...Array(4)].map((_, i) => (
             <View key={i} style={styles.skeletonCard}>
@@ -406,12 +420,56 @@ export default function WatchlistScreen() {
       ) : items.length === 0 ? (
         <EmptyState
           lumiMood="searching"
-          title="No films saved yet"
-          subtitle="Swipe right on films you love to save them here"
-          actionLabel="Discover Films"
+          title={t('watchlist.emptyTitle')}
+          subtitle={t('watchlist.emptySubtitle')}
+          actionLabel={t('watchlist.discoverButton')}
           onAction={() => router.push('/(tabs)/mood')}
         />
+      ) : viewMode === 'grouped' ? (
+        /* ── Grouped view ── */
+        <ScrollView
+          style={styles.groupedScroll}
+          contentContainerStyle={styles.groupedContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={Colors.gold}
+              colors={[Colors.gold]}
+            />
+          }
+        >
+          {groupsLoading ? (
+            /* Grouped yükleniyor — ince iskelet */
+            [0, 1, 2].map((i) => (
+              <View key={i} style={styles.groupSkeleton}>
+                <SkeletonLoader width="100%" height={56} borderRadius={16} />
+              </View>
+            ))
+          ) : groups.length === 0 ? (
+            /* Grouped boş (migration deploy edilmemiş veya eski filmler) */
+            <View style={styles.groupedEmpty}>
+              <Text style={styles.groupedEmptyTitle}>{t('watchlist.groupedEmpty')}</Text>
+              <Text style={styles.groupedEmptySubtitle}>
+                {t('watchlist.groupedEmptySubtitle')}
+              </Text>
+            </View>
+          ) : (
+            /* Session accordion'ları */
+            groups.map((group, i) => (
+              <SessionAccordion
+                key={group.sessionId ?? `no-session-${i}`}
+                group={group}
+                groupIndex={i}
+                onLongPress={handleCardLongPress}
+                defaultExpanded={i === 0}
+              />
+            ))
+          )}
+        </ScrollView>
       ) : (
+        /* ── List view (düz grid) ── */
         <FlatList
           data={displayedItems}
           renderItem={renderItem}
@@ -421,7 +479,7 @@ export default function WatchlistScreen() {
           contentContainerStyle={styles.listContent}
           columnWrapperStyle={styles.columnWrapper}
           showsVerticalScrollIndicator={false}
-          removeClippedSubviews={true}
+          removeClippedSubviews
           maxToRenderPerBatch={6}
           windowSize={7}
           initialNumToRender={6}
@@ -436,75 +494,97 @@ export default function WatchlistScreen() {
         />
       )}
 
-      {/* Uzun Basma Modal Menüsü */}
+      {/* ── Uzun Basma Modal ── */}
       <Modal
         visible={menuTarget !== null}
         transparent
         animationType="fade"
-        onRequestClose={() => setMenuTarget(null)}>
+        onRequestClose={() => setMenuTarget(null)}
+      >
         <TouchableOpacity
           style={styles.modalOverlay}
           activeOpacity={1}
-          onPress={() => setMenuTarget(null)}>
+          onPress={() => setMenuTarget(null)}
+        >
           <View style={styles.modalCard}>
             <Text style={styles.modalFilmTitle} numberOfLines={1}>
               {menuTarget?.filmTitle}
             </Text>
             <TouchableOpacity style={styles.modalOption} activeOpacity={0.7}>
-              <Text style={styles.modalOptionText}>Watched ✓</Text>
+              <Text style={styles.modalOptionText}>{t('watchlist.watched')} ✓</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.modalOption} activeOpacity={0.7}>
-              <Text style={styles.modalOptionText}>Add to List</Text>
+              <Text style={styles.modalOptionText}>{t('watchlist.addToList')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.modalOption}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (!menuTarget) return;
+                setMenuTarget(null);
+                router.push(`/film/${menuTarget.filmId}` as import('expo-router').Href);
+              }}
+            >
+              <Text style={styles.modalOptionText}>{t('share.shareFilm')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalOption, styles.modalOptionLast]}
               activeOpacity={0.7}
-              onPress={() => menuTarget && handleRemove(menuTarget.filmId)}>
+              onPress={() => menuTarget && handleRemove(menuTarget.filmId)}
+            >
               <Text style={[styles.modalOptionText, styles.modalOptionTextRed]}>
-                Remove
+                {t('watchlist.remove')}
               </Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
 
-      {/* ☰ Menü Modal */}
+      {/* ── ☰ Menü Modal ── */}
       <Modal
         visible={menuVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setMenuVisible(false)}>
-        <Pressable
-          style={styles.menuOverlay}
-          onPress={() => setMenuVisible(false)}>
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
           <View style={styles.menuContainer}>
             <Pressable
               style={styles.menuItem}
               onPress={() => {
                 setSortKey('title');
+                setViewMode('list');
                 setMenuVisible(false);
-              }}>
-              <Text style={[styles.menuItemText, sortKey === 'title' && styles.menuItemTextActive]}>
-                Sort by Title
+              }}
+            >
+              <Text
+                style={[styles.menuItemText, sortKey === 'title' && viewMode === 'list' && styles.menuItemTextActive]}
+              >
+                {t('watchlist.sort_title')}
               </Text>
             </Pressable>
             <Pressable
               style={styles.menuItem}
               onPress={() => {
                 setSortKey('year');
+                setViewMode('list');
                 setMenuVisible(false);
-              }}>
-              <Text style={[styles.menuItemText, sortKey === 'year' && styles.menuItemTextActive]}>
-                Sort by Year
+              }}
+            >
+              <Text
+                style={[styles.menuItemText, sortKey === 'year' && viewMode === 'list' && styles.menuItemTextActive]}
+              >
+                {t('watchlist.sort_year')}
               </Text>
             </Pressable>
             <Pressable style={styles.menuItem} onPress={handleClearAll}>
-              <Text style={styles.menuItemTextRed}>Clear All</Text>
+              <Text style={styles.menuItemTextRed}>{t('watchlist.clearAll')}</Text>
             </Pressable>
             <Pressable
               style={[styles.menuItem, styles.menuItemLast]}
-              onPress={() => setMenuVisible(false)}>
-              <Text style={styles.menuItemTextGrey}>Cancel</Text>
+              onPress={() => setMenuVisible(false)}
+            >
+              <Text style={styles.menuItemTextGrey}>{t('common.cancel')}</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -561,9 +641,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 48,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: Colors.white10,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: Colors.white05,
     gap: 10,
   },
   searchInput: {
@@ -586,76 +666,61 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingRight: 20,
     gap: 8,
+    alignItems: 'center',
   },
   chip: {
     borderRadius: 100,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 9,
   },
+  /** Görünüm toggle: aktif = violet */
   chipActive: {
-    backgroundColor: Colors.gold,
+    backgroundColor: Colors.accentPrimary,
   },
   chipInactive: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: Colors.tabInactive,
   },
+  /** Sıralama: aktif = gold (secondary accent) */
+  chipSortActive: {
+    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.gold,
+  },
   chipText: {
     fontSize: 13,
     fontWeight: '600',
   },
   chipTextActive: {
-    color: Colors.background,
+    color: Colors.textOnAccent,
   },
   chipTextInactive: {
     color: Colors.textGrey,
   },
+  chipSortTextActive: {
+    color: Colors.gold,
+  },
+  /** Chip satırındaki ince ayırıcı */
+  chipDivider: {
+    width: 1,
+    height: 18,
+    backgroundColor: Colors.white10,
+    marginHorizontal: 4,
+  },
 
-  /* FlatList */
+  /* FlatList (list mode) */
   list: {
     flex: 1,
     marginTop: 20,
   },
   listContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: GRID_H_PAD,
     paddingBottom: 20,
   },
   columnWrapper: {
     gap: GRID_COL_GAP,
     marginBottom: 20,
-  },
-
-  /* Film Kartı */
-  card: {
-    flex: 1,
-  },
-  poster: {
-    width: '100%',
-    aspectRatio: 2 / 3,
-    borderRadius: 14,
-    backgroundColor: Colors.cardSolid,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  posterPlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginTop: 10,
-    lineHeight: 19,
-  },
-  cardMeta: {
-    fontSize: 12,
-    color: Colors.textGrey,
-    marginTop: 3,
-    lineHeight: 16,
   },
 
   /* Skeleton grid */
@@ -670,33 +735,35 @@ const styles = StyleSheet.create({
     width: CARD_WIDTH,
   },
 
-  /* Boş durum */
-  emptyContainer: {
+  /* Grouped view */
+  groupedScroll: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    marginTop: 20,
   },
-  emptyTitle: {
-    fontSize: 18,
+  groupedContent: {
+    paddingBottom: 20,
+  },
+  groupSkeleton: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+  },
+  groupedEmpty: {
+    alignItems: 'center',
+    paddingTop: 48,
+    paddingHorizontal: 32,
+    gap: 10,
+  },
+  groupedEmptyTitle: {
+    fontSize: 17,
     fontWeight: '600',
     color: Colors.textWhite,
+    textAlign: 'center',
   },
-  emptySubtitle: {
+  groupedEmptySubtitle: {
     fontSize: 14,
     color: Colors.textGrey,
-  },
-  retryBtn: {
-    marginTop: 12,
-    backgroundColor: Colors.gold,
-    borderRadius: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-  },
-  retryBtnText: {
-    color: Colors.background,
-    fontSize: 15,
-    fontWeight: '700',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 
   /* Uzun basma modal */
@@ -718,14 +785,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: Colors.white10,
   },
   modalOption: {
     height: 48,
     justifyContent: 'center',
     paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
+    borderBottomColor: Colors.white10,
   },
   modalOptionLast: {
     borderBottomWidth: 0,
@@ -755,7 +822,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.06)',
+    borderBottomColor: Colors.white05,
   },
   menuItemLast: {
     borderBottomWidth: 0,
