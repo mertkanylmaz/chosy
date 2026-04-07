@@ -14,6 +14,9 @@ try {
   Haptics = null;
 }
 
+/** İlk hatada bir kez loglanır, sonra susturulur */
+let _hapticWarned = false;
+
 /**
  * Temel haptic wrapper — web ve desteklenmeyen cihazlarda sessizce geçer.
  */
@@ -22,7 +25,10 @@ async function safeHaptic(fn: () => Promise<void>): Promise<void> {
   try {
     await fn();
   } catch {
-    if (__DEV__) console.log('[haptics] not available');
+    if (__DEV__ && !_hapticWarned) {
+      console.log('[haptics] not available on this device — further warnings suppressed');
+      _hapticWarned = true;
+    }
   }
 }
 

@@ -41,7 +41,7 @@ export interface LumiProps {
 
 // ─── Yardımcı animasyon sabitleri ─────────────────────────────────────────────
 
-const SINE = Easing.inOut(Easing.sine);
+const SINE = Easing.inOut(Easing.sin);
 
 /** Dış halka nefes animasyonu — belirtilen sürede bir döngü */
 function ringBreath(duration: number) {
@@ -70,12 +70,11 @@ function glowPulse(duration: number, low = 0.15, high = 0.4) {
 // ─── Ana Component ────────────────────────────────────────────────────────────
 
 /**
- * Lumi — MoodFlix AI maskot.
+ * Lumi — Animasyonlu altın orb bileşeni.
  *
- * Tamamen react-native-reanimated v3 ile programatik çizim.
+ * Tamamen react-native-reanimated v4 ile programatik çizim.
  * Dış bağımlılık yok, Lottie yok, PNG yok.
- *
- * Props API sabit kalır — ileride Lottie/Rive'a geçiş kolaylığı için.
+ * Mood durumuna göre farklı animasyon sekansları çalıştırır.
  */
 export default function Lumi({
   size,

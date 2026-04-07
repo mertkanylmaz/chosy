@@ -36,7 +36,7 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ─── Flick/Lumi ─────────────────────────────────────────────────────────────
+  // ─── Lumi ────────────────────────────────────────────────────────────────────
   mascotContainer: {
     marginBottom: Theme.spacing.lg,
   },

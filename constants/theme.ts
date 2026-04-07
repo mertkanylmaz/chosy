@@ -29,6 +29,7 @@ export const Theme = {
     md: 16,
     lg: 24,
     xl: 32,
+    xxl: 48,
   },
 
   // ─── Border Radius (synced with DESIGN_SYSTEM.md) ──────────────────────

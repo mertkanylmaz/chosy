@@ -4,7 +4,7 @@
  * Animasyon sekansi (CDO spec):
  *   t=0.0s — Overlay fade in
  *   t=0.1s — Konfeti başlar
- *   t=0.2s — Flick/Lumi girer (scale bounce)
+ *   t=0.2s — Lumi girer (scale bounce)
  *   t=0.3s — Milestone icon bounce in
  *   t=0.4s — Title fade in down
  *   t=0.5s — Description fade in down
@@ -26,8 +26,7 @@ import Animated, {
 
 import { BOUNCE_CONFIG, FAST_TIMING, TIMING_CONFIG } from '@/constants/animations';
 import { hapticHeavy } from '@/utils/haptics';
-import Flick from '@/components/Flick';
-import type { FlickMood } from '@/components/Flick';
+import Lumi, { type LumiMood } from '@/components/Lumi';
 import ConfettiEffect from './ConfettiEffect';
 import { useScalePress } from '@/hooks/useScalePress';
 
@@ -63,8 +62,8 @@ const EPIC_CTA: Record<string, string> = {
   streak_30: 'Incredible! 👑',
 };
 
-/** Milestone kategori/threshold'a göre Flick mood */
-function getFlickMood(slug: string): FlickMood {
+/** Milestone kategori/threshold'a göre Lumi mood */
+function getLumiMood(slug: string): LumiMood {
   if (EPIC_SLUGS.has(slug)) return 'excited';
   return 'happy';
 }
@@ -79,7 +78,7 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
   const { animatedStyle: ctaPressStyle, onPressIn, onPressOut } = useScalePress(0.95);
   const isEpic = EPIC_SLUGS.has(milestone.slug);
   const ctaText = EPIC_CTA[milestone.slug] ?? 'Keep Going!';
-  const flickMood = getFlickMood(milestone.slug);
+  const lumiMood = getLumiMood(milestone.slug);
 
   // Haptic feedback — overlay açıldıktan 0.7s sonra
   useEffect(() => {
@@ -113,7 +112,7 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
         {/* İçerik — basınca propagation durmalı */}
         <Pressable style={styles.content} onPress={() => {}}>
 
-          {/* Flick mascot — 120px, celebration input */}
+          {/* Lumi orb — milestone kutlaması */}
           <Animated.View
             style={styles.mascotContainer}
             entering={FadeInDown.springify()
@@ -121,11 +120,11 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
               .stiffness(BOUNCE_CONFIG.stiffness)
               .delay(200)}
           >
-            <Flick
-              size={120}
-              mood={flickMood}
-              celebration
-              showEffects
+            <Lumi
+              size="large"
+              mood={lumiMood}
+              showParticles
+              showGlow
             />
           </Animated.View>
 
