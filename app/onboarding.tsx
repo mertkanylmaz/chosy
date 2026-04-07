@@ -1,12 +1,15 @@
 /**
- * Onboarding — 3 sayfalik ilk kullanim akisi (Premium Bumble).
+ * Onboarding — 5 aşamalı ilk kullanım akışı (Premium Bumble).
  *
- * Sayfa 0: "Feel it"  — mood ring + "Describe your mood"
- * Sayfa 1: "Swipe it" — poster carousel + "Discover matching movies"
- * Sayfa 2: "Save it"  — collection visual + "Build your collection"
+ * Aşama 1 (slides): 3 tanıtım slide — Feel it, Swipe it, Save it
+ * Aşama 2 (calibration): 6 sorulu Taste Calibration
+ * Aşama 3 (reveal): Archetype Reveal animasyonu
  *
- * Son sayfadan sonra AsyncStorage flag set edilir, (tabs)'a navigate edilir.
- * Skip butonu her sayfada gorunur.
+ * Akış:
+ *   Slide 2 "Continue" → calibration phase
+ *   Calibration complete → reveal phase
+ *   Reveal "Let's Go" → finishOnboarding() → /(tabs)
+ *   Skip (her aşamada) → finishOnboarding()
  */
 import React, { useCallback, useRef, useState } from 'react';
 import {
@@ -29,6 +32,9 @@ import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { supabase } from '@/services/supabase';
+import { TasteCalibration, ArchetypeReveal } from '@/components/Onboarding';
+import type { CalibrationAnswer } from '@/components/Onboarding';
 
 // ── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -448,14 +454,20 @@ const dotsStyles = StyleSheet.create({
 
 // ── Ana Ekran ────────────────────────────────────────────────────────────────
 
+// ─── Onboarding Phase ────────────────────────────────────────────────────────
+
+type Phase = 'slides' | 'calibration' | 'reveal';
+
 /**
- * Onboarding ana bileseni.
- * Horizontal FlatList ile 3 sayfa — son sayfadan sonra (tabs)'a yonlendirir.
+ * Onboarding ana bileşeni.
+ * Üç aşama: tanıtım slide'ları → taste calibration → archetype reveal.
  */
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [phase, setPhase] = useState<Phase>('slides');
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
   const flatListRef = useRef<FlatList<SlideItem>>(null);
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
@@ -482,38 +494,97 @@ export default function OnboardingScreen() {
     router.replace('/(tabs)');
   }, [router]);
 
-  /** "Next" → sonraki sayfaya git ya da onboarding'i bitir */
+  /** Arketip ID'sini Supabase'e arka planda yazar (bloklama olmaz) */
+  const saveArchetypeAsync = useCallback((archetypeId: number | null) => {
+    if (!archetypeId) return;
+    supabase.auth.getUser().then(({ data: authData }) => {
+      if (!authData.user) return;
+      supabase
+        .from('users')
+        .update({ archetype_id: archetypeId })
+        .eq('id', authData.user.id)
+        .then(({ error: dbError }) => {
+          if (dbError && __DEV__) {
+            // eslint-disable-next-line no-console
+            console.error('[Onboarding] archetype_id write failed:', dbError.message);
+          }
+        });
+    });
+  }, []);
+
+  /** "Next" → sonraki slide ya da calibration'a geç */
   const handleNext = useCallback(async () => {
     hapticLight();
     if (currentSlide < SLIDE_COUNT - 1) {
       flatListRef.current?.scrollToIndex({ index: currentSlide + 1, animated: true });
     } else {
-      await finishOnboarding();
+      // Son slide → calibration başlat
+      setPhase('calibration');
     }
-  }, [currentSlide, finishOnboarding]);
+  }, [currentSlide]);
 
-  /** "Skip" → dogrudan bitir */
-  const handleSkip = useCallback(async () => {
+  /** Slide'larda skip → doğrudan bitir */
+  const handleSlideSkip = useCallback(async () => {
+    await finishOnboarding();
+  }, [finishOnboarding]);
+
+  /** Calibration tamamlandı → reveal'a geç */
+  const handleCalibrationComplete = useCallback(
+    (archetypeId: number | null, _answers: CalibrationAnswer[]) => {
+      setRevealArchetypeId(archetypeId);
+      setPhase('reveal');
+      saveArchetypeAsync(archetypeId);
+    },
+    [saveArchetypeAsync],
+  );
+
+  /** Calibration skip → doğrudan bitir */
+  const handleCalibrationSkip = useCallback(async () => {
     await finishOnboarding();
   }, [finishOnboarding]);
 
   const isLast = currentSlide === SLIDE_COUNT - 1;
 
+  // ── Calibration Phase ──
+  if (phase === 'calibration') {
+    return (
+      <View style={styles.root}>
+        <TasteCalibration
+          onComplete={handleCalibrationComplete}
+          onSkip={handleCalibrationSkip}
+        />
+      </View>
+    );
+  }
+
+  // ── Reveal Phase ──
+  if (phase === 'reveal') {
+    return (
+      <View style={styles.root}>
+        <ArchetypeReveal
+          archetypeId={revealArchetypeId}
+          onFinish={finishOnboarding}
+        />
+      </View>
+    );
+  }
+
+  // ── Slides Phase ──
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
 
-        {/* Ust: Skip butonu */}
+        {/* Üst: Skip butonu */}
         <View style={styles.topRow}>
           <View style={styles.topSpacer} />
           {!isLast && (
-            <TouchableOpacity onPress={handleSkip} activeOpacity={0.7} style={styles.skipBtn}>
+            <TouchableOpacity onPress={handleSlideSkip} activeOpacity={0.7} style={styles.skipBtn}>
               <Text style={styles.skipText}>{t('common.skip')}</Text>
             </TouchableOpacity>
           )}
         </View>
 
-        {/* Sayfa icerikleri */}
+        {/* Sayfa içerikleri */}
         <FlatList<SlideItem>
           ref={flatListRef}
           data={SLIDES}
@@ -553,11 +624,9 @@ export default function OnboardingScreen() {
                 style={styles.buttonGradient}
               >
                 <Text style={styles.buttonText}>
-                  {isLast ? t('common.getStarted') : t('common.continue')}
+                  {t('common.continue')}
                 </Text>
-                {!isLast && (
-                  <Ionicons name="arrow-forward" size={18} color={Colors.textOnAccent} />
-                )}
+                <Ionicons name="arrow-forward" size={18} color={Colors.textOnAccent} />
               </LinearGradient>
             </TouchableOpacity>
           </View>

@@ -1,10 +1,14 @@
 /**
  * Mood analiz sonucunu ve filtrelerini ekranlar arası paylaşan context.
  * Feed ekranı buradan profil okur, Mood ekranı buraya yazar.
+ *
+ * P7.1: lastMoodText + lastSessionFilms eklendi — Home Header LastSessionCard için.
+ * In-memory only (restart'ta sıfırlanır) — P7.x'te AsyncStorage persist edilebilir.
  */
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
 import { FilmFilters, TasteProfile } from '@/types';
+import type { Film } from '@/types/film';
 
 interface MoodState {
   /** AI tarafından ayrıştırılmış 12 boyutlu profil; null ise feed boş görünür */
@@ -19,6 +23,16 @@ interface MoodState {
    * null = henüz session oluşturulmadı veya film detay sayfasından eklendi.
    */
   currentSessionId: string | null;
+  /**
+   * Son session'da kullanıcının girdiği ham mood metni.
+   * Home Header'daki LastSessionCard için. clearMood() ile sıfırlanmaz.
+   */
+  lastMoodText: string | null;
+  /**
+   * Son session'da sağa swipe edilen filmler (watchlist'e eklenenler).
+   * Home Header'daki LastSessionCard için. Yeni session başlayınca sıfırlanır.
+   */
+  lastSessionFilms: Film[];
   /** Yeni mood analizi tamamlandığında çağrılır */
   setMoodResult: (profile: TasteProfile, filters: FilmFilters) => void;
   /** Mevcut mood temizlenir (yeni mood başlatıldığında) */
@@ -27,6 +41,10 @@ interface MoodState {
   setPresetMoodText: (text: string | null) => void;
   /** Aktif session ID'yi set eder — mood parsedıktan sonra çağrılır */
   setCurrentSessionId: (id: string | null) => void;
+  /** Son session'ın ham mood metnini kaydeder — LastSessionCard için */
+  setLastMoodText: (text: string) => void;
+  /** Sağa swipe edilen filmi son session listesine ekler — max 5 film tutulur */
+  addLastSessionFilm: (film: Film) => void;
 }
 
 const MoodContext = createContext<MoodState | null>(null);
@@ -39,12 +57,24 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [currentFilters, setCurrentFilters] = useState<FilmFilters | null>(null);
   const [presetMoodText, setPresetMoodTextState] = useState<string | null>(null);
   const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null);
+  const [lastMoodText, setLastMoodTextState] = useState<string | null>(null);
+  const [lastSessionFilms, setLastSessionFilms] = useState<Film[]>([]);
 
+  /**
+   * Yeni mood sonucu gelince profil + filtreler güncellenir.
+   * lastSessionFilms sıfırlanır (yeni session başladı).
+   * lastMoodText KORUNUR — clearMood'da da korunur (LastSessionCard için).
+   */
   const setMoodResult = useCallback((profile: TasteProfile, filters: FilmFilters) => {
     setCurrentProfile(profile);
     setCurrentFilters(filters);
+    setLastSessionFilms([]);
   }, []);
 
+  /**
+   * Feed'den ayrılmak ya da "New Mood" basmak için profili temizler.
+   * lastMoodText ve lastSessionFilms KORUNUR (LastSessionCard görünsün).
+   */
   const clearMood = useCallback(() => {
     setCurrentProfile(null);
     setCurrentFilters(null);
@@ -59,6 +89,22 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     setCurrentSessionIdState(id);
   }, []);
 
+  /** Son session'ın ham mood metnini kaydeder. mood.tsx'den çağrılır. */
+  const setLastMoodText = useCallback((text: string) => {
+    setLastMoodTextState(text);
+  }, []);
+
+  /**
+   * Sağa swipe edilen filmi son session listesine ekler.
+   * Max 5 film tutulur — LastSessionCard en fazla 3 gösterir.
+   */
+  const addLastSessionFilm = useCallback((film: Film) => {
+    setLastSessionFilms((prev) => {
+      if (prev.find((f) => f.id === film.id)) return prev;
+      return [...prev, film].slice(0, 5);
+    });
+  }, []);
+
   return (
     <MoodContext.Provider
       value={{
@@ -66,10 +112,14 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
         currentFilters,
         presetMoodText,
         currentSessionId,
+        lastMoodText,
+        lastSessionFilms,
         setMoodResult,
         clearMood,
         setPresetMoodText,
         setCurrentSessionId,
+        setLastMoodText,
+        addLastSessionFilm,
       }}
     >
       {children}

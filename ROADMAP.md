@@ -1,11 +1,11 @@
 # MoodFlix (Chosy.ai) — Roadmap v3
 
 ## Durum Özeti (2026-04-07)
-- P0–P5: **TAMAMLANDI**
-- P6 Social/Share: **TAMAMLANDI**
+- P0–P6: **TAMAMLANDI**
+- P7 Home Screen Redesign: **TAMAMLANDI**
+- P8.1 Taste Calibration (Onboarding): **TAMAMLANDI**
 - MVP core flow çalışıyor: mood input > AI parsing > vector matching > swipe feed > watchlist save
-- **Aktif: P7** — Landing Page / Home Screen
-- Sonraki: P8 (Onboarding Revamp) → P9 (Payment)
+- **Sonraki: P8.2 veya P9 (Payment)**
 
 > ⚠️ **Not:** Orijinal ROADMAP'te P6=Landing Page, P7=Onboarding, P8=Payment idi.
 > Share Cards sprint'i P6 numarası aldı; eski P6/P7/P8 → yeni P7/P8/P9 olarak kaydırıldı.
@@ -116,15 +116,16 @@
 > Amaç: Feed tab'ı (index.tsx) daha davetkar ve kişiselleştirilmiş bir "Home"a dönüştürmek.
 > Şu an saf swipe kartlar var — yeni kullanıcı için bağlam yok.
 
-### P7.1 Home Screen Redesign
-- [ ] Karşılama widget'ı — günün saatine göre selamlama + kullanıcı adı (varsa)
-- [ ] Hızlı eylem satırı — "How are you feeling today?" CTA → mood tab
-- [ ] Son mood session özeti — "Last time you wanted X, here are your picks"
-- [ ] Günün önerisi tile'ı — DailyMatchCard'ı feed başına taşı veya kopyala
-- [ ] Home spec (CDO) — widget sırası, hero alanı, card hierarchy
-- [ ] Copy EN/TR (CMO)
-- **Owner:** CDO (spec) → CTO (implement) + CMO (copy)
-- **Est:** 1-2 session
+### P7.1 Home Screen Redesign ✅
+- [x] Karşılama widget'ı — günün saatine göre selamlama + kullanıcı adı (varsa)
+- [x] Hızlı eylem satırı — "How are you feeling today?" CTA → mood tab (MoodCTA)
+- [x] Son mood session özeti — LastSessionCard (lastMoodText + son 5 film)
+- [x] Günün önerisi tile'ı — DailyPickSection (DailyMatchCard wrapper)
+- [x] Home bileşenleri: GreetingWidget / MoodCTA / DailyPickSection / LastSessionCard
+- [x] MoodContext'e lastMoodText + lastSessionFilms + addLastSessionFilm eklendi
+- [x] index.tsx: boş durum → Home Header (ScrollView); swipe feed bozulmadı
+- [x] i18n: `home.*` 11 key EN+TR
+- **Owner:** CTO ✅ (CDO spec beklemeden implement edildi)
 - **Bağımlılık:** P5.3 DailyMatchCard hazır ✅, P5.1 kullanıcı adı hazır ✅
 
 ---
@@ -134,14 +135,14 @@
 > Amaç: Mevcut 4-adım onboarding'i archetype engine'e bağlamak.
 > Şu an onboarding → sadece favori film seçimi. Yeni kullanıcı arketip kazanmıyor.
 
-### P8.1 Taste Calibration Flow
-- [ ] Onboarding 3. adım: 5-6 mood/senaryo sorusu → `computeArchetype()` → anında arketip atama
-- [ ] Arketip reveal animasyonu — "You are: The Visual Poet 🎨" reveal kartı
-- [ ] `users.archetype_id` ilk girişte yazılır
-- [ ] Taste calibration UI spec (CDO) — soru kartları, reveal animasyonu
-- [ ] Onboarding copy revamp EN/TR (CMO)
-- **Owner:** CDO (spec) → CTO (implement) + CMO (copy)
-- **Est:** 2 session
+### P8.1 Taste Calibration Flow ✅
+- [x] Onboarding 6 sorulu TasteCalibration → `computeArchetype()` → anında arketip atama
+- [x] Arketip reveal animasyonu — 8-aşamalı stagger (ArchetypeReveal)
+- [x] `users.archetype_id` ilk girişte Supabase'e yazılır (non-blocking)
+- [x] components/Onboarding/: TasteCalibration, QuestionCard, ProgressBar, ArchetypeReveal
+- [x] app/onboarding.tsx: phase sistemi ('slides' | 'calibration' | 'reveal')
+- [x] i18n: 38 yeni key EN+TR (stepOf, q1-q6, seçenekler, arketip reveal)
+- **Owner:** CTO ✅ (CDO spec beklemeden implement edildi)
 - **Bağımlılık:** P5.2 archetypeEngine ✅, P5.1 users.archetype_id kolonu ✅
 
 ---

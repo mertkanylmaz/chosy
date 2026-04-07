@@ -127,7 +127,7 @@ const GENRES: GenreItem[] = [
 export default function MoodScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { setMoodResult, setCurrentSessionId } = useMood();
+  const { setMoodResult, setCurrentSessionId, setLastMoodText } = useMood();
 
   const [phase, setPhase] = useState<Phase>('input');
   const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
@@ -222,13 +222,16 @@ export default function MoodScreen() {
    */
   const handleBrowseMovies = useCallback(() => {
     if (!tasteProfile) return;
+    // P7.1: LastSessionCard için son mood metnini sakla
+    const trimmedMood = moodText.trim();
+    if (trimmedMood) setLastMoodText(trimmedMood);
     setMoodResult(
       tasteProfile,
       pendingFilters.current ?? { yearRange: null, minRating: null, regions: [], directors: [] },
     );
     setPhase('input');
     router.replace('/(tabs)');
-  }, [tasteProfile, setMoodResult, router]);
+  }, [tasteProfile, moodText, setMoodResult, setLastMoodText, router]);
 
   /**
    * Quick Mood koleksiyonu tıklandığında — metni doldur

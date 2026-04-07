@@ -24,6 +24,7 @@ import {
   FlatList,
   Image,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -41,6 +42,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import Lumi from '@/components/Lumi';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
@@ -48,6 +50,12 @@ import ErrorState from '@/components/ErrorState';
 import StreakBadge from '@/components/Gamification/StreakBadge';
 import MilestoneCelebration from '@/components/Gamification/MilestoneCelebration';
 import type { MilestoneCelebrationProps } from '@/components/Gamification/MilestoneCelebration';
+import {
+  GreetingWidget,
+  MoodCTA,
+  DailyPickSection,
+  LastSessionCard,
+} from '@/components/Home';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useFeedManager } from '@/hooks/useFeedManager';
@@ -56,6 +64,7 @@ import {
   getUnseenMilestones,
   markMilestoneSeen,
 } from '@/services/gamification';
+import { supabase } from '@/services/supabase';
 import type { StreakInfo, UserMilestone } from '@/services/gamification';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
@@ -94,7 +103,10 @@ export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm } = useMood();
+
+  // ── Username (Home Header icin) ────────────────────────────────────────────
+  const [username, setUsername] = useState<string | null>(null);
 
   const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
 
@@ -163,9 +175,29 @@ export default function FeedScreen() {
     }
   }, []);
 
+  /** Home Header icin kullanici adini yukler */
+  const loadUsername = useCallback(async () => {
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const authUser = authData?.user;
+      if (!authUser) return;
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('display_name')
+        .eq('auth_id', authUser.id)
+        .single();
+      if (userRow) {
+        setUsername((userRow as { display_name: string | null }).display_name);
+      }
+    } catch {
+      // Username yuklenemese de calisma
+    }
+  }, []);
+
   useEffect(() => {
     loadStreak();
-  }, [loadStreak]);
+    loadUsername();
+  }, [loadStreak, loadUsername]);
 
   // ── Milestone celebration — sıradakini göster ─────────────────────────
 
@@ -290,6 +322,8 @@ export default function FeedScreen() {
     (film: Film) => {
       onSwipeFilm(film, 'right');
       setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
+      // P7.1: LastSessionCard icin son session filmlerini guncelle
+      addLastSessionFilm(film);
       // Watchlist toast
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setShowSaveToast(true);
@@ -309,7 +343,7 @@ export default function FeedScreen() {
         checkNewMilestones();
       }
     },
-    [onSwipeFilm, showMilestone, checkNewMilestones, t],
+    [onSwipeFilm, addLastSessionFilm, showMilestone, checkNewMilestones, t],
   );
 
   /**
@@ -453,18 +487,47 @@ export default function FeedScreen() {
   }
 
   if (!isLoading && displayFilms.length === 0 && !currentProfile) {
+    // P7.1: Home Header — kisisellesmis karsılama ekrani
     return (
-      <>
-        <StatusBar style="light" backgroundColor={Colors.background} />
-        <EmptyState
-          lumiMood="idle"
-          lumiSize="large"
-          title={t('discover.readyTitle')}
-          subtitle={t('discover.readySubtitle')}
-          actionLabel={t('discover.setYourMood')}
-          onAction={() => router.push('/(tabs)/mood')}
-        />
-      </>
+      <View style={styles.container}>
+        <StatusBar style="light" translucent backgroundColor="transparent" />
+
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[
+            styles.homeScrollContent,
+            { paddingTop: insets.top + 52 },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <GreetingWidget username={username} />
+          <MoodCTA onPress={() => router.push('/(tabs)/mood')} />
+          <DailyPickSection />
+          <LastSessionCard />
+          <View style={{ height: Theme.spacing.xxl }} />
+        </ScrollView>
+
+        {/* Logo — ust merkez (Home Header'da da gosterilir) */}
+        <View
+          style={[styles.headerLogoContainer, { top: insets.top + 10 }]}
+          pointerEvents="none"
+        >
+          <Image
+            source={require('../../assets/images/chosy.ai-logo.png')}
+            style={styles.headerLogo}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Streak badge — sol ust */}
+        <View style={[styles.streakBadgeContainer, { top: insets.top + 12 }]}>
+          <StreakBadge
+            currentStreak={streakCount}
+            loading={streakLoading}
+            onPress={() => router.push('/(tabs)/profile')}
+          />
+        </View>
+      </View>
     );
   }
 
@@ -523,7 +586,7 @@ export default function FeedScreen() {
         removeClippedSubviews={true}
       />
 
-      {/* "New mood" floating butonu */}
+      {/* "New mood" floating butonu — sadece swipe feed varken (Home Header'da MoodCTA var) */}
       <Animated.View style={[styles.newMoodBtn, { top: insets.top + 12 }, newMoodAnimStyle]}>
         <TouchableOpacity
           onPressIn={newMoodPressIn}
@@ -622,6 +685,11 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.background,
+  },
+  // ─── Home Header (P7.1) ────────────────────────────────────────────────────
+  homeScrollContent: {
+    paddingBottom: 83 + Theme.spacing.xl, // tab bar + extra
     backgroundColor: Colors.background,
   },
   centered: {

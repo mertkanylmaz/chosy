@@ -52,7 +52,9 @@ import { encodeVector } from 'services/vectorEncoder' // Tek kaynak — başka y
 - **P6 ✅ TAMAMLANDI** — FilmShareCard + MoodShareCard + useShareCapture; film detay + mood result + watchlist entegre
 - **Share paketler:** react-native-view-shot@4.0.3 + expo-sharing~55.0.14 kurulu, app.json'da plugin
 - **⚠️ Share native rebuild:** Paylaşım özelliği için `expo run:ios` / `expo run:android` yeniden build gerekli
-- Sonraki: P7 (Onboarding) veya P8 (Payment)
+- **P7 ✅ TAMAMLANDI** — Home Screen Redesign: GreetingWidget + MoodCTA + DailyPickSection + LastSessionCard; MoodContext genişletildi
+- **P8.1 ✅ TAMAMLANDI** — Taste Calibration: 6 soru + ArchetypeReveal + phase sistemi (onboarding.tsx); 38 i18n key EN+TR
+- Sonraki: P8.2 veya P9 (Payment)
 
 ---
 
