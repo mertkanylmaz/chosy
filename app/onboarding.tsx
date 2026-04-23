@@ -19,7 +19,6 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import * as StoreReview from 'expo-store-review';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -279,13 +278,15 @@ export default function OnboardingScreen() {
    * iOS/Android rate-limit: 3 popup/yil — sadece bu noktada tetiklenir.
    */
   const handleRevealFinish = useCallback(async () => {
+    // Lazy dynamic import — native module build'de yoksa module-load crash'i onler
     try {
+      const StoreReview = await import('expo-store-review');
       const isAvailable = await StoreReview.hasAction();
       if (isAvailable) {
         await StoreReview.requestReview();
       }
     } catch {
-      // Sessizce devam et — review hata verse de onboarding bitmeli
+      // Sessizce devam et — dev build veya simulator'da review yoksa onboarding bitmeli
     }
     await finishOnboarding();
   }, [finishOnboarding]);
