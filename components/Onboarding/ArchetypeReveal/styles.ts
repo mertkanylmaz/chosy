@@ -111,4 +111,50 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 8,
   },
+
+  // ─── Aha Moment ─────────────────────────────────────────────────────────────
+
+  ahaSection: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+
+  ahaTitle: {
+    fontSize: 11,
+    fontFamily: 'Inter_700Bold',
+    color: Colors.textTertiary,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+  },
+
+  ahaRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  /** Today's Pick hint — poster altinda */
+  todayPickHint: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
+    maxWidth: 260,
+    lineHeight: 17,
+  },
+
+  /** Tek poster kart — 72×108 rounded */
+  ahaCard: {
+    width: 72,
+    height: 108,
+    borderRadius: 8,
+    backgroundColor: Colors.bgCard,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
 });
