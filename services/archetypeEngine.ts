@@ -8,6 +8,9 @@
  *     (profil yeterince gelismemis demek).
  *
  * Gelecek surumler: Claude API ile semantik puanlama.
+ *
+ * Ek: getArchetypeProfile — her arketip icin kanonical TasteProfile.
+ *   Today's Pick cold-start fallback'i icin kullanilir.
  */
 
 import type { TasteProfile } from '../types/index';
@@ -310,4 +313,210 @@ export function computeAllScores(profile: TasteProfile): { id: number; score: nu
   return SCORERS
     .map((scorer, idx) => ({ id: idx + 1, score: scorer(profile) }))
     .sort((a, b) => b.score - a.score);
+}
+
+// ─── Kanonical Arketip Profilleri ─────────────────────────────────────────────
+
+/**
+ * Her sinefil arketipinin sinematik kimligini temsil eden kanonical TasteProfile.
+ *
+ * Kullanim:
+ *   - Today's Pick cold-start: kullanici mood girmeden once arketipine gore oneri
+ *   - Kalibrasyon sonrasi ilk gun: preferences_vector yokken devreye girer
+ *   - Her profil archetypeEngine skor fonksiyonlariyla tutarlidir
+ */
+const ARCHETYPE_PROFILES: Readonly<Record<number, TasteProfile>> = {
+  /** 1 — Adrenalin Bagimlisi: hizli, yuksek enerji, gerilim/aksiyon */
+  1: {
+    emotional_state: { joy: 0.3, sadness: 0.1, anger: 0.7, fear: 0.8, surprise: 0.5, disgust: 0.2, anticipation: 0.8, trust: 0.3 },
+    energy_level: 0.9,
+    pace_preference: 'fast',
+    visual_style: 'cinematic',
+    thematic_depth: 0.35,
+    ending_preference: 'triumphant',
+    era_preference: { from: 1990, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'friends',
+    rewatch_tolerance: true,
+  },
+  /** 2 — Zihin Bukucu: derin, dogrusal olmayan, zihin-buran */
+  2: {
+    emotional_state: { joy: 0.3, sadness: 0.4, anger: 0.3, fear: 0.5, surprise: 0.9, disgust: 0.2, anticipation: 0.8, trust: 0.3 },
+    energy_level: 0.6,
+    pace_preference: 'medium',
+    visual_style: 'experimental',
+    thematic_depth: 0.95,
+    ending_preference: 'open',
+    era_preference: { from: 1990, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'nonlinear',
+    social_context: 'alone',
+    rewatch_tolerance: true,
+  },
+  /** 3 — Gozyasi Hirsizi: melankolik, yavas, tath-ac bitis */
+  3: {
+    emotional_state: { joy: 0.2, sadness: 0.9, anger: 0.2, fear: 0.3, surprise: 0.3, disgust: 0.1, anticipation: 0.4, trust: 0.5 },
+    energy_level: 0.25,
+    pace_preference: 'slow',
+    visual_style: 'lush',
+    thematic_depth: 0.8,
+    ending_preference: 'bittersweet',
+    era_preference: { from: 1980, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'alone',
+    rewatch_tolerance: false,
+  },
+  /** 4 — Gulumseme Avcisi: neşeli, umutlu, hafif temalar */
+  4: {
+    emotional_state: { joy: 0.95, sadness: 0.1, anger: 0.1, fear: 0.1, surprise: 0.5, disgust: 0.05, anticipation: 0.6, trust: 0.7 },
+    energy_level: 0.7,
+    pace_preference: 'fast',
+    visual_style: 'cinematic',
+    thematic_depth: 0.2,
+    ending_preference: 'hopeful',
+    era_preference: { from: 1990, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'friends',
+    rewatch_tolerance: true,
+  },
+  /** 5 — Umutsuz Romantik: guven/ask, cift baglami, tath-ac */
+  5: {
+    emotional_state: { joy: 0.7, sadness: 0.5, anger: 0.1, fear: 0.2, surprise: 0.3, disgust: 0.05, anticipation: 0.6, trust: 0.9 },
+    energy_level: 0.45,
+    pace_preference: 'medium',
+    visual_style: 'lush',
+    thematic_depth: 0.6,
+    ending_preference: 'bittersweet',
+    era_preference: { from: 1980, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'couple',
+    rewatch_tolerance: true,
+  },
+  /** 6 — Karanlik Yolcu: karanlik temalar, trajik, yalniz izleme */
+  6: {
+    emotional_state: { joy: 0.05, sadness: 0.5, anger: 0.5, fear: 0.9, surprise: 0.4, disgust: 0.8, anticipation: 0.4, trust: 0.2 },
+    energy_level: 0.55,
+    pace_preference: 'medium',
+    visual_style: 'raw',
+    thematic_depth: 0.8,
+    ending_preference: 'tragic',
+    era_preference: { from: 1970, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'nonlinear',
+    social_context: 'alone',
+    rewatch_tolerance: false,
+  },
+  /** 7 — Gorsel Sair: estetik, yavas, gorsel hikaye anlayisi */
+  7: {
+    emotional_state: { joy: 0.5, sadness: 0.4, anger: 0.1, fear: 0.2, surprise: 0.6, disgust: 0.1, anticipation: 0.5, trust: 0.6 },
+    energy_level: 0.3,
+    pace_preference: 'slow',
+    visual_style: 'lush',
+    thematic_depth: 0.85,
+    ending_preference: 'open',
+    era_preference: { from: 1960, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'nonlinear',
+    social_context: 'alone',
+    rewatch_tolerance: true,
+  },
+  /** 8 — Nostalji Bekcisi: klasik donem, tekrar izleme, sicak/guvenli */
+  8: {
+    emotional_state: { joy: 0.7, sadness: 0.3, anger: 0.1, fear: 0.15, surprise: 0.3, disgust: 0.05, anticipation: 0.5, trust: 0.85 },
+    energy_level: 0.4,
+    pace_preference: 'medium',
+    visual_style: 'cinematic',
+    thematic_depth: 0.5,
+    ending_preference: 'hopeful',
+    era_preference: { from: 1940, to: 1990 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'family',
+    rewatch_tolerance: true,
+  },
+  /** 9 — Kaos Elcisi: kaotik, ongoren olmayan, ham enerji */
+  9: {
+    emotional_state: { joy: 0.3, sadness: 0.2, anger: 0.9, fear: 0.4, surprise: 0.8, disgust: 0.6, anticipation: 0.5, trust: 0.15 },
+    energy_level: 0.85,
+    pace_preference: 'fast',
+    visual_style: 'raw',
+    thematic_depth: 0.5,
+    ending_preference: 'open',
+    era_preference: { from: 1990, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'nonlinear',
+    social_context: 'alone',
+    rewatch_tolerance: false,
+  },
+  /** 10 — Huzur Gezgini: sakin, dusuk enerji, i huzur arayan */
+  10: {
+    emotional_state: { joy: 0.5, sadness: 0.3, anger: 0.05, fear: 0.05, surprise: 0.3, disgust: 0.05, anticipation: 0.3, trust: 0.85 },
+    energy_level: 0.15,
+    pace_preference: 'slow',
+    visual_style: 'minimalist',
+    thematic_depth: 0.6,
+    ending_preference: 'open',
+    era_preference: { from: 1970, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'alone',
+    rewatch_tolerance: true,
+  },
+  /** 11 — Gerceklik Dedektifi: ham gercekcilik, diyalog odakli, derin analiz */
+  11: {
+    emotional_state: { joy: 0.2, sadness: 0.5, anger: 0.4, fear: 0.3, surprise: 0.3, disgust: 0.4, anticipation: 0.6, trust: 0.4 },
+    energy_level: 0.4,
+    pace_preference: 'slow',
+    visual_style: 'raw',
+    thematic_depth: 0.95,
+    ending_preference: 'open',
+    era_preference: { from: 1960, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'dialogue-driven',
+    social_context: 'alone',
+    rewatch_tolerance: true,
+  },
+  /** 12 — Fantastik Hayalperest: epik, gorselli, umut dolu macera */
+  12: {
+    emotional_state: { joy: 0.8, sadness: 0.1, anger: 0.1, fear: 0.2, surprise: 0.5, disgust: 0.05, anticipation: 0.9, trust: 0.6 },
+    energy_level: 0.85,
+    pace_preference: 'fast',
+    visual_style: 'lush',
+    thematic_depth: 0.4,
+    ending_preference: 'triumphant',
+    era_preference: { from: 1990, to: 2024 },
+    cultural_context: [],
+    avoid_signals: [],
+    narrative_style: 'linear',
+    social_context: 'friends',
+    rewatch_tolerance: true,
+  },
+};
+
+/**
+ * Verilen arketip ID'sine karsilik gelen kanonical TasteProfile'i dondurur.
+ *
+ * Today's Pick cold-start senaryosunda kullanilir: kalibrasyon tamamlanmis ama
+ * henuz mood session yoksa, arketip kimligine gore film onerisi uretilir.
+ *
+ * @param archetypeId - 1-12 arasi arketip kimlik numarasi
+ * @returns TasteProfile veya null (gecersiz ID)
+ */
+export function getArchetypeProfile(archetypeId: number): TasteProfile | null {
+  return ARCHETYPE_PROFILES[archetypeId] ?? null;
 }

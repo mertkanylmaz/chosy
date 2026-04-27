@@ -25,7 +25,7 @@ function isNetworkError(error: unknown): boolean {
     return true;
   }
   if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
+    const msg = error.message.toLocaleLowerCase('en-US');
     return (
       msg.includes('network') ||
       msg.includes('timeout') ||
@@ -43,7 +43,7 @@ function isNetworkError(error: unknown): boolean {
  */
 function isAuthError(error: unknown): boolean {
   if (error instanceof Error) {
-    const msg = error.message.toLowerCase();
+    const msg = error.message.toLocaleLowerCase('en-US');
     return (
       msg.includes('jwt') ||
       msg.includes('token') ||

@@ -5,11 +5,50 @@
  *
  * P4.1: saveSession + getWatchlistGroupedBySessions eklendi.
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import { Film } from '../types/film';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
 import { updateUserVector } from './userProfile';
 import { logger } from '../utils/logger';
+
+// ─── Watched Status (local) ──────────────────────────────────────────────────
+
+const WATCHED_KEY = 'chosy_watched_films';
+
+/**
+ * Filmin izlendi durumunu toggle eder.
+ * AsyncStorage'da JSON Set olarak saklanır.
+ */
+export async function toggleWatched(filmId: string): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(WATCHED_KEY);
+    const set: Set<string> = raw ? new Set(JSON.parse(raw)) : new Set();
+    const isWatched = set.has(filmId);
+    if (isWatched) {
+      set.delete(filmId);
+    } else {
+      set.add(filmId);
+    }
+    await AsyncStorage.setItem(WATCHED_KEY, JSON.stringify([...set]));
+    return !isWatched;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Tüm izlenen film ID'lerini döndürür.
+ */
+export async function getWatchedFilmIds(): Promise<Set<string>> {
+  try {
+    const raw = await AsyncStorage.getItem(WATCHED_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
 
 /** Watchlist listesinde dönen satır tipi */
 export interface WatchlistItem {
@@ -58,20 +97,28 @@ export async function getAppUserId(): Promise<string | null> {
 
     if (data) return data.id as string;
 
-    // Kayıt yoksa oluştur (anonim kullanıcı ilk kullanım)
+    // Kayıt yoksa oluştur — race condition için duplicate key (23505) toleransı var
     const { data: inserted, error: insertError } = await supabase
       .from('users')
       .insert({ auth_id: user.id })
       .select('id')
       .single();
 
-    if (insertError || !inserted) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('[watchlist] users kaydı oluşturulamadı:', insertError?.message);
+    if (insertError) {
+      // 23505 = unique_violation: eşzamanlı başka bir çağrı zaten INSERT yaptı
+      if (insertError.code === '23505') {
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', user.id)
+          .single();
+        return existing?.id ?? null;
       }
+      logger.error('[watchlist] users kaydı oluşturulamadı:', insertError.message);
       return null;
     }
+
+    if (!inserted) return null;
 
     return inserted.id as string;
   } catch (err) {
@@ -268,29 +315,40 @@ export async function clearWatchlist(): Promise<void> {
 
 /**
  * Filmi watchlist'ten siler.
+ * Başarılı olursa true, hata olursa false döner.
+ * Çağıran, false durumunda UI'ı geri almalıdır.
  *
  * @param filmId - Silinecek filmin ID'si
+ * @returns Silme başarılıysa true
  */
-export async function removeFromWatchlist(filmId: string): Promise<void> {
+export async function removeFromWatchlist(filmId: string): Promise<boolean> {
   try {
     const appUserId = await getAppUserId();
 
-    if (!appUserId) return;
+    if (!appUserId) return false;
 
     const { error } = await supabase
       .from('watchlist')
       .delete()
       .match({ film_id: filmId, user_id: appUserId });
 
-    if (__DEV__ && error) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] removeFromWatchlist hata:', error.message);
+    if (__DEV__) {
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('[watchlist] removeFromWatchlist hata:', error.message, '| code:', error.code);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('[watchlist] silindi: film_id=', filmId, '| user_id=', appUserId);
+      }
     }
+
+    return !error;
   } catch (err) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.error('[watchlist] removeFromWatchlist beklenmedik hata:', err);
     }
+    return false;
   }
 }
 

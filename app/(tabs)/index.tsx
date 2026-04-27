@@ -1,681 +1,438 @@
 /**
- * Feed sekmesi — FlatList tabanlı TikTok+Tinder hibrit film discovery.
+ * Home sekmesi — kişiselleştirilmiş dashboard.
  *
- * Mimari:
- * - FlatList: dikey snap scroll (TikTok tarzı sayfa geçişi)
- * - SwipeableCard: her kart kendi yatay swipe mekanizmasını yönetir (Tinder)
- * - Gesture çakışması yok: failOffsetY + activeOffsetX ile ayrılmış
+ * Düzen (yeni hiyerarşi):
+ *   - Floating header: logo + chosy.ai
+ *   - GreetingWidget: saate göre dinamik selamlama
+ *   - Hero Section: "Find a Mood" devasa CTA (birincil odak)
+ *   - Film Kartları: Last Added + Today's Pick (yatay, de-emphasized)
+ *   - Sinefil Profili: tam genişlik kart (text overflow düzeltildi)
  *
- * Film Yönetimi:
- * - useFeedManager: API yüklemesi, exclude_ids, faz geçişleri
- * - displayFilms (local state): swipe edilen filmler filter() ile çıkarılır
- * - Yükleme tetikleyici: displayFilms.length <= 3 → onLoadMore()
- *
- * Siyah ekran neden yok:
- * - Kart yatay uçuş animasyonu 300ms içinde biter
- * - withTiming callback'te runOnJS → onSwipeRight/Left → film array'den çıkar
- * - FlatList'teki sonraki kart zaten render edilmiş ve hazır
+ * UX Kararları:
+ *   - Hero en üstte, kullanıcıyı ana aksiyona yönlendirir
+ *   - Film kartları ikincil bilgi — küçük, yatay sıra
+ *   - Archetype kart: tam genişlik, numberOfLines + flex-wrap
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
+  Alert,
   Dimensions,
-  FlatList,
-  Image,
-  RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  ViewToken,
 } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut, FadeOutUp } from 'react-native-reanimated';
-import { hapticSuccess } from '@/utils/haptics';
-import { useScalePress } from '@/hooks/useScalePress';
-
-import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
-import Lumi from '@/components/Lumi';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import ErrorState from '@/components/ErrorState';
-import StreakBadge from '@/components/Gamification/StreakBadge';
-import MilestoneCelebration from '@/components/Gamification/MilestoneCelebration';
-import type { MilestoneCelebrationProps } from '@/components/Gamification/MilestoneCelebration';
-import {
-  GreetingWidget,
-  MoodCTA,
-  DailyPickSection,
-  LastSessionCard,
-} from '@/components/Home';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useMood } from '@/contexts/MoodContext';
-import { useFeedManager } from '@/hooks/useFeedManager';
-import {
-  getStreakInfo,
-  getUnseenMilestones,
-  markMilestoneSeen,
-} from '@/services/gamification';
-import { supabase } from '@/services/supabase';
-import type { StreakInfo, UserMilestone } from '@/services/gamification';
-import { Film } from '@/types/film';
-import { FilmFilters } from '@/types';
+import { GreetingWidget } from '@/components/Home';
+import { getArchetype } from '@/constants/archetypes';
+import { getHomeData, type HomeData } from '@/services/homeService';
+import { getDailyMatch, getDailyMatchByPreferences } from '@/services/dailyMatch';
+import { getLastParsedProfile } from '@/services/profileService';
+import { getArchetypeProfile } from '@/services/archetypeEngine';
+import { getAppUserId, getWatchlist } from '@/services/watchlist';
+import { logger } from '@/utils/logger';
+import { localizeGenre } from '@/utils/filmFilters';
+import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
+import type { Film } from '@/types/film';
 
-// ── Sabitler ──────────────────────────────────────────────────────────────────
+// ── Sabitler ─────────────────────────────────────────────────────────────────
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const TMDB_BASE = 'https://image.tmdb.org/t/p/w500';
+const RECALIBRATION_KEY = 'chosy_last_recalibration';
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const { width: SCREEN_W } = Dimensions.get('window');
 
-/** Tab bar yüksekliği (tab bar position:absolute) */
-const TAB_BAR_HEIGHT = 80;
 
-/**
- * Her kart item'ının yüksekliği.
- * snapToInterval bu değerle eşleşmeli.
- */
-const CARD_HEIGHT = SCREEN_HEIGHT - TAB_BAR_HEIGHT;
-
-/** Filtreler seçilmemişse varsayılan */
-const DEFAULT_FILTERS: FilmFilters = {
-  yearRange: null,
-  minRating: null,
-  regions: [],
-  directors: [],
-};
-
-/** Kalan film sayısı bu eşiğin altına düşünce yeni batch yükle */
-const LOAD_MORE_THRESHOLD = 3;
-
-// ── Ana Ekran ────────────────────────────────────────────────────────────────
+// ── Yardımcı ─────────────────────────────────────────────────────────────────
 
 /**
- * Feed sekmesi.
- * MoodContext'ten profil okur; FlatList + SwipeableCard ile filmler gösterilir.
+ * Film için kart altında gösterilecek meta metni oluşturur.
+ * Öncelik: moodTag[0] → runtime → sadece yıl
+ *
+ * @param film   - Film verisi
+ * @param locale - Aktif uygulama dili ('en' | 'tr')
  */
-export default function FeedScreen() {
-  const insets = useSafeAreaInsets();
+function getFilmMeta(
+  film: { year: number; moodTags?: string[]; runtime?: number },
+  locale: string,
+): string {
+  const raw = film.moodTags?.[0];
+  const tag = raw ? localizeGenre(raw, locale) : null;
+  if (tag) return `${film.year} · ${tag}`;
+  if (film.runtime) {
+    const h = Math.floor(film.runtime / 60);
+    const m = film.runtime % 60;
+    const rt = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+    return `${film.year} · ${rt}`;
+  }
+  return `${film.year}`;
+}
+
+/**
+ * Poster URL'sini kontrol eder; gerekirse TMDB base prefix ekler.
+ */
+function resolvePosterUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${TMDB_BASE}${url}`;
+}
+
+// ── Haftalık Limit ────────────────────────────────────────────────────────────
+
+/**
+ * Kullanıcının bu hafta yeniden kalibrasyon hakkı olup olmadığını kontrol eder.
+ */
+async function checkRecalibrationAllowed(): Promise<{ allowed: boolean; nextDate?: Date }> {
+  try {
+    const raw = await AsyncStorage.getItem(RECALIBRATION_KEY);
+    if (!raw) return { allowed: true };
+
+    const lastDate = new Date(raw);
+    const nextDate = new Date(lastDate.getTime() + SEVEN_DAYS_MS);
+
+    if (Date.now() >= nextDate.getTime()) return { allowed: true };
+    return { allowed: false, nextDate };
+  } catch {
+    return { allowed: true };
+  }
+}
+
+// ── Ana Ekran ─────────────────────────────────────────────────────────────────
+
+/**
+ * Home sekmesi — kişiselleştirilmiş dashboard.
+ * Hiyerarşi: Hero CTA (birincil) → Film Kartları (ikincil) → Archetype (detay).
+ */
+export default function HomeScreen() {
+  const { t, language } = useLanguage();
   const router = useRouter();
-  const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm } = useMood();
+  const insets = useSafeAreaInsets();
 
-  // ── Username (Home Header icin) ────────────────────────────────────────────
-  const [username, setUsername] = useState<string | null>(null);
-
-  const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
-
-  const {
-    films: managerFilms,
-    isLoading,
-    hasError,
-    errorType,
-    retryLoad,
-    onSwipeFilm,
-    onLoadMore,
-    resetFeed,
-  } = useFeedManager(currentProfile, effectiveFilters);
-
-  // ── Yerel film listesi ─────────────────────────────────────────────────────
+  const [homeData, setHomeData] = useState<HomeData | null>(null);
+  const [dailyFilm, setDailyFilm] = useState<Film | null>(null);
+  const [dailyLoading, setDailyLoading] = useState(true);
 
   /**
-   * Manager'dan gelen filmler buraya kopyalanır.
-   * Swipe edilince filter() ile çıkarılır — FlatList bu array'i kullanır.
+   * Home verilerini ve daily pick'i paralel yükler.
    */
-  const [displayFilms, setDisplayFilms] = useState<Film[]>([]);
-  const [showSaveToast, setShowSaveToast] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ── Streak badge state ─────────────────────────────────────────────────
-  const [streakCount, setStreakCount] = useState(0);
-  const [streakLoading, setStreakLoading] = useState(true);
-
-  // ── Milestone celebration overlay state ─────────────────────────────────
-  const [celebrationMilestone, setCelebrationMilestone] = useState<
-    MilestoneCelebrationProps['milestone'] | null
-  >(null);
-  const [celebrationVisible, setCelebrationVisible] = useState(false);
-  /** Milestone kuyruğu — birden fazla unseen varsa sırayla göster */
-  const milestoneQueueRef = useRef<UserMilestone[]>([]);
-
-  // ── Milestone toast (basit metin, küçük milestone'lar için) ─────────────
-  const [milestoneMsg, setMilestoneMsg] = useState<string | null>(null);
-  const milestoneTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const swipeCountRef = useRef(0);
-  const saveCountRef = useRef(0);
-  const firstSurpriseSeenRef = useRef(false);
-  /** Performans: milestone kontrolü max 1 kez / 5 sn — her swipe'da DB'ye gitmesin */
-  const lastMilestoneCheckRef = useRef(0);
-
-  /** Milestone mesajını 2 sn göster */
-  const showMilestone = useCallback((msg: string) => {
-    if (milestoneTimer.current) clearTimeout(milestoneTimer.current);
-    setMilestoneMsg(msg);
-    milestoneTimer.current = setTimeout(() => setMilestoneMsg(null), 2000);
-  }, []);
-
-  // ── Streak bilgisini yükle ───────────────────────────────────────────────
-
-  const loadStreak = useCallback(async () => {
+  const loadData = useCallback(async () => {
     try {
-      const info = await getStreakInfo();
-      if (info) {
-        setStreakCount(info.currentStreak);
+      const data = await getHomeData();
+      setHomeData(data);
+
+      if (data.archetypeId) {
+        try {
+          const userId = await getAppUserId();
+          if (userId) {
+            // Watchlist + son profil paralel çek
+            const [wl, lastProfile] = await Promise.all([
+              getWatchlist(),
+              getLastParsedProfile(userId),
+            ]);
+            const seenIds = wl.map((w) => w.film.id);
+
+            // ── Kademeli cascade: sinefil kimliğine göre öneri ────────────
+            // Priority 1: preferences_vector (swipe + kalibrasyon birikimi)
+            let film = await getDailyMatchByPreferences(userId, seenIds);
+
+            // Priority 2: son mood session profili
+            if (!film) {
+              film = await getDailyMatch(userId, lastProfile, seenIds);
+            }
+
+            // Priority 3: arketip kanonical profili (cold-start fallback)
+            if (!film) {
+              const archetypeProfile = getArchetypeProfile(data.archetypeId);
+              film = await getDailyMatch(userId, archetypeProfile, seenIds);
+            }
+
+            setDailyFilm(film);
+          }
+        } catch (err) {
+          logger.error('[HomeScreen] daily pick hatası:', err);
+        }
       }
-    } catch {
-      // Streak yükleme hatası sessizce geç
+    } catch (err) {
+      logger.error('[HomeScreen] veri yüklemesi hatası:', err);
     } finally {
-      setStreakLoading(false);
+      setDailyLoading(false);
     }
   }, []);
 
-  /** Home Header icin kullanici adini yukler */
-  const loadUsername = useCallback(async () => {
-    try {
-      const { data: authData } = await supabase.auth.getUser();
-      const authUser = authData?.user;
-      if (!authUser) return;
-      const { data: userRow } = await supabase
-        .from('users')
-        .select('display_name')
-        .eq('auth_id', authUser.id)
-        .single();
-      if (userRow) {
-        setUsername((userRow as { display_name: string | null }).display_name);
-      }
-    } catch {
-      // Username yuklenemese de calisma
-    }
-  }, []);
+  /** Ekran her odaklandığında yeniden yükle */
+  useFocusEffect(
+    useCallback(() => {
+      setDailyLoading(true);
+      setDailyFilm(null);
+      loadData();
+    }, [loadData]),
+  );
 
-  useEffect(() => {
-    loadStreak();
-    loadUsername();
-  }, [loadStreak, loadUsername]);
+  // ── Archetype tıklaması (haftalık limit) ──────────────────────────────────
 
-  // ── Milestone celebration — sıradakini göster ─────────────────────────
+  /** Kalibrasyon limiti kontrolü + yönlendirme */
+  async function handleArchetypeTap() {
+    hapticSelection();
+    const { allowed, nextDate } = await checkRecalibrationAllowed();
 
-  /** Kuyruktan sonraki milestone'u al ve celebration overlay'ı aç */
-  const showNextCelebration = useCallback(() => {
-    const next = milestoneQueueRef.current.shift();
-    if (!next) return;
-
-    setCelebrationMilestone({
-      userMilestoneId: next.id,
-      slug: next.milestone.slug,
-      title: next.milestone.title,
-      description: next.milestone.description,
-      icon: next.milestone.icon,
-      category: next.milestone.category,
-      threshold: next.milestone.threshold,
-    });
-    setCelebrationVisible(true);
-  }, []);
-
-  /** Celebration overlay kapatıldığında: seen işaretle, sıradakine geç */
-  const handleCelebrationDismiss = useCallback(() => {
-    setCelebrationVisible(false);
-
-    // Mevcut milestone'u seen olarak işaretle
-    if (celebrationMilestone) {
-      markMilestoneSeen(celebrationMilestone.userMilestoneId).catch(() => {});
-    }
-
-    // Kuyrukta başka milestone varsa 500ms sonra göster
-    if (milestoneQueueRef.current.length > 0) {
-      setTimeout(showNextCelebration, 500);
-    }
-  }, [celebrationMilestone, showNextCelebration]);
-
-  /**
-   * Manager'ın kaç filmini senkronize ettiğimizi izler.
-   * Sadece yeni eklenen filmler displayFilms'e eklenir.
-   */
-  const lastSyncedLengthRef = useRef(0);
-
-  // Yeni filmler gelince displayFilms'e ekle; manager sıfırlanınca temizle
-  useEffect(() => {
-    if (managerFilms.length === 0) {
-      setDisplayFilms([]);
-      lastSyncedLengthRef.current = 0;
+    if (!allowed && nextDate) {
+      Alert.alert(
+        t('home.retestWeeklyLimitTitle'),
+        t('home.retestWeeklyLimit').replace('%{date}', nextDate.toLocaleDateString()),
+      );
       return;
     }
-    if (managerFilms.length > lastSyncedLengthRef.current) {
-      const newFilms = managerFilms.slice(lastSyncedLengthRef.current);
-      lastSyncedLengthRef.current = managerFilms.length;
-      setDisplayFilms((prev) => [...prev, ...newFilms]);
-    }
-  }, [managerFilms]);
 
-  // ── Profil değişince feed sıfırla ─────────────────────────────────────────
-
-  const prevProfileRef = useRef(currentProfile);
-
-  useEffect(() => {
-    if (currentProfile && currentProfile !== prevProfileRef.current) {
-      prevProfileRef.current = currentProfile;
-      lastSyncedLengthRef.current = 0;
-      setDisplayFilms([]);
-      resetFeed(currentProfile, effectiveFilters);
-    } else if (!currentProfile) {
-      prevProfileRef.current = null;
-    }
-  }, [currentProfile, effectiveFilters, resetFeed]);
-
-  // ── Otomatik yükleme (swipe bazlı) ────────────────────────────────────────
-
-  /**
-   * Kalan film sayısı LOAD_MORE_THRESHOLD'un altına düşünce
-   * (FlatList scroll'ından bağımsız) yeni batch yükle.
-   */
-  useEffect(() => {
-    if (displayFilms.length > 0 && displayFilms.length <= LOAD_MORE_THRESHOLD) {
-      onLoadMore();
-    }
-  }, [displayFilms.length, onLoadMore]);
-
-  // ── Swipe handler'lar ──────────────────────────────────────────────────────
-
-  /**
-   * Swipe sonrası backend'den gelen yeni milestone'ları kontrol et.
-   * recordActivity() useFeedManager'da fire-and-forget çalışır;
-   * burada ayrıca unseen milestone sorgusu yaparız.
-   *
-   * Yeni milestone varsa:
-   * - Full celebration overlay (MilestoneCelebration) gösterilir
-   * - Birden fazla varsa sırayla gösterilir (kuyruk)
-   * - Streak badge da güncellenir
-   */
-  const checkNewMilestones = useCallback(async () => {
-    try {
-      // Kısa gecikme — recordActivity'nin DB'ye yazmasını bekle
-      await new Promise((r) => setTimeout(r, 600));
-      const unseen = await getUnseenMilestones();
-
-      if (unseen.length > 0) {
-        // Celebration overlay kuyruğuna ekle
-        milestoneQueueRef.current = [...unseen];
-        showNextCelebration();
-      }
-
-      // Streak badge'i de güncelle
-      const info = await getStreakInfo();
-      if (info) {
-        setStreakCount(info.currentStreak);
-      }
-    } catch {
-      // Milestone kontrolü başarısız olursa sessizce devam et
-    }
-  }, [showNextCelebration]);
-
-  /**
-   * Sağa swipe: watchlist'e ekle + film listeden çıkar.
-   * SwipeableCard'ın withTiming callback'inden (JS thread) çağrılır.
-   */
-  const handleSwipeRight = useCallback(
-    (film: Film) => {
-      onSwipeFilm(film, 'right');
-      setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
-      // P7.1: LastSessionCard icin son session filmlerini guncelle
-      addLastSessionFilm(film);
-      // Watchlist toast
-      if (toastTimer.current) clearTimeout(toastTimer.current);
-      setShowSaveToast(true);
-      toastTimer.current = setTimeout(() => setShowSaveToast(false), 1400);
-      // Local milestone — anlık geri bildirim
-      swipeCountRef.current += 1;
-      saveCountRef.current += 1;
-      if (swipeCountRef.current % 10 === 0) {
-        showMilestone(t('discover.milestoneExplored', { count: swipeCountRef.current }));
-      } else if (saveCountRef.current % 5 === 0) {
-        showMilestone(t('discover.milestoneSaved', { count: saveCountRef.current }));
-      }
-      // Backend milestone kontrolü — throttled: max 1 kez / 5 sn
-      const now = Date.now();
-      if (now - lastMilestoneCheckRef.current > 5000) {
-        lastMilestoneCheckRef.current = now;
-        checkNewMilestones();
-      }
-    },
-    [onSwipeFilm, addLastSessionFilm, showMilestone, checkNewMilestones, t],
-  );
-
-  /**
-   * Sola swipe: skip logla + film listeden çıkar.
-   * Milestone kontrolü burada yapılmaz — sadece sağa swipe'ta tetiklenir.
-   */
-  const handleSwipeLeft = useCallback(
-    (film: Film) => {
-      onSwipeFilm(film, 'left');
-      setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
-      // Local milestone — anlık geri bildirim
-      swipeCountRef.current += 1;
-      if (swipeCountRef.current % 10 === 0) {
-        showMilestone(t('discover.milestoneExplored', { count: swipeCountRef.current }));
-      }
-      // Sola swipe'ta DB sorgusu YOK — performans için
-    },
-    [onSwipeFilm, showMilestone, t],
-  );
-
-  const { animatedStyle: newMoodAnimStyle, onPressIn: newMoodPressIn, onPressOut: newMoodPressOut } = useScalePress(0.95);
-
-  /** "New Mood" → profili temizle + mood sekmesine git */
-  const handleNewMood = useCallback(() => {
-    clearMood();
-    router.push('/(tabs)/mood');
-  }, [clearMood, router]);
-
-  /** Pull-to-refresh — mevcut profil ile feed'i sıfırlar */
-  const handleRefresh = useCallback(async () => {
-    if (!currentProfile) return;
-    setIsRefreshing(true);
-    lastSyncedLengthRef.current = 0;
-    setDisplayFilms([]);
-    resetFeed(currentProfile, effectiveFilters);
-    // Yeni batch yüklenince isLoading false olur — kısa gecikme ile refreshing'i kapat
-    setTimeout(() => setIsRefreshing(false), 800);
-  }, [currentProfile, effectiveFilters, resetFeed]);
-
-  // ── Sürpriz kart görünürlük tespiti ───────────────────────────────────────
-
-  const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 });
-
-  const onViewableItemsChanged = useCallback(
-    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
-      if (!viewableItems[0]) return;
-      const film = viewableItems[0].item as Film;
-      const effectiveType = film.pick_type ?? film.surpriseType ?? null;
-      if (effectiveType != null && !firstSurpriseSeenRef.current) {
-        firstSurpriseSeenRef.current = true;
-        showMilestone(t('discover.milestoneHiddenGem'));
-        hapticSuccess();
-      }
-    },
-    [showMilestone],
-  );
-
-  // ── FlatList yardımcıları ──────────────────────────────────────────────────
-
-  /**
-   * getItemLayout: tüm kartlar aynı yükseklikte → FlatList'in hesaplama
-   * maliyetini ortadan kaldırır.
-   */
-  const getItemLayout = useCallback(
-    (_: ArrayLike<Film> | null | undefined, index: number) => ({
-      length: CARD_HEIGHT,
-      offset: CARD_HEIGHT * index,
-      index,
-    }),
-    [],
-  );
-
-  const keyExtractor = useCallback((item: Film) => item.id, []);
-
-  const renderItem = useCallback(
-    ({ item }: { item: Film }) => (
-      <View style={{ height: CARD_HEIGHT }}>
-        <SwipeableCard
-          film={item}
-          height={CARD_HEIGHT}
-          onSwipeRight={handleSwipeRight}
-          onSwipeLeft={handleSwipeLeft}
-        />
-      </View>
-    ),
-    [handleSwipeRight, handleSwipeLeft],
-  );
-
-  // ── Boş / yükleme durumları ────────────────────────────────────────────────
-
-  if (isLoading && displayFilms.length === 0) {
-    return (
-      <View style={styles.container}>
-        <StatusBar style="light" backgroundColor={Colors.background} />
-        <View style={styles.skeletonCard}>
-          {/* Poster alanı — tam kart yüksekliği */}
-          <SkeletonLoader width="100%" height={CARD_HEIGHT * 0.65} borderRadius={0} />
-
-          {/* Gradient geçiş — poster'dan bilgi alanına */}
-          <LinearGradient
-            colors={['transparent', Colors.background]}
-            style={styles.skeletonGradient}
-          />
-
-          {/* Match score dairesi placeholder */}
-          <View style={styles.skeletonMatchCircle}>
-            <SkeletonLoader width={56} height={56} borderRadius={28} />
-          </View>
-
-          {/* Alt bilgi alanı — başlık + meta + tagline */}
-          <View style={styles.skeletonInfo}>
-            <SkeletonLoader width="70%" height={24} borderRadius={6} />
-            <SkeletonLoader width="50%" height={14} borderRadius={6} style={{ marginTop: 10 }} />
-            <SkeletonLoader width="85%" height={12} borderRadius={6} style={{ marginTop: 12 }} />
-            <SkeletonLoader width="60%" height={12} borderRadius={6} style={{ marginTop: 6 }} />
-          </View>
-
-          {/* Aksiyon butonları placeholder */}
-          <View style={styles.skeletonActions}>
-            <SkeletonLoader width={48} height={48} borderRadius={24} />
-            <SkeletonLoader width={56} height={56} borderRadius={28} />
-            <SkeletonLoader width={48} height={48} borderRadius={24} />
-          </View>
-
-          {/* Watchlist butonu placeholder */}
-          <View style={styles.skeletonWatchlistBtn}>
-            <SkeletonLoader width="100%" height={48} borderRadius={14} />
-          </View>
-        </View>
-      </View>
+    Alert.alert(
+      t('home.retestTitle'),
+      t('home.retestMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('home.retestConfirm'),
+          onPress: async () => {
+            hapticLight();
+            try {
+              await AsyncStorage.setItem(RECALIBRATION_KEY, new Date().toISOString());
+            } catch (err) {
+              logger.error('[HomeScreen] recalibration timestamp yazılamadı:', err);
+            }
+            router.push('/onboarding');
+          },
+        },
+      ],
     );
   }
 
-  if (hasError && displayFilms.length === 0) {
-    return (
-      <>
-        <StatusBar style="light" backgroundColor={Colors.background} />
-        <ErrorState errorType={errorType} onRetry={retryLoad} />
-      </>
-    );
-  }
+  // ── Türetilen veriler ─────────────────────────────────────────────────────
 
-  if (!isLoading && displayFilms.length === 0 && !currentProfile) {
-    // P7.1: Home Header — kisisellesmis karsılama ekrani
-    return (
-      <View style={styles.container}>
-        <StatusBar style="light" translucent backgroundColor="transparent" />
-
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={[
-            styles.homeScrollContent,
-            { paddingTop: insets.top + 52 },
-          ]}
-          showsVerticalScrollIndicator={false}
-        >
-          <GreetingWidget username={username} />
-          <MoodCTA onPress={() => router.push('/(tabs)/mood')} />
-          <DailyPickSection />
-          <LastSessionCard />
-          <View style={{ height: Theme.spacing.xxl }} />
-        </ScrollView>
-
-        {/* Logo — ust merkez (Home Header'da da gosterilir) */}
-        <View
-          style={[styles.headerLogoContainer, { top: insets.top + 10 }]}
-          pointerEvents="none"
-        >
-          <Image
-            source={require('../../assets/images/chosy.ai-logo.png')}
-            style={styles.headerLogo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Streak badge — sol ust */}
-        <View style={[styles.streakBadgeContainer, { top: insets.top + 12 }]}>
-          <StreakBadge
-            currentStreak={streakCount}
-            loading={streakLoading}
-            onPress={() => router.push('/(tabs)/profile')}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  if (!isLoading && displayFilms.length === 0) {
-    return (
-      <>
-        <StatusBar style="light" backgroundColor={Colors.background} />
-        <EmptyState
-          lumiMood="searching"
-          title={t('discover.emptyTitle')}
-          subtitle={t('discover.tryNewMoodSubtitle')}
-          actionLabel={t('discover.newMoodButton')}
-          onAction={handleNewMood}
-        />
-      </>
-    );
-  }
-
-  // ── Feed ──────────────────────────────────────────────────────────────────
+  const archetype = homeData?.archetypeId ? getArchetype(homeData.archetypeId) : null;
+  const lastFilm = homeData?.lastFilm ?? null;
+  const lastPosterUrl = resolvePosterUrl(lastFilm?.film.posterUrl);
+  const dailyPosterUrl = resolvePosterUrl(dailyFilm?.posterUrl);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
 
-      <FlatList
-        data={displayFilms}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        // Dikey snap scroll
-        showsVerticalScrollIndicator={false}
-        snapToInterval={CARD_HEIGHT}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        getItemLayout={getItemLayout}
-        // Yükleme
-        onEndReached={onLoadMore}
-        onEndReachedThreshold={0.3}
-        // Sürpriz kart görünürlük tespiti
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig.current}
-        // Pull-to-refresh
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={Colors.accentPrimary}
-            colors={[Colors.accentPrimary]}
-            progressBackgroundColor={Colors.bgCard}
-          />
-        }
-        // Performans
-        maxToRenderPerBatch={2}
-        windowSize={3}
-        initialNumToRender={1}
-        updateCellsBatchingPeriod={100}
-        removeClippedSubviews={true}
-      />
-
-      {/* "New mood" floating butonu — sadece swipe feed varken (Home Header'da MoodCTA var) */}
-      <Animated.View style={[styles.newMoodBtn, { top: insets.top + 12 }, newMoodAnimStyle]}>
-        <TouchableOpacity
-          onPressIn={newMoodPressIn}
-          onPressOut={newMoodPressOut}
-          onPress={handleNewMood}
-          activeOpacity={1}
-        >
-          <Text style={styles.newMoodBtnText}>✦ {t('discover.newMoodBtn')}</Text>
-        </TouchableOpacity>
-      </Animated.View>
-
-      {/* Chosy.ai logo — üst merkez */}
-      <View style={[styles.headerLogoContainer, { top: insets.top + 10 }]} pointerEvents="none">
-        <Image
-          source={require('../../assets/images/chosy.ai-logo.png')}
-          style={styles.headerLogo}
-          resizeMode="contain"
-        />
-      </View>
-
-      {/* Streak badge — sol üst köşe */}
-      <View style={[styles.streakBadgeContainer, { top: insets.top + 12 }]}>
-        <StreakBadge
-          currentStreak={streakCount}
-          loading={streakLoading}
-          onPress={() => router.push('/(tabs)/profile')}
-        />
-      </View>
-
-      {/* Arka plan yükleme göstergesi — shimmer pill */}
-      {isLoading && displayFilms.length > 0 && (
-        <Animated.View
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(200)}
-          style={styles.loadingPill}
-          pointerEvents="none"
-        >
-          <ActivityIndicator size="small" color={Colors.accentPrimary} />
-          <Text style={styles.loadingPillText}>{t('loading.moreFilms')}</Text>
-        </Animated.View>
-      )}
-
-      {/* Arka plan hata durumu — retry butonu */}
-      {hasError && displayFilms.length > 0 && (
-        <Animated.View
-          entering={FadeInDown.springify().damping(16)}
-          style={styles.errorBar}
+      {/* ── Floating Header ───────────────────────────────────────────────── */}
+      <LinearGradient
+        colors={[
+          Colors.background,
+          Colors.background,
+          'rgba(10,10,10,0.9)',
+          'rgba(10,10,10,0)',
+        ]}
+        locations={[0, 0.68, 0.85, 1]}
+        style={styles.headerGradient}
+        pointerEvents="box-none"
+      >
+        <View
+          style={[styles.headerRow, { paddingTop: insets.top + 8 }]}
           pointerEvents="box-none"
         >
-          <Text style={styles.errorBarText}>{t('errors.noMoviesFound')}</Text>
-          <TouchableOpacity onPress={retryLoad} activeOpacity={0.8} style={styles.errorBarBtn}>
-            <Text style={styles.errorBarBtnText}>{t('errors.retry')}</Text>
+          <View style={styles.logoWrapper} pointerEvents="none">
+            <Image
+              source={require('../../assets/images/icon.png')}
+              style={styles.logo}
+              contentFit="contain"
+            />
+            <Text style={styles.logoText}>chosy.ai</Text>
+          </View>
+        </View>
+      </LinearGradient>
+
+      {/* ── Ana İçerik (scroll yok) ───────────────────────────────────────── */}
+      <View
+        style={[
+          styles.mainContent,
+          { paddingTop: insets.top + 56, paddingBottom: 83 },
+        ]}
+      >
+        {/* Selamlama */}
+        <GreetingWidget username={homeData?.displayName ?? null} />
+
+        {/* ── HERO SECTION — Birincil Odak ───────────────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(50).duration(400).springify().damping(18)}
+          style={styles.heroSection}
+        >
+          {/* Devasa gradient CTA butonu */}
+          <TouchableOpacity
+            onPress={() => { hapticMedium(); router.push('/(tabs)/mood'); }}
+            activeOpacity={0.88}
+          >
+            <LinearGradient
+              colors={['#B8A38E', '#D4C4AE', '#EADBC6']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.heroCta}
+            >
+              <View style={styles.heroCtaIconBg}>
+                <Ionicons name="sparkles" size={20} color="#FFFFFF" />
+              </View>
+              <View style={styles.heroCtaTextBlock}>
+                <Text style={styles.heroCtaTitle}>{t('home.navMood')}</Text>
+                <Text style={styles.heroCtaSubline}>{t('home.findMoodHint')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.55)" />
+            </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
-      )}
 
-      {/* Milestone toast — üstten kayarak girer */}
-      {milestoneMsg != null && (
+        {/* ── FILM KARTLARI — İkincil bilgi, flex ile dolu alan ─────────── */}
         <Animated.View
-          entering={FadeInDown.springify().damping(16)}
-          exiting={FadeOutUp.duration(300)}
-          style={[styles.milestoneToast, { top: insets.top + 12 }]}
-          pointerEvents="none"
+          entering={FadeInDown.delay(110).duration(400).springify().damping(18)}
+          style={styles.filmsSection}
         >
-          <Text style={styles.milestoneToastText}>{milestoneMsg}</Text>
-        </Animated.View>
-      )}
+          {/* Last Added */}
+          <View style={styles.filmCardWrap}>
+            <Text style={styles.filmCardLabel}>{t('home.lastAdded')}</Text>
+            {lastFilm && lastPosterUrl ? (
+              <TouchableOpacity
+                style={styles.filmCard}
+                onPress={() => {
+                  hapticLight();
+                  router.push(`/film/${lastFilm.film.id}`);
+                }}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: lastPosterUrl }}
+                  style={styles.filmPoster}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
+                {/* Gradient scrim — meta bilgi (yıl · tür) */}
+                <LinearGradient
+                  colors={['transparent', 'rgba(10,10,10,0.88)']}
+                  style={styles.filmOverlay}
+                >
+                  <Text style={styles.filmMeta} numberOfLines={1}>
+                    {getFilmMeta(lastFilm.film, language)}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.filmCardEmpty}>
+                <Ionicons name="bookmark-outline" size={22} color={Colors.textGrey} />
+                <Text style={styles.filmCardEmptyText}>{t('home.noLastFilm')}</Text>
+              </View>
+            )}
+          </View>
 
-      {/* Watchlist toast */}
-      {showSaveToast && (
+          {/* Today's Pick */}
+          <View style={styles.filmCardWrap}>
+            <Text style={styles.filmCardLabel}>{t('home.dailyPick')}</Text>
+            {dailyLoading ? (
+              <View style={[styles.filmCard, styles.filmCardSkeleton]} />
+            ) : dailyFilm && dailyPosterUrl ? (
+              <TouchableOpacity
+                style={styles.filmCard}
+                onPress={() => {
+                  hapticLight();
+                  router.push(`/film/${dailyFilm.id}`);
+                }}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: dailyPosterUrl }}
+                  style={styles.filmPoster}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
+                {/* Gradient scrim — meta bilgi + eşleşme skoru */}
+                <LinearGradient
+                  colors={['transparent', 'rgba(10,10,10,0.88)']}
+                  style={styles.filmOverlay}
+                >
+                  <View style={styles.filmMetaRow}>
+                    <Text style={styles.filmMeta} numberOfLines={1}>
+                      {getFilmMeta(dailyFilm, language)}
+                    </Text>
+                    {dailyFilm.matchScore > 0 && (
+                      <View style={styles.matchBadge}>
+                        <Text style={styles.matchBadgeText}>{dailyFilm.matchScore}%</Text>
+                      </View>
+                    )}
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.filmCardEmpty}>
+                <Ionicons name="film-outline" size={22} color={Colors.textGrey} />
+                <Text style={styles.filmCardEmptyText} numberOfLines={2}>
+                  {t('dailyMatch.noProfileHint')}
+                </Text>
+              </View>
+            )}
+          </View>
+        </Animated.View>
+
+        {/* ── SİNEFİL PROFİLİ — Tam genişlik, metin taşması giderildi ────── */}
         <Animated.View
-          entering={FadeIn.duration(200)}
-          exiting={FadeOut.duration(200)}
-          style={styles.toast}
-          pointerEvents="none"
+          entering={FadeInDown.delay(170).duration(400).springify().damping(18)}
+          style={styles.archetypeSection}
         >
-          <Lumi size="small" mood="happy" />
-          <Text style={styles.toastText}>{t('discover.savedToWatchlist')}</Text>
+          <Text style={styles.sectionLabel}>{t('home.sinephileTitle')}</Text>
+          <TouchableOpacity
+            style={[
+              styles.archetypeCard,
+              archetype
+                ? { backgroundColor: archetype.colorDim, borderColor: archetype.colorPrimary + '40' }
+                : undefined,
+            ]}
+            onPress={handleArchetypeTap}
+            activeOpacity={0.8}
+          >
+            {archetype ? (
+              <View style={styles.archetypeInner}>
+                <Text style={styles.archetypeEmoji}>{archetype.icon}</Text>
+                <View style={styles.archetypeTextBlock}>
+                  <Text
+                    style={[styles.archetypeName, { color: archetype.colorPrimary }]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                  >
+                    {t(archetype.nameKey)}
+                  </Text>
+                  <Text style={styles.archetypeDesc} numberOfLines={2}>
+                    {t(archetype.descKey)}
+                  </Text>
+                </View>
+                <View style={styles.retestBadge}>
+                  <Ionicons name="refresh-outline" size={18} color={Colors.textGrey} />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.noArchetypeInner}>
+                <Ionicons name="sparkles-outline" size={18} color={Colors.accentPrimary} />
+                <View style={styles.noArchetypeTextBlock}>
+                  <Text style={styles.noArchetypeTitle}>{t('home.noArchetype')}</Text>
+                  <Text style={styles.noArchetypeHint} numberOfLines={2}>
+                    {t('home.noArchetypeHint')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={15} color={Colors.textGrey} />
+              </View>
+            )}
+          </TouchableOpacity>
         </Animated.View>
-      )}
-
-      {/* Milestone celebration overlay — tam ekran */}
-      {celebrationMilestone && (
-        <MilestoneCelebration
-          milestone={celebrationMilestone}
-          visible={celebrationVisible}
-          onDismiss={handleCelebrationDismiss}
-        />
-      )}
+      </View>
     </View>
   );
 }
@@ -687,223 +444,269 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  // ─── Home Header (P7.1) ────────────────────────────────────────────────────
-  homeScrollContent: {
-    paddingBottom: 83 + Theme.spacing.xl, // tab bar + extra
-    backgroundColor: Colors.background,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
 
-  // ─── Boş durum ─────────────────────────────────────────────────────────────
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    color: Colors.textWhite,
-    fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    color: Colors.textGrey,
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 28,
-    lineHeight: 22,
-  },
-  emptyBtn: {
-    borderRadius: 14,
-    overflow: 'hidden',
-    width: '100%',
-  },
-  emptyBtnGradient: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    borderRadius: 14,
-  },
-  emptyBtnText: {
-    color: Colors.background,
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-
-  // ─── Feed skeleton ───────────────────────────────────────────────────────
-  skeletonCard: {
-    flex: 1,
-    backgroundColor: Colors.bgCard,
-  },
-  skeletonGradient: {
+  // ── Floating Header ──────────────────────────────────────────────────────
+  headerGradient: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    top: CARD_HEIGHT * 0.55,
-    height: CARD_HEIGHT * 0.15,
-  },
-  skeletonMatchCircle: {
-    position: 'absolute',
-    right: 20,
-    top: CARD_HEIGHT * 0.60,
-    zIndex: 2,
-  },
-  skeletonInfo: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  skeletonActions: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-    marginTop: 24,
-  },
-  skeletonWatchlistBtn: {
-    marginHorizontal: 20,
-    marginTop: 16,
-  },
-
-  // ─── Header logo (merkez üst) ───────────────────────────────────────────────
-  headerLogoContainer: {
-    position: 'absolute',
-    alignSelf: 'center',
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 9,
-  },
-  headerLogo: {
-    width: 38,
-    height: 38,
-    borderRadius: 8,
-    opacity: 0.92,
-  },
-
-  // ─── Streak badge (sol üst) ────────────────────────────────────────────────
-  streakBadgeContainer: {
-    position: 'absolute',
-    left: 16,
     zIndex: 10,
   },
-
-  // ─── Floating "New mood" butonu ────────────────────────────────────────────
-  newMoodBtn: {
-    position: 'absolute',
-    right: 16,
-    backgroundColor: Colors.overlay,
-    borderWidth: 1,
-    borderColor: Colors.goldGlow,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    shadowColor: Colors.gold,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 20,
+    paddingBottom: 4,
   },
-  newMoodBtnText: {
-    color: Colors.gold,
+  logoWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    opacity: 0.95,
+  },
+  logoText: {
+    color: Colors.goldLight,
+    fontSize: 22,
+    fontFamily: 'PlayfairDisplay_400Regular',
+    letterSpacing: 0.4,
+  },
+
+  // ── Ana İçerik ────────────────────────────────────────────────────────────
+  mainContent: {
+    flex: 1,
+  },
+
+  // ── Hero Section ──────────────────────────────────────────────────────────
+  heroSection: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  /** "What are you in the mood for?" etiketi */
+  heroQuestion: {
     fontSize: 13,
+    color: Colors.textSecondary,
     fontWeight: '600',
+    letterSpacing: 0.2,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  /** Gradient CTA butonu */
+  heroCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    gap: 14,
+    shadowColor: '#D4C4AE',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    elevation: 10,
+  },
+  /** Sol taraftaki ikon arka planı */
+  heroCtaIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroCtaTextBlock: {
+    flex: 1,
+  },
+  heroCtaTitle: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '800',
+    letterSpacing: 0.1,
+    marginBottom: 2,
+  },
+  heroCtaSubline: {
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 12,
+    fontWeight: '500',
     letterSpacing: 0.3,
   },
 
-  // ─── Arka plan yükleme pill ─────────────────────────────────────────────────
-  loadingPill: {
+  // ── Film Kartları Bölümü ──────────────────────────────────────────────────
+  /** Film kartları bölümü — flex: 1 ile kalan yüksekliği doldurur */
+  filmsSection: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 10,
+    marginTop: 14,
+    flex: 1,
+    alignItems: 'stretch',
+  },
+  /** Kart sarmalayıcı — label + kart dikey hizası */
+  filmCardWrap: {
+    flex: 1,
+    gap: 6,
+  },
+  filmCardLabel: {
+    fontSize: 9,
+    color: Colors.textTertiary,
+    letterSpacing: 1.4,
+    fontWeight: '700',
+  },
+  /** Film kartı — flex: 1 ile yüksekliği otomatik doldurur */
+  filmCard: {
+    flex: 1,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.white10,
+  },
+  filmPoster: {
+    flex: 1,
+    backgroundColor: Colors.bgElevated,
+  },
+  /** Siyahdan şeffafa gradient scrim — metin okunabilirliği */
+  filmOverlay: {
     position: 'absolute',
-    bottom: TAB_BAR_HEIGHT + 16,
-    alignSelf: 'center',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    paddingTop: 28,
+  },
+  /** Yıl · tür / süre tek satır meta bilgi */
+  filmMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: Colors.overlay,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.accentDim,
+    justifyContent: 'space-between',
+    gap: 6,
   },
-  loadingPillText: {
-    color: Colors.textSecondary,
-    fontSize: 12,
+  filmMeta: {
+    flex: 1,
+    color: Colors.textGrey,
+    fontSize: 11,
     fontWeight: '500',
   },
-
-  // ─── Hata bar ─────────────────────────────────────────────────────────────
-  errorBar: {
-    position: 'absolute',
-    bottom: TAB_BAR_HEIGHT + 16,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: 'rgba(239,68,68,0.15)',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.4)',
-  },
-  errorBarText: {
-    color: Colors.textWhite,
-    fontSize: 13,
+  filmCardSkeleton: {
     flex: 1,
+    borderRadius: 14,
+    backgroundColor: Colors.bgElevated,
+    opacity: 0.5,
   },
-  errorBarBtn: {
-    backgroundColor: Colors.gold,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+  filmCardEmpty: {
+    flex: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.white10,
+    borderStyle: 'dashed',
+    backgroundColor: Colors.bgCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
   },
-  errorBarBtnText: {
-    color: Colors.background,
-    fontSize: 13,
+  filmCardEmptyText: {
+    color: Colors.textGrey,
+    fontSize: 11,
+    textAlign: 'center',
+    lineHeight: 15,
+  },
+  /** Eşleşme skoru rozeti — filmMetaRow içinde sağ tarafa hizalanır */
+  matchBadge: {
+    backgroundColor: Colors.accentPrimary,
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    flexShrink: 0,
+  },
+  matchBadgeText: {
+    color: Colors.textOnAccent,
+    fontSize: 10,
     fontWeight: '700',
   },
 
-  // ─── Milestone toast ───────────────────────────────────────────────────────
-  milestoneToast: {
-    position: 'absolute',
-    alignSelf: 'center',
-    backgroundColor: Colors.overlay,
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
+  // ── Sinefil Profili Bölümü ────────────────────────────────────────────────
+  archetypeSection: {
+    paddingHorizontal: 16,
+    marginTop: 14,
+    gap: 6,
+  },
+  sectionLabel: {
+    fontSize: 9,
+    color: Colors.textTertiary,
+    letterSpacing: 1.4,
+    fontWeight: '700',
+  },
+  archetypeCard: {
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: Colors.goldGlow,
+    borderColor: Colors.white10,
+    backgroundColor: Colors.bgCard,
+    padding: 14,
   },
-  milestoneToastText: {
+  archetypeInner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  archetypeEmoji: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  archetypeTextBlock: {
+    flex: 1,
+    minWidth: 0, // flex child text overflow engellemek için
+  },
+  archetypeName: {
+    fontSize: 15,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    marginBottom: 4,
+    lineHeight: 20,
+    flexShrink: 1,
+  },
+  archetypeDesc: {
+    fontSize: 12,
     color: Colors.textWhite,
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
+    lineHeight: 17,
+    letterSpacing: 0.1,
+    opacity: 0.72,
+    flexShrink: 1,
   },
-
-  // ─── Watchlist toast ───────────────────────────────────────────────────────
-  toast: {
-    position: 'absolute',
-    top: 80,
-    alignSelf: 'center',
+  retestBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: Colors.white05,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  noArchetypeInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.overlay,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: Colors.goldDim,
-    gap: 8,
+    gap: 12,
   },
-  toastText: {
-    color: Colors.textWhite,
+  noArchetypeTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  noArchetypeTitle: {
     fontSize: 14,
-    fontWeight: '600',
+    color: Colors.accentPrimary,
+    fontWeight: '700',
+    marginBottom: 3,
+  },
+  noArchetypeHint: {
+    fontSize: 12,
+    color: Colors.textGrey,
+    lineHeight: 16,
+    flexShrink: 1,
   },
 });

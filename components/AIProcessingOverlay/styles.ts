@@ -32,7 +32,7 @@ export default StyleSheet.create({
     height: 220,
     borderRadius: 110,
     borderWidth: 1.5,
-    borderColor: 'rgba(139,92,246,0.15)',
+    borderColor: 'rgba(234,219,198,0.15)',
   },
 
   /** Orta halka — violet glow */
@@ -42,7 +42,7 @@ export default StyleSheet.create({
     height: 170,
     borderRadius: 85,
     borderWidth: 2,
-    borderColor: 'rgba(139,92,246,0.35)',
+    borderColor: 'rgba(234,219,198,0.35)',
     borderTopColor: Colors.accentPrimary,
     shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
@@ -58,7 +58,7 @@ export default StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 2.5,
-    borderColor: 'rgba(139,92,246,0.45)',
+    borderColor: 'rgba(234,219,198,0.45)',
     borderBottomColor: Colors.gold,
     borderLeftColor: 'transparent',
     shadowColor: Colors.accentPrimary,

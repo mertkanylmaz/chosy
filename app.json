@@ -14,14 +14,14 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.moodflix.app",
+      "bundleIdentifier": "com.chosy.ai",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.moodflix.app",
+      "package": "com.chosy.ai",
       "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A",
@@ -38,18 +38,16 @@
     },
     "plugins": [
       "expo-router",
-      "react-native-reanimated",
       "expo-sharing",
-      "expo-apple-authentication",
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.327479669789-7i53ngioate19tpdodmr3b7lvmdgkn8m.apps.googleusercontent.com"
-        }
-      ]
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "5c6d10a4-12a2-42cc-946b-3baecbe3bc5e"
+      }
     },
     "owner": "mertkanylmaz"
   }

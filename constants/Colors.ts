@@ -1,13 +1,11 @@
 /**
  * MoodFlix — Design Token Palette
- * Direction: "Premium Bumble" (violet + zinc + gold)
+ * Direction: "Warm Premium" (cream/beige + zinc + gold)
  *
- * Migration v2 — 2026-03-27
- * - Backgrounds: lacivert (#0A0E27) → zinc-950 (#0A0A0A)
- * - Primary accent: gold → violet-500 (#8B5CF6)
- * - Gold: secondary role (ratings, premium badges)
- * - Swipe semantic colors added
- * - All old token names preserved for backward compat
+ * Migration v3 — 2026-04-24
+ * - Primary accent: violet-500 (#8B5CF6) → warm cream (#EADBC6)
+ * - textOnAccent: white → dark (#1A1212) — readability on cream bg
+ * - All opacity variants updated to rgba(234,219,198,...)
  */
 
 export const Colors = {
@@ -20,8 +18,8 @@ export const Colors = {
   card: 'rgba(24,24,27,0.8)',
   /** Card surface — zinc-900, opaque */
   cardSolid: '#18181B',
-  /** Card border — subtle violet tint */
-  cardBorder: 'rgba(139,92,246,0.15)',
+  /** Card border — subtle cream tint */
+  cardBorder: 'rgba(234,219,198,0.15)',
 
   // Named bg tokens (new — prefer these)
   bgPrimary: '#0A0A0A',
@@ -29,13 +27,13 @@ export const Colors = {
   bgElevated: '#27272A',
   bgSubtle: '#3F3F46',
 
-  // ─── Accent: Violet (Primary) ────────────────────────────────────────────────
-  /** Primary CTA, active tabs, main interactions — violet-500 */
-  accentPrimary: '#8B5CF6',
-  /** Pressed / hover state — violet-600 */
-  accentHover: '#7C3AED',
-  /** Muted violet for backgrounds — 12% opacity */
-  accentDim: 'rgba(139,92,246,0.12)',
+  // ─── Accent: Cream (Primary) ─────────────────────────────────────────────────
+  /** Primary CTA, active tabs, main interactions — warm cream */
+  accentPrimary: '#EADBC6',
+  /** Pressed / hover state — cream-dark */
+  accentHover: '#D4C4AE',
+  /** Muted cream for backgrounds — 12% opacity */
+  accentDim: 'rgba(234,219,198,0.12)',
 
   // ─── Accent: Gold (Secondary / Premium) ──────────────────────────────────────
   /** Ratings, premium badges, special highlights */
@@ -58,8 +56,8 @@ export const Colors = {
   textGrey: '#A1A1AA',
   /** Tertiary text / hints — zinc-500 */
   textLightGrey: '#71717A',
-  /** Text on accent backgrounds (violet/green/red buttons) */
-  textOnAccent: '#FFFFFF',
+  /** Text on accent backgrounds (cream buttons) — dark for contrast */
+  textOnAccent: '#1A1212',
 
   // Named text tokens (new — prefer these)
   textPrimary: '#FAFAFA',
@@ -91,16 +89,16 @@ export const Colors = {
   // ─── Tab Bar ────────────────────────────────────────────────────────────────
   /** Tab bar background — zinc-950 with opacity */
   tabBarBg: 'rgba(10,10,10,0.95)',
-  /** Tab active icon — violet-500 */
-  tabActive: '#8B5CF6',
+  /** Tab active icon — warm cream */
+  tabActive: '#EADBC6',
   /** Tab inactive icon — zinc-500 */
   tabInactive: '#71717A',
 
   // ─── Chips ──────────────────────────────────────────────────────────────────
-  /** Active chip bg — violet filled */
-  chipActiveBg: '#8B5CF6',
-  /** Active chip text */
-  chipActiveText: '#FFFFFF',
+  /** Active chip bg — cream filled */
+  chipActiveBg: '#EADBC6',
+  /** Active chip text — dark for contrast on cream */
+  chipActiveText: '#1A1212',
   /** Inactive chip border — zinc-500 */
   chipInactiveBorder: '#71717A',
   /** Inactive chip text — zinc-500 */
@@ -109,8 +107,8 @@ export const Colors = {
   // ─── Input ──────────────────────────────────────────────────────────────────
   /** Input field background */
   inputBg: 'rgba(24,24,27,0.5)',
-  /** Input field border — subtle violet */
-  inputBorder: 'rgba(139,92,246,0.3)',
+  /** Input field border — subtle cream */
+  inputBorder: 'rgba(234,219,198,0.3)',
 
   // ─── Overlays & Utilities ───────────────────────────────────────────────────
   /** Modal/overlay background */
@@ -121,8 +119,8 @@ export const Colors = {
   white05: 'rgba(255,255,255,0.05)',
 
   // ─── Profile Gradients ──────────────────────────────────────────────────────
-  /** Profile header gradient start — violet tint */
-  profileHeaderStart: 'rgba(139,92,246,0.25)',
+  /** Profile header gradient start — cream tint */
+  profileHeaderStart: 'rgba(234,219,198,0.25)',
   /** Profile header gradient end — transparent */
   profileHeaderEnd: 'rgba(10,10,10,0.0)',
 
@@ -133,8 +131,8 @@ export const Colors = {
   cardGradientBottom: 'rgba(10,10,10,0.97)',
 
   // ─── AI / Animation ─────────────────────────────────────────────────────────
-  /** AI processing glow — violet */
-  aiGlow: 'rgba(139,92,246,0.35)',
+  /** AI processing glow — cream */
+  aiGlow: 'rgba(234,219,198,0.35)',
 } as const;
 
 // ─── Backward Compatibility ─────────────────────────────────────────────────

@@ -25,6 +25,8 @@ import {
   View,
 } from 'react-native';
 
+// TODO: Google Sign-In şimdilik kaldırıldı — native rebuild sonrası geri eklenecek
+
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,15 +36,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import Lumi from '@/components/Lumi';
-import { signInWithApple, signInWithGoogle } from '@/services/authService';
+import FilmSeridi from '@/components/FilmReelAnimation';
+import { supabase } from '@/services/supabase';
+import { signInWithApple } from '@/services/authService';
+import { identifyUser } from '@/services/purchaseService';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 /** Hangi butonun yüklendiğini takip eder */
-type LoadingState = 'idle' | 'apple' | 'google';
+type LoadingState = 'idle' | 'apple';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -63,17 +67,28 @@ export default function AuthScreen() {
 
   /**
    * Auth başarısı sonrası routing.
-   * Yeni kullanıcı ise profil kurulum ekranına, mevcut kullanıcı ise feed'e yönlendirir.
-   *
-   * @param isNewUser - Supabase'den gelen "yeni kayıt mı?" bilgisi
+   * Gate'e yönlendirir — onboarding / entry / tabs kararı gate.tsx'te verilir.
+   * Anonim→Apple linking akışında `created_at` değişmediğinden `isNewUser`
+   * güvenilir değil; tüm routing mantığı gate'te merkezi olarak yönetilir.
    */
-  function handleSuccess(isNewUser: boolean): void {
+  async function handleSuccess(_isNewUser: boolean): Promise<void> {
     void hapticSuccess();
-    if (isNewUser) {
-      router.replace('/setup-profile' as Href);
-    } else {
-      router.replace('/(tabs)');
+
+    // RevenueCat'e kullanıcıyı eşle — subscription tracking için kritik
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) {
+        await identifyUser(user.id);
+      }
+    } catch {
+      // RC identify başarısız olsa bile akışı engelleme
     }
+
+    // Gate tüm routing kararlarını verir:
+    //  - onboarding tamamlanmadıysa → /onboarding
+    //  - entry bugün gösterilmedi → /entry
+    //  - aksi hâlde → /(tabs)
+    router.replace('/gate' as Href);
   }
 
   // ─── Handlers ────────────────────────────────────────────────────────────
@@ -109,53 +124,15 @@ export default function AuthScreen() {
   }
 
   /**
-   * Google ile giriş handler'ı.
-   * configureGoogleSignIn() _layout.tsx'te zaten çağrılmıştır.
-   */
-  async function handleGoogle(): Promise<void> {
-    if (isLoading) return;
-    void hapticLight();
-    setErrorMsg(null);
-    setLoading('google');
-
-    try {
-      const result = await signInWithGoogle();
-
-      if (result.success) {
-        handleSuccess(result.isNewUser);
-      } else if (result.error === 'canceled') {
-        // Kullanıcı iptal etti — sessizce geç
-      } else if (result.error === 'not_available') {
-        setErrorMsg(t('auth.errorNotAvailable'));
-      } else {
-        setErrorMsg(t('auth.errorGeneral'));
-      }
-    } catch (err) {
-      logger.error('[auth] Google handler hatası:', err);
-      setErrorMsg(t('auth.errorGeneral'));
-    } finally {
-      setLoading('idle');
-    }
-  }
-
-  /**
-   * Misafir devam — anonim oturumu korur, /(tabs)'a yönlendirir.
-   */
-  function handleSkip(): void {
-    void hapticLight();
-    router.replace('/(tabs)');
-  }
-
-  /**
-   * Geri butonu — önceki sayfaya döner (ör. profile ekranı).
+   * Geri butonu — önceki sayfaya döner (eğer gidecek yer varsa).
+   * Gate'ten yönlendirildiyse geri yol yoktur — buton gizlenir.
    */
   function handleBack(): void {
     void hapticLight();
     if (router.canGoBack()) {
       router.back();
-    } else {
-      router.replace('/(tabs)');
     }
+    // Gidecek yer yoksa (gate'ten gelindi) — buton pasif kalır
   }
 
   // ─── Render ──────────────────────────────────────────────────────────────
@@ -173,15 +150,15 @@ export default function AuthScreen() {
         <Ionicons name="chevron-back" size={24} color={Colors.textGrey} />
       </TouchableOpacity>
 
-      {/* Hero — Lumi + ortam ışığı */}
+      {/* Hero — Dönen film şeritleri animasyonu */}
       <View style={styles.heroSection}>
         <LinearGradient
-          // 16% violet glow — accentDim (12%) yerine bilinçli karar
-          colors={[Colors.accentPrimary + '28', 'transparent']}
+          // Altın glow — film projektörü atmosferi
+          colors={[Colors.goldGlow, 'transparent']}
           style={styles.heroGlow}
           pointerEvents="none"
         />
-        <Lumi size="large" mood="happy" showParticles showGlow />
+        <FilmSeridi />
       </View>
 
       {/* Metin */}
@@ -204,28 +181,6 @@ export default function AuthScreen() {
           />
         )}
 
-        {/* Google Sign-In */}
-        <TouchableOpacity
-          style={[styles.googleButton, isLoading && styles.buttonDisabled]}
-          onPress={() => void handleGoogle()}
-          activeOpacity={0.85}
-          disabled={isLoading}
-        >
-          {loading === 'google' ? (
-            <ActivityIndicator color={Colors.textWhite} size="small" />
-          ) : (
-            <View style={styles.googleButtonInner}>
-              <Ionicons
-                name="logo-google"
-                size={20}
-                color={Colors.textWhite}
-                style={styles.buttonIcon}
-              />
-              <Text style={styles.googleButtonText}>{t('auth.signInGoogle')}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-
         {/* Hata mesajı */}
         {errorMsg !== null && (
           <Text style={styles.errorText}>{errorMsg}</Text>
@@ -233,19 +188,20 @@ export default function AuthScreen() {
 
       </View>
 
-      {/* Misafir devam */}
+      {/* Auth gating aktif — giriş zorunlu */}
       <View style={styles.skipSection}>
-        <TouchableOpacity
-          onPress={handleSkip}
-          activeOpacity={0.7}
-          disabled={isLoading}
-          hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
-        >
-          <Text style={[styles.skipText, isLoading && styles.skipDisabled]}>
-            {t('auth.skipAnonymous')}
-          </Text>
-        </TouchableOpacity>
-        <Text style={styles.skipNote}>{t('auth.skipNote')}</Text>
+        <Text style={styles.skipNote}>{t('auth.requiredNote')}</Text>
+
+        {/* DEV ONLY: Test ortamında geçiş butonu — production build'de görünmez */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={styles.devSkipButton}
+            onPress={() => router.replace('/(tabs)')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.devSkipText}>[ DEV ] Skip to App</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
     </SafeAreaView>
@@ -364,6 +320,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.xl,
     gap: Theme.spacing.xs,
   },
+  skipButton: {
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.lg,
+  },
   skipText: {
     ...Theme.typography.h3,           // Inter SemiBold 16 — CTA link için uygun
     color: Colors.accentPrimary,
@@ -375,5 +335,19 @@ const styles = StyleSheet.create({
     ...Theme.typography.caption,
     color: Colors.textTertiary,
     textAlign: 'center',
+  },
+  devSkipButton: {
+    marginTop: Theme.spacing.md,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.warning,
+    borderStyle: 'dashed',
+  },
+  devSkipText: {
+    color: Colors.warning,
+    fontSize: 13,
+    fontWeight: '700',
   },
 });

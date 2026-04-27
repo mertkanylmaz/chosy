@@ -1,24 +1,27 @@
 /**
  * SessionAccordion — Mood session bazlı watchlist grubu.
  *
- * Header: sparkles ikonu + mood prompt özeti + film sayısı + chevron
- * Body: 2-sütunlu WatchlistCard grid'i (expand/collapse animasyonlu)
+ * Header: stacked poster önizleme + mood prompt özeti + film sayısı + chevron
+ * Body: 2-sütunlu WatchlistCard grid'i (FadeInDown animasyonlu)
  *
  * defaultExpanded=true olan grup (genellikle ilk grup) açık başlar.
  */
 import React, { useCallback, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   Easing,
+  FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import { WatchlistGroup } from '@/services/watchlist';
+import { WatchlistGroup, WatchlistItem } from '@/services/watchlist';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { hapticSelection } from '@/utils/haptics';
 
 import WatchlistCard from '../WatchlistCard';
 import styles from './styles';
@@ -34,12 +37,54 @@ export interface SessionAccordionProps {
   defaultExpanded?: boolean;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── StackedPosters ───────────────────────────────────────────────────────────
 
-/** Prompt metni uzunsa kısaltır */
-function truncatePrompt(prompt: string, maxLen = 50): string {
-  if (prompt.length <= maxLen) return prompt;
-  return prompt.slice(0, maxLen).trimEnd() + '…';
+interface StackedPostersProps {
+  films: WatchlistItem[];
+}
+
+/**
+ * Kapalı accordion header'ında ilk 3 filmin üst üste binmiş küçük poster önizlemesi.
+ * Sadece collapsed modda görünür.
+ */
+function StackedPosters({ films }: StackedPostersProps) {
+  const previews = films.slice(0, 3);
+  if (previews.length === 0) return null;
+
+  return (
+    <View style={styles.stackedPosters}>
+      {previews.map((item, i) => {
+        const uri = item.film.posterUrl
+          ? item.film.posterUrl.startsWith('http')
+            ? item.film.posterUrl
+            : `https://image.tmdb.org/t/p/w185${item.film.posterUrl}`
+          : undefined;
+
+        return (
+          <View
+            key={item.film.id}
+            style={[
+              styles.stackPoster,
+              { left: i * 10, zIndex: 3 - i },
+            ]}
+          >
+            {uri ? (
+              <Image
+                source={{ uri }}
+                style={styles.stackPosterImage}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+            ) : (
+              <View style={[styles.stackPosterImage, styles.stackPosterPlaceholder]}>
+                <Ionicons name="film-outline" size={10} color="#71717A" />
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -60,6 +105,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
   const chevronProgress = useSharedValue(defaultExpanded ? 1 : 0);
 
   const toggle = useCallback(() => {
+    hapticSelection();
     setExpanded((prev) => {
       const next = !prev;
       chevronProgress.value = withTiming(next ? 1 : 0, {
@@ -81,7 +127,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
       : t('watchlist.sessionFilmCount', { count: group.filmCount });
 
   const headerLabel = group.prompt
-    ? t('watchlist.sessionGroup', { prompt: truncatePrompt(group.prompt) })
+    ? t('watchlist.sessionGroup', { prompt: group.prompt })
     : t('watchlist.sessionGroupNoPrompt');
 
   /* ── 2-sütunlu çiftler ──────────────────────────────────────────────────── */
@@ -106,14 +152,18 @@ const SessionAccordion = React.memo(function SessionAccordion({
         accessibilityState={{ expanded }}
         accessibilityLabel={headerLabel}
       >
-        {/* Sol ikon */}
-        <View style={styles.headerIconWrap}>
-          <Ionicons name="sparkles-outline" size={15} color="#8B5CF6" />
-        </View>
+        {/* Sol — stacked poster önizleme (kapalıyken) veya sparkles ikonu (açıkken) */}
+        {expanded ? (
+          <View style={styles.headerIconWrap}>
+            <Ionicons name="sparkles-outline" size={15} color="#EADBC6" />
+          </View>
+        ) : (
+          <StackedPosters films={group.films} />
+        )}
 
-        {/* Orta — başlık + sayı */}
+        {/* Orta — başlık (2 satır) + sayı */}
         <View style={styles.headerCenter}>
-          <Text style={styles.headerLabel} numberOfLines={1}>
+          <Text style={styles.headerLabel} numberOfLines={2}>
             {headerLabel}
           </Text>
           <Text style={styles.headerMeta}>{filmCountText}</Text>
@@ -125,9 +175,9 @@ const SessionAccordion = React.memo(function SessionAccordion({
         </Animated.View>
       </TouchableOpacity>
 
-      {/* Separator + Body (sadece expanded) */}
+      {/* Separator + Body (sadece expanded, FadeInDown animasyonlu) */}
       {expanded && (
-        <>
+        <Animated.View entering={FadeInDown.duration(220).easing(Easing.out(Easing.cubic))}>
           <View style={styles.divider} />
           <View style={styles.body}>
             {filmPairs.map((pair, rowIndex) => (
@@ -149,7 +199,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
               </View>
             ))}
           </View>
-        </>
+        </Animated.View>
       )}
     </View>
   );

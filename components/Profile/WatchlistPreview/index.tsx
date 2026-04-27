@@ -14,7 +14,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Image,
-  ScrollView,
   Text,
   TouchableOpacity,
   View,
@@ -156,7 +155,7 @@ function PosterCard({ item, isWatched, onToggle }: PosterCardProps) {
 export default function WatchlistPreview({ items, loading }: Props) {
   const { t } = useLanguage();
 
-  const shown = items.slice(0, 5);
+  const shown = items.slice(0, 4);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
 
   // ─── AsyncStorage'dan izlenen ID'leri yükle ───────────────────────────
@@ -204,13 +203,13 @@ export default function WatchlistPreview({ items, loading }: Props) {
 
       {/* İçerik */}
       {loading ? (
-        <View style={styles.skeletonRow}>
-          {[0, 1, 2].map((i) => (
+        <View style={styles.posterGrid}>
+          {[0, 1, 2, 3].map((i) => (
             <SkeletonLoader
               key={i}
-              width={POSTER_W}
               height={POSTER_H}
               borderRadius={8}
+              style={styles.skeletonItem}
             />
           ))}
         </View>
@@ -233,11 +232,8 @@ export default function WatchlistPreview({ items, loading }: Props) {
             })}
           />
 
-          {/* Poster horizontal scroll */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}>
+          {/* 2×2 poster ızgarası */}
+          <View style={styles.posterGrid}>
             {shown.map((item) => (
               <PosterCard
                 key={item.film.id}
@@ -246,7 +242,7 @@ export default function WatchlistPreview({ items, loading }: Props) {
                 onToggle={handleToggle}
               />
             ))}
-          </ScrollView>
+          </View>
         </>
       )}
     </View>

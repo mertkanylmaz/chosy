@@ -1,3 +1,6 @@
+import '@/utils/cryptoPolyfill';   // WebCrypto polyfill — ilk satır, sırası kritik
+import { useEffect } from 'react';
+
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import {
   PlayfairDisplay_400Regular,
@@ -10,7 +13,6 @@ import {
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -19,8 +21,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/services/supabase';
 import { configureGoogleSignIn } from '@/services/authService';
+import { initializePurchases } from '@/services/purchaseService';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { logger } from '@/utils/logger';
 
 // Geliştirme ortamında reduced motion strict uyarısını kapat
 if (__DEV__) {
@@ -54,12 +59,28 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontError) throw fontError;
+    // Production'da font hatası uygulamayı crash etmemeli — log + devam et.
+    // Font yüklenemese bile uygulama sistem fontuyla çalışmaya devam eder.
+    if (fontError) {
+      logger.error('[layout] Font yükleme hatası (graceful devam):', fontError);
+    }
   }, [fontError]);
 
   // Google Sign-In SDK konfigürasyonu (env'den client ID okunur)
   useEffect(() => {
     configureGoogleSignIn();
+  }, []);
+
+  // RevenueCat SDK başlatma — auth hazır olduktan sonra user ID ile configure
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const userId = session?.user?.id;
+      initializePurchases(userId ?? undefined).catch((err) => {
+        logger.error('[layout] RevenueCat başlatma hatası (graceful devam):', err);
+      });
+    }).catch((err) => {
+      logger.error('[layout] Auth session alınamadı (RC başlatılmadı):', err);
+    });
   }, []);
 
   // Anonim oturum — oturum yoksa signInAnonymously() ile aç
@@ -117,14 +138,15 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Font yüklemesi tamamlanınca splash'i kaldır
+  // Font yüklemesi tamamlanınca (veya hata olunca) splash'i kaldır.
+  // fontError durumunda da devam etmeli — sistem fontu ile çalışır.
   useEffect(() => {
-    if (fontsLoaded) {
+    if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, fontError]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
@@ -143,6 +165,7 @@ function RootLayoutNav() {
       <SafeAreaProvider>
       <LanguageProvider>
         <MoodProvider>
+          <SubscriptionProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="gate" />
@@ -153,11 +176,20 @@ function RootLayoutNav() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="splash" />
               <Stack.Screen
+                name="discover"
+                options={{ animation: 'slide_from_right', headerShown: false }}
+              />
+              <Stack.Screen
                 name="film/[id]"
                 options={{ animation: 'slide_from_bottom' }}
               />
+              <Stack.Screen
+                name="paywall"
+                options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+              />
             </Stack>
           </ThemeProvider>
+          </SubscriptionProvider>
         </MoodProvider>
       </LanguageProvider>
       </SafeAreaProvider>

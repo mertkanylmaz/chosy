@@ -39,8 +39,8 @@ export default function PersonaBadge({ archetypeId, onPress }: PersonaBadgeProps
   const archetype = getArchetype(archetypeId);
 
   const styles = createStyles(
-    archetype?.colorPrimary ?? '#8B5CF6',
-    archetype?.colorDim ?? 'rgba(139,92,246,0.14)',
+    archetype?.colorPrimary ?? '#EADBC6',
+    archetype?.colorDim ?? 'rgba(234,219,198,0.14)',
   );
 
   const content = (

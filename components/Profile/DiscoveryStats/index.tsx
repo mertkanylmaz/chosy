@@ -67,8 +67,6 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
 
   /** Watchlist'ten türetilen top 2 genre */
   const topGenres = insights?.saved_genre_distribution?.slice(0, 2) ?? [];
-  /** Watchlist'ten türetilen top 1 yönetmen */
-  const topDirector = insights?.top_directors?.[0] ?? null;
 
   return (
     <View style={styles.card}>
@@ -84,12 +82,12 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
         <Text style={styles.empty}>{t('profile.statsNoInsights')}</Text>
       ) : (
         <>
-          {/* 2×2 stat grid */}
+          {/* 1×3 stat grid — Top Genre kaldırıldı (aşağıdaki chip'lerde zaten var) */}
           <View style={styles.grid}>
             <StatCard
               value={stats?.total_discovered ?? discovered}
-              label={t('profile.statsMoviesDiscovered')}
-              icon="film-outline"
+              label={t('profile.statsMoviesWatched')}
+              icon="eye-outline"
             />
             <StatCard
               value={stats?.saved_films ?? 0}
@@ -100,11 +98,6 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
               value={stats?.total_sessions ?? 0}
               label={t('profile.statsMoodSessions')}
               icon="bulb-outline"
-            />
-            <StatCard
-              value={stats?.favorite_genre ?? '—'}
-              label={t('profile.statsFavoriteGenreStat')}
-              icon="star-outline"
             />
           </View>
 
@@ -123,21 +116,6 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
             </View>
           )}
 
-          {/* Top 1 Director */}
-          {topDirector != null && (
-            <View style={styles.directorRow}>
-              <Ionicons name="videocam-outline" size={14} color={Colors.textGrey} />
-              <View style={styles.directorInfo}>
-                <Text style={styles.directorLabel}>{t('profile.statsFavoriteDirector')}</Text>
-                <Text style={styles.directorName} numberOfLines={1}>
-                  {topDirector.director}
-                </Text>
-              </View>
-              <View style={styles.directorBadge}>
-                <Text style={styles.directorBadgeText}>{topDirector.saved_count}</Text>
-              </View>
-            </View>
-          )}
         </>
       )}
     </View>

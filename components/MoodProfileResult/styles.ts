@@ -23,8 +23,8 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 4,
+    paddingBottom: 4,
   },
   headerBtn: {
     width: 40,
@@ -51,16 +51,16 @@ export default StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
 
   // ─── Title ──────────────────────────────────────────────────────────────────
   title: {
-    fontSize: 32,
+    fontSize: 26,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textWhite,
-    marginTop: 16,
-    lineHeight: 40,
+    marginTop: 4,
+    lineHeight: 32,
   },
 
   // ─── Profile subtitle ────────────────────────────────────────────────────────
@@ -68,8 +68,8 @@ export default StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    marginTop: 8,
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 2,
   },
   profileBadgeLabel: {
     fontSize: 14,
@@ -83,19 +83,19 @@ export default StyleSheet.create({
 
   // ─── Description ────────────────────────────────────────────────────────────
   description: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textGrey,
-    marginTop: 4,
-    lineHeight: 22,
-    marginBottom: 8,
+    marginTop: 2,
+    lineHeight: 20,
+    marginBottom: 4,
   },
 
   // ─── Grid ───────────────────────────────────────────────────────────────────
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    marginTop: 20,
+    gap: 10,
+    marginTop: 10,
   },
   animWrapper: {
     width: CARD_WIDTH,
@@ -108,8 +108,8 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(212,168,67,0.12)',
     borderRadius: Theme.borderRadius.xl,
-    padding: 18,
-    minHeight: 140,
+    padding: 14,
+    minHeight: 120,
     justifyContent: 'space-between',
     overflow: 'hidden',
   },
@@ -136,7 +136,6 @@ export default StyleSheet.create({
     fontSize: 11,
     color: Colors.textGrey,
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
     marginBottom: 6,
   },
   cardValue: {
@@ -168,7 +167,7 @@ export default StyleSheet.create({
 
   // ─── Share Your Mood button ─────────────────────────────────────────────────
   shareWrapper: {
-    marginTop: 24,
+    marginTop: 14,
   },
   shareBtn: {
     height: 52,
@@ -188,8 +187,8 @@ export default StyleSheet.create({
 
   // ─── Browse Movies button ───────────────────────────────────────────────────
   browseWrapper: {
-    marginTop: 32,
-    marginBottom: 40,
+    marginTop: 16,
+    marginBottom: 20,
     borderRadius: Theme.borderRadius.xl,
     overflow: 'hidden',
     shadowColor: Colors.gold,

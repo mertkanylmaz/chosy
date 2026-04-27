@@ -27,7 +27,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { getArchetype } from '@/constants/archetypes';
 import type { SwipeInsight } from '@/types/profile';
 import type { EmotionalState, TasteProfile } from '@/types/index';
 
@@ -41,7 +40,7 @@ const EMOTION_COLORS: Record<keyof EmotionalState, string> = {
   sadness: '#60A5FA',
   fear: '#F87171',
   anger: '#EF4444',
-  trust: '#A78BFA',
+  trust: '#F0E8DA',
   anticipation: '#FBBF24',
   surprise: '#FB923C',
   disgust: '#6B7280',
@@ -76,8 +75,13 @@ const BAR_STAGGER = 100;
 
 /**
  * TasteProfile'dan okunabilir AI ozeti olusturur.
+ * Not: t() ikinci argümanı ile interpolasyon yapılır — .replace() değil.
+ * .replace() yaklaşımı i18n-js v4'te [missing "X" value] hatasına neden olur.
  */
-function buildSummary(profile: TasteProfile, t: (key: string) => string): string {
+function buildSummary(
+  profile: TasteProfile,
+  t: (key: string, options?: Record<string, unknown>) => string,
+): string {
   const emotionKeys: Record<string, string> = {
     joy: 'tasteDNA.emoJoy',
     sadness: 'tasteDNA.emoSadness',
@@ -105,10 +109,11 @@ function buildSummary(profile: TasteProfile, t: (key: string) => string): string
     profile.pace_preference === 'fast' ? 'tasteDNA.paceFast' :
     'tasteDNA.paceMedium';
 
-  return t('tasteDNA.summary')
-    .replace('%{pace}', t(paceKey))
-    .replace('%{emotion}', t(emotionKeys[topEmotion] ?? 'tasteDNA.emoTrust'))
-    .replace('%{depth}', t(depthKey));
+  return t('tasteDNA.summary', {
+    pace: t(paceKey),
+    emotion: t(emotionKeys[topEmotion] ?? 'tasteDNA.emoTrust'),
+    depth: t(depthKey),
+  });
 }
 
 /**
@@ -234,36 +239,6 @@ function AnimatedEnergyBar({ value }: { value: number }) {
   );
 }
 
-// ─── Arketip Banner ─────────────────────────────────────────────────────────
-
-interface ArchetypeBannerProps {
-  archetypeId: number;
-}
-
-/**
- * TasteDNA karti ici arketip banner'i.
- * Kullanicinin arketipini renkli arka plan + ikon + isim + aciklama ile gosterir.
- */
-function ArchetypeBanner({ archetypeId }: ArchetypeBannerProps) {
-  const { t } = useLanguage();
-  const archetype = getArchetype(archetypeId);
-  if (!archetype) return null;
-
-  return (
-    <View style={[styles.archetypeBanner, { borderLeftColor: archetype.colorPrimary, backgroundColor: archetype.colorDim }]}>
-      <View style={styles.archetypeRow}>
-        <Text style={styles.archetypeIcon}>{archetype.icon}</Text>
-        <View style={styles.archetypeTextBlock}>
-          <Text style={[styles.archetypeName, { color: archetype.colorPrimary }]}>
-            {t(archetype.nameKey)}
-          </Text>
-          <Text style={styles.archetypeDesc}>{t(archetype.descKey)}</Text>
-        </View>
-      </View>
-    </View>
-  );
-}
-
 // ─── Yukleniyor iskelet ───────────────────────────────────────────────────────
 
 /**
@@ -285,15 +260,14 @@ function SkeletonContent() {
 
 /**
  * Profil verisi mevcutken gosterilen dolu icerik.
+ * Not: Arketip banner kaldirildi — profil header'inda PersonaBadge + aciklama var.
  */
 function FilledContent({
   profile,
   insights,
-  archetypeId,
 }: {
   profile: TasteProfile;
   insights: SwipeInsight | null;
-  archetypeId: number | null | undefined;
 }) {
   const { t } = useLanguage();
   const topEmotions = getTopEmotions(profile.emotional_state);
@@ -302,11 +276,6 @@ function FilledContent({
 
   return (
     <>
-      {/* Arketip banner — en uste */}
-      {archetypeId != null && (
-        <ArchetypeBanner archetypeId={archetypeId} />
-      )}
-
       {/* Duygu dagilimi */}
       {topEmotions.length > 0 && (
         <View>
@@ -406,7 +375,7 @@ export default function TasteDNA({ profile, insights, loading, archetypeId }: Pr
       {loading ? (
         <SkeletonContent />
       ) : profile ? (
-        <FilledContent profile={profile} insights={insights} archetypeId={archetypeId} />
+        <FilledContent profile={profile} insights={insights} />
       ) : (
         <Text style={styles.summary}>
           {t('tasteDNA.emptyHint')}

@@ -16,7 +16,6 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.textTertiary,
     letterSpacing: 1.5,
-    textTransform: 'uppercase',
   },
   /**
    * DailyMatchCard'in varsayilan aspectRatio: 3/4'tür.

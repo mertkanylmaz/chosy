@@ -57,7 +57,6 @@ export default StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 14,
     color: Colors.gold,
-    textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 4,
   },

@@ -27,6 +27,7 @@ import Animated, {
 import { BOUNCE_CONFIG, FAST_TIMING, TIMING_CONFIG } from '@/constants/animations';
 import { hapticHeavy } from '@/utils/haptics';
 import Lumi, { type LumiMood } from '@/components/Lumi';
+import FilmSeridi from '@/components/FilmReelAnimation';
 import ConfettiEffect from './ConfettiEffect';
 import { useScalePress } from '@/hooks/useScalePress';
 
@@ -54,12 +55,13 @@ export interface MilestoneCelebrationProps {
 // ─── Yardımcılar ────────────��───────────────────────���────────────────────────
 
 /** Büyük milestone'lar → ekstra konfeti + farklı CTA */
-const EPIC_SLUGS = new Set(['films_100', 'films_250', 'streak_30']);
+const EPIC_SLUGS = new Set(['films_100', 'films_250', 'streak_30', 'curator_5']);
 
 const EPIC_CTA: Record<string, string> = {
   films_100: 'Legendary! 🏆',
   films_250: 'Unstoppable! ⭐',
   streak_30: 'Incredible! 👑',
+  curator_5: 'Go to My Watchlist →',
 };
 
 /** Milestone kategori/threshold'a göre Lumi mood */
@@ -77,6 +79,7 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
 }) => {
   const { animatedStyle: ctaPressStyle, onPressIn, onPressOut } = useScalePress(0.95);
   const isEpic = EPIC_SLUGS.has(milestone.slug);
+  const isCurator = milestone.slug === 'curator_5';
   const ctaText = EPIC_CTA[milestone.slug] ?? 'Keep Going!';
   const lumiMood = getLumiMood(milestone.slug);
 
@@ -112,20 +115,24 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
         {/* İçerik — basınca propagation durmalı */}
         <Pressable style={styles.content} onPress={() => {}}>
 
-          {/* Lumi orb — milestone kutlaması */}
+          {/* Curator: FilmSeridi makarasi — diger milestone'lar: Lumi orb */}
           <Animated.View
-            style={styles.mascotContainer}
+            style={isCurator ? styles.mascotContainerCurator : styles.mascotContainer}
             entering={FadeInDown.springify()
               .damping(BOUNCE_CONFIG.damping)
               .stiffness(BOUNCE_CONFIG.stiffness)
               .delay(200)}
           >
-            <Lumi
-              size="large"
-              mood={lumiMood}
-              showParticles
-              showGlow
-            />
+            {isCurator ? (
+              <FilmSeridi />
+            ) : (
+              <Lumi
+                size="large"
+                mood={lumiMood}
+                showParticles
+                showGlow
+              />
+            )}
           </Animated.View>
 
           {/* Milestone Icon */}

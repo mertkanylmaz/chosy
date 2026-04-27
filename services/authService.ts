@@ -18,28 +18,35 @@
  */
 
 import * as AppleAuthentication from 'expo-apple-authentication';
-import {
-  GoogleSignin,
-  statusCodes,
-  type SignInResponse,
-} from '@react-native-google-signin/google-signin';
+import * as ExpoCrypto from 'expo-crypto';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 
-// ─── Google Sign-In Konfigürasyonu ────────────────────────────────────────────
+// ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
+//
+// @react-native-google-signin/google-signin yerine Supabase OAuth + expo-web-browser
+// kullanılır. Bu yaklaşım native build gerektirmez; Expo Go ve dev client'ta çalışır.
+//
+// Akış:
+//   1. supabase.auth.signInWithOAuth → Supabase'den Google login URL'i al
+//   2. WebBrowser.openAuthSessionAsync → tarayıcıda Google ile giriş yap
+//   3. Supabase callback → uygulamaya redirect
+//   4. exchangeCodeForSession → PKCE kodu oturumaçevir
+//
+// Gereksinim:
+//   - Supabase Dashboard → Auth → URL Config → "chosy://" Redirect URLs'e eklenmeli
+//   - Google Cloud Console → OAuth Credentials → Authorized redirect URI:
+//     https://[project-id].supabase.co/auth/v1/callback (Supabase'de Google aktifken otomatik eklenir)
 
 /**
- * Uygulama başlangıcında çağrılmalı (ör. _layout.tsx useEffect içinde).
- * webClientId Supabase Google provider ile eşleşmeli.
+ * Google Sign-In konfigürasyonu — WebBrowser OAuth yaklaşımında gerekli değil.
+ * _layout.tsx uyumluluğu için korunur (no-op).
  */
 export function configureGoogleSignIn(): void {
-  GoogleSignin.configure({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
-    scopes: ['profile', 'email'],
-    // iOS için ayrı client ID (GoogleService-Info.plist'ten alınır)
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-  });
+  // WebBrowser OAuth flow konfigürasyon gerektirmez.
 }
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -65,6 +72,32 @@ export async function isCurrentUserAnonymous(): Promise<boolean> {
     return user?.is_anonymous ?? true;
   } catch {
     return true;
+  }
+}
+
+/**
+ * Apple Sign-In'den gelen ismi users.display_name alanina yazar.
+ * Yalnizca display_name henuz NULL ise gunceller — var olan ismi silmez.
+ * Apple, ismi yalnizca ilk authorization'da token'a gomer; sonrakinde gelmez.
+ *
+ * @param name - credential.fullName'den turetilmis tam ad
+ */
+async function syncDisplayName(name: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ display_name: name })
+      .eq('auth_id', user.id)
+      .is('display_name', null); // Kullanici daha once isim koyduysa ezme
+
+    if (error) {
+      logger.warn('[authService] syncDisplayName guncelleme hatasi:', error.message);
+    }
+  } catch (err) {
+    logger.error('[authService] syncDisplayName beklenmedik hata:', err);
   }
 }
 
@@ -97,6 +130,36 @@ async function syncAuthProvider(provider: 'apple' | 'google'): Promise<void> {
 
 // ─── Apple Sign-In ────────────────────────────────────────────────────────────
 
+// ⚠️ SUPABASE DASHBOARD GEREKSİNİMİ (tek seferlik kurulum):
+//   Supabase Dashboard → Authentication → Providers → Apple
+//   "Authorized Client IDs" alanına "com.chosy.ai" ekle.
+//   Bu olmadan Supabase, Apple token'ının aud alanını ("com.chosy.ai")
+//   reddeder → "Unacceptable audience in id_token" hatası alınır.
+
+/**
+ * Apple Sign-In için kriptografik nonce çifti üretir.
+ *
+ * Güvenlik gereği:
+ *  - Apple native SDK'ya hashedNonce gönderilir (token'a gömülür)
+ *  - Supabase'e rawNonce gönderilir (hash'i doğrular)
+ *  - İkisi uyuşmazsa Supabase token'ı reddeder → replay attack önlenir
+ *
+ * @returns rawNonce (Supabase'e) ve hashedNonce (Apple'a)
+ */
+async function generateAppleNonce(): Promise<{ rawNonce: string; hashedNonce: string }> {
+  // 16 byte kriptografik rastgele → hex string
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  const rawNonce = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+
+  const hashedNonce = await ExpoCrypto.digestStringAsync(
+    ExpoCrypto.CryptoDigestAlgorithm.SHA256,
+    rawNonce,
+  );
+
+  return { rawNonce, hashedNonce };
+}
+
 /**
  * Apple ile oturum açar (yalnızca iOS).
  *
@@ -113,20 +176,25 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { success: false, error: 'not_available' };
     }
 
+    // Nonce üret — Apple token'ına gömülür, Supabase doğrular
+    const { rawNonce, hashedNonce } = await generateAppleNonce();
+
     const credential = await AppleAuthentication.signInAsync({
       requestedScopes: [
         AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
+      nonce: hashedNonce, // Apple token'ına hash gömülür
     });
 
     if (!credential.identityToken) {
-      return { success: false, error: 'failed', message: 'identityToken alınamadı' };
+      return { success: false, error: 'failed', message: 'identityToken alinamadi' };
     }
 
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'apple',
       token: credential.identityToken,
+      nonce: rawNonce, // Supabase hash'i token'daki ile karsilastirir
     });
 
     if (error) {
@@ -134,10 +202,19 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { success: false, error: 'failed', message: error.message };
     }
 
-    // users tablosundaki auth_provider güncelle (non-blocking)
+    // users tablosundaki auth_provider guncelle (non-blocking)
     void syncAuthProvider('apple');
 
-    // İlk kez giriş mi?
+    // Apple ismi: yalnizca ILK authorization'da credential'da gelir.
+    // DB'ye yazilmazsa bir sonraki giriste kaybedilir.
+    const givenName = credential.fullName?.givenName ?? '';
+    const familyName = credential.fullName?.familyName ?? '';
+    const fullAppleName = [givenName, familyName].filter(Boolean).join(' ').trim();
+    if (fullAppleName) {
+      void syncDisplayName(fullAppleName);
+    }
+
+    // Ilk kez giris mi?
     const isNewUser =
       !!data.user &&
       data.user.created_at !== undefined &&
@@ -170,56 +247,68 @@ export async function signInWithApple(): Promise<AuthResult> {
  *
  * @returns AuthResult — başarı veya hata detayı
  */
+/**
+ * Google ile oturum açar — Supabase OAuth + WebBrowser akışı.
+ *
+ * Native build gerektirmez. Expo Go ve dev client'ta çalışır.
+ * Anonim kullanıcılar için Supabase'in automatic linking özelliği mevcut
+ * user_id'yi korur; watchlist/swipe/session verileri kaybolmaz.
+ *
+ * @returns AuthResult — başarı veya hata detayı
+ */
 export async function signInWithGoogle(): Promise<AuthResult> {
   try {
-    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    // Uygulama scheme'ine göre redirect URI oluştur
+    // Dev client: chosy:// | Expo Go: exp://...
+    const redirectTo = Linking.createURL('/');
 
-    const response: SignInResponse = await GoogleSignin.signIn();
-
-    if (response.type === 'cancelled') {
-      return { success: false, error: 'canceled' };
-    }
-
-    const idToken = response.data.idToken;
-    if (!idToken) {
-      return { success: false, error: 'failed', message: 'idToken alınamadı' };
-    }
-
-    const { data, error } = await supabase.auth.signInWithIdToken({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      token: idToken,
+      options: {
+        redirectTo,
+        skipBrowserRedirect: true,   // Tarayıcıyı biz açıyoruz
+      },
     });
 
-    if (error) {
-      logger.error('[authService] Google signInWithIdToken hatası:', error.message);
-      return { success: false, error: 'failed', message: error.message };
+    if (error || !data.url) {
+      logger.error('[authService] Google OAuth URL alınamadı:', error?.message);
+      return { success: false, error: 'failed', message: error?.message };
     }
 
-    // users tablosundaki auth_provider güncelle (non-blocking)
-    void syncAuthProvider('google');
+    // Supabase'in ürettiği Google login URL'ini tarayıcıda aç
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
 
-    // İlk kez giriş mi?
-    const isNewUser =
-      !!data.user &&
-      data.user.created_at !== undefined &&
-      Math.abs(new Date(data.user.created_at).getTime() - Date.now()) < 10_000;
+    if (result.type === 'success') {
+      // PKCE: auth kodunu oturuma çevir
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(result.url);
 
-    return { success: true, isNewUser };
-  } catch (err: unknown) {
-    const errCode = (err as { code?: string }).code;
+      if (sessionError) {
+        logger.error('[authService] Google session exchange hatası:', sessionError.message);
+        return { success: false, error: 'failed', message: sessionError.message };
+      }
 
-    if (errCode === statusCodes.SIGN_IN_CANCELLED) {
+      // users tablosundaki auth_provider güncelle (non-blocking)
+      void syncAuthProvider('google');
+
+      // İlk kez giriş mi?
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const isNewUser = user
+        ? Math.abs(new Date(user.created_at).getTime() - Date.now()) < 10_000
+        : false;
+
+      return { success: true, isNewUser };
+    }
+
+    // Kullanıcı tarayıcıyı kapattı
+    if (result.type === 'cancel' || result.type === 'dismiss') {
       return { success: false, error: 'canceled' };
     }
-    if (errCode === statusCodes.IN_PROGRESS) {
-      // Kullanıcı tekrar tıkladı, zaten işlem devam ediyor
-      return { success: false, error: 'canceled' };
-    }
-    if (errCode === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-      return { success: false, error: 'not_available' };
-    }
 
-    logger.error('[authService] Google sign-in beklenmedik hata:', err);
+    return { success: false, error: 'failed' };
+  } catch (err) {
+    logger.error('[authService] Google OAuth beklenmedik hata:', err);
     return {
       success: false,
       error: 'failed',
@@ -287,5 +376,71 @@ export async function signOut(): Promise<void> {
     }
   } catch (err) {
     logger.error('[authService] signOut beklenmedik hata:', err);
+  }
+}
+
+// ─── Delete Account ───────────────────────────────────────────────────────────
+
+/** deleteAccount sonuç tipi */
+export type DeleteAccountResult =
+  | { success: true }
+  | { success: false; error: 'not_authenticated' | 'server_error' | 'network_error'; message?: string };
+
+/**
+ * Kullanıcının tüm verilerini ve auth kaydını kalıcı olarak siler.
+ *
+ * App Store zorunluluğu — GDPR & Apple/Google hesap silme politikası.
+ *
+ * Akış:
+ *   1. Supabase JWT al
+ *   2. Edge Function `delete-account` çağır (servis rol yetkisi gerekli)
+ *   3. Edge function: subscriptions + mood_searches + users (cascade) + auth.users siler
+ *   4. Client: signOut + yerel session temizle
+ *
+ * @returns Başarı durumu ve opsiyonel hata detayı
+ */
+export async function deleteAccount(): Promise<DeleteAccountResult> {
+  try {
+    // Mevcut session token'ı al
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      return { success: false, error: 'not_authenticated' };
+    }
+
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+    const functionUrl = `${supabaseUrl}/functions/v1/delete-account`;
+
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+      },
+    });
+
+    if (!response.ok && response.status !== 207) {
+      const body = await response.json().catch(() => ({}));
+      logger.error('[authService] deleteAccount edge function hatası:', response.status, body);
+      return {
+        success: false,
+        error: 'server_error',
+        message: (body as { error?: string }).error ?? `HTTP ${response.status}`,
+      };
+    }
+
+    // Tüm veri silindi — yerel oturumu kapat
+    await supabase.auth.signOut();
+    logger.log('[authService] Hesap silindi ve oturum kapatıldı.');
+
+    return { success: true };
+  } catch (err) {
+    logger.error('[authService] deleteAccount beklenmedik hata:', err);
+    return {
+      success: false,
+      error: 'network_error',
+      message: err instanceof Error ? err.message : 'Bilinmeyen hata',
+    };
   }
 }

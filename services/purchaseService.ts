@@ -68,17 +68,24 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
   if (_initialized) return;
 
   // Native RC instance zaten ayarlanmış (Fast Refresh senaryosu) — sadece flag'i senkronize et
-  const alreadyConfigured = await Purchases.isConfigured();
-  if (alreadyConfigured) {
-    _initialized = true;
-    logger.log('[purchases] RevenueCat zaten yapılandırılmış — flag senkronize edildi');
-    return;
+  try {
+    const alreadyConfigured = await Purchases.isConfigured();
+    if (alreadyConfigured) {
+      _initialized = true;
+      logger.log('[purchases] RevenueCat zaten yapılandırılmış — flag senkronize edildi');
+      return;
+    }
+  } catch (err) {
+    logger.warn('[purchases] isConfigured() kontrolü başarısız — ilk kurulum varsayılıyor:', err);
   }
 
   const apiKey = Platform.OS === 'ios' ? RC_IOS_KEY : RC_ANDROID_KEY;
 
-  if (!apiKey) {
-    logger.warn('[purchases] RevenueCat API key bulunamadı — SDK başlatılmadı');
+  // EAS Build'de env secret tanimli degilse bos string gelir.
+  // Bos key ile Purchases.configure() native crash'e yol acabilir — kesinlikle guard'la.
+  if (!apiKey || apiKey.trim() === '') {
+    logger.warn('[purchases] RevenueCat API key bulunamadi — SDK baslatilmadi');
+    logger.warn('[purchases] EXPO_PUBLIC_RC_IOS_KEY EAS Secrets\'ta tanimli mi?');
     return;
   }
 
@@ -88,26 +95,17 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     }
 
     Purchases.configure({
-      apiKey,
+      apiKey: apiKey.trim(),
       appUserID: supabaseUserId ?? undefined,
     });
 
     _initialized = true;
-    logger.log('[purchases] RevenueCat başlatıldı');
-
-    // === TANI LOGU: SADECE GELİŞTİRME AŞAMASI İÇİN ===
-    try {
-      const offerings = await Purchases.getOfferings();
-      console.log("\n=== REVENUECAT LOG ===");
-      console.log(JSON.stringify(offerings, null, 2));
-      console.log("======================\n");
-    } catch (e) {
-      console.error("RevenueCat Log Hatası:", e);
-    }
-    // =================================================
+    logger.log('[purchases] RevenueCat baslatildi');
 
   } catch (err) {
-    logger.error('[purchases] RevenueCat başlatma hatası:', err);
+    // Native crash'i JS katmaninda yakala — uygulamayi cokertme
+    logger.error('[purchases] RevenueCat baslatma hatasi:', err);
+    // _initialized = false kalir; diger servisler _initialized guard ile korunur
   }
 }
 

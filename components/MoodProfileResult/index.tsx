@@ -29,28 +29,6 @@ function dominantEmotionKey(state: EmotionalState): keyof EmotionalState {
   return entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
 }
 
-const EMOTION_VALUE: Record<keyof EmotionalState, string> = {
-  joy: 'Joyful',
-  sadness: 'Melancholic',
-  anger: 'Intense',
-  fear: 'Anxious',
-  surprise: 'Curious',
-  disgust: 'Critical',
-  anticipation: 'Eager',
-  trust: 'Serene',
-};
-
-const EMOTION_DESC: Record<keyof EmotionalState, string> = {
-  joy: 'Uplifted and bright',
-  sadness: 'Deep emotional resonance',
-  anger: 'Passionate intensity',
-  fear: 'Edge of your seat',
-  surprise: 'Open to surprises',
-  disgust: 'Discerning taste',
-  anticipation: 'Eager for more',
-  trust: 'Warm and trusting',
-};
-
 const EMOTION_ICON: Record<keyof EmotionalState, string> = {
   joy: '😊',
   sadness: '🌧',
@@ -62,68 +40,34 @@ const EMOTION_ICON: Record<keyof EmotionalState, string> = {
   trust: '🤝',
 };
 
-/** Enerji seviyesini etiket stringine dönüştürür */
-function energyLabel(level: number): string {
-  if (level < 0.2) return 'Very Low';
-  if (level < 0.4) return 'Low';
-  if (level < 0.55) return 'Medium-Low';
-  if (level < 0.7) return 'Medium';
-  if (level < 0.85) return 'Medium-High';
-  return 'High';
-}
-
-function energyDesc(level: number): string {
-  if (level < 0.4) return 'Lower physical energy.';
-  if (level < 0.65) return 'Balanced energy level.';
-  return 'High-energy state.';
-}
-
-const PACE_VALUE: Record<PacePreference, string> = {
-  slow: 'Slow',
-  medium: 'Balanced',
-  fast: 'Fast-Paced',
-};
-
-const PACE_DESC: Record<PacePreference, string> = {
-  slow: 'A leisurely tempo.',
-  medium: 'Steady narrative flow.',
-  fast: 'High-octane energy.',
-};
-
-/** thematic_depth → etiket */
-function thematicDepthLabel(depth: number): string {
-  if (depth < 0.3) return 'Light';
-  if (depth < 0.55) return 'Moderate';
-  if (depth < 0.75) return 'Deep';
-  return 'Profound';
-}
-
-/** thematic_depth → açıklama */
-function thematicDepthDesc(depth: number): string {
-  if (depth < 0.3) return 'Easy and fun watching.';
-  if (depth < 0.55) return 'Thought-provoking layers.';
-  return 'Philosophical depth.';
-}
-
-/** Dominant emotion → profile name */
-function profileName(emotionKey: keyof EmotionalState): string {
-  const map: Record<keyof EmotionalState, string> = {
-    joy: 'Joyful',
-    sadness: 'Melancholic',
-    anger: 'Intense',
-    fear: 'Anxious',
-    surprise: 'Curious',
-    disgust: 'Critical',
-    anticipation: 'Eager',
-    trust: 'Calm',
-  };
-  return map[emotionKey];
-}
-
 // ─── Card sub-components ──────────────────────────────────────────────────────
 
+interface CardProps {
+  t: (key: string) => string;
+}
+
 /** Emotion boyutu kartı */
-function EmotionCard({ emotionKey }: { emotionKey: keyof EmotionalState }) {
+function EmotionCard({ emotionKey, t }: CardProps & { emotionKey: keyof EmotionalState }) {
+  const emotionKeyMap: Record<keyof EmotionalState, string> = {
+    joy: t('moodProfile.emotionJoyful'),
+    sadness: t('moodProfile.emotionMelancholic'),
+    anger: t('moodProfile.emotionIntense'),
+    fear: t('moodProfile.emotionAnxious'),
+    surprise: t('moodProfile.emotionCurious'),
+    disgust: t('moodProfile.emotionCritical'),
+    anticipation: t('moodProfile.emotionEager'),
+    trust: t('moodProfile.emotionSerene'),
+  };
+  const emotionDescMap: Record<keyof EmotionalState, string> = {
+    joy: t('moodProfile.descJoyful'),
+    sadness: t('moodProfile.descMelancholic'),
+    anger: t('moodProfile.descIntense'),
+    fear: t('moodProfile.descAnxious'),
+    surprise: t('moodProfile.descCurious'),
+    disgust: t('moodProfile.descCritical'),
+    anticipation: t('moodProfile.descEager'),
+    trust: t('moodProfile.descSerene'),
+  };
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
@@ -131,16 +75,32 @@ function EmotionCard({ emotionKey }: { emotionKey: keyof EmotionalState }) {
           <Text style={styles.cardIcon}>{EMOTION_ICON[emotionKey]}</Text>
         </View>
       </View>
-      <Text style={styles.cardLabel}>Emotion</Text>
-      <Text style={styles.cardValue}>{EMOTION_VALUE[emotionKey]}</Text>
-      <Text style={styles.cardDesc}>{EMOTION_DESC[emotionKey]}</Text>
+      <Text style={styles.cardLabel}>{t('moodProfile.labelEmotion')}</Text>
+      <Text style={styles.cardValue}>{emotionKeyMap[emotionKey]}</Text>
+      <Text style={styles.cardDesc}>{emotionDescMap[emotionKey]}</Text>
     </View>
   );
 }
 
 /** Energy Level boyutu kartı — progress bar ile */
-function EnergyCard({ level }: { level: number }) {
+function EnergyCard({ level, t }: CardProps & { level: number }) {
   const pct = `${Math.round(level * 100)}%`;
+
+  function energyLabel(v: number): string {
+    if (v < 0.2) return t('moodProfile.energyVeryLow');
+    if (v < 0.4) return t('moodProfile.energyLow');
+    if (v < 0.55) return t('moodProfile.energyMediumLow');
+    if (v < 0.7) return t('moodProfile.energyMedium');
+    if (v < 0.85) return t('moodProfile.energyMediumHigh');
+    return t('moodProfile.energyHigh');
+  }
+
+  function energyDesc(v: number): string {
+    if (v < 0.4) return t('moodProfile.descEnergyLow');
+    if (v < 0.65) return t('moodProfile.descEnergyMedium');
+    return t('moodProfile.descEnergyHigh');
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
@@ -148,7 +108,7 @@ function EnergyCard({ level }: { level: number }) {
           <Text style={styles.cardIcon}>⚡</Text>
         </View>
       </View>
-      <Text style={styles.cardLabel}>Energy Level</Text>
+      <Text style={styles.cardLabel}>{t('moodProfile.labelEnergy')}</Text>
       <Text style={styles.cardValue}>{energyLabel(level)}</Text>
       <Text style={styles.cardDesc}>{energyDesc(level)}</Text>
       <View style={styles.progressBg}>
@@ -159,7 +119,17 @@ function EnergyCard({ level }: { level: number }) {
 }
 
 /** Pacing boyutu kartı */
-function PacingCard({ pace }: { pace: PacePreference }) {
+function PacingCard({ pace, t }: CardProps & { pace: PacePreference }) {
+  const paceValueMap: Record<PacePreference, string> = {
+    slow: t('moodProfile.paceSlow'),
+    medium: t('moodProfile.paceMedium'),
+    fast: t('moodProfile.paceFast'),
+  };
+  const paceDescMap: Record<PacePreference, string> = {
+    slow: t('moodProfile.descPaceSlow'),
+    medium: t('moodProfile.descPaceMedium'),
+    fast: t('moodProfile.descPaceFast'),
+  };
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
@@ -167,16 +137,30 @@ function PacingCard({ pace }: { pace: PacePreference }) {
           <Text style={styles.cardIcon}>🎬</Text>
         </View>
       </View>
-      <Text style={styles.cardLabel}>Pacing</Text>
-      <Text style={styles.cardValue}>{PACE_VALUE[pace]}</Text>
-      <Text style={styles.cardDesc}>{PACE_DESC[pace]}</Text>
+      <Text style={styles.cardLabel}>{t('moodProfile.labelPacing')}</Text>
+      <Text style={styles.cardValue}>{paceValueMap[pace]}</Text>
+      <Text style={styles.cardDesc}>{paceDescMap[pace]}</Text>
     </View>
   );
 }
 
 /** Thematic Depth boyutu kartı — progress bar ile */
-function ThematicDepthCard({ depth }: { depth: number }) {
+function ThematicDepthCard({ depth, t }: CardProps & { depth: number }) {
   const pct = `${Math.round(depth * 100)}%`;
+
+  function depthLabel(v: number): string {
+    if (v < 0.3) return t('moodProfile.depthLight');
+    if (v < 0.55) return t('moodProfile.depthModerate');
+    if (v < 0.75) return t('moodProfile.depthDeep');
+    return t('moodProfile.depthProfound');
+  }
+
+  function depthDesc(v: number): string {
+    if (v < 0.3) return t('moodProfile.descDepthLight');
+    if (v < 0.55) return t('moodProfile.descDepthModerate');
+    return t('moodProfile.descDepthDeep');
+  }
+
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
@@ -184,9 +168,9 @@ function ThematicDepthCard({ depth }: { depth: number }) {
           <Text style={styles.cardIcon}>🎭</Text>
         </View>
       </View>
-      <Text style={styles.cardLabel}>Color Tone</Text>
-      <Text style={styles.cardValue}>{thematicDepthLabel(depth)}</Text>
-      <Text style={styles.cardDesc}>{thematicDepthDesc(depth)}</Text>
+      <Text style={styles.cardLabel}>{t('moodProfile.labelColorTone')}</Text>
+      <Text style={styles.cardValue}>{depthLabel(depth)}</Text>
+      <Text style={styles.cardDesc}>{depthDesc(depth)}</Text>
       <View style={styles.progressBg}>
         <View style={[styles.progressFill, { width: pct as `${number}%` }]} />
       </View>
@@ -226,14 +210,14 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
 
   useEffect(() => {
     // Header giriş
-    Animated.timing(headerAnim, {
+    const headerAnim_ = Animated.timing(headerAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
-    }).start();
+    });
 
     // Kartlar stagger
-    Animated.stagger(
+    const staggerAnim = Animated.stagger(
       90,
       cardAnims.map(anim =>
         Animated.timing(anim, {
@@ -242,7 +226,17 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
           useNativeDriver: true,
         })
       )
-    ).start();
+    );
+
+    headerAnim_.start();
+    staggerAnim.start();
+
+    // Cleanup: component unmount olursa animasyonlar durdurulur.
+    // Aksi hâlde "onAnimatedValueUpdate with no listeners" WARN oluşur.
+    return () => {
+      headerAnim_.stop();
+      staggerAnim.stop();
+    };
   }, []);
 
   const handleBack = () => {
@@ -254,13 +248,25 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
   };
 
   const emotionKey = dominantEmotionKey(profile.emotional_state);
-  const currentProfileName = profileName(emotionKey);
+
+  /** Dominant emotion → lokalize profil adı */
+  const profileNameMap: Record<keyof EmotionalState, string> = {
+    joy: t('moodProfile.emotionJoyful'),
+    sadness: t('moodProfile.emotionMelancholic'),
+    anger: t('moodProfile.emotionIntense'),
+    fear: t('moodProfile.emotionAnxious'),
+    surprise: t('moodProfile.emotionCurious'),
+    disgust: t('moodProfile.emotionCritical'),
+    anticipation: t('moodProfile.emotionEager'),
+    trust: t('moodProfile.emotionCalm'),
+  };
+  const currentProfileName = profileNameMap[emotionKey];
 
   const cardNodes = [
-    <EmotionCard emotionKey={emotionKey} />,
-    <EnergyCard level={profile.energy_level} />,
-    <PacingCard pace={profile.pace_preference} />,
-    <ThematicDepthCard depth={profile.thematic_depth} />,
+    <EmotionCard emotionKey={emotionKey} t={t} />,
+    <EnergyCard level={profile.energy_level} t={t} />,
+    <PacingCard pace={profile.pace_preference} t={t} />,
+    <ThematicDepthCard depth={profile.thematic_depth} t={t} />,
   ];
 
   return (
@@ -294,7 +300,7 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
               },
             ]}
           >
-            Mood Profile Result
+            {t('moodProfile.title')}
           </Animated.Text>
 
           {/* Profile name badge */}
@@ -304,7 +310,7 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
               { opacity: headerAnim },
             ]}
           >
-            <Text style={styles.profileBadgeLabel}>Current Profile:</Text>
+            <Text style={styles.profileBadgeLabel}>{t('moodProfile.currentProfile')}</Text>
             <Text style={styles.profileBadgeName}>{currentProfileName}.</Text>
           </Animated.View>
 
@@ -312,7 +318,7 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
           <Animated.Text
             style={[styles.description, { opacity: headerAnim }]}
           >
-            This profile matches a reflective mood and preference for slow-paced storytelling.
+            {t('moodProfile.description')}
           </Animated.Text>
 
           {/* 2x2 card grid */}
@@ -368,7 +374,7 @@ export default function MoodProfileResult({ profile, onBrowseMovies, onBack, onS
               end={{ x: 1, y: 0 }}
               style={styles.browseBtn}
             >
-              <Text style={styles.browseBtnText}>Browse Movies</Text>
+              <Text style={styles.browseBtnText}>{t('moodProfile.browseMovies')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </ScrollView>

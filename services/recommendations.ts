@@ -259,19 +259,31 @@ function scoreFilm(film: FilmTableRow, profile: TasteProfile): number {
   const genres = film.genres ?? [];
   const em = profile.emotional_state;
 
-  // --- Enerji seviyesi & tür eşleşmesi ---
-  const highEnergyGenres = ['Aksiyon', 'Gerilim', 'Bilim Kurgu', 'Macera', 'Fantezi', 'Western', 'Savaş'];
-  const lowEnergyGenres  = ['Drama', 'Romantik', 'Belgesel', 'Gizem', 'Tarih'];
+  // --- Enerji seviyesi & tür eşleşmesi (EN + TR her ikisini de kabul eder) ---
+  const highEnergyGenres = ['Action', 'Thriller', 'Science Fiction', 'Adventure', 'Fantasy', 'Western', 'War',
+                             'Aksiyon', 'Gerilim', 'Bilim Kurgu', 'Macera', 'Fantezi', 'Savaş'];
+  const lowEnergyGenres  = ['Drama', 'Romance', 'Documentary', 'Mystery', 'History',
+                             'Romantik', 'Belgesel', 'Gizem', 'Tarih'];
   if (profile.energy_level >= 0.6 && genres.some((g) => highEnergyGenres.includes(g))) score += 15;
   if (profile.energy_level < 0.4  && genres.some((g) => lowEnergyGenres.includes(g)))  score += 15;
 
-  // --- Duygusal uyum ---
-  if (em.joy > 0.5     && genres.some((g) => ['Komedi', 'Animasyon', 'Aile'].includes(g)))             score += 10;
-  if (em.sadness > 0.5 && genres.some((g) => ['Drama', 'Romantik'].includes(g)))                       score += 10;
-  if (em.fear > 0.5    && genres.some((g) => ['Korku', 'Gerilim'].includes(g)))                        score += 10;
-  if (em.surprise > 0.5 && genres.some((g) => ['Gerilim', 'Gizem', 'Bilim Kurgu'].includes(g)))       score +=  8;
-  if (em.trust > 0.5   && genres.some((g) => ['Aile', 'Animasyon', 'Belgesel'].includes(g)))           score +=  6;
-  if (em.anticipation > 0.5 && genres.some((g) => ['Aksiyon', 'Macera', 'Bilim Kurgu'].includes(g)))  score +=  8;
+  // --- Duygusal uyum (EN + TR) ---
+  if (em.joy > 0.7     && genres.some((g) => ['Comedy', 'Animation', 'Family', 'Komedi', 'Animasyon', 'Aile'].includes(g)))             score += 18;
+  else if (em.joy > 0.5 && genres.some((g) => ['Comedy', 'Animation', 'Family', 'Komedi', 'Animasyon', 'Aile'].includes(g)))            score += 10;
+  if (em.sadness > 0.5 && genres.some((g) => ['Drama', 'Romance', 'Romantik'].includes(g)))                                             score += 10;
+  if (em.fear > 0.5    && genres.some((g) => ['Horror', 'Thriller', 'Korku', 'Gerilim'].includes(g)))                                   score += 10;
+  if (em.surprise > 0.5 && genres.some((g) => ['Thriller', 'Mystery', 'Science Fiction', 'Gerilim', 'Gizem', 'Bilim Kurgu'].includes(g))) score +=  8;
+  if (em.trust > 0.5   && genres.some((g) => ['Family', 'Animation', 'Documentary', 'Aile', 'Animasyon', 'Belgesel'].includes(g)))      score +=  6;
+  if (em.anticipation > 0.5 && genres.some((g) => ['Action', 'Adventure', 'Science Fiction', 'Aksiyon', 'Macera', 'Bilim Kurgu'].includes(g))) score +=  8;
+
+  // --- Anti-matching: düşük duygu × uyumsuz tür → ceza ---
+  // Yüksek joy + düşük fear/anticipation iken Action/Thriller cezası (komedi profili aksiyon almasın)
+  if (em.joy > 0.7 && em.fear < 0.2 && em.anticipation < 0.3 &&
+      genres.some((g) => ['Action', 'Thriller', 'War', 'Aksiyon', 'Gerilim', 'Savaş'].includes(g))) score -= 20;
+  // Düşük joy iken Comedy cezası (korku/aksiyon profili komedi almasın)
+  if (em.joy < 0.3 && genres.some((g) => ['Comedy', 'Komedi'].includes(g))) score -= 12;
+  // Yüksek fear iken Comedy bonus kaldır (gerilim profili komedi almasın)
+  if (em.fear > 0.7 && genres.some((g) => ['Comedy', 'Family', 'Komedi', 'Aile'].includes(g))) score -= 10;
 
   // --- Dönem tercihi ---
   if (film.year && profile.era_preference) {
@@ -286,9 +298,9 @@ function scoreFilm(film: FilmTableRow, profile: TasteProfile): number {
 
   // --- Kaçınma sinyalleri (overview'da anahtar kelime) ---
   if (film.overview && profile.avoid_signals?.length) {
-    const overviewLower = film.overview.toLowerCase();
+    const overviewLower = film.overview.toLocaleLowerCase('en-US');
     for (const signal of profile.avoid_signals) {
-      if (overviewLower.includes(signal.toLowerCase())) {
+      if (overviewLower.includes(signal.toLocaleLowerCase('en-US'))) {
         score -= 30;
         break;
       }
@@ -317,7 +329,7 @@ function scoredRowToFilm(film: FilmTableRow, score: number): Film {
     posterUrl: toTmdbUrl(film.poster_url),
     matchScore,
     moodTags: film.genres?.slice(0, 3) ?? [],
-    whyThisFilm: film.overview ? film.overview.slice(0, 90) + '…' : '',
+    whyThisFilm: '',  // overview türkçe olabilir — film/[id].tsx'te TMDB'den EN çekilir
     backdropUrl: toTmdbUrl(film.backdrop_url, 'w1280'),
     overview: film.overview ?? '',
     runtime: film.runtime ?? undefined,
@@ -356,7 +368,7 @@ function applyFilters(rows: FilmTableRow[], filters?: FilmFilters): FilmTableRow
   if (filters.directors?.length) {
     result = result.filter((f) =>
       filters.directors.some((d) =>
-        f.director?.toLowerCase().includes(d.toLowerCase()),
+        f.director?.toLocaleLowerCase('en-US').includes(d.toLocaleLowerCase('en-US')),
       ),
     );
   }

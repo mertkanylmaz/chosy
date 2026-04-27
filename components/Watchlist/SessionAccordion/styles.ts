@@ -34,6 +34,7 @@ export default StyleSheet.create({
     backgroundColor: Colors.accentDim,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   headerCenter: {
     flex: 1,
@@ -51,6 +52,33 @@ export default StyleSheet.create({
   },
   headerChevron: {
     opacity: 0.7,
+    flexShrink: 0,
+  },
+
+  /* ── Stacked Poster Önizleme ──────────────────────────────────── */
+  /** Kapalı durumda sol tarafta üst üste 3 poster */
+  stackedPosters: {
+    width: 44,
+    height: 32,
+    position: 'relative',
+    flexShrink: 0,
+  },
+  stackPoster: {
+    position: 'absolute',
+    top: 0,
+  },
+  stackPosterImage: {
+    width: 24,
+    height: 32,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    overflow: 'hidden',
+    backgroundColor: Colors.bgElevated,
+  },
+  stackPosterPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* ── Separator ───────────────────────────────────────────────── */

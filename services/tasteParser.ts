@@ -247,17 +247,34 @@ const KEYWORD_MAP: Record<string, KeywordEffect> = {
   happy: { joy: 0.85, energy_level: 0.7 },
   cheerful: { joy: 0.85, energy_level: 0.7 },
   uplifting: { joy: 0.8, energy_level: 0.6 },
-  fun: { joy: 0.75, thematic_depth: 0.2 },
-  funny: { joy: 0.8, thematic_depth: 0.2 },
-  comedy: { joy: 0.8, thematic_depth: 0.2 },
-  light: { joy: 0.6, thematic_depth: 0.2 },
-  // Sadness / Hüzün
-  sad: { sadness: 0.85, energy_level: 0.25 },
-  melancholic: { sadness: 0.8, energy_level: 0.2 },
-  melancholy: { sadness: 0.8, energy_level: 0.2 },
-  grief: { sadness: 0.9, thematic_depth: 0.8 },
-  lonely: { sadness: 0.75, energy_level: 0.2 },
-  heartbreak: { sadness: 0.85, joy: 0.2 },
+  fun: { joy: 0.75, thematic_depth: 0.2, energy_level: 0.45 },
+  // Komedi sinyalleri — energy orta; anti-genre değerleri (fear/anger) KEYWORD_MAP'te OLMAMALI
+  // çünkü "not comedy" negasyonu fear:0.1 → fear:0.9'a çevirir. Anti-genre sadece regex bloğunda.
+  funny: { joy: 0.88, thematic_depth: 0.15, energy_level: 0.45 },
+  comedy: { joy: 0.88, thematic_depth: 0.15, energy_level: 0.45 },
+  laugh: { joy: 0.9, thematic_depth: 0.12, energy_level: 0.45 },
+  laughing: { joy: 0.9, thematic_depth: 0.12, energy_level: 0.45 },
+  hilarious: { joy: 0.95, thematic_depth: 0.1, energy_level: 0.5 },
+  humor: { joy: 0.85, thematic_depth: 0.15, energy_level: 0.42 },
+  humour: { joy: 0.85, thematic_depth: 0.15, energy_level: 0.42 },
+  witty: { joy: 0.8, thematic_depth: 0.25, energy_level: 0.4 },
+  // "lift my spirits" bileşenleri — energy düşük tutulur (aksiyon ile örtüşmesin)
+  lift: { joy: 0.72, energy_level: 0.4 },
+  spirits: { joy: 0.68, energy_level: 0.38 },
+  cheer: { joy: 0.75, energy_level: 0.42 },
+  lighthearted: { joy: 0.7, thematic_depth: 0.15, energy_level: 0.38 },
+  light: { joy: 0.6, thematic_depth: 0.2, energy_level: 0.35 },
+  // Sadness / Hüzün — anti-genre (joy/anticipation < 0.2) sadece regex bloğunda
+  sad: { sadness: 0.88, energy_level: 0.2 },
+  melancholic: { sadness: 0.82, energy_level: 0.18 },
+  melancholy: { sadness: 0.82, energy_level: 0.18 },
+  grief: { sadness: 0.92, thematic_depth: 0.82, energy_level: 0.15 },
+  lonely: { sadness: 0.78, energy_level: 0.18 },
+  heartbreak: { sadness: 0.88, trust: 0.3, energy_level: 0.2 },
+  tearjerker: { sadness: 0.88, thematic_depth: 0.7, energy_level: 0.2 },
+  drama: { sadness: 0.6, thematic_depth: 0.75, energy_level: 0.3 },
+  emotional: { sadness: 0.6, joy: 0.35, thematic_depth: 0.65, trust: 0.55 },
+  moving: { sadness: 0.55, joy: 0.4, trust: 0.6, thematic_depth: 0.65 },
   // Fear / Korku
   scary: { fear: 0.85, anticipation: 0.8 },
   horror: { fear: 0.9, anticipation: 0.7 },
@@ -270,22 +287,31 @@ const KEYWORD_MAP: Record<string, KeywordEffect> = {
   revenge: { anger: 0.8, anticipation: 0.8 },
   rage: { anger: 0.9, energy_level: 0.9 },
   intense: { anger: 0.6, energy_level: 0.8 },
-  // Romantic / Aşk
-  romantic: { joy: 0.7, trust: 0.8 },
-  love: { joy: 0.7, trust: 0.85 },
-  passionate: { joy: 0.6, trust: 0.7, energy_level: 0.7 },
-  // Calm / Sakin
-  calm: { energy_level: 0.15, sadness: 0.3 },
+  // Romantic / Aşk — anti-genre (fear/anger) sadece regex bloğunda
+  romantic: { joy: 0.65, trust: 0.88, energy_level: 0.35 },
+  love: { joy: 0.65, trust: 0.88, energy_level: 0.35 },
+  passionate: { joy: 0.6, trust: 0.75, energy_level: 0.45 },
+  heartfelt: { joy: 0.65, trust: 0.82, sadness: 0.35, energy_level: 0.3 },
+  tender: { joy: 0.55, trust: 0.82, energy_level: 0.25 },
+  intimate: { trust: 0.85, energy_level: 0.25, thematic_depth: 0.6 },
+  couple: { trust: 0.8, joy: 0.6 },
+  // Calm / Sakin — anti-genre (anticipation/anger < 0.2) sadece regex bloğunda
+  calm: { energy_level: 0.12, sadness: 0.3 },
   peaceful: { energy_level: 0.1, trust: 0.7, joy: 0.5 },
-  quiet: { energy_level: 0.15 },
-  relaxing: { energy_level: 0.2, joy: 0.5 },
-  chill: { energy_level: 0.2 },
-  // Energetic
-  energetic: { energy_level: 0.9, anticipation: 0.8 },
-  action: { energy_level: 0.9, anticipation: 0.85 },
-  exciting: { energy_level: 0.85, anticipation: 0.8 },
+  quiet: { energy_level: 0.12 },
+  relaxing: { energy_level: 0.15, joy: 0.5 },
+  chill: { energy_level: 0.18 },
+  warm: { joy: 0.6, trust: 0.65, energy_level: 0.25 },
+  cozy: { energy_level: 0.15, joy: 0.6, trust: 0.7 },
+  // Energetic / Aksiyon — yüksek energy/anticipation; anti-genre sadece regex bloğunda
+  energetic: { energy_level: 0.9, anticipation: 0.82 },
+  action: { energy_level: 0.92, anticipation: 0.88, fear: 0.45 },
+  exciting: { energy_level: 0.88, anticipation: 0.82 },
+  excitement: { energy_level: 0.88, anticipation: 0.82 },
   fast: { energy_level: 0.85 },
-  adrenaline: { energy_level: 0.95, anticipation: 0.9 },
+  adrenaline: { energy_level: 0.95, anticipation: 0.92, fear: 0.5 },
+  thrills: { energy_level: 0.88, anticipation: 0.85, fear: 0.6 },
+  thrilling: { energy_level: 0.88, anticipation: 0.85, fear: 0.55 },
   // Depth / Derinlik
   deep: { thematic_depth: 0.9 },
   philosophical: { thematic_depth: 0.95 },
@@ -308,14 +334,19 @@ const KEYWORD_MAP: Record<string, KeywordEffect> = {
   hopeful: { ending_preference: 'hopeful', joy: 0.6, trust: 0.7, anticipation: 0.7 },
   dark: { ending_preference: 'tragic', sadness: 0.6 },
   bittersweet: { ending_preference: 'bittersweet' },
-  nostalgic: { anticipation: 0.6, trust: 0.7, sadness: 0.4 },
+  // Nostalgia — yüksek trust/joy, hafif sadness, düşük energy; anti-genre sadece regex
+  nostalgic: { trust: 0.78, joy: 0.55, sadness: 0.42, energy_level: 0.22 },
+  nostalgia: { trust: 0.78, joy: 0.55, sadness: 0.42, energy_level: 0.22 },
+  sentimental: { trust: 0.75, joy: 0.5, sadness: 0.45, energy_level: 0.2 },
+  childhood: { trust: 0.8, joy: 0.6, sadness: 0.35, energy_level: 0.2 },
+  memory: { trust: 0.7, sadness: 0.4, joy: 0.5, energy_level: 0.18 },
+  memories: { trust: 0.7, sadness: 0.4, joy: 0.5, energy_level: 0.18 },
   // Emotional states
   tired: { energy_level: 0.1, sadness: 0.4 },
   exhausted: { energy_level: 0.05, sadness: 0.5 },
   bored: { energy_level: 0.3, surprise: 0.7 },
   curious: { anticipation: 0.8, surprise: 0.7 },
   anxious: { fear: 0.6, anticipation: 0.7, energy_level: 0.6 },
-  cozy: { energy_level: 0.15, joy: 0.6, trust: 0.7 },
   inspired: { joy: 0.7, anticipation: 0.8, thematic_depth: 0.7 },
   empty: { sadness: 0.7, energy_level: 0.15 },
   excited: { joy: 0.8, energy_level: 0.9, anticipation: 0.85 },
@@ -341,23 +372,59 @@ const KEYWORD_MAP: Record<string, KeywordEffect> = {
   layered: { thematic_depth: 0.85 },
   sophisticated: { thematic_depth: 0.8, trust: 0.65 },
   genre: { thematic_depth: 0.5 }, // genre-defining vb.
-  // Türkçe keywords
-  mutlu: { joy: 0.85, energy_level: 0.7 },
-  hüzünlü: { sadness: 0.85, energy_level: 0.25 },
-  korku: { fear: 0.85, anticipation: 0.8 },
-  sakin: { energy_level: 0.15 },
-  enerjik: { energy_level: 0.9 },
-  derin: { thematic_depth: 0.9 },
-  romantik: { joy: 0.7, trust: 0.8 },
-  gerilim: { fear: 0.7, anticipation: 0.85 },
-  komedi: { joy: 0.8, thematic_depth: 0.2 },
-  aksiyon: { energy_level: 0.9, anticipation: 0.85 },
-  // Türkçe duygu durumları
+  // Türkçe keywords — anti-genre düşük değerler (<0.2) KEYWORD_MAP'te OLMAMALI
+  // çünkü negasyon ("komedi değil") bunları tersine çevirip yanlış eşleşme yaratır.
+  // Anti-genre sadece regex bloklarında push() ile eklenir.
+  mutlu: { joy: 0.85, energy_level: 0.55 },
+  // TR Sadness / Hüzün
+  hüzünlü: { sadness: 0.88, energy_level: 0.2 },
+  üzücü: { sadness: 0.85, energy_level: 0.2 },
+  duygusal: { sadness: 0.6, joy: 0.35, thematic_depth: 0.65, trust: 0.55 },
+  dram: { sadness: 0.6, thematic_depth: 0.75, energy_level: 0.3 },
+  gözyaşı: { sadness: 0.85, energy_level: 0.18, thematic_depth: 0.7 },
+  // TR Fear / Gerilim
+  korku: { fear: 0.88, anticipation: 0.82, energy_level: 0.7 },
+  gerilim: { fear: 0.72, anticipation: 0.88, energy_level: 0.75 },
+  // TR Calm / Huzur
+  sakin: { energy_level: 0.12 },
+  huzurlu: { energy_level: 0.1, trust: 0.72, joy: 0.5 },
+  sıcak: { joy: 0.6, trust: 0.65, energy_level: 0.25 },
+  rahatlatıcı: { energy_level: 0.15, joy: 0.5 },
+  // TR Energetic / Aksiyon
+  enerjik: { energy_level: 0.9, anticipation: 0.82 },
+  heyecan: { energy_level: 0.88, anticipation: 0.85, fear: 0.4 },
+  aksiyon: { energy_level: 0.92, anticipation: 0.88, fear: 0.45 },
+  macera: { energy_level: 0.85, anticipation: 0.82, surprise: 0.6 },
+  // TR Deep / Derin
+  derin: { thematic_depth: 0.92, energy_level: 0.3, anticipation: 0.55 },
+  felsefi: { thematic_depth: 0.95, energy_level: 0.25, surprise: 0.6 },
+  düşündüren: { thematic_depth: 0.88, surprise: 0.6, energy_level: 0.3 },
+  düşündürücü: { thematic_depth: 0.88, surprise: 0.6, energy_level: 0.3 },
+  zihin: { thematic_depth: 0.9, surprise: 0.75, energy_level: 0.4 },
+  karmaşık: { thematic_depth: 0.85 },
+  // TR Romantic / Aşk
+  romantik: { joy: 0.65, trust: 0.88, energy_level: 0.35 },
+  aşk: { joy: 0.65, trust: 0.88, energy_level: 0.35 },
+  sevgiliyle: { trust: 0.85, joy: 0.6, energy_level: 0.3 },
+  // TR Comedy
+  komedi: { joy: 0.88, thematic_depth: 0.15, energy_level: 0.42 },
+  komik: { joy: 0.88, thematic_depth: 0.15, energy_level: 0.42 },
+  kahkaha: { joy: 0.92, thematic_depth: 0.1, energy_level: 0.45 },
+  güldürü: { joy: 0.85, thematic_depth: 0.15, energy_level: 0.42 },
+  mizah: { joy: 0.82, thematic_depth: 0.2, energy_level: 0.4 },
+  // TR Nostalgia
+  nostalji: { trust: 0.78, joy: 0.55, sadness: 0.42, energy_level: 0.22 },
+  nostaljik: { trust: 0.78, joy: 0.55, sadness: 0.42, energy_level: 0.22 },
+  çocukluk: { trust: 0.8, joy: 0.6, sadness: 0.35, energy_level: 0.2 },
+  anısı: { trust: 0.7, sadness: 0.4, joy: 0.5, energy_level: 0.18 },
+  // TR Light / Hafif
+  eğlenceli: { joy: 0.75, thematic_depth: 0.2, energy_level: 0.42 },
+  hafif: { thematic_depth: 0.15, energy_level: 0.32, joy: 0.5 },
+  // TR Duygu durumları
   yorgun: { energy_level: 0.1, sadness: 0.4 },
   'sıkılmış': { energy_level: 0.3, surprise: 0.7 },
   meraklı: { anticipation: 0.8, surprise: 0.7 },
-  huzurlu: { energy_level: 0.1, trust: 0.7, joy: 0.5 },
-  heyecanlı: { joy: 0.8, energy_level: 0.9, anticipation: 0.85 },
+  heyecanlı: { energy_level: 0.9, anticipation: 0.85 },
   stresli: { anger: 0.5, fear: 0.5, energy_level: 0.7 },
 };
 
@@ -403,6 +470,11 @@ function applyKeywordMap(text: string, acc: ScoreAcc, profile: TasteProfile): vo
         if (!negated) profile.ending_preference = val as EndingPreference;
       } else {
         const n = val as number;
+        // Negasyon stratejisi:
+        //   Birincil boyutlar (>0.5): ters çevir (0.88 → 0.12) — "not comedy" → joy düşük
+        //   Tali boyutlar (<=0.5): atla — "not action" → action'un fear:0.45'i push edilmez
+        // Bu sayede "not action" komedinin fear'ını yanlışlıkla yükseltmez.
+        if (negated && n <= 0.5) continue;
         const finalVal = negated ? clamp01(1 - n) : n;
         const key = KM_DIM_TO_SCORE[dim];
         if (key) acc[key].push(finalVal);
@@ -440,6 +512,12 @@ function buildNegatedTokens(text: string): Set<string> {
   // "X istemiyorum" (TR: kelime + istemiyorum)
   const trNeg = /(\w+)\s+istemiyorum/gi;
   while ((m = trNeg.exec(text)) !== null) {
+    negated.add(m[1]);
+  }
+
+  // "X değil" (TR: kelime + değil)
+  const trDegil = /(\w+)\s+değil/gi;
+  while ((m = trDegil.exec(text)) !== null) {
     negated.add(m[1]);
   }
 
@@ -490,10 +568,14 @@ function ruleBased(rawInput: string): TasteProfile {
       /\b(funny|comedy|laugh|laughing|hilarious|humor|humorous|amusing|witty|comic|lighthearted|giggle|chuckle|slapstick|satirical|parody|farce|romcom)\b/,
     )
   ) {
-    push('joy', 0.82, 0.2, 'funny', 'comedy', 'laugh');
-    push('energy', 0.65, 0.65);
-    push('depth', 0.20, 0.20);
-    if (!isNeg('comedy', 'funny')) p.ending_preference = 'triumphant';
+    push('joy', 0.88, 0.2, 'funny', 'comedy', 'laugh');
+    push('energy', 0.42, 0.42);
+    push('depth', 0.15, 0.15);
+    // Anti-action: komedi profilini aksiyon/gerilimden uzaklaştır
+    push('anticipation', 0.22, 0.22);
+    push('fear', 0.08, 0.08);
+    push('anger', 0.08, 0.08);
+    if (!isNeg('comedy', 'funny')) p.ending_preference = 'hopeful';
   }
 
   if (
@@ -506,9 +588,20 @@ function ruleBased(rawInput: string): TasteProfile {
     if (!isNeg('inspiring', 'hopeful')) p.ending_preference = 'hopeful';
   }
 
-  // Türkçe joy
-  if (hit(/mutlu|neşeli|sevinçli|keyifli|coşkulu|şen|neşe|sevinç|eğlenceli|komik|güldürü|mizah/)) {
+  // Türkçe joy (genel mutluluk)
+  if (hit(/mutlu|neşeli|sevinçli|keyifli|coşkulu|şen|neşe|sevinç|eğlenceli/)) {
     push('joy', 0.85, 0.1, 'mutlu', 'neşeli');
+  }
+
+  // Türkçe komedi — ayrı blok: anti-action sinyalleri ile
+  if (hit(/komik|güldürü|mizah|kahkaha|komedi|espri|gülmek|gülmeye/)) {
+    push('joy', 0.88, 0.2, 'komik', 'komedi');
+    push('energy', 0.42, 0.42);
+    push('depth', 0.15, 0.15);
+    push('anticipation', 0.22, 0.22);
+    push('fear', 0.08, 0.08);
+    push('anger', 0.08, 0.08);
+    if (!isNeg('komik', 'komedi')) p.ending_preference = 'hopeful';
   }
 
   // ── 2. SADNESS ─────────────────────────────────────────────────────────────
@@ -519,6 +612,10 @@ function ruleBased(rawInput: string): TasteProfile {
   ) {
     push('sadness', 0.87, 0.1, 'sad', 'sadness', 'depressing');
     push('depth', 0.72, 0.4);
+    // Anti-comedy/action: hüzün profilini aksiyondan ve komediden uzaklaştır
+    push('joy', 0.15, 0.15);
+    push('energy', 0.22, 0.22);
+    push('anticipation', 0.18, 0.18);
     if (!isNeg('sad', 'sadness')) {
       p.pace_preference = 'slow';
       p.ending_preference = 'bittersweet';
@@ -540,15 +637,41 @@ function ruleBased(rawInput: string): TasteProfile {
       /\b(nostalgic|nostalgia|throwback|reminiscent|sentimental|yearning|wistful|longing|bittersweet|remember)\b/,
     )
   ) {
-    push('sadness', 0.48, 0.2);
-    push('trust', 0.60, 0.3);
+    push('sadness', 0.45, 0.2);
+    push('trust', 0.75, 0.3);
+    push('joy', 0.52, 0.3);
+    // Anti-action: nostalji sakin, aksiyondan uzak
+    push('energy', 0.2, 0.2);
+    push('anticipation', 0.18, 0.18);
+    push('fear', 0.05, 0.05);
+    push('anger', 0.05, 0.05);
     p.rewatch_tolerance = true;
+    p.pace_preference = 'slow';
   }
 
-  // Türkçe sadness
-  if (hit(/üzgün|üzücü|hüzünlü|melankolik|kederli|ağlamak|gözyaşı|duygusal|bunalım|nostalkji|özlem|yalnız/)) {
+  // Türkçe sadness — anti-comedy/action sinyalleri ile
+  if (hit(/üzgün|üzücü|hüzünlü|melankolik|kederli|ağlamak|gözyaşı|bunalım|özlem|yalnız/)) {
     push('sadness', 0.85, 0.1, 'üzücü', 'hüzünlü');
     push('depth', 0.68, 0.3);
+    push('joy', 0.15, 0.15);
+    push('energy', 0.22, 0.22);
+    push('anticipation', 0.18, 0.18);
+    if (!isNeg('üzücü', 'hüzünlü')) {
+      p.pace_preference = 'slow';
+      p.ending_preference = 'bittersweet';
+    }
+  }
+
+  // Türkçe nostalji — ayrı blok
+  if (hit(/nostalji|nostaljik|çocukluk|anısı|sıcak bir anı/)) {
+    push('trust', 0.75, 0.3);
+    push('joy', 0.52, 0.3);
+    push('sadness', 0.42, 0.2);
+    push('energy', 0.2, 0.2);
+    push('anticipation', 0.18, 0.18);
+    push('fear', 0.05, 0.05);
+    p.rewatch_tolerance = true;
+    p.pace_preference = 'slow';
   }
 
   // ── 3. FEAR ────────────────────────────────────────────────────────────────
@@ -563,7 +686,10 @@ function ruleBased(rawInput: string): TasteProfile {
     } else {
       push('fear', 0.87, 0.1);
       push('anticipation', 0.82, 0.3);
-      push('energy', 0.75, 0.3);
+      push('energy', 0.78, 0.3);
+      // Anti-comedy: gerilim profilini komediden uzaklaştır
+      push('joy', 0.15, 0.15);
+      push('trust', 0.2, 0.2);
       p.pace_preference = 'fast';
       p.visual_style = 'raw';
     }
@@ -680,6 +806,10 @@ function ruleBased(rawInput: string): TasteProfile {
   ) {
     push('anticipation', 0.90, 0.2, 'action', 'exciting');
     push('energy', 0.90, 0.2);
+    // Anti-comedy/drama: aksiyon profilini komediden ve dramadan uzaklaştır
+    push('joy', 0.3, 0.3);
+    push('sadness', 0.1, 0.1);
+    push('trust', 0.25, 0.25);
     if (!isNeg('action', 'exciting', 'adventure')) {
       p.pace_preference = 'fast';
       p.ending_preference = 'triumphant';
@@ -692,10 +822,12 @@ function ruleBased(rawInput: string): TasteProfile {
     push('energy', 0.62, 0.3);
   }
 
-  // Türkçe anticipation
+  // Türkçe anticipation — anti-comedy/drama sinyalleri ile
   if (hit(/heyecan|macera|aksiyon|görev|adrenalin|nefes kesen|gerilim dolu/)) {
     push('anticipation', 0.88, 0.2, 'heyecan');
     push('energy', 0.85, 0.2);
+    push('joy', 0.3, 0.3);
+    push('sadness', 0.1, 0.1);
   }
 
   // ── 7. TRUST ───────────────────────────────────────────────────────────────
@@ -709,6 +841,11 @@ function ruleBased(rawInput: string): TasteProfile {
     } else {
       push('trust', 0.87, 0.2);
       push('joy', 0.65, 0.3);
+      // Anti-action/horror: romantik profilini aksiyondan ve korkudan uzaklaştır
+      push('energy', 0.32, 0.32);
+      push('fear', 0.08, 0.08);
+      push('anger', 0.08, 0.08);
+      push('anticipation', 0.25, 0.25);
       p.social_context = 'couple';
       p.ending_preference = 'bittersweet';
     }
@@ -735,13 +872,17 @@ function ruleBased(rawInput: string): TasteProfile {
     if (!isNeg('hope', 'faith')) p.ending_preference = 'hopeful';
   }
 
-  // Türkçe trust
+  // Türkçe trust — anti-action/horror sinyalleri ile
   if (hit(/aşk|romantik|sevgi|ilişki|randevu|çift|sevgili|dostluk|arkadaşlık|aile|güven|sadakat/)) {
     if (isNeg('aşk', 'romantik')) {
       push('trust', 0.20, 0.20);
     } else {
       push('trust', 0.83, 0.2);
       push('joy', 0.62, 0.3);
+      push('energy', 0.32, 0.32);
+      push('fear', 0.08, 0.08);
+      push('anger', 0.08, 0.08);
+      push('anticipation', 0.25, 0.25);
     }
   }
 

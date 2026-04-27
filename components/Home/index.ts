@@ -1,7 +1,6 @@
 /**
  * Home bilesenlerinin barrel export'u.
- * Home Header'i olusturan 4 bilesen: GreetingWidget, MoodCTA,
- * DailyPickSection, LastSessionCard.
+ * Home dashboard'ını oluşturan bileşenler.
  */
 
 export { default as GreetingWidget } from './GreetingWidget';
@@ -13,3 +12,11 @@ export type { MoodCTAProps } from './MoodCTA';
 export { default as DailyPickSection } from './DailyPickSection';
 
 export { default as LastSessionCard } from './LastSessionCard';
+
+export { default as ArchetypeCard } from './ArchetypeCard';
+export type { ArchetypeCardProps } from './ArchetypeCard';
+
+export { default as LastFilmCard } from './LastFilmCard';
+export type { LastFilmCardProps } from './LastFilmCard';
+
+export { default as QuickNavGrid } from './QuickNavGrid';

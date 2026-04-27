@@ -32,6 +32,7 @@ import {
   clearWatchlist,
   getWatchlist,
   getWatchlistGroupedBySessions,
+  getWatchedFilmIds,
   removeFromWatchlist,
   WatchlistGroup,
   WatchlistItem,
@@ -45,6 +46,7 @@ import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
 import WatchlistCard from '@/components/Watchlist/WatchlistCard';
 import SessionAccordion from '@/components/Watchlist/SessionAccordion';
+import FilmSeridi from '@/components/FilmReelAnimation';
 
 import { CARD_WIDTH, GRID_COL_GAP, GRID_H_PAD } from '@/components/Watchlist/WatchlistCard/styles';
 
@@ -52,6 +54,7 @@ import { CARD_WIDTH, GRID_COL_GAP, GRID_H_PAD } from '@/components/Watchlist/Wat
 
 type SortKey = 'recently_added' | 'highest_match' | 'title' | 'year';
 type ViewMode = 'list' | 'grouped';
+type WatchFilter = 'unwatched' | 'watched';
 
 interface LongPressTarget {
   filmId: string;
@@ -93,6 +96,14 @@ export default function WatchlistScreen() {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsLoaded, setGroupsLoaded] = useState(false);
 
+  // ── Watched state ──────────────────────────────────────────────────────────
+  const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
+  /**
+   * Varsayılan: 'unwatched' — kullanıcı izleme hedeflerine odaklanır.
+   * "All" sekmesi kaldırıldı; sadece Unwatched / Watched ikilisi.
+   */
+  const [watchFilter, setWatchFilter] = useState<WatchFilter>('unwatched');
+
   // ── Shared state ───────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [menuTarget, setMenuTarget] = useState<LongPressTarget | null>(null);
@@ -106,12 +117,16 @@ export default function WatchlistScreen() {
 
   // ── Veri yükleme ──────────────────────────────────────────────────────────
 
-  /** Düz liste yükler */
+  /** Düz liste + watched durumları yükler */
   const loadWatchlist = useCallback(async () => {
     setLoadError(false);
     try {
-      const data = await getWatchlist();
+      const [data, watched] = await Promise.all([
+        getWatchlist(),
+        getWatchedFilmIds(),
+      ]);
       setItems(data);
+      setWatchedIds(watched);
     } catch (err) {
       const { toUserError } = await import('@/utils/errorHelpers');
       const userError = toUserError(err, 'watchlist');
@@ -168,12 +183,21 @@ export default function WatchlistScreen() {
   // ── Filtered / Sorted list ─────────────────────────────────────────────────
 
   const displayedItems = useMemo((): WatchlistItem[] => {
-    const filtered =
-      searchQuery.length > 0
-        ? items.filter((item) =>
-            item.film.title.toLowerCase().includes(searchQuery.toLowerCase()),
-          )
-        : items;
+    let filtered = items;
+
+    // Search filter
+    if (searchQuery.length > 0) {
+      filtered = filtered.filter((item) =>
+        item.film.title.toLocaleLowerCase('en-US').includes(searchQuery.toLocaleLowerCase('en-US')),
+      );
+    }
+
+    // Watch status filter — 'unwatched' veya 'watched', 'all' yok
+    if (watchFilter === 'unwatched') {
+      filtered = filtered.filter((item) => !watchedIds.has(item.film.id));
+    } else {
+      filtered = filtered.filter((item) => watchedIds.has(item.film.id));
+    }
 
     const sorted = [...filtered];
     switch (sortKey) {
@@ -188,7 +212,7 @@ export default function WatchlistScreen() {
       default:
         return sorted;
     }
-  }, [items, sortKey, searchQuery]);
+  }, [items, sortKey, searchQuery, watchFilter, watchedIds]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -196,9 +220,10 @@ export default function WatchlistScreen() {
     async (filmId: string) => {
       setMenuTarget(null);
       hapticWarning();
+      // Optimistik güncelleme — Supabase başarısız olursa geri alınır
       const snapshot = items;
+      const groupsSnapshot = groups;
       setItems((prev) => prev.filter((i) => i.film.id !== filmId));
-      // Grouped view'den de kaldır (optimistik)
       setGroups((prev) =>
         prev
           .map((g) => ({
@@ -208,14 +233,15 @@ export default function WatchlistScreen() {
           }))
           .filter((g) => g.filmCount > 0),
       );
-      try {
-        await removeFromWatchlist(filmId);
-      } catch {
+      const success = await removeFromWatchlist(filmId);
+      if (!success) {
+        // Supabase silme başarısız — optimistik güncellemeyi geri al
         setItems(snapshot);
+        setGroups(groupsSnapshot);
         Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
       }
     },
-    [items, t],
+    [items, groups, t],
   );
 
   const handleClearAll = useCallback(() => {
@@ -255,6 +281,10 @@ export default function WatchlistScreen() {
 
   const renderItem = useCallback(
     ({ item, index }: { item: WatchlistItem; index: number }) => (
+      /**
+       * Kart: afiş + başlık + yıl/tür.
+       * Silme: film detay sayfasında "Remove from List" butonu.
+       */
       <WatchlistCard
         item={item}
         itemIndex={index}
@@ -278,6 +308,12 @@ export default function WatchlistScreen() {
   const sortChips: { key: SortKey; label: string }[] = [
     { key: 'recently_added', label: t('watchlist.sort_recently_added') },
     { key: 'highest_match', label: t('watchlist.sort_highest_match') },
+  ];
+
+  /** Watch filter chip'leri — "Unwatched" / "Watched" ("All" kaldırıldı) */
+  const watchFilterChips: { key: WatchFilter; label: string }[] = [
+    { key: 'unwatched', label: t('watchlist.filterUnwatched') },
+    { key: 'watched', label: t('watchlist.filterWatched') },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -381,7 +417,7 @@ export default function WatchlistScreen() {
               return (
                 <TouchableOpacity
                   key={key}
-                  style={[styles.chip, active ? styles.chipSortActive : styles.chipInactive]}
+                  style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
                   onPress={() => {
                     hapticSelection();
                     setSortKey(key);
@@ -391,7 +427,7 @@ export default function WatchlistScreen() {
                   <Text
                     style={[
                       styles.chipText,
-                      active ? styles.chipSortTextActive : styles.chipTextInactive,
+                      active ? styles.chipTextActive : styles.chipTextInactive,
                     ]}
                   >
                     {label}
@@ -399,6 +435,33 @@ export default function WatchlistScreen() {
                 </TouchableOpacity>
               );
             })}
+
+          {/* İzlendi filtreleme — sadece list modunda */}
+          {viewMode === 'list' && (
+            <>
+              <View style={styles.chipDivider} />
+              {watchFilterChips.map(({ key, label }) => {
+                const active = watchFilter === key;
+                return (
+                  <TouchableOpacity
+                    key={`wf-${key}`}
+                    style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
+                    onPress={() => { hapticSelection(); setWatchFilter(key); }}
+                    activeOpacity={0.8}
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        active ? styles.chipTextActive : styles.chipTextInactive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          )}
         </ScrollView>
       </Animated.View>
 
@@ -419,7 +482,7 @@ export default function WatchlistScreen() {
         <ErrorState errorType={loadErrorType} onRetry={loadWatchlist} />
       ) : items.length === 0 ? (
         <EmptyState
-          lumiMood="searching"
+          illustration={<FilmSeridi />}
           title={t('watchlist.emptyTitle')}
           subtitle={t('watchlist.emptySubtitle')}
           actionLabel={t('watchlist.discoverButton')}
@@ -673,7 +736,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 9,
   },
-  /** Görünüm toggle: aktif = violet */
+  /**
+   * Chip tasarım dili — tek ve tutarlı:
+   * Aktif  → violet dolgu (accentPrimary)
+   * Pasif  → şeffaf arka plan + ince çerçeve (outline)
+   */
   chipActive: {
     backgroundColor: Colors.accentPrimary,
   },
@@ -681,12 +748,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: Colors.tabInactive,
-  },
-  /** Sıralama: aktif = gold (secondary accent) */
-  chipSortActive: {
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.gold,
   },
   chipText: {
     fontSize: 13,
@@ -697,9 +758,6 @@ const styles = StyleSheet.create({
   },
   chipTextInactive: {
     color: Colors.textGrey,
-  },
-  chipSortTextActive: {
-    color: Colors.gold,
   },
   /** Chip satırındaki ince ayırıcı */
   chipDivider: {

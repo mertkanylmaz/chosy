@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -46,7 +46,7 @@ export interface GreetingWidgetProps {
  * Gunun saatine gore kisisellesmis selamlama widget'i.
  * Home Header'da FeedScreen'in ust kisminda yer alir.
  */
-export default function GreetingWidget({ username }: GreetingWidgetProps) {
+function GreetingWidget({ username }: GreetingWidgetProps) {
   const { t } = useLanguage();
 
   const greetingText = username
@@ -55,21 +55,17 @@ export default function GreetingWidget({ username }: GreetingWidgetProps) {
 
   return (
     <View style={styles.container}>
-      {/* Selamlama satiri */}
-      <Animated.Text
-        entering={FadeInDown.duration(400).springify().damping(18)}
-        style={styles.greeting}
-      >
-        {greetingText}
-      </Animated.Text>
+      {/* Selamlama satiri — Animated.View sarmalı: Animated.Text+entering Reanimated warning'i önler */}
+      <Animated.View entering={FadeInDown.duration(400).springify().damping(18)}>
+        <Text style={styles.greeting}>{greetingText}</Text>
+      </Animated.View>
 
       {/* Alt baslik */}
-      <Animated.Text
-        entering={FadeInDown.delay(100).duration(400).springify().damping(18)}
-        style={styles.subtitle}
-      >
-        {t('home.subtitle')}
-      </Animated.Text>
+      <Animated.View entering={FadeInDown.delay(100).duration(400).springify().damping(18)}>
+        <Text style={styles.subtitle}>{t('home.subtitle')}</Text>
+      </Animated.View>
     </View>
   );
 }
+
+export default React.memo(GreetingWidget);

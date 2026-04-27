@@ -6,18 +6,19 @@ import { Theme } from '@/constants/theme';
 export const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Theme.spacing.lg,
-    paddingTop: Theme.spacing.xl,
+    paddingTop: Theme.spacing.xs,
+    paddingBottom: Theme.spacing.xs,
   },
   greeting: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
     color: Colors.textPrimary,
-    lineHeight: 34,
+    lineHeight: 30,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: Colors.textSecondary,
-    marginTop: Theme.spacing.xs,
-    lineHeight: 22,
+    marginTop: 2,
+    lineHeight: 20,
   },
 });

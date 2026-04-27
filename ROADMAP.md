@@ -10,14 +10,13 @@
 > ⚠️ **Not:** Orijinal ROADMAP'te P6=Landing Page, P7=Onboarding, P8=Payment idi.
 > Share Cards sprint'i P6 numarası aldı; eski P6/P7/P8 → yeni P7/P8/P9 olarak kaydırıldı.
 
-### Yayın Öncesi Teknik Borçlar (P9 ile paralel çözülmeli)
-- [ ] Native rebuild — Share Cards için (expo-sharing + view-shot)
-- [ ] Bundle ID kararı — `com.chosy.ai` mı? (değiştirilemez, acil)
-- [ ] App Store assets — 1024×1024 icon PNG, screenshots, Privacy Policy URL
-- [ ] EAS credentials — appleId, ascAppId, appleTeamId, Google serviceAccountKey
-- [ ] Google OAuth client ID — placeholder, doldurulmalı
-- [ ] Migration 011 — Supabase'de deploy kontrolü
-- [ ] CDO QA — Share Cards + Auth ekranları (CDO'ya iletildi)
+### Yayın Öncesi Teknik Borçlar — GÜNCEL (2026-04-09)
+- [x] Bundle ID kararı — netleştirildi ✅
+- [x] CDO QA — Share Cards + Auth ekranları ✅
+- [x] Migration 011 — Supabase'de deploy edildi ✅
+- [x] EAS credentials — appleId, ascAppId, appleTeamId, Google OAuth set ✅
+- [ ] App Store assets — icon, screenshots, Privacy Policy URL ⏳ (paywall öncesi yapılacak)
+- [ ] Native rebuild — expo-sharing + view-shot için gerekli ⚠️
 
 ---
 
@@ -153,6 +152,15 @@
 - [x] i18n: 38 yeni key EN+TR (stepOf, q1-q6, seçenekler, arketip reveal)
 - **Owner:** CTO ✅ (CDO spec beklemeden implement edildi)
 - **Bağımlılık:** P5.2 archetypeEngine ✅, P5.1 users.archetype_id kolonu ✅
+
+### P8.2 Calibration → Recommendation Integration ✅
+- [x] `services/userProfile.ts`: `initUserPreferenceFromCalibration(userId, profile)` — TasteProfile → 384-dim → `users.preferences_vector`
+- [x] `app/onboarding.tsx`: `saveCalibrationResultsAsync` — archetype + vector tek seferde kaydedilir; auth_id bug düzeltildi (`eq('auth_id')` yerine `getAppUserId()`)
+- [x] `hooks/useFeedManager.ts`: cold-start feed — mood yokken `preferences_vector` varsa `getSurprisePicks` ile personalized film yüklenir
+- [x] `userIdReady` state: async `getAppUserId` tamamlanınca cold-start effect'i tetikler
+- **Etki:** Onboarding sonrası ilk açılışta anında kişiselleştirilmiş film; `getSurprisePicks` soğuk başlangıçtan kurtuldu
+- **Owner:** CTO ✅
+- **Bağımlılık:** P8.1 ✅, `preferences_vector` kolonu ✅ (mevcut migration)
 
 ---
 

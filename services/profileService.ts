@@ -14,6 +14,7 @@ import type {
   TopDirector,
   UserStats,
 } from '../types/profile';
+import { normalizeGenre } from '../utils/filmFilters';
 
 // ─── getUserStats ─────────────────────────────────────────────────────────────
 
@@ -134,7 +135,8 @@ export async function getSwipeInsights(userId: string): Promise<SwipeInsight | n
     // ── Genre dağılımı ──
     const genreCountMap = new Map<string, number>();
     for (const row of items) {
-      for (const genre of row.films?.genres ?? []) {
+      for (const rawGenre of row.films?.genres ?? []) {
+        const genre = normalizeGenre(rawGenre); // TR → EN dönüşümü
         genreCountMap.set(genre, (genreCountMap.get(genre) ?? 0) + 1);
       }
     }

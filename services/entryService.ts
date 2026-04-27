@@ -8,10 +8,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /** Oturum sayısı AsyncStorage anahtarı */
 const SESSIONS_KEY = 'chosy_sessions_count';
 
-/** Onboarding tamamlandı anahtarı (v2) */
-const ONBOARDING_KEY_V2 = 'chosy_onboarded';
-/** Geriye dönük uyumluluk — mevcut onboarding anahtarı */
-const ONBOARDING_KEY_V1 = 'moodflix_onboarding_done';
+/** Geriye dönük uyumluluk — eski global anahtarlar */
+const ONBOARDING_KEY_LEGACY_V2 = 'chosy_onboarded';
+const ONBOARDING_KEY_LEGACY_V1 = 'moodflix_onboarding_done';
 
 /** Son entry gösterim tarihi anahtarı (YYYY-MM-DD) */
 const LAST_ENTRY_DATE_KEY = 'chosy_last_entry_date';
@@ -85,15 +84,23 @@ export const markEntryShown = markEntryShownToday;
 
 /**
  * Kullanıcının onboarding'i tamamlayıp tamamlamadığını kontrol eder.
- * Eski ve yeni AsyncStorage anahtarlarını aynı anda kontrol eder.
+ *
+ * @param userId - Supabase auth user ID. Verilirse user-specific key kontrol edilir.
+ *                 Verilmezse yalnızca legacy global anahtarlar kontrol edilir.
+ *
+ * Kontrol sırası (en yeni → en eski):
+ *   1. `chosy_onboarded_${userId}` — user-specific (gate.tsx + onboarding.tsx ile uyumlu)
+ *   2. `chosy_onboarded`           — legacy global v2
+ *   3. `moodflix_onboarding_done`  — legacy global v1
  */
-export async function hasCompletedOnboarding(): Promise<boolean> {
+export async function hasCompletedOnboarding(userId?: string): Promise<boolean> {
   try {
-    const [v1, v2] = await Promise.all([
-      AsyncStorage.getItem(ONBOARDING_KEY_V1),
-      AsyncStorage.getItem(ONBOARDING_KEY_V2),
-    ]);
-    return !!(v1 || v2);
+    const keys: string[] = [];
+    if (userId) keys.push(`chosy_onboarded_${userId}`);
+    keys.push(ONBOARDING_KEY_LEGACY_V2, ONBOARDING_KEY_LEGACY_V1);
+
+    const values = await Promise.all(keys.map((k) => AsyncStorage.getItem(k)));
+    return values.some(Boolean);
   } catch {
     return false;
   }

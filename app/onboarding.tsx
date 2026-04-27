@@ -28,6 +28,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
+import { logger } from '@/utils/logger';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
@@ -39,8 +40,19 @@ import type { TasteProfile } from '@/types';
 
 // ── Sabitler ─────────────────────────────────────────────────────────────────
 
-/** gate.tsx ile ayni key — KRITIK */
-const ONBOARDING_KEY = 'chosy_onboarded';
+/**
+ * Kullanıcıya özgü onboarding key üretir.
+ * gate.tsx ile aynı format — KRITIK: `chosy_onboarded_${userId}`
+ */
+async function getOnboardingKey(): Promise<string> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id) return `chosy_onboarded_${user.id}`;
+  } catch {
+    // fallback: global key (auth yoksa, nadir durum)
+  }
+  return 'chosy_onboarded';
+}
 
 /** Poster URL'leri — SwipeDemo merkez karti ve yan kartlar */
 const POSTERS = [
@@ -68,7 +80,7 @@ function PosterCarousel() {
         <View style={posterStyles.dimOverlay} />
       </View>
 
-      {/* Merkez poster — violet border + swipe hints */}
+      {/* Merkez poster — uygulamanin asil swipe kart tasarimina uygun */}
       <View style={[posterStyles.wrap, posterStyles.center]}>
         <Image
           source={{ uri: POSTERS[1] }}
@@ -77,16 +89,9 @@ function PosterCarousel() {
           cachePolicy="memory-disk"
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.3)']}
+          colors={['transparent', 'rgba(0,0,0,0.5)']}
           style={StyleSheet.absoluteFillObject}
         />
-        {/* Swipe hint overlays */}
-        <View style={posterStyles.swipeHintRight}>
-          <Ionicons name="heart" size={20} color={Colors.swipeRight} />
-        </View>
-        <View style={posterStyles.swipeHintLeft}>
-          <Ionicons name="close" size={20} color={Colors.swipeLeft} />
-        </View>
       </View>
 
       {/* Sag poster */}
@@ -112,7 +117,7 @@ const posterStyles = StyleSheet.create({
     marginBottom: 28,
   },
   wrap: {
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
   },
   left: {
@@ -127,14 +132,15 @@ const posterStyles = StyleSheet.create({
   },
   center: {
     zIndex: 3,
-    borderWidth: 1.5,
-    borderColor: 'rgba(139,92,246,0.4)',
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.6,
+    shadowRadius: 20,
     elevation: 14,
     marginHorizontal: 8,
+    borderRadius: 16,
   },
   right: {
     transform: [{ rotate: '5deg' }, { translateY: 18 }],
@@ -160,28 +166,6 @@ const posterStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(10,10,10,0.25)',
   },
-  swipeHintRight: {
-    position: 'absolute',
-    right: 8,
-    top: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(34,197,94,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swipeHintLeft: {
-    position: 'absolute',
-    left: 8,
-    top: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(239,68,68,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 });
 
 // ── Onboarding Phase ────────────────────────────────────────────────────────
@@ -198,19 +182,25 @@ export default function OnboardingScreen() {
   const [phase, setPhase] = useState<Phase>('slides');
   const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
 
-  /** Onboarding'i tamamla ve (tabs)'a git */
+  /**
+   * AsyncStorage'a onboarding bitisini yazar.
+   * finishOnboarding ve handleRevealFinish tarafindan paylasilan yardimci.
+   */
+  const markOnboardingComplete = useCallback(async () => {
+    try {
+      const key = await getOnboardingKey();
+      await AsyncStorage.setItem(key, '1');
+    } catch {
+      logger.warn('[Onboarding] AsyncStorage write failed.');
+    }
+  }, []);
+
+  /** Onboarding'i tamamla ve (tabs)'a git — skip durumunda kullanilir */
   const finishOnboarding = useCallback(async () => {
     hapticSuccess();
-    try {
-      await AsyncStorage.setItem(ONBOARDING_KEY, '1');
-    } catch {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('[Onboarding] AsyncStorage write failed.');
-      }
-    }
+    await markOnboardingComplete();
     router.replace('/(tabs)');
-  }, [router]);
+  }, [router, markOnboardingComplete]);
 
   /**
    * P8.2 — Kalibrasyon sonuclarini Supabase'e arka planda yazar.
@@ -230,18 +220,14 @@ export default function OnboardingScreen() {
             .from('users')
             .update({ archetype_id: archetypeId })
             .eq('id', appUserId);
-          if (archetypeError && __DEV__) {
-            // eslint-disable-next-line no-console
-            console.error('[Onboarding] archetype_id write failed:', archetypeError.message);
+          if (archetypeError) {
+            logger.warn('[Onboarding] archetype_id write failed:', archetypeError.message);
           }
         }
 
         await initUserPreferenceFromCalibration(appUserId, profile);
       } catch (err) {
-        if (__DEV__) {
-          // eslint-disable-next-line no-console
-          console.error('[Onboarding] saveCalibrationResultsAsync hata:', err);
-        }
+        logger.error('[Onboarding] saveCalibrationResultsAsync hata:', err);
       }
     },
     [],
@@ -268,28 +254,16 @@ export default function OnboardingScreen() {
   );
 
   /**
-   * Arketip reveal tamamlandi — App Store review trigger.
+   * Arketip reveal tamamlandi — dogrudan ana sayfaya yonlendir.
    *
-   * Bu an kullanici:
-   *   1. Arketibini gorup kendini ozel hissetti (aha moment)
-   *   2. Arketibine ozel filmlerle karsilasti
-   *   3. Uygulamanin degerini deneyimledi
-   *
-   * iOS/Android rate-limit: 3 popup/yil — sadece bu noktada tetiklenir.
+   * Onboarding: onboarded flag'i burda yazilir (gate.tsx tekrar onboarding'e yonlendirmesin).
+   * Kullanici ana sayfada kendi ritminde kesfetmeye baslar.
    */
   const handleRevealFinish = useCallback(async () => {
-    // Lazy dynamic import — native module build'de yoksa module-load crash'i onler
-    try {
-      const StoreReview = await import('expo-store-review');
-      const isAvailable = await StoreReview.hasAction();
-      if (isAvailable) {
-        await StoreReview.requestReview();
-      }
-    } catch {
-      // Sessizce devam et — dev build veya simulator'da review yoksa onboarding bitmeli
-    }
-    await finishOnboarding();
-  }, [finishOnboarding]);
+    hapticSuccess();
+    await markOnboardingComplete();
+    router.replace('/(tabs)');
+  }, [router, markOnboardingComplete]);
 
   /** Calibration skip → dogrudan bitir */
   const handleCalibrationSkip = useCallback(async () => {
@@ -339,27 +313,6 @@ export default function OnboardingScreen() {
           <Text style={styles.demoTitle}>{t('onboarding.swipeTryTitle')}</Text>
           <Text style={styles.demoTagline}>{t('onboarding.swipeTryTagline')}</Text>
           <Text style={styles.demoDesc}>{t('onboarding.swipeTryDesc')}</Text>
-        </View>
-
-        {/* Like / Skip aksiyonlari */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.actionSkip}
-            onPress={handleSwipeAction}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="close-circle" size={24} color={Colors.swipeLeft} />
-            <Text style={styles.actionSkipText}>{t('onboarding.swipeTrySkip')}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionLike}
-            onPress={handleSwipeAction}
-            activeOpacity={0.75}
-          >
-            <Ionicons name="heart-circle" size={24} color={Colors.swipeRight} />
-            <Text style={styles.actionLikeText}>{t('onboarding.swipeTryLike')}</Text>
-          </TouchableOpacity>
         </View>
 
         {/* Continue butonu */}
@@ -453,48 +406,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     maxWidth: 300,
     lineHeight: 24,
-  },
-
-  // Like / Skip aksiyonlari
-  actionRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  actionSkip: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(239,68,68,0.1)',
-    borderRadius: 14,
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.2)',
-  },
-  actionLike: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderRadius: 14,
-    height: 52,
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.2)',
-  },
-  actionSkipText: {
-    color: Colors.swipeLeft,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  actionLikeText: {
-    color: Colors.swipeRight,
-    fontSize: 15,
-    fontWeight: '600',
   },
 
   // Continue butonu

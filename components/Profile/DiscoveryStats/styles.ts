@@ -95,48 +95,6 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ── Top Director row ──
-  directorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.white05,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-  },
-  directorInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  directorLabel: {
-    color: Colors.textGrey,
-    fontSize: 10,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  directorName: {
-    color: Colors.textWhite,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  directorBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Theme.borderRadius.pill,
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.gold + '40',
-  },
-  directorBadgeText: {
-    color: Colors.gold,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-
   // ── Boş durum ──
   empty: {
     color: Colors.textGrey,

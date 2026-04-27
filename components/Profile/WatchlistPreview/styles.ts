@@ -4,7 +4,7 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 
 export const POSTER_W = 80;
-export const POSTER_H = 120;
+export const POSTER_H = 110;
 
 export const styles = StyleSheet.create({
   container: {
@@ -61,20 +61,24 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.accentPrimary,
   },
 
-  // ── Horizontal scroll ──
-  scrollContent: {
-    gap: 10,
-    paddingRight: 4,
+  // ── 2×2 poster ızgarası ──
+  posterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  skeletonItem: {
+    width: '48%',
   },
 
   // ── Poster kartı ──
   posterCard: {
-    width: POSTER_W,
+    width: '48%',
     alignItems: 'center',
     gap: 6,
   },
   posterImage: {
-    width: POSTER_W,
+    width: '100%',
     height: POSTER_H,
     borderRadius: Theme.borderRadius.sm,
     backgroundColor: Colors.card,
@@ -88,7 +92,7 @@ export const styles = StyleSheet.create({
     opacity: 0.45,
   },
   posterPlaceholder: {
-    width: POSTER_W,
+    width: '100%',
     height: POSTER_H,
     borderRadius: Theme.borderRadius.sm,
     backgroundColor: Colors.card,
@@ -117,7 +121,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   watchedToggleActive: {
-    backgroundColor: 'rgba(139,92,246,0.25)',
+    backgroundColor: 'rgba(234,219,198,0.25)',
   },
 
   // ── Boş durum ──
@@ -134,9 +138,4 @@ export const styles = StyleSheet.create({
     maxWidth: 220,
   },
 
-  // ── Skeleton ──
-  skeletonRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
 });

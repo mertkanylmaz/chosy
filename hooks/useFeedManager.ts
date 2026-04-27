@@ -9,7 +9,7 @@
  *   - Swipe aksiyonlarını işleme (watchlist, kullanıcı vektörü)
  *   - Yeni mood ile feed'i sıfırlama
  */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Image } from 'react-native';
 
 import { FilmFilters, TasteProfile } from '@/types';
@@ -17,7 +17,7 @@ import { Film } from '@/types/film';
 import { recordActivity } from '@/services/gamification';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { updateUserVector } from '@/services/userProfile';
-import { addToWatchlist, getAppUserId } from '@/services/watchlist';
+import { addToWatchlist, getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { useMood } from '@/contexts/MoodContext';
 
@@ -251,13 +251,44 @@ export function useFeedManager(
   /** Kullanıcı DB UUID'si; surprise picks ve vektör güncellemesi için */
   const userIdRef = useRef<string | null>(null);
 
+  /**
+   * Mevcut watchlist'teki + izlenmiş film ID'leri — öneri motoruna exclude_ids olarak verilir.
+   * Watchlist'e daha önce eklenen veya izlenmiş işaretlenen filmler tekrar önerilmez.
+   */
+  const preExistingWatchlistRef = useRef<string[]>([]);
+
+  /**
+   * P8.2: getAppUserId tamamlandığında true olur — cold-start effect'ini tetikler.
+   * ref kullanılamaz: ref değişimi effect'i yeniden çalıştırmaz.
+   */
+  const [userIdReady, setUserIdReady] = useState(false);
+
+  /**
+   * P8.2: Cold-start yüklemesi yapıldı mı?
+   * true ise tekrar denenmez.
+   */
+  const coldStartLoadedRef = useRef(false);
+
   useEffect(() => {
     getAppUserId()
       .then((id) => {
         userIdRef.current = id;
+        // Mevcut watchlist + izlenmiş film ID'lerini önceden yükle — duplicate öneri engeller
+        return Promise.all([
+          getWatchlist().catch(() => [] as { film: Film }[]),
+          getWatchedFilmIds().catch(() => new Set<string>()),
+        ]).then(([items, watchedIds]) => {
+          const watchlistIds = items.map((item) => item.film.id);
+          const watchedArray = Array.from(watchedIds);
+          // Her iki listeyi birleştir — duplicate'leri Set ile temizle
+          preExistingWatchlistRef.current = [...new Set([...watchlistIds, ...watchedArray])];
+        });
       })
       .catch(() => {
         // Auth yoksa null kalır, surprise picks atlanır
+      })
+      .finally(() => {
+        setUserIdReady(true);
       });
   }, []);
 
@@ -281,33 +312,66 @@ export function useFeedManager(
     loadedCount: number,
   ) => {
     if (isLoadingRef.current) return;
-    if (!profileRef.current) return;
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log('[useFeedManager] Next batch loading...');
-    }
     isLoadingRef.current = true;
     dispatch({ type: 'SET_LOADING', loading: true });
+
+    // Mevcut watchlist film ID'lerini session exclude listesiyle birleştir
+    // Set ile duplicate'leri temizle — Supabase max 500 ID kabul eder
+    const allExcludeIds = [...new Set([...preExistingWatchlistRef.current, ...excludeIds])];
+
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log('[useFeedManager] Next batch loading... profile:', profileRef.current ? 'set' : 'null');
+    }
 
     try {
       const phase = phaseForBatch(loadedCount);
 
+      // ── P8.2: Mood profili yok → kalibrasyon vektörüyle cold-start ─────────
+      // Onboarding'den çıkan kullanıcı ilk mood'unu girmeden önce de
+      // kişiselleştirilmiş film görür (initUserPreferenceFromCalibration ile tohumlanan vektör).
+      if (!profileRef.current) {
+        if (userIdRef.current) {
+          const personalizedResult = await getSurprisePicks(
+            userIdRef.current,
+            BATCH_SIZE,
+            allExcludeIds,
+          );
+          if (personalizedResult && personalizedResult.films.length > 0) {
+            if (__DEV__) {
+              // eslint-disable-next-line no-console
+              console.log(
+                '[useFeedManager] P8.2 cold-start:',
+                personalizedResult.films.length,
+                'film kalibrasyon vektöründen yüklendi',
+              );
+            }
+            dispatch({ type: 'ADD_FILMS', films: personalizedResult.films });
+            return;
+          }
+        }
+        // Kalibrasyon vektörü de yoksa yükleme yok — CTA gösterilir
+        dispatch({ type: 'SET_LOADING', loading: false });
+        return;
+      }
+
+      // ── Normal akış: mood profili mevcut ────────────────────────────────────
       if (phase === 'surprise' && userIdRef.current) {
         // 30+ film sonrası: kullanıcı profil vektörü bazlı öneriler
         const surpriseResult = await getSurprisePicks(
           userIdRef.current,
           BATCH_SIZE,
-          excludeIds,
+          allExcludeIds,
         );
 
         if (surpriseResult && surpriseResult.films.length > 0) {
           dispatch({ type: 'ADD_FILMS', films: surpriseResult.films });
         } else {
-          // Soğuk başlangıç: surprise yoksa low phase ile devam et
+          // Surprise picks yok — low phase ile devam et
           const fallback = await getRecommendations(
             profileRef.current,
             BATCH_SIZE,
-            excludeIds,
+            allExcludeIds,
             filtersRef.current,
           );
           dispatch({ type: 'ADD_FILMS', films: fallback.films });
@@ -316,7 +380,7 @@ export function useFeedManager(
         const result = await getRecommendations(
           profileRef.current,
           BATCH_SIZE,
-          excludeIds,
+          allExcludeIds,
           filtersRef.current,
         );
 
@@ -330,6 +394,7 @@ export function useFeedManager(
       }
     } catch (err) {
       if (__DEV__) {
+        // eslint-disable-next-line no-console
         console.error('[useFeedManager] loadNextBatch hatası:', err);
       }
       const userError = toUserError(err, 'feed');
@@ -338,6 +403,26 @@ export function useFeedManager(
       isLoadingRef.current = false;
     }
   }, []);
+
+  // ─── P8.2: Cold-Start Yüklemesi ─────────────────────────────────────────
+  //
+  // getAppUserId (async) tamamlanınca userIdReady=true → bu effect çalışır.
+  // Mood profili yoksa + preferences_vector tohumlandıysa → personalized feed.
+  // Kullanıcı onboarding'den çıkınca ilk mood girmeden kişiselleştirilmiş film görür.
+
+  useEffect(() => {
+    if (
+      userIdReady &&
+      !profileRef.current &&
+      userIdRef.current &&
+      !coldStartLoadedRef.current &&
+      !isLoadingRef.current &&
+      state.films.length === 0
+    ) {
+      coldStartLoadedRef.current = true;
+      loadNextBatch([], 0);
+    }
+  }, [userIdReady, state.films.length, loadNextBatch]);
 
   // ─── İlk Yükleme (mount + reset sonrası) ────────────────────────────────
 

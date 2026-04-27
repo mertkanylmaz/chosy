@@ -1,55 +1,115 @@
 /**
  * Gate — uygulama açılışında routing kararını verir.
+ * Premium LoadingScreen gösterir, minimum 3 saniye sonra fade-out ile geçiş yapar.
  *
  * Sıra:
- *  1. Onboarding tamamlanmadıysa → /onboarding
- *  2. Entry bugün zaten gösterildiyse → /(tabs)
- *  3. Aksi hâlde session sayısını artır, tarihi kaydet → /entry
+ *  1. Auth gating: anonim veya oturumsuz kullanıcılar → /auth
+ *  2. Onboarding tamamlanmadıysa → /onboarding
+ *  3. Session sayısını artır → /(tabs)
  */
 
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
-import {
-  incrementSessionCount,
-  markEntryShown,
-  wasEntryShownToday,
-} from '../services/entryService';
+import { LoadingScreen } from '@/components/LoadingScreen';
+import { supabase } from '@/services/supabase';
+import { getAppUserId } from '@/services/watchlist';
+import { incrementSessionCount } from '../services/entryService';
+
+/** Minimum splash display time (ms) */
+const MIN_SPLASH_MS = 3000;
 
 export default function Gate() {
+  const [showLoading, setShowLoading] = useState(true);
+  const targetRoute = useRef<string | null>(null);
+  const decisionReady = useRef(false);
+  const minTimePassed = useRef(false);
+
+  /** Try to navigate if both conditions met */
+  const tryNavigate = useCallback(() => {
+    if (decisionReady.current && minTimePassed.current && targetRoute.current) {
+      // Trigger fade-out (setShowLoading false → LoadingScreen fades → onFadeOutComplete navigates)
+      setShowLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
+    // Minimum display timer
+    const timer = setTimeout(() => {
+      minTimePassed.current = true;
+      tryNavigate();
+    }, MIN_SPLASH_MS);
+
+    // Routing decision
     async function decide() {
       try {
-        const onboarded = await AsyncStorage.getItem('chosy_onboarded');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        // Auth gating — Apple/Google ile giriş zorunlu
+        const isAnonymous = session?.user?.is_anonymous === true;
+        if (!session || isAnonymous) {
+          targetRoute.current = '/auth';
+          decisionReady.current = true;
+          tryNavigate();
+          return;
+        }
+
+        // public.users satırını garantile
+        await getAppUserId();
+
+        // Onboarding kontrolü
+        const userId = session.user.id;
+        const userKey = `chosy_onboarded_${userId}`;
+        let onboarded = await AsyncStorage.getItem(userKey);
         if (!onboarded) {
-          router.replace('/onboarding');
+          const legacy = await AsyncStorage.getItem('chosy_onboarded');
+          if (legacy) {
+            await AsyncStorage.setItem(userKey, legacy);
+            await AsyncStorage.removeItem('chosy_onboarded');
+            onboarded = legacy;
+          }
+        }
+        if (!onboarded) {
+          targetRoute.current = '/onboarding';
+          decisionReady.current = true;
+          tryNavigate();
           return;
         }
 
-        const shownToday = await wasEntryShownToday();
-        if (shownToday) {
-          router.replace('/(tabs)');
-          return;
-        }
-
+        // Entry ekranı kaldırıldı — doğrudan ana ekrana yönlendir
         await incrementSessionCount();
-        await markEntryShown();
-        router.replace('/entry');
+        targetRoute.current = '/(tabs)';
+        decisionReady.current = true;
+        tryNavigate();
       } catch {
-        router.replace('/(tabs)');
+        targetRoute.current = '/(tabs)';
+        decisionReady.current = true;
+        tryNavigate();
       }
     }
 
     decide();
+
+    return () => clearTimeout(timer);
+  }, [tryNavigate]);
+
+  /** Called after LoadingScreen fade-out animation completes */
+  const handleFadeOutComplete = useCallback(() => {
+    if (targetRoute.current) {
+      router.replace(targetRoute.current as never);
+    }
   }, []);
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator color={Colors.accentPrimary} size="large" />
+      <LoadingScreen
+        visible={showLoading}
+        onFadeOutComplete={handleFadeOutComplete}
+      />
     </View>
   );
 }
@@ -58,7 +118,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

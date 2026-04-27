@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -113,7 +114,11 @@ export default function SplashScreen() {
       >
         {/* ─── Logo ─────────────────────────────────────────────────── */}
         <View style={styles.logoSection}>
-          <Text style={styles.logoText}>MoodFlix</Text>
+          <Image
+            source={require('../assets/images/icon.png')}
+            style={styles.splashLogo}
+            contentFit="contain"
+          />
         </View>
 
         {/* ─── Halka animasyonu ─────────────────────────────────────── */}
@@ -185,14 +190,10 @@ const styles = StyleSheet.create({
     marginTop: 64,
     alignItems: 'center',
   },
-  logoText: {
-    fontFamily: 'PlayfairDisplay_700Bold',
-    fontSize: 44,
-    color: Colors.gold,
-    letterSpacing: 1.5,
-    textShadowColor: 'rgba(212,168,67,0.35)',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 20,
+  splashLogo: {
+    width: 200,
+    height: 200,
+    borderRadius: 28,
   },
 
   // Halkalar

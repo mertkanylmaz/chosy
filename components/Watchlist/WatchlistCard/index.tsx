@@ -25,6 +25,8 @@ import { WatchlistItem } from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
 import { hapticMedium } from '@/utils/haptics';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { localizeGenre } from '@/utils/filmFilters';
 
 import styles from './styles';
 
@@ -49,6 +51,7 @@ const WatchlistCard = React.memo(function WatchlistCard({
 }: WatchlistCardProps) {
   const { film } = item;
   const router = useRouter();
+  const { language } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const rotation = useSharedValue(0);
   const staggerStyle = useStaggeredEntry(itemIndex, { delay: 60, baseDelay: 0 });
@@ -82,7 +85,8 @@ const WatchlistCard = React.memo(function WatchlistCard({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const genre = film.moodTags[0] ?? null;
+  const rawGenre = film.moodTags[0] ?? null;
+  const genre = rawGenre ? localizeGenre(rawGenre, language) : null;
   const meta = genre ? `${film.year} · ${genre}` : String(film.year);
   const posterUri = film.posterUrl
     ? film.posterUrl.startsWith('http')
@@ -101,25 +105,31 @@ const WatchlistCard = React.memo(function WatchlistCard({
         activeOpacity={0.85}
         delayLongPress={400}
       >
-        {/* Poster */}
-        {posterUri ? (
-          <Image
-            source={{ uri: posterUri }}
-            style={styles.poster}
-            contentFit="cover"
-            transition={200}
-            cachePolicy="memory-disk"
-          />
-        ) : (
-          <View style={[styles.poster, styles.posterPlaceholder]}>
-            <Ionicons name="film-outline" size={32} color={Colors.textGrey} />
-          </View>
-        )}
-        {/* İsim */}
-        <Text style={styles.cardTitle} numberOfLines={1}>
-          {film.title}
-        </Text>
-        {/* Yıl · Tür */}
+        {/* Poster + badge kapsayıcı */}
+        <View style={styles.posterContainer}>
+          {posterUri ? (
+            <Image
+              source={{ uri: posterUri }}
+              style={styles.poster}
+              contentFit="cover"
+              transition={200}
+              cachePolicy="memory-disk"
+            />
+          ) : (
+            <View style={[styles.poster, styles.posterPlaceholder]}>
+              <Ionicons name="film-outline" size={32} color={Colors.textGrey} />
+            </View>
+          )}
+
+          {/* Match Score Rozeti — glassmorphism, sağ alt köşe */}
+          {film.matchScore > 0 && (
+            <View style={styles.matchBadge}>
+              <Text style={styles.matchBadgeText}>{film.matchScore}%</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Yıl · Tür — film adı kaldırıldı */}
         <Text style={styles.cardMeta} numberOfLines={1}>
           {meta}
         </Text>

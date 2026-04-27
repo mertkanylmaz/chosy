@@ -31,7 +31,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
-import { ARCHETYPES_MAP, getArchetype } from '@/constants/archetypes';
+import { getArchetype } from '@/constants/archetypes';
 import { styles } from './styles';
 
 // ─── Tip ──────────────────────────────────────────────────────────────────────

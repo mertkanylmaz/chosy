@@ -6,6 +6,7 @@
 import React from 'react';
 
 import EmptyState from '@/components/EmptyState';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { type ErrorType } from '@/utils/errorHelpers';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -23,30 +24,31 @@ interface ErrorStateProps {
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
-const ERROR_CONFIG: Record<ErrorType, { title: string; subtitle: string; mood: string }> = {
+/** ErrorType → i18n anahtar çiftleri */
+const ERROR_KEYS: Record<ErrorType, { titleKey: string; subtitleKey: string; mood: string }> = {
   network: {
-    title: 'No connection',
-    subtitle: 'Check your internet connection and try again',
+    titleKey: 'errorState.networkTitle',
+    subtitleKey: 'errorState.networkSubtitle',
     mood: 'calm',
   },
   auth: {
-    title: 'Session expired',
-    subtitle: 'Please restart the app to continue',
+    titleKey: 'errorState.authTitle',
+    subtitleKey: 'errorState.authSubtitle',
     mood: 'calm',
   },
   server: {
-    title: 'Something went wrong',
-    subtitle: 'Our servers are having trouble. Please try again.',
+    titleKey: 'errorState.serverTitle',
+    subtitleKey: 'errorState.serverSubtitle',
     mood: 'calm',
   },
   empty: {
-    title: 'No results found',
-    subtitle: 'Try adjusting your filters or describing a different mood',
+    titleKey: 'errorState.emptyTitle',
+    subtitleKey: 'errorState.emptySubtitle',
     mood: 'searching',
   },
   unknown: {
-    title: 'Something went wrong',
-    subtitle: 'Please try again',
+    titleKey: 'errorState.unknownTitle',
+    subtitleKey: 'errorState.unknownSubtitle',
     mood: 'calm',
   },
 };
@@ -57,14 +59,15 @@ const ERROR_CONFIG: Record<ErrorType, { title: string; subtitle: string; mood: s
  * Hata durumu bileşeni — ErrorType'a göre uygun mesaj ve Lumi mood gösterir.
  */
 export default function ErrorState({ message, title, errorType = 'unknown', onRetry }: ErrorStateProps) {
-  const config = ERROR_CONFIG[errorType];
+  const { t } = useLanguage();
+  const keys = ERROR_KEYS[errorType];
 
   return (
     <EmptyState
-      lumiMood={config.mood as 'calm' | 'searching'}
-      title={title ?? config.title}
-      subtitle={message ?? config.subtitle}
-      actionLabel={onRetry != null ? 'Try Again' : undefined}
+      lumiMood={keys.mood as 'calm' | 'searching'}
+      title={title ?? t(keys.titleKey)}
+      subtitle={message ?? t(keys.subtitleKey)}
+      actionLabel={onRetry != null ? t('errorState.tryAgain') : undefined}
       onAction={onRetry}
     />
   );

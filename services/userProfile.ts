@@ -6,11 +6,13 @@
  *
  * Kullanım:
  *   - Swipe sonrası: updateUserPreferenceVector(userId)
- *   - Onboarding cold-start: initUserPreferenceFromFavorites(userId, filmIds)
+ *   - Onboarding cold-start (kalibrasyon): initUserPreferenceFromCalibration(userId, profile)
+ *   - Onboarding cold-start (favoriler): initUserPreferenceFromFavorites(userId, filmIds)
  */
 
 import { supabase } from './supabase';
-import { VECTOR_DIM } from './vectorEncoder';
+import { VECTOR_DIM, tasteProfileToVector } from './vectorEncoder';
+import type { TasteProfile } from '../types';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -316,6 +318,57 @@ export async function initUserPreferenceFromFavorites(
       console.error('[userProfile] initUserPreferenceFromFavorites hatası:', err);
     }
     return null;
+  }
+}
+
+// ─── P8.2: Kalibrasyon Cold-Start ────────────────────────────────────────────
+
+/**
+ * Onboarding Taste Calibration tamamlandıktan hemen sonra kullanıcının
+ * preferences_vector'ünü başlangıç değeriyle doldurur.
+ *
+ * Neden gerekli:
+ *   - Yeni kullanıcıların preferences_vector = NULL olduğundan getSurprisePicks
+ *     hiçbir zaman çalışmıyordu (cold-start sorunu).
+ *   - Kalibrasyon TasteProfile'ı 384 boyutlu vektöre çevrilip DB'ye yazılarak
+ *     ilk mood session'dan önce bile kişiselleştirilmiş öneri akışı başlar.
+ *
+ * İlk swipe sonrası updateUserVector EMA ile üstüne yazar; bu değer silinmez.
+ *
+ * @param userId  - users tablosundaki dahili UUID (getAppUserId ile alınmalı)
+ * @param profile - buildCalibrationProfile ile üretilen TasteProfile
+ */
+export async function initUserPreferenceFromCalibration(
+  userId: string,
+  profile: TasteProfile,
+): Promise<void> {
+  try {
+    const vector = tasteProfileToVector(profile);
+
+    const { error } = await supabase
+      .from('users')
+      .update({ preferences_vector: JSON.stringify(vector) })
+      .eq('id', userId);
+
+    if (__DEV__) {
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('[userProfile] initUserPreferenceFromCalibration hata:', error.message);
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(
+          '[userProfile] Kalibrasyon vektörü kaydedildi:',
+          `userId=${userId}`,
+          `vektör boyutu=${vector.length}`,
+        );
+      }
+    }
+  } catch (err) {
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.error('[userProfile] initUserPreferenceFromCalibration beklenmedik hata:', err);
+    }
+    // Hata dışarıya yayılmaz — arka plan işlemi, uygulama çökmemeli
   }
 }
 

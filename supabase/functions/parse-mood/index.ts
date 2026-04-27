@@ -59,7 +59,15 @@ Rules:
 - cultural_context default when not mentioned: []
 - rewatch_tolerance: true if user implies comfort/familiar content, false for new discoveries
 - profile_name and profile_description must always be in English
-- Accept both English and Turkish input equally well`
+- Accept both English and Turkish input equally well
+
+Genre-critical differentiation rules (IMPORTANT — these prevent cross-genre contamination):
+- COMEDY/FUNNY/LAUGH signals → joy VERY HIGH (0.8-0.95), energy MEDIUM-LOW (0.3-0.5), anticipation LOW (0.1-0.25), fear LOW (0.05-0.15), anger LOW (0.05-0.15), thematic_depth LOW (0.1-0.2), ending "hopeful". Comedy is NOT high energy — high energy maps to Action.
+- ACTION/THRILLER/ADVENTURE signals → energy VERY HIGH (0.8-0.95), anticipation HIGH (0.8-0.9), fear MODERATE (0.5-0.7), joy MODERATE (0.4-0.6), pace "fast"
+- HORROR/SCARY signals → fear HIGH (0.8-0.9), anticipation HIGH, energy MODERATE, joy LOW (0.1-0.2)
+- ROMANTIC signals → trust HIGH (0.8-0.9), joy MODERATE-HIGH (0.6-0.8), energy LOW-MODERATE (0.3-0.5)
+- DRAMA/SAD signals → sadness HIGH (0.7-0.9), thematic_depth HIGH, energy LOW (0.1-0.3), pace "slow"
+- When a mood clearly maps to one genre (e.g. "need a laugh" = comedy), actively SUPPRESS dimensions of other genres. A comedy profile should NOT have high anticipation/fear/anger values.`
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 

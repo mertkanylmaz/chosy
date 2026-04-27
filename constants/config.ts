@@ -17,3 +17,9 @@ export const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? ''
  * @deprecated Client-side TMDb çağrıları Edge Function'a taşınacak.
  */
 export const TMDB_API_KEY = '';
+
+/** RevenueCat iOS API anahtarı */
+export const RC_IOS_API_KEY = process.env.EXPO_PUBLIC_RC_IOS_KEY ?? '';
+
+/** RevenueCat Android API anahtarı */
+export const RC_ANDROID_API_KEY = process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '';

@@ -1,13 +1,17 @@
 /**
- * EmptyState — Lumi maskot ile boş durum ekranı.
+ * EmptyState — Boş durum ekranı.
+ *
+ * İllüstrasyon:
+ *   - `illustration` prop verilirse Lumi yerine o render edilir (örn. FilmReelAnimation)
+ *   - Verilmezse varsayılan: Lumi maskot (mood prop'uyla)
  *
  * Giriş animasyonları:
- *   - Lumi: scale 0→1 spring (delay 0)
+ *   - İllüstrasyon/Lumi: scale 0→1 spring (delay 0)
  *   - Title: opacity + translateY 10→0 (delay 300ms)
  *   - Subtitle: opacity + translateY 10→0 (delay 450ms)
  *   - Button: opacity + translateY 10→0 (delay 600ms)
  *
- * Reduced motion: animasyonlar atlanır, Lumi yerine statik altın daire gösterilir.
+ * Reduced motion: animasyonlar atlanır, Lumi yerine statik orb gösterilir.
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -39,8 +43,13 @@ const SIZE_MAP = { small: 32, medium: 64, large: 140 } as const;
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 export interface EmptyStateProps {
-  /** Lumi'nin duygu durumu */
-  lumiMood: LumiProps['mood'];
+  /**
+   * Özel illüstrasyon node'u — verilirse Lumi'nin yerine render edilir.
+   * Örn: `<FilmReelAnimation />` (watchlist empty state)
+   */
+  illustration?: React.ReactNode;
+  /** Lumi'nin duygu durumu — illustration yoksa zorunlu */
+  lumiMood?: LumiProps['mood'];
   /** Lumi boyutu (varsayılan: 'medium') */
   lumiSize?: LumiProps['size'];
   /** Ana başlık */
@@ -56,9 +65,10 @@ export interface EmptyStateProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
- * Boş durum bileşeni — Lumi + başlık + opsiyonel aksiyon butonu.
+ * Boş durum bileşeni — İllüstrasyon (veya Lumi) + başlık + opsiyonel aksiyon butonu.
  */
 export default function EmptyState({
+  illustration,
   lumiMood,
   lumiSize = 'medium',
   title,
@@ -144,12 +154,14 @@ export default function EmptyState({
   return (
     <View style={styles.container}>
       <Animated.View style={lumiStyle}>
-        {isReducedMotion ? (
+        {illustration != null ? (
+          illustration
+        ) : isReducedMotion ? (
           <View
             style={[styles.staticOrb, { width: sz, height: sz, borderRadius: sz / 2 }]}
           />
         ) : (
-          <Lumi size={lumiSize} mood={lumiMood} showGlow />
+          <Lumi size={lumiSize} mood={lumiMood ?? 'calm'} showGlow />
         )}
       </Animated.View>
 
@@ -167,7 +179,7 @@ export default function EmptyState({
         <Animated.View style={buttonStyle}>
           <TouchableOpacity onPress={handleAction} activeOpacity={0.85}>
             <LinearGradient
-              colors={[Colors.gold, Colors.goldDark]}
+              colors={[Colors.accentPrimary, Colors.accentHover]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.button}

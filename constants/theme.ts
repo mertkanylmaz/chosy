@@ -8,7 +8,7 @@ import { Colors } from './Colors';
  * Migration v2 — 2026-03-27
  * - Spacing: aligned with DESIGN_SYSTEM.md (md:16, lg:24, xl:32)
  * - Typography: Inter is workhorse, PlayfairDisplay ONLY for display + rating
- * - Shadows: violet glow replaces gold glow
+ * - Shadows: cream glow replaces gold glow
  * - All deprecated exports preserved for backward compat
  */
 
@@ -129,7 +129,7 @@ export const Theme = {
       shadowRadius: 8,
       elevation: 5,
     },
-    /** Violet glow — for primary CTA and highlighted elements */
+    /** Cream glow — for primary CTA and highlighted elements */
     glow: {
       shadowColor: Colors.accentPrimary,
       shadowOffset: { width: 0, height: 0 },

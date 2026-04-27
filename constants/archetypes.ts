@@ -124,8 +124,8 @@ export const ARCHETYPES: readonly Archetype[] = [
     nameKey: 'archetype.12_name',
     descKey: 'archetype.12_desc',
     icon: '🚀',
-    colorPrimary: '#8B5CF6',
-    colorDim: 'rgba(139,92,246,0.14)',
+    colorPrimary: '#EADBC6',
+    colorDim: 'rgba(234,219,198,0.14)',
   },
 ] as const;
 

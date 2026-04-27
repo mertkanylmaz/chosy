@@ -17,9 +17,17 @@ export default StyleSheet.create({
   card: {
     flex: 1,
   },
-  poster: {
+
+  /** Poster + rozet için kapsayıcı */
+  posterContainer: {
+    position: 'relative',
     width: '100%',
     aspectRatio: 2 / 3,
+  },
+
+  poster: {
+    width: '100%',
+    height: '100%',
     borderRadius: 14,
     backgroundColor: Colors.cardSolid,
     shadowColor: '#000',
@@ -32,17 +40,34 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardTitle: {
-    fontSize: 14,
+
+  /**
+   * Match Score Rozeti — glassmorphism tarzı, posterin sağ alt köşesi.
+   * Yarı şeffaf arka plan + blur benzeri kenarlık.
+   */
+  matchBadge: {
+    position: 'absolute',
+    right: 6,
+    bottom: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
+    backgroundColor: 'rgba(10,10,10,0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  matchBadgeText: {
+    fontSize: 11,
     fontWeight: '700',
     color: Colors.textWhite,
-    marginTop: 10,
-    lineHeight: 19,
+    letterSpacing: 0.2,
   },
+
+  /** Film adı kaldırıldı — sadece yıl·tür */
   cardMeta: {
     fontSize: 12,
     color: Colors.textGrey,
-    marginTop: 3,
+    marginTop: 6,
     lineHeight: 16,
   },
 });

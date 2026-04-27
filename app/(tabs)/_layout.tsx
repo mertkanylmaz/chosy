@@ -23,7 +23,6 @@ import Animated, {
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
-import Lumi from '@/components/Lumi';
 import { BOUNCE_CONFIG, SPRING_CONFIG, FAST_TIMING } from '@/constants/animations';
 
 // ─── Ionicons tip yardımcısı ─────────────────────────────────────────────────
@@ -127,13 +126,14 @@ export default function TabLayout() {
         headerTintColor: Colors.textWhite,
         headerTitleStyle: { fontFamily: 'PlayfairDisplay_700Bold' },
       }}>
-      {/* 1 — Feed: film kartları */}
+      {/* 1 — Home: dashboard (kendi floating header'ı var — nav header gizle) */}
       <Tabs.Screen
         name="index"
         options={{
-          title: t('tabs.discover'),
+          title: t('tabs.home'),
+          headerShown: false,
           tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
+            focused ? <Text style={styles.activeLabel}>{t('tabs.home')}</Text> : null,
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} filledName="home" outlineName="home-outline" />
           ),
@@ -144,6 +144,8 @@ export default function TabLayout() {
         name="watchlist"
         options={{
           title: t('tabs.watchlist'),
+          /** Ekranın kendi header'ı var (başlık + ikonlar aynı satırda) — nav header gizle */
+          headerShown: false,
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.watchlist')}</Text> : null,
           tabBarIcon: ({ focused }) => (
@@ -151,33 +153,25 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* 3 — Mood: Duygu girişi */}
+      {/* 3 — Mood: Duygu girişi (kendi başlığı var — nav header gizle) */}
       <Tabs.Screen
         name="mood"
         options={{
-          title: t('tabs.home'),
+          title: t('tabs.mood'),
+          headerShown: false,
           tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.home')}</Text> : null,
+            focused ? <Text style={styles.activeLabel}>{t('tabs.mood')}</Text> : null,
           tabBarIcon: ({ focused }) => (
-            <AnimatedTabIcon focused={focused}>
-              {focused ? (
-                <Lumi size="small" mood="idle" />
-              ) : (
-                <Ionicons
-                  name="sparkles-outline"
-                  size={24}
-                  color={Colors.tabInactive}
-                />
-              )}
-            </AnimatedTabIcon>
+            <TabIcon focused={focused} filledName="sparkles" outlineName="sparkles-outline" />
           ),
         }}
       />
-      {/* 4 — Profile: Ayarlar ve dil */}
+      {/* 4 — Profile: avatar + isim zaten kimlik gösteriyor — nav header gizle */}
       <Tabs.Screen
         name="profile"
         options={{
           title: t('tabs.profile'),
+          headerShown: false,
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.profile')}</Text> : null,
           tabBarIcon: ({ focused }) => (
@@ -194,12 +188,23 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.tabBarBg,
-    borderTopColor: Colors.white10,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    // Pill görünüm
+    borderTopWidth: 0,
+    borderTopColor: 'transparent',
+    borderRadius: 36,
+    marginHorizontal: 16,
+    // Floating gölge
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.40,
+    shadowRadius: 18,
+    elevation: 18,
+    // Pozisyon: bottom 10 + height 64 = 74px → paddingBottom:83 ile uyumlu (9px nefes)
     position: 'absolute',
-    height: 83,
-    paddingBottom: 20,
-    paddingTop: 8,
+    bottom: 10,
+    height: 64,
+    paddingBottom: 10,
+    paddingTop: 6,
   },
   tabLabel: {
     fontSize: 11,

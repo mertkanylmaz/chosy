@@ -71,7 +71,6 @@ export const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.8,
-    textTransform: 'uppercase',
     marginBottom: 8,
   },
 

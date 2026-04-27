@@ -36,9 +36,16 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ─── Lumi ────────────────────────────────────────────────────────────────────
+  // ─── Lumi (normal milestone) ─────────────────────────────────────────────────
   mascotContainer: {
     marginBottom: Theme.spacing.lg,
+  },
+
+  // ─── FilmSeridi (curator_5) — 280px bileşeni %65 scale ile sığdır ───────────
+  // transform scale layout'u etkilemiyor: negatif margin ile boşluğu kapat
+  mascotContainerCurator: {
+    transform: [{ scale: 0.65 }],
+    marginBottom: -50,
   },
 
   // ─── Milestone Icon ─────────────────────────────────────────────────────────

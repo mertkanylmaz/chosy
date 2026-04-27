@@ -30,6 +30,7 @@ import { useRouter } from 'expo-router';
 import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
 
 import Animated, {
+  cancelAnimation,
   Extrapolation,
   FadeInDown,
   interpolate,
@@ -44,6 +45,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { localizeGenre } from '@/utils/filmFilters';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -53,7 +55,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
  */
 function getAIExplanation(film: Film): string {
   if (film.whyThisFilm) return film.whyThisFilm;
-  const genres = film.moodTags.slice(0, 2).join(' and ').toLowerCase();
+  // Şablon metni İngilizce — genre'ları her zaman EN normalize et
+  const genres = film.moodTags.slice(0, 2).map((g) => localizeGenre(g, 'en')).join(' and ').toLocaleLowerCase('en-US');
   if (!genres) return 'A unique film picked just for your current mood';
   const templates = [
     `A ${genres} film that perfectly matches your mood`,
@@ -88,6 +91,8 @@ export interface SwipeableCardProps {
   film: Film;
   /** Kartın yüksekliği — FlatList item height ile eşleşmeli */
   height: number;
+  /** Alt navigasyon barının yüksekliği + konumu — bottomContent'i yukarı iter */
+  bottomOffset?: number;
   onSwipeRight: (film: Film) => void;
   onSwipeLeft: (film: Film) => void;
 }
@@ -102,11 +107,12 @@ export interface SwipeableCardProps {
 export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   film,
   height,
+  bottomOffset = 0,
   onSwipeRight,
   onSwipeLeft,
 }) => {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // ── Shared values ─────────────────────────────────────────────────────────
   const translateX = useSharedValue(0);
@@ -138,6 +144,25 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
           ? '🎲 Unexpected'
           : null;
 
+  /**
+   * isMounted guard — runOnJS callback'leri component unmount olduktan sonra
+   * calismasin. Production Hermes'te withTiming callback use-after-free'e yol
+   * acar (SIGBUS / KERN_PROTECTION_FAILURE).
+   */
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+      // Devam eden tum animasyonlari iptal et — callback'lerin unmount sonrasi
+      // ateşlenmesini ve gecersiz closure'lara erismesini onler.
+      cancelAnimation(translateX);
+      cancelAnimation(cardRotation);
+      cancelAnimation(savedOpacity);
+      cancelAnimation(skipOpacity);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Sürpriz kart ilk görününce notification haptic (bir kez)
   const hapticFiredRef = useRef(false);
   useEffect(() => {
@@ -150,14 +175,23 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
 
   // ── JS thread callback'ler ────────────────────────────────────────────────
 
-  /** Sağa swipe tamamlandı — haptic + parent callback */
+  /**
+   * Sağa swipe tamamlandı — haptic + parent callback.
+   * isMounted kontrolü: withTiming callback'i component unmount olduktan
+   * sonra tetiklenirse (hizli swipe + GC) gecersiz closure → SIGBUS.
+   */
   const doSwipeRight = useCallback(() => {
+    if (!isMounted.current) return;
     hapticMedium();
     onSwipeRight(film);
   }, [film, onSwipeRight]);
 
-  /** Sola swipe tamamlandı — haptic + parent callback */
+  /**
+   * Sola swipe tamamlandı — haptic + parent callback.
+   * isMounted kontrolü: ayni sebeple unmount sonrası guard.
+   */
   const doSwipeLeft = useCallback(() => {
+    if (!isMounted.current) return;
     hapticLight();
     onSwipeLeft(film);
   }, [film, onSwipeLeft]);
@@ -297,7 +331,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   const metaLine = [
     film.year,
     rating > 0 ? `★ ${rating.toFixed(1)}` : null,
-    ...film.moodTags.slice(0, 2),
+    ...film.moodTags.slice(0, 2).map((g) => localizeGenre(g, language)),
   ].filter(Boolean).join(' · ');
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -373,32 +407,39 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
             </View>
           </Animated.View>
 
-          {/* Sürpriz badge — tip bazlı renk + FadeInDown animasyon */}
+          {/* Sürpriz badge — tip bazlı renk + FadeInDown animasyon.
+              Outer View: entering animasyonu (transform yok)
+              Inner View: renk + konum stili
+              Bu ayrım Reanimated "transform overwrite by layout animation" uyarısını önler. */}
           {surpriseLabel != null && (
             <Animated.View
               entering={FadeInDown.springify().damping(14).stiffness(160)}
-              style={[
-                styles.surpriseBadge,
-                effectiveType === 'ai_pick'
-                  ? styles.surpriseBadgeWhite
-                  : effectiveType === 'unexpected'
-                    ? styles.surpriseBadgePurple
-                    : styles.surpriseBadgeGold,
-              ]}
+              style={styles.surpriseBadgeAnchor}
             >
-              <Text
+              <View
                 style={[
-                  styles.surpriseBadgeText,
-                  effectiveType === 'unexpected' && styles.surpriseBadgeTextLight,
+                  styles.surpriseBadge,
+                  effectiveType === 'ai_pick'
+                    ? styles.surpriseBadgeWhite
+                    : effectiveType === 'unexpected'
+                      ? styles.surpriseBadgePurple
+                      : styles.surpriseBadgeGold,
                 ]}
               >
-                {surpriseLabel}
-              </Text>
+                <Text
+                  style={[
+                    styles.surpriseBadgeText,
+                    effectiveType === 'unexpected' && styles.surpriseBadgeTextLight,
+                  ]}
+                >
+                  {surpriseLabel}
+                </Text>
+              </View>
             </Animated.View>
           )}
 
           {/* ── Alt içerik ─────────────────────────────────────────────────── */}
-          <View style={styles.bottomContent} pointerEvents="box-none">
+          <View style={[styles.bottomContent, { bottom: 20 + bottomOffset }]} pointerEvents="box-none">
 
             {/* Film adı + match dairesi */}
             <View style={styles.titleRow}>
@@ -532,11 +573,15 @@ const styles = StyleSheet.create({
   },
 
   // ─── Sürpriz badge (base + type varyantları) ───────────────────────────────
-  surpriseBadge: {
+  /** Outer: konumlama + entering animasyonu — transform içermez */
+  surpriseBadgeAnchor: {
     position: 'absolute',
     top: 54,
     right: 16,
     zIndex: 20,
+  },
+  /** Inner: görsel stil — renk + padding + borderRadius */
+  surpriseBadge: {
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -562,7 +607,7 @@ const styles = StyleSheet.create({
   // ─── Alt içerik ────────────────────────────────────────────────────────────
   bottomContent: {
     position: 'absolute',
-    bottom: 20,
+    // bottom is set dynamically via inline style using bottomOffset prop
     left: 20,
     right: 20,
     zIndex: 20,

@@ -1,0 +1,323 @@
+/**
+ * Quota Engine — mood arama hakkı yönetimi.
+ *
+ * Plan bazlı günlük/haftalık limit kontrolü yapar.
+ * Supabase mood_searches tablosundan sayaç okur.
+ *
+ * Kurallar:
+ *   - Free: 1 arama/gün
+ *   - Weekly trial (ilk 10 gün): toplam 20 arama
+ *   - Weekly (sonraki): 14/hafta (2/gün)
+ *   - Monthly / Yearly: 3/gün, 21/hafta cap
+ */
+
+import { supabase } from './supabase';
+import {
+  FREE_DAILY_LIMIT,
+  PLANS,
+  TRIAL_FIRST_PERIOD_DAYS,
+  TRIAL_FIRST_PERIOD_QUOTA,
+  type PlanId,
+  type SubscriptionStatus,
+} from '@/constants/subscriptionPlans';
+import { logger } from '@/utils/logger';
+
+// ─── Tipler ───────────────────────────────────────────────────────────────────
+
+/** Kota kontrolü sonucu */
+export interface QuotaCheckResult {
+  /** Mood arama yapabilir mi? */
+  allowed: boolean;
+  /** Kalan arama hakkı */
+  remaining: number;
+  /** Kota ne zaman sıfırlanır (reset zamanı) */
+  resetAt: Date | null;
+  /** Günlük limit */
+  dailyLimit: number;
+  /** Haftalık limit */
+  weeklyLimit: number;
+}
+
+// ─── Yardımcı — Tarih Hesaplama ──────────────────────────────────────────────
+
+/** Bugünün başlangıcı (UTC 00:00) */
+function startOfToday(): string {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+/** Bu haftanın Pazartesi günü (UTC 00:00) */
+function startOfThisWeek(): string {
+  const d = new Date();
+  const day = d.getUTCDay();
+  // Pazartesi = 1, Pazar = 0 (Pazar'ı 7 olarak say)
+  const diff = day === 0 ? 6 : day - 1;
+  d.setUTCDate(d.getUTCDate() - diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+/** Yarın UTC 00:00 */
+function startOfTomorrow(): Date {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + 1);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+/** Gelecek Pazartesi UTC 00:00 */
+function startOfNextWeek(): Date {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const diff = day === 0 ? 1 : 8 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+// ─── Supabase Sorguları ──────────────────────────────────────────────────────
+
+/**
+ * Belirli tarihten itibaren yapılan mood arama sayısını döndürür.
+ */
+async function countSearchesSince(userId: string, since: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('mood_searches')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('searched_at', since);
+
+  if (error) {
+    // Sessizce 0 dön:
+    //   42P01 = tablo yok (migration henüz deploy edilmemiş)
+    //   PGRST301 = JWT/auth hatası
+    //   42501 = RLS izin yok
+    //   PGRST204 = fonksiyon yok (auth_user_id() migration 013 eksik)
+    //   boş kod = HEAD isteği RLS bloğu (count+head kombinasyonu)
+    const isExpectedError =
+      !error.code ||
+      error.code === '42P01' ||
+      error.code === 'PGRST301' ||
+      error.code === 'PGRST204' ||
+      error.code === '42501' ||
+      error.message?.includes('not find the table') ||
+      error.message?.includes('JWT') ||
+      error.message?.includes('function') ||
+      error.message?.includes('does not exist');
+
+    if (!isExpectedError) {
+      logger.error('[quota] Arama sayısı sorgu hatası:', error.code, error.message ?? JSON.stringify(error));
+    }
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+/**
+ * Trial başlangıcından itibaren toplam arama sayısını döndürür.
+ */
+async function countSearchesSinceTrialStart(
+  userId: string,
+  trialStartDate: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('mood_searches')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('searched_at', trialStartDate);
+
+  if (error) {
+    const isExpectedError =
+      !error.code ||
+      error.code === '42P01' ||
+      error.code === 'PGRST301' ||
+      error.code === 'PGRST204' ||
+      error.code === '42501' ||
+      error.message?.includes('not find the table') ||
+      error.message?.includes('JWT') ||
+      error.message?.includes('function') ||
+      error.message?.includes('does not exist');
+
+    if (!isExpectedError) {
+      logger.error('[quota] Trial arama sayısı sorgu hatası:', error.code, error.message ?? JSON.stringify(error));
+    }
+    return 0;
+  }
+
+  return count ?? 0;
+}
+
+// ─── Ana Kota Kontrol Fonksiyonu ─────────────────────────────────────────────
+
+/**
+ * Kullanıcının mood arama yapıp yapamayacağını kontrol eder.
+ *
+ * @param userId Supabase users tablosundaki UUID
+ * @param subscriptionStatus Kullanıcının abonelik durumu
+ * @param planId Aktif plan (null = free)
+ * @param trialStartDate Trial başlangıç tarihi (ISO string, null = trial yok)
+ */
+export async function canSearchMood(
+  userId: string,
+  subscriptionStatus: SubscriptionStatus,
+  planId: PlanId | null,
+  trialStartDate: string | null,
+): Promise<QuotaCheckResult> {
+  // ─── Free Kullanıcı ─────────────────────────────────────────────────────
+  if (subscriptionStatus === 'free' || subscriptionStatus === 'expired' || !planId) {
+    const dailyCount = await countSearchesSince(userId, startOfToday());
+    return {
+      allowed: dailyCount < FREE_DAILY_LIMIT,
+      remaining: Math.max(0, FREE_DAILY_LIMIT - dailyCount),
+      resetAt: startOfTomorrow(),
+      dailyLimit: FREE_DAILY_LIMIT,
+      weeklyLimit: FREE_DAILY_LIMIT * 7,
+    };
+  }
+
+  const plan = PLANS[planId];
+
+  // ─── Weekly Plan — Trial Dönemi ─────────────────────────────────────────
+  if (planId === 'weekly' && subscriptionStatus === 'trial' && trialStartDate) {
+    const trialStart = new Date(trialStartDate);
+    const daysSinceTrialStart = Math.floor(
+      (Date.now() - trialStart.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    // İlk 10 gün (trial 3 gün + ilk hafta 7 gün): toplam 20 hak
+    if (daysSinceTrialStart < TRIAL_FIRST_PERIOD_DAYS) {
+      const totalUsed = await countSearchesSinceTrialStart(userId, trialStartDate);
+      const remaining = Math.max(0, TRIAL_FIRST_PERIOD_QUOTA - totalUsed);
+      return {
+        allowed: remaining > 0,
+        remaining,
+        resetAt: new Date(trialStart.getTime() + TRIAL_FIRST_PERIOD_DAYS * 24 * 60 * 60 * 1000),
+        dailyLimit: plan.dailyLimit,
+        weeklyLimit: TRIAL_FIRST_PERIOD_QUOTA,
+      };
+    }
+
+    // Trial bitti ama abonelik aktif — normal weekly kurallarına geç
+  }
+
+  // ─── Weekly Plan — Normal ───────────────────────────────────────────────
+  if (planId === 'weekly') {
+    const weeklyCount = await countSearchesSince(userId, startOfThisWeek());
+    const remaining = Math.max(0, plan.weeklyLimit - weeklyCount);
+    return {
+      allowed: remaining > 0,
+      remaining,
+      resetAt: startOfNextWeek(),
+      dailyLimit: plan.dailyLimit,
+      weeklyLimit: plan.weeklyLimit,
+    };
+  }
+
+  // ─── Monthly / Yearly ──────────────────────────────────────────────────
+  const dailyCount = await countSearchesSince(userId, startOfToday());
+  const weeklyCount = await countSearchesSince(userId, startOfThisWeek());
+
+  if (dailyCount >= plan.dailyLimit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: startOfTomorrow(),
+      dailyLimit: plan.dailyLimit,
+      weeklyLimit: plan.weeklyLimit,
+    };
+  }
+
+  if (weeklyCount >= plan.weeklyLimit) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: startOfNextWeek(),
+      dailyLimit: plan.dailyLimit,
+      weeklyLimit: plan.weeklyLimit,
+    };
+  }
+
+  const dailyRemaining = plan.dailyLimit - dailyCount;
+  const weeklyRemaining = plan.weeklyLimit - weeklyCount;
+
+  return {
+    allowed: true,
+    remaining: Math.min(dailyRemaining, weeklyRemaining),
+    resetAt: dailyRemaining <= weeklyRemaining ? startOfTomorrow() : startOfNextWeek(),
+    dailyLimit: plan.dailyLimit,
+    weeklyLimit: plan.weeklyLimit,
+  };
+}
+
+// ─── Arama Kaydı ─────────────────────────────────────────────────────────────
+
+/**
+ * Mood arama kaydını Supabase'e yazar.
+ * mood.tsx'te handleFindMovies başarılı olduktan sonra çağrılır.
+ */
+export async function recordMoodSearch(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('mood_searches')
+    .insert({ user_id: userId });
+
+  if (error) {
+    // Beklenen hatalar — sessizce geç:
+    //   42P01 = tablo yok (migration 012 deploy edilmemiş)
+    //   42501 = RLS ihlali (migration 013 deploy edilmemiş — auth_user_id() eksik)
+    //   PGRST204 = fonksiyon yok
+    const isExpectedError =
+      !error.code ||
+      error.code === '42P01' ||
+      error.code === '42501' ||
+      error.code === '23503' || // FK ihlali: public.users satırı henüz yok (getAppUserId race condition)
+      error.code === 'PGRST204' ||
+      error.message?.includes('not find the table') ||
+      error.message?.includes('row-level security') ||
+      error.message?.includes('function') ||
+      error.message?.includes('does not exist');
+
+    if (!isExpectedError) {
+      logger.error('[quota] Arama kaydı hatası:', error.code, error.message ?? JSON.stringify(error));
+    }
+  }
+}
+
+// ─── Trial Kontrol ───────────────────────────────────────────────────────────
+
+/**
+ * Verilen email'in daha önce free trial kullanıp kullanmadığını kontrol eder.
+ */
+export async function hasUsedFreeTrial(email: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('trial_claims')
+    .select('email')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
+
+  if (error) {
+    if (!error.message?.includes('not find the table') && error.code !== '42P01') {
+      logger.error('[quota] Trial kontrol hatası:', error.message);
+    }
+    return false;
+  }
+
+  return data !== null;
+}
+
+/**
+ * Email'i trial_claims tablosuna kaydeder.
+ * Trial satın alımından hemen sonra çağrılır.
+ */
+export async function claimFreeTrial(email: string): Promise<void> {
+  const { error } = await supabase
+    .from('trial_claims')
+    .upsert({ email: email.toLowerCase() }, { onConflict: 'email' });
+
+  if (error) {
+    if (!error.message?.includes('not find the table') && error.code !== '42P01') {
+      logger.error('[quota] Trial kayıt hatası:', error.message);
+    }
+  }
+}
