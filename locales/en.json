@@ -599,7 +599,7 @@
     "exhaustedTitle": "Search limit reached",
     "exhaustedDaily": "You've used all your daily searches. Come back tomorrow or upgrade for more.",
     "exhaustedWeekly": "You've reached your weekly limit. Upgrade for more searches.",
-    "exhaustedFree": "You've used your free search for today. Subscribe to keep discovering.",
+    "exhaustedFree": "You've used your free search. Subscribe to unlock unlimited mood searches.",
     "upgradeButton": "Upgrade Now",
     "waitUntil": "Resets %{time}"
   },

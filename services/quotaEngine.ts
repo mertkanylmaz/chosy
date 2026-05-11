@@ -5,7 +5,7 @@
  * Supabase mood_searches tablosundan sayaç okur.
  *
  * Kurallar:
- *   - Free: 1 arama/gün
+ *   - Free: toplam 1 arama (onboarding bedava, sonrası paywall)
  *   - Weekly trial (ilk 10 gün): toplam 20 arama
  *   - Weekly (sonraki): 14/hafta (2/gün)
  *   - Monthly / Yearly: 3/gün, 21/hafta cap
@@ -137,14 +137,16 @@ export async function canSearchMood(
   trialStartDate: string | null,
 ): Promise<QuotaCheckResult> {
   // ─── Free Kullanıcı ─────────────────────────────────────────────────────
+  // Toplam 1 arama hakkı (onboarding'deki ilk arama kayıt edilmez — bedava).
+  // İlk arama sonrası her "Find Movies" → QuotaExhausted → paywall.
   if (subscriptionStatus === 'free' || subscriptionStatus === 'expired' || !planId) {
-    const dailyCount = await countSearchesSince(userId, startOfToday());
+    const totalCount = await countSearchesSince(userId, '1970-01-01T00:00:00Z');
     return {
-      allowed: dailyCount < FREE_DAILY_LIMIT,
-      remaining: Math.max(0, FREE_DAILY_LIMIT - dailyCount),
-      resetAt: startOfTomorrow(),
+      allowed: totalCount < FREE_DAILY_LIMIT,
+      remaining: Math.max(0, FREE_DAILY_LIMIT - totalCount),
+      resetAt: null,
       dailyLimit: FREE_DAILY_LIMIT,
-      weeklyLimit: FREE_DAILY_LIMIT * 7,
+      weeklyLimit: FREE_DAILY_LIMIT,
     };
   }
 

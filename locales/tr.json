@@ -599,7 +599,7 @@
     "exhaustedTitle": "Arama limitine ulaştın",
     "exhaustedDaily": "Bugünkü arama hakkın doldu. Yarın tekrar gel veya yükselt.",
     "exhaustedWeekly": "Haftalık limitine ulaştın. Daha fazlası için yükselt.",
-    "exhaustedFree": "Bugünkü ücretsiz arama hakkını kullandın. Keşfe devam etmek için abone ol.",
+    "exhaustedFree": "Ücretsiz arama hakkını kullandın. Sınırsız keşif için abone ol.",
     "upgradeButton": "Yükselt",
     "waitUntil": "%{time} tarihinde sıfırlanır"
   },
