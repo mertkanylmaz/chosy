@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chosy.ai",
     "slug": "chosy-ai",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "chosy",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.chosy.ai",
-      "buildNumber": "1",
+      "buildNumber": "3",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -38,7 +38,6 @@
     },
     "plugins": [
       "expo-router",
-      "expo-sharing",
       "expo-apple-authentication"
     ],
     "experiments": {
