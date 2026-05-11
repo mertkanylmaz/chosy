@@ -89,27 +89,10 @@ async function countSearchesSince(userId: string, since: string): Promise<number
     .gte('searched_at', since);
 
   if (error) {
-    // Sessizce 0 dön:
-    //   42P01 = tablo yok (migration henüz deploy edilmemiş)
-    //   PGRST301 = JWT/auth hatası
-    //   42501 = RLS izin yok
-    //   PGRST204 = fonksiyon yok (auth_user_id() migration 013 eksik)
-    //   boş kod = HEAD isteği RLS bloğu (count+head kombinasyonu)
-    const isExpectedError =
-      !error.code ||
-      error.code === '42P01' ||
-      error.code === 'PGRST301' ||
-      error.code === 'PGRST204' ||
-      error.code === '42501' ||
-      error.message?.includes('not find the table') ||
-      error.message?.includes('JWT') ||
-      error.message?.includes('function') ||
-      error.message?.includes('does not exist');
-
-    if (!isExpectedError) {
-      logger.error('[quota] Arama sayısı sorgu hatası:', error.code, error.message ?? JSON.stringify(error));
-    }
-    return 0;
+    // Fail-closed: hata durumunda limiti dolu say — paywall bypass'i engelle.
+    // Kullanıcı deneyimi: "kota doldu" overlay gösterir, paywall'a yönlendirir.
+    logger.warn('[quota] Arama sayısı sorgu hatası (fail-closed):', error.code, error.message ?? JSON.stringify(error));
+    return FREE_DAILY_LIMIT;
   }
 
   return count ?? 0;
@@ -129,21 +112,9 @@ async function countSearchesSinceTrialStart(
     .gte('searched_at', trialStartDate);
 
   if (error) {
-    const isExpectedError =
-      !error.code ||
-      error.code === '42P01' ||
-      error.code === 'PGRST301' ||
-      error.code === 'PGRST204' ||
-      error.code === '42501' ||
-      error.message?.includes('not find the table') ||
-      error.message?.includes('JWT') ||
-      error.message?.includes('function') ||
-      error.message?.includes('does not exist');
-
-    if (!isExpectedError) {
-      logger.error('[quota] Trial arama sayısı sorgu hatası:', error.code, error.message ?? JSON.stringify(error));
-    }
-    return 0;
+    // Fail-closed: hata durumunda limiti dolu say
+    logger.warn('[quota] Trial arama sayısı sorgu hatası (fail-closed):', error.code, error.message ?? JSON.stringify(error));
+    return FREE_DAILY_LIMIT;
   }
 
   return count ?? 0;
@@ -263,24 +234,9 @@ export async function recordMoodSearch(userId: string): Promise<void> {
     .insert({ user_id: userId });
 
   if (error) {
-    // Beklenen hatalar — sessizce geç:
-    //   42P01 = tablo yok (migration 012 deploy edilmemiş)
-    //   42501 = RLS ihlali (migration 013 deploy edilmemiş — auth_user_id() eksik)
-    //   PGRST204 = fonksiyon yok
-    const isExpectedError =
-      !error.code ||
-      error.code === '42P01' ||
-      error.code === '42501' ||
-      error.code === '23503' || // FK ihlali: public.users satırı henüz yok (getAppUserId race condition)
-      error.code === 'PGRST204' ||
-      error.message?.includes('not find the table') ||
-      error.message?.includes('row-level security') ||
-      error.message?.includes('function') ||
-      error.message?.includes('does not exist');
-
-    if (!isExpectedError) {
-      logger.error('[quota] Arama kaydı hatası:', error.code, error.message ?? JSON.stringify(error));
-    }
+    logger.error('[quota] Arama kaydı hatası:', error.code, error.message ?? JSON.stringify(error));
+    // Hata durumunda bile devam et — kullanıcı deneyimini engelleme.
+    // Ama log'a yaz ki sorun tespit edilebilsin.
   }
 }
 

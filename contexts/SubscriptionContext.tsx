@@ -171,11 +171,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setQuota(result);
       return result;
     } catch (err) {
-      // Offline veya Supabase hatası — kullanıcıyı engelleme, izin ver
-      logger.warn('[subscription-ctx] Kota kontrolü başarısız, fallback: izin ver', err);
+      // Fail-closed: hata durumunda aramayı engelle — paywall bypass'i önle.
+      // Kullanıcı QuotaExhausted overlay'ini görür → paywall'a yönlendirilir.
+      logger.warn('[subscription-ctx] Kota kontrolü başarısız, fallback: engelle', err);
       const fallback: QuotaCheckResult = {
-        allowed: true,
-        remaining: 1,
+        allowed: false,
+        remaining: 0,
         resetAt: null,
         dailyLimit: 1,
         weeklyLimit: 7,

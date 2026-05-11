@@ -195,11 +195,11 @@ export default function OnboardingScreen() {
     }
   }, []);
 
-  /** Onboarding'i tamamla ve (tabs)'a git — skip durumunda kullanilir */
+  /** Onboarding'i tamamla ve mood ekranina git — onboarding zincirini baslat */
   const finishOnboarding = useCallback(async () => {
     hapticSuccess();
     await markOnboardingComplete();
-    router.replace('/(tabs)');
+    router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
   }, [router, markOnboardingComplete]);
 
   /**
@@ -254,15 +254,15 @@ export default function OnboardingScreen() {
   );
 
   /**
-   * Arketip reveal tamamlandi — dogrudan ana sayfaya yonlendir.
+   * Arketip reveal tamamlandi — mood arama ekranina yonlendir.
    *
-   * Onboarding: onboarded flag'i burda yazilir (gate.tsx tekrar onboarding'e yonlendirmesin).
-   * Kullanici ana sayfada kendi ritminde kesfetmeye baslar.
+   * Onboarding zinciri: reveal → mood (onboarding=1) → discover (5 film) → paywall
+   * onboarded flag'i burda yazilir (gate.tsx tekrar onboarding'e yonlendirmesin).
    */
   const handleRevealFinish = useCallback(async () => {
     hapticSuccess();
     await markOnboardingComplete();
-    router.replace('/(tabs)');
+    router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
   }, [router, markOnboardingComplete]);
 
   /** Calibration skip → dogrudan bitir */

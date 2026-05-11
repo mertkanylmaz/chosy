@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -23,6 +24,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { PurchasesPackage } from 'react-native-purchases';
+import Purchases from 'react-native-purchases';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,6 +61,7 @@ interface PlanUI {
   titleKey: string;
   badgeKey: string;
   descKey: string;
+  durationKey: string;
   periodKey: string;
   featured: boolean;
 }
@@ -69,6 +72,7 @@ const PLAN_UI: PlanUI[] = [
     titleKey: 'paywall.weeklyTitle',
     badgeKey: 'paywall.weeklyBadge',
     descKey: 'paywall.weeklyDesc',
+    durationKey: 'paywall.weeklyDuration',
     periodKey: 'paywall.perWeek',
     featured: false,
   },
@@ -77,6 +81,7 @@ const PLAN_UI: PlanUI[] = [
     titleKey: 'paywall.monthlyTitle',
     badgeKey: 'paywall.monthlyBadge',
     descKey: 'paywall.monthlyDesc',
+    durationKey: 'paywall.monthlyDuration',
     periodKey: 'paywall.perMonth',
     featured: true,
   },
@@ -85,6 +90,7 @@ const PLAN_UI: PlanUI[] = [
     titleKey: 'paywall.yearlyTitle',
     badgeKey: 'paywall.yearlyBadge',
     descKey: 'paywall.yearlyDesc',
+    durationKey: 'paywall.yearlyDuration',
     periodKey: 'paywall.perYear',
     featured: false,
   },
@@ -116,6 +122,7 @@ export default function PaywallScreen() {
   const [trialUsed, setTrialUsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
+
   // ── Paketleri yükle ──────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -136,6 +143,20 @@ export default function PaywallScreen() {
       }
     }
     load();
+  }, []);
+
+  /**
+   * Apple Offer Code redemption sheet'ini açar.
+   * iOS 14+ — Apple'ın native kod girişi ekranını gösterir.
+   * Kod doğrulama, indirim uygulama, kullanım limiti: Apple yönetir.
+   */
+  const handleRedeemCode = useCallback(async () => {
+    if (Platform.OS !== 'ios') return;
+    try {
+      await Purchases.presentCodeRedemptionSheet();
+    } catch (err) {
+      logger.warn('[paywall] Code redemption sheet hatası:', err);
+    }
   }, []);
 
   // Premium ise bilgilendir ve cik
@@ -285,6 +306,9 @@ export default function PaywallScreen() {
         {/* ── Hero ─────────────────────────────────────────────────── */}
         <View style={styles.hero}>
           <Ionicons name="diamond" size={48} color={Colors.accentPrimary} />
+          <View style={styles.serviceNameBadge}>
+            <Text style={styles.serviceNameText}>{t('paywall.serviceName')}</Text>
+          </View>
           <Text style={styles.heroTitle}>{t('paywall.title')}</Text>
           <Text style={styles.heroSubtitle}>
             {isOnboarding ? t('paywall.onboardingSubtitle') : t('paywall.subtitle')}
@@ -319,6 +343,9 @@ export default function PaywallScreen() {
                 <Text style={[styles.planTitle, isSelected && styles.planTitleSelected]}>
                   {t(planUI.titleKey)}
                 </Text>
+                <Text style={[styles.planDuration, isSelected && styles.planDurationSelected]}>
+                  {t(planUI.durationKey)}
+                </Text>
                 <View style={styles.priceRow}>
                   <Text style={[styles.planPrice, isSelected && styles.planPriceSelected]}>
                     {plan.displayPrice}
@@ -341,6 +368,18 @@ export default function PaywallScreen() {
         {/* ── Trial notu ──────────────────────────────────────────── */}
         {showTrial && (
           <Text style={styles.trialNote}>{t('paywall.trialNote')}</Text>
+        )}
+
+        {/* ── Promo / Offer Code — Apple native ────────────────── */}
+        {Platform.OS === 'ios' && (
+          <TouchableOpacity
+            style={styles.promoToggle}
+            onPress={handleRedeemCode}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="pricetag-outline" size={14} color={Colors.textTertiary} />
+            <Text style={styles.promoToggleText}>{t('paywall.redeemCode')}</Text>
+          </TouchableOpacity>
         )}
 
         {/* ── CTA ─────────────────────────────────────────────────── */}
@@ -392,23 +431,27 @@ export default function PaywallScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Yasal linkler ───────────────────────────────────────── */}
-        <Text style={styles.legalText}>
-          {t('paywall.termsPrefix')}
-          <Text
-            style={styles.legalLink}
+        {/* ── Otomatik yenileme aciklamasi (Apple 3.1.2c zorunlu) ─── */}
+        <Text style={styles.autoRenewText}>{t('paywall.autoRenewDisclosure')}</Text>
+
+        {/* ── Yasal linkler — ayri TouchableOpacity (Apple gerekliligi) */}
+        <View style={styles.legalLinksRow}>
+          <TouchableOpacity
             onPress={() => Linking.openURL(TERMS_URL)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
           >
-            {t('paywall.terms')}
-          </Text>
-          {t('paywall.and')}
-          <Text
-            style={styles.legalLink}
+            <Text style={styles.legalLinkBtn}>{t('paywall.termsAction')}</Text>
+          </TouchableOpacity>
+          <Text style={styles.legalSeparator}>·</Text>
+          <TouchableOpacity
             onPress={() => Linking.openURL(PRIVACY_URL)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            activeOpacity={0.7}
           >
-            {t('paywall.privacy')}
-          </Text>
-        </Text>
+            <Text style={styles.legalLinkBtn}>{t('paywall.privacyAction')}</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -451,11 +494,26 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 28,
   },
+  serviceNameBadge: {
+    marginTop: 10,
+    backgroundColor: Colors.accentPrimary + '20',
+    borderWidth: 1,
+    borderColor: Colors.accentPrimary + '50',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  serviceNameText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.accentPrimary,
+    letterSpacing: 0.6,
+  },
   heroTitle: {
     fontSize: 28,
     fontWeight: '800',
     color: Colors.textWhite,
-    marginTop: 12,
+    marginTop: 10,
     letterSpacing: -0.4,
   },
   heroSubtitle: {
@@ -513,10 +571,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: Colors.textWhite,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   planTitleSelected: {
     color: Colors.accentPrimary,
+  },
+  planDuration: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textTertiary,
+    marginBottom: 6,
+    letterSpacing: 0.2,
+  },
+  planDurationSelected: {
+    color: Colors.accentPrimary + '80',
   },
   priceRow: {
     flexDirection: 'row',
@@ -566,6 +634,21 @@ const styles = StyleSheet.create({
     height: 12,
     borderRadius: 6,
     backgroundColor: Colors.accentPrimary,
+  },
+
+  // ── Promo / Offer Code ──────────────────────────────────────────────────
+  promoToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  promoToggleText: {
+    fontSize: 13,
+    color: Colors.textTertiary,
+    fontWeight: '500',
   },
 
   // ── Trial ───────────────────────────────────────────────────────────────
@@ -624,17 +707,34 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // ── Legal ───────────────────────────────────────────────────────────────
-  legalText: {
+  // ── Auto-renewal Disclosure (Apple 3.1.2c) ──────────────────────────────
+  autoRenewText: {
     fontSize: 11,
     color: Colors.textTertiary,
     textAlign: 'center',
     lineHeight: 16,
-    paddingHorizontal: 12,
-    marginTop: 8,
+    paddingHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
-  legalLink: {
+
+  // ── Legal Links ─────────────────────────────────────────────────────────
+  legalLinksRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  legalLinkBtn: {
+    fontSize: 12,
     color: Colors.accentPrimary,
     textDecorationLine: 'underline',
+    fontWeight: '500',
   },
+  legalSeparator: {
+    fontSize: 12,
+    color: Colors.textTertiary,
+  },
+
 });
