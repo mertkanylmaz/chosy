@@ -14,7 +14,7 @@
  * - Baslik: "Taste DNA" — Playfair Display, altin, emoji
  */
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -25,6 +25,7 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
+import { EmotionIcons, TasteDNAIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import type { SwipeInsight } from '@/types/profile';
@@ -46,17 +47,8 @@ const EMOTION_COLORS: Record<keyof EmotionalState, string> = {
   disgust: '#6B7280',
 };
 
-/** Her duygu icin emoji */
-const EMOTION_EMOJI: Record<keyof EmotionalState, string> = {
-  joy: '😄',
-  sadness: '😢',
-  fear: '😨',
-  anger: '😠',
-  trust: '🤝',
-  anticipation: '⚡',
-  surprise: '😲',
-  disgust: '😒',
-};
+/** Her duygu icin ikon — constants/icons.ts'ten single source of truth */
+const EMOTION_ICON = EmotionIcons;
 
 /** Hiz tercihi icin ikon */
 const PACE_OPTIONS: { key: 'slow' | 'medium' | 'fast'; icon: string }[] = [
@@ -144,7 +136,7 @@ interface Props {
 // ─── Alt Bilesenkler ─────────────────────────────────────────────────────────
 
 interface AnimatedBarProps {
-  emoji: string;
+  emotionKey: keyof EmotionalState;
   label: string;
   value: number;
   color: string;
@@ -154,7 +146,7 @@ interface AnimatedBarProps {
 /**
  * Soldan saga reanimated animasyonlu duygu bari.
  */
-function AnimatedBar({ emoji, label, value, color, delay }: AnimatedBarProps) {
+function AnimatedBar({ emotionKey, label, value, color, delay }: AnimatedBarProps) {
   const [trackWidth, setTrackWidth] = useState(0);
   const barWidth = useSharedValue(0);
 
@@ -176,7 +168,7 @@ function AnimatedBar({ emoji, label, value, color, delay }: AnimatedBarProps) {
 
   return (
     <View style={styles.emotionRow}>
-      <Text style={styles.emotionEmoji}>{emoji}</Text>
+      <Image source={EMOTION_ICON[emotionKey]} style={styles.emotionEmoji} resizeMode="contain" />
       <Text style={styles.emotionName}>{label}</Text>
       <View
         style={styles.barTrack}
@@ -284,7 +276,7 @@ function FilledContent({
             {topEmotions.map(({ key, value }, index) => (
               <AnimatedBar
                 key={key}
-                emoji={EMOTION_EMOJI[key]}
+                emotionKey={key}
                 label={t(`tasteDNA.emotion_${key}`)}
                 value={value}
                 color={EMOTION_COLORS[key]}
@@ -368,7 +360,7 @@ export default function TasteDNA({ profile, insights, loading, archetypeId }: Pr
     <View style={styles.card}>
       {/* Baslik */}
       <View style={styles.header}>
-        <Text style={styles.headerDna}>🧬</Text>
+        <Image source={TasteDNAIcons.dnaHeader} style={styles.headerDna} resizeMode="contain" />
         <Text style={styles.headerTitle}>{t('profile.tasteDNA')}</Text>
       </View>
 

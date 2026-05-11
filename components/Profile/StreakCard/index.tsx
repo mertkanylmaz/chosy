@@ -14,7 +14,7 @@
  * Spec: .claude/specs/GAMIFICATION_UI_SPEC.md — Component 3
  */
 import React, { useEffect, useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { TIMING_CONFIG, STAGGER_DELAY_MS } from '@/constants/animations';
+import { GamificationIcons } from '@/constants/icons';
 import SkeletonLoader from '@/components/SkeletonLoader';
 
 import { styles } from './styles';
@@ -129,7 +130,7 @@ const StreakCard: React.FC<StreakCardProps> = React.memo(({
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerEmoji}>🔥</Text>
+        <Image source={GamificationIcons.streakActive} style={styles.headerEmoji} resizeMode="contain" />
         <Text style={styles.headerTitle}>Daily Streak</Text>
       </View>
 

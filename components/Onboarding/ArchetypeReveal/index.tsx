@@ -176,7 +176,6 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
   // Fallback: Mystery Cinephile
   const colorPrimary = archetype?.colorPrimary ?? Colors.accentPrimary;
   const colorDim = archetype?.colorDim ?? Colors.accentDim;
-  const icon = archetype?.icon ?? '✦';
   const nameText = archetype
     ? t(archetype.nameKey)
     : t('onboarding.mysteryType');
@@ -227,9 +226,21 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
     transform: [{ scale: glowScale.value }],
   }));
 
-  const handleFinish = useCallback(() => {
+  /**
+   * "Let's Go" basıldığında — dopamin zirvesinde App Store review iste,
+   * ardından onFinish() ile ana sayfaya geç.
+   * Lazy import: native build yoksa crash önler.
+   */
+  const handleFinish = useCallback(async () => {
     if (!ctaEnabled) return;
     hapticLight();
+    try {
+      const StoreReview = await import('expo-store-review');
+      const isAvailable = await StoreReview.hasAction();
+      if (isAvailable) await StoreReview.requestReview();
+    } catch {
+      // Sessizce devam — review bloklayici olmamali
+    }
     onFinish();
   }, [ctaEnabled, onFinish]);
 
@@ -281,7 +292,15 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
             emojiCircleStyle,
           ]}
         >
-          <Text style={styles.emojiText}>{icon}</Text>
+          {archetype ? (
+            <Image
+              source={archetype.image}
+              style={styles.emojiImage}
+              contentFit="contain"
+            />
+          ) : (
+            <Text style={styles.emojiText}>✦</Text>
+          )}
         </Animated.View>
 
         {/* Arketip adı */}

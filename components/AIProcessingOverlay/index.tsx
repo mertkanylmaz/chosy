@@ -10,7 +10,6 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import * as StoreReview from 'expo-store-review';
 import { hapticLight, hapticSelection, hapticSuccess } from '@/utils/haptics';
 import FilmSeridi from '@/components/FilmReelAnimation';
 import styles from './styles';
@@ -155,10 +154,6 @@ export default function AIProcessingOverlay({ visible, onComplete, t }: AIProces
       hapticSelection();
       setSteps(prev => prev.map(s => ({ ...s, state: 'completed' })));
       hapticSuccess();
-      // App Store review — tamamlanma aninda tetikle (dopamin zirvesi)
-      StoreReview.isAvailableAsync().then((available) => {
-        if (available) StoreReview.requestReview();
-      }).catch(() => {});
     }, 1900);
 
     // onComplete callback (2600ms) — opsiyonel

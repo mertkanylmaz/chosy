@@ -326,7 +326,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
  * Mevcut `users` satırını auth_id ile bulur; username ve avatar_url alanlarını yazar.
  *
  * @param username - Kullanıcının seçtiği takma ad (2-20 alfanümerik karakter)
- * @param avatarUrl - Seçilen avatarı temsil eden emoji string (ör. "🎬")
+ * @param avatarUrl - Seçilen avatar'ın id string'i (ör. "clapperboard"); AvatarIcons tablosundan çözülür
  * @returns Başarı durumu ve opsiyonel hata mesajı
  */
 export async function updateUserProfile(

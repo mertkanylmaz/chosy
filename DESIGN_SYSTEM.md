@@ -76,7 +76,7 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Meta line: year · genre · duration in text-secondary
 - Stack: 2 cards behind, scale(0.95) + scale(0.90), blur(2px)
 - Swipe overlays: green "+" / red "✕" / blue "👁" at 0→0.3 opacity
-- Flick mascot: 48px, bottom-right corner (when built)
+- Match score badge: bottom-right corner
 
 ### Action Buttons (Below Card)
 - 3 circular buttons in a row, centered
@@ -100,37 +100,25 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Rating: PlayfairDisplay Bold, gold colored
 
 ### Empty States
-- Flick mascot centered, 120px
+- Lumi orb or illustration centered
 - Message below in text-secondary
 - CTA button in accent-primary
 
-## Mascot: Flick
-- **Status: SPEC COMPLETE, AWAITING RIVE BUILD** (Lumi is current placeholder)
-- **Full spec:** `.claude/specs/FLICK_MASCOT_SPEC.md`
-- Cinematic cat, violet body (Colors.accentHover #7C3AED), amber eyes (Colors.gold)
-- Film-strip tail (cinema motif)
-- Rive animation with state machine (`FlickController`)
-- 4 layers: body, eyes, tail, effects
-- 8 emotion states: idle, happy, sad, thinking, excited, surprised, love, sleepy
-- Inputs: mood (0-7), is_swiping (bool), swipe_direction (0-3), celebration (bool)
-- Sizes: 48px (card corner), 96px (AI loading), 120px (empty state), 256px (onboarding)
-- Transition plan: Lumi component becomes wrapper, Flick renders inside
-- Target .riv file: assets/flick/flick.riv, < 150KB
-- **Rive build guide:** `.claude/specs/FLICK_RIVE_BUILD_GUIDE.md`
-- **Activation:** Set `USE_RIVE = true` in `components/Flick/index.tsx` after .riv placed
-- State machine bindings coded — 4 useEffect syncs for mood/isSwiping/swipeDirection/celebration
+## Mascot / Animated Element
+- **Flick (Rive): IPTAL EDILDI** — kaldirildI, dependency'ler uninstall edildi
+- **Lumi:** Programatik animasyon orb, mood ekraninda aktif, korunuyor
 
 ## Gamification UI
-- **Full spec:** `.claude/specs/GAMIFICATION_UI_SPEC.md`
+- Implemented and live in V1.0
 - **StreakBadge:** Pill badge, Feed sag ust, Colors.accentPrimary border, pulse on increment
 - **MilestoneCelebration:** Full-screen overlay, konfeti + Flick 120px + staggered content
 - **StreakCard:** Profile ekrani, 3-stat row + 14-gun dot takvim + progress bar
 - Konfeti renkleri: Colors.accentPrimary + Colors.gold + Colors.success
 - Kutlama kapatma: sadece manuel (CTA veya backdrop tap)
-- Special milestones (films_100+, streak_30): excited Flick + extra confetti
+- Special milestones (films_100+, streak_30): extra confetti + FilmSeridi
 
 ## Stats Charts
-- **Full spec:** `.claude/specs/STATS_CHARTS_SPEC.md`
+- Implemented in V1.0 (DiscoveryStats component)
 - **MoodPatternChart:** Horizontal bar timeline, son 14 gun, baskil duygu rengiyle
   - Duygu renkleri TasteDNA'daki EMOTION_COLORS ile ayni (import et)
   - Staggered bar animasyonu (50ms * index)
@@ -140,7 +128,7 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Her iki chart Profile ekraninda, mevcut section'lar arasina yerlesir
 
 ## Home Screen (P7.1)
-- **Full spec:** `.claude/specs/HOME_SCREEN_SPEC.md`
+- Implemented in V1.0
 - **GreetingWidget:** Saat bazli selamlama + kullanici adi, Inter Bold 28px
 - **MoodCTA:** Tam genislik violet gradient buton, glow pulse (idle), scale(0.97) press
 - **DailyPickSection:** DailyMatchCard wrapper, 2.5:4 aspect, "Today's Pick" ust baslik
@@ -149,7 +137,7 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Stagger animasyon: 0→400ms FadeInDown, springify
 
 ## Social Share Cards
-- **Full spec:** `.claude/specs/SOCIAL_SHARE_SPEC.md`
+- Implemented in V1.0
 - **FilmShareCard:** 360x450px (3x→1080x1350 PNG), poster + title + mood text + branding
   - Poster blur ambient arka plan efekti (blurRadius:25, opacity:0.15)
   - PlayfairDisplay sadece film title + tirnak isareti
@@ -159,7 +147,7 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Offscreen render + react-native-view-shot + expo-sharing
 
 ## Taste Calibration (P8.1)
-- **Full spec:** `.claude/specs/TASTE_CALIBRATION_SPEC.md`
+- Implemented in V1.0
 - **TasteCalibration:** 6 senaryo-bazli soru karti, FadeOutLeft/FadeInRight gecis, 400ms bekleme
 - **QuestionCard:** bgCard kart, 24px radius, 4 secenek (veya 3), secim → violet border + accentDim bg
 - **ProgressBar:** 4px bar (bgSubtle → accentPrimary dolgu), 12px glow dot, animated genislik
@@ -170,16 +158,16 @@ Bumble's addictive swipe UX + cinema-grade premium aesthetics. Think: a luxury m
 - Mevcut 3 intro slide KORUNUR, calibration + reveal SONRASINA eklenir
 
 ## Auth Screens QA
-- **Full spec:** `.claude/specs/AUTH_SCREENS_QA_SPEC.md`
+- Implemented in V1.0
 - auth.tsx + setup-profile.tsx CDO spec'siz build edildi, QA fix spec hazirlandi
 - 3 critical (PlayfairDisplay ihlali x2, hardcoded hex), 4 medium, 2 minor
 - Yeni token gerekli: `Colors.pink: '#EC4899'`
 
 ## Animation Standards
-- Swipe card follow: 1:1 with finger, rotation = distance × 0.08 (max ±12°)
+- Swipe card follow: 1:1 with finger, rotation = distance x 0.08 (max +/-12deg)
 - Swipe threshold: 120px horizontal, 100px vertical
 - Card transition: 0.3s spring
 - Tab morph: 200ms ease
 - Haptic: light on swipe start, medium on threshold cross, heavy on action complete
 - Skeleton shimmer: 1.5s infinite pulse
-- Milestone confetti: particle rain + Flick celebration state
+- Milestone confetti: particle rain + FilmSeridi animation

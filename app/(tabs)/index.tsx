@@ -400,7 +400,7 @@ export default function HomeScreen() {
           >
             {archetype ? (
               <View style={styles.archetypeInner}>
-                <Text style={styles.archetypeEmoji}>{archetype.icon}</Text>
+                <Image source={archetype.image} style={styles.archetypeEmoji} contentFit="contain" />
                 <View style={styles.archetypeTextBlock}>
                   <Text
                     style={[styles.archetypeName, { color: archetype.colorPrimary }]}
@@ -468,7 +468,6 @@ const styles = StyleSheet.create({
   logo: {
     width: 40,
     height: 40,
-    borderRadius: 10,
     opacity: 0.95,
   },
   logoText: {
@@ -657,8 +656,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   archetypeEmoji: {
-    fontSize: 28,
-    lineHeight: 34,
+    width: 34,
+    height: 34,
   },
   archetypeTextBlock: {
     flex: 1,

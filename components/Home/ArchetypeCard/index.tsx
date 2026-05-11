@@ -9,7 +9,7 @@
  */
 
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -86,7 +86,7 @@ export default React.memo(function ArchetypeCard({
                 },
               ]}
             >
-              <Text style={styles.iconEmoji}>{archetype.icon}</Text>
+              <Image source={archetype.image} style={styles.iconEmoji} resizeMode="contain" />
             </View>
             <View style={styles.archetypeInfo}>
               <Text

@@ -8,10 +8,11 @@
  */
 
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getArchetype } from '@/constants/archetypes';
+import { AvatarIcons } from '@/constants/icons';
 
 import { createStyles } from './styles';
 
@@ -45,9 +46,11 @@ export default function PersonaBadge({ archetypeId, onPress }: PersonaBadgeProps
 
   const content = (
     <View style={styles.badge}>
-      <Text style={styles.icon}>
-        {archetype ? archetype.icon : '✨'}
-      </Text>
+      <Image
+        source={archetype ? archetype.image : AvatarIcons.clapperboard}
+        style={styles.icon}
+        resizeMode="contain"
+      />
       <Text style={styles.label} numberOfLines={1}>
         {archetype
           ? t(archetype.nameKey)

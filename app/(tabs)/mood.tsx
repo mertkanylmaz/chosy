@@ -15,6 +15,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -46,6 +47,7 @@ import MoodProfileResult from '@/components/MoodProfileResult';
 import QuotaExhausted from '@/components/QuotaExhausted';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import { Colors } from '@/constants/Colors';
+import { MoodIcons } from '@/constants/icons';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useScalePress } from '@/hooks/useScalePress';
 import { hapticMedium, hapticSelection } from '@/utils/haptics';
@@ -94,20 +96,19 @@ const RATING_CHIPS: { id: RatingChipId; labelKey: string }[] = [
 
 interface QuickMoodItem {
   id: string;
-  emoji: string;
   labelKey: string;
   promptKey: string;
 }
 
 const QUICK_MOODS: QuickMoodItem[] = [
-  { id: 'rainy', emoji: '🌧️', labelKey: 'mood.quickRainy', promptKey: 'mood.quickRainyPrompt' },
-  { id: 'date', emoji: '💕', labelKey: 'mood.quickDate', promptKey: 'mood.quickDatePrompt' },
-  { id: 'thrill', emoji: '⚡', labelKey: 'mood.quickThrill', promptKey: 'mood.quickThrillPrompt' },
-  { id: 'laugh', emoji: '😂', labelKey: 'mood.quickLaugh', promptKey: 'mood.quickLaughPrompt' },
-  { id: 'deep', emoji: '🧠', labelKey: 'mood.quickDeep', promptKey: 'mood.quickDeepPrompt' },
-  { id: 'nostalgia', emoji: '✨', labelKey: 'mood.quickNostalgia', promptKey: 'mood.quickNostalgiaPrompt' },
-  { id: 'chill', emoji: '🍿', labelKey: 'mood.quickChill', promptKey: 'mood.quickChillPrompt' },
-  { id: 'cry', emoji: '😢', labelKey: 'mood.quickCry', promptKey: 'mood.quickCryPrompt' },
+  { id: 'rainy',    labelKey: 'mood.quickRainy',    promptKey: 'mood.quickRainyPrompt' },
+  { id: 'date',     labelKey: 'mood.quickDate',     promptKey: 'mood.quickDatePrompt' },
+  { id: 'thrill',   labelKey: 'mood.quickThrill',   promptKey: 'mood.quickThrillPrompt' },
+  { id: 'laugh',    labelKey: 'mood.quickLaugh',    promptKey: 'mood.quickLaughPrompt' },
+  { id: 'deep',     labelKey: 'mood.quickDeep',     promptKey: 'mood.quickDeepPrompt' },
+  { id: 'nostalgia',labelKey: 'mood.quickNostalgia',promptKey: 'mood.quickNostalgiaPrompt' },
+  { id: 'chill',    labelKey: 'mood.quickChill',    promptKey: 'mood.quickChillPrompt' },
+  { id: 'cry',      labelKey: 'mood.quickCry',      promptKey: 'mood.quickCryPrompt' },
 ];
 
 
@@ -469,7 +470,11 @@ export default function MoodScreen() {
                           onPress={() => handleQuickMood(prompt)}
                           activeOpacity={0.7}
                         >
-                          <Text style={styles.quickEmoji}>{item.emoji}</Text>
+                          <Image
+                            source={MoodIcons[item.id]}
+                            style={styles.quickEmoji}
+                            resizeMode="contain"
+                          />
                           <Text
                             style={[styles.quickLabel, isActive && styles.quickLabelActive]}
                             numberOfLines={1}
@@ -818,7 +823,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.accentPrimary + '40',
   },
   quickEmoji: {
-    fontSize: 26,
+    width: 40,
+    height: 40,
   },
   quickLabel: {
     fontSize: 12,

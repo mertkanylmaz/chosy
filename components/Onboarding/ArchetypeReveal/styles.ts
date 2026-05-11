@@ -49,6 +49,12 @@ export const styles = StyleSheet.create({
     elevation: 12,
   },
 
+  /** Custom PNG arketip ikonu — normal durum */
+  emojiImage: {
+    width: 80,
+    height: 80,
+  },
+  /** Metin fallback — Mystery Cinephile (✦ sembolü) */
   emojiText: {
     fontSize: 56,
   },

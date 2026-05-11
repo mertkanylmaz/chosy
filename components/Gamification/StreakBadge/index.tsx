@@ -10,7 +10,7 @@
  * Spec: .claude/specs/GAMIFICATION_UI_SPEC.md — Component 1
  */
 import React, { useEffect, useRef } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -20,6 +20,7 @@ import Animated, {
 
 import { BOUNCE_CONFIG } from '@/constants/animations';
 import { hapticLight } from '@/utils/haptics';
+import { GamificationIcons } from '@/constants/icons';
 import SkeletonLoader from '@/components/SkeletonLoader';
 
 import { styles } from './styles';
@@ -93,9 +94,11 @@ const StreakBadge: React.FC<StreakBadgeProps> = React.memo(({
           animatedStyle,
         ]}
       >
-        <Text style={[styles.emoji, !isActive && styles.emojiDim]}>
-          🔥
-        </Text>
+        <Image
+          source={GamificationIcons.streakActive}
+          style={[styles.emoji, !isActive && styles.emojiDim]}
+          resizeMode="contain"
+        />
         <Text style={[styles.count, isActive ? styles.countActive : styles.countZero]}>
           {currentStreak}
         </Text>

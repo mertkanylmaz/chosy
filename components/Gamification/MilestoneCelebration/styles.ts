@@ -36,22 +36,20 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  // ─── Lumi (normal milestone) ─────────────────────────────────────────────────
-  mascotContainer: {
-    marginBottom: Theme.spacing.lg,
-  },
-
-  // ─── FilmSeridi (curator_5) — 280px bileşeni %65 scale ile sığdır ───────────
+  // ─── FilmSeridi — 280px bileşeni %65 scale ile sığdır ───────────────────────
   // transform scale layout'u etkilemiyor: negatif margin ile boşluğu kapat
-  mascotContainerCurator: {
+  mascotContainer: {
     transform: [{ scale: 0.65 }],
     marginBottom: -50,
   },
 
-  // ─── Milestone Icon ─────────────────────────────────────────────────────────
-  milestoneIcon: {
-    fontSize: 32,
+  // ─── Milestone Özel İkonu ────────────────────────────────────────────────────
+  milestoneImageWrap: {
     marginBottom: Theme.spacing.md,
+  },
+  milestoneImage: {
+    width: 72,
+    height: 72,
   },
 
   // ─── Title ──────────────────────────────────────────────────────────────────

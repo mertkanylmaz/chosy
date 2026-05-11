@@ -24,7 +24,8 @@ export const styles = StyleSheet.create({
     marginBottom: Theme.spacing.lg,
   },
   headerEmoji: {
-    fontSize: 20,
+    width: 24,
+    height: 24,
   },
   headerTitle: {
     ...Theme.typography.h3,

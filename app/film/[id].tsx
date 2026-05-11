@@ -1,25 +1,28 @@
 /**
- * Film Detay ekrani — modern redesign v2.
+ * Film Detay ekrani — redesign v3 (dark glassmorphism).
  *
  * Layout (yukaridan asagiya):
- *   - Hero: YouTube trailer (full-width 16:9) veya backdrop gorseli
- *   - Film baslik (tam genislik, sol hizali)
- *   - Meta inline: "1h 19m  •  2021  •  United States  ⭐ 9.7"
- *   - Genre pill'leri
- *   - Watch Trailer butonu (tam genislik, sadece trailer varsa)
- *   - CTA satiri: [I Watched It] [+ Watchlist] yan yana
- *   - "Why this film?" AI aciklama karti
- *   - Overview / Film konusu
- *   - Cast: yatay scroll portrait karti
- *   - Director & Crew
- *   - Watch On: streaming platform loglari
- *
- * Watchlist ekleme/cikartma: header sag heart ikonu + CTA satiri
+ *   - Blurred poster background (absoluteFill, blurRadius=28)
+ *   - Trailer section: rounded card, YouTube thumbnail/backdrop, kirmizi play butonu,
+ *     TRAILER label gradient, glassmorphic bookmark+share butonlari (sag ust)
+ *   - Action row: WATCH NOW + WATCHED pill butonlari
+ *   - Info card (bottom sheet, karanlik, top-radius 30):
+ *       Meta row (runtime • year • country) + rating pill
+ *       Buyuk uppercase baslik (PlayfairDisplay_900Black)
+ *       Genre chip'leri (yatay scroll)
+ *       "Why this film?" AI karti (varsa)
+ *       WATCH ON section (provider ikonlari + JustWatch atfi)
+ *       SYNOPSIS
+ *       CASTING (yatay FlatList, portrait foto)
+ *       DIRECTOR & CREW (yatay FlatList, foto + rol)
+ *       Remove watchlist linki (varsa)
+ *       TMDB attribution footer
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  FlatList,
   Linking,
   ScrollView,
   StyleSheet,
@@ -28,15 +31,12 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import YoutubePlayer from 'react-native-youtube-iframe';
-
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { hapticMedium } from '@/utils/haptics';
-
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { SvgXml } from 'react-native-svg';
 
 import { Film } from '@/types/film';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -61,15 +61,18 @@ import { localizeGenre } from '@/utils/filmFilters';
 import { Colors } from '@/constants/Colors';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { FilmShareCard, useShareCapture } from '@/components/ShareCards';
+import { hapticMedium } from '@/utils/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-/** YouTube 16:9 hero yuksekligi */
-const HERO_HEIGHT = Math.round(SCREEN_WIDTH * (9 / 16));
+/** Trailer bolumu genisligi (yatay margin hesabi) */
+const TRAILER_WIDTH = SCREEN_WIDTH - 32;
+/** Trailer bolumu yuksekligi — 16:9 oran */
+const TRAILER_HEIGHT = Math.round(TRAILER_WIDTH * (9 / 16));
 
-/** Cast portrait kart boyutlari */
-const CAST_CARD_WIDTH = 88;
-const CAST_CARD_HEIGHT = 118;
+/** Cast/crew kart boyutlari — 4:5 oran */
+const CAST_CARD_WIDTH = 82;
+const CAST_CARD_HEIGHT = 103;
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -92,86 +95,68 @@ interface FilmDbRow {
   cast_json: Array<{ name: string; profile_path?: string | null }> | null;
 }
 
+/** Ekranda gosterilen crew satiri */
+interface CrewDisplayItem {
+  label: string;
+  name: string;
+  avatarUrl?: string;
+}
+
 // ── Yardimcilar ───────────────────────────────────────────────────────────────
 
-/** TMDb path -> tam URL */
+/** TMDb path → tam URL donusturur */
 function toTmdbUrl(path: string | null, size = 'w780'): string {
   if (!path) return '';
   if (path.startsWith('http')) return path;
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
 
-/** Dakika -> "1h 40m" */
-function formatRuntime(minutes: number): string {
+/**
+ * Dakikay "2H22" / "45M" formatina donusturur.
+ * Tasarim: buyuk harf, sifir dolgulu dakika.
+ */
+function formatRuntimeShort(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
-  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  if (h > 0) return `${h}H${m.toString().padStart(2, '0')}`;
+  return `${m}M`;
 }
 
 /**
- * Video listesinden en iyi YouTube trailer anahtarini secer.
- * Oncelik: official trailer > trailer > herhangi YouTube video.
+ * YouTube trailer anahtarini secer.
+ * Oncelik: official trailer > trailer > ilk YouTube video.
  */
 function pickYouTubeKey(
   videos: Array<{ site: string; type: string; official: boolean; key: string }>,
 ): string | null {
-  const ytVideos = videos.filter((v) => v.site === 'YouTube');
+  const yt = videos.filter((v) => v.site === 'YouTube');
   return (
-    ytVideos.find((v) => v.official && v.type === 'Trailer')?.key ??
-    ytVideos.find((v) => v.type === 'Trailer')?.key ??
-    ytVideos[0]?.key ??
+    yt.find((v) => v.official && v.type === 'Trailer')?.key ??
+    yt.find((v) => v.type === 'Trailer')?.key ??
+    yt[0]?.key ??
     null
   );
 }
 
-/**
- * Crew listesinden belirli bir job'i bulur.
- * Birden fazla esleme varsa ilkini dondurur.
- */
-function findCrewByJob(crew: TmdbCredits['crew'], job: string): string | null {
-  return crew.find((c) => c.job === job)?.name ?? null;
-}
+// ── Sub-bilesenler ────────────────────────────────────────────────────────────
 
-// ── Kucuk Sub-Bilesenler ─────────────────────────────────────────────────────
-
-interface CastCardProps {
-  name: string;
-  character?: string;
-  avatarUrl?: string;
-}
-
-/**
- * Portrait-rectangle oyuncu karti.
- * Yuvarlak cerceveli buyuk resim + isim + karakter/rol metni.
- */
-function CastCard({ name, character, avatarUrl }: CastCardProps) {
+/** Section baslik satiri — opsiyonel sag element destekler */
+function SectionHeader({
+  title,
+  right,
+}: {
+  title: string;
+  right?: React.ReactNode;
+}) {
   return (
-    <View style={styles.castCard}>
-      {avatarUrl ? (
-        <Image
-          source={{ uri: avatarUrl }}
-          style={styles.castCardImage}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-        />
-      ) : (
-        <View style={[styles.castCardImage, styles.castCardPlaceholder]}>
-          <Ionicons name="person-outline" size={28} color={Colors.textTertiary} />
-        </View>
-      )}
-      <Text style={styles.castCardName} numberOfLines={2}>
-        {name}
-      </Text>
-      {!!character && (
-        <Text style={styles.castCardCharacter} numberOfLines={2}>
-          {character}
-        </Text>
-      )}
+    <View style={styles.sectionHeaderRow}>
+      <Text style={styles.sectionHeaderText}>{title}</Text>
+      {right}
     </View>
   );
 }
 
-/** Genre etiket chip'i */
+/** Genre etiket pill */
 function GenreChip({ label }: { label: string }) {
   return (
     <View style={styles.genreChip}>
@@ -180,8 +165,81 @@ function GenreChip({ label }: { label: string }) {
   );
 }
 
-/** Streaming provider logo chip'i */
-function ProviderLogo({ provider }: { provider: TmdbProvider }) {
+interface CastCardProps {
+  name: string;
+  character?: string;
+  avatarUrl?: string;
+}
+
+/**
+ * Portrait oyuncu karti.
+ * 4:5 oran foto + isim + karakter (opsiyonel).
+ */
+function CastCard({ name, character, avatarUrl }: CastCardProps) {
+  return (
+    <View style={styles.personCard}>
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={styles.personCardImg}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+      ) : (
+        <View style={[styles.personCardImg, styles.personCardPlaceholder]}>
+          <Ionicons name="person-outline" size={26} color={Colors.textTertiary} />
+        </View>
+      )}
+      <Text style={styles.personCardName} numberOfLines={1}>
+        {name}
+      </Text>
+      {!!character && (
+        <Text style={styles.personCardRole} numberOfLines={1}>
+          {character}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Crew karti — cast karti ile ayni gorsel, rol etiketi altinda.
+ */
+function CrewCard({
+  name,
+  role,
+  avatarUrl,
+}: {
+  name: string;
+  role: string;
+  avatarUrl?: string;
+}) {
+  return (
+    <View style={styles.personCard}>
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={styles.personCardImg}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+      ) : (
+        <View style={[styles.personCardImg, styles.personCardPlaceholder]}>
+          <Ionicons name="person-outline" size={26} color={Colors.textTertiary} />
+        </View>
+      )}
+      <Text style={styles.personCardName} numberOfLines={1}>
+        {name}
+      </Text>
+      <Text style={styles.personCardRole} numberOfLines={1}>
+        {role}
+      </Text>
+    </View>
+  );
+}
+
+/** Streaming platform ikon karti */
+function ProviderIcon({ provider }: { provider: TmdbProvider }) {
   const uri = toTmdbUrl(provider.logo_path, 'w92');
   if (!uri) return null;
   return (
@@ -199,10 +257,29 @@ function ProviderLogo({ provider }: { provider: TmdbProvider }) {
   );
 }
 
+/**
+ * Resmi TMDB logo SVG'si — style class'lari inline fill'e donusturulmus,
+ * react-native-svg SvgXml ile render edilir.
+ * Kaynak: themoviedb.org/about/logos-attribution
+ */
+const TMDB_LOGO_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 273.42 35.52"><defs><linearGradient id="tmdb-grad" y1="17.76" x2="273.42" y2="17.76" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#90cea1"/><stop offset="0.56" stop-color="#3cbec9"/><stop offset="1" stop-color="#00b3e5"/></linearGradient></defs><g><g><path fill="url(#tmdb-grad)" d="M191.85,35.37h63.9A17.67,17.67,0,0,0,273.42,17.7h0A17.67,17.67,0,0,0,255.75,0h-63.9A17.67,17.67,0,0,0,174.18,17.7h0A17.67,17.67,0,0,0,191.85,35.37ZM10.1,35.42h7.8V6.92H28V0H0v6.9H10.1Zm28.1,0H46V8.25h.1L55.05,35.4h6L70.3,8.25h.1V35.4h7.8V0H66.45l-8.2,23.1h-.1L50,0H38.2ZM89.14.12h11.7a33.56,33.56,0,0,1,8.08,1,18.52,18.52,0,0,1,6.67,3.08,15.09,15.09,0,0,1,4.53,5.52,18.5,18.5,0,0,1,1.67,8.25,16.91,16.91,0,0,1-1.62,7.58,16.3,16.3,0,0,1-4.38,5.5,19.24,19.24,0,0,1-6.35,3.37,24.53,24.53,0,0,1-7.55,1.15H89.14Zm7.8,28.2h4a21.66,21.66,0,0,0,5-.55A10.58,10.58,0,0,0,110,26a8.73,8.73,0,0,0,2.68-3.35,11.9,11.9,0,0,0,1-5.08,9.87,9.87,0,0,0-1-4.52,9.17,9.17,0,0,0-2.63-3.18A11.61,11.61,0,0,0,106.22,8a17.06,17.06,0,0,0-4.68-.63h-4.6ZM133.09.12h13.2a32.87,32.87,0,0,1,4.63.33,12.66,12.66,0,0,1,4.17,1.3,7.94,7.94,0,0,1,3,2.72,8.34,8.34,0,0,1,1.15,4.65,7.48,7.48,0,0,1-1.67,5,9.13,9.13,0,0,1-4.43,2.82V17a10.28,10.28,0,0,1,3.18,1,8.51,8.51,0,0,1,2.45,1.85,7.79,7.79,0,0,1,1.57,2.62,9.16,9.16,0,0,1,.55,3.2,8.52,8.52,0,0,1-1.2,4.68,9.32,9.32,0,0,1-3.1,3A13.38,13.38,0,0,1,152.32,35a22.5,22.5,0,0,1-4.73.5h-14.5Zm7.8,14.15h5.65a7.65,7.65,0,0,0,1.78-.2,4.78,4.78,0,0,0,1.57-.65,3.43,3.43,0,0,0,1.13-1.2,3.63,3.63,0,0,0,.42-1.8A3.3,3.3,0,0,0,151,8.6a3.42,3.42,0,0,0-1.23-1.13A6.07,6.07,0,0,0,148,6.9a9.9,9.9,0,0,0-1.85-.18h-5.3Zm0,14.65h7a8.27,8.27,0,0,0,1.83-.2,4.67,4.67,0,0,0,1.67-.7,3.93,3.93,0,0,0,1.23-1.3,3.8,3.8,0,0,0,.47-1.95,3.16,3.16,0,0,0-.62-2,4,4,0,0,0-1.58-1.18,8.23,8.23,0,0,0-2-.55,15.12,15.12,0,0,0-2.05-.15h-5.9Z"/></g></g></svg>`;
+
+/** TMDB attribution footer — resmi SVG logo ile */
+function TmdbFooter({ text }: { text: string }) {
+  return (
+    <View style={styles.tmdbFooter}>
+      <Text style={styles.tmdbAttributionText}>{text}</Text>
+      <View style={styles.tmdbLogoWrap}>
+        <SvgXml xml={TMDB_LOGO_SVG} width={90} height={12} />
+      </View>
+    </View>
+  );
+}
+
 // ── Ana Ekran ─────────────────────────────────────────────────────────────────
 
 /**
- * Film Detay ekrani.
+ * Film Detay ekrani v3.
  * route param: id → Supabase films.id (UUID)
  */
 export default function FilmDetailScreen() {
@@ -212,33 +289,38 @@ export default function FilmDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  // ── Temel film verisi ───────────────────────────────────────────────────────
+  // ── Temel film verisi ────────────────────────────────────────────────────────
   const [film, setFilm] = useState<Film | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
-  // ── TMDB zengin veri ────────────────────────────────────────────────────────
+  // ── TMDB zengin veri ─────────────────────────────────────────────────────────
   const [youtubeKey, setYoutubeKey] = useState<string | null>(null);
   const [tmdbCredits, setTmdbCredits] = useState<TmdbCredits | null>(null);
   const [watchProviders, setWatchProviders] = useState<TmdbWatchProviders | null>(null);
   const [country, setCountry] = useState<string | null>(null);
 
-  // ── Watchlist & izleme durumu ───────────────────────────────────────────────
+  // ── Watchlist & izleme ───────────────────────────────────────────────────────
   const [watchlistAdded, setWatchlistAdded] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
 
-  // ── AI aciklama ─────────────────────────────────────────────────────────────
+  // ── AI aciklama ──────────────────────────────────────────────────────────────
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
 
-  // ── YouTube oynatma durumu ────────────────────────────────────────────────
-  const [isPlaying, setIsPlaying] = useState(false);
+  // ── YouTube thumbnail fallback ───────────────────────────────────────────────
+  /**
+   * YouTube thumbnail kalite fallback seviyesi.
+   * 0 = maxresdefault (1280×720) → 1 = hqdefault (480×360) → 2 = backdrop/poster
+   * Eski filmler icin maxresdefault 404 donebilir; onError ile bir sonraki seviyeye dusuler.
+   */
+  const [thumbnailFallbackLevel, setThumbnailFallbackLevel] = useState(0);
 
-  // ── Paylasim ────────────────────────────────────────────────────────────────
+  // ── Paylasim ─────────────────────────────────────────────────────────────────
   const { cardRef: shareCardRef, share: shareFilmCard } = useShareCapture();
 
-  // ── Film verisi yukle ───────────────────────────────────────────────────────
+  // ── Film verisi yukle ────────────────────────────────────────────────────────
 
   const loadFilm = useCallback(async () => {
     if (!id || id === 'undefined' || !UUID_REGEX.test(id)) {
@@ -248,6 +330,7 @@ export default function FilmDetailScreen() {
 
     setLoading(true);
     setLoadError(false);
+    setThumbnailFallbackLevel(0);
 
     try {
       const { data, error } = await supabase
@@ -267,19 +350,19 @@ export default function FilmDetailScreen() {
       if (data) {
         const row = data as FilmDbRow;
 
-        // DB fallback degerler
         let enOverview = row.overview ?? undefined;
         let enTitle = row.title;
         let enPosterUrl = toTmdbUrl(row.poster_url);
 
-        // DB cast — TMDB credits gelmezse kullanilir
         const dbCast = (row.cast_json ?? []).map((a) => ({
           name: a.name,
-          avatarUrl: a.profile_path ? toTmdbUrl(a.profile_path, 'w185') : undefined,
+          // profile_path "/xyz.jpg" formatinda; temel URL dogrudan ekleniyor
+          avatarUrl: a.profile_path
+            ? `https://image.tmdb.org/t/p/w185${a.profile_path}`
+            : undefined,
         }));
 
         if (row.tmdb_id) {
-          // Tek TMDB istegi — append_to_response=videos,credits ile
           const [tmdbDetails, providers] = await Promise.all([
             fetchMovieDetails(row.tmdb_id),
             fetchMovieWatchProviders(row.tmdb_id),
@@ -291,11 +374,7 @@ export default function FilmDetailScreen() {
             if (tmdbDetails.poster_path) enPosterUrl = toTmdbUrl(tmdbDetails.poster_path);
             const firstCountry = tmdbDetails.production_countries?.[0];
             if (firstCountry) setCountry(firstCountry.name);
-
-            // Credits — append_to_response ile gelen veri
             if (tmdbDetails.credits) setTmdbCredits(tmdbDetails.credits);
-
-            // Videos — append_to_response ile gelen veri
             if (tmdbDetails.videos?.results) {
               const key = pickYouTubeKey(tmdbDetails.videos.results);
               if (key) setYoutubeKey(key);
@@ -333,7 +412,7 @@ export default function FilmDetailScreen() {
     loadFilm();
   }, [loadFilm]);
 
-  /** Izlendi durumu */
+  /** Izlendi kontrolu */
   useEffect(() => {
     if (!id || !UUID_REGEX.test(id)) return;
     getWatchedFilmIds()
@@ -353,8 +432,7 @@ export default function FilmDetailScreen() {
       .catch(() => {});
   }, [id]);
 
-  // ── "Why this film?" aciklama yukle ─────────────────────────────────────────
-
+  /** AI aciklama yukle */
   useEffect(() => {
     if (!film || !currentProfile || explanation != null) return;
 
@@ -380,15 +458,14 @@ export default function FilmDetailScreen() {
     };
   }, [film, currentProfile, explanation]);
 
-  // ── Aksiyonlar ──────────────────────────────────────────────────────────────
+  // ── Aksiyonlar ───────────────────────────────────────────────────────────────
 
-  /** YouTube veya mevcut trailerUrl'i acar */
+  /** YouTube veya trailerUrl'i acar */
   const handleWatchNow = () => {
     const url = youtubeKey
       ? `https://www.youtube.com/watch?v=${youtubeKey}`
       : film?.trailerUrl ?? null;
-    if (!url) return;
-    Linking.openURL(url).catch(() => {});
+    if (url) Linking.openURL(url).catch(() => {});
   };
 
   const handleAddToWatchlist = async () => {
@@ -432,38 +509,61 @@ export default function FilmDetailScreen() {
   }, [film]);
 
   const handleShare = () => {
-    if (!film) return;
-    shareFilmCard();
+    if (film) shareFilmCard();
   };
 
-  // ── Yukleniyor ──────────────────────────────────────────────────────────────
+  // ── Yukleniyor ───────────────────────────────────────────────────────────────
 
   if (loading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
         <View style={styles.root}>
-          <SkeletonLoader width="100%" height={HERO_HEIGHT} borderRadius={0} />
-          <View style={styles.skeletonContent}>
-            <SkeletonLoader width="75%" height={32} borderRadius={8} style={{ marginTop: 20 }} />
-            <SkeletonLoader width="55%" height={14} borderRadius={6} style={{ marginTop: 12 }} />
-            <SkeletonLoader width="100%" height={50} borderRadius={14} style={{ marginTop: 24 }} />
-            <SkeletonLoader width="100%" height={50} borderRadius={14} style={{ marginTop: 10 }} />
+          <View style={{ paddingTop: insets.top + 60, paddingHorizontal: 16 }}>
+            <SkeletonLoader
+              width={TRAILER_WIDTH}
+              height={TRAILER_HEIGHT}
+              borderRadius={20}
+            />
+          </View>
+          <View style={[styles.infoCard, { marginTop: 14 }]}>
+            <SkeletonLoader width="70%" height={14} borderRadius={6} />
+            <SkeletonLoader
+              width="90%"
+              height={38}
+              borderRadius={8}
+              style={{ marginTop: 12 }}
+            />
+            <SkeletonLoader
+              width="100%"
+              height={52}
+              borderRadius={26}
+              style={{ marginTop: 24 }}
+            />
+            <SkeletonLoader
+              width="100%"
+              height={52}
+              borderRadius={26}
+              style={{ marginTop: 10 }}
+            />
           </View>
         </View>
       </>
     );
   }
 
-  // ── Hata durumu ─────────────────────────────────────────────────────────────
+  // ── Hata durumu ──────────────────────────────────────────────────────────────
 
   if (loadError) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.notFoundContainer}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color={Colors.textWhite} />
+        <View style={styles.errorContainer}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { position: 'absolute', top: insets.top + 12, left: 16 }]}
+          >
+            <Ionicons name="chevron-down" size={22} color={Colors.textWhite} />
           </TouchableOpacity>
           <Ionicons
             name="cloud-offline-outline"
@@ -471,10 +571,10 @@ export default function FilmDetailScreen() {
             color={Colors.textGrey}
             style={{ marginBottom: 16 }}
           />
-          <Text style={styles.notFoundTitle}>{t('errors.generic')}</Text>
-          <Text style={styles.notFoundText}>{t('filmDetail.loadError')}</Text>
-          <TouchableOpacity onPress={loadFilm} style={styles.retryButton} activeOpacity={0.8}>
-            <Text style={styles.retryButtonText}>{t('errors.retry')}</Text>
+          <Text style={styles.errorTitle}>{t('errors.generic')}</Text>
+          <Text style={styles.errorText}>{t('filmDetail.loadError')}</Text>
+          <TouchableOpacity onPress={loadFilm} style={styles.retryBtn} activeOpacity={0.8}>
+            <Text style={styles.retryBtnText}>{t('errors.retry')}</Text>
           </TouchableOpacity>
         </View>
       </>
@@ -485,68 +585,105 @@ export default function FilmDetailScreen() {
     return (
       <>
         <Stack.Screen options={{ headerShown: false }} />
-        <View style={styles.notFoundContainer}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={20} color={Colors.textWhite} />
+        <View style={styles.errorContainer}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={[styles.backBtn, { position: 'absolute', top: insets.top + 12, left: 16 }]}
+          >
+            <Ionicons name="chevron-down" size={22} color={Colors.textWhite} />
           </TouchableOpacity>
-          <Text style={styles.notFoundTitle}>{t('filmDetail.filmNotFoundTitle')}</Text>
-          <Text style={styles.notFoundText}>{t('filmDetail.filmNotFoundText')}</Text>
+          <Text style={styles.errorTitle}>{t('filmDetail.filmNotFoundTitle')}</Text>
+          <Text style={styles.errorText}>{t('filmDetail.filmNotFoundText')}</Text>
         </View>
       </>
     );
   }
 
-  // ── Hesaplamalar ─────────────────────────────────────────────────────────────
+  // ── Hesaplamalar ──────────────────────────────────────────────────────────────
 
-  const backdropUri = film.backdropUrl || film.posterUrl;
   const hasTrailer = !!(youtubeKey || film.trailerUrl);
 
   /**
-   * Inline meta string parcalari.
-   * Bos parcalar filtre edilir, aralarinda bullet separator konur.
+   * Trailer bolumu icin gorsel URI — fallback zinciri:
+   *   0: YouTube maxresdefault.jpg (1280×720, bazi eski filmler 404 donebilir)
+   *   1: YouTube hqdefault.jpg     (480×360, her zaman mevcut)
+   *   2: backdrop veya poster      (TMDB CDN)
    */
-  const metaParts: string[] = [
-    film.runtime != null ? formatRuntime(film.runtime) : '',
-    film.year > 0 ? String(film.year) : '',
-    country ?? '',
-  ].filter(Boolean);
+  const thumbnailUri: string | null = (() => {
+    if (!youtubeKey) return film.backdropUrl || film.posterUrl || null;
+    if (thumbnailFallbackLevel === 0)
+      return `https://img.youtube.com/vi/${youtubeKey}/maxresdefault.jpg`;
+    if (thumbnailFallbackLevel === 1)
+      return `https://img.youtube.com/vi/${youtubeKey}/hqdefault.jpg`;
+    return film.backdropUrl || film.posterUrl || null;
+  })();
 
+  /** maxresdefault 404 aldiysa bir sonraki fallback seviyesine gec */
+  const handleThumbnailError = () => {
+    if (youtubeKey && thumbnailFallbackLevel < 2) {
+      setThumbnailFallbackLevel((prev) => prev + 1);
+    }
+  };
+
+  /** Meta satirı: "2H22 • 1994 • UNITED STATES" */
+  const metaParts = [
+    film.runtime != null ? formatRuntimeShort(film.runtime) : null,
+    film.year > 0 ? String(film.year) : null,
+    country ? country.toUpperCase() : null,
+  ].filter(Boolean) as string[];
+
+  /** TMDB credits > DB cast_json fallback */
   interface DisplayCastMember {
     name: string;
     character?: string;
     avatarUrl?: string;
   }
 
-  /** TMDB credits > DB cast_json fallback */
+  /**
+   * profile_path daima "/abc.jpg" formatinda gelir.
+   * toTmdbUrl yerine dogrudan URL insa edilerek edge-case'ler onleniyor.
+   */
+  const tmdbImgBase = 'https://image.tmdb.org/t/p/w185';
+
   const displayCast: DisplayCastMember[] =
     tmdbCredits && tmdbCredits.cast.length > 0
       ? tmdbCredits.cast.slice(0, 10).map((c) => ({
           name: c.name,
           character: c.character,
-          avatarUrl: c.profile_path ? toTmdbUrl(c.profile_path, 'w185') : undefined,
+          avatarUrl: c.profile_path ? `${tmdbImgBase}${c.profile_path}` : undefined,
         }))
       : (film.cast ?? []).map((c) => ({ name: c.name, avatarUrl: c.avatarUrl }));
 
-  /** Kritik crew rolleri */
-  const crewRows: Array<{ label: string; name: string }> = [];
+  /** Director / Producer / Composer — foto ile */
+  const crewDisplay: CrewDisplayItem[] = [];
   if (tmdbCredits) {
-    const director =
-      findCrewByJob(tmdbCredits.crew, 'Director') ?? film.director ?? null;
-    const writer =
-      findCrewByJob(tmdbCredits.crew, 'Screenplay') ??
-      findCrewByJob(tmdbCredits.crew, 'Writer') ??
-      null;
-    const dop = findCrewByJob(tmdbCredits.crew, 'Director of Photography');
-    const composer = findCrewByJob(tmdbCredits.crew, 'Original Music Composer');
-    if (director) crewRows.push({ label: t('filmDetail.director'), name: director });
-    if (writer) crewRows.push({ label: 'Screenplay', name: writer });
-    if (dop) crewRows.push({ label: 'Cinematography', name: dop });
-    if (composer) crewRows.push({ label: 'Music', name: composer });
+    const findCrew = (job: string) => tmdbCredits.crew.find((c) => c.job === job);
+    const director = findCrew('Director');
+    const producer = findCrew('Producer') ?? findCrew('Executive Producer');
+    const composer = findCrew('Original Music Composer');
+    if (director)
+      crewDisplay.push({
+        label: t('filmDetail.director'),
+        name: director.name,
+        avatarUrl: director.profile_path ? `${tmdbImgBase}${director.profile_path}` : undefined,
+      });
+    if (producer)
+      crewDisplay.push({
+        label: 'Producer',
+        name: producer.name,
+        avatarUrl: producer.profile_path ? `${tmdbImgBase}${producer.profile_path}` : undefined,
+      });
+    if (composer)
+      crewDisplay.push({
+        label: 'Music',
+        name: composer.name,
+        avatarUrl: composer.profile_path ? `${tmdbImgBase}${composer.profile_path}` : undefined,
+      });
   } else if (film.director) {
-    crewRows.push({ label: t('filmDetail.director'), name: film.director });
+    crewDisplay.push({ label: t('filmDetail.director'), name: film.director });
   }
 
-  /** Flatrate > rent > buy siralamasiyla birlesik provider listesi (tekrarsiz) */
+  /** Flatrate > rent > buy siralamasiyla tekrarsiz provider listesi */
   const allProviders: TmdbProvider[] = [];
   const seenIds = new Set<number>();
   const addProviders = (list?: TmdbProvider[]) => {
@@ -561,299 +698,304 @@ export default function FilmDetailScreen() {
   addProviders(watchProviders?.rent);
   addProviders(watchProviders?.buy);
 
+  // ── Render ────────────────────────────────────────────────────────────────────
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.root}>
+        {/* ── Blurred poster background ── */}
+        {film.posterUrl ? (
+          <Image
+            source={{ uri: film.posterUrl }}
+            style={StyleSheet.absoluteFillObject}
+            blurRadius={28}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+        ) : null}
+        {/* Karanlik overlay — readability */}
+        <View style={[StyleSheet.absoluteFillObject, styles.bgDim]} />
+
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={{ paddingBottom: 40 + insets.bottom }}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
           showsVerticalScrollIndicator={false}
         >
-          {/* ── HERO: YouTube player, thumbnail veya backdrop ── */}
-          <View style={styles.heroContainer}>
-            {youtubeKey ? (
-              <View style={styles.heroPlayer}>
-                <YoutubePlayer
-                  height={HERO_HEIGHT}
-                  width={SCREEN_WIDTH}
-                  videoId={youtubeKey}
-                  play={isPlaying}
-                  onChangeState={(state: string) => {
-                    if (state === 'ended') setIsPlaying(false);
-                  }}
-                  webViewProps={{
-                    injectedJavaScript: 'document.body.style.backgroundColor = "#0A0A0A";',
-                  }}
-                />
-              </View>
-            ) : backdropUri ? (
-              <Image
-                source={{ uri: backdropUri }}
-                style={styles.heroImage}
-                contentFit="cover"
-                blurRadius={12}
-                cachePolicy="memory-disk"
-              />
-            ) : (
-              <View style={[styles.heroImage, styles.heroPlaceholder]} />
-            )}
+          {/* Back button icin bosluk */}
+          <View style={{ height: insets.top + 56 }} />
 
-            {/* Alt gradient — sadece video yokken */}
-            {!youtubeKey && (
-              <>
-                <LinearGradient
-                  colors={['transparent', 'rgba(10,10,10,0.85)', Colors.background]}
-                  style={StyleSheet.absoluteFill}
-                  locations={[0.45, 0.75, 1]}
-                />
-                <LinearGradient
-                  colors={['rgba(234,219,198,0.06)', 'transparent']}
-                  style={StyleSheet.absoluteFill}
-                  locations={[0, 0.5]}
-                />
-              </>
-            )}
-          </View>
-
-          {/* ── Film baslik ── */}
+          {/* ──────────────── TRAILER SECTION ──────────────── */}
           <Animated.View
-            style={styles.titleBlock}
-            entering={FadeInDown.duration(350).delay(100)}
+            style={styles.trailerWrapper}
+            entering={FadeInDown.duration(420)}
           >
-            <Text style={styles.filmTitle} numberOfLines={3}>
-              {film.title}
-            </Text>
-          </Animated.View>
-
-          {/* ── Meta inline: "1h 19m • 2021 • United States  ⭐ 9.7" ── */}
-          <Animated.View
-            style={styles.metaRow}
-            entering={FadeInDown.duration(300).delay(160)}
-          >
-            <Text style={styles.metaText}>
-              {metaParts.join('  •  ')}
-            </Text>
-            {film.voteAverage != null && (
-              <View style={styles.ratingPill}>
-                <Text style={styles.ratingStar}>⭐</Text>
-                <Text style={styles.ratingValue}>
-                  {film.voteAverage.toFixed(1)}
-                </Text>
-              </View>
-            )}
-          </Animated.View>
-
-          {/* ── Genre pill'leri ── */}
-          {film.moodTags.length > 0 && (
-            <Animated.View
-              style={styles.genreRow}
-              entering={FadeInDown.duration(300).delay(200)}
-            >
-              {film.moodTags.map((g) => (
-                <GenreChip key={g} label={localizeGenre(g, language)} />
-              ))}
-            </Animated.View>
-          )}
-
-          {/* ── Watch Trailer — tam genislik, sadece trailer varsa ── */}
-          {hasTrailer && (
-            <Animated.View
-              style={styles.trailerBtnWrapper}
-              entering={FadeInUp.duration(300).delay(240)}
-            >
-              <TouchableOpacity
-                onPress={handleWatchNow}
-                activeOpacity={0.85}
-                style={styles.trailerBtnTouchable}
-              >
-                <LinearGradient
-                  colors={[Colors.accentPrimary, Colors.accentHover]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.trailerBtnGradient}
-                >
-                  <Ionicons name="play-circle" size={22} color={Colors.textOnAccent} />
-                  <Text style={styles.trailerBtnText}>{t('filmDetail.watchNow')}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-
-          {/* ── CTA satiri: [I Watched It]  [+ Watchlist] yan yana ── */}
-          <Animated.View
-            style={styles.ctaRow}
-            entering={FadeInUp.duration(300).delay(280)}
-          >
-            {/* I Watched It — ikincil, solda */}
+            {/*
+             * Trailer thumbnail — daima statik gorsel, basin YouTube'da acar.
+             * Inline YoutubePlayer kaldirildi: native module rebuild gerektiriyor
+             * ve WebView overhead'i ekliyor. Linking.openURL daha guvenilir.
+             */}
             <TouchableOpacity
-              style={[
-                styles.ctaWatched,
-                isWatched && styles.ctaWatchedActive,
-              ]}
+              activeOpacity={hasTrailer ? 0.85 : 1}
+              onPress={hasTrailer ? handleWatchNow : undefined}
+              style={styles.trailerTouchable}
+            >
+              {thumbnailUri ? (
+                <Image
+                  source={{ uri: thumbnailUri }}
+                  style={styles.trailerImage}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  onError={handleThumbnailError}
+                />
+              ) : (
+                <View style={[styles.trailerImage, styles.trailerPlaceholder]} />
+              )}
+
+              {/* Kirmizi YouTube play butonu — her zaman goster (film bilgisi yuklendi) */}
+              <View style={styles.redPlayOverlay}>
+                <View style={[styles.redPlayBtn, !hasTrailer && styles.redPlayBtnDisabled]}>
+                  <Ionicons
+                    name="play"
+                    size={24}
+                    color={Colors.textWhite}
+                    style={{ marginLeft: 3 }}
+                  />
+                </View>
+              </View>
+
+              {/* Alt gradient + TRAILER etiketi */}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.80)']}
+                style={styles.trailerGradient}
+                locations={[0.25, 1]}
+                pointerEvents="none"
+              >
+                <Text style={styles.trailerLabel}>
+                  {t('filmDetail.trailer').toUpperCase()}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Glassmorphic bookmark + share butonlari (sag ust) */}
+            <View style={styles.trailerTopRight}>
+                <TouchableOpacity
+                  style={[styles.glassBtn, watchlistAdded && styles.glassBtnActive]}
+                  onPress={handleAddToWatchlist}
+                  activeOpacity={0.75}
+                >
+                  <Ionicons
+                    name={watchlistAdded ? 'bookmark' : 'bookmark-outline'}
+                    size={17}
+                    color={watchlistAdded ? Colors.accentPrimary : Colors.textWhite}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.glassBtn}
+                  onPress={handleShare}
+                  activeOpacity={0.75}
+                >
+                  <Ionicons name="share-outline" size={17} color={Colors.textWhite} />
+                </TouchableOpacity>
+            </View>
+          </Animated.View>
+
+          {/* ──────────────── ACTION BUTTONS ROW ──────────────── */}
+          <Animated.View
+            style={styles.actionRow}
+            entering={FadeInDown.duration(380).delay(80)}
+          >
+            {/* WATCH NOW */}
+            <TouchableOpacity
+              style={[styles.actionBtn, !hasTrailer && styles.actionBtnDisabled]}
+              onPress={handleWatchNow}
+              activeOpacity={hasTrailer ? 0.8 : 1}
+            >
+              <Ionicons
+                name="play-circle-outline"
+                size={17}
+                color={hasTrailer ? Colors.textWhite : Colors.textTertiary}
+              />
+              <Text
+                style={[
+                  styles.actionBtnText,
+                  !hasTrailer && styles.actionBtnTextDisabled,
+                ]}
+              >
+                {t('filmDetail.watchNow').toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+
+            {/* WATCHED */}
+            <TouchableOpacity
+              style={[styles.actionBtn, isWatched && styles.actionBtnWatched]}
               onPress={handleToggleWatched}
               activeOpacity={0.8}
             >
               <Ionicons
-                name={isWatched ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                size={20}
-                color={isWatched ? Colors.success : Colors.textSecondary}
+                name={isWatched ? 'checkmark-circle' : 'eye-outline'}
+                size={17}
+                color={isWatched ? Colors.success : Colors.textWhite}
               />
               <Text
                 style={[
-                  styles.ctaWatchedText,
-                  isWatched && styles.ctaWatchedTextActive,
+                  styles.actionBtnText,
+                  isWatched && styles.actionBtnTextWatched,
                 ]}
-                numberOfLines={1}
               >
-                {isWatched ? t('watchlist.markedWatched') : t('watchlist.markAsWatched')}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Add to Watchlist — birincil, sagda */}
-            <TouchableOpacity
-              style={[
-                styles.ctaWatchlist,
-                watchlistAdded && styles.ctaWatchlistAdded,
-              ]}
-              onPress={watchlistAdded ? undefined : handleAddToWatchlist}
-              activeOpacity={watchlistAdded ? 1 : 0.85}
-            >
-              <Ionicons
-                name={watchlistAdded ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color={watchlistAdded ? Colors.textOnAccent : Colors.textOnAccent}
-              />
-              <Text style={styles.ctaWatchlistText} numberOfLines={1}>
-                {watchlistAdded
-                  ? t('filmDetail.addedToWatchlist')
-                  : t('filmDetail.addToWatchlist')}
+                {t('filmDetail.watchedBtn').toUpperCase()}
               </Text>
             </TouchableOpacity>
           </Animated.View>
 
-          {/* ── "Why this film?" AI aciklama ── */}
-          {(explanation != null || explanationLoading) && (
-            <Animated.View style={styles.whySection} entering={FadeIn.duration(400)}>
-              <View style={styles.whySectionHeader}>
-                <Ionicons name="sparkles" size={16} color={Colors.accentPrimary} />
-                <Text style={styles.whySectionTitle}>{t('filmDetail.whyThisFilm')}</Text>
-              </View>
-              {explanationLoading ? (
-                <SkeletonLoader width="100%" height={40} borderRadius={8} />
-              ) : (
-                <Text style={styles.whySectionBody}>{explanation}</Text>
+          {/* ──────────────── MAIN INFO CARD (bottom sheet) ──────────────── */}
+          <Animated.View
+            style={styles.infoCard}
+            entering={FadeInDown.duration(400).delay(140)}
+          >
+            {/* Meta row: "2H22 • 1994 • UNITED STATES" + rating */}
+            <View style={styles.metaRow}>
+              <Text style={styles.metaText} numberOfLines={1}>
+                {metaParts.join('  •  ')}
+              </Text>
+              {film.voteAverage != null && (
+                <View style={styles.ratingPill}>
+                  <Text style={styles.ratingStar}>★</Text>
+                  <Text style={styles.ratingValue}>
+                    {film.voteAverage.toFixed(1)}
+                  </Text>
+                </View>
               )}
-            </Animated.View>
-          )}
-
-          {/* ── Overview / Film konusu ── */}
-          {!!film.overview && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('filmDetail.moodExplanation')}</Text>
-              <Text style={styles.sectionBody}>{film.overview}</Text>
             </View>
-          )}
 
-          {/* ── Cast: portrait kart ── */}
-          {displayCast.length > 0 && (
-            <View style={styles.castSection}>
-              <Text style={styles.sectionTitle}>{t('filmDetail.cast')}</Text>
+            {/* Film baslik — buyuk, uppercase */}
+            <Text style={styles.filmTitle}>{film.title.toUpperCase()}</Text>
+
+            {/* Genre chip'leri */}
+            {film.moodTags.length > 0 && (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.castList}
+                contentContainerStyle={styles.genreRow}
               >
-                {displayCast.map((actor) => (
-                  <CastCard
-                    key={actor.name}
-                    name={actor.name}
-                    character={actor.character}
-                    avatarUrl={actor.avatarUrl}
-                  />
+                {film.moodTags.map((g) => (
+                  <GenreChip key={g} label={localizeGenre(g, language)} />
                 ))}
               </ScrollView>
-            </View>
-          )}
+            )}
 
-          {/* ── Director & Crew ── */}
-          {crewRows.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('filmDetail.crew')}</Text>
-              <View style={styles.crewList}>
-                {crewRows.map((row) => (
-                  <View key={row.label} style={styles.crewRow}>
-                    <Text style={styles.crewLabel}>{row.label}</Text>
-                    <Text style={styles.crewName}>{row.name}</Text>
-                  </View>
-                ))}
+            {/* ── "Why this film?" AI aciklama ── */}
+            {(explanation != null || explanationLoading) && (
+              <Animated.View style={styles.whyCard} entering={FadeIn.duration(400)}>
+                <View style={styles.whyHeader}>
+                  <Ionicons name="sparkles" size={15} color={Colors.accentPrimary} />
+                  <Text style={styles.whyTitle}>{t('filmDetail.whyThisFilm')}</Text>
+                </View>
+                {explanationLoading ? (
+                  <SkeletonLoader width="100%" height={36} borderRadius={8} />
+                ) : (
+                  <Text style={styles.whyBody}>{explanation}</Text>
+                )}
+              </Animated.View>
+            )}
+
+            {/* ── WATCH ON ── */}
+            {allProviders.length > 0 && (
+              <View style={styles.section}>
+                <SectionHeader
+                  title={t('filmDetail.watchOn').toUpperCase()}
+                  right={<Text style={styles.justWatchText}>JustWatch</Text>}
+                />
+                <FlatList<TmdbProvider>
+                  data={allProviders}
+                  keyExtractor={(p) => String(p.provider_id)}
+                  renderItem={({ item }) => <ProviderIcon provider={item} />}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalListContent}
+                />
               </View>
-            </View>
-          )}
+            )}
 
-          {/* ── Watch On (streaming platformlar) ── */}
-          {allProviders.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('filmDetail.watchOn')}</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.providerList}
+            {/* ── SYNOPSIS ── */}
+            {!!film.overview && (
+              <View style={styles.section}>
+                <SectionHeader title={t('filmDetail.synopsis').toUpperCase()} />
+                <Text style={styles.synopsisText}>{film.overview}</Text>
+              </View>
+            )}
+
+            {/* ── CASTING ── */}
+            {displayCast.length > 0 && (
+              <View style={styles.section}>
+                <SectionHeader title={t('filmDetail.cast').toUpperCase()} />
+                <FlatList<DisplayCastMember>
+                  data={displayCast}
+                  keyExtractor={(c, i) => `cast-${c.name}-${i}`}
+                  renderItem={({ item }) => (
+                    <CastCard
+                      name={item.name}
+                      character={item.character}
+                      avatarUrl={item.avatarUrl}
+                    />
+                  )}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalListContent}
+                />
+              </View>
+            )}
+
+            {/* ── DIRECTOR & CREW ── */}
+            {crewDisplay.length > 0 && (
+              <View style={styles.section}>
+                <SectionHeader title={t('filmDetail.directorAndCrew').toUpperCase()} />
+                <FlatList<CrewDisplayItem>
+                  data={crewDisplay}
+                  keyExtractor={(c, i) => `crew-${c.name}-${i}`}
+                  renderItem={({ item }) => (
+                    <CrewCard
+                      name={item.name}
+                      role={item.label}
+                      avatarUrl={item.avatarUrl}
+                    />
+                  )}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalListContent}
+                />
+              </View>
+            )}
+
+            {/* ── Listeden cikar ── */}
+            {isInWatchlist && (
+              <TouchableOpacity
+                style={styles.removeBtn}
+                onPress={handleRemoveFromWatchlist}
+                activeOpacity={0.8}
               >
-                {allProviders.map((p) => (
-                  <ProviderLogo key={p.provider_id} provider={p} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
+                <Ionicons name="trash-outline" size={16} color={Colors.error} />
+                <Text style={styles.removeBtnText}>
+                  {t('filmDetail.removeFromWatchlist')}
+                </Text>
+              </TouchableOpacity>
+            )}
 
-          {/* ── Listeden cikar linki — en altta ── */}
-          {isInWatchlist && (
-            <TouchableOpacity
-              style={styles.removeBtn}
-              onPress={handleRemoveFromWatchlist}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="trash-outline" size={16} color={Colors.error} />
-              <Text style={styles.removeBtnText}>{t('filmDetail.removeFromWatchlist')}</Text>
-            </TouchableOpacity>
-          )}
+            {/* ── TMDB Footer ── */}
+            <TmdbFooter text={t('filmDetail.tmdbAttribution')} />
+          </Animated.View>
         </ScrollView>
 
-        {/* ── Header butonlari (position: absolute) ── */}
-        <View style={[styles.header, { top: insets.top + 12 }]}>
+        {/* ── Geri butonu (absolute, her zaman gorunur) ── */}
+        <View style={[styles.headerBar, { top: insets.top + 12 }]}>
           <TouchableOpacity
             onPress={() => router.back()}
-            style={styles.headerBtn}
+            style={styles.backBtn}
             activeOpacity={0.75}
           >
             <Ionicons name="chevron-down" size={22} color={Colors.textWhite} />
           </TouchableOpacity>
-
-          <View style={styles.headerRight}>
-            {/* Watchlist heart */}
-            <TouchableOpacity
-              onPress={handleAddToWatchlist}
-              style={[styles.headerBtn, watchlistAdded && styles.headerBtnActive]}
-              activeOpacity={0.75}
-            >
-              <Ionicons
-                name={watchlistAdded ? 'heart' : 'heart-outline'}
-                size={20}
-                color={watchlistAdded ? Colors.accentPrimary : Colors.textWhite}
-              />
-            </TouchableOpacity>
-
-            {/* Paylasim */}
-            <TouchableOpacity
-              onPress={handleShare}
-              style={styles.headerBtn}
-              activeOpacity={0.75}
-            >
-              <Ionicons name="share-outline" size={20} color={Colors.textWhite} />
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 
@@ -878,126 +1020,239 @@ export default function FilmDetailScreen() {
 // ── Stiller ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
+  // ── Root ─────────────────────────────────────────────────────────────────────
   root: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-
-  // ── Loading skeleton ─────────────────────────────────────────────────────────
-  skeletonContent: {
-    paddingHorizontal: 20,
+  /** Blurred arkaplan uzerine karanlik saydam katman */
+  bgDim: {
+    backgroundColor: 'rgba(0,0,0,0.72)',
+  },
+  scroll: {
+    flex: 1,
   },
 
-  // ── Not found / error ────────────────────────────────────────────────────────
-  notFoundContainer: {
+  // ── Error / not found ─────────────────────────────────────────────────────────
+  errorContainer: {
     flex: 1,
     backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 24,
   },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.white10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  notFoundTitle: {
+  errorTitle: {
     fontSize: 20,
     fontWeight: '700',
     color: Colors.textWhite,
     marginBottom: 8,
     textAlign: 'center',
   },
-  notFoundText: {
+  errorText: {
     color: Colors.textSecondary,
     fontSize: 15,
     textAlign: 'center',
   },
-  retryButton: {
+  retryBtn: {
     marginTop: 20,
     backgroundColor: Colors.gold,
     borderRadius: 12,
     paddingHorizontal: 28,
     paddingVertical: 12,
   },
-  retryButtonText: {
+  retryBtnText: {
     color: Colors.background,
     fontSize: 15,
     fontWeight: '700',
   },
 
-  // ── ScrollView ───────────────────────────────────────────────────────────────
-  scroll: {
+  // ── Header (back button) ─────────────────────────────────────────────────────
+  headerBar: {
+    position: 'absolute',
+    left: 16,
+  },
+  backBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Trailer section ───────────────────────────────────────────────────────────
+  /** Dis cerceve — yuvarlatilmis, overflow hidden */
+  trailerWrapper: {
+    marginHorizontal: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+    height: TRAILER_HEIGHT,
+    backgroundColor: Colors.bgCard,
+  },
+  trailerTouchable: {
     flex: 1,
   },
-
-  // ── HERO ─────────────────────────────────────────────────────────────────────
-  heroContainer: {
-    width: SCREEN_WIDTH,
-    height: HERO_HEIGHT,
-    overflow: 'hidden',
-    backgroundColor: Colors.bgCard,
+  trailerImage: {
+    width: '100%',
+    height: TRAILER_HEIGHT,
   },
-  heroPlayer: {
-    width: SCREEN_WIDTH,
-    height: HERO_HEIGHT,
+  trailerPlaceholder: {
+    backgroundColor: Colors.bgElevated,
   },
-  heroImage: {
-    width: SCREEN_WIDTH,
-    height: HERO_HEIGHT,
+  /** Merkez kirmizi play butonu overlay'i */
+  redPlayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  heroPlaceholder: {
-    backgroundColor: Colors.bgCard,
+  /** Klasik YouTube kirmizi daire */
+  redPlayBtn: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#FF0000',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#FF0000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.55,
+    shadowRadius: 14,
+    elevation: 10,
   },
-
-  // ── Title block ──────────────────────────────────────────────────────────────
-  titleBlock: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 4,
+  /** Trailer bulunamadiysa soluk gri play butonu */
+  redPlayBtnDisabled: {
+    backgroundColor: 'rgba(100,100,100,0.6)',
+    shadowOpacity: 0,
+    elevation: 0,
   },
-  filmTitle: {
-    fontSize: 26,
-    fontFamily: 'PlayfairDisplay_700Bold',
+  /** Alt gradient — TRAILER etiketini barindiran alan */
+  trailerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 88,
+    justifyContent: 'flex-end',
+    paddingBottom: 14,
+    paddingHorizontal: 16,
+  },
+  /** "TRAILER" buyuk yazisi */
+  trailerLabel: {
+    fontSize: 24,
+    fontWeight: '900',
     color: Colors.textWhite,
-    lineHeight: 34,
-    letterSpacing: -0.3,
+    letterSpacing: 8,
+    opacity: 0.92,
+  },
+  /** Sag ust glassmorphic buton grubu */
+  trailerTopRight: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  /** Cam efekti dairesel buton */
+  glassBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(0,0,0,0.50)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /** Aktif (bookmarked) cam buton */
+  glassBtnActive: {
+    backgroundColor: Colors.accentDim,
+    borderColor: Colors.accentPrimary,
   },
 
-  // ── Meta inline ──────────────────────────────────────────────────────────────
+  // ── Action buttons row ────────────────────────────────────────────────────────
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginHorizontal: 16,
+    marginTop: 14,
+  },
+  /** Pill sekilli aksiyon butonu */
+  actionBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(28,28,32,0.88)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  actionBtnDisabled: {
+    opacity: 0.42,
+  },
+  /** Izlendi aktif durumu */
+  actionBtnWatched: {
+    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderColor: Colors.success,
+  },
+  actionBtnText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: Colors.textWhite,
+    letterSpacing: 1.2,
+  },
+  actionBtnTextDisabled: {
+    color: Colors.textTertiary,
+  },
+  actionBtnTextWatched: {
+    color: Colors.success,
+  },
+
+  // ── Info card (bottom sheet) ──────────────────────────────────────────────────
+  infoCard: {
+    backgroundColor: Colors.bgCard,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: 16,
+    paddingTop: 28,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    minHeight: 400,
+  },
+
+  // ── Meta row ─────────────────────────────────────────────────────────────────
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingHorizontal: 20,
-    paddingTop: 8,
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 8,
   },
   metaText: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '500',
-    letterSpacing: 0.1,
+    flex: 1,
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.textGrey,
+    letterSpacing: 1.2,
   },
   ratingPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 3,
     backgroundColor: Colors.goldDim,
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.25)',
+    borderColor: 'rgba(212,168,67,0.3)',
   },
   ratingStar: {
     fontSize: 11,
+    color: Colors.gold,
   },
   ratingValue: {
     fontSize: 13,
@@ -1005,19 +1260,27 @@ const styles = StyleSheet.create({
     color: Colors.gold,
   },
 
-  // ── Genre pill'leri ───────────────────────────────────────────────────────────
+  // ── Film baslik ───────────────────────────────────────────────────────────────
+  filmTitle: {
+    fontSize: 28,
+    fontFamily: 'PlayfairDisplay_900Black',
+    color: Colors.textWhite,
+    letterSpacing: -0.3,
+    lineHeight: 36,
+    marginBottom: 16,
+  },
+
+  // ── Genre chips ───────────────────────────────────────────────────────────────
   genreRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingTop: 12,
+    gap: 8,
+    paddingRight: 4,
+    marginBottom: 4,
   },
   genreChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     backgroundColor: Colors.accentDim,
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
     borderWidth: 1,
     borderColor: 'rgba(234,219,198,0.2)',
   },
@@ -1028,121 +1291,27 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  // ── Watch Trailer butonu ──────────────────────────────────────────────────────
-  trailerBtnWrapper: {
-    marginHorizontal: 20,
+  // ── "Why this film?" AI karti ─────────────────────────────────────────────────
+  whyCard: {
     marginTop: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  trailerBtnTouchable: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  trailerBtnGradient: {
-    height: 54,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-  },
-  trailerBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
-    letterSpacing: 0.4,
-  },
-
-  // ── CTA satiri: [I Watched It]  [+ Watchlist] ────────────────────────────────
-  ctaRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginHorizontal: 20,
-    marginTop: 10,
-  },
-
-  /** I Watched It — ikincil, translucent */
-  ctaWatched: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: Colors.white10,
-    backgroundColor: Colors.white05,
-    gap: 7,
-  },
-  ctaWatchedActive: {
-    borderColor: Colors.success,
-    backgroundColor: 'rgba(34,197,94,0.08)',
-  },
-  ctaWatchedText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 0.2,
-  },
-  ctaWatchedTextActive: {
-    color: Colors.success,
-  },
-
-  /** Add to Watchlist — birincil, dolu */
-  ctaWatchlist: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: Colors.accentPrimary,
-    gap: 7,
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  ctaWatchlistAdded: {
-    backgroundColor: Colors.bgElevated,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  ctaWatchlistText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
-    letterSpacing: 0.2,
-  },
-
-  // ── "Why this film?" ──────────────────────────────────────────────────────────
-  whySection: {
-    marginTop: 24,
-    marginHorizontal: 20,
     padding: 16,
     backgroundColor: Colors.accentDim,
     borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(234,219,198,0.2)',
   },
-  whySectionHeader: {
+  whyHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     marginBottom: 10,
   },
-  whySectionTitle: {
-    fontSize: 15,
+  whyTitle: {
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.accentPrimary,
   },
-  whySectionBody: {
+  whyBody: {
     fontSize: 14,
     color: Colors.textSecondary,
     lineHeight: 22,
@@ -1151,105 +1320,86 @@ const styles = StyleSheet.create({
   // ── Section genel ─────────────────────────────────────────────────────────────
   section: {
     marginTop: 28,
-    paddingHorizontal: 20,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  sectionHeaderText: {
+    fontSize: 12,
+    fontWeight: '800',
     color: Colors.textWhite,
-    marginBottom: 14,
+    letterSpacing: 1.8,
   },
-  sectionBody: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 22,
+  justWatchText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+    fontWeight: '500',
   },
 
-  // ── Cast: portrait karti ──────────────────────────────────────────────────────
-  castSection: {
-    marginTop: 28,
-    paddingHorizontal: 20,
+  // ── Yatay FlatList ────────────────────────────────────────────────────────────
+  horizontalListContent: {
+    gap: 12,
+    paddingRight: 4,
   },
-  castList: {
-    gap: 10,
-    paddingRight: 20,
+
+  // ── Synopsis metni ────────────────────────────────────────────────────────────
+  synopsisText: {
+    fontSize: 15,
+    color: '#D3D3D3',
+    lineHeight: 26,
   },
-  castCard: {
+
+  // ── Cast / Crew kart (paylasilanlar) ──────────────────────────────────────────
+  personCard: {
     width: CAST_CARD_WIDTH,
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
-  castCardImage: {
+  personCardImg: {
     width: CAST_CARD_WIDTH,
     height: CAST_CARD_HEIGHT,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: Colors.white10,
-    backgroundColor: Colors.bgCard,
+    backgroundColor: Colors.bgElevated,
   },
-  castCardPlaceholder: {
+  personCardPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  castCardName: {
+  personCardName: {
     fontSize: 11,
     fontWeight: '700',
     color: Colors.textPrimary,
     textAlign: 'center',
     lineHeight: 15,
+    width: CAST_CARD_WIDTH,
   },
-  castCardCharacter: {
+  personCardRole: {
     fontSize: 10,
     color: Colors.textTertiary,
     textAlign: 'center',
     lineHeight: 14,
     fontStyle: 'italic',
+    width: CAST_CARD_WIDTH,
   },
 
-  // ── Director & Crew ───────────────────────────────────────────────────────────
-  crewList: {
-    gap: 10,
-  },
-  crewRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: Colors.white05,
-    borderRadius: 10,
-  },
-  crewLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textTertiary,
-    width: 90,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  crewName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-  },
-
-  // ── Watch On ──────────────────────────────────────────────────────────────────
-  providerList: {
-    gap: 14,
-    paddingRight: 20,
-  },
+  // ── Provider ikonlari ─────────────────────────────────────────────────────────
   providerItem: {
     alignItems: 'center',
     gap: 6,
-    width: 64,
+    width: 70,
   },
   providerLogo: {
-    width: 52,
-    height: 52,
-    borderRadius: 12,
+    width: 60,
+    height: 60,
+    borderRadius: 15,
     borderWidth: 1,
     borderColor: Colors.white10,
+    backgroundColor: Colors.bgElevated,
   },
   providerName: {
     fontSize: 10,
@@ -1263,8 +1413,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 20,
-    marginHorizontal: 20,
+    marginTop: 28,
     height: 44,
     borderRadius: 12,
     borderWidth: 1.5,
@@ -1279,29 +1428,30 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
-  // ── Header overlay ────────────────────────────────────────────────────────────
-  header: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
+  // ── TMDB footer ───────────────────────────────────────────────────────────────
+  tmdbFooter: {
+    marginTop: 32,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  headerRight: {
-    flexDirection: 'row',
     gap: 10,
   },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+  tmdbAttributionText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  /** SvgXml logo etrafindaki saydam kutu */
+  tmdbLogoWrap: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.white10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  headerBtnActive: {
-    backgroundColor: Colors.accentDim,
   },
 });

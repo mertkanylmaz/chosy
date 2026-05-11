@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  Image,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
+import { EmotionIcons, TasteDNAIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   EmotionalState,
@@ -29,16 +31,8 @@ function dominantEmotionKey(state: EmotionalState): keyof EmotionalState {
   return entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
 }
 
-const EMOTION_ICON: Record<keyof EmotionalState, string> = {
-  joy: '😊',
-  sadness: '🌧',
-  anger: '🔥',
-  fear: '🌑',
-  surprise: '✨',
-  disgust: '🎭',
-  anticipation: '🚀',
-  trust: '🤝',
-};
+/** EmotionIcons — constants/icons.ts'ten import edilen single source of truth */
+const EMOTION_ICON = EmotionIcons;
 
 // ─── Card sub-components ──────────────────────────────────────────────────────
 
@@ -72,7 +66,7 @@ function EmotionCard({ emotionKey, t }: CardProps & { emotionKey: keyof Emotiona
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Text style={styles.cardIcon}>{EMOTION_ICON[emotionKey]}</Text>
+          <Image source={EMOTION_ICON[emotionKey]} style={styles.cardIcon} resizeMode="contain" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelEmotion')}</Text>
@@ -105,7 +99,7 @@ function EnergyCard({ level, t }: CardProps & { level: number }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Text style={styles.cardIcon}>⚡</Text>
+          <Image source={TasteDNAIcons.cardEnergy} style={styles.cardIcon} resizeMode="contain" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelEnergy')}</Text>
@@ -134,7 +128,7 @@ function PacingCard({ pace, t }: CardProps & { pace: PacePreference }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Text style={styles.cardIcon}>🎬</Text>
+          <Image source={TasteDNAIcons.cardFilmTaste} style={styles.cardIcon} resizeMode="contain" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelPacing')}</Text>
@@ -165,7 +159,7 @@ function ThematicDepthCard({ depth, t }: CardProps & { depth: number }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Text style={styles.cardIcon}>🎭</Text>
+          <Image source={TasteDNAIcons.cardGenre} style={styles.cardIcon} resizeMode="contain" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelColorTone')}</Text>

@@ -130,7 +130,8 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
   cardIcon: {
-    fontSize: 16,
+    width: 20,
+    height: 20,
   },
   cardLabel: {
     fontSize: 11,

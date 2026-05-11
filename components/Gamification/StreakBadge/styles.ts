@@ -40,7 +40,8 @@ export const styles = StyleSheet.create({
 
   // ─── Emoji ──────────────────────────────────────────────────────────────────
   emoji: {
-    fontSize: 14,
+    width: 18,
+    height: 18,
   },
   emojiDim: {
     opacity: 0.4,

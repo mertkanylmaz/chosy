@@ -82,7 +82,8 @@ export const styles = StyleSheet.create({
     default: {},
   }),
   iconEmoji: {
-    fontSize: 26,
+    width: 32,
+    height: 32,
   },
   archetypeInfo: {
     flex: 1,

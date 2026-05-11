@@ -69,7 +69,8 @@ export default StyleSheet.create({
   },
 
   cardEmoji: {
-    fontSize: 36,
+    width: 44,
+    height: 44,
     marginBottom: 8,
   },
 

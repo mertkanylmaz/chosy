@@ -52,8 +52,9 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.accentDim,
   },
 
-  optionEmoji: {
-    fontSize: 20,
+  optionImage: {
+    width: 32,
+    height: 32,
     marginRight: Theme.spacing.sm,
   },
 

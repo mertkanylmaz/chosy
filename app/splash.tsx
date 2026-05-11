@@ -193,7 +193,6 @@ const styles = StyleSheet.create({
   splashLogo: {
     width: 200,
     height: 200,
-    borderRadius: 28,
   },
 
   // Halkalar

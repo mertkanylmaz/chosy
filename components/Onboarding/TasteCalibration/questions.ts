@@ -2,9 +2,12 @@
  * Taste Calibration — 6 soru tanımı ve TasteProfile mapping yapılandırması.
  *
  * Her soru: senaryo metni (i18n key) ve 3-4 seçenek.
- * Her seçenek: emoji + i18n key + TasteProfile üzerindeki etkileri.
+ * Her seçenek: image (custom PNG) + i18n key + TasteProfile üzerindeki etkileri.
  */
 
+import type { ImageSourcePropType } from 'react-native';
+
+import { CalibrationIcons } from '@/constants/icons';
 import type { TasteProfile } from '@/types/index';
 
 // ─── Tip Tanımları ────────────────────────────────────────────────────────────
@@ -23,8 +26,8 @@ export interface OptionEffect {
 
 /** Tek bir seçeneğin tanımı */
 export interface CalibrationOption {
-  /** Seçenek emoji ikonu */
-  emoji: string;
+  /** Seçenek görseli — custom PNG */
+  image: ImageSourcePropType;
   /** i18n key — seçenek metni */
   labelKey: string;
   /** Bu seçenek seçildiğinde TasteProfile'a uygulanacak etkiler */
@@ -60,7 +63,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q1',
     options: [
       {
-        emoji: '⚡',
+        image: CalibrationIcons.q1_intensity,
         labelKey: 'onboarding.q1a',
         effect: {
           energy_level: 0.9,
@@ -68,7 +71,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         },
       },
       {
-        emoji: '🌀',
+        image: CalibrationIcons.q1_cerebral,
         labelKey: 'onboarding.q1b',
         effect: {
           thematic_depth: 0.85,
@@ -76,7 +79,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         },
       },
       {
-        emoji: '💧',
+        image: CalibrationIcons.q1_emotional,
         labelKey: 'onboarding.q1c',
         effect: {
           thematic_depth: 0.7,
@@ -84,7 +87,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         },
       },
       {
-        emoji: '☀️',
+        image: CalibrationIcons.q1_bright,
         labelKey: 'onboarding.q1d',
         effect: {
           energy_level: 0.6,
@@ -100,22 +103,22 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q2',
     options: [
       {
-        emoji: '🎨',
+        image: CalibrationIcons.q2_visual_art,
         labelKey: 'onboarding.q2a',
         effect: { visual_style: 'lush' },
       },
       {
-        emoji: '📷',
+        image: CalibrationIcons.q2_old_footage,
         labelKey: 'onboarding.q2b',
         effect: { visual_style: 'raw' },
       },
       {
-        emoji: '🌌',
+        image: CalibrationIcons.q2_galactic,
         labelKey: 'onboarding.q2c',
         effect: { visual_style: 'experimental' },
       },
       {
-        emoji: '🎬',
+        image: CalibrationIcons.q2_cinematic,
         labelKey: 'onboarding.q2d',
         effect: { visual_style: 'cinematic' },
       },
@@ -128,17 +131,17 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q3',
     options: [
       {
-        emoji: '🚀',
+        image: CalibrationIcons.q3_scifi,
         labelKey: 'onboarding.q3a',
         effect: { pace_preference: 'fast', energy_level: 0.3 },
       },
       {
-        emoji: '🎭',
+        image: CalibrationIcons.q3_masks,
         labelKey: 'onboarding.q3b',
         effect: { pace_preference: 'medium' },
       },
       {
-        emoji: '🍃',
+        image: CalibrationIcons.q3_escape,
         labelKey: 'onboarding.q3c',
         effect: { pace_preference: 'slow', energy_level: -0.2 },
       },
@@ -151,22 +154,22 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q4',
     options: [
       {
-        emoji: '🌅',
+        image: CalibrationIcons.q4_daydream,
         labelKey: 'onboarding.q4a',
         effect: { ending_preference: 'hopeful' },
       },
       {
-        emoji: '💔',
+        image: CalibrationIcons.q4_sadness,
         labelKey: 'onboarding.q4b',
         effect: { ending_preference: 'bittersweet' },
       },
       {
-        emoji: '❓',
+        image: CalibrationIcons.q4_curious,
         labelKey: 'onboarding.q4c',
         effect: { ending_preference: 'open' },
       },
       {
-        emoji: '🏆',
+        image: CalibrationIcons.q4_achievement,
         labelKey: 'onboarding.q4d',
         effect: { ending_preference: 'triumphant' },
       },
@@ -179,22 +182,22 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q5',
     options: [
       {
-        emoji: '🎧',
+        image: CalibrationIcons.q5_soundtrack,
         labelKey: 'onboarding.q5a',
         effect: { social_context: 'alone' },
       },
       {
-        emoji: '💑',
+        image: CalibrationIcons.q5_relationships,
         labelKey: 'onboarding.q5b',
         effect: { social_context: 'couple' },
       },
       {
-        emoji: '🍿',
+        image: CalibrationIcons.q5_casual,
         labelKey: 'onboarding.q5c',
         effect: { social_context: 'friends' },
       },
       {
-        emoji: '🏠',
+        image: CalibrationIcons.q5_cozy,
         labelKey: 'onboarding.q5d',
         effect: { social_context: 'family' },
       },
@@ -207,7 +210,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     scenarioKey: 'onboarding.q6',
     options: [
       {
-        emoji: '🗣️',
+        image: CalibrationIcons.q6_social,
         labelKey: 'onboarding.q6a',
         effect: {
           narrative_style: 'dialogue-driven',
@@ -215,7 +218,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         },
       },
       {
-        emoji: '🔀',
+        image: CalibrationIcons.q6_randomize,
         labelKey: 'onboarding.q6b',
         effect: {
           narrative_style: 'nonlinear',
@@ -223,12 +226,12 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         },
       },
       {
-        emoji: '➡️',
+        image: CalibrationIcons.q6_continue,
         labelKey: 'onboarding.q6c',
         effect: { narrative_style: 'linear' },
       },
       {
-        emoji: '📖',
+        image: CalibrationIcons.q6_backstory,
         labelKey: 'onboarding.q6d',
         effect: { narrative_style: 'anthology' },
       },

@@ -4,7 +4,7 @@
  * Akış:
  *  1. Sosyal auth ile yeni kayıt olan kullanıcıyı karşılar (auth.tsx → isNewUser → buraya)
  *  2. Kullanıcı adı girer (2-20 alfanümerik karakter, validation anlık)
- *  3. 12 emoji avatar arasından birini seçer
+ *  3. 9 custom PNG avatar arasından birini seçer
  *  4. "Hadi Başlayalım" → authService.updateUserProfile → /(tabs)
  *
  * DB: users.username + users.avatar_url güncellenir (auth_id ile match)
@@ -14,6 +14,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -30,6 +31,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+import { AvatarIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { updateUserProfile } from '@/services/authService';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
@@ -37,31 +39,32 @@ import { logger } from '@/utils/logger';
 
 // ─── Avatar Veri Tanımı ────────────────────────────────────────────────────────
 
+import type { ImageSourcePropType } from 'react-native';
+
 /** Tek bir avatar seçeneğini tanımlar */
 interface AvatarOption {
+  /** Benzersiz kimlik — avatar_url olarak kaydedilir */
   id: string;
-  emoji: string;
-  /** Arka plan rengi — zinc scale veya tematik */
+  /** Custom PNG ikonu */
+  image: ImageSourcePropType;
+  /** Arka plan rengi — tematik */
   color: string;
 }
 
 /**
- * 12 emoji avatar — film türleri ve kişilikler.
- * avatar_url olarak emoji string'in kendisi kaydedilir.
+ * 9 custom PNG avatar — ikonik film ekipmanları.
+ * avatar_url olarak id string kaydedilir; profile.tsx AVATAR_OPTIONS ile eşleşir.
  */
 const AVATARS: AvatarOption[] = [
-  { id: '1',  emoji: '🎬', color: Colors.accentPrimary },  // Yönetmen — violet
-  { id: '2',  emoji: '🌙', color: Colors.swipeDown },      // Gece kuşu — blue
-  { id: '3',  emoji: '🔥', color: Colors.error },           // Aksiyon — red
-  { id: '4',  emoji: '🌸', color: Colors.pink },            // Romantik — pink
-  { id: '5',  emoji: '🏆', color: Colors.gold },            // Ödül avcısı — gold
-  { id: '6',  emoji: '🚀', color: Colors.swipeDown },       // Sci-fi — blue
-  { id: '7',  emoji: '👻', color: Colors.bgSubtle },        // Korku — zinc-700
-  { id: '8',  emoji: '🌿', color: Colors.success },         // Drama — green
-  { id: '9',  emoji: '⚡', color: Colors.warning },          // Gerilim — amber
-  { id: '10', emoji: '🎭', color: Colors.accentHover },     // Tiyatro — violet-600
-  { id: '11', emoji: '🐉', color: Colors.goldDark },        // Fantezi — amber-dark
-  { id: '12', emoji: '❄️', color: Colors.swipeDown },       // Sakin — blue
+  { id: 'clapperboard',   image: AvatarIcons.clapperboard,   color: Colors.accentPrimary },
+  { id: 'pro_camera',     image: AvatarIcons.pro_camera,     color: Colors.swipeDown },
+  { id: 'director_chair', image: AvatarIcons.director_chair, color: Colors.gold },
+  { id: 'film_reel',      image: AvatarIcons.film_reel,      color: Colors.accentHover },
+  { id: 'megaphone',      image: AvatarIcons.megaphone,      color: Colors.error },
+  { id: 'boom_mic',       image: AvatarIcons.boom_mic,       color: Colors.bgSubtle },
+  { id: 'studio_light',   image: AvatarIcons.studio_light,   color: Colors.warning },
+  { id: 'edit_monitor',   image: AvatarIcons.edit_monitor,   color: Colors.success },
+  { id: 'tripod',         image: AvatarIcons.tripod,         color: Colors.swipeDown },
 ];
 
 /** Kullanıcı adı validation regex: 2-20 alfanümerik karakter */
@@ -78,7 +81,7 @@ export default function SetupProfileScreen() {
   const { t } = useLanguage();
 
   const [username, setUsername] = useState('');
-  const [selectedAvatarId, setSelectedAvatarId] = useState<string>('1');
+  const [selectedAvatarId, setSelectedAvatarId] = useState<string>('clapperboard');
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -138,7 +141,7 @@ export default function SetupProfileScreen() {
     }
 
     const selectedAvatar = AVATARS.find(av => av.id === selectedAvatarId);
-    const avatarUrl = selectedAvatar?.emoji ?? '🎬';
+    const avatarUrl = selectedAvatar?.id ?? 'clapperboard';
 
     void hapticLight();
     setSaving(true);
@@ -260,7 +263,7 @@ export default function SetupProfileScreen() {
                     onPress={() => handleAvatarSelect(avatar.id)}
                     activeOpacity={0.75}
                   >
-                    <Text style={styles.avatarEmoji}>{avatar.emoji}</Text>
+                    <Image source={avatar.image} style={styles.avatarEmoji} resizeMode="contain" />
                     {isSelected && (
                       <View style={[styles.selectedBadge, { backgroundColor: avatar.color }]}>
                         <Ionicons name="checkmark" size={9} color={Colors.textOnAccent} />
@@ -400,7 +403,7 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.lg,
   },
 
-  /** 4 sütunlu grid — flexWrap ile satır otomatik kırılır */
+  /** 3 sütunlu grid — flexWrap ile satır otomatik kırılır */
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -409,9 +412,9 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.md,
   },
 
-  /** Her bir avatar hücre — 4 sütun için ~23% genişlik */
+  /** Her bir avatar hücre — 3 sütun için ~31% genişlik */
   avatarItem: {
-    width: '23%',
+    width: '31%',
     aspectRatio: 1,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 2,
@@ -421,8 +424,8 @@ const styles = StyleSheet.create({
   },
 
   avatarEmoji: {
-    fontSize: 28,
-    lineHeight: 36,
+    width: 40,
+    height: 40,
   },
 
   /** Seçili avatarın köşe onay rozeti */

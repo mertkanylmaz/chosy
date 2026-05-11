@@ -4,8 +4,8 @@
  * Animasyon sekansi (CDO spec):
  *   t=0.0s — Overlay fade in
  *   t=0.1s — Konfeti başlar
- *   t=0.2s — Lumi girer (scale bounce)
- *   t=0.3s — Milestone icon bounce in
+ *   t=0.2s — FilmSeridi makara animasyonu girer (scale bounce)
+ *   t=0.3s — Milestone özel ikonu (Image) bounce in
  *   t=0.4s — Title fade in down
  *   t=0.5s — Description fade in down
  *   t=0.6s — CTA button fade in down
@@ -17,7 +17,7 @@
  * Spec: .claude/specs/GAMIFICATION_UI_SPEC.md — Component 2
  */
 import React, { useCallback, useEffect } from 'react';
-import { Pressable, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -26,14 +26,14 @@ import Animated, {
 
 import { BOUNCE_CONFIG, FAST_TIMING, TIMING_CONFIG } from '@/constants/animations';
 import { hapticHeavy } from '@/utils/haptics';
-import Lumi, { type LumiMood } from '@/components/Lumi';
+import { GamificationIcons } from '@/constants/icons';
 import FilmSeridi from '@/components/FilmReelAnimation';
 import ConfettiEffect from './ConfettiEffect';
 import { useScalePress } from '@/hooks/useScalePress';
 
 import { styles } from './styles';
 
-// ─── Tipler ───────────────���──────────────────────────────────────────────────
+// ─── Tipler ───────────────────────────────────────────────────────────────────
 
 export interface MilestoneCelebrationProps {
   /** Kutlanacak milestone bilgisi */
@@ -52,25 +52,35 @@ export interface MilestoneCelebrationProps {
   onDismiss: () => void;
 }
 
-// ─── Yardımcılar ────────────��───────────────────────���────────────────────────
+// ─── Yardımcılar ──────────────────────────────────────────────────────────────
 
-/** Büyük milestone'lar → ekstra konfeti + farklı CTA */
+/** Büyük milestone'lar → ekstra konfeti */
 const EPIC_SLUGS = new Set(['films_100', 'films_250', 'streak_30', 'curator_5']);
 
+/** CTA metinleri — emoji kaldırıldı, custom ikonlar kullanılıyor */
 const EPIC_CTA: Record<string, string> = {
-  films_100: 'Legendary! 🏆',
-  films_250: 'Unstoppable! ⭐',
-  streak_30: 'Incredible! 👑',
-  curator_5: 'Go to My Watchlist →',
+  films_100: 'Legendary!',
+  films_250: 'Unstoppable!',
+  streak_30: 'Incredible!',
+  curator_5: 'Go to My Watchlist',
 };
 
-/** Milestone kategori/threshold'a göre Lumi mood */
-function getLumiMood(slug: string): LumiMood {
-  if (EPIC_SLUGS.has(slug)) return 'excited';
-  return 'happy';
+/** Slug'a göre özel milestone ikonu — tanımlı değilse null (FilmSeridi görünür) */
+function getMilestoneImage(slug: string): ImageSourcePropType | null {
+  switch (slug) {
+    case 'films_100':
+    case 'films_250':
+      return GamificationIcons.milestone100;
+    case 'streak_30':
+      return GamificationIcons.streakPeak;
+    case 'curator_5':
+      return GamificationIcons.curator;
+    default:
+      return null;
+  }
 }
 
-// ─── Component ────���───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
   milestone,
@@ -79,9 +89,8 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
 }) => {
   const { animatedStyle: ctaPressStyle, onPressIn, onPressOut } = useScalePress(0.95);
   const isEpic = EPIC_SLUGS.has(milestone.slug);
-  const isCurator = milestone.slug === 'curator_5';
   const ctaText = EPIC_CTA[milestone.slug] ?? 'Keep Going!';
-  const lumiMood = getLumiMood(milestone.slug);
+  const milestoneImage = getMilestoneImage(milestone.slug);
 
   // Haptic feedback — overlay açıldıktan 0.7s sonra
   useEffect(() => {
@@ -115,37 +124,32 @@ const MilestoneCelebration: React.FC<MilestoneCelebrationProps> = React.memo(({
         {/* İçerik — basınca propagation durmalı */}
         <Pressable style={styles.content} onPress={() => {}}>
 
-          {/* Curator: FilmSeridi makarasi — diger milestone'lar: Lumi orb */}
+          {/* FilmSeridi makara animasyonu — tüm milestone'larda standart arka plan */}
           <Animated.View
-            style={isCurator ? styles.mascotContainerCurator : styles.mascotContainer}
+            style={styles.mascotContainer}
             entering={FadeInDown.springify()
               .damping(BOUNCE_CONFIG.damping)
               .stiffness(BOUNCE_CONFIG.stiffness)
               .delay(200)}
           >
-            {isCurator ? (
-              <FilmSeridi />
-            ) : (
-              <Lumi
-                size="large"
-                mood={lumiMood}
-                showParticles
-                showGlow
-              />
-            )}
+            <FilmSeridi />
           </Animated.View>
 
-          {/* Milestone Icon */}
-          {milestone.icon && (
-            <Animated.Text
-              style={styles.milestoneIcon}
+          {/* Milestone özel ikonu — slug'a özel PNG, yoksa gösterilmez */}
+          {milestoneImage && (
+            <Animated.View
+              style={styles.milestoneImageWrap}
               entering={FadeInDown.springify()
                 .damping(BOUNCE_CONFIG.damping)
                 .stiffness(BOUNCE_CONFIG.stiffness)
                 .delay(300)}
             >
-              {milestone.icon}
-            </Animated.Text>
+              <Image
+                source={milestoneImage}
+                style={styles.milestoneImage}
+                resizeMode="contain"
+              />
+            </Animated.View>
           )}
 
           {/* Title */}

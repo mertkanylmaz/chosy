@@ -19,6 +19,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Image,
+  type ImageSourcePropType,
   Linking,
   Modal,
   RefreshControl,
@@ -41,6 +43,7 @@ import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
+import { AvatarIcons } from '@/constants/icons';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
@@ -82,33 +85,23 @@ const LANGUAGES: { code: Locale; label: string }[] = [
 /** AsyncStorage anahtari */
 const AVATAR_STORAGE_KEY = 'chosy_user_avatar';
 
-/** Ikonik film objeleri — avatar secenekleri */
+/** Sinema ekipmanı avatar seçenekleri — 9 özel ikon */
 interface AvatarItem {
-  emoji: string;
+  id: string;
+  image: ImageSourcePropType;
   labelKey: string;
 }
 
 const AVATAR_OPTIONS: AvatarItem[] = [
-  { emoji: '💍', labelKey: 'profile.avatarRing' },          // LOTR — One Ring
-  { emoji: '🪄', labelKey: 'profile.avatarWand' },          // Harry Potter
-  { emoji: '🗡️', labelKey: 'profile.avatarLightsaber' },    // Star Wars
-  { emoji: '🌀', labelKey: 'profile.avatarTotem' },          // Inception
-  { emoji: '🦇', labelKey: 'profile.avatarBat' },            // Batman
-  { emoji: '🕷️', labelKey: 'profile.avatarSpider' },         // Spider-Man
-  { emoji: '🛡️', labelKey: 'profile.avatarShield' },         // Captain America
-  { emoji: '🔨', labelKey: 'profile.avatarHammer' },         // Thor
-  { emoji: '🏴‍☠️', labelKey: 'profile.avatarPirate' },         // Pirates of Caribbean
-  { emoji: '🦖', labelKey: 'profile.avatarDino' },           // Jurassic Park
-  { emoji: '🦈', labelKey: 'profile.avatarShark' },          // Jaws
-  { emoji: '👽', labelKey: 'profile.avatarAlien' },          // E.T. / Alien
-  { emoji: '🤖', labelKey: 'profile.avatarRobot' },          // Terminator
-  { emoji: '🧙', labelKey: 'profile.avatarWizard' },         // Gandalf
-  { emoji: '🧛', labelKey: 'profile.avatarVampire' },        // Dracula
-  { emoji: '🏹', labelKey: 'profile.avatarBow' },            // Hunger Games
-  { emoji: '🐍', labelKey: 'profile.avatarSnake' },          // Indiana Jones
-  { emoji: '🎩', labelKey: 'profile.avatarTopHat' },         // The Prestige
-  { emoji: '🔮', labelKey: 'profile.avatarOrb' },            // Doctor Strange
-  { emoji: '🪐', labelKey: 'profile.avatarPlanet' },         // Interstellar
+  { id: 'clapperboard',   image: AvatarIcons.clapperboard,   labelKey: 'profile.avatarClapperboard' },
+  { id: 'pro_camera',     image: AvatarIcons.pro_camera,     labelKey: 'profile.avatarProCamera' },
+  { id: 'director_chair', image: AvatarIcons.director_chair, labelKey: 'profile.avatarDirectorChair' },
+  { id: 'film_reel',      image: AvatarIcons.film_reel,      labelKey: 'profile.avatarFilmReel' },
+  { id: 'megaphone',      image: AvatarIcons.megaphone,      labelKey: 'profile.avatarMegaphone' },
+  { id: 'boom_mic',       image: AvatarIcons.boom_mic,       labelKey: 'profile.avatarBoomMic' },
+  { id: 'studio_light',   image: AvatarIcons.studio_light,   labelKey: 'profile.avatarStudioLight' },
+  { id: 'edit_monitor',   image: AvatarIcons.edit_monitor,   labelKey: 'profile.avatarEditMonitor' },
+  { id: 'tripod',         image: AvatarIcons.tripod,         labelKey: 'profile.avatarTripod' },
 ];
 
 // ─── Section Heading ──────────────────────────────────────────────────────────
@@ -155,12 +148,12 @@ function SectionCard({
 interface AvatarModalProps {
   /** Modal gorunur mu */
   visible: boolean;
-  /** Mevcut secili avatar */
+  /** Mevcut secili avatar ID'si */
   current: string | null;
   /** Kapatma callback */
   onClose: () => void;
-  /** Secim callback */
-  onSelect: (emoji: string) => void;
+  /** Secim callback — avatar ID döner */
+  onSelect: (avatarId: string) => void;
 }
 
 /**
@@ -196,17 +189,21 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
           {/* Film objeleri subtitle */}
           <Text style={styles.avatarSubtitle}>{t('profile.avatarSubtitle')}</Text>
 
-          {/* 4x5 avatar grid */}
+          {/* 3x3 avatar grid */}
           <View style={styles.avatarGrid}>
             {AVATAR_OPTIONS.map((item) => {
-              const isSelected = temp === item.emoji;
+              const isSelected = temp === item.id;
               return (
                 <TouchableOpacity
-                  key={item.emoji}
+                  key={item.id}
                   style={[styles.avatarOption, isSelected && styles.avatarOptionSelected]}
-                  onPress={() => setTemp(item.emoji)}
+                  onPress={() => setTemp(item.id)}
                   activeOpacity={0.7}>
-                  <Text style={styles.avatarOptionEmoji}>{item.emoji}</Text>
+                  <Image
+                    source={item.image}
+                    style={styles.avatarOptionEmoji}
+                    resizeMode="contain"
+                  />
                   <Text
                     style={[
                       styles.avatarOptionLabel,
@@ -945,7 +942,11 @@ export default function ProfileScreen() {
               >
                 <View style={styles.avatarInner}>
                   {avatarEmoji ? (
-                    <Text style={styles.avatarEmoji}>{avatarEmoji}</Text>
+                    <Image
+                      source={AVATAR_OPTIONS.find((a) => a.id === avatarEmoji)?.image ?? AvatarIcons.clapperboard}
+                      style={styles.avatarEmoji}
+                      resizeMode="contain"
+                    />
                   ) : (
                     <Ionicons name="person-outline" size={32} color={Colors.gold} />
                   )}
@@ -1172,7 +1173,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarEmoji: {
-    fontSize: 40,
+    width: 56,
+    height: 56,
   },
   profileName: {
     color: Colors.textWhite,
@@ -1438,7 +1440,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.goldDim,
   },
   avatarOptionEmoji: {
-    fontSize: 26,
+    width: 44,
+    height: 44,
   },
   avatarOptionLabel: {
     fontSize: 8,

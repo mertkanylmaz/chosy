@@ -31,7 +31,8 @@ export function createStyles(colorPrimary: string, colorDim: string) {
       marginTop: 8,
     },
     icon: {
-      fontSize: 14,
+      width: 18,
+      height: 18,
     },
     label: {
       color: colorPrimary,

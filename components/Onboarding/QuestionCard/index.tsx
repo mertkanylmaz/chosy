@@ -4,14 +4,14 @@
  * Seçim animasyonu:
  *   1. Basma: scale(0.97)
  *   2. Seçildi: border → accentPrimary, bg → accentDim
- *   3. Ikon pulse: scale 1.0 → 1.2 → 1.0
+ *   3. İkon pulse: scale 1.0 → 1.2 → 1.0
  *   4. Haptic: light → medium (200ms sonra)
  *   5. Diğerleri: opacity 0.4
  *   6. Geçiş: 400ms → parent'a iletilir
  */
 
 import React, { useCallback, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -35,7 +35,7 @@ interface QuestionCardProps {
 // ─── Option Button ────────────────────────────────────────────────────────────
 
 interface OptionButtonProps {
-  emoji: string;
+  image: CalibrationQuestion['options'][number]['image'];
   label: string;
   isSelected: boolean;
   isDisabled: boolean;
@@ -45,12 +45,11 @@ interface OptionButtonProps {
 /**
  * Tek bir seçenek butonu — seçim durumuna göre stil değişir.
  */
-function OptionButton({ emoji, label, isSelected, isDisabled, onPress }: OptionButtonProps) {
-  const emojiScale = useSharedValue(1);
+function OptionButton({ image, label, isSelected, isDisabled, onPress }: OptionButtonProps) {
+  const iconScale = useSharedValue(1);
   const btnScale = useSharedValue(1);
 
   const handlePress = useCallback(() => {
-    // Scale animasyonu
     btnScale.value = withSequence(
       withTiming(0.97, { duration: 100 }),
       withTiming(1.0, { duration: 100 }),
@@ -58,23 +57,25 @@ function OptionButton({ emoji, label, isSelected, isDisabled, onPress }: OptionB
     onPress();
   }, [btnScale, onPress]);
 
-  // Seçildiğinde emoji pulse
+  /** Seçildiğinde ikon pulse */
   React.useEffect(() => {
     if (isSelected) {
-      emojiScale.value = withSequence(
+      iconScale.value = withSequence(
         withTiming(1.2, { duration: 150 }),
         withTiming(1.0, { duration: 150 }),
       );
     }
-  }, [isSelected, emojiScale]);
+  }, [isSelected, iconScale]);
 
   const btnAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: btnScale.value }],
-    opacity: isDisabled && !isSelected ? withTiming(0.4, { duration: 200 }) : withTiming(1, { duration: 200 }),
+    opacity: isDisabled && !isSelected
+      ? withTiming(0.4, { duration: 200 })
+      : withTiming(1,   { duration: 200 }),
   }));
 
-  const emojiAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: emojiScale.value }],
+  const iconAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
   }));
 
   return (
@@ -88,7 +89,11 @@ function OptionButton({ emoji, label, isSelected, isDisabled, onPress }: OptionB
           isSelected && styles.optionBtnSelected,
         ]}
       >
-        <Animated.Text style={[styles.optionEmoji, emojiAnimStyle]}>{emoji}</Animated.Text>
+        <Animated.Image
+          source={image}
+          style={[styles.optionImage, iconAnimStyle]}
+          resizeMode="contain"
+        />
         <Text style={styles.optionLabel}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -107,7 +112,7 @@ export function QuestionCard({ question, onAnswer }: QuestionCardProps) {
 
   const handleOptionPress = useCallback(
     (index: number) => {
-      if (selectedIndex !== null) return; // Zaten seçilmiş
+      if (selectedIndex !== null) return;
 
       setSelectedIndex(index);
       hapticLight();
@@ -131,7 +136,7 @@ export function QuestionCard({ question, onAnswer }: QuestionCardProps) {
         {question.options.map((option, index) => (
           <OptionButton
             key={`${question.id}-${index}`}
-            emoji={option.emoji}
+            image={option.image}
             label={t(option.labelKey)}
             isSelected={selectedIndex === index}
             isDisabled={selectedIndex !== null}

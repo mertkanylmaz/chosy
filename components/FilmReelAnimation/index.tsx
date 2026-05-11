@@ -295,7 +295,7 @@ function FilmRing({
  *   - auth.tsx: hesap açılış ekranı
  *   - watchlist.tsx: boş watchlist durumu
  *   - AIProcessingOverlay: AI analiz bekleme ekranı
- *   - MilestoneCelebration: curator_5 achievement overlay
+ *   - MilestoneCelebration: tüm achievement overlay'lerde standart arka plan
  *
  * Teknik: react-native-svg (Mask + Filter + LinearGradient) + Reanimated parallax
  *

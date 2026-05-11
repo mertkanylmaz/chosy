@@ -26,7 +26,8 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   headerDna: {
-    fontSize: 18,
+    width: 24,
+    height: 24,
   },
   headerTitle: {
     color: Colors.gold,
@@ -84,9 +85,8 @@ export const styles = StyleSheet.create({
     gap: 8,
   },
   emotionEmoji: {
-    fontSize: 14,
     width: 20,
-    textAlign: 'center',
+    height: 20,
   },
   emotionName: {
     color: Colors.textLightGrey,

@@ -6,6 +6,7 @@
 
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -14,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { ImageSourcePropType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,6 +27,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
+import { MoodIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { hapticMedium, hapticSelection } from '@/utils/haptics';
@@ -34,19 +37,23 @@ import styles from './styles';
 /** Mood kart verisi */
 interface MoodCardData {
   id: string;
-  emoji: string;
+  image: ImageSourcePropType;
   label: string;
   description: string;
   /** MoodContext'e set edilecek preset metin (AI'a gider, dil bağımsız) */
   preset: string;
 }
 
-/** 4 mood seçeneği — statik preset İngilizce kalır (AI input) */
-const MOOD_PRESETS: ReadonlyArray<{ id: string; emoji: string; preset: string }> = [
-  { id: 'calm',       emoji: '😌', preset: 'I feel calm and peaceful tonight, looking for something serene' },
-  { id: 'reflective', emoji: '🧠', preset: 'I am in a reflective, thoughtful mood and want something deep' },
-  { id: 'energetic',  emoji: '⚡', preset: 'I feel energetic and want something fast-paced and thrilling' },
-  { id: 'melancholic',emoji: '🌧', preset: 'I am feeling melancholic and want something emotional and moving' },
+/**
+ * 4 mood seçeneği — statik preset İngilizce kalır (AI input).
+ * İkon: MoodIcons'dan en yakın eşleşme kullanılır.
+ *   calm → chill | reflective → deep | energetic → thrill | melancholic → rainy
+ */
+const MOOD_PRESETS: ReadonlyArray<{ id: string; image: ImageSourcePropType; preset: string }> = [
+  { id: 'calm',       image: MoodIcons.chill,  preset: 'I feel calm and peaceful tonight, looking for something serene' },
+  { id: 'reflective', image: MoodIcons.deep,   preset: 'I am in a reflective, thoughtful mood and want something deep' },
+  { id: 'energetic',  image: MoodIcons.thrill, preset: 'I feel energetic and want something fast-paced and thrilling' },
+  { id: 'melancholic',image: MoodIcons.rainy,  preset: 'I am feeling melancholic and want something emotional and moving' },
 ];
 
 /** Tek mood kartı bileşeni — kendi scale animasyonunu yönetir */
@@ -85,7 +92,7 @@ function MoodCard({ item, selected, onPress }: MoodCardProps) {
           animatedStyle,
         ]}
       >
-        <Text style={styles.cardEmoji}>{item.emoji}</Text>
+        <Image source={item.image} style={styles.cardEmoji} resizeMode="contain" />
         <Text style={styles.cardLabel}>{item.label}</Text>
         <Text style={styles.cardDescription}>{item.description}</Text>
       </Animated.View>
