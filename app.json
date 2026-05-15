@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chosy.ai",
     "slug": "chosy-ai",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "chosy",
@@ -38,8 +38,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-updates"
     ],
+    "updates": {
+      "url": "https://u.expo.dev/5c6d10a4-12a2-42cc-946b-3baecbe3bc5e"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "experiments": {
       "typedRoutes": true
     },

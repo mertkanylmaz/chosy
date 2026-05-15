@@ -184,6 +184,10 @@ function RootLayoutNav() {
                 options={{ animation: 'slide_from_bottom' }}
               />
               <Stack.Screen
+                name="games"
+                options={{ animation: 'slide_from_right' }}
+              />
+              <Stack.Screen
                 name="paywall"
                 options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
               />

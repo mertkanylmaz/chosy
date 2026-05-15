@@ -738,5 +738,48 @@
     "retestWeeklyLimit": "You can re-test your profile again on %{date}.",
     "tapToRetest": "Tap to re-test",
     "findMoodHint": "AI-powered film discovery"
+  },
+  "games": {
+    "hub": {
+      "title": "Daily Games",
+      "subtitle": "Test your cinema IQ",
+      "played": "Played today",
+      "play": "Play",
+      "streak": "Best streak",
+      "streak_count": "%{count} day streak"
+    },
+    "imposter": {
+      "title": "Imposter",
+      "description": "One actor doesn't belong. Can you spot the fake?",
+      "question": "Which actor is NOT in this film?"
+    },
+    "pinpoint": {
+      "title": "Pinpoint",
+      "description": "5 clues, abstract to obvious. How fast can you guess?",
+      "clue_locked": "Locked — guess wrong to reveal",
+      "search_placeholder": "Search for a film...",
+      "perfect": "Perfect Guess!"
+    },
+    "roast": {
+      "title": "Famous Quote",
+      "description": "A real movie quote. Which film is it from?",
+      "source": "Real movie quote",
+      "quoteLabel": "Guess the movie from the quote",
+      "hint_used": "Hint revealed"
+    },
+    "result": {
+      "solved": "Nailed it!",
+      "failed": "Better luck tomorrow",
+      "share": "Share",
+      "add_watchlist": "Add to Watchlist",
+      "next_puzzle": "Next puzzle in %{time}",
+      "streak": "%{count} day streak!",
+      "loading": "Loading puzzle..."
+    },
+    "home_widget": {
+      "title": "Daily Games",
+      "play_now": "Play Now",
+      "all_played": "All played today!"
+    }
   }
 }

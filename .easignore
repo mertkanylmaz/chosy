@@ -1,0 +1,8 @@
+figurler/
+docs/archive/
+logs/
+*.md
+!app.json
+!eas.json
+!package.json
+!tsconfig.json

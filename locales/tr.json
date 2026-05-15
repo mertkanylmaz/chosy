@@ -738,5 +738,48 @@
     "retestWeeklyLimit": "Profilini %{date} tarihinde yeniden test edebilirsin.",
     "tapToRetest": "Yeniden test et",
     "findMoodHint": "AI destekli film keşfi"
+  },
+  "games": {
+    "hub": {
+      "title": "Günlük Oyunlar",
+      "subtitle": "Sinema bilgini test et",
+      "played": "Bugün oynandı",
+      "play": "Oyna",
+      "streak": "En iyi seri",
+      "streak_count": "%{count} günlük seri"
+    },
+    "imposter": {
+      "title": "Sahtekar",
+      "description": "Bir oyuncu bu filmde yok. Sahtekarı bulabilir misin?",
+      "question": "Bu filmde OLMAYAN oyuncu hangisi?"
+    },
+    "pinpoint": {
+      "title": "5 İpucu",
+      "description": "5 ipucu, soyuttan somuta. Ne kadar hızlı bulabilirsin?",
+      "clue_locked": "Kilitli — yanlış tahmin et ve aç",
+      "search_placeholder": "Film ara...",
+      "perfect": "Kusursuz Tahmin!"
+    },
+    "roast": {
+      "title": "Replik Tahmin",
+      "description": "Gercek bir film repligi. Hangi filmden?",
+      "source": "Gercek film repligi",
+      "quoteLabel": "Replikten filmi tahmin et",
+      "hint_used": "Ipucu acildi"
+    },
+    "result": {
+      "solved": "Bildin!",
+      "failed": "Yarın tekrar dene",
+      "share": "Paylaş",
+      "add_watchlist": "Listeye Ekle",
+      "next_puzzle": "Sonraki bulmaca: %{time}",
+      "streak": "%{count} günlük seri!",
+      "loading": "Bulmaca yükleniyor..."
+    },
+    "home_widget": {
+      "title": "Günlük Oyunlar",
+      "play_now": "Oyna",
+      "all_played": "Bugün hepsini oynadın!"
+    }
   }
 }

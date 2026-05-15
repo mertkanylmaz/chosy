@@ -44,6 +44,7 @@ import { getAppUserId, getWatchlist } from '@/services/watchlist';
 import { logger } from '@/utils/logger';
 import { localizeGenre } from '@/utils/filmFilters';
 import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
+import { getCachedResult } from '@/services/gameService';
 import type { Film } from '@/types/film';
 
 // ── Sabitler ─────────────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ export default function HomeScreen() {
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [dailyFilm, setDailyFilm] = useState<Film | null>(null);
   const [dailyLoading, setDailyLoading] = useState(true);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
 
   /**
    * Home verilerini ve daily pick'i paralel yükler.
@@ -170,13 +172,25 @@ export default function HomeScreen() {
     }
   }, []);
 
+  /** Oyun durumlarını yükle */
+  const loadGameStates = useCallback(async () => {
+    const types = ['imposter', 'pinpoint', 'roast'];
+    let played = 0;
+    for (const gt of types) {
+      const r = await getCachedResult(gt);
+      if (r) played++;
+    }
+    setGamesPlayed(played);
+  }, []);
+
   /** Ekran her odaklandığında yeniden yükle */
   useFocusEffect(
     useCallback(() => {
       setDailyLoading(true);
       setDailyFilm(null);
       loadData();
-    }, [loadData]),
+      loadGameStates();
+    }, [loadData, loadGameStates]),
   );
 
   // ── Archetype tıklaması (haftalık limit) ──────────────────────────────────
@@ -380,6 +394,35 @@ export default function HomeScreen() {
               </View>
             )}
           </View>
+        </Animated.View>
+
+        {/* ── GÜNLÜK OYUNLAR — Games Hub'a yönlendirme ───────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(150).duration(400).springify().damping(18)}
+          style={styles.gamesSection}
+        >
+          <TouchableOpacity
+            style={styles.gamesCard}
+            onPress={() => { hapticLight(); router.push('/games' as never); }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.gamesIconBg}>
+              <Ionicons name="game-controller" size={20} color={Colors.accentPrimary} />
+            </View>
+            <View style={styles.gamesTextBlock}>
+              <Text style={styles.gamesTitle}>{t('games.home_widget.title')}</Text>
+              <Text style={styles.gamesSubtitle}>
+                {gamesPlayed >= 3
+                  ? t('games.home_widget.all_played')
+                  : `${gamesPlayed}/3 ${t('games.hub.played')}`}
+              </Text>
+            </View>
+            <View style={styles.gamesPlayBadge}>
+              <Text style={styles.gamesPlayText}>
+                {gamesPlayed >= 3 ? '✓' : t('games.home_widget.play_now')}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </Animated.View>
 
         {/* ── SİNEFİL PROFİLİ — Tam genişlik, metin taşması giderildi ────── */}
@@ -629,6 +672,54 @@ const styles = StyleSheet.create({
     color: Colors.textOnAccent,
     fontSize: 10,
     fontWeight: '700',
+  },
+
+  // ── Günlük Oyunlar ───────────────────────────────────────────────────────
+  gamesSection: {
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  gamesCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 14,
+    gap: 12,
+  },
+  gamesIconBg: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Colors.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gamesTextBlock: {
+    flex: 1,
+  },
+  gamesTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: 2,
+  },
+  gamesSubtitle: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  gamesPlayBadge: {
+    backgroundColor: Colors.accentPrimary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 9999,
+  },
+  gamesPlayText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.textOnAccent,
   },
 
   // ── Sinefil Profili Bölümü ────────────────────────────────────────────────

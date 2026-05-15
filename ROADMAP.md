@@ -1,98 +1,120 @@
-# Chosy.ai — Roadmap (Post-MVP)
+# Chosy.ai — Roadmap
 
-> V1.0.0 App Store review'da (2 Mayis 2026)
-> Asagidaki tum planlar review onayi sonrasi baslar
-
----
-
-## V1.1 — Streaming & Re-engagement
-
-> Hedef: "Nerede izlerim?" sorusunu coz + gunluk geri cagirma
-> Tahmini: 2-3 hafta
-
-### 1.1.1 Streaming Availability
-- [ ] TMDB watch/providers API entegrasyonu (veya JustWatch)
-- [ ] Film detay sayfasinda "Watch on..." butonlari
-- [ ] Turkiye + US provider destegi (Netflix, Prime, Disney+, BluTV, MUBI)
-- [ ] Provider ikonlari + deep link (varsa)
-- **Owner:** CTO
-
-### 1.1.2 Watchlist > Streaming Deep Link
-- [ ] Watchlist'teki filmlere "Watch Now" aksiyonu
-- [ ] Provider secim bottom sheet (birden fazla platformda varsa)
-- **Owner:** CTO
-- **Bagimlilik:** 1.1.1
-
-### 1.1.3 Push Notifications (Daily Pick)
-- [ ] expo-notifications + Supabase Edge Function (veya OneSignal)
-- [ ] Gunluk "Today's Pick" notification (arketipe ozel)
-- [ ] Notification permission flow (onboarding sonrasi)
-- [ ] Bildirim tercihleri (profile settings)
-- **Owner:** CTO
+> V1.0.2 App Store'da live (Mayis 2026)
+> Aktif sprint: Mini Games (14-20 Mayis)
 
 ---
 
-## V1.2 — Smarter AI & Retention
+## V1.1 — Mini Games & Daily Engagement ← AKTİF
 
-> Hedef: Kisisellesmeyi derinlestir, kullaniciyi bagla
-> Tahmini: 3-4 hafta
+> Hedef: Gunluk uygulama girisi + session time artisi
+> Sprint: 14-20 Mayis 2026 | Deadline: 20 Mayis yatirimci toplantisi
 
-### 1.2.1 Mood History & Pattern Analysis
-- [ ] Mood gecmisi kaydi (son 30 gun)
-- [ ] Haftalik mood pattern ozeti (profil ekraninda)
-- [ ] "Based on your mood patterns" oneriler
+### 1.1.0 Game Altyapisi
+- [ ] `app/games/` route yapisi + Games Hub ekrani
+- [ ] `services/gameService.ts` — puzzle fetch, score submit, streak
+- [ ] `services/gameTypes.ts` — shared types
+- [ ] Supabase migration: `daily_puzzles` + `game_scores` tablolari
+- [ ] `components/games/GameShell/` — ortak wrapper (header, progress, actions)
+- [ ] `components/games/ResultCard/` — sonuc + share + streak
 - **Owner:** CTO
+- **Est:** 1.5 session
 
-### 1.2.2 Gelismis AI Recommendations
-- [ ] Swipe history feedback loop (liked/skipped filmlerden ogrenme)
-- [ ] preferences_vector guncelleme (her 10 swipe sonrasi)
-- [ ] "Because you liked X" aciklamalari
-- **Owner:** CTO
+### 1.1.1 Imposter (Kim Yok?)
+- [ ] Film afisi + 4 oyuncu ismi (3 gercek, 1 sahte)
+- [ ] Tek hak mekanigi — yanlis = oyun biter, ekran kirmizi
+- [ ] Sahte oyuncu secimi: ayni genre/donem filmlerden benzer taninirlik
+- [ ] TMDb credits data kullan (fetchMovieCredits mevcut)
+- [ ] Sonuc ekrani + paylasim karti
+- **Owner:** CTO (impl) + CDO (spec)
+- **Est:** 1.5 session
+- **Bagimlilik:** 1.1.0
 
-### 1.2.3 Gamification Deepening
-- [ ] Haftalik challenge sistemi ("Watch 3 films from different decades")
-- [ ] Streak odulleri (7, 30, 100 gun)
-- [ ] Achievement badge koleksiyonu (profilde goruntuleme)
-- [ ] Leaderboard (opsiyonel — sosyal feature ile birlikte)
+### 1.1.2 5 Ipucu (Pinpoint)
+- [ ] 5 ipucu: en soyuttan en somuta (1=zor, 5=kolay)
+- [ ] Her yanlis tahminde sonraki ipucu acilir
+- [ ] Ipucu uretimi: Claude API veya pre-generated (films tablosundan metadata)
+- [ ] Film arama/autocomplete input (searchMovies mevcut)
+- [ ] "Kusursuz Tahmin" rozeti (ilk ipucunda bilen)
+- [ ] Sonuc ekrani + emoji grid paylasim
+- **Owner:** CTO (impl) + CDO (spec)
+- **Est:** 2 session
+- **Bagimlilik:** 1.1.0
+
+### 1.1.3 Acimasiz Elestiri
+- [ ] Gercek veya AI-uretilmis 1 yildiz komik yorum goster
+- [ ] Kullanici filmi tahmin eder (arama/autocomplete)
+- [ ] TMDb reviews API fonksiyonu ekle VEYA Claude API ile satirik yorum uret
+- [ ] Sonuc ekrani + komik yorum paylasim karti
+- **Owner:** CTO (impl) + CDO (spec) + CMO (yorum icerigi)
+- **Est:** 2 session
+- **Bagimlilik:** 1.1.0
+
+### 1.1.4 Games Hub & Navigation
+- [ ] Home ekranina "Gunun Oyunlari" widget
+- [ ] Games Hub: 3 oyun karti + streak/skor ozeti
+- [ ] Tab bar'dan veya home'dan erisim
 - **Owner:** CTO + CDO
+- **Est:** 1 session
+- **Bagimlilik:** 1.1.1, 1.1.2, 1.1.3
 
 ---
 
-## V1.3 — Growth & Monetization
+## V1.2 — Streaming & Visual Games
 
-> Hedef: Organik buyume + ARPU artisi
-> Tahmini: 4+ hafta
+> Hedef: "Nerede izlerim?" + gorsel oyunlar
+> Tahmini: 2-3 hafta (post-investor)
 
-### 1.3.1 Social Features
-- [ ] Arkadas ekleme (invite link)
-- [ ] Liste paylasma
-- [ ] "X is watching..." activity feed
-- **Owner:** CTO
+### 1.2.1 Streaming Availability
+- [ ] TMDB watch/providers entegrasyonu
+- [ ] Film detayda "Watch on..." butonlari
+- [ ] TR + US provider destegi
 
-### 1.3.2 Premium Feature Expansion
-- [ ] Unlimited mood searches (premium)
-- [ ] Advanced filters (director, cinematographer, decade)
-- [ ] Custom archetype blending
-- [ ] Export watchlist (CSV, Letterboxd import)
-- **Owner:** CTO + COO (strateji)
+### 1.2.2 Pikselli Afis (Oyun #4)
+- [ ] Bulanik afis → her yanlis tahminde netlesir
+- [ ] Progressive blur/pixelation efekti
+- [ ] Paylasim karti
 
-### 1.3.3 Android Launch
-- [ ] EAS Android build + test
-- [ ] Google Play Store listing
-- [ ] Google Sign-In native implementasyon
-- **Owner:** CTO
+### 1.2.3 Renk Paleti (Oyun #5)
+- [ ] Film renk paleti cikarimi
+- [ ] 5 renk cubugu + metin ipuclari
+- [ ] Estetik paylasim karti
+
+### 1.2.4 Push Notifications
+- [ ] Gunluk oyun hatirlatmasi
+- [ ] Streak kaybi uyarisi
 
 ---
 
-## Backlog (Oncelik belirlenmemis)
+## V1.3 — Deep Games & Social
 
-- Landing page (chosy.ai web sitesi)
+> Hedef: Hardcore sinefil oyunlari + sosyal katman
+
+### 1.3.1 Kare Kare (Oyun #6)
+- [ ] Film detay kareleri → progressive reveal
+
+### 1.3.2 Film Zinciri (Oyun #7)
+- [ ] Aktor-film-aktor graf baglantisi
+- [ ] Autocomplete arama + path validation
+
+### 1.3.3 Social Features / Film Buddy
+- [ ] Arkadas ekleme, liste paylasma
+- [ ] Film buddy eslesmesi (degerlendirilecek)
+
+### 1.3.4 Android Launch
+- [ ] EAS Android build + Google Play
+
+---
+
+## Backlog
+
+- Landing page (chosy.ai)
 - Letterboxd/IMDb import
-- Widget (iOS home screen — Today's Pick)
-- Apple Watch companion (mood quick-input)
-- Yapay zeka sohbet modu ("Tell me more about why this film...")
-- Multi-language AI (TR mood input native parsing)
-- Affiliate revenue (streaming platform referral)
+- iOS Widget (Today's Pick + Gunun Oyunu)
+- Apple Watch companion
+- AI sohbet modu
+- Leaderboard / global ranking
+- Affiliate revenue
 
 ---
 
@@ -103,6 +125,9 @@
 | DAU | 100+ | 500+ |
 | D1 Retention | >40% | >50% |
 | D7 Retention | >20% | >30% |
+| Games Played/Day | 2+ per user | 3+ per user |
+| Game Share Rate | >10% | >20% |
+| Session Duration | >3 min | >5 min |
 | Trial > Paid | >50% | >60% |
 | App Store Rating | >4.5 | >4.7 |
 | Crash-free | >99% | >99.5% |

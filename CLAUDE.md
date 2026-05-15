@@ -1,17 +1,18 @@
 # Chosy.ai (MoodFlix) — Project Rules v5
 
 > **App Store:** `Chosy.ai - Mood Movie Finder` | **Code/comms:** `MoodFlix`
-> **Status:** V1.0.0 App Store review'da (submitted 2 Mayis 2026)
+> **Status:** V1.0.2 App Store'da live | **Aktif:** Mini Games Sprint (14-20 Mayis)
 > **Build:** `expo-dev-client` — Expo Go degil
 
 ---
 
 ## Proje Durumu
 
-- V1.0.0 iOS App Store review'da
-- Android plani yok (simdilik)
-- Sonraki development: V1.1 (review onay sonrasi)
+- V1.0.2 iOS App Store'da live
+- Aktif sprint: Mini Games & Daily Engagement (3 oyun)
 - Core flow calisiyor: onboarding > mood > AI > swipe > watchlist > paywall
+- Yatirimci toplantisi: 20 Mayis 2026
+- Oyunlar FREE — kota/paywall yok (engagement oncelikli)
 
 ## Kod Kurallari
 
@@ -51,6 +52,11 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 - `app/gate.tsx` = Auth guard (anonim > /auth'a yonlendir)
 - `app/auth.tsx` = Apple Sign-In (zorunlu)
 - `app/paywall.tsx` = 3 plan (weekly/monthly/yearly) + purchase + restore
+- `app/games/_layout.tsx` = Games stack navigator (YENİ)
+- `app/games/index.tsx` = Games Hub — oyun listesi (YENİ)
+- `app/games/imposter.tsx` = Imposter oyunu (YENİ)
+- `app/games/pinpoint.tsx` = 5 Ipucu oyunu (YENİ)
+- `app/games/roast.tsx` = Acimasiz Elestiri oyunu (YENİ)
 - Provider zinciri: GestureHandlerRootView > SafeAreaProvider > LanguageProvider > MoodProvider > SubscriptionProvider > ThemeProvider > Stack
 - Vector kodlama: sadece `services/vectorEncoder.ts` (384 boyut)
 - Her ekranda `paddingBottom: 83` — tab bar floating pill
@@ -91,3 +97,11 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 | V1.1+ roadmap, gelecek planlar | `ROADMAP.md` |
 | App Store listing, ASO, launch checklist | `docs/LAUNCH_CHECKLIST.md` |
 | Eski changelog, session log, specs | `docs/archive/` |
+
+## Agent Briefleri (Aktif Sprint)
+
+| Brief | Dosya |
+|-------|-------|
+| CDO: Mini Games UI Specs | `.claude/briefs/CDO_MINI_GAMES_SPECS.md` |
+| CTO: Mini Games Implementation | `.claude/briefs/CTO_MINI_GAMES_IMPL.md` |
+| CMO: Mini Games Copy | `.claude/briefs/CMO_MINI_GAMES_COPY.md` |

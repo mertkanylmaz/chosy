@@ -14,6 +14,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -94,6 +95,18 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [quota, setQuota] = useState<QuotaCheckResult | null>(null);
 
+  // ─── Refs — stale closure sorununu önlemek için ────────────────────────────
+  // useCallback closure'ları state güncellemesinden önce çağrılabilir.
+  // Ref'ler her zaman güncel değeri tutar.
+  const statusRef = useRef<SubscriptionStatus>(status);
+  const planIdRef = useRef<PlanId | null>(planId);
+  const trialStartRef = useRef<string | null>(trialStartDate);
+
+  // State değiştiğinde ref'leri senkronize et
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { planIdRef.current = planId; }, [planId]);
+  useEffect(() => { trialStartRef.current = trialStartDate; }, [trialStartDate]);
+
   /**
    * RevenueCat + Supabase'den abonelik bilgisini çeker.
    */
@@ -115,20 +128,30 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const dbSub: SubscriptionRow | null = await getUserSubscription(userId);
 
       if (rcStatus.isPremium && dbSub) {
+        const newStatus: SubscriptionStatus = rcStatus.isInTrial ? 'trial' : 'active';
         setIsPremium(true);
         setPlanId(dbSub.plan);
-        setStatus(rcStatus.isInTrial ? 'trial' : 'active');
+        setStatus(newStatus);
         setIsInTrial(rcStatus.isInTrial);
         setTrialStartDate(dbSub.started_at);
         setExpiresAt(rcStatus.expiresAt);
+        // Ref'leri hemen güncelle — stale closure önlemi
+        statusRef.current = newStatus;
+        planIdRef.current = dbSub.plan;
+        trialStartRef.current = dbSub.started_at;
       } else if (dbSub && dbSub.status === 'active') {
         // RevenueCat henüz sync olmamış olabilir — Supabase'e güven
+        const newStatus = dbSub.status as SubscriptionStatus;
         setIsPremium(true);
         setPlanId(dbSub.plan);
-        setStatus(dbSub.status as SubscriptionStatus);
+        setStatus(newStatus);
         setIsInTrial(false);
         setTrialStartDate(dbSub.started_at);
         setExpiresAt(dbSub.expires_at ? new Date(dbSub.expires_at) : null);
+        // Ref'leri hemen güncelle
+        statusRef.current = newStatus;
+        planIdRef.current = dbSub.plan;
+        trialStartRef.current = dbSub.started_at;
       } else {
         setIsPremium(false);
         setPlanId(null);
@@ -136,6 +159,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         setIsInTrial(false);
         setTrialStartDate(null);
         setExpiresAt(null);
+        // Ref'leri hemen güncelle
+        statusRef.current = 'free';
+        planIdRef.current = null;
+        trialStartRef.current = null;
       }
     } catch (err) {
       logger.error('[subscription-ctx] Refresh hatası:', err);
@@ -149,8 +176,9 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   /**
    * Mood arama öncesi kota kontrolü.
    *
-   * Offline/hata durumunda graceful fallback: aramaya izin ver.
-   * Kullanıcı deneyimini ağ hatası nedeniyle engelleme.
+   * Ref'lerden güncel abonelik durumunu okur — stale closure sorununu önler.
+   * Eğer ref'ler hâlâ 'free' ama kullanıcı abone olabilir diye şüphe varsa,
+   * RevenueCat + Supabase'den taze veri çeker (defensive fresh-fetch).
    */
   const checkQuota = useCallback(async (): Promise<QuotaCheckResult> => {
     const userId = await getAppUserId();
@@ -167,12 +195,55 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      const result = await canSearchMood(userId, status, planId, trialStartDate);
+      let currentStatus = statusRef.current;
+      let currentPlanId = planIdRef.current;
+      let currentTrialStart = trialStartRef.current;
+
+      // Defensive fresh-fetch: ref hâlâ free/expired ise doğrudan kaynaktan kontrol et.
+      // Bu, subscription henüz yüklenmemişken yapılan erken checkQuota çağrılarını yakalar.
+      if (currentStatus === 'free' || currentStatus === 'expired' || !currentPlanId) {
+        try {
+          const [rcStatus, dbSub] = await Promise.all([
+            getSubscriptionStatus(),
+            getUserSubscription(userId),
+          ]);
+
+          if (rcStatus.isPremium && dbSub) {
+            currentStatus = rcStatus.isInTrial ? 'trial' : 'active';
+            currentPlanId = dbSub.plan;
+            currentTrialStart = dbSub.started_at;
+            // Ref + state senkronize et
+            statusRef.current = currentStatus;
+            planIdRef.current = currentPlanId;
+            trialStartRef.current = currentTrialStart;
+            setStatus(currentStatus);
+            setPlanId(currentPlanId);
+            setIsPremium(true);
+            setIsInTrial(rcStatus.isInTrial);
+            setTrialStartDate(currentTrialStart);
+          } else if (dbSub && dbSub.status === 'active') {
+            currentStatus = dbSub.status as SubscriptionStatus;
+            currentPlanId = dbSub.plan;
+            currentTrialStart = dbSub.started_at;
+            statusRef.current = currentStatus;
+            planIdRef.current = currentPlanId;
+            trialStartRef.current = currentTrialStart;
+            setStatus(currentStatus);
+            setPlanId(currentPlanId);
+            setIsPremium(true);
+            setTrialStartDate(currentTrialStart);
+          }
+          logger.log('[subscription-ctx] Fresh-fetch sonucu:', currentStatus, currentPlanId);
+        } catch (freshErr) {
+          logger.warn('[subscription-ctx] Fresh-fetch başarısız, ref değerleri kullanılıyor:', freshErr);
+        }
+      }
+
+      const result = await canSearchMood(userId, currentStatus, currentPlanId, currentTrialStart);
       setQuota(result);
       return result;
     } catch (err) {
       // Fail-closed: hata durumunda aramayı engelle — paywall bypass'i önle.
-      // Kullanıcı QuotaExhausted overlay'ini görür → paywall'a yönlendirilir.
       logger.warn('[subscription-ctx] Kota kontrolü başarısız, fallback: engelle', err);
       const fallback: QuotaCheckResult = {
         allowed: false,
@@ -184,20 +255,26 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setQuota(fallback);
       return fallback;
     }
-  }, [status, planId, trialStartDate]);
+  }, []);
 
   /**
    * Başarılı mood aramasından sonra sayacı artırır.
+   * Ref'lerden güncel abonelik durumunu okur.
    */
   const recordSearch = useCallback(async () => {
     const userId = await getAppUserId();
     if (!userId) return;
 
     await recordMoodSearch(userId);
-    // Kota bilgisini güncelle
-    const result = await canSearchMood(userId, status, planId, trialStartDate);
+    // Kota bilgisini güncelle — ref'lerden oku, stale closure önle
+    const result = await canSearchMood(
+      userId,
+      statusRef.current,
+      planIdRef.current,
+      trialStartRef.current,
+    );
     setQuota(result);
-  }, [status, planId, trialStartDate]);
+  }, []);
 
   // İlk yüklemede abonelik durumunu çek
   useEffect(() => {
