@@ -12,5 +12,8 @@ export type { FilmShareCardProps } from './FilmShareCard';
 export { default as MoodShareCard } from './MoodShareCard';
 export type { MoodShareCardProps } from './MoodShareCard';
 
+export { default as GameShareCard } from './GameShareCard';
+export type { GameShareCardProps } from './GameShareCard';
+
 export { useShareCapture } from './useShareCapture';
 export type { UseShareCaptureReturn } from './useShareCapture';

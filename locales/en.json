@@ -774,7 +774,9 @@
       "add_watchlist": "Add to Watchlist",
       "next_puzzle": "Next puzzle in %{time}",
       "streak": "%{count} day streak!",
-      "loading": "Loading puzzle..."
+      "loading": "Loading puzzle...",
+      "error_title": "Puzzle Unavailable",
+      "error_subtitle": "We couldn't load today's puzzle. Check your connection and try again later."
     },
     "home_widget": {
       "title": "Daily Games",

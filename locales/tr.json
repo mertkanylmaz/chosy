@@ -774,7 +774,9 @@
       "add_watchlist": "Listeye Ekle",
       "next_puzzle": "Sonraki bulmaca: %{time}",
       "streak": "%{count} günlük seri!",
-      "loading": "Bulmaca yükleniyor..."
+      "loading": "Bulmaca yükleniyor...",
+      "error_title": "Bulmaca Yüklenemedi",
+      "error_subtitle": "Bugünkü bulmaca yüklenemedi. Bağlantını kontrol edip daha sonra tekrar dene."
     },
     "home_widget": {
       "title": "Günlük Oyunlar",

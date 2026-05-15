@@ -46,6 +46,7 @@ export default function RoastScreen() {
   } | null>(null);
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const maxAttempts = 4; // 1 replik + 3 ipucu
 
@@ -70,6 +71,7 @@ export default function RoastScreen() {
       const puzzle = await fetchDailyPuzzle('roast');
       if (!puzzle) {
         logger.error('[roast] Puzzle yuklenemedi');
+        setLoadError(true);
         return;
       }
 
@@ -89,6 +91,7 @@ export default function RoastScreen() {
       setGameState('playing');
     } catch (err) {
       logger.error('[roast] Load hatasi:', err);
+      setLoadError(true);
     }
   }, []);
 
@@ -152,6 +155,19 @@ export default function RoastScreen() {
     [puzzleId, puzzleFilmId],
   );
 
+  // ─── Error ───
+  if (loadError) {
+    return (
+      <GameShell title={t('games.roast.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+        <View style={styles.center}>
+          <Text style={styles.errorEmoji}>🎬</Text>
+          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
+          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
+        </View>
+      </GameShell>
+    );
+  }
+
   // ─── Loading ───
   if (gameState === 'loading') {
     return (
@@ -190,6 +206,7 @@ export default function RoastScreen() {
             filmId={result.filmId}
             streak={streak}
             gameTitle={t('games.roast.title')}
+            gameType="roast"
           />
         </ScrollView>
       </GameShell>
@@ -257,6 +274,22 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: Colors.textSecondary,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: Theme.spacing.sm,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: Theme.spacing.xl,
   },
   resultContainer: {
     flexGrow: 1,

@@ -45,6 +45,7 @@ export default function PinpointScreen() {
   } | null>(null);
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   // Load puzzle
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function PinpointScreen() {
       const puzzle = await fetchDailyPuzzle('pinpoint');
       if (!puzzle) {
         logger.error('[pinpoint] Puzzle yüklenemedi');
+        setLoadError(true);
         return;
       }
 
@@ -80,6 +82,7 @@ export default function PinpointScreen() {
       setGameState('playing');
     } catch (err) {
       logger.error('[pinpoint] Load hatası:', err);
+      setLoadError(true);
     }
   }, []);
 
@@ -155,6 +158,19 @@ export default function PinpointScreen() {
     [gameState, attempts, puzzleFilmId, puzzleId, revealedCount, clues.length],
   );
 
+  // Error
+  if (loadError) {
+    return (
+      <GameShell title={t('games.pinpoint.title')} currentAttempt={0} maxAttempts={5}>
+        <View style={styles.center}>
+          <Text style={styles.errorEmoji}>🎬</Text>
+          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
+          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
+        </View>
+      </GameShell>
+    );
+  }
+
   // Loading
   if (gameState === 'loading') {
     return (
@@ -193,6 +209,7 @@ export default function PinpointScreen() {
             filmId={result.filmId}
             streak={streak}
             gameTitle={t('games.pinpoint.title')}
+            gameType="pinpoint"
           />
         </ScrollView>
       </GameShell>
@@ -262,6 +279,22 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: Colors.textSecondary,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: Theme.spacing.sm,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: Theme.spacing.xl,
   },
   resultContainer: {
     flexGrow: 1,

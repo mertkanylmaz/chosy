@@ -2,6 +2,7 @@
  * ResultCard — Oyun sonuç ekranı.
  *
  * Başarı/başarısızlık durumu, film bilgisi, streak, paylaşım + watchlist butonları.
+ * Share: useShareCapture + GameShareCard ile PNG capture.
  */
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -15,6 +16,7 @@ import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticHeavy } from '@/utils/haptics';
 import { getPosterUrl } from '@/services/tmdb';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 
 interface ResultCardProps {
   /** Bildi mi? */
@@ -32,8 +34,8 @@ interface ResultCardProps {
   streak: number;
   /** Oyun adı (paylaşım için) */
   gameTitle: string;
-  /** Paylaşım butonu callback */
-  onShare?: () => void;
+  /** Oyun tipi (share card emoji grid için) */
+  gameType?: 'imposter' | 'pinpoint' | 'roast';
 }
 
 export function ResultCard({
@@ -46,94 +48,119 @@ export function ResultCard({
   filmId,
   streak,
   gameTitle,
-  onShare,
+  gameType,
 }: ResultCardProps) {
   const { t } = useLanguage();
   const router = useRouter();
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
   const posterUrl = getPosterUrl(filmPosterPath, 'w342');
 
   return (
-    <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
-      {/* Status */}
-      <View style={styles.statusRow}>
-        <Ionicons
-          name={solved ? 'checkmark-circle' : 'close-circle'}
-          size={48}
-          color={solved ? Colors.success : Colors.error}
+    <>
+      {/* Offscreen share card — PNG capture icin */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <GameShareCard
+          ref={cardRef}
+          gameTitle={gameTitle}
+          solved={solved}
+          attempts={attempts}
+          maxAttempts={maxAttempts}
+          filmTitle={filmTitle}
+          filmYear={filmYear}
+          streak={streak}
+          gameType={gameType ?? 'imposter'}
         />
-        <Text style={styles.statusText}>
-          {solved
-            ? t('games.result.solved')
-            : t('games.result.failed')}
-        </Text>
-        {solved && (
-          <Text style={styles.attemptsText}>
-            {attempts}/{maxAttempts}
-          </Text>
-        )}
       </View>
 
-      {/* Film */}
-      <View style={styles.filmRow}>
-        {posterUrl && (
-          <Image
-            source={{ uri: posterUrl }}
-            style={styles.poster}
-            contentFit="cover"
-            transition={200}
+      <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
+        {/* Status */}
+        <View style={styles.statusRow}>
+          <Ionicons
+            name={solved ? 'checkmark-circle' : 'close-circle'}
+            size={48}
+            color={solved ? Colors.success : Colors.error}
           />
+          <Text style={styles.statusText}>
+            {solved
+              ? t('games.result.solved')
+              : t('games.result.failed')}
+          </Text>
+          {solved && (
+            <Text style={styles.attemptsText}>
+              {attempts}/{maxAttempts}
+            </Text>
+          )}
+        </View>
+
+        {/* Film */}
+        <View style={styles.filmRow}>
+          {posterUrl && (
+            <Image
+              source={{ uri: posterUrl }}
+              style={styles.poster}
+              contentFit="cover"
+              transition={200}
+            />
+          )}
+          <View style={styles.filmInfo}>
+            <Text style={styles.filmTitle} numberOfLines={2}>
+              {filmTitle}
+            </Text>
+            <Text style={styles.filmYear}>{filmYear}</Text>
+          </View>
+        </View>
+
+        {/* Streak */}
+        {streak > 0 && (
+          <View style={styles.streakRow}>
+            <Text style={styles.streakEmoji}>🔥</Text>
+            <Text style={styles.streakText}>
+              {t('games.result.streak', { count: streak })}
+            </Text>
+          </View>
         )}
-        <View style={styles.filmInfo}>
-          <Text style={styles.filmTitle} numberOfLines={2}>
-            {filmTitle}
-          </Text>
-          <Text style={styles.filmYear}>{filmYear}</Text>
-        </View>
-      </View>
 
-      {/* Streak */}
-      {streak > 0 && (
-        <View style={styles.streakRow}>
-          <Text style={styles.streakEmoji}>🔥</Text>
-          <Text style={styles.streakText}>
-            {t('games.result.streak', { count: streak })}
-          </Text>
-        </View>
-      )}
-
-      {/* Actions */}
-      <View style={styles.actions}>
-        {onShare && (
+        {/* Actions */}
+        <View style={styles.actions}>
+          {isShareAvailable && (
+            <TouchableOpacity
+              style={[styles.shareButton, isCapturing && styles.shareButtonDisabled]}
+              onPress={() => {
+                hapticLight();
+                share();
+              }}
+              disabled={isCapturing}
+            >
+              <Ionicons name="share-outline" size={20} color={Colors.textWhite} />
+              <Text style={styles.shareText}>{t('games.result.share')}</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
-            style={styles.shareButton}
+            style={styles.watchlistButton}
             onPress={() => {
-              hapticLight();
-              onShare();
+              hapticHeavy();
+              router.push(`/film/${filmId}`);
             }}
           >
-            <Ionicons name="share-outline" size={20} color={Colors.textWhite} />
-            <Text style={styles.shareText}>{t('games.result.share')}</Text>
+            <Ionicons name="add" size={20} color={Colors.textOnAccent} />
+            <Text style={styles.watchlistText}>
+              {t('games.result.add_watchlist')}
+            </Text>
           </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.watchlistButton}
-          onPress={() => {
-            hapticHeavy();
-            router.push(`/film/${filmId}`);
-          }}
-        >
-          <Ionicons name="add" size={20} color={Colors.textOnAccent} />
-          <Text style={styles.watchlistText}>
-            {t('games.result.add_watchlist')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+        </View>
+      </Animated.View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  offscreen: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    opacity: 0,
+  },
   container: {
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
@@ -209,6 +236,9 @@ const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
     borderColor: Colors.accentPrimary,
+  },
+  shareButtonDisabled: {
+    opacity: 0.5,
   },
   shareText: {
     fontSize: 15,

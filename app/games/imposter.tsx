@@ -52,6 +52,7 @@ export default function ImposterScreen() {
     posterPath: string | null;
   } | null>(null);
   const [streak, setStreak] = useState(0);
+  const [loadError, setLoadError] = useState(false);
 
   // Flash animation
   const flashOpacity = useSharedValue(0);
@@ -81,6 +82,7 @@ export default function ImposterScreen() {
       const puzzle = await fetchDailyPuzzle('imposter');
       if (!puzzle) {
         logger.error('[imposter] Puzzle yüklenemedi');
+        setLoadError(true);
         return;
       }
 
@@ -101,6 +103,7 @@ export default function ImposterScreen() {
       setGameState('playing');
     } catch (err) {
       logger.error('[imposter] Load hatası:', err);
+      setLoadError(true);
     }
   }, []);
 
@@ -159,6 +162,19 @@ export default function ImposterScreen() {
     [selectedId],
   );
 
+  // Error
+  if (loadError) {
+    return (
+      <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={1}>
+        <View style={styles.center}>
+          <Text style={styles.errorEmoji}>🎬</Text>
+          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
+          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
+        </View>
+      </GameShell>
+    );
+  }
+
   // Loading
   if (gameState === 'loading') {
     return (
@@ -190,6 +206,7 @@ export default function ImposterScreen() {
             filmId={result.filmId}
             streak={streak}
             gameTitle={t('games.imposter.title')}
+            gameType="imposter"
           />
         </View>
       </GameShell>
@@ -269,6 +286,22 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: Colors.textSecondary,
+  },
+  errorEmoji: {
+    fontSize: 48,
+    marginBottom: Theme.spacing.md,
+  },
+  errorText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: Theme.spacing.sm,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: Theme.spacing.xl,
   },
   resultContainer: {
     flex: 1,
