@@ -5,8 +5,9 @@
  * Kullanıcı filmde OLMAYAN oyuncuyu seçer.
  * Tek hak — yanlış seçim = oyun biter.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
@@ -62,10 +63,20 @@ export default function ImposterScreen() {
     opacity: flashOpacity.value,
   }));
 
-  // Load puzzle
-  useEffect(() => {
-    loadPuzzle();
-  }, []);
+  // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
+  useFocusEffect(
+    useCallback(() => {
+      // State reset (ekran stack'te kalmışsa eski veriyi temizle)
+      setGameState('loading');
+      setOptions([]);
+      setFilmPoster(null);
+      setSelectedId(null);
+      setResult(null);
+      setFilmInfo(null);
+      setLoadError(false);
+      loadPuzzle();
+    }, []),
+  );
 
   const loadPuzzle = useCallback(async () => {
     try {

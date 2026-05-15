@@ -5,7 +5,7 @@
  * Her kart: oyun durumu (oynandı/oynanmadı) + streak.
  */
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,8 +14,8 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticLight } from '@/utils/haptics';
-import { getCachedResult, getGameStreak, clearOldGameCaches } from '@/services/gameService';
+import { hapticLight, hapticHeavy } from '@/utils/haptics';
+import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches } from '@/services/gameService';
 
 interface GameCardData {
   gameType: string;
@@ -95,9 +95,29 @@ export default function GamesHubScreen() {
 
   const playedCount = games.filter((g) => g.played).length;
 
+  /** DEV: Title'a long press → tüm game cache'leri sıfırla (test için) */
+  const handleResetCaches = useCallback(() => {
+    Alert.alert(
+      'Reset Games',
+      'Tüm oyun cache\'leri silinecek. Bugünkü oyunlar sıfırlanır, yeni puzzle üretilir.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            hapticHeavy();
+            await clearAllGameCaches();
+            loadGameStates();
+          },
+        },
+      ],
+    );
+  }, []);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* Header — title'a long press: DEV reset */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -109,7 +129,9 @@ export default function GamesHubScreen() {
         >
           <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
+        <TouchableOpacity onLongPress={handleResetCaches} delayLongPress={800}>
+          <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
+        </TouchableOpacity>
         <View style={styles.backButton} />
       </View>
 

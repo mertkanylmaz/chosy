@@ -5,8 +5,9 @@
  * Her yanlış tahminde sonraki ipucu açılır.
  * İlk ipucunda bilen = "Kusursuz Tahmin" rozeti.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -47,10 +48,20 @@ export default function PinpointScreen() {
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
-  // Load puzzle
-  useEffect(() => {
-    loadPuzzle();
-  }, []);
+  // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
+  useFocusEffect(
+    useCallback(() => {
+      setGameState('loading');
+      setClues([]);
+      setRevealedCount(1);
+      setAttempts(0);
+      setResult(null);
+      setFilmInfo(null);
+      setWrongGuess(null);
+      setLoadError(false);
+      loadPuzzle();
+    }, []),
+  );
 
   const loadPuzzle = useCallback(async () => {
     try {

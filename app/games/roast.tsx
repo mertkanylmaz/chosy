@@ -5,8 +5,9 @@
  * Yanlis tahminlerde ipuclari acilir: karakter adi > basrol > yonetmen+yil.
  * Max 4 deneme hakki (1 replik + 3 ipucu).
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -50,9 +51,21 @@ export default function RoastScreen() {
 
   const maxAttempts = 4; // 1 replik + 3 ipucu
 
-  useEffect(() => {
-    loadPuzzle();
-  }, []);
+  // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
+  useFocusEffect(
+    useCallback(() => {
+      setGameState('loading');
+      setQuoteText('');
+      setHints([]);
+      setRevealedHints(0);
+      setAttempts(0);
+      setResult(null);
+      setFilmInfo(null);
+      setWrongGuess(null);
+      setLoadError(false);
+      loadPuzzle();
+    }, []),
+  );
 
   /** Puzzle yukle — cache veya fresh */
   const loadPuzzle = useCallback(async () => {
