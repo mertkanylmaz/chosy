@@ -10,53 +10,58 @@
 > Hedef: Gunluk uygulama girisi + session time artisi
 > Sprint: 14-20 Mayis 2026 | Deadline: 20 Mayis yatirimci toplantisi
 
-### 1.1.0 Game Altyapisi
-- [ ] `app/games/` route yapisi + Games Hub ekrani
-- [ ] `services/gameService.ts` — puzzle fetch, score submit, streak
-- [ ] `services/gameTypes.ts` — shared types
-- [ ] Supabase migration: `daily_puzzles` + `game_scores` tablolari
-- [ ] `components/games/GameShell/` — ortak wrapper (header, progress, actions)
-- [ ] `components/games/ResultCard/` — sonuc + share + streak
+### 1.1.0 Game Altyapisi ✅
+- [x] `app/games/` route yapisi + Games Hub ekrani
+- [x] `services/gameService.ts` — puzzle fetch, score submit, streak
+- [x] `services/gameTypes.ts` — shared types
+- [x] Supabase migration: `daily_puzzles` + `game_scores` tablolari
+- [x] `components/games/GameShell/` — ortak wrapper (header, progress, actions)
+- [x] `components/games/ResultCard/` — sonuc + share + streak
 - **Owner:** CTO
-- **Est:** 1.5 session
+- **Status:** DONE
 
-### 1.1.1 Imposter (Kim Yok?)
-- [ ] Film afisi + 4 oyuncu ismi (3 gercek, 1 sahte)
-- [ ] Tek hak mekanigi — yanlis = oyun biter, ekran kirmizi
-- [ ] Sahte oyuncu secimi: ayni genre/donem filmlerden benzer taninirlik
-- [ ] TMDb credits data kullan (fetchMovieCredits mevcut)
-- [ ] Sonuc ekrani + paylasim karti
+### 1.1.1 Imposter (Kim Yok?) ✅
+- [x] Film afisi + 4 oyuncu ismi (3 gercek, 1 sahte)
+- [x] Tek hak mekanigi — yanlis = oyun biter, ekran kirmizi
+- [x] Sahte oyuncu secimi: ayni genre/donem filmlerden benzer taninirlik
+- [x] TMDb credits data kullan (fetchMovieCredits mevcut)
+- [x] Sonuc ekrani + paylasim karti
 - **Owner:** CTO (impl) + CDO (spec)
-- **Est:** 1.5 session
-- **Bagimlilik:** 1.1.0
+- **Status:** DONE
 
-### 1.1.2 5 Ipucu (Pinpoint)
-- [ ] 5 ipucu: en soyuttan en somuta (1=zor, 5=kolay)
-- [ ] Her yanlis tahminde sonraki ipucu acilir
-- [ ] Ipucu uretimi: Claude API veya pre-generated (films tablosundan metadata)
-- [ ] Film arama/autocomplete input (searchMovies mevcut)
-- [ ] "Kusursuz Tahmin" rozeti (ilk ipucunda bilen)
-- [ ] Sonuc ekrani + emoji grid paylasim
+### 1.1.2 5 Ipucu (Pinpoint) ✅
+- [x] 5 ipucu: en soyuttan en somuta (1=zor, 5=kolay)
+- [x] Her yanlis tahminde sonraki ipucu acilir
+- [x] Ipucu uretimi: film metadata'dan (yonetmen, oyuncu, genre, yil, konu)
+- [x] Film arama/autocomplete input (searchMovies mevcut)
+- [x] "Kusursuz Tahmin" rozeti (ilk ipucunda bilen)
+- [x] Sonuc ekrani + emoji grid paylasim
 - **Owner:** CTO (impl) + CDO (spec)
-- **Est:** 2 session
-- **Bagimlilik:** 1.1.0
+- **Status:** DONE
 
-### 1.1.3 Acimasiz Elestiri
-- [ ] Gercek veya AI-uretilmis 1 yildiz komik yorum goster
-- [ ] Kullanici filmi tahmin eder (arama/autocomplete)
-- [ ] TMDb reviews API fonksiyonu ekle VEYA Claude API ile satirik yorum uret
-- [ ] Sonuc ekrani + komik yorum paylasim karti
-- **Owner:** CTO (impl) + CDO (spec) + CMO (yorum icerigi)
-- **Est:** 2 session
-- **Bagimlilik:** 1.1.0
+### 1.1.3 Replik Tahmin (eski: Acimasiz Elestiri) ✅
+- [x] Ikonik film repligi goster (100+ curated quote, movieQuotes.ts)
+- [x] Kullanici filmi tahmin eder (arama/autocomplete)
+- [x] 4 deneme hakki: replik + 3 ipucu (karakter, oyuncu, yonetmen+yil)
+- [x] Sonuc ekrani + paylasim karti
+- **Owner:** CTO (impl) + CDO (spec) + CMO (replik icerigi)
+- **Status:** DONE
 
-### 1.1.4 Games Hub & Navigation
-- [ ] Home ekranina "Gunun Oyunlari" widget
-- [ ] Games Hub: 3 oyun karti + streak/skor ozeti
-- [ ] Tab bar'dan veya home'dan erisim
+### 1.1.4 Games Hub & Navigation ✅
+- [x] Home ekranina "Gunun Oyunlari" widget
+- [x] Games Hub: 3 oyun karti + streak/skor ozeti
+- [x] Home'dan erisim (games route)
 - **Owner:** CTO + CDO
-- **Est:** 1 session
-- **Bagimlilik:** 1.1.1, 1.1.2, 1.1.3
+- **Status:** DONE
+
+### 1.1.5 Polish & Release Hazirlik
+- [x] Share fonksiyonu (GameShareCard + useShareCapture)
+- [x] Error handling (puzzle yuklenememe durumu)
+- [x] App Store What's New copy (EN + TR)
+- [x] Keywords guncelleme (quiz, game, trivia)
+- [ ] Supabase migration 016 deploy (db push)
+- [ ] Device test — 3 oyun full flow
+- [ ] V1.1.0 EAS build + App Store submit
 
 ---
 
