@@ -116,13 +116,26 @@ Payment will be charged to your Apple ID account at confirmation of purchase. Su
 ### 2.3 Keywords (100 karakter, virgul ile ayrilmis)
 
 ```
-movie,recommendation,mood,film,what to watch,AI,tonight,suggest,discover,swipe,watchlist
+movie,recommendation,mood,film,what to watch,AI,quiz,game,trivia,discover,swipe,watchlist
 ```
 
 > **Karakter sayisi:** 88/100 — 12 karakter bos.
 > Alternatif eklemeler: `,cinema` (94) veya `,vibe` (93) veya `,picker` (95)
 
-### 2.4 What's New (Version 1.0.0)
+### 2.4 What's New (Version 1.1.0)
+
+```
+Daily cinema games are here! Test your movie knowledge every day.
+
+- NEW: Imposter — Spot the actor who doesn't belong
+- NEW: Pinpoint — Guess the film from 5 cryptic clues
+- NEW: Famous Quote — Name the movie from an iconic line
+- Daily puzzles with streak tracking
+- Share your game results with friends
+- Redesigned home dashboard
+```
+
+### 2.5 What's New (Version 1.0.0) — archived
 
 ```
 Welcome to Chosy.ai! Your mood-powered movie matchmaker.
@@ -199,10 +212,23 @@ Odeme, satin alimin onaylanmasiyla Apple Kimliginize faturalanir. Abonelik, mevc
 ### 3.3 Keywords (TR)
 
 ```
-film,oneri,ne izlesem,ruh hali,yapay zeka,film bul,izleme listesi,kesif,sinema,film onerisi
+film,oneri,ne izlesem,ruh hali,yapay zeka,film bul,oyun,bilgi yarismasi,sinema,film onerisi
 ```
 
-### 3.4 What's New (TR)
+### 3.4 What's New (TR) — V1.1.0
+
+```
+Gunluk sinema oyunlari geldi! Film bilgini her gun test et.
+
+- YENI: Sahtekar — Filmde olmayan oyuncuyu bul
+- YENI: 5 Ipucu — Gizemli ipuclarindan filmi tahmin et
+- YENI: Replik Tahmin — Ikonik replikten filmi bil
+- Gunluk bulmacalar + seri takibi
+- Oyun sonuclarini arkadaslarinla paylas
+- Yenilenen ana ekran
+```
+
+### 3.5 What's New (TR) — V1.0.0 — archived
 
 ```
 Chosy.ai'ye hos geldin! Ruh haline guc veren film eslestiricin.
