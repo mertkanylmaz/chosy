@@ -129,10 +129,14 @@ export default function GamesHubScreen() {
         >
           <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
         </TouchableOpacity>
-        <TouchableOpacity onLongPress={handleResetCaches} delayLongPress={800}>
-          <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
+        <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={handleResetCaches}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
+          <Ionicons name="refresh" size={22} color={Colors.textTertiary} />
         </TouchableOpacity>
-        <View style={styles.backButton} />
       </View>
 
       {/* Streak summary */}
