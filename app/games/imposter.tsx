@@ -6,7 +6,7 @@
  * Tek hak — yanlış seçim = oyun biter.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
@@ -35,7 +35,9 @@ import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const POSTER_HEIGHT = SCREEN_W * 0.65;
+/** Poster genisligi — ekranin %55'i, 2:3 aspect ratio */
+const POSTER_W = SCREEN_W * 0.55;
+const POSTER_H = POSTER_W * 1.5;
 
 export default function ImposterScreen() {
   const { t } = useLanguage();
@@ -223,56 +225,62 @@ export default function ImposterScreen() {
       {/* Flash overlay */}
       <Animated.View style={[styles.flashOverlay, flashStyle]} pointerEvents="none" />
 
-      {/* Poster */}
-      <View style={styles.posterContainer}>
-        {filmPoster && (
-          <Image
-            source={{ uri: filmPoster }}
-            style={styles.poster}
-            contentFit="cover"
-            transition={300}
-          />
-        )}
-      </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Poster — 2:3 oranında, ortalanmış */}
+        <View style={styles.posterContainer}>
+          {filmPoster && (
+            <Image
+              source={{ uri: filmPoster }}
+              style={styles.poster}
+              contentFit="cover"
+              transition={300}
+            />
+          )}
+        </View>
 
-      {/* Question */}
-      <Text style={styles.question}>{t('games.imposter.question')}</Text>
+        {/* Question */}
+        <Text style={styles.question}>{t('games.imposter.question')}</Text>
 
-      {/* Options — 2x2 grid */}
-      <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.optionsGrid}>
-        {options.map((option) => (
-          <TouchableOpacity
-            key={option.id}
-            style={[styles.optionButton, getButtonStyle(option)]}
-            onPress={() => handleSelect(option)}
-            disabled={gameState !== 'playing'}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.optionText,
-                selectedId !== null && option.isImposter && styles.optionTextCorrect,
-                selectedId === option.id && !option.isImposter && styles.optionTextWrong,
-              ]}
-              numberOfLines={1}
+        {/* Options — 2x2 grid */}
+        <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.optionsGrid}>
+          {options.map((option) => (
+            <TouchableOpacity
+              key={option.id}
+              style={[styles.optionButton, getButtonStyle(option)]}
+              onPress={() => handleSelect(option)}
+              disabled={gameState !== 'playing'}
+              activeOpacity={0.7}
             >
-              {option.name}
-            </Text>
-            {option.character ? (
               <Text
                 style={[
-                  styles.optionCharacter,
+                  styles.optionText,
                   selectedId !== null && option.isImposter && styles.optionTextCorrect,
                   selectedId === option.id && !option.isImposter && styles.optionTextWrong,
                 ]}
                 numberOfLines={1}
               >
-{`as "${option.character}"`}
+                {option.name}
               </Text>
-            ) : null}
-          </TouchableOpacity>
-        ))}
-      </Animated.View>
+              {option.character ? (
+                <Text
+                  style={[
+                    styles.optionCharacter,
+                    selectedId !== null && option.isImposter && styles.optionTextCorrect,
+                    selectedId === option.id && !option.isImposter && styles.optionTextWrong,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {`as "${option.character}"`}
+                </Text>
+              ) : null}
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      </ScrollView>
     </GameShell>
   );
 }
@@ -312,13 +320,17 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.error,
     zIndex: 100,
   },
+  scrollContent: {
+    alignItems: 'center',
+    paddingBottom: Theme.spacing.md,
+  },
   posterContainer: {
     alignItems: 'center',
     marginBottom: Theme.spacing.md,
   },
   poster: {
-    width: SCREEN_W - Theme.spacing.md * 2,
-    height: POSTER_HEIGHT,
+    width: POSTER_W,
+    height: POSTER_H,
     borderRadius: Theme.borderRadius.lg,
   },
   question: {
@@ -332,6 +344,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Theme.spacing.sm,
+    width: SCREEN_W - Theme.spacing.md * 2,
   },
   optionButton: {
     width: (SCREEN_W - Theme.spacing.md * 2 - Theme.spacing.sm) / 2,

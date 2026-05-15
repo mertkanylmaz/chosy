@@ -271,7 +271,7 @@ async function generateImposterClues(
       character: c.character || undefined,
       isImposter: false,
     })),
-    { id: fakeActor.id, name: fakeActor.name, character: 'Unknown Role', isImposter: true },
+    { id: fakeActor.id, name: fakeActor.name, character: fakeActor.character || undefined, isImposter: true },
   ];
 
   const shuffled = shuffleWithSeed(options, seed + 1);
@@ -287,12 +287,12 @@ async function generateImposterClues(
 
 /**
  * Sahte oyuncu bulmak için farklı bir filmden cast çeker.
- * Karakter ismi de dahil edilir (merak uyandırıcı).
+ * Oyuncunun kendi filmindeki rolü de döndürülür (cevabı belli etmemek için).
  */
 async function findFakeActor(
   excludeFilmId: number,
   seed: number,
-): Promise<{ id: number; name: string } | null> {
+): Promise<{ id: number; name: string; character: string } | null> {
   try {
     const { data } = await supabase
       .from('films')
@@ -307,7 +307,11 @@ async function findFakeActor(
     if (!credits || credits.cast.length === 0) return null;
 
     const candidate = credits.cast[seed % Math.min(5, credits.cast.length)];
-    return { id: candidate.id, name: candidate.name };
+    return {
+      id: candidate.id,
+      name: candidate.name,
+      character: candidate.character || '',
+    };
   } catch {
     return null;
   }

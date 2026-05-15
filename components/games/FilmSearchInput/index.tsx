@@ -2,10 +2,12 @@
  * FilmSearchInput — Oyunlardaki film tahmin autocomplete input'u.
  *
  * Kullanıcı yazar → TMDb arama → dropdown sonuçlar → seçim.
+ * Dropdown INPUT'UN ÜSTÜNDE açılır (keyboard çakışmasını önlemek için).
  */
 import React, { useCallback, useRef, useState } from 'react';
 import {
-  FlatList,
+  Keyboard,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -63,7 +65,8 @@ export function FilmSearchInput({
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {
       hapticLight();
-      setQuery(film.title);
+      Keyboard.dismiss();
+      setQuery('');
       setShowDropdown(false);
       setResults([]);
       onSelect(film);
@@ -73,6 +76,47 @@ export function FilmSearchInput({
 
   return (
     <View style={styles.container}>
+      {/* Dropdown — INPUT'UN ÜSTÜNDE açılır */}
+      {showDropdown && (
+        <View style={styles.dropdown}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            nestedScrollEnabled
+            showsVerticalScrollIndicator={false}
+          >
+            {results.slice(0, 6).map((item) => {
+              const poster = getPosterUrl(item.posterPath, 'w92');
+              return (
+                <TouchableOpacity
+                  key={String(item.id)}
+                  style={styles.resultRow}
+                  onPress={() => handleSelect(item)}
+                >
+                  {poster ? (
+                    <Image
+                      source={{ uri: poster }}
+                      style={styles.resultPoster}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.resultPoster, styles.noPoster]}>
+                      <Ionicons name="film" size={16} color={Colors.textTertiary} />
+                    </View>
+                  )}
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.resultYear}>{item.year}</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Input */}
       <View style={styles.inputRow}>
         <Ionicons name="search" size={20} color={Colors.textTertiary} />
         <TextInput
@@ -99,43 +143,6 @@ export function FilmSearchInput({
           </TouchableOpacity>
         )}
       </View>
-
-      {showDropdown && (
-        <View style={styles.dropdown}>
-          <FlatList
-            data={results.slice(0, 6)}
-            keyExtractor={(item) => String(item.id)}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => {
-              const poster = getPosterUrl(item.posterPath, 'w92');
-              return (
-                <TouchableOpacity
-                  style={styles.resultRow}
-                  onPress={() => handleSelect(item)}
-                >
-                  {poster ? (
-                    <Image
-                      source={{ uri: poster }}
-                      style={styles.resultPoster}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={[styles.resultPoster, styles.noPoster]}>
-                      <Ionicons name="film" size={16} color={Colors.textTertiary} />
-                    </View>
-                  )}
-                  <View style={styles.resultInfo}>
-                    <Text style={styles.resultTitle} numberOfLines={1}>
-                      {item.title}
-                    </Text>
-                    <Text style={styles.resultYear}>{item.year}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            }}
-          />
-        </View>
-      )}
     </View>
   );
 }
@@ -163,15 +170,20 @@ const styles = StyleSheet.create({
   },
   dropdown: {
     position: 'absolute',
-    top: 52,
+    bottom: 52,
     left: 0,
     right: 0,
     backgroundColor: Colors.bgElevated,
     borderRadius: Theme.borderRadius.md,
-    maxHeight: 240,
+    maxHeight: 280,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: Colors.cardBorder,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   resultRow: {
     flexDirection: 'row',
@@ -179,10 +191,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
     gap: Theme.spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.cardBorder,
   },
   resultPoster: {
-    width: 32,
-    height: 48,
+    width: 36,
+    height: 54,
     borderRadius: 4,
   },
   noPoster: {
@@ -195,12 +209,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   resultTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: Colors.textWhite,
   },
   resultYear: {
-    fontSize: 12,
+    fontSize: 13,
     color: Colors.textSecondary,
   },
 });

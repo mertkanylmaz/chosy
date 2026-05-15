@@ -16,6 +16,8 @@ import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticHeavy } from '@/utils/haptics';
 import { getPosterUrl } from '@/services/tmdb';
+import { supabase } from '@/services/supabase';
+import { logger } from '@/utils/logger';
 import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 
 interface ResultCardProps {
@@ -138,9 +140,23 @@ export function ResultCard({
           )}
           <TouchableOpacity
             style={styles.watchlistButton}
-            onPress={() => {
+            onPress={async () => {
               hapticHeavy();
-              router.push(`/film/${filmId}`);
+              try {
+                // tmdb_id → UUID lookup (film detail sayfasi UUID bekliyor)
+                const { data } = await supabase
+                  .from('films')
+                  .select('id')
+                  .eq('tmdb_id', filmId)
+                  .single();
+                if (data?.id) {
+                  router.push(`/film/${data.id}`);
+                } else {
+                  logger.warn(`[ResultCard] Film UUID bulunamadi: tmdb_id=${filmId}`);
+                }
+              } catch (err) {
+                logger.error('[ResultCard] Film lookup hatasi:', err);
+              }
             }}
           >
             <Ionicons name="add" size={20} color={Colors.textOnAccent} />
