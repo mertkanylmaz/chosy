@@ -4,10 +4,18 @@
  * Header: geri butonu + oyun adı
  * Progress: attempt göstergesi (dolu/boş noktalar)
  * Children: oyun içeriği
+ * KeyboardAvoidingView: keyboard açıldığında içerik yukarı kayar
  * paddingBottom: 83 (tab bar clearance)
  */
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +48,11 @@ export function GameShell({
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingTop: insets.top }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={0}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -74,7 +86,7 @@ export function GameShell({
 
       {/* Content */}
       <View style={styles.content}>{children}</View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

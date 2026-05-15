@@ -25,10 +25,10 @@ import type {
 // ─── Cache Keys ──────────────────────────────────────────────────────────────
 
 /** Cache version — artir: eski puzzle cache'leri gecersiz olur */
-const CACHE_PREFIX = 'chosy_game_v5_';
+const CACHE_PREFIX = 'chosy_game_v6_';
 
 /** Eski prefix migrasyon flag'i — bir kez calisir */
-const MIGRATION_KEY = 'chosy_game_migration_v5';
+const MIGRATION_KEY = 'chosy_game_migration_v6';
 
 /**
  * Eski versiyon cache'lerini temizler (v1-v4).
@@ -288,6 +288,7 @@ async function generateImposterClues(
 /**
  * Sahte oyuncu bulmak için farklı bir filmden cast çeker.
  * Oyuncunun kendi filmindeki rolü de döndürülür (cevabı belli etmemek için).
+ * Karakter adı olan bir oyuncu bulana kadar birden fazla film dener.
  */
 async function findFakeActor(
   excludeFilmId: number,
@@ -298,20 +299,39 @@ async function findFakeActor(
       .from('films')
       .select('tmdb_id')
       .neq('tmdb_id', excludeFilmId)
-      .limit(20);
+      .limit(30);
 
     if (!data || data.length === 0) return null;
 
-    const randomFilm = data[seed % data.length];
-    const credits = await fetchMovieCredits(randomFilm.tmdb_id);
-    if (!credits || credits.cast.length === 0) return null;
+    // Birden fazla film dene — karakter adı olan oyuncu bul
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const filmIdx = (seed + attempt) % data.length;
+      const randomFilm = data[filmIdx];
+      const credits = await fetchMovieCredits(randomFilm.tmdb_id);
+      if (!credits || credits.cast.length === 0) continue;
 
-    const candidate = credits.cast[seed % Math.min(5, credits.cast.length)];
-    return {
-      id: candidate.id,
-      name: candidate.name,
-      character: candidate.character || '',
-    };
+      // Karakter adı olan ilk 5 oyuncudan birini seç
+      const topCast = credits.cast.slice(0, 5);
+      const withCharacter = topCast.filter(
+        (c) => c.character && c.character.trim().length > 0,
+      );
+
+      if (withCharacter.length > 0) {
+        const candidate = withCharacter[(seed + attempt) % withCharacter.length];
+        return {
+          id: candidate.id,
+          name: candidate.name,
+          character: candidate.character,
+        };
+      }
+    }
+
+    // Fallback: karakter adı olmadan da dön (UI'da gösterilmez)
+    const fallbackFilm = data[seed % data.length];
+    const fallbackCredits = await fetchMovieCredits(fallbackFilm.tmdb_id);
+    if (!fallbackCredits || fallbackCredits.cast.length === 0) return null;
+    const fb = fallbackCredits.cast[0];
+    return { id: fb.id, name: fb.name, character: '' };
   } catch {
     return null;
   }
