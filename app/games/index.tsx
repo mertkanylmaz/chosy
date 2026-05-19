@@ -15,6 +15,7 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticHeavy } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches } from '@/services/gameService';
 
 interface GameCardData {
@@ -30,6 +31,13 @@ interface GameCardData {
 
 const GAME_DEFINITIONS = [
   {
+    gameType: 'fadein',
+    route: '/games/fadein',
+    titleKey: 'games.fadein.title',
+    descriptionKey: 'games.fadein.description',
+    icon: 'image',
+  },
+  {
     gameType: 'imposter',
     route: '/games/imposter',
     titleKey: 'games.imposter.title',
@@ -37,17 +45,17 @@ const GAME_DEFINITIONS = [
     icon: 'people',
   },
   {
-    gameType: 'pinpoint',
-    route: '/games/pinpoint',
-    titleKey: 'games.pinpoint.title',
-    descriptionKey: 'games.pinpoint.description',
+    gameType: 'logline',
+    route: '/games/logline',
+    titleKey: 'games.logline.title',
+    descriptionKey: 'games.logline.description',
     icon: 'bulb',
   },
   {
-    gameType: 'roast',
-    route: '/games/roast',
-    titleKey: 'games.roast.title',
-    descriptionKey: 'games.roast.description',
+    gameType: 'quoted',
+    route: '/games/quoted',
+    titleKey: 'games.quoted.title',
+    descriptionKey: 'games.quoted.description',
     icon: 'chatbubble-ellipses',
   },
 ] as const;
@@ -142,7 +150,7 @@ export default function GamesHubScreen() {
       {/* Streak summary */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>{playedCount}/3</Text>
+          <Text style={styles.summaryNumber}>{playedCount}/{GAME_DEFINITIONS.length}</Text>
           <Text style={styles.summaryLabel}>{t('games.hub.played')}</Text>
         </View>
         {totalStreak > 0 && (
@@ -168,6 +176,7 @@ export default function GamesHubScreen() {
               ]}
               onPress={() => {
                 hapticLight();
+                // Oyunlar FREE — kota/paywall yok (engagement oncelikli)
                 router.push(game.route as never);
               }}
               activeOpacity={0.7}

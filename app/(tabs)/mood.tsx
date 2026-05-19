@@ -45,6 +45,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import AIProcessingOverlay from '@/components/AIProcessingOverlay';
 import MoodProfileResult from '@/components/MoodProfileResult';
 import QuotaExhausted from '@/components/QuotaExhausted';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import { Colors } from '@/constants/Colors';
 import { MoodIcons } from '@/constants/icons';
@@ -59,6 +61,7 @@ import { saveSession, getAppUserId } from '@/services/watchlist';
 import { FilmFilters, TasteProfile } from '@/types';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
+import { logger } from '@/utils/logger';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -125,7 +128,8 @@ export default function MoodScreen() {
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
   const { setMoodResult, setCurrentSessionId, setLastMoodText } = useMood();
-  const { quota, checkQuota, recordSearch, status: subscriptionStatus, isLoading: subLoading } = useSubscription();
+  const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [phase, setPhase] = useState<Phase>('input');
   const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
@@ -138,8 +142,10 @@ export default function MoodScreen() {
   const [ratingChip, setRatingChip] = useState<RatingChipId>('');
   /** Hata durumu — inline hata mesajı göstermek için */
   const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
-  /** Kota doldu overlay görünürlüğü */
+  /** Kota doldu overlay gorunurlugu */
   const [showQuotaExhausted, setShowQuotaExhausted] = useState(false);
+  /** Son kota sonucu — QuotaExhausted overlay'ine aktarilir */
+  const [lastQuotaResult, setLastQuotaResult] = useState<import('@/constants/subscriptionPlans').QuotaStatus | null>(null);
   /** TextInput focus durumu — glow efekti için */
   const [isFocused, setIsFocused] = useState(false);
 
@@ -202,11 +208,19 @@ export default function MoodScreen() {
     hapticMedium();
     Keyboard.dismiss();
 
-    // ── Kota kontrolü ─────────────────────────────────────────────────────
-    const quotaResult = await checkQuota();
-    if (!quotaResult.allowed) {
-      setShowQuotaExhausted(true);
-      return;
+    // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
+    // Onboarding'de kota tuketme (ilk arama bedava)
+    if (!isOnboarding) {
+      const quotaResult = await consumeQuota('search');
+      setLastQuotaResult(quotaResult);
+      if (!quotaResult.allowed) {
+        // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
+        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
+        if (!shown) {
+          setShowQuotaExhausted(true);
+        }
+        return;
+      }
     }
 
     const yearRange = yearChip ? (yearChip as FilmFilters['yearRange']) : null;
@@ -231,13 +245,11 @@ export default function MoodScreen() {
         profile.era_preference = yearRangeToEra(filters.yearRange);
       }
 
+      // consumeQuota zaten arama oncesinde atomic olarak hem kontrol etti hem kayit yazdi.
+      // Ek recordSearch cagrisi gerekmiyor.
+
       setTasteProfile(profile);
       setPhase('result');
-
-      // ── Basarili arama → kota sayacini artir (onboarding'de bedava) ────
-      if (!isOnboarding) {
-        await recordSearch();
-      }
 
       // Session'ı arka planda kaydet — hata akışı engellemez
       getAppUserId().then((userId) => {
@@ -256,7 +268,7 @@ export default function MoodScreen() {
       setMoodError({ type: userError.type, message: userError.message });
       setPhase('input');
     }
-  }, [moodText, yearChip, ratingChip, phase, t, checkQuota, recordSearch]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
 
   /**
    * "Browse Movies" → MoodContext'e kaydet → Discover'a gec
@@ -523,9 +535,9 @@ export default function MoodScreen() {
                   />
                   <View style={styles.findButtonContent}>
                     <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
-                    {quota && !subLoading && quota.remaining > 0 && (
+                    {fullQuota && !subLoading && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
                       <Text style={styles.findButtonQuota}>
-                        {t('mood.quotaLeft', { count: quota.remaining })}
+                        {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
                       </Text>
                     )}
                   </View>
@@ -543,13 +555,15 @@ export default function MoodScreen() {
 
       <AIProcessingOverlay visible={phase === 'processing'} t={t} />
 
-      {/* ── Kota Doldu Overlay ──────────────────────────────────── */}
+      {/* ── Kota Doldu Overlay (fallback) ────────────────────────── */}
       <QuotaExhausted
         visible={showQuotaExhausted}
         onClose={() => setShowQuotaExhausted(false)}
-        quota={quota}
-        subscriptionStatus={subscriptionStatus}
+        quotaStatus={lastQuotaResult}
       />
+
+      {/* ── Contextual Paywall (orchestrator-driven) ─────────── */}
+      <ContextualPaywall {...paywallProps} />
     </>
   );
 }

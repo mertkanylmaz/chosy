@@ -11,6 +11,8 @@ export const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
     padding: Theme.spacing.md,
     gap: 14,
+    /** Sabit minHeight — veri yuklenene kadar layout shift'i engeller */
+    minHeight: 140,
   },
 
   // ── Başlık ──
@@ -71,6 +73,7 @@ export const styles = StyleSheet.create({
   },
   genreRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   genrePill: {

@@ -1,12 +1,12 @@
 /**
- * 5 İpucu (Pinpoint) — Tümdengelim oyunu.
+ * Quoted — Gercek film repliginden filmi tahmin et.
  *
- * 5 ipucu soyuttan somuta açılır.
- * Her yanlış tahminde sonraki ipucu açılır.
- * İlk ipucunda bilen = "Kusursuz Tahmin" rozeti.
+ * Ikonik bir film repligi gosterilir, kullanici filmi tahmin eder.
+ * Yanlis tahminlerde ipuclari acilir: karakter adi > basrol > yonetmen+yil.
+ * Max 4 deneme hakki (1 replik + 3 ipucu).
  */
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -14,7 +14,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
+import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import {
   fetchDailyPuzzle,
@@ -28,13 +28,17 @@ import type { GameState, GameClue, GameResult, FilmSearchResult } from '@/servic
 import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useGamePaywall } from '@/hooks/useGamePaywall';
 
-export default function PinpointScreen() {
+export default function QuotedScreen() {
   const { t } = useLanguage();
+  const { checkGamePaywall, paywallProps } = useGamePaywall();
 
   const [gameState, setGameState] = useState<GameState>('loading');
-  const [clues, setClues] = useState<GameClue[]>([]);
-  const [revealedCount, setRevealedCount] = useState(1); // İlk ipucu açık başlar
+  const [quoteText, setQuoteText] = useState('');
+  const [hints, setHints] = useState<GameClue[]>([]);
+  const [revealedHints, setRevealedHints] = useState(0);
   const [attempts, setAttempts] = useState(0);
   const [puzzleFilmId, setPuzzleFilmId] = useState(0);
   const [puzzleId, setPuzzleId] = useState('');
@@ -48,12 +52,15 @@ export default function PinpointScreen() {
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
+  const maxAttempts = 4; // 1 replik + 3 ipucu
+
   // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
   useFocusEffect(
     useCallback(() => {
       setGameState('loading');
-      setClues([]);
-      setRevealedCount(1);
+      setQuoteText('');
+      setHints([]);
+      setRevealedHints(0);
       setAttempts(0);
       setResult(null);
       setFilmInfo(null);
@@ -63,12 +70,13 @@ export default function PinpointScreen() {
     }, []),
   );
 
+  /** Puzzle yukle — cache veya fresh */
   const loadPuzzle = useCallback(async () => {
     try {
-      const cached = await getCachedResult('pinpoint');
+      const cached = await getCachedResult('quoted');
       if (cached) {
         const film = await getFilmAnswer(cached.filmId);
-        const streakInfo = await getGameStreak('pinpoint');
+        const streakInfo = await getGameStreak('quoted');
         setResult(cached);
         setFilmInfo(film);
         setStreak(streakInfo.currentStreak);
@@ -76,14 +84,20 @@ export default function PinpointScreen() {
         return;
       }
 
-      const puzzle = await fetchDailyPuzzle('pinpoint');
+      const puzzle = await fetchDailyPuzzle('quoted');
       if (!puzzle) {
-        logger.error('[pinpoint] Puzzle yüklenemedi');
+        logger.error('[quoted] Puzzle yuklenemedi');
         setLoadError(true);
         return;
       }
 
-      setClues(puzzle.clues.sort((a, b) => a.order - b.order));
+      const sortedClues = puzzle.clues.sort((a, b) => a.order - b.order);
+      // Ilk clue = replik (type: 'quote'), geri kalan = ipuclari
+      const quoteClue = sortedClues[0];
+      const hintClues = sortedClues.slice(1);
+
+      setQuoteText(quoteClue?.content ?? '');
+      setHints(hintClues);
       setPuzzleFilmId(puzzle.filmId);
       setPuzzleId(puzzle.id);
 
@@ -92,11 +106,12 @@ export default function PinpointScreen() {
 
       setGameState('playing');
     } catch (err) {
-      logger.error('[pinpoint] Load hatası:', err);
+      logger.error('[quoted] Load hatasi:', err);
       setLoadError(true);
     }
   }, []);
 
+  /** Tahmin yap */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
       if (gameState !== 'playing') return;
@@ -108,71 +123,59 @@ export default function PinpointScreen() {
 
       if (solved) {
         hapticSuccess();
-        setGameState('reveal');
-
-        await new Promise((r) => setTimeout(r, 600));
-
-        const today = getTodayDate();
-        const gameResult: GameResult = {
-          puzzleId,
-          date: today,
-          gameType: 'pinpoint',
-          solved: true,
-          attempts: newAttempts,
-          maxAttempts: 5,
-          filmId: puzzleFilmId,
-        };
-
-        await submitGameScore(gameResult);
-        const streakInfo = await getGameStreak('pinpoint');
-
-        setResult(gameResult);
-        setStreak(streakInfo.currentStreak);
-        setGameState('complete');
+        await finishGame(true, newAttempts);
       } else {
         hapticWarning();
         setWrongGuess(film.title);
         setTimeout(() => setWrongGuess(null), 1500);
 
-        // Sonraki ipucunu aç
-        if (revealedCount < clues.length) {
-          setRevealedCount((prev) => prev + 1);
+        // Sonraki ipucunu ac
+        if (revealedHints < hints.length) {
+          setRevealedHints((prev) => prev + 1);
         }
 
-        // Son deneme — oyun biter
-        if (newAttempts >= 5) {
+        // Son deneme
+        if (newAttempts >= maxAttempts) {
           hapticHeavy();
-          setGameState('reveal');
-
-          await new Promise((r) => setTimeout(r, 600));
-
-          const today = getTodayDate();
-          const gameResult: GameResult = {
-            puzzleId,
-            date: today,
-            gameType: 'pinpoint',
-            solved: false,
-            attempts: newAttempts,
-            maxAttempts: 5,
-            filmId: puzzleFilmId,
-          };
-
-          await submitGameScore(gameResult);
-          const streakInfo = await getGameStreak('pinpoint');
-
-          setResult(gameResult);
-          setStreak(streakInfo.currentStreak);
-          setGameState('complete');
+          await finishGame(false, newAttempts);
         }
       }
     },
-    [gameState, attempts, puzzleFilmId, puzzleId, revealedCount, clues.length],
+    [gameState, attempts, puzzleFilmId, puzzleId, revealedHints, hints.length],
   );
 
-  // Error
+  /** Oyunu bitir */
+  const finishGame = useCallback(
+    async (solved: boolean, totalAttempts: number) => {
+      setGameState('reveal');
+      await new Promise((r) => setTimeout(r, 600));
+
+      const today = getTodayDate();
+      const gameResult: GameResult = {
+        puzzleId,
+        date: today,
+        gameType: 'quoted',
+        solved,
+        attempts: totalAttempts,
+        maxAttempts,
+        filmId: puzzleFilmId,
+      };
+
+      await submitGameScore(gameResult);
+      const streakInfo = await getGameStreak('quoted');
+
+      setResult(gameResult);
+      setStreak(streakInfo.currentStreak);
+      setGameState('complete');
+      checkGamePaywall(streakInfo.currentStreak, solved);
+    },
+    [puzzleId, puzzleFilmId, checkGamePaywall],
+  );
+
+  // ─── Error ───
   if (loadError) {
     return (
-      <GameShell title={t('games.pinpoint.title')} currentAttempt={0} maxAttempts={5}>
+      <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <View style={styles.center}>
           <Text style={styles.errorEmoji}>🎬</Text>
           <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
@@ -182,10 +185,10 @@ export default function PinpointScreen() {
     );
   }
 
-  // Loading
+  // ─── Loading ───
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.pinpoint.title')} currentAttempt={0} maxAttempts={5}>
+      <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <View style={styles.center}>
           <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
         </View>
@@ -193,23 +196,23 @@ export default function PinpointScreen() {
     );
   }
 
-  // Complete
+  // ─── Complete ───
   if (gameState === 'complete' && result && filmInfo) {
-    const isPerfect = result.solved && result.attempts === 1;
     return (
       <GameShell
-        title={t('games.pinpoint.title')}
+        title={t('games.quoted.title')}
         currentAttempt={result.attempts}
-        maxAttempts={5}
+        maxAttempts={maxAttempts}
         hideProgress
       >
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
-          {isPerfect && (
-            <Animated.View entering={FadeInDown.duration(400)} style={styles.perfectBadge}>
-              <Text style={styles.perfectEmoji}>🎯</Text>
-              <Text style={styles.perfectText}>{t('games.pinpoint.perfect')}</Text>
-            </Animated.View>
-          )}
+          {/* Repligi tekrar goster */}
+          <View style={styles.quoteCardSmall}>
+            <Ionicons name="chatbubble-ellipses" size={18} color={Colors.gold} />
+            <Text style={styles.quoteTextSmall} numberOfLines={3}>
+              {`"${quoteText}"`}
+            </Text>
+          </View>
           <ResultCard
             solved={result.solved}
             attempts={result.attempts}
@@ -219,49 +222,47 @@ export default function PinpointScreen() {
             filmPosterPath={filmInfo.posterPath}
             filmId={result.filmId}
             streak={streak}
-            gameTitle={t('games.pinpoint.title')}
-            gameType="pinpoint"
+            gameTitle={t('games.quoted.title')}
+            gameType="quoted"
           />
         </ScrollView>
       </GameShell>
     );
   }
 
-  // Playing
+  // ─── Playing ───
   return (
     <GameShell
-      title={t('games.pinpoint.title')}
+      title={t('games.quoted.title')}
       currentAttempt={attempts}
-      maxAttempts={5}
+      maxAttempts={maxAttempts}
     >
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Clues */}
-        <View style={styles.cluesContainer}>
-          {clues.map((clue, index) => {
-            const isRevealed = index < revealedCount;
-            return (
-              <Animated.View
-                key={clue.order}
-                entering={isRevealed ? FadeInUp.delay(index * 100).duration(300) : undefined}
-                style={[styles.clueRow, isRevealed ? styles.clueRevealed : styles.clueLocked]}
-              >
-                <View style={styles.clueNumber}>
-                  <Text style={styles.clueNumberText}>{clue.order}</Text>
-                </View>
-                {isRevealed ? (
-                  <Text style={styles.clueText}>{clue.content}</Text>
-                ) : (
-                  <View style={styles.lockedRow}>
-                    <Ionicons name="lock-closed" size={14} color={Colors.textTertiary} />
-                    <Text style={styles.lockedText}>{t('games.pinpoint.clue_locked')}</Text>
-                  </View>
-                )}
-              </Animated.View>
-            );
-          })}
+        {/* Film ikonu badge */}
+        <View style={styles.quoteBadge}>
+          <Ionicons name="film-outline" size={20} color={Colors.gold} />
+          <Text style={styles.quoteBadgeLabel}>{t('games.quoted.quoteLabel')}</Text>
         </View>
 
-        {/* Wrong guess feedback */}
+        {/* Replik karti */}
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.quoteCard}>
+          <Ionicons name="chatbubble-ellipses" size={28} color={Colors.gold} style={styles.quoteIcon} />
+          <Text style={styles.quoteMainText}>{`"${quoteText}"`}</Text>
+        </Animated.View>
+
+        {/* Acilan ipuclari */}
+        {hints.slice(0, revealedHints).map((hint, index) => (
+          <Animated.View
+            key={hint.order}
+            entering={FadeInUp.delay(index * 100).duration(300)}
+            style={styles.hintRow}
+          >
+            <Ionicons name="bulb" size={16} color={Colors.gold} />
+            <Text style={styles.hintText}>{hint.content}</Text>
+          </Animated.View>
+        ))}
+
+        {/* Yanlis tahmin */}
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
             <Ionicons name="close-circle" size={16} color={Colors.error} />
@@ -270,13 +271,14 @@ export default function PinpointScreen() {
         )}
       </ScrollView>
 
-      {/* Search input — fixed at bottom */}
+      {/* Film arama */}
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
           disabled={gameState !== 'playing'}
         />
       </View>
+      <ContextualPaywall {...paywallProps} />
     </GameShell>
   );
 }
@@ -310,79 +312,73 @@ const styles = StyleSheet.create({
   resultContainer: {
     flexGrow: 1,
     justifyContent: 'center',
+    gap: Theme.spacing.md,
     paddingBottom: Theme.spacing.lg,
   },
-  perfectBadge: {
+  quoteCardSmall: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'flex-start',
     gap: Theme.spacing.sm,
-    paddingVertical: Theme.spacing.md,
-    marginBottom: Theme.spacing.md,
-    backgroundColor: Colors.goldDim,
+    backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
-  perfectEmoji: {
-    fontSize: 24,
-  },
-  perfectText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.gold,
+  quoteTextSmall: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 20,
   },
   scrollContent: {
     flex: 1,
   },
-  cluesContainer: {
-    gap: Theme.spacing.sm,
-    paddingTop: Theme.spacing.md,
-  },
-  clueRow: {
+  quoteBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Theme.spacing.md,
-    padding: Theme.spacing.md,
-    borderRadius: Theme.borderRadius.md,
-    minHeight: 52,
+    justifyContent: 'center',
+    gap: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.sm,
   },
-  clueRevealed: {
+  quoteBadgeLabel: {
+    fontSize: 13,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+  quoteCard: {
     backgroundColor: Colors.bgCard,
+    borderRadius: Theme.borderRadius.lg,
+    padding: Theme.spacing.lg,
+    marginVertical: Theme.spacing.md,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
   },
-  clueLocked: {
-    backgroundColor: Colors.white05,
-    borderWidth: 1,
-    borderColor: 'transparent',
+  quoteIcon: {
+    marginBottom: Theme.spacing.sm,
   },
-  clueNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clueNumberText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.accentPrimary,
-  },
-  clueText: {
-    flex: 1,
-    fontSize: 15,
+  quoteMainText: {
+    fontSize: 20,
     color: Colors.textWhite,
-    lineHeight: 22,
+    lineHeight: 30,
+    fontStyle: 'italic',
+    fontWeight: '500',
   },
-  lockedRow: {
-    flex: 1,
+  hintRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Theme.spacing.xs,
+    gap: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.md,
+    backgroundColor: Colors.goldDim,
+    borderRadius: Theme.borderRadius.sm,
+    marginTop: Theme.spacing.sm,
   },
-  lockedText: {
+  hintText: {
     fontSize: 14,
-    color: Colors.textTertiary,
+    color: Colors.gold,
+    fontWeight: '500',
   },
   wrongGuess: {
     flexDirection: 'row',
@@ -401,5 +397,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingTop: Theme.spacing.md,
     paddingBottom: Theme.spacing.sm,
+    marginBottom: Platform.OS === 'ios' ? 20 : 10,
   },
 });

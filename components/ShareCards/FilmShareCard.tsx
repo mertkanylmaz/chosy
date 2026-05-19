@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 import { Colors } from '@/constants/Colors';
 import { i18n } from '@/constants/i18n';
+import { localizeGenre } from '@/utils/filmFilters';
 
 import { styles, CARD_HEIGHT } from './styles';
 
@@ -37,7 +38,7 @@ const FilmShareCard = React.forwardRef<View, FilmShareCardProps>(
     // Meta satiri: "1994 · Drama · ★ 9.3"
     const metaParts: string[] = [];
     if (film.year) metaParts.push(String(film.year));
-    if (film.genres.length > 0) metaParts.push(film.genres[0]);
+    if (film.genres.length > 0) metaParts.push(localizeGenre(film.genres[0], i18n.locale));
     if (film.voteAverage != null) metaParts.push(`\u2605 ${film.voteAverage.toFixed(1)}`);
     const metaText = metaParts.join(' \u00B7 ');
 

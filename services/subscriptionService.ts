@@ -11,7 +11,7 @@
  */
 
 import { supabase } from './supabase';
-import type { PlanId, SubscriptionStatus } from '@/constants/subscriptionPlans';
+import type { LegacyPlanId, PlanId, SubscriptionStatus } from '@/constants/subscriptionPlans';
 import { logger } from '@/utils/logger';
 
 // ─── Yardımcı ────────────────────────────────────────────────────────────────
@@ -24,11 +24,14 @@ function isTableMissing(error: { message?: string; code?: string }): boolean {
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
-/** Supabase subscriptions tablosu satırı */
+/**
+ * Supabase subscriptions tablosu satiri.
+ * plan alani eski kayitlarda 'weekly'/'yearly' olabilir — LegacyPlanId kullanilir.
+ */
 export interface SubscriptionRow {
   id: string;
   user_id: string;
-  plan: PlanId;
+  plan: LegacyPlanId;
   status: SubscriptionStatus;
   trial_used: boolean;
   started_at: string;

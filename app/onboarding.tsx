@@ -193,6 +193,19 @@ export default function OnboardingScreen() {
     } catch {
       logger.warn('[Onboarding] AsyncStorage write failed.');
     }
+
+    // DB source of truth — reinstall sonrasi da korunur
+    try {
+      const appUserId = await getAppUserId();
+      if (appUserId) {
+        await supabase
+          .from('users')
+          .update({ onboarding_completed_at: new Date().toISOString() })
+          .eq('id', appUserId);
+      }
+    } catch {
+      logger.warn('[Onboarding] DB onboarding_completed_at write failed.');
+    }
   }, []);
 
   /** Onboarding'i tamamla ve mood ekranina git — onboarding zincirini baslat */

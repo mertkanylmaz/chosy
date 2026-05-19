@@ -8,13 +8,11 @@
 -- SECURITY DEFINER: RLS'yi bypass eder, sadece kendi tablosuna erişir.
 
 CREATE OR REPLACE FUNCTION auth_user_id()
-RETURNS UUID
+RETURNS uuid
 LANGUAGE sql
-STABLE
 SECURITY DEFINER
-SET search_path = public
 AS $$
-  SELECT id FROM public.users WHERE auth_id = auth.uid() LIMIT 1;
+  SELECT id FROM users WHERE auth_id = auth.uid()::text;
 $$;
 
 -- ─── mood_searches RLS — Yeniden oluştur ─────────────────────────────────────

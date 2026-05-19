@@ -69,23 +69,30 @@ function getLast14Days(
   const lastActive = lastActiveDate ? new Date(lastActiveDate) : null;
   if (lastActive) lastActive.setHours(0, 0, 0, 0);
 
+  // Streak aralığını önceden hesapla
+  let streakStartTime = 0;
+  let lastActiveTime = 0;
+  if (lastActive && currentStreak > 0) {
+    lastActiveTime = lastActive.getTime();
+    const streakStart = new Date(lastActive);
+    streakStart.setDate(streakStart.getDate() - (currentStreak - 1));
+    streakStartTime = streakStart.getTime();
+  }
+
   for (let i = 13; i >= 0; i--) {
     const day = new Date(today);
     day.setDate(day.getDate() - i);
+    const dayTime = day.getTime();
+
+    // Streak içinde mi?
+    const isInStreak = lastActive && currentStreak > 0
+      && dayTime >= streakStartTime && dayTime <= lastActiveTime;
 
     if (i === 0) {
-      // Bugün — lastActive bugünse active + today, değilse sadece today
-      const isActiveToday = lastActive && lastActive.getTime() === today.getTime();
-      result.push(isActiveToday ? 'today' : 'inactive');
-    } else if (lastActive && currentStreak > 0) {
-      // Streak boyunca aktif günleri işaretle
-      const streakStart = new Date(lastActive);
-      streakStart.setDate(streakStart.getDate() - (currentStreak - 1));
-      const dayTime = day.getTime();
-      const isInStreak = dayTime >= streakStart.getTime() && dayTime <= lastActive.getTime();
-      result.push(isInStreak ? 'active' : 'inactive');
+      // Bugün: her zaman 'today' olarak işaretle (aktifse altın + glow, değilse altın border)
+      result.push('today');
     } else {
-      result.push('inactive');
+      result.push(isInStreak ? 'active' : 'inactive');
     }
   }
 

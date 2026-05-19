@@ -44,13 +44,19 @@ import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
 import MilestoneCelebration from '@/components/Gamification/MilestoneCelebration';
 import type { MilestoneCelebrationProps } from '@/components/Gamification/MilestoneCelebration';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useFeedManager } from '@/hooks/useFeedManager';
 import {
   getUnseenMilestones,
+  getStreakInfo,
   markMilestoneSeen,
 } from '@/services/gamification';
+import { isWatchlistFull, isStreakMilestone } from '@/services/conversion';
+import { getAppUserId } from '@/services/watchlist';
 import type { UserMilestone } from '@/services/gamification';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
@@ -94,6 +100,8 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { currentProfile, currentFilters, clearMood, addLastSessionFilm } = useMood();
+  const { isPremium } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Onboarding akisi: mood.tsx'ten gelen param — 5 film limiti + Store Review + paywall */
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
@@ -275,10 +283,18 @@ export default function DiscoverScreen() {
         milestoneQueueRef.current = [...unseen];
         showNextCelebration();
       }
+
+      // Streak milestone paywall check — free user icin
+      if (!isPremium) {
+        const streakInfo = await getStreakInfo();
+        if (streakInfo && isStreakMilestone(streakInfo.currentStreak)) {
+          triggerPaywall({ type: 'streak_milestone', days: streakInfo.currentStreak });
+        }
+      }
     } catch {
       // Sessizce devam
     }
-  }, [showNextCelebration]);
+  }, [showNextCelebration, isPremium, triggerPaywall]);
 
   const handleSwipeRight = useCallback(
     (film: Film) => {
@@ -290,6 +306,17 @@ export default function DiscoverScreen() {
       toastTimer.current = setTimeout(() => setShowSaveToast(false), 1400);
       swipeCountRef.current += 1;
       saveCountRef.current += 1;
+
+      // Watchlist full check — free user 30 film limitine ulasmissa paywall goster
+      if (!isPremium) {
+        getAppUserId().then((uid) => {
+          if (uid) {
+            isWatchlistFull(uid).then((isFull) => {
+              if (isFull) triggerPaywall({ type: 'watchlist_full' });
+            });
+          }
+        });
+      }
 
       // 5 film watchlist'e eklendiyse session biter — Curator milestone goster
       if (saveCountRef.current >= WATCHLIST_SESSION_LIMIT) {
@@ -318,7 +345,7 @@ export default function DiscoverScreen() {
         checkNewMilestones();
       }
     },
-    [onSwipeFilm, addLastSessionFilm, showMilestone, checkNewMilestones, t],
+    [onSwipeFilm, addLastSessionFilm, showMilestone, checkNewMilestones, t, isPremium, triggerPaywall],
   );
 
   const handleSwipeLeft = useCallback(
@@ -619,6 +646,9 @@ export default function DiscoverScreen() {
           onDismiss={handleCelebrationDismiss}
         />
       )}
+
+      {/* Contextual Paywall (watchlist_full, streak_milestone) */}
+      <ContextualPaywall {...paywallProps} />
     </View>
   );
 }

@@ -9,9 +9,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
 import { getAppUserId } from './watchlist';
+import { earnSlotToken } from './slotService';
 import { fetchMovieCredits, fetchMovieDetails, searchMovies } from './tmdb';
 import type { TmdbCredits } from './tmdb';
 import { getQuoteForFilm, getQuotableFilmIds } from '@/constants/movieQuotes';
+import { i18n } from '@/constants/i18n';
+import { localizeGenre, localizeGenres } from '@/utils/filmFilters';
 import { logger } from '@/utils/logger';
 import type {
   DailyPuzzle,
@@ -181,12 +184,12 @@ async function generatePuzzle(
   // Deterministic seed: tarih + oyun tipi → aynı gün aynı puzzle
   const seed = hashDateGame(date, gameType);
 
-  // Roast özel akış: replik olan filmlerden seç
-  if (gameType === 'roast') {
-    return generateRoastPuzzle(seed, date);
+  // Quoted özel akış: replik olan filmlerden seç
+  if (gameType === 'quoted') {
+    return generateQuotedPuzzle(seed, date);
   }
 
-  // Random film seç (imposter + pinpoint)
+  // Random film seç (imposter + logline)
   const film = await getRandomFilm(seed);
   if (!film) return null;
 
@@ -213,9 +216,13 @@ async function generatePuzzle(
       clues = await generateImposterClues(richFilm, seed);
       maxAttempts = 1;
       break;
-    case 'pinpoint':
-      clues = generatePinpointClues(richFilm, seed);
+    case 'logline':
+      clues = generateLoglineClues(richFilm, seed);
       maxAttempts = 5;
+      break;
+    case 'fadein':
+      clues = generateFadeInClues(richFilm);
+      maxAttempts = 6;
       break;
     default:
       return null;
@@ -337,10 +344,10 @@ async function findFakeActor(
   }
 }
 
-// ─── Pinpoint Clue Generation ────────────────────────────────────────────────
+// ─── Logline Clue Generation ─────────────────────────────────────────────────
 
 /**
- * 5 İpucu oyunu: Zordan kolaya, her ipucu filme ilgiyi artırır.
+ * Logline oyunu: Zordan kolaya, her ipucu filme ilgiyi artırır.
  *
  * Sıra:
  * 1. Yönetmen (en zor — sadece sinefiller bilir)
@@ -349,10 +356,10 @@ async function findFakeActor(
  * 4. Ana karakterin adı (karakter ismi — "Jack Dawson")
  * 5. Filmin tek cümlede konusu — spoilersız (en kolay)
  */
-function generatePinpointClues(film: RichFilmData, _seed: number): GameClue[] {
-  logger.log(`[pinpoint] Generating clues for: ${film.title} (${film.year}) director=${film.director} cast=${film.cast.length}`);
+function generateLoglineClues(film: RichFilmData, _seed: number): GameClue[] {
+  logger.log(`[logline] Generating clues for: ${film.title} (${film.year}) director=${film.director} cast=${film.cast.length}`);
   const clues: GameClue[] = [];
-  const genres = film.genres ?? [];
+  const genres = localizeGenres(film.genres ?? [], i18n.locale);
   const year = film.year ?? 0;
   const director = film.director ?? '';
   const overview = film.overview ?? '';
@@ -410,10 +417,10 @@ function generatePinpointClues(film: RichFilmData, _seed: number): GameClue[] {
   return clues;
 }
 
-// ─── Roast (Replik) — Puzzle Generation ──────────────────────────────────────
+// ─── Quoted (Replik) — Puzzle Generation ─────────────────────────────────────
 
 /**
- * Replik oyunu: Gercek film repliginden filmi tahmin et.
+ * Quoted oyunu: Gercek film repliginden filmi tahmin et.
  *
  * Replik kurasyon veritabanindan (movieQuotes.ts) secilir.
  * Film secimi: replik olan filmlerden deterministic random.
@@ -424,13 +431,13 @@ function generatePinpointClues(film: RichFilmData, _seed: number): GameClue[] {
  *   order 3, type 'hint'   → Basrol oyuncu
  *   order 4, type 'hint'   → Yonetmen + yil
  */
-async function generateRoastPuzzle(
+async function generateQuotedPuzzle(
   seed: number,
   date: string,
 ): Promise<DailyPuzzle | null> {
   // Replik olan film ID'lerini al
   const quotableIds = getQuotableFilmIds();
-  logger.log(`[roast] Quotable films: ${quotableIds.length}, seed: ${seed}`);
+  logger.log(`[quoted] Quotable films: ${quotableIds.length}, seed: ${seed}`);
   if (quotableIds.length === 0) return null;
 
   // Deterministic film sec (replik olan filmlerden)
@@ -438,7 +445,7 @@ async function generateRoastPuzzle(
 
   // Replik sec
   const quote = getQuoteForFilm(filmTmdbId, seed);
-  logger.log(`[roast] Film: ${filmTmdbId}, Quote: ${quote?.quote?.substring(0, 40) ?? 'NULL'}`);
+  logger.log(`[quoted] Film: ${filmTmdbId}, Quote: ${quote?.quote?.substring(0, 40) ?? 'NULL'}`);
   if (!quote) return null;
 
   // TMDb'den zengin bilgi cek
@@ -481,19 +488,94 @@ async function generateRoastPuzzle(
   ];
 
   return {
-    id: `local_${date}_roast`,
+    id: `local_${date}_quoted`,
     date,
-    gameType: 'roast',
+    gameType: 'quoted',
     filmId: filmTmdbId,
     clues,
     maxAttempts: 4,
   };
 }
 
+// ─── Fade In (Pikselli Afis) — Clue Generation ──────────────────────────
+
+/**
+ * Fade In oyunu: Pikselli afisten filmi tahmin et.
+ * 6 deneme — her yanlis tahminde blur azalir + 1 ipucu acilir.
+ *
+ * Clue yapisi:
+ *   order 1, type 'poster'  → Poster URL (blur seviyesi client'da)
+ *   order 2, type 'hint'    → Tur
+ *   order 3, type 'hint'    → Cikis yili (decade)
+ *   order 4, type 'hint'    → Yonetmen
+ *   order 5, type 'hint'    → Basrol oyuncu
+ *   order 6, type 'hint'    → Mood etiketi / overview
+ */
+function generateFadeInClues(film: RichFilmData): GameClue[] {
+  const clues: GameClue[] = [];
+  const genres = localizeGenres(film.genres ?? [], i18n.locale);
+  const year = film.year ?? 0;
+  const director = film.director ?? '';
+  const overview = film.overview ?? '';
+  const cast = film.cast;
+
+  // Clue 1: Poster URL (client blur uygulayacak)
+  clues.push({
+    order: 1,
+    type: 'poster',
+    content: film.poster_url ?? '',
+  });
+
+  // Clue 2: Tur
+  clues.push({
+    order: 2,
+    type: 'hint',
+    content: genres.length > 0 ? genres.slice(0, 2).join(', ') : 'Film',
+  });
+
+  // Clue 3: Cikis yili (decade)
+  const decade = year > 0 ? `${Math.floor(year / 10) * 10}s` : 'Unknown era';
+  clues.push({
+    order: 3,
+    type: 'hint',
+    content: decade,
+  });
+
+  // Clue 4: Yonetmen
+  let directorName = director;
+  if (!directorName) {
+    const directorCrew = film.crew.find((c) => c.job === 'Director');
+    directorName = directorCrew?.name ?? '';
+  }
+  clues.push({
+    order: 4,
+    type: 'hint',
+    content: directorName ? `Directed by ${directorName}` : `${genres[0] ?? 'Drama'} film`,
+  });
+
+  // Clue 5: Basrol oyuncu
+  clues.push({
+    order: 5,
+    type: 'hint',
+    content: cast.length > 0 ? `Starring ${cast[0].name}` : `Released in ${year}`,
+  });
+
+  // Clue 6: Mood / kisa ozet
+  const firstSentence = overview.split(/[.!?]/).filter((s) => s.trim().length > 10)[0]?.trim();
+  clues.push({
+    order: 6,
+    type: 'hint',
+    content: firstSentence ?? `A ${genres[0]?.toLowerCase() ?? 'classic'} film`,
+  });
+
+  return clues;
+}
+
 // ─── Score Submit ────────────────────────────────────────────────────────────
 
 /**
  * Oyun sonucunu Supabase'e ve cache'e kaydeder.
+ * Perfect score (ilk denemede cozum) durumunda slot token kazandirir.
  */
 export async function submitGameScore(result: GameResult): Promise<void> {
   // Cache'e kaydet (UI hemen gösterebilsin)
@@ -514,6 +596,13 @@ export async function submitGameScore(result: GameResult): Promise<void> {
     // Puzzle ID'si local ise Supabase'de yok — skip
     if (result.puzzleId.startsWith('local_')) {
       await updateLocalStreak(result.gameType, result.solved);
+      // Perfect score token earning (fire-and-forget)
+      if (result.solved && result.attempts === 1) {
+        earnSlotToken(userId, 1, 'game_perfect').catch(() => {
+          // Token hatasi onemsiz — engagement oncelikli
+        });
+        logger.log(`[gameService] Perfect score! Token earned for ${result.gameType}`);
+      }
       return;
     }
 
@@ -525,6 +614,14 @@ export async function submitGameScore(result: GameResult): Promise<void> {
     });
 
     await updateLocalStreak(result.gameType, result.solved);
+
+    // Perfect score token earning (fire-and-forget)
+    if (result.solved && result.attempts === 1) {
+      earnSlotToken(userId, 1, 'game_perfect').catch(() => {
+        // Token hatasi onemsiz — engagement oncelikli
+      });
+      logger.log(`[gameService] Perfect score! Token earned for ${result.gameType}`);
+    }
   } catch (err) {
     logger.error('[gameService] Score submit hatası:', err);
   }
@@ -726,6 +823,12 @@ async function getRandomFilm(seed: number): Promise<FilmRow | null> {
 }
 
 // ─── Utility ─────────────────────────────────────────────────────────────────
+
+// ─── Genre Translation ──────────────────────────────────────────────────────
+
+// Genre çevirisi: utils/filmFilters.ts'deki localizeGenre/localizeGenres kullanılır.
+
+// ─── Seed & Hash ────────────────────────────────────────────────────────────
 
 /** Tarih + oyun tipinden deterministic seed */
 function hashDateGame(date: string, gameType: string): number {

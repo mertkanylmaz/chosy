@@ -34,6 +34,8 @@ import {
 import type { GameState, ImposterOption, GameResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useGamePaywall } from '@/hooks/useGamePaywall';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 /** Poster genisligi — ekranin %55'i, 2:3 aspect ratio */
@@ -42,6 +44,7 @@ const POSTER_H = POSTER_W * 1.5;
 
 export default function ImposterScreen() {
   const { t } = useLanguage();
+  const { checkGamePaywall, paywallProps } = useGamePaywall();
 
   // State
   const [gameState, setGameState] = useState<GameState>('loading');
@@ -161,8 +164,11 @@ export default function ImposterScreen() {
       setResult(gameResult);
       setStreak(streakInfo.currentStreak);
       setGameState('complete');
+
+      // Perfect streak paywall check
+      checkGamePaywall(streakInfo.currentStreak, solved);
     },
-    [gameState, selectedId, flashOpacity],
+    [gameState, selectedId, flashOpacity, checkGamePaywall],
   );
 
   const getButtonStyle = useCallback(
@@ -292,6 +298,7 @@ export default function ImposterScreen() {
           ))}
         </Animated.View>
       </ScrollView>
+      <ContextualPaywall {...paywallProps} />
     </GameShell>
   );
 }

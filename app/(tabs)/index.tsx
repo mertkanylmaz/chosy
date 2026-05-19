@@ -174,7 +174,7 @@ export default function HomeScreen() {
 
   /** Oyun durumlarını yükle */
   const loadGameStates = useCallback(async () => {
-    const types = ['imposter', 'pinpoint', 'roast'];
+    const types = ['fadein', 'imposter', 'logline', 'quoted'];
     let played = 0;
     for (const gt of types) {
       const r = await getCachedResult(gt);
@@ -412,22 +412,43 @@ export default function HomeScreen() {
             <View style={styles.gamesTextBlock}>
               <Text style={styles.gamesTitle}>{t('games.home_widget.title')}</Text>
               <Text style={styles.gamesSubtitle}>
-                {gamesPlayed >= 3
+                {gamesPlayed >= 4
                   ? t('games.home_widget.all_played')
-                  : `${gamesPlayed}/3 ${t('games.hub.played')}`}
+                  : `${gamesPlayed}/4 ${t('games.hub.played')}`}
               </Text>
             </View>
             <View style={styles.gamesPlayBadge}>
               <Text style={styles.gamesPlayText}>
-                {gamesPlayed >= 3 ? '✓' : t('games.home_widget.play_now')}
+                {gamesPlayed >= 4 ? '✓' : t('games.home_widget.play_now')}
               </Text>
             </View>
           </TouchableOpacity>
         </Animated.View>
 
+        {/* ── REFERRAL CTA — Davet programı widget ────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(160).duration(400).springify().damping(18)}
+          style={styles.referralSection}
+        >
+          <TouchableOpacity
+            style={styles.referralCard}
+            onPress={() => { hapticLight(); router.push('/referral' as never); }}
+            activeOpacity={0.8}
+          >
+            <View style={styles.referralIconBg}>
+              <Ionicons name="people" size={18} color={Colors.gold} />
+            </View>
+            <View style={styles.referralTextBlock}>
+              <Text style={styles.referralTitle}>{t('referral.title')}</Text>
+              <Text style={styles.referralSubtitle}>{t('referral.subtitle')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+          </TouchableOpacity>
+        </Animated.View>
+
         {/* ── SİNEFİL PROFİLİ — Tam genişlik, metin taşması giderildi ────── */}
         <Animated.View
-          entering={FadeInDown.delay(170).duration(400).springify().damping(18)}
+          entering={FadeInDown.delay(180).duration(400).springify().damping(18)}
           style={styles.archetypeSection}
         >
           <Text style={styles.sectionLabel}>{t('home.sinephileTitle')}</Text>
@@ -720,6 +741,43 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: Colors.textOnAccent,
+  },
+
+  // ── Referral Widget ─────────────────────────────────────────────────────
+  referralSection: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+  },
+  referralCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bgCard,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: Colors.gold + '20',
+    padding: 14,
+    gap: 12,
+  },
+  referralIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.goldDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  referralTextBlock: {
+    flex: 1,
+  },
+  referralTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    marginBottom: 2,
+  },
+  referralSubtitle: {
+    fontSize: 11,
+    color: Colors.textGrey,
   },
 
   // ── Sinefil Profili Bölümü ────────────────────────────────────────────────

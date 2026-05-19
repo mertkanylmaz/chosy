@@ -23,6 +23,7 @@ import {
   type ImageSourcePropType,
   Linking,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -59,6 +60,9 @@ import {
   getUserStats,
 } from '@/services/profileService';
 import PersonaBadge from '@/components/Profile/PersonaBadge';
+import Purchases from 'react-native-purchases';
+
+import { clearWatchlist } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { PLANS } from '@/constants/subscriptionPlans';
@@ -69,6 +73,12 @@ import {
   getUserMilestones,
 } from '@/services/gamification';
 import type { StreakInfo } from '@/services/gamification';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import {
+  getNotificationStatus,
+  toggleNotifications,
+} from '@/services/pushNotifications';
 
 import type { MoodHistoryItem, SwipeInsight, UserStats } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
@@ -343,9 +353,18 @@ interface SettingsModalProps {
   language: string;
   onLanguageChange: (code: 'en' | 'tr') => void;
   isAnonymous: boolean;
+  isPremium: boolean;
+  isLifetime: boolean;
+  /** Aktif plan etiketi — Apple yonetim sayfasi oncesi gosterilir */
+  currentPlanLabel: string;
   linkingAccount: boolean;
+  notificationsEnabled: boolean;
+  onToggleNotifications: (enabled: boolean) => void;
   onLinkApple: () => void;
   onClearWatchlist: () => void;
+  onManageSubscription: () => void;
+  onFoundingMember: () => void;
+  onInviteFriends: () => void;
   onSignOut: () => void;
   /** Hesap silme akışını başlatır — iki aşamalı onay */
   onDeleteAccount: () => void;
@@ -361,14 +380,21 @@ function SettingsModal({
   language,
   onLanguageChange,
   isAnonymous,
+  isPremium: isPremiumUser,
+  isLifetime,
+  currentPlanLabel,
   linkingAccount,
+  notificationsEnabled,
+  onToggleNotifications,
   onLinkApple,
   onClearWatchlist,
+  onManageSubscription,
+  onFoundingMember,
+  onInviteFriends,
   onSignOut,
   onDeleteAccount,
 }: SettingsModalProps) {
   const { t } = useLanguage();
-  const router = useRouter();
 
   return (
     <Modal
@@ -421,6 +447,32 @@ function SettingsModal({
             </View>
           </View>
 
+          {/* Bildirim toggle */}
+          <View style={settingsModalStyles.row}>
+            <View style={settingsModalStyles.rowLeft}>
+              <Ionicons name="notifications-outline" size={16} color={Colors.textGrey} />
+              <Text style={settingsModalStyles.rowLabel}>{t('notifications.settingsLabel')}</Text>
+            </View>
+            <View style={settingsModalStyles.langToggle}>
+              <TouchableOpacity
+                style={[settingsModalStyles.langOption, notificationsEnabled && settingsModalStyles.langOptionActive]}
+                onPress={() => { hapticSelection(); onToggleNotifications(true); }}
+                activeOpacity={0.75}>
+                <Text style={[settingsModalStyles.langText, notificationsEnabled && settingsModalStyles.langTextActive]}>
+                  {t('notifications.enabled')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[settingsModalStyles.langOption, !notificationsEnabled && settingsModalStyles.langOptionActive]}
+                onPress={() => { hapticSelection(); onToggleNotifications(false); }}
+                activeOpacity={0.75}>
+                <Text style={[settingsModalStyles.langText, !notificationsEnabled && settingsModalStyles.langTextActive]}>
+                  {t('notifications.disabled')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
           {/* Hesap bağlama — sadece anonim */}
           {isAnonymous && (
             <View style={settingsModalStyles.linkSection}>
@@ -453,11 +505,46 @@ function SettingsModal({
           {/* Subscription yönetimi */}
           <TouchableOpacity
             style={settingsModalStyles.row}
-            onPress={() => { onClose(); router.push('/paywall'); }}
+            onPress={() => { onClose(); onManageSubscription(); }}
             activeOpacity={0.7}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="diamond-outline" size={16} color={Colors.accentPrimary} />
-              <Text style={settingsModalStyles.rowLabel}>{t('profile.manageSubscription')}</Text>
+              <Text style={settingsModalStyles.rowLabel}>
+                {isPremiumUser ? t('profile.manageSubscription') : t('profile.upgradePlus')}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+          </TouchableOpacity>
+
+          {/* Apple yonetim sayfasi hakkinda bilgi notu */}
+          {isPremiumUser && (
+            <Text style={settingsModalStyles.manageNote}>
+              {t('profile.manageNote', { plan: currentPlanLabel })}
+            </Text>
+          )}
+
+          {/* Founding Member — sadece lifetime olmayan kullanicilar */}
+          {!isLifetime && (
+            <TouchableOpacity
+              style={settingsModalStyles.row}
+              onPress={() => { onClose(); onFoundingMember(); }}
+              activeOpacity={0.7}>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="diamond" size={16} color={Colors.gold} />
+                <Text style={settingsModalStyles.rowLabel}>{t('lifetime.settingsEntry')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+            </TouchableOpacity>
+          )}
+
+          {/* Invite Friends */}
+          <TouchableOpacity
+            style={settingsModalStyles.row}
+            onPress={() => { onClose(); onInviteFriends(); }}
+            activeOpacity={0.7}>
+            <View style={settingsModalStyles.rowLeft}>
+              <Ionicons name="people-outline" size={16} color={Colors.accentPrimary} />
+              <Text style={settingsModalStyles.rowLabel}>{t('referral.title')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
           </TouchableOpacity>
@@ -539,7 +626,8 @@ function SettingsModal({
 export default function ProfileScreen() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
-  const { isPremium, planId, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
+  const { isPremium, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
@@ -563,6 +651,7 @@ export default function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
@@ -619,10 +708,12 @@ export default function ProfileScreen() {
       setArchetypeId(calibrationArchetypeId ?? null);
 
       // Faz 1: Kritik veriler (üst kısımda görünen)
-      const [profileData, streakData] = await Promise.all([
+      const [profileData, streakData, pushStatus] = await Promise.all([
         getLastParsedProfile(userId),
         getStreakInfo(),
+        getNotificationStatus(),
       ]);
+      setNotificationsEnabled(pushStatus);
 
       setLastProfile(profileData);
       setStreakInfo(streakData);
@@ -739,6 +830,29 @@ export default function ProfileScreen() {
 
   // ─── Aksiyonlar ───────────────────────────────────────────────────────────
 
+  /**
+   * Abonelik yonetimi — premium kullanicilar iOS native ayarlara,
+   * free kullanicilar paywall'a yonlendirilir.
+   */
+  async function handleManageSubscription(): Promise<void> {
+    if (isPremium) {
+      try {
+        await Purchases.showManageSubscriptions();
+      } catch {
+        // Fallback: native URL ile ac
+        const url = Platform.OS === 'ios'
+          ? 'itms-apps://apps.apple.com/account/subscriptions'
+          : 'https://play.google.com/store/account/subscriptions';
+        await Linking.openURL(url);
+      }
+    } else {
+      router.push('/paywall');
+    }
+  }
+
+  /**
+   * Watchlist temizleme — onay sonrasi tum kayitlari siler + UI gunceller.
+   */
   function handleClearWatchlist() {
     Alert.alert(
       t('profile.clearWatchlistTitle'),
@@ -748,8 +862,15 @@ export default function ProfileScreen() {
         {
           text: t('profile.clearWatchlistConfirm'),
           style: 'destructive',
-          onPress: () => {
-            logger.log('[Profile] Watchlist cleared');
+          onPress: async () => {
+            try {
+              await clearWatchlist();
+              logger.log('[Profile] Watchlist cleared');
+              Alert.alert(t('profile.clearWatchlistSuccess') ?? 'Watchlist cleared');
+            } catch (err) {
+              logger.error('[Profile] clearWatchlist hatasi:', err);
+              Alert.alert(t('errors.generic'));
+            }
           },
         },
       ],
@@ -871,6 +992,21 @@ export default function ProfileScreen() {
         },
       ],
     );
+  }
+
+  // ─── Notification toggle ─────────────────────────────────────────────────
+
+  async function handleToggleNotifications(enabled: boolean): Promise<void> {
+    const prev = notificationsEnabled;
+    setNotificationsEnabled(enabled); // Optimistic
+    try {
+      const success = await toggleNotifications(enabled);
+      if (!success) {
+        setNotificationsEnabled(prev); // Rollback
+      }
+    } catch {
+      setNotificationsEnabled(prev);
+    }
   }
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -1003,13 +1139,18 @@ export default function ProfileScreen() {
             )}
 
             {/* Subscription badge */}
-            {isPremium ? (
+            {tier === 'lifetime' ? (
+              <View style={styles.subBadgeLifetime}>
+                <Ionicons name="diamond" size={14} color={Colors.gold} />
+                <Text style={styles.subBadgeLifetimeText}>Founding Member</Text>
+              </View>
+            ) : isPremium ? (
               <View style={styles.subBadgePremium}>
                 <Ionicons name="diamond" size={14} color={Colors.accentPrimary} />
                 <Text style={styles.subBadgePremiumText}>
                   {isInTrial
                     ? t('profile.subscriptionTrial')
-                    : `Premium — ${t(`paywall.${planId ?? 'monthly'}Title`)}`}
+                    : t('profile.subscriptionActive')}
                 </Text>
               </View>
             ) : (
@@ -1019,7 +1160,20 @@ export default function ProfileScreen() {
                 activeOpacity={0.8}
               >
                 <Ionicons name="sparkles" size={14} color={Colors.gold} />
-                <Text style={styles.subBadgeFreeText}>{t('profile.upgradePremium')}</Text>
+                <Text style={styles.subBadgeFreeText}>{t('profile.upgradePlus')}</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Founding Member upsell banner — non-lifetime premium + free */}
+            {tier !== 'lifetime' && (
+              <TouchableOpacity
+                style={styles.foundingBanner}
+                onPress={() => router.push('/lifetime' as never)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="diamond-outline" size={14} color={Colors.gold} />
+                <Text style={styles.foundingBannerText}>{t('lifetime.profileBanner')}</Text>
+                <Ionicons name="chevron-forward" size={14} color={Colors.gold} />
               </TouchableOpacity>
             )}
           </LinearGradient>
@@ -1039,12 +1193,26 @@ export default function ProfileScreen() {
 
             {/* 2. Taste DNA */}
             <SectionHeading title={t('profile.tasteDNA')} />
-            <TasteDNA
-              profile={lastProfile}
-              insights={swipeInsights}
-              loading={loading}
-              archetypeId={archetypeId}
-            />
+            {!isPremium ? (
+              <TouchableOpacity
+                activeOpacity={0.85}
+                onPress={() => triggerPaywall({ type: 'mood_history_tap' })}
+              >
+                <TasteDNA
+                  profile={lastProfile}
+                  insights={swipeInsights}
+                  loading={loading}
+                  archetypeId={archetypeId}
+                />
+              </TouchableOpacity>
+            ) : (
+              <TasteDNA
+                profile={lastProfile}
+                insights={swipeInsights}
+                loading={loading}
+                archetypeId={archetypeId}
+              />
+            )}
 
             {/* 3. Discovery Stats */}
             <SectionHeading title={t('profile.discoveryStats')} />
@@ -1091,12 +1259,28 @@ export default function ProfileScreen() {
         language={language}
         onLanguageChange={(code) => setLanguage(code)}
         isAnonymous={isAnonymous}
+        isPremium={isPremium}
+        isLifetime={tier === 'lifetime'}
+        currentPlanLabel={
+          tier === 'lifetime' ? t('paywall.lifetimeTitle')
+            : tier === 'annual' ? t('paywall.annualTitle')
+            : tier === 'monthly' ? t('paywall.monthlyTitle')
+            : t('profile.freePlan')
+        }
         linkingAccount={linkingAccount}
+        notificationsEnabled={notificationsEnabled}
+        onToggleNotifications={(enabled) => void handleToggleNotifications(enabled)}
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
+        onManageSubscription={() => void handleManageSubscription()}
+        onFoundingMember={() => router.push('/lifetime' as never)}
+        onInviteFriends={() => router.push('/referral' as never)}
         onSignOut={handleSignOut}
         onDeleteAccount={handleDeleteAccount}
       />
+
+      {/* ── Contextual Paywall ──────────────────────────────────────── */}
+      <ContextualPaywall {...paywallProps} />
     </SafeAreaView>
   );
 }
@@ -1278,6 +1462,43 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.gold,
     letterSpacing: 0.2,
+  },
+  subBadgeLifetime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.gold + '40',
+  },
+  subBadgeLifetimeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.gold,
+    letterSpacing: 0.3,
+  },
+  foundingBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: Colors.gold + '12',
+    borderWidth: 1,
+    borderColor: Colors.gold + '25',
+  },
+  foundingBannerText: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.gold,
+    letterSpacing: 0.1,
   },
 
   // ── Sections container ──
@@ -1652,6 +1873,13 @@ const settingsModalStyles = StyleSheet.create({
   rowLabel: {
     color: Colors.textWhite,
     fontSize: 14,
+  },
+  manageNote: {
+    color: Colors.textGrey,
+    fontSize: 12,
+    lineHeight: 16,
+    paddingHorizontal: 24,
+    marginTop: -8,
   },
   langToggle: {
     flexDirection: 'row',

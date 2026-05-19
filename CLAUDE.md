@@ -57,6 +57,8 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 - `app/games/imposter.tsx` = Imposter oyunu (YENİ)
 - `app/games/pinpoint.tsx` = 5 Ipucu oyunu (YENİ)
 - `app/games/roast.tsx` = Acimasiz Elestiri oyunu (YENİ)
+- `app/lifetime.tsx` = Founding Member ozel satis (modal, scarcity counter)
+- `app/referral.tsx` = Davet programi (milestone rewards, share)
 - Provider zinciri: GestureHandlerRootView > SafeAreaProvider > LanguageProvider > MoodProvider > SubscriptionProvider > ThemeProvider > Stack
 - Vector kodlama: sadece `services/vectorEncoder.ts` (384 boyut)
 - Her ekranda `paddingBottom: 83` — tab bar floating pill
@@ -74,11 +76,12 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 
 ## Subscription & Kota
 
-- Free: 1 mood search/gun
-- Weekly ($1.99/w): 2/gun, 3-day trial
-- Monthly ($4.99/m): 3/gun + 21/hafta
-- Yearly ($39.99/y): aylik ile ayni
+- Free: 3 mood search/gun
+- Monthly ($6.99/m): 15/gun, sinirsiz slot/game
+- Annual ($39.99/y): 25/gun, sinirsiz slot/game
+- Lifetime ($89.99): 50/gun, sinirsiz her sey, Founding Member (ilk 1000)
 - Auth gating AKTIF — Apple Sign-In zorunlu
+- Referral: 1/3/5/10 milestone rewards (free months, slot tokens, lifetime upgrade)
 
 ## Bilinen Sorunlar
 
@@ -97,6 +100,8 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 | V1.1+ roadmap, gelecek planlar | `ROADMAP.md` |
 | App Store listing, ASO, launch checklist | `docs/LAUNCH_CHECKLIST.md` |
 | Eski changelog, session log, specs | `docs/archive/` |
+| RevenueCat offerings, webhooks, entitlements | `docs/REVENUECAT_FINAL_SETUP.md` |
+| Yatirimci metrikleri (SQL queries) | `docs/INVESTOR_METRICS.md` |
 
 ## Agent Briefleri (Aktif Sprint)
 

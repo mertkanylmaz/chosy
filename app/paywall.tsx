@@ -10,10 +10,11 @@
  *   - B+C hibrit: ilk free arama sonrası → soft paywall
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated as RNAnimated,
   Linking,
   Platform,
   ScrollView,
@@ -32,7 +33,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
-import { PLANS, type PlanId } from '@/constants/subscriptionPlans';
+import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
@@ -41,7 +42,7 @@ import {
   restorePurchases,
 } from '@/services/purchaseService';
 import { upsertSubscription } from '@/services/subscriptionService';
-import { claimFreeTrial, hasUsedFreeTrial } from '@/services/quotaEngine';
+import { hasUsedFreeTrial, clearQuotaCache } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import { supabase } from '@/services/supabase';
 import { hapticSuccess, hapticMedium } from '@/utils/haptics';
@@ -68,31 +69,22 @@ interface PlanUI {
 
 const PLAN_UI: PlanUI[] = [
   {
-    planId: 'weekly',
-    titleKey: 'paywall.weeklyTitle',
-    badgeKey: 'paywall.weeklyBadge',
-    descKey: 'paywall.weeklyDesc',
-    durationKey: 'paywall.weeklyDuration',
-    periodKey: 'paywall.perWeek',
-    featured: false,
-  },
-  {
     planId: 'monthly',
     titleKey: 'paywall.monthlyTitle',
     badgeKey: 'paywall.monthlyBadge',
     descKey: 'paywall.monthlyDesc',
     durationKey: 'paywall.monthlyDuration',
     periodKey: 'paywall.perMonth',
-    featured: true,
+    featured: false,
   },
   {
-    planId: 'yearly',
-    titleKey: 'paywall.yearlyTitle',
-    badgeKey: 'paywall.yearlyBadge',
-    descKey: 'paywall.yearlyDesc',
-    durationKey: 'paywall.yearlyDuration',
+    planId: 'annual',
+    titleKey: 'paywall.annualTitle',
+    badgeKey: 'paywall.annualBadge',
+    descKey: 'paywall.annualDesc',
+    durationKey: 'paywall.annualDuration',
     periodKey: 'paywall.perYear',
-    featured: false,
+    featured: true,
   },
 ];
 
@@ -101,7 +93,21 @@ const PLAN_UI: PlanUI[] = [
 export default function PaywallScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const { isPremium, refreshSubscription } = useSubscription();
+  const { isPremium, refreshSubscription, refreshQuota } = useSubscription();
+
+  // ── Dark mode toast state ──────────────────────────────────────────────────
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastOpacity = useRef(new RNAnimated.Value(0)).current;
+
+  /** Koyu temaya uyumlu toast goster — Alert.alert yerine */
+  const showDarkToast = useCallback((msg: string, duration = 2500) => {
+    setToastMessage(msg);
+    RNAnimated.sequence([
+      RNAnimated.timing(toastOpacity, { toValue: 1, duration: 250, useNativeDriver: true }),
+      RNAnimated.delay(duration),
+      RNAnimated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setToastMessage(null));
+  }, [toastOpacity]);
 
   /**
    * Onboarding akisi: discover.tsx'ten gelen param.
@@ -119,7 +125,6 @@ export default function PaywallScreen() {
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('monthly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
-  const [trialUsed, setTrialUsed] = useState(false);
   const [loading, setLoading] = useState(true);
 
 
@@ -127,15 +132,15 @@ export default function PaywallScreen() {
   useEffect(() => {
     async function load() {
       try {
-        const pkgs = await getOfferings();
-        setPackages(pkgs);
+        const defaultPkgs = await getOfferings();
 
-        // Trial kontrolü
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.email) {
-          const used = await hasUsedFreeTrial(user.email);
-          setTrialUsed(used);
-        }
+        setPackages(defaultPkgs);
+
+        logger.log('[paywall] Loaded packages:', defaultPkgs.map((p: PurchasesPackage) => ({
+          id: p.identifier,
+          type: p.packageType,
+          productId: p.product.identifier,
+        })));
       } catch (err) {
         logger.error('[paywall] Yükleme hatası:', err);
       } finally {
@@ -163,14 +168,17 @@ export default function PaywallScreen() {
   useEffect(() => {
     if (isPremium && !loading) {
       if (isOnboarding) {
-        // Onboarding modunda alert gostermeden dogrudan tabs'a git
         navigateAfterPaywall();
       } else {
-        Alert.alert(t('paywall.alreadyPremium'));
-        if (router.canGoBack()) router.back();
+        showDarkToast(t('paywall.alreadyPremium'));
+        // Kisa bir gecikme ile geri don — toast'u kullanici gorebilsin
+        const timer = setTimeout(() => {
+          if (router.canGoBack()) router.back();
+        }, 1200);
+        return () => clearTimeout(timer);
       }
     }
-  }, [isPremium, loading, t, router, isOnboarding, navigateAfterPaywall]);
+  }, [isPremium, loading, t, router, isOnboarding, navigateAfterPaywall, showDarkToast]);
 
   /**
    * Seçili planı RevenueCat'ten satın alır.
@@ -187,8 +195,7 @@ export default function PaywallScreen() {
       );
 
       if (!pkg) {
-        // RevenueCat paket bulunamazsa fallback: displayPrice göster
-        Alert.alert(t('errors.generic'), t('paywall.purchaseError'));
+        showDarkToast(t('paywall.purchaseError'));
         setPurchasing(false);
         return;
       }
@@ -206,42 +213,57 @@ export default function PaywallScreen() {
         // Supabase'e kaydet
         const userId = await getAppUserId();
         if (userId) {
-          const isTrialPlan = selectedPlan === 'weekly' && !trialUsed;
           await upsertSubscription({
             userId,
             plan: selectedPlan,
-            status: isTrialPlan ? 'trial' : 'active',
-            trialUsed: isTrialPlan ? true : undefined,
+            status: 'active',
             rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
           });
 
-          // Trial claim kaydet
-          if (isTrialPlan) {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user?.email) {
-              await claimFreeTrial(user.email);
-            }
+          // KRITIK: users.subscription_tier'i hemen guncelle.
+          // Quota RPC'leri (check_and_consume_quota) bu kolonu okur.
+          // Webhook async gelebilir — kullanici arada "limit reached" gorebilir.
+          const tier = selectedPlan === 'annual' ? 'annual'
+            : selectedPlan === 'lifetime' ? 'lifetime'
+            : 'monthly';
+          const { error: tierErr } = await supabase
+            .from('users')
+            .update({
+              subscription_tier: tier,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+
+          if (tierErr) {
+            logger.warn('[paywall] users.subscription_tier guncelleme hatasi:', tierErr.message);
           }
         }
 
+        // Kritik: Hem subscription hem quota state'ini hemen senkronize et
         await refreshSubscription();
-        Alert.alert(t('paywall.purchaseSuccess'));
-        // Onboarding modunda: stack'i temizle, tabs'a git
-        if (isOnboarding) {
-          navigateAfterPaywall();
-        } else if (router.canGoBack()) {
-          router.back();
-        }
+        // Client-side quota cache'ini temizle — yeni tier ile fresh quota
+        if (userId) await clearQuotaCache(userId);
+        await refreshQuota();
+
+        showDarkToast(t('paywall.purchaseSuccess'));
+        // Kisa gecikme ile navigate — toast gorunsun
+        setTimeout(() => {
+          if (isOnboarding) {
+            navigateAfterPaywall();
+          } else if (router.canGoBack()) {
+            router.back();
+          }
+        }, 800);
       } else {
-        Alert.alert(t('paywall.purchaseError'), result.error ?? '');
+        showDarkToast(result.error ?? t('paywall.purchaseError'));
       }
     } catch (err) {
       logger.error('[paywall] Satın alma hatası:', err);
-      Alert.alert(t('paywall.purchaseError'));
+      showDarkToast(t('paywall.purchaseError'));
     } finally {
       setPurchasing(false);
     }
-  }, [selectedPlan, packages, purchasing, trialUsed, t, router, refreshSubscription, isOnboarding, navigateAfterPaywall]);
+  }, [selectedPlan, packages, purchasing, t, router, refreshSubscription, isOnboarding, navigateAfterPaywall]);
 
   /**
    * Önceki satın alımları geri yükler.
@@ -255,15 +277,53 @@ export default function PaywallScreen() {
 
       if (result.success) {
         hapticSuccess();
-        await refreshSubscription();
-        Alert.alert(t('paywall.restoreSuccess'));
-        if (isOnboarding) {
-          navigateAfterPaywall();
-        } else if (router.canGoBack()) {
-          router.back();
+
+        // Restore sonrasi da users.subscription_tier'i hemen guncelle
+        const userId = await getAppUserId();
+        if (userId && result.customerInfo) {
+          const entitlement = result.customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+          if (entitlement) {
+            const tier = productIdToTier(entitlement.productIdentifier);
+            if (tier !== 'free') {
+              const { error: tierErr } = await supabase
+                .from('users')
+                .update({
+                  subscription_tier: tier,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', userId);
+
+              if (tierErr) {
+                logger.warn('[paywall] Restore tier guncelleme hatasi:', tierErr.message);
+              }
+
+              // subscriptions tablosunu da senkronize et
+              await upsertSubscription({
+                userId,
+                plan: tier === 'weekly_legacy' ? 'weekly' as PlanId : tier as PlanId,
+                status: 'active',
+                rcCustomerId: result.customerInfo.originalAppUserId ?? null,
+              });
+            }
+          }
         }
+
+        await refreshSubscription();
+        // Client-side quota cache'ini temizle
+        const restoreUserId = await getAppUserId();
+        if (restoreUserId) await clearQuotaCache(restoreUserId);
+        await refreshQuota();
+
+        showDarkToast(t('paywall.restoreSuccess'));
+        setTimeout(() => {
+          if (isOnboarding) {
+            navigateAfterPaywall();
+          } else if (router.canGoBack()) {
+            router.back();
+          }
+        }, 800);
       } else {
-        Alert.alert(t('paywall.restoreEmpty'));
+        showDarkToast(t('paywall.restoreEmpty'));
       }
     } catch (err) {
       logger.error('[paywall] Restore hatası:', err);
@@ -281,8 +341,6 @@ export default function PaywallScreen() {
       </SafeAreaView>
     );
   }
-
-  const showTrial = selectedPlan === 'weekly' && !trialUsed;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -365,10 +423,19 @@ export default function PaywallScreen() {
           })}
         </View>
 
-        {/* ── Trial notu ──────────────────────────────────────────── */}
-        {showTrial && (
-          <Text style={styles.trialNote}>{t('paywall.trialNote')}</Text>
-        )}
+        {/* ── Lifetime link — ayrı ekrana yönlendir ─────────────── */}
+        <TouchableOpacity
+          style={styles.lifetimeLink}
+          onPress={() => {
+            if (router.canGoBack()) router.back();
+            setTimeout(() => router.push('/lifetime' as never), 300);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.lifetimeLinkText}>
+            {t('paywall.preferOneTime')}
+          </Text>
+        </TouchableOpacity>
 
         {/* ── Promo / Offer Code — Apple native ────────────────── */}
         {Platform.OS === 'ios' && (
@@ -401,7 +468,7 @@ export default function PaywallScreen() {
               <>
                 <Ionicons name="sparkles" size={18} color={Colors.textOnAccent} />
                 <Text style={styles.ctaText}>
-                  {showTrial ? t('paywall.startTrial') : t('paywall.subscribe')}
+                  {t('paywall.subscribe')}
                 </Text>
               </>
             )}
@@ -434,6 +501,9 @@ export default function PaywallScreen() {
         {/* ── Otomatik yenileme aciklamasi (Apple 3.1.2c zorunlu) ─── */}
         <Text style={styles.autoRenewText}>{t('paywall.autoRenewDisclosure')}</Text>
 
+        {/* ── AI Disclosure (Apple 2025 zorunlu) ──────────────────── */}
+        <Text style={styles.aiDisclosureText}>{t('paywall.aiDisclosure')}</Text>
+
         {/* ── Yasal linkler — ayri TouchableOpacity (Apple gerekliligi) */}
         <View style={styles.legalLinksRow}>
           <TouchableOpacity
@@ -453,6 +523,19 @@ export default function PaywallScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* ── Dark Toast Overlay ──────────────────────────────────────── */}
+      {toastMessage != null && (
+        <RNAnimated.View
+          style={[styles.darkToast, { opacity: toastOpacity }]}
+          pointerEvents="none"
+        >
+          <View style={styles.darkToastInner}>
+            <Ionicons name="checkmark-circle" size={20} color={Colors.accentPrimary} />
+            <Text style={styles.darkToastText}>{toastMessage}</Text>
+          </View>
+        </RNAnimated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -613,6 +696,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
+  // Lifetime link
+  lifetimeLink: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  lifetimeLinkText: {
+    fontSize: 13,
+    color: Colors.textTertiary,
+    fontWeight: '500',
+    textDecorationLine: 'underline' as const,
+  },
+
   // Radio
   radioOuter: {
     position: 'absolute',
@@ -718,6 +814,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
+  // ── AI Disclosure ──────────────────────────────────────────────────────
+  aiDisclosureText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    lineHeight: 16,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+
   // ── Legal Links ─────────────────────────────────────────────────────────
   legalLinksRow: {
     flexDirection: 'row',
@@ -735,6 +841,38 @@ const styles = StyleSheet.create({
   legalSeparator: {
     fontSize: 12,
     color: Colors.textTertiary,
+  },
+
+  // ── Dark Toast ──────────────────────────────────────────────────────────────
+  darkToast: {
+    position: 'absolute',
+    bottom: 100,
+    left: 24,
+    right: 24,
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  darkToastInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.cardSolid,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  darkToastText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textWhite,
+    flex: 1,
   },
 
 });

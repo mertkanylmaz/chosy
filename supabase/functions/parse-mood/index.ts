@@ -6,6 +6,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -69,6 +70,66 @@ Genre-critical differentiation rules (IMPORTANT — these prevent cross-genre co
 - DRAMA/SAD signals → sadness HIGH (0.7-0.9), thematic_depth HIGH, energy LOW (0.1-0.3), pace "slow"
 - When a mood clearly maps to one genre (e.g. "need a laugh" = comedy), actively SUPPRESS dimensions of other genres. A comedy profile should NOT have high anticipation/fear/anger values.`
 
+// ─── Quota Check Helper ───────────────────────────────────────────────────────
+
+/**
+ * JWT'den user_id alip quota kontrolu yapar.
+ * allowed=false ise Claude API call engellenir (maliyet tasarrufu).
+ */
+async function checkSearchQuota(
+  req: Request,
+): Promise<{ allowed: boolean; userId?: string; quotaResult?: Record<string, unknown>; error?: string }> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) {
+    // Auth yoksa quota kontrol etme (rate limiter yeterli)
+    return { allowed: true }
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+
+    // JWT'den auth user al
+    const supabaseUser = createClient(supabaseUrl, supabaseAnon, {
+      global: { headers: { Authorization: authHeader } },
+    })
+    const { data: { user } } = await supabaseUser.auth.getUser()
+    if (!user) return { allowed: true } // auth basarisizsa gecir, rate limiter yakalar
+
+    // users tablosundan id bul
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('auth_id', user.id)
+      .single()
+
+    if (!userData) return { allowed: true }
+
+    // Atomic quota check + consume
+    const { data, error } = await supabaseAdmin.rpc('check_and_consume_quota', {
+      p_user_id: userData.id,
+      p_quota_type: 'search',
+    })
+
+    if (error) {
+      console.error('[parse-mood] Quota check error:', error.message)
+      return { allowed: true } // fail-open: quota hatasi olursa gecir
+    }
+
+    const result = data as Record<string, unknown>
+    return {
+      allowed: result.allowed as boolean,
+      userId: userData.id,
+      quotaResult: result,
+    }
+  } catch (err) {
+    console.error('[parse-mood] Quota check exception:', err)
+    return { allowed: true } // fail-open
+  }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
@@ -89,6 +150,20 @@ serve(async (req: Request): Promise<Response> => {
     if (err instanceof RateLimitError) {
       return rateLimitResponse(err, CORS_HEADERS)
     }
+  }
+
+  // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
+  const quotaCheck = await checkSearchQuota(req)
+  if (!quotaCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: 'Daily search quota exceeded',
+        code: 'QUOTA_EXCEEDED',
+        ...quotaCheck.quotaResult,
+        upgrade_url: 'chosy://paywall',
+      }),
+      { status: 429, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
   }
 
   let rawInput: string

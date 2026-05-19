@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import type { SwipeInsight, UserStats } from '@/types/profile';
 
@@ -61,7 +62,7 @@ function StatCard({
  * Badge sistemi kaldırıldı; watchlist bazlı top 2 genre + top yönetmen eklendi.
  */
 export default function DiscoveryStats({ stats, insights, loading }: Props) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const discovered = (insights?.total_saves ?? 0) + (insights?.total_skips ?? 0);
 
@@ -108,7 +109,7 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
               <View style={styles.genreRow}>
                 {topGenres.map((g) => (
                   <View key={g.genre} style={styles.genrePill}>
-                    <Text style={styles.genrePillText}>{g.genre}</Text>
+                    <Text style={styles.genrePillText}>{localizeGenre(g.genre, language)}</Text>
                     <Text style={styles.genrePct}>{g.percentage}%</Text>
                   </View>
                 ))}

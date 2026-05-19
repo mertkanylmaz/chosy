@@ -219,6 +219,42 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
   }
 }
 
+// ─── Lifetime Offering ──────────────────────────────────────────────────────
+
+/**
+ * RevenueCat'ten lifetime_founding offering paketlerini döndürür.
+ * Lifetime ürünü ayrı offering'te tutulur — paywall'daki default'tan ayrı.
+ * Fallback: default offering'teki lifetime paketini arar.
+ */
+export async function getLifetimeOffering(): Promise<PurchasesPackage[]> {
+  if (!_initialized) return [];
+
+  try {
+    const offerings = await Purchases.getOfferings();
+
+    // Önce ayrı lifetime offering'i dene
+    const lifetimeOffering = offerings.all['lifetime_founding'];
+    if (lifetimeOffering?.availablePackages?.length) {
+      return lifetimeOffering.availablePackages;
+    }
+
+    // Fallback: default offering'teki lifetime paketini bul
+    const current = offerings.current;
+    if (current) {
+      const lifetimePkg = current.availablePackages.filter(
+        (p) => p.product.identifier === 'com.chosy.lifetime',
+      );
+      if (lifetimePkg.length > 0) return lifetimePkg;
+    }
+
+    logger.warn('[purchases] Lifetime offering bulunamadı — fallback: tüm paketler');
+    return current?.availablePackages ?? [];
+  } catch (err) {
+    logger.error('[purchases] Lifetime offering hatası:', err);
+    return [];
+  }
+}
+
 // ─── Satın Alma ──────────────────────────────────────────────────────────────
 
 /**

@@ -30,7 +30,7 @@ export interface GameShareCardProps {
   /** Streak */
   streak: number;
   /** Oyun tipi (emoji grid icin) */
-  gameType: 'imposter' | 'pinpoint' | 'roast';
+  gameType: 'imposter' | 'logline' | 'quoted' | 'fadein';
 }
 
 /** Emoji grid olustur — oyun tipine gore */
@@ -43,7 +43,7 @@ function buildEmojiGrid(
   switch (gameType) {
     case 'imposter':
       return solved ? '\u{1F7E2}' : '\u{1F534}';
-    case 'pinpoint': {
+    case 'logline': {
       const squares: string[] = [];
       for (let i = 0; i < maxAttempts; i++) {
         if (i < attempts - 1) {
@@ -58,7 +58,7 @@ function buildEmojiGrid(
       }
       return squares.join('');
     }
-    case 'roast': {
+    case 'quoted': {
       const dots: string[] = [];
       for (let i = 0; i < maxAttempts; i++) {
         if (i < attempts - 1) {

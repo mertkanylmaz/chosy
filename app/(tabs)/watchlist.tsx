@@ -332,6 +332,19 @@ export default function WatchlistScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>{t('tabs.watchlist')}</Text>
           <View style={styles.headerIcons}>
+            {/* Roulette — header kısayol ikonu */}
+            {items.length >= 3 && (
+              <TouchableOpacity
+                style={styles.iconBtn}
+                activeOpacity={0.7}
+                onPress={() => {
+                  hapticSelection();
+                  router.push('/roulette' as import('expo-router').Href);
+                }}
+              >
+                <Ionicons name="dice-outline" size={22} color={Colors.gold} />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.iconBtn}
               activeOpacity={0.7}
@@ -464,6 +477,24 @@ export default function WatchlistScreen() {
           )}
         </ScrollView>
       </Animated.View>
+
+      {/* ── Roulette CTA (≥3 film varsa, her filter modunda) ── */}
+      {!initialLoading && !loadError && items.length >= 3 && (
+        <Animated.View style={chipsAnimStyle}>
+          <TouchableOpacity
+            style={styles.rouletteCta}
+            activeOpacity={0.8}
+            onPress={() => {
+              hapticSelection();
+              router.push('/roulette' as import('expo-router').Href);
+            }}
+          >
+            <Ionicons name="dice-outline" size={20} color={Colors.textOnAccent} />
+            <Text style={styles.rouletteCtaText}>{t('roulette.ctaButton')}</Text>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textOnAccent} style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* ── İçerik ── */}
 
@@ -765,6 +796,24 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: Colors.white10,
     marginHorizontal: 4,
+  },
+
+  /* Roulette CTA */
+  rouletteCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: Colors.accentPrimary,
+    gap: 10,
+  },
+  rouletteCtaText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: Colors.textOnAccent,
   },
 
   /* FlatList (list mode) */

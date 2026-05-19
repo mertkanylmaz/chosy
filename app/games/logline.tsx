@@ -1,12 +1,12 @@
 /**
- * Replik Oyunu (Roast) — Gercek film repliginden filmi tahmin et.
+ * Logline — Tümdengelim oyunu.
  *
- * Ikonik bir film repligi gosterilir, kullanici filmi tahmin eder.
- * Yanlis tahminlerde ipuclari acilir: karakter adi > basrol > yonetmen+yil.
- * Max 4 deneme hakki (1 replik + 3 ipucu).
+ * 5 ipucu soyuttan somuta açılır.
+ * Her yanlış tahminde sonraki ipucu açılır.
+ * İlk ipucunda bilen = "Kusursuz Tahmin" rozeti.
  */
 import React, { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -14,7 +14,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
+import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import {
   fetchDailyPuzzle,
@@ -28,14 +28,16 @@ import type { GameState, GameClue, GameResult, FilmSearchResult } from '@/servic
 import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useGamePaywall } from '@/hooks/useGamePaywall';
 
-export default function RoastScreen() {
+export default function LoglineScreen() {
   const { t } = useLanguage();
+  const { checkGamePaywall, paywallProps } = useGamePaywall();
 
   const [gameState, setGameState] = useState<GameState>('loading');
-  const [quoteText, setQuoteText] = useState('');
-  const [hints, setHints] = useState<GameClue[]>([]);
-  const [revealedHints, setRevealedHints] = useState(0);
+  const [clues, setClues] = useState<GameClue[]>([]);
+  const [revealedCount, setRevealedCount] = useState(1); // İlk ipucu açık başlar
   const [attempts, setAttempts] = useState(0);
   const [puzzleFilmId, setPuzzleFilmId] = useState(0);
   const [puzzleId, setPuzzleId] = useState('');
@@ -49,15 +51,12 @@ export default function RoastScreen() {
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
-  const maxAttempts = 4; // 1 replik + 3 ipucu
-
   // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
   useFocusEffect(
     useCallback(() => {
       setGameState('loading');
-      setQuoteText('');
-      setHints([]);
-      setRevealedHints(0);
+      setClues([]);
+      setRevealedCount(1);
       setAttempts(0);
       setResult(null);
       setFilmInfo(null);
@@ -67,13 +66,12 @@ export default function RoastScreen() {
     }, []),
   );
 
-  /** Puzzle yukle — cache veya fresh */
   const loadPuzzle = useCallback(async () => {
     try {
-      const cached = await getCachedResult('roast');
+      const cached = await getCachedResult('logline');
       if (cached) {
         const film = await getFilmAnswer(cached.filmId);
-        const streakInfo = await getGameStreak('roast');
+        const streakInfo = await getGameStreak('logline');
         setResult(cached);
         setFilmInfo(film);
         setStreak(streakInfo.currentStreak);
@@ -81,20 +79,14 @@ export default function RoastScreen() {
         return;
       }
 
-      const puzzle = await fetchDailyPuzzle('roast');
+      const puzzle = await fetchDailyPuzzle('logline');
       if (!puzzle) {
-        logger.error('[roast] Puzzle yuklenemedi');
+        logger.error('[logline] Puzzle yüklenemedi');
         setLoadError(true);
         return;
       }
 
-      const sortedClues = puzzle.clues.sort((a, b) => a.order - b.order);
-      // Ilk clue = replik (type: 'quote'), geri kalan = ipuclari
-      const quoteClue = sortedClues[0];
-      const hintClues = sortedClues.slice(1);
-
-      setQuoteText(quoteClue?.content ?? '');
-      setHints(hintClues);
+      setClues(puzzle.clues.sort((a, b) => a.order - b.order));
       setPuzzleFilmId(puzzle.filmId);
       setPuzzleId(puzzle.id);
 
@@ -103,12 +95,11 @@ export default function RoastScreen() {
 
       setGameState('playing');
     } catch (err) {
-      logger.error('[roast] Load hatasi:', err);
+      logger.error('[logline] Load hatası:', err);
       setLoadError(true);
     }
   }, []);
 
-  /** Tahmin yap */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
       if (gameState !== 'playing') return;
@@ -120,58 +111,72 @@ export default function RoastScreen() {
 
       if (solved) {
         hapticSuccess();
-        await finishGame(true, newAttempts);
+        setGameState('reveal');
+
+        await new Promise((r) => setTimeout(r, 600));
+
+        const today = getTodayDate();
+        const gameResult: GameResult = {
+          puzzleId,
+          date: today,
+          gameType: 'logline',
+          solved: true,
+          attempts: newAttempts,
+          maxAttempts: 5,
+          filmId: puzzleFilmId,
+        };
+
+        await submitGameScore(gameResult);
+        const streakInfo = await getGameStreak('logline');
+
+        setResult(gameResult);
+        setStreak(streakInfo.currentStreak);
+        setGameState('complete');
+        checkGamePaywall(streakInfo.currentStreak, true);
       } else {
         hapticWarning();
         setWrongGuess(film.title);
         setTimeout(() => setWrongGuess(null), 1500);
 
-        // Sonraki ipucunu ac
-        if (revealedHints < hints.length) {
-          setRevealedHints((prev) => prev + 1);
+        // Sonraki ipucunu aç
+        if (revealedCount < clues.length) {
+          setRevealedCount((prev) => prev + 1);
         }
 
-        // Son deneme
-        if (newAttempts >= maxAttempts) {
+        // Son deneme — oyun biter
+        if (newAttempts >= 5) {
           hapticHeavy();
-          await finishGame(false, newAttempts);
+          setGameState('reveal');
+
+          await new Promise((r) => setTimeout(r, 600));
+
+          const today = getTodayDate();
+          const gameResult: GameResult = {
+            puzzleId,
+            date: today,
+            gameType: 'logline',
+            solved: false,
+            attempts: newAttempts,
+            maxAttempts: 5,
+            filmId: puzzleFilmId,
+          };
+
+          await submitGameScore(gameResult);
+          const streakInfo = await getGameStreak('logline');
+
+          setResult(gameResult);
+          setStreak(streakInfo.currentStreak);
+          setGameState('complete');
         }
       }
     },
-    [gameState, attempts, puzzleFilmId, puzzleId, revealedHints, hints.length],
+    [gameState, attempts, puzzleFilmId, puzzleId, revealedCount, clues.length],
   );
 
-  /** Oyunu bitir */
-  const finishGame = useCallback(
-    async (solved: boolean, totalAttempts: number) => {
-      setGameState('reveal');
-      await new Promise((r) => setTimeout(r, 600));
-
-      const today = getTodayDate();
-      const gameResult: GameResult = {
-        puzzleId,
-        date: today,
-        gameType: 'roast',
-        solved,
-        attempts: totalAttempts,
-        maxAttempts,
-        filmId: puzzleFilmId,
-      };
-
-      await submitGameScore(gameResult);
-      const streakInfo = await getGameStreak('roast');
-
-      setResult(gameResult);
-      setStreak(streakInfo.currentStreak);
-      setGameState('complete');
-    },
-    [puzzleId, puzzleFilmId],
-  );
-
-  // ─── Error ───
+  // Error
   if (loadError) {
     return (
-      <GameShell title={t('games.roast.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={5}>
         <View style={styles.center}>
           <Text style={styles.errorEmoji}>🎬</Text>
           <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
@@ -181,10 +186,10 @@ export default function RoastScreen() {
     );
   }
 
-  // ─── Loading ───
+  // Loading
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.roast.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={5}>
         <View style={styles.center}>
           <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
         </View>
@@ -192,23 +197,23 @@ export default function RoastScreen() {
     );
   }
 
-  // ─── Complete ───
+  // Complete
   if (gameState === 'complete' && result && filmInfo) {
+    const isPerfect = result.solved && result.attempts === 1;
     return (
       <GameShell
-        title={t('games.roast.title')}
+        title={t('games.logline.title')}
         currentAttempt={result.attempts}
-        maxAttempts={maxAttempts}
+        maxAttempts={5}
         hideProgress
       >
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
-          {/* Repligi tekrar goster */}
-          <View style={styles.quoteCardSmall}>
-            <Ionicons name="chatbubble-ellipses" size={18} color={Colors.gold} />
-            <Text style={styles.quoteTextSmall} numberOfLines={3}>
-              {`"${quoteText}"`}
-            </Text>
-          </View>
+          {isPerfect && (
+            <Animated.View entering={FadeInDown.duration(400)} style={styles.perfectBadge}>
+              <Text style={styles.perfectEmoji}>🎯</Text>
+              <Text style={styles.perfectText}>{t('games.logline.perfect')}</Text>
+            </Animated.View>
+          )}
           <ResultCard
             solved={result.solved}
             attempts={result.attempts}
@@ -218,47 +223,49 @@ export default function RoastScreen() {
             filmPosterPath={filmInfo.posterPath}
             filmId={result.filmId}
             streak={streak}
-            gameTitle={t('games.roast.title')}
-            gameType="roast"
+            gameTitle={t('games.logline.title')}
+            gameType="logline"
           />
         </ScrollView>
       </GameShell>
     );
   }
 
-  // ─── Playing ───
+  // Playing
   return (
     <GameShell
-      title={t('games.roast.title')}
+      title={t('games.logline.title')}
       currentAttempt={attempts}
-      maxAttempts={maxAttempts}
+      maxAttempts={5}
     >
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Film ikonu badge */}
-        <View style={styles.quoteBadge}>
-          <Ionicons name="film-outline" size={20} color={Colors.gold} />
-          <Text style={styles.quoteBadgeLabel}>{t('games.roast.quoteLabel')}</Text>
+        {/* Clues */}
+        <View style={styles.cluesContainer}>
+          {clues.map((clue, index) => {
+            const isRevealed = index < revealedCount;
+            return (
+              <Animated.View
+                key={clue.order}
+                entering={isRevealed ? FadeInUp.delay(index * 100).duration(300) : undefined}
+                style={[styles.clueRow, isRevealed ? styles.clueRevealed : styles.clueLocked]}
+              >
+                <View style={styles.clueNumber}>
+                  <Text style={styles.clueNumberText}>{clue.order}</Text>
+                </View>
+                {isRevealed ? (
+                  <Text style={styles.clueText}>{clue.content}</Text>
+                ) : (
+                  <View style={styles.lockedRow}>
+                    <Ionicons name="lock-closed" size={14} color={Colors.textTertiary} />
+                    <Text style={styles.lockedText}>{t('games.logline.clue_locked')}</Text>
+                  </View>
+                )}
+              </Animated.View>
+            );
+          })}
         </View>
 
-        {/* Replik karti */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.quoteCard}>
-          <Ionicons name="chatbubble-ellipses" size={28} color={Colors.gold} style={styles.quoteIcon} />
-          <Text style={styles.quoteMainText}>{`"${quoteText}"`}</Text>
-        </Animated.View>
-
-        {/* Acilan ipuclari */}
-        {hints.slice(0, revealedHints).map((hint, index) => (
-          <Animated.View
-            key={hint.order}
-            entering={FadeInUp.delay(index * 100).duration(300)}
-            style={styles.hintRow}
-          >
-            <Ionicons name="bulb" size={16} color={Colors.gold} />
-            <Text style={styles.hintText}>{hint.content}</Text>
-          </Animated.View>
-        ))}
-
-        {/* Yanlis tahmin */}
+        {/* Wrong guess feedback */}
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
             <Ionicons name="close-circle" size={16} color={Colors.error} />
@@ -267,13 +274,14 @@ export default function RoastScreen() {
         )}
       </ScrollView>
 
-      {/* Film arama */}
+      {/* Search input — fixed at bottom */}
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
           disabled={gameState !== 'playing'}
         />
       </View>
+      <ContextualPaywall {...paywallProps} />
     </GameShell>
   );
 }
@@ -307,73 +315,79 @@ const styles = StyleSheet.create({
   resultContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    gap: Theme.spacing.md,
     paddingBottom: Theme.spacing.lg,
   },
-  quoteCardSmall: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Theme.spacing.sm,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  quoteTextSmall: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: 20,
-  },
-  scrollContent: {
-    flex: 1,
-  },
-  quoteBadge: {
+  perfectBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Theme.spacing.sm,
-    paddingVertical: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.md,
+    marginBottom: Theme.spacing.md,
+    backgroundColor: Colors.goldDim,
+    borderRadius: Theme.borderRadius.md,
   },
-  quoteBadgeLabel: {
-    fontSize: 13,
-    color: Colors.textTertiary,
-    fontWeight: '500',
+  perfectEmoji: {
+    fontSize: 24,
   },
-  quoteCard: {
+  perfectText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.gold,
+  },
+  scrollContent: {
+    flex: 1,
+  },
+  cluesContainer: {
+    gap: Theme.spacing.sm,
+    paddingTop: Theme.spacing.md,
+  },
+  clueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.md,
+    padding: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.md,
+    minHeight: 52,
+  },
+  clueRevealed: {
     backgroundColor: Colors.bgCard,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.lg,
-    marginVertical: Theme.spacing.md,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
   },
-  quoteIcon: {
-    marginBottom: Theme.spacing.sm,
+  clueLocked: {
+    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  quoteMainText: {
-    fontSize: 20,
+  clueNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  clueNumberText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.accentPrimary,
+  },
+  clueText: {
+    flex: 1,
+    fontSize: 15,
     color: Colors.textWhite,
-    lineHeight: 30,
-    fontStyle: 'italic',
-    fontWeight: '500',
+    lineHeight: 22,
   },
-  hintRow: {
+  lockedRow: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Theme.spacing.sm,
-    paddingVertical: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.md,
-    backgroundColor: Colors.goldDim,
-    borderRadius: Theme.borderRadius.sm,
-    marginTop: Theme.spacing.sm,
+    gap: Theme.spacing.xs,
   },
-  hintText: {
+  lockedText: {
     fontSize: 14,
-    color: Colors.gold,
-    fontWeight: '500',
+    color: Colors.textTertiary,
   },
   wrongGuess: {
     flexDirection: 'row',
@@ -392,5 +406,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     paddingTop: Theme.spacing.md,
     paddingBottom: Theme.spacing.sm,
+    marginBottom: Platform.OS === 'ios' ? 20 : 10,
   },
 });

@@ -27,6 +27,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { EmotionIcons, TasteDNAIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import type { SwipeInsight } from '@/types/profile';
 import type { EmotionalState, TasteProfile } from '@/types/index';
@@ -261,8 +262,13 @@ function FilledContent({
   profile: TasteProfile;
   insights: SwipeInsight | null;
 }) {
-  const { t } = useLanguage();
-  const topEmotions = getTopEmotions(profile.emotional_state);
+  const { t, language } = useLanguage();
+  const rawEmotions = getTopEmotions(profile.emotional_state);
+  // Normalize: değerleri toplamı 1.0 (100%) olacak şekilde ölçekle
+  const emotionSum = rawEmotions.reduce((sum, e) => sum + e.value, 0);
+  const topEmotions = emotionSum > 0
+    ? rawEmotions.map((e) => ({ ...e, value: e.value / emotionSum }))
+    : rawEmotions;
   const topGenres = insights?.saved_genre_distribution.slice(0, 5) ?? [];
   const summary = buildSummary(profile, t);
 
@@ -295,7 +301,7 @@ function FilledContent({
             {topGenres.map((item, index) => (
               <AnimatedGenreChip
                 key={item.genre}
-                genre={item.genre}
+                genre={localizeGenre(item.genre, language)}
                 delay={index * 80}
               />
             ))}

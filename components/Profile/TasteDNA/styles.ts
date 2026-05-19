@@ -17,6 +17,8 @@ export const styles = StyleSheet.create({
     borderBottomColor: Colors.cardBorder,
     padding: Theme.spacing.md,
     gap: 16,
+    /** Sabit minHeight — veri yuklenene kadar layout shift'i engeller */
+    minHeight: 200,
   },
 
   // ── Header ──

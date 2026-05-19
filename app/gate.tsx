@@ -61,7 +61,7 @@ export default function Gate() {
         // public.users satırını garantile
         await getAppUserId();
 
-        // Onboarding kontrolü
+        // Onboarding kontrolü — AsyncStorage cache + DB source of truth
         const userId = session.user.id;
         const userKey = `chosy_onboarded_${userId}`;
         let onboarded = await AsyncStorage.getItem(userKey);
@@ -73,6 +73,29 @@ export default function Gate() {
             onboarded = legacy;
           }
         }
+
+        // AsyncStorage miss — DB'den kontrol et (reinstall durumu)
+        if (!onboarded) {
+          try {
+            const appUserId = await getAppUserId();
+            if (appUserId) {
+              const { data: userRow } = await supabase
+                .from('users')
+                .select('onboarding_completed_at')
+                .eq('id', appUserId)
+                .single();
+
+              if (userRow?.onboarding_completed_at) {
+                // DB'de onboarding tamamlanmış — AsyncStorage cache'ini yenile
+                await AsyncStorage.setItem(userKey, '1');
+                onboarded = '1';
+              }
+            }
+          } catch {
+            // DB kontrolü başarısız — güvenli tarafta kal, onboarding göster
+          }
+        }
+
         if (!onboarded) {
           targetRoute.current = '/onboarding';
           decisionReady.current = true;

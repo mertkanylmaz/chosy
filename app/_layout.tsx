@@ -1,5 +1,5 @@
 import '@/utils/cryptoPolyfill';   // WebCrypto polyfill — ilk satır, sırası kritik
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import {
@@ -18,6 +18,9 @@ import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-rean
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import * as Notifications from 'expo-notifications';
+import { useRouter } from 'expo-router';
+
 import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/services/supabase';
 import { configureGoogleSignIn } from '@/services/authService';
@@ -26,6 +29,14 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { logger } from '@/utils/logger';
+import {
+  savePushTokenToServer,
+  shouldAskForPermission,
+  registerForPushNotifications,
+  clearBadge,
+  getDeepLinkFromNotification,
+  type NotificationData,
+} from '@/services/pushNotifications';
 
 // Geliştirme ortamında reduced motion strict uyarısını kapat
 if (__DEV__) {
@@ -138,6 +149,26 @@ export default function RootLayout() {
     };
   }, []);
 
+  // ── Push Notifications setup ─────────────────────────────────────────────
+  useEffect(() => {
+    // Refresh push token on every launch (token can rotate)
+    savePushTokenToServer().catch(() => {
+      // Non-critical — will retry next launch
+    });
+
+    // Clear badge on app launch
+    clearBadge().catch(() => {});
+
+    // Check if we should prompt for permission (2nd session)
+    shouldAskForPermission().then((shouldAsk) => {
+      if (shouldAsk) {
+        registerForPushNotifications().catch((err) => {
+          logger.warn('[layout] Push registration failed:', err);
+        });
+      }
+    }).catch(() => {});
+  }, []);
+
   // Font yüklemesi tamamlanınca (veya hata olunca) splash'i kaldır.
   // fontError durumunda da devam etmeli — sistem fontu ile çalışır.
   useEffect(() => {
@@ -159,6 +190,33 @@ export default function RootLayout() {
  */
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
+  const router = useRouter();
+  const notificationResponseListener = useRef<Notifications.EventSubscription | null>(null);
+
+  // ── Deep link from push notification tap ────────────────────────────────
+  useEffect(() => {
+    notificationResponseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response: Notifications.NotificationResponse) => {
+        const data = response.notification.request.content.data as NotificationData | undefined;
+        const route = getDeepLinkFromNotification(data);
+        if (route) {
+          // Small delay to ensure navigation is ready
+          setTimeout(() => {
+            try {
+              router.push(route as never);
+            } catch (err) {
+              logger.warn('[push] Deep link navigation failed:', err);
+            }
+          }, 500);
+        }
+      });
+
+    return () => {
+      if (notificationResponseListener.current) {
+        notificationResponseListener.current.remove();
+      }
+    };
+  }, [router]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -188,8 +246,20 @@ function RootLayoutNav() {
                 options={{ animation: 'slide_from_right' }}
               />
               <Stack.Screen
+                name="roulette"
+                options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+              />
+              <Stack.Screen
                 name="paywall"
                 options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="lifetime"
+                options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+              />
+              <Stack.Screen
+                name="referral"
+                options={{ animation: 'slide_from_right' }}
               />
             </Stack>
           </ThemeProvider>

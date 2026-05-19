@@ -14,6 +14,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     padding: Theme.spacing.lg,
+    /** Sabit minHeight — veri yuklenene kadar layout shift'i engeller */
+    minHeight: 180,
   },
 
   // ─── Header ─────────────────────────────────────────────────────────────────
@@ -91,9 +93,14 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
   dotToday: {
-    backgroundColor: Colors.accentPrimary,
+    backgroundColor: Colors.gold,
     borderWidth: 2,
     borderColor: Colors.gold,
+    shadowColor: Colors.gold,
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 3,
   },
   dotInactive: {
     backgroundColor: Colors.bgSubtle,

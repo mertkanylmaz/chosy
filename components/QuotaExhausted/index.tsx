@@ -1,12 +1,15 @@
 /**
- * QuotaExhausted — kota dolduğunda gösterilen overlay.
+ * QuotaExhausted — kota doldugunda gosterilen overlay.
  *
- * Mood ekranında "Find Movies" basıldığında kota yoksa
- * bu overlay açılır. "Upgrade" butonu paywall'a yönlendirir.
+ * Mood ekraninda "Find Movies" basildiginda kota yoksa
+ * bu overlay acilir. "Upgrade" butonu paywall'a yonlendirir.
  *
- * B+C hibrit stratejisi:
- *   - Free kullanıcı: "Bugünkü ücretsiz hakkını kullandın"
- *   - Paid kullanıcı (günlük/haftalık limit): "Limit doldu, yarın/haftaya gel"
+ * V2: QuotaStatus (RPC) tipine gecis — tier alani sayesinde
+ * subscriptionStatus prop'u kaldirildi.
+ *
+ * Strateji:
+ *   - Free: "Arama hakkini kullandin" + Upgrade CTA
+ *   - Paid: "Gunluk limit doldu" + reset zamani + Kapat
  */
 
 import React from 'react';
@@ -19,56 +22,55 @@ import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { QuotaCheckResult } from '@/services/quotaEngine';
-import type { SubscriptionStatus } from '@/constants/subscriptionPlans';
+import type { QuotaStatus } from '@/constants/subscriptionPlans';
 
 // ─── Props ───────────────────────────────────────────────────────────────────
 
 interface QuotaExhaustedProps {
-  /** Overlay görünür mü? */
+  /** Overlay gorunur mu? */
   visible: boolean;
   /** Kapatma callback'i */
   onClose: () => void;
-  /** Kota bilgisi */
-  quota: QuotaCheckResult | null;
-  /** Kullanıcı abonelik durumu */
-  subscriptionStatus: SubscriptionStatus;
+  /** RPC'den donen kota bilgisi (null = henuz yuklenmedi) */
+  quotaStatus: QuotaStatus | null;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
- * Kota dolduğunda modal overlay gösterir.
- * Free → "Abone ol", Paid → "Yarın/haftaya tekrar gel".
+ * Kota doldugunda modal overlay gosterir.
+ * Free → "Abone ol", Paid → "Yarin tekrar gel".
  */
 export default function QuotaExhausted({
   visible,
   onClose,
-  quota,
-  subscriptionStatus,
+  quotaStatus,
 }: QuotaExhaustedProps) {
   const router = useRouter();
   const { t } = useLanguage();
 
-  const isFree = subscriptionStatus === 'free' || subscriptionStatus === 'expired';
+  const isFree = !quotaStatus || quotaStatus.tier === 'free';
 
-  /** Paywall'a yönlendir */
+  /** Paywall'a yonlendir */
   function handleUpgrade(): void {
     onClose();
     router.push('/paywall');
   }
 
-  // Mesaj seçimi
+  // Mesaj secimi
   const message = isFree
     ? t('quota.exhaustedFree')
-    : quota?.resetAt
-      ? t('quota.exhaustedDaily')
-      : t('quota.exhaustedWeekly');
+    : t('quota.exhaustedDaily');
 
-  // Reset zamanı formatla
-  const resetText = quota?.resetAt
+  // Kalan/limit bilgisi
+  const limitInfo = quotaStatus
+    ? t('quota.limitInfo', { used: quotaStatus.used, limit: quotaStatus.limit })
+    : '';
+
+  // Reset zamani formatla
+  const resetText = quotaStatus?.resetAt
     ? t('quota.waitUntil', {
-        time: quota.resetAt.toLocaleDateString(undefined, {
+        time: quotaStatus.resetAt.toLocaleDateString(undefined, {
           weekday: 'short',
           hour: '2-digit',
           minute: '2-digit',
@@ -86,18 +88,23 @@ export default function QuotaExhausted({
     >
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          {/* İkon */}
+          {/* Ikon */}
           <View style={styles.iconCircle}>
             <Ionicons name="hourglass-outline" size={32} color={Colors.accentPrimary} />
           </View>
 
-          {/* Başlık */}
+          {/* Baslik */}
           <Text style={styles.title}>{t('quota.exhaustedTitle')}</Text>
 
-          {/* Açıklama */}
+          {/* Aciklama */}
           <Text style={styles.message}>{message}</Text>
 
-          {/* Reset zamanı */}
+          {/* Limit bilgisi — paid kullanicilara gosterilir */}
+          {!isFree && limitInfo !== '' && (
+            <Text style={styles.limitInfo}>{limitInfo}</Text>
+          )}
+
+          {/* Reset zamani */}
           {!isFree && resetText !== '' && (
             <Text style={styles.resetText}>{resetText}</Text>
           )}
@@ -176,6 +183,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 12,
     paddingHorizontal: 8,
+  },
+  /** Kullanim/limit bilgisi — "3/3 used" */
+  limitInfo: {
+    fontSize: 12,
+    color: Colors.textTertiary,
+    marginBottom: 4,
   },
   resetText: {
     fontSize: 12,

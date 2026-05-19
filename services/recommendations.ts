@@ -111,15 +111,22 @@ interface FilmTableRow {
 /**
  * Similarity ve oy ortalamasına göre veri tabanlı pick_type belirler.
  * - similarity >= 0.8 → 'ai_pick' (güçlü eşleşme)
- * - voteAverage < 7.0 && similarity >= 0.5 → 'hidden_gem' (bilinmez ama uyumlu)
+ * - voteAverage < 7.0 && similarity >= 0.5 → 'hidden_gem' (niche ama uyumlu)
+ * - voteAverage >= 7.5 → asla hidden_gem (populer filmler gem olamaz)
  * - Diğerleri → null
+ *
+ * Sinema mantigi: Hidden gem = dusuk profilli ama kaliteli film.
+ * Top Gun, Avengers gibi 7.5+ oy alan blockbuster'lar gem etiketini almaz.
  */
 function determinePickType(
   similarity: number,
   voteAverage: number | null,
 ): Film['pick_type'] {
   if (similarity >= 0.8) return 'ai_pick';
-  if ((voteAverage ?? 10) < 7.0 && similarity >= 0.5) return 'hidden_gem';
+  const va = voteAverage ?? 10;
+  // Sadece dusuk profilli (va < 7.0) ve yeterli eslesmeli filmler gem olabilir
+  // Yuksek puanli filmler (>= 7.5) kesinlikle gem degildir
+  if (va < 7.0 && va >= 4.0 && similarity >= 0.5) return 'hidden_gem';
   return null;
 }
 

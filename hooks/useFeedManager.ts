@@ -15,6 +15,7 @@ import { Image } from 'react-native';
 import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
 import { recordActivity } from '@/services/gamification';
+import { touchActivity } from '@/services/pushNotifications';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { updateUserVector } from '@/services/userProfile';
 import { addToWatchlist, getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
@@ -86,6 +87,11 @@ function phaseForBatch(loadedCount: number): FeedPhase {
  * Her SURPRISE_INTERVAL'da bir filmi sürpriz kart olarak işaretler.
  * Tür sırayla döngüseldir: hidden_gem → ai_pick → unexpected → …
  *
+ * Hidden Gem sinema mantigi: Yuksek oy ortalamasi (>= 7.5) veya yuksek
+ * matchScore (>= 85) olan filmler blockbuster kabul edilir — hidden_gem
+ * yerine ai_pick etiketi alir. Gercek hidden gem'ler nicheye hitap eden,
+ * dusuk profilli ama kaliteli filmlerdir.
+ *
  * @param films      - Etiketlenecek film dizisi
  * @param startIndex - Bu batch'in feed içindeki başlangıç index'i
  */
@@ -95,7 +101,20 @@ function markSurpriseCards(films: Film[], startIndex: number): Film[] {
     const globalPos = startIndex + i + 1; // 1-indexed
     if (globalPos % SURPRISE_INTERVAL === 0) {
       const typeIndex = Math.floor(globalPos / SURPRISE_INTERVAL - 1) % types.length;
-      return { ...film, surpriseType: types[typeIndex] };
+      let assignedType = types[typeIndex];
+
+      // Hidden Gem sinema filtresi: populer/yuksek puanli filmler gem olamaz
+      if (assignedType === 'hidden_gem') {
+        const isPopular =
+          (film.voteAverage != null && film.voteAverage >= 7.5) ||
+          film.matchScore >= 85;
+        if (isPopular) {
+          // Populer filme hidden_gem vermek yerine ai_pick ata
+          assignedType = 'ai_pick';
+        }
+      }
+
+      return { ...film, surpriseType: assignedType };
     }
     return film;
   });
@@ -544,6 +563,9 @@ export function useFeedManager(
       recordActivity().catch(() => {
         // Gamification hataları kullanıcıyı etkilememeli
       });
+
+      // Activity tracking for churn detection (fire-and-forget)
+      touchActivity().catch(() => {});
     },
     [currentSessionId],
   );

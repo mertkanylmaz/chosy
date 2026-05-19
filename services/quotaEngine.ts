@@ -1,64 +1,344 @@
 /**
- * Quota Engine — mood arama hakkı yönetimi.
+ * Quota Engine — Client-side kota yonetimi.
  *
- * Plan bazlı günlük/haftalık limit kontrolü yapar.
- * Supabase mood_searches tablosundan sayaç okur.
+ * V3: RPC bypass — AsyncStorage + RevenueCat tier detection.
+ * Supabase'de quota RPC'leri mevcut degil, bu yuzden tum quota logic
+ * client-side'a tasindi. Tier tespiti RevenueCat'ten, sayac AsyncStorage'dan.
  *
- * Kurallar:
- *   - Free: toplam 1 arama (onboarding bedava, sonrası paywall)
- *   - Weekly trial (ilk 10 gün): toplam 20 arama
- *   - Weekly (sonraki): 14/hafta (2/gün)
- *   - Monthly / Yearly: 3/gün, 21/hafta cap
+ * Eski sistem (canSearchMood, countSearchesSince) geriye uyumluluk icin korundu.
+ * recordMoodSearch hala mood_searches tablosuna yazar (analytics icin).
  */
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Purchases from 'react-native-purchases';
 
 import { supabase } from './supabase';
 import {
   FREE_DAILY_LIMIT,
-  PLANS,
-  TRIAL_FIRST_PERIOD_DAYS,
-  TRIAL_FIRST_PERIOD_QUOTA,
-  type PlanId,
+  TIER_LIMITS,
+  RC_ENTITLEMENT_ID,
+  planIdToTier,
   type SubscriptionStatus,
+  type SubscriptionTier,
+  type QuotaStatus,
 } from '@/constants/subscriptionPlans';
 import { logger } from '@/utils/logger';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
-/** Kota kontrolü sonucu */
+/** Kota kontrolu sonucu (eski interface — geriye uyumluluk) */
 export interface QuotaCheckResult {
   /** Mood arama yapabilir mi? */
   allowed: boolean;
-  /** Kalan arama hakkı */
+  /** Kalan arama hakki */
   remaining: number;
-  /** Kota ne zaman sıfırlanır (reset zamanı) */
+  /** Kota ne zaman sifirlanir (reset zamani) */
   resetAt: Date | null;
-  /** Günlük limit */
+  /** Gunluk limit */
   dailyLimit: number;
-  /** Haftalık limit */
+  /** Haftalik limit */
   weeklyLimit: number;
 }
 
-// ─── Yardımcı — Tarih Hesaplama ──────────────────────────────────────────────
+/** Tum quota durumu */
+export interface FullQuotaStatus {
+  tier: SubscriptionTier;
+  searches: { used: number; limit: number; bonus_available: number };
+  refines: { used: number; limit: number };
+  slots: { used: number; limit: number };
+  games: { played: Record<string, number>; limit_per_game: number };
+  reset_at: string;
+}
 
-/** Bugünün başlangıcı (UTC 00:00) */
+// ─── AsyncStorage Helpers ────────────────────────────────────────────────────
+
+/** Bugunun tarihini YYYY-MM-DD formatinda dondurur */
+function todayDateKey(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+/** AsyncStorage key: quota_{userId}_{type}_{YYYY-MM-DD} */
+function storageKey(userId: string, type: string): string {
+  return `quota_${userId}_${type}_${todayDateKey()}`;
+}
+
+/** Mevcut kullanim sayisini oku */
+async function getUsedCount(key: string): Promise<number> {
+  try {
+    const val = await AsyncStorage.getItem(key);
+    return val ? parseInt(val, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Kullanim sayisini artir */
+async function incrementCount(key: string, current: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(key, String(current + 1));
+  } catch (err) {
+    logger.warn('[quota] AsyncStorage write failed:', err);
+  }
+}
+
+// ─── RevenueCat Tier Detection ───────────────────────────────────────────────
+
+/**
+ * RevenueCat'ten aktif tier'i belirler.
+ * RC erisilemedigi durumda 'free' doner (fail-safe).
+ */
+async function getTierFromRevenueCat(): Promise<SubscriptionTier> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    const entitlement = customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+
+    if (!entitlement) return 'free';
+
+    const productId = entitlement.productIdentifier?.toLowerCase() ?? '';
+
+    if (productId.includes('lifetime')) return 'lifetime';
+    if (productId.includes('annual') || productId.includes('yearly')) return 'annual';
+    if (productId.includes('weekly')) return 'weekly_legacy';
+    if (productId.includes('monthly')) return 'monthly';
+
+    // Entitlement aktif ama product ID tanimsiz — monthly ver (kullaniciyi cezalandirma)
+    return 'monthly';
+  } catch (err) {
+    logger.warn('[quota] RC getCustomerInfo failed — defaulting to free:', err);
+    return 'free';
+  }
+}
+
+// ─── Limit Helpers ───────────────────────────────────────────────────────────
+
+/** Quota type'a gore tier'dan limiti al. -1 = sinirsiz (9999 olarak doner) */
+function getLimitForType(tier: SubscriptionTier, quotaType: string): number {
+  const limits = TIER_LIMITS[tier];
+  switch (quotaType) {
+    case 'search': return limits.dailySearchLimit;
+    case 'refine': return limits.dailyRefineLimit === -1 ? 9999 : limits.dailyRefineLimit;
+    case 'slot': return limits.dailySlotLimit === -1 ? 9999 : limits.dailySlotLimit;
+    default: return FREE_DAILY_LIMIT;
+  }
+}
+
+// ─── Ana Fonksiyonlar (RPC yerine client-side) ──────────────────────────────
+
+/**
+ * Atomic quota check + consume — client-side.
+ * RPC bypass: AsyncStorage sayac + RevenueCat tier.
+ *
+ * Fail-open strateji: hata durumunda kullaniciyi kilitlemez.
+ *
+ * @param userId Supabase users tablosundaki UUID
+ * @param quotaType 'search' | 'refine' | 'slot'
+ */
+export async function checkAndConsumeQuota(
+  userId: string,
+  quotaType: 'search' | 'refine' | 'slot',
+): Promise<QuotaStatus> {
+  try {
+    const tier = await getTierFromRevenueCat();
+    const limit = getLimitForType(tier, quotaType);
+    const key = storageKey(userId, quotaType);
+    const used = await getUsedCount(key);
+
+    if (used >= limit) {
+      return {
+        allowed: false,
+        used,
+        limit,
+        tier,
+        remaining: 0,
+        resetAt: startOfTomorrow(),
+      };
+    }
+
+    // Consume: sayaci artir
+    await incrementCount(key, used);
+
+    // Search ise mood_searches'a da yaz (analytics icin)
+    if (quotaType === 'search') {
+      recordMoodSearch(userId).catch((err) => {
+        logger.warn('[quota] recordMoodSearch background failed:', err);
+      });
+    }
+
+    return {
+      allowed: true,
+      used: used + 1,
+      limit,
+      tier,
+      remaining: Math.max(0, limit - (used + 1)),
+      resetAt: startOfTomorrow(),
+    };
+  } catch (err) {
+    logger.error('[quota] checkAndConsumeQuota error:', err);
+    // Fail-open: hata durumunda kullaniciyi kilitlemez
+    return {
+      allowed: true,
+      used: 0,
+      limit: FREE_DAILY_LIMIT,
+      tier: 'free',
+      remaining: FREE_DAILY_LIMIT,
+      resetAt: startOfTomorrow(),
+    };
+  }
+}
+
+/**
+ * Game-specific quota check + consume — client-side.
+ *
+ * @param userId Supabase users tablosundaki UUID
+ * @param gameId 'fadein' | 'imposter' | 'logline' | 'quoted'
+ */
+export async function checkAndConsumeGameQuota(
+  userId: string,
+  gameId: string,
+): Promise<QuotaStatus> {
+  try {
+    const tier = await getTierFromRevenueCat();
+    const limits = TIER_LIMITS[tier];
+    const limit = limits.dailyGameLimitPerGame === -1 ? 9999 : limits.dailyGameLimitPerGame;
+    const key = storageKey(userId, `game_${gameId}`);
+    const used = await getUsedCount(key);
+
+    if (used >= limit) {
+      return {
+        allowed: false,
+        used,
+        limit,
+        tier,
+        remaining: 0,
+        resetAt: startOfTomorrow(),
+      };
+    }
+
+    await incrementCount(key, used);
+
+    return {
+      allowed: true,
+      used: used + 1,
+      limit,
+      tier,
+      remaining: Math.max(0, limit - (used + 1)),
+      resetAt: startOfTomorrow(),
+    };
+  } catch (err) {
+    logger.error('[quota] checkAndConsumeGameQuota error:', err);
+    // Fail-open: oyun engagement oncelikli — hata durumunda izin ver
+    return {
+      allowed: true,
+      used: 0,
+      limit: 1,
+      tier: 'free',
+      remaining: 1,
+      resetAt: startOfTomorrow(),
+    };
+  }
+}
+
+/**
+ * Tum quota durumunu oku (read-only, consume etmez) — client-side.
+ */
+export async function getFullQuotaStatus(userId: string): Promise<FullQuotaStatus | null> {
+  try {
+    const tier = await getTierFromRevenueCat();
+    const limits = TIER_LIMITS[tier];
+    const today = todayDateKey();
+
+    // Tum quota turlerini paralel oku
+    const [searchUsed, refineUsed, slotUsed] = await Promise.all([
+      getUsedCount(`quota_${userId}_search_${today}`),
+      getUsedCount(`quota_${userId}_refine_${today}`),
+      getUsedCount(`quota_${userId}_slot_${today}`),
+    ]);
+
+    // Game quota'larini oku
+    const gameIds = ['fadein', 'imposter', 'logline', 'quoted'];
+    const gameUsedPromises = gameIds.map((gid) =>
+      getUsedCount(`quota_${userId}_game_${gid}_${today}`),
+    );
+    const gameUsedValues = await Promise.all(gameUsedPromises);
+    const played: Record<string, number> = {};
+    gameIds.forEach((gid, i) => {
+      played[gid] = gameUsedValues[i];
+    });
+
+    return {
+      tier,
+      searches: {
+        used: searchUsed,
+        limit: limits.dailySearchLimit,
+        bonus_available: 0,
+      },
+      refines: {
+        used: refineUsed,
+        limit: limits.dailyRefineLimit,
+      },
+      slots: {
+        used: slotUsed,
+        limit: limits.dailySlotLimit,
+      },
+      games: {
+        played,
+        limit_per_game: limits.dailyGameLimitPerGame,
+      },
+      reset_at: startOfTomorrow().toISOString(),
+    };
+  } catch (err) {
+    logger.error('[quota] getFullQuotaStatus error:', err);
+    return null;
+  }
+}
+
+/**
+ * Bonus search ver (streak rewards icin).
+ * Client-side: mevcut search sayacini negatife cekmek yerine
+ * ayri bir bonus key tutar.
+ */
+export async function grantBonusSearches(
+  userId: string,
+  amount: number,
+  _reason: string,
+): Promise<void> {
+  try {
+    const bonusKey = `quota_bonus_${userId}_search_${todayDateKey()}`;
+    const current = await getUsedCount(bonusKey);
+    await AsyncStorage.setItem(bonusKey, String(current + amount));
+    logger.log('[quota] Bonus granted:', amount, 'for user:', userId);
+  } catch (err) {
+    logger.error('[quota] grantBonusSearches error:', err);
+  }
+}
+
+/**
+ * Purchase sonrasi quota cache'ini temizle.
+ * Yeni tier ile fresh quota baslar.
+ */
+export async function clearQuotaCache(userId: string): Promise<void> {
+  try {
+    const today = todayDateKey();
+    const types = ['search', 'refine', 'slot', 'game_fadein', 'game_imposter', 'game_logline', 'game_quoted'];
+    const keys = types.map((t) => `quota_${userId}_${t}_${today}`);
+    keys.push(`quota_bonus_${userId}_search_${today}`);
+    await AsyncStorage.multiRemove(keys);
+    logger.log('[quota] Cache cleared for user:', userId);
+  } catch (err) {
+    logger.warn('[quota] Cache clear failed:', err);
+  }
+}
+
+// ─── Yardimci — Tarih Hesaplama ──────────────────────────────────────────────
+
+/** Bugunun baslangici (UTC 00:00) */
 function startOfToday(): string {
   const d = new Date();
   d.setUTCHours(0, 0, 0, 0);
   return d.toISOString();
 }
 
-/** Bu haftanın Pazartesi günü (UTC 00:00) */
-function startOfThisWeek(): string {
-  const d = new Date();
-  const day = d.getUTCDay();
-  // Pazartesi = 1, Pazar = 0 (Pazar'ı 7 olarak say)
-  const diff = day === 0 ? 6 : day - 1;
-  d.setUTCDate(d.getUTCDate() - diff);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString();
-}
-
-/** Yarın UTC 00:00 */
+/** Yarin UTC 00:00 */
 function startOfTomorrow(): Date {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() + 1);
@@ -66,20 +346,11 @@ function startOfTomorrow(): Date {
   return d;
 }
 
-/** Gelecek Pazartesi UTC 00:00 */
-function startOfNextWeek(): Date {
-  const d = new Date();
-  const day = d.getUTCDay();
-  const diff = day === 0 ? 1 : 8 - day;
-  d.setUTCDate(d.getUTCDate() + diff);
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
-}
-
-// ─── Supabase Sorguları ──────────────────────────────────────────────────────
+// ─── Supabase Sorgulari (Eski — geriye uyumluluk) ───────────────────────────
 
 /**
- * Belirli tarihten itibaren yapılan mood arama sayısını döndürür.
+ * Belirli tarihten itibaren yapilan mood arama sayisini dondurur.
+ * @deprecated Yeni kodda checkAndConsumeQuota kullan
  */
 async function countSearchesSince(userId: string, since: string): Promise<number> {
   const { count, error } = await supabase
@@ -89,146 +360,59 @@ async function countSearchesSince(userId: string, since: string): Promise<number
     .gte('searched_at', since);
 
   if (error) {
-    // Fail-closed: hata durumunda limiti dolu say — paywall bypass'i engelle.
-    // Kullanıcı deneyimi: "kota doldu" overlay gösterir, paywall'a yönlendirir.
-    logger.warn('[quota] Arama sayısı sorgu hatası (fail-closed):', error.code, error.message ?? JSON.stringify(error));
+    logger.warn('[quota] Arama sayisi sorgu hatasi (fail-closed):', error.code, error.message ?? JSON.stringify(error));
     return FREE_DAILY_LIMIT;
   }
 
   return count ?? 0;
 }
 
-/**
- * Trial başlangıcından itibaren toplam arama sayısını döndürür.
- */
-async function countSearchesSinceTrialStart(
-  userId: string,
-  trialStartDate: string,
-): Promise<number> {
-  const { count, error } = await supabase
-    .from('mood_searches')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('searched_at', trialStartDate);
-
-  if (error) {
-    // Fail-closed: hata durumunda limiti dolu say
-    logger.warn('[quota] Trial arama sayısı sorgu hatası (fail-closed):', error.code, error.message ?? JSON.stringify(error));
-    return FREE_DAILY_LIMIT;
-  }
-
-  return count ?? 0;
-}
-
-// ─── Ana Kota Kontrol Fonksiyonu ─────────────────────────────────────────────
+// ─── Eski Kota Kontrol Fonksiyonu (geriye uyumluluk) ────────────────────────
 
 /**
- * Kullanıcının mood arama yapıp yapamayacağını kontrol eder.
+ * Kullanicinin mood arama yapip yapamayacagini kontrol eder.
  *
- * @param userId Supabase users tablosundaki UUID
- * @param subscriptionStatus Kullanıcının abonelik durumu
- * @param planId Aktif plan (null = free)
- * @param trialStartDate Trial başlangıç tarihi (ISO string, null = trial yok)
+ * @deprecated Yeni kodda checkAndConsumeQuota('search') kullan.
+ * Bu fonksiyon SubscriptionContext.checkQuota tarafindan hala kullaniliyor.
+ *
+ * V2: TIER_LIMITS bazli — eski PLANS.dailyLimit/weeklyLimit referanslari kaldirildi.
+ * planId string olarak gelir, planIdToTier ile tier'a cevirilir (legacy safe).
  */
 export async function canSearchMood(
   userId: string,
   subscriptionStatus: SubscriptionStatus,
-  planId: PlanId | null,
-  trialStartDate: string | null,
+  planId: string | null,
+  _trialStartDate: string | null,
 ): Promise<QuotaCheckResult> {
-  // ─── Free Kullanıcı ─────────────────────────────────────────────────────
-  // Toplam 1 arama hakkı (onboarding'deki ilk arama kayıt edilmez — bedava).
-  // İlk arama sonrası her "Find Movies" → QuotaExhausted → paywall.
-  if (subscriptionStatus === 'free' || subscriptionStatus === 'expired' || !planId) {
-    const totalCount = await countSearchesSince(userId, '1970-01-01T00:00:00Z');
-    return {
-      allowed: totalCount < FREE_DAILY_LIMIT,
-      remaining: Math.max(0, FREE_DAILY_LIMIT - totalCount),
-      resetAt: null,
-      dailyLimit: FREE_DAILY_LIMIT,
-      weeklyLimit: FREE_DAILY_LIMIT,
-    };
-  }
+  // Tier'i belirle — eski 'weekly'/'yearly' dahil guvenli donusum
+  const tier: SubscriptionTier =
+    (subscriptionStatus === 'free' || subscriptionStatus === 'expired' || !planId)
+      ? 'free'
+      : planIdToTier(planId);
 
-  const plan = PLANS[planId];
+  const limits = TIER_LIMITS[tier];
+  const dailyLimit = limits.dailySearchLimit;
+  // Weekly limit: dailyLimit * 7 (basit hesaplama)
+  const weeklyLimit = dailyLimit * 7;
 
-  // ─── Weekly Plan — Trial Dönemi ─────────────────────────────────────────
-  if (planId === 'weekly' && subscriptionStatus === 'trial' && trialStartDate) {
-    const trialStart = new Date(trialStartDate);
-    const daysSinceTrialStart = Math.floor(
-      (Date.now() - trialStart.getTime()) / (1000 * 60 * 60 * 24),
-    );
-
-    // İlk 10 gün (trial 3 gün + ilk hafta 7 gün): toplam 20 hak
-    if (daysSinceTrialStart < TRIAL_FIRST_PERIOD_DAYS) {
-      const totalUsed = await countSearchesSinceTrialStart(userId, trialStartDate);
-      const remaining = Math.max(0, TRIAL_FIRST_PERIOD_QUOTA - totalUsed);
-      return {
-        allowed: remaining > 0,
-        remaining,
-        resetAt: new Date(trialStart.getTime() + TRIAL_FIRST_PERIOD_DAYS * 24 * 60 * 60 * 1000),
-        dailyLimit: plan.dailyLimit,
-        weeklyLimit: TRIAL_FIRST_PERIOD_QUOTA,
-      };
-    }
-
-    // Trial bitti ama abonelik aktif — normal weekly kurallarına geç
-  }
-
-  // ─── Weekly Plan — Normal ───────────────────────────────────────────────
-  if (planId === 'weekly') {
-    const weeklyCount = await countSearchesSince(userId, startOfThisWeek());
-    const remaining = Math.max(0, plan.weeklyLimit - weeklyCount);
-    return {
-      allowed: remaining > 0,
-      remaining,
-      resetAt: startOfNextWeek(),
-      dailyLimit: plan.dailyLimit,
-      weeklyLimit: plan.weeklyLimit,
-    };
-  }
-
-  // ─── Monthly / Yearly ──────────────────────────────────────────────────
   const dailyCount = await countSearchesSince(userId, startOfToday());
-  const weeklyCount = await countSearchesSince(userId, startOfThisWeek());
-
-  if (dailyCount >= plan.dailyLimit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: startOfTomorrow(),
-      dailyLimit: plan.dailyLimit,
-      weeklyLimit: plan.weeklyLimit,
-    };
-  }
-
-  if (weeklyCount >= plan.weeklyLimit) {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: startOfNextWeek(),
-      dailyLimit: plan.dailyLimit,
-      weeklyLimit: plan.weeklyLimit,
-    };
-  }
-
-  const dailyRemaining = plan.dailyLimit - dailyCount;
-  const weeklyRemaining = plan.weeklyLimit - weeklyCount;
 
   return {
-    allowed: true,
-    remaining: Math.min(dailyRemaining, weeklyRemaining),
-    resetAt: dailyRemaining <= weeklyRemaining ? startOfTomorrow() : startOfNextWeek(),
-    dailyLimit: plan.dailyLimit,
-    weeklyLimit: plan.weeklyLimit,
+    allowed: dailyCount < dailyLimit,
+    remaining: Math.max(0, dailyLimit - dailyCount),
+    resetAt: startOfTomorrow(),
+    dailyLimit,
+    weeklyLimit,
   };
 }
 
-// ─── Arama Kaydı ─────────────────────────────────────────────────────────────
+// ─── Arama Kaydi ─────────────────────────────────────────────────────────────
 
 /**
- * Mood arama kaydını Supabase'e yazar.
- * mood.tsx'te handleFindMovies başarılı olduktan sonra çağrılır.
+ * Mood arama kaydini Supabase'e yazar.
+ * Analytics icin korundu — quota kontrolu artik client-side.
+ *
+ * CRITICAL: Hata durumunda throw eder — cagiran taraf yakalamalI.
  */
 export async function recordMoodSearch(userId: string): Promise<void> {
   const { error } = await supabase
@@ -236,16 +420,17 @@ export async function recordMoodSearch(userId: string): Promise<void> {
     .insert({ user_id: userId });
 
   if (error) {
-    logger.error('[quota] Arama kaydı hatası:', error.code, error.message ?? JSON.stringify(error));
-    // Hata durumunda bile devam et — kullanıcı deneyimini engelleme.
-    // Ama log'a yaz ki sorun tespit edilebilsin.
+    logger.error('[quota] Arama kaydi hatasi:', error.code, error.message ?? JSON.stringify(error));
+    throw new Error(`[quota] recordMoodSearch failed: ${error.code} — ${error.message}`);
   }
+
+  logger.log('[quota] Mood search recorded', { userId });
 }
 
 // ─── Trial Kontrol ───────────────────────────────────────────────────────────
 
 /**
- * Verilen email'in daha önce free trial kullanıp kullanmadığını kontrol eder.
+ * Verilen email'in daha once free trial kullanip kullanmadigini kontrol eder.
  */
 export async function hasUsedFreeTrial(email: string): Promise<boolean> {
   const { data, error } = await supabase
@@ -256,7 +441,7 @@ export async function hasUsedFreeTrial(email: string): Promise<boolean> {
 
   if (error) {
     if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error('[quota] Trial kontrol hatası:', error.message);
+      logger.error('[quota] Trial kontrol hatasi:', error.message);
     }
     return false;
   }
@@ -266,7 +451,7 @@ export async function hasUsedFreeTrial(email: string): Promise<boolean> {
 
 /**
  * Email'i trial_claims tablosuna kaydeder.
- * Trial satın alımından hemen sonra çağrılır.
+ * Trial satin alimindan hemen sonra cagrilir.
  */
 export async function claimFreeTrial(email: string): Promise<void> {
   const { error } = await supabase
@@ -275,7 +460,7 @@ export async function claimFreeTrial(email: string): Promise<void> {
 
   if (error) {
     if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error('[quota] Trial kayıt hatası:', error.message);
+      logger.error('[quota] Trial kayit hatasi:', error.message);
     }
   }
 }

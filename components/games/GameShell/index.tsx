@@ -51,7 +51,7 @@ export function GameShell({
     <KeyboardAvoidingView
       style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 83 : 0}
     >
       {/* Header */}
       <View style={styles.header}>

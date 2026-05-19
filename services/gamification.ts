@@ -13,6 +13,8 @@
 
 import { supabase } from './supabase';
 import { getAppUserId } from './watchlist';
+import { earnSlotToken } from './slotService';
+import { logger } from '../utils/logger';
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
@@ -104,9 +106,43 @@ export async function recordActivity(): Promise<ActivityResult | null> {
       ...(milestoneData?.new_milestones ?? []),
     ];
 
+    const currentStreak = streakData.current_streak ?? 0;
+
+    // ── Streak-based slot token earning (fire-and-forget) ──
+    // 3 gunluk streak: +1 token, 7 gunluk streak: +2 token
+    if (streakData.streak_updated && userId) {
+      if (currentStreak === 7 || (currentStreak > 0 && currentStreak % 7 === 0)) {
+        earnSlotToken(userId, 2, 'daily_login_7').catch(() => {
+          // Token hatasi onemsiz
+        });
+        logger.log(`[gamification] 7-day streak token earned! streak=${currentStreak}`);
+      } else if (currentStreak === 3 || (currentStreak > 0 && currentStreak % 3 === 0 && currentStreak % 7 !== 0)) {
+        earnSlotToken(userId, 1, 'streak_3day').catch(() => {
+          // Token hatasi onemsiz
+        });
+        logger.log(`[gamification] 3-day streak token earned! streak=${currentStreak}`);
+      }
+
+      // ── Streak reward grants (bonus searches + notifications) ──
+      // Fire-and-forget: RPC checks if a reward exists for this streak day
+      void (async () => {
+        try {
+          const { data } = await supabase.rpc('grant_streak_rewards', {
+            p_user_id: userId,
+            p_streak_days: currentStreak,
+          });
+          if (data && (data as { bonus_searches: number }).bonus_searches > 0) {
+            logger.log(`[gamification] Streak reward granted! streak=${currentStreak}`, data);
+          }
+        } catch {
+          // Non-critical — reward will be retried next activity
+        }
+      })();
+    }
+
     return {
       streakUpdated: streakData.streak_updated,
-      currentStreak: streakData.current_streak ?? 0,
+      currentStreak,
       longestStreak: streakData.longest_streak ?? 0,
       newMilestones: allNewMilestones,
     };

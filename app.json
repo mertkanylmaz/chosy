@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chosy.ai",
     "slug": "chosy-ai",
-    "version": "1.0.3",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "chosy",
@@ -15,14 +15,14 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.chosy.ai",
-      "buildNumber": "3",
+      "buildNumber": "6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.chosy.ai",
-      "versionCode": 1,
+      "versionCode": 6,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,7 +39,15 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#D4A843",
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "updates": {
       "url": "https://u.expo.dev/5c6d10a4-12a2-42cc-946b-3baecbe3bc5e"

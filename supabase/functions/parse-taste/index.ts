@@ -1,6 +1,7 @@
 /** Edge Function: Ham metni TasteProfile'a dönüştürür (Deno) */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
@@ -280,6 +281,56 @@ function getFollowUpQuestion(input: string): string {
   return "Daha iyi öneri yapabilmem için biraz daha anlatır mısın? Ne hissediyorsun ya da ne tür bir film atmosferi arıyorsun?";
 }
 
+// ─── Quota Check Helper ───────────────────────────────────────────────────────
+
+/**
+ * JWT'den user_id alip quota kontrolu yapar.
+ * allowed=false ise Claude API call engellenir (maliyet tasarrufu).
+ */
+async function checkSearchQuota(
+  req: Request,
+): Promise<{ allowed: boolean; quotaResult?: Record<string, unknown> }> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return { allowed: true };
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnon = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+    const supabaseUser = createClient(supabaseUrl, supabaseAnon, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user } } = await supabaseUser.auth.getUser();
+    if (!user) return { allowed: true };
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: userData } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .single();
+
+    if (!userData) return { allowed: true };
+
+    const { data, error } = await supabaseAdmin.rpc("check_and_consume_quota", {
+      p_user_id: userData.id,
+      p_quota_type: "search",
+    });
+
+    if (error) {
+      console.error("[parse-taste] Quota check error:", error.message);
+      return { allowed: true };
+    }
+
+    const result = data as Record<string, unknown>;
+    return { allowed: result.allowed as boolean, quotaResult: result };
+  } catch (err) {
+    console.error("[parse-taste] Quota check exception:", err);
+    return { allowed: true };
+  }
+}
+
 // ─── Ana Handler ──────────────────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
@@ -292,6 +343,20 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ error: "Sadece POST destekleniyor", code: "METHOD_NOT_ALLOWED" } satisfies ErrorResponse),
       { status: 405, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
+
+  // Quota check BEFORE Claude API call
+  const quotaCheck = await checkSearchQuota(req);
+  if (!quotaCheck.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Daily search quota exceeded",
+        code: "QUOTA_EXCEEDED",
+        ...quotaCheck.quotaResult,
+        upgrade_url: "chosy://paywall",
+      } satisfies Record<string, unknown> as unknown as ErrorResponse),
+      { status: 429, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
   }
 
