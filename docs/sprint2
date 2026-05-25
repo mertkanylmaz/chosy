@@ -1,0 +1,158 @@
+GÖREV: Watchlist Slot Machine — 3 Variant + Animation Upgrade
+
+CONTEXT:
+- Mevcut slot machine çalışıyor ama tek variant (random)
+- Sprint 0'da canonical location'a taşındı (büyük ihtimal components/slot-machine/)
+- Sprint 1'de quota sistemi production'da
+- Şimdi 3 variant + premium gating + animation polish
+
+YAPILACAKLAR:
+
+═══════════════════════════════════════════════════════
+1. BACKEND: 3 SLOT VARIANT EDGE FUNCTIONS
+═══════════════════════════════════════════════════════
+
+A) supabase/functions/slot-pure-random/index.ts
+   - Tüm tier'lara açık
+   - Quota check ('slot' type)
+   - Watchlist'ten random unwatched film
+   - Min 3 film gerekli, yoksa NEED_MORE_FILMS error
+   - Log: slot_spins table
+
+B) supabase/functions/slot-mood-filtered/index.ts
+   - SADECE paid tier (monthly, annual, lifetime)
+   - Free user → 403 PREMIUM_REQUIRED
+   - Input: { mood: string }
+   - Flow:
+     1. Subscription check
+     2. Quota check
+     3. Get/generate mood vector (parse-mood reuse)
+     4. Watchlist films + film_profiles join
+     5. Cosine similarity scoring
+     6. Top 7 → weighted random (score'a göre)
+     7. Return film + match_score
+   - Min 5 film gerekli
+
+C) supabase/functions/slot-triple/index.ts
+   - SADECE paid tier
+   - Input: { duration_filter?, mood_filter?, era_filter? }
+   - Filters:
+     * duration: 'short' (<90min) | 'medium' (90-150min) | 'long' (>150min)
+     * mood: aynı parse-mood logic
+     * era: '2020s' | '2010s' | '2000s' | 'classic' | 'any'
+   - Watchlist'i filter, sonra weighted random
+   - Eğer matching film yoksa "no matches, broaden filters" response
+
+D) Migration 022_slot_variants.sql
+   CREATE TABLE slot_spins (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id UUID REFERENCES users(id),
+     film_id INT REFERENCES films(id),
+     variant TEXT NOT NULL CHECK (variant IN ('pure_random', 'mood_filtered', 'triple')),
+     mood_context TEXT,
+     filters JSONB,
+     match_score FLOAT,
+     accepted BOOLEAN DEFAULT FALSE,
+     spun_at TIMESTAMPTZ DEFAULT NOW()
+   );
+   CREATE INDEX idx_slot_spins_user_date ON slot_spins(user_id, spun_at DESC);
+
+═══════════════════════════════════════════════════════
+2. FRONTEND: Slot Machine Component Refactor
+═══════════════════════════════════════════════════════
+
+A) components/slot-machine/SlotMachine.tsx (canonical, refactor)
+   Props:
+   - variant: 'pure_random' | 'mood_filtered' | 'triple'
+   - onResult: (film) => void
+   - onClose: () => void
+
+B) Animation Engine (react-native-reanimated v4):
+   - 3 fake film cover'ı hızlıca geçer (her biri ~200ms)
+   - Final film 1.2s'de yumuşak durur (cubic-bezier(0.34, 1.56, 0.64, 1))
+   - Triple variant: 3 makara, asenkron durur (1.2s → 1.5s → 1.8s)
+   - Haptic: expo-haptics medium impact her makara duruşunda
+   - Sound: assets/sounds/slot-spin.mp3 + slot-stop.mp3 (yoksa placeholder dosya oluştur ve TODO ekle)
+
+C) UX States:
+   - Idle (start screen, variant-specific)
+   - Spinning (animation playing)
+   - Result (film card + Accept/Re-roll/Save buttons)
+   - Empty (watchlist too small)
+   - Premium gated (free user mood-filtered/triple denerse)
+
+D) Variant Selector UI (slot hub):
+   - Pure Random: "Sürpriz Beni" — herkese açık
+   - Mood-Filtered: "Bu Akşam Şu Hava" — premium badge
+   - Triple: "Üç Yıldız Hizalanması" — premium badge
+   - Premium kullanıcılarda tüm 3 variant accessible
+   - Free user mood/triple'a tıklarsa → contextual paywall sheet
+
+E) Mood input UI (Mood-Filtered için):
+   - 6 quick preset chip: Cozy, Melancholic, Adrenaline, Mind-Bending, Romantic, Wild
+   - "Custom" → text input
+   - Recent moods (son 5) shortcut
+
+F) Triple filter UI:
+   - 3 dropdown / chip group
+   - "Any" default — kullanıcı opt-in filter
+   - Apply button
+
+═══════════════════════════════════════════════════════
+3. SLOT TOKEN ECONOMY (Bonus Layer)
+═══════════════════════════════════════════════════════
+
+Premium kullanıcı zaten sınırsız spin. Token sistem FREE user için:
+
+A) Migration ekle:
+   ALTER TABLE users ADD COLUMN slot_tokens INT DEFAULT 0;
+   
+   CREATE TABLE slot_token_transactions (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id UUID REFERENCES users(id),
+     amount INT NOT NULL, -- positive = earn, negative = spend
+     reason TEXT NOT NULL, -- 'streak_3day', 'game_perfect', 'referral', 'spin_used'
+     created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+B) Token earning rules:
+   - 3 günlük streak: +1 token
+   - Mini game perfect score: +1 token
+   - Daily login (7 gün üst üste): +2 token
+   - Free user max balance: 5 token (overflow yok)
+
+C) Spending:
+   - Token harcayarak Pure Random ekstra spin
+   - 1 token = 1 ekstra spin
+
+D) UI:
+   - Slot hub'da token balance göster
+   - "Tokenları topla" hint
+
+═══════════════════════════════════════════════════════
+4. ANALYTICS
+═══════════════════════════════════════════════════════
+
+services/analytics.ts'ye event'ler ekle:
+- slot_spin_initiated (variant)
+- slot_spin_completed (variant, film_id, match_score)
+- slot_film_accepted
+- slot_film_rerolled
+- slot_premium_paywall_shown (variant)
+- slot_premium_paywall_converted (variant)
+
+═══════════════════════════════════════════════════════
+TEST CASES:
+═══════════════════════════════════════════════════════
+1. Free user pure_random → 1 spin/gün limit
+2. Free user mood_filtered → 403 + paywall
+3. Premium user sınırsız spin
+4. Watchlist < 3 → empty state
+5. Mood-filtered yüksek match score → ilk 7'den weighted random
+6. Triple slot animation senkronize
+7. Token earn/spend flow
+
+DİKKAT:
+- Slot animation 60fps mobile'da smooth olmalı (reanimated worklet kullan, JS thread değil)
+- Edge Function'larda Claude API maliyetini optimize et (mood vector cache)
+- Production'a deploy etmeden önce devamlı oynat ve UX feel'i test et

@@ -1,0 +1,250 @@
+GÖREV: Chosy.ai Quota & Subscription Backend Mimarisi
+
+CONTEXT:
+Mevcut plan yapısı değişti. Yeni 4 tier sistemi:
+- Free: 3 mood search/gün, 1 refine/gün, 1 slot spin/gün, 1 oyun/gün (her oyun)
+- Monthly ($6.99): 15 search, sınırsız refine/slot/games
+- Annual ($39.99/yıl): 25 search, sınırsız diğerleri
+- Lifetime ($89.99): 50 search (fair use), sınırsız diğerleri
+
+Mevcut sistemde quota tracking varsa onu refactor et, yoksa sıfırdan kur.
+
+YAPILACAKLAR:
+
+═══════════════════════════════════════════════════════
+1. DATABASE MIGRATION (supabase/migrations/020_quota_system.sql)
+═══════════════════════════════════════════════════════
+
+A) Subscription tier enum'unu güncelle:
+   - Mevcut tiers'ı kontrol et (muhtemelen users tablosunda subscription_tier column var)
+   - Yeni enum: 'free' | 'monthly' | 'annual' | 'lifetime' | 'weekly_legacy'
+   - 'weekly_legacy' mevcut weekly user'lar için grandfather tier (yeni signup yok)
+   - Mevcut weekly user'ları 'weekly_legacy'ye migrate et
+
+B) Quota tracking tablosu:
+   CREATE TABLE user_daily_quotas (
+     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+     date DATE NOT NULL,
+     searches_used INT DEFAULT 0,
+     refines_used INT DEFAULT 0,
+     rerolls_used INT DEFAULT 0,
+     slot_spins_used INT DEFAULT 0,
+     games_played JSONB DEFAULT '{}'::jsonb,
+     bonus_searches_earned INT DEFAULT 0,
+     bonus_searches_used INT DEFAULT 0,
+     created_at TIMESTAMPTZ DEFAULT NOW(),
+     updated_at TIMESTAMPTZ DEFAULT NOW(),
+     PRIMARY KEY (user_id, date)
+   );
+   
+   CREATE INDEX idx_quotas_user_recent 
+     ON user_daily_quotas(user_id, date DESC);
+
+C) Limits configuration tablosu (hard-coded yerine DB-driven, hızlı change için):
+   CREATE TABLE subscription_limits (
+     tier TEXT PRIMARY KEY,
+     daily_search_limit INT NOT NULL,
+     daily_refine_limit INT NOT NULL, -- -1 = sınırsız
+     daily_slot_limit INT NOT NULL,
+     daily_game_limit_per_game INT NOT NULL,
+     watchlist_max_films INT NOT NULL, -- -1 = sınırsız
+     mood_history_days INT NOT NULL,
+     advanced_filters BOOLEAN DEFAULT FALSE,
+     streaming_availability BOOLEAN DEFAULT FALSE,
+     custom_lists BOOLEAN DEFAULT FALSE,
+     priority_ai BOOLEAN DEFAULT FALSE
+   );
+   
+   INSERT INTO subscription_limits VALUES
+     ('free', 3, 1, 1, 1, 30, 0, false, false, false, false),
+     ('weekly_legacy', 14, -1, 5, -1, -1, 30, true, true, true, false),
+     ('monthly', 15, -1, -1, -1, -1, 30, true, true, true, true),
+     ('annual', 25, -1, -1, -1, -1, 365, true, true, true, true),
+     ('lifetime', 50, -1, -1, -1, -1, -1, true, true, true, true);
+
+D) RPC function: atomic quota check + increment
+   CREATE OR REPLACE FUNCTION check_and_consume_quota(
+     p_user_id UUID,
+     p_quota_type TEXT -- 'search' | 'refine' | 'slot' | 'game'
+   ) RETURNS JSONB
+   LANGUAGE plpgsql AS $$
+   DECLARE
+     v_tier TEXT;
+     v_limit INT;
+     v_used INT;
+     v_bonus INT;
+     v_today DATE := CURRENT_DATE;
+     v_quota_row user_daily_quotas%ROWTYPE;
+   BEGIN
+     -- Get user tier
+     SELECT subscription_tier INTO v_tier FROM users WHERE id = p_user_id;
+     IF NOT FOUND THEN
+       RETURN jsonb_build_object('allowed', false, 'error', 'USER_NOT_FOUND');
+     END IF;
+     
+     -- Upsert today's quota row (atomic)
+     INSERT INTO user_daily_quotas (user_id, date) 
+       VALUES (p_user_id, v_today)
+       ON CONFLICT (user_id, date) DO NOTHING;
+     
+     -- Lock and read
+     SELECT * INTO v_quota_row 
+       FROM user_daily_quotas 
+       WHERE user_id = p_user_id AND date = v_today
+       FOR UPDATE;
+     
+     -- Get limit
+     CASE p_quota_type
+       WHEN 'search' THEN
+         SELECT daily_search_limit INTO v_limit FROM subscription_limits WHERE tier = v_tier;
+         v_used := v_quota_row.searches_used;
+         v_bonus := v_quota_row.bonus_searches_earned - v_quota_row.bonus_searches_used;
+       WHEN 'refine' THEN
+         SELECT daily_refine_limit INTO v_limit FROM subscription_limits WHERE tier = v_tier;
+         v_used := v_quota_row.refines_used;
+         v_bonus := 0;
+       WHEN 'slot' THEN
+         SELECT daily_slot_limit INTO v_limit FROM subscription_limits WHERE tier = v_tier;
+         v_used := v_quota_row.slot_spins_used;
+         v_bonus := 0;
+       ELSE
+         RETURN jsonb_build_object('allowed', false, 'error', 'INVALID_QUOTA_TYPE');
+     END CASE;
+     
+     -- Check (-1 = unlimited)
+     IF v_limit != -1 AND v_used >= (v_limit + v_bonus) THEN
+       RETURN jsonb_build_object(
+         'allowed', false, 
+         'error', 'QUOTA_EXCEEDED',
+         'used', v_used,
+         'limit', v_limit + v_bonus,
+         'tier', v_tier,
+         'reset_at', (v_today + INTERVAL '1 day')::timestamptz
+       );
+     END IF;
+     
+     -- Increment (use bonus first if available)
+     CASE p_quota_type
+       WHEN 'search' THEN
+         IF v_bonus > 0 AND v_used >= v_limit THEN
+           UPDATE user_daily_quotas 
+             SET bonus_searches_used = bonus_searches_used + 1, updated_at = NOW()
+             WHERE user_id = p_user_id AND date = v_today;
+         ELSE
+           UPDATE user_daily_quotas 
+             SET searches_used = searches_used + 1, updated_at = NOW()
+             WHERE user_id = p_user_id AND date = v_today;
+         END IF;
+       WHEN 'refine' THEN
+         UPDATE user_daily_quotas 
+           SET refines_used = refines_used + 1, updated_at = NOW()
+           WHERE user_id = p_user_id AND date = v_today;
+       WHEN 'slot' THEN
+         UPDATE user_daily_quotas 
+           SET slot_spins_used = slot_spins_used + 1, updated_at = NOW()
+           WHERE user_id = p_user_id AND date = v_today;
+     END CASE;
+     
+     RETURN jsonb_build_object(
+       'allowed', true,
+       'used', v_used + 1,
+       'limit', CASE WHEN v_limit = -1 THEN 999999 ELSE v_limit + v_bonus END,
+       'tier', v_tier
+     );
+   END $$;
+
+E) RPC: game quota (oyun-specific, JSONB-based)
+   CREATE OR REPLACE FUNCTION check_and_consume_game_quota(
+     p_user_id UUID,
+     p_game_id TEXT -- 'posterle' | 'imposter' | 'pinpoint' | 'roast'
+   ) RETURNS JSONB
+   LANGUAGE plpgsql AS $$
+   -- Similar pattern, JSONB games_played map
+   -- Tier-aware: free = 1/day each, paid = unlimited
+   END $$;
+
+F) RPC: grant bonus search (streak rewards için)
+   CREATE OR REPLACE FUNCTION grant_bonus_searches(
+     p_user_id UUID,
+     p_amount INT,
+     p_reason TEXT
+   ) RETURNS VOID
+
+═══════════════════════════════════════════════════════
+2. EDGE FUNCTION: supabase/functions/check-quota/index.ts
+═══════════════════════════════════════════════════════
+
+Single endpoint, quota_type parameter:
+- POST /functions/v1/check-quota
+- Body: { quota_type: 'search' | 'refine' | 'slot' | 'game', game_id?: string }
+- Auth: Supabase JWT (user_id from token, NEVER from body)
+- Calls check_and_consume_quota RPC
+- Returns: { allowed, used, limit, tier, reset_at?, upgrade_url? }
+
+KRİTİK: User ID body'den ALMA, sadece JWT'den çıkar. Aksi halde başkasının quota'sını harcayabilir.
+
+═══════════════════════════════════════════════════════
+3. EDGE FUNCTION UPDATE: parse-mood, parse-taste
+═══════════════════════════════════════════════════════
+
+Mevcut Edge Function'larda:
+- Claude API call'dan ÖNCE check_and_consume_quota('search') çağır
+- Eğer allowed=false → quota_exceeded response, Claude API call yapma
+- Bu, free user'ın 4. aramada Claude API maliyeti oluşturmasını engeller
+
+═══════════════════════════════════════════════════════
+4. FRONTEND: services/subscriptionService.ts
+═══════════════════════════════════════════════════════
+
+A) Type-safe interface:
+   export type SubscriptionTier = 'free' | 'weekly_legacy' | 'monthly' | 'annual' | 'lifetime'
+   
+   export interface QuotaStatus {
+     allowed: boolean
+     used: number
+     limit: number
+     tier: SubscriptionTier
+     remaining: number
+     resetAt?: Date
+   }
+
+B) Hook: useQuota()
+   - React Query ile cache'lenen current quota
+   - Optimistic update (search yapıldığında local count +1)
+   - Background refetch
+
+C) Hook: useSubscription()
+   - RevenueCat customer info wrapper
+   - Tier detection
+   - Active subscription check
+
+═══════════════════════════════════════════════════════
+5. RevenueCat OFFERING UPDATE PLAN (Manuel - Doc Çıkar)
+═══════════════════════════════════════════════════════
+
+Bu kısmı kod olarak yapma, sadece bir markdown dosya oluştur:
+docs/REVENUECAT_MIGRATION_PLAN.md
+
+İçinde:
+- Eski offerings: weekly, monthly, yearly
+- Yeni offerings: monthly, annual, lifetime (weekly hide)
+- Migration steps for existing weekly users
+- Product ID conventions (com.chosy.monthly, com.chosy.annual, com.chosy.lifetime)
+- Entitlement structure ("chosy_plus" master entitlement)
+
+═══════════════════════════════════════════════════════
+TEST EDİLECEKLER:
+═══════════════════════════════════════════════════════
+
+1. Free user 3 search → 4. search engellenmeli
+2. Quota reset 00:00 user timezone'da
+3. Bonus searches önce harcanır (limit'i koruyor)
+4. Paid user'da limit -1 = sınırsız
+5. Race condition: 2 concurrent search request → biri allow, biri deny
+6. Weekly_legacy user mevcut hakkını korur
+
+DİKKAT:
+- Production DB'ye direkt push YAPMA
+- Migration'ı önce local Supabase'de test et
+- Mevcut quota tracking kodu varsa migration script ile data preserve et
+- RevenueCat tarafı manuel, sadece dokümante et

@@ -1,0 +1,196 @@
+GÖREV: Conversion Funnel — Contextual Paywall System + A/B Testing
+
+CONTEXT:
+Hard paywall yok. Free user'ın engagement loop'unun belirli noktalarında 
+"value moment" paywall'ları göstereceğiz. Her paywall context-aware, 
+spesifik, A/B testable olmalı. Apple Store kurallarına (Guideline 2.3.2) 
+%100 uyumlu olmak adına kesinlikle sahte indirimler kullanılmayacak; testler 
+tamamen metin algısı (copy), sosyal kanıt ve matematiksel karşılaştırma (framing) 
+üzerine kurulacaktır.
+
+YAPILACAKLAR:
+
+═══════════════════════════════════════════════════════
+1. TRIGGER ORCHESTRATOR
+═══════════════════════════════════════════════════════
+
+services/conversion/triggerOrchestrator.ts:
+
+A) Trigger event types:
+   type TriggerEvent =
+     | { type: 'quota_exhausted', quota: 'search' | 'slot' | 'refine' }
+     | { type: 'watchlist_full' }
+     | { type: 'streak_milestone', days: number }
+     | { type: 'game_perfect_streak', count: number }
+     | { type: 'mood_history_tap' }
+     | { type: 'streaming_link_tap', film_id: number }
+     | { type: 'custom_list_attempt' }
+     | { type: 'share_card_generated', count: number }
+
+B) Orchestrator class:
+   class ConversionTriggerOrchestrator {
+     private cooldowns: Map<TriggerType, Date>
+     private dismissalCounts: Map<TriggerType, number>
+     
+     async shouldShowPaywall(event: TriggerEvent): Promise<PaywallVariant | null>
+     async recordPaywallShown(variant: PaywallVariant): Promise<void>
+     async recordConversion(variant: PaywallVariant): Promise<void>
+     async recordDismissal(variant: PaywallVariant): Promise<void>
+   }
+
+C) Rules engine:
+   - Same trigger 24 saat içinde max 1 kez göster
+   - 3 dismiss sonrası 7 gün cooldown
+   - Yeni user ilk 24 saat NO PAYWALL (habit formation)
+   - Active trial sırasında NO PAYWALL
+
+D) Backend tracking:
+   CREATE TABLE paywall_events (
+     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     user_id UUID REFERENCES users(id),
+     variant TEXT NOT NULL,
+     trigger_type TEXT NOT NULL,
+     trigger_context JSONB,
+     action TEXT NOT NULL, -- 'shown' | 'dismissed' | 'converted' | 'trial_started'
+     ab_test_group TEXT,
+     created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+═══════════════════════════════════════════════════════
+2. PAYWALL VARIANTS (5 Adet)
+═══════════════════════════════════════════════════════
+
+Her variant ayrı component, ortak base. components/paywalls/ altında:
+
+A) PaywallQuotaExhausted.tsx
+   Trigger: quota_exhausted
+   Context: "Bugünkü 3 keşfin bitti"
+   Visual: Son aramanın film cover'ı blur'lu background
+   CTA: "3 Gün Ücretsiz Dene" + "Yarın Geri Dön"
+   Side option: "Watchlist Slot Çevir" (1 spin kaldıysa)
+
+B) PaywallStreakMilestone.tsx
+   Trigger: streak_milestone (3, 7, 14, 30 gün)
+   Context: "🔥 7 günlük streak! Chosy+ Annual ile Monthly'ye kıyasla %52 tasarruf et"
+   Visual: Streak flame animation
+   CTA: "Yıllık Plus ile Devam Et" + "Daha Sonra"
+   Special: 14+ gün streak'te Lifetime offer ön plana çıkar
+
+C) PaywallWatchlistFull.tsx
+   Trigger: watchlist_full (free user 30 film)
+   Context: "Listende harika seçimler var. Hepsini sakla?"
+   Visual: Watchlist film grid
+   CTA: "Sınırsız Watchlist" + "Eski Filmleri Sil"
+
+D) PaywallMoodHistory.tsx
+   Trigger: mood_history_tap
+   Context: "Son 30 günde nasıl hissettin? Taste DNA gör"
+   Visual: Sample mood graph
+   CTA: "Geçmişini Aç" + "Geri"
+
+E) PaywallStreamingLink.tsx
+   Trigger: streaming_link_tap (V1.1 feature, ileride)
+   Context: "Bu film Netflix'te. Direkt aç?"
+   Visual: Film cover + Netflix logo
+   CTA: "Chosy+ ile Direkt Aç" + "Manuel Bul"
+
+═══════════════════════════════════════════════════════
+3. PAYWALL BASE COMPONENT
+═══════════════════════════════════════════════════════
+
+components/paywalls/PaywallBase.tsx:
+
+Props:
+- variant: PaywallVariant
+- trigger: TriggerEvent
+- onConvert: (plan: 'monthly' | 'annual' | 'lifetime') => void
+- onDismiss: () => void
+
+Layout:
+- Bottom sheet modal (react-native-bottom-sheet)
+- 85% screen height
+- Drag handle to dismiss
+- Header: variant-specific / ab-test-specific message
+- Body: 3 plan card (Monthly, Annual, Lifetime)
+  * Annual default selected
+  * "Most Popular" badge on Annual
+  * "Best Value" badge on Lifetime
+  * Price comparison: Yıllık plan seçildiğinde "$3.33/ay" altında "Monthly $6.99'a göre %52 tasarruf" (Gerçek matematiksel veri)
+- Trial info: "3 gün ücretsiz, sonra $X/X"
+- Restore purchases link
+- ToS + Privacy links
+- CTA button (variant-aware copy)
+
+RevenueCat integration:
+- Purchase via Purchases.purchasePackage()
+- Loading state during purchase
+- Success → onConvert → close
+- Cancel → stay open
+
+═══════════════════════════════════════════════════════
+4. A/B TEST FRAMEWORK
+═══════════════════════════════════════════════════════
+
+services/conversion/abTesting.ts:
+
+A) Test definitions:
+   const experiments = {
+     'paywall_quota_v1': {
+       // aggressive_discount kaldırıldı yerine yasal 'value_framing' (matematiksel vurgu) geldi.
+       variants: ['control', 'value_framing', 'social_proof'],
+       allocation: [50, 25, 25] // percent
+     },
+     'paywall_streak_v1': {
+       variants: ['control', 'lifetime_offer'],
+       allocation: [50, 50]
+     }
+   }
+
+B) Assignment logic:
+   - User ID hash → deterministic bucket
+   - Persisted (kullanıcı her zaman aynı variant görür)
+   - Override mechanism (admin/dev için)
+
+C) Tracking:
+   - Her paywall event'inde ab_test_group log
+   - Dashboard query example dahil et
+
+═══════════════════════════════════════════════════════
+5. INTEGRATION POINTS
+═══════════════════════════════════════════════════════
+
+Mevcut feature'lara trigger emit ekle:
+- Mood search Edge Function fail (quota) → frontend orchestrator.handle({type:'quota_exhausted',quota:'search'})
+- Slot spin fail (quota) → orchestrator.handle({type:'quota_exhausted',quota:'slot'})
+- Watchlist add → 30. filmde watchlist_full
+- Streak update → milestone check
+- Mini game complete → game_perfect_streak check
+
+═══════════════════════════════════════════════════════
+ANALYTICS DASHBOARD QUERY EXAMPLES
+═══════════════════════════════════════════════════════
+
+docs/CONVERSION_ANALYTICS.md oluştur:
+
+-- Conversion rate by paywall variant
+SELECT variant, 
+  COUNT(*) FILTER (WHERE action='shown') as shown,
+  COUNT(*) FILTER (WHERE action='converted') as converted,
+  ROUND(100.0 * COUNT(*) FILTER (WHERE action='converted') / 
+        NULLIF(COUNT(*) FILTER (WHERE action='shown'), 0), 2) as conversion_rate
+FROM paywall_events
+GROUP BY variant;
+
+-- A/B test winner
+SELECT ab_test_group, variant,
+  COUNT(*) FILTER (WHERE action='shown') as shown,
+  COUNT(*) FILTER (WHERE action='converted') as converted
+FROM paywall_events
+WHERE variant LIKE 'paywall_quota%'
+GROUP BY ab_test_group, variant;
+
+DİKKAT:
+- Paywall'lar ASLA yanıltıcı fiyat/indirim bilgisi içeremez. Varyantlar sadece kelime seçimleri (copywriting), topluluk vurgusu (social proof) veya fiyatın yıllık-aylık oran mantığıyla ekrana basılma biçimini (value_framing) değiştirebilir.
+- Cooldown logic'i sıkı uygula (irritation = uninstall)
+- Trial period sırasında HİÇ paywall gösterme
+- Conversion analytics'i ilk günden topla.
