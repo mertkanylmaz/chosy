@@ -8,10 +8,17 @@
  *   4. Spinning: 3 sutunlu slot machine animasyonu
  *   5. Result: film karti + aksiyonlar
  *
+ * V2 UX Overhaul:
+ *   - Morph transition: slot durdugunca kazanan poster buyuyerek hero olur
+ *   - Tap-to-stop: kullanici dokunarak erken durdurabilir
+ *   - Token balance header'da her zaman gorunur
+ *   - Gorsel tekrar yok: slot + ayri buyuk poster yerine morph gecisi
+ *
  * Stack screen olarak acilir (watchlist tab'indan navigate).
  */
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -21,6 +28,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Animated, {
@@ -30,6 +38,7 @@ import Animated, {
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
@@ -43,7 +52,10 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import SlotMachine, {
   buildReelPosters,
   REEL_LENGTH,
+  SLOT_COL_WIDTH,
+  SLOT_POSTER_H,
 } from '@/components/Roulette/SlotMachine';
+import type { SlotMachineHandle } from '@/components/Roulette/SlotMachine';
 import { getWatchlist, getWatchedFilmIds, WatchlistItem } from '@/services/watchlist';
 import {
   updateRouletteOutcome,
@@ -69,13 +81,23 @@ import {
   trackSlotPremiumPaywallShown,
 } from '@/services/analytics';
 import { getAppUserId } from '@/services/watchlist';
+import { localizeGenres } from '@/utils/filmFilters';
 import { hapticHeavy, hapticMedium, hapticSelection, hapticSuccess } from '@/utils/haptics';
 import { preloadSlotSounds, playSpinSound, playStopSound, unloadSlotSounds } from '@/utils/sounds';
 import { logger } from '@/utils/logger';
 
-// ─── Sabitler ────────────────────────────────────────────────────────────────
+// --- Sabitler ---
 
 type Phase = 'hub' | 'mood_input' | 'triple_filter' | 'spinning' | 'result';
+
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w500';
+
+/** Relative poster path'e TMDB base URL ekler */
+function ensureFullUrl(url: string | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${TMDB_IMG}${url}`;
+}
 
 /** Mood preset chip'leri */
 const MOOD_PRESETS = [
@@ -104,47 +126,57 @@ const ERA_OPTIONS: { key: EraFilter; labelKey: string }[] = [
   { key: 'classic', labelKey: 'roulette.tripleFilter.eraClassic' },
 ];
 
-// ─── RouletteScreen ──────────────────────────────────────────────────────────
+// --- RouletteScreen ---
 
 export default function RouletteScreen() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const router = useRouter();
-  const { isPremium, consumeQuota } = useSubscription();
+  const { isPremium } = useSubscription();
 
-  // ── Data state ──────────────────────────────────────────────────────────────
+  // -- Data state --
   const [items, setItems] = useState<WatchlistItem[]>([]);
   const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
-  // ── Phase + variant state ───────────────────────────────────────────────────
+  // -- Phase + variant state --
   const [phase, setPhase] = useState<Phase>('hub');
   const [activeVariant, setActiveVariant] = useState<SlotVariant>('pure_random');
   const [result, setResult] = useState<RouletteResult | null>(null);
   const [slotResult, setSlotResult] = useState<SlotResult | null>(null);
   const [spinError, setSpinError] = useState<string | null>(null);
+  const [spinning, setSpinning] = useState(false);
 
-  // ── Mood input state ────────────────────────────────────────────────────────
+  // -- Mood input state --
   const [moodText, setMoodText] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
 
-  // ── Triple filter state ─────────────────────────────────────────────────────
+  // -- Triple filter state --
   const [durationFilter, setDurationFilter] = useState<DurationFilter>('any');
   const [eraFilter, setEraFilter] = useState<EraFilter>('any');
   const [tripleMoodText, setTripleMoodText] = useState('');
 
-  // ── Token state ─────────────────────────────────────────────────────────────
+  // -- Token state --
   const [tokenBalance, setTokenBalance] = useState(0);
 
-  // ── Slot reel verisi ────────────────────────────────────────────────────────
+  // -- Slot reel verisi --
   const [reelData, setReelData] = useState<string[][]>([[], [], []]);
   const [stoppedReels, setStoppedReels] = useState(0);
 
-  // ── Animations ──────────────────────────────────────────────────────────────
+  // -- Slot machine ref (tap-to-stop) --
+  const slotRef = useRef<SlotMachineHandle>(null);
+
+  // -- Animations --
   const resultOpacity = useSharedValue(0);
   const resultTranslateY = useSharedValue(30);
   const glowOpacity = useSharedValue(0);
 
-  // ── Yukleme + ses preload ─────────────────────────────────────────────────
+  // -- Morph: slot fade-out + hero poster scale-in --
+  const slotScale = useSharedValue(1);
+  const slotOpacity = useSharedValue(1);
+  const heroScale = useSharedValue(0.6);
+  const heroOpacity = useSharedValue(0);
+
+  // -- Yukleme + ses preload + poster prefetch --
   useEffect(() => {
     const load = async () => {
       try {
@@ -155,38 +187,62 @@ export default function RouletteScreen() {
         setItems(data);
         setWatchedIds(watched);
 
-        // Token balance (free user icin)
+        // Token balance
         const userId = await getAppUserId();
         if (userId) {
           const balance = await getSlotTokenBalance(userId);
           setTokenBalance(balance);
         }
 
-        // Ses dosyalarini on-yukle (varsa)
+        // Ses dosyalarini on-yukle
         preloadSlotSounds();
+
+        // POSTER PREFETCH
+        const posterUrls = data
+          .filter((item) => item.film.posterUrl)
+          .map((item) => ensureFullUrl(item.film.posterUrl).replace(/\/t\/p\/w\d+/, '/t/p/w342'))
+          .filter(Boolean);
+
+        if (posterUrls.length > 0) {
+          logger.log('[roulette] Prefetching', posterUrls.length, 'poster images (w342) via expo-image...');
+          // expo-image prefetch: download + decode to memory-disk cache
+          // Spin bastiginda posterler aninda render olur
+          await Promise.race([
+            Image.prefetch(posterUrls),
+            new Promise((resolve) => setTimeout(resolve, 5000)),
+          ]);
+          logger.log('[roulette] Poster prefetch complete');
+        }
       } finally {
         setLoading(false);
       }
     };
     load();
 
-    // Cleanup — ses bellegi bosalt
     return () => { unloadSlotSounds(); };
   }, []);
 
-  // ── Poster havuzu ───────────────────────────────────────────────────────────
+  // -- Poster havuzu --
   const allPosters = useMemo(() => {
-    return items
-      .filter((i) => !watchedIds.has(i.film.id) && i.film.posterUrl)
-      .map((i) => i.film.posterUrl);
-  }, [items, watchedIds]);
+    const all = items
+      .filter((i) => i.film.posterUrl)
+      .map((i) => {
+        const url = ensureFullUrl(i.film.posterUrl);
+        return url.replace(/\/t\/p\/w\d+/, '/t/p/w342');
+      });
+    logger.log('[roulette] allPosters pool size:', all.length);
+    return all;
+  }, [items]);
 
   const unwatchedCount = useMemo(
     () => items.filter((i) => !watchedIds.has(i.film.id)).length,
     [items, watchedIds],
   );
 
-  // ── Reel durdugunda haptic + ses ────────────────────────────────────────────
+  // -- Spin counter --
+  const [spinId, setSpinId] = useState(0);
+
+  // -- Reel durdugunda haptic + ses --
   const handleReelStop = useCallback((reelIndex: number) => {
     playStopSound();
     if (reelIndex < 2) {
@@ -197,9 +253,10 @@ export default function RouletteScreen() {
     setStoppedReels((prev) => prev + 1);
   }, []);
 
-  // ── Tum reeller durdugunda result goster ────────────────────────────────────
+  // -- Tum reeller durdugunda: morph transition --
   useEffect(() => {
     if (stoppedReels >= 3 && result) {
+      // Glow pulse
       glowOpacity.value = withSequence(
         withTiming(1, { duration: 200 }),
         withTiming(0.4, { duration: 300 }),
@@ -208,47 +265,83 @@ export default function RouletteScreen() {
 
       const timer = setTimeout(() => {
         hapticSuccess();
-        setPhase('result');
-        resultOpacity.value = withTiming(1, { duration: 400 });
-        resultTranslateY.value = withTiming(0, {
+
+        // Phase 1: Slot fades out + scales down
+        slotScale.value = withTiming(0.85, {
+          duration: 400,
+          easing: Easing.in(Easing.cubic),
+        });
+        slotOpacity.value = withTiming(0, {
+          duration: 350,
+          easing: Easing.in(Easing.quad),
+        });
+
+        // Phase 2: Hero poster scales in (with delay)
+        heroScale.value = withDelay(200, withTiming(1, {
+          duration: 500,
+          easing: Easing.out(Easing.back(1.1)),
+        }));
+        heroOpacity.value = withDelay(200, withTiming(1, {
+          duration: 400,
+        }));
+
+        // Phase 3: Result info slides up
+        resultOpacity.value = withDelay(400, withTiming(1, { duration: 400 }));
+        resultTranslateY.value = withDelay(400, withTiming(0, {
           duration: 500,
           easing: Easing.out(Easing.back(1.2)),
-        });
-      }, 600);
+        }));
+
+        setPhase('result');
+      }, 500);
 
       return () => clearTimeout(timer);
     }
-  }, [stoppedReels, result, glowOpacity, resultOpacity, resultTranslateY]);
+  }, [stoppedReels, result, glowOpacity, resultOpacity, resultTranslateY, slotScale, slotOpacity, heroScale, heroOpacity]);
 
-  // ── Ortak spin baslat (animation icin) ──────────────────────────────────────
+  // -- Ortak spin baslat (animation icin) --
   const startSpinAnimation = useCallback((pickedResult: RouletteResult) => {
-    setResult(pickedResult);
-    setStoppedReels(0);
+    const posterUrl = ensureFullUrl(pickedResult.film.posterUrl)
+      .replace(/\/t\/p\/w\d+/, '/t/p/w342');
 
-    if (allPosters.length >= 3 && pickedResult.film.posterUrl) {
-      const reel1 = buildReelPosters(allPosters, pickedResult.film.posterUrl, REEL_LENGTH);
-      const reel2 = buildReelPosters(allPosters, pickedResult.film.posterUrl, REEL_LENGTH + 2);
-      const reel3 = buildReelPosters(allPosters, pickedResult.film.posterUrl, REEL_LENGTH + 4);
-      setReelData([reel1, reel2, reel3]);
-    }
+    const reel1 = buildReelPosters(allPosters, posterUrl, REEL_LENGTH);
+    const reel2 = buildReelPosters(allPosters, posterUrl, REEL_LENGTH + 2);
+    const reel3 = buildReelPosters(allPosters, posterUrl, REEL_LENGTH + 4);
 
+    logger.log('[roulette] startSpinAnimation',
+      'posterUrl:', posterUrl.substring(0, 60),
+      'pool:', allPosters.length,
+      'reels:', reel1.length, reel2.length, reel3.length,
+    );
+
+    // Reset ALL animations
     resultOpacity.value = 0;
     resultTranslateY.value = 30;
     glowOpacity.value = 0;
+    slotScale.value = 1;
+    slotOpacity.value = 1;
+    heroScale.value = 0.6;
+    heroOpacity.value = 0;
+
+    // State'i TEK SEFERDE set et
+    setSpinId((prev) => prev + 1);
+    setStoppedReels(0);
+    setResult(pickedResult);
+    setReelData([reel1, reel2, reel3]);
+    setSpinning(false);
+    setPhase('spinning');
 
     hapticHeavy();
     playSpinSound();
-    setPhase('spinning');
-  }, [allPosters, resultOpacity, resultTranslateY, glowOpacity]);
+  }, [allPosters, resultOpacity, resultTranslateY, glowOpacity, slotScale, slotOpacity, heroScale, heroOpacity]);
 
-  // ── Variant secimi ──────────────────────────────────────────────────────────
+  // -- Variant secimi --
   const handleVariantSelect = useCallback((variant: SlotVariant) => {
     hapticSelection();
     setActiveVariant(variant);
     setSpinError(null);
 
     if (variant === 'pure_random') {
-      // Direkt spin
       handlePureRandomSpin();
     } else if (variant === 'mood_filtered') {
       if (!isPremium) {
@@ -267,12 +360,12 @@ export default function RouletteScreen() {
     }
   }, [isPremium, router]);
 
-  // ── Pure Random Spin ────────────────────────────────────────────────────────
+  // -- Pure Random Spin --
   const handlePureRandomSpin = useCallback(async () => {
     trackSlotSpinInitiated('pure_random');
+    setSpinning(true);
 
     try {
-      // Edge Function kullan — server-side watched_at filtreleme + quota check
       const slotData = await spinPureRandom();
       setSlotResult(slotData);
 
@@ -284,6 +377,7 @@ export default function RouletteScreen() {
       startSpinAnimation(rResult);
       trackSlotSpinCompleted('pure_random', slotData.film.id);
     } catch (err: unknown) {
+      setSpinning(false);
       const errorObj = err as Record<string, unknown>;
       const errorCode = errorObj?.error as string | undefined;
       const errorMsg = err instanceof Error ? err.message : undefined;
@@ -293,14 +387,12 @@ export default function RouletteScreen() {
       if (errorCode === 'NEED_MORE_FILMS') {
         setSpinError(t('roulette.needMoreFilms', { min: errorObj.min ?? 3 }));
       } else if (errorCode === 'QUOTA_EXCEEDED') {
-        // Token varsa kullan
         if (tokenBalance > 0) {
           const userId = await getAppUserId();
           if (userId) {
             const tokenResult = await spendSlotToken(userId);
             if (tokenResult.success) {
               setTokenBalance(tokenResult.balance);
-              // Tekrar dene (token harcandiktan sonra)
               handlePureRandomSpin();
               return;
             }
@@ -313,18 +405,18 @@ export default function RouletteScreen() {
     }
   }, [startSpinAnimation, tokenBalance, router, t]);
 
-  // ── Mood Filtered Spin ──────────────────────────────────────────────────────
+  // -- Mood Filtered Spin --
   const handleMoodSpin = useCallback(async () => {
     const mood = selectedPreset || moodText.trim();
     if (!mood) return;
 
     trackSlotSpinInitiated('mood_filtered');
+    setSpinning(true);
 
     try {
       const slotData = await spinMoodFiltered(mood);
       setSlotResult(slotData);
 
-      // RouletteResult formatina cevir (animation icin)
       const rResult: RouletteResult = {
         film: slotData.film,
         candidateCount: slotData.candidateCount,
@@ -333,6 +425,7 @@ export default function RouletteScreen() {
       startSpinAnimation(rResult);
       trackSlotSpinCompleted('mood_filtered', slotData.film.id, slotData.matchScore);
     } catch (err: unknown) {
+      setSpinning(false);
       const errorObj = err as Record<string, unknown>;
       const errorCode = errorObj?.error as string | undefined;
       const errorMsg = err instanceof Error ? err.message : undefined;
@@ -351,9 +444,10 @@ export default function RouletteScreen() {
     }
   }, [moodText, selectedPreset, startSpinAnimation, router, t]);
 
-  // ── Triple Spin ─────────────────────────────────────────────────────────────
+  // -- Triple Spin --
   const handleTripleSpin = useCallback(async () => {
     trackSlotSpinInitiated('triple');
+    setSpinning(true);
 
     try {
       const slotData = await spinTriple(
@@ -371,6 +465,7 @@ export default function RouletteScreen() {
       startSpinAnimation(rResult);
       trackSlotSpinCompleted('triple', slotData.film.id);
     } catch (err: unknown) {
+      setSpinning(false);
       const errorObj = err as Record<string, unknown>;
       const errorCode = errorObj?.error as string | undefined;
       const errorMsg = err instanceof Error ? err.message : undefined;
@@ -391,7 +486,7 @@ export default function RouletteScreen() {
     }
   }, [durationFilter, eraFilter, tripleMoodText, startSpinAnimation, router, t]);
 
-  // ── Spin Again ──────────────────────────────────────────────────────────────
+  // -- Spin Again --
   const handleSpinAgain = useCallback(() => {
     if (result) {
       updateRouletteOutcome(result.film.id, 'spin_again');
@@ -405,7 +500,7 @@ export default function RouletteScreen() {
     setPhase('hub');
   }, [result, activeVariant]);
 
-  // ── Accept ──────────────────────────────────────────────────────────────────
+  // -- Accept --
   const handleAccept = useCallback(() => {
     if (!result) return;
     hapticSuccess();
@@ -415,7 +510,7 @@ export default function RouletteScreen() {
     router.push(`/film/${result.film.id}` as import('expo-router').Href);
   }, [result, activeVariant, router]);
 
-  // ── Close ───────────────────────────────────────────────────────────────────
+  // -- Close --
   const handleClose = useCallback(() => {
     if (result) {
       updateRouletteOutcome(result.film.id, 'closed');
@@ -423,14 +518,14 @@ export default function RouletteScreen() {
     router.back();
   }, [result, router]);
 
-  // ── Back to hub ─────────────────────────────────────────────────────────────
+  // -- Back to hub --
   const handleBackToHub = useCallback(() => {
     hapticSelection();
     setSpinError(null);
     setPhase('hub');
   }, []);
 
-  // ── Animated styles ─────────────────────────────────────────────────────────
+  // -- Animated styles --
   const resultInfoStyle = useAnimatedStyle(() => ({
     opacity: resultOpacity.value,
     transform: [{ translateY: resultTranslateY.value }],
@@ -440,15 +535,37 @@ export default function RouletteScreen() {
     opacity: glowOpacity.value,
   }));
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  /** Slot machine morph-out: scale down + fade */
+  const slotMorphStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: slotScale.value }],
+    opacity: slotOpacity.value,
+  }));
 
+  /** Hero poster morph-in: scale up from slot position */
+  const heroMorphStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heroScale.value }],
+    opacity: heroOpacity.value,
+  }));
+
+  // -- Render --
+
+  // Loading
   if (loading) {
     return (
       <SafeAreaView style={styles.safe}>
         <StatusBar style="light" />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t('common.loading')}</Text>
-        </View>
+        <LinearGradient
+          colors={[Colors.background, Colors.backgroundGradient]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+        <Animated.View
+          entering={FadeIn.duration(300)}
+          style={styles.loadingContainer}
+        >
+          <ActivityIndicator size="large" color={Colors.accentPrimary} />
+          <Text style={styles.loadingText}>{t('roulette.title')}</Text>
+        </Animated.View>
       </SafeAreaView>
     );
   }
@@ -461,6 +578,22 @@ export default function RouletteScreen() {
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
+
+      {/* Hidden poster preloader */}
+      {allPosters.length > 0 && (
+        <View style={styles.posterPreloader} pointerEvents="none">
+          {allPosters.slice(0, 30).map((url, i) => (
+            <Image
+              key={`pl-${i}`}
+              source={{ uri: url }}
+              style={{ width: SLOT_COL_WIDTH, height: SLOT_POSTER_H }}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={0}
+            />
+          ))}
+        </View>
+      )}
 
       {/* Header */}
       <View style={styles.header}>
@@ -476,10 +609,14 @@ export default function RouletteScreen() {
           />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('roulette.title')}</Text>
-        <View style={styles.headerSpacer} />
+        {/* Token balance badge — header'da her zaman gorunur */}
+        <View style={styles.headerTokenBadge}>
+          <Ionicons name="diamond-outline" size={14} color={Colors.gold} />
+          <Text style={styles.headerTokenText}>{tokenBalance}</Text>
+        </View>
       </View>
 
-      {/* ── Phase: Hub — Variant Selection ── */}
+      {/* == Phase: Hub — Variant Selection == */}
       {phase === 'hub' && (
         <ScrollView
           style={styles.filterScroll}
@@ -493,7 +630,7 @@ export default function RouletteScreen() {
             </Text>
           </Animated.View>
 
-          {/* Token balance (free user) */}
+          {/* Token balance bar (free user, balance > 0) */}
           {!isPremium && tokenBalance > 0 && (
             <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.tokenBar}>
               <Ionicons name="diamond-outline" size={16} color={Colors.gold} />
@@ -503,12 +640,13 @@ export default function RouletteScreen() {
             </Animated.View>
           )}
 
-          {/* Pure Random — herkese acik */}
+          {/* Pure Random */}
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <TouchableOpacity
               style={styles.variantCard}
               onPress={() => handleVariantSelect('pure_random')}
               activeOpacity={0.8}
+              disabled={spinning}
             >
               <View style={styles.variantIconContainer}>
                 <Ionicons name="dice-outline" size={28} color={Colors.accentPrimary} />
@@ -517,7 +655,11 @@ export default function RouletteScreen() {
                 <Text style={styles.variantTitle}>{t('roulette.variantHub.pureRandom')}</Text>
                 <Text style={styles.variantDesc}>{t('roulette.variantHub.pureRandomDesc')}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.textLightGrey} />
+              {spinning && activeVariant === 'pure_random' ? (
+                <ActivityIndicator size="small" color={Colors.accentPrimary} />
+              ) : (
+                <Ionicons name="chevron-forward" size={20} color={Colors.textLightGrey} />
+              )}
             </TouchableOpacity>
           </Animated.View>
 
@@ -527,6 +669,7 @@ export default function RouletteScreen() {
               style={styles.variantCard}
               onPress={() => handleVariantSelect('mood_filtered')}
               activeOpacity={0.8}
+              disabled={spinning}
             >
               <View style={[styles.variantIconContainer, styles.variantIconPremium]}>
                 <Ionicons name="heart-outline" size={28} color={Colors.gold} />
@@ -553,6 +696,7 @@ export default function RouletteScreen() {
               style={styles.variantCard}
               onPress={() => handleVariantSelect('triple')}
               activeOpacity={0.8}
+              disabled={spinning}
             >
               <View style={[styles.variantIconContainer, styles.variantIconPremium]}>
                 <Ionicons name="options-outline" size={28} color={Colors.gold} />
@@ -591,7 +735,7 @@ export default function RouletteScreen() {
         </ScrollView>
       )}
 
-      {/* ── Phase: Mood Input ── */}
+      {/* == Phase: Mood Input == */}
       {phase === 'mood_input' && (
         <ScrollView
           style={styles.filterScroll}
@@ -656,17 +800,21 @@ export default function RouletteScreen() {
             <TouchableOpacity
               style={[styles.spinButton, !(selectedPreset || moodText.trim()) && styles.spinButtonDisabled]}
               onPress={handleMoodSpin}
-              disabled={!(selectedPreset || moodText.trim())}
+              disabled={!(selectedPreset || moodText.trim()) || spinning}
               activeOpacity={0.8}
             >
-              <Ionicons name="sparkles" size={22} color={Colors.textOnAccent} />
+              {spinning ? (
+                <ActivityIndicator size="small" color={Colors.textOnAccent} />
+              ) : (
+                <Ionicons name="sparkles" size={22} color={Colors.textOnAccent} />
+              )}
               <Text style={styles.spinButtonText}>{t('roulette.moodInput.spinWithMood')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       )}
 
-      {/* ── Phase: Triple Filter ── */}
+      {/* == Phase: Triple Filter == */}
       {phase === 'triple_filter' && (
         <ScrollView
           style={styles.filterScroll}
@@ -748,18 +896,27 @@ export default function RouletteScreen() {
             <TouchableOpacity
               style={styles.spinButton}
               onPress={handleTripleSpin}
+              disabled={spinning}
               activeOpacity={0.8}
             >
-              <Ionicons name="options-outline" size={22} color={Colors.textOnAccent} />
+              {spinning ? (
+                <ActivityIndicator size="small" color={Colors.textOnAccent} />
+              ) : (
+                <Ionicons name="options-outline" size={22} color={Colors.textOnAccent} />
+              )}
               <Text style={styles.spinButtonText}>{t('roulette.tripleFilter.applyButton')}</Text>
             </TouchableOpacity>
           </Animated.View>
         </ScrollView>
       )}
 
-      {/* ── Phase: Spinning + Result ── */}
+      {/* == Phase: Spinning + Result (morph transition) == */}
       {(phase === 'spinning' || phase === 'result') && result && (
-        <View style={styles.slotResultContainer}>
+        <ScrollView
+          style={styles.filterScroll}
+          contentContainerStyle={styles.resultScrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           {phase === 'spinning' && (
             <Animated.Text
               entering={FadeIn.duration(300)}
@@ -769,12 +926,37 @@ export default function RouletteScreen() {
             </Animated.Text>
           )}
 
-          <SlotMachine
-            reelData={reelData}
-            glowStyle={glowStyle}
-            onReelStop={handleReelStop}
-          />
+          {/* Slot machine — morph out when result reveals */}
+          <Animated.View style={slotMorphStyle}>
+            <SlotMachine
+              ref={slotRef}
+              key={`slot-${spinId}`}
+              reelData={reelData}
+              glowStyle={glowStyle}
+              onReelStop={handleReelStop}
+              tapHintText={t('roulette.tapToStop')}
+            />
+          </Animated.View>
 
+          {/* Hero poster — morph in from slot position (replaces old separate poster) */}
+          {phase === 'result' && result.film.posterUrl ? (
+            <Animated.View style={[styles.heroPosterContainer, heroMorphStyle]}>
+              <Image
+                source={{ uri: ensureFullUrl(result.film.posterUrl) }}
+                style={styles.heroPoster}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                transition={200}
+              />
+              <LinearGradient
+                colors={['transparent', Colors.background]}
+                style={styles.heroPosterGradient}
+                pointerEvents="none"
+              />
+            </Animated.View>
+          ) : null}
+
+          {/* Result info — slides up after hero poster */}
           {phase === 'result' && (
             <Animated.View style={[styles.resultInfo, resultInfoStyle]}>
               <Text style={styles.resultTitle} numberOfLines={2}>
@@ -808,9 +990,9 @@ export default function RouletteScreen() {
                 </View>
               )}
 
-              {result.film.moodTags.length > 0 && (
+              {result.film.moodTags && result.film.moodTags.length > 0 && (
                 <View style={styles.resultTags}>
-                  {result.film.moodTags.map((tag) => (
+                  {localizeGenres(result.film.moodTags, language).map((tag) => (
                     <View key={tag} style={styles.tagChip}>
                       <Text style={styles.tagText}>{tag}</Text>
                     </View>
@@ -839,13 +1021,13 @@ export default function RouletteScreen() {
               </View>
             </Animated.View>
           )}
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   );
 }
 
-// ─── Stiller ──────────────────────────────────────────────────────────────────
+// --- Stiller ---
 
 const styles = StyleSheet.create({
   safe: {
@@ -853,15 +1035,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
 
+  /** Gorunmez preloader */
+  posterPreloader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    opacity: 0,
+    zIndex: -1,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    overflow: 'hidden',
+  },
+
   /* Loading */
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    gap: Theme.spacing.md,
   },
   loadingText: {
     color: Colors.textGrey,
     fontSize: 16,
+    marginTop: Theme.spacing.sm,
   },
 
   /* Header */
@@ -885,8 +1081,23 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textWhite,
   },
-  headerSpacer: {
-    width: 40,
+  /** Token balance badge in header — always visible */
+  headerTokenBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: Theme.borderRadius.full,
+    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.goldGlow,
+    minWidth: 40,
+  },
+  headerTokenText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.gold,
   },
 
   /* Scroll + content */
@@ -1112,10 +1323,11 @@ const styles = StyleSheet.create({
     color: Colors.textOnAccent,
   },
 
-  /* Spinning + Result container */
-  slotResultContainer: {
-    flex: 1,
+  /* Spinning + Result scroll container */
+  resultScrollContent: {
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 100,
   },
   spinningText: {
     fontSize: 20,
@@ -1127,11 +1339,38 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
+  /* Hero poster — morph-in from slot (replaces old resultPosterContainer) */
+  heroPosterContainer: {
+    width: 200,
+    height: 300,
+    borderRadius: Theme.borderRadius.lg,
+    overflow: 'hidden',
+    marginTop: Theme.spacing.md,
+    borderWidth: 2,
+    borderColor: Colors.goldGlow,
+    // Elevation for "pop" feel
+    shadowColor: Colors.gold,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  heroPoster: {
+    width: '100%',
+    height: '100%',
+  },
+  heroPosterGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
+
   /* Result info */
   resultInfo: {
     alignItems: 'center',
-    marginTop: Theme.spacing.lg,
-    paddingHorizontal: 20,
+    marginTop: Theme.spacing.md,
     width: '100%',
   },
   resultTitle: {

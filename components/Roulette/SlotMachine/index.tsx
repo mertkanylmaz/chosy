@@ -4,126 +4,260 @@
  * Watchlist Roulette ekraninda kullanilir.
  * Her sutun (reel) dikeyde poster listesi akar, staggered durur.
  * Son poster = secilen film (jackpot).
+ *
+ * V7 — expo-image fix:
+ *   - ROOT CAUSE: RN Image hizli Reanimated scroll sirasinda decode etmiyor
+ *     → renkli placeholder'lar gorunuyordu
+ *   - FIX: expo-image (memory-disk cache + aninda decode) kullan
+ *   - Casino-grade easing: dramatik yavaslama
+ *   - Tap-to-stop: kullanici dokunarak erken durdurabilir
+ *   - Variable timing: her spin farkli hissedilir
  */
-import React, { useEffect } from 'react';
-import { Dimensions, Image, StyleSheet, View } from 'react-native';
+import React, { useCallback, useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
+import {
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
+  cancelAnimation,
   Easing,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
-  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+import { logger } from '@/utils/logger';
 
-// ─── Sabitler ─────────────────────────────────────────────────────────────────
+// --- Sabitler ---
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 /** Slot machine 3 sutun — poster boyutlari */
 const SLOT_GAP = 6;
 const SLOT_H_PAD = 24;
-const SLOT_COL_WIDTH = Math.floor((SCREEN_WIDTH - SLOT_H_PAD * 2 - SLOT_GAP * 2) / 3);
+const SLOT_COL_WIDTH = Math.floor(
+  (SCREEN_WIDTH - SLOT_H_PAD * 2 - SLOT_GAP * 2) / 3,
+);
 const SLOT_POSTER_H = Math.floor(SLOT_COL_WIDTH * 1.5);
 
 /** Her slot sutununda akan poster sayisi (son poster = secilen film) */
-export const REEL_LENGTH = 16;
+export const REEL_LENGTH = 14;
 
-/** Sutun durus zamanlari (ms) — staggered stop (1.2s → 1.5s → 1.8s) */
-export const REEL_STOP_TIMES = [1200, 1500, 1800];
+/** Base sutun durus zamanlari (ms) — staggered stop */
+const BASE_STOP_TIMES = [2200, 3000, 3800];
+
+/** Variable timing — her spin farkli hissedilsin */
+function getVariableStopTimes(): [number, number, number] {
+  const variance = () => Math.floor(Math.random() * 400) - 200; // -200..+200ms
+  return [
+    BASE_STOP_TIMES[0] + variance(),
+    BASE_STOP_TIMES[1] + variance(),
+    BASE_STOP_TIMES[2] + variance(),
+  ];
+}
 
 /** Son sutun durma + reveal gecikmesi */
-export const RESULT_DELAY = REEL_STOP_TIMES[2] + 400;
+export const RESULT_DELAY = BASE_STOP_TIMES[2] + 700;
 
-// ─── Disa aktarilan boyut sabitleri ──────────────────────────────────────────
+/** Eski export uyumluluk */
+export const REEL_STOP_TIMES = BASE_STOP_TIMES;
+
+// --- Disa aktarilan boyut sabitleri ---
 
 export { SLOT_COL_WIDTH, SLOT_POSTER_H, SLOT_GAP, SLOT_H_PAD };
 
-// ─── buildReelPosters ──────────────────────────────────────────────────────
+// --- buildReelPosters ---
 
 /**
  * Bir slot sutunu icin poster URL listesi olusturur.
  * Son eleman her zaman pickedPosterUrl olur (slot orada durur).
- * Diger posterler rastgele watchlist filmlerinden secilir.
+ * Diger posterler rastgele havuzdan secilir.
  */
 export function buildReelPosters(
   allPosters: string[],
   pickedPosterUrl: string,
   length: number,
 ): string[] {
+  const fillerPool = allPosters.filter((url) => url !== pickedPosterUrl);
+  const pool = fillerPool.length >= 3 ? fillerPool : (allPosters.length > 0 ? allPosters : []);
+
   const reelPosters: string[] = [];
   for (let i = 0; i < length - 1; i++) {
-    const randomUrl = allPosters[Math.floor(Math.random() * allPosters.length)];
-    reelPosters.push(randomUrl);
+    if (pool.length > 0) {
+      const randomUrl = pool[Math.floor(Math.random() * pool.length)];
+      reelPosters.push(randomUrl);
+    } else {
+      reelPosters.push('');
+    }
   }
-  // Son poster = secilen film (slot burada durur)
   reelPosters.push(pickedPosterUrl);
   return reelPosters;
 }
 
-// ─── SlotReel ──────────────────────────────────────────────────────────────
+// --- Reel poster renk paleti (fallback — poster yuklenemezse) ---
+
+const PLACEHOLDER_COLORS = [
+  '#2D1B3D', '#1B2D3D', '#3D2D1B', '#1B3D2D',
+  '#3D1B2D', '#2D3D1B', '#1B1B3D', '#3D1B1B',
+  '#1B3D3D', '#3D3D1B', '#2D1B2D', '#1B2D1B',
+];
+
+// --- ReelPoster ---
+
+/**
+ * Tek poster karosu.
+ *
+ * KRITIK: expo-image kullanir (react-native Image DEGIL).
+ * RN Image hizli Reanimated translateY sirasinda decode etmiyor,
+ * sadece renkli placeholder gorunuyordu.
+ *
+ * expo-image avantajlari:
+ *   - memory-disk cache: prefetch edilen image aninda render
+ *   - recyclingKey: reel pozisyonuna gore image yeniden kullanir
+ *   - transition=0: cache'den gelince animasyon yok, aninda gorunur
+ */
+const ReelPoster = React.memo(function ReelPoster({
+  url,
+  index,
+}: {
+  url: string;
+  index: number;
+}) {
+  const bgColor = PLACEHOLDER_COLORS[index % PLACEHOLDER_COLORS.length];
+
+  return (
+    <View style={[styles.reelPoster, { backgroundColor: bgColor }]}>
+      {url ? (
+        <Image
+          source={{ uri: url }}
+          style={styles.reelPosterImage}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={`reel-${index}`}
+          transition={0}
+        />
+      ) : null}
+    </View>
+  );
+});
+
+// --- SlotReel ---
 
 interface SlotReelProps {
-  /** Sirayla gorunecek poster URL'leri — son eleman secilen film */
   posters: string[];
-  /** Bu sutunun durma suresi (ms) */
   stopTime: number;
-  /** Sutun durduğunda tetiklenir */
   onStop?: () => void;
+  forceStop: { value: number };
 }
 
 /**
- * Tek bir slot sutunu. Dikeyde poster listesi akar, son posterde durur.
+ * Tek slot sutunu. Dikeyde poster listesi yukari kayar, son posterde durur.
+ *
+ * Casino-grade bezier easing: hizli basla, dramatik yavasla.
  */
-export function SlotReel({ posters, stopTime, onStop }: SlotReelProps) {
+function SlotReel({ posters, stopTime, onStop, forceStop }: SlotReelProps) {
   const translateY = useSharedValue(0);
+  const animStarted = useRef(false);
+  const reelStopped = useRef(false);
 
-  useEffect(() => {
-    // Toplam scroll mesafesi: tum posterler - son poster (gorunur kalan)
-    const totalScroll = (posters.length - 1) * SLOT_POSTER_H;
+  const totalScroll = (posters.length - 1) * SLOT_POSTER_H;
 
-    // Hizli baslangi + yumusak durus + hafif bounce
-    // Sprint spec: cubic-bezier(0.34, 1.56, 0.64, 1)
+  const notifyStop = useCallback(() => {
+    if (!reelStopped.current) {
+      reelStopped.current = true;
+      if (onStop) onStop();
+    }
+  }, [onStop]);
+
+  const startAnimation = useCallback(() => {
+    if (animStarted.current) return;
+    animStarted.current = true;
+
+    logger.log('[SlotReel] Starting animation',
+      'posters:', posters.length,
+      'totalScroll:', totalScroll,
+      'stopTime:', stopTime,
+    );
+
+    translateY.value = 0;
     translateY.value = withTiming(-totalScroll, {
       duration: stopTime,
-      easing: Easing.bezier(0.34, 1.56, 0.64, 1),
+      easing: Easing.bezier(0.05, 0.7, 0.1, 1.0),
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posters.length, stopTime]);
 
-    // Haptic + callback durduğunda
-    const timer = setTimeout(() => {
-      if (onStop) onStop();
-    }, stopTime);
+  // Force stop — kullanici dokundu
+  useAnimatedReaction(
+    () => forceStop.value,
+    (val) => {
+      if (val === 1 && !reelStopped.current) {
+        cancelAnimation(translateY);
+        translateY.value = withTiming(-totalScroll, {
+          duration: 300,
+          easing: Easing.out(Easing.cubic),
+        });
+        runOnJS(notifyStop)();
+      }
+    },
+  );
 
-    return () => clearTimeout(timer);
-  }, [posters, stopTime, translateY, onStop]);
+  useEffect(() => {
+    if (posters.length <= 1) return;
+
+    // expo-image cache'den render cok hizli —
+    // image onLoad beklemeye gerek yok, direkt baslat
+    const startTimer = setTimeout(() => {
+      startAnimation();
+    }, 150); // 150ms mount stabilizasyonu
+
+    const stopTimer = setTimeout(() => {
+      notifyStop();
+    }, stopTime + 200);
+
+    return () => {
+      clearTimeout(startTimer);
+      clearTimeout(stopTimer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: translateY.value }],
   }));
 
+  if (posters.length === 0) {
+    return (
+      <View style={styles.reelWindow}>
+        <View style={[styles.reelPoster, { backgroundColor: Colors.bgElevated }]} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.reelWindow}>
       <Animated.View style={[styles.reelStrip, animStyle]}>
         {posters.map((url, i) => (
-          <Image
-            key={`reel-${i}-${url}`}
-            source={{ uri: url }}
-            style={styles.reelPoster}
-            resizeMode="cover"
-          />
+          <ReelPoster key={`p${i}`} url={url} index={i} />
         ))}
       </Animated.View>
 
-      {/* Ust-alt gradient — slot makinesi kenar efekti */}
+      {/* Ust gradient — slot kenar efekti */}
       <LinearGradient
         colors={[Colors.background, 'transparent']}
         style={styles.reelGradientTop}
         pointerEvents="none"
       />
+      {/* Alt gradient — slot kenar efekti */}
       <LinearGradient
         colors={['transparent', Colors.background]}
         style={styles.reelGradientBottom}
@@ -133,53 +267,83 @@ export function SlotReel({ posters, stopTime, onStop }: SlotReelProps) {
   );
 }
 
-// ─── SlotMachine ─────────────────────────────────────────────────────────────
+// --- SlotMachine ---
+
+/** Imperative handle — tap-to-stop icin */
+export interface SlotMachineHandle {
+  forceStopAll: () => void;
+}
 
 interface SlotMachineProps {
-  /** 3 sutun reel verisi — her biri poster URL listesi */
   reelData: string[][];
-  /** Jackpot glow animasyon stili */
   glowStyle: { opacity: number };
-  /** Reel durduğunda cagrılır (reelIndex: 0|1|2) */
   onReelStop: (reelIndex: number) => void;
+  tapHintText?: string;
 }
 
 /**
- * 3 sutunlu slot makinesi — cerceve + glow + win line.
+ * 3 sutunlu slot makinesi.
+ * Tap-to-stop + variable timing + expo-image poster reels.
  */
-export default function SlotMachine({ reelData, glowStyle, onReelStop }: SlotMachineProps) {
-  return (
-    <View style={styles.slotMachine}>
-      {/* Jackpot glow arka plan */}
-      <Animated.View style={[styles.jackpotGlow, glowStyle]} />
+const SlotMachine = forwardRef<SlotMachineHandle, SlotMachineProps>(
+  function SlotMachine({ reelData, glowStyle, onReelStop, tapHintText }, ref) {
+    const forceStop = useSharedValue(0);
+    const stopTimesRef = useRef(getVariableStopTimes());
 
-      {/* Slot cercevesi */}
-      <View style={styles.slotFrame}>
-        <View style={styles.slotColumns}>
-          {reelData.map((posters, colIdx) => (
-            <SlotReel
-              key={`col-${colIdx}-${posters.length}`}
-              posters={posters}
-              stopTime={REEL_STOP_TIMES[colIdx]}
-              onStop={() => onReelStop(colIdx)}
-            />
-          ))}
+    useImperativeHandle(ref, () => ({
+      forceStopAll: () => {
+        forceStop.value = 1;
+      },
+    }));
+
+    const handleTap = useCallback(() => {
+      if (forceStop.value === 0) {
+        logger.log('[SlotMachine] Tap-to-stop triggered');
+        forceStop.value = 1;
+      }
+    }, [forceStop]);
+
+    return (
+      <Pressable onPress={handleTap}>
+        <View style={styles.slotMachine}>
+          <Animated.View style={[styles.jackpotGlow, glowStyle]} />
+
+          <View style={styles.slotFrame}>
+            <View style={styles.slotColumns}>
+              {reelData.map((posters, colIdx) => (
+                <SlotReel
+                  key={`reel-${colIdx}-${posters.length}`}
+                  posters={posters}
+                  stopTime={stopTimesRef.current[colIdx]}
+                  onStop={() => onReelStop(colIdx)}
+                  forceStop={forceStop}
+                />
+              ))}
+            </View>
+
+            <View style={styles.winLine} pointerEvents="none" />
+          </View>
+
+          <Animated.View style={styles.tapHintContainer}>
+            <Animated.Text style={styles.tapHintText}>
+              {tapHintText || 'Tap to stop'}
+            </Animated.Text>
+          </Animated.View>
         </View>
+      </Pressable>
+    );
+  },
+);
 
-        {/* Orta cizgi gostergesi — "kazanan satir" */}
-        <View style={styles.winLine} pointerEvents="none" />
-      </View>
-    </View>
-  );
-}
+export default SlotMachine;
 
-// ─── Stiller ────────────────────────────────────────────────────────────────
+// --- Stiller ---
 
 const styles = StyleSheet.create({
-  /* Slot machine */
   slotMachine: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 8,
   },
   jackpotGlow: {
     position: 'absolute',
@@ -203,12 +367,12 @@ const styles = StyleSheet.create({
     gap: SLOT_GAP,
   },
 
-  /* Tek sutun (reel) */
   reelWindow: {
     width: SLOT_COL_WIDTH,
     height: SLOT_POSTER_H,
     overflow: 'hidden',
     borderRadius: Theme.borderRadius.sm,
+    backgroundColor: Colors.bgElevated,
   },
   reelStrip: {
     width: SLOT_COL_WIDTH,
@@ -216,31 +380,48 @@ const styles = StyleSheet.create({
   reelPoster: {
     width: SLOT_COL_WIDTH,
     height: SLOT_POSTER_H,
-    borderRadius: Theme.borderRadius.sm,
+    overflow: 'hidden',
   },
+  reelPosterImage: {
+    width: SLOT_COL_WIDTH,
+    height: SLOT_POSTER_H,
+  },
+
   reelGradientTop: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 30,
+    height: 24,
+    zIndex: 2,
   },
   reelGradientBottom: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 30,
+    height: 24,
+    zIndex: 2,
   },
 
-  /* Kazanan satir cizgisi */
   winLine: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: 4,
+    right: 4,
     top: '50%',
     height: 2,
     backgroundColor: Colors.gold,
     opacity: 0.5,
+    borderRadius: 1,
+  },
+
+  tapHintContainer: {
+    marginTop: 8,
+    opacity: 0.5,
+  },
+  tapHintText: {
+    fontSize: 12,
+    color: Colors.textLightGrey,
+    textAlign: 'center',
   },
 });

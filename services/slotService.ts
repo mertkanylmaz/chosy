@@ -44,9 +44,53 @@ export interface TokenBalance {
 /**
  * supabase.functions.invoke non-2xx donerse error icinde
  * structured JSON gizli kalir. Bu helper onu cikarir.
+ *
+ * supabase-js v2 FunctionsHttpError yapisi:
+ *   error.message  = "Edge Function returned a non-2XX status code" (generic)
+ *   error.context  = raw Response objesi (body okunmamis) VEYA parsed JSON
  */
-function extractStructuredError(error: { message?: string; context?: unknown }): SlotError {
-  // FunctionsHttpError.message genelde response body text icerir
+async function extractStructuredError(error: { message?: string; context?: unknown }): Promise<SlotError> {
+  const ctx = error.context;
+
+  // Strategy 1: context bir Response objesi ise body'yi oku
+  if (ctx && typeof ctx === 'object' && 'status' in ctx && '_bodyBlob' in ctx) {
+    try {
+      const resp = ctx as Response;
+      const body = await resp.json();
+      logger.log('[slot] Edge Function response body:', JSON.stringify(body));
+      if (body && typeof body.error === 'string') {
+        return body as SlotError;
+      }
+      // Edge function crash — body { msg: "..." } formatinda olabilir
+      if (body && typeof body.msg === 'string') {
+        return { error: body.msg };
+      }
+    } catch (e) {
+      logger.error('[slot] Response body parse failed:', e);
+    }
+  }
+
+  // Strategy 2: context zaten parsed JSON ise
+  if (ctx && typeof ctx === 'object' && 'error' in ctx) {
+    const ctxObj = ctx as Record<string, unknown>;
+    if (typeof ctxObj.error === 'string') {
+      return ctxObj as unknown as SlotError;
+    }
+  }
+
+  // Strategy 3: context string ise parse et
+  if (typeof ctx === 'string') {
+    try {
+      const parsed = JSON.parse(ctx);
+      if (parsed && typeof parsed.error === 'string') {
+        return parsed as SlotError;
+      }
+    } catch {
+      // JSON degilse devam
+    }
+  }
+
+  // Strategy 4: message icinde JSON olabilir
   const msg = error.message ?? '';
   try {
     const parsed = JSON.parse(msg);
@@ -70,13 +114,18 @@ function extractStructuredError(error: { message?: string; context?: unknown }):
  * Pure Random slot — tum tier'lara acik.
  */
 export async function spinPureRandom(): Promise<SlotResult> {
+  // Fallback: user_id body'ye ekle (Edge Function JWT sorunu icin)
+  const { data: { user } } = await supabase.auth.getUser();
+  logger.log('[slot] spinPureRandom — user:', user?.id, 'session valid:', !!user);
+
   const { data, error } = await supabase.functions.invoke('slot-pure-random', {
-    body: {},
+    body: { user_id: user?.id },
   });
 
+  logger.log('[slot] spinPureRandom response — data:', JSON.stringify(data)?.substring(0, 200));
   if (error) {
     logger.error('[slot] spinPureRandom error:', error.message);
-    const structured = extractStructuredError(error);
+    const structured = await extractStructuredError(error as { message?: string; context?: unknown });
     throw structured;
   }
 
@@ -91,13 +140,14 @@ export async function spinPureRandom(): Promise<SlotResult> {
  * Mood Filtered slot — premium only.
  */
 export async function spinMoodFiltered(mood: string): Promise<SlotResult> {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke('slot-mood-filtered', {
-    body: { mood },
+    body: { mood, user_id: user?.id },
   });
 
   if (error) {
     logger.error('[slot] spinMoodFiltered error:', error.message);
-    const structured = extractStructuredError(error);
+    const structured = await extractStructuredError(error as { message?: string; context?: unknown });
     throw structured;
   }
 
@@ -116,17 +166,19 @@ export async function spinTriple(
   moodFilter?: string,
   eraFilter?: EraFilter,
 ): Promise<SlotResult> {
+  const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke('slot-triple', {
     body: {
       duration_filter: durationFilter ?? 'any',
       mood_filter: moodFilter,
       era_filter: eraFilter ?? 'any',
+      user_id: user?.id,
     },
   });
 
   if (error) {
     logger.error('[slot] spinTriple error:', error.message);
-    const structured = extractStructuredError(error);
+    const structured = await extractStructuredError(error as { message?: string; context?: unknown });
     throw structured;
   }
 
@@ -216,6 +268,15 @@ export async function earnSlotToken(
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
+
+/** Relative poster path'e TMDB base URL ekler */
+function fullPosterUrl(url: string | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  return `${TMDB_IMAGE_BASE}${url}`;
+}
+
 /** Edge Function response'unu SlotResult'a map'ler */
 function mapSlotResponse(data: Record<string, unknown>): SlotResult {
   const film = data.film as Record<string, unknown>;
@@ -224,7 +285,7 @@ function mapSlotResponse(data: Record<string, unknown>): SlotResult {
     film: {
       id: film.id as string,
       title: film.title as string,
-      posterUrl: film.posterUrl as string,
+      posterUrl: fullPosterUrl(film.posterUrl as string),
       year: film.year as number,
       runtime: film.runtime as number | undefined,
       voteAverage: film.voteAverage as number | undefined,

@@ -4,13 +4,12 @@
  * SADECE paid tier (monthly, annual, lifetime).
  *
  * POST /functions/v1/slot-triple
- * Body: { duration_filter?, mood_filter?, era_filter? }
- * Auth: Supabase JWT
+ * Body: { duration_filter?, mood_filter?, era_filter?, user_id? }
+ * Auth: Supabase JWT (fallback: body.user_id)
  *
- * Deploy: supabase functions deploy slot-triple
+ * Deploy: supabase functions deploy slot-triple --no-verify-jwt
  */
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -22,12 +21,6 @@ const PAID_TIERS = ['monthly', 'annual', 'lifetime']
 
 type DurationFilter = 'short' | 'medium' | 'long' | 'any'
 type EraFilter = '2020s' | '2010s' | '2000s' | 'classic' | 'any'
-
-interface TripleRequest {
-  duration_filter?: DurationFilter
-  mood_filter?: string
-  era_filter?: EraFilter
-}
 
 const DURATION_BOUNDS: Record<DurationFilter, [number, number]> = {
   short: [0, 90],
@@ -44,79 +37,126 @@ const ERA_BOUNDS: Record<EraFilter, [number, number]> = {
   any: [1900, 2099],
 }
 
-/** JWT'den users.id + tier cikarir */
-async function getUserInfo(req: Request): Promise<{
-  userId: string;
-  tier: string;
-  error?: string;
-}> {
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return { userId: '', tier: '', error: 'MISSING_AUTH' }
-
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-
-  const supabaseUser = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
   })
-
-  const { data: { user }, error } = await supabaseUser.auth.getUser()
-  if (error || !user) return { userId: '', tier: '', error: 'INVALID_TOKEN' }
-
-  const admin = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
-  const { data, error: lookupError } = await admin
-    .from('users')
-    .select('id, subscription_tier')
-    .eq('auth_id', user.id)
-    .single()
-
-  if (lookupError || !data) return { userId: '', tier: '', error: 'USER_NOT_FOUND' }
-  return { userId: data.id, tier: data.subscription_tier }
 }
 
-serve(async (req: Request): Promise<Response> => {
+/**
+ * Resolve user — JWT first, fallback to body.user_id
+ * Returns app user UUID + tier
+ */
+async function resolveUser(
+  req: Request,
+  body: Record<string, unknown>,
+): Promise<{ userId: string; tier: string; error?: string }> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+
+  const admin = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false },
+  })
+
+  // Strategy 1: JWT auth
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader) {
+    try {
+      const userClient = createClient(supabaseUrl, anonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false, autoRefreshToken: false },
+      })
+
+      const { data: { user }, error } = await userClient.auth.getUser()
+      if (user && !error) {
+        const { data, error: lookupError } = await admin
+          .from('users')
+          .select('id, subscription_tier')
+          .eq('auth_id', user.id)
+          .single()
+
+        if (data && !lookupError) {
+          return { userId: data.id, tier: data.subscription_tier ?? 'free' }
+        }
+        console.error('[auth] User lookup failed:', lookupError?.message)
+      } else {
+        console.error('[auth] getUser failed:', error?.message)
+      }
+    } catch (e) {
+      console.error('[auth] JWT strategy threw:', (e as Error).message)
+    }
+  }
+
+  // Strategy 2: body.user_id fallback
+  const bodyUserId = body.user_id as string | undefined
+  if (bodyUserId) {
+    console.log('[auth] Fallback to body.user_id')
+    const { data } = await admin
+      .from('users')
+      .select('id, subscription_tier')
+      .eq('id', bodyUserId)
+      .single()
+
+    if (data) {
+      return { userId: data.id, tier: data.subscription_tier ?? 'free' }
+    }
+
+    const { data: d2 } = await admin
+      .from('users')
+      .select('id, subscription_tier')
+      .eq('auth_id', bodyUserId)
+      .single()
+
+    if (d2) {
+      return { userId: d2.id, tier: d2.subscription_tier ?? 'free' }
+    }
+  }
+
+  return { userId: '', tier: '', error: 'NO_USER_CONTEXT' }
+}
+
+Deno.serve(async (req: Request): Promise<Response> => {
+  console.log('=== SLOT-TRIPLE REQUEST ===')
+  console.log('Method:', req.method)
+  console.log('Auth header present:', !!req.headers.get('Authorization'))
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
+    return json({ error: 'Method not allowed' }, 405)
   }
 
-  const { userId, tier, error: authError } = await getUserInfo(req)
-  if (authError || !userId) {
-    return new Response(
-      JSON.stringify({ error: 'Auth required', code: authError }),
-      { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
-
-  // Premium gate
-  if (!PAID_TIERS.includes(tier)) {
-    return new Response(
-      JSON.stringify({ error: 'PREMIUM_REQUIRED', tier, upgrade_url: 'chosy://paywall' }),
-      { status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
-
-  let body: TripleRequest
+  let body: Record<string, unknown>
   try {
     body = await req.json()
   } catch {
     body = {}
   }
 
-  const durationFilter: DurationFilter = body.duration_filter ?? 'any'
-  const eraFilter: EraFilter = body.era_filter ?? 'any'
-  const moodFilter: string | undefined = body.mood_filter?.trim() || undefined
+  const { userId, tier, error: authError } = await resolveUser(req, body)
+  if (authError || !userId) {
+    return json({ error: 'Auth required', code: authError }, 401)
+  }
+
+  // Premium gate
+  if (!PAID_TIERS.includes(tier)) {
+    return json({ error: 'PREMIUM_REQUIRED', tier, upgrade_url: 'chosy://paywall' }, 403)
+  }
+
+  const durationFilter: DurationFilter = (body.duration_filter as DurationFilter) ?? 'any'
+  const eraFilter: EraFilter = (body.era_filter as EraFilter) ?? 'any'
+  const moodFilter: string | undefined = (body.mood_filter as string)?.trim() || undefined
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const admin = createClient(supabaseUrl, serviceKey)
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      { auth: { persistSession: false } },
+    )
 
     // Quota check
     const { data: quotaResult, error: quotaError } = await admin.rpc('check_and_consume_quota', {
@@ -125,16 +165,13 @@ serve(async (req: Request): Promise<Response> => {
     })
     if (quotaError) throw quotaError
     if (!quotaResult?.allowed) {
-      return new Response(
-        JSON.stringify({ error: 'QUOTA_EXCEEDED', ...quotaResult }),
-        { status: 429, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-      )
+      return json({ error: 'QUOTA_EXCEEDED', ...quotaResult }, 429)
     }
 
     // Get unwatched watchlist films
     const { data: watchlistFilms, error: wlError } = await admin
       .from('watchlist')
-      .select('film_id, films(id, title, poster_url, year, runtime, vote_average, mood_tags)')
+      .select('film_id, films(id, title, poster_url, year, runtime, vote_average, genres)')
       .eq('user_id', userId)
       .is('watched_at', null)
 
@@ -149,21 +186,18 @@ serve(async (req: Request): Promise<Response> => {
         const film = w.films as Record<string, unknown> | null
         if (!film) return false
 
-        // Duration filter
         if (durationFilter !== 'any' && film.runtime != null) {
           const runtime = film.runtime as number
           if (runtime < minDur || runtime > maxDur) return false
         }
 
-        // Era filter
         if (eraFilter !== 'any' && film.year != null) {
           const year = film.year as number
           if (year < minYear || year > maxYear) return false
         }
 
-        // Mood filter (simple keyword match on mood_tags)
         if (moodFilter) {
-          const tags = (film.mood_tags as string[]) ?? []
+          const tags = (film.genres as string[]) ?? []
           const moodLower = moodFilter.toLowerCase()
           const hasMatch = tags.some((t: string) => t.toLowerCase().includes(moodLower))
           if (!hasMatch) return false
@@ -173,17 +207,13 @@ serve(async (req: Request): Promise<Response> => {
       })
 
     if (candidates.length === 0) {
-      return new Response(
-        JSON.stringify({
-          error: 'NO_MATCHES',
-          message: 'No films match your filters. Try broader settings.',
-          filters: { duration: durationFilter, mood: moodFilter, era: eraFilter },
-        }),
-        { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-      )
+      return json({
+        error: 'NO_MATCHES',
+        message: 'No films match your filters. Try broader settings.',
+        filters: { duration: durationFilter, mood: moodFilter, era: eraFilter },
+      })
     }
 
-    // Weighted random (uniform for triple)
     const randomIndex = Math.floor(Math.random() * candidates.length)
     const picked = candidates[randomIndex]
     const film = picked.films as Record<string, unknown>
@@ -197,29 +227,24 @@ serve(async (req: Request): Promise<Response> => {
       accepted: false,
     })
 
-    return new Response(
-      JSON.stringify({
-        film: {
-          id: film.id,
-          title: film.title,
-          posterUrl: film.poster_url,
-          year: film.year,
-          runtime: film.runtime,
-          voteAverage: film.vote_average,
-          moodTags: film.mood_tags ?? [],
-        },
-        variant: 'triple',
-        candidateCount: candidates.length,
-        filters: { duration: durationFilter, mood: moodFilter, era: eraFilter },
-      }),
-      { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
+    console.log('[slot-triple] Picked:', film.title)
+    return json({
+      film: {
+        id: film.id,
+        title: film.title,
+        posterUrl: film.poster_url,
+        year: film.year,
+        runtime: film.runtime,
+        voteAverage: film.vote_average,
+        moodTags: film.genres ?? [],
+      },
+      variant: 'triple',
+      candidateCount: candidates.length,
+      filters: { duration: durationFilter, mood: moodFilter, era: eraFilter },
+    })
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('[slot-triple] Error:', msg)
-    return new Response(
-      JSON.stringify({ error: 'Internal error', code: 'INTERNAL_ERROR' }),
-      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
+    return json({ error: 'Internal error', code: 'INTERNAL_ERROR' }, 500)
   }
 })

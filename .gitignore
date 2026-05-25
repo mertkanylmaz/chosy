@@ -1,5 +1,8 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+# Quality test outputs (baseline sonuclari git'e girmez)
+tests/recommendation-quality/output/
+
 # dependencies
 node_modules/
 

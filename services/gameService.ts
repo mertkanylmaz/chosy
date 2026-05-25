@@ -11,6 +11,7 @@ import { supabase } from './supabase';
 import { getAppUserId } from './watchlist';
 import { earnSlotToken } from './slotService';
 import { fetchMovieCredits, fetchMovieDetails, searchMovies } from './tmdb';
+import { searchFilmsDb } from './searchFilms';
 import type { TmdbCredits } from './tmdb';
 import { getQuoteForFilm, getQuotableFilmIds } from '@/constants/movieQuotes';
 import { i18n } from '@/constants/i18n';
@@ -705,13 +706,27 @@ export async function getCachedResult(
 
 /**
  * Film arama — oyunlardaki tahmin input'u için.
+ * Önce Supabase DB'de arar (title, original_title, tr_title, director, cast).
+ * DB sonuç vermezse TMDb API'ye fallback yapar.
  */
 export async function searchFilms(query: string): Promise<FilmSearchResult[]> {
   if (!query || query.trim().length < 2) return [];
 
   try {
-    const results = await searchMovies(query.trim());
-    return results.map((r) => ({
+    // 1) DB search — çok katmanlı (title + original_title + tr_title + director + cast)
+    const dbResults = await searchFilmsDb(query.trim(), 10);
+    if (dbResults.length > 0) {
+      return dbResults.map((r) => ({
+        id: r.tmdb_id,
+        title: r.title,
+        year: r.year?.toString() ?? '',
+        posterPath: r.poster_url ?? null,
+      }));
+    }
+
+    // 2) TMDb fallback — DB'de eşleşme yoksa
+    const tmdbResults = await searchMovies(query.trim());
+    return tmdbResults.map((r) => ({
       id: r.id,
       title: r.title,
       year: r.release_date?.split('-')[0] ?? '',
