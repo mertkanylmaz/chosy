@@ -163,4 +163,13 @@ export const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+
+  /** Poster yükleme hatası placeholder */
+  ahaPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    borderStyle: 'dashed',
+  },
 });

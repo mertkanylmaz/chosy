@@ -66,9 +66,9 @@ async function getOnboardingKey(): Promise<string> {
 
 /** Poster URL'leri — SwipeDemo merkez karti ve yan kartlar */
 const POSTERS = [
-  'https://image.tmdb.org/t/p/w185/eCOtqtfvn7mxGCGuBSnapSBgBBP.jpg',
-  'https://image.tmdb.org/t/p/w185/aeMuA17vprY3QWlyIRVTiKHqD6z.jpg',
-  'https://image.tmdb.org/t/p/w185/5MwkWH9tYHv3mV9OiQ0ZfahtXnj.jpg',
+  'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg',
+  'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
+  'https://image.tmdb.org/t/p/w185/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg',
 ];
 
 // ── Poster Karuseli ──────────────────────────────────────────────────────────

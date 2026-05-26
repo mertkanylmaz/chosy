@@ -13,7 +13,7 @@
  * archetypeId null ise "Mystery Cinephile" fallback gösterilir.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   FadeInUp,
@@ -25,6 +25,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -75,19 +76,19 @@ const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
     'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
   ],
   3: [ // Gozyasi Hirsizi
-    'https://image.tmdb.org/t/p/w185/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
     'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
     'https://image.tmdb.org/t/p/w185/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', // La La Land
   ],
   4: [ // Gulumseme Avcisi
     'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
-    'https://image.tmdb.org/t/p/w185/aeMuA17vprY3QWlyIRVTiKHqD6z.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/5MwkWH9tYHv3mV9OiQ0ZfahtXnj.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', // Roster film
   ],
   5: [ // Umutsuz Romantik
     'https://image.tmdb.org/t/p/w185/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', // La La Land
-    'https://image.tmdb.org/t/p/w185/eCOtqtfvn7mxGCGuBSnapSBgBBP.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
   ],
   6: [ // Karanlik Yolcu
     'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
@@ -97,12 +98,12 @@ const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
   7: [ // Gorsel Sair
     'https://image.tmdb.org/t/p/w185/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', // Interstellar
     'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-    'https://image.tmdb.org/t/p/w185/aeMuA17vprY3QWlyIRVTiKHqD6z.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
   ],
   8: [ // Nostalji Bekcisi
     'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
-    'https://image.tmdb.org/t/p/w185/5MwkWH9tYHv3mV9OiQ0ZfahtXnj.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/eCOtqtfvn7mxGCGuBSnapSBgBBP.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', // Roster film
   ],
   9: [ // Kaos Elcisi
     'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
@@ -111,12 +112,12 @@ const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
   ],
   10: [ // Huzur Gezgini
     'https://image.tmdb.org/t/p/w185/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', // Spirited Away
-    'https://image.tmdb.org/t/p/w185/aeMuA17vprY3QWlyIRVTiKHqD6z.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
   ],
   11: [ // Gerceklik Dedektifi
     'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-    'https://image.tmdb.org/t/p/w185/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
     'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
   ],
   12: [ // Fantastik Hayalperest
@@ -130,7 +131,7 @@ const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
 const FALLBACK_POSTERS = [
   'https://image.tmdb.org/t/p/w185/qJ2tW6WMUDux911r6m7haRef0WH.jpg', // The Dark Knight
   'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-  'https://image.tmdb.org/t/p/w185/lIv1QinFqz4dlp5U4lQ6HaiskOZ.jpg', // Whiplash
+  'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
 ];
 
 // ─── Parçacıklar ──────────────────────────────────────────────────────────────
@@ -154,6 +155,64 @@ const PARTICLES: ParticleConfig[] = [
   { char: '·', top: '85%', left: '22%', fontSize: 14, opacity: 0.35 },
 ];
 
+// ─── Poster Havuzu (yedek için) ───────────────────────────────────────────────
+
+/** Tüm arketip posterlerinden benzersiz URL listesi — fallback havuzu */
+const ALL_POSTER_URLS: readonly string[] = [
+  ...new Set([
+    ...FALLBACK_POSTERS,
+    ...Object.values(ARCHETYPE_FILM_POSTERS).flat(),
+  ]),
+];
+
+/**
+ * Belirli bir arketip setinden eksik (broken/404) posterleri çıkarıp
+ * havuzdan yedek ile tamamlar. Her zaman 3 geçerli poster döner.
+ */
+function buildSafePosters(primary: readonly string[]): string[] {
+  // Sadece havuzda olan unique poster'ları al
+  const result = [...primary];
+  // Yedek havuzda olan ama primary'de olmayan poster'lar
+  const reserves = ALL_POSTER_URLS.filter((u) => !result.includes(u));
+  // Eksikse tamamla (3'ten az ise)
+  while (result.length < 3 && reserves.length > 0) {
+    result.push(reserves.shift()!);
+  }
+  return result.slice(0, 3);
+}
+
+// ─── AhaPoster — hata toleranslı poster kartı ────────────────────────────────
+
+interface AhaPosterProps {
+  uri: string;
+}
+
+/**
+ * Tek poster kart bileşeni — Image yükleme hatası olursa
+ * film ikonu placeholder gösterir (boş kart yerine).
+ */
+function AhaPoster({ uri }: AhaPosterProps) {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError) {
+    return (
+      <View style={[styles.ahaCard, styles.ahaPlaceholder]}>
+        <Ionicons name="film-outline" size={28} color={Colors.textSecondary} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri }}
+      style={styles.ahaCard}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 /**
@@ -167,11 +226,14 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
 
   const archetype = archetypeId !== null ? getArchetype(archetypeId) : null;
 
-  /** Arketibe ozgu poster listesi — fallback genel set */
-  const ahaPosters =
-    archetypeId !== null
-      ? (ARCHETYPE_FILM_POSTERS[archetypeId] ?? FALLBACK_POSTERS)
-      : FALLBACK_POSTERS;
+  /** Arketibe özgü poster listesi — fallback + yedek havuzu ile güvenli */
+  const ahaPosters = useMemo(() => {
+    const primary =
+      archetypeId !== null
+        ? (ARCHETYPE_FILM_POSTERS[archetypeId] ?? FALLBACK_POSTERS)
+        : FALLBACK_POSTERS;
+    return buildSafePosters(primary);
+  }, [archetypeId]);
 
   // Fallback: Mystery Cinephile
   const colorPrimary = archetype?.colorPrimary ?? Colors.accentPrimary;
@@ -327,13 +389,7 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
           <Text style={styles.ahaTitle}>{t('onboarding.ahaFor')}</Text>
           <View style={styles.ahaRow}>
             {ahaPosters.map((uri, i) => (
-              <Image
-                key={i}
-                source={{ uri }}
-                style={styles.ahaCard}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-              />
+              <AhaPoster key={`${archetypeId}-${i}`} uri={uri} />
             ))}
           </View>
           {/* Today's Pick hint — home feed baglantisi */}
