@@ -26,7 +26,8 @@
     "test:quality": "tsx tests/recommendation-quality/run-quality-test.ts",
     "profile:ai": "tsx scripts/ai-profile-films.ts",
     "profile:ai:missing": "tsx scripts/ai-profile-films.ts --only-missing",
-    "profile:ai:verify": "tsx scripts/verify-ai-profiles.ts"
+    "profile:ai:verify": "tsx scripts/verify-ai-profiles.ts",
+    "sentry:sourcemaps": "npx sentry-expo-upload-sourcemaps dist"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -35,6 +36,7 @@
     "@react-native-google-signin/google-signin": "^16.1.2",
     "@react-navigation/bottom-tabs": "^7.10.1",
     "@react-navigation/native": "^7.1.28",
+    "@sentry/react-native": "~7.2.0",
     "@supabase/supabase-js": "^2.98.0",
     "expo": "^54.0.34",
     "expo-apple-authentication": "~8.0.8",
@@ -61,6 +63,7 @@
     "expo-web-browser": "~15.0.11",
     "i18n-js": "^4.5.3",
     "openai": "^6.39.0",
+    "posthog-react-native": "^4.45.15",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.5",

@@ -48,3 +48,7 @@ google-service-account.json
 /android
 
 google-service-account.json
+
+# Design assets (not needed for builds)
+figurler/
+design-reference/

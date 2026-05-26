@@ -22,6 +22,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import { i18n } from '@/constants/i18n';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Module cache ─────────────────────────────────────────────────────────────
 
@@ -145,6 +146,10 @@ export function useShareCapture(): UseShareCaptureReturn {
 
   const share = useCallback(async () => {
     if (!cardRef.current || isCapturing) return;
+
+    // PostHog: app_share_initiated — card_type is determined by caller context
+    // TODO: Accept card_type param if distinct tracking per card type is needed
+    posthogAnalytics.track('app_share_initiated', { card_type: 'share_card' });
 
     setIsCapturing(true);
     try {

@@ -47,6 +47,7 @@ import { getAppUserId } from '@/services/watchlist';
 import { supabase } from '@/services/supabase';
 import { hapticSuccess, hapticMedium } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Yasal Sayfa URL'leri ────────────────────────────────────────────────────
 
@@ -148,6 +149,10 @@ export default function PaywallScreen() {
       }
     }
     load();
+
+    // PostHog: paywall_shown
+    const variant = isOnboarding ? 'onboarding' : 'default';
+    posthogAnalytics.track('paywall_shown', { variant });
   }, []);
 
   /**
@@ -209,6 +214,10 @@ export default function PaywallScreen() {
 
       if (result.success) {
         hapticSuccess();
+        posthogAnalytics.track('paywall_converted', {
+          variant: isOnboarding ? 'onboarding' : 'default',
+          plan: selectedPlan,
+        });
 
         // Supabase'e kaydet
         const userId = await getAppUserId();
@@ -353,6 +362,7 @@ export default function PaywallScreen() {
         <TouchableOpacity
           style={styles.closeBtn}
           onPress={() => {
+            posthogAnalytics.track('paywall_dismissed', { variant: isOnboarding ? 'onboarding' : 'default' });
             if (isOnboarding) navigateAfterPaywall();
             else if (router.canGoBack()) router.back();
           }}

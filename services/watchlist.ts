@@ -12,6 +12,7 @@ import { TasteProfile } from '../types';
 import { supabase } from './supabase';
 import { updateUserVector } from './userProfile';
 import { logger } from '../utils/logger';
+import { posthogAnalytics } from './posthog';
 
 // ─── Watched Status (local) ──────────────────────────────────────────────────
 
@@ -187,6 +188,9 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
     }
 
     if (!error) {
+      // PostHog: film_added_to_watchlist
+      posthogAnalytics.track('film_added_to_watchlist', { film_id: film.id });
+
       // Arka planda kullanıcı vektörünü güncelle — hata dışarıya yayılmaz
       updateUserVector(appUserId, film.id);
     }

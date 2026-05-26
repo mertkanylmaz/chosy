@@ -42,6 +42,7 @@ import { signInWithApple } from '@/services/authService';
 import { identifyUser } from '@/services/purchaseService';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -79,9 +80,20 @@ export default function AuthScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user?.id) {
         await identifyUser(user.id);
+
+        // PostHog: identify user with traits
+        const { data: profile } = await supabase
+          .from('users')
+          .select('archetype_id, subscription_tier')
+          .eq('id', user.id)
+          .single();
+        posthogAnalytics.identify(user.id, {
+          archetype: profile?.archetype_id ?? null,
+          subscription_tier: profile?.subscription_tier ?? 'free',
+        });
       }
     } catch {
-      // RC identify başarısız olsa bile akışı engelleme
+      // RC/PostHog identify başarısız olsa bile akışı engelleme
     }
 
     // Gate tüm routing kararlarını verir:
