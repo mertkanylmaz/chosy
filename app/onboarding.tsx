@@ -11,13 +11,16 @@
  *   Reveal "Let's Go" → finishOnboarding() → /(tabs)
  *   Skip (her aşamada) → finishOnboarding()
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  Dimensions,
+  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { ViewToken } from 'react-native';
 import { Image } from 'expo-image';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -175,6 +178,39 @@ const posterStyles = StyleSheet.create({
   },
 });
 
+// ── Intro Slide Verileri ─────────────────────────────────────────────────────
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+/** Intro slide ikonu — Ionicons name */
+interface IntroSlide {
+  titleKey: string;
+  taglineKey: string;
+  descKey: string;
+  icon: 'sparkles' | 'finger-print' | 'tv';
+}
+
+const INTRO_SLIDES: IntroSlide[] = [
+  {
+    titleKey: 'onboarding.slide1Title',
+    taglineKey: 'onboarding.slide1Tagline',
+    descKey: 'onboarding.slide1Desc',
+    icon: 'sparkles',
+  },
+  {
+    titleKey: 'onboarding.slide2Title',
+    taglineKey: 'onboarding.slide2Tagline',
+    descKey: 'onboarding.slide2Desc',
+    icon: 'finger-print',
+  },
+  {
+    titleKey: 'onboarding.slide3Title',
+    taglineKey: 'onboarding.slide3Tagline',
+    descKey: 'onboarding.slide3Desc',
+    icon: 'tv',
+  },
+];
+
 // ── Onboarding Phase ────────────────────────────────────────────────────────
 
 type Phase = 'slides' | 'calibration' | 'reveal';
@@ -188,6 +224,9 @@ export default function OnboardingScreen() {
   const { t } = useLanguage();
   const [phase, setPhase] = useState<Phase>('slides');
   const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const flatListRef = useRef<FlatList<IntroSlide>>(null);
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
   // ── PostHog: onboarding_started (mount) ───────────────────────────────────
   useEffect(() => {
@@ -333,6 +372,44 @@ export default function OnboardingScreen() {
     await finishOnboarding();
   }, [finishOnboarding]);
 
+  // ── Intro Slides hooks (hooks kuralı: conditional return'dan önce) ──
+  const isLastSlide = slideIndex === INTRO_SLIDES.length - 1;
+
+  /** Viewability callback — aktif slide index'i günceller */
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0 && viewableItems[0].index != null) {
+        setSlideIndex(viewableItems[0].index);
+      }
+    },
+    [],
+  );
+
+  /** Next/Continue butonuna basıldı */
+  const handleSlideNext = useCallback(() => {
+    hapticLight();
+    if (isLastSlide) {
+      handleSwipeAction();
+    } else {
+      flatListRef.current?.scrollToIndex({ index: slideIndex + 1, animated: true });
+    }
+  }, [isLastSlide, slideIndex, handleSwipeAction]);
+
+  /** Tek bir intro slide render */
+  const renderSlide = useCallback(
+    ({ item }: { item: IntroSlide }) => (
+      <View style={[styles.demoContent, { width: SCREEN_WIDTH }]}>
+        <View style={styles.slideIconWrap}>
+          <Ionicons name={item.icon} size={64} color={Colors.accentPrimary} />
+        </View>
+        <Text style={styles.demoTitle}>{t(item.titleKey)}</Text>
+        <Text style={styles.demoTagline}>{t(item.taglineKey)}</Text>
+        <Text style={styles.demoDesc}>{t(item.descKey)}</Text>
+      </View>
+    ),
+    [t],
+  );
+
   // ── Calibration Phase ──
   if (phase === 'calibration') {
     return (
@@ -357,7 +434,7 @@ export default function OnboardingScreen() {
     );
   }
 
-  // ── Slides Phase → Interaktif SwipeDemo ──
+  // ── Slides Phase → 3 Intro Slide + Pagination ──
   return (
     <View style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -370,18 +447,39 @@ export default function OnboardingScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Demo icerik */}
-        <View style={styles.demoContent}>
-          <PosterCarousel />
-          <Text style={styles.demoTitle}>{t('onboarding.swipeTryTitle')}</Text>
-          <Text style={styles.demoTagline}>{t('onboarding.swipeTryTagline')}</Text>
-          <Text style={styles.demoDesc}>{t('onboarding.swipeTryDesc')}</Text>
+        {/* Intro Slides — yatay FlatList */}
+        <FlatList
+          ref={flatListRef}
+          data={INTRO_SLIDES}
+          renderItem={renderSlide}
+          keyExtractor={(_item, index) => `slide-${index}`}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          style={styles.slideList}
+          contentContainerStyle={styles.slideListContent}
+        />
+
+        {/* Pagination dots */}
+        <View style={styles.dotsRow}>
+          {INTRO_SLIDES.map((_, i) => (
+            <View
+              key={`dot-${i}`}
+              style={[
+                styles.dot,
+                i === slideIndex && styles.dotActive,
+              ]}
+            />
+          ))}
         </View>
 
-        {/* Continue butonu */}
+        {/* Next / Continue butonu */}
         <View style={styles.buttonWrap}>
           <TouchableOpacity
-            onPress={handleSwipeAction}
+            onPress={handleSlideNext}
             activeOpacity={0.85}
             style={styles.button}
           >
@@ -392,7 +490,7 @@ export default function OnboardingScreen() {
               style={styles.buttonGradient}
             >
               <Text style={styles.buttonText}>
-                {t('common.continue')}
+                {isLastSlide ? t('common.continue') : t('common.next')}
               </Text>
               <Ionicons name="arrow-forward" size={18} color={Colors.textOnAccent} />
             </LinearGradient>
@@ -437,12 +535,50 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Demo icerik alani
+  // Slide FlatList
+  slideList: {
+    flex: 1,
+  },
+  slideListContent: {
+    alignItems: 'center',
+  },
+
+  // Demo icerik alani (her slide)
   demoContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+  },
+
+  // Slide ikon kapsayici
+  slideIconWrap: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(234,219,198,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 32,
+  },
+
+  // Pagination dots
+  dotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  dotActive: {
+    width: 24,
+    backgroundColor: Colors.accentPrimary,
   },
   demoTitle: {
     color: Colors.textWhite,
