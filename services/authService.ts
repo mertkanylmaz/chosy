@@ -23,6 +23,9 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
 import { supabase } from './supabase';
+import { logOutPurchases } from './purchaseService';
+import { clearQuotaCache } from './quotaEngine';
+import { getAppUserId } from './watchlist';
 import { logger } from '../utils/logger';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
@@ -430,9 +433,20 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       };
     }
 
+    // ── RevenueCat müşteri kimliğini sıfırla ─────────────────────────────
+    // Çağrılmazsa on-device entitlement cache kalır → yeni hesap premium görünür (BUG-002)
+    await logOutPurchases();
+
+    // ── AsyncStorage quota cache'ini temizle ────────────────────────────
+    // Eski kullanıcının kota sayaçları cihazda kalmasın
+    const appUserId = await getAppUserId();
+    if (appUserId) {
+      await clearQuotaCache(appUserId);
+    }
+
     // Tüm veri silindi — yerel oturumu kapat
     await supabase.auth.signOut();
-    logger.log('[authService] Hesap silindi ve oturum kapatıldı.');
+    logger.log('[authService] Hesap silindi, RC sıfırlandı ve oturum kapatıldı.');
 
     return { success: true };
   } catch (err) {

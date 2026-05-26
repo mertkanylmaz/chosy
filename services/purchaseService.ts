@@ -287,6 +287,24 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
   }
 }
 
+// ─── Oturum Sıfırlama ────────────────────────────────────────────────────
+
+/**
+ * RevenueCat müşteri kimliğini sıfırlar (anonim kullanıcıya döner).
+ * Hesap silme akışında çağrılır — on-device entitlement cache'ini temizler.
+ * Çağrılmazsa eski abonelik bilgisi cihazda kalır ve yeni hesap premium görünür.
+ */
+export async function logOutPurchases(): Promise<void> {
+  if (!_initialized) return;
+
+  try {
+    await Purchases.logOut();
+    logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
+  } catch (err) {
+    logger.warn('[purchases] RevenueCat logOut hatası:', err);
+  }
+}
+
 // ─── Geri Yükleme ────────────────────────────────────────────────────────────
 
 /**
