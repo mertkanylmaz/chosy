@@ -50,10 +50,10 @@ const SLOT_COL_WIDTH = Math.floor(
 const SLOT_POSTER_H = Math.floor(SLOT_COL_WIDTH * 1.5);
 
 /** Her slot sutununda akan poster sayisi (son poster = secilen film) */
-export const REEL_LENGTH = 14;
+export const REEL_LENGTH = 20;
 
 /** Base sutun durus zamanlari (ms) — staggered stop */
-const BASE_STOP_TIMES = [2200, 3000, 3800];
+const BASE_STOP_TIMES = [3000, 4000, 5000];
 
 /** Variable timing — her spin farkli hissedilsin */
 function getVariableStopTimes(): [number, number, number] {
@@ -66,7 +66,7 @@ function getVariableStopTimes(): [number, number, number] {
 }
 
 /** Son sutun durma + reveal gecikmesi */
-export const RESULT_DELAY = BASE_STOP_TIMES[2] + 700;
+export const RESULT_DELAY = BASE_STOP_TIMES[2] + 800;
 
 /** Eski export uyumluluk */
 export const REEL_STOP_TIMES = BASE_STOP_TIMES;
@@ -191,7 +191,9 @@ function SlotReel({ posters, stopTime, onStop, forceStop }: SlotReelProps) {
     translateY.value = 0;
     translateY.value = withTiming(-totalScroll, {
       duration: stopTime,
-      easing: Easing.bezier(0.05, 0.7, 0.1, 1.0),
+      // Casino-grade easing: hizli donus, dramatik son yavaslama
+      // %60 sure tam hizda, son %40 ağır frenleme
+      easing: Easing.bezier(0.15, 0.85, 0.05, 1.0),
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posters.length, stopTime]);
@@ -214,11 +216,10 @@ function SlotReel({ posters, stopTime, onStop, forceStop }: SlotReelProps) {
   useEffect(() => {
     if (posters.length <= 1) return;
 
-    // expo-image cache'den render cok hizli —
-    // image onLoad beklemeye gerek yok, direkt baslat
+    // expo-image cache'den render — kisa bekleme image decode icin
     const startTimer = setTimeout(() => {
       startAnimation();
-    }, 150); // 150ms mount stabilizasyonu
+    }, 250); // 250ms mount + image decode stabilizasyonu
 
     const stopTimer = setTimeout(() => {
       notifyStop();
