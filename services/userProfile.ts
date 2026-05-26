@@ -342,33 +342,29 @@ export async function initUserPreferenceFromCalibration(
   userId: string,
   profile: TasteProfile,
 ): Promise<void> {
-  try {
-    const vector = tasteProfileToVector(profile);
+  const vector = tasteProfileToVector(profile);
 
-    const { error } = await supabase
-      .from('users')
-      .update({ preferences_vector: JSON.stringify(vector) })
-      .eq('id', userId);
+  const { error } = await supabase
+    .from('users')
+    .update({ preferences_vector: JSON.stringify(vector) })
+    .eq('id', userId);
 
-    if (__DEV__) {
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('[userProfile] initUserPreferenceFromCalibration hata:', error.message);
-      } else {
-        // eslint-disable-next-line no-console
-        console.log(
-          '[userProfile] Kalibrasyon vektörü kaydedildi:',
-          `userId=${userId}`,
-          `vektör boyutu=${vector.length}`,
-        );
-      }
-    }
-  } catch (err) {
+  if (error) {
+    // Hata firlatilir — cagiran taraf (onboarding) offline queue'ya ekleyebilir
     if (__DEV__) {
       // eslint-disable-next-line no-console
-      console.error('[userProfile] initUserPreferenceFromCalibration beklenmedik hata:', err);
+      console.error('[userProfile] initUserPreferenceFromCalibration hata:', error.message);
     }
-    // Hata dışarıya yayılmaz — arka plan işlemi, uygulama çökmemeli
+    throw new Error(`[userProfile] calibration vector write failed: ${error.message}`);
+  }
+
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log(
+      '[userProfile] Kalibrasyon vektörü kaydedildi:',
+      `userId=${userId}`,
+      `vektör boyutu=${vector.length}`,
+    );
   }
 }
 

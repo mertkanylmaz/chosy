@@ -34,6 +34,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
 import { initUserPreferenceFromCalibration } from '@/services/userProfile';
+import {
+  cacheArchetypeId,
+  cacheCalibrationVector,
+  enqueueOperation,
+} from '@/services/offlineQueue';
+import { tasteProfileToVector } from '@/services/vectorEncoder';
 import { TasteCalibration, ArchetypeReveal } from '@/components/Onboarding';
 import type { CalibrationAnswer } from '@/components/Onboarding';
 import { buildCalibrationProfile } from '@/components/Onboarding/TasteCalibration/questions';
@@ -228,23 +234,57 @@ export default function OnboardingScreen() {
    *   1. archetype_id → users tablosuna
    *   2. TasteProfile → preferences_vector (cold-start duzeltmesi)
    */
+  /**
+   * P8.2 — Kalibrasyon sonuclarini kaydeder (offline-safe).
+   *
+   * Strateji:
+   *   1. AsyncStorage'a hemen yaz (optimistic — UI aninda guncellenir)
+   *   2. Supabase'e yazmayi dene
+   *   3. Supabase basarisiz olursa offline queue'ya ekle (reconnect'te sync)
+   */
   const saveCalibrationResultsAsync = useCallback(
     async (archetypeId: number | null, profile: TasteProfile) => {
       try {
         const appUserId = await getAppUserId();
         if (!appUserId) return;
 
+        // ── 1. Local cache — her durumda (offline bile) ──────────────────
+        if (archetypeId) {
+          await cacheArchetypeId(archetypeId);
+        }
+
+        const vectorJson = JSON.stringify(tasteProfileToVector(profile));
+        await cacheCalibrationVector(vectorJson);
+
+        // ── 2. Supabase write — network varsa basarili olur ─────────────
         if (archetypeId) {
           const { error: archetypeError } = await supabase
             .from('users')
             .update({ archetype_id: archetypeId })
             .eq('id', appUserId);
+
           if (archetypeError) {
-            logger.warn('[Onboarding] archetype_id write failed:', archetypeError.message);
+            logger.warn('[Onboarding] archetype_id write failed, queuing:', archetypeError.message);
+            await enqueueOperation({
+              type: 'save_archetype',
+              userId: appUserId,
+              payload: String(archetypeId),
+            });
           }
         }
 
-        await initUserPreferenceFromCalibration(appUserId, profile);
+        // initUserPreferenceFromCalibration icinde Supabase write var
+        // Basarisiz olursa vector'u offline queue'ya ekle
+        try {
+          await initUserPreferenceFromCalibration(appUserId, profile);
+        } catch {
+          logger.warn('[Onboarding] calibration vector write failed, queuing');
+          await enqueueOperation({
+            type: 'save_calibration_vector',
+            userId: appUserId,
+            payload: vectorJson,
+          });
+        }
       } catch (err) {
         logger.error('[Onboarding] saveCalibrationResultsAsync hata:', err);
       }

@@ -8,6 +8,7 @@
 
 import { supabase } from './supabase';
 import { getWatchlist } from './watchlist';
+import { getCachedArchetypeId } from './offlineQueue';
 import type { WatchlistItem } from './watchlist';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -67,9 +68,15 @@ export async function getHomeData(): Promise<HomeData> {
   const watchlist =
     watchlistResult.status === 'fulfilled' ? watchlistResult.value : [];
 
+  // DB'den archetype_id gelmezse (offline onboarding) local cache'e bak
+  let archetypeId = profile?.archetype_id ?? null;
+  if (!archetypeId) {
+    archetypeId = await getCachedArchetypeId();
+  }
+
   return {
     displayName: profile?.display_name ?? null,
-    archetypeId: profile?.archetype_id ?? null,
+    archetypeId,
     lastFilm: watchlist[0] ?? null,
     filmCount: watchlist.length,
   };

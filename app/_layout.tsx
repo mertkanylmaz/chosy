@@ -1,4 +1,5 @@
 import '@/utils/cryptoPolyfill';   // WebCrypto polyfill — ilk satır, sırası kritik
+import * as Sentry from '@sentry/react-native';
 import { useEffect, useRef } from 'react';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -29,6 +30,8 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
+import { processOfflineQueue } from '@/services/offlineQueue';
 import {
   savePushTokenToServer,
   shouldAskForPermission,
@@ -37,6 +40,31 @@ import {
   getDeepLinkFromNotification,
   type NotificationData,
 } from '@/services/pushNotifications';
+import SentryErrorBoundary from '@/components/ErrorBoundary';
+
+// ── Sentry initialization ───────────────────────────────────────────────────
+// Expo Router kendi entry'sini yonetir — Sentry.wrap() yerine Sentry.init()
+// kullaniyoruz. Navigation integration Expo Router ile otomatik calisir.
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  enableAutoSessionTracking: true,
+  environment: __DEV__ ? 'development' : 'production',
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  enableNative: true,
+  // Production'da debug kapali — verbose log istemiyoruz
+  debug: __DEV__,
+  // Hassas veri filtreleme
+  beforeSend(event) {
+    // Development'ta Sentry'e gonderme (DSN bos ise zaten gondermez)
+    if (__DEV__ && !process.env.EXPO_PUBLIC_SENTRY_DSN) {
+      return null;
+    }
+    return event;
+  },
+});
+
+// ── PostHog initialization ───────────────────────────────────────────────────
+posthogAnalytics.init();
 
 // Geliştirme ortamında reduced motion strict uyarısını kapat
 if (__DEV__) {
@@ -77,6 +105,11 @@ export default function RootLayout() {
     }
   }, [fontError]);
 
+  // ── PostHog: app_launched event ───────────────────────────────────────────
+  useEffect(() => {
+    posthogAnalytics.track('app_launched');
+  }, []);
+
   // Google Sign-In SDK konfigürasyonu (env'den client ID okunur)
   useEffect(() => {
     configureGoogleSignIn();
@@ -91,6 +124,13 @@ export default function RootLayout() {
       });
     }).catch((err) => {
       logger.error('[layout] Auth session alınamadı (RC başlatılmadı):', err);
+    });
+  }, []);
+
+  // Offline queue — app acilisinda bekleyen islemleri sync et
+  useEffect(() => {
+    processOfflineQueue().catch((err) => {
+      logger.warn('[layout] Offline queue isleme hatasi:', err);
     });
   }, []);
 
@@ -113,6 +153,9 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event) => {
         if (event === 'TOKEN_REFRESHED') {
+          // Token yenilendi — offline queue'daki bekleyen islemleri sync et
+          processOfflineQueue().catch(() => {});
+
           // Token yenilemesi başarısız olursa yeniden anonim oturum aç
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
@@ -181,7 +224,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <SentryErrorBoundary>
+      <RootLayoutNav />
+    </SentryErrorBoundary>
+  );
 }
 
 /**
@@ -228,7 +275,7 @@ function RootLayoutNav() {
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="gate" />
               <Stack.Screen name="entry" />
-              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               <Stack.Screen name="auth" />
               <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />
