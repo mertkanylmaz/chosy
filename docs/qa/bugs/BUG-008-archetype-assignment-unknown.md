@@ -1,90 +1,77 @@
-## BUG-008: Archetype Assignment Logic — ANALYZED
+## BUG-008: Archetype Assignment Logic — FIXED
 
-**Severity:** P2 (confirmed bias, no crash)
-**Status:** INVESTIGATED — 1 archetype unreachable, 3 severely underrepresented
-
----
-
-### Investigation Summary
-
-**Method:** Brute-force simulation of all 3,072 possible answer combinations (4x4x3x4x4x4).
-**Script:** `scripts/archetype-analysis.ts`
-**Result:** Scoring is deterministic. 0 null results (all combos pass threshold).
+**Severity:** P2 → Resolved
+**Status:** FIXED — All 12 archetypes now reachable
 
 ---
 
-### Answer: Can all 12 archetypes be assigned?
+### Original Problem
 
-**NO.** 11 out of 12 can be assigned. **#9 Chaos Agent is NEVER assigned** (0 out of 3,072 combos).
+Brute-force of 3,072 calibration combos revealed:
+- #9 Chaos Agent: **0/3072** (NEVER assigned)
+- #8 Nostalgia Keeper: 5/3072 (0.2%)
+- #6 Dark Passenger: 25/3072 (0.8%)
+- #7 Visual Poet: 826/3072 (26.9%) — over-represented
 
----
-
-### Winner Distribution (3,072 combos)
-
-| # | Archetype | Count | % | Status |
-|---|-----------|-------|---|--------|
-| 7 | Visual Poet | 826 | 26.9% | OVER-REPRESENTED |
-| 1 | Adrenaline Junkie | 413 | 13.4% | OK |
-| 4 | Joy Seeker | 394 | 12.8% | OK |
-| 2 | Mind-Bender | 378 | 12.3% | OK |
-| 12 | Escapist | 340 | 11.1% | OK |
-| 3 | Melancholy Soul | 312 | 10.2% | OK |
-| 11 | Truth Seeker | 213 | 6.9% | OK |
-| 5 | Hopeless Romantic | 91 | 3.0% | UNDER |
-| 10 | Zen Wanderer | 75 | 2.4% | UNDER |
-| 6 | Dark Passenger | 25 | 0.8% | SEVERELY UNDER |
-| 8 | Nostalgia Keeper | 5 | 0.2% | SEVERELY UNDER |
-| 9 | Chaos Agent | 0 | 0.0% | NEVER ASSIGNED |
+Root cause: `anger`, `disgust`, `era_preference` never modified by calibration questions.
 
 ---
 
-### Root Cause: Structural Bias
+### Fix Applied
 
-Calibration questions **never modify** these TasteProfile fields:
+#### questions.ts — Effect Changes
 
-| Field | Stuck Value | Affected Archetypes |
-|-------|-------------|---------------------|
-| `anger` | 0.2 (default) | #9 Chaos Agent relies on anger w=3.0 |
-| `disgust` | 0.1 (default) | #6 Dark Passenger (w=2.5), #9 (w=2.0), #11 (w=1.5) |
-| `era_preference` | {1990, 2026} | #8 Nostalgia Keeper (eraV=0, w=3.0) |
-| `rewatch_tolerance` | always true | Minor — helps #8 but not enough |
+| Question | Option | Change |
+|----------|--------|--------|
+| Q1 | intensity | Added `anger: 0.6, disgust: 0.3` to emotional_state |
+| Q2 | old_footage | Changed `visual_style: 'raw'` → `'minimalist'` + added `era_preference: {1940, 1985}` |
+| Q3 | masks | Added `emotional_state: { anger: 0.7, disgust: 0.5 }` |
+| Q4 | sadness | Changed `ending_preference: 'bittersweet'` → `'tragic'` + added `emotional_state: { disgust: 0.4 }` |
 
-Additionally, these values are **never offered as options:**
-- `visual_style: 'minimalist'` — needed by #10 Zen Wanderer, #11 Truth Seeker
-- `ending_preference: 'tragic'` — needed by #3 Melancholy Soul, #6 Dark Passenger
+Also added `era_preference` to `OptionEffect` interface and `buildCalibrationProfile()` handler.
 
----
+#### archetypeEngine.ts — Weight Changes
 
-### Scoring Logic Location
-
-| File | Lines | What |
-|------|-------|------|
-| `components/Onboarding/TasteCalibration/questions.ts` | 59-240 | 6 questions, option effects |
-| `components/Onboarding/TasteCalibration/questions.ts` | 251-332 | `buildCalibrationProfile()` — answers → TasteProfile |
-| `services/archetypeEngine.ts` | 80-267 | 12 scorer functions (score1..score12) |
-| `services/archetypeEngine.ts` | 289-305 | `computeArchetype()` — winner selection |
-| `components/Onboarding/TasteCalibration/index.tsx` | 97-99 | Orchestration: buildProfile → computeArchetype |
+| Archetype | Change |
+|-----------|--------|
+| #6 Dark Passenger | disgust w: 2.5→3.0, ending accepts 'bittersweet', visual accepts 'minimalist' |
+| #7 Visual Poet | visual w: 3.5→2.8, targets: `lush+cinematic` → `lush` only |
+| #8 Nostalgia Keeper | trust w: 2.0→2.5, added visual match (minimalist, cinematic) w=1.0 |
+| #9 Chaos Agent | anger w: 3.0→3.5, disgust w: 2.0→2.5, added `1-fear` w=1.5, visual accepts 'minimalist' |
 
 ---
 
-### Deterministic?
+### Results After Fix
 
-**YES.** Same answers always produce the same archetype. No randomness involved.
+| # | Archetype | Before | After |
+|---|-----------|--------|-------|
+| 1 | Adrenaline Junkie | 413 (13.4%) | 349 (11.4%) |
+| 2 | Mind-Bender | 378 (12.3%) | 340 (11.1%) |
+| 3 | Melancholy Soul | 312 (10.2%) | 341 (11.1%) |
+| 4 | Joy Seeker | 394 (12.8%) | 305 (9.9%) |
+| 5 | Hopeless Romantic | 91 (3.0%) | 34 (1.1%) |
+| 6 | Dark Passenger | **25 (0.8%)** | **37 (1.2%)** ↑ |
+| 7 | Visual Poet | **826 (26.9%)** | **386 (12.6%)** ↓ |
+| 8 | Nostalgia Keeper | **5 (0.2%)** | **423 (13.8%)** ↑↑ |
+| 9 | Chaos Agent | **0 (0.0%)** ❌ | **54 (1.8%)** ✅ |
+| 10 | Zen Wanderer | 75 (2.4%) | 81 (2.6%) |
+| 11 | Truth Seeker | 213 (6.9%) | 251 (8.2%) |
+| 12 | Escapist | 340 (11.1%) | 471 (15.3%) |
+
+**12/12 archetypes reachable. 0 null results.**
 
 ---
 
-### Fix Recommendations (prioritized)
+### Remaining Notes
 
-1. **Quick fix — Q1 options:** Add `anger` and `disgust` effects to relevant Q1 options (e.g., intensity → anger: 0.5)
-2. **Q4 option:** Add 'tragic' to ending choices, or combine with 'bittersweet'
-3. **Q2 option:** Consider adding 'minimalist' visual style
-4. **Era question:** Either add a Q7 for era preference, or add era effects to existing questions
-5. **Weight rebalancing:** Visual Poet at 26.9% suggests Q2 lush/cinematic + slow pace combo is too powerful
+- #5 Hopeless Romantic (1.1%) and #6 Dark Passenger (1.2%) are still rare but reachable
+- This is acceptable: niche archetypes should be rare (specific user profiles)
+- Verification script: `scripts/archetype-analysis.ts`
 
 ---
 
-### Device / Build
-iPhone SE, Build 6 (original report)
+### Files Changed
 
-### Analysis Script
-`scripts/archetype-analysis.ts` — run with `npx ts-node scripts/archetype-analysis.ts`
+- `components/Onboarding/TasteCalibration/questions.ts` — question effects + era_preference support
+- `services/archetypeEngine.ts` — weight rebalancing for #6, #7, #8, #9
+- `scripts/archetype-analysis.ts` — analysis script updated to match

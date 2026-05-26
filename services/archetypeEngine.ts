@@ -158,10 +158,10 @@ function score6(p: TasteProfile): number {
   const e = p.emotional_state;
   return weightedScore([
     { w: 3.0, v: e.fear },
-    { w: 2.5, v: e.disgust },
-    { w: 2.0, v: endingScore(p.ending_preference, 'tragic', 'open') },
+    { w: 3.0, v: e.disgust },
+    { w: 2.0, v: endingScore(p.ending_preference, 'tragic', 'open', 'bittersweet') },
     { w: 1.5, v: socialScore(p.social_context, 'alone') },
-    { w: 1.5, v: visualScore(p.visual_style, 'raw', 'experimental') },
+    { w: 1.5, v: visualScore(p.visual_style, 'raw', 'experimental', 'minimalist') },
     { w: 0.5, v: 1 - e.joy },
   ]);
 }
@@ -173,7 +173,7 @@ function score6(p: TasteProfile): number {
 function score7(p: TasteProfile): number {
   const e = p.emotional_state;
   return weightedScore([
-    { w: 3.5, v: visualScore(p.visual_style, 'lush', 'cinematic') },
+    { w: 2.8, v: visualScore(p.visual_style, 'lush') },
     { w: 2.5, v: p.thematic_depth },
     { w: 2.0, v: paceScore(p.pace_preference, 'slow') },
     { w: 1.5, v: (e.joy + e.surprise) / 2 },
@@ -198,9 +198,10 @@ function score8(p: TasteProfile): number {
   return weightedScore([
     { w: 3.0, v: eraV },
     { w: 2.5, v: p.rewatch_tolerance ? 1 : 0 },
-    { w: 2.0, v: e.trust },
+    { w: 2.5, v: e.trust },
     { w: 1.5, v: endingScore(p.ending_preference, 'hopeful', 'triumphant') },
     { w: 1.0, v: narrativeScore(p.narrative_style, 'linear') },
+    { w: 1.0, v: visualScore(p.visual_style, 'minimalist', 'cinematic') },
   ]);
 }
 
@@ -211,11 +212,12 @@ function score8(p: TasteProfile): number {
 function score9(p: TasteProfile): number {
   const e = p.emotional_state;
   return weightedScore([
-    { w: 3.0, v: e.anger },
+    { w: 3.5, v: e.anger },
     { w: 2.5, v: e.surprise },
-    { w: 2.0, v: e.disgust },
+    { w: 2.5, v: e.disgust },
     { w: 1.5, v: paceScore(p.pace_preference, 'fast') },
-    { w: 1.5, v: visualScore(p.visual_style, 'raw', 'experimental') },
+    { w: 1.5, v: visualScore(p.visual_style, 'raw', 'experimental', 'minimalist') },
+    { w: 1.5, v: 1 - e.fear },
     { w: 0.5, v: endingScore(p.ending_preference, 'open', 'tragic') },
   ]);
 }

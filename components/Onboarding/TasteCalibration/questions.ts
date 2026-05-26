@@ -22,6 +22,7 @@ export interface OptionEffect {
   ending_preference?: TasteProfile['ending_preference'];
   narrative_style?: TasteProfile['narrative_style'];
   social_context?: TasteProfile['social_context'];
+  era_preference?: TasteProfile['era_preference'];
 }
 
 /** Tek bir seçeneğin tanımı */
@@ -67,7 +68,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
         labelKey: 'onboarding.q1a',
         effect: {
           energy_level: 0.9,
-          emotional_state: { fear: 0.6, anticipation: 0.7 },
+          emotional_state: { fear: 0.6, anticipation: 0.7, anger: 0.6, disgust: 0.3 },
         },
       },
       {
@@ -110,7 +111,10 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       {
         image: CalibrationIcons.q2_old_footage,
         labelKey: 'onboarding.q2b',
-        effect: { visual_style: 'raw' },
+        effect: {
+          visual_style: 'minimalist',
+          era_preference: { from: 1940, to: 1985 },
+        },
       },
       {
         image: CalibrationIcons.q2_galactic,
@@ -138,7 +142,10 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       {
         image: CalibrationIcons.q3_masks,
         labelKey: 'onboarding.q3b',
-        effect: { pace_preference: 'medium' },
+        effect: {
+          pace_preference: 'medium',
+          emotional_state: { anger: 0.7, disgust: 0.5 },
+        },
       },
       {
         image: CalibrationIcons.q3_escape,
@@ -161,7 +168,10 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       {
         image: CalibrationIcons.q4_sadness,
         labelKey: 'onboarding.q4b',
-        effect: { ending_preference: 'bittersweet' },
+        effect: {
+          ending_preference: 'tragic',
+          emotional_state: { disgust: 0.4 },
+        },
       },
       {
         image: CalibrationIcons.q4_curious,
@@ -297,6 +307,9 @@ export function buildCalibrationProfile(answers: CalibrationAnswer[]): TasteProf
     }
     if (effect.social_context !== undefined) {
       profile.social_context = effect.social_context;
+    }
+    if (effect.era_preference !== undefined) {
+      profile.era_preference = { ...effect.era_preference };
     }
 
     // Numeric deltas — clamp to [0, 1]

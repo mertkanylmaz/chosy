@@ -44,12 +44,13 @@ interface OptionEffect {
   ending_preference?: string;
   narrative_style?: string;
   social_context?: string;
+  era_preference?: { from: number; to: number };
 }
 
 const Q_OPTIONS: OptionEffect[][] = [
   // Q1 (4 options)
   [
-    { energy_level: 0.9, emotional_state: { fear: 0.6, anticipation: 0.7 } },
+    { energy_level: 0.9, emotional_state: { fear: 0.6, anticipation: 0.7, anger: 0.6, disgust: 0.3 } },
     { thematic_depth: 0.85, emotional_state: { surprise: 0.7, anticipation: 0.6 } },
     { thematic_depth: 0.7, emotional_state: { sadness: 0.8, trust: 0.5 } },
     { energy_level: 0.6, emotional_state: { joy: 0.9 } },
@@ -57,20 +58,20 @@ const Q_OPTIONS: OptionEffect[][] = [
   // Q2 (4 options)
   [
     { visual_style: 'lush' },
-    { visual_style: 'raw' },
+    { visual_style: 'minimalist', era_preference: { from: 1940, to: 1985 } },
     { visual_style: 'experimental' },
     { visual_style: 'cinematic' },
   ],
   // Q3 (3 options)
   [
     { pace_preference: 'fast', energy_level: 0.3 },
-    { pace_preference: 'medium' },
+    { pace_preference: 'medium', emotional_state: { anger: 0.7, disgust: 0.5 } },
     { pace_preference: 'slow', energy_level: -0.2 },
   ],
   // Q4 (4 options)
   [
     { ending_preference: 'hopeful' },
-    { ending_preference: 'bittersweet' },
+    { ending_preference: 'tragic', emotional_state: { disgust: 0.4 } },
     { ending_preference: 'open' },
     { ending_preference: 'triumphant' },
   ],
@@ -117,6 +118,7 @@ function buildProfile(choices: number[]): TasteProfile {
     if (effect.ending_preference !== undefined) profile.ending_preference = effect.ending_preference;
     if (effect.narrative_style !== undefined) profile.narrative_style = effect.narrative_style;
     if (effect.social_context !== undefined) profile.social_context = effect.social_context;
+    if (effect.era_preference !== undefined) profile.era_preference = { ...effect.era_preference };
 
     if (effect.energy_level !== undefined) {
       profile.energy_level = Math.max(0, Math.min(1, profile.energy_level + effect.energy_level));
@@ -202,15 +204,15 @@ const SCORERS: Array<(p: TasteProfile) => number> = [
   ]); },
   // 6 — Dark Passenger
   (p) => { const e = p.emotional_state; return ws([
-    { w: 3.0, v: e.fear }, { w: 2.5, v: e.disgust },
-    { w: 2.0, v: endingMatch(p.ending_preference, 'tragic', 'open') },
+    { w: 3.0, v: e.fear }, { w: 3.0, v: e.disgust },
+    { w: 2.0, v: endingMatch(p.ending_preference, 'tragic', 'open', 'bittersweet') },
     { w: 1.5, v: socialMatch(p.social_context, 'alone') },
-    { w: 1.5, v: visualMatch(p.visual_style, 'raw', 'experimental') },
+    { w: 1.5, v: visualMatch(p.visual_style, 'raw', 'experimental', 'minimalist') },
     { w: 0.5, v: 1 - e.joy },
   ]); },
   // 7 — Visual Poet
   (p) => { const e = p.emotional_state; return ws([
-    { w: 3.5, v: visualMatch(p.visual_style, 'lush', 'cinematic') },
+    { w: 2.8, v: visualMatch(p.visual_style, 'lush') },
     { w: 2.5, v: p.thematic_depth }, { w: 2.0, v: paceScore(p.pace_preference, 'slow') },
     { w: 1.5, v: (e.joy + e.surprise) / 2 }, { w: 0.5, v: socialMatch(p.social_context, 'alone') },
   ]); },
@@ -221,15 +223,17 @@ const SCORERS: Array<(p: TasteProfile) => number> = [
     const eraV = era.from < 1970 ? 1.0 : era.from < 1990 ? 0.8 : era.to < 2000 ? 0.6 : era.to < 2010 ? 0.35 : 0;
     return ws([
       { w: 3.0, v: eraV }, { w: 2.5, v: p.rewatch_tolerance ? 1 : 0 },
-      { w: 2.0, v: e.trust }, { w: 1.5, v: endingMatch(p.ending_preference, 'hopeful', 'triumphant') },
+      { w: 2.5, v: e.trust }, { w: 1.5, v: endingMatch(p.ending_preference, 'hopeful', 'triumphant') },
       { w: 1.0, v: narrativeMatch(p.narrative_style, 'linear') },
+      { w: 1.0, v: visualMatch(p.visual_style, 'minimalist', 'cinematic') },
     ]);
   },
   // 9 — Chaos Agent
   (p) => { const e = p.emotional_state; return ws([
-    { w: 3.0, v: e.anger }, { w: 2.5, v: e.surprise }, { w: 2.0, v: e.disgust },
+    { w: 3.5, v: e.anger }, { w: 2.5, v: e.surprise }, { w: 2.5, v: e.disgust },
     { w: 1.5, v: paceScore(p.pace_preference, 'fast') },
-    { w: 1.5, v: visualMatch(p.visual_style, 'raw', 'experimental') },
+    { w: 1.5, v: visualMatch(p.visual_style, 'raw', 'experimental', 'minimalist') },
+    { w: 1.5, v: 1 - e.fear },
     { w: 0.5, v: endingMatch(p.ending_preference, 'open', 'tragic') },
   ]); },
   // 10 — Zen Wanderer
@@ -270,9 +274,9 @@ const ARCHETYPE_NAMES: Record<number, string> = {
 
 const Q_LABELS = [
   ['intensity', 'cerebral', 'emotional', 'bright'],
-  ['lush/visual_art', 'raw/old_footage', 'experimental/galactic', 'cinematic'],
+  ['lush/visual_art', 'minimalist/old_footage', 'experimental/galactic', 'cinematic'],
   ['fast/scifi', 'medium/masks', 'slow/escape'],
-  ['hopeful/daydream', 'bittersweet/sadness', 'open/curious', 'triumphant/achievement'],
+  ['hopeful/daydream', 'tragic/sadness', 'open/curious', 'triumphant/achievement'],
   ['alone/soundtrack', 'couple/relationships', 'friends/casual', 'family/cozy'],
   ['dialogue-driven/social', 'nonlinear/randomize', 'linear/continue', 'anthology/backstory'],
 ];
