@@ -11,7 +11,7 @@
  *   Reveal "Let's Go" → finishOnboarding() → /(tabs)
  *   Skip (her aşamada) → finishOnboarding()
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -29,6 +29,7 @@ import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
@@ -182,6 +183,11 @@ export default function OnboardingScreen() {
   const [phase, setPhase] = useState<Phase>('slides');
   const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
 
+  // ── PostHog: onboarding_started (mount) ───────────────────────────────────
+  useEffect(() => {
+    posthogAnalytics.track('onboarding_started');
+  }, []);
+
   /**
    * AsyncStorage'a onboarding bitisini yazar.
    * finishOnboarding ve handleRevealFinish tarafindan paylasilan yardimci.
@@ -252,12 +258,14 @@ export default function OnboardingScreen() {
    */
   const handleSwipeAction = useCallback(() => {
     hapticLight();
+    posthogAnalytics.track('onboarding_step_completed', { step: 1 });
     setPhase('calibration');
   }, []);
 
   /** Calibration tamamlandi → reveal'a gec + P8.2: sonuclari DB'ye yaz */
   const handleCalibrationComplete = useCallback(
     (archetypeId: number | null, answers: CalibrationAnswer[]) => {
+      posthogAnalytics.track('onboarding_step_completed', { step: 2 });
       setRevealArchetypeId(archetypeId);
       setPhase('reveal');
       const calibrationProfile = buildCalibrationProfile(answers);
@@ -274,6 +282,8 @@ export default function OnboardingScreen() {
    */
   const handleRevealFinish = useCallback(async () => {
     hapticSuccess();
+    posthogAnalytics.track('onboarding_step_completed', { step: 3 });
+    posthogAnalytics.track('archetype_revealed', { archetype_id: revealArchetypeId });
     await markOnboardingComplete();
     router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
   }, [router, markOnboardingComplete]);
