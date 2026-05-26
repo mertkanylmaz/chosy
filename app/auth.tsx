@@ -124,12 +124,19 @@ export default function AuthScreen() {
         // Kullanıcı iptal etti — sessizce geç
       } else if (result.error === 'not_available') {
         setErrorMsg(t('auth.errorNotAvailable'));
+      } else if (result.error === 'network') {
+        setErrorMsg(t('auth.errorNetwork'));
       } else {
         setErrorMsg(t('auth.errorGeneral'));
       }
     } catch (err) {
       logger.error('[auth] Apple handler hatası:', err);
-      setErrorMsg(t('auth.errorGeneral'));
+      const msg = (err instanceof Error ? err.message : '').toLowerCase();
+      if (msg.includes('network') || msg.includes('fetch') || msg.includes('timeout') || msg.includes('offline')) {
+        setErrorMsg(t('auth.errorNetwork'));
+      } else {
+        setErrorMsg(t('auth.errorGeneral'));
+      }
     } finally {
       setLoading('idle');
     }

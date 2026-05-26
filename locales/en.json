@@ -484,6 +484,7 @@
     "skipAnonymous": "Explore without an account",
     "skipNote": "Your watchlist won't be saved without an account.",
     "errorGeneral": "Something went wrong. Please try again.",
+    "errorNetwork": "No internet connection. Check your network and try again.",
     "errorNotAvailable": "Sign-in is not available on this device.",
     "requiredNote": "Sign in to start discovering movies tailored to your mood."
   },

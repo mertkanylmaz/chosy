@@ -57,7 +57,27 @@ export function configureGoogleSignIn(): void {
 /** Auth işlemi sonuç tipi */
 export type AuthResult =
   | { success: true; isNewUser: boolean }
-  | { success: false; error: 'canceled' | 'not_available' | 'failed'; message?: string };
+  | { success: false; error: 'canceled' | 'not_available' | 'network' | 'failed'; message?: string };
+
+/**
+ * Hata mesajından network hatası olup olmadığını tespit eder.
+ * Supabase, Apple SDK ve fetch kaynaklı hatalar için ortak kontrol.
+ */
+function isNetworkError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    msg.includes('network') ||
+    msg.includes('internet') ||
+    msg.includes('offline') ||
+    msg.includes('timeout') ||
+    msg.includes('timed out') ||
+    msg.includes('fetch') ||
+    msg.includes('dns') ||
+    msg.includes('econnrefused') ||
+    msg.includes('could not connect') ||
+    msg.includes('no connection')
+  );
+}
 
 // ─── Yardımcı Fonksiyonlar ────────────────────────────────────────────────────
 
@@ -202,6 +222,9 @@ export async function signInWithApple(): Promise<AuthResult> {
 
     if (error) {
       logger.error('[authService] Apple signInWithIdToken hatası:', error.message);
+      if (isNetworkError(error)) {
+        return { success: false, error: 'network', message: error.message };
+      }
       return { success: false, error: 'failed', message: error.message };
     }
 
@@ -228,6 +251,11 @@ export async function signInWithApple(): Promise<AuthResult> {
     // Kullanıcı dialog'u kapattı
     if ((err as { code?: string }).code === 'ERR_REQUEST_CANCELED') {
       return { success: false, error: 'canceled' };
+    }
+    // Network hatası — offline veya DNS çözülemedi
+    if (isNetworkError(err)) {
+      logger.warn('[authService] Apple sign-in network hatası:', err);
+      return { success: false, error: 'network' };
     }
     logger.error('[authService] Apple sign-in beklenmedik hata:', err);
     return {

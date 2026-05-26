@@ -484,6 +484,7 @@
     "skipAnonymous": "Hesapsız keşfet",
     "skipNote": "Hesap olmadan izleme listen kaydedilmez.",
     "errorGeneral": "Bir şeyler ters gitti. Lütfen tekrar dene.",
+    "errorNetwork": "İnternet bağlantısı yok. Ağını kontrol edip tekrar dene.",
     "errorNotAvailable": "Bu cihazda giriş yapılamıyor.",
     "requiredNote": "Ruh haline uygun filmler keşfetmek için giriş yap."
   },
