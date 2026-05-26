@@ -1,0 +1,70 @@
+{
+  "snapshot_date": "2026-05-26",
+  "sprint": "Sprint 1 v2.0 START",
+  "context": "Pre-enrichment, pre-reprofile, pre-pool-expansion",
+  "db_state": {
+    "total_films": 3236,
+    "rule_based_films": 1115,
+    "null_vector_films": 143,
+    "missing_director": 647,
+    "missing_country": 659
+  },
+  "test_run": {
+    "total_cases": 40,
+    "active_cases": 39,
+    "skipped": 1,
+    "passed": 35,
+    "failed": 4,
+    "partial": 0,
+    "score": 90,
+    "duration_seconds": 45
+  },
+  "category_breakdown": {
+    "mood": { "total": 11, "passed": 8, "pct": 73 },
+    "genre": { "total": 11, "passed": 11, "pct": 100 },
+    "director": { "total": 8, "passed": 7, "pct": 88 },
+    "edge_case": { "total": 9, "passed": 9, "pct": 100 }
+  },
+  "worst_5_cases": [
+    {
+      "id": "sprint1-a04-anxious-no-horror",
+      "input": "kaygili, gerilimli, ama korku filmi olmasin",
+      "reason": "Forbidden hit: 'It' matched a title via fuzzy substring (false positive in title matcher). No expected title in top10. Top films: Surrounded, Kraken, The 400 Blows — poor relevance for thriller request."
+    },
+    {
+      "id": "sprint1-a02-tired-light",
+      "input": "yorgun ama film izleyecegim, cok yogun olmasin",
+      "reason": "No films with similarity >= 0.85. Top films (Arthur the King, Stand and Deliver, Life of Pi) lack expected comfort-watch feel. Max similarity 0.813."
+    },
+    {
+      "id": "dir-02-wes-anderson",
+      "input": "Wes Anderson estetigi, pastel renkler, simetri, quirky",
+      "reason": "Anderson filter yields few films. No sim >= 0.85. Top results (Pina, NeverEnding Story, The Fall) not Anderson films. DB may lack Anderson filmography."
+    },
+    {
+      "id": "mood-06-dark-disturbing",
+      "input": "karanlik ve rahatsiz edici, icimi urspertecek",
+      "reason": "Expected emotion: fear, but top high-sim films have sadness/disgust dominant. No expected title (Zodiac, Se7en, etc.) in top10. Good dark films returned but not the expected ones."
+    },
+    {
+      "id": "mood-04-thought-provoking",
+      "input": "dusundurecek, kafa yorduracak, felsefi bir sey",
+      "reason": "PASSED but borderline — emotion match at sim 0.844 (just under 0.85 threshold). Would fail with stricter threshold."
+    }
+  ],
+  "best_5_cases": [
+    { "id": "sprint1-a01-rainy-hopeful", "input": "yagmurlu bir aksam, huzunlu ama umutlu bir seyler", "score": "PASS (title match, sim: 0.983)" },
+    { "id": "sprint1-e05-rewatch-classic", "input": "tekrar izlemek istedigim bir film, eskimemis", "score": "PASS (emotion:trust, sim: 0.974)" },
+    { "id": "sprint1-e03-recent-films", "input": "yeni bir sey, son 5 yildan", "score": "PASS (emotion:anticipation, sim: 0.973)" },
+    { "id": "tr-04-nostalgic-childhood", "input": "Cocuklugumu hatirlatan, 90lar vibes, eskiye ozlem", "score": "PASS (emotion:trust, sim: 0.965)" },
+    { "id": "sprint1-e02-short-runtime", "input": "kisa bir film, 90 dakikadan az", "score": "PASS (edge_case, sim: 0.964)" }
+  ],
+  "sprint_1_target_score": 85,
+  "notes": [
+    "sprint1-a04 forbidden 'It' is a false positive — fuzzy title matcher matches substring 'it' in other film titles",
+    "Mood category is weakest at 73% — driven by dark/anxious profiles not matching expected Western canon films",
+    "Edge cases 100% — system is robust to empty/emoji/long/minimal inputs",
+    "Genre 100% — cultural context and filter-based queries work well",
+    "Already above 85 target — focus on mood category improvement"
+  ]
+}
