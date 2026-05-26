@@ -2,7 +2,7 @@
   "expo": {
     "name": "Chosy.ai",
     "slug": "chosy-ai",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "chosy",
@@ -15,14 +15,14 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.chosy.ai",
-      "buildNumber": "6",
+      "buildNumber": "33",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.chosy.ai",
-      "versionCode": 6,
+      "versionCode": 33,
       "adaptiveIcon": {
         "backgroundColor": "#0A0A0A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -46,6 +46,13 @@
           "icon": "./assets/images/icon.png",
           "color": "#D4A843",
           "defaultChannel": "default"
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "chosy",
+          "project": "react-native"
         }
       ]
     ],
