@@ -56,10 +56,12 @@ import {
   markMilestoneSeen,
 } from '@/services/gamification';
 import { isWatchlistFull, isStreakMilestone } from '@/services/conversion';
+import { checkAndConsumeQuota } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import type { UserMilestone } from '@/services/gamification';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -247,9 +249,15 @@ export default function DiscoverScreen() {
       return;
     }
     if (managerFilms.length > lastSyncedLengthRef.current) {
+      const isFirstBatch = lastSyncedLengthRef.current === 0;
       const newFilms = managerFilms.slice(lastSyncedLengthRef.current);
       lastSyncedLengthRef.current = managerFilms.length;
       setDisplayFilms((prev) => [...prev, ...newFilms]);
+
+      // PostHog: film_recommended — ilk batch geldiginde fire
+      if (isFirstBatch) {
+        posthogAnalytics.track('film_recommended', { film_count: managerFilms.length });
+      }
     }
   }, [managerFilms]);
 
@@ -297,9 +305,25 @@ export default function DiscoverScreen() {
   }, [showNextCelebration, isPremium, triggerPaywall]);
 
   const handleSwipeRight = useCallback(
-    (film: Film) => {
-      onSwipeFilm(film, 'right');
+    async (film: Film) => {
+      // Karti her durumda listeden cikar — swipe animasyonu zaten oynadi
       setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
+
+      // ── Slot quota check — free user kota kontrolu ──────────────────────
+      // Premium kullanicilar icin atlaniyor (sinirsiz slot).
+      // Kota bitmisse: filmi watchlist'e EKLEME, paywall goster.
+      if (!isPremium) {
+        const uid = await getAppUserId();
+        if (uid) {
+          const quota = await checkAndConsumeQuota(uid, 'slot');
+          if (!quota.allowed) {
+            triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
+            return;
+          }
+        }
+      }
+
+      onSwipeFilm(film, 'right');
       addLastSessionFilm(film);
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setShowSaveToast(true);
