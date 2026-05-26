@@ -15,6 +15,27 @@ import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '..
 import { supabase } from './supabase';
 import { tasteProfileToVector } from './vectorEncoder';
 
+// ─── Yardımcı: Network Hata Tespiti ──────────────────────────────────────────
+
+/**
+ * Supabase PostgrestError'un network kaynakli olup olmadigini kontrol eder.
+ * Offline, DNS hatasi veya timeout durumlarinda true doner.
+ * true ise retry'lar atlanir ve UI'a 'network' hata tipi iletilir (BUG-004).
+ */
+function isNetworkLikeError(error: { message?: string; code?: string }): boolean {
+  const msg = (error.message ?? '').toLowerCase();
+  return (
+    msg.includes('network') ||
+    msg.includes('fetch') ||
+    msg.includes('timeout') ||
+    msg.includes('abort') ||
+    msg.includes('dns') ||
+    msg.includes('econnrefused') ||
+    msg.includes('failed to') ||
+    error.code === 'PGRST301' // Supabase connection refused
+  );
+}
+
 /** AsyncStorage anahtarı — Profile ekranındaki AI slider değerleri */
 const AI_PREFS_KEY = 'chosy_ai_preferences';
 
@@ -387,6 +408,8 @@ function applyFilters(rows: FilmTableRow[], filters?: FilmFilters): FilmTableRow
  * Supabase films tablosundan tüm filmleri çekip JavaScript tarafında
  * profile göre sıralayarak en iyi `limit` filmi döndürür.
  * Tablo boşsa null döner. RPC hata verdiğinde çağrılır.
+ *
+ * Network hatasi varsa throw eder — cagiran taraf 'network' ErrorType alir.
  */
 async function getFallbackFromSupabase(
   profile: TasteProfile,
@@ -398,10 +421,20 @@ async function getFallbackFromSupabase(
     .from('films')
     .select('id, title, year, poster_url, backdrop_url, genres, overview, runtime, vote_average, director, country');
 
-  if (error || !data || data.length === 0) {
+  if (error) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
-      console.log('[recommendations] films tablosu sorgusu başarısız veya boş:', error?.message);
+      console.log('[recommendations] films tablosu sorgusu hatasi:', error.message);
+    }
+    // Network/Supabase hatasi → throw et, UI "No connection" gostersin
+    // (Bos veri ile network hatasini ayirt etmek icin — BUG-004)
+    throw new TypeError(`Network request failed: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log('[recommendations] films tablosu bos');
     }
     return null;
   }
@@ -466,6 +499,13 @@ async function getFilmsWithRelaxation(
     ...(era ? { year_from: era.from, year_to: era.to } : {}),
     ...excl,
   });
+
+  // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
+  // Boylece 4 basarisiz network istegi yerine 1 istek + aninda hata gosterimi
+  if (res.error && isNetworkLikeError(res.error)) {
+    throw new TypeError(`Network request failed: ${res.error.message}`);
+  }
+
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
