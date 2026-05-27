@@ -1,0 +1,60 @@
+{
+  "snapshot_date": "2026-05-27",
+  "task": "TASK 1.2 — Films Metadata Enrichment",
+  "enrichment_stats": {
+    "total_processed": 535,
+    "updates": 534,
+    "unchanged": 1,
+    "failed": 0,
+    "duration_minutes": 6.3,
+    "api_calls": 535,
+    "field_updates": {
+      "director": 137,
+      "country": 135,
+      "cast": 443,
+      "cast_json": 224,
+      "tmdb_keywords": 358,
+      "imdb_id": 437,
+      "original_language": 447
+    }
+  },
+  "field_coverage_before": {
+    "director_null": 647,
+    "country_null": 646,
+    "cast_null": 954,
+    "cast_json_null": 2460,
+    "tmdb_keywords_null": 954,
+    "imdb_id_null": 956,
+    "original_language_null": 954
+  },
+  "field_coverage_after": {
+    "director_null": 510,
+    "country_null": 511,
+    "cast_null": 511,
+    "cast_json_null": 2236,
+    "tmdb_keywords_null": 596,
+    "imdb_id_null": 519,
+    "original_language_null": 507
+  },
+  "adversarial_scores": {
+    "before_v1": 83,
+    "before_v2": 83,
+    "after_v1": 82,
+    "after_v2": 83
+  },
+  "adversarial_category_scores_v2": {
+    "diversity": "85%",
+    "tr_persona": "84%",
+    "anti_mainstream": "79%",
+    "mood_subtlety": "83%",
+    "strict_negative": "85%"
+  },
+  "notes": [
+    "510 films still have NULL director — TMDb has no director info for these (documentaries, shorts, etc.)",
+    "cast_json still 2236 NULL — mostly films with existing data, 535 processed had lower overlap",
+    "v2 shows +3% diversity improvement over v1 (85% vs 82%)",
+    "v2 dimension avg Diversity: 17.9/20 vs v1 17.3/20",
+    "v2 Emotion Match: 13/20 vs v1 12.3/20",
+    "ADV-B4 still shows director concentration issue even with cap=3 (5 films from same director)"
+  ]
+}

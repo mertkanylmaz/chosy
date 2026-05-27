@@ -191,6 +191,7 @@ export interface TmdbCastMember {
   name: string;
   character: string;
   order: number;
+  profile_path: string | null;
 }
 
 export interface TmdbCrewMember {
