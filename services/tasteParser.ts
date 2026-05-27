@@ -49,7 +49,14 @@ async function checkRateLimit(): Promise<void> {
 type EdgeResponse = TasteProfile & {
   profile_name?: string;
   profile_description?: string;
+  search_id?: string;
 };
+
+/** parseMood return type — includes searchId for downstream logging */
+export interface ParseMoodResult {
+  profile: TasteProfile;
+  searchId: string | null;
+}
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
   const {
@@ -1345,21 +1352,27 @@ function ruleBased(rawInput: string): TasteProfile {
  * Claude API (Edge Function) birincil kaynaktır.
  * Timeout (5 sn), 404 veya hata durumunda kapsamlı rule-based fallback devreye girer.
  *
+ * Sprint 1 v4.0: Returns searchId from edge function for downstream logging.
+ *
  * @param input - Kullanıcının yazdığı ham mood metni (TR veya EN)
  */
-export async function parseMood(input: string): Promise<TasteProfile> {
+export async function parseMood(input: string): Promise<ParseMoodResult> {
   try {
     await checkRateLimit();
     const raw = await callEdgeFunction(input);
-    return validateAndNormalize(raw);
+    const searchId = raw.search_id ?? null;
+    return { profile: validateAndNormalize(raw), searchId };
   } catch (error) {
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.warn('[tasteParser] Claude API failed, using rule-based fallback:', error);
     }
-    return ruleBased(input);
+    return { profile: ruleBased(input), searchId: null };
   }
 }
 
 /** @deprecated parseTaste yerine parseMood kullanın. */
-export const parseTaste = parseMood;
+export async function parseTaste(input: string): Promise<TasteProfile> {
+  const result = await parseMood(input);
+  return result.profile;
+}

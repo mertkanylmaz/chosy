@@ -62,6 +62,7 @@ import { FilmFilters, TasteProfile } from '@/types';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -127,7 +128,7 @@ export default function MoodScreen() {
   /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
-  const { setMoodResult, setCurrentSessionId, setLastMoodText } = useMood();
+  const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
   const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
@@ -207,6 +208,7 @@ export default function MoodScreen() {
 
     hapticMedium();
     Keyboard.dismiss();
+    posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
     // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
     // Onboarding'de kota tuketme (ilk arama bedava)
@@ -214,6 +216,7 @@ export default function MoodScreen() {
       const quotaResult = await consumeQuota('search');
       setLastQuotaResult(quotaResult);
       if (!quotaResult.allowed) {
+        posthogAnalytics.track('quota_exhausted', { quota_type: 'search' });
         // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
         const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
         if (!shown) {
@@ -236,17 +239,19 @@ export default function MoodScreen() {
 
     try {
       setMoodError(null);
-      const [profile] = await Promise.all([
+      const [parseResult] = await Promise.all([
         parseMood(trimmed),
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
       ]);
+
+      const { profile, searchId } = parseResult;
 
       if (filters.yearRange !== null) {
         profile.era_preference = yearRangeToEra(filters.yearRange);
       }
 
-      // consumeQuota zaten arama oncesinde atomic olarak hem kontrol etti hem kayit yazdi.
-      // Ek recordSearch cagrisi gerekmiyor.
+      // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
+      setLastSearchId(searchId);
 
       setTasteProfile(profile);
       setPhase('result');
@@ -264,6 +269,10 @@ export default function MoodScreen() {
         // eslint-disable-next-line no-console
         console.log('[MoodScreen] parseMood hatası:', err instanceof Error ? err.message : err);
       }
+      posthogAnalytics.track('mood_search_failed', {
+        error: err instanceof Error ? err.message : 'unknown',
+        mood_length: trimmed.length,
+      });
       const userError = toUserError(err, 'mood');
       setMoodError({ type: userError.type, message: userError.message });
       setPhase('input');

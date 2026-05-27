@@ -647,16 +647,21 @@ export interface RecommendationResult {
  *   2. Daraltılmış havuzda vektör similarity sıralaması çalışır
  *   3. RPC başarısız olursa JS fallback devreye girer
  *
+ * Sprint 1 v4.0: searchId parametresi ile mood_searches tablosu
+ * recommended_film_ids ve rpc_version ile guncellenir (fire-and-forget).
+ *
  * @param profile     - Kullanıcının ayrıştırılmış TasteProfile'ı
  * @param limit       - Kaç film isteniyor
  * @param excludeIds  - Daha önce gösterilen film id'leri
  * @param filters     - İsteğe bağlı ek filtreler (yıl, puan, bölge, yönetmen)
+ * @param searchId    - parse-mood edge function'dan donen mood_searches row ID
  */
 export async function getRecommendations(
   profile: TasteProfile,
   limit = 30,
   excludeIds: string[] = [],
   filters?: FilmFilters,
+  searchId?: string | null,
 ): Promise<RecommendationResult> {
   // ── Adım 1: TasteProfile logu ────────────────────────────────────────────
   if (__DEV__) {
@@ -740,6 +745,32 @@ export async function getRecommendations(
       `[recommendations] Supabase'den ${films.length} film geldi:`,
       films.slice(0, 3).map((f) => `${f.title} (%${f.matchScore}) pick=${f.pick_type ?? '-'}`),
     );
+  }
+
+  // Sprint 1 v4.0: mood_searches update with film IDs (fire-and-forget)
+  if (searchId) {
+    const rpcVersion = USE_MATCH_FILMS_V2 ? 'match_films_v2' : 'match_films';
+    supabase
+      .from('mood_searches')
+      .update({
+        recommended_film_ids: films.map((f) => f.id),
+        rpc_version: rpcVersion,
+      })
+      .eq('id', searchId)
+      .then(
+        () => {
+          if (__DEV__) {
+            // eslint-disable-next-line no-console
+            console.log(`[recommendations] mood_searches updated: ${searchId} → ${films.length} films`);
+          }
+        },
+        (err) => {
+          if (__DEV__) {
+            // eslint-disable-next-line no-console
+            console.log('[recommendations] mood_searches update failed:', err);
+          }
+        },
+      );
   }
 
   return { films, source: 'supabase' };

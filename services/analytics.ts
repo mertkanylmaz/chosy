@@ -17,7 +17,11 @@ type AnalyticsEvent =
   | 'slot_film_accepted'
   | 'slot_film_rerolled'
   | 'slot_premium_paywall_shown'
-  | 'slot_premium_paywall_converted';
+  | 'slot_premium_paywall_converted'
+  | 'mood_search_requested'
+  | 'mood_search_completed'
+  | 'mood_search_failed'
+  | 'mood_search_zero_results';
 
 interface EventPayload {
   event: AnalyticsEvent;
@@ -115,4 +119,51 @@ export function trackSlotPremiumPaywallShown(variant: SlotVariant): void {
 /** Free user paywall'dan satin alma yapti */
 export function trackSlotPremiumPaywallConverted(variant: SlotVariant): void {
   trackEvent({ event: 'slot_premium_paywall_converted', variant });
+}
+
+// ─── Mood Search Events (Sprint 1 v4.0) ────────────────────────────────────
+
+/** Kullanici mood arama baslatti */
+export function trackMoodSearchRequested(moodLength: number, wordCount: number): void {
+  trackEvent({
+    event: 'mood_search_requested',
+    metadata: { mood_length: moodLength, word_count: wordCount },
+  });
+}
+
+/** Mood arama basariyla tamamlandi */
+export function trackMoodSearchCompleted(params: {
+  searchId: string | null;
+  resultCount: number;
+  rpcVersion: string;
+  profileName?: string;
+}): void {
+  trackEvent({
+    event: 'mood_search_completed',
+    metadata: {
+      search_id: params.searchId,
+      result_count: params.resultCount,
+      rpc_version: params.rpcVersion,
+      profile_name: params.profileName,
+    },
+  });
+}
+
+/** Mood arama hata ile bitti */
+export function trackMoodSearchFailed(errorCode: string, moodLength: number): void {
+  trackEvent({
+    event: 'mood_search_failed',
+    metadata: { error_code: errorCode, mood_length: moodLength },
+  });
+}
+
+/** Mood arama sonuc donmedi (anomali) */
+export function trackMoodSearchZeroResults(searchId: string | null, moodTextPreview: string): void {
+  trackEvent({
+    event: 'mood_search_zero_results',
+    metadata: {
+      search_id: searchId,
+      mood_text_preview: moodTextPreview.slice(0, 50),
+    },
+  });
 }

@@ -33,6 +33,11 @@ interface MoodState {
    * Home Header'daki LastSessionCard için. Yeni session başlayınca sıfırlanır.
    */
   lastSessionFilms: Film[];
+  /**
+   * Sprint 1 v4.0: parse-mood edge function'dan donen mood_searches row ID.
+   * recommendations.ts bu ID ile film sonuclarini mood_searches'e yazar.
+   */
+  lastSearchId: string | null;
   /** Yeni mood analizi tamamlandığında çağrılır */
   setMoodResult: (profile: TasteProfile, filters: FilmFilters) => void;
   /** Mevcut mood temizlenir (yeni mood başlatıldığında) */
@@ -45,6 +50,8 @@ interface MoodState {
   setLastMoodText: (text: string) => void;
   /** Sağa swipe edilen filmi son session listesine ekler — max 5 film tutulur */
   addLastSessionFilm: (film: Film) => void;
+  /** Sprint 1 v4.0: parse-mood search_id set eder */
+  setLastSearchId: (id: string | null) => void;
 }
 
 const MoodContext = createContext<MoodState | null>(null);
@@ -59,6 +66,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [currentSessionId, setCurrentSessionIdState] = useState<string | null>(null);
   const [lastMoodText, setLastMoodTextState] = useState<string | null>(null);
   const [lastSessionFilms, setLastSessionFilms] = useState<Film[]>([]);
+  const [lastSearchId, setLastSearchIdState] = useState<string | null>(null);
 
   /**
    * Yeni mood sonucu gelince profil + filtreler güncellenir.
@@ -105,6 +113,11 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  /** Sprint 1 v4.0: parse-mood search_id set eder */
+  const setLastSearchId = useCallback((id: string | null) => {
+    setLastSearchIdState(id);
+  }, []);
+
   return (
     <MoodContext.Provider
       value={{
@@ -114,12 +127,14 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
         currentSessionId,
         lastMoodText,
         lastSessionFilms,
+        lastSearchId,
         setMoodResult,
         clearMood,
         setPresetMoodText,
         setCurrentSessionId,
         setLastMoodText,
         addLastSessionFilm,
+        setLastSearchId,
       }}
     >
       {children}

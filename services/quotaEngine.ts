@@ -157,12 +157,9 @@ export async function checkAndConsumeQuota(
     // Consume: sayaci artir
     await incrementCount(key, used);
 
-    // Search ise mood_searches'a da yaz (analytics icin)
-    if (quotaType === 'search') {
-      recordMoodSearch(userId).catch((err) => {
-        logger.warn('[quota] recordMoodSearch background failed:', err);
-      });
-    }
+    // Sprint 1 v4.0: mood_searches INSERT artik parse-mood edge function'da
+    // yapiliyor (enriched — mood_text, parsed_profile, latency, tokens).
+    // Eski recordMoodSearch cagrisi kaldirildi (double insert onlendi).
 
     return {
       allowed: true,

@@ -249,7 +249,7 @@ export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
 ): FeedManager {
-  const { currentSessionId } = useMood();
+  const { currentSessionId, lastSearchId } = useMood();
   const [state, dispatch] = useReducer(feedReducer, initialState);
 
   /** Arka plan yüklemesi devam ediyorsa duplicate isteği engeller */
@@ -262,10 +262,14 @@ export function useFeedManager(
   const profileRef = useRef(moodProfile);
   const filtersRef = useRef(filters);
 
+  /** Sprint 1 v4.0: parse-mood'dan donen search_id — ilk batch'te kullanilir */
+  const searchIdRef = useRef(lastSearchId);
+
   useEffect(() => {
     profileRef.current = moodProfile;
     filtersRef.current = filters;
-  }, [moodProfile, filters]);
+    searchIdRef.current = lastSearchId;
+  }, [moodProfile, filters, lastSearchId]);
 
   /** Kullanıcı DB UUID'si; surprise picks ve vektör güncellemesi için */
   const userIdRef = useRef<string | null>(null);
@@ -392,15 +396,19 @@ export function useFeedManager(
             BATCH_SIZE,
             allExcludeIds,
             filtersRef.current,
+            null, // searchId — surprise fallback, logging unnecessary
           );
           dispatch({ type: 'ADD_FILMS', films: fallback.films });
         }
       } else {
+        // Sprint 1 v4.0: ilk batch'te searchId gonder, sonrakilerinde null
+        const effectiveSearchId = loadedCount === 0 ? searchIdRef.current : null;
         const result = await getRecommendations(
           profileRef.current,
           BATCH_SIZE,
           allExcludeIds,
           filtersRef.current,
+          effectiveSearchId,
         );
 
         if (result.films.length === 0 && loadedCount === 0) {

@@ -9,6 +9,52 @@ import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
 
+// ─── Sprint 1 v4.0 — Async Logging Helper ────────────────────────────────────
+
+/**
+ * Fire-and-forget mood search logging.
+ * Inserts enriched row into mood_searches for production debugging.
+ * Errors are silently caught — never affects user-facing response.
+ */
+async function logMoodSearch(params: {
+  userId: string;
+  moodText?: string;
+  parsedProfile: Record<string, unknown> | null;
+  latencyMs: number;
+  tierUsed?: number;
+  cacheHit?: boolean;
+  errorCode?: string;
+  llmTokensIn?: number;
+  llmTokensOut?: number;
+}): Promise<string | null> {
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const admin = createClient(supabaseUrl, supabaseServiceKey)
+
+    const { data } = await admin
+      .from('mood_searches')
+      .insert({
+        user_id: params.userId,
+        mood_text: params.moodText?.slice(0, 500) || null,
+        parsed_profile: params.parsedProfile,
+        latency_ms: params.latencyMs,
+        tier_used: params.tierUsed || null,
+        cache_hit: params.cacheHit || false,
+        error_code: params.errorCode || null,
+        llm_tokens_in: params.llmTokensIn || null,
+        llm_tokens_out: params.llmTokensOut || null,
+      })
+      .select('id')
+      .single()
+
+    return data?.id || null
+  } catch (e) {
+    console.error('[parse-mood] log failed:', e)
+    return null
+  }
+}
+
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
 const CORS_HEADERS = {
@@ -152,9 +198,21 @@ serve(async (req: Request): Promise<Response> => {
     }
   }
 
+  const startTime = Date.now()
+
   // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
   const quotaCheck = await checkSearchQuota(req)
   if (!quotaCheck.allowed) {
+    // Log quota exceeded (no mood_text available yet — body not parsed)
+    if (quotaCheck.userId) {
+      logMoodSearch({
+        userId: quotaCheck.userId,
+        parsedProfile: null,
+        latencyMs: Date.now() - startTime,
+        errorCode: 'QUOTA_EXCEEDED',
+      }).catch(() => {})
+    }
+
     return new Response(
       JSON.stringify({
         error: 'Daily search quota exceeded',
@@ -177,6 +235,15 @@ serve(async (req: Request): Promise<Response> => {
       throw new Error('raw_input too long')
     }
   } catch {
+    if (quotaCheck.userId) {
+      logMoodSearch({
+        userId: quotaCheck.userId,
+        parsedProfile: null,
+        latencyMs: Date.now() - startTime,
+        errorCode: 'INVALID_INPUT',
+      }).catch(() => {})
+    }
+
     return new Response(
       JSON.stringify({ error: 'raw_input string is required', code: 'INVALID_INPUT' }),
       { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
@@ -202,6 +269,10 @@ serve(async (req: Request): Promise<Response> => {
       messages: [{ role: 'user', content: rawInput }],
     })
 
+    // Token usage tracking
+    const llmTokensIn = message.usage?.input_tokens || 0
+    const llmTokensOut = message.usage?.output_tokens || 0
+
     const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
 
     // Markdown code block varsa temizle
@@ -210,13 +281,41 @@ serve(async (req: Request): Promise<Response> => {
 
     const parsed = JSON.parse(jsonString)
 
+    const latencyMs = Date.now() - startTime
+
+    // Async log — response'u beklemez
+    let searchId: string | null = null
+    if (quotaCheck.userId) {
+      searchId = await logMoodSearch({
+        userId: quotaCheck.userId,
+        moodText: rawInput,
+        parsedProfile: parsed,
+        latencyMs,
+        llmTokensIn,
+        llmTokensOut,
+        tierUsed: 3, // Sprint 1.A: hepsi tier 3, 1.C'de degisecek
+        cacheHit: false, // Sprint 1.A: cache yok, 1.B'de eklenecek
+      }).catch(() => null)
+    }
+
     return new Response(
-      JSON.stringify(parsed),
+      JSON.stringify({ ...parsed, search_id: searchId }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('[parse-mood] Error:', msg)
+
+    // Log parse failure
+    if (quotaCheck.userId) {
+      logMoodSearch({
+        userId: quotaCheck.userId,
+        moodText: rawInput,
+        parsedProfile: null,
+        latencyMs: Date.now() - startTime,
+        errorCode: 'PARSE_FAILED',
+      }).catch(() => {})
+    }
 
     return new Response(
       JSON.stringify({ error: 'Failed to parse mood. Please try again.', code: 'PARSE_FAILED' }),
