@@ -235,10 +235,10 @@ async function runSingleTest(tc: QualityTestCase): Promise<TestResult> {
       }
     }
 
-    // Yasak film eslesmesi
+    // Yasak film eslesmesi — EXACT match (fixes "It" false positive bug)
     for (const forbidden of tc.expected_films_must_not_include) {
       const forbLower = forbidden.toLowerCase();
-      if (top10Lower.some((t) => t.includes(forbLower) || forbLower.includes(t))) {
+      if (top10Lower.some((t) => t === forbLower)) {
         result.matched_forbidden.push(forbidden);
       }
     }
