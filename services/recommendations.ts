@@ -36,6 +36,23 @@ function isNetworkLikeError(error: { message?: string; code?: string }): boolean
   );
 }
 
+// ─── match_films_v2 rollout ──────────────────────────────────────────────────
+
+/**
+ * Sprint 1 v3.0 — match_films_v2 feature flag.
+ * Dev'de her zaman ON, prod'da env flag ile kontrol edilir.
+ * Rollback: EXPO_PUBLIC_USE_MATCH_FILMS_V2=false
+ */
+const USE_MATCH_FILMS_V2 =
+  process.env.EXPO_PUBLIC_USE_MATCH_FILMS_V2 === 'true' ||
+  (typeof __DEV__ !== 'undefined' && __DEV__);
+
+/** v2 default configuration */
+const V2_CONFIG = {
+  per_director_cap: 3,
+  tier_boost: false,  // Phase 1: cap only, tier_boost ayrı rollout
+} as const;
+
 /** AsyncStorage anahtarı — Profile ekranındaki AI slider değerleri */
 const AI_PREFS_KEY = 'chosy_ai_preferences';
 
@@ -94,7 +111,7 @@ interface UserVectorRow {
 
 // ─── Supabase satır tipleri ───────────────────────────────────────────────────
 
-/** match_films RPC'nin döndürdüğü satır yapısı */
+/** match_films / match_films_v2 RPC'nin döndürdüğü satır yapısı */
 interface MatchFilmRow {
   id: string;
   tmdb_id: number;
@@ -110,6 +127,8 @@ interface MatchFilmRow {
   director: string | null;
   country: string[] | null;
   similarity: number;
+  /** v2 only — 'core' | 'extended' | 'archive' */
+  curation_tier?: string | null;
 }
 
 /** films tablosundan select edilen satır yapısı (JS fallback için) */
@@ -467,6 +486,84 @@ function parseVector(raw: unknown): number[] | null {
   return null;
 }
 
+// ─── RPC Helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * match_films_v2 RPC'yi çağırır. Hata verirse null döner (caller fallback yapar).
+ */
+async function callMatchFilmsV2(
+  vectorString: string,
+  limit: number,
+  minSimilarity: number,
+  minRating: number | null,
+  era: { from: number; to: number } | null,
+  excludeIds: string[],
+): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
+  const excl = excludeIds.length > 0 ? { exclude_ids: excludeIds } : {};
+  return supabase.rpc('match_films_v2', {
+    query_vector: vectorString,
+    match_count: limit,
+    min_similarity: minSimilarity,
+    ...(minRating != null ? { min_rating: minRating } : {}),
+    ...(era ? { year_from: era.from, year_to: era.to } : {}),
+    ...excl,
+    per_director_cap: V2_CONFIG.per_director_cap,
+    tier_boost: V2_CONFIG.tier_boost,
+  });
+}
+
+/**
+ * match_films v1 RPC'yi çağırır.
+ */
+async function callMatchFilmsV1(
+  vectorString: string,
+  limit: number,
+  minSimilarity: number,
+  minRating: number | null,
+  era: { from: number; to: number } | null,
+  excludeIds: string[],
+): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
+  const excl = excludeIds.length > 0 ? { exclude_ids: excludeIds } : {};
+  return supabase.rpc('match_films', {
+    query_vector: vectorString,
+    match_count: limit,
+    min_similarity: minSimilarity,
+    ...(minRating != null ? { min_rating: minRating } : {}),
+    ...(era ? { year_from: era.from, year_to: era.to } : {}),
+    ...excl,
+  });
+}
+
+/**
+ * v2 veya v1 RPC'yi feature flag'e göre çağırır.
+ * v2 hata verirse otomatik v1'e döner (graceful fallback).
+ */
+async function callMatchFilms(
+  vectorString: string,
+  limit: number,
+  minSimilarity: number,
+  minRating: number | null,
+  era: { from: number; to: number } | null,
+  excludeIds: string[],
+): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
+  if (USE_MATCH_FILMS_V2) {
+    const v2Res = await callMatchFilmsV2(vectorString, limit, minSimilarity, minRating, era, excludeIds);
+    if (v2Res.error) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[recommendations] v2 failed, falling back to v1:', v2Res.error.message);
+      }
+      // Network hatasi → throw (BUG-004 — retry'ları atla)
+      if (isNetworkLikeError(v2Res.error)) {
+        throw new TypeError(`Network request failed: ${v2Res.error.message}`);
+      }
+      return callMatchFilmsV1(vectorString, limit, minSimilarity, minRating, era, excludeIds);
+    }
+    return v2Res;
+  }
+  return callMatchFilmsV1(vectorString, limit, minSimilarity, minRating, era, excludeIds);
+}
+
 // ─── Progressive Filter Relaxation ───────────────────────────────────────────
 
 /**
@@ -479,6 +576,9 @@ function parseVector(raw: unknown): number[] | null {
  *
  * ≥5 film gelince o denemedeki sonuç döndürülür.
  * Tüm denemeler boş kalırsa son denemenin sonucu (boş dizi veya null) döner.
+ *
+ * Uses v2 (per-director cap + NULL exclusion) when USE_MATCH_FILMS_V2 is true,
+ * with automatic fallback to v1 on error.
  */
 async function getFilmsWithRelaxation(
   vectorString: string,
@@ -487,21 +587,12 @@ async function getFilmsWithRelaxation(
   era: { from: number; to: number } | null,
   excludeIds: string[],
 ): Promise<MatchFilmRow[] | null> {
-  const excl = excludeIds.length > 0 ? { exclude_ids: excludeIds } : {};
   const baseRating = ratingMin ?? 6.0;
 
   // Deneme 1: tam filtreler
-  let res = await supabase.rpc('match_films', {
-    query_vector: vectorString,
-    match_count: limit,
-    min_similarity: 0.3,
-    min_rating: baseRating,
-    ...(era ? { year_from: era.from, year_to: era.to } : {}),
-    ...excl,
-  });
+  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
-  // Boylece 4 basarisiz network istegi yerine 1 istek + aninda hata gosterimi
   if (res.error && isNetworkLikeError(res.error)) {
     throw new TypeError(`Network request failed: ${res.error.message}`);
   }
@@ -515,14 +606,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #1: filtreler gevşetildi (rating -1)');
   }
-  res = await supabase.rpc('match_films', {
-    query_vector: vectorString,
-    match_count: limit,
-    min_similarity: 0.25,
-    min_rating: Math.max(0, baseRating - 1),
-    ...(era ? { year_from: era.from, year_to: era.to } : {}),
-    ...excl,
-  });
+  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -532,13 +616,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #2: filtreler gevşetildi (year kaldırıldı)');
   }
-  res = await supabase.rpc('match_films', {
-    query_vector: vectorString,
-    match_count: limit,
-    min_similarity: 0.2,
-    min_rating: Math.max(0, baseRating - 1),
-    ...excl,
-  });
+  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -548,12 +626,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #3: sadece vektör similarity');
   }
-  res = await supabase.rpc('match_films', {
-    query_vector: vectorString,
-    match_count: limit,
-    min_similarity: 0.2,
-    ...excl,
-  });
+  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds);
   if (res.error) return null;
   return (res.data as MatchFilmRow[]) ?? [];
 }
@@ -615,11 +688,13 @@ export async function getRecommendations(
   if (__DEV__) {
     // eslint-disable-next-line no-console
     console.log('[recommendations] match_films params:', JSON.stringify({
+      version: USE_MATCH_FILMS_V2 ? 'v2' : 'v1',
       match_count: limit,
       min_rating: ratingMin ?? 6.0,
       era,
       exclude_ids_count: excludeIds.length,
       query_vector: `[${vector.length} boyut]`,
+      ...(USE_MATCH_FILMS_V2 ? { per_director_cap: V2_CONFIG.per_director_cap, tier_boost: V2_CONFIG.tier_boost } : {}),
     }, null, 2));
   }
 

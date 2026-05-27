@@ -36,6 +36,12 @@ if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ─── v2 Feature Flag ─────────────────────────────────────────────────────────
+
+/** Use match_films_v2 when TEST_USE_V2=true */
+const USE_V2 = process.env.TEST_USE_V2 === 'true';
+const V2_CONFIG = { per_director_cap: 3, tier_boost: false } as const;
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface MatchFilmRow {
@@ -53,6 +59,7 @@ interface MatchFilmRow {
   country: string[] | null;
   similarity: number;
   dimensions_json: Record<string, unknown> | null;
+  curation_tier?: string | null;
 }
 
 interface ScoreBreakdown {
@@ -128,8 +135,14 @@ async function queryMatchFilms(
     }
   }
 
-  const { data, error } = await supabase.rpc('match_films', params);
-  if (error) throw new Error(`match_films RPC error: ${error.message}`);
+  const rpcName = USE_V2 ? 'match_films_v2' : 'match_films';
+  if (USE_V2) {
+    params.per_director_cap = V2_CONFIG.per_director_cap;
+    params.tier_boost = V2_CONFIG.tier_boost;
+  }
+
+  const { data, error } = await supabase.rpc(rpcName, params);
+  if (error) throw new Error(`${rpcName} RPC error: ${error.message}`);
 
   return ((data as MatchFilmRow[]) ?? []).slice(0, limit);
 }
@@ -593,6 +606,7 @@ async function main(): Promise<void> {
   console.log(`${C.bold}${C.cyan}  Chosy.ai — Adversarial Quality Test${C.reset}`);
   console.log(`${C.bold}${C.cyan}========================================${C.reset}\n`);
   console.log(`${C.dim}Total cases: ${ADVERSARIAL_CASES.length}${C.reset}`);
+  console.log(`${C.dim}RPC: ${USE_V2 ? `match_films_v2 (cap=${V2_CONFIG.per_director_cap}, boost=${V2_CONFIG.tier_boost})` : 'match_films v1'}${C.reset}`);
   console.log(`${C.dim}Supabase: ${SUPABASE_URL.slice(0, 30)}...${C.reset}\n`);
 
   const startTime = Date.now();
@@ -716,7 +730,9 @@ async function main(): Promise<void> {
   const baseline = {
     snapshot_date: new Date().toISOString().slice(0, 10),
     test_type: 'ADVERSARIAL',
-    context: 'TASK 1.1.5 — Sprint 1 pivot decision baseline',
+    context: USE_V2 ? 'TASK 1.6 — match_films_v2 test' : 'TASK 1.1.5 — Sprint 1 pivot decision baseline',
+    rpc_version: USE_V2 ? 'v2' : 'v1',
+    v2_config: USE_V2 ? V2_CONFIG : null,
     regular_test_score: 90,
     adversarial_test: {
       total_cases: results.length,
@@ -758,7 +774,10 @@ async function main(): Promise<void> {
     })),
   };
 
-  const baselinePath = path.join(baselineDir, '2026-05-27-adversarial-baseline.json');
+  const baselineFilename = USE_V2
+    ? `${new Date().toISOString().slice(0, 10)}-adversarial-v2.json`
+    : `${new Date().toISOString().slice(0, 10)}-adversarial-baseline.json`;
+  const baselinePath = path.join(baselineDir, baselineFilename);
   fs.writeFileSync(baselinePath, JSON.stringify(baseline, null, 2), 'utf-8');
   console.log(`\n${C.dim}Baseline saved: ${baselinePath}${C.reset}`);
 

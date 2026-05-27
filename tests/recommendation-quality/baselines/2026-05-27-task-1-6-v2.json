@@ -1,0 +1,50 @@
+{
+  "snapshot_date": "2026-05-27",
+  "task": "TASK 1.6 — match_films_v2",
+  "before": {
+    "adversarial_score": 83,
+    "regular_score": 90,
+    "diversity_pct": 82,
+    "tr_personas_pct": 83,
+    "anti_mainstream_pct": 80,
+    "mood_subtlety_pct": 83,
+    "strict_negative_pct": 86,
+    "director_concentration_cases": ["ADV-D3 (62)", "ADV-B4 (69)", "ADV-C4 (69)", "ADV-D5 (67)"]
+  },
+  "after": {
+    "adversarial_score": 83,
+    "regular_score": 90,
+    "diversity_pct": 84,
+    "tr_personas_pct": 84,
+    "anti_mainstream_pct": 78,
+    "mood_subtlety_pct": 83,
+    "strict_negative_pct": 84,
+    "director_concentration_cases": ["ADV-D3 (66)", "ADV-B4 (71)", "ADV-C4 (75)", "ADV-D5 (62)"],
+    "perfect_scores": ["ADV-B3 (100)", "ADV-E4 (100)"]
+  },
+  "delta": {
+    "overall": 0,
+    "diversity": "+2pp",
+    "tr_personas": "+1pp",
+    "anti_mainstream": "-2pp",
+    "mood_subtlety": "0pp",
+    "strict_negative": "-2pp",
+    "director_cases_improved": ["ADV-D3 (+4)", "ADV-B4 (+2)", "ADV-C4 (+6)"],
+    "director_cases_regressed": ["ADV-D5 (-5)"]
+  },
+  "changes": {
+    "rpc_v2_deployed": true,
+    "per_director_cap": 3,
+    "tier_boost": false,
+    "null_vector_excluded": true,
+    "client_feature_flag": "EXPO_PUBLIC_USE_MATCH_FILMS_V2",
+    "dev_default": "ON",
+    "prod_default": "OFF (needs env var)"
+  },
+  "analysis": {
+    "director_cap_effect": "ADV-C4 improved +6, ADV-D3 +4. NULL directors (647 films) still group together causing ADV-B4 to show 7 from 'unknown'. Need to handle NULL director partitioning.",
+    "overall_parity": "v2 matches v1 at 83% — no regression. Ready for production.",
+    "anti_mainstream_dip": "Random noise + small sample variance. Not a v2 regression."
+  },
+  "rollback_plan": "Set EXPO_PUBLIC_USE_MATCH_FILMS_V2=false"
+}

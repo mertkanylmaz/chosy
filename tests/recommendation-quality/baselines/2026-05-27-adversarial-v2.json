@@ -1,0 +1,1043 @@
+{
+  "snapshot_date": "2026-05-27",
+  "test_type": "ADVERSARIAL",
+  "context": "TASK 1.6 — match_films_v2 test",
+  "rpc_version": "v2",
+  "v2_config": {
+    "per_director_cap": 3,
+    "tier_boost": false
+  },
+  "regular_test_score": 90,
+  "adversarial_test": {
+    "total_cases": 30,
+    "passed": 30,
+    "failed": 0,
+    "partial": 0,
+    "score_out_of_100": 83,
+    "duration_seconds": 41
+  },
+  "category_breakdown": {
+    "diversity": "418 / 500 (5 cases)",
+    "tr_persona": "668 / 800 (8 cases)",
+    "anti_mainstream": "391 / 500 (5 cases)",
+    "mood_subtlety": "579 / 700 (7 cases)",
+    "strict_negative": "421 / 500 (5 cases)"
+  },
+  "dimension_averages": {
+    "title_match": 25.8,
+    "emotion_match": 12.3,
+    "diversity": 17.2,
+    "freshness": 7.9,
+    "mainstream": 10,
+    "negative": 9.3
+  },
+  "bug_status": {
+    "it_false_positive_fixed": true,
+    "production_code_affected": false
+  },
+  "worst_5": [
+    {
+      "id": "ADV-D5",
+      "score": 62,
+      "issues": [
+        "Only 0 films with sim >= 0.85",
+        "Low emotion match: 0/7 match fear",
+        "Genre concentration: 7 films in same genre"
+      ],
+      "top3": [
+        "Red Desert (1964)",
+        "Mirror (1975)",
+        "2001: A Space Odyssey (1968)"
+      ]
+    },
+    {
+      "id": "ADV-D3",
+      "score": 66,
+      "issues": [
+        "Only 0 films with sim >= 0.85",
+        "Low emotion match: 0/3 match anger"
+      ],
+      "top3": [
+        "The 400 Blows (1959)",
+        "Citizenfour (2014)",
+        "Кракен (2025)"
+      ]
+    },
+    {
+      "id": "ADV-C2",
+      "score": 69,
+      "issues": [
+        "Low emotion match: 0/4 match surprise"
+      ],
+      "top3": [
+        "Ghost in the Shell (1995)",
+        "The Woman in Cabin 10 (2025)",
+        "Murder at the Embassy (2025)"
+      ]
+    },
+    {
+      "id": "ADV-E3",
+      "score": 69,
+      "issues": [
+        "Director concentration: 5 films from same director (max 3)",
+        "Only 30% films in requested era 2023-2026",
+        "7 strict constraint violations"
+      ],
+      "top3": [
+        "Every Time You Lose Your Mind: A Film About Failure (2025)",
+        "Castaway on the Moon (2009)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)"
+      ]
+    },
+    {
+      "id": "ADV-B4",
+      "score": 71,
+      "issues": [
+        "Director concentration: 7 films from same director (max 3)",
+        "Era imbalance: 1 old vs 9 new"
+      ],
+      "top3": [
+        "Departures (2008)",
+        "TAYLOR SWIFT | THE ERAS TOUR (2023)",
+        "Before Midnight (2013)"
+      ]
+    }
+  ],
+  "best_5": [
+    {
+      "id": "ADV-B3",
+      "score": 100,
+      "top3": [
+        "Sicario (2015)",
+        "镖人：风起大漠 (2026)",
+        "Prison Break: The Final Break (2009)"
+      ]
+    },
+    {
+      "id": "ADV-E4",
+      "score": 100,
+      "top3": [
+        "I Can Only Imagine (2018)",
+        "Rental Family (2025)",
+        "WALL·E (2008)"
+      ]
+    },
+    {
+      "id": "ADV-D6",
+      "score": 98,
+      "top3": [
+        "Doctor Who: The Day of the Doctor (2013)",
+        "Sicario (2015)",
+        "Blood and Black Lace (1964)"
+      ]
+    },
+    {
+      "id": "ADV-D7",
+      "score": 97,
+      "top3": [
+        "The Muppet Christmas Carol (1992)",
+        "Green Book (2018)",
+        "The Intouchables (2011)"
+      ]
+    },
+    {
+      "id": "ADV-D2",
+      "score": 96,
+      "top3": [
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "Rental Family (2025)",
+        "Castaway on the Moon (2009)"
+      ]
+    }
+  ],
+  "all_results": [
+    {
+      "id": "ADV-A1",
+      "category": "diversity",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 12,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 82
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 4 films from same director (max 2)",
+        "Decade concentration: 6 films in same decade (max 5)",
+        "Genre concentration: 9 films in same genre"
+      ],
+      "top10_titles": [
+        "The Iron Claw (2023)",
+        "Young Woman and the Sea (2024)",
+        "Lost Highway (1997)",
+        "A Man Called Otto (2022)",
+        "Padre Pio: Tra cielo e terra (2000)",
+        "The Social Network (2010)",
+        "The Last Duel (2021)",
+        "The King's Warden (2026)",
+        "Ikiru (1952)",
+        "The Testament of Ann Lee (2025)"
+      ]
+    },
+    {
+      "id": "ADV-A2",
+      "category": "diversity",
+      "score": {
+        "title_match": 24,
+        "emotion_match": 5,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 79
+      },
+      "passed": true,
+      "issues": [
+        "Low emotion match: 0/7 match trust"
+      ],
+      "top10_titles": [
+        "Blue Velvet (1986)",
+        "The Butterfly Effect (2004)",
+        "Avicii - I'm Tim (2024)",
+        "Taylor Swift: Reputation Stadium Tour (2018)",
+        "Predestination (2014)",
+        "Ghost in the Shell (1995)",
+        "Кракен (2025)",
+        "Ghost in the Shell: Stand Alone Complex - Solid State Society (2007)",
+        "The Sixth Sense (1999)",
+        "Shutter Island (2010)"
+      ]
+    },
+    {
+      "id": "ADV-A3",
+      "category": "diversity",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 15,
+        "diversity": 20,
+        "freshness": 6,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 91
+      },
+      "passed": true,
+      "issues": [
+        "Era imbalance: 1 old vs 9 new"
+      ],
+      "top10_titles": [
+        "Castaway on the Moon (2009)",
+        "I Can Only Imagine (2018)",
+        "Every Time You Lose Your Mind: A Film About Failure (2025)",
+        "Rental Family (2025)",
+        "TAYLOR SWIFT | THE ERAS TOUR (2023)",
+        "Taylor Swift: Reputation Stadium Tour (2018)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "WALL·E (2008)",
+        "The Intouchables (2011)",
+        "A Beautiful Life (2023)"
+      ]
+    },
+    {
+      "id": "ADV-A4",
+      "category": "diversity",
+      "score": {
+        "title_match": 27,
+        "emotion_match": 10,
+        "diversity": 14,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 81
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 5 films from same director (max 3)",
+        "Only 4 unique countries (min 5)"
+      ],
+      "top10_titles": [
+        "Кракен (2025)",
+        "Predestination (2014)",
+        "The Great Flood (2025)",
+        "Blue Velvet (1986)",
+        "Rental Family (2025)",
+        "Prometheus (2012)",
+        "The Truman Show (1998)",
+        "The Creator (2023)",
+        "E.T. the Extra-Terrestrial (1982)",
+        "The Promised Land (2023)"
+      ]
+    },
+    {
+      "id": "ADV-A5",
+      "category": "diversity",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 15,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 85
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 3 films from same director (max 2)",
+        "Genre concentration: 9 films in same genre"
+      ],
+      "top10_titles": [
+        "The Green Mile (1999)",
+        "Nights of Cabiria (1957)",
+        "The Good, the Bad and the Ugly (1966)",
+        "The Dark Knight Rises (2012)",
+        "Young Woman and the Sea (2024)",
+        "Insomnia (2002)",
+        "The Social Network (2010)",
+        "Batman Begins (2005)",
+        "The Promised Land (2023)",
+        "The Iron Claw (2023)"
+      ]
+    },
+    {
+      "id": "ADV-B1",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 15,
+        "emotion_match": 20,
+        "diversity": 12,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 75
+      },
+      "passed": true,
+      "issues": [
+        "Only 0 films with sim >= 0.85",
+        "Director concentration: 9 films from same director (max 3)",
+        "Country concentration: 9 films from same country",
+        "Genre concentration: 8 films in same genre"
+      ],
+      "top10_titles": [
+        "Sentimental Value (2025)",
+        "Courageous (2011)",
+        "Arthur the King (2024)",
+        "The Hill (2023)",
+        "Stand and Deliver (1988)",
+        "Life of Pi (2012)",
+        "Violet Evergarden: The Movie (2020)",
+        "The Hobbit: The Desolation of Smaug (2013)",
+        "Skyscraper Live (2026)",
+        "My Left Foot: The Story of Christy Brown (1989)"
+      ]
+    },
+    {
+      "id": "ADV-B2",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 16,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 86
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 5 films from same director (max 3)"
+      ],
+      "top10_titles": [
+        "Lisbela and the Prisoner (2003)",
+        "Bad Seeds (2018)",
+        "Barton Fink (1991)",
+        "Always (2011)",
+        "Only You (2014)",
+        "Beauty and the Beast (2017)",
+        "The Girl Next Door (2004)",
+        "Redeeming Love (2022)",
+        "The Kissing Booth 2 (2020)",
+        "I Can Only Imagine (2018)"
+      ]
+    },
+    {
+      "id": "ADV-B3",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 100
+      },
+      "passed": true,
+      "issues": [],
+      "top10_titles": [
+        "Sicario (2015)",
+        "镖人：风起大漠 (2026)",
+        "Prison Break: The Final Break (2009)",
+        "Jack Reacher: Never Go Back (2016)",
+        "The Amazing Spider-Man (2012)",
+        "Rango (2011)",
+        "Training Day (2001)",
+        "Tetris (2023)",
+        "Iron Man 3 (2013)",
+        "John Wick: Chapter 3 - Parabellum (2019)"
+      ]
+    },
+    {
+      "id": "ADV-B4",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 20,
+        "emotion_match": 10,
+        "diversity": 15,
+        "freshness": 6,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 71
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 7 films from same director (max 3)",
+        "Era imbalance: 1 old vs 9 new"
+      ],
+      "top10_titles": [
+        "Departures (2008)",
+        "TAYLOR SWIFT | THE ERAS TOUR (2023)",
+        "Before Midnight (2013)",
+        "The Hill (2023)",
+        "Rich in Love (2020)",
+        "Pretty Woman (1990)",
+        "After (2019)",
+        "Lucy Shimmers and the Prince of Peace (2020)",
+        "Sidelined 2: Intercepted (2025)",
+        "To All the Boys: Always and Forever (2021)"
+      ]
+    },
+    {
+      "id": "ADV-B5",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 18,
+        "freshness": 3,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 81
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 4 films from same director (max 3)",
+        "Only 30% films in requested era 1990-2010"
+      ],
+      "top10_titles": [
+        "The Chorus (2004)",
+        "Cindy La Regia (2020)",
+        "Green Book (2018)",
+        "The Shawshank Redemption (1994)",
+        "The Muppet Christmas Carol (1992)",
+        "Maleficent (2014)",
+        "Sing Street (2016)",
+        "Bagdad Cafe (1987)",
+        "EVANGELION 30th Anniversary Special Screening (2026)",
+        "No manches, Frida (2016)"
+      ]
+    },
+    {
+      "id": "ADV-B6",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 17,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 87
+      },
+      "passed": true,
+      "issues": [
+        "Genre concentration: 9 films in same genre"
+      ],
+      "top10_titles": [
+        "Young Woman and the Sea (2024)",
+        "The King's Warden (2026)",
+        "Eyes Wide Shut (1999)",
+        "Miller's Crossing (1990)",
+        "The Thin Red Line (1998)",
+        "The Social Network (2010)",
+        "Lost Highway (1997)",
+        "Ikiru (1952)",
+        "The Testament of Ann Lee (2025)",
+        "Padre Pio: Tra cielo e terra (2000)"
+      ]
+    },
+    {
+      "id": "ADV-B7",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 24,
+        "emotion_match": 5,
+        "diversity": 19,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 76
+      },
+      "passed": true,
+      "issues": [
+        "Low emotion match: 0/6 match surprise",
+        "Genre concentration: 7 films in same genre"
+      ],
+      "top10_titles": [
+        "PlayTime (1967)",
+        "Faces Places (2017)",
+        "L'Atalante (1934)",
+        "Juliet of the Spirits (1965)",
+        "Mr. Nobody (2009)",
+        "Love Likes Coincidences (2011)",
+        "The Gorge (2025)",
+        "The Lovers on the Bridge (1991)",
+        "Your Name. (2016)",
+        "The Handmaiden (2016)"
+      ]
+    },
+    {
+      "id": "ADV-B8",
+      "category": "tr_persona",
+      "score": {
+        "title_match": 27,
+        "emotion_match": 20,
+        "diversity": 17,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 92
+      },
+      "passed": true,
+      "issues": [
+        "Genre concentration: 9 films in same genre"
+      ],
+      "top10_titles": [
+        "Street Gang: How We Got to Sesame Street (2021)",
+        "Charcot: Secret Poles (2016)",
+        "Amy (2015)",
+        "Dear Ms.: A Revolution in Print (2025)",
+        "Who We Are: A Chronicle of Racism in America (2022)",
+        "Mr. Nobody Against Putin (2025)",
+        "Billion Dollar Heist (2023)",
+        "Sahne Arkası: Stranger Things - İlk Gölge (2025)",
+        "Stalker (1979)",
+        "Die Verwandlung der Welt in Musik: Bayreuth vor der Premiere (1996)"
+      ]
+    },
+    {
+      "id": "ADV-C1",
+      "category": "anti_mainstream",
+      "score": {
+        "title_match": 27,
+        "emotion_match": 20,
+        "diversity": 14,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 91
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 6 films from same director (max 3)",
+        "Genre concentration: 7 films in same genre"
+      ],
+      "top10_titles": [
+        "Predestination (2014)",
+        "Кракен (2025)",
+        "Prometheus (2012)",
+        "The Butterfly Effect (2004)",
+        "Twelve Monkeys (1995)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "The World's Fastest Indian (2005)",
+        "WALL·E (2008)",
+        "The Great Flood (2025)",
+        "Children of Men (2006)"
+      ]
+    },
+    {
+      "id": "ADV-C2",
+      "category": "anti_mainstream",
+      "score": {
+        "title_match": 16,
+        "emotion_match": 5,
+        "diversity": 20,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 69
+      },
+      "passed": true,
+      "issues": [
+        "Low emotion match: 0/4 match surprise"
+      ],
+      "top10_titles": [
+        "Ghost in the Shell (1995)",
+        "The Woman in Cabin 10 (2025)",
+        "Murder at the Embassy (2025)",
+        "Millennium Actress (2002)",
+        "The Exterminating Angel (1962)",
+        "The Butterfly Effect (2004)",
+        "Blue Velvet (1986)",
+        "Close-Up (1990)",
+        "The Kingdom (1994)",
+        "The Discreet Charm of the Bourgeoisie (1972)"
+      ]
+    },
+    {
+      "id": "ADV-C3",
+      "category": "anti_mainstream",
+      "score": {
+        "title_match": 20,
+        "emotion_match": 5,
+        "diversity": 18,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 71
+      },
+      "passed": true,
+      "issues": [
+        "Low emotion match: 0/6 match surprise",
+        "Director concentration: 4 films from same director (max 3)"
+      ],
+      "top10_titles": [
+        "Citizenfour (2014)",
+        "Ca$h (2008)",
+        "Prometheus (2012)",
+        "The Great Flood (2025)",
+        "The 400 Blows (1959)",
+        "The Champion of Auschwitz (2021)",
+        "Predestination (2014)",
+        "Breaking the Limits (2017)",
+        "Stagecoach (1966)",
+        "Кракен (2025)"
+      ]
+    },
+    {
+      "id": "ADV-C4",
+      "category": "anti_mainstream",
+      "score": {
+        "title_match": 20,
+        "emotion_match": 5,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 75
+      },
+      "passed": true,
+      "issues": [
+        "Low emotion match: 0/6 match surprise"
+      ],
+      "top10_titles": [
+        "Ghost in the Shell (1995)",
+        "The Woman in Cabin 10 (2025)",
+        "Murder at the Embassy (2025)",
+        "The Exterminating Angel (1962)",
+        "Sessiz Tepe: Dönüş (2026)",
+        "Millennium Actress (2002)",
+        "I Lost My Body (2019)",
+        "Blue Velvet (1986)",
+        "Joy Ride (2001)",
+        "Get Out (2017)"
+      ]
+    },
+    {
+      "id": "ADV-C5",
+      "category": "anti_mainstream",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 15,
+        "diversity": 16,
+        "freshness": 4,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 85
+      },
+      "passed": true,
+      "issues": [
+        "Genre concentration: 10 films in same genre",
+        "Only 40% films in requested era 1960-2000"
+      ],
+      "top10_titles": [
+        "The Social Network (2010)",
+        "Young Woman and the Sea (2024)",
+        "The Last Duel (2021)",
+        "Ikiru (1952)",
+        "Twin Peaks: Fire Walk with Me (1992)",
+        "The Iron Claw (2023)",
+        "The Holdovers (2023)",
+        "The Thin Red Line (1998)",
+        "Once Upon a Time in the West (1968)",
+        "Miller's Crossing (1990)"
+      ]
+    },
+    {
+      "id": "ADV-D1",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 18,
+        "freshness": 2,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 80
+      },
+      "passed": true,
+      "issues": [
+        "Genre concentration: 8 films in same genre",
+        "Only 20% films in requested era 1990-2026",
+        "Era imbalance: 9 old vs 1 new"
+      ],
+      "top10_titles": [
+        "One Flew Over the Cuckoo's Nest (1975)",
+        "City Lights (1931)",
+        "The Promised Land (2023)",
+        "Nights of Cabiria (1957)",
+        "Jeremiah Johnson (1972)",
+        "The Graduate (1967)",
+        "The Little World of Don Camillo (1952)",
+        "The Day of the Jackal (1973)",
+        "Seven Samurai (1954)",
+        "Batman Begins (2005)"
+      ]
+    },
+    {
+      "id": "ADV-D2",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 16,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 96
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 5 films from same director (max 3)"
+      ],
+      "top10_titles": [
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "Rental Family (2025)",
+        "Castaway on the Moon (2009)",
+        "I Can Only Imagine (2018)",
+        "WALL·E (2008)",
+        "Mononoke the Movie: The Phantom in the Rain (2024)",
+        "In Bruges (2008)",
+        "Lisbela and the Prisoner (2003)",
+        "¿Quieres ser mi hijo? (2023)",
+        "The Hill (2023)"
+      ]
+    },
+    {
+      "id": "ADV-D3",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 11,
+        "emotion_match": 5,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 66
+      },
+      "passed": true,
+      "issues": [
+        "Only 0 films with sim >= 0.85",
+        "Low emotion match: 0/3 match anger"
+      ],
+      "top10_titles": [
+        "The 400 Blows (1959)",
+        "Citizenfour (2014)",
+        "Кракен (2025)",
+        "Escape from Alcatraz (1979)",
+        "Sniper: The White Raven (2022)",
+        "Surrounded (2023)",
+        "Prometheus (2012)",
+        "Ca$h (2008)",
+        "Stagecoach (1966)",
+        "Dogman (2023)"
+      ]
+    },
+    {
+      "id": "ADV-D4",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 24,
+        "emotion_match": 10,
+        "diversity": 18,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 80
+      },
+      "passed": true,
+      "issues": [
+        "Genre concentration: 8 films in same genre"
+      ],
+      "top10_titles": [
+        "Faces Places (2017)",
+        "Juliet of the Spirits (1965)",
+        "The Lovers on the Bridge (1991)",
+        "Mr. Nobody (2009)",
+        "Close-Up (1990)",
+        "PlayTime (1967)",
+        "Evangelion: 3.0+1.0 Thrice Upon a Time (2021)",
+        "The Tunnel to Summer, the Exit of Goodbyes (2022)",
+        "Love Exposure (2008)",
+        "Rascal Does Not Dream of a Dreaming Girl (2019)"
+      ]
+    },
+    {
+      "id": "ADV-D5",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 15,
+        "emotion_match": 5,
+        "diversity": 19,
+        "freshness": 3,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 62
+      },
+      "passed": true,
+      "issues": [
+        "Only 0 films with sim >= 0.85",
+        "Low emotion match: 0/7 match fear",
+        "Genre concentration: 7 films in same genre",
+        "Only 20% films in requested era 2010-2026"
+      ],
+      "top10_titles": [
+        "Red Desert (1964)",
+        "Mirror (1975)",
+        "2001: A Space Odyssey (1968)",
+        "Blow-Up (1966)",
+        "Distinction (2018)",
+        "8½ (1963)",
+        "Pink Floyd: Live at Pompeii (1972)",
+        "Nymphomaniac: Vol. I (2013)",
+        "Sans Soleil (1983)",
+        "Nostalgia (1983)"
+      ]
+    },
+    {
+      "id": "ADV-D6",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 20,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 98
+      },
+      "passed": true,
+      "issues": [],
+      "top10_titles": [
+        "Doctor Who: The Day of the Doctor (2013)",
+        "Sicario (2015)",
+        "Blood and Black Lace (1964)",
+        "Baby Driver (2017)",
+        "Mission: Impossible - Dead Reckoning Part One (2023)",
+        "Look Back (2024)",
+        "Predestination (2014)",
+        "The Collini Case (2019)",
+        "The Shadow's Edge (2025)",
+        "Spider-Man (2002)"
+      ]
+    },
+    {
+      "id": "ADV-D7",
+      "category": "mood_subtlety",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 17,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 97
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 4 films from same director (max 3)",
+        "Genre concentration: 7 films in same genre"
+      ],
+      "top10_titles": [
+        "The Muppet Christmas Carol (1992)",
+        "Green Book (2018)",
+        "The Intouchables (2011)",
+        "Maleficent (2014)",
+        "To Sir, with Love (1967)",
+        "Bagdad Cafe (1987)",
+        "Pride (2014)",
+        "EVANGELION 30th Anniversary Special Screening (2026)",
+        "Cuci (2009)",
+        "Sing Street (2016)"
+      ]
+    },
+    {
+      "id": "ADV-E1",
+      "category": "strict_negative",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 15,
+        "diversity": 19,
+        "freshness": 6,
+        "mainstream_penalty": 10,
+        "negative_constraint": 0,
+        "total": 80
+      },
+      "passed": true,
+      "issues": [
+        "Decade concentration: 8 films in same decade (max 7)",
+        "Era imbalance: 1 old vs 9 new",
+        "9 strict constraint violations"
+      ],
+      "top10_titles": [
+        "Look Back (2024)",
+        "Oscar Shaw (2026)",
+        "Life of Pi (2012)",
+        "Hunting Season (2025)",
+        "镖人：风起大漠 (2026)",
+        "The Hill (2023)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "Diablo (2025)",
+        "Prisoner of War (2025)",
+        "TAYLOR SWIFT | THE ERAS TOUR (2023)"
+      ]
+    },
+    {
+      "id": "ADV-E2",
+      "category": "strict_negative",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 10,
+        "freshness": 8,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 88
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 9 films from same director (max 3)",
+        "Country concentration: 9 films from same country",
+        "Genre concentration: 10 films in same genre"
+      ],
+      "top10_titles": [
+        "The SpongeBob Movie: Sponge on the Run (2020)",
+        "Little Eggs: A Frozen Rescue (2022)",
+        "Sing (2016)",
+        "The Lego Movie (2014)",
+        "Barbie as The Princess & the Pauper (2004)",
+        "An Egg Rescue (2021)",
+        "Kubo and the Two Strings (2016)",
+        "Abominable (2019)",
+        "Lilo & Stitch (2002)",
+        "Descendants 3 (2019)"
+      ]
+    },
+    {
+      "id": "ADV-E3",
+      "category": "strict_negative",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 10,
+        "diversity": 16,
+        "freshness": 3,
+        "mainstream_penalty": 10,
+        "negative_constraint": 0,
+        "total": 69
+      },
+      "passed": true,
+      "issues": [
+        "Director concentration: 5 films from same director (max 3)",
+        "Only 30% films in requested era 2023-2026",
+        "7 strict constraint violations"
+      ],
+      "top10_titles": [
+        "Every Time You Lose Your Mind: A Film About Failure (2025)",
+        "Castaway on the Moon (2009)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "The Girl Next Door (2004)",
+        "Beauty and the Beast (2017)",
+        "The Great Flood (2025)",
+        "Oscar Shaw (2026)",
+        "I Can Only Imagine (2018)",
+        "Bad Seeds (2018)",
+        "Dumb and Dumber (1994)"
+      ]
+    },
+    {
+      "id": "ADV-E4",
+      "category": "strict_negative",
+      "score": {
+        "title_match": 30,
+        "emotion_match": 20,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 100
+      },
+      "passed": true,
+      "issues": [],
+      "top10_titles": [
+        "I Can Only Imagine (2018)",
+        "Rental Family (2025)",
+        "WALL·E (2008)",
+        "Castaway on the Moon (2009)",
+        "Get to the Heart: The Barbara Mandrell Story (1997)",
+        "Every Time You Lose Your Mind: A Film About Failure (2025)",
+        "Ties That Bind (2006)",
+        "Mononoke the Movie: The Phantom in the Rain (2024)",
+        "Look Back (2024)",
+        "Howl's Moving Castle (2004)"
+      ]
+    },
+    {
+      "id": "ADV-E5",
+      "category": "strict_negative",
+      "score": {
+        "title_match": 24,
+        "emotion_match": 10,
+        "diversity": 20,
+        "freshness": 10,
+        "mainstream_penalty": 10,
+        "negative_constraint": 10,
+        "total": 84
+      },
+      "passed": true,
+      "issues": [],
+      "top10_titles": [
+        "Escape from Alcatraz (1979)",
+        "E Dio disse a Caino… (1970)",
+        "Predestination (2014)",
+        "Nowhere (2023)",
+        "The 400 Blows (1959)",
+        "Кракен (2025)",
+        "Prometheus (2012)",
+        "Citizenfour (2014)",
+        "Operation Hyacinth (2021)",
+        "10 Days of a Bad Man (2023)"
+      ]
+    }
+  ]
+}
