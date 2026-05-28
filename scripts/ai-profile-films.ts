@@ -539,6 +539,24 @@ async function getAlreadyProfiledIds(sb: SupabaseClient): Promise<Set<string>> {
 }
 
 /**
+ * Fetches set of film_ids that have NULL profile_vector in film_profiles.
+ * These are the films invisible to match_films and need AI profiling.
+ */
+async function getFilmsWithNullVector(sb: SupabaseClient): Promise<Set<string>> {
+  const ids = new Set<string>();
+  const { data, error } = await sb
+    .from('film_profiles')
+    .select('film_id')
+    .is('profile_vector', null);
+
+  if (error) throw new Error(`film_profiles null vector query error: ${error.message}`);
+  for (const row of data ?? []) {
+    ids.add(row.film_id as string);
+  }
+  return ids;
+}
+
+/**
  * Upserts a single profiled film to DB.
  */
 async function upsertProfile(
@@ -652,18 +670,18 @@ async function main(): Promise<void> {
     filmsToProcess = [film];
     console.log(`Single film mode: "${film.title}" (${flags.filmId})`);
   } else if (flags.onlyMissing && sb) {
-    // Get UUID map and already profiled
+    // Get UUID map and films with NULL profile_vector
     const tmdbIds = allFilms.map((f) => f.tmdb_id);
     const idMap = await getTmdbToUuidMap(sb, tmdbIds);
-    const alreadyProfiled = await getAlreadyProfiledIds(sb);
+    const nullVectorIds = await getFilmsWithNullVector(sb);
 
     filmsToProcess = allFilms.filter((f) => {
       const uuid = idMap.get(f.tmdb_id);
-      if (!uuid) return true; // not in DB yet — will be skipped during upsert
-      return !alreadyProfiled.has(uuid);
+      if (!uuid) return false; // not in DB — skip
+      return nullVectorIds.has(uuid); // only films WITH a profile row but NULL vector
     });
 
-    console.log(`--only-missing: ${filmsToProcess.length} films need profiling (${alreadyProfiled.size} already done)`);
+    console.log(`--only-missing: ${filmsToProcess.length} films have NULL profile_vector (targeting exact NULL rows)`);
   } else {
     filmsToProcess = allFilms;
   }
