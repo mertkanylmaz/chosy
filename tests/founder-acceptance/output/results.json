@@ -1,0 +1,570 @@
+[
+  {
+    "id": "mind_bending_neo_noir",
+    "mood": "mind bending slow burn neo-noir",
+    "verdict": "PARTIAL",
+    "acceptableCount": 0,
+    "unacceptableCount": 0,
+    "avgSimilarity": 0.817,
+    "top10": [
+      {
+        "title": "God's Crooked Lines",
+        "year": 2022,
+        "similarity": 0.889,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Mysterious Skin",
+        "year": 2005,
+        "similarity": 0.828,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Opening Night",
+        "year": 1977,
+        "similarity": 0.886,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Flee",
+        "year": 2021,
+        "similarity": 0.8,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Innocence",
+        "year": 1997,
+        "similarity": 0.81,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Machinist",
+        "year": 2004,
+        "similarity": 0.796,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Wind River",
+        "year": 2017,
+        "similarity": 0.798,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Hateful Eight",
+        "year": 2015,
+        "similarity": 0.788,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "2046",
+        "year": 2004,
+        "similarity": 0.777,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Call",
+        "year": 2020,
+        "similarity": 0.797,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      }
+    ],
+    "profile": {
+      "emotional_state": {
+        "joy": 0.2,
+        "sadness": 0.6,
+        "fear": 0.5,
+        "anger": 0.4,
+        "surprise": 0.7,
+        "disgust": 0.5,
+        "trust": 0.3,
+        "anticipation": 0.8
+      },
+      "energy_level": 0.2,
+      "pace_preference": "slow",
+      "visual_style": "raw",
+      "thematic_depth": 0.9,
+      "ending_preference": "bittersweet",
+      "era_preference": {
+        "from": 1940,
+        "to": 2025
+      },
+      "cultural_context": [
+        "American",
+        "European"
+      ],
+      "avoid_signals": [
+        "linear simplicity",
+        "cheerful resolution",
+        "romance-heavy"
+      ],
+      "narrative_style": "nonlinear",
+      "social_context": "alone",
+      "rewatch_tolerance": true,
+      "profile_name": "Cerebral Shadows",
+      "profile_description": "A viewer craving intellectually complex, visually austere narratives where reality unravels at a deliberate pace—perfect for immersive, layered storytelling that rewards close attention.",
+      "search_id": null
+    }
+  },
+  {
+    "id": "happy_simple",
+    "mood": "happy",
+    "verdict": "PASS",
+    "acceptableCount": 4,
+    "unacceptableCount": 0,
+    "avgSimilarity": 0.869,
+    "top10": [
+      {
+        "title": "An Egg Rescue",
+        "year": 2021,
+        "similarity": 0.878,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Kubo and the Two Strings",
+        "year": 2016,
+        "similarity": 0.88,
+        "isAcceptable": true,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Abominable",
+        "year": 2019,
+        "similarity": 0.879,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Midnight in Paris",
+        "year": 2011,
+        "similarity": 0.876,
+        "isAcceptable": true,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Descendants 3",
+        "year": 2019,
+        "similarity": 0.869,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Monsters University",
+        "year": 2013,
+        "similarity": 0.871,
+        "isAcceptable": true,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Trollhunters: Rise of the Titans",
+        "year": 2021,
+        "similarity": 0.848,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Bad Guys",
+        "year": 2022,
+        "similarity": 0.857,
+        "isAcceptable": true,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Little Eggs: A Frozen Rescue",
+        "year": 2022,
+        "similarity": 0.881,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Tarzan",
+        "year": 1999,
+        "similarity": 0.847,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      }
+    ],
+    "profile": {
+      "emotional_state": {
+        "joy": 0.85,
+        "sadness": 0.1,
+        "fear": 0.05,
+        "anger": 0.05,
+        "surprise": 0.4,
+        "disgust": 0.05,
+        "trust": 0.75,
+        "anticipation": 0.5
+      },
+      "energy_level": 0.6,
+      "pace_preference": "medium",
+      "visual_style": "lush",
+      "thematic_depth": 0.4,
+      "ending_preference": "hopeful",
+      "era_preference": {
+        "from": 1970,
+        "to": 2025
+      },
+      "cultural_context": [],
+      "avoid_signals": [],
+      "narrative_style": "linear",
+      "social_context": "alone",
+      "rewatch_tolerance": true,
+      "profile_name": "Pure Joy",
+      "profile_description": "A person in a genuinely happy mood seeking uplifting, feel-good entertainment that celebrates life's bright moments with warmth and optimism.",
+      "search_id": null
+    }
+  },
+  {
+    "id": "sad_drama",
+    "mood": "sad",
+    "verdict": "PASS",
+    "acceptableCount": 1,
+    "unacceptableCount": 0,
+    "avgSimilarity": 0.919,
+    "top10": [
+      {
+        "title": "The Iron Claw",
+        "year": 2023,
+        "similarity": 0.967,
+        "isAcceptable": true,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Social Network",
+        "year": 2010,
+        "similarity": 0.97,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Ikiru",
+        "year": 1952,
+        "similarity": 0.937,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Lost Highway",
+        "year": 1997,
+        "similarity": 0.929,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "similarity": 0.909,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Twin Peaks: Fire Walk with Me",
+        "year": 1992,
+        "similarity": 0.912,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "similarity": 0.931,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Men of Honor",
+        "year": 2000,
+        "similarity": 0.862,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Black Beauty",
+        "year": 2020,
+        "similarity": 0.865,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Padre Pio: Tra cielo e terra",
+        "year": 2000,
+        "similarity": 0.905,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      }
+    ],
+    "profile": {
+      "emotional_state": {
+        "joy": 0.15,
+        "sadness": 0.85,
+        "fear": 0.2,
+        "anger": 0.1,
+        "surprise": 0.1,
+        "disgust": 0.1,
+        "trust": 0.4,
+        "anticipation": 0.3
+      },
+      "energy_level": 0.2,
+      "pace_preference": "slow",
+      "visual_style": "cinematic",
+      "thematic_depth": 0.8,
+      "ending_preference": "bittersweet",
+      "era_preference": {
+        "from": 1970,
+        "to": 2025
+      },
+      "cultural_context": [],
+      "avoid_signals": [],
+      "narrative_style": "linear",
+      "social_context": "alone",
+      "rewatch_tolerance": true,
+      "profile_name": "Melancholic Solitude",
+      "profile_description": "A reflective mood seeking emotionally resonant cinema that honors sadness without overwhelming, allowing space for quiet contemplation and catharsis.",
+      "search_id": null
+    }
+  },
+  {
+    "id": "wong_kar_wai",
+    "mood": "wong kar-wai tarzi, gorsel ve melankolik",
+    "verdict": "PARTIAL",
+    "acceptableCount": 0,
+    "unacceptableCount": 0,
+    "avgSimilarity": 0.849,
+    "top10": [
+      {
+        "title": "Millennium Mambo",
+        "year": 2001,
+        "similarity": 0.894,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Magnolia",
+        "year": 1999,
+        "similarity": 0.859,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Zodiac",
+        "year": 2007,
+        "similarity": 0.875,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "similarity": 0.899,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Man Who Wasn't There",
+        "year": 2001,
+        "similarity": 0.817,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Love Letter",
+        "year": 1995,
+        "similarity": 0.875,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Last Duel",
+        "year": 2021,
+        "similarity": 0.81,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Arrival",
+        "year": 2016,
+        "similarity": 0.863,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Long Day's Journey Into Night",
+        "year": 2018,
+        "similarity": 0.806,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Lost Highway",
+        "year": 1997,
+        "similarity": 0.797,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      }
+    ],
+    "profile": {
+      "emotional_state": {
+        "joy": 0.25,
+        "sadness": 0.75,
+        "fear": 0.15,
+        "anger": 0.1,
+        "surprise": 0.2,
+        "disgust": 0.1,
+        "trust": 0.4,
+        "anticipation": 0.35
+      },
+      "energy_level": 0.3,
+      "pace_preference": "slow",
+      "visual_style": "cinematic",
+      "thematic_depth": 0.85,
+      "ending_preference": "bittersweet",
+      "era_preference": {
+        "from": 1980,
+        "to": 2025
+      },
+      "cultural_context": [
+        "Hong Kong",
+        "Asian"
+      ],
+      "avoid_signals": [
+        "action sequences",
+        "happy resolution",
+        "dialogue-heavy"
+      ],
+      "narrative_style": "nonlinear",
+      "social_context": "alone",
+      "rewatch_tolerance": true,
+      "profile_name": "Neon Melancholy",
+      "profile_description": "A contemplative viewer seeking visually stunning, slow-burn narratives dripping with nostalgia and romantic longing, where beauty exists in loneliness and time moves like drifting smoke.",
+      "search_id": null
+    }
+  },
+  {
+    "id": "no_marvel",
+    "mood": "Marvel ve super kahraman filmi istemiyorum, alternatif sinema",
+    "verdict": "PARTIAL",
+    "acceptableCount": 0,
+    "unacceptableCount": 0,
+    "avgSimilarity": 0.793,
+    "top10": [
+      {
+        "title": "Ghost in the Shell",
+        "year": 1995,
+        "similarity": 0.864,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Exterminating Angel",
+        "year": 1962,
+        "similarity": 0.859,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Chungking Express",
+        "year": 1994,
+        "similarity": 0.786,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Pink Floyd: Live at Pompeii",
+        "year": 1972,
+        "similarity": 0.79,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Memories",
+        "year": 1995,
+        "similarity": 0.757,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Puella Magi Madoka Magica the Movie Part III: Rebellion",
+        "year": 2013,
+        "similarity": 0.784,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Sans Soleil",
+        "year": 1983,
+        "similarity": 0.763,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Blue Velvet",
+        "year": 1986,
+        "similarity": 0.778,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "similarity": 0.784,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      },
+      {
+        "title": "Open Your Eyes",
+        "year": 1997,
+        "similarity": 0.765,
+        "isAcceptable": false,
+        "isUnacceptable": false
+      }
+    ],
+    "profile": {
+      "emotional_state": {
+        "joy": 0.4,
+        "sadness": 0.5,
+        "fear": 0.2,
+        "anger": 0.2,
+        "surprise": 0.6,
+        "disgust": 0.1,
+        "trust": 0.5,
+        "anticipation": 0.5
+      },
+      "energy_level": 0.4,
+      "pace_preference": "medium",
+      "visual_style": "experimental",
+      "thematic_depth": 0.8,
+      "ending_preference": "open",
+      "era_preference": {
+        "from": 1960,
+        "to": 2025
+      },
+      "cultural_context": [
+        "European",
+        "Independent",
+        "International"
+      ],
+      "avoid_signals": [
+        "superhero",
+        "blockbuster action",
+        "franchise",
+        "CGI-heavy"
+      ],
+      "narrative_style": "nonlinear",
+      "social_context": "alone",
+      "rewatch_tolerance": true,
+      "profile_name": "Arthouse Explorer",
+      "profile_description": "Seeking thought-provoking, unconventional cinema with artistic vision—independent and international films that challenge narrative norms and prioritize human storytelling over spectacle.",
+      "search_id": null
+    }
+  }
+]

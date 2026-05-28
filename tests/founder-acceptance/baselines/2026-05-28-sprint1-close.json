@@ -1,0 +1,103 @@
+{
+  "date": "2026-05-28",
+  "sprint": "Sprint 1 v5.0 closure",
+  "rpc": "match_films_v2",
+  "results": {
+    "mind_bending_neo_noir": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.817,
+      "top10_titles": [
+        "God's Crooked Lines (2022) sim=0.889",
+        "Mysterious Skin (2005) sim=0.828",
+        "Opening Night (1977) sim=0.886",
+        "Flee (2021) sim=0.8",
+        "Innocence (1997) sim=0.81",
+        "The Machinist (2004) sim=0.796",
+        "Wind River (2017) sim=0.798",
+        "The Hateful Eight (2015) sim=0.788",
+        "2046 (2004) sim=0.777",
+        "The Call (2020) sim=0.797"
+      ]
+    },
+    "happy_simple": {
+      "verdict": "PASS",
+      "acceptableCount": 4,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.869,
+      "top10_titles": [
+        "An Egg Rescue (2021) sim=0.878",
+        "Kubo and the Two Strings (2016) sim=0.88",
+        "Abominable (2019) sim=0.879",
+        "Midnight in Paris (2011) sim=0.876",
+        "Descendants 3 (2019) sim=0.869",
+        "Monsters University (2013) sim=0.871",
+        "Trollhunters: Rise of the Titans (2021) sim=0.848",
+        "The Bad Guys (2022) sim=0.857",
+        "Little Eggs: A Frozen Rescue (2022) sim=0.881",
+        "Tarzan (1999) sim=0.847"
+      ]
+    },
+    "sad_drama": {
+      "verdict": "PASS",
+      "acceptableCount": 1,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.919,
+      "top10_titles": [
+        "The Iron Claw (2023) sim=0.967",
+        "The Social Network (2010) sim=0.97",
+        "Ikiru (1952) sim=0.937",
+        "Lost Highway (1997) sim=0.929",
+        "Once Upon a Time in the West (1968) sim=0.909",
+        "Twin Peaks: Fire Walk with Me (1992) sim=0.912",
+        "Eyes Wide Shut (1999) sim=0.931",
+        "Men of Honor (2000) sim=0.862",
+        "Black Beauty (2020) sim=0.865",
+        "Padre Pio: Tra cielo e terra (2000) sim=0.905"
+      ]
+    },
+    "wong_kar_wai": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.849,
+      "top10_titles": [
+        "Millennium Mambo (2001) sim=0.894",
+        "Magnolia (1999) sim=0.859",
+        "Zodiac (2007) sim=0.875",
+        "Cinema Paradiso (1988) sim=0.899",
+        "The Man Who Wasn't There (2001) sim=0.817",
+        "Love Letter (1995) sim=0.875",
+        "The Last Duel (2021) sim=0.81",
+        "Arrival (2016) sim=0.863",
+        "Long Day's Journey Into Night (2018) sim=0.806",
+        "Lost Highway (1997) sim=0.797"
+      ]
+    },
+    "no_marvel": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.793,
+      "top10_titles": [
+        "Ghost in the Shell (1995) sim=0.864",
+        "The Exterminating Angel (1962) sim=0.859",
+        "Chungking Express (1994) sim=0.786",
+        "Pink Floyd: Live at Pompeii (1972) sim=0.79",
+        "Memories (1995) sim=0.757",
+        "Puella Magi Madoka Magica the Movie Part III: Rebellion (2013) sim=0.784",
+        "Sans Soleil (1983) sim=0.763",
+        "Blue Velvet (1986) sim=0.778",
+        "The Butterfly Effect (2004) sim=0.784",
+        "Open Your Eyes (1997) sim=0.765"
+      ]
+    }
+  },
+  "scoring": "Yol B: unacceptable-based + similarity",
+  "total_pass": 2,
+  "total_partial": 3,
+  "total_weak": 0,
+  "total_fail": 0,
+  "notes": "Yol B scoring: PASS = 0 unacc + avgSim>=0.75 + (acc>=2 || avgSim>=0.85)"
+}
