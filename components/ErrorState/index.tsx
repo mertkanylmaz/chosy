@@ -41,6 +41,11 @@ const ERROR_KEYS: Record<ErrorType, { titleKey: string; subtitleKey: string; moo
     subtitleKey: 'errorState.serverSubtitle',
     mood: 'calm',
   },
+  quota: {
+    titleKey: 'errorState.quotaTitle',
+    subtitleKey: 'errorState.quotaSubtitle',
+    mood: 'calm',
+  },
   empty: {
     titleKey: 'errorState.emptyTitle',
     subtitleKey: 'errorState.emptySubtitle',

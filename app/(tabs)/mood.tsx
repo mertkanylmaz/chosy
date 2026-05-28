@@ -269,13 +269,25 @@ export default function MoodScreen() {
         // eslint-disable-next-line no-console
         console.log('[MoodScreen] parseMood hatası:', err instanceof Error ? err.message : err);
       }
+
+      const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
       posthogAnalytics.track('mood_search_failed', {
         error: err instanceof Error ? err.message : 'unknown',
+        error_code: errorCode,
         mood_length: trimmed.length,
       });
+
       const userError = toUserError(err, 'mood');
       setMoodError({ type: userError.type, message: userError.message });
       setPhase('input');
+
+      // Quota exceeded from edge function — show paywall
+      if (userError.type === 'quota') {
+        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
+        if (!shown) {
+          setShowQuotaExhausted(true);
+        }
+      }
     }
   }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
 
@@ -516,7 +528,11 @@ export default function MoodScreen() {
               {moodError != null && (
                 <View style={styles.errorBanner}>
                   <Ionicons
-                    name={moodError.type === 'network' ? 'cloud-offline-outline' : 'warning-outline'}
+                    name={
+                      moodError.type === 'network' ? 'cloud-offline-outline' :
+                      moodError.type === 'quota' ? 'lock-closed-outline' :
+                      'warning-outline'
+                    }
                     size={18}
                     color={Colors.error}
                   />

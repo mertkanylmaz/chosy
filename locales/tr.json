@@ -716,6 +716,8 @@
     "serverSubtitle": "Sunucularımızda sorun var. Lütfen tekrar dene.",
     "emptyTitle": "Sonuç bulunamadı",
     "emptySubtitle": "Filtrelerini ayarla veya farklı bir ruh hali dene",
+    "quotaTitle": "Günlük limit doldu",
+    "quotaSubtitle": "Daha fazla arama için Pro'ya geç",
     "unknownTitle": "Bir şeyler ters gitti",
     "unknownSubtitle": "Lütfen tekrar dene",
     "tryAgain": "Tekrar Dene"

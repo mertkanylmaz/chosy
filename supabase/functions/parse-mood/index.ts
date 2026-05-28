@@ -304,7 +304,45 @@ serve(async (req: Request): Promise<Response> => {
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
-    console.error('[parse-mood] Error:', msg)
+    const latencyMs = Date.now() - startTime
+
+    // ── Sprint 1 v5.0: Anthropic credit/billing detection ─────────────
+    // 14 gun boyunca fark edilmeden kaldi — artik FATAL level log
+    const isAnthropicCreditError =
+      msg.includes('credit balance is too low') ||
+      msg.includes('billing') ||
+      msg.includes('insufficient_quota') ||
+      msg.includes('rate_limit') ||
+      (err instanceof Error && 'status' in err && (err as { status: number }).status === 529)
+
+    if (isAnthropicCreditError) {
+      console.error('[parse-mood] FATAL: ANTHROPIC_CREDIT_LOW —', msg)
+
+      if (quotaCheck.userId) {
+        logMoodSearch({
+          userId: quotaCheck.userId,
+          moodText: rawInput,
+          parsedProfile: null,
+          latencyMs,
+          errorCode: 'ANTHROPIC_CREDIT_LOW',
+        }).catch(() => {})
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: 'AI service is temporarily unavailable. Please try again later.',
+          code: 'SERVICE_UNAVAILABLE',
+          retry_after: 3600,
+        }),
+        { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── JSON parse error (LLM returned invalid JSON) ──────────────────
+    const isJsonError = msg.includes('JSON') || msg.includes('Unexpected token')
+    const errorCode = isJsonError ? 'PARSE_FAILED' : 'UNKNOWN_ERROR'
+
+    console.error(`[parse-mood] Error [${errorCode}]:`, msg)
 
     // Log parse failure
     if (quotaCheck.userId) {
@@ -312,13 +350,13 @@ serve(async (req: Request): Promise<Response> => {
         userId: quotaCheck.userId,
         moodText: rawInput,
         parsedProfile: null,
-        latencyMs: Date.now() - startTime,
-        errorCode: 'PARSE_FAILED',
+        latencyMs,
+        errorCode,
       }).catch(() => {})
     }
 
     return new Response(
-      JSON.stringify({ error: 'Failed to parse mood. Please try again.', code: 'PARSE_FAILED' }),
+      JSON.stringify({ error: 'Failed to parse mood. Please try again.', code: errorCode }),
       { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }

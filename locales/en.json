@@ -716,6 +716,8 @@
     "serverSubtitle": "Our servers are having trouble. Please try again.",
     "emptyTitle": "No results found",
     "emptySubtitle": "Try adjusting your filters or describing a different mood",
+    "quotaTitle": "Daily limit reached",
+    "quotaSubtitle": "Upgrade to Pro for more searches",
     "unknownTitle": "Something went wrong",
     "unknownSubtitle": "Please try again",
     "tryAgain": "Try Again"

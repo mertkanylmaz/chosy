@@ -21,6 +21,27 @@ import {
   TasteProfile,
   VisualStyle,
 } from '../types';
+import { logger } from '../utils/logger';
+
+// ─── MoodParseError ──────────────────────────────────────────────────────────
+
+/**
+ * Structured error class for mood parsing failures.
+ * Carries a machine-readable code + user-facing message so the UI
+ * can show context-specific feedback (network, quota, parse, credit).
+ *
+ * Sprint 1 v5.0 — replaces silent default-profile fallback.
+ */
+export class MoodParseError extends Error {
+  constructor(
+    public readonly code: string,
+    public readonly userMessage: string,
+    public readonly originalError?: unknown,
+  ) {
+    super(userMessage);
+    this.name = 'MoodParseError';
+  }
+}
 
 // ─── Rate Limiter ─────────────────────────────────────────────────────────────
 
@@ -67,8 +88,10 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 5_000);
 
+  let res: Response;
+
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/parse-mood`, {
+    res = await fetch(`${SUPABASE_URL}/functions/v1/parse-mood`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -78,16 +101,44 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
       body: JSON.stringify({ raw_input: input }),
       signal: controller.signal,
     });
-
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`Edge Function ${res.status}: ${body}`);
-    }
-
-    return (await res.json()) as EdgeResponse;
+  } catch (networkError) {
+    clearTimeout(timeoutId);
+    throw new MoodParseError(
+      'NETWORK_ERROR',
+      'Check your internet connection and try again.',
+      networkError,
+    );
   } finally {
     clearTimeout(timeoutId);
   }
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    const code = typeof errorData?.code === 'string' ? errorData.code : '';
+
+    // Map specific edge function error codes to user-facing errors
+    if (code === 'QUOTA_EXCEEDED') {
+      throw new MoodParseError('QUOTA_EXCEEDED', errorData.error ?? 'Daily search quota exceeded.', errorData);
+    }
+    if (code === 'INVALID_INPUT') {
+      throw new MoodParseError('INVALID_INPUT', errorData.error ?? 'Please describe your mood in more detail.', errorData);
+    }
+    if (code === 'RATE_LIMIT_EXCEEDED') {
+      throw new MoodParseError('RATE_LIMIT_EXCEEDED', 'Too many requests. Please wait a moment.', errorData);
+    }
+    if (code === 'SERVICE_UNAVAILABLE') {
+      throw new MoodParseError('SERVICE_UNAVAILABLE', 'AI service is temporarily unavailable. Please try again later.', errorData);
+    }
+
+    // Generic server error
+    throw new MoodParseError(
+      code || 'PARSE_FAILED',
+      'Could not analyze your mood right now. Please try again.',
+      errorData,
+    );
+  }
+
+  return (await res.json()) as EdgeResponse;
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────
@@ -1350,25 +1401,46 @@ function ruleBased(rawInput: string): TasteProfile {
  * Kullanıcının serbest metin girdisini 12 boyutlu TasteProfile'a dönüştürür.
  *
  * Claude API (Edge Function) birincil kaynaktır.
- * Timeout (5 sn), 404 veya hata durumunda kapsamlı rule-based fallback devreye girer.
+ * Hata durumunda MoodParseError throw eder — sessiz fallback YOK.
  *
- * Sprint 1 v4.0: Returns searchId from edge function for downstream logging.
+ * Sprint 1 v5.0: Silent fallback kaldirildi. 14 gunluk Anthropic outage
+ * bu silent fallback yuzunden fark edilmedi. Artik hata UI'a gosterilir.
+ *
+ * Rule-based parser sadece acik cagirildiginda kullanilir (parseMoodLocal).
  *
  * @param input - Kullanıcının yazdığı ham mood metni (TR veya EN)
+ * @throws {MoodParseError} - API/network/quota/parse hatalari icin
  */
 export async function parseMood(input: string): Promise<ParseMoodResult> {
+  await checkRateLimit();
+
   try {
-    await checkRateLimit();
     const raw = await callEdgeFunction(input);
     const searchId = raw.search_id ?? null;
     return { profile: validateAndNormalize(raw), searchId };
   } catch (error) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.warn('[tasteParser] Claude API failed, using rule-based fallback:', error);
+    // MoodParseError already structured — re-throw as-is
+    if (error instanceof MoodParseError) {
+      logger.warn('[tasteParser] MoodParseError:', error.code, error.message);
+      throw error;
     }
-    return { profile: ruleBased(input), searchId: null };
+
+    // Unexpected error — wrap in MoodParseError so UI can handle consistently
+    logger.error('[tasteParser] Unexpected error in parseMood:', error);
+    throw new MoodParseError(
+      'UNKNOWN_ERROR',
+      'Something went wrong. Please try again.',
+      error,
+    );
   }
+}
+
+/**
+ * Acik cagrilan rule-based fallback — SADECE test veya bilinli kullanim icin.
+ * parseMood'un hata durumunda otomatik olarak cagrilmaz.
+ */
+export function parseMoodLocal(input: string): TasteProfile {
+  return ruleBased(input);
 }
 
 /** @deprecated parseTaste yerine parseMood kullanın. */
