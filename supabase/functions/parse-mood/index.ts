@@ -8,6 +8,7 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { sentryCapture } from '../_shared/sentry.ts'
 
 // ─── Sprint 1 v4.0 — Async Logging Helper ────────────────────────────────────
 
@@ -318,6 +319,14 @@ serve(async (req: Request): Promise<Response> => {
     if (isAnthropicCreditError) {
       console.error('[parse-mood] FATAL: ANTHROPIC_CREDIT_LOW —', msg)
 
+      // Sentry fatal — immediate alert for credit outage
+      await sentryCapture({
+        message: 'ANTHROPIC CREDIT BALANCE LOW — parse-mood failing',
+        level: 'fatal',
+        tags: { function: 'parse-mood', critical: 'true', error_code: 'ANTHROPIC_CREDIT_LOW' },
+        extra: { user_id: quotaCheck.userId, error_message: msg },
+      })
+
       if (quotaCheck.userId) {
         logMoodSearch({
           userId: quotaCheck.userId,
@@ -343,6 +352,14 @@ serve(async (req: Request): Promise<Response> => {
     const errorCode = isJsonError ? 'PARSE_FAILED' : 'UNKNOWN_ERROR'
 
     console.error(`[parse-mood] Error [${errorCode}]:`, msg)
+
+    // Sentry error — parse/unknown failures
+    await sentryCapture({
+      message: `parse-mood failed: ${msg}`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: errorCode },
+      extra: { mood_length: rawInput?.length, user_id: quotaCheck.userId },
+    })
 
     // Log parse failure
     if (quotaCheck.userId) {
