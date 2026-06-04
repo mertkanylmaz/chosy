@@ -57,11 +57,12 @@ import {
 } from '@/services/gamification';
 import { isWatchlistFull, isStreakMilestone } from '@/services/conversion';
 import { checkAndConsumeQuota } from '@/services/quotaEngine';
-import { getAppUserId } from '@/services/watchlist';
+import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import type { UserMilestone } from '@/services/gamification';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 import { posthogAnalytics } from '@/services/posthog';
+import { tasteSignals } from '@/services/tasteSignalService';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -317,11 +318,21 @@ export default function DiscoverScreen() {
         if (uid) {
           const quota = await checkAndConsumeQuota(uid, 'slot');
           if (!quota.allowed) {
+            // Watchlist'e eklenemedi — swipe_right sinyali yaz (watchlist_add yazılmayacak)
+            tasteSignals.recordSwipeRight(film.id).catch(() => {});
             triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
             return;
           }
         }
       }
+
+      // ── Watchlist insert — Sprint 2 Bug B fix ─────────────────────────
+      // Quota gate'i geçildi. Filmi gerçekten watchlist tablosuna yaz.
+      // addToWatchlist içinde fire-and-forget swipe_right signal + user
+      // vector update tetiklenir. await: insert tamamlanmadan UI "Saved"
+      // toast göstermesin diye. Hata olursa addToWatchlist içinde
+      // [watchlist] addToWatchlist hata: log'u atılır, sessizce yutulmaz.
+      await addToWatchlist(film);
 
       onSwipeFilm(film, 'right');
       addLastSessionFilm(film);
@@ -375,6 +386,7 @@ export default function DiscoverScreen() {
   const handleSwipeLeft = useCallback(
     (film: Film) => {
       onSwipeFilm(film, 'left');
+      tasteSignals.recordSwipeLeft(film.id).catch(() => {});
       setDisplayFilms((prev) => prev.filter((f) => f.id !== film.id));
       swipeCountRef.current += 1;
 
