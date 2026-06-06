@@ -5,7 +5,7 @@
  * Supabase roulette_picks tablosuna ve logger'a kaydeder (fire-and-forget).
  */
 import { supabase } from './supabase';
-import { getAppUserId } from './watchlist';
+import { getAppUserId } from './auth-utils';
 import { logger } from '../utils/logger';
 import type { SlotVariant } from './slotService';
 

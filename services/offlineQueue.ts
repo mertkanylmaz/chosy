@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
-import { getAppUserId } from './watchlist';
+import { getAppUserId } from './auth-utils';
 import { logger } from '@/utils/logger';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────

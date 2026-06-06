@@ -15,7 +15,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from '@/services/supabase';
-import { getAppUserId } from '@/services/watchlist';
+import { getAppUserId } from '@/services/auth-utils';
 import { getExperimentGroup } from './abTesting';
 import type {
   TriggerEvent,

@@ -24,6 +24,8 @@ import { useRouter } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { supabase } from '@/services/supabase';
+import { remoteConfig } from '@/services/remoteConfig';
+import { tasteSignals } from '@/services/tasteSignalService';
 import { configureGoogleSignIn } from '@/services/authService';
 import { initializePurchases } from '@/services/purchaseService';
 import { LanguageProvider } from '@/contexts/LanguageContext';
@@ -104,6 +106,24 @@ export default function RootLayout() {
       logger.error('[layout] Font yükleme hatası (graceful devam):', fontError);
     }
   }, [fontError]);
+
+  // ── Remote config hydration ──────────────────────────────────────────
+  // Supabase'den app_config çekip flag'leri belleğe yükler.
+  // Fire-and-forget: splash'i bloklamaz, hata durumunda cache/default'a düşer.
+  useEffect(() => {
+    remoteConfig.hydrate().catch((err) => {
+      logger.warn('[layout] remoteConfig hydrate hatası (graceful devam):', err);
+    });
+  }, []);
+
+  // ── Taste signals offline queue flush ─────────────────────────────────
+  // Network kesintilerinde AsyncStorage'a düşen sinyaller burada Supabase'e
+  // gönderilir. Sprint 2 TASK 2.1.
+  useEffect(() => {
+    tasteSignals.flushOfflineQueue().catch((err) => {
+      logger.warn('[layout] tasteSignals flush hatası (graceful devam):', err);
+    });
+  }, []);
 
   // ── PostHog: app_launched event ───────────────────────────────────────────
   useEffect(() => {

@@ -26,6 +26,7 @@
     "process:figurler": "python3 scripts/remove_white_backgrounds.py",
     "test:quality": "tsx tests/recommendation-quality/run-quality-test.ts",
     "quality:adversarial": "tsx tests/recommendation-quality/adversarial-runner.ts",
+    "test:founder": "tsx tests/founder-acceptance/runner.ts",
     "profile:ai": "tsx scripts/ai-profile-films.ts",
     "profile:ai:missing": "tsx scripts/ai-profile-films.ts --only-missing",
     "profile:ai:verify": "tsx scripts/verify-ai-profiles.ts",

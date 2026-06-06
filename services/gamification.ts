@@ -12,7 +12,7 @@
  */
 
 import { supabase } from './supabase';
-import { getAppUserId } from './watchlist';
+import { getAppUserId } from './auth-utils';
 import { earnSlotToken } from './slotService';
 import { logger } from '../utils/logger';
 

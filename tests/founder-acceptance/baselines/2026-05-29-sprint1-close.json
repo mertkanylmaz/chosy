@@ -1,0 +1,103 @@
+{
+  "date": "2026-05-29",
+  "sprint": "Sprint 1 v5.0 closure",
+  "rpc": "match_films_v2",
+  "results": {
+    "mind_bending_neo_noir": {
+      "verdict": "PASS",
+      "acceptableCount": 3,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.808,
+      "top10_titles": [
+        "The Master (2012) sim=0.865",
+        "Il Divo (2008) sim=0.86",
+        "Inherent Vice (2014) sim=0.862",
+        "Zodiac (2007) sim=0.785",
+        "Belle de Jour (1967) sim=0.778",
+        "The Hourglass Sanatorium (1973) sim=0.785",
+        "Enemy (2014) sim=0.773",
+        "The Witch: Part 2 - The Other One (2022) sim=0.783",
+        "Inception (2010) sim=0.794",
+        "Killers of the Flower Moon (2023) sim=0.792"
+      ]
+    },
+    "happy_simple": {
+      "verdict": "PASS",
+      "acceptableCount": 7,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.845,
+      "top10_titles": [
+        "The Adventures of Pinocchio (1972) sim=0.914",
+        "Kiki's Delivery Service (1989) sim=0.929",
+        "Mononoke the Movie: The Phantom in the Rain (2024) sim=0.481",
+        "Midnight in Paris (2011) sim=0.87",
+        "Sing (2016) sim=0.868",
+        "The SpongeBob Movie: Sponge on the Run (2020) sim=0.869",
+        "Klaus (2019) sim=0.858",
+        "Howl's Moving Castle (2004) sim=0.919",
+        "The Croods: A New Age (2020) sim=0.87",
+        "Abominable (2019) sim=0.875"
+      ]
+    },
+    "sad_drama": {
+      "verdict": "PASS",
+      "acceptableCount": 4,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.873,
+      "top10_titles": [
+        "Black Dog (2024) sim=0.924",
+        "Men of Honor (2000) sim=0.861",
+        "Still Alice (2014) sim=0.856",
+        "A Prophet (2009) sim=0.875",
+        "Innocence (1997) sim=0.928",
+        "The Cider House Rules (1999) sim=0.849",
+        "No Letting Go (2016) sim=0.862",
+        "The Fallout (2021) sim=0.864",
+        "The Turin Horse (2011) sim=0.86",
+        "A Few Good Men (1992) sim=0.851"
+      ]
+    },
+    "wong_kar_wai": {
+      "verdict": "PASS",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.863,
+      "top10_titles": [
+        "Summer Interlude (1951) sim=0.881",
+        "Millennium Mambo (2001) sim=0.9",
+        "Once Upon a Time in America (1984) sim=0.859",
+        "Zodiac (2007) sim=0.865",
+        "Mank (2020) sim=0.857",
+        "Killers of the Flower Moon (2023) sim=0.893",
+        "Cinema Paradiso (1988) sim=0.901",
+        "Long Day's Journey Into Night (2018) sim=0.8",
+        "My Blueberry Nights (2007) sim=0.888",
+        "The Diving Bell and the Butterfly (2007) sim=0.784"
+      ]
+    },
+    "no_marvel": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.801,
+      "top10_titles": [
+        "Ghost in the Shell (1995) sim=0.875",
+        "City of Women (1980) sim=0.85",
+        "The Exterminating Angel (1962) sim=0.835",
+        "Twin Peaks (1989) sim=0.789",
+        "The Butterfly Effect (2004) sim=0.783",
+        "Get Out (2017) sim=0.779",
+        "Blue Velvet (1986) sim=0.775",
+        "Blind Chance (1987) sim=0.763",
+        "Evangelion: 3.0+1.0 Thrice Upon a Time (2021) sim=0.784",
+        "Inland Empire (2006) sim=0.774"
+      ]
+    }
+  },
+  "scoring": "Yol B: unacceptable-based + similarity",
+  "total_pass": 4,
+  "total_partial": 1,
+  "total_weak": 0,
+  "total_fail": 0,
+  "notes": "Yol B scoring: PASS = 0 unacc + avgSim>=0.75 + (acc>=2 || avgSim>=0.85)"
+}

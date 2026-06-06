@@ -13,6 +13,8 @@ import { supabase } from './supabase';
 import { updateUserVector } from './userProfile';
 import { logger } from '../utils/logger';
 import { posthogAnalytics } from './posthog';
+import { tasteSignals } from './tasteSignalService';
+import { getAppUserId } from './auth-utils'; // re-export aşağıda, iç kullanım için de import
 
 // ─── Watched Status (local) ──────────────────────────────────────────────────
 
@@ -78,58 +80,8 @@ export interface WatchlistGroup {
   films: WatchlistItem[];
 }
 
-/**
- * Auth kullanıcısının `users` tablosundaki UUID'sini döndürür.
- * Kayıt yoksa (anonim dahil) otomatik oluşturur.
- */
-export async function getAppUserId(): Promise<string | null> {
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return null;
-
-    const { data } = await supabase
-      .from('users')
-      .select('id')
-      .eq('auth_id', user.id)
-      .single();
-
-    if (data) return data.id as string;
-
-    // Kayıt yoksa oluştur — race condition için duplicate key (23505) toleransı var
-    const { data: inserted, error: insertError } = await supabase
-      .from('users')
-      .insert({ auth_id: user.id })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      // 23505 = unique_violation: eşzamanlı başka bir çağrı zaten INSERT yaptı
-      if (insertError.code === '23505') {
-        const { data: existing } = await supabase
-          .from('users')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-        return existing?.id ?? null;
-      }
-      logger.error('[watchlist] users kaydı oluşturulamadı:', insertError.message);
-      return null;
-    }
-
-    if (!inserted) return null;
-
-    return inserted.id as string;
-  } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] getAppUserId beklenmedik hata:', err);
-    }
-    return null;
-  }
-}
+// getAppUserId artık auth-utils.ts'te tanımlı — re-export for backward compat
+export { getAppUserId } from './auth-utils';
 
 /** UUID v4 format kontrolü */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -193,6 +145,9 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
 
       // Arka planda kullanıcı vektörünü güncelle — hata dışarıya yayılmaz
       updateUserVector(appUserId, film.id);
+
+      // Taste signal: watchlist add (fire-and-forget, fail ana akışı etkilemez)
+      tasteSignals.recordWatchlistAdd(film.id).catch(() => {});
     }
   } catch (err) {
     if (__DEV__) {
@@ -344,6 +299,11 @@ export async function removeFromWatchlist(filmId: string): Promise<boolean> {
         // eslint-disable-next-line no-console
         console.log('[watchlist] silindi: film_id=', filmId, '| user_id=', appUserId);
       }
+    }
+
+    if (!error) {
+      // Taste signal: watchlist remove (fire-and-forget, fail ana akışı etkilemez)
+      tasteSignals.recordWatchlistRemove(filmId).catch(() => {});
     }
 
     return !error;

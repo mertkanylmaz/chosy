@@ -12,7 +12,11 @@ import { TasteProfile, FilmFilters } from '../types';
 import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 
+import { getAppUserId } from './auth-utils';
+import { remoteConfig } from './remoteConfig';
 import { supabase } from './supabase';
+import { tasteSignals } from './tasteSignalService';
+import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
 
 // ─── Yardımcı: Network Hata Tespiti ──────────────────────────────────────────
@@ -39,13 +43,15 @@ function isNetworkLikeError(error: { message?: string; code?: string }): boolean
 // ─── match_films_v2 rollout ──────────────────────────────────────────────────
 
 /**
- * Sprint 1 v3.0 — match_films_v2 feature flag.
- * Dev'de her zaman ON, prod'da env flag ile kontrol edilir.
- * Rollback: EXPO_PUBLIC_USE_MATCH_FILMS_V2=false
+ * Lazy getters — her çağrıda remoteConfig.memoryCache'ten okur.
+ * Module-level constant evaluation race'i önler (Sprint 2 TASK 2.4 Bug A fix).
+ * remoteConfig.hydrate() bu module import'undan SONRA resolve olsa bile
+ * flag'in güncel değeri her recommendation call'unda görülür.
+ *
+ * KURAL: Bu file içinde remoteConfig.get(...) DOĞRUDAN kullanma — bu getter'ları çağır.
  */
-const USE_MATCH_FILMS_V2 =
-  process.env.EXPO_PUBLIC_USE_MATCH_FILMS_V2 === 'true' ||
-  (typeof __DEV__ !== 'undefined' && __DEV__);
+const useMatchFilmsV2 = (): boolean => remoteConfig.get('use_match_films_v2');
+const useHybridRecommendation = (): boolean => remoteConfig.get('use_hybrid_recommendation');
 
 /** v2 default configuration */
 const V2_CONFIG = {
@@ -513,6 +519,37 @@ async function callMatchFilmsV2(
 }
 
 /**
+ * match_films_v3 RPC'yi çağırır. Hybrid mood + user vector recommendation.
+ * user_vector NULL gönderilebilir (mood-only fallback davranışı).
+ */
+async function callMatchFilmsV3(
+  vectorString: string,
+  userVectorString: string | null,
+  moodWeight: number,
+  userWeight: number,
+  limit: number,
+  minSimilarity: number,
+  minRating: number | null,
+  era: { from: number; to: number } | null,
+  excludeIds: string[],
+): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
+  const excl = excludeIds.length > 0 ? { exclude_ids: excludeIds } : {};
+  return supabase.rpc('match_films_v3', {
+    query_vector: vectorString,
+    user_vector: userVectorString,  // NULL olabilir
+    mood_weight: moodWeight,
+    user_weight: userWeight,
+    match_count: limit,
+    min_similarity: minSimilarity,
+    ...(minRating != null ? { min_rating: minRating } : {}),
+    ...(era ? { year_from: era.from, year_to: era.to } : {}),
+    ...excl,
+    per_director_cap: V2_CONFIG.per_director_cap,
+    tier_boost: V2_CONFIG.tier_boost,
+  });
+}
+
+/**
  * match_films v1 RPC'yi çağırır.
  */
 async function callMatchFilmsV1(
@@ -545,8 +582,38 @@ async function callMatchFilms(
   minRating: number | null,
   era: { from: number; to: number } | null,
   excludeIds: string[],
+  userVectorString?: string | null,
+  moodWeight?: number,
+  userWeight?: number,
 ): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
-  if (USE_MATCH_FILMS_V2) {
+  // v3 hybrid recommendation (Sprint 2 TASK 2.4)
+  if (useHybridRecommendation()) {
+    const v3Res = await callMatchFilmsV3(
+      vectorString,
+      userVectorString ?? null,
+      moodWeight ?? 1.0,
+      userWeight ?? 0.0,
+      limit,
+      minSimilarity,
+      minRating,
+      era,
+      excludeIds,
+    );
+    if (v3Res.error) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[recommendations] v3 failed, falling back to v2:', v3Res.error.message);
+      }
+      if (isNetworkLikeError(v3Res.error)) {
+        throw new TypeError(`Network request failed: ${v3Res.error.message}`);
+      }
+      // v3 fail → v2'ye düş (graceful fallback chain)
+    } else {
+      return v3Res;
+    }
+  }
+
+  if (useMatchFilmsV2()) {
     const v2Res = await callMatchFilmsV2(vectorString, limit, minSimilarity, minRating, era, excludeIds);
     if (v2Res.error) {
       if (__DEV__) {
@@ -577,7 +644,7 @@ async function callMatchFilms(
  * ≥5 film gelince o denemedeki sonuç döndürülür.
  * Tüm denemeler boş kalırsa son denemenin sonucu (boş dizi veya null) döner.
  *
- * Uses v2 (per-director cap + NULL exclusion) when USE_MATCH_FILMS_V2 is true,
+ * Uses v2 (per-director cap + NULL exclusion) when useMatchFilmsV2() is true,
  * with automatic fallback to v1 on error.
  */
 async function getFilmsWithRelaxation(
@@ -586,11 +653,14 @@ async function getFilmsWithRelaxation(
   ratingMin: number | null,
   era: { from: number; to: number } | null,
   excludeIds: string[],
+  userVectorString?: string | null,
+  moodWeight?: number,
+  userWeight?: number,
 ): Promise<MatchFilmRow[] | null> {
   const baseRating = ratingMin ?? 6.0;
 
   // Deneme 1: tam filtreler
-  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds);
+  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
   if (res.error && isNetworkLikeError(res.error)) {
@@ -606,7 +676,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #1: filtreler gevşetildi (rating -1)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds);
+  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds, userVectorString, moodWeight, userWeight);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -616,7 +686,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #2: filtreler gevşetildi (year kaldırıldı)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds);
+  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds, userVectorString, moodWeight, userWeight);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -626,7 +696,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #3: sadece vektör similarity');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds);
+  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds, userVectorString, moodWeight, userWeight);
   if (res.error) return null;
   return (res.data as MatchFilmRow[]) ?? [];
 }
@@ -669,6 +739,41 @@ export async function getRecommendations(
     console.log('[recommendations] TasteProfile:', JSON.stringify(profile, null, 2));
   }
 
+  // ── Adım 1.5: User vector + dynamic blend (Sprint 2 TASK 2.4) ────────
+  let userVectorString: string | null = null;
+  let moodWeight = 1.0;
+  let userWeight = 0.0;
+
+  if (useHybridRecommendation()) {
+    try {
+      const userId = await getAppUserId();
+      if (userId) {
+        const { vector: userVector, signalCount } = await getFreshUserVector(userId);
+        const weights = calculateBlendWeights(signalCount);
+        moodWeight = weights.moodWeight;
+        userWeight = weights.userWeight;
+        if (userVector && userWeight > 0) {
+          userVectorString = `[${userVector.join(',')}]`;
+        }
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[recommendations] Hybrid mode:', JSON.stringify({
+            signalCount,
+            moodWeight,
+            userWeight,
+            hasUserVector: !!userVectorString,
+          }));
+        }
+      }
+    } catch (err) {
+      // User vector fetch fail → mood-only fallback (sessiz değil, log)
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.warn('[recommendations] User vector fetch failed, mood-only:', err);
+      }
+    }
+  }
+
   // ── Adım 2: AI prefs override + Vektör oluştur ───────────────────────────
   const effectiveProfile = await applyAIPreferences(profile);
   const vector = tasteProfileToVector(effectiveProfile);
@@ -693,18 +798,26 @@ export async function getRecommendations(
   if (__DEV__) {
     // eslint-disable-next-line no-console
     console.log('[recommendations] match_films params:', JSON.stringify({
-      version: USE_MATCH_FILMS_V2 ? 'v2' : 'v1',
+      version: useHybridRecommendation() ? 'v3' : (useMatchFilmsV2() ? 'v2' : 'v1'),
+      ...(useHybridRecommendation() ? {
+        mood_weight: moodWeight,
+        user_weight: userWeight,
+        has_user_vector: !!userVectorString,
+      } : {}),
       match_count: limit,
       min_rating: ratingMin ?? 6.0,
       era,
       exclude_ids_count: excludeIds.length,
       query_vector: `[${vector.length} boyut]`,
-      ...(USE_MATCH_FILMS_V2 ? { per_director_cap: V2_CONFIG.per_director_cap, tier_boost: V2_CONFIG.tier_boost } : {}),
+      ...(useMatchFilmsV2() ? { per_director_cap: V2_CONFIG.per_director_cap, tier_boost: V2_CONFIG.tier_boost } : {}),
     }, null, 2));
   }
 
   // ── Adım 4: Aşamalı filtre gevşetme ile RPC ───────────────────────────────
-  const rawResult = await getFilmsWithRelaxation(vectorString, limit, ratingMin, era, excludeIds);
+  const rawResult = await getFilmsWithRelaxation(
+    vectorString, limit, ratingMin, era, excludeIds,
+    userVectorString, moodWeight, userWeight,
+  );
   const data: MatchFilmRow[] = rawResult ?? [];
   const rpcFailed = rawResult === null;
 
@@ -726,6 +839,24 @@ export async function getRecommendations(
     }
 
     const fallbackFilms = await getFallbackFromSupabase(effectiveProfile, limit, excludeIds, filters);
+
+    // Sprint 2 fix: fallback path'te de observability garantisi.
+    // rpc_version: hangi flag aktifti, error_code: neden fallback'e düştük.
+    if (searchId) {
+      const rpcVersion = useHybridRecommendation()
+        ? 'match_films_v3'
+        : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
+      const errorCode = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
+      await supabase
+        .from('mood_searches')
+        .update({
+          rpc_version: rpcVersion,
+          recommended_film_ids: fallbackFilms?.map((f) => f.id) ?? [],
+          error_code: errorCode,
+        })
+        .eq('id', searchId);
+    }
+
     if (fallbackFilms) return { films: fallbackFilms, source: 'fallback' };
 
     if (__DEV__) {
@@ -747,30 +878,27 @@ export async function getRecommendations(
     );
   }
 
-  // Sprint 1 v4.0: mood_searches update with film IDs (fire-and-forget)
   if (searchId) {
-    const rpcVersion = USE_MATCH_FILMS_V2 ? 'match_films_v2' : 'match_films';
-    supabase
+    const rpcVersion = useHybridRecommendation()
+        ? 'match_films_v3'
+        : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
+    // Sprint 2 fix: await ekle (fire-and-forget değil) — observability garantisi.
+    // Latency ~50ms artar ama rpc_version her search için garanti yazılır.
+    const { error: updateError } = await supabase
       .from('mood_searches')
       .update({
         recommended_film_ids: films.map((f) => f.id),
         rpc_version: rpcVersion,
       })
-      .eq('id', searchId)
-      .then(
-        () => {
-          if (__DEV__) {
-            // eslint-disable-next-line no-console
-            console.log(`[recommendations] mood_searches updated: ${searchId} → ${films.length} films`);
-          }
-        },
-        (err) => {
-          if (__DEV__) {
-            // eslint-disable-next-line no-console
-            console.log('[recommendations] mood_searches update failed:', err);
-          }
-        },
-      );
+      .eq('id', searchId);
+
+    if (updateError && __DEV__) {
+      // eslint-disable-next-line no-console
+      console.log('[recommendations] mood_searches update failed:', updateError.message);
+    }
+
+    // Sprint 2 TASK 2.1.G4: mood_search_completed signal
+    tasteSignals.recordMoodSearchCompleted(searchId).catch(() => {});
   }
 
   return { films, source: 'supabase' };

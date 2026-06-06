@@ -15,6 +15,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -385,6 +387,27 @@ export default function OnboardingScreen() {
     [],
   );
 
+  /** Scroll bittiğinde index'i güvenle güncelle — onViewableItemsChanged'in ateşlenmediği edge case'ler için */
+  const onMomentumScrollEnd = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const newIndex = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+      if (newIndex >= 0 && newIndex < INTRO_SLIDES.length) {
+        setSlideIndex(newIndex);
+      }
+    },
+    [],
+  );
+
+  /** FlatList'e kesin layout bilgisi ver — ilk render'da boş ekran sorununu önler */
+  const getItemLayout = useCallback(
+    (_data: unknown, index: number) => ({
+      length: SCREEN_WIDTH,
+      offset: SCREEN_WIDTH * index,
+      index,
+    }),
+    [],
+  );
+
   /** Next/Continue butonuna basıldı */
   const handleSlideNext = useCallback(() => {
     hapticLight();
@@ -439,10 +462,10 @@ export default function OnboardingScreen() {
     <View style={styles.root}>
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
 
-        {/* Ust: Skip butonu */}
+        {/* Ust: Skip butonu — slide'ları atla, kalibrasyona git (arketip korunur) */}
         <View style={styles.topRow}>
           <View style={styles.topSpacer} />
-          <TouchableOpacity onPress={finishOnboarding} activeOpacity={0.7} style={styles.skipBtn}>
+          <TouchableOpacity onPress={handleSwipeAction} activeOpacity={0.7} style={styles.skipBtn}>
             <Text style={styles.skipText}>{t('common.skip')}</Text>
           </TouchableOpacity>
         </View>
@@ -457,10 +480,11 @@ export default function OnboardingScreen() {
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           bounces={false}
+          getItemLayout={getItemLayout}
           onViewableItemsChanged={onViewableItemsChanged}
           viewabilityConfig={viewabilityConfig}
+          onMomentumScrollEnd={onMomentumScrollEnd}
           style={styles.slideList}
-          contentContainerStyle={styles.slideListContent}
         />
 
         {/* Pagination dots */}
@@ -539,16 +563,13 @@ const styles = StyleSheet.create({
   slideList: {
     flex: 1,
   },
-  slideListContent: {
-    alignItems: 'center',
-  },
-
-  // Demo icerik alani (her slide)
+  // Demo icerik alani (her slide) — height %100 ile FlatList yuksekligini doldurur
   demoContent: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 32,
+    alignSelf: 'stretch',
+    flex: 1,
   },
 
   // Slide ikon kapsayici

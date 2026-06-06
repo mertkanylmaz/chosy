@@ -21,6 +21,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  AppState,
+  AppStateStatus,
   Dimensions,
   FlatList,
   Linking,
@@ -62,6 +64,7 @@ import { Colors } from '@/constants/Colors';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { FilmShareCard, useShareCapture } from '@/components/ShareCards';
 import { hapticMedium } from '@/utils/haptics';
+import { tasteSignals } from '@/services/tasteSignalService';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -457,6 +460,42 @@ export default function FilmDetailScreen() {
       active = false;
     };
   }, [film, currentProfile, explanation]);
+
+  // ── Detail view dwell-time taste signal ────────────────────────────────────
+  // Mount → unmount arası aktif süreyi ölçer, AppState background/foreground
+  // geçişlerini hesaba katar. Sprint 2 TASK 2.1.G2.
+  useEffect(() => {
+    if (!id || !UUID_REGEX.test(id)) return;
+
+    let accumulatedMs = 0;
+    let lastActiveStart: number | null = Date.now();
+
+    const recordIfActive = () => {
+      if (lastActiveStart !== null) {
+        accumulatedMs += Date.now() - lastActiveStart;
+        lastActiveStart = null;
+      }
+    };
+
+    const handleAppStateChange = (next: AppStateStatus) => {
+      if (next === 'active') {
+        if (lastActiveStart === null) lastActiveStart = Date.now();
+      } else {
+        recordIfActive();
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      recordIfActive();
+      sub.remove();
+
+      if (accumulatedMs >= 1000) {
+        tasteSignals.recordDetailView(id, accumulatedMs).catch(() => {});
+      }
+    };
+  }, [id]);
 
   // ── Aksiyonlar ───────────────────────────────────────────────────────────────
 

@@ -1,0 +1,103 @@
+{
+  "date": "2026-06-06",
+  "sprint": "Sprint 1 v5.0 closure",
+  "rpc": "match_films_v2",
+  "results": {
+    "mind_bending_neo_noir": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 1,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.849,
+      "top10_titles": [
+        "Zodiac (2007) sim=0.9",
+        "Millennium Mambo (2001) sim=0.872",
+        "Magnolia (1999) sim=0.879",
+        "Killers of the Flower Moon (2023) sim=0.902",
+        "Summer Interlude (1951) sim=0.843",
+        "Mank (2020) sim=0.864",
+        "Opening Night (1977) sim=0.792",
+        "Once Upon a Time in the West (1968) sim=0.805",
+        "Da Vinci Şifresi (2006) sim=0.831",
+        "The Sixth Sense (1999) sim=0.798"
+      ]
+    },
+    "happy_simple": {
+      "verdict": "PASS",
+      "acceptableCount": 5,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.88,
+      "top10_titles": [
+        "Howl's Moving Castle (2004) sim=0.918",
+        "The Book of Life (2014) sim=0.875",
+        "Midnight in Paris (2011) sim=0.869",
+        "I Can Only Imagine (2018) sim=0.863",
+        "Hercules (1997) sim=0.867",
+        "Little Eggs: A Frozen Rescue (2022) sim=0.876",
+        "Kubo and the Two Strings (2016) sim=0.872",
+        "Lilo & Stitch (2002) sim=0.87",
+        "Miracles from Heaven (2016) sim=0.858",
+        "Kiki's Delivery Service (1989) sim=0.927"
+      ]
+    },
+    "sad_drama": {
+      "verdict": "PASS",
+      "acceptableCount": 6,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.884,
+      "top10_titles": [
+        "Innocence (1997) sim=0.928",
+        "Paper Lives (2021) sim=0.925",
+        "Black Dog (2024) sim=0.924",
+        "Boyhood (2014) sim=0.856",
+        "The Last King of Scotland (2006) sim=0.858",
+        "Mary and Max (2009) sim=0.913",
+        "Charm City Kings (2020) sim=0.86",
+        "The Florida Project (2017) sim=0.856",
+        "The Social Network (2010) sim=0.863",
+        "4 Months, 3 Weeks and 2 Days (2007) sim=0.861"
+      ]
+    },
+    "wong_kar_wai": {
+      "verdict": "PASS",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.892,
+      "top10_titles": [
+        "Killers of the Flower Moon (2023) sim=0.926",
+        "Summer Interlude (1951) sim=0.894",
+        "My Blueberry Nights (2007) sim=0.904",
+        "Arrival (2016) sim=0.899",
+        "Love Letter (1995) sim=0.875",
+        "Millennium Mambo (2001) sim=0.912",
+        "Zodiac (2007) sim=0.902",
+        "Cinema Paradiso (1988) sim=0.916",
+        "Mank (2020) sim=0.875",
+        "When Marnie Was There (2014) sim=0.813"
+      ]
+    },
+    "no_marvel": {
+      "verdict": "PARTIAL",
+      "acceptableCount": 0,
+      "unacceptableCount": 0,
+      "avgSimilarity": 0.819,
+      "top10_titles": [
+        "City of Women (1980) sim=0.878",
+        "Ghost in the Shell (1995) sim=0.889",
+        "The Exterminating Angel (1962) sim=0.854",
+        "Close-Up (1990) sim=0.816",
+        "Cobain: Montage of Heck (2015) sim=0.787",
+        "Amarcord (1973) sim=0.788",
+        "Chungking Express (1994) sim=0.805",
+        "The Butterfly Effect (2004) sim=0.819",
+        "Sans Soleil (1983) sim=0.781",
+        "Neon Genesis Evangelion: Death and Rebirth (1997) sim=0.773"
+      ]
+    }
+  },
+  "scoring": "Yol B: unacceptable-based + similarity",
+  "total_pass": 3,
+  "total_partial": 2,
+  "total_weak": 0,
+  "total_fail": 0,
+  "notes": "Yol B scoring: PASS = 0 unacc + avgSim>=0.75 + (acc>=2 || avgSim>=0.85)"
+}

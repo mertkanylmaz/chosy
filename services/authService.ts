@@ -25,7 +25,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from './supabase';
 import { logOutPurchases } from './purchaseService';
 import { clearQuotaCache } from './quotaEngine';
-import { getAppUserId } from './watchlist';
+import { getAppUserId } from './auth-utils';
 import { logger } from '../utils/logger';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────

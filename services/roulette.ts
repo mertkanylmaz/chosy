@@ -4,7 +4,8 @@
  * Analytics Supabase'e kaydedilir.
  */
 import { Film } from '../types/film';
-import { WatchlistItem, getAppUserId } from './watchlist';
+import { WatchlistItem } from './watchlist';
+import { getAppUserId } from './auth-utils';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 

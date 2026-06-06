@@ -42,6 +42,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
@@ -924,6 +925,7 @@ export default function ProfileScreen() {
           text: t('profile.signOutConfirm'),
           style: 'destructive',
           onPress: async () => {
+            posthogAnalytics.reset();
             await signOut();
             router.replace('/auth');
           },
@@ -1112,8 +1114,11 @@ export default function ProfileScreen() {
               <Text style={styles.userIdHash}>#{userIdHash}</Text>
             )}
 
-            {/* Arketip rozeti + açıklama */}
-            <PersonaBadge archetypeId={archetypeId} />
+            {/* Arketip rozeti + açıklama — null ise dokunarak kalibrasyona git */}
+            <PersonaBadge
+              archetypeId={archetypeId}
+              onPress={archetypeId == null ? () => router.push('/onboarding' as never) : undefined}
+            />
             {archetypeId != null && (
               <Text style={styles.archetypeDesc} numberOfLines={2}>
                 {t(getArchetype(archetypeId)?.descKey ?? '')}
@@ -1224,6 +1229,24 @@ export default function ProfileScreen() {
 
           </View>
           </Animated.View>
+
+            {/* ── Dev-only: Sentry Test ──────────────────────────────── */}
+            {__DEV__ && (
+              <View style={styles.devSection}>
+                <TouchableOpacity
+                  style={styles.devSentryBtn}
+                  onPress={() => {
+                    // Lazy import — production bundle'a dahil olmaz
+                    const { triggerTestError } = require('@/utils/sentryTest');
+                    triggerTestError();
+                    Alert.alert('Sentry Test', 'Test error sent. Check Sentry dashboard.');
+                  }}
+                  activeOpacity={0.7}>
+                  <Ionicons name="bug-outline" size={16} color={Colors.gold} />
+                  <Text style={styles.devSentryBtnText}>Test Sentry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
           <View style={styles.bottomSpacer} />
         </ScrollView>
@@ -1770,6 +1793,30 @@ const styles = StyleSheet.create({
     color: Colors.textWhite,
     fontSize: 13,
     fontWeight: '600',
+  },
+
+  // ── Dev-only Sentry test ──
+  devSection: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: 16,
+  },
+  devSentryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: Colors.gold + '30',
+    borderRadius: Radius.button,
+    paddingVertical: 10,
+    borderStyle: 'dashed',
+  },
+  devSentryBtnText: {
+    color: Colors.gold,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
   // ── Genel ──

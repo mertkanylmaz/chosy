@@ -13,7 +13,7 @@
  */
 
 import { supabase } from './supabase';
-import { getAppUserId } from './watchlist';
+import { getAppUserId } from './auth-utils';
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
