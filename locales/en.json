@@ -301,7 +301,11 @@
     "q6c": "A clean, powerful A-to-B arc",
     "q6d": "Short stories woven together",
     "discoverMilestoneTitle": "5 films discovered! 🎬",
-    "discoverMilestoneSubtitle": "Your cinematic journey begins now"
+    "discoverMilestoneSubtitle": "Your cinematic journey begins now",
+    "tasteSwipeTitle": "Show us your taste",
+    "tasteSwipeSubtitle": "Swipe right on films you love, left on ones you'd skip",
+    "tasteSwipeLike": "Love it",
+    "tasteSwipeSkip": "Not for me"
   },
   "swipeCard": {
     "noMovies": "No movies yet",

@@ -301,7 +301,11 @@
     "q6c": "Temiz, güçlü bir A'dan B'ye arc",
     "q6d": "Birbirine dokunan kisa hikayeler",
     "discoverMilestoneTitle": "5 film kesfettin! 🎬",
-    "discoverMilestoneSubtitle": "Sinema yolculugun simdi basliyor"
+    "discoverMilestoneSubtitle": "Sinema yolculugun simdi basliyor",
+    "tasteSwipeTitle": "Zevkini goster",
+    "tasteSwipeSubtitle": "Sevdigin filmleri saga, istemedigin filmleri sola kaydir",
+    "tasteSwipeLike": "Severim",
+    "tasteSwipeSkip": "Bana gore degil"
   },
   "swipeCard": {
     "noMovies": "Henüz film yok",

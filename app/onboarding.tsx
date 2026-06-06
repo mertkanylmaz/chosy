@@ -1,15 +1,17 @@
 /**
- * Onboarding — 3 aşamalı ilk kullanım akışı.
+ * Onboarding — 4 asamali ilk kullanim akisi.
  *
- * Aşama 1 (slides): Interaktif swipe demo — tek ekran, kullanıcı Like/Skip ile ilerler
- * Aşama 2 (calibration): 6 sorulu Taste Calibration
- * Aşama 3 (reveal): Archetype Reveal animasyonu
+ * Asama 1 (slides): Interaktif swipe demo — tek ekran, kullanici Like/Skip ile ilerler
+ * Asama 2 (calibration): 6 sorulu Taste Calibration
+ * Asama 3 (taste_swipe): 6 film cold-start swipe — hybrid recommendation icin signal uretir
+ * Asama 4 (reveal): Archetype Reveal animasyonu
  *
- * Akış:
+ * Akis:
  *   SwipeDemo Like/Skip/Continue → calibration phase
- *   Calibration complete → reveal phase
+ *   Calibration complete → taste_swipe phase
+ *   Taste swipe complete (6 film) → reveal phase
  *   Reveal "Let's Go" → finishOnboarding() → /(tabs)
- *   Skip (her aşamada) → finishOnboarding()
+ *   Skip (calibration asamasinda) → finishOnboarding()
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -45,7 +47,7 @@ import {
   enqueueOperation,
 } from '@/services/offlineQueue';
 import { tasteProfileToVector } from '@/services/vectorEncoder';
-import { TasteCalibration, ArchetypeReveal } from '@/components/Onboarding';
+import { TasteCalibration, ArchetypeReveal, TasteSwipe } from '@/components/Onboarding';
 import type { CalibrationAnswer } from '@/components/Onboarding';
 import { buildCalibrationProfile } from '@/components/Onboarding/TasteCalibration/questions';
 import type { TasteProfile } from '@/types';
@@ -215,7 +217,7 @@ const INTRO_SLIDES: IntroSlide[] = [
 
 // ── Onboarding Phase ────────────────────────────────────────────────────────
 
-type Phase = 'slides' | 'calibration' | 'reveal';
+type Phase = 'slides' | 'calibration' | 'taste_swipe' | 'reveal';
 
 /**
  * Onboarding ana bileseni.
@@ -343,17 +345,23 @@ export default function OnboardingScreen() {
     setPhase('calibration');
   }, []);
 
-  /** Calibration tamamlandi → reveal'a gec + P8.2: sonuclari DB'ye yaz */
+  /** Calibration tamamlandi → taste_swipe'a gec + P8.2: sonuclari DB'ye yaz */
   const handleCalibrationComplete = useCallback(
     (archetypeId: number | null, answers: CalibrationAnswer[]) => {
       posthogAnalytics.track('onboarding_step_completed', { step: 2 });
       setRevealArchetypeId(archetypeId);
-      setPhase('reveal');
+      setPhase('taste_swipe');
       const calibrationProfile = buildCalibrationProfile(answers);
       void saveCalibrationResultsAsync(archetypeId, calibrationProfile);
     },
     [saveCalibrationResultsAsync],
   );
+
+  /** Cold-start swipe tamamlandi → reveal'a gec */
+  const handleTasteSwipeComplete = useCallback(() => {
+    posthogAnalytics.track('onboarding_step_completed', { step: 3, type: 'taste_swipe' });
+    setPhase('reveal');
+  }, []);
 
   /**
    * Arketip reveal tamamlandi — mood arama ekranina yonlendir.
@@ -363,7 +371,7 @@ export default function OnboardingScreen() {
    */
   const handleRevealFinish = useCallback(async () => {
     hapticSuccess();
-    posthogAnalytics.track('onboarding_step_completed', { step: 3 });
+    posthogAnalytics.track('onboarding_step_completed', { step: 4 });
     posthogAnalytics.track('archetype_revealed', { archetype_id: revealArchetypeId });
     await markOnboardingComplete();
     router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
@@ -441,6 +449,17 @@ export default function OnboardingScreen() {
           onComplete={handleCalibrationComplete}
           onSkip={handleCalibrationSkip}
         />
+      </View>
+    );
+  }
+
+  // ── Taste Swipe Phase (cold-start) ──
+  if (phase === 'taste_swipe') {
+    return (
+      <View style={styles.root}>
+        <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+          <TasteSwipe onComplete={handleTasteSwipeComplete} />
+        </SafeAreaView>
       </View>
     );
   }
