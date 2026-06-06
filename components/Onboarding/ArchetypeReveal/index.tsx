@@ -31,8 +31,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticLight, hapticSuccess } from '@/utils/haptics';
+import { hapticLight, hapticSuccess, hapticHeavy } from '@/utils/haptics';
 import { getArchetype } from '@/constants/archetypes';
+import { ArchetypeShareCard, useShareCapture } from '@/components/ShareCards';
+import { styles as shareStyles } from '@/components/ShareCards/styles';
 import { styles } from './styles';
 
 // ─── Tip ──────────────────────────────────────────────────────────────────────
@@ -223,6 +225,7 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [ctaEnabled, setCtaEnabled] = useState(false);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
   const archetype = archetypeId !== null ? getArchetype(archetypeId) : null;
 
@@ -263,9 +266,10 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
     glowOpacity.value = withDelay(500, withTiming(1, { duration: 400 }));
     glowScale.value = withDelay(500, withSpring(1.0, { damping: 12 }));
 
-    // Haptic: 400ms'de emoji göründüğünde
+    // Haptic: 400ms'de emoji gorunuyor — heavy + success combo
     const hapticTimer = setTimeout(() => {
-      hapticSuccess();
+      hapticHeavy();
+      setTimeout(() => hapticSuccess(), 100);
     }, 400);
 
     // CTA: 1200ms'de tıklanabilir
@@ -399,11 +403,26 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
         </Animated.View>
       </View>
 
-      {/* CTA Butonu */}
+      {/* CTA Butonlari */}
       <Animated.View
         entering={FadeInUp.delay(1200).springify()}
         style={styles.ctaWrap}
       >
+        {/* Share butonu — native modüller yoksa gizle */}
+        {isShareAvailable && (
+          <TouchableOpacity
+            onPress={share}
+            activeOpacity={0.85}
+            disabled={isCapturing || !ctaEnabled}
+            style={styles.shareBtn}
+          >
+            <Ionicons name="share-outline" size={18} color={Colors.accentPrimary} />
+            <Text style={styles.shareBtnText}>
+              {isCapturing ? t('share.sharing') : t('share.shareArchetype')}
+            </Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           onPress={handleFinish}
           activeOpacity={0.85}
@@ -421,6 +440,11 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
           </LinearGradient>
         </TouchableOpacity>
       </Animated.View>
+
+      {/* Offscreen share card — capture icin render edilir */}
+      <View style={shareStyles.offscreen}>
+        <ArchetypeShareCard ref={cardRef} archetypeId={archetypeId} />
+      </View>
     </View>
   );
 }

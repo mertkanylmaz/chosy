@@ -80,6 +80,26 @@ export const styles = StyleSheet.create({
   ctaWrap: {
     width: '100%',
     paddingBottom: 8,
+    gap: 10,
+  },
+
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: Colors.accentPrimary,
+    backgroundColor: 'transparent',
+  },
+
+  shareBtnText: {
+    color: Colors.accentPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
   ctaBtn: {

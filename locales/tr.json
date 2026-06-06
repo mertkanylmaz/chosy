@@ -610,7 +610,10 @@
     "endingBittersweet": "Tatlı-acı son",
     "endingOpen": "Açık son",
     "endingTragic": "Trajik son",
-    "endingTriumphant": "Zafer dolu son"
+    "endingTriumphant": "Zafer dolu son",
+    "archetypeLabel": "Sinema Arketipim",
+    "archetypeTagline": "Film kimligini kesfet",
+    "shareArchetype": "Arketipi Paylas"
   },
   "quota": {
     "remaining": "Bugün %{count} arama hakkın kaldı",

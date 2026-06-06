@@ -610,7 +610,10 @@
     "endingBittersweet": "Bittersweet ending",
     "endingOpen": "Open ending",
     "endingTragic": "Tragic ending",
-    "endingTriumphant": "Triumphant ending"
+    "endingTriumphant": "Triumphant ending",
+    "archetypeLabel": "My Cinema Archetype",
+    "archetypeTagline": "Discover your film identity",
+    "shareArchetype": "Share Archetype"
   },
   "quota": {
     "remaining": "%{count} searches left today",
