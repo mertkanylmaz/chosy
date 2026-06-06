@@ -31,7 +31,9 @@
     "profile:ai:missing": "tsx scripts/ai-profile-films.ts --only-missing",
     "profile:ai:verify": "tsx scripts/verify-ai-profiles.ts",
     "sentry:sourcemaps": "npx sentry-expo-upload-sourcemaps dist",
-    "lint:config": "tsx scripts/lint-remote-config.ts"
+    "lint:config": "tsx scripts/lint-remote-config.ts",
+    "lint:ui": "tsx scripts/lint-optimistic-ui.ts",
+    "lint:all": "tsx scripts/lint-remote-config.ts && tsx scripts/lint-optimistic-ui.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

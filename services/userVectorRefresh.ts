@@ -118,16 +118,19 @@ export async function getFreshUserVector(userId: string): Promise<UserVectorResu
 /**
  * Signal count -> dynamic blend weights.
  * Step function (CTO karari):
- *   < 10:      mood 1.0, user 0.0 (cold start)
- *   10-49:     mood 0.85, user 0.15 (light personalization)
+ *   < 6:       mood 1.0, user 0.0 (cold start — onboarding swipe 6 signal uretir)
+ *   6-49:      mood 0.85, user 0.15 (light personalization)
  *   50-199:    mood 0.70, user 0.30 (default)
  *   >= 200:    mood 0.55, user 0.45 (heavy user)
+ *
+ * Sprint 3: Threshold 10 → 6. Onboarding TasteSwipe 6 film swipe ile
+ * her yeni user en az 6 signal ile baslar. Hybrid ilk aramadan itibaren aktif.
  */
 export function calculateBlendWeights(signalCount: number): {
   moodWeight: number;
   userWeight: number;
 } {
-  if (signalCount < 10) return { moodWeight: 1.0, userWeight: 0.0 };
+  if (signalCount < 6) return { moodWeight: 1.0, userWeight: 0.0 };
   if (signalCount < 50) return { moodWeight: 0.85, userWeight: 0.15 };
   if (signalCount < 200) return { moodWeight: 0.7, userWeight: 0.3 };
   return { moodWeight: 0.55, userWeight: 0.45 };

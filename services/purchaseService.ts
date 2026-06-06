@@ -91,7 +91,9 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
 
   try {
     if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      // WARN seviyesi: RC log spam'ini suppress et (Sprint 3 #19)
+      // DEBUG seviyesi gerekirse gecici olarak tekrar acilabilir.
+      Purchases.setLogLevel(LOG_LEVEL.WARN);
     }
 
     Purchases.configure({

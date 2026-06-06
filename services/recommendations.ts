@@ -798,7 +798,9 @@ export async function getRecommendations(
   if (__DEV__) {
     // eslint-disable-next-line no-console
     console.log('[recommendations] match_films params:', JSON.stringify({
-      version: useHybridRecommendation() ? 'v3' : (useMatchFilmsV2() ? 'v2' : 'v1'),
+      version: useHybridRecommendation()
+        ? (userWeight > 0 ? 'v3_hybrid' : 'v3_cold_start')
+        : (useMatchFilmsV2() ? 'v2' : 'v1'),
       ...(useHybridRecommendation() ? {
         mood_weight: moodWeight,
         user_weight: userWeight,
@@ -832,10 +834,31 @@ export async function getRecommendations(
 
   // ── Adım 5: Hata / boş sonuç → JS fallback ───────────────────────────────
   if (rpcFailed || data.length === 0) {
+    const reason = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
     if (__DEV__) {
-      const reason = rpcFailed ? 'RPC hatası' : 'Supabase boş sonuç';
       // eslint-disable-next-line no-console
       console.log(`[recommendations] ${reason} — JS fallback deneniyor`);
+    }
+
+    // Sentry breadcrumb — production'da RPC fail path'i izle (Sprint 3 #3)
+    try {
+      const Sentry = await import('@sentry/react-native');
+      Sentry.addBreadcrumb({
+        category: 'recommendations',
+        message: `RPC fallback: ${reason}`,
+        level: 'warning',
+        data: {
+          version: useHybridRecommendation()
+            ? (userWeight > 0 ? 'v3_hybrid' : 'v3_cold_start')
+            : (useMatchFilmsV2() ? 'v2' : 'v1'),
+          moodWeight,
+          userWeight,
+          hasUserVector: !!userVectorString,
+          dataLength: data.length,
+        },
+      });
+    } catch {
+      // Sentry unavailable — devam et
     }
 
     const fallbackFilms = await getFallbackFromSupabase(effectiveProfile, limit, excludeIds, filters);
@@ -844,7 +867,7 @@ export async function getRecommendations(
     // rpc_version: hangi flag aktifti, error_code: neden fallback'e düştük.
     if (searchId) {
       const rpcVersion = useHybridRecommendation()
-        ? 'match_films_v3'
+        ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
         : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
       const errorCode = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
       await supabase
@@ -880,7 +903,7 @@ export async function getRecommendations(
 
   if (searchId) {
     const rpcVersion = useHybridRecommendation()
-        ? 'match_films_v3'
+        ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
         : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
     // Sprint 2 fix: await ekle (fire-and-forget değil) — observability garantisi.
     // Latency ~50ms artar ama rpc_version her search için garanti yazılır.
