@@ -754,6 +754,15 @@ export async function getRecommendations(
         userWeight = weights.userWeight;
         if (userVector && userWeight > 0) {
           userVectorString = `[${userVector.join(',')}]`;
+        } else if (!userVector && userWeight > 0) {
+          // Defensive: signal count threshold'a ulasti (userWeight > 0)
+          // ama Edge Function henuz recompute etmedi (userVector null).
+          // RPC'ye yaniltici user_weight gonderme + version log
+          // "v3_cold_start" olarak dogru etiketlensin.
+          // Sprint 3: JS <-> Edge Function threshold senkron (her ikisi 6).
+          // Defensive guard her durumda race condition siperi.
+          moodWeight = 1.0;
+          userWeight = 0.0;
         }
         if (__DEV__) {
           // eslint-disable-next-line no-console

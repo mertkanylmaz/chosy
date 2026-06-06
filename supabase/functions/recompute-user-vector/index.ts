@@ -11,7 +11,10 @@ const VECTOR_DIM = 384
 const SIGNAL_LOOKBACK_DAYS = 90
 const TIME_DECAY_HALF_LIFE_DAYS = 30
 const MIN_MEANINGFUL_STRENGTH = 0.2
-const MIN_SIGNALS_FOR_RECOMPUTE = 10
+// Sprint 3: Threshold 10 → 6. JS katmaninda calculateBlendWeights
+// ile senkron (onboarding TasteSwipe 6 signal uretir, hybrid ilk
+// aramadan itibaren aktif).
+const MIN_SIGNALS_FOR_RECOMPUTE = 6
 const SIGNALS_FOR_FULL_PERSONALIZATION = 50
 const MIN_VECTOR_MAGNITUDE = 0.1
 
