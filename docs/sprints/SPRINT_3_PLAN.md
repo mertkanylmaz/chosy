@@ -3,7 +3,7 @@
 > **Tarih:** 6 Haziran 2026
 > **Tahmini sure:** 5-7 gun
 > **Onceki:** Sprint 2 (taste signals + hybrid v3 + remote config)
-> **Durum:** PLAN ONAYI BEKLENIYOR
+> **Durum:** KOD TASKLERI TAMAMLANDI — EAS build bekliyor
 
 ---
 
