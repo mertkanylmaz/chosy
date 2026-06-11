@@ -59,6 +59,7 @@ export interface NotificationData {
   gameId?: string;       // for specific game navigation
   action?: string;       // custom action identifier
   offerId?: string;      // promotional offer ID
+  source?: string;       // notification source (e.g. 'daily_pick')
 }
 
 // ─── Core Functions ───────────────────────────────────────────────────────────
@@ -264,6 +265,52 @@ export async function getNotificationStatus(): Promise<boolean> {
   }
 }
 
+/**
+ * Get daily pick notification enabled status.
+ */
+export async function getDailyPickStatus(): Promise<boolean> {
+  try {
+    const userId = await getAppUserId();
+    if (!userId) return false;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('daily_pick_enabled')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) return false;
+    return (data as { daily_pick_enabled: boolean }).daily_pick_enabled ?? true;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Toggle daily pick notifications on/off.
+ */
+export async function toggleDailyPick(enabled: boolean): Promise<boolean> {
+  try {
+    const userId = await getAppUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ daily_pick_enabled: enabled })
+      .eq('id', userId);
+
+    if (error) {
+      logger.error('[push] toggleDailyPick failed:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('[push] toggleDailyPick error:', err);
+    return false;
+  }
+}
+
 // ─── Permission Flow (Post-Onboarding) ───────────────────────────────────────
 
 /**
@@ -320,8 +367,11 @@ export function getDeepLinkFromNotification(
       return '/(tabs)/profile';
     case 'games':
       return data.gameId ? `/games/${data.gameId}` : '/games';
-    case 'film':
-      return data.filmId ? `/film/${data.filmId}` : null;
+    case 'film': {
+      if (!data.filmId) return null;
+      const filmSource = data.source ? `?source=${data.source}` : '';
+      return `/film/${data.filmId}${filmSource}`;
+    }
     case 'paywall':
       return '/paywall';
     default:

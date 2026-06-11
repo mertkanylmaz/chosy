@@ -65,6 +65,8 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import { FilmShareCard, useShareCapture } from '@/components/ShareCards';
 import { hapticMedium } from '@/utils/haptics';
 import { tasteSignals } from '@/services/tasteSignalService';
+import { posthogAnalytics } from '@/services/posthog';
+import { logger } from '@/utils/logger';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -286,7 +288,7 @@ function TmdbFooter({ text }: { text: string }) {
  * route param: id → Supabase films.id (UUID)
  */
 export default function FilmDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
   const { t, language } = useLanguage();
   const { currentProfile, presetMoodText, currentSessionId } = useMood();
   const router = useRouter();
@@ -414,6 +416,18 @@ export default function FilmDetailScreen() {
   useEffect(() => {
     loadFilm();
   }, [loadFilm]);
+
+  /** Daily pick push acildi — analytics + notification_log guncelle */
+  useEffect(() => {
+    if (source !== 'daily_pick' || !id) return;
+
+    posthogAnalytics.track('daily_pick_opened', { film_id: id, source: 'daily_pick' });
+
+    // notification_log'da opened=true yapmak icin:
+    // RLS sadece SELECT izin veriyor, UPDATE icin service_role gerekli.
+    // Bu yuzden sadece PostHog event yeterli — server-side analytics ile eslestirilir.
+    logger.log('[FilmDetail] Opened from daily_pick notification:', id);
+  }, [source, id]);
 
   /** Izlendi kontrolu */
   useEffect(() => {

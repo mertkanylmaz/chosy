@@ -941,7 +941,8 @@
     "streakRewardTitle": "Streak Odulu!",
     "streakRewardBody": "%{streak} gunluk streak! +%{bonus} bonus arama hakki kazandin!",
     "enabledSuccess": "Bildirimler acildi",
-    "disabledSuccess": "Bildirimler kapatildi"
+    "disabledSuccess": "Bildirimler kapatildi",
+    "dailyPickLabel": "Gunluk Film Onerisi"
   },
   "lifetime": {
     "heroTitle": "Kurucu Uye Ol",

@@ -47,6 +47,7 @@ import {
   enqueueOperation,
 } from '@/services/offlineQueue';
 import { tasteProfileToVector } from '@/services/vectorEncoder';
+import { registerForPushNotifications } from '@/services/pushNotifications';
 import { TasteCalibration, ArchetypeReveal, TasteSwipe } from '@/components/Onboarding';
 import type { CalibrationAnswer } from '@/components/Onboarding';
 import { buildCalibrationProfile } from '@/components/Onboarding/TasteCalibration/questions';
@@ -374,6 +375,13 @@ export default function OnboardingScreen() {
     posthogAnalytics.track('onboarding_step_completed', { step: 4 });
     posthogAnalytics.track('archetype_revealed', { archetype_id: revealArchetypeId });
     await markOnboardingComplete();
+
+    // Request push permission after value delivery (archetype revealed).
+    // Fire-and-forget: rejection is silent — user can enable from Settings later.
+    registerForPushNotifications().catch((err) => {
+      logger.warn('[Onboarding] Push registration failed (non-blocking):', err);
+    });
+
     router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
   }, [router, markOnboardingComplete]);
 

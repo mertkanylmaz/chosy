@@ -78,7 +78,9 @@ import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import {
   getNotificationStatus,
+  getDailyPickStatus,
   toggleNotifications,
+  toggleDailyPick,
 } from '@/services/pushNotifications';
 
 import type { MoodHistoryItem, SwipeInsight, UserStats } from '@/types/profile';
@@ -360,7 +362,9 @@ interface SettingsModalProps {
   currentPlanLabel: string;
   linkingAccount: boolean;
   notificationsEnabled: boolean;
+  dailyPickEnabled: boolean;
   onToggleNotifications: (enabled: boolean) => void;
+  onToggleDailyPick: (enabled: boolean) => void;
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
@@ -386,7 +390,9 @@ function SettingsModal({
   currentPlanLabel,
   linkingAccount,
   notificationsEnabled,
+  dailyPickEnabled,
   onToggleNotifications,
+  onToggleDailyPick,
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
@@ -473,6 +479,34 @@ function SettingsModal({
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Daily Pick toggle — sadece notifications acikken goster */}
+          {notificationsEnabled && (
+            <View style={settingsModalStyles.row}>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="film-outline" size={16} color={Colors.textGrey} />
+                <Text style={settingsModalStyles.rowLabel}>{t('notifications.dailyPickLabel')}</Text>
+              </View>
+              <View style={settingsModalStyles.langToggle}>
+                <TouchableOpacity
+                  style={[settingsModalStyles.langOption, dailyPickEnabled && settingsModalStyles.langOptionActive]}
+                  onPress={() => { hapticSelection(); onToggleDailyPick(true); }}
+                  activeOpacity={0.75}>
+                  <Text style={[settingsModalStyles.langText, dailyPickEnabled && settingsModalStyles.langTextActive]}>
+                    {t('notifications.enabled')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[settingsModalStyles.langOption, !dailyPickEnabled && settingsModalStyles.langOptionActive]}
+                  onPress={() => { hapticSelection(); onToggleDailyPick(false); }}
+                  activeOpacity={0.75}>
+                  <Text style={[settingsModalStyles.langText, !dailyPickEnabled && settingsModalStyles.langTextActive]}>
+                    {t('notifications.disabled')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
 
           {/* Hesap bağlama — sadece anonim */}
           {isAnonymous && (
@@ -653,6 +687,7 @@ export default function ProfileScreen() {
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
 
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
@@ -709,12 +744,14 @@ export default function ProfileScreen() {
       setArchetypeId(calibrationArchetypeId ?? null);
 
       // Faz 1: Kritik veriler (üst kısımda görünen)
-      const [profileData, streakData, pushStatus] = await Promise.all([
+      const [profileData, streakData, pushStatus, dailyPickStatus] = await Promise.all([
         getLastParsedProfile(userId),
         getStreakInfo(),
         getNotificationStatus(),
+        getDailyPickStatus(),
       ]);
       setNotificationsEnabled(pushStatus);
+      setDailyPickEnabled(dailyPickStatus);
 
       setLastProfile(profileData);
       setStreakInfo(streakData);
@@ -1011,6 +1048,21 @@ export default function ProfileScreen() {
     }
   }
 
+  // ─── Daily Pick toggle ─────────────────────────────────────────────────
+
+  async function handleToggleDailyPick(enabled: boolean): Promise<void> {
+    const prev = dailyPickEnabled;
+    setDailyPickEnabled(enabled); // Optimistic
+    try {
+      const success = await toggleDailyPick(enabled);
+      if (!success) {
+        setDailyPickEnabled(prev); // Rollback
+      }
+    } catch {
+      setDailyPickEnabled(prev);
+    }
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loadError && !loading) {
@@ -1292,7 +1344,9 @@ export default function ProfileScreen() {
         }
         linkingAccount={linkingAccount}
         notificationsEnabled={notificationsEnabled}
+        dailyPickEnabled={dailyPickEnabled}
         onToggleNotifications={(enabled) => void handleToggleNotifications(enabled)}
+        onToggleDailyPick={(enabled) => void handleToggleDailyPick(enabled)}
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}
