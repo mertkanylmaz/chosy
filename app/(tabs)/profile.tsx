@@ -79,8 +79,10 @@ import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall
 import {
   getNotificationStatus,
   getDailyPickStatus,
+  getWatchlistRemindersStatus,
   toggleNotifications,
   toggleDailyPick,
+  toggleWatchlistReminders,
 } from '@/services/pushNotifications';
 
 import type { MoodHistoryItem, SwipeInsight, UserStats } from '@/types/profile';
@@ -363,8 +365,10 @@ interface SettingsModalProps {
   linkingAccount: boolean;
   notificationsEnabled: boolean;
   dailyPickEnabled: boolean;
+  watchlistRemindersEnabled: boolean;
   onToggleNotifications: (enabled: boolean) => void;
   onToggleDailyPick: (enabled: boolean) => void;
+  onToggleWatchlistReminders: (enabled: boolean) => void;
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
@@ -391,8 +395,10 @@ function SettingsModal({
   linkingAccount,
   notificationsEnabled,
   dailyPickEnabled,
+  watchlistRemindersEnabled,
   onToggleNotifications,
   onToggleDailyPick,
+  onToggleWatchlistReminders,
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
@@ -501,6 +507,34 @@ function SettingsModal({
                   onPress={() => { hapticSelection(); onToggleDailyPick(false); }}
                   activeOpacity={0.75}>
                   <Text style={[settingsModalStyles.langText, !dailyPickEnabled && settingsModalStyles.langTextActive]}>
+                    {t('notifications.disabled')}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Watchlist Reminders toggle — sadece notifications acikken goster */}
+          {notificationsEnabled && (
+            <View style={settingsModalStyles.row}>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="bookmark-outline" size={16} color={Colors.textGrey} />
+                <Text style={settingsModalStyles.rowLabel}>{t('notifications.watchlistRemindersLabel')}</Text>
+              </View>
+              <View style={settingsModalStyles.langToggle}>
+                <TouchableOpacity
+                  style={[settingsModalStyles.langOption, watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
+                  onPress={() => { hapticSelection(); onToggleWatchlistReminders(true); }}
+                  activeOpacity={0.75}>
+                  <Text style={[settingsModalStyles.langText, watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
+                    {t('notifications.enabled')}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[settingsModalStyles.langOption, !watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
+                  onPress={() => { hapticSelection(); onToggleWatchlistReminders(false); }}
+                  activeOpacity={0.75}>
+                  <Text style={[settingsModalStyles.langText, !watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
                     {t('notifications.disabled')}
                   </Text>
                 </TouchableOpacity>
@@ -688,6 +722,7 @@ export default function ProfileScreen() {
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
+  const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
 
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
@@ -744,14 +779,16 @@ export default function ProfileScreen() {
       setArchetypeId(calibrationArchetypeId ?? null);
 
       // Faz 1: Kritik veriler (üst kısımda görünen)
-      const [profileData, streakData, pushStatus, dailyPickStatus] = await Promise.all([
+      const [profileData, streakData, pushStatus, dailyPickStatus, watchlistRemindersStatus] = await Promise.all([
         getLastParsedProfile(userId),
         getStreakInfo(),
         getNotificationStatus(),
         getDailyPickStatus(),
+        getWatchlistRemindersStatus(),
       ]);
       setNotificationsEnabled(pushStatus);
       setDailyPickEnabled(dailyPickStatus);
+      setWatchlistRemindersEnabled(watchlistRemindersStatus);
 
       setLastProfile(profileData);
       setStreakInfo(streakData);
@@ -1063,6 +1100,21 @@ export default function ProfileScreen() {
     }
   }
 
+  // ─── Watchlist Reminders toggle ───────────────────────────────────────
+
+  async function handleToggleWatchlistReminders(enabled: boolean): Promise<void> {
+    const prev = watchlistRemindersEnabled;
+    setWatchlistRemindersEnabled(enabled); // Optimistic
+    try {
+      const success = await toggleWatchlistReminders(enabled);
+      if (!success) {
+        setWatchlistRemindersEnabled(prev); // Rollback
+      }
+    } catch {
+      setWatchlistRemindersEnabled(prev);
+    }
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loadError && !loading) {
@@ -1345,8 +1397,10 @@ export default function ProfileScreen() {
         linkingAccount={linkingAccount}
         notificationsEnabled={notificationsEnabled}
         dailyPickEnabled={dailyPickEnabled}
+        watchlistRemindersEnabled={watchlistRemindersEnabled}
         onToggleNotifications={(enabled) => void handleToggleNotifications(enabled)}
         onToggleDailyPick={(enabled) => void handleToggleDailyPick(enabled)}
+        onToggleWatchlistReminders={(enabled) => void handleToggleWatchlistReminders(enabled)}
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}

@@ -311,6 +311,54 @@ export async function toggleDailyPick(enabled: boolean): Promise<boolean> {
   }
 }
 
+// ─── Watchlist Reminders Toggle ──────────────────────────────────────────────
+
+/**
+ * Get watchlist reminders notification enabled status.
+ */
+export async function getWatchlistRemindersStatus(): Promise<boolean> {
+  try {
+    const userId = await getAppUserId();
+    if (!userId) return false;
+
+    const { data, error } = await supabase
+      .from('users')
+      .select('watchlist_notifications_enabled')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) return false;
+    return (data as { watchlist_notifications_enabled: boolean }).watchlist_notifications_enabled ?? true;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Toggle watchlist reminder notifications on/off.
+ */
+export async function toggleWatchlistReminders(enabled: boolean): Promise<boolean> {
+  try {
+    const userId = await getAppUserId();
+    if (!userId) return false;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ watchlist_notifications_enabled: enabled })
+      .eq('id', userId);
+
+    if (error) {
+      logger.error('[push] toggleWatchlistReminders failed:', error.message);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('[push] toggleWatchlistReminders error:', err);
+    return false;
+  }
+}
+
 // ─── Permission Flow (Post-Onboarding) ───────────────────────────────────────
 
 /**

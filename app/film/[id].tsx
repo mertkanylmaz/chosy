@@ -417,16 +417,17 @@ export default function FilmDetailScreen() {
     loadFilm();
   }, [loadFilm]);
 
-  /** Daily pick push acildi — analytics + notification_log guncelle */
+  /** Push notification acildi — analytics (daily_pick, weekend_pick, mood_recall) */
   useEffect(() => {
-    if (source !== 'daily_pick' || !id) return;
+    const notifSources = ['daily_pick', 'weekend_pick', 'mood_recall'] as const;
+    if (!source || !id || !notifSources.includes(source as typeof notifSources[number])) return;
 
-    posthogAnalytics.track('daily_pick_opened', { film_id: id, source: 'daily_pick' });
+    posthogAnalytics.track('notification_opened', { film_id: id, source });
 
     // notification_log'da opened=true yapmak icin:
     // RLS sadece SELECT izin veriyor, UPDATE icin service_role gerekli.
     // Bu yuzden sadece PostHog event yeterli — server-side analytics ile eslestirilir.
-    logger.log('[FilmDetail] Opened from daily_pick notification:', id);
+    logger.log(`[FilmDetail] Opened from ${source} notification:`, id);
   }, [source, id]);
 
   /** Izlendi kontrolu */

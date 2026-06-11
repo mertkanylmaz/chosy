@@ -942,7 +942,8 @@
     "streakRewardBody": "%{streak}-day streak! You earned +%{bonus} bonus searches!",
     "enabledSuccess": "Notifications enabled",
     "disabledSuccess": "Notifications disabled",
-    "dailyPickLabel": "Daily Cinema Pick"
+    "dailyPickLabel": "Daily Cinema Pick",
+    "watchlistRemindersLabel": "Watchlist Reminders"
   },
   "lifetime": {
     "heroTitle": "Become a Founding Member",
