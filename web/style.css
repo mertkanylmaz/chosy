@@ -1,0 +1,355 @@
+/* ================================================================
+   Chosy.ai — Landing Page Styles
+   Vanilla CSS, mobile-first, <50KB target
+   ================================================================ */
+
+/* ─── Custom Properties ──────────────────────────────────────────── */
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #141420;
+  --text: #ffffff;
+  --text-muted: #8888aa;
+  --accent: #7c6af7;
+  --accent-dim: rgba(124, 106, 247, 0.12);
+  --radius: 12px;
+  --max-w: 1100px;
+}
+
+/* ─── Reset & Base ───────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* ─── Layout ─────────────────────────────────────────────────────── */
+
+.container {
+  width: 100%;
+  max-width: var(--max-w);
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+section {
+  padding: 80px 0;
+}
+
+/* ─── Hero ───────────────────────────────────────────────────────── */
+
+.hero {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(124, 106, 247, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.hero__badge {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-dim);
+  padding: 6px 16px;
+  border-radius: 20px;
+  margin-bottom: 28px;
+}
+
+.hero h1 {
+  font-size: 2.4rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero__sub {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+}
+
+/* ─── CTA Button (App Store) ─────────────────────────────────────── */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--text);
+  color: var(--bg);
+  padding: 14px 28px;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124, 106, 247, 0.25);
+}
+
+.cta:active {
+  transform: translateY(0);
+}
+
+.cta svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.cta--small {
+  padding: 10px 20px;
+  font-size: 0.85rem;
+}
+
+.cta--small svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── Section Headers ────────────────────────────────────────────── */
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-header h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+
+.section-header p {
+  font-size: 1rem;
+  color: var(--text-muted);
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ─── Archetypes Grid ────────────────────────────────────────────── */
+
+.archetypes {
+  background: var(--surface);
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.archetype-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.archetype-card {
+  padding: 18px 16px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+  text-align: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  cursor: default;
+}
+
+.archetype-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--accent-color, rgba(255, 255, 255, 0.1));
+  box-shadow: 0 4px 24px var(--glow-color, rgba(255, 255, 255, 0.04));
+}
+
+/* ─── How It Works ───────────────────────────────────────────────── */
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.step {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.step__num {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: 50%;
+}
+
+.step__text h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.step__text p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* ─── Footer ─────────────────────────────────────────────────────── */
+
+.footer {
+  padding: 40px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  text-align: center;
+}
+
+.footer__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.footer__links {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.footer__links a {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+
+.footer__links a:hover {
+  color: var(--text);
+}
+
+.footer__copy {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ─── Desktop (768px+) ───────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .hero h1 {
+    font-size: 3.6rem;
+  }
+
+  .hero__sub {
+    font-size: 1.15rem;
+  }
+
+  section {
+    padding: 100px 0;
+  }
+
+  .section-header h2 {
+    font-size: 2.2rem;
+  }
+
+  .archetype-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .archetype-card {
+    padding: 22px 16px;
+    font-size: 0.92rem;
+  }
+
+  .steps {
+    gap: 40px;
+  }
+
+  .step__num {
+    width: 56px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .footer__inner {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+
+  .footer__copy {
+    order: -1;
+  }
+}
+
+/* ─── Large Desktop (1024px+) ────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+  .archetype-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
