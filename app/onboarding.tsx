@@ -48,6 +48,7 @@ import {
 } from '@/services/offlineQueue';
 import { tasteProfileToVector } from '@/services/vectorEncoder';
 import { registerForPushNotifications } from '@/services/pushNotifications';
+import ReferralPromptSheet, { useReferralPrompt } from '@/components/ReferralPromptSheet';
 import { TasteCalibration, ArchetypeReveal, TasteSwipe } from '@/components/Onboarding';
 import type { CalibrationAnswer } from '@/components/Onboarding';
 import { buildCalibrationProfile } from '@/components/Onboarding/TasteCalibration/questions';
@@ -232,6 +233,9 @@ export default function OnboardingScreen() {
   const [slideIndex, setSlideIndex] = useState(0);
   const flatListRef = useRef<FlatList<IntroSlide>>(null);
   const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const referralPrompt = useReferralPrompt();
+  /** Pending navigation — waits for referral prompt dismissal */
+  const [pendingNavigate, setPendingNavigate] = useState(false);
 
   // ── PostHog: onboarding_started (mount) ───────────────────────────────────
   useEffect(() => {
@@ -382,8 +386,17 @@ export default function OnboardingScreen() {
       logger.warn('[Onboarding] Push registration failed (non-blocking):', err);
     });
 
-    router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
-  }, [router, markOnboardingComplete]);
+    // Show referral prompt (one-time) — navigation deferred until dismiss
+    setPendingNavigate(true);
+    referralPrompt.show();
+  }, [markOnboardingComplete, referralPrompt]);
+
+  /** Navigate to mood tab after referral prompt is dismissed (or immediately if already shown) */
+  useEffect(() => {
+    if (pendingNavigate && !referralPrompt.visible) {
+      router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
+    }
+  }, [pendingNavigate, referralPrompt.visible, router]);
 
   /** Calibration skip → dogrudan bitir */
   const handleCalibrationSkip = useCallback(async () => {
@@ -479,6 +492,10 @@ export default function OnboardingScreen() {
         <ArchetypeReveal
           archetypeId={revealArchetypeId}
           onFinish={handleRevealFinish}
+        />
+        <ReferralPromptSheet
+          visible={referralPrompt.visible}
+          onDismiss={referralPrompt.dismiss}
         />
       </View>
     );

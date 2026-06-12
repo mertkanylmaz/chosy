@@ -392,6 +392,10 @@
     "clearWatchlistConfirm": "Temizle",
     "clearWatchlistSuccess": "İzleme listeniz temizlendi.",
     "shareArchetype": "Arketipimi Paylas",
+    "inviteFriends": "Arkadaslarini Davet Et",
+    "friendsJoined": "%{count} arkadas katildi",
+    "copyCode": "Kopyala",
+    "codeCopied": "Kopyalandi!",
     "about": "Chosy.ai Hakkında",
     "aboutVersion": "Sürüm 1.0.0",
     "noFavorites": "Henüz favori film yok.",
@@ -1010,6 +1014,11 @@
     "alreadyReferred": "Zaten bir davet kodu kullandin",
     "codeApplied": "Davet kodu uygulandi! 14 gun ucretsiz deneme aktif",
     "milestoneTitle": "Odul Asamalari",
-    "allMilestonesComplete": "Tum odulleri actiniz!"
+    "allMilestonesComplete": "Tum odulleri actiniz!",
+    "promptTitle": "Arkadas davet et, ikiniz de +5 arama kazanin",
+    "promptBody": "Davet linkini paylas ve birlikte daha fazla arama hakkini ac.",
+    "promptShareButton": "Davet Linkini Paylas",
+    "promptLater": "Belki sonra",
+    "promptShareMessage": "Chosy'de bana katil 🎬\nKodum ile kaydol ve +5 arama kazan: %{code}"
   }
 }

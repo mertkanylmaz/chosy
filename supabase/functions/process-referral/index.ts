@@ -84,7 +84,7 @@ serve(async (req: Request) => {
 
       const { data: pendingReferrals, error: fetchError } = await supabase
         .from('referrals')
-        .select('id, referee_id, referrer_id')
+        .select('id, referee_id, referrer_id, invite_code')
         .eq('status', 'pending')
         .lt('referee_signed_up_at', sevenDaysAgo)
 
@@ -129,6 +129,47 @@ serve(async (req: Request) => {
           } else {
             activatedCount++
             console.log(`[process-referral] Activated referral for ${referral.referee_id}:`, activateResult)
+
+            // Queue push notification for referrer
+            const { error: notifError } = await supabase
+              .from('notification_log')
+              .insert({
+                user_id: referral.referrer_id,
+                type: 'referral_milestone',
+                title: '🎉 Friend joined!',
+                body: '+5 searches added to your account',
+                data: {
+                  source: 'referral_milestone',
+                  referee_id: referral.referee_id,
+                  activated_count: (activateResult as Record<string, unknown>)?.activated_count,
+                },
+                status: 'queued',
+                scheduled_for: new Date().toISOString(),
+              })
+
+            if (notifError) {
+              console.error(`[process-referral] notification_log insert failed for referrer ${referral.referrer_id}:`, notifError.message)
+            }
+
+            // PostHog server-side event
+            const posthogKey = Deno.env.get('EXPO_PUBLIC_POSTHOG_KEY')
+            if (posthogKey) {
+              fetch('https://eu.i.posthog.com/capture/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  api_key: posthogKey,
+                  event: 'referral_completed',
+                  distinct_id: referral.referrer_id,
+                  properties: {
+                    invite_code: referral.invite_code ?? '',
+                    referee_id: referral.referee_id,
+                    activated_count: (activateResult as Record<string, unknown>)?.activated_count,
+                  },
+                  timestamp: new Date().toISOString(),
+                }),
+              }).catch(() => { /* non-critical */ })
+            }
           }
         }
       }

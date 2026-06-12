@@ -39,6 +39,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
@@ -64,8 +65,12 @@ import {
 import PersonaBadge from '@/components/Profile/PersonaBadge';
 import Purchases from 'react-native-purchases';
 
-import { clearWatchlist } from '@/services/watchlist';
+import { clearWatchlist, getAppUserId } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
+import {
+  getReferralStats,
+  type ReferralStats,
+} from '@/services/referralService';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { PLANS } from '@/constants/subscriptionPlans';
 import { getArchetype } from '@/constants/archetypes';
@@ -738,6 +743,8 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
   const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
+  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
@@ -821,6 +828,12 @@ export default function ProfileScreen() {
       setStats(statsData);
       setMoodHistory(historyData);
       setSwipeInsights(insightsData);
+
+      // Referral stats (non-blocking)
+      getReferralStats(userId).then((rs) => {
+        if (rs) setReferralStats(rs);
+      }).catch(() => {});
+
 
       // Sonraki streak milestone'u hesapla
       if (streakData && allMilestonesData.length > 0) {
@@ -1162,6 +1175,30 @@ export default function ProfileScreen() {
     }
   }
 
+  // ─── Referral Share ────────────────────────────────────────────────────
+
+  async function handleShareReferral(): Promise<void> {
+    if (!referralStats?.inviteCode) return;
+    const code = referralStats.inviteCode;
+
+    posthogAnalytics.track('referral_share_tapped', {
+      invite_code: code,
+      source: 'profile_card',
+    });
+
+    try {
+      const msg = `Join me on Chosy 🎬\nGet +5 searches when you sign up: chosy.vercel.app?ref=${code}`;
+      const url = `https://chosy.vercel.app?ref=${code}`;
+      await Share.share(
+        Platform.OS === 'ios'
+          ? { message: msg, url }
+          : { message: `${msg}\n${url}` },
+      );
+    } catch (err) {
+      logger.error('[Profile] shareReferral error:', err);
+    }
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loadError && !loading) {
@@ -1338,6 +1375,55 @@ export default function ProfileScreen() {
           {/* ── Bolumler ─────────────────────────────────────────────── */}
           <Animated.View style={sectionsAnimStyle}>
           <View style={styles.sections}>
+
+            {/* 0. Invite Friends Card */}
+            {referralStats?.inviteCode ? (
+              <View style={styles.referralCard}>
+                <View style={styles.referralHeader}>
+                  <Ionicons name="people" size={20} color={Colors.accentPrimary} />
+                  <Text style={styles.referralTitle}>{t('profile.inviteFriends')}</Text>
+                </View>
+
+                {/* Invite code row */}
+                <View style={styles.referralCodeRow}>
+                  <Text style={styles.referralCode}>{referralStats.inviteCode}</Text>
+                  <TouchableOpacity
+                    style={styles.referralCopyBtn}
+                    onPress={() => {
+                      hapticLight();
+                      Clipboard.setStringAsync(`https://chosy.vercel.app?ref=${referralStats.inviteCode}`);
+                      setCodeCopied(true);
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons
+                      name={codeCopied ? 'checkmark' : 'copy-outline'}
+                      size={16}
+                      color={codeCopied ? Colors.gold : Colors.accentPrimary}
+                    />
+                    <Text style={[styles.referralCopyText, codeCopied && styles.referralCopyTextDone]}>
+                      {codeCopied ? t('profile.codeCopied') : t('profile.copyCode')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Friends joined count */}
+                <Text style={styles.referralCount}>
+                  {t('profile.friendsJoined', { count: referralStats.activatedReferrals })}
+                </Text>
+
+                {/* Share button */}
+                <TouchableOpacity
+                  style={styles.referralShareBtn}
+                  onPress={() => void handleShareReferral()}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="share-outline" size={16} color={Colors.textOnAccent} />
+                  <Text style={styles.referralShareText}>{t('referral.shareButton')}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
 
             {/* 1. Daily Streak */}
             <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
@@ -1978,6 +2064,74 @@ const styles = StyleSheet.create({
   // ── Genel ──
   bottomSpacer: {
     height: 100,
+  },
+
+  // ── Referral Card ──
+  referralCard: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+  },
+  referralHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  referralTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textWhite,
+  },
+  referralCodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.background,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 8,
+  },
+  referralCode: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: Colors.accentPrimary,
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  referralCopyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  referralCopyText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.accentPrimary,
+  },
+  referralCopyTextDone: {
+    color: Colors.gold,
+  },
+  referralCount: {
+    fontSize: 13,
+    color: Colors.textGrey,
+    marginBottom: 12,
+  },
+  referralShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Colors.accentPrimary,
+    borderRadius: 12,
+    height: 40,
+  },
+  referralShareText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.textOnAccent,
   },
 
   // ── Hesap silme overlay ──

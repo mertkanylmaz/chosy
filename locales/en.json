@@ -392,6 +392,10 @@
     "clearWatchlistConfirm": "Clear",
     "clearWatchlistSuccess": "Your watchlist has been cleared.",
     "shareArchetype": "Share My Archetype",
+    "inviteFriends": "Invite Friends",
+    "friendsJoined": "%{count} friends joined",
+    "copyCode": "Copy",
+    "codeCopied": "Copied!",
     "about": "About Chosy.ai",
     "aboutVersion": "Version 1.0.0",
     "noFavorites": "No favorite films yet.",
@@ -1010,6 +1014,11 @@
     "alreadyReferred": "You've already used an invite code",
     "codeApplied": "Invite code applied! 14 days free trial activated",
     "milestoneTitle": "Reward Milestones",
-    "allMilestonesComplete": "You've unlocked all rewards!"
+    "allMilestonesComplete": "You've unlocked all rewards!",
+    "promptTitle": "Invite a friend, both get +5 searches",
+    "promptBody": "Share your invite link and unlock more searches together.",
+    "promptShareButton": "Share Invite Link",
+    "promptLater": "Maybe later",
+    "promptShareMessage": "Join me on Chosy 🎬\nGet +5 searches when you sign up with code %{code}"
   }
 }

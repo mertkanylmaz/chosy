@@ -156,7 +156,7 @@ export async function applyInviteCode(
  * Share link olusturur.
  */
 export function getShareLink(inviteCode: string): string {
-  return `https://chosy.ai/i/${inviteCode}`;
+  return `https://chosy.vercel.app?ref=${inviteCode}`;
 }
 
 /**
