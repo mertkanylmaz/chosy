@@ -80,9 +80,12 @@ export interface ParseMoodResult {
 }
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  // Cached session dene, null ise refresh yap — anon key fallback'ini minimize et
+  let { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    const refreshResult = await supabase.auth.refreshSession();
+    session = refreshResult.data.session;
+  }
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
   const controller = new AbortController();
