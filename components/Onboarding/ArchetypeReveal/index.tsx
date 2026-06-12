@@ -225,9 +225,15 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [ctaEnabled, setCtaEnabled] = useState(false);
-  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
   const archetype = archetypeId !== null ? getArchetype(archetypeId) : null;
+  const archetypeName = archetype ? t(archetype.nameKey) : t('onboarding.mysteryType');
+
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'archetype',
+    trackingProps: { archetype_id: archetypeId, archetype_name: archetypeName },
+    shareMessage: `I'm a ${archetypeName} 🎬 Which cinephile archetype are you?\nchosy.vercel.app`,
+  });
 
   /** Arketibe özgü poster listesi — fallback + yedek havuzu ile güvenli */
   const ahaPosters = useMemo(() => {
@@ -241,9 +247,7 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
   // Fallback: Mystery Cinephile
   const colorPrimary = archetype?.colorPrimary ?? Colors.accentPrimary;
   const colorDim = archetype?.colorDim ?? Colors.accentDim;
-  const nameText = archetype
-    ? t(archetype.nameKey)
-    : t('onboarding.mysteryType');
+  const nameText = archetypeName;
   const descText = archetype
     ? t(archetype.descKey)
     : t('onboarding.mysteryDesc');

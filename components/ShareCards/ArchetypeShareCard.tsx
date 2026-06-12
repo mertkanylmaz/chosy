@@ -79,12 +79,13 @@ const ArchetypeShareCard = forwardRef<View, ArchetypeShareCardProps>(
           <Text style={cardStyles.desc} numberOfLines={3}>{desc}</Text>
         </View>
 
-        {/* Footer — branding */}
+        {/* Footer — branding + viral URL */}
         <View style={cardStyles.footer}>
           <Text style={cardStyles.brand}>Chosy.ai</Text>
           <Text style={cardStyles.tagline}>
             {i18n.t('share.archetypeTagline')}
           </Text>
+          <Text style={cardStyles.url}>chosy.vercel.app</Text>
         </View>
       </View>
     );
@@ -185,5 +186,13 @@ const cardStyles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textTertiary,
     letterSpacing: 0.5,
+  },
+
+  url: {
+    fontSize: 10,
+    color: Colors.textTertiary,
+    letterSpacing: 0.3,
+    marginTop: 4,
+    opacity: 0.7,
   },
 });

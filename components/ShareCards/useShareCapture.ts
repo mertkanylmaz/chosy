@@ -107,6 +107,16 @@ async function loadNativeModules(): Promise<{
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** Hook options — caller-level tracking and share message */
+export interface UseShareCaptureOptions {
+  /** PostHog card_type — e.g. 'archetype', 'film', 'mood' */
+  cardType?: string;
+  /** Extra PostHog properties merged into share events */
+  trackingProps?: Record<string, unknown>;
+  /** Text message shown alongside the shared image (Android dialogTitle) */
+  shareMessage?: string;
+}
+
 /** Hook donus tipi */
 export interface UseShareCaptureReturn {
   /** Share card'in render edilecegi ref */
@@ -128,7 +138,11 @@ export interface UseShareCaptureReturn {
  * Native modüller yoksa (dev-client yeniden build edilmemiş) kullanıcıya
  * bilgi mesajı gösterir ve işlemi iptal eder.
  */
-export function useShareCapture(): UseShareCaptureReturn {
+export function useShareCapture(options?: UseShareCaptureOptions): UseShareCaptureReturn {
+  const cardType = options?.cardType ?? 'share_card';
+  const trackingProps = options?.trackingProps;
+  const shareMessage = options?.shareMessage;
+
   const cardRef = useRef<View | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
   // isShareAvailable: mount'ta eager yükleme ile doğru state — share butonu
@@ -147,9 +161,10 @@ export function useShareCapture(): UseShareCaptureReturn {
   const share = useCallback(async () => {
     if (!cardRef.current || isCapturing) return;
 
-    // PostHog: app_share_initiated — card_type is determined by caller context
-    // TODO: Accept card_type param if distinct tracking per card type is needed
-    posthogAnalytics.track('app_share_initiated', { card_type: 'share_card' });
+    posthogAnalytics.track('app_share_initiated', {
+      card_type: cardType,
+      ...trackingProps,
+    });
 
     setIsCapturing(true);
     try {
@@ -180,13 +195,19 @@ export function useShareCapture(): UseShareCaptureReturn {
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         UTI: 'public.png',
+        dialogTitle: shareMessage,
+      });
+
+      posthogAnalytics.track('app_share_completed', {
+        card_type: cardType,
+        ...trackingProps,
       });
     } catch (err) {
       logger.error('[share] Capture/share error:', err);
     } finally {
       setIsCapturing(false);
     }
-  }, [isCapturing]);
+  }, [isCapturing, cardType, trackingProps, shareMessage]);
 
   return { cardRef, share, isCapturing, isShareAvailable };
 }

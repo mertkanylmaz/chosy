@@ -26,6 +26,7 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -374,6 +375,7 @@ interface SettingsModalProps {
   onManageSubscription: () => void;
   onFoundingMember: () => void;
   onInviteFriends: () => void;
+  onShareArchetype: () => void;
   onSignOut: () => void;
   /** Hesap silme akışını başlatır — iki aşamalı onay */
   onDeleteAccount: () => void;
@@ -404,6 +406,7 @@ function SettingsModal({
   onManageSubscription,
   onFoundingMember,
   onInviteFriends,
+  onShareArchetype,
   onSignOut,
   onDeleteAccount,
 }: SettingsModalProps) {
@@ -614,6 +617,18 @@ function SettingsModal({
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="people-outline" size={16} color={Colors.accentPrimary} />
               <Text style={settingsModalStyles.rowLabel}>{t('referral.title')}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+          </TouchableOpacity>
+
+          {/* Share My Archetype */}
+          <TouchableOpacity
+            style={settingsModalStyles.row}
+            onPress={() => { onClose(); onShareArchetype(); }}
+            activeOpacity={0.7}>
+            <View style={settingsModalStyles.rowLeft}>
+              <Ionicons name="share-social-outline" size={16} color={Colors.accentPrimary} />
+              <Text style={settingsModalStyles.rowLabel}>{t('profile.shareArchetype')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
           </TouchableOpacity>
@@ -1115,6 +1130,38 @@ export default function ProfileScreen() {
     }
   }
 
+  // ─── Share Archetype ─────────────────────────────────────────────────
+
+  async function handleShareArchetype(): Promise<void> {
+    const archetype = archetypeId !== null ? getArchetype(archetypeId) : null;
+    const name = archetype ? t(archetype.nameKey) : t('onboarding.mysteryType');
+
+    posthogAnalytics.track('archetype_share_initiated', {
+      archetype_id: archetypeId,
+      archetype_name: name,
+      source: 'settings',
+    });
+
+    try {
+      const message = `I'm a ${name} 🎬 Which cinephile archetype are you?\nchosy.vercel.app`;
+      const result = await Share.share(
+        Platform.OS === 'ios'
+          ? { message, url: 'https://chosy.vercel.app' }
+          : { message },
+      );
+
+      if (result.action === Share.sharedAction) {
+        posthogAnalytics.track('archetype_share_completed', {
+          archetype_id: archetypeId,
+          archetype_name: name,
+          source: 'settings',
+        });
+      }
+    } catch (err) {
+      logger.error('[Profile] shareArchetype error:', err);
+    }
+  }
+
   // ─── Render ───────────────────────────────────────────────────────────────
 
   if (loadError && !loading) {
@@ -1406,6 +1453,7 @@ export default function ProfileScreen() {
         onManageSubscription={() => void handleManageSubscription()}
         onFoundingMember={() => router.push('/lifetime' as never)}
         onInviteFriends={() => router.push('/referral' as never)}
+        onShareArchetype={() => void handleShareArchetype()}
         onSignOut={handleSignOut}
         onDeleteAccount={handleDeleteAccount}
       />

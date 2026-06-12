@@ -391,6 +391,7 @@
     "clearWatchlistMessage": "All saved films will be removed. This cannot be undone.",
     "clearWatchlistConfirm": "Clear",
     "clearWatchlistSuccess": "Your watchlist has been cleared.",
+    "shareArchetype": "Share My Archetype",
     "about": "About Chosy.ai",
     "aboutVersion": "Version 1.0.0",
     "noFavorites": "No favorite films yet.",
