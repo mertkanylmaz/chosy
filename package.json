@@ -33,7 +33,8 @@
     "sentry:sourcemaps": "npx sentry-expo-upload-sourcemaps dist",
     "lint:config": "tsx scripts/lint-remote-config.ts",
     "lint:ui": "tsx scripts/lint-optimistic-ui.ts",
-    "lint:all": "tsx scripts/lint-remote-config.ts && tsx scripts/lint-optimistic-ui.ts"
+    "lint:all": "tsx scripts/lint-remote-config.ts && tsx scripts/lint-optimistic-ui.ts",
+    "lint": "expo lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -88,6 +89,8 @@
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
     "@types/react": "~19.1.10",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0",
     "tsx": "^4.21.0",
     "typescript": "~5.9.2"
   },

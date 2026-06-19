@@ -10,6 +10,25 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 
+// ─── Shared Admin Client ──────────────────────────────────────────────────────
+
+/**
+ * Lazy-init admin client (service role).
+ * persistSession: false ZORUNLU — Deno Deploy'da storage yok,
+ * default true client auth module'unu bozuyor (BUG: mood_searches INSERT sessiz fail).
+ */
+let _admin: ReturnType<typeof createClient> | null = null
+function getAdmin(): ReturnType<typeof createClient> {
+  if (!_admin) {
+    _admin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    )
+  }
+  return _admin
+}
+
 // ─── Sprint 1 v4.0 — Async Logging Helper ────────────────────────────────────
 
 /**
@@ -29,11 +48,9 @@ async function logMoodSearch(params: {
   llmTokensOut?: number;
 }): Promise<string | null> {
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    const admin = createClient(supabaseUrl, supabaseServiceKey)
+    const admin = getAdmin()
 
-    const { data } = await admin
+    const { data, error } = await admin
       .from('mood_searches')
       .insert({
         user_id: params.userId,
@@ -48,6 +65,11 @@ async function logMoodSearch(params: {
       })
       .select('id')
       .single()
+
+    if (error) {
+      console.error('[parse-mood] log INSERT error:', error.message, '| code:', error.code, '| user_id:', params.userId)
+      return null
+    }
 
     return data?.id || null
   } catch (e) {
@@ -122,6 +144,10 @@ Genre-critical differentiation rules (IMPORTANT — these prevent cross-genre co
 /**
  * JWT'den user_id alip quota kontrolu yapar.
  * allowed=false ise Claude API call engellenir (maliyet tasarrufu).
+ *
+ * Auth pattern: slot-mood-filtered/delete-account ile ayni —
+ * anon key + Authorization header ile userClient olustur, getUser() cagir.
+ * Manual atob JWT decode KALDIRILDI (Deno Deploy'da guvenilmezdi).
  */
 async function checkSearchQuota(
   req: Request,
@@ -134,35 +160,45 @@ async function checkSearchQuota(
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const supabaseAnon = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+    const admin = getAdmin()
 
-    // JWT'den auth user al
-    const supabaseUser = createClient(supabaseUrl, supabaseAnon, {
+    // ── Step 1: JWT'den auth user id al (getUser pattern) ────────────────
+    const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
     })
-    const { data: { user } } = await supabaseUser.auth.getUser()
-    if (!user) return { allowed: true } // auth basarisizsa gecir, rate limiter yakalar
 
-    // users tablosundan id bul
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey)
-    const { data: userData } = await supabaseAdmin
+    const { data: { user: authUser }, error: authError } = await userClient.auth.getUser()
+    if (authError || !authUser) {
+      console.warn('[parse-mood] getUser failed:', authError?.message ?? 'no user', '— anon key or expired token')
+      return { allowed: true }
+    }
+
+    const authUserId = authUser.id
+
+    // ── Step 2: users tablosundan app user id'yi al (service role ile) ───
+    const { data: userData, error: userError } = await admin
       .from('users')
       .select('id')
-      .eq('auth_id', user.id)
+      .eq('auth_id', authUserId)
       .single()
 
-    if (!userData) return { allowed: true }
+    if (userError || !userData) {
+      console.warn('[parse-mood] User lookup failed:', userError?.message ?? 'no row', '| auth_id:', authUserId)
+      return { allowed: true }
+    }
 
-    // Atomic quota check + consume
-    const { data, error } = await supabaseAdmin.rpc('check_and_consume_quota', {
+    // ── Step 3: Atomic quota check + consume ─────────────────────────────
+    const { data, error } = await admin.rpc('check_and_consume_quota', {
       p_user_id: userData.id,
       p_quota_type: 'search',
     })
 
     if (error) {
       console.error('[parse-mood] Quota check error:', error.message)
-      return { allowed: true } // fail-open: quota hatasi olursa gecir
+      // fail-open: quota hatasi olursa gecir — AMA userId'yi koru (logging icin)
+      return { allowed: true, userId: userData.id }
     }
 
     const result = data as Record<string, unknown>
