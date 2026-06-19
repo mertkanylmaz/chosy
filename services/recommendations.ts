@@ -19,6 +19,34 @@ import { tasteSignals } from './tasteSignalService';
 import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
 
+// ─── Yardımcı: Auth Session Doğrulama ─────────────────────────────────────────
+
+/**
+ * mood_searches UPDATE öncesi auth session'ı doğrular ve gerekirse yeniler.
+ *
+ * Neden gerekli: match_films RPC hem anon hem authenticated role'e GRANT edilmiş.
+ * JWT expired/stale ise RPC başarılı olur ama mood_searches UPDATE sessiz fail olur
+ * çünkü RLS policy `user_id = auth_user_id()` authenticated context gerektirir.
+ * PostgREST, RLS tarafından engellenen UPDATE için hata döndürmez (0 rows affected).
+ *
+ * Bu fonksiyon session'ı kontrol eder, yoksa refresh dener.
+ * Fail durumunda sessiz devam eder — UPDATE RLS'den düşer ama film akışı kesilmez.
+ */
+async function ensureAuthSession(): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      const { error } = await supabase.auth.refreshSession();
+      if (__DEV__ && error) {
+        // eslint-disable-next-line no-console
+        console.warn('[recommendations] Session refresh failed:', error.message);
+      }
+    }
+  } catch {
+    // Auth check hatası film akışını engellemez
+  }
+}
+
 // ─── Yardımcı: Network Hata Tespiti ──────────────────────────────────────────
 
 /**
@@ -135,6 +163,8 @@ interface MatchFilmRow {
   similarity: number;
   /** v2 only — 'core' | 'extended' | 'archive' */
   curation_tier?: string | null;
+  /** v3 only — tmdb_keywords based match reason */
+  match_reason?: string | null;
 }
 
 /** films tablosundan select edilen satır yapısı (JS fallback için) */
@@ -281,6 +311,10 @@ function toTmdbUrl(path: string | null, size = 'w780'): string {
  */
 function rowToFilm(row: MatchFilmRow): Film {
   const overviewFallback = row.overview ? row.overview.slice(0, 90) + '…' : '';
+  // v3 match_reason (tmdb_keywords) takes priority over dimensions-based reason
+  const reason = row.match_reason
+    ? `Matches your mood: ${row.match_reason}`
+    : whyFromDimensions(row.dimensions_json, overviewFallback);
   return {
     id: row.id,
     title: row.title,
@@ -288,7 +322,7 @@ function rowToFilm(row: MatchFilmRow): Film {
     posterUrl: toTmdbUrl(row.poster_url),
     matchScore: Math.min(100, Math.round(Math.max(0, row.similarity) * 100)),
     moodTags: [],
-    whyThisFilm: whyFromDimensions(row.dimensions_json, overviewFallback),
+    whyThisFilm: reason,
     backdropUrl: toTmdbUrl(row.backdrop_url, 'w1280'),
     overview: row.overview ?? '',
     runtime: row.runtime ?? undefined,
@@ -544,7 +578,7 @@ async function callMatchFilmsV3(
     ...(minRating != null ? { min_rating: minRating } : {}),
     ...(era ? { year_from: era.from, year_to: era.to } : {}),
     ...excl,
-    per_director_cap: V2_CONFIG.per_director_cap,
+    per_director_cap: 1,  // v3: max 1 per director for diversity
     tier_boost: V2_CONFIG.tier_boost,
   });
 }
@@ -879,14 +913,23 @@ export async function getRecommendations(
         ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
         : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
       const errorCode = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
-      await supabase
+      await ensureAuthSession();
+      const { data: fbUpdateData, error: fbUpdateError } = await supabase
         .from('mood_searches')
         .update({
           rpc_version: rpcVersion,
           recommended_film_ids: fallbackFilms?.map((f) => f.id) ?? [],
           error_code: errorCode,
         })
-        .eq('id', searchId);
+        .eq('id', searchId)
+        .select('id');
+
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[recommendations] mood_searches fallback update:',
+          fbUpdateError ? `ERROR: ${fbUpdateError.message}` : `rows=${fbUpdateData?.length ?? 0}`,
+          '| searchId:', searchId);
+      }
     }
 
     if (fallbackFilms) return { films: fallbackFilms, source: 'fallback' };
@@ -914,19 +957,30 @@ export async function getRecommendations(
     const rpcVersion = useHybridRecommendation()
         ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
         : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
-    // Sprint 2 fix: await ekle (fire-and-forget değil) — observability garantisi.
-    // Latency ~50ms artar ama rpc_version her search için garanti yazılır.
-    const { error: updateError } = await supabase
+    // FIX: match_films RPC anon role'de de çalışır ama UPDATE authenticated gerektirir.
+    // JWT stale/expired ise RPC başarılı olur, UPDATE sessiz fail olur (0 rows).
+    // Session refresh yaparak auth.uid()'nin RLS policy'de doğru çözümlenmesini garanti et.
+    await ensureAuthSession();
+    const { data: updateData, error: updateError } = await supabase
       .from('mood_searches')
       .update({
         recommended_film_ids: films.map((f) => f.id),
         rpc_version: rpcVersion,
       })
-      .eq('id', searchId);
+      .eq('id', searchId)
+      .select('id');
 
-    if (updateError && __DEV__) {
+    if (__DEV__) {
+      const rowCount = updateData?.length ?? 0;
       // eslint-disable-next-line no-console
-      console.log('[recommendations] mood_searches update failed:', updateError.message);
+      console.log('[recommendations] mood_searches update:',
+        updateError ? `ERROR: ${updateError.message}` : `rows=${rowCount}`,
+        '| searchId:', searchId,
+        '| rpcVersion:', rpcVersion);
+      if (rowCount === 0 && !updateError) {
+        // eslint-disable-next-line no-console
+        console.warn('[recommendations] UPDATE 0 rows — RLS auth_user_id() mismatch or row not found');
+      }
     }
 
     // Sprint 2 TASK 2.1.G4: mood_search_completed signal
