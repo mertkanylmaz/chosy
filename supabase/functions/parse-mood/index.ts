@@ -114,7 +114,8 @@ Return ONLY valid JSON, no explanation:
   "social_context": "alone" | "couple" | "friends" | "family",
   "rewatch_tolerance": true | false,
   "profile_name": "2-3 word mood summary in English",
-  "profile_description": "One sentence explaining the mood and what kind of film experience this person needs"
+  "profile_description": "One sentence explaining the mood and what kind of film experience this person needs",
+  "search_keywords": ["5-8 lowercase thematic keywords for content matching"]
 }
 
 Rules:
@@ -137,7 +138,19 @@ Genre-critical differentiation rules (IMPORTANT — these prevent cross-genre co
 - HORROR/SCARY signals → fear HIGH (0.8-0.9), anticipation HIGH, energy MODERATE, joy LOW (0.1-0.2)
 - ROMANTIC signals → trust HIGH (0.8-0.9), joy MODERATE-HIGH (0.6-0.8), energy LOW-MODERATE (0.3-0.5)
 - DRAMA/SAD signals → sadness HIGH (0.7-0.9), thematic_depth HIGH, energy LOW (0.1-0.3), pace "slow"
-- When a mood clearly maps to one genre (e.g. "need a laugh" = comedy), actively SUPPRESS dimensions of other genres. A comedy profile should NOT have high anticipation/fear/anger values.`
+- When a mood clearly maps to one genre (e.g. "need a laugh" = comedy), actively SUPPRESS dimensions of other genres. A comedy profile should NOT have high anticipation/fear/anger values.
+
+search_keywords rules (IMPORTANT — these enable thematic film matching):
+- Extract 5-8 lowercase thematic keywords describing the SUBJECT, SETTING, THEME, or CONTEXT implied by the mood — NOT emotions.
+- These match against film content tags (TMDB keywords). Think: what is this film ABOUT?
+- Use natural language phrases like TMDB keywords (lowercase, can be multi-word).
+- Examples:
+  "thailand trip" → ["travel", "vacation", "adventure", "southeast asia", "journey", "exotic location"]
+  "sınav sonucum iyi geldi" → ["coming of age", "school", "youth", "achievement", "friendship", "success"]
+  "ayrılık acısı" → ["heartbreak", "breakup", "romance", "loss", "relationships", "melancholy"]
+  "bir soygun filmi izlemek istiyorum" → ["heist", "crime", "robbery", "thriller", "gang", "planning"]
+  "need a laugh" → ["comedy", "humor", "funny", "satire"]
+- If the mood is purely emotional with no clear theme/subject (e.g. "feeling down"), return an empty array [].`
 
 // ─── Quota Check Helper ───────────────────────────────────────────────────────
 
@@ -317,6 +330,16 @@ serve(async (req: Request): Promise<Response> => {
     const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
 
     const parsed = JSON.parse(jsonString)
+
+    // Normalize search_keywords: array of lowercase strings, max 8
+    if (!Array.isArray(parsed.search_keywords)) {
+      parsed.search_keywords = []
+    } else {
+      parsed.search_keywords = parsed.search_keywords
+        .filter((k: unknown) => typeof k === 'string' && k.trim().length > 0)
+        .map((k: string) => k.toLowerCase().trim())
+        .slice(0, 8)
+    }
 
     const latencyMs = Date.now() - startTime
 

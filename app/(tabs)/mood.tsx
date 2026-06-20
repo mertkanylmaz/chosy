@@ -56,6 +56,7 @@ import { hapticMedium, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { setPendingSearchId, setSearchKeywords } from '@/services/moodSearchState';
 import { parseMood } from '@/services/tasteParser';
 import { saveSession, getAppUserId } from '@/services/watchlist';
 import { FilmFilters, TasteProfile } from '@/types';
@@ -244,7 +245,7 @@ export default function MoodScreen() {
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
       ]);
 
-      const { profile, searchId } = parseResult;
+      const { profile, searchId, searchKeywords } = parseResult;
 
       if (filters.yearRange !== null) {
         profile.era_preference = yearRangeToEra(filters.yearRange);
@@ -252,6 +253,10 @@ export default function MoodScreen() {
 
       // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
       setLastSearchId(searchId);
+      // Module-level store — React state/ref/effect race condition bypass
+      setPendingSearchId(searchId);
+      // Tematik keyword'ler — match_films_v3 keyword overlap boost için
+      setSearchKeywords(searchKeywords);
 
       setTasteProfile(profile);
       setPhase('result');

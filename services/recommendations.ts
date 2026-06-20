@@ -13,6 +13,8 @@ import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 
 import { getAppUserId } from './auth-utils';
+import { getSearchKeywords } from './moodSearchState';
+import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
 import { supabase } from './supabase';
 import { tasteSignals } from './tasteSignalService';
@@ -35,7 +37,11 @@ import { tasteProfileToVector } from './vectorEncoder';
 async function ensureAuthSession(): Promise<void> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // getSession() cached session döner — expires_at kontrolü ile proaktif refresh
+    const nowSec = Math.floor(Date.now() / 1000);
+    const isExpiredOrSoon = !session ||
+      (session.expires_at != null && session.expires_at < nowSec + 30);
+    if (isExpiredOrSoon) {
       const { error } = await supabase.auth.refreshSession();
       if (__DEV__ && error) {
         // eslint-disable-next-line no-console
@@ -566,8 +572,12 @@ async function callMatchFilmsV3(
   minRating: number | null,
   era: { from: number; to: number } | null,
   excludeIds: string[],
+  searchKeywords?: string[],
 ): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
   const excl = excludeIds.length > 0 ? { exclude_ids: excludeIds } : {};
+  const kwParam = searchKeywords && searchKeywords.length > 0
+    ? { search_keywords: searchKeywords }
+    : {};
   return supabase.rpc('match_films_v3', {
     query_vector: vectorString,
     user_vector: userVectorString,  // NULL olabilir
@@ -578,6 +588,7 @@ async function callMatchFilmsV3(
     ...(minRating != null ? { min_rating: minRating } : {}),
     ...(era ? { year_from: era.from, year_to: era.to } : {}),
     ...excl,
+    ...kwParam,
     per_director_cap: 1,  // v3: max 1 per director for diversity
     tier_boost: V2_CONFIG.tier_boost,
   });
@@ -619,6 +630,7 @@ async function callMatchFilms(
   userVectorString?: string | null,
   moodWeight?: number,
   userWeight?: number,
+  searchKeywords?: string[],
 ): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
   // v3 hybrid recommendation (Sprint 2 TASK 2.4)
   if (useHybridRecommendation()) {
@@ -632,6 +644,7 @@ async function callMatchFilms(
       minRating,
       era,
       excludeIds,
+      searchKeywords,
     );
     if (v3Res.error) {
       if (__DEV__) {
@@ -690,11 +703,12 @@ async function getFilmsWithRelaxation(
   userVectorString?: string | null,
   moodWeight?: number,
   userWeight?: number,
+  searchKeywords?: string[],
 ): Promise<MatchFilmRow[] | null> {
   const baseRating = ratingMin ?? 6.0;
 
   // Deneme 1: tam filtreler
-  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight);
+  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
   if (res.error && isNetworkLikeError(res.error)) {
@@ -710,7 +724,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #1: filtreler gevşetildi (rating -1)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds, userVectorString, moodWeight, userWeight);
+  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -720,7 +734,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #2: filtreler gevşetildi (year kaldırıldı)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds, userVectorString, moodWeight, userWeight);
+  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
     return res.data as MatchFilmRow[];
   }
@@ -730,7 +744,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #3: sadece vektör similarity');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds, userVectorString, moodWeight, userWeight);
+  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
   if (res.error) return null;
   return (res.data as MatchFilmRow[]) ?? [];
 }
@@ -767,6 +781,15 @@ export async function getRecommendations(
   filters?: FilmFilters,
   searchId?: string | null,
 ): Promise<RecommendationResult> {
+  // ── DEBUG: koşulsuz entry telemetri — searchId gerçekten geliyor mu? ────
+  posthogAnalytics.track('mood_search_debug_entry', {
+    receivedSearchId: searchId ?? null,
+    type: typeof searchId,
+    isNull: searchId === null,
+    isUndefined: searchId === undefined,
+    isFalsy: !searchId,
+  });
+
   // ── Adım 1: TasteProfile logu ────────────────────────────────────────────
   if (__DEV__) {
     // eslint-disable-next-line no-console
@@ -858,10 +881,19 @@ export async function getRecommendations(
     }, null, 2));
   }
 
+  // ── Adım 3.5: Tematik keyword'leri module-level store'dan oku ────────────
+  const searchKeywords = getSearchKeywords();
+  if (searchKeywords.length > 0) {
+    posthogAnalytics.track('keyword_boost_active', {
+      search_keywords: searchKeywords.join(', '),
+      keyword_count: searchKeywords.length,
+    });
+  }
+
   // ── Adım 4: Aşamalı filtre gevşetme ile RPC ───────────────────────────────
   const rawResult = await getFilmsWithRelaxation(
     vectorString, limit, ratingMin, era, excludeIds,
-    userVectorString, moodWeight, userWeight,
+    userVectorString, moodWeight, userWeight, searchKeywords,
   );
   const data: MatchFilmRow[] = rawResult ?? [];
   const rpcFailed = rawResult === null;
@@ -961,6 +993,19 @@ export async function getRecommendations(
     // JWT stale/expired ise RPC başarılı olur, UPDATE sessiz fail olur (0 rows).
     // Session refresh yaparak auth.uid()'nin RLS policy'de doğru çözümlenmesini garanti et.
     await ensureAuthSession();
+
+    // ── DEBUG: session durumunu UPDATE ÖNCESİ logla ───────────────────────
+    const { data: { session: preSession } } = await supabase.auth.getSession();
+    const preSessionInfo = {
+      hasSession: !!preSession,
+      expiresAt: preSession?.expires_at ?? null,
+      nowSec: Math.floor(Date.now() / 1000),
+      isExpired: preSession?.expires_at != null
+        ? preSession.expires_at < Math.floor(Date.now() / 1000)
+        : null,
+      authUid: preSession?.user?.id ?? null,
+    };
+
     const { data: updateData, error: updateError } = await supabase
       .from('mood_searches')
       .update({
@@ -970,13 +1015,32 @@ export async function getRecommendations(
       .eq('id', searchId)
       .select('id');
 
+    const rowsAffected = updateData?.length ?? 0;
+
+    // ── DEBUG: PostHog event — production silent failure telemetri ────────
+    posthogAnalytics.track('mood_search_update_debug', {
+      hasSearchId: true,
+      searchId,
+      hasSession: preSessionInfo.hasSession,
+      isExpired: preSessionInfo.isExpired,
+      authUid: preSessionInfo.authUid,
+      expiresAt: preSessionInfo.expiresAt,
+      nowSec: preSessionInfo.nowSec,
+      updateError: updateError?.message ?? null,
+      updateErrorCode: updateError?.code ?? null,
+      rowsAffected,
+      rpcVersion,
+      filmCount: films.length,
+    });
+
     if (__DEV__) {
       const rowCount = updateData?.length ?? 0;
       // eslint-disable-next-line no-console
       console.log('[recommendations] mood_searches update:',
         updateError ? `ERROR: ${updateError.message}` : `rows=${rowCount}`,
         '| searchId:', searchId,
-        '| rpcVersion:', rpcVersion);
+        '| rpcVersion:', rpcVersion,
+        '| session:', JSON.stringify(preSessionInfo));
       if (rowCount === 0 && !updateError) {
         // eslint-disable-next-line no-console
         console.warn('[recommendations] UPDATE 0 rows — RLS auth_user_id() mismatch or row not found');

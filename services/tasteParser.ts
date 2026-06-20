@@ -59,7 +59,10 @@ async function checkRateLimit(): Promise<void> {
   const prev = rateLimitStore.get(key) ?? [];
   const recent = prev.filter((ts) => now - ts < RATE_WINDOW_MS);
   if (recent.length >= RATE_MAX) {
-    throw new Error('Rate limit: please wait before making another request.');
+    throw new MoodParseError(
+      'RATE_LIMIT_EXCEEDED',
+      'Too many requests. Please wait a moment.',
+    );
   }
   recent.push(now);
   rateLimitStore.set(key, recent);
@@ -71,25 +74,40 @@ type EdgeResponse = TasteProfile & {
   profile_name?: string;
   profile_description?: string;
   search_id?: string;
+  search_keywords?: string[];
 };
 
 /** parseMood return type — includes searchId for downstream logging */
 export interface ParseMoodResult {
   profile: TasteProfile;
   searchId: string | null;
+  /** Tematik keyword'ler — LLM çıkarır, match_films_v3'te keyword overlap boost için */
+  searchKeywords: string[];
 }
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
-  // Cached session dene, null ise refresh yap — anon key fallback'ini minimize et
+  // ── Token freshness garantisi ─────────────────────────────────────────────
+  // getSession() CACHED session döner — expired token'ı null yapmaz.
+  // Expired token → edge function getUser() fail → userId null → logMoodSearch SKIP.
+  // Bu yüzden expires_at kontrolü yapıp proaktif refresh ediyoruz.
   let { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const isExpiredOrSoon = !session ||
+    (session.expires_at != null && session.expires_at < nowSec + 30);
+
+  if (isExpiredOrSoon) {
     const refreshResult = await supabase.auth.refreshSession();
     session = refreshResult.data.session;
+    if (!session) {
+      // Refresh de başarısız — son şans: belki başka bir çağrı refresh etmiştir
+      const retry = await supabase.auth.getSession();
+      session = retry.data.session;
+    }
   }
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5_000);
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
 
   let res: Response;
 
@@ -1420,7 +1438,8 @@ export async function parseMood(input: string): Promise<ParseMoodResult> {
   try {
     const raw = await callEdgeFunction(input);
     const searchId = raw.search_id ?? null;
-    return { profile: validateAndNormalize(raw), searchId };
+    const searchKeywords = Array.isArray(raw.search_keywords) ? raw.search_keywords : [];
+    return { profile: validateAndNormalize(raw), searchId, searchKeywords };
   } catch (error) {
     // MoodParseError already structured — re-throw as-is
     if (error instanceof MoodParseError) {
