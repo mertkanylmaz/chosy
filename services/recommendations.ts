@@ -13,13 +13,15 @@ import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 
 import { getAppUserId } from './auth-utils';
-import { getSearchKeywords } from './moodSearchState';
+import { getSearchKeywords, consumePendingMoodText } from './moodSearchState';
 import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
 import { supabase } from './supabase';
 import { tasteSignals } from './tasteSignalService';
 import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
+
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
 
 // ─── Yardımcı: Auth Session Doğrulama ─────────────────────────────────────────
 
@@ -86,6 +88,7 @@ function isNetworkLikeError(error: { message?: string; code?: string }): boolean
  */
 const useMatchFilmsV2 = (): boolean => remoteConfig.get('use_match_films_v2');
 const useHybridRecommendation = (): boolean => remoteConfig.get('use_hybrid_recommendation');
+const useLlmReranker = (): boolean => remoteConfig.get('use_llm_reranker');
 
 /** v2 default configuration */
 const V2_CONFIG = {
@@ -678,6 +681,128 @@ async function callMatchFilms(
   return callMatchFilmsV1(vectorString, limit, minSimilarity, minRating, era, excludeIds);
 }
 
+// ─── LLM Re-ranker ──────────────────────────────────────────────────────────
+
+/** Rerank edge function response shape */
+interface RerankResponse {
+  reranked_ids: string[];
+  original_count: number;
+  reranked_count: number;
+  fallback?: boolean;
+}
+
+/**
+ * LLM re-ranker edge function'i cagirarak vektor sonuclarini
+ * tematik uygunluga gore yeniden siralar.
+ *
+ * "thailand trip" gibi tematik mood girdilerinde vektor uzayinin
+ * yakalayamadigi kavramsal anlami LLM ile doldurur.
+ *
+ * Hata durumunda null doner — caller orijinal siralamaya doner.
+ *
+ * @param moodText   - Kullanicinin orijinal mood metni
+ * @param candidates - match_films_v3'ten gelen film satirlari
+ * @param count      - Kac film isteniyor (rerank sonrasi)
+ */
+async function callRerankFilms(
+  moodText: string,
+  candidates: MatchFilmRow[],
+  count: number,
+): Promise<RerankResponse | null> {
+  // Token freshness — tasteParser.ts ile ayni pattern
+  let { data: { session } } = await supabase.auth.getSession();
+  const nowSec = Math.floor(Date.now() / 1000);
+  const isExpiredOrSoon = !session ||
+    (session.expires_at != null && session.expires_at < nowSec + 30);
+
+  if (isExpiredOrSoon) {
+    const refreshResult = await supabase.auth.refreshSession();
+    session = refreshResult.data.session;
+    if (!session) {
+      const retry = await supabase.auth.getSession();
+      session = retry.data.session;
+    }
+  }
+  const token = session?.access_token ?? SUPABASE_ANON_KEY;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8_000); // 8s timeout
+
+  try {
+    const body = {
+      mood_text: moodText,
+      candidates: candidates.map((c) => ({
+        id: c.id,
+        title: c.title,
+        overview: (c.overview ?? '').slice(0, 150),
+        genres: c.genres,
+        year: c.year,
+        similarity: c.similarity,
+      })),
+      count,
+    };
+
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/rerank-films`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        apikey: SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.error('[recommendations] rerank-films HTTP error:', res.status);
+      }
+      return null;
+    }
+
+    const data: RerankResponse = await res.json();
+    return data;
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.error('[recommendations] rerank-films call failed:', err instanceof Error ? err.message : err);
+    }
+    return null;
+  }
+}
+
+/**
+ * match_films_v3 sonuclarini LLM rerank ID sirasina gore yeniden siralar.
+ * Rerank listesinde olmayan filmler sona eklenir (kaybolmaz).
+ */
+function reorderByRerankedIds(rows: MatchFilmRow[], rerankedIds: string[]): MatchFilmRow[] {
+  const idToRow = new Map(rows.map((r) => [r.id, r]));
+  const result: MatchFilmRow[] = [];
+  const usedIds = new Set<string>();
+
+  // Rerank sirasina gore ekle
+  for (const id of rerankedIds) {
+    const row = idToRow.get(id);
+    if (row) {
+      result.push(row);
+      usedIds.add(id);
+    }
+  }
+
+  // Rerank'ta olmayanlari orijinal sirada sona ekle
+  for (const row of rows) {
+    if (!usedIds.has(row.id)) {
+      result.push(row);
+    }
+  }
+
+  return result;
+}
+
 // ─── Progressive Filter Relaxation ───────────────────────────────────────────
 
 /**
@@ -773,6 +898,7 @@ export interface RecommendationResult {
  * @param excludeIds  - Daha önce gösterilen film id'leri
  * @param filters     - İsteğe bağlı ek filtreler (yıl, puan, bölge, yönetmen)
  * @param searchId    - parse-mood edge function'dan donen mood_searches row ID
+ * @param isFirstBatch - Ilk batch mi? LLM reranker sadece ilk batch'te calisir
  */
 export async function getRecommendations(
   profile: TasteProfile,
@@ -780,6 +906,7 @@ export async function getRecommendations(
   excludeIds: string[] = [],
   filters?: FilmFilters,
   searchId?: string | null,
+  isFirstBatch = false,
 ): Promise<RecommendationResult> {
   // ── DEBUG: koşulsuz entry telemetri — searchId gerçekten geliyor mu? ────
   posthogAnalytics.track('mood_search_debug_entry', {
@@ -895,7 +1022,7 @@ export async function getRecommendations(
     vectorString, limit, ratingMin, era, excludeIds,
     userVectorString, moodWeight, userWeight, searchKeywords,
   );
-  const data: MatchFilmRow[] = rawResult ?? [];
+  let data: MatchFilmRow[] = rawResult ?? [];
   const rpcFailed = rawResult === null;
 
   if (__DEV__) {
@@ -905,6 +1032,53 @@ export async function getRecommendations(
       rpcFailed ? 'RPC hatası' : `${data.length} film`,
       data[0] ? `| ilk: ${data[0].title} (similarity: ${data[0].similarity})` : '',
     );
+  }
+
+  // ── Adım 4.5: LLM Re-ranker (sadece ilk batch + flag aktif) ──────────────
+  if (
+    !rpcFailed &&
+    data.length > 0 &&
+    isFirstBatch &&
+    useLlmReranker() &&
+    searchKeywords.length > 0
+  ) {
+    const moodText = consumePendingMoodText();
+    if (moodText) {
+      const rerankStart = Date.now();
+      const rerankResult = await callRerankFilms(moodText, data, limit);
+
+      if (rerankResult && !rerankResult.fallback && rerankResult.reranked_ids.length > 0) {
+        data = reorderByRerankedIds(data, rerankResult.reranked_ids);
+
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log(
+            '[recommendations] LLM rerank applied:',
+            `${rerankResult.reranked_count}/${rerankResult.original_count} films reranked`,
+            `| ${Date.now() - rerankStart}ms`,
+            `| ilk: ${data[0]?.title}`,
+          );
+        }
+
+        posthogAnalytics.track('llm_rerank_applied', {
+          original_count: rerankResult.original_count,
+          reranked_count: rerankResult.reranked_count,
+          latency_ms: Date.now() - rerankStart,
+          mood_text_length: moodText.length,
+          keyword_count: searchKeywords.length,
+        });
+      } else {
+        if (__DEV__) {
+          // eslint-disable-next-line no-console
+          console.log('[recommendations] LLM rerank skipped (fallback or empty)');
+        }
+        posthogAnalytics.track('llm_rerank_fallback', {
+          had_result: !!rerankResult,
+          was_fallback: rerankResult?.fallback ?? false,
+          latency_ms: Date.now() - rerankStart,
+        });
+      }
+    }
   }
 
   // ── Adım 5: Hata / boş sonuç → JS fallback ───────────────────────────────

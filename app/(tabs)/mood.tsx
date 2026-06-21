@@ -56,7 +56,7 @@ import { hapticMedium, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { setPendingSearchId, setSearchKeywords } from '@/services/moodSearchState';
+import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/services/moodSearchState';
 import { parseMood } from '@/services/tasteParser';
 import { saveSession, getAppUserId } from '@/services/watchlist';
 import { FilmFilters, TasteProfile } from '@/types';
@@ -257,6 +257,8 @@ export default function MoodScreen() {
       setPendingSearchId(searchId);
       // Tematik keyword'ler — match_films_v3 keyword overlap boost için
       setSearchKeywords(searchKeywords);
+      // Orijinal mood metni — LLM re-ranker için
+      setPendingMoodText(trimmed);
 
       setTasteProfile(profile);
       setPhase('result');

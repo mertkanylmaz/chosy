@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CACHE_KEY = 'remote_config_cache';
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const SAFE_DEFAULTS = { use_match_films_v2: true, use_hybrid_recommendation: false } as const;
+const SAFE_DEFAULTS = { use_match_films_v2: true, use_hybrid_recommendation: false, use_llm_reranker: false } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;
 let memoryCache: { values: Record<string, any>; fetchedAt: number } | null = null;

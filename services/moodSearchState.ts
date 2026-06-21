@@ -81,3 +81,28 @@ export function getSearchKeywords(): string[] {
 export function clearSearchKeywords(): void {
   _searchKeywords = [];
 }
+
+// ─── Mood Text Store ──────────────────────────────────────────────────────
+
+/**
+ * Kullanicinin orijinal mood metni — LLM re-ranker icin gerekli.
+ * searchId gibi consume edilir (ilk batch'te okunur, sonra null'a sifirlanir).
+ */
+let _pendingMoodText: string | null = null;
+
+/**
+ * Mood text'i kaydeder — parseMood basarili oldugunda cagirilir.
+ */
+export function setPendingMoodText(text: string | null): void {
+  _pendingMoodText = text;
+}
+
+/**
+ * Mood text'i okur ve sifirlar (consume pattern).
+ * Ilk batch'te okunur, sonraki batch'lerde null doner.
+ */
+export function consumePendingMoodText(): string | null {
+  const text = _pendingMoodText;
+  _pendingMoodText = null;
+  return text;
+}

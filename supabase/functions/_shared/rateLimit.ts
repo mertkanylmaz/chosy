@@ -15,6 +15,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
   'parse-mood':    { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
   'explain-match': { maxRequests: 30, windowMs: 60_000 },  // 30/dakika
+  'rerank-films':  { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
 }
 
 /** Rate limit aşımında dönen HTTP yanıtı için hata sınıfı */

@@ -426,6 +426,7 @@ export function useFeedManager(
           allExcludeIds,
           filtersRef.current,
           effectiveSearchId,
+          loadedCount === 0, // isFirstBatch — LLM reranker sadece ilk batch'te
         );
 
         if (result.films.length === 0 && loadedCount === 0) {
