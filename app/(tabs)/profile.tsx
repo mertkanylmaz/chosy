@@ -949,7 +949,7 @@ export default function ProfileScreen() {
         await Linking.openURL(url);
       }
     } else {
-      router.push('/paywall');
+      triggerPaywall({ type: 'profile_upgrade' });
     }
   }
 
@@ -1349,7 +1349,7 @@ export default function ProfileScreen() {
             ) : (
               <TouchableOpacity
                 style={styles.subBadgeFree}
-                onPress={() => router.push('/paywall')}
+                onPress={() => triggerPaywall({ type: 'profile_upgrade' })}
                 activeOpacity={0.8}
               >
                 <Ionicons name="sparkles" size={14} color={Colors.gold} />

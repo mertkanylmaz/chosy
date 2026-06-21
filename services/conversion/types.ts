@@ -16,7 +16,11 @@ export type TriggerType =
   | 'mood_history_tap'
   | 'streaming_link_tap'
   | 'custom_list_attempt'
-  | 'share_card_generated';
+  | 'share_card_generated'
+  | 'profile_upgrade'
+  | 'onboarding_complete'
+  | 'roulette_limit'
+  | 'lifetime_soldout';
 
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =
@@ -27,7 +31,11 @@ export type TriggerEvent =
   | { type: 'mood_history_tap' }
   | { type: 'streaming_link_tap'; filmId: number }
   | { type: 'custom_list_attempt' }
-  | { type: 'share_card_generated'; count: number };
+  | { type: 'share_card_generated'; count: number }
+  | { type: 'profile_upgrade' }
+  | { type: 'onboarding_complete' }
+  | { type: 'roulette_limit' }
+  | { type: 'lifetime_soldout' };
 
 // ─── Paywall Variants ────────────────────────────────────────────────────────
 
@@ -37,7 +45,11 @@ export type PaywallVariantName =
   | 'streak_milestone'
   | 'watchlist_full'
   | 'mood_history'
-  | 'streaming_link';
+  | 'streaming_link'
+  | 'profile_upgrade'
+  | 'onboarding_complete'
+  | 'roulette_limit'
+  | 'lifetime_soldout';
 
 /** Paywall gosterim kararinin sonucu */
 export interface PaywallVariant {

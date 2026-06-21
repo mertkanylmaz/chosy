@@ -590,6 +590,7 @@ export default function MoodScreen() {
         visible={showQuotaExhausted}
         onClose={() => setShowQuotaExhausted(false)}
         quotaStatus={lastQuotaResult}
+        onUpgrade={() => triggerPaywall({ type: 'quota_exhausted', quota: 'search' })}
       />
 
       {/* ── Contextual Paywall (orchestrator-driven) ─────────── */}

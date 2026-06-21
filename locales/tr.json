@@ -933,7 +933,37 @@
     "streamingTitle": "Platformunda direkt izle",
     "streamingSubtitle": "Chosy Plus ile filmlerini Netflix, Disney+ ve diger platformlarda direkt ac.",
     "streamingCta": "Direkt Baglantilari Ac",
-    "streamingDismiss": "Manuel bul"
+    "streamingDismiss": "Manuel bul",
+
+    "profileTitle": "Tam Deneyimi Ac",
+    "profileSubtitle": "Daha fazla kesif, sinirsiz oyun ve premium ozellikler.",
+    "profileBenefit1": "Gunluk 25'e kadar mood araması",
+    "profileBenefit2": "Sinirsiz watchlist ve oyun",
+    "profileBenefit3": "Streaming baglanti entegrasyonu",
+    "profileBenefit4": "Oncelikli AI onerileri",
+    "profileCta": "Premium'a Yukselt",
+    "profileDismiss": "Belki Sonra",
+
+    "onboardingTitle": "Arketipini kesfettin!",
+    "onboardingSubtitle": "Daha derin kesifler ve sinirsiz erisim ile premium yolculuguna basla.",
+    "onboardingBenefit1": "AI destekli ruh hali eslestirme",
+    "onboardingBenefit2": "Sinirsiz arama ve oyun",
+    "onboardingBenefit3": "Gunluk film meydan okumalari",
+    "onboardingCta": "Yolculuguna Basla",
+    "onboardingDismiss": "Ucretsiz Devam Et",
+
+    "rouletteTitle": "Premium ile Daha Fazla Cevir",
+    "rouletteSubtitle": "Sinirsiz cevirme, ruh haline gore rulet ve uclu mod ac.",
+    "rouletteBenefit1": "Sinirsiz gunluk cevirme",
+    "rouletteBenefit2": "Ruh haline gore rulet",
+    "rouletteBenefit3": "Uclu slot modu",
+    "rouletteCta": "Sinirsiz Cevirme Ac",
+    "rouletteDismiss": "Daha Sonra Gel",
+
+    "lifetimeSoldoutTitle": "Omur Boyu Yerler Tukendi",
+    "lifetimeSoldoutSubtitle": "Tum kurucu uye yerleri doldu. Premium ozellikleri acmak icin bir abonelik plani sec.",
+    "lifetimeSoldoutCta": "Planini Sec",
+    "lifetimeSoldoutDismiss": "Belki Sonra"
   },
   "notifications": {
     "settingsLabel": "Bildirimler",

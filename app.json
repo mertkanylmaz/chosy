@@ -54,7 +54,8 @@
           "organization": "chosy",
           "project": "react-native"
         }
-      ]
+      ],
+      "./plugins/withModularHeaders"
     ],
     "updates": {
       "url": "https://u.expo.dev/5c6d10a4-12a2-42cc-946b-3baecbe3bc5e"

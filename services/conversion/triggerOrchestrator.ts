@@ -64,10 +64,29 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
       return 'watchlist_full';
     case 'share_card_generated':
       return null; // V1.1'de eklenecek
+    case 'profile_upgrade':
+      return 'profile_upgrade';
+    case 'onboarding_complete':
+      return 'onboarding_complete';
+    case 'roulette_limit':
+      return 'roulette_limit';
+    case 'lifetime_soldout':
+      return 'lifetime_soldout';
     default:
       return null;
   }
 }
+
+/**
+ * Kullanici eylemiyle tetiklenen trigger'lar — cooldown / 24h grace atlanir.
+ * Kullanici bilinçli olarak paywall'i goruyor, engellemek UX bozar.
+ */
+const IMMEDIATE_TRIGGERS: ReadonlySet<TriggerType> = new Set([
+  'profile_upgrade',
+  'onboarding_complete',
+  'roulette_limit',
+  'lifetime_soldout',
+]);
 
 /** Trigger icin ilgili A/B test ID'si */
 function triggerToExperiment(triggerType: TriggerType): string | null {
@@ -164,28 +183,32 @@ export async function shouldShowPaywall(
   if (!variantName) return null;
 
   const triggerType = event.type;
+  const isImmediate = IMMEDIATE_TRIGGERS.has(triggerType);
 
-  // Yeni kullanici kontrolu — ilk 24 saat paywall yok
-  const firstOpen = await getFirstOpenTime();
-  if (Date.now() - firstOpen < NEW_USER_GRACE_MS) {
-    logger.log('[orchestrator] Yeni kullanici — paywall atlanıyor');
-    return null;
-  }
+  // Kullanici eylemiyle tetiklenen trigger'lar cooldown/grace atlar
+  if (!isImmediate) {
+    // Yeni kullanici kontrolu — ilk 24 saat paywall yok
+    const firstOpen = await getFirstOpenTime();
+    if (Date.now() - firstOpen < NEW_USER_GRACE_MS) {
+      logger.log('[orchestrator] Yeni kullanici — paywall atlanıyor');
+      return null;
+    }
 
-  // Cooldown kontrolu
-  const cooldowns = await getCooldowns();
-  const lastShown = cooldowns[triggerType] ?? 0;
-  const dismissals = await getDismissals();
-  const dismissCount = dismissals[triggerType] ?? 0;
+    // Cooldown kontrolu
+    const cooldowns = await getCooldowns();
+    const lastShown = cooldowns[triggerType] ?? 0;
+    const dismissals = await getDismissals();
+    const dismissCount = dismissals[triggerType] ?? 0;
 
-  // 3+ dismiss → 7 gun cooldown
-  const activeCooldown = dismissCount >= MAX_DISMISSALS_BEFORE_EXTENDED
-    ? EXTENDED_COOLDOWN_MS
-    : COOLDOWN_MS;
+    // 3+ dismiss → 7 gun cooldown
+    const activeCooldown = dismissCount >= MAX_DISMISSALS_BEFORE_EXTENDED
+      ? EXTENDED_COOLDOWN_MS
+      : COOLDOWN_MS;
 
-  if (Date.now() - lastShown < activeCooldown) {
-    logger.log(`[orchestrator] Cooldown aktif — ${triggerType} atlanıyor`);
-    return null;
+    if (Date.now() - lastShown < activeCooldown) {
+      logger.log(`[orchestrator] Cooldown aktif — ${triggerType} atlanıyor`);
+      return null;
+    }
   }
 
   // A/B test grubu ata

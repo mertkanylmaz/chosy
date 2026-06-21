@@ -30,7 +30,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
-import { PLANS, type PlanId } from '@/constants/subscriptionPlans';
+import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
@@ -39,7 +39,9 @@ import {
   restorePurchases,
 } from '@/services/purchaseService';
 import { upsertSubscription } from '@/services/subscriptionService';
+import { clearQuotaCache } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
+import { supabase } from '@/services/supabase';
 import {
   recordPaywallShown,
   recordPaywallDismissed,
@@ -106,7 +108,7 @@ export default function PaywallBase({
   dismissLabel,
 }: PaywallBaseProps) {
   const { t } = useLanguage();
-  const { refreshSubscription } = useSubscription();
+  const { refreshSubscription, refreshQuota } = useSubscription();
 
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('annual');
@@ -174,10 +176,32 @@ export default function PaywallBase({
             status: 'active',
             rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
           });
+
+          // KRITIK: users.subscription_tier'i hemen guncelle.
+          // Quota RPC'leri (check_and_consume_quota) bu kolonu okur.
+          // Webhook async gelebilir — kullanici arada "limit reached" gorebilir.
+          const tier = selectedPlan === 'annual' ? 'annual'
+            : selectedPlan === 'lifetime' ? 'lifetime'
+            : 'monthly';
+          const { error: tierErr } = await supabase
+            .from('users')
+            .update({
+              subscription_tier: tier,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', userId);
+
+          if (tierErr) {
+            logger.warn('[paywall-base] users.subscription_tier guncelleme hatasi:', tierErr.message);
+          }
+
+          // Client-side quota cache'ini temizle — yeni tier ile fresh quota
+          await clearQuotaCache(userId);
         }
 
         await recordPaywallConverted(variant);
         await refreshSubscription();
+        await refreshQuota();
         onConvert(selectedPlan);
       } else {
         Alert.alert(t('paywall.purchaseError'), result.error ?? '');
@@ -188,7 +212,7 @@ export default function PaywallBase({
     } finally {
       setPurchasing(false);
     }
-  }, [selectedPlan, packages, purchasing, t, refreshSubscription, onConvert, variant]);
+  }, [selectedPlan, packages, purchasing, t, refreshSubscription, refreshQuota, onConvert, variant]);
 
   /** Restore */
   const handleRestore = useCallback(async () => {
@@ -196,7 +220,41 @@ export default function PaywallBase({
       const result = await restorePurchases();
       if (result.success) {
         hapticSuccess();
+
+        // Restore sonrasi users.subscription_tier'i hemen guncelle
+        const userId = await getAppUserId();
+        if (userId && result.customerInfo) {
+          const entitlement = result.customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+          if (entitlement) {
+            const tier = productIdToTier(entitlement.productIdentifier);
+            if (tier !== 'free') {
+              const { error: tierErr } = await supabase
+                .from('users')
+                .update({
+                  subscription_tier: tier,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq('id', userId);
+
+              if (tierErr) {
+                logger.warn('[paywall-base] Restore tier guncelleme hatasi:', tierErr.message);
+              }
+
+              await upsertSubscription({
+                userId,
+                plan: tier === 'weekly_legacy' ? 'weekly' as PlanId : tier as PlanId,
+                status: 'active',
+                rcCustomerId: result.customerInfo.originalAppUserId ?? null,
+              });
+            }
+          }
+
+          // Client-side quota cache temizle
+          await clearQuotaCache(userId);
+        }
+
         await refreshSubscription();
+        await refreshQuota();
         Alert.alert(t('paywall.restoreSuccess'));
         onDismiss();
       } else {
@@ -205,7 +263,7 @@ export default function PaywallBase({
     } catch (err) {
       logger.error('[paywall-base] Restore hatasi:', err);
     }
-  }, [t, refreshSubscription, onDismiss]);
+  }, [t, refreshSubscription, refreshQuota, onDismiss]);
 
   /** Dismiss + tracking */
   const handleDismiss = useCallback(() => {

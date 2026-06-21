@@ -933,7 +933,37 @@
     "streamingTitle": "Watch directly on your platform",
     "streamingSubtitle": "Chosy Plus opens your films directly in Netflix, Disney+, and more.",
     "streamingCta": "Unlock Direct Links",
-    "streamingDismiss": "Find manually"
+    "streamingDismiss": "Find manually",
+
+    "profileTitle": "Unlock the Full Experience",
+    "profileSubtitle": "Get more discoveries, unlimited games, and premium features.",
+    "profileBenefit1": "Up to 25 daily mood searches",
+    "profileBenefit2": "Unlimited watchlist & games",
+    "profileBenefit3": "Streaming link integration",
+    "profileBenefit4": "Priority AI recommendations",
+    "profileCta": "Upgrade to Premium",
+    "profileDismiss": "Maybe Later",
+
+    "onboardingTitle": "You discovered your archetype!",
+    "onboardingSubtitle": "Start your premium journey with deeper discoveries and unlimited access.",
+    "onboardingBenefit1": "AI-powered mood matching",
+    "onboardingBenefit2": "Unlimited searches & games",
+    "onboardingBenefit3": "Daily film challenges",
+    "onboardingCta": "Start Your Journey",
+    "onboardingDismiss": "Continue Free",
+
+    "rouletteTitle": "Spin More with Premium",
+    "rouletteSubtitle": "Unlock unlimited spins, mood-filtered roulette, and triple mode.",
+    "rouletteBenefit1": "Unlimited daily spins",
+    "rouletteBenefit2": "Mood-filtered roulette",
+    "rouletteBenefit3": "Triple slot mode",
+    "rouletteCta": "Unlock Unlimited Spins",
+    "rouletteDismiss": "Come Back Later",
+
+    "lifetimeSoldoutTitle": "Lifetime Spots Sold Out",
+    "lifetimeSoldoutSubtitle": "All founding member spots are taken. Choose a subscription plan to unlock premium features.",
+    "lifetimeSoldoutCta": "Choose Your Plan",
+    "lifetimeSoldoutDismiss": "Maybe Later"
   },
   "notifications": {
     "settingsLabel": "Notifications",

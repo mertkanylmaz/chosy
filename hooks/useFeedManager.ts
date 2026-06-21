@@ -16,6 +16,8 @@ import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
 import { recordActivity } from '@/services/gamification';
 import { touchActivity } from '@/services/pushNotifications';
+import { consumePendingSearchId, peekPendingSearchId } from '@/services/moodSearchState';
+import { posthogAnalytics } from '@/services/posthog';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { updateUserVector } from '@/services/userProfile';
 import { addToWatchlist, getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
@@ -249,7 +251,7 @@ export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
 ): FeedManager {
-  const { currentSessionId, lastSearchId } = useMood();
+  const { currentSessionId } = useMood();
   const [state, dispatch] = useReducer(feedReducer, initialState);
 
   /** Arka plan yüklemesi devam ediyorsa duplicate isteği engeller */
@@ -262,14 +264,13 @@ export function useFeedManager(
   const profileRef = useRef(moodProfile);
   const filtersRef = useRef(filters);
 
-  /** Sprint 1 v4.0: parse-mood'dan donen search_id — ilk batch'te kullanilir */
-  const searchIdRef = useRef(lastSearchId);
+  // searchId artık module-level store'dan okunuyor (consumePendingSearchId).
+  // React state/ref/effect zinciri kaldırıldı — race condition fix.
 
   useEffect(() => {
     profileRef.current = moodProfile;
     filtersRef.current = filters;
-    searchIdRef.current = lastSearchId;
-  }, [moodProfile, filters, lastSearchId]);
+  }, [moodProfile, filters]);
 
   /** Kullanıcı DB UUID'si; surprise picks ve vektör güncellemesi için */
   const userIdRef = useRef<string | null>(null);
@@ -333,6 +334,7 @@ export function useFeedManager(
   const loadNextBatch = useCallback(async (
     excludeIds: string[],
     loadedCount: number,
+    callSource: 'cold_start' | 'initial_load' | 'preload' | 'retry' | 'on_load_more' = 'initial_load',
   ) => {
     if (isLoadingRef.current) return;
     isLoadingRef.current = true;
@@ -402,7 +404,22 @@ export function useFeedManager(
         }
       } else {
         // Sprint 1 v4.0: ilk batch'te searchId gonder, sonrakilerinde null
-        const effectiveSearchId = loadedCount === 0 ? searchIdRef.current : null;
+        // FIX: Module-level consume — React state/ref/effect race condition bypass.
+        // consumePendingSearchId() bir kez okuyup null'a sıfırlar (ikinci batch'te null döner).
+        const pendingAtCallTime = peekPendingSearchId();
+        const effectiveSearchId = loadedCount === 0 ? consumePendingSearchId() : null;
+
+        // DEBUG: loadedCount + callSource bilgisi — gerçek bug mu beklenen davranış mı ayırt et
+        posthogAnalytics.track('feed_batch_search_id_debug', {
+          loadedCount,
+          isFirstBatch: loadedCount === 0,
+          callSource,
+          pendingSearchIdAtCallTime: pendingAtCallTime ?? null,
+          effectiveSearchId: effectiveSearchId ?? null,
+          phase,
+          profileExists: !!profileRef.current,
+        });
+
         const result = await getRecommendations(
           profileRef.current,
           BATCH_SIZE,
@@ -447,7 +464,7 @@ export function useFeedManager(
       state.films.length === 0
     ) {
       coldStartLoadedRef.current = true;
-      loadNextBatch([], 0);
+      loadNextBatch([], 0, 'cold_start');
     }
   }, [userIdReady, state.films.length, loadNextBatch]);
 
@@ -461,7 +478,7 @@ export function useFeedManager(
       profileRef.current !== null
     ) {
       loadedSessionRef.current = state.sessionId;
-      loadNextBatch([], 0);
+      loadNextBatch([], 0, 'initial_load');
     }
   }, [state.films.length, state.sessionId, loadNextBatch]);
 
@@ -481,7 +498,7 @@ export function useFeedManager(
       remaining <= PRELOAD_TRIGGER &&
       !isLoadingRef.current
     ) {
-      loadNextBatch(state.excludeIds, state.films.length);
+      loadNextBatch(state.excludeIds, state.films.length, 'preload');
     }
   }, [state.currentIndex, state.films.length, state.excludeIds, loadNextBatch]);
 
@@ -582,7 +599,7 @@ export function useFeedManager(
 
   const onLoadMore = useCallback(() => {
     if (!isLoadingRef.current) {
-      loadNextBatch(state.excludeIds, state.films.length);
+      loadNextBatch(state.excludeIds, state.films.length, 'on_load_more');
     }
   }, [loadNextBatch, state.excludeIds, state.films.length]);
 
@@ -591,7 +608,7 @@ export function useFeedManager(
   const retryLoad = useCallback(() => {
     dispatch({ type: 'SET_ERROR', hasError: false });
     isLoadingRef.current = false;
-    loadNextBatch(state.excludeIds, state.films.length);
+    loadNextBatch(state.excludeIds, state.films.length, 'retry');
   }, [loadNextBatch, state.excludeIds, state.films.length]);
 
   // ─── Return ───────────────────────────────────────────────────────────────

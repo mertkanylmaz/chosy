@@ -35,6 +35,8 @@ import { Theme } from '@/constants/theme';
 import { PLANS } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import {
   getLifetimeOffering,
   purchasePackage,
@@ -77,6 +79,7 @@ export default function LifetimeOfferScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { tier, refreshSubscription } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [counter, setCounter] = useState<LifetimeCounter | null>(null);
   const [memberInfo, setMemberInfo] = useState<FoundingMemberInfo | null>(null);
@@ -142,10 +145,9 @@ export default function LifetimeOfferScreen() {
   const handlePurchase = useCallback(async () => {
     if (purchasing) return;
 
-    // Sold out check
+    // Sold out check — contextual paywall ile annual one cikar
     if (counter?.soldOut) {
-      // Redirect to annual
-      router.replace('/paywall' as never);
+      triggerPaywall({ type: 'lifetime_soldout' });
       return;
     }
 
@@ -465,6 +467,9 @@ export default function LifetimeOfferScreen() {
 
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      {/* ── Contextual Paywall (lifetime_soldout) ──────────────── */}
+      <ContextualPaywall {...paywallProps} />
     </SafeAreaView>
   );
 }

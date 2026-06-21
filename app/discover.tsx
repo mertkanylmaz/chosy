@@ -15,7 +15,7 @@
  * - Yükleme tetikleyici: displayFilms.length <= 3 → onLoadMore()
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -104,10 +104,25 @@ export default function DiscoverScreen() {
   const { t } = useLanguage();
   const { currentProfile, currentFilters, clearMood, addLastSessionFilm } = useMood();
   const { isPremium } = useSubscription();
-  const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Onboarding akisi: mood.tsx'ten gelen param — 5 film limiti + Store Review + paywall */
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
+
+  /** Onboarding tamamlaninca tabs'a yonlendir */
+  const navigateAfterOnboarding = useCallback(() => {
+    if (isOnboarding) router.replace('/(tabs)' as never);
+  }, [isOnboarding, router]);
+
+  const { triggerPaywall, paywallProps: rawPaywallProps } = useContextualPaywall(navigateAfterOnboarding);
+
+  // Onboarding dismiss'inde de tabs'a yonlendir
+  const paywallProps = useMemo(() => ({
+    ...rawPaywallProps,
+    onDismiss: () => {
+      rawPaywallProps.onDismiss();
+      if (isOnboarding) router.replace('/(tabs)' as never);
+    },
+  }), [rawPaywallProps, isOnboarding, router]);
 
   const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
 
@@ -188,8 +203,8 @@ export default function DiscoverScreen() {
       // Sessizce devam et
     }
 
-    router.push({ pathname: '/paywall', params: { onboarding: '1' } } as never);
-  }, [showMilestone, t, router]);
+    triggerPaywall({ type: 'onboarding_complete' });
+  }, [showMilestone, t, triggerPaywall]);
 
   // Streak yukleme kaldirildi — discover'da streak gosterilmiyor
 

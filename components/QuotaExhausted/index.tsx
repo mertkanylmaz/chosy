@@ -17,7 +17,6 @@ import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
@@ -33,6 +32,8 @@ interface QuotaExhaustedProps {
   onClose: () => void;
   /** RPC'den donen kota bilgisi (null = henuz yuklenmedi) */
   quotaStatus: QuotaStatus | null;
+  /** Upgrade butonuna basildiginda cagirilacak callback — parent triggerPaywall cagirir */
+  onUpgrade?: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -45,16 +46,16 @@ export default function QuotaExhausted({
   visible,
   onClose,
   quotaStatus,
+  onUpgrade,
 }: QuotaExhaustedProps) {
-  const router = useRouter();
   const { t } = useLanguage();
 
   const isFree = !quotaStatus || quotaStatus.tier === 'free';
 
-  /** Paywall'a yonlendir */
+  /** Contextual paywall'i trigger et */
   function handleUpgrade(): void {
     onClose();
-    router.push('/paywall');
+    onUpgrade?.();
   }
 
   // Mesaj secimi

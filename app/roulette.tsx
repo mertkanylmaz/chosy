@@ -49,6 +49,8 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import SlotMachine, {
   buildReelPosters,
   REEL_LENGTH,
@@ -132,6 +134,7 @@ export default function RouletteScreen() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const { isPremium } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   // -- Data state --
   const [items, setItems] = useState<WatchlistItem[]>([]);
@@ -346,19 +349,19 @@ export default function RouletteScreen() {
     } else if (variant === 'mood_filtered') {
       if (!isPremium) {
         trackSlotPremiumPaywallShown('mood_filtered');
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
         return;
       }
       setPhase('mood_input');
     } else if (variant === 'triple') {
       if (!isPremium) {
         trackSlotPremiumPaywallShown('triple');
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
         return;
       }
       setPhase('triple_filter');
     }
-  }, [isPremium, router]);
+  }, [isPremium, triggerPaywall]);
 
   // -- Pure Random Spin --
   const handlePureRandomSpin = useCallback(async () => {
@@ -398,12 +401,12 @@ export default function RouletteScreen() {
             }
           }
         }
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
       } else {
         setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
       }
     }
-  }, [startSpinAnimation, tokenBalance, router, t]);
+  }, [startSpinAnimation, tokenBalance, triggerPaywall, t]);
 
   // -- Mood Filtered Spin --
   const handleMoodSpin = useCallback(async () => {
@@ -435,14 +438,14 @@ export default function RouletteScreen() {
       if (errorCode === 'NEED_MORE_FILMS') {
         setSpinError(t('roulette.needMoreFilms', { min: errorObj.min ?? 5 }));
       } else if (errorCode === 'QUOTA_EXCEEDED') {
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
       } else if (errorCode === 'PREMIUM_REQUIRED') {
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
       } else {
         setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
       }
     }
-  }, [moodText, selectedPreset, startSpinAnimation, router, t]);
+  }, [moodText, selectedPreset, startSpinAnimation, triggerPaywall, t]);
 
   // -- Triple Spin --
   const handleTripleSpin = useCallback(async () => {
@@ -475,16 +478,16 @@ export default function RouletteScreen() {
       if (errorCode === 'NO_MATCHES') {
         setSpinError(t('roulette.tripleFilter.noMatches'));
       } else if (errorCode === 'QUOTA_EXCEEDED') {
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
       } else if (errorCode === 'PREMIUM_REQUIRED') {
-        router.push('/paywall' as never);
+        triggerPaywall({ type: 'roulette_limit' });
       } else if (errorCode === 'NEED_MORE_FILMS') {
         setSpinError(t('roulette.needMoreFilms', { min: errorObj.min ?? 5 }));
       } else {
         setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
       }
     }
-  }, [durationFilter, eraFilter, tripleMoodText, startSpinAnimation, router, t]);
+  }, [durationFilter, eraFilter, tripleMoodText, startSpinAnimation, triggerPaywall, t]);
 
   // -- Spin Again --
   const handleSpinAgain = useCallback(() => {
@@ -571,6 +574,7 @@ export default function RouletteScreen() {
   }
 
   return (
+    <>
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <StatusBar style="light" />
       <LinearGradient
@@ -1024,6 +1028,10 @@ export default function RouletteScreen() {
         </ScrollView>
       )}
     </SafeAreaView>
+
+    {/* ── Contextual Paywall (roulette_limit) ─────────────────── */}
+    <ContextualPaywall {...paywallProps} />
+    </>
   );
 }
 
