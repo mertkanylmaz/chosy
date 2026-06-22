@@ -142820,5 +142820,2372 @@
     "oscar_wins": 0,
     "oscar_nominations": 0,
     "content_rating": null
+  },
+  {
+    "tmdb_id": 1066298,
+    "title": "Full River Red",
+    "original_title": "满江红",
+    "original_language": "zh",
+    "overview": "During China's Song Dynasty, a mysterious murder occurs at Chancellor Quin Hui's palace after meeting delegates from the neighboring Jin Dynasty. The members become embroiled not just in a murder mystery, but a larger conspiracy concerning the fate of the empire.",
+    "release_date": "2023-01-22",
+    "runtime": 157,
+    "vote_average": 6.028,
+    "vote_count": 176,
+    "genres": [
+      {
+        "id": 9648,
+        "name": "Mystery"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "HK"
+    ],
+    "director": "Zhang Yimou",
+    "cast": [
+      "Shen Teng",
+      "Jackson Yee",
+      "Zhang Yi",
+      "Lei Jiayin",
+      "Yue Yunpeng",
+      "Pan Binlong",
+      "Yu Ailei",
+      "Guo Jingfei"
+    ],
+    "keywords": [
+      "evil plot",
+      "costume drama",
+      "murder mystery",
+      "song dynasty (960-1279)"
+    ],
+    "imdb_id": "tt21148018",
+    "poster_url": "https://image.tmdb.org/t/p/original/kOoxkXTYTi4OipM5G97gK9jnYIk.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/lY6RkqchljFAS7MrylH4l1nGXIU.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 176,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1462229,
+    "title": "Pegasus 3",
+    "original_title": "飞驰人生3",
+    "original_language": "zh",
+    "overview": "Bearing the glory of being the 'King of Bayanbulak', Zhang Chi once again embarks on his racing journey, aiming not only to win the race but also to achieve something beyond the competition itself.",
+    "release_date": "2026-02-17",
+    "runtime": 126,
+    "vote_average": 7.162,
+    "vote_count": 37,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Han Han",
+    "cast": [
+      "Shen Teng",
+      "Yin Zheng",
+      "Johnny Huang",
+      "Zhang Benyu",
+      "Wei Xiang",
+      "Sha Yi",
+      "Adam Fan",
+      "Sun Yizhou"
+    ],
+    "keywords": [
+      "sequel",
+      "racing"
+    ],
+    "imdb_id": "tt38035835",
+    "poster_url": "https://image.tmdb.org/t/p/original/7lA564Na4uofXpfqRUnVQdSa2bg.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/rLHFufd3gALwHay1Sxl3MjbGQ7E.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 37,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1229349,
+    "title": "Yolo",
+    "original_title": "热辣滚烫",
+    "original_language": "zh",
+    "overview": "After an argument with her younger sister, Le Ying moves out on her own. She meets a boxing trainer and starts boxing.",
+    "release_date": "2024-02-10",
+    "runtime": 129,
+    "vote_average": 6.8,
+    "vote_count": 115,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Jia Ling",
+    "cast": [
+      "Jia Ling",
+      "Lei Jiayin",
+      "Zhang Xiaofei",
+      "Yang Zi",
+      "Sha Yi",
+      "Qiao Shan",
+      "Li Xueqin",
+      "Ma Li"
+    ],
+    "keywords": [
+      "remake",
+      "boxing"
+    ],
+    "imdb_id": "tt28151876",
+    "poster_url": "https://image.tmdb.org/t/p/original/eD1mfjEeDUOAAsptZjQA6skrdJy.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/9IEYCg2Sxk72QdNNcvbbCMelalu.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 115,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1079091,
+    "title": "It Ends with Us",
+    "original_title": "It Ends with Us",
+    "original_language": "en",
+    "overview": "When a woman's first love suddenly reenters her life, her relationship with a charming, but abusive neurosurgeon is upended, and she realizes she must learn to rely on her own strength to make an impossible choice for her future.",
+    "release_date": "2024-08-07",
+    "runtime": 131,
+    "vote_average": 6.9,
+    "vote_count": 1965,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Justin Baldoni",
+    "cast": [
+      "Blake Lively",
+      "Justin Baldoni",
+      "Jenny Slate",
+      "Brandon Sklenar",
+      "Hasan Minhaj",
+      "Kevin McKidd",
+      "Amy Morton",
+      "Alex Neustaedter"
+    ],
+    "keywords": [
+      "based on novel or book",
+      "love triangle",
+      "abusive father",
+      "trauma",
+      "florist",
+      "flashback",
+      "love",
+      "domestic abuse",
+      "domestic violence",
+      "macabre",
+      "candid",
+      "satirical",
+      "repressed trauma",
+      "abusive relationship",
+      "adaptation",
+      "romantic drama",
+      "absurd",
+      "critical",
+      "antagonistic",
+      "baffled",
+      "defiant",
+      "vibrant"
+    ],
+    "imdb_id": "tt10655524",
+    "poster_url": "https://image.tmdb.org/t/p/original/AjV6jFJ2YFIluYo4GQf13AA1tqu.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/8yPSYhooj8nyBbmV3GVdLDwuE7e.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 1965,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1500536,
+    "title": "Dead to Rights",
+    "original_title": "南京照相馆",
+    "original_language": "zh",
+    "overview": "During the 1937 Nanjing Massacre, a postman poses as a photo developer, helping Japanese forces while secretly sheltering Chinese refugees. He later risks his life evacuating them and revealing evidence of the atrocities.",
+    "release_date": "2025-07-19",
+    "runtime": 137,
+    "vote_average": 8,
+    "vote_count": 81,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Shen Ao",
+    "cast": [
+      "Liu Haoran",
+      "Wang Chuanjun",
+      "Gao Ye",
+      "Wang Xiao",
+      "Zhou You",
+      "Yang Enyou",
+      "Daichi Harashima",
+      "Wang Zhener"
+    ],
+    "keywords": [
+      "photography",
+      "grave",
+      "based on true story",
+      "second sino-japanese war (1937-45)",
+      "period drama",
+      "nanking massacre china 1937",
+      "historical drama",
+      "1940s",
+      "photo studio",
+      "1930s",
+      "nanjing",
+      "serious",
+      "critical",
+      "bitter"
+    ],
+    "imdb_id": "tt36598036",
+    "poster_url": "https://image.tmdb.org/t/p/original/rx9xTly73NssFHPg9gKrX9tJdDI.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/iyIYSfyMTRlaLQWzKWxNRPVkt8Z.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 81,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1314481,
+    "title": "The Devil Wears Prada 2",
+    "original_title": "The Devil Wears Prada 2",
+    "original_language": "en",
+    "overview": "Andy Sachs returns to Runway as Miranda Priestly navigates a new media landscape and Runway's position within. The duo reconnect with former assistant Emily Charlton, now the head of a luxury brand that possesses funding which could ensure Runway's survival.",
+    "release_date": "2026-04-29",
+    "runtime": 119,
+    "vote_average": 6.6,
+    "vote_count": 822,
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "David Frankel",
+    "cast": [
+      "Meryl Streep",
+      "Anne Hathaway",
+      "Emily Blunt",
+      "Stanley Tucci",
+      "Kenneth Branagh",
+      "Justin Theroux",
+      "Lucy Liu",
+      "Tracie Thoms"
+    ],
+    "keywords": [
+      "new york city",
+      "based on novel or book",
+      "sequel",
+      "fashion",
+      "fashion magazine",
+      "dramedy",
+      "magazine editor",
+      "fashion industry",
+      "fashionista"
+    ],
+    "imdb_id": "tt33612209",
+    "poster_url": "https://image.tmdb.org/t/p/original/xTI42pmsP5EDnvsNJPEDubwWBQO.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/Af907x5h9W1wVis8XrSd7ynTWuy.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 822,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 779029,
+    "title": "The Battle at Lake Changjin",
+    "original_title": "长津湖",
+    "original_language": "zh",
+    "overview": "Korean War, winter 1950. In the frozen and snowy area of Changjin Lake, a bloody battle is about to begin between the elite troops of the United States and China.",
+    "release_date": "2021-09-30",
+    "runtime": 178,
+    "vote_average": 6.33,
+    "vote_count": 150,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 10752,
+        "name": "War"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "HK"
+    ],
+    "director": "Chen Kaige",
+    "cast": [
+      "Wu Jing",
+      "Jackson Yee",
+      "Duan Yihong",
+      "Zhu Yawen",
+      "Kevin Lee",
+      "Jerry Lee",
+      "John F. Cruz",
+      "Elvis Han"
+    ],
+    "keywords": [
+      "korean war (1950-53)",
+      "chinese communism"
+    ],
+    "imdb_id": "tt13462900",
+    "poster_url": "https://image.tmdb.org/t/p/original/iXvAlIo4DPLBiraC2KLu4977Wo2.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/dwNeWkccTWJCgfc6yqpkuH93nSu.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 150,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 602666,
+    "title": "Detective Chinatown 3",
+    "original_title": "唐人街探案3",
+    "original_language": "zh",
+    "overview": "Tang Ren and Qin Feng travel to Japan to investigate the death of a mafia head. As they suspect foul play, they engage in a battle of wits against foreign detectives.",
+    "release_date": "2021-02-12",
+    "runtime": 136,
+    "vote_average": 5.6,
+    "vote_count": 115,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 9648,
+        "name": "Mystery"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Chen Sicheng",
+    "cast": [
+      "Wang Baoqiang",
+      "Liu Haoran",
+      "Satoshi Tsumabuki",
+      "Tony Jaa",
+      "Masami Nagasawa",
+      "Tomokazu Miura",
+      "Shang Yuxian",
+      "Xiao Yang"
+    ],
+    "keywords": [],
+    "imdb_id": "tt10370822",
+    "poster_url": "https://image.tmdb.org/t/p/original/jPF7uzdrJ3gynLAgNdCG9CevqAS.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/j3P4MhXTIrb9wPX1hqQQtpegxXP.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 115,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 615656,
+    "title": "Meg 2: The Trench",
+    "original_title": "Meg 2: The Trench",
+    "original_language": "en",
+    "overview": "An exploratory dive into the deepest depths of the ocean of a daring research team spirals into chaos when a malevolent mining operation threatens their mission and forces them into a high-stakes battle for survival.",
+    "release_date": "2023-08-02",
+    "runtime": 116,
+    "vote_average": 6.374,
+    "vote_count": 3997,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 27,
+        "name": "Horror"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "US"
+    ],
+    "director": "Ben Wheatley",
+    "cast": [
+      "Jason Statham",
+      "Wu Jing",
+      "Shuya Sophia Cai",
+      "Page Kennedy",
+      "Sergio Peris-Mencheta",
+      "Sienna Guillory",
+      "Cliff Curtis",
+      "Skyler Samuels"
+    ],
+    "keywords": [
+      "based on novel or book",
+      "deep sea",
+      "sequel",
+      "underwater",
+      "shark",
+      "kaiju",
+      "civil action",
+      "animal horror",
+      "mariana trench",
+      "environmental crisis",
+      "shark cage",
+      "megalodon"
+    ],
+    "imdb_id": "tt9224104",
+    "poster_url": "https://image.tmdb.org/t/p/original/4m1Au3YkjqsxF8iwQy0fPYSxE0h.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/5mzr6JZbrqnqD8rCEvPhuCE5Fw2.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 3997,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1228891,
+    "title": "Pegasus 2",
+    "original_title": "飞驰人生2",
+    "original_language": "zh",
+    "overview": "The former champion driver Zhang Chi became a driving school instructor in troubled times, living a life of relying on his reputation to make ends meet. Unexpectedly, pie in the sky falls, and the director of Laotoule Automobile Factor, who is on the verge of suspending production, offers to sponsor Zhang Chi to form a team to compete in the last Bayinbrook Rally.",
+    "release_date": "2024-02-10",
+    "runtime": 121,
+    "vote_average": 7.215,
+    "vote_count": 93,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Han Han",
+    "cast": [
+      "Shen Teng",
+      "Adam Fan",
+      "Yin Zheng",
+      "Zhang Benyu",
+      "Sun Yizhou",
+      "Wei Xiang",
+      "Jia Bing",
+      "Ryan Zheng Kai"
+    ],
+    "keywords": [],
+    "imdb_id": "tt30829309",
+    "poster_url": "https://image.tmdb.org/t/p/original/tYCsMelHCecCvhWsrvR9NsZcT1D.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/ch8rKF1a5WXFDcxi2AKfmnaMBk7.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 93,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1713571,
+    "title": "Veerabhadrudu",
+    "original_title": "Veerabhadrudu",
+    "original_language": "te",
+    "overview": "Binu and her father travel to Chennai for her liver transplant, but the gold meant to fund her treatment is stolen, trapping them in a corrupt legal system. As corruption and judicial delays claim Binu's life, her father invokes the guardian deity Veerabhadrudu through a ritual. Suriya, as Veerabhadrudu, descends in the form of advocate Saravana, emerging as a divine force to deliver justice",
+    "release_date": "2026-06-12",
+    "runtime": 151,
+    "vote_average": 8,
+    "vote_count": 2,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 14,
+        "name": "Fantasy"
+      }
+    ],
+    "production_countries": [
+      "IN"
+    ],
+    "director": "RJ Balaji",
+    "cast": [
+      "Suriya",
+      "Trisha Krishnan",
+      "RJ Balaji",
+      "Anagha Maya Ravi",
+      "Indrans"
+    ],
+    "keywords": [
+      "veerabhadrudu",
+      "veerabhadrudu telugu",
+      "karuppu telugu"
+    ],
+    "imdb_id": null,
+    "poster_url": "https://image.tmdb.org/t/p/original/wqT4ANWmPOY30dZuulLrUzVZrGq.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/8vDpvEV57jy7hpbzkGkoSas3bCi.jpg",
+    "country": "IN",
+    "imdb_rating": null,
+    "imdb_votes": 2,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 49040,
+    "title": "The Bourne Legacy",
+    "original_title": "The Bourne Legacy",
+    "original_language": "en",
+    "overview": "New CIA operative Aaron Cross experiences life-or-death stakes that have been triggered by the previous actions of Jason Bourne.",
+    "release_date": "2012-08-08",
+    "runtime": 135,
+    "vote_average": 6.248,
+    "vote_count": 6149,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Tony Gilroy",
+    "cast": [
+      "Jeremy Renner",
+      "Rachel Weisz",
+      "Edward Norton",
+      "Stacy Keach",
+      "Dennis Boutsikaris",
+      "Oscar Isaac",
+      "Joan Allen",
+      "Albert Finney"
+    ],
+    "keywords": [
+      "assassin",
+      "espionage",
+      "wolf",
+      "maryland",
+      "covert operation",
+      "sniper rifle",
+      "rooftop",
+      "exploding house",
+      "laptop",
+      "tracking device",
+      "fake id",
+      "pharmaceutical lab",
+      "government conspiracy",
+      "manila philippines",
+      "hunted",
+      "false passport",
+      "alberta canada",
+      "dramatic",
+      "admiring"
+    ],
+    "imdb_id": "tt1194173",
+    "poster_url": "https://image.tmdb.org/t/p/original/1aExL5DTGHj25ZfIC3dDwS84RWi.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/luJdHbHiMNotIKryzkyH6ZrrNBW.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 6149,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 580489,
+    "title": "Venom: Let There Be Carnage",
+    "original_title": "Venom: Let There Be Carnage",
+    "original_language": "en",
+    "overview": "After finding a host body in investigative reporter Eddie Brock, the alien symbiote must face a new enemy, Carnage, the alter ego of serial killer Cletus Kasady.",
+    "release_date": "2021-09-30",
+    "runtime": 97,
+    "vote_average": 6.745,
+    "vote_count": 11201,
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Andy Serkis",
+    "cast": [
+      "Tom Hardy",
+      "Woody Harrelson",
+      "Michelle Williams",
+      "Naomie Harris",
+      "Reid Scott",
+      "Stephen Graham",
+      "Peggy Lu",
+      "Sian Webber"
+    ],
+    "keywords": [
+      "hero",
+      "psychopath",
+      "superhero",
+      "anti hero",
+      "villain",
+      "alien life-form",
+      "based on comic",
+      "sequel",
+      "fear",
+      "aftercreditsstinger",
+      "symbiote",
+      "carnage"
+    ],
+    "imdb_id": "tt7097896",
+    "poster_url": "https://image.tmdb.org/t/p/original/pzKsRuKLFmYrW5Q0q8E8G78Tcgo.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/eENEf62tMXbhyVvdcXlnQz2wcuT.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 11201,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 324668,
+    "title": "Jason Bourne",
+    "original_title": "Jason Bourne",
+    "original_language": "en",
+    "overview": "The most dangerous former operative of the CIA is drawn out of hiding to uncover hidden truths about his past.",
+    "release_date": "2016-07-27",
+    "runtime": 123,
+    "vote_average": 6.38,
+    "vote_count": 6230,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "US"
+    ],
+    "director": "Paul Greengrass",
+    "cast": [
+      "Matt Damon",
+      "Tommy Lee Jones",
+      "Alicia Vikander",
+      "Vincent Cassel",
+      "Julia Stiles",
+      "Riz Ahmed",
+      "Ato Essandoh",
+      "Scott Shepherd"
+    ],
+    "keywords": [
+      "assassin",
+      "central intelligence agency (cia)",
+      "amnesia",
+      "casino",
+      "chase",
+      "greece",
+      "flashback",
+      "hacking",
+      "las vegas",
+      "black ops",
+      "rogue agent",
+      "armored vehicle",
+      "reykjavík, iceland",
+      "hdd"
+    ],
+    "imdb_id": "tt4196776",
+    "poster_url": "https://image.tmdb.org/t/p/original/xA7N41glw17MBQtcWSm2eBlBRuG.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/7mHeyU0a538bgguOeF57I8ZroSk.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 6230,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 385128,
+    "title": "F9",
+    "original_title": "F9",
+    "original_language": "en",
+    "overview": "Dominic Toretto and his crew battle the most skilled assassin and high-performance driver they've ever encountered: his forsaken brother.",
+    "release_date": "2021-05-19",
+    "runtime": 143,
+    "vote_average": 6.997,
+    "vote_count": 7726,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Justin Lin",
+    "cast": [
+      "Vin Diesel",
+      "Michelle Rodriguez",
+      "Tyrese Gibson",
+      "Ludacris",
+      "John Cena",
+      "Nathalie Emmanuel",
+      "Jordana Brewster",
+      "Sung Kang"
+    ],
+    "keywords": [
+      "speed",
+      "family relationships",
+      "sequel",
+      "nostalgic",
+      "duringcreditsstinger",
+      "fast car",
+      "brother brother relationship",
+      "cars",
+      "farcical"
+    ],
+    "imdb_id": "tt5433138",
+    "poster_url": "https://image.tmdb.org/t/p/original/deEmLILTPejEb6OGsXRJ5MCvyDW.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/xXHZeb1yhJvnSHPzZDqee0zfMb6.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 7726,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 801803,
+    "title": "Moon Man",
+    "original_title": "独行月球",
+    "original_language": "zh",
+    "overview": "Working as a maintenance crew member on the moon, Duguyue is left behind after the evacuation mission forgets about him. A meteorite then destroys planet Earth, leaving him as the only man left alive in existence.",
+    "release_date": "2022-07-29",
+    "runtime": 122,
+    "vote_average": 6.8,
+    "vote_count": 108,
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Zhang Chiyu",
+    "cast": [
+      "Shen Teng",
+      "Ma Li",
+      "Chang Yuan",
+      "Li Chengru",
+      "Huang Cailun",
+      "Jackie Li",
+      "Hao Han",
+      "Huang Zitao"
+    ],
+    "keywords": [
+      "moon",
+      "based on webcomic or webtoon"
+    ],
+    "imdb_id": "tt14557302",
+    "poster_url": "https://image.tmdb.org/t/p/original/uLfT4oOj0Cp2XuUCDWZpvFMeSmE.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/q3Njgn2eNo52TVi55PULD1rHlaF.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 108,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 107846,
+    "title": "Escape Plan",
+    "original_title": "Escape Plan",
+    "original_language": "en",
+    "overview": "Ray Breslin is the world's foremost authority on structural security. After analyzing every high security prison and learning a vast array of survival skills so he can design escape-proof prisons, his skills are put to the test. He's framed and incarcerated in a master prison he designed himself. He needs to escape and find the person who put him behind bars.",
+    "release_date": "2013-10-09",
+    "runtime": 115,
+    "vote_average": 6.721,
+    "vote_count": 5606,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "GB",
+      "US"
+    ],
+    "director": "Mikael Håfström",
+    "cast": [
+      "Sylvester Stallone",
+      "Arnold Schwarzenegger",
+      "Jim Caviezel",
+      "50 Cent",
+      "Sam Neill",
+      "Vinnie Jones",
+      "Faran Tahir",
+      "Vincent D'Onofrio"
+    ],
+    "keywords": [
+      "ship",
+      "prison warden",
+      "prison escape",
+      "escape artist",
+      "maximum security prison"
+    ],
+    "imdb_id": "tt1211956",
+    "poster_url": "https://image.tmdb.org/t/p/original/qOZPLflxDqKogu9v9hYw3lolxGs.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/ix9WYBqQ2xSZCgyeQ1vVdrbaFa4.jpg",
+    "country": "GB",
+    "imdb_rating": null,
+    "imdb_votes": 5606,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 31414,
+    "title": "Satantango",
+    "original_title": "Sátántangó",
+    "original_language": "hu",
+    "overview": "Inhabitants of a small village in Hungary deal with the effects of the fall of Communism. The town's source of revenue, a factory, has closed, and the locals, who include a doctor and three couples, await a cash payment offered in the wake of the shuttering. Irimias, a villager thought to be dead, returns and, unbeknownst to the locals, is a police informant. In a scheme, he persuades the villagers to form a commune with him.",
+    "release_date": "1994-02-08",
+    "runtime": 432,
+    "vote_average": 8,
+    "vote_count": 309,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "production_countries": [
+      "DE",
+      "HU",
+      "CH"
+    ],
+    "director": "Béla Tarr",
+    "cast": [
+      "Mihály Víg",
+      "Putyi Horváth",
+      "Székely B. Miklós",
+      "Erika Bók",
+      "László feLugossy",
+      "Alfréd Járai",
+      "János Derzsi",
+      "Irén Szajki"
+    ],
+    "keywords": [
+      "farm",
+      "countryside",
+      "based on novel or book",
+      "cat",
+      "rain",
+      "hungary",
+      "loneliness",
+      "art house",
+      "poverty",
+      "black and white",
+      "writer",
+      "alcoholic",
+      "mental illness",
+      "remodernist",
+      "nonlinear timeline",
+      "multiple perspectives",
+      "contemplative cinema",
+      "powerful"
+    ],
+    "imdb_id": "tt0111341",
+    "poster_url": "https://image.tmdb.org/t/p/original/y38z0v4HJ12MHiKddLEoFlvPiBt.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/5a4Gmk2HNeefI4Rmwdmbyoy79oy.jpg",
+    "country": "DE",
+    "imdb_rating": null,
+    "imdb_votes": 309,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 928123,
+    "title": "The Battle at Lake Changjin II: Water Gate Bridge",
+    "original_title": "长津湖之水门桥",
+    "original_language": "zh",
+    "overview": "Commander Wu Qianli leads the 7th Infantry Company soldiers to Funchilin Pass where they are tasked to destroy a bridge to stop enemy troops from retreating.",
+    "release_date": "2022-02-01",
+    "runtime": 149,
+    "vote_average": 6.297,
+    "vote_count": 96,
+    "genres": [
+      {
+        "id": 10752,
+        "name": "War"
+      },
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "HK"
+    ],
+    "director": "Tsui Hark",
+    "cast": [
+      "Wu Jing",
+      "Jackson Yee",
+      "Zhu Yawen",
+      "Jerry Lee",
+      "Elvis Han",
+      "Zhang Hanyu",
+      "Geng Le",
+      "Du Chun"
+    ],
+    "keywords": [
+      "korean war (1950-53)",
+      "historical",
+      "chinese communism",
+      "communist propaganda",
+      "chosin"
+    ],
+    "imdb_id": "tt16194408",
+    "poster_url": "https://image.tmdb.org/t/p/original/4W58wirZhbzcw2lNzRS2ErKnOGS.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/93BFLgHE0G10hXiDOUDHnRmQzZD.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 96,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 436270,
+    "title": "Black Adam",
+    "original_title": "Black Adam",
+    "original_language": "en",
+    "overview": "Nearly 5,000 years after he was bestowed with the almighty powers of the Egyptian gods—and imprisoned just as quickly—Black Adam is freed from his earthly tomb, ready to unleash his unique form of justice on the modern world.",
+    "release_date": "2022-10-19",
+    "runtime": 125,
+    "vote_average": 6.798,
+    "vote_count": 7046,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Jaume Collet-Serra",
+    "cast": [
+      "Dwayne Johnson",
+      "Aldis Hodge",
+      "Noah Centineo",
+      "Sarah Shahi",
+      "Quintessa Swindell",
+      "Marwan Kenzari",
+      "Mo Amer",
+      "Bodhi Sabongui"
+    ],
+    "keywords": [
+      "lightning",
+      "superhero",
+      "anti hero",
+      "based on comic",
+      "demon",
+      "superhero team",
+      "duringcreditsstinger",
+      "dc extended universe (dceu)",
+      "egotistical"
+    ],
+    "imdb_id": "tt6443346",
+    "poster_url": "https://image.tmdb.org/t/p/original/rCtreCr4xiYEWDQTebybolIh6Xe.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/bQXAqRx2Fgc46uCVWgoPz5L5Dtr.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 7046,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 438148,
+    "title": "Minions: The Rise of Gru",
+    "original_title": "Minions: The Rise of Gru",
+    "original_language": "en",
+    "overview": "A fanboy of a supervillain supergroup known as the Vicious 6, Gru hatches a plan to become evil enough to join them, with the backup of his followers, the Minions.",
+    "release_date": "2022-06-29",
+    "runtime": 87,
+    "vote_average": 7.3,
+    "vote_count": 4025,
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 80,
+        "name": "Crime"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 16,
+        "name": "Animation"
+      },
+      {
+        "id": 10751,
+        "name": "Family"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Kyle Balda",
+    "cast": [
+      "Steve Carell",
+      "Pierre Coffin",
+      "Alan Arkin",
+      "Taraji P. Henson",
+      "Julie Andrews",
+      "Jean-Claude Van Damme",
+      "Lucy Lawless",
+      "Michelle Yeoh"
+    ],
+    "keywords": [
+      "1970s",
+      "villain",
+      "sequel",
+      "prequel",
+      "spin off",
+      "duringcreditsstinger",
+      "supervillain",
+      "3d animation"
+    ],
+    "imdb_id": "tt5113044",
+    "poster_url": "https://image.tmdb.org/t/p/original/wKiOkZTN9lUUUNZLmtnwubZYONg.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/wZS4xSfPtk1NPQnx9zsT5R2WhCu.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 4025,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1147596,
+    "title": "Article 20",
+    "original_title": "第二十条",
+    "original_language": "zh",
+    "overview": "Tells the story of prosecutor Han Ming who is involved in a difficult case where the intentional injury of people is turned into a legitimate defense.",
+    "release_date": "2024-02-10",
+    "runtime": 141,
+    "vote_average": 6.9,
+    "vote_count": 54,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Zhang Yimou",
+    "cast": [
+      "Lei Jiayin",
+      "Ma Li",
+      "Zhao Liying",
+      "Gao Ye",
+      "Liu Yaowen",
+      "Wang Xiao",
+      "Chen Minghao",
+      "Pan Binlong"
+    ],
+    "keywords": [],
+    "imdb_id": "tt28258332",
+    "poster_url": "https://image.tmdb.org/t/p/original/atUfcWtxyILttah3ItN329ouAU.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/PsyMMWKOyMVjTZBiyhNebyHDsQ.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 54,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1357305,
+    "title": "Detective Chinatown 1900",
+    "original_title": "唐探1900",
+    "original_language": "zh",
+    "overview": "In 1900, the mysterious murder of a white woman and a Native American man in San Francisco's Chinatown triggers a race against time as the Chinese suspect and the Native American's adopted Chinese son work to uncover the truth while a politician seeks to leverage the Chinese Exclusion Bill as well as the prevailing xenophobia and racism to close down Chinatown and elect himself as the mayor.",
+    "release_date": "2025-01-29",
+    "runtime": 135,
+    "vote_average": 6.3,
+    "vote_count": 96,
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 9648,
+        "name": "Mystery"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      }
+    ],
+    "production_countries": [
+      "CN",
+      "HK"
+    ],
+    "director": "Chen Sicheng",
+    "cast": [
+      "Wang Baoqiang",
+      "Liu Haoran",
+      "Chow Yun-Fat",
+      "White-K",
+      "Zhang Xincheng",
+      "Yue Yunpeng",
+      "John Cusack",
+      "Tai Bo"
+    ],
+    "keywords": [
+      "san francisco, california",
+      "chinatown",
+      "prequel",
+      "murder",
+      "buddy comedy",
+      "1900s",
+      "action comedy",
+      "20th century"
+    ],
+    "imdb_id": "tt34463310",
+    "poster_url": "https://image.tmdb.org/t/p/original/g3GsgIlH3fA4RxhNOAMvSbVWyfW.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/4xN3phAX024b251CPhy8zvsXbBc.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 96,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 718821,
+    "title": "Twisters",
+    "original_title": "Twisters",
+    "original_language": "en",
+    "overview": "As storm season intensifies, the paths of former storm chaser Kate Carter and reckless social-media superstar Tyler Owens collide when terrifying phenomena never seen before are unleashed. The pair and their competing teams find themselves squarely in the paths of multiple storm systems converging over central Oklahoma in the fight of their lives.",
+    "release_date": "2024-07-10",
+    "runtime": 123,
+    "vote_average": 6.777,
+    "vote_count": 3011,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Lee Isaac Chung",
+    "cast": [
+      "Daisy Edgar-Jones",
+      "Glen Powell",
+      "Anthony Ramos",
+      "Brandon Perea",
+      "Maura Tierney",
+      "Harry Hadden-Paton",
+      "Sasha Lane",
+      "Daryl McCormack"
+    ],
+    "keywords": [
+      "dying and death",
+      "rodeo",
+      "climate",
+      "twister",
+      "natural disaster",
+      "oklahoma",
+      "storm chaser",
+      "sequel",
+      "meteorologist",
+      "duringcreditsstinger",
+      "disaster movie",
+      "weather chasers",
+      "social media influencer",
+      "youtuber",
+      "extreme weather",
+      "hilarious",
+      "exhilarated",
+      "science experiment"
+    ],
+    "imdb_id": "tt12584954",
+    "poster_url": "https://image.tmdb.org/t/p/original/pjnD08FlMAIXsfOLKQbvmO0f0MD.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/58D6ZAvOKxlHjyX9S8qNKSBE9Y.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 3011,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 335787,
+    "title": "Uncharted",
+    "original_title": "Uncharted",
+    "original_language": "en",
+    "overview": "A young street-smart, Nathan Drake and his wisecracking partner Victor “Sully” Sullivan embark on a dangerous pursuit of “the greatest treasure never found” while also tracking clues that may lead to Nathan’s long-lost brother.",
+    "release_date": "2022-02-10",
+    "runtime": 116,
+    "vote_average": 6.885,
+    "vote_count": 6903,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 9648,
+        "name": "Mystery"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Ruben Fleischer",
+    "cast": [
+      "Tom Holland",
+      "Mark Wahlberg",
+      "Sophia Ali",
+      "Tati Gabrielle",
+      "Antonio Banderas",
+      "Steven Waddington",
+      "Rudy Pankow",
+      "Tiernan Jones"
+    ],
+    "keywords": [
+      "lighter",
+      "treasure hunt",
+      "treasure map",
+      "based on video game",
+      "lost treasure",
+      "duringcreditsstinger",
+      "missing relative",
+      "development hell"
+    ],
+    "imdb_id": "tt1464335",
+    "poster_url": "https://image.tmdb.org/t/p/original/rJHC1RUORuUhtfNb4Npclx0xnOf.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/fwrqW8Lp5VQuppFrODd4iJ8LySE.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 6903,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 45243,
+    "title": "The Hangover Part II",
+    "original_title": "The Hangover Part II",
+    "original_language": "en",
+    "overview": "The Hangover crew heads to Thailand for Stu's wedding. After the disaster of a bachelor party in Las Vegas last year, Stu is playing it safe with a mellow pre-wedding brunch. However, nothing goes as planned and Bangkok is the perfect setting for another adventure with the rowdy group.",
+    "release_date": "2011-05-25",
+    "runtime": 102,
+    "vote_average": 6.507,
+    "vote_count": 11306,
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Todd Phillips",
+    "cast": [
+      "Bradley Cooper",
+      "Ed Helms",
+      "Zach Galifianakis",
+      "Justin Bartha",
+      "Mason Lee",
+      "Ken Jeong",
+      "Paul Giamatti",
+      "Jeffrey Tambor"
+    ],
+    "keywords": [
+      "stag night",
+      "memory loss",
+      "undercover cop",
+      "drugs"
+    ],
+    "imdb_id": "tt1411697",
+    "poster_url": "https://image.tmdb.org/t/p/original/cKZu0Fdkj7dmwbfMpgDqVVCkLJQ.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/aGmsekNU5cMOkJMpbdRutkvmVMl.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 11306,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 2502,
+    "title": "The Bourne Supremacy",
+    "original_title": "The Bourne Supremacy",
+    "original_language": "en",
+    "overview": "A CIA operation to purchase classified Russian documents is blown by a rival agent, who then shows up in the sleepy seaside village where Bourne and Marie have been living. The pair run for their lives and Bourne, who promised retaliation should anyone from his former life attempt contact, is forced to once again take up his life as a trained assassin to survive.",
+    "release_date": "2004-07-23",
+    "runtime": 108,
+    "vote_average": 7.331,
+    "vote_count": 8180,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Paul Greengrass",
+    "cast": [
+      "Matt Damon",
+      "Franka Potente",
+      "Brian Cox",
+      "Julia Stiles",
+      "Karl Urban",
+      "Gabriel Mann",
+      "Joan Allen",
+      "Marton Csokas"
+    ],
+    "keywords": [
+      "sniper",
+      "assassin",
+      "berlin, germany",
+      "amnesia",
+      "based on novel or book",
+      "espionage",
+      "lie",
+      "sequel",
+      "on the run",
+      "shootout",
+      "foot chase",
+      "exploding house",
+      "one against many",
+      "rail car",
+      "dark past",
+      "moscow, russia",
+      "hand to hand combat",
+      "action hero",
+      "bourne",
+      "jason bourne",
+      "dramatic",
+      "suspenseful"
+    ],
+    "imdb_id": "tt0372183",
+    "poster_url": "https://image.tmdb.org/t/p/original/jupG9sFT64YwM8PSkwkUD2wHcYD.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/fE7RqvVHbGHjBC9NjIjlLh2t4zK.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 8180,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 758891,
+    "title": "Hi, Mom",
+    "original_title": "你好，李焕英",
+    "original_language": "zh",
+    "overview": "Devastated after her mom's serious accident and grief-stricken because she hasn't become the daughter she wanted to be for her mother, a Chinese woman finds herself transported back in time to the year 1981, where she meets her younger mother before she was her mom.",
+    "release_date": "2021-02-12",
+    "runtime": 128,
+    "vote_average": 7.015,
+    "vote_count": 171,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      },
+      {
+        "id": 14,
+        "name": "Fantasy"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Jia Ling",
+    "cast": [
+      "Jia Ling",
+      "Zhang Xiaofei",
+      "Shen Teng",
+      "Chen He",
+      "He Huan",
+      "Liu Jia",
+      "Ding Jiali",
+      "Qiao Shan"
+    ],
+    "keywords": [
+      "time travel",
+      "family"
+    ],
+    "imdb_id": "tt13364790",
+    "poster_url": "https://image.tmdb.org/t/p/original/31W7qLEMqQKgdCeCtV9EbVi3bwG.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/cTD9U4QLJHEL75ee1NoqIIeBc1y.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 171,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 495278,
+    "title": "Limonov: The Ballad",
+    "original_title": "Limonov: The Ballad",
+    "original_language": "fr",
+    "overview": "A revolutionary militant, a thug, an underground writer, a butler to a millionaire in Manhattan. But also a switchblade-waving poet, a lover of beautiful women, a warmonger, a political agitator, and a novelist who wrote of his greatness. Eduard Limonov’s life story is a journey through Russia, America, and Europe during the second half of the 20th century.",
+    "release_date": "2024-09-05",
+    "runtime": 133,
+    "vote_average": 6.4,
+    "vote_count": 83,
+    "genres": [
+      {
+        "id": 36,
+        "name": "History"
+      },
+      {
+        "id": 18,
+        "name": "Drama"
+      }
+    ],
+    "production_countries": [
+      "FR",
+      "IT",
+      "ES"
+    ],
+    "director": "Kirill Serebrennikov",
+    "cast": [
+      "Ben Whishaw",
+      "Viktoriya Miroshnichenko",
+      "Masha Mashkova",
+      "Tomas Arana",
+      "Corrado Invernizzi",
+      "Evgeny Mironov",
+      "Andrey Burkovskiy",
+      "Odin Lund Biron"
+    ],
+    "keywords": [
+      "poet",
+      "biography",
+      "based on true story",
+      "docudrama",
+      "novelist",
+      "blood",
+      "based on real person"
+    ],
+    "imdb_id": "tt2963262",
+    "poster_url": "https://image.tmdb.org/t/p/original/xCZzUVMX8FjPSV4fYtGE5K2J5jr.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/tOZ6kU5KRbYDR6SAxHzP6Jd1AX7.jpg",
+    "country": "FR",
+    "imdb_rating": null,
+    "imdb_votes": 83,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 370172,
+    "title": "No Time to Die",
+    "original_title": "No Time to Die",
+    "original_language": "en",
+    "overview": "Bond has left active service and is enjoying a tranquil life in Jamaica. His peace is short-lived when his old friend Felix Leiter from the CIA turns up asking for help. The mission to rescue a kidnapped scientist turns out to be far more treacherous than expected, leading Bond onto the trail of a mysterious villain armed with dangerous new technology.",
+    "release_date": "2021-09-29",
+    "runtime": 163,
+    "vote_average": 7.339,
+    "vote_count": 7147,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 53,
+        "name": "Thriller"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "GB",
+      "US"
+    ],
+    "director": "Cary Joji Fukunaga",
+    "cast": [
+      "Daniel Craig",
+      "Léa Seydoux",
+      "Rami Malek",
+      "Lashana Lynch",
+      "Ralph Fiennes",
+      "Ben Whishaw",
+      "Naomie Harris",
+      "Rory Kinnear"
+    ],
+    "keywords": [
+      "biological weapon",
+      "based on novel or book",
+      "parent child relationship",
+      "forgiveness",
+      "poison",
+      "spy",
+      "mi6",
+      "family",
+      "british secret service",
+      "parents",
+      "global threat",
+      "somber",
+      "nanobots",
+      "james bond",
+      "bold"
+    ],
+    "imdb_id": "tt2382320",
+    "poster_url": "https://image.tmdb.org/t/p/original/iUgygt3fscRoKWCV1d0C7FbM9TP.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/bz7pwNGCbV576COsDcYN9MbEACC.jpg",
+    "country": "GB",
+    "imdb_rating": null,
+    "imdb_votes": 7147,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1239561,
+    "title": "Waffle F1 - The Movie",
+    "original_title": "Waffle F1 - The Movie",
+    "original_language": "en",
+    "overview": "Feel the adrenaline and excitement of racing at the highest level in the official movie of the Waffle F1 Championship.",
+    "release_date": "2022-05-11",
+    "runtime": 63,
+    "vote_average": 10,
+    "vote_count": 1,
+    "genres": [
+      {
+        "id": 18,
+        "name": "Drama"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 99,
+        "name": "Documentary"
+      }
+    ],
+    "production_countries": [],
+    "director": "Um-An Rights",
+    "cast": [
+      "Reece Nuttall",
+      "Jack-Daniel Tucker",
+      "Finlay Brown",
+      "Edward Salisbury",
+      "Oliver Hargreaves",
+      "Anthony Baldwin",
+      "Codie Guest",
+      "Um-An Rights"
+    ],
+    "keywords": [
+      "racing",
+      "formula one (f1)",
+      "intense",
+      "waffle f1"
+    ],
+    "imdb_id": null,
+    "poster_url": "https://image.tmdb.org/t/p/original/qRxAvGF3t8IHESZ0lBb3QDz5DTP.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/bGrrB9rnsBMb2CsSNEZ4bM5zOLN.jpg",
+    "country": null,
+    "imdb_rating": null,
+    "imdb_votes": 1,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 640146,
+    "title": "Ant-Man and the Wasp: Quantumania",
+    "original_title": "Ant-Man and the Wasp: Quantumania",
+    "original_language": "en",
+    "overview": "Super-Hero partners Scott Lang and Hope van Dyne, along with with Hope's parents Janet van Dyne and Hank Pym, and Scott's daughter Cassie Lang, find themselves exploring the Quantum Realm, interacting with strange new creatures and embarking on an adventure that will push them beyond the limits of what they thought possible.",
+    "release_date": "2023-02-15",
+    "runtime": 125,
+    "vote_average": 6.226,
+    "vote_count": 5866,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Peyton Reed",
+    "cast": [
+      "Paul Rudd",
+      "Evangeline Lilly",
+      "Michael Douglas",
+      "Michelle Pfeiffer",
+      "Jonathan Majors",
+      "Kathryn Newton",
+      "Corey Stoll",
+      "Bill Murray"
+    ],
+    "keywords": [
+      "hero",
+      "superhero",
+      "ant",
+      "based on comic",
+      "sequel",
+      "alternate dimension",
+      "family",
+      "aftercreditsstinger",
+      "duringcreditsstinger",
+      "marvel cinematic universe (mcu)",
+      "bewildered"
+    ],
+    "imdb_id": "tt10954600",
+    "poster_url": "https://image.tmdb.org/t/p/original/qnqGbB22YJ7dSs4o6M7exTpNxPz.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/m8JTwHFwX7I7JY5fPe4SjqejWag.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 5866,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1452,
+    "title": "Superman Returns",
+    "original_title": "Superman Returns",
+    "original_language": "en",
+    "overview": "Superman returns to discover his 5-year absence has allowed Lex Luthor to walk free, and that those he was closest to felt abandoned and have moved on. Luthor plots his ultimate revenge that could see millions killed and change the face of the planet forever, as well as ridding himself of the Man of Steel.",
+    "release_date": "2006-06-28",
+    "runtime": 154,
+    "vote_average": 5.819,
+    "vote_count": 4590,
+    "genres": [
+      {
+        "id": 878,
+        "name": "Science Fiction"
+      },
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Bryan Singer",
+    "cast": [
+      "Brandon Routh",
+      "Kate Bosworth",
+      "Kevin Spacey",
+      "James Marsden",
+      "Parker Posey",
+      "Frank Langella",
+      "Sam Huntington",
+      "Eva Marie Saint"
+    ],
+    "keywords": [
+      "saving the world",
+      "superhero",
+      "invulnerability",
+      "based on comic",
+      "sequel",
+      "alien",
+      "super power",
+      "superhuman strength"
+    ],
+    "imdb_id": "tt0348150",
+    "poster_url": "https://image.tmdb.org/t/p/original/385XwTQZDpRX2d3kxtnpiLrjBXw.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/8eRscFbRYl681zDfkjv1jjW1KAA.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 4590,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1299537,
+    "title": "Successor",
+    "original_title": "抓娃娃",
+    "original_language": "zh",
+    "overview": "Ma Chenggang, a wealthy man in Xihong City, worries that his eldest son is too spoiled to succeed him. Determined to raise a capable successor, he takes an unconventional approach. They conceal their wealth, moving the family to a dilapidated neighborhood, and maintain an illusion of poverty, so that his son could develop qualities such as hard work, knowledge, careful budgeting, physical fitness, and perseverance.",
+    "release_date": "2024-07-13",
+    "runtime": 133,
+    "vote_average": 7,
+    "vote_count": 85,
+    "genres": [
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Peng Damo",
+    "cast": [
+      "Shen Teng",
+      "Ma Li",
+      "Shi Pengyuan",
+      "Sa Rina",
+      "Xiao Bochen",
+      "Zhang Zidong",
+      "Jackie Li",
+      "Wei Xiang"
+    ],
+    "keywords": [
+      "家庭关系"
+    ],
+    "imdb_id": "tt32613601",
+    "poster_url": "https://image.tmdb.org/t/p/original/jqGZEk4sLGGmIXBDQzxTuT1lZx2.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/vH0IXldpTM8J3MCT35khoeUMb5E.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 85,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 923192,
+    "title": "Too Cool to Kill",
+    "original_title": "这个杀手不太冷静",
+    "original_language": "zh",
+    "overview": "Wei Chenggong, a working actor with big dreams, finally appears to get his big break when actress Milan invites him to play the lead role of \"Killer Karl\" in a new play. Little does Wei Chenggong know, he has fallen into a perilous conspiracy where all the villains are real, and only through his acting skills and good deal of luck will he be able to make it out alive.",
+    "release_date": "2022-02-01",
+    "runtime": 109,
+    "vote_average": 6.373,
+    "vote_count": 51,
+    "genres": [
+      {
+        "id": 28,
+        "name": "Action"
+      },
+      {
+        "id": 35,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "CN"
+    ],
+    "director": "Xing Wenxiong",
+    "cast": [
+      "Ma Li",
+      "Wei Xiang",
+      "Allen",
+      "Chen Minghao",
+      "Huang Cailun",
+      "Zhou Dayong",
+      "Gianluca Zoppa",
+      "Wei Li"
+    ],
+    "keywords": [],
+    "imdb_id": "tt16254308",
+    "poster_url": "https://image.tmdb.org/t/p/original/ut3aZaMzs0DfkSovDL7VddxLS8f.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/i6xBxo7l0b0IJd8OP4t6lN95Wo7.jpg",
+    "country": "CN",
+    "imdb_rating": null,
+    "imdb_votes": 51,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 142145,
+    "title": "Cold River",
+    "original_title": "Cold River",
+    "original_language": "en",
+    "overview": "Based on the novel Winterkill, by William Judson, Cold River is the story of an Adirondack guide who takes his young daughter and step-son on a long camping trip in the fall of 1932. When winter strikes unexpectedly early (a natural phenomenon known as a 'winterkill' - so named because the animals are totally unprepared for a sudden, early winter, and many freeze or starve to death), a disastrous turn of events leaves the two children to find their own way home without food, or protection from the elements.",
+    "release_date": "1982-03-01",
+    "runtime": 94,
+    "vote_average": 7.333,
+    "vote_count": 3,
+    "genres": [
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Fred G. Sullivan",
+    "cast": [
+      "Richard Jaeckel",
+      "Brad Sullivan",
+      "Suzanne Weber",
+      "Pat Petersen",
+      "Robert Earl Jones",
+      "Elizabeth Hubbard",
+      "Augusta Dabney",
+      "Adam Petroski"
+    ],
+    "keywords": [
+      "winter",
+      "camping"
+    ],
+    "imdb_id": "tt0083741",
+    "poster_url": "https://image.tmdb.org/t/p/original/xxMyMMBgAV6GkAaF9RGDc7PVBff.jpg",
+    "backdrop_url": null,
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 3,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 338953,
+    "title": "Fantastic Beasts: The Secrets of Dumbledore",
+    "original_title": "Fantastic Beasts: The Secrets of Dumbledore",
+    "original_language": "en",
+    "overview": "Professor Albus Dumbledore knows the powerful, dark wizard Gellert Grindelwald is moving to seize control of the wizarding world. Unable to stop him alone, he entrusts magizoologist Newt Scamander to lead an intrepid team of wizards and witches. They soon encounter an array of old and new beasts as they clash with Grindelwald's growing legion of followers.",
+    "release_date": "2022-04-06",
+    "runtime": 142,
+    "vote_average": 6.628,
+    "vote_count": 5118,
+    "genres": [
+      {
+        "id": 14,
+        "name": "Fantasy"
+      },
+      {
+        "id": 12,
+        "name": "Adventure"
+      }
+    ],
+    "production_countries": [
+      "GB",
+      "US"
+    ],
+    "director": "David Yates",
+    "cast": [
+      "Eddie Redmayne",
+      "Jude Law",
+      "Mads Mikkelsen",
+      "Ezra Miller",
+      "Dan Fogler",
+      "Alison Sudol",
+      "Callum Turner",
+      "Jessica Williams"
+    ],
+    "keywords": [
+      "prison",
+      "witch",
+      "berlin, germany",
+      "magic",
+      "election campaign",
+      "affectation",
+      "sequel",
+      "curse",
+      "bhutan",
+      "lgbt",
+      "fantasy world",
+      "wizard",
+      "magical creature",
+      "1930s",
+      "based on young adult novel",
+      "good versus evil",
+      "amused",
+      "powerful"
+    ],
+    "imdb_id": "tt4123432",
+    "poster_url": "https://image.tmdb.org/t/p/original/3c5GNLB4yRSLBby0trHoA1DSQxQ.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/zGLHX92Gk96O1DJvLil7ObJTbaL.jpg",
+    "country": "GB",
+    "imdb_rating": null,
+    "imdb_votes": 5118,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 447277,
+    "title": "The Little Mermaid",
+    "original_title": "The Little Mermaid",
+    "original_language": "en",
+    "overview": "The youngest of King Triton’s daughters, and the most defiant, Ariel longs to find out more about the world beyond the sea, and while visiting the surface, falls for the dashing Prince Eric. With mermaids forbidden to interact with humans, Ariel makes a deal with the evil sea witch, Ursula, which gives her a chance to experience life on land, but ultimately places her life – and her father’s crown – in jeopardy.",
+    "release_date": "2023-05-18",
+    "runtime": 135,
+    "vote_average": 6.3,
+    "vote_count": 3330,
+    "genres": [
+      {
+        "id": 12,
+        "name": "Adventure"
+      },
+      {
+        "id": 10751,
+        "name": "Family"
+      },
+      {
+        "id": 14,
+        "name": "Fantasy"
+      },
+      {
+        "id": 10749,
+        "name": "Romance"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Rob Marshall",
+    "cast": [
+      "Halle Bailey",
+      "Jonah Hauer-King",
+      "Melissa McCarthy",
+      "Javier Bardem",
+      "Noma Dumezweni",
+      "Art Malik",
+      "Daveed Diggs",
+      "Jacob Tremblay"
+    ],
+    "keywords": [
+      "witch",
+      "mermaid",
+      "musical",
+      "based on fairy tale",
+      "live action remake",
+      "adoring"
+    ],
+    "imdb_id": "tt5971474",
+    "poster_url": "https://image.tmdb.org/t/p/original/ym1dxyOk4jFcSl4Q2zmRrA5BEEN.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/lAs4Y5a8Pi86xDwuv8cx2prOVI2.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 3330,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 51876,
+    "title": "Limitless",
+    "original_title": "Limitless",
+    "original_language": "en",
+    "overview": "The life of an unsuccessful writer is transformed by a top-secret 'smart drug' that allows him to use 100% of his brain and become a perfect version of himself. His enhanced abilities soon attract shadowy forces that threaten his new life.",
+    "release_date": "2011-03-17",
+    "runtime": 106,
+    "vote_average": 7.201,
+    "vote_count": 11509,
+    "genres": [
+      {
+        "id": 0,
+        "name": "Thriller"
+      },
+      {
+        "id": 0,
+        "name": "Mystery"
+      },
+      {
+        "id": 0,
+        "name": "Science Fiction"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Neil Burger",
+    "cast": [
+      "Bradley Cooper",
+      "Robert De Niro",
+      "Abbie Cornish",
+      "Andrew Howard",
+      "Anna Friel",
+      "Johnny Whitworth",
+      "Tomas Arana",
+      "Robert John Burke"
+    ],
+    "keywords": [
+      "new york city",
+      "medicine",
+      "politician",
+      "iq",
+      "pill",
+      "stalking",
+      "superhuman",
+      "transhumanism",
+      "writer",
+      "drugs",
+      "threat",
+      "knowledge",
+      "nootropics",
+      "mind booster",
+      "inspirational"
+    ],
+    "imdb_id": "tt1219289",
+    "poster_url": "https://image.tmdb.org/t/p/original/kCokPP4WCQRrrAuZ7FcpIyHr8b2.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/vQGo5VjJcHxpzIa8lMBFzpAth1w.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 11509,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 1907,
+    "title": "The Beach",
+    "original_title": "The Beach",
+    "original_language": "en",
+    "overview": "Twenty-something Richard travels to Thailand and finds himself in possession of a strange map. Rumours state that it leads to a solitary beach paradise, a tropical bliss - excited and intrigued, he sets out to find it.",
+    "release_date": "2000-02-03",
+    "runtime": 119,
+    "vote_average": 6.484,
+    "vote_count": 4723,
+    "genres": [
+      {
+        "id": 0,
+        "name": "Drama"
+      },
+      {
+        "id": 0,
+        "name": "Adventure"
+      },
+      {
+        "id": 0,
+        "name": "Romance"
+      },
+      {
+        "id": 0,
+        "name": "Thriller"
+      }
+    ],
+    "production_countries": [
+      "GB"
+    ],
+    "director": "Danny Boyle",
+    "cast": [
+      "Leonardo DiCaprio",
+      "Virginie Ledoyen",
+      "Guillaume Canet",
+      "Tilda Swinton",
+      "Staffan Kihlbom",
+      "Paterson Joseph",
+      "Peter Youngblood Hills",
+      "Robert Carlyle"
+    ],
+    "keywords": [
+      "exotic island",
+      "beach",
+      "based on novel or book",
+      "hippie",
+      "map",
+      "commune",
+      "delusion",
+      "shark attack",
+      "thailand",
+      "backpacker",
+      "community",
+      "marijuana",
+      "shark",
+      "extramarital affair",
+      "voiceover"
+    ],
+    "imdb_id": "tt0163978",
+    "poster_url": "https://image.tmdb.org/t/p/original/4y7LxD8TSi6AtsM2xSYqUm1gu7u.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/f7sQHmdZdPHaRVt3428XmdoZ8Hs.jpg",
+    "country": "GB",
+    "imdb_rating": null,
+    "imdb_votes": 4723,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
+  },
+  {
+    "tmdb_id": 109439,
+    "title": "The Hangover Part III",
+    "original_title": "The Hangover Part III",
+    "original_language": "en",
+    "overview": "This time, there's no wedding. No bachelor party. What could go wrong, right? But when the Wolfpack hits the road, all bets are off.",
+    "release_date": "2013-05-23",
+    "runtime": 100,
+    "vote_average": 6.211,
+    "vote_count": 9261,
+    "genres": [
+      {
+        "id": 0,
+        "name": "Comedy"
+      }
+    ],
+    "production_countries": [
+      "US"
+    ],
+    "director": "Todd Phillips",
+    "cast": [
+      "Bradley Cooper",
+      "Ed Helms",
+      "Zach Galifianakis",
+      "Justin Bartha",
+      "Ken Jeong",
+      "John Goodman",
+      "Melissa McCarthy",
+      "Jeffrey Tambor"
+    ],
+    "keywords": [
+      "las vegas"
+    ],
+    "imdb_id": "tt1951261",
+    "poster_url": "https://image.tmdb.org/t/p/original/vtxuPWkdllLNLVyGjKYa267ntuH.jpg",
+    "backdrop_url": "https://image.tmdb.org/t/p/original/o8ZS811VjYbBi4pRYwILLdWCVey.jpg",
+    "country": "US",
+    "imdb_rating": null,
+    "imdb_votes": 9261,
+    "metascore": null,
+    "oscar_wins": 0,
+    "oscar_nominations": 0,
+    "content_rating": null
   }
 ]
