@@ -106,3 +106,11 @@ export function consumePendingMoodText(): string | null {
   _pendingMoodText = null;
   return text;
 }
+
+/**
+ * Mood text'i okur (sifirlamadan).
+ * Reranker kosul kontrolu icin — consume oncesi deger dogrulamasi.
+ */
+export function peekPendingMoodText(): string | null {
+  return _pendingMoodText;
+}

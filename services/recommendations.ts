@@ -13,7 +13,7 @@ import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 
 import { getAppUserId } from './auth-utils';
-import { getSearchKeywords, consumePendingMoodText } from './moodSearchState';
+import { getSearchKeywords, consumePendingMoodText, peekPendingMoodText } from './moodSearchState';
 import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
 import { supabase } from './supabase';
@@ -1035,11 +1035,29 @@ export async function getRecommendations(
   }
 
   // ── Adım 4.5: LLM Re-ranker (sadece ilk batch + flag aktif) ──────────────
+
+  // Diagnostic: tum kosullari logla — hangi kosul false dondugunu tespit et
+  const rerankFlag = useLlmReranker();
+  const peekedMoodText = peekPendingMoodText();
+  if (isFirstBatch) {
+    posthogAnalytics.track('reranker_condition_check', {
+      rpcFailed,
+      dataLength: data.length,
+      isFirstBatch,
+      useLlmReranker: rerankFlag,
+      hasSearchKeywords: searchKeywords.length > 0,
+      searchKeywordsCount: searchKeywords.length,
+      hasMoodText: peekedMoodText !== null,
+      moodTextLength: peekedMoodText?.length ?? 0,
+      allConditionsMet: !rpcFailed && data.length > 0 && rerankFlag && searchKeywords.length > 0 && peekedMoodText !== null,
+    });
+  }
+
   if (
     !rpcFailed &&
     data.length > 0 &&
     isFirstBatch &&
-    useLlmReranker() &&
+    rerankFlag &&
     searchKeywords.length > 0
   ) {
     const moodText = consumePendingMoodText();
@@ -1078,6 +1096,12 @@ export async function getRecommendations(
           latency_ms: Date.now() - rerankStart,
         });
       }
+    } else {
+      // moodText null — setPendingMoodText cagirilmamis veya consume edilmis
+      posthogAnalytics.track('llm_rerank_mood_text_null', {
+        searchKeywordsCount: searchKeywords.length,
+        isFirstBatch,
+      });
     }
   }
 

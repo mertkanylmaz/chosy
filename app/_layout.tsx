@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
 import { useRouter } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -114,6 +115,38 @@ export default function RootLayout() {
     remoteConfig.hydrate().catch((err) => {
       logger.warn('[layout] remoteConfig hydrate hatası (graceful devam):', err);
     });
+  }, []);
+
+  // ── EAS Update: explicit check + fetch + reload ─────────────────────
+  // Otomatik kontrol (checkAutomatically: ON_LOAD) yeterli olmadigi icin
+  // JS tarafinda da kontrol ediyoruz. Belt-and-suspenders.
+  useEffect(() => {
+    async function checkForOTAUpdate(): Promise<void> {
+      try {
+        // Development client'ta expo-updates calismaz
+        if (__DEV__) return;
+
+        const update = await Updates.checkForUpdateAsync();
+        if (update.isAvailable) {
+          logger.log('[layout] OTA update bulundu, indiriliyor...');
+          posthogAnalytics.track('ota_update_found');
+
+          const result = await Updates.fetchUpdateAsync();
+          if (result.isNew) {
+            logger.log('[layout] OTA update indirildi, sonraki acilista uygulanacak');
+            posthogAnalytics.track('ota_update_fetched');
+            // Sessiz reload — kullanici aktif kullaniyorsa rahatsiz etme,
+            // sonraki cold start'ta otomatik uygulanir.
+            // Opsiyonel: hemen reload etmek icin Updates.reloadAsync();
+          }
+        }
+      } catch (err) {
+        // expo-updates development'ta veya Expo Go'da hata verir — sessiz devam
+        logger.warn('[layout] OTA update check hatasi:', err);
+      }
+    }
+
+    checkForOTAUpdate();
   }, []);
 
   // ── Taste signals offline queue flush ─────────────────────────────────
