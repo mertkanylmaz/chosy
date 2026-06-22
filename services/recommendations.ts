@@ -93,7 +93,7 @@ const useLlmReranker = (): boolean => remoteConfig.get('use_llm_reranker');
 /** v2 default configuration */
 const V2_CONFIG = {
   per_director_cap: 3,
-  tier_boost: false,  // Phase 1: cap only, tier_boost ayrı rollout
+  tier_boost: true,  // Phase 2: archive penalty active (migration 045)
 } as const;
 
 /** AsyncStorage anahtarı — Profile ekranındaki AI slider değerleri */
