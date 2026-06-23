@@ -1,10 +1,14 @@
 /**
  * Tab navigasyon layout'u — Premium Bumble tab bar.
  *
- * Sıra: Feed (Home) → Watchlist (Bookmark) → Mood (Sparkle/Lumi) → Profile (Person)
+ * Sıra: Feed (Home) → Discover (Compass) → Profile (Person)
  *
  * Aktif tab: filled ikon (violet) + label (11px bold) + dot + bounce
  * Pasif tab: outline ikon (zinc-500) + label yok
+ *
+ * UX Redesign v2: 4→3 tab. Watchlist tab kaldırıldı (Profile'a taşındı).
+ * Mood tab "Discover" olarak yeniden adlandırıldı. watchlist.tsx dosyası
+ * dizinde kalıyor ama href:null ile router'dan gizleniyor.
  */
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -107,7 +111,9 @@ function TabIcon({
 
 /**
  * Tab navigasyon layout'u.
- * Sıra: Feed (Home) → Watchlist → Mood (Sparkle) → Profile
+ * Sıra: Feed (Home) → Discover (eski Mood) → Profile
+ *
+ * UX Redesign: Watchlist tab kaldırıldı, Mood "Discover" olarak yeniden adlandırıldı.
  */
 export default function TabLayout() {
   const { t } = useLanguage();
@@ -139,34 +145,20 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* 2 — Watchlist: İzleme listesi */}
-      <Tabs.Screen
-        name="watchlist"
-        options={{
-          title: t('tabs.watchlist'),
-          /** Ekranın kendi header'ı var (başlık + ikonlar aynı satırda) — nav header gizle */
-          headerShown: false,
-          tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.watchlist')}</Text> : null,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} filledName="bookmark" outlineName="bookmark-outline" />
-          ),
-        }}
-      />
-      {/* 3 — Mood: Duygu girişi (kendi başlığı var — nav header gizle) */}
+      {/* 2 — Discover (eski Mood): Duygu girişi + AI keşif (kendi başlığı var — nav header gizle) */}
       <Tabs.Screen
         name="mood"
         options={{
-          title: t('tabs.mood'),
+          title: t('tabs.discover'),
           headerShown: false,
           tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.mood')}</Text> : null,
+            focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} filledName="sparkles" outlineName="sparkles-outline" />
+            <TabIcon focused={focused} filledName="compass" outlineName="compass-outline" />
           ),
         }}
       />
-      {/* 4 — Profile: avatar + isim zaten kimlik gösteriyor — nav header gizle */}
+      {/* 3 — Profile: avatar + isim zaten kimlik gösteriyor — nav header gizle */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -177,6 +169,13 @@ export default function TabLayout() {
           tabBarIcon: ({ focused }) => (
             <TabIcon focused={focused} filledName="person" outlineName="person-outline" />
           ),
+        }}
+      />
+      {/* Watchlist — tab bar'dan gizle, dosya dizinde kalıyor (expo-router gerekliliği) */}
+      <Tabs.Screen
+        name="watchlist"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

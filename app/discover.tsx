@@ -246,7 +246,7 @@ export default function DiscoverScreen() {
         } catch {
           // Sessizce devam — review bloklayici olmamali
         }
-        router.navigate('/(tabs)/watchlist');
+        router.navigate('/watchlist-detail' as never);
       })();
       return;
     }
@@ -609,31 +609,34 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Nav butonları — alt bar */}
+      {/* Nav butonları — alt bar (icon-only, 3 buton) */}
       <View style={[styles.navBar, { bottom: insets.bottom + 16 }]}>
         <TouchableOpacity
           style={styles.navBtn}
           onPress={() => router.navigate('/(tabs)' as never)}
           activeOpacity={0.75}
+          accessibilityLabel={t('tabs.home')}
+          accessibilityRole="button"
         >
-          <Ionicons name="home" size={20} color={Colors.textWhite} />
-          <Text style={styles.navBtnText}>{t('tabs.home')}</Text>
+          <Ionicons name="home" size={22} color={Colors.textWhite} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navBtn}
-          onPress={() => router.navigate('/(tabs)/watchlist')}
+          onPress={() => router.navigate('/watchlist-detail' as never)}
           activeOpacity={0.75}
+          accessibilityLabel={t('tabs.watchlist')}
+          accessibilityRole="button"
         >
-          <Ionicons name="bookmark" size={20} color={Colors.textWhite} />
-          <Text style={styles.navBtnText}>{t('tabs.watchlist')}</Text>
+          <Ionicons name="bookmark" size={22} color={Colors.textWhite} />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navBtn}
           onPress={() => router.navigate('/(tabs)/profile')}
           activeOpacity={0.75}
+          accessibilityLabel={t('tabs.profile')}
+          accessibilityRole="button"
         >
-          <Ionicons name="person" size={20} color={Colors.textWhite} />
-          <Text style={styles.navBtnText}>{t('tabs.profile')}</Text>
+          <Ionicons name="person" size={22} color={Colors.textWhite} />
         </TouchableOpacity>
       </View>
 
@@ -745,19 +748,12 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   navBtn: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    justifyContent: 'center',
+    minWidth: 44,
+    minHeight: 44,
     borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  navBtnText: {
-    color: Colors.textWhite,
-    fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.2,
   },
   newMoodBtn: {
     position: 'absolute',

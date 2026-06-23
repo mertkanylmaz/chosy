@@ -1,25 +1,27 @@
 /**
- * Home sekmesi — kişiselleştirilmiş dashboard.
+ * Home sekmesi — mood-first, ilham veren, minimal dashboard.
  *
- * Düzen (yeni hiyerarşi):
- *   - Floating header: logo + chosy.ai
- *   - GreetingWidget: saate göre dinamik selamlama
- *   - Hero Section: "Find a Mood" devasa CTA (birincil odak)
- *   - Film Kartları: Last Added + Today's Pick (yatay, de-emphasized)
- *   - Sinefil Profili: tam genişlik kart (text overflow düzeltildi)
+ * UX Redesign v2 — Section'lar:
+ *   1. Compact Header: logo + archetype badge
+ *   2. Hero Mood Input: buyuk TextInput + animated placeholder
+ *   3. Quick Mood Chips: yatay scroll pill'ler
+ *   4. Son Aramalar: son 3 mood session (conditional)
+ *   5. Bugunun Filmi: Today's Pick kart (conditional)
+ *   6. Watchlist Strip: yatay poster strip (conditional)
  *
- * UX Kararları:
- *   - Hero en üstte, kullanıcıyı ana aksiyona yönlendirir
- *   - Film kartları ikincil bilgi — küçük, yatay sıra
- *   - Archetype kart: tam genişlik, numberOfLines + flex-wrap
+ * Kaldirilan: GreetingWidget, eski Hero CTA, Games Widget,
+ *   Referral CTA, Archetype section, Last Added kart
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
+  FlatList,
+  Keyboard,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -29,474 +31,516 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
+
+import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { GreetingWidget } from '@/components/Home';
 import { getArchetype } from '@/constants/archetypes';
+import { QUICK_CHIPS, type QuickChip } from '@/constants/quickChips';
 import { getHomeData, type HomeData } from '@/services/homeService';
 import { getDailyMatch, getDailyMatchByPreferences } from '@/services/dailyMatch';
-import { getLastParsedProfile } from '@/services/profileService';
+import { getLastParsedProfile, getMoodHistory } from '@/services/profileService';
 import { getArchetypeProfile } from '@/services/archetypeEngine';
 import { getAppUserId, getWatchlist } from '@/services/watchlist';
+import SkeletonLoader from '@/components/SkeletonLoader';
 import { logger } from '@/utils/logger';
 import { localizeGenre } from '@/utils/filmFilters';
-import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
-import { getCachedResult } from '@/services/gameService';
+import { hapticLight, hapticMedium } from '@/utils/haptics';
+import { posthogAnalytics } from '@/services/posthog';
 import type { Film } from '@/types/film';
+import type { MoodHistoryItem } from '@/types/profile';
+import type { WatchlistItem } from '@/services/watchlist';
 
 // ── Sabitler ─────────────────────────────────────────────────────────────────
 
 const TMDB_BASE = 'https://image.tmdb.org/t/p/w500';
-const RECALIBRATION_KEY = 'chosy_last_recalibration';
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const TMDB_W185 = 'https://image.tmdb.org/t/p/w185';
 const { width: SCREEN_W } = Dimensions.get('window');
+/** Placeholder rotation interval (ms) */
+const PLACEHOLDER_INTERVAL = 3000;
 
+// ── Yardimci ─────────────────────────────────────────────────────────────────
 
-// ── Yardımcı ─────────────────────────────────────────────────────────────────
-
-/**
- * Film için kart altında gösterilecek meta metni oluşturur.
- * Öncelik: moodTag[0] → runtime → sadece yıl
- *
- * @param film   - Film verisi
- * @param locale - Aktif uygulama dili ('en' | 'tr')
- */
-function getFilmMeta(
-  film: { year: number; moodTags?: string[]; runtime?: number },
-  locale: string,
-): string {
-  const raw = film.moodTags?.[0];
-  const tag = raw ? localizeGenre(raw, locale) : null;
-  if (tag) return `${film.year} · ${tag}`;
-  if (film.runtime) {
-    const h = Math.floor(film.runtime / 60);
-    const m = film.runtime % 60;
-    const rt = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-    return `${film.year} · ${rt}`;
-  }
-  return `${film.year}`;
-}
-
-/**
- * Poster URL'sini kontrol eder; gerekirse TMDB base prefix ekler.
- */
-function resolvePosterUrl(url: string | undefined | null): string | null {
+/** Poster URL cozumle */
+function resolvePoster(url: string | undefined | null, size: 'w500' | 'w185' = 'w500'): string | null {
   if (!url) return null;
   if (url.startsWith('http')) return url;
-  return `${TMDB_BASE}${url}`;
+  return `${size === 'w185' ? TMDB_W185 : TMDB_BASE}${url}`;
 }
 
-// ── Haftalık Limit ────────────────────────────────────────────────────────────
+// ── Ana Ekran ────────────────────────────────────────────────────────────────
 
 /**
- * Kullanıcının bu hafta yeniden kalibrasyon hakkı olup olmadığını kontrol eder.
- */
-async function checkRecalibrationAllowed(): Promise<{ allowed: boolean; nextDate?: Date }> {
-  try {
-    const raw = await AsyncStorage.getItem(RECALIBRATION_KEY);
-    if (!raw) return { allowed: true };
-
-    const lastDate = new Date(raw);
-    const nextDate = new Date(lastDate.getTime() + SEVEN_DAYS_MS);
-
-    if (Date.now() >= nextDate.getTime()) return { allowed: true };
-    return { allowed: false, nextDate };
-  } catch {
-    return { allowed: true };
-  }
-}
-
-// ── Ana Ekran ─────────────────────────────────────────────────────────────────
-
-/**
- * Home sekmesi — kişiselleştirilmiş dashboard.
- * Hiyerarşi: Hero CTA (birincil) → Film Kartları (ikincil) → Archetype (detay).
+ * Home sekmesi — mood-first, minimal dashboard.
  */
 export default function HomeScreen() {
   const { t, language } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  // ── Data state ──────────────────────────────────────────────────────────────
   const [homeData, setHomeData] = useState<HomeData | null>(null);
   const [dailyFilm, setDailyFilm] = useState<Film | null>(null);
   const [dailyLoading, setDailyLoading] = useState(true);
-  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [moodHistory, setMoodHistory] = useState<MoodHistoryItem[]>([]);
+  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
+  /** Section skeleton gorunurlugu — ilk yuklemede true, veri gelince false */
+  const [sectionsLoading, setSectionsLoading] = useState(true);
 
-  /**
-   * Home verilerini ve daily pick'i paralel yükler.
-   */
+  // ── Hero input state ────────────────────────────────────────────────────────
+  const [moodText, setMoodText] = useState('');
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // ── Placeholder texts ────────────────────────────────────────────────────────
+  // i18n-js array dot-notation desteklemiyor (t('key.0') calismaz).
+  // Locale JSON'daki array'i dil bazli dogrudan import ediyoruz.
+  const placeholders = useMemo(() => {
+    const localeData = language === 'tr'
+      ? require('../../locales/tr.json')
+      : require('../../locales/en.json');
+    const arr = localeData?.home?.heroPlaceholders;
+    if (Array.isArray(arr) && arr.length > 0) return arr as string[];
+    return [
+      'a rainy evening mood...',
+      'something mind-bending',
+      'fun night with friends',
+      'a nostalgic journey',
+      'edge-of-seat thriller',
+      'heartwarming feel-good',
+    ];
+  }, [language]);
+
+  // Placeholder rotation — placeholders.length'e gore doner
+  useEffect(() => {
+    const len = placeholders.length;
+    const timer = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % len);
+    }, PLACEHOLDER_INTERVAL);
+    return () => clearInterval(timer);
+  }, [placeholders.length]);
+
+  // ── Data loading ────────────────────────────────────────────────────────────
+
   const loadData = useCallback(async () => {
     try {
-      const data = await getHomeData();
+      const [data, userId] = await Promise.all([
+        getHomeData(),
+        getAppUserId(),
+      ]);
       setHomeData(data);
 
+      if (!userId) { setSectionsLoading(false); return; }
+
+      // Paralel yukle: mood history, watchlist — bireysel hata izolasyonu
+      const [historyResult, wlResult] = await Promise.allSettled([
+        getMoodHistory(userId),
+        getWatchlist(),
+      ]);
+
+      if (historyResult.status === 'fulfilled') {
+        setMoodHistory(historyResult.value.slice(0, 3));
+      } else {
+        Sentry.captureException(historyResult.reason, {
+          tags: { screen: 'HomeScreen', fn: 'loadData.getMoodHistory' },
+        });
+        logger.error('[HomeScreen] getMoodHistory hatasi:', historyResult.reason);
+      }
+
+      const wl = wlResult.status === 'fulfilled' ? wlResult.value : [];
+      if (wlResult.status === 'rejected') {
+        Sentry.captureException(wlResult.reason, {
+          tags: { screen: 'HomeScreen', fn: 'loadData.getWatchlist' },
+        });
+        logger.error('[HomeScreen] getWatchlist hatasi:', wlResult.reason);
+      }
+      setWatchlistItems(wl.slice(0, 6));
+      setSectionsLoading(false);
+
+      // Daily pick cascade
       if (data.archetypeId) {
         try {
-          const userId = await getAppUserId();
-          if (userId) {
-            // Watchlist + son profil paralel çek
-            const [wl, lastProfile] = await Promise.all([
-              getWatchlist(),
-              getLastParsedProfile(userId),
-            ]);
-            const seenIds = wl.map((w) => w.film.id);
+          const seenIds = wl.map((w) => w.film.id);
+          const lastProfile = await getLastParsedProfile(userId);
 
-            // ── Kademeli cascade: sinefil kimliğine göre öneri ────────────
-            // Priority 1: preferences_vector (swipe + kalibrasyon birikimi)
-            let film = await getDailyMatchByPreferences(userId, seenIds);
-
-            // Priority 2: son mood session profili
-            if (!film) {
-              film = await getDailyMatch(userId, lastProfile, seenIds);
-            }
-
-            // Priority 3: arketip kanonical profili (cold-start fallback)
-            if (!film) {
-              const archetypeProfile = getArchetypeProfile(data.archetypeId);
-              film = await getDailyMatch(userId, archetypeProfile, seenIds);
-            }
-
-            setDailyFilm(film);
+          let film = await getDailyMatchByPreferences(userId, seenIds);
+          if (!film) {
+            film = await getDailyMatch(userId, lastProfile, seenIds);
           }
+          if (!film) {
+            const archetypeProfile = getArchetypeProfile(data.archetypeId);
+            film = await getDailyMatch(userId, archetypeProfile, seenIds);
+          }
+          setDailyFilm(film);
         } catch (err) {
-          logger.error('[HomeScreen] daily pick hatası:', err);
+          logger.error('[HomeScreen] daily pick hatasi:', err);
         }
       }
     } catch (err) {
-      logger.error('[HomeScreen] veri yüklemesi hatası:', err);
+      logger.error('[HomeScreen] veri yukleme hatasi:', err);
+      setSectionsLoading(false);
     } finally {
       setDailyLoading(false);
     }
   }, []);
 
-  /** Oyun durumlarını yükle */
-  const loadGameStates = useCallback(async () => {
-    const types = ['fadein', 'imposter', 'logline', 'quoted'];
-    let played = 0;
-    for (const gt of types) {
-      const r = await getCachedResult(gt);
-      if (r) played++;
-    }
-    setGamesPlayed(played);
-  }, []);
-
-  /** Ekran her odaklandığında yeniden yükle */
   useFocusEffect(
     useCallback(() => {
       setDailyLoading(true);
       setDailyFilm(null);
       loadData();
-      loadGameStates();
-    }, [loadData, loadGameStates]),
+
+      // Analytics
+      const sections: string[] = ['header', 'hero', 'quick_moods'];
+      // Note: conditional sections will be tracked after data loads
+      posthogAnalytics.track('home_screen_viewed', { sections_visible: sections.join(',') });
+    }, [loadData]),
   );
 
-  // ── Archetype tıklaması (haftalık limit) ──────────────────────────────────
+  // ── Mood submit (Home → Discover tab) ───────────────────────────────────────
 
-  /** Kalibrasyon limiti kontrolü + yönlendirme */
-  async function handleArchetypeTap() {
-    hapticSelection();
-    const { allowed, nextDate } = await checkRecalibrationAllowed();
+  /** Mood text'i ile Discover tab'a navigate et */
+  const submitMood = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
-    if (!allowed && nextDate) {
-      Alert.alert(
-        t('home.retestWeeklyLimitTitle'),
-        t('home.retestWeeklyLimit').replace('%{date}', nextDate.toLocaleDateString()),
-      );
-      return;
-    }
+    hapticMedium();
+    Keyboard.dismiss();
 
-    Alert.alert(
-      t('home.retestTitle'),
-      t('home.retestMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('home.retestConfirm'),
-          onPress: async () => {
-            hapticLight();
-            try {
-              await AsyncStorage.setItem(RECALIBRATION_KEY, new Date().toISOString());
-            } catch (err) {
-              logger.error('[HomeScreen] recalibration timestamp yazılamadı:', err);
-            }
-            router.push('/onboarding');
-          },
-        },
-      ],
-    );
-  }
+    posthogAnalytics.track('home_mood_input_submitted', {
+      text: trimmed,
+      source: 'typed',
+    });
 
-  // ── Türetilen veriler ─────────────────────────────────────────────────────
+    // Discover (mood) tab'a prefill param ile navigate
+    router.push({
+      pathname: '/(tabs)/mood',
+      params: { prefill: trimmed },
+    } as never);
+
+    // Input'u temizle (geri donunce bos olsun)
+    setMoodText('');
+  }, [router]);
+
+  /** Quick mood chip tap */
+  const handleQuickChip = useCallback((chip: QuickChip) => {
+    hapticLight();
+    posthogAnalytics.track('home_quick_mood_tapped', { mood: chip.id });
+    submitMood(chip.prompt);
+  }, [submitMood]);
+
+  /** Recent search tap */
+  const handleRecentSearch = useCallback((item: MoodHistoryItem) => {
+    hapticLight();
+    posthogAnalytics.track('home_recent_search_tapped', { mood_text: item.mood_text });
+    submitMood(item.mood_text);
+  }, [submitMood]);
+
+  // ── Turetilen veriler ──────────────────────────────────────────────────────
 
   const archetype = homeData?.archetypeId ? getArchetype(homeData.archetypeId) : null;
-  const lastFilm = homeData?.lastFilm ?? null;
-  const lastPosterUrl = resolvePosterUrl(lastFilm?.film.posterUrl);
-  const dailyPosterUrl = resolvePosterUrl(dailyFilm?.posterUrl);
+  const dailyPosterUrl = resolvePoster(dailyFilm?.posterUrl);
+  const hasRecentSearches = moodHistory.length > 0;
+  const hasWatchlist = watchlistItems.length > 0;
+  const hasDailyFilm = !dailyLoading && dailyFilm != null;
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
 
-      {/* ── Floating Header ───────────────────────────────────────────────── */}
-      <LinearGradient
-        colors={[
-          Colors.background,
-          Colors.background,
-          'rgba(10,10,10,0.9)',
-          'rgba(10,10,10,0)',
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 12, paddingBottom: 100 },
         ]}
-        locations={[0, 0.68, 0.85, 1]}
-        style={styles.headerGradient}
-        pointerEvents="box-none"
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <View
-          style={[styles.headerRow, { paddingTop: insets.top + 8 }]}
-          pointerEvents="box-none"
-        >
-          <View style={styles.logoWrapper} pointerEvents="none">
+
+        {/* ── Section 1: Compact Header ──────────────────────────────── */}
+        <View style={styles.headerRow}>
+          <View style={styles.logoWrapper}>
             <Image
               source={require('../../assets/images/icon.png')}
               style={styles.logo}
               contentFit="contain"
             />
-            <Text style={styles.logoText}>chosy.ai</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      {/* ── Ana İçerik (scroll yok) ───────────────────────────────────────── */}
-      <View
-        style={[
-          styles.mainContent,
-          { paddingTop: insets.top + 56, paddingBottom: 83 },
-        ]}
-      >
-        {/* Selamlama */}
-        <GreetingWidget username={homeData?.displayName ?? null} />
-
-        {/* ── HERO SECTION — Birincil Odak ───────────────────────────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(50).duration(400).springify().damping(18)}
-          style={styles.heroSection}
-        >
-          {/* Devasa gradient CTA butonu */}
-          <TouchableOpacity
-            onPress={() => { hapticMedium(); router.push('/(tabs)/mood'); }}
-            activeOpacity={0.88}
-          >
-            <LinearGradient
-              colors={['#B8A38E', '#D4C4AE', '#EADBC6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.heroCta}
-            >
-              <View style={styles.heroCtaIconBg}>
-                <Ionicons name="sparkles" size={20} color="#FFFFFF" />
-              </View>
-              <View style={styles.heroCtaTextBlock}>
-                <Text style={styles.heroCtaTitle}>{t('home.navMood')}</Text>
-                <Text style={styles.heroCtaSubline}>{t('home.findMoodHint')}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.55)" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* ── FILM KARTLARI — İkincil bilgi, flex ile dolu alan ─────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(110).duration(400).springify().damping(18)}
-          style={styles.filmsSection}
-        >
-          {/* Last Added */}
-          <View style={styles.filmCardWrap}>
-            <Text style={styles.filmCardLabel}>{t('home.lastAdded')}</Text>
-            {lastFilm && lastPosterUrl ? (
-              <TouchableOpacity
-                style={styles.filmCard}
-                onPress={() => {
-                  hapticLight();
-                  router.push(`/film/${lastFilm.film.id}`);
-                }}
-                activeOpacity={0.85}
-              >
-                <Image
-                  source={{ uri: lastPosterUrl }}
-                  style={styles.filmPoster}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
-                />
-                {/* Gradient scrim — meta bilgi (yıl · tür) */}
-                <LinearGradient
-                  colors={['transparent', 'rgba(10,10,10,0.88)']}
-                  style={styles.filmOverlay}
-                >
-                  <Text style={styles.filmMeta} numberOfLines={1}>
-                    {getFilmMeta(lastFilm.film, language)}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.filmCardEmpty}>
-                <Ionicons name="bookmark-outline" size={22} color={Colors.textGrey} />
-                <Text style={styles.filmCardEmptyText}>{t('home.noLastFilm')}</Text>
-              </View>
-            )}
+            <Text style={styles.logoText}>chosy</Text>
           </View>
 
-          {/* Today's Pick */}
-          <View style={styles.filmCardWrap}>
-            <Text style={styles.filmCardLabel}>{t('home.dailyPick')}</Text>
-            {dailyLoading ? (
-              <View style={[styles.filmCard, styles.filmCardSkeleton]} />
-            ) : dailyFilm && dailyPosterUrl ? (
-              <TouchableOpacity
-                style={styles.filmCard}
-                onPress={() => {
-                  hapticLight();
-                  router.push(`/film/${dailyFilm.id}`);
-                }}
-                activeOpacity={0.85}
-              >
-                <Image
-                  source={{ uri: dailyPosterUrl }}
-                  style={styles.filmPoster}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
-                />
-                {/* Gradient scrim — meta bilgi + eşleşme skoru */}
-                <LinearGradient
-                  colors={['transparent', 'rgba(10,10,10,0.88)']}
-                  style={styles.filmOverlay}
-                >
-                  <View style={styles.filmMetaRow}>
-                    <Text style={styles.filmMeta} numberOfLines={1}>
-                      {getFilmMeta(dailyFilm, language)}
-                    </Text>
-                    {dailyFilm.matchScore > 0 && (
-                      <View style={styles.matchBadge}>
-                        <Text style={styles.matchBadgeText}>{dailyFilm.matchScore}%</Text>
-                      </View>
-                    )}
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            ) : (
-              <View style={styles.filmCardEmpty}>
-                <Ionicons name="film-outline" size={22} color={Colors.textGrey} />
-                <Text style={styles.filmCardEmptyText} numberOfLines={2}>
-                  {t('dailyMatch.noProfileHint')}
-                </Text>
-              </View>
-            )}
-          </View>
-        </Animated.View>
-
-        {/* ── GÜNLÜK OYUNLAR — Games Hub'a yönlendirme ───────────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(150).duration(400).springify().damping(18)}
-          style={styles.gamesSection}
-        >
+          {/* Archetype badge — tappable, Profile'a navigate */}
           <TouchableOpacity
-            style={styles.gamesCard}
-            onPress={() => { hapticLight(); router.push('/games' as never); }}
-            activeOpacity={0.8}
-          >
-            <View style={styles.gamesIconBg}>
-              <Ionicons name="game-controller" size={20} color={Colors.accentPrimary} />
-            </View>
-            <View style={styles.gamesTextBlock}>
-              <Text style={styles.gamesTitle}>{t('games.home_widget.title')}</Text>
-              <Text style={styles.gamesSubtitle}>
-                {gamesPlayed >= 4
-                  ? t('games.home_widget.all_played')
-                  : `${gamesPlayed}/4 ${t('games.hub.played')}`}
-              </Text>
-            </View>
-            <View style={styles.gamesPlayBadge}>
-              <Text style={styles.gamesPlayText}>
-                {gamesPlayed >= 4 ? '✓' : t('games.home_widget.play_now')}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* ── REFERRAL CTA — Davet programı widget ────────────────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(160).duration(400).springify().damping(18)}
-          style={styles.referralSection}
-        >
-          <TouchableOpacity
-            style={styles.referralCard}
-            onPress={() => { hapticLight(); router.push('/referral' as never); }}
-            activeOpacity={0.8}
-          >
-            <View style={styles.referralIconBg}>
-              <Ionicons name="people" size={18} color={Colors.gold} />
-            </View>
-            <View style={styles.referralTextBlock}>
-              <Text style={styles.referralTitle}>{t('referral.title')}</Text>
-              <Text style={styles.referralSubtitle}>{t('referral.subtitle')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* ── SİNEFİL PROFİLİ — Tam genişlik, metin taşması giderildi ────── */}
-        <Animated.View
-          entering={FadeInDown.delay(180).duration(400).springify().damping(18)}
-          style={styles.archetypeSection}
-        >
-          <Text style={styles.sectionLabel}>{t('home.sinephileTitle')}</Text>
-          <TouchableOpacity
-            style={[
-              styles.archetypeCard,
-              archetype
-                ? { backgroundColor: archetype.colorDim, borderColor: archetype.colorPrimary + '40' }
-                : undefined,
-            ]}
-            onPress={handleArchetypeTap}
+            style={styles.archetypeBadge}
+            onPress={() => { hapticLight(); router.push('/(tabs)/profile'); }}
             activeOpacity={0.8}
           >
             {archetype ? (
-              <View style={styles.archetypeInner}>
-                <Image source={archetype.image} style={styles.archetypeEmoji} contentFit="contain" />
-                <View style={styles.archetypeTextBlock}>
-                  <Text
-                    style={[styles.archetypeName, { color: archetype.colorPrimary }]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.8}
-                  >
-                    {t(archetype.nameKey)}
-                  </Text>
-                  <Text style={styles.archetypeDesc} numberOfLines={2}>
-                    {t(archetype.descKey)}
-                  </Text>
-                </View>
-                <View style={styles.retestBadge}>
-                  <Ionicons name="refresh-outline" size={18} color={Colors.textGrey} />
-                </View>
-              </View>
+              <Image source={archetype.image} style={styles.archetypeBadgeIcon} contentFit="contain" />
             ) : (
-              <View style={styles.noArchetypeInner}>
-                <Ionicons name="sparkles-outline" size={18} color={Colors.accentPrimary} />
-                <View style={styles.noArchetypeTextBlock}>
-                  <Text style={styles.noArchetypeTitle}>{t('home.noArchetype')}</Text>
-                  <Text style={styles.noArchetypeHint} numberOfLines={2}>
-                    {t('home.noArchetypeHint')}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={15} color={Colors.textGrey} />
-              </View>
+              <Ionicons name="person-circle-outline" size={28} color={Colors.textGrey} />
             )}
           </TouchableOpacity>
+        </View>
+
+        {/* ── Section 2: Hero Mood Input ─────────────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(50).duration(400).springify().damping(18)}
+          style={styles.heroCard}
+        >
+          <Text style={styles.heroLabel}>{t('home.heroPlaceholder')}</Text>
+          <View style={styles.heroInputRow}>
+            <TextInput
+              ref={inputRef}
+              style={styles.heroInput}
+              value={moodText}
+              onChangeText={setMoodText}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={placeholders[placeholderIndex]}
+              placeholderTextColor={Colors.textTertiary}
+              multiline
+              returnKeyType="search"
+              onSubmitEditing={() => submitMood(moodText)}
+              blurOnSubmit
+            />
+            {/* Submit button */}
+            <TouchableOpacity
+              style={[
+                styles.heroSubmitBtn,
+                moodText.trim().length === 0 && styles.heroSubmitBtnDisabled,
+              ]}
+              onPress={() => submitMood(moodText)}
+              disabled={moodText.trim().length === 0}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="arrow-forward"
+                size={20}
+                color={moodText.trim().length > 0 ? Colors.textOnAccent : Colors.textTertiary}
+              />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
-      </View>
+
+        {/* ── Section 3: Quick Mood Chips ─────────────────────────────── */}
+        <Animated.View
+          entering={FadeInDown.delay(100).duration(400).springify().damping(18)}
+          style={styles.quickChipsSection}
+        >
+          <FlatList
+            data={QUICK_CHIPS}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.quickChipsContent}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.quickChip}
+                onPress={() => handleQuickChip(item)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.quickChipText}>{t(item.labelKey)}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </Animated.View>
+
+        {/* ── Section 4: Son Aramalar (skeleton + conditional) ──────── */}
+        {sectionsLoading && (
+          <View style={styles.section}>
+            <SkeletonLoader width={130} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
+            <View style={styles.skeletonRow}>
+              <SkeletonLoader width={160} height={90} borderRadius={14} />
+              <SkeletonLoader width={160} height={90} borderRadius={14} />
+            </View>
+          </View>
+        )}
+        {!sectionsLoading && hasRecentSearches && (
+          <Animated.View
+            entering={FadeInDown.delay(150).duration(400).springify().damping(18)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>{t('home.recentSearches')}</Text>
+            <FlatList
+              data={moodHistory}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.session_id}
+              contentContainerStyle={styles.recentSearchContent}
+              renderItem={({ item }) => {
+                const posters = (item.saved_posters ?? []).slice(0, 3);
+                return (
+                  <TouchableOpacity
+                    style={styles.recentCard}
+                    onPress={() => handleRecentSearch(item)}
+                    activeOpacity={0.8}
+                  >
+                    {/* Poster stack — ust uste binmis */}
+                    <View style={styles.posterStack}>
+                      {posters.map((p, i) => {
+                        const uri = resolvePoster(p, 'w185');
+                        return uri ? (
+                          <Image
+                            key={i}
+                            source={{ uri }}
+                            style={[
+                              styles.stackPoster,
+                              { left: i * 14, zIndex: 3 - i },
+                            ]}
+                            contentFit="cover"
+                            cachePolicy="memory-disk"
+                          />
+                        ) : null;
+                      })}
+                      {posters.length === 0 && (
+                        <View style={styles.stackPosterEmpty}>
+                          <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.recentText} numberOfLines={2}>
+                      {item.mood_text}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </Animated.View>
+        )}
+
+        {/* ── Section 5: Bugunun Filmi (skeleton + conditional) ──────── */}
+        {dailyLoading && (
+          <View style={styles.section}>
+            <SkeletonLoader width={120} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
+            <SkeletonLoader width={SCREEN_W - 32} height={140} borderRadius={16} style={{ marginLeft: 16 }} />
+          </View>
+        )}
+        {hasDailyFilm && dailyFilm && dailyPosterUrl && (
+          <Animated.View
+            entering={FadeInDown.delay(200).duration(400).springify().damping(18)}
+            style={styles.section}
+          >
+            <Text style={styles.sectionTitle}>{t('home.todaysFilm')}</Text>
+            <TouchableOpacity
+              style={styles.dailyCard}
+              onPress={() => {
+                hapticLight();
+                posthogAnalytics.track('home_daily_pick_tapped', { film_id: dailyFilm.id });
+                router.push(`/film/${dailyFilm.id}`);
+              }}
+              activeOpacity={0.85}
+            >
+              {/* Blurred poster background */}
+              <Image
+                source={{ uri: dailyPosterUrl }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                blurRadius={15}
+              />
+              <View style={styles.dailyCardOverlay} />
+              {/* Content */}
+              <View style={styles.dailyCardContent}>
+                <Image
+                  source={{ uri: dailyPosterUrl }}
+                  style={styles.dailyPoster}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  transition={200}
+                />
+                <View style={styles.dailyMeta}>
+                  <Text style={styles.dailyTitle} numberOfLines={2}>
+                    {dailyFilm.title}
+                  </Text>
+                  <Text style={styles.dailySubtitle} numberOfLines={1}>
+                    {dailyFilm.year}{dailyFilm.director ? ` \u00B7 ${dailyFilm.director}` : ''}
+                  </Text>
+                  {dailyFilm.matchScore > 0 && (
+                    <View style={styles.matchBadge}>
+                      <Text style={styles.matchBadgeText}>{dailyFilm.matchScore}% match</Text>
+                    </View>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.textGrey} />
+              </View>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {/* ── Section 6: Watchlist Strip (skeleton + conditional) ────── */}
+        {sectionsLoading && (
+          <View style={styles.section}>
+            <SkeletonLoader width={160} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
+            <View style={styles.skeletonRow}>
+              <SkeletonLoader width={100} height={150} borderRadius={12} />
+              <SkeletonLoader width={100} height={150} borderRadius={12} />
+              <SkeletonLoader width={100} height={150} borderRadius={12} />
+            </View>
+          </View>
+        )}
+        {!sectionsLoading && hasWatchlist && (
+          <Animated.View
+            entering={FadeInDown.delay(250).duration(400).springify().damping(18)}
+            style={styles.section}
+          >
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('home.fromWatchlist')}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  hapticLight();
+                  router.push('/watchlist-detail' as never);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.seeAllText}>{t('home.seeAll')}</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={watchlistItems}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.film.id}
+              contentContainerStyle={styles.watchlistContent}
+              renderItem={({ item }) => {
+                const uri = resolvePoster(item.film.posterUrl, 'w185');
+                return (
+                  <TouchableOpacity
+                    style={styles.watchlistCard}
+                    onPress={() => {
+                      hapticLight();
+                      posthogAnalytics.track('home_watchlist_pick_tapped', { film_id: item.film.id });
+                      router.push(`/film/${item.film.id}`);
+                    }}
+                    activeOpacity={0.85}
+                  >
+                    {uri ? (
+                      <Image
+                        source={{ uri }}
+                        style={styles.watchlistPoster}
+                        contentFit="cover"
+                        cachePolicy="memory-disk"
+                        transition={200}
+                      />
+                    ) : (
+                      <View style={[styles.watchlistPoster, styles.watchlistPosterEmpty]}>
+                        <Ionicons name="film-outline" size={24} color={Colors.textGrey} />
+                      </View>
+                    )}
+                    <Text style={styles.watchlistTitle} numberOfLines={1}>
+                      {item.film.title}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </Animated.View>
+        )}
+
+      </ScrollView>
     </View>
   );
 }
@@ -508,21 +552,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-
-  // ── Floating Header ──────────────────────────────────────────────────────
-  headerGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+  scroll: {
+    flex: 1,
   },
+  scrollContent: {
+    gap: 28,
+  },
+
+  // ── Skeleton ─────────────────────────────────────────────────────────────────
+  skeletonRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+
+  // ── Header ──────────────────────────────────────────────────────────────────
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingHorizontal: 20,
-    paddingBottom: 4,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
   logoWrapper: {
     flexDirection: 'row',
@@ -530,331 +579,246 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   logo: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     opacity: 0.95,
   },
   logoText: {
     color: Colors.goldLight,
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'PlayfairDisplay_400Regular',
     letterSpacing: 0.4,
   },
-
-  // ── Ana İçerik ────────────────────────────────────────────────────────────
-  mainContent: {
-    flex: 1,
-  },
-
-  // ── Hero Section ──────────────────────────────────────────────────────────
-  heroSection: {
-    paddingHorizontal: 16,
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  /** "What are you in the mood for?" etiketi */
-  heroQuestion: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-    marginBottom: 10,
-    paddingHorizontal: 2,
-  },
-  /** Gradient CTA butonu */
-  heroCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  archetypeBadge: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    paddingVertical: 18,
-    paddingHorizontal: 18,
-    gap: 14,
-    shadowColor: '#D4C4AE',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    elevation: 10,
-  },
-  /** Sol taraftaki ikon arka planı */
-  heroCtaIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: Colors.white10,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  heroCtaTextBlock: {
-    flex: 1,
-  },
-  heroCtaTitle: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '800',
-    letterSpacing: 0.1,
-    marginBottom: 2,
-  },
-  heroCtaSubline: {
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 12,
-    fontWeight: '500',
-    letterSpacing: 0.3,
-  },
-
-  // ── Film Kartları Bölümü ──────────────────────────────────────────────────
-  /** Film kartları bölümü — flex: 1 ile kalan yüksekliği doldurur */
-  filmsSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 10,
-    marginTop: 14,
-    flex: 1,
-    alignItems: 'stretch',
-  },
-  /** Kart sarmalayıcı — label + kart dikey hizası */
-  filmCardWrap: {
-    flex: 1,
-    gap: 6,
-  },
-  filmCardLabel: {
-    fontSize: 9,
-    color: Colors.textTertiary,
-    letterSpacing: 1.4,
-    fontWeight: '700',
-  },
-  /** Film kartı — flex: 1 ile yüksekliği otomatik doldurur */
-  filmCard: {
-    flex: 1,
-    borderRadius: 14,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.white10,
   },
-  filmPoster: {
-    flex: 1,
-    backgroundColor: Colors.bgElevated,
-  },
-  /** Siyahdan şeffafa gradient scrim — metin okunabilirliği */
-  filmOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 10,
-    paddingBottom: 10,
-    paddingTop: 28,
-  },
-  /** Yıl · tür / süre tek satır meta bilgi */
-  filmMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 6,
-  },
-  filmMeta: {
-    flex: 1,
-    color: Colors.textGrey,
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  filmCardSkeleton: {
-    flex: 1,
-    borderRadius: 14,
-    backgroundColor: Colors.bgElevated,
-    opacity: 0.5,
-  },
-  filmCardEmpty: {
-    flex: 1,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    borderStyle: 'dashed',
-    backgroundColor: Colors.bgCard,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: 12,
-  },
-  filmCardEmptyText: {
-    color: Colors.textGrey,
-    fontSize: 11,
-    textAlign: 'center',
-    lineHeight: 15,
-  },
-  /** Eşleşme skoru rozeti — filmMetaRow içinde sağ tarafa hizalanır */
-  matchBadge: {
-    backgroundColor: Colors.accentPrimary,
-    borderRadius: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    flexShrink: 0,
-  },
-  matchBadgeText: {
-    color: Colors.textOnAccent,
-    fontSize: 10,
-    fontWeight: '700',
+  archetypeBadgeIcon: {
+    width: 28,
+    height: 28,
   },
 
-  // ── Günlük Oyunlar ───────────────────────────────────────────────────────
-  gamesSection: {
-    paddingHorizontal: 16,
-    marginTop: 12,
-  },
-  gamesCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
+  // ── Hero Mood Input ────────────────────────────────────────────────────────
+  heroCard: {
+    marginHorizontal: 16,
+    backgroundColor: Colors.bgElevated,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
-    padding: 14,
+    padding: 20,
     gap: 12,
   },
-  gamesIconBg: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: Colors.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
+  heroLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
   },
-  gamesTextBlock: {
+  heroInputRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 12,
+  },
+  heroInput: {
     flex: 1,
+    fontSize: 16,
+    fontWeight: '400',
+    color: Colors.textPrimary,
+    lineHeight: 22,
+    minHeight: 60,
+    maxHeight: 100,
+    textAlignVertical: 'top',
+    padding: 0,
   },
-  gamesTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginBottom: 2,
-  },
-  gamesSubtitle: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  gamesPlayBadge: {
+  heroSubmitBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.accentPrimary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 9999,
-  },
-  gamesPlayText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
-  },
-
-  // ── Referral Widget ─────────────────────────────────────────────────────
-  referralSection: {
-    paddingHorizontal: 16,
-    marginTop: 10,
-  },
-  referralCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.gold + '20',
-    padding: 14,
-    gap: 12,
-  },
-  referralIconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: Colors.goldDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  referralTextBlock: {
-    flex: 1,
-  },
-  referralTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginBottom: 2,
-  },
-  referralSubtitle: {
-    fontSize: 11,
-    color: Colors.textGrey,
-  },
-
-  // ── Sinefil Profili Bölümü ────────────────────────────────────────────────
-  archetypeSection: {
-    paddingHorizontal: 16,
-    marginTop: 14,
-    gap: 6,
-  },
-  sectionLabel: {
-    fontSize: 9,
-    color: Colors.textTertiary,
-    letterSpacing: 1.4,
-    fontWeight: '700',
-  },
-  archetypeCard: {
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    backgroundColor: Colors.bgCard,
-    padding: 14,
-  },
-  archetypeInner: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  archetypeEmoji: {
-    width: 34,
-    height: 34,
-  },
-  archetypeTextBlock: {
-    flex: 1,
-    minWidth: 0, // flex child text overflow engellemek için
-  },
-  archetypeName: {
-    fontSize: 15,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    marginBottom: 4,
-    lineHeight: 20,
-    flexShrink: 1,
-  },
-  archetypeDesc: {
-    fontSize: 12,
-    color: Colors.textWhite,
-    lineHeight: 17,
-    letterSpacing: 0.1,
-    opacity: 0.72,
-    flexShrink: 1,
-  },
-  retestBadge: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: Colors.white05,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  noArchetypeInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroSubmitBtnDisabled: {
+    backgroundColor: Colors.bgSubtle,
+  },
+
+  // ── Quick Mood Chips ───────────────────────────────────────────────────────
+  quickChipsSection: {
+    marginTop: -12, // section gap azalt — hero'ya yakin dursun
+  },
+  quickChipsContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  quickChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  quickChipText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+
+  // ── Section shared ────────────────────────────────────────────────────────
+  section: {
     gap: 12,
   },
-  noArchetypeTextBlock: {
-    flex: 1,
-    minWidth: 0,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
   },
-  noArchetypeTitle: {
-    fontSize: 14,
-    color: Colors.accentPrimary,
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '700',
-    marginBottom: 3,
+    color: Colors.textPrimary,
+    letterSpacing: -0.2,
+    paddingHorizontal: 16,
   },
-  noArchetypeHint: {
+  seeAllText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.accentPrimary,
+  },
+
+  // ── Recent Searches ───────────────────────────────────────────────────────
+  recentSearchContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  recentCard: {
+    width: 160,
+    backgroundColor: Colors.bgCard,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 12,
+    gap: 10,
+  },
+  posterStack: {
+    height: 44,
+    position: 'relative',
+    width: 60,
+  },
+  stackPoster: {
+    position: 'absolute',
+    top: 0,
+    width: 32,
+    height: 44,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Colors.bgCard,
+  },
+  stackPosterEmpty: {
+    width: 32,
+    height: 44,
+    borderRadius: 6,
+    backgroundColor: Colors.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    lineHeight: 18,
+  },
+
+  // ── Daily Film ────────────────────────────────────────────────────────────
+  dailyCard: {
+    marginHorizontal: 16,
+    height: 140,
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  dailyCardOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,10,10,0.75)',
+  },
+  dailyCardContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 14,
+  },
+  dailyPoster: {
+    width: 75,
+    height: 112,
+    borderRadius: 10,
+    backgroundColor: Colors.bgElevated,
+  },
+  dailyMeta: {
+    flex: 1,
+    gap: 4,
+  },
+  dailyTitle: {
+    fontSize: 17,
+    fontFamily: 'PlayfairDisplay_700Bold',
+    color: Colors.textPrimary,
+    lineHeight: 22,
+  },
+  dailySubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    letterSpacing: 0.1,
+  },
+  matchBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.accentPrimary,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginTop: 4,
+  },
+  matchBadgeText: {
+    color: Colors.textOnAccent,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  // ── Watchlist Strip ───────────────────────────────────────────────────────
+  watchlistContent: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  watchlistCard: {
+    width: 100,
+    gap: 6,
+  },
+  watchlistPoster: {
+    width: 100,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: Colors.bgElevated,
+  },
+  watchlistPosterEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.white10,
+    borderStyle: 'dashed',
+  },
+  watchlistTitle: {
     fontSize: 12,
-    color: Colors.textGrey,
-    lineHeight: 16,
-    flexShrink: 1,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    paddingHorizontal: 2,
   },
 });

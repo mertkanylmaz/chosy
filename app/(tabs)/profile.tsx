@@ -53,6 +53,7 @@ import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
 import DiscoveryStats from '@/components/Profile/DiscoveryStats';
+import WatchlistPreview from '@/components/Profile/WatchlistPreview';
 import ErrorState from '@/components/ErrorState';
 import StreakCard from '@/components/Profile/StreakCard';
 import type { StreakCardProps } from '@/components/Profile/StreakCard';
@@ -65,7 +66,7 @@ import {
 import PersonaBadge from '@/components/Profile/PersonaBadge';
 import Purchases from 'react-native-purchases';
 
-import { clearWatchlist, getAppUserId } from '@/services/watchlist';
+import { clearWatchlist, getAppUserId, getWatchlist, type WatchlistItem } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
 import {
   getReferralStats,
@@ -746,6 +747,10 @@ export default function ProfileScreen() {
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
   const [codeCopied, setCodeCopied] = useState(false);
 
+  // ── Watchlist state (preview icin) ─────────────────────────────────────────
+  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
+  const [watchlistLoading, setWatchlistLoading] = useState(true);
+
   // ── Streak state ──────────────────────────────────────────────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
   const [nextMilestone, setNextMilestone] = useState<StreakCardProps['nextMilestone']>(null);
@@ -833,6 +838,14 @@ export default function ProfileScreen() {
       getReferralStats(userId).then((rs) => {
         if (rs) setReferralStats(rs);
       }).catch(() => {});
+
+      // Watchlist preview (non-blocking)
+      getWatchlist().then((wl) => {
+        setWatchlistItems(wl);
+        setWatchlistLoading(false);
+      }).catch(() => {
+        setWatchlistLoading(false);
+      });
 
 
       // Sonraki streak milestone'u hesapla
@@ -1462,6 +1475,13 @@ export default function ProfileScreen() {
               stats={stats}
               insights={swipeInsights}
               loading={loading}
+            />
+
+            {/* 4. Watchlist Preview */}
+            <SectionHeading title={t('tabs.watchlist')} />
+            <WatchlistPreview
+              items={watchlistItems}
+              loading={watchlistLoading}
             />
 
           </View>

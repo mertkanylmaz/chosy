@@ -4,7 +4,8 @@
     "discover": "Kartlar",
     "mood": "Ruh Hali",
     "watchlist": "Listem",
-    "profile": "Profil"
+    "profile": "Profil",
+    "games": "Oyunlar"
   },
   "moodInput": {
     "title": "Bugün ne izlemek istersin?",
@@ -113,7 +114,10 @@
     "curatedMindBlowingPrompt": "Hikaye anlatımını yeniden tanımlayan, algıyı zorlayan akıl uçuran başyapıt",
     "curatedWeekendBinge": "Hafta Sonu Maratonu",
     "curatedWeekendBingeDesc": "Tembel bir gün maratonu için ideal",
-    "curatedWeekendBingePrompt": "Rahat bir hafta sonu maratonu için ideal, kolay izlenen, eğlenceli film"
+    "curatedWeekendBingePrompt": "Rahat bir hafta sonu maratonu için ideal, kolay izlenen, eğlenceli film",
+    "discoverGamesTitle": "Sinefil Oyunlari",
+    "discoverRecentTitle": "Son Aramalar",
+    "discoverSearchPlaceholder": "Ne izlemek istiyorsun?"
   },
   "discover": {
     "emptyTitle": "Hepsi bu kadar!",
@@ -767,7 +771,31 @@
     "retestWeeklyLimitTitle": "Haftalık Limit",
     "retestWeeklyLimit": "Profilini %{date} tarihinde yeniden test edebilirsin.",
     "tapToRetest": "Yeniden test et",
-    "findMoodHint": "AI destekli film keşfi"
+    "findMoodHint": "AI destekli film keşfi",
+    "heroPlaceholder": "Ne izlemek istersin?",
+    "heroPlaceholders": [
+      "yagmurlu bir aksam...",
+      "kafami acabilecek bir film",
+      "arkadaslarla eglenceli",
+      "nostaljik bir yolculuk",
+      "gerilim dolu bir aksam",
+      "ici isitan bir film"
+    ],
+    "recentSearches": "Son Aramalar",
+    "todaysFilm": "Gunun Filmi",
+    "fromWatchlist": "Listenden",
+    "seeAll": "Tumunu Gor",
+    "quickThrill": "Gerilim",
+    "quickRomantic": "Romantik",
+    "quickMindBending": "Zihin Buken",
+    "quickFeelGood": "Keyifli",
+    "quickMelancholy": "Melankoli",
+    "quickAdventure": "Macera",
+    "quickComedy": "Komedi",
+    "quickDocumentary": "Belgesel",
+    "quickArthouse": "Sanat",
+    "quickNostalgia": "Nostalji",
+    "compactPlaceholder": "Ne izlemek istiyorsun?"
   },
   "games": {
     "hub": {

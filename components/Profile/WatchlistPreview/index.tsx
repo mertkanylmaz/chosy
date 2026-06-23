@@ -181,9 +181,9 @@ export default function WatchlistPreview({ items, loading }: Props) {
   const totalCount = items.length;
   const watchedCount = items.filter((i) => watchedIds.has(i.film.id)).length;
 
-  /** Watchlist sekmesine git */
+  /** Watchlist detay ekranina git (stack screen) */
   function handleSeeAll() {
-    router.push('/(tabs)/watchlist');
+    router.push('/watchlist-detail' as never);
   }
 
   return (

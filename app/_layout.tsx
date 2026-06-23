@@ -338,6 +338,10 @@ function RootLayoutNav() {
                 options={{ animation: 'slide_from_right', headerShown: false }}
               />
               <Stack.Screen
+                name="watchlist-detail"
+                options={{ animation: 'slide_from_right', headerShown: false }}
+              />
+              <Stack.Screen
                 name="film/[id]"
                 options={{ animation: 'slide_from_bottom' }}
               />

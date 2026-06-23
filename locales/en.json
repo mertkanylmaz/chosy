@@ -4,7 +4,8 @@
     "discover": "Discover",
     "mood": "Mood",
     "watchlist": "Watchlist",
-    "profile": "Profile"
+    "profile": "Profile",
+    "games": "Games"
   },
   "moodInput": {
     "title": "What do you want to watch today?",
@@ -113,7 +114,10 @@
     "curatedMindBlowingPrompt": "Mind-bending masterpiece that redefines storytelling and challenges perception",
     "curatedWeekendBinge": "Weekend Binge",
     "curatedWeekendBingeDesc": "Perfect for a lazy day marathon",
-    "curatedWeekendBingePrompt": "Easy to watch, entertaining film perfect for a relaxed weekend marathon"
+    "curatedWeekendBingePrompt": "Easy to watch, entertaining film perfect for a relaxed weekend marathon",
+    "discoverGamesTitle": "Daily Cinema Games",
+    "discoverRecentTitle": "Recent Searches",
+    "discoverSearchPlaceholder": "What do you feel like watching?"
   },
   "discover": {
     "emptyTitle": "That's all!",
@@ -767,7 +771,31 @@
     "retestWeeklyLimitTitle": "Weekly Limit",
     "retestWeeklyLimit": "You can re-test your profile again on %{date}.",
     "tapToRetest": "Tap to re-test",
-    "findMoodHint": "AI-powered film discovery"
+    "findMoodHint": "AI-powered film discovery",
+    "heroPlaceholder": "What do you feel like watching?",
+    "heroPlaceholders": [
+      "a rainy evening mood...",
+      "something mind-bending",
+      "fun night with friends",
+      "a nostalgic journey",
+      "edge-of-seat thriller",
+      "heartwarming feel-good"
+    ],
+    "recentSearches": "Recent Searches",
+    "todaysFilm": "Today's Film",
+    "fromWatchlist": "From Your Watchlist",
+    "seeAll": "See All",
+    "quickThrill": "Thriller",
+    "quickRomantic": "Romantic",
+    "quickMindBending": "Mind-bending",
+    "quickFeelGood": "Feel-good",
+    "quickMelancholy": "Melancholy",
+    "quickAdventure": "Adventure",
+    "quickComedy": "Comedy",
+    "quickDocumentary": "Documentary",
+    "quickArthouse": "Arthouse",
+    "quickNostalgia": "Nostalgia",
+    "compactPlaceholder": "What do you feel like watching?"
   },
   "games": {
     "hub": {

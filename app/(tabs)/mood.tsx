@@ -15,6 +15,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  FlatList,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -37,10 +38,9 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 
-import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 
 import AIProcessingOverlay from '@/components/AIProcessingOverlay';
 import MoodProfileResult from '@/components/MoodProfileResult';
@@ -50,16 +50,18 @@ import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import { Colors } from '@/constants/Colors';
 import { MoodIcons } from '@/constants/icons';
-import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
+import { QUICK_CHIPS, DISCOVER_GAMES, type QuickChip } from '@/constants/quickChips';
 import { useScalePress } from '@/hooks/useScalePress';
-import { hapticMedium, hapticSelection } from '@/utils/haptics';
+import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/services/moodSearchState';
+import { getMoodHistory } from '@/services/profileService';
 import { parseMood } from '@/services/tasteParser';
 import { saveSession, getAppUserId } from '@/services/watchlist';
 import { FilmFilters, TasteProfile } from '@/types';
+import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
 import { logger } from '@/utils/logger';
@@ -127,7 +129,8 @@ export default function MoodScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
-  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  /** Prefill: Home'dan mood text ile navigate edildiginde otomatik search */
+  const { onboarding, prefill } = useLocalSearchParams<{ onboarding?: string; prefill?: string }>();
   const isOnboarding = onboarding === '1';
   const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
   const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
@@ -151,19 +154,45 @@ export default function MoodScreen() {
   /** TextInput focus durumu — glow efekti için */
   const [isFocused, setIsFocused] = useState(false);
 
+  /** Son mood aramalari — discover tab content section */
+  const [recentSearches, setRecentSearches] = useState<MoodHistoryItem[]>([]);
+
   const pendingFilters = useRef<FilmFilters | null>(null);
+  /** Prefill auto-submit: true olunca handleFindMovies tetiklenir */
+  const [autoSubmitPending, setAutoSubmitPending] = useState(false);
+  /** Prefill consume tracking — ayni param tekrar tetiklemesin */
+  const prefillConsumed = useRef(false);
 
   // Ekran açıldığında kota bilgisini yenile
   useEffect(() => {
     checkQuota();
   }, [checkQuota]);
 
-  // ── Giriş animasyonları ────────────────────────────────────────────────────
-  const style0 = useStaggeredEntry(0); // ekran başlığı
-  const style1 = useStaggeredEntry(1); // yıl chipleri
-  const style2 = useStaggeredEntry(2); // rating chipleri
-  const style3 = useStaggeredEntry(3); // text input
-  const style4 = useStaggeredEntry(4); // quick moods
+  // ── Tab focus'ta recent searches yukle ──────────────────────────────────────
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        try {
+          const userId = await getAppUserId();
+          if (!userId) return;
+          const history = await getMoodHistory(userId);
+          setRecentSearches(history.slice(0, 3));
+        } catch {
+          // Sessizce devam — recent searches opsiyonel
+        }
+      })();
+    }, []),
+  );
+
+  // ── Home'dan prefill param ile otomatik arama ──────────────────────────────
+  // prefill geldiginde: text'i set et, auto-submit flag'i ac.
+  useEffect(() => {
+    if (prefill && typeof prefill === 'string' && prefill.trim().length > 0 && !prefillConsumed.current) {
+      prefillConsumed.current = true;
+      setMoodText(prefill.trim());
+      setAutoSubmitPending(true);
+    }
+  }, [prefill]);
 
   const { animatedStyle: btnAnimStyle, onPressIn: btnPressIn, onPressOut: btnPressOut } = useScalePress(0.95);
 
@@ -298,6 +327,31 @@ export default function MoodScreen() {
     }
   }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
 
+  // ── isReadyToSearch: tum pre-condition'lar karsilandi mi ─────────────────
+  // Subscription context yuklenmesi tamamlaninca search yapilabilir.
+  const isReadyToSearch = !subLoading;
+
+  // ── Prefill auto-submit: event-driven, sabit delay yok ─────────────────
+  // isReadyToSearch true olunca aninla tetikler.
+  // 3sn icinde ready olmazsa: autoSubmit iptal, kullanici manuel submit edebilir.
+  useEffect(() => {
+    if (!autoSubmitPending) return;
+
+    // 3sn safety valve — network sorunu vb. durumda sessizce kaybolmasin
+    const safetyTimer = setTimeout(() => {
+      setAutoSubmitPending(false);
+      logger.warn('[MoodScreen] prefill timeout — isReadyToSearch hala false, manuel submit bekleniyor');
+    }, 3000);
+
+    if (moodText.trim().length > 0 && phase === 'input' && isReadyToSearch) {
+      clearTimeout(safetyTimer);
+      setAutoSubmitPending(false);
+      handleFindMovies();
+    }
+
+    return () => clearTimeout(safetyTimer);
+  }, [autoSubmitPending, moodText, phase, isReadyToSearch, handleFindMovies]);
+
   /**
    * "Browse Movies" → MoodContext'e kaydet → Discover'a gec
    *
@@ -352,6 +406,38 @@ export default function MoodScreen() {
   );
 
 
+  /** Quick chip secildiginde — mood text'i set et + haptik */
+  const handleQuickChip = useCallback((chip: QuickChip) => {
+    hapticLight();
+    posthogAnalytics.track('discover_quick_chip_tapped', { mood: chip.id });
+    setMoodText(chip.prompt);
+    // Flash buton efekti
+    findBtnFlash.value = withSequence(
+      withTiming(0.6, { duration: 80 }),
+      withSpring(1, { damping: 10, stiffness: 220 }),
+    );
+    findBtnScale.value = withSequence(
+      withSpring(1.04, { damping: 8, stiffness: 300 }),
+      withSpring(1, { damping: 12, stiffness: 200 }),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /** Recent search tap — text'i set et + auto submit */
+  const handleRecentTap = useCallback((item: MoodHistoryItem) => {
+    hapticLight();
+    posthogAnalytics.track('discover_recent_search_tapped', { mood_text: item.mood_text });
+    setMoodText(item.mood_text);
+    setAutoSubmitPending(true);
+  }, []);
+
+  /** Game card tap — navigate to game */
+  const handleGameTap = useCallback((route: string, gameType: string) => {
+    hapticLight();
+    posthogAnalytics.track('discover_game_tapped', { game_id: gameType, source: 'discover_tab' });
+    router.push(route as never);
+  }, [router]);
+
   // ── MoodProfileResult aşaması ──────────────────────────────────────────────
   if (phase === 'result' && tasteProfile) {
     return (
@@ -385,204 +471,258 @@ export default function MoodScreen() {
     <>
       <StatusBar style="light" backgroundColor={Colors.background} />
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <LinearGradient
-          colors={[Colors.background, Colors.backgroundGradient]}
-          style={styles.gradient}
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <KeyboardAvoidingView
-            style={styles.keyboardAvoid}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+
+          {/* ── Onboarding: ucretsiz arama banner ────────────────── */}
+          {isOnboarding && (
+            <View style={styles.onboardingBanner}>
+              <Ionicons name="sparkles" size={13} color={Colors.accentPrimary} />
+              <View style={styles.onboardingBannerText}>
+                <Text style={styles.onboardingBannerTitle}>{t('mood.onboardingFreeSearch')}</Text>
+                <Text style={styles.onboardingBannerHint}>{t('mood.onboardingFreeHint')}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Compact Search Bar (sticky top) ─────────────────── */}
+          <View style={styles.compactSearchBar}>
+            <Ionicons name="search" size={18} color={Colors.textSecondary} />
+            <TextInput
+              style={styles.compactInput}
+              value={moodText}
+              onChangeText={setMoodText}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={t('mood.discoverSearchPlaceholder')}
+              placeholderTextColor={Colors.textTertiary}
+              returnKeyType="search"
+              onSubmitEditing={() => handleFindMovies()}
+              blurOnSubmit
+            />
+            <Animated.View style={findBtnFlashStyle}>
+              <TouchableOpacity
+                style={[styles.compactSubmitBtn, !canSubmit && styles.compactSubmitBtnDisabled]}
+                onPress={handleFindMovies}
+                disabled={!canSubmit}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name="arrow-forward"
+                  size={18}
+                  color={canSubmit ? Colors.textOnAccent : Colors.textTertiary}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+
+          {/* ── Hata mesaji — search bar altinda ─────────────────── */}
+          {moodError != null && (
+            <View style={styles.errorBanner}>
+              <Ionicons
+                name={
+                  moodError.type === 'network' ? 'cloud-offline-outline' :
+                  moodError.type === 'quota' ? 'lock-closed-outline' :
+                  'warning-outline'
+                }
+                size={18}
+                color={Colors.error}
+              />
+              <Text style={styles.errorBannerText}>{moodError.message}</Text>
+              <TouchableOpacity onPress={() => setMoodError(null)} activeOpacity={0.7}>
+                <Ionicons name="close-circle" size={18} color={Colors.textGrey} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Scrollable content ──────────────────────────────── */}
+          <ScrollView
+            style={styles.discoverScroll}
+            contentContainerStyle={styles.discoverScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
 
-            {/* ── Icerik — scroll yok, sigacak sekilde kompakt layout ── */}
-            <View style={styles.content}>
-
-              {/* ── Onboarding: ucretsiz arama banner ────────────────── */}
-              {isOnboarding && (
-                <View style={styles.onboardingBanner}>
-                  <Ionicons name="sparkles" size={13} color={Colors.accentPrimary} />
-                  <View style={styles.onboardingBannerText}>
-                    <Text style={styles.onboardingBannerTitle}>{t('mood.onboardingFreeSearch')}</Text>
-                    <Text style={styles.onboardingBannerHint}>{t('mood.onboardingFreeHint')}</Text>
-                  </View>
-                </View>
-              )}
-
-              {/* ── Ekran Basligi ─────────────────────────────────────── */}
-              <Animated.View style={[style0, styles.titleSection]}>
-                <Text style={styles.screenTitle}>{t('mood.screenTitle')}</Text>
-                <Text style={styles.screenSubtitle}>{t('mood.screenSubtitle')}</Text>
-              </Animated.View>
-
-              {/* ── Year filtresi ────────────────────────────────────────── */}
-              <Animated.View style={style1}>
-                <View style={styles.filterBlock}>
-                  <Text style={styles.filterLabel}>{t('mood.eraLabel')}</Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipRow}
-                  >
-                    {/* "Any" önce — varsayılan seçili olduğu için başta görünür */}
-                    {[...YEAR_CHIPS].reverse().map((chip) => {
-                      const active = yearChip === chip.id;
-                      return (
-                        <TouchableOpacity
-                          key={chip.id || 'year-any'}
-                          style={[styles.chip, active && styles.chipActive]}
-                          onPress={() => { hapticSelection(); setYearChip(chip.id); }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                            {t(chip.labelKey)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              </Animated.View>
-
-              {/* ── IMDb filtresi ────────────────────────────────────────── */}
-              <Animated.View style={style2}>
-                <View style={styles.filterBlock}>
-                  <Text style={styles.filterLabel}>{t('mood.qualityLabel')}</Text>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.chipRow}
-                  >
-                    {/* "Any" önce */}
-                    {[...RATING_CHIPS].reverse().map((chip) => {
-                      const active = ratingChip === chip.id;
-                      return (
-                        <TouchableOpacity
-                          key={chip.id || 'rating-any'}
-                          style={[styles.chip, active && styles.chipActive]}
-                          onPress={() => { hapticSelection(); setRatingChip(chip.id); }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                            {t(chip.labelKey)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </ScrollView>
-                </View>
-              </Animated.View>
-
-              {/* ── Metin girişi ──────────────────────────────────────────── */}
-              <Animated.View style={[style3, styles.textInputContainer]}>
-                <TextInput
-                  style={[
-                    styles.textInput,
-                    moodText.length > 0 && styles.textInputActive,
-                    isFocused && styles.textInputFocused,
-                  ]}
-                  value={moodText}
-                  onChangeText={(text) => { setMoodText(text); }}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder={t('moodInput.placeholder')}
-                  placeholderTextColor="rgba(161,161,170,0.5)"
-                  multiline
-                  textAlignVertical="top"
-                />
-              </Animated.View>
-
-              {/* ── Quick Moods — 2-kolon grid ──────────────────────────── */}
-              <Animated.View style={[style4, styles.quickWrapper]}>
-                <Text style={styles.quickTitle}>{t('mood.quickMoodsTitle')}</Text>
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.quickScrollContent}
-                  keyboardShouldPersistTaps="handled"
-                >
-                  <View style={styles.quickGrid}>
-                    {QUICK_MOODS.map((item) => {
-                      const prompt = t(item.promptKey);
-                      const isActive = moodText === prompt;
-                      return (
-                        <TouchableOpacity
-                          key={item.id}
-                          style={[styles.quickGridCard, isActive && styles.quickCardActive]}
-                          onPress={() => handleQuickMood(prompt)}
-                          activeOpacity={0.7}
-                        >
-                          <Image
-                            source={MoodIcons[item.id]}
-                            style={styles.quickEmoji}
-                            resizeMode="contain"
-                          />
-                          <Text
-                            style={[styles.quickLabel, isActive && styles.quickLabelActive]}
-                            numberOfLines={1}
-                          >
-                            {t(item.labelKey)}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                </ScrollView>
-              </Animated.View>
-            </View>
-
-            {/* ── Sabit Alt Bar: Hata + Find Movies butonu ─────────────── */}
-            <View style={styles.bottomBar}>
-              {/* Hata mesajı — buton üzerinde, görünürse */}
-              {moodError != null && (
-                <View style={styles.errorBanner}>
-                  <Ionicons
-                    name={
-                      moodError.type === 'network' ? 'cloud-offline-outline' :
-                      moodError.type === 'quota' ? 'lock-closed-outline' :
-                      'warning-outline'
-                    }
-                    size={18}
-                    color={Colors.error}
-                  />
-                  <Text style={styles.errorBannerText}>{moodError.message}</Text>
-                  <TouchableOpacity onPress={() => setMoodError(null)} activeOpacity={0.7}>
-                    <Ionicons name="close-circle" size={18} color={Colors.textGrey} />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Find Movies — tam genişlik, dikkat çekici, shimmer + kota */}
-              <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
-                <TouchableOpacity
-                  style={[styles.findButton, !canSubmit && styles.findButtonDisabled]}
-                  onPressIn={btnPressIn}
-                  onPressOut={btnPressOut}
-                  onPress={handleFindMovies}
-                  disabled={!canSubmit}
-                  activeOpacity={1}
-                >
-                  <Ionicons
-                    name="sparkles"
-                    size={18}
-                    color={canSubmit ? Colors.textOnAccent : 'rgba(255,255,255,0.4)'}
-                  />
-                  <View style={styles.findButtonContent}>
-                    <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
-                    {fullQuota && !subLoading && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
-                      <Text style={styles.findButtonQuota}>
-                        {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
+            {/* ── Era + Rating filter chips ─────────────────────── */}
+            <View style={styles.filterBlock}>
+              <Text style={styles.filterLabel}>{t('mood.eraLabel')}</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                {[...YEAR_CHIPS].reverse().map((chip) => {
+                  const active = yearChip === chip.id;
+                  return (
+                    <TouchableOpacity
+                      key={chip.id || 'year-any'}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => { hapticSelection(); setYearChip(chip.id); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {t(chip.labelKey)}
                       </Text>
-                    )}
-                  </View>
-                  {/* Shimmer overlay — canSubmit'te kayıyor */}
-                  {canSubmit && (
-                    <Animated.View style={[styles.findButtonShimmer, shimmerStyle]} pointerEvents="none" />
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
 
-          </KeyboardAvoidingView>
-        </LinearGradient>
+            <View style={styles.filterBlock}>
+              <Text style={styles.filterLabel}>{t('mood.qualityLabel')}</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                {[...RATING_CHIPS].reverse().map((chip) => {
+                  const active = ratingChip === chip.id;
+                  return (
+                    <TouchableOpacity
+                      key={chip.id || 'rating-any'}
+                      style={[styles.chip, active && styles.chipActive]}
+                      onPress={() => { hapticSelection(); setRatingChip(chip.id); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                        {t(chip.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* ── Quick Mood Chips — horizontal scroll ──────────── */}
+            <View style={styles.discoverSection}>
+              <Text style={styles.quickTitle}>{t('mood.quickMoodsTitle')}</Text>
+              <FlatList
+                data={QUICK_CHIPS}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.quickChipsRow}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.quickChipPill, moodText === item.prompt && styles.quickChipPillActive]}
+                    onPress={() => handleQuickChip(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.quickChipPillText, moodText === item.prompt && styles.quickChipPillTextActive]}>
+                      {t(item.labelKey)}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </View>
+
+            {/* ── Quick Moods — 2-kolon grid ──────────────────────── */}
+            <View style={styles.discoverSection}>
+              <View style={styles.quickGrid}>
+                {QUICK_MOODS.map((item) => {
+                  const prompt = t(item.promptKey);
+                  const isActive = moodText === prompt;
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={[styles.quickGridCard, isActive && styles.quickCardActive]}
+                      onPress={() => handleQuickMood(prompt)}
+                      activeOpacity={0.7}
+                    >
+                      <Image
+                        source={MoodIcons[item.id]}
+                        style={styles.quickEmoji}
+                        resizeMode="contain"
+                      />
+                      <Text
+                        style={[styles.quickLabel, isActive && styles.quickLabelActive]}
+                        numberOfLines={1}
+                      >
+                        {t(item.labelKey)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* ── Son Aramalar (conditional) ─────────────────────── */}
+            {recentSearches.length > 0 && (
+              <View style={styles.discoverSection}>
+                <Text style={styles.discoverSectionTitle}>{t('mood.discoverRecentTitle')}</Text>
+                {recentSearches.map((item) => (
+                  <TouchableOpacity
+                    key={item.session_id}
+                    style={styles.recentItem}
+                    onPress={() => handleRecentTap(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
+                    <Text style={styles.recentItemText} numberOfLines={1}>{item.mood_text}</Text>
+                    <Ionicons name="arrow-forward" size={14} color={Colors.textTertiary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* ── Sinefil Oyunlari section ──────────────────────── */}
+            <View style={styles.discoverSection}>
+              <Text style={styles.discoverSectionTitle}>{t('mood.discoverGamesTitle')}</Text>
+              <View style={styles.gamesGrid}>
+                {DISCOVER_GAMES.map((game) => (
+                  <TouchableOpacity
+                    key={game.gameType}
+                    style={styles.gameCard}
+                    onPress={() => handleGameTap(game.route, game.gameType)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.gameCardIcon}>
+                      <Ionicons name={game.icon as never} size={24} color={Colors.accentPrimary} />
+                    </View>
+                    <Text style={styles.gameCardTitle}>{t(game.titleKey)}</Text>
+                    <Text style={styles.gameCardDesc} numberOfLines={2}>{t(game.descriptionKey)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+          </ScrollView>
+
+          {/* ── Sabit Alt Bar: Find Movies butonu ─────────────────── */}
+          <View style={styles.bottomBar}>
+            <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
+              <TouchableOpacity
+                style={[styles.findButton, !canSubmit && styles.findButtonDisabled]}
+                onPressIn={btnPressIn}
+                onPressOut={btnPressOut}
+                onPress={handleFindMovies}
+                disabled={!canSubmit}
+                activeOpacity={1}
+              >
+                <Ionicons
+                  name="sparkles"
+                  size={18}
+                  color={canSubmit ? Colors.textOnAccent : 'rgba(255,255,255,0.4)'}
+                />
+                <View style={styles.findButtonContent}>
+                  <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
+                  {fullQuota && !subLoading && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
+                    <Text style={styles.findButtonQuota}>
+                      {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
+                    </Text>
+                  )}
+                </View>
+                {canSubmit && (
+                  <Animated.View style={[styles.findButtonShimmer, shimmerStyle]} pointerEvents="none" />
+                )}
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <AIProcessingOverlay visible={phase === 'processing'} t={t} />
@@ -608,22 +748,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  gradient: {
-    flex: 1,
-  },
   keyboardAvoid: {
-    flex: 1,
-  },
-
-  // ─── İçerik Alanı ──────────────────────────────────────────────────────────
-
-  content: {
     flex: 1,
   },
 
   // ─── Onboarding Banner ──────────────────────────────────────────────────────
 
-  /** Onboarding modunda "ilk arama bedava" bilgi sekidi */
   onboardingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -654,29 +784,67 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
 
-  // ─── Ekran Başlığı ──────────────────────────────────────────────────────────
+  // ─── Compact Search Bar ─────────────────────────────────────────────────────
 
-  titleSection: {
+  compactSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 4,
+    height: 48,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    gap: 10,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  compactInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textWhite,
+    height: 48,
+    padding: 0,
+  },
+  compactSubmitBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: Colors.accentPrimary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  compactSubmitBtnDisabled: {
+    backgroundColor: Colors.bgSubtle,
+  },
+
+  // ─── Discover Scroll Content ────────────────────────────────────────────────
+
+  discoverScroll: {
+    flex: 1,
+  },
+  discoverScrollContent: {
+    paddingBottom: 180, // tab bar (83) + bottom bar (~90)
+    gap: 20,
+    paddingTop: 8,
+  },
+  discoverSection: {
+    gap: 10,
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 0,
   },
-  screenTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.accentPrimary,
-    letterSpacing: -0.4,
-  },
-  screenSubtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
+  discoverSectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textWhite,
+    letterSpacing: -0.2,
   },
 
   // ─── Filtre ────────────────────────────────────────────────────────────────
 
   filterBlock: {
-    marginTop: 14,
+    marginTop: 0,
   },
   filterLabel: {
     fontSize: 10,
@@ -691,14 +859,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     gap: 8,
   },
-  /** Seçili olmayan chip — opak yüzey, border yok */
   chip: {
     backgroundColor: Colors.bgElevated,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 999,
   },
-  /** Seçili chip — tam dolu violet, border yok */
   chipActive: {
     backgroundColor: Colors.accentPrimary,
   },
@@ -712,47 +878,90 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // ─── TextInput ─────────────────────────────────────────────────────────────
+  // ─── Quick Chips (horizontal pill row) ──────────────────────────────────────
 
-  /** TextInput container */
-  textInputContainer: {
-    position: 'relative',
-    marginTop: 8,
-    marginHorizontal: 20,
+  quickChipsRow: {
+    gap: 8,
   },
-  textInput: {
+  quickChipPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  quickChipPillActive: {
+    backgroundColor: Colors.accentPrimary + '30',
+    borderColor: Colors.accentPrimary,
+  },
+  quickChipPillText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  quickChipPillTextActive: {
+    color: Colors.accentPrimary,
+    fontWeight: '700',
+  },
+
+  // ─── Recent Searches ────────────────────────────────────────────────────────
+
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  recentItemText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.textWhite,
+    fontWeight: '500',
+  },
+
+  // ─── Games Grid ─────────────────────────────────────────────────────────────
+
+  gamesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  gameCard: {
+    width: '48%',
     backgroundColor: Colors.bgElevated,
     borderRadius: 16,
-    height: 80,
-    paddingTop: 12,
-    paddingLeft: 14,
-    paddingBottom: 12,
-    paddingRight: 14,
-    color: Colors.textWhite,
+    padding: 14,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  gameCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.accentDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gameCardTitle: {
     fontSize: 14,
-    lineHeight: 20,
-    textAlignVertical: 'top',
+    fontWeight: '700',
+    color: Colors.textWhite,
   },
-  /** Active state — mor tint üzerine opak yüzey */
-  textInputActive: {
-    backgroundColor: Colors.bgElevated,
-  },
-  /** Focus glow — kullanıcı yazmaya başladığında mor "AI dinliyor" hissi */
-  textInputFocused: {
-    borderWidth: 1.5,
-    borderColor: Colors.accentPrimary,
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.45,
-    shadowRadius: 10,
-    elevation: 6,
+  gameCardDesc: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 16,
   },
 
   // ─── Sabit Alt Bar ─────────────────────────────────────────────────────────
 
   bottomBar: {
     paddingHorizontal: 20,
-    /** 83 = floating tab bar yüksekliği (bottom:10 + height:64 + 9px buffer) */
     paddingBottom: 90,
     paddingTop: 10,
     borderTopWidth: 1,
@@ -767,6 +976,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 4,
     paddingHorizontal: 14,
     paddingVertical: 10,
     backgroundColor: 'rgba(239,68,68,0.1)',
@@ -781,7 +992,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // ─── Find Movies butonu — devasa, dikkat çekici ────────────────────────────
+  // ─── Find Movies butonu ─────────────────────────────────────────────────────
 
   findButton: {
     backgroundColor: Colors.accentPrimary,
@@ -809,7 +1020,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 0.3,
   },
-  /** Buton içinde kota metni — "3 left today" */
   findButtonContent: {
     alignItems: 'center',
     gap: 1,
@@ -820,7 +1030,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     letterSpacing: 0.2,
   },
-  /** Shimmer overlay — soldan sağa kayar, skewX shimmerStyle içinde */
   findButtonShimmer: {
     position: 'absolute',
     top: 0,
@@ -829,32 +1038,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
-  // ─── Quick Moods ──────────────────────────────────────────────────────────
+  // ─── Quick Moods (2-column grid) ───────────────────────────────────────────
 
-  /** Quick Moods wrapper — flex:1 ile kalan alanı alır, kendi içinde scroll */
-  quickWrapper: {
-    flex: 1,
-    marginTop: 12,
-    paddingHorizontal: 20,
-  },
   quickTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: Colors.textWhite,
     marginBottom: 2,
+    paddingHorizontal: 20,
   },
-  /** ScrollView içeriği — grid wrapper + alt boşluk */
-  quickScrollContent: {
-    paddingTop: 8,
-    paddingBottom: 8,
-  },
-  /** 2-kolon grid container */
   quickGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  /** Grid kart — ~yarım genişlik, dikey düzen */
   quickGridCard: {
     width: '48%',
     alignItems: 'center',

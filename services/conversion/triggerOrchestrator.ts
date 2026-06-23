@@ -25,6 +25,8 @@ import type {
   PaywallEventInsert,
 } from './types';
 import { logger } from '@/utils/logger';
+import { remoteConfig } from '@/services/remoteConfig';
+import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
 
@@ -99,6 +101,34 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
     default:
       return null;
   }
+}
+
+// ─── Variant Activation Check (Remote Config) ──────────────────────────────
+
+/**
+ * Variant → remote config key mapping.
+ * Listede olmayan variant'lar daima aktiftir.
+ * Geri acma: DB'de ilgili key'i true yap → hydrate sonrasi aktif olur.
+ */
+const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
+  streak_milestone: 'paywall_streak_milestone',
+  streaming_link: 'paywall_streaming_link',
+  profile_upgrade: 'paywall_profile_upgrade',
+  roulette_limit: 'paywall_roulette_limit',
+  lifetime_soldout: 'paywall_lifetime_soldout',
+};
+
+/**
+ * Variant'in remote config ile aktif olup olmadigini kontrol eder.
+ * Config key yoksa (mapping'de tanimli degilse) variant daima aktiftir.
+ * SAFE_DEFAULTS'ta false → deaktif. DB'de true yapilirsa → aktif.
+ */
+function isVariantEnabled(variantName: PaywallVariantName): boolean {
+  const configKey = VARIANT_CONFIG_KEYS[variantName];
+  if (!configKey) return true;
+  // remoteConfig.get strict typed — cast ile dynamic key okuma
+  const val = (remoteConfig as { get(k: string): unknown }).get(configKey);
+  return val === true;
 }
 
 // ─── Cooldown & Dismissal Persistence ────────────────────────────────────────
@@ -181,6 +211,13 @@ export async function shouldShowPaywall(
   // Variant mapping
   const variantName = triggerToVariant(event);
   if (!variantName) return null;
+
+  // Deaktif variant kontrolu — remote config flag'i false ise paywall gosterme
+  if (!isVariantEnabled(variantName)) {
+    logger.log(`[orchestrator] Variant deaktif — ${variantName} atlanıyor`);
+    posthogAnalytics.track('paywall_variant_skipped', { variant: variantName, trigger: event.type });
+    return null;
+  }
 
   const triggerType = event.type;
   const isImmediate = IMMEDIATE_TRIGGERS.has(triggerType);

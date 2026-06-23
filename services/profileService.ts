@@ -3,6 +3,8 @@
  * Supabase view'ları ve RPC çağrılarını sarar.
  */
 
+import * as Sentry from '@sentry/react-native';
+
 import { supabase } from './supabase';
 
 import type { TasteProfile } from '../types/index';
@@ -56,23 +58,19 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
  * @returns MoodHistoryItem listesi (boş dizi hata durumunda)
  */
 export async function getMoodHistory(userId: string): Promise<MoodHistoryItem[]> {
-  try {
-    const { data, error } = await supabase
-      .from('mood_history')
-      .select('session_id, user_id, mood_text, parsed_profile_json, created_at, total_swipes, saved_count, skipped_count, saved_posters')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .limit(20);
+  const { data, error } = await supabase
+    .from('mood_history')
+    .select('session_id, user_id, mood_text, parsed_profile_json, created_at, total_swipes, saved_count, skipped_count, saved_posters')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(20);
 
-    if (error) throw error;
-
-    return (data ?? []) as MoodHistoryItem[];
-  } catch (err) {
-    if (__DEV__) {
-      console.error('[profileService] getMoodHistory hatası:', err);
-    }
-    return [];
+  if (error) {
+    Sentry.captureException(error, { tags: { service: 'profileService', fn: 'getMoodHistory' } });
+    throw error;
   }
+
+  return (data ?? []) as MoodHistoryItem[];
 }
 
 // ─── getTonightPick ────────────────────────────────────────────────────────────
