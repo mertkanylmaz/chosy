@@ -5,6 +5,7 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,13 +29,10 @@ export default StyleSheet.create({
   poster: {
     width: '100%',
     height: '100%',
-    borderRadius: 14,
-    backgroundColor: Colors.cardSolid,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
+    borderRadius: 12,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   posterPlaceholder: {
     alignItems: 'center',
@@ -52,12 +50,12 @@ export default StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 8,
-    backgroundColor: 'rgba(10,10,10,0.72)',
+    backgroundColor: Colors.bgElevated,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
+    borderColor: Colors.border,
   },
   matchBadgeText: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
     color: Colors.textWhite,
     letterSpacing: 0.2,
@@ -65,9 +63,9 @@ export default StyleSheet.create({
 
   /** Film adı kaldırıldı — sadece yıl·tür */
   cardMeta: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textGrey,
     marginTop: 6,
-    lineHeight: 16,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 });

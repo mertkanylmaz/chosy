@@ -153,7 +153,7 @@ export default function DailyMatchCard({ film, loading, archetypeId }: DailyMatc
 
       {/* Alt gradient overlay */}
       <LinearGradient
-        colors={['transparent', 'rgba(10,10,10,0.55)', 'rgba(10,10,10,0.92)']}
+        colors={['transparent', 'rgba(10,10,15,0.55)', 'rgba(10,10,15,0.92)']}
         locations={[0, 0.45, 1]}
         style={styles.gradient}
       >
@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: Colors.border,
   },
   archetypeBadgeText: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
   },
   matchBadgeText: {
     color: Colors.textOnAccent,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
     letterSpacing: 0.4,
   },
@@ -253,9 +253,9 @@ const styles = StyleSheet.create({
   },
   filmTitle: {
     color: Colors.textWhite,
-    fontSize: 22,
+    fontSize: Theme.typography.h2.fontSize,
     fontFamily: 'PlayfairDisplay_700Bold',
-    lineHeight: 28,
+    lineHeight: Theme.typography.h2.lineHeight,
     marginBottom: Theme.spacing.xs,
   },
   metaRow: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   filmYear: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
   },
   imdbBadge: {
@@ -275,8 +275,8 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   imdbText: {
-    color: '#000',
-    fontSize: 11,
+    color: Colors.textOnAccent,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
   },
   tapHint: {
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   },
   tapHintText: {
     color: Colors.textGrey,
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
   },
 
   // ── İskelet ──
@@ -313,15 +313,15 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: Colors.textWhite,
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: Theme.spacing.xs,
   },
   emptyHint: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 });

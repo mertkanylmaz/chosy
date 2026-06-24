@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     marginBottom: Theme.spacing.sm,
   },
   sectionLabel: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '600',
     color: Colors.textTertiary,
     letterSpacing: 1.5,

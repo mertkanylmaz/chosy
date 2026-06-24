@@ -29,13 +29,13 @@ export const styles = StyleSheet.create({
   },
   title: {
     color: Colors.textWhite,
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
     fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: 0.2,
   },
   seeAll: {
     color: Colors.gold,
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
   },
 
@@ -45,7 +45,7 @@ export const styles = StyleSheet.create({
   },
   progressLabel: {
     color: Colors.textGrey,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '500',
     letterSpacing: 0.2,
   },
@@ -80,13 +80,10 @@ export const styles = StyleSheet.create({
   posterImage: {
     width: '100%',
     height: POSTER_H,
-    borderRadius: Theme.borderRadius.sm,
-    backgroundColor: Colors.card,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 6,
+    borderRadius: 12,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   posterWatched: {
     opacity: 0.45,
@@ -94,18 +91,18 @@ export const styles = StyleSheet.create({
   posterPlaceholder: {
     width: '100%',
     height: POSTER_H,
-    borderRadius: Theme.borderRadius.sm,
-    backgroundColor: Colors.card,
+    borderRadius: 12,
+    backgroundColor: Colors.bgCard,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.borderSubtle,
   },
   filmTitle: {
     color: Colors.textWhite,
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: Theme.typography.micro.lineHeight,
   },
 
   // ── İzlendi toggle (poster üst sağ) ──
@@ -116,12 +113,12 @@ export const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: 'rgba(0,0,0,0.55)',
+    backgroundColor: 'rgba(10,10,15,0.55)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   watchedToggleActive: {
-    backgroundColor: 'rgba(234,219,198,0.25)',
+    backgroundColor: Colors.accentDim,
   },
 
   // ── Boş durum ──
@@ -132,9 +129,9 @@ export const styles = StyleSheet.create({
   },
   emptyText: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     textAlign: 'center',
-    lineHeight: 18,
+    lineHeight: Theme.typography.caption.lineHeight,
     maxWidth: 220,
   },
 

@@ -6,8 +6,8 @@ import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 
-/** Matte black background — slightly warmer than pure black */
-const BG_MATTE = '#0B0B0B';
+/** Matte background — matches app background */
+const BG_MATTE = Colors.background;
 
 export const styles = StyleSheet.create({
   // ─── Container ────────────────────────────────────────────────────────────────
@@ -38,8 +38,8 @@ export const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 90,
-    backgroundColor: 'rgba(234,219,198,0.06)',
-    shadowColor: '#EADBC6',
+    backgroundColor: Colors.accentDim,
+    shadowColor: Colors.accentPrimary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.25,
     shadowRadius: 50,
@@ -55,7 +55,7 @@ export const styles = StyleSheet.create({
   brandName: {
     fontFamily: 'PlayfairDisplay_400Regular',
     fontSize: 36,
-    color: '#F0E4D4',
+    color: Colors.textPrimary,
     letterSpacing: 1.5,
     marginBottom: 8,
   },

@@ -1,39 +1,40 @@
 /**
  * MoodFlix — Design Token Palette
- * Direction: "Warm Premium" (cream/beige + zinc + gold)
+ * Direction: "Cinematic Dark" — warm deep backgrounds + amber-gold accent
  *
- * Migration v3 — 2026-04-24
- * - Primary accent: violet-500 (#8B5CF6) → warm cream (#EADBC6)
- * - textOnAccent: white → dark (#1A1212) — readability on cream bg
- * - All opacity variants updated to rgba(234,219,198,...)
+ * Migration v4 — 2026-06-23
+ * - Backgrounds: flat black → warm deep (#0A0A0F)
+ * - Accent: cream (#EADBC6) → cinematic amber (#E8A838)
+ * - Text: pure white → soft off-white (#F0F0F5)
+ * - Borders: shadow-first → border-first (2026 trend)
  */
 
 export const Colors = {
-  // ─── Backgrounds (Zinc Scale) ────────────────────────────────────────────────
-  /** App background — zinc-950 */
-  background: '#0A0A0A',
+  // ─── Backgrounds (Warm Deep) ────────────────────────────────────────────────
+  /** App background — warm deep */
+  background: '#0A0A0F',
   /** @deprecated Use bgCard instead — kept for backward compat */
-  backgroundGradient: '#0A0A0A',
-  /** Card surface — zinc-900, semi-transparent */
-  card: 'rgba(24,24,27,0.8)',
-  /** Card surface — zinc-900, opaque */
-  cardSolid: '#18181B',
-  /** Card border — subtle cream tint */
-  cardBorder: 'rgba(234,219,198,0.15)',
+  backgroundGradient: '#0A0A0F',
+  /** Card surface — semi-transparent */
+  card: 'rgba(18,18,26,0.8)',
+  /** Card surface — opaque */
+  cardSolid: '#12121A',
+  /** Card border — subtle white tint */
+  cardBorder: 'rgba(255,255,255,0.10)',
 
   // Named bg tokens (new — prefer these)
-  bgPrimary: '#0A0A0A',
-  bgCard: '#18181B',
-  bgElevated: '#27272A',
-  bgSubtle: '#3F3F46',
+  bgPrimary: '#0A0A0F',
+  bgCard: '#12121A',
+  bgElevated: '#1A1A24',
+  bgSubtle: '#22222E',
 
-  // ─── Accent: Cream (Primary) ─────────────────────────────────────────────────
-  /** Primary CTA, active tabs, main interactions — warm cream */
-  accentPrimary: '#EADBC6',
-  /** Pressed / hover state — cream-dark */
-  accentHover: '#D4C4AE',
-  /** Muted cream for backgrounds — 12% opacity */
-  accentDim: 'rgba(234,219,198,0.12)',
+  // ─── Accent: Amber (Primary) ────────────────────────────────────────────────
+  /** Primary CTA, active tabs, main interactions — cinematic amber */
+  accentPrimary: '#E8A838',
+  /** Pressed / hover state — amber dark */
+  accentHover: '#C48820',
+  /** Muted amber for backgrounds — 15% opacity */
+  accentDim: 'rgba(232,168,56,0.15)',
 
   // ─── Accent: Gold (Secondary / Premium) ──────────────────────────────────────
   /** Ratings, premium badges, special highlights */
@@ -49,34 +50,36 @@ export const Colors = {
   /** Gold glow — overlay and blur backgrounds */
   goldGlow: 'rgba(212,168,67,0.18)',
 
-  // ─── Text (Zinc Scale) ──────────────────────────────────────────────────────
-  /** Primary text — zinc-50 */
-  textWhite: '#FAFAFA',
-  /** Secondary text / meta — zinc-400 */
-  textGrey: '#A1A1AA',
-  /** Tertiary text / hints — zinc-500 */
-  textLightGrey: '#71717A',
-  /** Text on accent backgrounds (cream buttons) — dark for contrast */
-  textOnAccent: '#1A1212',
+  // ─── Text (Warm Scale) ──────────────────────────────────────────────────────
+  /** Primary text — soft off-white */
+  textWhite: '#F0F0F5',
+  /** Secondary text / meta — muted lavender */
+  textGrey: '#8888A0',
+  /** Tertiary text / hints — deep muted */
+  textLightGrey: '#55556A',
+  /** Text on accent backgrounds (amber buttons) — dark for contrast */
+  textOnAccent: '#0A0A0F',
 
   // Named text tokens (new — prefer these)
-  textPrimary: '#FAFAFA',
-  textSecondary: '#A1A1AA',
-  textTertiary: '#71717A',
+  textPrimary: '#F0F0F5',
+  textSecondary: '#8888A0',
+  textTertiary: '#55556A',
 
   // ─── Semantic ───────────────────────────────────────────────────────────────
   /** Success / confirmations */
-  success: '#22C55E',
+  success: '#34D399',
   /** Error / destructive */
   error: '#EF4444',
   /** Warning / alerts */
-  warning: '#F59E0B',
+  warning: '#FBBF24',
+  /** Info — informational highlights */
+  info: '#60A5FA',
   /** Pink — romantic/decorative accent */
   pink: '#EC4899',
 
   // ─── Swipe Semantic ─────────────────────────────────────────────────────────
   /** Swipe right → watchlist add */
-  swipeRight: '#22C55E',
+  swipeRight: '#34D399',
   /** Swipe left → skip */
   swipeLeft: '#EF4444',
   /** Swipe down → watched/seen */
@@ -87,52 +90,60 @@ export const Colors = {
   imdbYellow: '#F5C518',
 
   // ─── Tab Bar ────────────────────────────────────────────────────────────────
-  /** Tab bar background — zinc-950 with opacity */
-  tabBarBg: 'rgba(10,10,10,0.95)',
-  /** Tab active icon — warm cream */
-  tabActive: '#EADBC6',
-  /** Tab inactive icon — zinc-500 */
-  tabInactive: '#71717A',
+  /** Tab bar background — warm deep with opacity */
+  tabBarBg: 'rgba(10,10,15,0.95)',
+  /** Tab active icon — cinematic amber */
+  tabActive: '#E8A838',
+  /** Tab inactive icon — deep muted */
+  tabInactive: '#55556A',
 
   // ─── Chips ──────────────────────────────────────────────────────────────────
-  /** Active chip bg — cream filled */
-  chipActiveBg: '#EADBC6',
-  /** Active chip text — dark for contrast on cream */
-  chipActiveText: '#1A1212',
-  /** Inactive chip border — zinc-500 */
-  chipInactiveBorder: '#71717A',
-  /** Inactive chip text — zinc-500 */
-  chipInactiveText: '#71717A',
+  /** Active chip bg — amber filled */
+  chipActiveBg: '#E8A838',
+  /** Active chip text — dark for contrast on amber */
+  chipActiveText: '#0A0A0F',
+  /** Inactive chip border — deep muted */
+  chipInactiveBorder: '#55556A',
+  /** Inactive chip text — deep muted */
+  chipInactiveText: '#55556A',
 
   // ─── Input ──────────────────────────────────────────────────────────────────
   /** Input field background */
-  inputBg: 'rgba(24,24,27,0.5)',
-  /** Input field border — subtle cream */
-  inputBorder: 'rgba(234,219,198,0.3)',
+  inputBg: 'rgba(34,34,46,0.5)',
+  /** Input field border — subtle amber */
+  inputBorder: 'rgba(232,168,56,0.30)',
 
   // ─── Overlays & Utilities ───────────────────────────────────────────────────
   /** Modal/overlay background */
-  overlay: 'rgba(10,10,10,0.95)',
+  overlay: 'rgba(10,10,15,0.95)',
   /** 10% white — fine borders / surfaces */
-  white10: 'rgba(255,255,255,0.1)',
+  white10: 'rgba(255,255,255,0.10)',
   /** 5% white — very subtle surfaces */
-  white05: 'rgba(255,255,255,0.05)',
+  white05: 'rgba(255,255,255,0.06)',
+
+  // ─── Borders (2026 trend: shadow → border) ─────────────────────────────────
+  /** Standard border — subtle white */
+  border: 'rgba(255,255,255,0.10)',
+  /** Very subtle border */
+  borderSubtle: 'rgba(255,255,255,0.06)',
+  /** Accent border — amber tint */
+  borderAccent: 'rgba(232,168,56,0.30)',
 
   // ─── Profile Gradients ──────────────────────────────────────────────────────
-  /** Profile header gradient start — cream tint */
-  profileHeaderStart: 'rgba(234,219,198,0.25)',
+  /** Profile header gradient start — amber tint */
+  profileHeaderStart: 'rgba(232,168,56,0.25)',
   /** Profile header gradient end — transparent */
-  profileHeaderEnd: 'rgba(10,10,10,0.0)',
+  profileHeaderEnd: 'rgba(10,10,15,0.0)',
 
   // ─── Card Gradients ─────────────────────────────────────────────────────────
   /** Card poster gradient top — transparent */
-  cardGradientTop: 'rgba(10,10,10,0.0)',
+  cardGradientTop: 'rgba(10,10,15,0.0)',
   /** Card poster gradient bottom — solid bg */
-  cardGradientBottom: 'rgba(10,10,10,0.97)',
+  cardGradientBottom: 'rgba(10,10,15,0.97)',
 
   // ─── AI / Animation ─────────────────────────────────────────────────────────
-  /** AI processing glow — cream */
-  aiGlow: 'rgba(234,219,198,0.35)',
+  /** AI processing glow — amber */
+  aiGlow: 'rgba(232,168,56,0.35)',
 } as const;
 
 // ─── Backward Compatibility ─────────────────────────────────────────────────
@@ -141,9 +152,9 @@ export const Colors = {
 export default {
   light: {
     text: Colors.background,
-    background: '#FFFFFF',
+    background: '#F0F0F5',
     tint: Colors.accentPrimary,
-    tabIconDefault: '#CCCCCC',
+    tabIconDefault: '#8888A0',
     tabIconSelected: Colors.accentPrimary,
   },
   dark: {

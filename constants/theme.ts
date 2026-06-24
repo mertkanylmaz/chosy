@@ -5,10 +5,10 @@ import { Colors } from './Colors';
 /**
  * MoodFlix — Design System Constants
  *
- * Migration v2 — 2026-03-27
+ * Migration v3 — 2026-06-23
  * - Spacing: aligned with DESIGN_SYSTEM.md (md:16, lg:24, xl:32)
  * - Typography: Inter is workhorse, PlayfairDisplay ONLY for display + rating
- * - Shadows: cream glow replaces gold glow
+ * - Shadows: amber glow replaces cream glow
  * - All deprecated exports preserved for backward compat
  */
 
@@ -44,50 +44,79 @@ export const Theme = {
   },
 
   // ─── Typography ─────────────────────────────────────────────────────────
-  // Rule: Inter is the workhorse. PlayfairDisplay is the "premium sprinkle"
-  // — ONLY for film detail titles (display) and rating numbers.
+  // Rule: System font (SF Pro) is the workhorse. PlayfairDisplay is the
+  // "premium sprinkle" — ONLY for film detail titles (display) and ratings.
   // Never for buttons, labels, or body text.
+  //
+  // Type Scale (v2 — 2026-06-23):
+  //   display  32/38  — hero text, archetype reveal
+  //   heading  22/28  — section headings
+  //   subhead  17/22  — card titles, film names
+  //   body     15/22  — main content, AI pitch
+  //   caption  13/18  — meta info, year, director
+  //   micro    11/14  — badges, chips, tags
   typography: {
-    /** Film detail title, special headings — PlayfairDisplay Bold 28-32 */
+    /** Hero text, archetype reveal — PlayfairDisplay Bold 32 */
     display: {
-      fontSize: 30,
+      fontSize: 32,
+      lineHeight: 38,
       fontFamily: FONT_DISPLAY,
+      fontWeight: '700' as const,
+      letterSpacing: -0.5,
       color: Colors.textPrimary,
     },
-    /** Screen titles — Inter Bold 24 */
+    /** Screen titles, page headings — System Bold 24 */
     h1: {
       fontSize: 24,
+      lineHeight: 30,
       fontWeight: '700' as const,
       fontFamily: FONT_INTER,
+      letterSpacing: -0.3,
       color: Colors.textPrimary,
     },
-    /** Section headers — Inter SemiBold 20 */
+    /** Section headers ("Son Aramalar", "Watchlist'inden") — System SemiBold 22 */
     h2: {
-      fontSize: 20,
+      fontSize: 22,
+      lineHeight: 28,
       fontWeight: '600' as const,
       fontFamily: FONT_INTER,
+      letterSpacing: -0.3,
       color: Colors.textPrimary,
     },
-    /** Card titles, list headers — Inter SemiBold 16 */
+    /** Card titles, film names, list headers — System SemiBold 17 */
     h3: {
-      fontSize: 16,
+      fontSize: 17,
+      lineHeight: 22,
       fontWeight: '600' as const,
       fontFamily: FONT_INTER,
       color: Colors.textPrimary,
     },
-    /** Main content — Inter Regular 14 */
+    /** Main content, descriptions — System Regular 15 */
     body: {
-      fontSize: 14,
+      fontSize: 15,
+      lineHeight: 22,
+      fontWeight: '400' as const,
       fontFamily: FONT_INTER,
       color: Colors.textPrimary,
     },
-    /** Meta info, timestamps — Inter Regular 12 */
+    /** Meta info, timestamps, year, director — System Regular 13 */
     caption: {
-      fontSize: 12,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '400' as const,
       fontFamily: FONT_INTER,
       color: Colors.textSecondary,
     },
-    /** Active tab label — Inter Bold 11 */
+    /** Badges, chips, tags, micro labels — System Medium 11 */
+    micro: {
+      fontSize: 11,
+      lineHeight: 14,
+      fontWeight: '500' as const,
+      fontFamily: FONT_INTER,
+      letterSpacing: 0.3,
+      color: Colors.textSecondary,
+    },
+    /** Active tab label — System Bold 11 */
     tabLabel: {
       fontSize: 11,
       fontWeight: '700' as const,
@@ -105,7 +134,8 @@ export const Theme = {
     // ── Backward compat aliases ──────────────────────────────────────────
     /** @deprecated Use caption */
     bodyGrey: {
-      fontSize: 14,
+      fontSize: 15,
+      lineHeight: 22,
       fontFamily: FONT_INTER,
       color: Colors.textSecondary,
     },

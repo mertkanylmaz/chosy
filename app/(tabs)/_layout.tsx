@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     marginHorizontal: 16,
     // Floating gölge
-    shadowColor: '#000',
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.40,
     shadowRadius: 18,

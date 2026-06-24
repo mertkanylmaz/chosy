@@ -1402,7 +1402,7 @@ const styles = StyleSheet.create({
   // ── Synopsis metni ────────────────────────────────────────────────────────────
   synopsisText: {
     fontSize: 15,
-    color: '#D3D3D3',
+    color: Colors.textPrimary,
     lineHeight: 26,
   },
 

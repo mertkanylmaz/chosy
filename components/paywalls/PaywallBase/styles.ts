@@ -60,17 +60,18 @@ export const styles = StyleSheet.create({
     marginBottom: 12,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: Theme.typography.h2.fontSize,
+    lineHeight: Theme.typography.h2.lineHeight,
     fontWeight: '800',
     color: Colors.textWhite,
     textAlign: 'center',
     marginBottom: 6,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: Theme.typography.body.lineHeight,
     paddingHorizontal: 12,
   },
 
@@ -103,7 +104,7 @@ export const styles = StyleSheet.create({
     marginBottom: 2,
   },
   planTitle: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '700',
     color: Colors.textWhite,
   },
@@ -117,18 +118,18 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.gold + '20',
   },
   planBadgeText: {
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
     color: Colors.gold,
     letterSpacing: 0.4,
   },
   planPrice: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     marginTop: 2,
   },
   planSaving: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.success,
     fontWeight: '600',
     marginTop: 2,
@@ -157,7 +158,7 @@ export const styles = StyleSheet.create({
 
   // ─── Trial Info ───────────────────────────────────────────────────────────
   trialInfo: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.accentPrimary,
     textAlign: 'center',
     fontWeight: '600',
@@ -178,7 +179,7 @@ export const styles = StyleSheet.create({
     height: 54,
   },
   ctaText: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '800',
     color: Colors.textOnAccent,
     letterSpacing: 0.3,
@@ -193,7 +194,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   dismissText: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textTertiary,
     fontWeight: '500',
   },
@@ -204,7 +205,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   restoreText: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textTertiary,
   },
 
@@ -218,19 +219,19 @@ export const styles = StyleSheet.create({
     marginBottom: 8,
   },
   legalLink: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.accentPrimary,
     textDecorationLine: 'underline',
   },
   legalSeparator: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textTertiary,
   },
   autoRenew: {
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textTertiary,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: Theme.typography.micro.lineHeight,
     paddingHorizontal: 16,
     marginTop: 8,
   },

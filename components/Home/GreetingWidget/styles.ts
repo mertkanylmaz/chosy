@@ -10,15 +10,16 @@ export const styles = StyleSheet.create({
     paddingBottom: Theme.spacing.xs,
   },
   greeting: {
-    fontSize: 24,
+    fontSize: Theme.typography.h1.fontSize,
     fontWeight: '700',
     color: Colors.textPrimary,
-    lineHeight: 30,
+    lineHeight: Theme.typography.h1.lineHeight,
+    letterSpacing: Theme.typography.h1.letterSpacing,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textSecondary,
     marginTop: 2,
-    lineHeight: 20,
+    lineHeight: Theme.typography.body.lineHeight,
   },
 });

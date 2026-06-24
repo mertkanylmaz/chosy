@@ -50,7 +50,7 @@ import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
-import { Radius, Shadows, Spacing, Typography } from '@/constants/theme';
+import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
 import DiscoveryStats from '@/components/Profile/DiscoveryStats';
 import WatchlistPreview from '@/components/Profile/WatchlistPreview';
@@ -1609,10 +1609,10 @@ const styles = StyleSheet.create({
   },
   archetypeDesc: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     textAlign: 'center',
     marginTop: 6,
-    lineHeight: 18,
+    lineHeight: Theme.typography.caption.lineHeight,
     maxWidth: 260,
     fontStyle: 'italic',
     opacity: 0.85,
@@ -1647,14 +1647,15 @@ const styles = StyleSheet.create({
   },
   profileName: {
     color: Colors.textWhite,
-    fontSize: 22,
+    fontSize: Theme.typography.h2.fontSize,
+    lineHeight: Theme.typography.h2.lineHeight,
     fontFamily: Typography.displayFont,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
   userIdHash: {
     color: Colors.textGrey,
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     marginTop: 2,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
@@ -1706,7 +1707,7 @@ const styles = StyleSheet.create({
   },
   authProviderText: {
     color: Colors.textGrey,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     letterSpacing: 0.2,
     opacity: 0.85,
   },
@@ -1725,7 +1726,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.accentPrimary + '30',
   },
   subBadgePremiumText: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
     color: Colors.accentPrimary,
     letterSpacing: 0.2,
@@ -1743,7 +1744,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.gold + '40',
   },
   subBadgeFreeText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '700',
     color: Colors.gold,
     letterSpacing: 0.2,
@@ -1761,7 +1762,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.gold + '40',
   },
   subBadgeLifetimeText: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '700',
     color: Colors.gold,
     letterSpacing: 0.3,
@@ -1780,7 +1781,7 @@ const styles = StyleSheet.create({
   },
   foundingBannerText: {
     flex: 1,
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
     color: Colors.gold,
     letterSpacing: 0.1,
@@ -1808,7 +1809,8 @@ const styles = StyleSheet.create({
   },
   sectionHeadingText: {
     color: Colors.textWhite,
-    fontSize: 20,
+    fontSize: Theme.typography.h2.fontSize,
+    lineHeight: Theme.typography.h2.lineHeight,
     fontFamily: Typography.displayFont,
     letterSpacing: 0.3,
   },
@@ -1830,7 +1832,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: Colors.textWhite,
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
     fontFamily: Typography.displayFont,
     letterSpacing: 0.2,
   },
@@ -1852,7 +1854,7 @@ const styles = StyleSheet.create({
   },
   settingsLabel: {
     color: Colors.textWhite,
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
   },
   langToggle: {
     flexDirection: 'row',
@@ -1872,7 +1874,7 @@ const styles = StyleSheet.create({
   },
   langOptionText: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
   },
   langOptionTextActive: {
@@ -1886,7 +1888,7 @@ const styles = StyleSheet.create({
   },
   dangerLabel: {
     color: Colors.error,
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
   },
 
   // ── Avatar Modal ──
@@ -1909,7 +1911,8 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: Colors.textWhite,
-    fontSize: 18,
+    fontSize: Theme.typography.h3.fontSize,
+    lineHeight: Theme.typography.h3.lineHeight,
     fontFamily: Typography.displayFont,
     textAlign: 'center',
     marginBottom: Spacing.md,
@@ -2031,7 +2034,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: Colors.bgCard,
     borderRadius: Radius.button,
     borderWidth: 1,
     borderColor: Colors.white10,
@@ -2312,7 +2315,7 @@ const settingsModalStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: Colors.bgCard,
     borderRadius: Radius.button,
     borderWidth: 1,
     borderColor: Colors.white10,
@@ -2334,7 +2337,7 @@ const settingsModalStyles = StyleSheet.create({
   },
   dangerLabel: {
     color: Colors.error,
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
   },
   signOutRow: {
     flexDirection: 'row',

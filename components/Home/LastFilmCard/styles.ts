@@ -15,7 +15,8 @@ export const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
+    lineHeight: Theme.typography.micro.lineHeight,
     color: Colors.textSecondary,
     letterSpacing: 1.2,
     fontWeight: '600',
@@ -41,7 +42,7 @@ export const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.bgElevated,
     // Poster shadow — subtle depth
-    shadowColor: '#000000',
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.4,
     shadowRadius: 6,
@@ -62,10 +63,10 @@ export const styles = StyleSheet.create({
     gap: 5,
   },
   title: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: Theme.typography.h3.lineHeight,
   },
   metaRow: {
     flexDirection: 'row',
@@ -73,20 +74,20 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   meta: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
   },
   metaDot: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textTertiary,
   },
   rating: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.gold,
     fontFamily: 'PlayfairDisplay_700Bold',
   },
   addedAt: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textTertiary,
   },
 
@@ -106,14 +107,14 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   emptyTitle: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textPrimary,
     fontWeight: '600',
   },
   emptyHint: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     marginTop: 3,
-    lineHeight: 17,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 });

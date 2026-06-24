@@ -1,6 +1,7 @@
 import { Dimensions, Platform, StatusBar as RNStatusBar, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -32,11 +33,8 @@ export default StyleSheet.create({
     height: SCREEN_HEIGHT - TAB_BAR_HEIGHT,
     backgroundColor: Colors.background,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 22,
-    elevation: 16,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
 
   // ─── Poster ────────────────────────────────────────────────────────────────
@@ -54,8 +52,8 @@ export default StyleSheet.create({
     marginBottom: 12,
   },
   posterPlaceholderTitle: {
-    color: 'rgba(255,255,255,0.55)',
-    fontSize: 18,
+    color: Colors.textTertiary,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '700',
     textAlign: 'center',
     paddingHorizontal: 32,
@@ -98,7 +96,7 @@ export default StyleSheet.create({
   },
   surpriseBadgeText: {
     color: Colors.gold,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
   },
 
@@ -150,15 +148,15 @@ export default StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.58)',
+    backgroundColor: 'rgba(10,10,15,0.58)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderColor: Colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sideButtonLabel: {
     color: 'rgba(255,255,255,0.8)',
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '600',
     letterSpacing: 0.2,
   },
@@ -181,7 +179,7 @@ export default StyleSheet.create({
   title: {
     flex: 1,
     color: Colors.textWhite,
-    fontSize: 26,
+    fontSize: Theme.typography.display.fontSize - 6,
     fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: 0.2,
     lineHeight: 32,
@@ -200,36 +198,36 @@ export default StyleSheet.create({
   },
   matchScoreText: {
     color: Colors.gold,
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '800',
     letterSpacing: -0.5,
   },
   moodMatchLabel: {
     color: Colors.gold,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '600',
     letterSpacing: 0.6,
     marginBottom: 6,
   },
   whyText: {
     color: 'rgba(255,255,255,0.78)',
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight + 1,
     marginRight: 70,
   },
   filmInfoLine: {
     color: Colors.textGrey,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
     marginTop: 8,
   },
 
   // ─── Mood açıklaması (matchExplanation) ────────────────────────────────────
   explanationText: {
     color: Colors.textGrey,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontStyle: 'italic',
-    lineHeight: 19,
+    lineHeight: Theme.typography.caption.lineHeight + 1,
     marginRight: 70,
     marginBottom: 2,
   },

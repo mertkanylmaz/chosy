@@ -40,7 +40,7 @@ export default StyleSheet.create({
     borderRadius: 20,
     backgroundColor: Colors.goldDim,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.3)',
+    borderColor: Colors.borderAccent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -56,7 +56,7 @@ export default StyleSheet.create({
 
   // ─── Title ──────────────────────────────────────────────────────────────────
   title: {
-    fontSize: 26,
+    fontSize: Theme.typography.display.fontSize - 6,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textWhite,
     marginTop: 4,
@@ -72,18 +72,18 @@ export default StyleSheet.create({
     marginBottom: 2,
   },
   profileBadgeLabel: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textGrey,
   },
   profileBadgeName: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textWhite,
     fontWeight: '700',
   },
 
   // ─── Description ────────────────────────────────────────────────────────────
   description: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textGrey,
     marginTop: 2,
     lineHeight: 20,
@@ -106,7 +106,7 @@ export default StyleSheet.create({
     width: CARD_WIDTH,
     backgroundColor: Colors.cardSolid,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.12)',
+    borderColor: Colors.goldDim,
     borderRadius: Theme.borderRadius.xl,
     padding: 14,
     minHeight: 120,
@@ -125,7 +125,7 @@ export default StyleSheet.create({
     borderRadius: 10,
     backgroundColor: Colors.goldDim,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.25)',
+    borderColor: Colors.borderAccent,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -134,22 +134,22 @@ export default StyleSheet.create({
     height: 20,
   },
   cardLabel: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textGrey,
     letterSpacing: 0.5,
     marginBottom: 6,
   },
   cardValue: {
-    fontSize: 20,
+    fontSize: Theme.typography.h2.fontSize - 2,
     color: Colors.textWhite,
     fontFamily: 'PlayfairDisplay_700Bold',
     lineHeight: 26,
     marginBottom: 4,
   },
   cardDesc: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textGrey,
-    lineHeight: 17,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ─── Energy progress bar ────────────────────────────────────────────────────
@@ -181,9 +181,8 @@ export default StyleSheet.create({
   },
   shareBtnText: {
     color: Colors.accentPrimary,
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '600',
-    fontFamily: 'Inter_600SemiBold',
   },
 
   // ─── Browse Movies button ───────────────────────────────────────────────────
@@ -206,7 +205,7 @@ export default StyleSheet.create({
   },
   browseBtnText: {
     color: Colors.background,
-    fontSize: 17,
+    fontSize: Theme.typography.h3.fontSize,
     fontFamily: 'PlayfairDisplay_700Bold',
     fontWeight: '700',
     letterSpacing: 0.3,

@@ -6,6 +6,7 @@
 import { Platform, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   wrapper: {
@@ -14,7 +15,7 @@ export const styles = StyleSheet.create({
   },
 
   sectionLabel: {
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textSecondary,
     letterSpacing: 1.2,
     fontWeight: '700',
@@ -36,7 +37,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     // Premium depth
-    shadowColor: '#000000',
+    shadowColor: Colors.background,
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
     shadowRadius: 8,

@@ -19,6 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { Colors } from '@/constants/Colors';
 import { WatchlistGroup, WatchlistItem } from '@/services/watchlist';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticSelection } from '@/utils/haptics';
@@ -77,7 +78,7 @@ function StackedPosters({ films }: StackedPostersProps) {
               />
             ) : (
               <View style={[styles.stackPosterImage, styles.stackPosterPlaceholder]}>
-                <Ionicons name="film-outline" size={10} color="#71717A" />
+                <Ionicons name="film-outline" size={10} color={Colors.textTertiary} />
               </View>
             )}
           </View>
@@ -155,7 +156,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
         {/* Sol — stacked poster önizleme (kapalıyken) veya sparkles ikonu (açıkken) */}
         {expanded ? (
           <View style={styles.headerIconWrap}>
-            <Ionicons name="sparkles-outline" size={15} color="#EADBC6" />
+            <Ionicons name="sparkles-outline" size={15} color={Colors.accentPrimary} />
           </View>
         ) : (
           <StackedPosters films={group.films} />
@@ -171,7 +172,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
 
         {/* Sağ — chevron (dönen) */}
         <Animated.View style={[styles.headerChevron, chevronStyle]}>
-          <Ionicons name="chevron-down-outline" size={20} color="#A1A1AA" />
+          <Ionicons name="chevron-down-outline" size={20} color={Colors.textSecondary} />
         </Animated.View>
       </TouchableOpacity>
 

@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
     marginRight: Theme.spacing.sm,
   },
   label: {
-    fontSize: 17,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '700',
     color: Colors.textOnAccent,
     letterSpacing: 0.5,

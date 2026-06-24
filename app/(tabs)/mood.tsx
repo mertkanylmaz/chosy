@@ -49,6 +49,7 @@ import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { MoodIcons } from '@/constants/icons';
 import { QUICK_CHIPS, DISCOVER_GAMES, type QuickChip } from '@/constants/quickChips';
 import { useScalePress } from '@/hooks/useScalePress';
@@ -774,14 +775,14 @@ const styles = StyleSheet.create({
   },
   onboardingBannerTitle: {
     color: Colors.accentPrimary,
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '700',
     letterSpacing: 0.1,
   },
   onboardingBannerHint: {
     color: Colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: Theme.typography.micro.fontSize,
+    lineHeight: Theme.typography.micro.lineHeight,
   },
 
   // ─── Compact Search Bar ─────────────────────────────────────────────────────
@@ -802,7 +803,7 @@ const styles = StyleSheet.create({
   },
   compactInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textWhite,
     height: 48,
     padding: 0,
@@ -835,7 +836,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   discoverSectionTitle: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
+    lineHeight: Theme.typography.h3.lineHeight,
     fontWeight: '700',
     color: Colors.textWhite,
     letterSpacing: -0.2,
@@ -847,7 +849,7 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   filterLabel: {
-    fontSize: 10,
+    fontSize: Theme.typography.micro.fontSize,
     color: Colors.textTertiary,
     marginBottom: 8,
     paddingHorizontal: 20,
@@ -869,7 +871,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accentPrimary,
   },
   chipText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     fontWeight: '500',
   },
@@ -896,7 +898,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.accentPrimary,
   },
   quickChipPillText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '500',
     color: Colors.textSecondary,
   },
@@ -918,7 +920,7 @@ const styles = StyleSheet.create({
   },
   recentItemText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     color: Colors.textWhite,
     fontWeight: '500',
   },
@@ -948,14 +950,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   gameCardTitle: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '700',
     color: Colors.textWhite,
   },
   gameCardDesc: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
-    lineHeight: 16,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ─── Sabit Alt Bar ─────────────────────────────────────────────────────────
@@ -988,8 +990,8 @@ const styles = StyleSheet.create({
   errorBannerText: {
     flex: 1,
     color: Colors.textWhite,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ─── Find Movies butonu ─────────────────────────────────────────────────────
@@ -1016,7 +1018,7 @@ const styles = StyleSheet.create({
   },
   findButtonText: {
     color: Colors.textOnAccent,
-    fontSize: 17,
+    fontSize: Theme.typography.h3.fontSize,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
@@ -1026,7 +1028,7 @@ const styles = StyleSheet.create({
   },
   findButtonQuota: {
     color: 'rgba(255,255,255,0.55)',
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '500',
     letterSpacing: 0.2,
   },

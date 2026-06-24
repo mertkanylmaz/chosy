@@ -33,7 +33,8 @@ export const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionLabel: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
+    lineHeight: Theme.typography.micro.lineHeight,
     color: Colors.textSecondary,
     letterSpacing: 1.2,
     fontWeight: '600',
@@ -47,7 +48,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   filmCountText: {
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
+    lineHeight: Theme.typography.micro.lineHeight,
     color: Colors.accentPrimary,
     fontWeight: '700',
   },
@@ -89,14 +91,15 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   archetypeName: {
-    fontSize: 18,
+    fontSize: Theme.typography.h3.fontSize,
+    lineHeight: Theme.typography.h3.lineHeight,
     fontFamily: 'PlayfairDisplay_700Bold',
     marginBottom: 4,
   },
   archetypeDesc: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ── Kalibrasyon CTA ────────────────────────────────────────────────────────
@@ -115,14 +118,15 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   calibrateTitle: {
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
+    lineHeight: Theme.typography.body.lineHeight,
     color: Colors.textPrimary,
     fontWeight: '600',
   },
   calibrateHint: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     marginTop: 2,
-    lineHeight: 17,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 });

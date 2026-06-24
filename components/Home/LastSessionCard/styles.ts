@@ -18,7 +18,8 @@ export const styles = StyleSheet.create({
 
   // ─── Baslik ────────────────────────────────────────────────────────────────
   titleRow: {
-    fontSize: 15,
+    fontSize: Theme.typography.body.fontSize,
+    lineHeight: Theme.typography.body.lineHeight,
     fontWeight: '600',
     color: Colors.textPrimary,
     marginBottom: Theme.spacing.sm,
@@ -49,7 +50,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   extraCount: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     alignSelf: 'center',
   },
@@ -61,7 +62,7 @@ export const styles = StyleSheet.create({
     marginTop: Theme.spacing.sm,
   },
   ctaText: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '600',
     color: Colors.accentPrimary,
   },

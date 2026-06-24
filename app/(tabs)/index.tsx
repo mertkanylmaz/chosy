@@ -36,6 +36,7 @@ import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { getArchetype } from '@/constants/archetypes';
 import { QUICK_CHIPS, type QuickChip } from '@/constants/quickChips';
@@ -616,7 +617,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroLabel: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
+    lineHeight: Theme.typography.h3.lineHeight,
     fontWeight: '600',
     color: Colors.textPrimary,
     letterSpacing: -0.2,
@@ -628,10 +630,10 @@ const styles = StyleSheet.create({
   },
   heroInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '400',
     color: Colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: Theme.typography.body.lineHeight,
     minHeight: 60,
     maxHeight: 100,
     textAlignVertical: 'top',
@@ -667,7 +669,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.cardBorder,
   },
   quickChipText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
     fontWeight: '500',
     color: Colors.textSecondary,
   },
@@ -683,14 +686,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: Theme.typography.h3.fontSize,
+    lineHeight: Theme.typography.h3.lineHeight,
     fontWeight: '700',
     color: Colors.textPrimary,
     letterSpacing: -0.2,
     paddingHorizontal: 16,
   },
   seeAllText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '600',
     color: Colors.accentPrimary,
   },
@@ -732,10 +736,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   recentText: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '500',
     color: Colors.textSecondary,
-    lineHeight: 18,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ── Daily Film ────────────────────────────────────────────────────────────
@@ -749,7 +753,7 @@ const styles = StyleSheet.create({
   },
   dailyCardOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.75)',
+    backgroundColor: 'rgba(10,10,15,0.75)',
   },
   dailyCardContent: {
     flex: 1,
@@ -761,21 +765,23 @@ const styles = StyleSheet.create({
   dailyPoster: {
     width: 75,
     height: 112,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   dailyMeta: {
     flex: 1,
     gap: 4,
   },
   dailyTitle: {
-    fontSize: 17,
+    fontSize: Theme.typography.h3.fontSize,
     fontFamily: 'PlayfairDisplay_700Bold',
     color: Colors.textPrimary,
-    lineHeight: 22,
+    lineHeight: Theme.typography.h3.lineHeight,
   },
   dailySubtitle: {
-    fontSize: 13,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textSecondary,
     letterSpacing: 0.1,
   },
@@ -789,7 +795,7 @@ const styles = StyleSheet.create({
   },
   matchBadgeText: {
     color: Colors.textOnAccent,
-    fontSize: 11,
+    fontSize: Theme.typography.micro.fontSize,
     fontWeight: '700',
   },
 
@@ -807,6 +813,8 @@ const styles = StyleSheet.create({
     height: 150,
     borderRadius: 12,
     backgroundColor: Colors.bgElevated,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   watchlistPosterEmpty: {
     alignItems: 'center',
@@ -816,7 +824,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   watchlistTitle: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '500',
     color: Colors.textSecondary,
     paddingHorizontal: 2,

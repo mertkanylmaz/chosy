@@ -1,6 +1,7 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -38,14 +39,14 @@ export default StyleSheet.create({
   },
   mysteryTitle: {
     color: Colors.textWhite,
-    fontSize: 26,
+    fontSize: Theme.typography.display.fontSize - 6,
     fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: 0.3,
     marginBottom: 10,
   },
   mysterySubtitle: {
     color: Colors.textGrey,
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
     letterSpacing: 0.3,
   },
 
@@ -89,7 +90,7 @@ export default StyleSheet.create({
   },
   badgeText: {
     color: Colors.background,
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     fontWeight: '800',
     letterSpacing: 0.3,
   },
@@ -115,13 +116,13 @@ export default StyleSheet.create({
   },
   matchScoreText: {
     color: Colors.gold,
-    fontSize: 22,
+    fontSize: Theme.typography.h2.fontSize,
     fontWeight: '900',
     letterSpacing: -0.5,
   },
   matchLabel: {
     color: Colors.goldLight,
-    fontSize: 9,
+    fontSize: Theme.typography.micro.fontSize - 2,
     fontWeight: '700',
     letterSpacing: 0.6,
     marginTop: 1,

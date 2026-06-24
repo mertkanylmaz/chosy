@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 
 interface StaggeredFilmCardProps {
@@ -69,20 +70,23 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 2 / 3,
     borderRadius: 12,
-    backgroundColor: Colors.cardSolid,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   posterPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 14,
+    fontSize: Theme.typography.body.fontSize,
+    lineHeight: Theme.typography.body.lineHeight,
     fontWeight: '700',
     color: Colors.textWhite,
     marginTop: 8,
   },
   meta: {
-    fontSize: 12,
+    fontSize: Theme.typography.caption.fontSize,
     color: Colors.textGrey,
     marginTop: 4,
   },
