@@ -42,9 +42,9 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 
 ## Mimari
 
-- `app/(tabs)/index.tsx` = Home dashboard (GreetingWidget + ArchetypeCard + LastFilmCard + QuickNavGrid)
+- `app/(tabs)/index.tsx` = Home — Mood search + AI processing + result (3 state: input/processing/result)
 - `app/discover.tsx` = Film swipe feed (STACK screen, tab degil)
-- `app/(tabs)/mood.tsx` = Mood input + AI processing + result (3 state: input/processing/result)
+- `app/(tabs)/mood.tsx` = Discover placeholder (gelecek: browse/explore)
 - `app/(tabs)/watchlist.tsx` = Izleme listesi (2x2 grid + grouped view)
 - `app/(tabs)/profile.tsx` = Profil, arketip, stats, settings
 - `app/film/[id].tsx` = Film detay

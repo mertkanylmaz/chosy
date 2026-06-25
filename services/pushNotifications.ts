@@ -408,7 +408,7 @@ export function getDeepLinkFromNotification(
 
   switch (data.screen) {
     case 'mood':
-      return '/(tabs)/mood';
+      return '/(tabs)';
     case 'watchlist':
       return '/(tabs)/watchlist';
     case 'profile':
