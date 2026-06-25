@@ -11,7 +11,7 @@ export default StyleSheet.create({
     bottom: 0,
     left: 0,
     zIndex: 999,
-    backgroundColor: Colors.overlay,
+    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -186,5 +186,40 @@ export default StyleSheet.create({
   stepTextCompleted: {
     color: Colors.success,
     fontWeight: '600',
+  },
+
+  // ─── Timeout / Retry ──────────────────────────────────────────────────────
+
+  /** Timeout alanı — step listesinin altında */
+  timeoutWrap: {
+    marginTop: 32,
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  /** Retry butonu — amber accent */
+  retryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.accentPrimary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+
+  /** Retry buton metni */
+  retryText: {
+    color: Colors.textOnAccent,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  /** Yavaş bağlantı ipucu */
+  timeoutHint: {
+    color: Colors.textTertiary,
+    fontSize: 12,
+    textAlign: 'center',
+    letterSpacing: 0.2,
   },
 });

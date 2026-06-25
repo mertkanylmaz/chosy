@@ -11,13 +11,14 @@
  */
 
 import React, { useCallback, useState } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import * as PhosphorIcons from 'phosphor-react-native';
 
 import { hapticLight, hapticMedium } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -35,7 +36,7 @@ interface QuestionCardProps {
 // ─── Option Button ────────────────────────────────────────────────────────────
 
 interface OptionButtonProps {
-  image: CalibrationQuestion['options'][number]['image'];
+  phosphorIcon: string;
   label: string;
   isSelected: boolean;
   isDisabled: boolean;
@@ -43,9 +44,9 @@ interface OptionButtonProps {
 }
 
 /**
- * Tek bir seçenek butonu — seçim durumuna göre stil değişir.
+ * Tek bir seçenek butonu — Phosphor ikonu + seçim durumuna göre stil değişir.
  */
-function OptionButton({ image, label, isSelected, isDisabled, onPress }: OptionButtonProps) {
+function OptionButton({ phosphorIcon, label, isSelected, isDisabled, onPress }: OptionButtonProps) {
   const iconScale = useSharedValue(1);
   const btnScale = useSharedValue(1);
 
@@ -78,6 +79,10 @@ function OptionButton({ image, label, isSelected, isDisabled, onPress }: OptionB
     transform: [{ scale: iconScale.value }],
   }));
 
+  // Resolve Phosphor icon component by name
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const IconComponent = (PhosphorIcons as any)[phosphorIcon] as React.ComponentType<PhosphorIcons.IconProps> | undefined;
+
   return (
     <Animated.View style={btnAnimStyle}>
       <TouchableOpacity
@@ -89,11 +94,15 @@ function OptionButton({ image, label, isSelected, isDisabled, onPress }: OptionB
           isSelected && styles.optionBtnSelected,
         ]}
       >
-        <Animated.Image
-          source={image}
-          style={[styles.optionImage, iconAnimStyle]}
-          resizeMode="contain"
-        />
+        <Animated.View style={[styles.optionImage, iconAnimStyle]}>
+          {IconComponent && (
+            <IconComponent
+              size={28}
+              color="#E8A838"
+              weight="duotone"
+            />
+          )}
+        </Animated.View>
         <Text style={styles.optionLabel}>{label}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -136,7 +145,7 @@ export function QuestionCard({ question, onAnswer }: QuestionCardProps) {
         {question.options.map((option, index) => (
           <OptionButton
             key={`${question.id}-${index}`}
-            image={option.image}
+            phosphorIcon={option.phosphorIcon}
             label={t(option.labelKey)}
             isSelected={selectedIndex === index}
             isDisabled={selectedIndex !== null}

@@ -146,6 +146,63 @@ export const Colors = {
   aiGlow: 'rgba(232,168,56,0.35)',
 } as const;
 
+// ─── Mood Card Gradient System ──────────────────────────────────────────────
+// Each mood card gets a unique amber-family gradient pair.
+// All tones are derived from the amber base (#E8A838) and harmonize with
+// Colors.background (#0A0A0F). Subtle and dark — never saturated.
+
+export interface MoodCardGradient {
+  /** Two-stop LinearGradient colors (135 deg) */
+  gradient: readonly [string, string];
+  /** Soft radial glow behind the emoji */
+  glow: string;
+  /** Card-specific accent — used for border tint */
+  accent: string;
+}
+
+export const MoodCardGradients: Record<string, MoodCardGradient> = {
+  rainyDay: {
+    gradient: ['#14141A', '#1A2A36'],       // card-dark → blue-grey (cool, rainy)
+    glow: 'rgba(140,170,200,0.12)',
+    accent: '#7A9AB8',
+  },
+  dateNight: {
+    gradient: ['#1A1216', '#3A1620'],       // card-dark → deep burgundy (warm, romantic)
+    glow: 'rgba(216,90,110,0.14)',
+    accent: '#D85A6E',
+  },
+  adrenaline: {
+    gradient: ['#1A1410', '#3A2210'],       // card-dark → burnt orange (fiery)
+    glow: 'rgba(232,130,56,0.15)',
+    accent: '#E88238',
+  },
+  needLaugh: {
+    gradient: ['#1A180E', '#32290E'],       // card-dark → warm yellow-amber (bright)
+    glow: 'rgba(232,200,60,0.14)',
+    accent: '#E8C83C',
+  },
+  mindBending: {
+    gradient: ['#14121E', '#26163A'],       // card-dark → deep purple (mysterious)
+    glow: 'rgba(160,100,220,0.12)',
+    accent: '#A064DC',
+  },
+  nostalgia: {
+    gradient: ['#1A1610', '#302214'],       // card-dark → warm sepia (vintage)
+    glow: 'rgba(200,150,90,0.12)',
+    accent: '#C8965A',
+  },
+  cozyNight: {
+    gradient: ['#1A1610', '#2E1E0E'],       // card-dark → golden-brown (cozy)
+    glow: 'rgba(220,160,70,0.12)',
+    accent: '#DCA046',
+  },
+  emotional: {
+    gradient: ['#12141C', '#162036'],       // card-dark → steel-blue indigo (melancholic)
+    glow: 'rgba(100,130,190,0.12)',
+    accent: '#6482BE',
+  },
+} as const;
+
 // ─── Backward Compatibility ─────────────────────────────────────────────────
 // @react-navigation ThemeProvider expects this shape.
 // New screens should use Colors.xxx directly.

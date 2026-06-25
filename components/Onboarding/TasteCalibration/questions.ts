@@ -2,7 +2,8 @@
  * Taste Calibration — 6 soru tanımı ve TasteProfile mapping yapılandırması.
  *
  * Her soru: senaryo metni (i18n key) ve 3-4 seçenek.
- * Her seçenek: image (custom PNG) + i18n key + TasteProfile üzerindeki etkileri.
+ * Her seçenek: Phosphor icon name + i18n key + TasteProfile üzerindeki etkileri.
+ * PNG fallback: image alanı opsiyonel olarak korunur (kullanılmaz, rollback güvenliği).
  */
 
 import type { ImageSourcePropType } from 'react-native';
@@ -27,8 +28,10 @@ export interface OptionEffect {
 
 /** Tek bir seçeneğin tanımı */
 export interface CalibrationOption {
-  /** Seçenek görseli — custom PNG */
+  /** Seçenek görseli — custom PNG (fallback, artık kullanılmaz) */
   image: ImageSourcePropType;
+  /** Phosphor icon name — QuestionCard bu ikonu render eder */
+  phosphorIcon: string;
   /** i18n key — seçenek metni */
   labelKey: string;
   /** Bu seçenek seçildiğinde TasteProfile'a uygulanacak etkiler */
@@ -65,6 +68,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q1_intensity,
+        phosphorIcon: 'Lightning',
         labelKey: 'onboarding.q1a',
         effect: {
           energy_level: 0.9,
@@ -73,6 +77,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q1_cerebral,
+        phosphorIcon: 'Brain',
         labelKey: 'onboarding.q1b',
         effect: {
           thematic_depth: 0.85,
@@ -81,6 +86,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q1_emotional,
+        phosphorIcon: 'Drop',
         labelKey: 'onboarding.q1c',
         effect: {
           thematic_depth: 0.7,
@@ -89,6 +95,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q1_bright,
+        phosphorIcon: 'SmileyWink',
         labelKey: 'onboarding.q1d',
         effect: {
           energy_level: 0.6,
@@ -105,11 +112,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q2_visual_art,
+        phosphorIcon: 'PaintBrush',
         labelKey: 'onboarding.q2a',
         effect: { visual_style: 'lush' },
       },
       {
         image: CalibrationIcons.q2_old_footage,
+        phosphorIcon: 'FilmStrip',
         labelKey: 'onboarding.q2b',
         effect: {
           visual_style: 'minimalist',
@@ -118,11 +127,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q2_galactic,
+        phosphorIcon: 'Atom',
         labelKey: 'onboarding.q2c',
         effect: { visual_style: 'experimental' },
       },
       {
         image: CalibrationIcons.q2_cinematic,
+        phosphorIcon: 'FilmSlate',
         labelKey: 'onboarding.q2d',
         effect: { visual_style: 'cinematic' },
       },
@@ -136,11 +147,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q3_scifi,
+        phosphorIcon: 'Rocket',
         labelKey: 'onboarding.q3a',
         effect: { pace_preference: 'fast', energy_level: 0.3 },
       },
       {
         image: CalibrationIcons.q3_masks,
+        phosphorIcon: 'MusicNote',
         labelKey: 'onboarding.q3b',
         effect: {
           pace_preference: 'medium',
@@ -149,6 +162,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q3_escape,
+        phosphorIcon: 'Leaf',
         labelKey: 'onboarding.q3c',
         effect: { pace_preference: 'slow', energy_level: -0.2 },
       },
@@ -162,11 +176,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q4_daydream,
+        phosphorIcon: 'Sun',
         labelKey: 'onboarding.q4a',
         effect: { ending_preference: 'hopeful' },
       },
       {
         image: CalibrationIcons.q4_sadness,
+        phosphorIcon: 'HeartBreak',
         labelKey: 'onboarding.q4b',
         effect: {
           ending_preference: 'tragic',
@@ -175,11 +191,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q4_curious,
+        phosphorIcon: 'Question',
         labelKey: 'onboarding.q4c',
         effect: { ending_preference: 'open' },
       },
       {
         image: CalibrationIcons.q4_achievement,
+        phosphorIcon: 'Trophy',
         labelKey: 'onboarding.q4d',
         effect: { ending_preference: 'triumphant' },
       },
@@ -193,21 +211,25 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q5_soundtrack,
+        phosphorIcon: 'Headphones',
         labelKey: 'onboarding.q5a',
         effect: { social_context: 'alone' },
       },
       {
         image: CalibrationIcons.q5_relationships,
+        phosphorIcon: 'Heart',
         labelKey: 'onboarding.q5b',
         effect: { social_context: 'couple' },
       },
       {
         image: CalibrationIcons.q5_casual,
+        phosphorIcon: 'UsersThree',
         labelKey: 'onboarding.q5c',
         effect: { social_context: 'friends' },
       },
       {
         image: CalibrationIcons.q5_cozy,
+        phosphorIcon: 'House',
         labelKey: 'onboarding.q5d',
         effect: { social_context: 'family' },
       },
@@ -221,6 +243,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
     options: [
       {
         image: CalibrationIcons.q6_social,
+        phosphorIcon: 'ChatCircle',
         labelKey: 'onboarding.q6a',
         effect: {
           narrative_style: 'dialogue-driven',
@@ -229,6 +252,7 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q6_randomize,
+        phosphorIcon: 'Shuffle',
         labelKey: 'onboarding.q6b',
         effect: {
           narrative_style: 'nonlinear',
@@ -237,11 +261,13 @@ export const CALIBRATION_QUESTIONS: readonly CalibrationQuestion[] = [
       },
       {
         image: CalibrationIcons.q6_continue,
+        phosphorIcon: 'ArrowRight',
         labelKey: 'onboarding.q6c',
         effect: { narrative_style: 'linear' },
       },
       {
         image: CalibrationIcons.q6_backstory,
+        phosphorIcon: 'BookOpen',
         labelKey: 'onboarding.q6d',
         effect: { narrative_style: 'anthology' },
       },

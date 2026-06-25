@@ -13,6 +13,7 @@ import {
   Dimensions,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -252,9 +253,9 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
           </Animated.View>
         )}
 
-        {/* Active card */}
+        {/* Active card — zIndex:2 ensures it sits above backCard for touch */}
         <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.card, cardAnimatedStyle]}>
+          <Animated.View style={[styles.card, styles.activeCard, cardAnimatedStyle]}>
             <Image
               source={{ uri: `${TMDB_IMAGE_BASE}${currentFilm.posterPath}` }}
               style={styles.poster}
@@ -287,16 +288,32 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
         </GestureDetector>
       </View>
 
-      {/* Hint */}
+      {/* Action buttons — fallback for swipe + visual hint */}
       <View style={styles.hintRow}>
-        <View style={styles.hintItem}>
-          <Ionicons name="arrow-back" size={16} color={Colors.error} />
-          <Text style={styles.hintText}>{t('onboarding.tasteSwipeSkip')}</Text>
-        </View>
-        <View style={styles.hintItem}>
-          <Text style={styles.hintText}>{t('onboarding.tasteSwipeLike')}</Text>
-          <Ionicons name="arrow-forward" size={16} color={Colors.success} />
-        </View>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          activeOpacity={0.7}
+          onPress={() => {
+            translateX.value = withTiming(-EXIT_DISTANCE, { duration: 250 }, () => {
+              runOnJS(onSwipeDone)('left');
+            });
+          }}
+        >
+          <Ionicons name="close-circle" size={32} color={Colors.error} />
+          <Text style={[styles.hintText, { color: Colors.error }]}>{t('onboarding.tasteSwipeSkip')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          activeOpacity={0.7}
+          onPress={() => {
+            translateX.value = withTiming(EXIT_DISTANCE, { duration: 250 }, () => {
+              runOnJS(onSwipeDone)('right');
+            });
+          }}
+        >
+          <Ionicons name="heart-circle" size={32} color={Colors.success} />
+          <Text style={[styles.hintText, { color: Colors.success }]}>{t('onboarding.tasteSwipeLike')}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -375,8 +392,11 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 10,
   },
+  activeCard: {
+    zIndex: 2,
+  },
   backCard: {
-    zIndex: 1,
+    zIndex: 0,
   },
   poster: {
     width: '100%',
@@ -436,15 +456,17 @@ const styles = StyleSheet.create({
   // Hint
   hintRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     width: CARD_WIDTH,
-    marginTop: 16,
-    paddingHorizontal: 8,
+    marginTop: 20,
+    gap: 48,
   },
-  hintItem: {
-    flexDirection: 'row',
+  actionBtn: {
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   hintText: {
     color: Colors.textLightGrey,

@@ -56,6 +56,8 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     marginRight: Theme.spacing.sm,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 
   optionLabel: {

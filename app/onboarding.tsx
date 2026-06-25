@@ -272,7 +272,7 @@ export default function OnboardingScreen() {
   const finishOnboarding = useCallback(async () => {
     hapticSuccess();
     await markOnboardingComplete();
-    router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
+    router.replace({ pathname: '/(tabs)', params: { onboarding: '1' } } as never);
   }, [router, markOnboardingComplete]);
 
   /**
@@ -394,7 +394,7 @@ export default function OnboardingScreen() {
   /** Navigate to mood tab after referral prompt is dismissed (or immediately if already shown) */
   useEffect(() => {
     if (pendingNavigate && !referralPrompt.visible) {
-      router.replace({ pathname: '/(tabs)/mood', params: { onboarding: '1' } } as never);
+      router.replace({ pathname: '/(tabs)', params: { onboarding: '1' } } as never);
     }
   }, [pendingNavigate, referralPrompt.visible, router]);
 

@@ -1,19 +1,19 @@
 /**
  * Tab navigasyon layout'u — Premium Bumble tab bar.
  *
- * Sıra: Feed (Home) → Discover (Compass) → Profile (Person)
+ * Sıra: Home (Sparkle) → Discover (Compass) → Profile (User)
  *
- * Aktif tab: filled ikon (violet) + label (11px bold) + dot + bounce
- * Pasif tab: outline ikon (zinc-500) + label yok
+ * İkon kütüphanesi: Phosphor (duotone weight) — marka anı ikonları.
+ * Aktif tab: duotone weight, accentPrimary renk + label (11px bold) + dot + bounce
+ * Pasif tab: regular weight, tabInactive renk + label yok
  *
- * UX Redesign v2: 4→3 tab. Watchlist tab kaldırıldı (Profile'a taşındı).
- * Mood tab "Discover" olarak yeniden adlandırıldı. watchlist.tsx dosyası
- * dizinde kalıyor ama href:null ile router'dan gizleniyor.
+ * UX Redesign v3: Home tab = Mood search (eski mood.tsx icerigi index.tsx'e tasindi).
+ * Discover tab = placeholder (gelecek: browse/explore). Watchlist tab gizli.
  */
 import React, { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import { Sparkle, Compass, User, type IconWeight } from 'phosphor-react-native';
 
 import Animated, {
   useSharedValue,
@@ -29,9 +29,9 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { BOUNCE_CONFIG, SPRING_CONFIG, FAST_TIMING } from '@/constants/animations';
 
-// ─── Ionicons tip yardımcısı ─────────────────────────────────────────────────
+// ─── Phosphor ikon boyutu (tab bar standart) ────────────────────────────────
 
-type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
+const TAB_ICON_SIZE = 24;
 
 // ─── Animated Tab Icon ────────────────────────────────────────────────────────
 
@@ -82,26 +82,32 @@ function AnimatedTabIcon({ focused, children }: AnimatedTabIconProps) {
   );
 }
 
-// ─── Tab Icon Renderer ───────────────────────────────────────────────────────
+// ─── Phosphor Tab Icon Renderer ─────────────────────────────────────────────
+
+/** Phosphor ikon bileşen tipi (Sparkle, Compass, User vb.) */
+type PhosphorIcon = React.ComponentType<{
+  size?: number;
+  color?: string;
+  weight?: IconWeight;
+}>;
 
 /**
- * Outline/filled ikon seçimi — focused durumuna göre.
+ * Phosphor duotone/regular ikon seçimi — focused durumuna göre.
+ * Aktif: duotone weight (dolgu + kontur), pasif: regular weight (sadece kontur).
  */
 function TabIcon({
   focused,
-  filledName,
-  outlineName,
+  Icon,
 }: {
   focused: boolean;
-  filledName: IoniconsName;
-  outlineName: IoniconsName;
+  Icon: PhosphorIcon;
 }) {
   return (
     <AnimatedTabIcon focused={focused}>
-      <Ionicons
-        name={focused ? filledName : outlineName}
-        size={24}
+      <Icon
+        size={TAB_ICON_SIZE}
         color={focused ? Colors.accentPrimary : Colors.tabInactive}
+        weight={focused ? 'duotone' : 'regular'}
       />
     </AnimatedTabIcon>
   );
@@ -111,9 +117,9 @@ function TabIcon({
 
 /**
  * Tab navigasyon layout'u.
- * Sıra: Feed (Home) → Discover (eski Mood) → Profile
+ * Sıra: Home (Mood Search) → Discover (placeholder) → Profile
  *
- * UX Redesign: Watchlist tab kaldırıldı, Mood "Discover" olarak yeniden adlandırıldı.
+ * UX Redesign v3: Home tab = Mood search. Discover = gelecek browse/explore.
  */
 export default function TabLayout() {
   const { t } = useLanguage();
@@ -132,7 +138,7 @@ export default function TabLayout() {
         headerTintColor: Colors.textWhite,
         headerTitleStyle: { fontFamily: 'PlayfairDisplay_700Bold' },
       }}>
-      {/* 1 — Home: dashboard (kendi floating header'ı var — nav header gizle) */}
+      {/* 1 — Home: Mood search + AI processing (kendi floating header'ı var — nav header gizle) */}
       <Tabs.Screen
         name="index"
         options={{
@@ -141,11 +147,11 @@ export default function TabLayout() {
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.home')}</Text> : null,
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} filledName="home" outlineName="home-outline" />
+            <TabIcon focused={focused} Icon={Sparkle} />
           ),
         }}
       />
-      {/* 2 — Discover (eski Mood): Duygu girişi + AI keşif (kendi başlığı var — nav header gizle) */}
+      {/* 2 — Discover: Browse/explore placeholder (gelecekte film kesfet icerigi) */}
       <Tabs.Screen
         name="mood"
         options={{
@@ -154,7 +160,7 @@ export default function TabLayout() {
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} filledName="compass" outlineName="compass-outline" />
+            <TabIcon focused={focused} Icon={Compass} />
           ),
         }}
       />
@@ -167,7 +173,7 @@ export default function TabLayout() {
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.profile')}</Text> : null,
           tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} filledName="person" outlineName="person-outline" />
+            <TabIcon focused={focused} Icon={User} />
           ),
         }}
       />

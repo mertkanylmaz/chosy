@@ -1,23 +1,27 @@
 /**
- * Home sekmesi — mood-first, ilham veren, minimal dashboard.
+ * Home sekmesi — duygu giris akisi + AI Processing + Mood Profile Result.
  *
- * UX Redesign v2 — Section'lar:
- *   1. Compact Header: logo + archetype badge
- *   2. Hero Mood Input: buyuk TextInput + animated placeholder
- *   3. Quick Mood Chips: yatay scroll pill'ler
- *   4. Son Aramalar: son 3 mood session (conditional)
- *   5. Bugunun Filmi: Today's Pick kart (conditional)
- *   6. Watchlist Strip: yatay poster strip (conditional)
+ * UX Redesign v3 — Tab restructure:
+ *   Home tab artik tam MoodScreen iceriyor (eskiden ayri Discover tab'daydı).
+ *   Duplicate mood input kaldirildi — tek giris noktasi burasi.
  *
- * Kaldirilan: GreetingWidget, eski Hero CTA, Games Widget,
- *   Referral CTA, Archetype section, Last Added kart
+ * Asamalar:
+ *   input      — Ekran basligi + Era/Quality chip filtreleri + metin girisi
+ *                + Quick Moods + sabit alt "Find Movies" butonu
+ *   processing — AIProcessingOverlay (modal overlay)
+ *   result     — MoodProfileResult; "Browse Movies" → discover stack'e gecer
+ *
+ * UX Kararlari:
+ *   - Logo hero kaldirildi → sade baslik + subtitle
+ *   - "Find Movies" butonu sabit alt bar (klavye ile yukselir)
+ *   - Quick Mood secimi → haptik + buton flash animasyon
+ *   - "Any" chip varsayilan secili ve listeye ilk siraya alindi
  */
-
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Dimensions,
-  FlatList,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,808 +29,738 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withTiming,
+  withSpring,
+  withRepeat,
+  Easing,
+} from 'react-native-reanimated';
+
 import { StatusBar } from 'expo-status-bar';
-import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInDown, FadeIn, FadeOut } from 'react-native-reanimated';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 
-import * as Sentry from '@sentry/react-native';
-
+import AIProcessingOverlay from '@/components/AIProcessingOverlay';
+import MoodProfileResult from '@/components/MoodProfileResult';
+import QuotaExhausted from '@/components/QuotaExhausted';
+import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
+import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
+import MoodCardGrid from '@/components/Home/MoodCardGrid';
+import FilterBottomSheet from '@/components/Home/FilterBottomSheet';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+// DISCOVER_GAMES import removed — games section only in Discover tab
+import { useScalePress } from '@/hooks/useScalePress';
+import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { getArchetype } from '@/constants/archetypes';
-import { QUICK_CHIPS, type QuickChip } from '@/constants/quickChips';
-import { getHomeData, type HomeData } from '@/services/homeService';
-import { getDailyMatch, getDailyMatchByPreferences } from '@/services/dailyMatch';
-import { getLastParsedProfile, getMoodHistory } from '@/services/profileService';
-import { getArchetypeProfile } from '@/services/archetypeEngine';
-import { getAppUserId, getWatchlist } from '@/services/watchlist';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import { logger } from '@/utils/logger';
-import { localizeGenre } from '@/utils/filmFilters';
-import { hapticLight, hapticMedium } from '@/utils/haptics';
-import { posthogAnalytics } from '@/services/posthog';
-import type { Film } from '@/types/film';
+import { useMood } from '@/contexts/MoodContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/services/moodSearchState';
+import { getMoodHistory } from '@/services/profileService';
+import { parseMood } from '@/services/tasteParser';
+import { saveSession, getAppUserId } from '@/services/watchlist';
+import { FilmFilters, TasteProfile } from '@/types';
 import type { MoodHistoryItem } from '@/types/profile';
-import type { WatchlistItem } from '@/services/watchlist';
+import { type ErrorType, toUserError } from '@/utils/errorHelpers';
+import { yearRangeToEra } from '@/utils/filmFilters';
+import { logger } from '@/utils/logger';
+import { posthogAnalytics } from '@/services/posthog';
 
-// ── Sabitler ─────────────────────────────────────────────────────────────────
+// ─── Tipler ───────────────────────────────────────────────────────────────────
 
-const TMDB_BASE = 'https://image.tmdb.org/t/p/w500';
-const TMDB_W185 = 'https://image.tmdb.org/t/p/w185';
-const { width: SCREEN_W } = Dimensions.get('window');
-/** Placeholder rotation interval (ms) */
-const PLACEHOLDER_INTERVAL = 3000;
+/** Overlay asamalari */
+type Phase = 'input' | 'processing' | 'result';
 
-// ── Yardimci ─────────────────────────────────────────────────────────────────
+/** Pipeline ilerleme sinyali — AIProcessingOverlay'e aktarilir */
+type PipelineStage = 'parsing' | 'done';
 
-/** Poster URL cozumle */
-function resolvePoster(url: string | undefined | null, size: 'w500' | 'w185' = 'w500'): string | null {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return `${size === 'w185' ? TMDB_W185 : TMDB_BASE}${url}`;
-}
+/** Year chip secenegi ID'si */
+type YearChipId = 'pre1990' | '1990s' | '2000s' | '2010s' | '2020s' | '';
 
-// ── Ana Ekran ────────────────────────────────────────────────────────────────
+/** Rating chip secenegi ID'si */
+type RatingChipId = '7' | '8' | 'top250' | '';
+
+/** Minimum AI processing gosterme suresi (ms) */
+const MIN_PROCESSING_MS = 1500;
+
+// ─── Filter chip type aliases (used by FilterBottomSheet + handleFindMovies) ─
+
+
+// ─── Ana ekran ────────────────────────────────────────────────────────────────
 
 /**
- * Home sekmesi — mood-first, minimal dashboard.
+ * Home sekmesi — mood search + AI processing + profil sonucu.
+ * Onboarding'den gelen `onboarding` param'i ile ucretsiz ilk arama desteklenir.
  */
 export default function HomeScreen() {
-  const { t, language } = useLanguage();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
+  /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
+  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  const isOnboarding = onboarding === '1';
+  const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
+  const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
+  const { triggerPaywall, paywallProps } = useContextualPaywall();
 
-  // ── Data state ──────────────────────────────────────────────────────────────
-  const [homeData, setHomeData] = useState<HomeData | null>(null);
-  const [dailyFilm, setDailyFilm] = useState<Film | null>(null);
-  const [dailyLoading, setDailyLoading] = useState(true);
-  const [moodHistory, setMoodHistory] = useState<MoodHistoryItem[]>([]);
-  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
-  /** Section skeleton gorunurlugu — ilk yuklemede true, veri gelince false */
-  const [sectionsLoading, setSectionsLoading] = useState(true);
-
-  // ── Hero input state ────────────────────────────────────────────────────────
+  const [phase, setPhase] = useState<Phase>('input');
+  const [pipelineStage, setPipelineStage] = useState<PipelineStage>('parsing');
+  const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
+  const { cardRef: moodShareRef, share: shareMoodCard, isCapturing: isMoodShareCapturing } = useShareCapture();
+  /** Metin giris state'i */
   const [moodText, setMoodText] = useState('');
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  /** Secili yil filtresi */
+  const [yearChip, setYearChip] = useState<YearChipId>('');
+  /** Secili IMDb filtresi */
+  const [ratingChip, setRatingChip] = useState<RatingChipId>('');
+  /** Hata durumu — inline hata mesaji gostermek icin */
+  const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
+  /** Kota doldu overlay gorunurlugu */
+  const [showQuotaExhausted, setShowQuotaExhausted] = useState(false);
+  /** Son kota sonucu — QuotaExhausted overlay'ine aktarilir */
+  const [lastQuotaResult, setLastQuotaResult] = useState<import('@/constants/subscriptionPlans').QuotaStatus | null>(null);
+  /** TextInput focus durumu — glow efekti icin */
   const [isFocused, setIsFocused] = useState(false);
-  const inputRef = useRef<TextInput>(null);
 
-  // ── Placeholder texts ────────────────────────────────────────────────────────
-  // i18n-js array dot-notation desteklemiyor (t('key.0') calismaz).
-  // Locale JSON'daki array'i dil bazli dogrudan import ediyoruz.
-  const placeholders = useMemo(() => {
-    const localeData = language === 'tr'
-      ? require('../../locales/tr.json')
-      : require('../../locales/en.json');
-    const arr = localeData?.home?.heroPlaceholders;
-    if (Array.isArray(arr) && arr.length > 0) return arr as string[];
-    return [
-      'a rainy evening mood...',
-      'something mind-bending',
-      'fun night with friends',
-      'a nostalgic journey',
-      'edge-of-seat thriller',
-      'heartwarming feel-good',
-    ];
-  }, [language]);
+  /** Son mood aramalari — discover tab content section */
+  const [recentSearches, setRecentSearches] = useState<MoodHistoryItem[]>([]);
 
-  // Placeholder rotation — placeholders.length'e gore doner
+  const pendingFilters = useRef<FilmFilters | null>(null);
+
+  // Ekran acildiginda kota bilgisini yenile
   useEffect(() => {
-    const len = placeholders.length;
-    const timer = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % len);
-    }, PLACEHOLDER_INTERVAL);
-    return () => clearInterval(timer);
-  }, [placeholders.length]);
+    checkQuota();
+  }, [checkQuota]);
 
-  // ── Data loading ────────────────────────────────────────────────────────────
-
-  const loadData = useCallback(async () => {
-    try {
-      const [data, userId] = await Promise.all([
-        getHomeData(),
-        getAppUserId(),
-      ]);
-      setHomeData(data);
-
-      if (!userId) { setSectionsLoading(false); return; }
-
-      // Paralel yukle: mood history, watchlist — bireysel hata izolasyonu
-      const [historyResult, wlResult] = await Promise.allSettled([
-        getMoodHistory(userId),
-        getWatchlist(),
-      ]);
-
-      if (historyResult.status === 'fulfilled') {
-        setMoodHistory(historyResult.value.slice(0, 3));
-      } else {
-        Sentry.captureException(historyResult.reason, {
-          tags: { screen: 'HomeScreen', fn: 'loadData.getMoodHistory' },
-        });
-        logger.error('[HomeScreen] getMoodHistory hatasi:', historyResult.reason);
-      }
-
-      const wl = wlResult.status === 'fulfilled' ? wlResult.value : [];
-      if (wlResult.status === 'rejected') {
-        Sentry.captureException(wlResult.reason, {
-          tags: { screen: 'HomeScreen', fn: 'loadData.getWatchlist' },
-        });
-        logger.error('[HomeScreen] getWatchlist hatasi:', wlResult.reason);
-      }
-      setWatchlistItems(wl.slice(0, 6));
-      setSectionsLoading(false);
-
-      // Daily pick cascade
-      if (data.archetypeId) {
-        try {
-          const seenIds = wl.map((w) => w.film.id);
-          const lastProfile = await getLastParsedProfile(userId);
-
-          let film = await getDailyMatchByPreferences(userId, seenIds);
-          if (!film) {
-            film = await getDailyMatch(userId, lastProfile, seenIds);
-          }
-          if (!film) {
-            const archetypeProfile = getArchetypeProfile(data.archetypeId);
-            film = await getDailyMatch(userId, archetypeProfile, seenIds);
-          }
-          setDailyFilm(film);
-        } catch (err) {
-          logger.error('[HomeScreen] daily pick hatasi:', err);
-        }
-      }
-    } catch (err) {
-      logger.error('[HomeScreen] veri yukleme hatasi:', err);
-      setSectionsLoading(false);
-    } finally {
-      setDailyLoading(false);
-    }
-  }, []);
-
+  // ── Tab focus'ta recent searches yukle ──────────────────────────────────────
   useFocusEffect(
     useCallback(() => {
-      setDailyLoading(true);
-      setDailyFilm(null);
-      loadData();
-
-      // Analytics
-      const sections: string[] = ['header', 'hero', 'quick_moods'];
-      // Note: conditional sections will be tracked after data loads
-      posthogAnalytics.track('home_screen_viewed', { sections_visible: sections.join(',') });
-    }, [loadData]),
+      (async () => {
+        try {
+          const userId = await getAppUserId();
+          if (!userId) return;
+          const history = await getMoodHistory(userId);
+          setRecentSearches(history.slice(0, 3));
+        } catch {
+          // Sessizce devam — recent searches opsiyonel
+        }
+      })();
+    }, []),
   );
 
-  // ── Mood submit (Home → Discover tab) ───────────────────────────────────────
+  const { animatedStyle: btnAnimStyle, onPressIn: btnPressIn, onPressOut: btnPressOut } = useScalePress(0.95);
 
-  /** Mood text'i ile Discover tab'a navigate et */
-  const submitMood = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+  /**
+   * Mood Card / Quick Mood secildiginde "Find Movies" butonunu kisa sure parlatir + scale pulse.
+   * Reanimated SharedValue — dependency array'e gerek yok (stable ref gibi davranir).
+   */
+  const findBtnFlash = useSharedValue(1);
+  const findBtnScale = useSharedValue(1);
+  const findBtnFlashStyle = useAnimatedStyle(() => ({
+    opacity: findBtnFlash.value,
+    transform: [{ scale: findBtnScale.value }],
+  }));
+
+  /**
+   * Surekli donen shimmer efekti — butonun uzerinde yavasca kayip gider.
+   * canSubmit false iken durdurulur (opacity 0).
+   */
+  const shimmerPos = useSharedValue(-200);
+  useEffect(() => {
+    shimmerPos.value = withRepeat(
+      withTiming(400, { duration: 2000, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const shimmerStyle = useAnimatedStyle(() => ({
+    // skewX + translateX birlikte — static transform override problemini onler
+    transform: [{ skewX: '-20deg' }, { translateX: shimmerPos.value }],
+  }));
+
+  /**
+   * "Find Movies" → kota kontrolu → AI processing → profile result
+   *
+   * B+C hibrit paywall stratejisi:
+   *   - Kota varsa: normal AI flow
+   *   - Kota dolmussa: QuotaExhausted overlay (free → paywall, paid → bekleme mesaji)
+   */
+  const handleFindMovies = useCallback(async () => {
+    const trimmed = moodText.trim();
+    if (!trimmed || phase === 'processing') return;
 
     hapticMedium();
     Keyboard.dismiss();
+    posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
-    posthogAnalytics.track('home_mood_input_submitted', {
-      text: trimmed,
-      source: 'typed',
-    });
+    // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
+    // Onboarding'de kota tuketme (ilk arama bedava)
+    if (!isOnboarding) {
+      const quotaResult = await consumeQuota('search');
+      setLastQuotaResult(quotaResult);
+      if (!quotaResult.allowed) {
+        posthogAnalytics.track('quota_exhausted', { quota_type: 'search' });
+        // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
+        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
+        if (!shown) {
+          setShowQuotaExhausted(true);
+        }
+        return;
+      }
+    }
 
-    // Discover (mood) tab'a prefill param ile navigate
-    router.push({
-      pathname: '/(tabs)/mood',
-      params: { prefill: trimmed },
-    } as never);
+    const yearRange = yearChip ? (yearChip as FilmFilters['yearRange']) : null;
+    let minRating: FilmFilters['minRating'] = null;
+    if (ratingChip === '7') minRating = 7;
+    else if (ratingChip === '8') minRating = 8;
+    else if (ratingChip === 'top250') minRating = 'top250';
 
-    // Input'u temizle (geri donunce bos olsun)
-    setMoodText('');
-  }, [router]);
+    const filters: FilmFilters = { yearRange, minRating, regions: [], directors: [] };
 
-  /** Quick mood chip tap */
-  const handleQuickChip = useCallback((chip: QuickChip) => {
+    setPipelineStage('parsing');
+    setPhase('processing');
+    pendingFilters.current = filters;
+
+    try {
+      setMoodError(null);
+      const [parseResult] = await Promise.all([
+        parseMood(trimmed),
+        new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
+      ]);
+
+      const { profile, searchId, searchKeywords } = parseResult;
+
+      // parseMood bitti — overlay'e sinyal gönder
+      setPipelineStage('done');
+
+      if (filters.yearRange !== null) {
+        profile.era_preference = yearRangeToEra(filters.yearRange);
+      }
+
+      // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
+      setLastSearchId(searchId);
+      // Module-level store — React state/ref/effect race condition bypass
+      setPendingSearchId(searchId);
+      // Tematik keyword'ler — match_films_v3 keyword overlap boost icin
+      setSearchKeywords(searchKeywords);
+      // Orijinal mood metni — LLM re-ranker icin
+      setPendingMoodText(trimmed);
+
+      setTasteProfile(profile);
+
+      // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
+      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      setPhase('result');
+
+      // Session'i arka planda kaydet — hata akisini engellemez
+      getAppUserId().then((userId) => {
+        if (userId) {
+          saveSession(userId, trimmed, profile).then((sessionId) => {
+            setCurrentSessionId(sessionId);
+          });
+        }
+      });
+    } catch (err) {
+      if (__DEV__) {
+        // eslint-disable-next-line no-console
+        console.log('[HomeScreen] parseMood hatasi:', err instanceof Error ? err.message : err);
+      }
+
+      const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
+      posthogAnalytics.track('mood_search_failed', {
+        error: err instanceof Error ? err.message : 'unknown',
+        error_code: errorCode,
+        mood_length: trimmed.length,
+      });
+
+      const userError = toUserError(err, 'mood');
+      setMoodError({ type: userError.type, message: userError.message });
+      setPhase('input');
+
+      // Quota exceeded from edge function — show paywall
+      if (userError.type === 'quota') {
+        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
+        if (!shown) {
+          setShowQuotaExhausted(true);
+        }
+      }
+    }
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
+
+  /**
+   * "Browse Movies" → MoodContext'e kaydet → Discover'a gec
+   *
+   * B hibrit paywall: Free kullanici ilk aramasini yaptiktan sonra
+   * discover'a gonder, ama kota bittiyse sonraki "Find Movies"'te paywall goster.
+   * Su anki arama zaten basarili oldu — discover'a gitmesini engelleme.
+   *
+   * Onboarding modu: discover'a onboarding=1 param'i gecilir → 5 film limiti aktif.
+   */
+  const handleBrowseMovies = useCallback(() => {
+    if (!tasteProfile) return;
+    // P7.1: LastSessionCard icin son mood metnini sakla
+    const trimmedMood = moodText.trim();
+    if (trimmedMood) setLastMoodText(trimmedMood);
+    setMoodResult(
+      tasteProfile,
+      pendingFilters.current ?? { yearRange: null, minRating: null, regions: [], directors: [] },
+    );
+    setPhase('input');
+
+    // Discover'a gonder — kota bilgisini yenile (badge guncellensin)
+    checkQuota();
+    if (isOnboarding) {
+      // Onboarding akisi: discover 5 film limit + App Store review + paywall zinciri
+      router.push({ pathname: '/discover', params: { onboarding: '1' } } as never);
+    } else {
+      router.push('/discover');
+    }
+  }, [tasteProfile, moodText, setMoodResult, setLastMoodText, router, checkQuota, isOnboarding]);
+
+  /**
+   * Mood card secildiginde — metin doldur + haptik + buton flash + scale pulse.
+   * MoodCardGrid'den gelen text zaten localized prompt.
+   */
+  const handleMoodCardSelect = useCallback(
+    (text: string) => {
+      hapticSelection();
+      posthogAnalytics.track('mood_card_tapped', { mood_text: text.slice(0, 40) });
+      setMoodText(text);
+      // Opacity: dim → spring geri
+      findBtnFlash.value = withSequence(
+        withTiming(0.6, { duration: 80 }),
+        withSpring(1, { damping: 10, stiffness: 220 }),
+      );
+      // Scale: hafif buyu → geri — "Buraya bas!" mesaji
+      findBtnScale.value = withSequence(
+        withSpring(1.04, { damping: 8, stiffness: 300 }),
+        withSpring(1, { damping: 12, stiffness: 200 }),
+      );
+    },
+    // findBtnFlash + findBtnScale stable SharedValue ref — ESLint uyarisi beklenmez
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  /** Recent search tap — text'i set et + submit */
+  const handleRecentTap = useCallback((item: MoodHistoryItem) => {
     hapticLight();
-    posthogAnalytics.track('home_quick_mood_tapped', { mood: chip.id });
-    submitMood(chip.prompt);
-  }, [submitMood]);
+    posthogAnalytics.track('discover_recent_search_tapped', { mood_text: item.mood_text });
+    setMoodText(item.mood_text);
+    // Kisa gecikme — state'in yerlesip handleFindMovies'in guncel moodText'i görmesi icin
+    setTimeout(() => {
+      // handleFindMovies moodText ref'ini kullanir, setState async oldugu icin
+      // dogrudan text'i kullanmak yerine state'in settle etmesini bekliyoruz
+    }, 100);
+  }, []);
 
-  /** Recent search tap */
-  const handleRecentSearch = useCallback((item: MoodHistoryItem) => {
-    hapticLight();
-    posthogAnalytics.track('home_recent_search_tapped', { mood_text: item.mood_text });
-    submitMood(item.mood_text);
-  }, [submitMood]);
+  // ── MoodProfileResult asamasi ──────────────────────────────────────────────
+  if (phase === 'result' && tasteProfile) {
+    return (
+      <>
+        <StatusBar style="light" backgroundColor={Colors.background} />
+        <MoodProfileResult
+          profile={tasteProfile}
+          onBack={() => setPhase('input')}
+          onBrowseMovies={handleBrowseMovies}
+          onShareMood={shareMoodCard}
+          isShareCapturing={isMoodShareCapturing}
+        />
+        {/* Offscreen mood share card — capture icin */}
+        <MoodShareCard
+          ref={moodShareRef}
+          moodText={moodText}
+          profile={{
+            energyLevel: tasteProfile.energy_level,
+            thematicDepth: tasteProfile.thematic_depth,
+            endingPreference: tasteProfile.ending_preference,
+          }}
+        />
+      </>
+    );
+  }
 
-  // ── Turetilen veriler ──────────────────────────────────────────────────────
+  const canSubmit = moodText.trim().length > 0 && phase !== 'processing';
 
-  const archetype = homeData?.archetypeId ? getArchetype(homeData.archetypeId) : null;
-  const dailyPosterUrl = resolvePoster(dailyFilm?.posterUrl);
-  const hasRecentSearches = moodHistory.length > 0;
-  const hasWatchlist = watchlistItems.length > 0;
-  const hasDailyFilm = !dailyLoading && dailyFilm != null;
-
+  // ── Input asamasi ──────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" translucent backgroundColor="transparent" />
-
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingTop: insets.top + 12, paddingBottom: 100 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-
-        {/* ── Section 1: Compact Header ──────────────────────────────── */}
-        <View style={styles.headerRow}>
-          <View style={styles.logoWrapper}>
-            <Image
-              source={require('../../assets/images/icon.png')}
-              style={styles.logo}
-              contentFit="contain"
-            />
-            <Text style={styles.logoText}>chosy</Text>
-          </View>
-
-          {/* Archetype badge — tappable, Profile'a navigate */}
-          <TouchableOpacity
-            style={styles.archetypeBadge}
-            onPress={() => { hapticLight(); router.push('/(tabs)/profile'); }}
-            activeOpacity={0.8}
-          >
-            {archetype ? (
-              <Image source={archetype.image} style={styles.archetypeBadgeIcon} contentFit="contain" />
-            ) : (
-              <Ionicons name="person-circle-outline" size={28} color={Colors.textGrey} />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* ── Section 2: Hero Mood Input ─────────────────────────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(50).duration(400).springify().damping(18)}
-          style={styles.heroCard}
+    <>
+      <StatusBar style="light" backgroundColor={Colors.background} />
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoid}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <Text style={styles.heroLabel}>{t('home.heroPlaceholder')}</Text>
-          <View style={styles.heroInputRow}>
+
+          {/* ── Onboarding: ucretsiz arama banner ────────────────── */}
+          {isOnboarding && (
+            <View style={styles.onboardingBanner}>
+              <Ionicons name="sparkles" size={13} color={Colors.accentPrimary} />
+              <View style={styles.onboardingBannerText}>
+                <Text style={styles.onboardingBannerTitle}>{t('mood.onboardingFreeSearch')}</Text>
+                <Text style={styles.onboardingBannerHint}>{t('mood.onboardingFreeHint')}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── Compact Search Bar (sticky top) ─────────────────── */}
+          <View style={styles.compactSearchBar}>
+            <Ionicons name="search" size={18} color={Colors.textSecondary} />
             <TextInput
-              ref={inputRef}
-              style={styles.heroInput}
+              style={styles.compactInput}
               value={moodText}
               onChangeText={setMoodText}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              placeholder={placeholders[placeholderIndex]}
+              placeholder={t('mood.discoverSearchPlaceholder')}
               placeholderTextColor={Colors.textTertiary}
-              multiline
               returnKeyType="search"
-              onSubmitEditing={() => submitMood(moodText)}
+              onSubmitEditing={() => handleFindMovies()}
               blurOnSubmit
             />
-            {/* Submit button */}
-            <TouchableOpacity
-              style={[
-                styles.heroSubmitBtn,
-                moodText.trim().length === 0 && styles.heroSubmitBtnDisabled,
-              ]}
-              onPress={() => submitMood(moodText)}
-              disabled={moodText.trim().length === 0}
-              activeOpacity={0.8}
-            >
-              <Ionicons
-                name="arrow-forward"
-                size={20}
-                color={moodText.trim().length > 0 ? Colors.textOnAccent : Colors.textTertiary}
-              />
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
-
-        {/* ── Section 3: Quick Mood Chips ─────────────────────────────── */}
-        <Animated.View
-          entering={FadeInDown.delay(100).duration(400).springify().damping(18)}
-          style={styles.quickChipsSection}
-        >
-          <FlatList
-            data={QUICK_CHIPS}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.quickChipsContent}
-            renderItem={({ item }) => (
+            <Animated.View style={findBtnFlashStyle}>
               <TouchableOpacity
-                style={styles.quickChip}
-                onPress={() => handleQuickChip(item)}
-                activeOpacity={0.7}
+                style={[styles.compactSubmitBtn, !canSubmit && styles.compactSubmitBtnDisabled]}
+                onPress={handleFindMovies}
+                disabled={!canSubmit}
+                activeOpacity={0.8}
               >
-                <Text style={styles.quickChipText}>{t(item.labelKey)}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        </Animated.View>
-
-        {/* ── Section 4: Son Aramalar (skeleton + conditional) ──────── */}
-        {sectionsLoading && (
-          <View style={styles.section}>
-            <SkeletonLoader width={130} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
-            <View style={styles.skeletonRow}>
-              <SkeletonLoader width={160} height={90} borderRadius={14} />
-              <SkeletonLoader width={160} height={90} borderRadius={14} />
-            </View>
-          </View>
-        )}
-        {!sectionsLoading && hasRecentSearches && (
-          <Animated.View
-            entering={FadeInDown.delay(150).duration(400).springify().damping(18)}
-            style={styles.section}
-          >
-            <Text style={styles.sectionTitle}>{t('home.recentSearches')}</Text>
-            <FlatList
-              data={moodHistory}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.session_id}
-              contentContainerStyle={styles.recentSearchContent}
-              renderItem={({ item }) => {
-                const posters = (item.saved_posters ?? []).slice(0, 3);
-                return (
-                  <TouchableOpacity
-                    style={styles.recentCard}
-                    onPress={() => handleRecentSearch(item)}
-                    activeOpacity={0.8}
-                  >
-                    {/* Poster stack — ust uste binmis */}
-                    <View style={styles.posterStack}>
-                      {posters.map((p, i) => {
-                        const uri = resolvePoster(p, 'w185');
-                        return uri ? (
-                          <Image
-                            key={i}
-                            source={{ uri }}
-                            style={[
-                              styles.stackPoster,
-                              { left: i * 14, zIndex: 3 - i },
-                            ]}
-                            contentFit="cover"
-                            cachePolicy="memory-disk"
-                          />
-                        ) : null;
-                      })}
-                      {posters.length === 0 && (
-                        <View style={styles.stackPosterEmpty}>
-                          <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
-                        </View>
-                      )}
-                    </View>
-                    <Text style={styles.recentText} numberOfLines={2}>
-                      {item.mood_text}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </Animated.View>
-        )}
-
-        {/* ── Section 5: Bugunun Filmi (skeleton + conditional) ──────── */}
-        {dailyLoading && (
-          <View style={styles.section}>
-            <SkeletonLoader width={120} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
-            <SkeletonLoader width={SCREEN_W - 32} height={140} borderRadius={16} style={{ marginLeft: 16 }} />
-          </View>
-        )}
-        {hasDailyFilm && dailyFilm && dailyPosterUrl && (
-          <Animated.View
-            entering={FadeInDown.delay(200).duration(400).springify().damping(18)}
-            style={styles.section}
-          >
-            <Text style={styles.sectionTitle}>{t('home.todaysFilm')}</Text>
-            <TouchableOpacity
-              style={styles.dailyCard}
-              onPress={() => {
-                hapticLight();
-                posthogAnalytics.track('home_daily_pick_tapped', { film_id: dailyFilm.id });
-                router.push(`/film/${dailyFilm.id}`);
-              }}
-              activeOpacity={0.85}
-            >
-              {/* Blurred poster background */}
-              <Image
-                source={{ uri: dailyPosterUrl }}
-                style={StyleSheet.absoluteFillObject}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                blurRadius={15}
-              />
-              <View style={styles.dailyCardOverlay} />
-              {/* Content */}
-              <View style={styles.dailyCardContent}>
-                <Image
-                  source={{ uri: dailyPosterUrl }}
-                  style={styles.dailyPoster}
-                  contentFit="cover"
-                  cachePolicy="memory-disk"
-                  transition={200}
+                <Ionicons
+                  name="arrow-forward"
+                  size={18}
+                  color={canSubmit ? Colors.textOnAccent : Colors.textTertiary}
                 />
-                <View style={styles.dailyMeta}>
-                  <Text style={styles.dailyTitle} numberOfLines={2}>
-                    {dailyFilm.title}
-                  </Text>
-                  <Text style={styles.dailySubtitle} numberOfLines={1}>
-                    {dailyFilm.year}{dailyFilm.director ? ` \u00B7 ${dailyFilm.director}` : ''}
-                  </Text>
-                  {dailyFilm.matchScore > 0 && (
-                    <View style={styles.matchBadge}>
-                      <Text style={styles.matchBadgeText}>{dailyFilm.matchScore}% match</Text>
-                    </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+
+          {/* ── Hata mesaji — search bar altinda ─────────────────── */}
+          {moodError != null && (
+            <View style={styles.errorBanner}>
+              <Ionicons
+                name={
+                  moodError.type === 'network' ? 'cloud-offline-outline' :
+                  moodError.type === 'quota' ? 'lock-closed-outline' :
+                  'warning-outline'
+                }
+                size={18}
+                color={Colors.error}
+              />
+              <Text style={styles.errorBannerText}>{moodError.message}</Text>
+              <TouchableOpacity onPress={() => setMoodError(null)} activeOpacity={0.7}>
+                <Ionicons name="close-circle" size={18} color={Colors.textGrey} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* ── Scrollable content ──────────────────────────────── */}
+          <ScrollView
+            style={styles.discoverScroll}
+            contentContainerStyle={styles.discoverScrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+
+            {/* ── Filter trigger (bottom sheet) — above mood cards ── */}
+            <FilterBottomSheet
+              yearChip={yearChip}
+              ratingChip={ratingChip}
+              onYearChange={setYearChip}
+              onRatingChange={setRatingChip}
+            />
+
+            {/* ── Mood Card Bento Grid ───────────────────────────── */}
+            <MoodCardGrid
+              activeMoodText={moodText}
+              onSelect={handleMoodCardSelect}
+            />
+
+            {/* ── Son Aramalar (conditional) ─────────────────────── */}
+            {recentSearches.length > 0 && (
+              <View style={styles.discoverSection}>
+                <Text style={styles.discoverSectionTitle}>{t('mood.discoverRecentTitle')}</Text>
+                {recentSearches.map((item) => (
+                  <TouchableOpacity
+                    key={item.session_id}
+                    style={styles.recentItem}
+                    onPress={() => handleRecentTap(item)}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="time-outline" size={16} color={Colors.textSecondary} />
+                    <Text style={styles.recentItemText} numberOfLines={1}>{item.mood_text}</Text>
+                    <Ionicons name="arrow-forward" size={14} color={Colors.textTertiary} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Games section removed — only shown in Discover tab */}
+
+          </ScrollView>
+
+          {/* ── Sabit Alt Bar: Find Movies butonu ─────────────────── */}
+          <View style={styles.bottomBar}>
+            <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
+              <TouchableOpacity
+                style={[styles.findButton, !canSubmit && styles.findButtonDisabled]}
+                onPressIn={btnPressIn}
+                onPressOut={btnPressOut}
+                onPress={handleFindMovies}
+                disabled={!canSubmit}
+                activeOpacity={1}
+              >
+                <Ionicons
+                  name="sparkles"
+                  size={18}
+                  color={canSubmit ? Colors.textOnAccent : 'rgba(255,255,255,0.4)'}
+                />
+                <View style={styles.findButtonContent}>
+                  <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
+                  {fullQuota && !subLoading && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
+                    <Text style={styles.findButtonQuota}>
+                      {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
+                    </Text>
                   )}
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textGrey} />
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-
-        {/* ── Section 6: Watchlist Strip (skeleton + conditional) ────── */}
-        {sectionsLoading && (
-          <View style={styles.section}>
-            <SkeletonLoader width={160} height={16} borderRadius={6} style={{ marginLeft: 16 }} />
-            <View style={styles.skeletonRow}>
-              <SkeletonLoader width={100} height={150} borderRadius={12} />
-              <SkeletonLoader width={100} height={150} borderRadius={12} />
-              <SkeletonLoader width={100} height={150} borderRadius={12} />
-            </View>
-          </View>
-        )}
-        {!sectionsLoading && hasWatchlist && (
-          <Animated.View
-            entering={FadeInDown.delay(250).duration(400).springify().damping(18)}
-            style={styles.section}
-          >
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('home.fromWatchlist')}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  hapticLight();
-                  router.push('/watchlist-detail' as never);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.seeAllText}>{t('home.seeAll')}</Text>
+                {canSubmit && (
+                  <Animated.View style={[styles.findButtonShimmer, shimmerStyle]} pointerEvents="none" />
+                )}
               </TouchableOpacity>
-            </View>
-            <FlatList
-              data={watchlistItems}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(item) => item.film.id}
-              contentContainerStyle={styles.watchlistContent}
-              renderItem={({ item }) => {
-                const uri = resolvePoster(item.film.posterUrl, 'w185');
-                return (
-                  <TouchableOpacity
-                    style={styles.watchlistCard}
-                    onPress={() => {
-                      hapticLight();
-                      posthogAnalytics.track('home_watchlist_pick_tapped', { film_id: item.film.id });
-                      router.push(`/film/${item.film.id}`);
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    {uri ? (
-                      <Image
-                        source={{ uri }}
-                        style={styles.watchlistPoster}
-                        contentFit="cover"
-                        cachePolicy="memory-disk"
-                        transition={200}
-                      />
-                    ) : (
-                      <View style={[styles.watchlistPoster, styles.watchlistPosterEmpty]}>
-                        <Ionicons name="film-outline" size={24} color={Colors.textGrey} />
-                      </View>
-                    )}
-                    <Text style={styles.watchlistTitle} numberOfLines={1}>
-                      {item.film.title}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </Animated.View>
-        )}
+            </Animated.View>
+          </View>
 
-      </ScrollView>
-    </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+
+      <AIProcessingOverlay
+        visible={phase === 'processing'}
+        pipelineStage={pipelineStage}
+        onRetry={() => {
+          setPhase('input');
+          setPipelineStage('parsing');
+        }}
+        t={t}
+      />
+
+      {/* ── Kota Doldu Overlay (fallback) ────────────────────────── */}
+      <QuotaExhausted
+        visible={showQuotaExhausted}
+        onClose={() => setShowQuotaExhausted(false)}
+        quotaStatus={lastQuotaResult}
+        onUpgrade={() => triggerPaywall({ type: 'quota_exhausted', quota: 'search' })}
+      />
+
+      {/* ── Contextual Paywall (orchestrator-driven) ─────────── */}
+      <ContextualPaywall {...paywallProps} />
+    </>
   );
 }
 
-// ── Stiller ───────────────────────────────────────────────────────────────────
+// ─── Stiller ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: {
+  safe: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scroll: {
+  keyboardAvoid: {
     flex: 1,
   },
-  scrollContent: {
-    gap: 28,
-  },
 
-  // ── Skeleton ─────────────────────────────────────────────────────────────────
-  skeletonRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 10,
-  },
+  // ─── Onboarding Banner ──────────────────────────────────────────────────────
 
-  // ── Header ──────────────────────────────────────────────────────────────────
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-  },
-  logoWrapper: {
+  onboardingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  logo: {
-    width: 36,
-    height: 36,
-    opacity: 0.95,
-  },
-  logoText: {
-    color: Colors.goldLight,
-    fontSize: 20,
-    fontFamily: 'PlayfairDisplay_400Regular',
-    letterSpacing: 0.4,
-  },
-  archetypeBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.white05,
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 2,
+    backgroundColor: Colors.accentPrimary + '18',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.white10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+    borderColor: Colors.accentPrimary + '35',
   },
-  archetypeBadgeIcon: {
-    width: 28,
-    height: 28,
+  onboardingBannerText: {
+    flex: 1,
+    gap: 1,
+  },
+  onboardingBannerTitle: {
+    color: Colors.accentPrimary,
+    fontSize: Theme.typography.caption.fontSize,
+    fontWeight: '700',
+    letterSpacing: 0.1,
+  },
+  onboardingBannerHint: {
+    color: Colors.textSecondary,
+    fontSize: Theme.typography.micro.fontSize,
+    lineHeight: Theme.typography.micro.lineHeight,
   },
 
-  // ── Hero Mood Input ────────────────────────────────────────────────────────
-  heroCard: {
-    marginHorizontal: 16,
+  // ─── Compact Search Bar ─────────────────────────────────────────────────────
+
+  compactSearchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 4,
+    height: 48,
     backgroundColor: Colors.bgElevated,
-    borderRadius: 16,
+    borderRadius: 24,
+    paddingHorizontal: 14,
+    gap: 10,
     borderWidth: 1,
     borderColor: Colors.cardBorder,
-    padding: 20,
-    gap: 12,
   },
-  heroLabel: {
-    fontSize: Theme.typography.h3.fontSize,
-    lineHeight: Theme.typography.h3.lineHeight,
-    fontWeight: '600',
-    color: Colors.textPrimary,
-    letterSpacing: -0.2,
-  },
-  heroInputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 12,
-  },
-  heroInput: {
+  compactInput: {
     flex: 1,
     fontSize: Theme.typography.body.fontSize,
-    fontWeight: '400',
-    color: Colors.textPrimary,
-    lineHeight: Theme.typography.body.lineHeight,
-    minHeight: 60,
-    maxHeight: 100,
-    textAlignVertical: 'top',
+    color: Colors.textWhite,
+    height: 48,
     padding: 0,
   },
-  heroSubmitBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  compactSubmitBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: Colors.accentPrimary,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  heroSubmitBtnDisabled: {
+  compactSubmitBtnDisabled: {
     backgroundColor: Colors.bgSubtle,
   },
 
-  // ── Quick Mood Chips ───────────────────────────────────────────────────────
-  quickChipsSection: {
-    marginTop: -12, // section gap azalt — hero'ya yakin dursun
-  },
-  quickChipsContent: {
-    paddingHorizontal: 16,
-    gap: 8,
-  },
-  quickChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  quickChipText: {
-    fontSize: Theme.typography.caption.fontSize,
-    lineHeight: Theme.typography.caption.lineHeight,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
+  // ─── Discover Scroll Content ────────────────────────────────────────────────
 
-  // ── Section shared ────────────────────────────────────────────────────────
-  section: {
-    gap: 12,
+  discoverScroll: {
+    flex: 1,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+  discoverScrollContent: {
+    paddingBottom: 180, // tab bar (83) + bottom bar (~90)
+    gap: 20,
+    paddingTop: 8,
   },
-  sectionTitle: {
+  discoverSection: {
+    gap: 10,
+    paddingHorizontal: 20,
+  },
+  discoverSectionTitle: {
     fontSize: Theme.typography.h3.fontSize,
     lineHeight: Theme.typography.h3.lineHeight,
     fontWeight: '700',
-    color: Colors.textPrimary,
+    color: Colors.textWhite,
     letterSpacing: -0.2,
-    paddingHorizontal: 16,
-  },
-  seeAllText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '600',
-    color: Colors.accentPrimary,
   },
 
-  // ── Recent Searches ───────────────────────────────────────────────────────
-  recentSearchContent: {
-    paddingHorizontal: 16,
+  // (Filter chips moved to FilterBottomSheet component)
+
+  // ─── Recent Searches ────────────────────────────────────────────────────────
+
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.bgElevated,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  recentItemText: {
+    flex: 1,
+    fontSize: Theme.typography.body.fontSize,
+    color: Colors.textWhite,
+    fontWeight: '500',
+  },
+
+  // ─── Sabit Alt Bar ─────────────────────────────────────────────────────────
+
+  bottomBar: {
+    paddingHorizontal: 20,
+    paddingBottom: 90,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: Colors.white10,
+    backgroundColor: Colors.background,
     gap: 10,
   },
-  recentCard: {
-    width: 160,
-    backgroundColor: Colors.bgCard,
-    borderRadius: 14,
+
+  // ─── Hata banner ──────────────────────────────────────────────────────────
+
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 12,
-    gap: 10,
+    borderColor: 'rgba(239,68,68,0.3)',
   },
-  posterStack: {
-    height: 44,
-    position: 'relative',
-    width: 60,
+  errorBannerText: {
+    flex: 1,
+    color: Colors.textWhite,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
-  stackPoster: {
+
+  // ─── Find Movies butonu ─────────────────────────────────────────────────────
+
+  findButton: {
+    backgroundColor: Colors.accentPrimary,
+    height: 56,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: Colors.accentPrimary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.55,
+    shadowRadius: 12,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  findButtonDisabled: {
+    backgroundColor: 'rgba(234,219,198,0.3)',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  findButtonText: {
+    color: Colors.textOnAccent,
+    fontSize: Theme.typography.h3.fontSize,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  findButtonContent: {
+    alignItems: 'center',
+    gap: 1,
+  },
+  findButtonQuota: {
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: Theme.typography.micro.fontSize,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
+  findButtonShimmer: {
     position: 'absolute',
     top: 0,
-    width: 32,
-    height: 44,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: Colors.bgCard,
-  },
-  stackPosterEmpty: {
-    width: 32,
-    height: 44,
-    borderRadius: 6,
-    backgroundColor: Colors.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  recentText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    lineHeight: Theme.typography.caption.lineHeight,
+    bottom: 0,
+    width: 60,
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
 
-  // ── Daily Film ────────────────────────────────────────────────────────────
-  dailyCard: {
-    marginHorizontal: 16,
-    height: 140,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  dailyCardOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,15,0.75)',
-  },
-  dailyCardContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 14,
-  },
-  dailyPoster: {
-    width: 75,
-    height: 112,
-    borderRadius: 12,
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  dailyMeta: {
-    flex: 1,
-    gap: 4,
-  },
-  dailyTitle: {
-    fontSize: Theme.typography.h3.fontSize,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: Colors.textPrimary,
-    lineHeight: Theme.typography.h3.lineHeight,
-  },
-  dailySubtitle: {
-    fontSize: Theme.typography.caption.fontSize,
-    color: Colors.textSecondary,
-    letterSpacing: 0.1,
-  },
-  matchBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.accentPrimary,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 4,
-  },
-  matchBadgeText: {
-    color: Colors.textOnAccent,
-    fontSize: Theme.typography.micro.fontSize,
-    fontWeight: '700',
-  },
-
-  // ── Watchlist Strip ───────────────────────────────────────────────────────
-  watchlistContent: {
-    paddingHorizontal: 16,
-    gap: 10,
-  },
-  watchlistCard: {
-    width: 100,
-    gap: 6,
-  },
-  watchlistPoster: {
-    width: 100,
-    height: 150,
-    borderRadius: 12,
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  watchlistPosterEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    borderStyle: 'dashed',
-  },
-  watchlistTitle: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    paddingHorizontal: 2,
-  },
+  // (Quick Moods grid moved to MoodCardGrid component)
 });
