@@ -47,7 +47,7 @@ export default function LastSessionCard() {
 
   function handlePress() {
     hapticLight();
-    router.push('/(tabs)/mood');
+    router.push('/(tabs)');
   }
 
   return (

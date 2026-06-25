@@ -47,7 +47,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     icon: 'sparkles',
     labelKey: 'home.navMood',
-    route: '/(tabs)/mood',
+    route: '/(tabs)',
     color: '#FBBF24',                   // amber-400
     bgColor: 'rgba(251,191,36,0.10)',
   },

@@ -7,6 +7,10 @@
     "profile": "Profile",
     "games": "Games"
   },
+  "discover": {
+    "comingSoonTitle": "Discover",
+    "comingSoonSubtitle": "A whole new way to explore films is on its way. Stay tuned!"
+  },
   "moodInput": {
     "title": "What do you want to watch today?",
     "subtitle": "Write how you feel, let's find movies just for you.",
@@ -117,7 +121,37 @@
     "curatedWeekendBingePrompt": "Easy to watch, entertaining film perfect for a relaxed weekend marathon",
     "discoverGamesTitle": "Daily Cinema Games",
     "discoverRecentTitle": "Recent Searches",
-    "discoverSearchPlaceholder": "What do you feel like watching?"
+    "discoverSearchPlaceholder": "What do you feel like watching?",
+
+    "moodCardRainyTitle": "Rainy Night",
+    "moodCardRainySubtitle": "Films that pull you in deep",
+    "moodCardMindTitle": "Mind-Bending",
+    "moodCardMindSubtitle": "Stories that twist your brain",
+    "moodCardDateTitle": "Date Night",
+    "moodCardDateSubtitle": "A romantic pick for two",
+    "moodCardAdrenalineTitle": "Adrenaline",
+    "moodCardAdrenalineSubtitle": "Get your heart racing",
+    "moodCardLaughTitle": "Comedy",
+    "moodCardLaughSubtitle": "Guaranteed laughs",
+    "moodCardNostalgiaTitle": "Nostalgia",
+    "moodCardNostalgiaSubtitle": "A trip to the good old days",
+    "moodCardCozyTitle": "Cozy Night",
+    "moodCardCozySubtitle": "No thinking, just enjoy",
+    "moodCardEmotionalTitle": "Emotional",
+    "moodCardEmotionalSubtitle": "An emotional journey awaits",
+
+    "filterTrigger": "Filter",
+    "filterActiveCount": "{{count}} active",
+    "filterSheetTitle": "Filters",
+    "filterClear": "Clear",
+    "filterApply": "Apply"
+  },
+  "discoverTab": {
+    "screenTitle": "Discover",
+    "screenSubtitle": "Explore films, find inspiration",
+    "trendingTitle": "Trending This Week",
+    "upcomingTitle": "Coming Soon",
+    "gamesTitle": "Cinema Games"
   },
   "discover": {
     "emptyTitle": "That's all!",
@@ -452,6 +486,11 @@
     "statsFavoriteDirector": "Favorite Director",
     "statsNoInsights": "Explore more films to build your taste profile",
     "statsNoDirector": "Save more films to discover",
+    "gamesTitle": "My Games",
+    "gamesNotPlayed": "Not played yet",
+    "gamesPlay": "Play",
+    "gamesStreak": "%{count} day streak",
+    "gamesLongest": "Best: %{count}",
     "settingsSection": "Settings",
     "personaPlaceholder": "Discover your type",
     "editProfile": "Edit Profile",
@@ -517,7 +556,9 @@
     "subtitle": "Analyzing your mood...",
     "step1": "Reading emotions",
     "step2": "Finding patterns",
-    "step3": "Matching films"
+    "step3": "Matching films",
+    "retry": "Try Again",
+    "slowConnection": "Connection seems slow"
   },
   "loading": {
     "moreFilms": "Loading more films..."

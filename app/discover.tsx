@@ -246,7 +246,7 @@ export default function DiscoverScreen() {
         } catch {
           // Sessizce devam — review bloklayici olmamali
         }
-        router.navigate('/watchlist-detail' as never);
+        router.navigate('/(tabs)/profile' as never);
       })();
       return;
     }
@@ -419,7 +419,7 @@ export default function DiscoverScreen() {
   /** Yeni Mood → profili temizle + mood sekmesine git */
   const handleNewMood = useCallback(() => {
     clearMood();
-    router.navigate('/(tabs)/mood');
+    router.navigate('/(tabs)');
   }, [clearMood, router]);
 
   /** Pull-to-refresh */
@@ -622,7 +622,7 @@ export default function DiscoverScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.navBtn}
-          onPress={() => router.navigate('/watchlist-detail' as never)}
+          onPress={() => router.navigate('/(tabs)/profile' as never)}
           activeOpacity={0.75}
           accessibilityLabel={t('tabs.watchlist')}
           accessibilityRole="button"

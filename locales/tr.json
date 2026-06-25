@@ -7,6 +7,10 @@
     "profile": "Profil",
     "games": "Oyunlar"
   },
+  "discover": {
+    "comingSoonTitle": "Kesfet",
+    "comingSoonSubtitle": "Filmleri kesfetmenin yepyeni bir yolu geliyor. Takipte kal!"
+  },
   "moodInput": {
     "title": "Bugün ne izlemek istersin?",
     "subtitle": "Hissettiklerini yaz, sana özel filmler bulalım.",
@@ -117,7 +121,37 @@
     "curatedWeekendBingePrompt": "Rahat bir hafta sonu maratonu için ideal, kolay izlenen, eğlenceli film",
     "discoverGamesTitle": "Sinefil Oyunlari",
     "discoverRecentTitle": "Son Aramalar",
-    "discoverSearchPlaceholder": "Ne izlemek istiyorsun?"
+    "discoverSearchPlaceholder": "Ne izlemek istiyorsun?",
+
+    "moodCardRainyTitle": "Yagmurlu Gece",
+    "moodCardRainySubtitle": "Icine cekilmek istedigin filmler",
+    "moodCardMindTitle": "Zihin Buken",
+    "moodCardMindSubtitle": "Kafani karistiracak hikayeler",
+    "moodCardDateTitle": "Romantik Aksam",
+    "moodCardDateSubtitle": "Ikiniz icin romantik secim",
+    "moodCardAdrenalineTitle": "Adrenalin",
+    "moodCardAdrenalineSubtitle": "Nabzini hizlandiracak aksiyon",
+    "moodCardLaughTitle": "Komedi",
+    "moodCardLaughSubtitle": "Kahkaha garantili",
+    "moodCardNostalgiaTitle": "Nostalji",
+    "moodCardNostalgiaSubtitle": "Eski guzel gunlere yolculuk",
+    "moodCardCozyTitle": "Rahat Aksam",
+    "moodCardCozySubtitle": "Hic dusunmeden izlenecek",
+    "moodCardEmotionalTitle": "Duygusal",
+    "moodCardEmotionalSubtitle": "Duygusal bir yolculuk istiyorum",
+
+    "filterTrigger": "Filtrele",
+    "filterActiveCount": "%{count} aktif",
+    "filterSheetTitle": "Filtreler",
+    "filterClear": "Temizle",
+    "filterApply": "Uygula"
+  },
+  "discoverTab": {
+    "screenTitle": "Kesfet",
+    "screenSubtitle": "Film kesfet, ilham al",
+    "trendingTitle": "Bu Hafta Trend",
+    "upcomingTitle": "Yakinda Vizyonda",
+    "gamesTitle": "Sinefil Oyunlari"
   },
   "discover": {
     "emptyTitle": "Hepsi bu kadar!",
@@ -452,6 +486,11 @@
     "statsFavoriteDirector": "Favori Yönetmen",
     "statsNoInsights": "Zevk profilini oluşturmak için daha fazla film keşfet",
     "statsNoDirector": "Daha fazla film kaydet",
+    "gamesTitle": "Oyunlarim",
+    "gamesNotPlayed": "Henuz oynamadin",
+    "gamesPlay": "Oyna",
+    "gamesStreak": "%{count} gun seri",
+    "gamesLongest": "En iyi: %{count}",
     "settingsSection": "Ayarlar",
     "personaPlaceholder": "Türünü keşfet",
     "editProfile": "Profili Düzenle",
@@ -517,7 +556,9 @@
     "subtitle": "Ruh halin analiz ediliyor...",
     "step1": "Duygular okunuyor",
     "step2": "Örüntüler bulunuyor",
-    "step3": "Filmler eşleştiriliyor"
+    "step3": "Filmler eşleştiriliyor",
+    "retry": "Tekrar Dene",
+    "slowConnection": "Bağlantı yavaş görünüyor"
   },
   "loading": {
     "moreFilms": "Daha fazla film yükleniyor..."

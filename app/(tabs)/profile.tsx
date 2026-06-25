@@ -39,7 +39,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Clipboard from 'expo-clipboard';
+// import * as Clipboard from 'expo-clipboard'; // Referral card UI'dan kaldirildi
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
@@ -53,10 +53,12 @@ import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
 import DiscoveryStats from '@/components/Profile/DiscoveryStats';
-import WatchlistPreview from '@/components/Profile/WatchlistPreview';
+import WatchlistSection from '@/components/Profile/WatchlistSection';
+import type { WatchlistSectionRef } from '@/components/Profile/WatchlistSection';
+// import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
-import StreakCard from '@/components/Profile/StreakCard';
-import type { StreakCardProps } from '@/components/Profile/StreakCard';
+// import StreakCard from '@/components/Profile/StreakCard';
+// import type { StreakCardProps } from '@/components/Profile/StreakCard';
 import {
   getLastParsedProfile,
   getMoodHistory,
@@ -66,7 +68,7 @@ import {
 import PersonaBadge from '@/components/Profile/PersonaBadge';
 import Purchases from 'react-native-purchases';
 
-import { clearWatchlist, getAppUserId, getWatchlist, type WatchlistItem } from '@/services/watchlist';
+import { clearWatchlist, getAppUserId } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
 import {
   getReferralStats,
@@ -719,6 +721,7 @@ export default function ProfileScreen() {
   const { isPremium, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
+  const watchlistRef = useRef<WatchlistSectionRef>(null);
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
 
@@ -745,15 +748,11 @@ export default function ProfileScreen() {
   const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
   const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
-  const [codeCopied, setCodeCopied] = useState(false);
+  // const [codeCopied, setCodeCopied] = useState(false); // Referral card UI kaldirildi
 
-  // ── Watchlist state (preview icin) ─────────────────────────────────────────
-  const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
-  const [watchlistLoading, setWatchlistLoading] = useState(true);
-
-  // ── Streak state ──────────────────────────────────────────────────────────
+  // ── Streak state (UI'dan kaldirildi, backend dokunulmadi) ─────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
-  const [nextMilestone, setNextMilestone] = useState<StreakCardProps['nextMilestone']>(null);
+  const [nextMilestone, setNextMilestone] = useState<{ title: string; threshold: number; currentProgress: number } | null>(null);
 
   // ─── Avatar yukleme ───────────────────────────────────────────────────────
 
@@ -839,15 +838,6 @@ export default function ProfileScreen() {
         if (rs) setReferralStats(rs);
       }).catch(() => {});
 
-      // Watchlist preview (non-blocking)
-      getWatchlist().then((wl) => {
-        setWatchlistItems(wl);
-        setWatchlistLoading(false);
-      }).catch(() => {
-        setWatchlistLoading(false);
-      });
-
-
       // Sonraki streak milestone'u hesapla
       if (streakData && allMilestonesData.length > 0) {
         const earnedSlugs = new Set(userMilestonesData.map((m) => m.milestone.slug));
@@ -902,7 +892,10 @@ export default function ProfileScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await loadAll();
+    await Promise.all([
+      loadAll(),
+      watchlistRef.current?.refresh(),
+    ]);
     setRefreshing(false);
   }, [loadAll]);
 
@@ -1389,62 +1382,16 @@ export default function ProfileScreen() {
           <Animated.View style={sectionsAnimStyle}>
           <View style={styles.sections}>
 
-            {/* 0. Invite Friends Card */}
-            {referralStats?.inviteCode ? (
-              <View style={styles.referralCard}>
-                <View style={styles.referralHeader}>
-                  <Ionicons name="people" size={20} color={Colors.accentPrimary} />
-                  <Text style={styles.referralTitle}>{t('profile.inviteFriends')}</Text>
-                </View>
+            {/* 0. Invite Friends Card — UI'dan kaldirildi, watchlist'e alan acildi */}
+            {/* Referral card Settings modal uzerinden erisiliyor */}
 
-                {/* Invite code row */}
-                <View style={styles.referralCodeRow}>
-                  <Text style={styles.referralCode}>{referralStats.inviteCode}</Text>
-                  <TouchableOpacity
-                    style={styles.referralCopyBtn}
-                    onPress={() => {
-                      hapticLight();
-                      Clipboard.setStringAsync(`https://chosy.vercel.app?ref=${referralStats.inviteCode}`);
-                      setCodeCopied(true);
-                      setTimeout(() => setCodeCopied(false), 2000);
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name={codeCopied ? 'checkmark' : 'copy-outline'}
-                      size={16}
-                      color={codeCopied ? Colors.gold : Colors.accentPrimary}
-                    />
-                    <Text style={[styles.referralCopyText, codeCopied && styles.referralCopyTextDone]}>
-                      {codeCopied ? t('profile.codeCopied') : t('profile.copyCode')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* Friends joined count */}
-                <Text style={styles.referralCount}>
-                  {t('profile.friendsJoined', { count: referralStats.activatedReferrals })}
-                </Text>
-
-                {/* Share button */}
-                <TouchableOpacity
-                  style={styles.referralShareBtn}
-                  onPress={() => void handleShareReferral()}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="share-outline" size={16} color={Colors.textOnAccent} />
-                  <Text style={styles.referralShareText}>{t('referral.shareButton')}</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-
-            {/* 1. Daily Streak */}
-            <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
+            {/* 1. Daily Streak — UI'dan kaldirildi, gelecekte geri eklenebilir */}
+            {/* <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
             <StreakCard
               streakInfo={streakInfo}
               loading={loading}
               nextMilestone={nextMilestone}
-            />
+            /> */}
 
             {/* 2. Taste DNA */}
             <SectionHeading title={t('profile.tasteDNA')} />
@@ -1477,12 +1424,13 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* 4. Watchlist Preview */}
+            {/* 4. Watchlist — tam ozellikli section */}
             <SectionHeading title={t('tabs.watchlist')} />
-            <WatchlistPreview
-              items={watchlistItems}
-              loading={watchlistLoading}
-            />
+            <WatchlistSection ref={watchlistRef} />
+
+            {/* 5. Game Scores — UI'dan kaldirildi, gelecekte geri eklenebilir */}
+            {/* <SectionHeading title={t('profile.gamesTitle')} />
+            <GameScoreSummary /> */}
 
           </View>
           </Animated.View>

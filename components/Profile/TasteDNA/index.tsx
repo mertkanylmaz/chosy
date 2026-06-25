@@ -13,19 +13,17 @@
  * - Enerji bari: ayni animasyonla acilir
  * - Baslik: "Taste DNA" — Playfair Display, altin, emoji
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Image, Text, View } from 'react-native';
 import Animated, {
-  Easing,
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Dna } from 'phosphor-react-native';
 
-import { Colors } from '@/constants/Colors';
-import { EmotionIcons, TasteDNAIcons } from '@/constants/icons';
+import { EmotionIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -36,33 +34,13 @@ import { styles } from './styles';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
-/** Her duygu icin ozel renk */
-const EMOTION_COLORS: Record<keyof EmotionalState, string> = {
-  joy: '#4ADE80',
-  sadness: '#60A5FA',
-  fear: '#F87171',
-  anger: '#EF4444',
-  trust: '#F0E8DA',
-  anticipation: '#FBBF24',
-  surprise: '#FB923C',
-  disgust: '#6B7280',
-};
+// EMOTION_COLORS — kompakt versiyon icin kaldirildi (barlar yok)
+// const EMOTION_COLORS: Record<keyof EmotionalState, string> = { ... };
 
 /** Her duygu icin ikon — constants/icons.ts'ten single source of truth */
 const EMOTION_ICON = EmotionIcons;
 
-/** Hiz tercihi icin ikon */
-const PACE_OPTIONS: { key: 'slow' | 'medium' | 'fast'; icon: string }[] = [
-  { key: 'slow', icon: 'leaf-outline' },
-  { key: 'medium', icon: 'car-outline' },
-  { key: 'fast', icon: 'flash-outline' },
-];
-
-/** Bar animasyon suresi (ms) */
-const BAR_DURATION = 800;
-
-/** Barlar arasi gecikme (ms) */
-const BAR_STAGGER = 100;
+// PACE_OPTIONS, BAR_DURATION, BAR_STAGGER — kompakt versiyon icin kaldirildi
 
 // ─── Yardimci Fonksiyonlar ────────────────────────────────────────────────────
 
@@ -136,51 +114,9 @@ interface Props {
 
 // ─── Alt Bilesenkler ─────────────────────────────────────────────────────────
 
-interface AnimatedBarProps {
-  emotionKey: keyof EmotionalState;
-  label: string;
-  value: number;
-  color: string;
-  delay: number;
-}
-
-/**
- * Soldan saga reanimated animasyonlu duygu bari.
- */
-function AnimatedBar({ emotionKey, label, value, color, delay }: AnimatedBarProps) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const barWidth = useSharedValue(0);
-
-  useEffect(() => {
-    if (trackWidth > 0) {
-      barWidth.value = withDelay(
-        delay,
-        withTiming(value * trackWidth, {
-          duration: BAR_DURATION,
-          easing: Easing.out(Easing.cubic),
-        }),
-      );
-    }
-  }, [trackWidth, value, delay, barWidth]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: barWidth.value,
-  }));
-
-  return (
-    <View style={styles.emotionRow}>
-      <Image source={EMOTION_ICON[emotionKey]} style={styles.emotionEmoji} resizeMode="contain" />
-      <Text style={styles.emotionName}>{label}</Text>
-      <View
-        style={styles.barTrack}
-        onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
-        <Animated.View style={[styles.barFill, { backgroundColor: color }, animatedStyle]}>
-          <Text style={styles.inBarPercent}>{Math.round(value * 100)}%</Text>
-        </Animated.View>
-      </View>
-    </View>
-  );
-}
+// AnimatedBar — kompakt versiyon icin kaldirildi, gelecekte geri eklenebilir
+// interface AnimatedBarProps { emotionKey: keyof EmotionalState; label: string; value: number; color: string; delay: number; }
+// function AnimatedBar(...) { ... }
 
 /**
  * Fade-in animasyonlu genre chip.
@@ -203,34 +139,8 @@ function AnimatedGenreChip({ genre, delay }: { genre: string; delay: number }) {
   );
 }
 
-/**
- * Enerji bari — withTiming animasyonu.
- */
-function AnimatedEnergyBar({ value }: { value: number }) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const barWidth = useSharedValue(0);
-
-  useEffect(() => {
-    if (trackWidth > 0) {
-      barWidth.value = withTiming(value * trackWidth, {
-        duration: BAR_DURATION,
-        easing: Easing.out(Easing.cubic),
-      });
-    }
-  }, [trackWidth, value, barWidth]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    width: barWidth.value,
-  }));
-
-  return (
-    <View
-      style={styles.energyTrack}
-      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}>
-      <Animated.View style={[styles.energyFill, animatedStyle]} />
-    </View>
-  );
-}
+// AnimatedEnergyBar — kompakt versiyon icin kaldirildi, gelecekte geri eklenebilir
+// function AnimatedEnergyBar({ value }: { value: number }) { ... }
 
 // ─── Yukleniyor iskelet ───────────────────────────────────────────────────────
 
@@ -263,89 +173,43 @@ function FilledContent({
   insights: SwipeInsight | null;
 }) {
   const { t, language } = useLanguage();
-  const rawEmotions = getTopEmotions(profile.emotional_state);
-  // Normalize: değerleri toplamı 1.0 (100%) olacak şekilde ölçekle
-  const emotionSum = rawEmotions.reduce((sum, e) => sum + e.value, 0);
-  const topEmotions = emotionSum > 0
-    ? rawEmotions.map((e) => ({ ...e, value: e.value / emotionSum }))
-    : rawEmotions;
-  const topGenres = insights?.saved_genre_distribution.slice(0, 5) ?? [];
+  const topGenres = insights?.saved_genre_distribution.slice(0, 3) ?? [];
   const summary = buildSummary(profile, t);
+
+  // Baskin duygu — tek satir ozet
+  const rawEmotions = getTopEmotions(profile.emotional_state);
+  const topEmotion = rawEmotions[0];
+  const secondEmotion = rawEmotions[1];
 
   return (
     <>
-      {/* Duygu dagilimi */}
-      {topEmotions.length > 0 && (
-        <View>
-          <Text style={styles.sectionLabel}>{t('tasteDNA.moodDistribution')}</Text>
-          <View style={styles.emotionsBlock}>
-            {topEmotions.map(({ key, value }, index) => (
-              <AnimatedBar
-                key={key}
-                emotionKey={key}
-                label={t(`tasteDNA.emotion_${key}`)}
-                value={value}
-                color={EMOTION_COLORS[key]}
-                delay={index * BAR_STAGGER}
-              />
-            ))}
-          </View>
+      {/* Baskin duygu — kompakt tek satir */}
+      {topEmotion && (
+        <View style={styles.dominantEmotionRow}>
+          <Image source={EMOTION_ICON[topEmotion.key]} style={styles.emotionEmoji} resizeMode="contain" />
+          <Text style={styles.dominantEmotionText}>
+            {t(`tasteDNA.emotion_${topEmotion.key}`)}
+            {secondEmotion ? ` + ${t(`tasteDNA.emotion_${secondEmotion.key}`)}` : ''}
+          </Text>
         </View>
       )}
 
-      {/* Genre egilimler */}
+      {/* Genre egilimler — top 3, pill chip */}
       {topGenres.length > 0 && (
-        <View>
-          <Text style={styles.sectionLabel}>{t('tasteDNA.genreTendencies')}</Text>
-          <View style={styles.genresBlock}>
-            {topGenres.map((item, index) => (
-              <AnimatedGenreChip
-                key={item.genre}
-                genre={localizeGenre(item.genre, language)}
-                delay={index * 80}
-              />
-            ))}
-          </View>
+        <View style={styles.genresBlock}>
+          {topGenres.map((item, index) => (
+            <AnimatedGenreChip
+              key={item.genre}
+              genre={localizeGenre(item.genre, language)}
+              delay={index * 80}
+            />
+          ))}
         </View>
       )}
 
-      {/* Enerji tercihi */}
-      <View style={styles.energyBlock}>
-        <Text style={styles.sectionLabel}>{t('tasteDNA.energyLevel')}</Text>
-        <View style={styles.energyRow}>
-          <Text style={styles.energyLabel}>{t('tasteDNA.calm')}</Text>
-          <AnimatedEnergyBar value={profile.energy_level} />
-          <Text style={styles.energyLabelRight}>{t('tasteDNA.high')}</Text>
-        </View>
-      </View>
-
-      {/* Hiz tercihi */}
-      <View>
-        <Text style={styles.sectionLabel}>{t('tasteDNA.pacePreference')}</Text>
-        <View style={styles.paceBlock}>
-          {PACE_OPTIONS.map(({ key, icon }) => {
-            const isActive = profile.pace_preference === key;
-            return (
-              <View
-                key={key}
-                style={[styles.paceOption, isActive && styles.paceOptionActive]}>
-                <Ionicons
-                  name={icon as keyof typeof Ionicons.glyphMap}
-                  size={18}
-                  color={isActive ? Colors.gold : Colors.textGrey}
-                />
-                <Text
-                  style={[
-                    styles.paceOptionText,
-                    isActive && styles.paceOptionTextActive,
-                  ]}>
-                  {t(`tasteDNA.pace_${key}`)}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
-      </View>
+      {/* Duygu barlari — kompakt versiyon icin kaldirildi */}
+      {/* Enerji bari — kompakt versiyon icin kaldirildi */}
+      {/* Hiz tercihi — kompakt versiyon icin kaldirildi */}
 
       {/* AI ozeti */}
       <Text style={styles.summary}>{summary}</Text>
@@ -366,7 +230,7 @@ export default function TasteDNA({ profile, insights, loading, archetypeId }: Pr
     <View style={styles.card}>
       {/* Baslik */}
       <View style={styles.header}>
-        <Image source={TasteDNAIcons.dnaHeader} style={styles.headerDna} resizeMode="contain" />
+        <Dna size={24} color="#E8A838" weight="duotone" />
         <Text style={styles.headerTitle}>{t('profile.tasteDNA')}</Text>
       </View>
 

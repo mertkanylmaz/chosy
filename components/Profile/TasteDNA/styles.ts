@@ -16,9 +16,9 @@ export const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.cardBorder,
     padding: Theme.spacing.md,
-    gap: 16,
-    /** Sabit minHeight — veri yuklenene kadar layout shift'i engeller */
-    minHeight: 200,
+    gap: 12,
+    /** Kompakt versiyon — sadece genre + duygu + ozet */
+    minHeight: 100,
   },
 
   // ── Header ──
@@ -75,6 +75,20 @@ export const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.8,
     marginBottom: 8,
+  },
+
+  // ── Dominant emotion (compact) ──
+  dominantEmotionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 4,
+  },
+  dominantEmotionText: {
+    color: Colors.textLightGrey,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
   // ── Emotion bars ──

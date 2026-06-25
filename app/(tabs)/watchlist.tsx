@@ -517,7 +517,7 @@ export default function WatchlistScreen() {
           title={t('watchlist.emptyTitle')}
           subtitle={t('watchlist.emptySubtitle')}
           actionLabel={t('watchlist.discoverButton')}
-          onAction={() => router.push('/(tabs)/mood')}
+          onAction={() => router.push('/(tabs)')}
         />
       ) : viewMode === 'grouped' ? (
         /* ── Grouped view ── */

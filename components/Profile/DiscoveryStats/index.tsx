@@ -8,7 +8,13 @@
  */
 import React from 'react';
 import { Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  Eye,
+  BookmarkSimple,
+  Lightbulb,
+  ChartBar,
+} from 'phosphor-react-native';
+import type { IconProps } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -29,25 +35,21 @@ interface Props {
 // ─── Yardımcı bileşenler ──────────────────────────────────────────────────────
 
 /**
- * Tek istatistik kutusu.
+ * Tek istatistik kutusu — Phosphor icon ile.
  */
 function StatCard({
   value,
   label,
-  icon,
+  IconComp,
 }: {
   value: string | number;
   label: string;
-  icon: string;
+  IconComp: React.ComponentType<IconProps>;
 }) {
   return (
     <View style={styles.statCard}>
       <View style={styles.statIconRow}>
-        <Ionicons
-          name={icon as keyof typeof Ionicons.glyphMap}
-          size={14}
-          color={Colors.textGrey}
-        />
+        <IconComp size={14} color={Colors.textGrey} weight="duotone" />
       </View>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
@@ -73,7 +75,7 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
     <View style={styles.card}>
       {/* Başlık */}
       <View style={styles.header}>
-        <Ionicons name="stats-chart-outline" size={16} color={Colors.gold} />
+        <ChartBar size={16} color={Colors.gold} weight="duotone" />
         <Text style={styles.headerTitle}>{t('profile.discoveryStats')}</Text>
       </View>
 
@@ -88,17 +90,17 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
             <StatCard
               value={stats?.total_discovered ?? discovered}
               label={t('profile.statsMoviesWatched')}
-              icon="eye-outline"
+              IconComp={Eye}
             />
             <StatCard
               value={stats?.saved_films ?? 0}
               label={t('profile.statsMoviesSaved')}
-              icon="bookmark-outline"
+              IconComp={BookmarkSimple}
             />
             <StatCard
               value={stats?.total_sessions ?? 0}
               label={t('profile.statsMoodSessions')}
-              icon="bulb-outline"
+              IconComp={Lightbulb}
             />
           </View>
 

@@ -37,13 +37,13 @@ export default function EmotionalHook() {
 
   const handleDescribeMood = () => {
     hapticMedium();
-    router.push('/(tabs)/mood');
+    router.push('/(tabs)');
   };
 
   const handleChipPress = (mood: string) => {
     hapticSelection();
     setPresetMoodText(mood);
-    router.push('/(tabs)/mood');
+    router.push('/(tabs)');
   };
 
   const handleContinue = () => {
