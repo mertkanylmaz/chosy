@@ -26,8 +26,8 @@ import { useMood } from '@/contexts/MoodContext';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
-/** Her batch'te yüklenen film sayısı */
-const BATCH_SIZE = 10;
+/** Her batch'te yüklenen film sayısı (migration 050: quality > quantity) */
+const BATCH_SIZE = 8;
 
 /** Kalan film sayısı bu değere düşünce sonraki batch arka planda yüklenir */
 const PRELOAD_TRIGGER = 3; // currentIndex 7'ye gelince (10 - 7 = 3 kalan)

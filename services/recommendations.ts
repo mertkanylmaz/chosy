@@ -594,6 +594,7 @@ async function callMatchFilmsV3(
     ...kwParam,
     per_director_cap: 1,  // v3: max 1 per director for diversity
     tier_boost: V2_CONFIG.tier_boost,
+    exclude_archive: true,  // migration 050: skip archive tier (1453 low-quality films)
   });
 }
 
@@ -830,47 +831,54 @@ async function getFilmsWithRelaxation(
   userWeight?: number,
   searchKeywords?: string[],
 ): Promise<MatchFilmRow[] | null> {
-  const baseRating = ratingMin ?? 6.0;
+  const baseRating = ratingMin ?? 6.5;
 
-  // Deneme 1: tam filtreler
-  let res = await callMatchFilms(vectorString, limit, 0.3, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  // ── Quality-first relaxation (migration 050) ──────────────────────────────
+  // Target: 8 high-quality films. match_count=12 gives buffer for director cap.
+  // Never pad with junk — return whatever passes the threshold.
+  const TARGET_COUNT = 8;
+  const MATCH_COUNT = 12;
+
+  // Deneme 1: strict thresholds
+  let res = await callMatchFilms(vectorString, MATCH_COUNT, 0.45, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
   if (res.error && isNetworkLikeError(res.error)) {
     throw new TypeError(`Network request failed: ${res.error.message}`);
   }
 
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
+  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
     return res.data as MatchFilmRow[];
   }
 
-  // Deneme 2: min_rating'i 1 düşür
+  // Deneme 2: similarity ve rating biraz gevset
   if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #1: filtreler gevşetildi (rating -1)');
+    console.log('[recommendations] Retry #1: threshold gevsetildi (0.42, rating 6.0)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.25, Math.max(0, baseRating - 1), era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
+  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.42, 6.0, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
     return res.data as MatchFilmRow[];
   }
 
-  // Deneme 3: year filtrelerini kaldır
+  // Deneme 3: year filtrelerini kaldir, similarity biraz daha gevset
   if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #2: filtreler gevşetildi (year kaldırıldı)');
+    console.log('[recommendations] Retry #2: year kaldirildi (0.40, rating 5.5)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, Math.max(0, baseRating - 1), null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= 5) {
+  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.40, 5.5, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
     return res.data as MatchFilmRow[];
   }
 
-  // Deneme 4: sadece vektör similarity (min 0.2)
+  // Deneme 4 (son): minimum viable threshold — copi doldurma YOK
   if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #3: sadece vektör similarity');
+    console.log('[recommendations] Retry #3: son sans (0.38, rating yok, year yok)');
   }
-  res = await callMatchFilms(vectorString, limit, 0.2, null, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.38, null, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
   if (res.error) return null;
+  // Return whatever we found — even if < TARGET_COUNT. Never pad with junk.
   return (res.data as MatchFilmRow[]) ?? [];
 }
 
@@ -880,6 +888,8 @@ async function getFilmsWithRelaxation(
 export interface RecommendationResult {
   films: Film[];
   source: 'supabase' | 'fallback';
+  /** true when RPC returned fewer films than requested — UI should show "try different words" */
+  insufficient_results?: boolean;
 }
 
 /**
@@ -902,7 +912,7 @@ export interface RecommendationResult {
  */
 export async function getRecommendations(
   profile: TasteProfile,
-  limit = 30,
+  limit = 8,
   excludeIds: string[] = [],
   filters?: FilmFilters,
   searchId?: string | null,
@@ -1105,6 +1115,41 @@ export async function getRecommendations(
     }
   }
 
+  // ── Adım 4.8: Quality gate — relative score filter + cap at 8 ─────────────
+  // Remove films whose similarity is below 55% of the best match.
+  // Then cap at 8 films max. This prevents low-quality tail from reaching UI.
+  const FINAL_CAP = 8;
+  const RELATIVE_QUALITY_FLOOR = 0.55;
+
+  if (data.length > 0) {
+    const bestScore = data[0]?.similarity ?? 0;
+    const qualityFloor = bestScore * RELATIVE_QUALITY_FLOOR;
+
+    const beforeCount = data.length;
+    data = data.filter((row) => row.similarity >= qualityFloor);
+
+    if (__DEV__ && data.length < beforeCount) {
+      // eslint-disable-next-line no-console
+      console.log(
+        `[recommendations] Quality gate: ${beforeCount} → ${data.length} films`,
+        `| floor: ${(qualityFloor * 100).toFixed(0)}% (best: ${(bestScore * 100).toFixed(0)}%)`,
+      );
+    }
+
+    // Cap at FINAL_CAP
+    if (data.length > FINAL_CAP) {
+      data = data.slice(0, FINAL_CAP);
+    }
+
+    posthogAnalytics.track('quality_gate_applied', {
+      before_count: beforeCount,
+      after_count: data.length,
+      best_score: bestScore,
+      quality_floor: qualityFloor,
+      final_cap: FINAL_CAP,
+    });
+  }
+
   // ── Adım 5: Hata / boş sonuç → JS fallback ───────────────────────────────
   if (rpcFailed || data.length === 0) {
     const reason = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
@@ -1162,13 +1207,13 @@ export async function getRecommendations(
       }
     }
 
-    if (fallbackFilms) return { films: fallbackFilms, source: 'fallback' };
+    if (fallbackFilms) return { films: fallbackFilms, source: 'fallback', insufficient_results: fallbackFilms.length < limit || undefined };
 
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.log('[recommendations] films tablosu da boş — öneri listesi boş döndürülüyor');
     }
-    return { films: [], source: 'fallback' };
+    return { films: [], source: 'fallback', insufficient_results: true };
   }
 
   // ── Adım 6: Başarılı — SQL zaten filtredi, dönüştür + unexpected inject ──
@@ -1249,7 +1294,15 @@ export async function getRecommendations(
     tasteSignals.recordMoodSearchCompleted(searchId).catch(() => {});
   }
 
-  return { films, source: 'supabase' };
+  const insufficient = films.length < limit && films.length > 0;
+  if (insufficient) {
+    posthogAnalytics.track('insufficient_results', {
+      requested: limit,
+      returned: films.length,
+    });
+  }
+
+  return { films, source: 'supabase', insufficient_results: insufficient || undefined };
 }
 
 /**
