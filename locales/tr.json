@@ -185,6 +185,22 @@
     "curatorTitle": "Secimleriniz Hazir!",
     "curatorDescription": "5 film secildi ve hazir. Harika bir aksam seni bekliyor."
   },
+  "deckSummary": {
+    "title": "%{count} film watchlist'e eklendi",
+    "noLikesTitle": "Bu sefer tutmadi",
+    "subtitle": "Watchlist'in guclenmeye devam ediyor. Bu aksam icin birini sec!",
+    "noLikesSubtitle": "Farkli bir mood dene — sana gore filmler mutlaka var.",
+    "liked": "Begendim",
+    "passed": "Gectim",
+    "total": "Toplam",
+    "tonightsPick": "BU AKSAMIN ONERISI",
+    "topMatch": "EN IYI ESLESME",
+    "addedToWatchlist": "WATCHLIST'E EKLENENLER",
+    "insufficientNote": "Bu mood icin sinirli sayida guclu eslesme bulduk.",
+    "newMood": "Yeni Mood Ara",
+    "goWatchlist": "Watchlist'e Git",
+    "deckProgress": "%{current} / %{total}"
+  },
   "watchlist": {
     "header": "İzleme Listem",
     "emptyTitle": "Henüz film eklemedin.",

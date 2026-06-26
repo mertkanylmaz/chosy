@@ -490,18 +490,9 @@ export function useFeedManager(
     }
   }, [state.currentIndex]);
 
-  // ─── Otomatik Preload ────────────────────────────────────────────────────
-
-  useEffect(() => {
-    const remaining = state.films.length - state.currentIndex;
-    if (
-      state.films.length > 0 &&
-      remaining <= PRELOAD_TRIGGER &&
-      !isLoadingRef.current
-    ) {
-      loadNextBatch(state.excludeIds, state.films.length, 'preload');
-    }
-  }, [state.currentIndex, state.films.length, state.excludeIds, loadNextBatch]);
+  // ─── Otomatik Preload (deaktif — sonlu deste modeli, 8 film yeterli) ─────
+  // Eski sonsuz scroll icin her 3 kart kala preload yapiliyordu.
+  // Artik tek batch yukleniyor, preload gereksiz.
 
   // ─── Poster Prefetch ─────────────────────────────────────────────────────
 
