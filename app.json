@@ -15,7 +15,6 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.chosy.ai",
-      "buildNumber": "44",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
