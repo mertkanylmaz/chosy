@@ -9,14 +9,13 @@
  * Görsel:
  * - Full-bleed poster, bottom %40 gradient overlay
  * - Swipe overlay: yeşil "+" (sağa), kırmızı "✕" (sola)
- * - 3 dairesel action button: Skip (✕), Surprise (★), Save (♡)
+ * - 2 dairesel action button: Skip (✕), Save (♡)
  * - Sürpriz badge + match circle
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import {
   Dimensions,
-  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -83,7 +82,6 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w780';
 
 /** Action button boyutları */
 const ACTION_BTN_SM = 48;
-const ACTION_BTN_LG = 56;
 
 // ── Tipler ────────────────────────────────────────────────────────────────────
 
@@ -112,7 +110,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   onSwipeLeft,
 }) => {
   const router = useRouter();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
   // ── Shared values ─────────────────────────────────────────────────────────
   const translateX = useSharedValue(0);
@@ -219,16 +217,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
     router.push(`/film/${film.id}`);
   }, [router, film.id]);
 
-  /** Share butonu */
-  const handleShare = useCallback(async () => {
-    try {
-      await Share.share({
-        message: t('swipeCard.shareMessage', { title: film.title, match: matchPercent }),
-      });
-    } catch {
-      // kullanıcı iptal etti
-    }
-  }, [film.title, matchPercent, t]);
+  // Star/share button kaldirildi — sadece Skip + Save kaldi (Madde 1)
 
   // ── Gesture ───────────────────────────────────────────────────────────────
 
@@ -467,7 +456,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
               <Text style={styles.metaText}>{metaLine}</Text>
             )}
 
-            {/* ── 3 Action Buttons ─────────────────────────────────────────── */}
+            {/* ── 2 Action Buttons — Skip / Save ─────────────────────────── */}
             <View style={styles.actionRow}>
               {/* Skip — kırmızı border */}
               <TouchableOpacity
@@ -476,15 +465,6 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
                 activeOpacity={0.8}
               >
                 <Ionicons name="close" size={24} color={Colors.swipeLeft} />
-              </TouchableOpacity>
-
-              {/* Share/Surprise — violet filled, büyük */}
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.actionBtnLg, styles.actionBtnSurprise]}
-                onPress={handleShare}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="star" size={26} color={Colors.textOnAccent} />
               </TouchableOpacity>
 
               {/* Save — yeşil border */}
@@ -669,12 +649,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // ─── 3 Action Buttons — Skip / Surprise / Save ────────────────────────────
+  // ─── 2 Action Buttons — Skip / Save ────────────────────────────────────────
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 20,
+    gap: 32,
   },
   actionBtn: {
     alignItems: 'center',
@@ -687,26 +667,12 @@ const styles = StyleSheet.create({
     height: ACTION_BTN_SM,
     borderRadius: ACTION_BTN_SM / 2,
   },
-  actionBtnLg: {
-    width: ACTION_BTN_LG,
-    height: ACTION_BTN_LG,
-    borderRadius: ACTION_BTN_LG / 2,
-  },
   actionBtnSkip: {
     borderColor: Colors.swipeLeft,
-  },
-  actionBtnSurprise: {
-    borderColor: Colors.accentPrimary,
-    backgroundColor: Colors.accentPrimary,
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
   },
   actionBtnSave: {
     borderColor: Colors.swipeRight,
   },
 });
 
-export default React.memo(SwipeableCard);
+export default SwipeableCard;

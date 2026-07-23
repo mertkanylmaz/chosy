@@ -14,16 +14,26 @@
  * - Baslik: "Taste DNA" — Playfair Display, altin, emoji
  */
 import React, { useEffect } from 'react';
-import { Image, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { Dna } from 'phosphor-react-native';
+import {
+  Dna,
+  Smiley,
+  SmileyMeh,
+  SmileyAngry,
+  SmileyNervous,
+  Question,
+  ThumbsDown,
+  Timer,
+  HandHeart,
+} from 'phosphor-react-native';
+import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 
-import { EmotionIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -37,8 +47,17 @@ import { styles } from './styles';
 // EMOTION_COLORS — kompakt versiyon icin kaldirildi (barlar yok)
 // const EMOTION_COLORS: Record<keyof EmotionalState, string> = { ... };
 
-/** Her duygu icin ikon — constants/icons.ts'ten single source of truth */
-const EMOTION_ICON = EmotionIcons;
+/** Her duygu icin Phosphor vektor ikon */
+const EMOTION_PHOSPHOR: Record<keyof EmotionalState, React.ComponentType<PhosphorIconProps>> = {
+  joy: Smiley,
+  sadness: SmileyMeh,
+  anger: SmileyAngry,
+  fear: SmileyNervous,
+  surprise: Question,
+  disgust: ThumbsDown,
+  anticipation: Timer,
+  trust: HandHeart,
+};
 
 // PACE_OPTIONS, BAR_DURATION, BAR_STAGGER — kompakt versiyon icin kaldirildi
 
@@ -184,15 +203,18 @@ function FilledContent({
   return (
     <>
       {/* Baskin duygu — kompakt tek satir */}
-      {topEmotion && (
-        <View style={styles.dominantEmotionRow}>
-          <Image source={EMOTION_ICON[topEmotion.key]} style={styles.emotionEmoji} resizeMode="contain" />
-          <Text style={styles.dominantEmotionText}>
-            {t(`tasteDNA.emotion_${topEmotion.key}`)}
-            {secondEmotion ? ` + ${t(`tasteDNA.emotion_${secondEmotion.key}`)}` : ''}
-          </Text>
-        </View>
-      )}
+      {topEmotion && (() => {
+        const TopIcon = EMOTION_PHOSPHOR[topEmotion.key] ?? Smiley;
+        return (
+          <View style={styles.dominantEmotionRow}>
+            <TopIcon size={20} color="#E8A838" weight="duotone" />
+            <Text style={styles.dominantEmotionText}>
+              {t(`tasteDNA.emotion_${topEmotion.key}`)}
+              {secondEmotion ? ` + ${t(`tasteDNA.emotion_${secondEmotion.key}`)}` : ''}
+            </Text>
+          </View>
+        );
+      })()}
 
       {/* Genre egilimler — top 3, pill chip */}
       {topGenres.length > 0 && (

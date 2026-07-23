@@ -5,7 +5,7 @@ import { Theme } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
   container: {
-    marginTop: Theme.spacing.lg,
+    marginTop: Theme.spacing.sm,
   },
   sectionHeader: {
     marginHorizontal: Theme.spacing.lg,

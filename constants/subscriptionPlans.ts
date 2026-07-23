@@ -83,7 +83,7 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
   free: {
     dailySearchLimit: 3,
     dailyRefineLimit: 1,
-    dailySlotLimit: 1,
+    dailySlotLimit: 8,
     dailyGameLimitPerGame: 1,
     watchlistMaxFilms: 30,
   },

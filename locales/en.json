@@ -542,7 +542,12 @@
     "avatarHint": "Tap to change",
     "connectedWithApple": "Connected with Apple",
     "connectedWithGoogle": "Connected with Google",
-    "editNickname": "Edit"
+    "editNickname": "Edit",
+    "retakeQuiz": "Retake Quiz",
+    "retakeQuizConfirmTitle": "Retake Quiz?",
+    "retakeQuizConfirmMessage": "This will recalculate your cinephile archetype and taste profile. Do you want to continue?",
+    "watchlistSummaryCount": "Watchlist (%{count} films)",
+    "watchlistSummaryEmpty": "Watchlist"
   },
   "auth": {
     "welcomeTitle": "Your mood. Your movies.",

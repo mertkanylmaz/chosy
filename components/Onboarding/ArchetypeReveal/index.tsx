@@ -50,27 +50,27 @@ interface ArchetypeRevealProps {
 
 /**
  * Her sinefil arketipine ozel 3 filmlik poster seti.
- * Skorlama mantigi ile tutarli: her arketip kendi "imza" filmlerini gosterir.
- * TMDB w185 poster yollari — expo-image cache ile yuklenir.
+ * Her arketipin kimligi ile UYUMLU filmler secildi.
+ * TMDB w185 poster yollari — TMDB API'den dogrulanmis.
  *
- * 1  Adrenalin Bagimlisi — aksiyon/gerilim (Mad Max, Dark Knight, Inception)
- * 2  Zihin Bukucu — karmasik/dogrusal olmayan (Inception, Fight Club, Parasite)
- * 3  Gozyasi Hirsizi — duygusal/dram (Whiplash, Shawshank, La La Land)
- * 4  Gulumseme Avcisi — neşeli/hafif (Shawshank + roster filmleri)
- * 5  Umutsuz Romantik — ask/tath-ac (La La Land, Whiplash + roster)
- * 6  Karanlik Yolcu — karanlik/trajik (Fight Club, Parasite, Dark Knight)
- * 7  Gorsel Sair — estetik/sinematik (Interstellar, Parasite + roster)
- * 8  Nostalji Bekcisi — klasik/sicak (Shawshank, Whiplash + roster)
- * 9  Kaos Elcisi — kaotik/ham (Fight Club, Mad Max, Dark Knight)
- * 10 Huzur Gezgini — sakin/dogal (Spirited Away, Whiplash + roster)
- * 11 Gerceklik Dedektifi — ham/diyalog (Parasite, Whiplash, Fight Club)
- * 12 Fantastik Hayalperest — epik/macera (Inception, Interstellar, LotR)
+ * 1  Adrenalin Bagimlisi — Mad Max: Fury Road, The Dark Knight, John Wick
+ * 2  Zihin Bukucu — Inception, Fight Club, Parasite
+ * 3  Gozyasi Hirsizi — Whiplash, The Green Mile, Manchester by the Sea
+ * 4  Gulumseme Avcisi — The Grand Budapest Hotel, Amelie, Paddington 2
+ * 5  Umutsuz Romantik — La La Land, Pride & Prejudice, Eternal Sunshine
+ * 6  Karanlik Yolcu — Fight Club, Se7en, No Country for Old Men
+ * 7  Gorsel Sair — Blade Runner 2049, The Tree of Life, In the Mood for Love
+ * 8  Nostalji Bekcisi — Cinema Paradiso, Stand By Me, The Sandlot
+ * 9  Kaos Elcisi — Fight Club, Mad Max: Fury Road, Joker
+ * 10 Huzur Gezgini — Spirited Away, My Neighbor Totoro, A Man Called Ove
+ * 11 Gerceklik Dedektifi — Parasite, Spotlight, The Social Network
+ * 12 Fantastik Hayalperest — The Lord of the Rings, Pan's Labyrinth, Spirited Away
  */
 const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
   1: [ // Adrenalin Bagimlisi
     'https://image.tmdb.org/t/p/w185/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg', // Mad Max: Fury Road
     'https://image.tmdb.org/t/p/w185/qJ2tW6WMUDux911r6m7haRef0WH.jpg', // The Dark Knight
-    'https://image.tmdb.org/t/p/w185/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', // Inception
+    'https://image.tmdb.org/t/p/w185/wXqWR7dHncNRbxoEGybEy7QTe9h.jpg', // John Wick
   ],
   2: [ // Zihin Bukucu
     'https://image.tmdb.org/t/p/w185/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', // Inception
@@ -79,53 +79,53 @@ const ARCHETYPE_FILM_POSTERS: Readonly<Record<number, readonly string[]>> = {
   ],
   3: [ // Gozyasi Hirsizi
     'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
-    'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
-    'https://image.tmdb.org/t/p/w185/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', // La La Land
+    'https://image.tmdb.org/t/p/w185/8VG8fDNiy50H4FedGwdSVUPoaJe.jpg', // The Green Mile
+    'https://image.tmdb.org/t/p/w185/o9VXYOuaJxCEKOxbA86xqtwmqYn.jpg', // Manchester by the Sea
   ],
-  4: [ // Gulumseme Avcisi
-    'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
-    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', // Roster film
+  4: [ // Gulumseme Avcisi (Joy Seeker)
+    'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', // The Grand Budapest Hotel
+    'https://image.tmdb.org/t/p/w185/nSxDa3M9aMvGVLoItzWTepQ5h5d.jpg', // Amelie
+    'https://image.tmdb.org/t/p/w185/1OJ9vkD5xPt3skC6KguyXAgagRZ.jpg', // Paddington 2
   ],
   5: [ // Umutsuz Romantik
     'https://image.tmdb.org/t/p/w185/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', // La La Land
-    'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/o8UhmEbWPHmTUxP0lMuCoqNkbB3.jpg', // Pride & Prejudice (2005)
+    'https://image.tmdb.org/t/p/w185/5MwkWH9tYHv3mV9OdYTMR5qreIz.jpg', // Eternal Sunshine
   ],
   6: [ // Karanlik Yolcu
     'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
-    'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-    'https://image.tmdb.org/t/p/w185/qJ2tW6WMUDux911r6m7haRef0WH.jpg', // The Dark Knight
+    'https://image.tmdb.org/t/p/w185/191nKfP0ehp3uIvWqgPbFmI4lv9.jpg', // Se7en
+    'https://image.tmdb.org/t/p/w185/6d5XOczc226jECq0LIX0siKtgHR.jpg', // No Country for Old Men
   ],
   7: [ // Gorsel Sair
-    'https://image.tmdb.org/t/p/w185/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', // Interstellar
-    'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/gajva2L0rPYkEWjzgFlBXCAVBE5.jpg', // Blade Runner 2049
+    'https://image.tmdb.org/t/p/w185/l8cwuB5WJSoj4uMAsnzuHBOMaSJ.jpg', // The Tree of Life
+    'https://image.tmdb.org/t/p/w185/iYypPT4bhqXfq1b6EnmxvRt6b2Y.jpg', // In the Mood for Love
   ],
   8: [ // Nostalji Bekcisi
-    'https://image.tmdb.org/t/p/w185/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', // The Shawshank Redemption
-    'https://image.tmdb.org/t/p/w185/vQWk5YBFWF4bZaofAbv0tShwBvQ.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', // Roster film
+    'https://image.tmdb.org/t/p/w185/gCI2AeMV4IHSewhJkzsur5MEp6R.jpg', // Cinema Paradiso
+    'https://image.tmdb.org/t/p/w185/vz0w9BSehcqjDcJOjRaCk7fgJe7.jpg', // Stand By Me
+    'https://image.tmdb.org/t/p/w185/3rdEAMh4a3pc7GO6fSkJwpt7BWX.jpg', // The Sandlot
   ],
   9: [ // Kaos Elcisi
     'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
     'https://image.tmdb.org/t/p/w185/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg', // Mad Max: Fury Road
-    'https://image.tmdb.org/t/p/w185/qJ2tW6WMUDux911r6m7haRef0WH.jpg', // The Dark Knight
+    'https://image.tmdb.org/t/p/w185/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', // Joker
   ],
   10: [ // Huzur Gezgini
     'https://image.tmdb.org/t/p/w185/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', // Spirited Away
-    'https://image.tmdb.org/t/p/w185/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', // Roster film
-    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
+    'https://image.tmdb.org/t/p/w185/rtGDOeG9LzoerkDGZF9dnVeLppL.jpg', // My Neighbor Totoro
+    'https://image.tmdb.org/t/p/w185/a41uvFqze4PI7N3E9jPNwN9ypV.jpg',  // A Man Called Ove
   ],
   11: [ // Gerceklik Dedektifi
     'https://image.tmdb.org/t/p/w185/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', // Parasite
-    'https://image.tmdb.org/t/p/w185/7fn624j5lj3xTme2SgiLCeuedmO.jpg', // Whiplash
-    'https://image.tmdb.org/t/p/w185/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg', // Fight Club
+    'https://image.tmdb.org/t/p/w185/8DPGG400FgaFWaqcv11n8mRd2NG.jpg', // Spotlight
+    'https://image.tmdb.org/t/p/w185/n0ybibhJtQ5icDqTp8eRytcIHJx.jpg', // The Social Network
   ],
   12: [ // Fantastik Hayalperest
-    'https://image.tmdb.org/t/p/w185/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', // Inception
-    'https://image.tmdb.org/t/p/w185/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', // Interstellar
     'https://image.tmdb.org/t/p/w185/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', // The Lord of the Rings
+    'https://image.tmdb.org/t/p/w185/z7xXihu5wHuSMWymq5VAulPVuvg.jpg', // Pan's Labyrinth
+    'https://image.tmdb.org/t/p/w185/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', // Spirited Away
   ],
 };
 
@@ -297,21 +297,24 @@ export function ArchetypeReveal({ archetypeId, onFinish }: ArchetypeRevealProps)
   }));
 
   /**
-   * "Let's Go" basıldığında — dopamin zirvesinde App Store review iste,
-   * ardından onFinish() ile ana sayfaya geç.
+   * "Let's Go" basıldığında — ÖNCE navigate et, store review arka planda.
+   * requestReview() await edilmez — navigation'ı bloklamaz.
    * Lazy import: native build yoksa crash önler.
    */
-  const handleFinish = useCallback(async () => {
+  const handleFinish = useCallback(() => {
     if (!ctaEnabled) return;
     hapticLight();
-    try {
-      const StoreReview = await import('expo-store-review');
-      const isAvailable = await StoreReview.hasAction();
-      if (isAvailable) await StoreReview.requestReview();
-    } catch {
-      // Sessizce devam — review bloklayici olmamali
-    }
-    onFinish();
+    onFinish(); // ÖNCE navigate — bloklanmadan
+
+    // Store review arka planda, fire-and-forget:
+    (async () => {
+      try {
+        const StoreReview = await import('expo-store-review');
+        if (await StoreReview.hasAction()) await StoreReview.requestReview();
+      } catch {
+        // Sessizce devam — review bloklayici olmamali
+      }
+    })();
   }, [ctaEnabled, onFinish]);
 
   return (

@@ -174,7 +174,7 @@ export default function MoodCardGrid({ activeMoodText, onSelect }: MoodCardGridP
 
               {/* Title + Subtitle — bottom-left, never overlaps emoji top-right */}
               <View style={styles.textBlock}>
-                <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+                <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
                   {t(card.titleKey)}
                 </Text>
                 <Text style={styles.subtitle} numberOfLines={2}>

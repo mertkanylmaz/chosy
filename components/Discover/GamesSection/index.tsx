@@ -96,7 +96,7 @@ export default function GamesSection({ onGamePress }: GamesSectionProps) {
             <Text style={styles.cardTitle} numberOfLines={1}>
               {t(game.titleKey)}
             </Text>
-            <Text style={styles.cardDescription} numberOfLines={1}>
+            <Text style={styles.cardDescription} numberOfLines={2}>
               {t(game.descKey)}
             </Text>
           </TouchableOpacity>

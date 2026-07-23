@@ -30,7 +30,7 @@ import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
@@ -41,6 +41,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
 import { initUserPreferenceFromCalibration } from '@/services/userProfile';
+import { clearDailyPickCache } from '@/services/dailyMatch';
 import {
   cacheArchetypeId,
   cacheCalibrationVector,
@@ -228,7 +229,10 @@ type Phase = 'slides' | 'calibration' | 'taste_swipe' | 'reveal';
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const [phase, setPhase] = useState<Phase>('slides');
+  const params = useLocalSearchParams<{ mode?: string }>();
+  /** Retake mode — profile'dan tetiklenir, push/referral prompt atlanir */
+  const isRetakeMode = params.mode === 'retake';
+  const [phase, setPhase] = useState<Phase>(isRetakeMode ? 'calibration' : 'slides');
   const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const flatListRef = useRef<FlatList<IntroSlide>>(null);
@@ -239,8 +243,8 @@ export default function OnboardingScreen() {
 
   // ── PostHog: onboarding_started (mount) ───────────────────────────────────
   useEffect(() => {
-    posthogAnalytics.track('onboarding_started');
-  }, []);
+    posthogAnalytics.track(isRetakeMode ? 'retake_quiz_started' : 'onboarding_started');
+  }, [isRetakeMode]);
 
   /**
    * AsyncStorage'a onboarding bitisini yazar.
@@ -333,6 +337,9 @@ export default function OnboardingScreen() {
             payload: vectorJson,
           });
         }
+
+        // ── 3. Daily Pick cache invalidation — yeni archetype aninda yansissin ──
+        await clearDailyPickCache(appUserId);
       } catch (err) {
         logger.error('[Onboarding] saveCalibrationResultsAsync hata:', err);
       }
@@ -380,6 +387,13 @@ export default function OnboardingScreen() {
     posthogAnalytics.track('archetype_revealed', { archetype_id: revealArchetypeId });
     await markOnboardingComplete();
 
+    if (isRetakeMode) {
+      // Retake mode — push/referral atlanir, profile'a don
+      posthogAnalytics.track('retake_quiz_completed', { archetype_id: revealArchetypeId });
+      router.replace('/(tabs)/profile' as never);
+      return;
+    }
+
     // Request push permission after value delivery (archetype revealed).
     // Fire-and-forget: rejection is silent — user can enable from Settings later.
     registerForPushNotifications().catch((err) => {
@@ -389,13 +403,25 @@ export default function OnboardingScreen() {
     // Show referral prompt (one-time) — navigation deferred until dismiss
     setPendingNavigate(true);
     referralPrompt.show();
-  }, [markOnboardingComplete, referralPrompt]);
+  }, [markOnboardingComplete, referralPrompt, isRetakeMode, router, revealArchetypeId]);
 
   /** Navigate to mood tab after referral prompt is dismissed (or immediately if already shown) */
   useEffect(() => {
-    if (pendingNavigate && !referralPrompt.visible) {
+    if (!pendingNavigate) return;
+
+    // Referral prompt dismissed (or never shown) → navigate
+    if (!referralPrompt.visible) {
       router.replace({ pathname: '/(tabs)', params: { onboarding: '1' } } as never);
+      return;
     }
+
+    // Safety timeout: 3s after pendingNavigate, navigate even if referral is stuck
+    const fallbackTimer = setTimeout(() => {
+      logger.warn('[Onboarding] Referral prompt fallback timeout — forcing navigation');
+      router.replace({ pathname: '/(tabs)', params: { onboarding: '1' } } as never);
+    }, 3000);
+
+    return () => clearTimeout(fallbackTimer);
   }, [pendingNavigate, referralPrompt.visible, router]);
 
   /** Calibration skip → dogrudan bitir */

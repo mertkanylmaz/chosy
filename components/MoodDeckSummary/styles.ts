@@ -12,17 +12,19 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
+  scrollArea: {
+    flex: 1,
+  },
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
     paddingHorizontal: Theme.spacing.lg,
-    paddingBottom: 40,
+    paddingBottom: 120, // footer arkasinda kalmasin
   },
 
   // ── Header ──────────────────────────────────────────────────────────────────
-  headerEmoji: {
-    fontSize: 48,
-    textAlign: 'center',
+  headerIconWrap: {
+    alignItems: 'center',
     marginBottom: 12,
   },
   title: {
@@ -163,10 +165,18 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
 
-  // ── Action buttons ──────────────────────────────────────────────────────────
-  actions: {
+  // ── Fixed footer ────────────────────────────────────────────────────────────
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: Theme.spacing.lg,
+    paddingTop: 16,
     gap: 12,
-    marginTop: 8,
+    backgroundColor: Colors.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.borderSubtle,
   },
   primaryBtn: {
     backgroundColor: Colors.accentPrimary,

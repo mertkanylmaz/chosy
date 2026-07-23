@@ -5,8 +5,9 @@
  * sola (skip) kaydirmak zorunlu. Tamamlaninca taste signal'leri kayda
  * alinmis olur → hybrid recommendation ilk aramadan itibaren aktif.
  *
- * Basitlestirilmis swipe mekanigi — discover.tsx'teki full stack'a ihtiyac yok.
- * Reanimated + GestureHandler ile 60fps animasyon.
+ * Her kart kendi shared value'larina sahip TasteSwipeCard instance'i
+ * olarak render edilir (key={film.id}). Bu sayede kart gecisinde
+ * translateX sifirlanmasi kaynaklı poster flash/glitch onlenir.
  */
 import React, { useCallback, useMemo, useState } from 'react';
 import {
@@ -35,7 +36,6 @@ import { Colors } from '@/constants/Colors';
 import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { tasteSignals } from '@/services/tasteSignalService';
-import { getAppUserId } from '@/services/watchlist';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
@@ -60,11 +60,11 @@ export interface ColdStartFilm {
 
 /** Curated cold-start films — well-known, genre-diverse */
 const COLD_START_FILMS: ColdStartFilm[] = [
-  { id: '278', title: 'The Shawshank Redemption', year: 1994, posterPath: '/9cjIGRiQoOdyAMSMaHiMznO7SUk.jpg', genre: 'Drama' },
+  { id: '278', title: 'The Shawshank Redemption', year: 1994, posterPath: '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg', genre: 'Drama' },
   { id: '27205', title: 'Inception', year: 2010, posterPath: '/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg', genre: 'Sci-Fi' },
   { id: '129', title: 'Spirited Away', year: 2001, posterPath: '/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', genre: 'Animation' },
   { id: '120467', title: 'The Grand Budapest Hotel', year: 2014, posterPath: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', genre: 'Comedy' },
-  { id: '419704', title: 'Get Out', year: 2017, posterPath: '/tFXcEccSQMf3zy7uWgQMBMRL5Z4.jpg', genre: 'Thriller' },
+  { id: '419430', title: 'Get Out', year: 2017, posterPath: '/mE24wUCfjK8AoBBjaMjho7Rczr7.jpg', genre: 'Thriller' },
   { id: '313369', title: 'La La Land', year: 2016, posterPath: '/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', genre: 'Romance' },
 ];
 
@@ -77,57 +77,28 @@ interface TasteSwipeProps {
   onComplete: () => void;
 }
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Per-card swipe component ──────────────────────────────────────────────────
+
+interface TasteSwipeCardProps {
+  film: ColdStartFilm;
+  onSwipeComplete: (direction: 'right' | 'left') => void;
+}
 
 /**
- * Cold-start onboarding swipe — 6 film, zorunlu swipe.
- * Her swipe bir taste signal kaydeder.
+ * Tek bir swipe karti — kendi shared value'larina sahip.
+ * key={film.id} ile mount edilir → her kart gecisinde temiz state baslar,
+ * translateX sifirlanma kaynaklı poster flash onlenir.
  */
-export function TasteSwipe({ onComplete }: TasteSwipeProps) {
+function TasteSwipeCard({ film, onSwipeComplete }: TasteSwipeCardProps) {
   const { t } = useLanguage();
-  const [currentIndex, setCurrentIndex] = useState(0);
   const translateX = useSharedValue(0);
-
-  /** Swipe tamamlandi — signal kaydet, sonraki karta gec */
-  const handleSwipeComplete = useCallback(
-    (direction: 'right' | 'left', filmIndex: number) => {
-      const film = COLD_START_FILMS[filmIndex];
-      if (!film) return;
-
-      // Taste signal kaydi — fire-and-forget
-      if (direction === 'right') {
-        hapticMedium();
-        tasteSignals.recordSwipeRight(film.id).catch((err) => {
-          logger.error('[TasteSwipe] swipe_right signal failed:', err);
-        });
-      } else {
-        hapticLight();
-        tasteSignals.recordSwipeLeft(film.id).catch((err) => {
-          logger.error('[TasteSwipe] swipe_left signal failed:', err);
-        });
-      }
-
-      const nextIndex = filmIndex + 1;
-      if (nextIndex >= TOTAL_CARDS) {
-        // Tum kartlar bitti — dirty flag tetikle ve complete callback
-        hapticSuccess();
-        // preferences_vector_dirty migration 039 ile otomatik tetiklenir
-        // (taste signal insert → trigger)
-        onComplete();
-      } else {
-        setCurrentIndex(nextIndex);
-      }
-    },
-    [onComplete],
-  );
 
   /** Worklet: swipe sonrasi JS callback'e gec */
   const onSwipeDone = useCallback(
     (direction: 'right' | 'left') => {
-      handleSwipeComplete(direction, currentIndex);
-      translateX.value = 0;
+      onSwipeComplete(direction);
     },
-    [currentIndex, handleSwipeComplete, translateX],
+    [onSwipeComplete],
   );
 
   // ── Gesture ─────────────────────────────────────────────────────────────────
@@ -135,10 +106,14 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
   const panGesture = useMemo(
     () =>
       Gesture.Pan()
+        .activeOffsetX([-15, 15])
+        .failOffsetY([-10, 10])
         .onUpdate((e) => {
+          'worklet';
           translateX.value = e.translationX;
         })
         .onEnd((e) => {
+          'worklet';
           const shouldSwipeRight =
             e.translationX > SWIPE_THRESHOLD || e.velocityX > VELOCITY_THRESHOLD;
           const shouldSwipeLeft =
@@ -162,6 +137,7 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
   // ── Animated Styles ─────────────────────────────────────────────────────────
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
+    'worklet';
     const rotate = interpolate(
       translateX.value,
       [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
@@ -177,35 +153,152 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
   });
 
   /** Save overlay (sag) opacity */
-  const saveOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [0, SWIPE_THRESHOLD],
-      [0, 1],
-      Extrapolation.CLAMP,
-    ),
-  }));
+  const saveOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [0, SWIPE_THRESHOLD],
+        [0, 1],
+        Extrapolation.CLAMP,
+      ),
+    };
+  });
 
   /** Skip overlay (sol) opacity */
-  const skipOverlayStyle = useAnimatedStyle(() => ({
-    opacity: interpolate(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0],
-      [1, 0],
-      Extrapolation.CLAMP,
-    ),
-  }));
-
-  /** Back card scale — swipe ilerledikce buyur */
-  const backCardStyle = useAnimatedStyle(() => {
-    const scale = interpolate(
-      Math.abs(translateX.value),
-      [0, SWIPE_THRESHOLD],
-      [0.92, 1],
-      Extrapolation.CLAMP,
-    );
-    return { transform: [{ scale }] };
+  const skipOverlayStyle = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      opacity: interpolate(
+        translateX.value,
+        [-SWIPE_THRESHOLD, 0],
+        [1, 0],
+        Extrapolation.CLAMP,
+      ),
+    };
   });
+
+  /** Button ile sola kaydirma */
+  const triggerLeft = useCallback(() => {
+    translateX.value = withTiming(-EXIT_DISTANCE, { duration: 250 }, () => {
+      runOnJS(onSwipeDone)('left');
+    });
+  }, [translateX, onSwipeDone]);
+
+  /** Button ile saga kaydirma */
+  const triggerRight = useCallback(() => {
+    translateX.value = withTiming(EXIT_DISTANCE, { duration: 250 }, () => {
+      runOnJS(onSwipeDone)('right');
+    });
+  }, [translateX, onSwipeDone]);
+
+  return (
+    <View style={styles.cardWithButtons}>
+      {/* Active card — cardArea icinde absolute olarak konumlanir */}
+      <View style={styles.cardArea}>
+        <GestureDetector gesture={panGesture}>
+          <Animated.View style={[styles.card, styles.activeCard, cardAnimatedStyle]}>
+            <Image
+              source={{ uri: `${TMDB_IMAGE_BASE}${film.posterPath}` }}
+              style={styles.poster}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              transition={200}
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(10,10,10,0.85)']}
+              style={styles.gradient}
+            />
+
+            {/* Save overlay */}
+            <Animated.View style={[styles.overlay, styles.saveOverlay, saveOverlayStyle]}>
+              <Ionicons name="heart" size={48} color={Colors.success} />
+              <Text style={styles.overlayText}>{t('onboarding.tasteSwipeLike')}</Text>
+            </Animated.View>
+
+            {/* Skip overlay */}
+            <Animated.View style={[styles.overlay, styles.skipOverlay, skipOverlayStyle]}>
+              <Ionicons name="close" size={48} color={Colors.error} />
+              <Text style={styles.overlayText}>{t('onboarding.tasteSwipeSkip')}</Text>
+            </Animated.View>
+
+            {/* Film info */}
+            <View style={styles.cardInfo}>
+              <Text style={styles.filmTitle} numberOfLines={2}>{film.title}</Text>
+              <Text style={styles.filmMeta}>{film.year} · {film.genre}</Text>
+            </View>
+          </Animated.View>
+        </GestureDetector>
+      </View>
+
+      {/* Action buttons — fallback for swipe + visual hint */}
+      <View style={styles.hintRow}>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          activeOpacity={0.7}
+          onPress={triggerLeft}
+        >
+          <Ionicons name="close-circle" size={32} color={Colors.error} />
+          <Text style={[styles.hintText, { color: Colors.error }]}>{t('onboarding.tasteSwipeSkip')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionBtn}
+          activeOpacity={0.7}
+          onPress={triggerRight}
+        >
+          <Ionicons name="heart-circle" size={32} color={Colors.success} />
+          <Text style={[styles.hintText, { color: Colors.success }]}>{t('onboarding.tasteSwipeLike')}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
+/**
+ * Cold-start onboarding swipe — 6 film, zorunlu swipe.
+ * Her swipe bir taste signal kaydeder.
+ * Her kart kendi TasteSwipeCard instance'i — key={film.id} ile mount/unmount.
+ */
+export function TasteSwipe({ onComplete }: TasteSwipeProps) {
+  const { t } = useLanguage();
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  /** Swipe tamamlandi — signal kaydet, sonraki karta gec */
+  const handleSwipeComplete = useCallback(
+    (direction: 'right' | 'left') => {
+      const film = COLD_START_FILMS[currentIndex];
+      if (!film) return;
+
+      // Taste signal kaydi — fire-and-forget
+      if (direction === 'right') {
+        hapticMedium();
+        tasteSignals.recordSwipeRight(film.id).catch((err) => {
+          logger.error('[TasteSwipe] swipe_right signal failed:', err);
+        });
+      } else {
+        hapticLight();
+        tasteSignals.recordSwipeLeft(film.id).catch((err) => {
+          logger.error('[TasteSwipe] swipe_left signal failed:', err);
+        });
+      }
+
+      const nextIndex = currentIndex + 1;
+      if (nextIndex >= TOTAL_CARDS) {
+        // Tum kartlar bitti — dirty flag tetikle ve complete callback
+        hapticSuccess();
+        onComplete();
+      } else {
+        setCurrentIndex(nextIndex);
+      }
+    },
+    [currentIndex, onComplete],
+  );
+
+  // ── Back card scale animation (shared — parent level) ───────────────────────
+
+  /** Back card icin basit scale-up — sabit 0.92 (aktif kart ucunca 1.0'a gecis CSS'te) */
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
@@ -231,89 +324,36 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
         {currentIndex + 1} / {TOTAL_CARDS}
       </Text>
 
-      {/* Card stack */}
-      <View style={styles.cardArea}>
-        {/* Back card (next) */}
+      {/* Card stack + buttons — TasteSwipeCard manages own cardArea */}
+      <View style={styles.stackWrapper}>
+        {/* Back card (next) — static preview behind active card */}
         {nextFilm && (
-          <Animated.View style={[styles.card, styles.backCard, backCardStyle]}>
-            <Image
-              source={{ uri: `${TMDB_IMAGE_BASE}${nextFilm.posterPath}` }}
-              style={styles.poster}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(10,10,10,0.85)']}
-              style={styles.gradient}
-            />
-            <View style={styles.cardInfo}>
-              <Text style={styles.filmTitle} numberOfLines={2}>{nextFilm.title}</Text>
-              <Text style={styles.filmMeta}>{nextFilm.year} · {nextFilm.genre}</Text>
-            </View>
-          </Animated.View>
+          <View style={styles.backCardWrap}>
+            <Animated.View style={[styles.card, styles.backCard, { transform: [{ scale: 0.92 }] }]}>
+              <Image
+                source={{ uri: `${TMDB_IMAGE_BASE}${nextFilm.posterPath}` }}
+                style={styles.poster}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
+              <LinearGradient
+                colors={['transparent', 'rgba(10,10,10,0.85)']}
+                style={styles.gradient}
+              />
+              <View style={styles.cardInfo}>
+                <Text style={styles.filmTitle} numberOfLines={2}>{nextFilm.title}</Text>
+                <Text style={styles.filmMeta}>{nextFilm.year} · {nextFilm.genre}</Text>
+              </View>
+            </Animated.View>
+          </View>
         )}
 
-        {/* Active card — zIndex:2 ensures it sits above backCard for touch */}
-        <GestureDetector gesture={panGesture}>
-          <Animated.View style={[styles.card, styles.activeCard, cardAnimatedStyle]}>
-            <Image
-              source={{ uri: `${TMDB_IMAGE_BASE}${currentFilm.posterPath}` }}
-              style={styles.poster}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-            />
-            <LinearGradient
-              colors={['transparent', 'rgba(10,10,10,0.85)']}
-              style={styles.gradient}
-            />
-
-            {/* Save overlay */}
-            <Animated.View style={[styles.overlay, styles.saveOverlay, saveOverlayStyle]}>
-              <Ionicons name="heart" size={48} color={Colors.success} />
-              <Text style={styles.overlayText}>{t('onboarding.tasteSwipeLike')}</Text>
-            </Animated.View>
-
-            {/* Skip overlay */}
-            <Animated.View style={[styles.overlay, styles.skipOverlay, skipOverlayStyle]}>
-              <Ionicons name="close" size={48} color={Colors.error} />
-              <Text style={styles.overlayText}>{t('onboarding.tasteSwipeSkip')}</Text>
-            </Animated.View>
-
-            {/* Film info */}
-            <View style={styles.cardInfo}>
-              <Text style={styles.filmTitle} numberOfLines={2}>{currentFilm.title}</Text>
-              <Text style={styles.filmMeta}>{currentFilm.year} · {currentFilm.genre}</Text>
-            </View>
-          </Animated.View>
-        </GestureDetector>
-      </View>
-
-      {/* Action buttons — fallback for swipe + visual hint */}
-      <View style={styles.hintRow}>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          activeOpacity={0.7}
-          onPress={() => {
-            translateX.value = withTiming(-EXIT_DISTANCE, { duration: 250 }, () => {
-              runOnJS(onSwipeDone)('left');
-            });
-          }}
-        >
-          <Ionicons name="close-circle" size={32} color={Colors.error} />
-          <Text style={[styles.hintText, { color: Colors.error }]}>{t('onboarding.tasteSwipeSkip')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.actionBtn}
-          activeOpacity={0.7}
-          onPress={() => {
-            translateX.value = withTiming(EXIT_DISTANCE, { duration: 250 }, () => {
-              runOnJS(onSwipeDone)('right');
-            });
-          }}
-        >
-          <Ionicons name="heart-circle" size={32} color={Colors.success} />
-          <Text style={[styles.hintText, { color: Colors.success }]}>{t('onboarding.tasteSwipeLike')}</Text>
-        </TouchableOpacity>
+        {/* Active card — key={film.id} ile her geciste fresh mount */}
+        <TasteSwipeCard
+          key={currentFilm.id}
+          film={currentFilm}
+          onSwipeComplete={handleSwipeComplete}
+        />
       </View>
     </View>
   );
@@ -372,7 +412,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  // Card area
+  // Stack wrapper — contains back card + TasteSwipeCard (active card + buttons)
+  stackWrapper: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  // Back card wrapper — absolute overlay behind active card
+  backCardWrap: {
+    position: 'absolute',
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 0,
+  },
+  // Card with buttons — wraps active card area + hint row
+  cardWithButtons: {
+    alignItems: 'center',
+    zIndex: 1,
+  },
+  // Card area — fixed size for absolute-positioned card
   cardArea: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,

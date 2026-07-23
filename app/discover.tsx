@@ -46,6 +46,7 @@ import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
+import * as Sentry from '@sentry/react-native';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -70,7 +71,7 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId } = useMood();
   const { isPremium } = useSubscription();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
@@ -80,13 +81,19 @@ export default function DiscoverScreen() {
   }, [isOnboarding, router]);
 
   const { triggerPaywall, paywallProps: rawPaywallProps } = useContextualPaywall(navigateAfterOnboarding);
+  /** Slot quota tükendi — deck donduruldu, swipe bloklanır */
+  const [deckFrozen, setDeckFrozen] = useState(false);
   const paywallProps = useMemo(() => ({
     ...rawPaywallProps,
     onDismiss: () => {
       rawPaywallProps.onDismiss();
-      if (isOnboarding) router.replace('/(tabs)' as never);
+      // Slot quota tükendiyse veya onboarding'deyse: discover'dan çık
+      if (deckFrozen || isOnboarding) {
+        clearMood();
+        router.replace('/(tabs)' as never);
+      }
     },
-  }), [rawPaywallProps, isOnboarding, router]);
+  }), [rawPaywallProps, isOnboarding, deckFrozen, clearMood, router]);
 
   const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
 
@@ -150,42 +157,58 @@ export default function DiscoverScreen() {
 
   const handleSwipeRight = useCallback(
     async (film: Film) => {
-      // Quota check (free users)
+      // ── Slot quota kontrolü (free users) — gate BEFORE advancing ──────
       if (!isPremium) {
-        const uid = await getAppUserId();
-        if (uid) {
-          const quota = await checkAndConsumeQuota(uid, 'slot');
-          if (!quota.allowed) {
-            tasteSignals.recordSwipeRight(film.id).catch(() => {});
-            triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
-            advanceToNext();
-            return;
+        try {
+          const uid = await getAppUserId();
+          if (uid) {
+            const quota = await checkAndConsumeQuota(uid, 'slot');
+            if (!quota.allowed) {
+              // Kota tükendi — deck'i dondur, paywall göster
+              tasteSignals.recordSwipeRight(film.id).catch(() => {});
+              setDeckFrozen(true);
+              triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
+              return; // Kart ilerlemez, watchlist'e yazılmaz
+            }
           }
+        } catch (err) {
+          // Fail-open: quota kontrolü başarısız olursa devam et
+          Sentry.captureException(err, {
+            tags: { action: 'swipe_right_quota_check' },
+            extra: { filmId: film.id },
+          });
         }
       }
 
-      // Watchlist'e ekle
-      await addToWatchlist(film);
-      onSwipeFilm(film, 'right');
-      addLastSessionFilm(film);
+      // ── Quota geçti — kart ilerler, watchlist arka planda yazılır ──────
+      advanceToNext();
       setLikedFilms((prev) => [...prev, film]);
+      addLastSessionFilm(film);
+      onSwipeFilm(film, 'right');
 
       // Toast
       if (toastTimer.current) clearTimeout(toastTimer.current);
       setShowSaveToast(true);
       toastTimer.current = setTimeout(() => setShowSaveToast(false), 1200);
 
-      advanceToNext();
+      // Watchlist yazma — arka planda, kullanıcıyı bloklamaz
+      addToWatchlist(film, currentSessionId).catch((err) => {
+        Sentry.captureException(err, {
+          tags: { action: 'swipe_right_watchlist' },
+          extra: { filmId: film.id, filmTitle: film.title },
+        });
+      });
     },
-    [isPremium, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext],
+    [isPremium, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
   );
 
   const handleSwipeLeft = useCallback(
     (film: Film) => {
+      // ── Optimistic UI: kart hemen ilerler ──────────────────────────────
+      advanceToNext();
+      setDislikedFilms((prev) => [...prev, film]);
       onSwipeFilm(film, 'left');
       tasteSignals.recordSwipeLeft(film.id).catch(() => {});
-      setDislikedFilms((prev) => [...prev, film]);
-      advanceToNext();
     },
     [onSwipeFilm, advanceToNext],
   );
@@ -274,10 +297,14 @@ export default function DiscoverScreen() {
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
 
-      {/* Current swipe card */}
+      {/* Current swipe card — deckFrozen olunca gesture bloklanir */}
       {currentFilm && (
-        <View style={{ height: CARD_HEIGHT }}>
+        <View
+          style={{ height: CARD_HEIGHT }}
+          pointerEvents={deckFrozen ? 'none' : 'auto'}
+        >
           <SwipeableCard
+            key={currentFilm.id}
             film={currentFilm}
             height={CARD_HEIGHT}
             bottomOffset={insets.bottom + 80}
@@ -368,23 +395,27 @@ const styles = StyleSheet.create({
   },
   progressText: {
     color: Colors.textWhite,
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     marginBottom: 6,
-    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    textShadowRadius: 4,
   },
   progressTrack: {
-    height: 3,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 2,
+    height: 5,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: Colors.accentPrimary,
-    borderRadius: 2,
+    borderRadius: 3,
+    shadowColor: Colors.accentPrimary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
   },
 
   // ── New mood (close) button ─────────────────────────────────────────────────

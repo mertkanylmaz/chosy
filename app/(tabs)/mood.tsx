@@ -214,6 +214,6 @@ const styles = StyleSheet.create({
     paddingBottom: 83 + Theme.spacing.lg,
   },
   dailyPickWrapper: {
-    marginBottom: Theme.spacing.xl,
+    marginBottom: Theme.spacing.sm,
   },
 });

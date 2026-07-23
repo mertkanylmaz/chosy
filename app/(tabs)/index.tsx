@@ -61,6 +61,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/services/moodSearchState';
+import { startPreload, clearPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
 import { parseMood } from '@/services/tasteParser';
 import { saveSession, getAppUserId } from '@/services/watchlist';
@@ -252,6 +253,11 @@ export default function HomeScreen() {
       setPendingMoodText(trimmed);
 
       setTasteProfile(profile);
+
+      // Recommendations preload — animasyonu beklemeden hemen baslat
+      // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
+      // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
+      startPreload(profile, filters);
 
       // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
       await new Promise<void>((resolve) => setTimeout(resolve, 350));

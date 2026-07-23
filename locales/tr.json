@@ -542,7 +542,12 @@
     "avatarHint": "Degistirmek icin dokun",
     "connectedWithApple": "Apple ile baglandi",
     "connectedWithGoogle": "Google ile baglandi",
-    "editNickname": "Duzenle"
+    "editNickname": "Duzenle",
+    "retakeQuiz": "Testi Tekrarla",
+    "retakeQuizConfirmTitle": "Testi Tekrarla?",
+    "retakeQuizConfirmMessage": "Bu, mevcut sinefil arketipini ve zevk profilini yeniden hesaplayacak. Devam etmek istiyor musun?",
+    "watchlistSummaryCount": "Izleme Listesi (%{count} film)",
+    "watchlistSummaryEmpty": "Izleme Listesi"
   },
   "auth": {
     "welcomeTitle": "Mood'un. Filmlerin.",

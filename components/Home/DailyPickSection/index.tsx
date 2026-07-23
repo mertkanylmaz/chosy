@@ -6,7 +6,11 @@
  *  - Daha kisa aspect ratio (2.5:4) — scroll alanini korumak icin
  *  - FadeInDown.delay(300) stagger animasyonu
  *
- * Veri: getDailyMatch() via AsyncStorage cache (gunluk).
+ * Veri oncelik sirasi:
+ *   1. getDailyMatchByPreferences — users.preferences_vector (calibration/retake gunceller)
+ *   2. getDailyMatch(lastProfile) — son mood session fallback
+ *   Her ikisi de AsyncStorage cache (gunluk) kullanir.
+ *
  * Profile yoksa DailyMatchCard'in kendi EmptyCard'i gosterilir.
  */
 
@@ -15,12 +19,13 @@ import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { supabase } from '@/services/supabase';
-import { getDailyMatch } from '@/services/dailyMatch';
+import { getDailyMatch, getDailyMatchByPreferences } from '@/services/dailyMatch';
 import { getLastParsedProfile } from '@/services/profileService';
 import { computeArchetype } from '@/services/archetypeEngine';
 import * as watchlist from '@/services/watchlist';
 import DailyMatchCard from '@/components/Profile/DailyMatchCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { logger } from '@/utils/logger';
 
 import type { Film } from '@/types/film';
 
@@ -52,7 +57,7 @@ export default function DailyPickSection() {
 
       const { data: userRow } = await supabase
         .from('users')
-        .select('id')
+        .select('id, archetype_id')
         .eq('auth_id', authUser.id)
         .single();
 
@@ -61,25 +66,41 @@ export default function DailyPickSection() {
         return;
       }
 
-      const userId: string = (userRow as { id: string }).id;
+      const row = userRow as { id: string; archetype_id: number | null };
+      const userId: string = row.id;
 
-      // Son parsed profil ve arketip
-      const tasteProfile = await getLastParsedProfile(userId);
-      const archId = computeArchetype(tasteProfile);
-      setArchetypeId(archId);
-
-      if (!tasteProfile) {
-        setLoading(false);
-        return;
-      }
+      // Arketip ID'sini DB'den oku (retake sonrasi her zaman guncel)
+      setArchetypeId(row.archetype_id);
 
       // Watchlist'ten gorulmus film ID'lerini al (servis auth'u dahili alir)
       const watchlistItems = await watchlist.getWatchlist();
       const seenIds = watchlistItems.map((w) => w.film.id);
 
-      // Gunluk oneriyi getir (cache'li)
-      const dailyFilm = await getDailyMatch(userId, tasteProfile, seenIds);
-      setFilm(dailyFilm);
+      // ── Oncelik 1: preferences_vector (calibration/retake her zaman gunceller) ──
+      const prefFilm = await getDailyMatchByPreferences(userId, seenIds);
+      if (prefFilm) {
+        logger.log('[DailyPickSection] preferences_vector ile oneri:', prefFilm.title);
+        setFilm(prefFilm);
+        return;
+      }
+
+      // ── Oncelik 2: Son mood session profili (fallback) ──
+      const tasteProfile = await getLastParsedProfile(userId);
+      if (tasteProfile) {
+        const dailyFilm = await getDailyMatch(userId, tasteProfile, seenIds);
+        if (dailyFilm) {
+          logger.log('[DailyPickSection] session profili ile oneri:', dailyFilm.title);
+        }
+        setFilm(dailyFilm);
+        // Arketip hesaplamasi — sadece session fallback'inda gerekli
+        if (!row.archetype_id) {
+          setArchetypeId(computeArchetype(tasteProfile));
+        }
+        return;
+      }
+
+      // Her iki kaynak da bos — DailyMatchCard EmptyCard gosterir
+      logger.log('[DailyPickSection] preferences_vector ve session profili yok');
     } catch {
       // Hata sessizce gec — DailyMatchCard EmptyCard gosterir
     } finally {

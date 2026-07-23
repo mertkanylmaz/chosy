@@ -11,6 +11,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Purchases from 'react-native-purchases';
+import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import {
@@ -171,6 +172,7 @@ export async function checkAndConsumeQuota(
     };
   } catch (err) {
     logger.error('[quota] checkAndConsumeQuota error:', err);
+    Sentry.captureException(err, { tags: { context: 'quota_fail_open', quota_type: quotaType } });
     // Fail-open: hata durumunda kullaniciyi kilitlemez
     return {
       allowed: true,
@@ -223,6 +225,7 @@ export async function checkAndConsumeGameQuota(
     };
   } catch (err) {
     logger.error('[quota] checkAndConsumeGameQuota error:', err);
+    Sentry.captureException(err, { tags: { context: 'quota_fail_open', quota_type: `game_${gameId}` } });
     // Fail-open: oyun engagement oncelikli — hata durumunda izin ver
     return {
       allowed: true,

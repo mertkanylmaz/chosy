@@ -56,8 +56,8 @@ export const styles = StyleSheet.create({
     maxWidth: '75%',
   },
   title: {
-    fontSize: Theme.typography.h3.fontSize,
-    lineHeight: Theme.typography.h3.lineHeight,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '700',
     color: Colors.textPrimary,
   },

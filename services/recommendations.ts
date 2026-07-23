@@ -321,8 +321,13 @@ function toTmdbUrl(path: string | null, size = 'w780'): string {
 function rowToFilm(row: MatchFilmRow): Film {
   const overviewFallback = row.overview ? row.overview.slice(0, 90) + '…' : '';
   // v3 match_reason (tmdb_keywords) takes priority over dimensions-based reason
-  const reason = row.match_reason
-    ? `Matches your mood: ${row.match_reason}`
+  // SQL returns "Matches: heist, chase" — strip duplicate prefix to avoid
+  // "Matches your mood: Matches: heist, chase"
+  const cleanMatchReason = row.match_reason
+    ? row.match_reason.replace(/^Matches:\s*/i, '')
+    : null;
+  const reason = cleanMatchReason
+    ? `Matches your mood: ${cleanMatchReason}`
     : whyFromDimensions(row.dimensions_json, overviewFallback);
   return {
     id: row.id,

@@ -10,12 +10,14 @@
  */
 import React, { useEffect } from 'react';
 import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Ionicons } from '@expo/vector-icons';
 import { hapticSuccess } from '@/utils/haptics';
+import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { Film } from '@/types/film';
@@ -51,6 +53,7 @@ export default function MoodDeckSummary({
   onGoWatchlist,
 }: MoodDeckSummaryProps) {
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
 
   // Haptic + analytics on mount
   useEffect(() => {
@@ -84,101 +87,120 @@ export default function MoodDeckSummary({
     onGoWatchlist();
   };
 
+  // Footer height: butonlar + padding (tab bar arkasinda kalmasin)
+  const FOOTER_PADDING_BOTTOM = Math.max(insets.bottom, 20) + 83;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      {/* Header */}
-      <Animated.View entering={FadeInDown.delay(100).springify()}>
-        <Text style={styles.headerEmoji}>{hasLiked ? '\uD83C\uDFAC' : '\uD83E\uDD14'}</Text>
-        <Text style={styles.title}>
-          {hasLiked
-            ? t('deckSummary.title', { count: likedFilms.length })
-            : t('deckSummary.noLikesTitle')}
-        </Text>
-        <Text style={styles.subtitle}>
-          {hasLiked
-            ? t('deckSummary.subtitle')
-            : t('deckSummary.noLikesSubtitle')}
-        </Text>
-      </Animated.View>
-
-      {/* Stats */}
-      <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text style={[styles.statNumber, styles.statNumberLiked]}>{likedFilms.length}</Text>
-          <Text style={styles.statLabel}>{t('deckSummary.liked')}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{dislikedFilms.length}</Text>
-          <Text style={styles.statLabel}>{t('deckSummary.passed')}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{deckSize}</Text>
-          <Text style={styles.statLabel}>{t('deckSummary.total')}</Text>
-        </View>
-      </Animated.View>
-
-      {/* Hero recommendation */}
-      {heroFilm && (
-        <Animated.View entering={FadeInDown.delay(300).springify()}>
-          <View style={styles.heroCard}>
-            <Image
-              source={{ uri: heroFilm.posterUrl }}
-              style={styles.heroPoster}
-              contentFit="cover"
-              transition={200}
+    <View style={styles.container}>
+      {/* Scrollable content */}
+      <ScrollView
+        style={styles.scrollArea}
+        contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 20 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <Animated.View entering={FadeInDown.delay(100).springify()}>
+          <View style={styles.headerIconWrap}>
+            <Ionicons
+              name={hasLiked ? 'film-outline' : 'help-circle-outline'}
+              size={48}
+              color={Colors.accentPrimary}
             />
-            <View style={styles.heroInfo}>
-              <Text style={styles.heroBadge}>
-                {hasLiked ? t('deckSummary.tonightsPick') : t('deckSummary.topMatch')}
-              </Text>
-              <Text style={styles.heroTitle} numberOfLines={2}>{heroFilm.title}</Text>
-              <Text style={styles.heroYear}>{heroFilm.year}</Text>
-              {heroFilm.matchScore > 0 && (
-                <View style={styles.heroMatchBadge}>
-                  <Ionicons name="sparkles" size={14} color="#E8A838" />
-                  <Text style={styles.heroMatchText}>{heroFilm.matchScore}% match</Text>
-                </View>
-              )}
-            </View>
+          </View>
+          <Text style={styles.title}>
+            {hasLiked
+              ? t('deckSummary.title', { count: likedFilms.length })
+              : t('deckSummary.noLikesTitle')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {hasLiked
+              ? t('deckSummary.subtitle')
+              : t('deckSummary.noLikesSubtitle')}
+          </Text>
+        </Animated.View>
+
+        {/* Stats */}
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={[styles.statNumber, styles.statNumberLiked]}>{likedFilms.length}</Text>
+            <Text style={styles.statLabel}>{t('deckSummary.liked')}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{dislikedFilms.length}</Text>
+            <Text style={styles.statLabel}>{t('deckSummary.passed')}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{deckSize}</Text>
+            <Text style={styles.statLabel}>{t('deckSummary.total')}</Text>
           </View>
         </Animated.View>
-      )}
 
-      {/* Liked films poster strip */}
-      {likedFilms.length > 1 && (
-        <Animated.View entering={FadeInDown.delay(400).springify()}>
-          <Text style={styles.sectionLabel}>{t('deckSummary.addedToWatchlist')}</Text>
-          <FlatList
-            data={likedFilms}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            style={styles.posterStrip}
-            contentContainerStyle={styles.posterStripContent}
-            renderItem={({ item }) => (
-              <View style={styles.posterCard}>
-                <Image
-                  source={{ uri: item.posterUrl }}
-                  style={styles.posterImage}
-                  contentFit="cover"
-                  transition={150}
-                />
-                <Text style={styles.posterTitle} numberOfLines={1}>{item.title}</Text>
+        {/* Hero recommendation */}
+        {heroFilm && (
+          <Animated.View entering={FadeInDown.delay(300).springify()}>
+            <View style={styles.heroCard}>
+              <Image
+                source={{ uri: heroFilm.posterUrl }}
+                style={styles.heroPoster}
+                contentFit="cover"
+                transition={200}
+              />
+              <View style={styles.heroInfo}>
+                <Text style={styles.heroBadge}>
+                  {hasLiked ? t('deckSummary.tonightsPick') : t('deckSummary.topMatch')}
+                </Text>
+                <Text style={styles.heroTitle} numberOfLines={2}>{heroFilm.title}</Text>
+                <Text style={styles.heroYear}>{heroFilm.year}</Text>
+                {heroFilm.matchScore > 0 && (
+                  <View style={styles.heroMatchBadge}>
+                    <Ionicons name="sparkles" size={14} color="#E8A838" />
+                    <Text style={styles.heroMatchText}>{heroFilm.matchScore}% match</Text>
+                  </View>
+                )}
               </View>
-            )}
-          />
-        </Animated.View>
-      )}
+            </View>
+          </Animated.View>
+        )}
 
-      {/* Insufficient results note */}
-      {insufficientResults && (
-        <Animated.View entering={FadeInDown.delay(450).springify()}>
-          <Text style={styles.insufficientNote}>{t('deckSummary.insufficientNote')}</Text>
-        </Animated.View>
-      )}
+        {/* Liked films poster strip */}
+        {likedFilms.length > 1 && (
+          <Animated.View entering={FadeInDown.delay(400).springify()}>
+            <Text style={styles.sectionLabel}>{t('deckSummary.addedToWatchlist')}</Text>
+            <FlatList
+              data={likedFilms}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              style={styles.posterStrip}
+              contentContainerStyle={styles.posterStripContent}
+              renderItem={({ item }) => (
+                <View style={styles.posterCard}>
+                  <Image
+                    source={{ uri: item.posterUrl }}
+                    style={styles.posterImage}
+                    contentFit="cover"
+                    transition={150}
+                  />
+                  <Text style={styles.posterTitle} numberOfLines={1}>{item.title}</Text>
+                </View>
+              )}
+            />
+          </Animated.View>
+        )}
 
-      {/* Action buttons */}
-      <Animated.View entering={FadeInDown.delay(500).springify()} style={styles.actions}>
+        {/* Insufficient results note */}
+        {insufficientResults && (
+          <Animated.View entering={FadeInDown.delay(450).springify()}>
+            <Text style={styles.insufficientNote}>{t('deckSummary.insufficientNote')}</Text>
+          </Animated.View>
+        )}
+      </ScrollView>
+
+      {/* Fixed footer — always visible */}
+      <Animated.View
+        entering={FadeInDown.delay(500).springify()}
+        style={[styles.footer, { paddingBottom: FOOTER_PADDING_BOTTOM }]}
+      >
         <TouchableOpacity
           style={styles.primaryBtn}
           onPress={handleNewMood}
@@ -197,6 +219,6 @@ export default function MoodDeckSummary({
           </TouchableOpacity>
         )}
       </Animated.View>
-    </ScrollView>
+    </View>
   );
 }

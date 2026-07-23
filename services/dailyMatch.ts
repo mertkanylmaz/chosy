@@ -167,6 +167,30 @@ async function fetchBestMatch(
   return rowToFilm(rows[0]);
 }
 
+// ─── Cache Invalidation ─────────────────────────────────────────────────────────
+
+/**
+ * Daily Pick cache'ini temizler — retake quiz / kalibrasyon sonrasi cagirilir.
+ *
+ * Hem mood-based hem preferences-based cache anahtarlarini siler.
+ * Ayni gun icinde bile yeni archetype'a uygun film onerisi uretilmesini saglar.
+ *
+ * @param userId - users tablosundaki dahili UUID
+ */
+export async function clearDailyPickCache(userId: string): Promise<void> {
+  const today = todayString();
+  const keys = [
+    `${CACHE_PREFIX}${userId}_${today}`,
+    `${CACHE_PREFIX}${userId}_${today}_pref`,
+  ];
+  try {
+    await AsyncStorage.multiRemove(keys);
+    logger.log('[dailyMatch] cache temizlendi (retake/calibration):', keys.join(', '));
+  } catch (err) {
+    logger.error('[dailyMatch] cache temizleme hatasi:', err);
+  }
+}
+
 // ─── Ana Fonksiyon ─────────────────────────────────────────────────────────────
 
 /**

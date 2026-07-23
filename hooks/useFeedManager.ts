@@ -10,7 +10,7 @@
  *   - Yeni mood ile feed'i sıfırlama
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
-import { Image } from 'react-native';
+import { Image } from 'expo-image';
 
 import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
@@ -19,10 +19,10 @@ import { touchActivity } from '@/services/pushNotifications';
 import { consumePendingSearchId, peekPendingSearchId } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
+import { consumePreloadedRecommendations } from '@/services/recommendationPreload';
 import { updateUserVector } from '@/services/userProfile';
-import { addToWatchlist, getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
+import { getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
-import { useMood } from '@/contexts/MoodContext';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -251,7 +251,6 @@ export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
 ): FeedManager {
-  const { currentSessionId } = useMood();
   const [state, dispatch] = useReducer(feedReducer, initialState);
 
   /** Arka plan yüklemesi devam ediyorsa duplicate isteği engeller */
@@ -403,6 +402,61 @@ export function useFeedManager(
           dispatch({ type: 'ADD_FILMS', films: fallback.films });
         }
       } else {
+        // ── Preload cache kontrolu — ilk batch icin ──────────────────────
+        // Home ekraninda setPhase('result') tetiklendigi anda startPreload()
+        // baslatilmis olabilir. Sonuc hazirsa network call atlanir.
+        if (loadedCount === 0) {
+          const preloaded = consumePreloadedRecommendations();
+
+          if (preloaded.ready) {
+            // Preload tamamlanmis — hemen kullan
+            if (__DEV__) {
+              // eslint-disable-next-line no-console
+              console.log('[useFeedManager] Preloaded recommendations kullanildi:', preloaded.ready.films.length, 'film');
+            }
+            posthogAnalytics.track('feed_preload_hit', {
+              filmCount: preloaded.ready.films.length,
+              source: preloaded.ready.source,
+            });
+
+            if (preloaded.ready.films.length === 0) {
+              dispatch({ type: 'SET_ERROR', hasError: true, errorType: 'empty' });
+              return;
+            }
+            dispatch({ type: 'ADD_FILMS', films: preloaded.ready.films });
+            return;
+          }
+
+          if (preloaded.pending) {
+            // Preload devam ediyor — await et (network call tekrarlanmaz)
+            try {
+              const result = await preloaded.pending;
+              if (__DEV__) {
+                // eslint-disable-next-line no-console
+                console.log('[useFeedManager] Preload pending resolved:', result.films.length, 'film');
+              }
+              posthogAnalytics.track('feed_preload_awaited', {
+                filmCount: result.films.length,
+                source: result.source,
+              });
+
+              if (result.films.length === 0) {
+                dispatch({ type: 'SET_ERROR', hasError: true, errorType: 'empty' });
+                return;
+              }
+              dispatch({ type: 'ADD_FILMS', films: result.films });
+              return;
+            } catch {
+              // Preload basarisiz — asagida normal fetch devam edecek
+              if (__DEV__) {
+                // eslint-disable-next-line no-console
+                console.warn('[useFeedManager] Preload failed, falling back to normal fetch');
+              }
+            }
+          }
+        }
+
+        // ── Normal fetch — preload yoksa veya basarisizsa ────────────────
         // Sprint 1 v4.0: ilk batch'te searchId gonder, sonrakilerinde null
         // FIX: Module-level consume — React state/ref/effect race condition bypass.
         // consumePendingSearchId() bir kez okuyup null'a sıfırlar (ikinci batch'te null döner).
@@ -561,21 +615,12 @@ export function useFeedManager(
   // ─── onSwipeFilm (film objesi tabanlı — SwipeCardFeed için) ────────────
 
   /**
-   * FlatList tabanlı SwipeCardFeed'den gelen swipe aksiyonunu işler.
-   * Hangi Film'in swipe edildiği doğrudan parametre olarak alınır.
+   * Swipe aksiyonu sonrası analytics + gamification tracking.
+   * Watchlist yazma buradan YAPILMAZ — tek kaynak discover.tsx handleSwipeRight
+   * (quota kontrolü orada, çift yazma önlenir).
    */
   const onSwipeFilm = useCallback(
-    (film: Film, direction: 'left' | 'right') => {
-      if (direction === 'right') {
-        // addToWatchlist içinde updateUserVector zaten çağrılır
-        // currentSessionId ile filmin hangi mood prompt'undan geldiği kaydedilir
-        addToWatchlist(film, currentSessionId).catch((err) => {
-          if (__DEV__) {
-            console.error('[useFeedManager] addToWatchlist hatası:', err);
-          }
-        });
-      }
-
+    (_film: Film, _direction: 'left' | 'right') => {
       // Streak + milestone güncelleme (fire-and-forget, her swipe'da)
       recordActivity().catch(() => {
         // Gamification hataları kullanıcıyı etkilememeli
@@ -584,7 +629,7 @@ export function useFeedManager(
       // Activity tracking for churn detection (fire-and-forget)
       touchActivity().catch(() => {});
     },
-    [currentSessionId],
+    [],
   );
 
   // ─── onLoadMore (FlatList onEndReached için) ─────────────────────────────

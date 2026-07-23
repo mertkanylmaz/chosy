@@ -5,16 +5,28 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Image,
 } from 'react-native';
 
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  Smiley,
+  SmileyMeh,
+  SmileyAngry,
+  SmileyNervous,
+  Question,
+  ThumbsDown,
+  Timer,
+  HandHeart,
+  Lightning,
+  FilmStrip,
+  Palette,
+} from 'phosphor-react-native';
+import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
-import { EmotionIcons, TasteDNAIcons } from '@/constants/icons';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   EmotionalState,
@@ -31,8 +43,17 @@ function dominantEmotionKey(state: EmotionalState): keyof EmotionalState {
   return entries.reduce((a, b) => (a[1] > b[1] ? a : b))[0];
 }
 
-/** EmotionIcons — constants/icons.ts'ten import edilen single source of truth */
-const EMOTION_ICON = EmotionIcons;
+/** Phosphor ikon bileşeni — her duygu için ayrı ikon */
+const EMOTION_PHOSPHOR: Record<keyof EmotionalState, React.ComponentType<PhosphorIconProps>> = {
+  joy: Smiley,
+  sadness: SmileyMeh,
+  anger: SmileyAngry,
+  fear: SmileyNervous,
+  surprise: Question,
+  disgust: ThumbsDown,
+  anticipation: Timer,
+  trust: HandHeart,
+};
 
 // ─── Card sub-components ──────────────────────────────────────────────────────
 
@@ -62,11 +83,12 @@ function EmotionCard({ emotionKey, t }: CardProps & { emotionKey: keyof Emotiona
     anticipation: t('moodProfile.descEager'),
     trust: t('moodProfile.descSerene'),
   };
+  const EmotionIcon = EMOTION_PHOSPHOR[emotionKey] ?? Smiley;
   return (
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Image source={EMOTION_ICON[emotionKey]} style={styles.cardIcon} resizeMode="contain" />
+          <EmotionIcon size={20} color="#E8A838" weight="duotone" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelEmotion')}</Text>
@@ -99,7 +121,7 @@ function EnergyCard({ level, t }: CardProps & { level: number }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Image source={TasteDNAIcons.cardEnergy} style={styles.cardIcon} resizeMode="contain" />
+          <Lightning size={20} color="#E8A838" weight="duotone" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelEnergy')}</Text>
@@ -128,7 +150,7 @@ function PacingCard({ pace, t }: CardProps & { pace: PacePreference }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Image source={TasteDNAIcons.cardFilmTaste} style={styles.cardIcon} resizeMode="contain" />
+          <FilmStrip size={20} color="#E8A838" weight="duotone" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelPacing')}</Text>
@@ -159,7 +181,7 @@ function ThematicDepthCard({ depth, t }: CardProps & { depth: number }) {
     <View style={styles.card}>
       <View style={styles.cardHeaderRow}>
         <View style={styles.cardIconBg}>
-          <Image source={TasteDNAIcons.cardGenre} style={styles.cardIcon} resizeMode="contain" />
+          <Palette size={20} color="#E8A838" weight="duotone" />
         </View>
       </View>
       <Text style={styles.cardLabel}>{t('moodProfile.labelColorTone')}</Text>

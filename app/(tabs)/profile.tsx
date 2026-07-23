@@ -53,8 +53,7 @@ import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
 import DiscoveryStats from '@/components/Profile/DiscoveryStats';
-import WatchlistSection from '@/components/Profile/WatchlistSection';
-import type { WatchlistSectionRef } from '@/components/Profile/WatchlistSection';
+// WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
 // import StreakCard from '@/components/Profile/StreakCard';
@@ -68,7 +67,7 @@ import {
 import PersonaBadge from '@/components/Profile/PersonaBadge';
 import Purchases from 'react-native-purchases';
 
-import { clearWatchlist, getAppUserId } from '@/services/watchlist';
+import { clearWatchlist, getAppUserId, getWatchlist } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
 import {
   getReferralStats,
@@ -721,7 +720,6 @@ export default function ProfileScreen() {
   const { isPremium, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
-  const watchlistRef = useRef<WatchlistSectionRef>(null);
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
 
@@ -749,6 +747,8 @@ export default function ProfileScreen() {
   const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
   const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
   // const [codeCopied, setCodeCopied] = useState(false); // Referral card UI kaldirildi
+  const [watchlistCount, setWatchlistCount] = useState(0);
+  const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
 
   // ── Streak state (UI'dan kaldirildi, backend dokunulmadi) ─────────────────
   const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
@@ -833,6 +833,16 @@ export default function ProfileScreen() {
       setMoodHistory(historyData);
       setSwipeInsights(insightsData);
 
+      // Watchlist count + poster previews (non-blocking)
+      getWatchlist().then((wl) => {
+        setWatchlistCount(wl.length);
+        const posters = wl
+          .slice(0, 4)
+          .map((item) => item.film.posterUrl)
+          .filter((url): url is string => !!url);
+        setWatchlistPosters(posters);
+      }).catch(() => {});
+
       // Referral stats (non-blocking)
       getReferralStats(userId).then((rs) => {
         if (rs) setReferralStats(rs);
@@ -892,10 +902,7 @@ export default function ProfileScreen() {
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      loadAll(),
-      watchlistRef.current?.refresh(),
-    ]);
+    await loadAll();
     setRefreshing(false);
   }, [loadAll]);
 
@@ -1308,17 +1315,6 @@ export default function ProfileScreen() {
               <Text style={styles.userIdHash}>#{userIdHash}</Text>
             )}
 
-            {/* Arketip rozeti + açıklama — null ise dokunarak kalibrasyona git */}
-            <PersonaBadge
-              archetypeId={archetypeId}
-              onPress={archetypeId == null ? () => router.push('/onboarding' as never) : undefined}
-            />
-            {archetypeId != null && (
-              <Text style={styles.archetypeDesc} numberOfLines={2}>
-                {t(getArchetype(archetypeId)?.descKey ?? '')}
-              </Text>
-            )}
-
             {/* Auth provider rozeti — Apple/Google icin ozel gosterim */}
             {!isAnonymous && authProvider && (
               <View style={styles.authProviderBadge}>
@@ -1336,8 +1332,89 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             )}
+          </LinearGradient>
+          </Animated.View>
 
-            {/* Subscription badge */}
+          {/* ── Bolumler ─────────────────────────────────────────────── */}
+          <Animated.View style={sectionsAnimStyle}>
+          <View style={styles.sections}>
+
+            {/* b) Archetype Hero Card — BÜYÜTÜLMÜŞ */}
+            <View style={styles.archetypeHeroCard}>
+              {archetypeId != null ? (
+                <>
+                  <Image
+                    source={getArchetype(archetypeId)?.image ?? AvatarIcons.clapperboard}
+                    style={styles.archetypeHeroIcon}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.archetypeHeroName}>
+                    {t(getArchetype(archetypeId)?.nameKey ?? '')}
+                  </Text>
+                  <Text style={styles.archetypeHeroTagline} numberOfLines={2}>
+                    {t(getArchetype(archetypeId)?.descKey ?? '')}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <PersonaBadge
+                    archetypeId={null}
+                    onPress={() => router.push('/onboarding' as never)}
+                  />
+                </>
+              )}
+              {/* Retake Quiz link — onay diyalogu ile */}
+              <TouchableOpacity
+                style={styles.retakeQuizBtn}
+                onPress={() => {
+                  hapticLight();
+                  Alert.alert(
+                    t('profile.retakeQuizConfirmTitle'),
+                    t('profile.retakeQuizConfirmMessage'),
+                    [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      {
+                        text: t('common.continue'),
+                        onPress: () => {
+                          router.push({ pathname: '/onboarding', params: { mode: 'retake' } } as never);
+                        },
+                      },
+                    ],
+                  );
+                }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="refresh-outline" size={14} color={Colors.gold} />
+                <Text style={styles.retakeQuizText}>{t('profile.retakeQuiz')}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* c) Upgrade CTAs — compact, yan yana */}
+            {tier !== 'lifetime' && (
+              <View style={styles.upgradeCtaRow}>
+                {!isPremium && (
+                  <TouchableOpacity
+                    style={styles.upgradeCta}
+                    onPress={() => triggerPaywall({ type: 'profile_upgrade' })}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="sparkles" size={14} color={Colors.gold} />
+                    <Text style={styles.upgradeCtaText}>{t('profile.upgradePlus')}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={[styles.upgradeCta, isPremium && { flex: 1 }]}
+                  onPress={() => router.push('/lifetime' as never)}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons name="diamond-outline" size={14} color={Colors.gold} />
+                  <Text style={styles.upgradeCtaText}>{t('lifetime.profileBanner')}</Text>
+                  <Ionicons name="chevron-forward" size={12} color={Colors.gold} />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Subscription badge — lifetime veya premium ise goster */}
             {tier === 'lifetime' ? (
               <View style={styles.subBadgeLifetime}>
                 <Ionicons name="diamond" size={14} color={Colors.gold} />
@@ -1352,48 +1429,9 @@ export default function ProfileScreen() {
                     : t('profile.subscriptionActive')}
                 </Text>
               </View>
-            ) : (
-              <TouchableOpacity
-                style={styles.subBadgeFree}
-                onPress={() => triggerPaywall({ type: 'profile_upgrade' })}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="sparkles" size={14} color={Colors.gold} />
-                <Text style={styles.subBadgeFreeText}>{t('profile.upgradePlus')}</Text>
-              </TouchableOpacity>
-            )}
+            ) : null}
 
-            {/* Founding Member upsell banner — non-lifetime premium + free */}
-            {tier !== 'lifetime' && (
-              <TouchableOpacity
-                style={styles.foundingBanner}
-                onPress={() => router.push('/lifetime' as never)}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="diamond-outline" size={14} color={Colors.gold} />
-                <Text style={styles.foundingBannerText}>{t('lifetime.profileBanner')}</Text>
-                <Ionicons name="chevron-forward" size={14} color={Colors.gold} />
-              </TouchableOpacity>
-            )}
-          </LinearGradient>
-          </Animated.View>
-
-          {/* ── Bolumler ─────────────────────────────────────────────── */}
-          <Animated.View style={sectionsAnimStyle}>
-          <View style={styles.sections}>
-
-            {/* 0. Invite Friends Card — UI'dan kaldirildi, watchlist'e alan acildi */}
-            {/* Referral card Settings modal uzerinden erisiliyor */}
-
-            {/* 1. Daily Streak — UI'dan kaldirildi, gelecekte geri eklenebilir */}
-            {/* <SectionHeading title={t('profile.dailyStreak') ?? 'Daily Streak'} />
-            <StreakCard
-              streakInfo={streakInfo}
-              loading={loading}
-              nextMilestone={nextMilestone}
-            /> */}
-
-            {/* 2. Taste DNA */}
+            {/* d) Taste DNA */}
             <SectionHeading title={t('profile.tasteDNA')} />
             {!isPremium ? (
               <TouchableOpacity
@@ -1416,7 +1454,7 @@ export default function ProfileScreen() {
               />
             )}
 
-            {/* 3. Discovery Stats */}
+            {/* e) Discovery Stats */}
             <SectionHeading title={t('profile.discoveryStats')} />
             <DiscoveryStats
               stats={stats}
@@ -1424,13 +1462,40 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* 4. Watchlist — tam ozellikli section */}
-            <SectionHeading title={t('tabs.watchlist')} />
-            <WatchlistSection ref={watchlistRef} />
-
-            {/* 5. Game Scores — UI'dan kaldirildi, gelecekte geri eklenebilir */}
-            {/* <SectionHeading title={t('profile.gamesTitle')} />
-            <GameScoreSummary /> */}
+            {/* f) Watchlist summary row — mini poster previews + count */}
+            <TouchableOpacity
+              style={styles.watchlistSummaryRow}
+              onPress={() => router.push('/watchlist-detail' as never)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.watchlistSummaryLeft}>
+                {/* Mini poster stack */}
+                {watchlistPosters.length > 0 ? (
+                  <View style={[styles.watchlistPosterStack, { width: 24 + (watchlistPosters.length - 1) * 18 }]}>
+                    {watchlistPosters.map((url, idx) => (
+                      <Image
+                        key={`wl-poster-${idx}`}
+                        source={{ uri: url }}
+                        style={[
+                          styles.watchlistMiniPoster,
+                          { left: idx * 18, zIndex: watchlistPosters.length - idx },
+                        ]}
+                      />
+                    ))}
+                  </View>
+                ) : (
+                  <View style={styles.watchlistEmptyPoster}>
+                    <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
+                  </View>
+                )}
+                <Text style={styles.watchlistSummaryText}>
+                  {watchlistCount > 0
+                    ? t('profile.watchlistSummaryCount', { count: watchlistCount })
+                    : t('profile.watchlistSummaryEmpty')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textGrey} />
+            </TouchableOpacity>
 
           </View>
           </Animated.View>
@@ -1739,6 +1804,135 @@ const styles = StyleSheet.create({
   sections: {
     paddingHorizontal: Spacing.md,
     gap: 10,
+  },
+
+  // ── Archetype Hero Card ──
+  archetypeHeroCard: {
+    backgroundColor: Colors.cardSolid,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    gap: 8,
+    ...Shadows.light,
+  },
+  archetypeHeroIcon: {
+    width: 72,
+    height: 72,
+    marginBottom: 4,
+  },
+  archetypeHeroName: {
+    color: Colors.textWhite,
+    fontSize: 28,
+    lineHeight: 34,
+    fontFamily: Typography.displayFont,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    textAlign: 'center',
+  },
+  archetypeHeroTagline: {
+    color: Colors.textGrey,
+    fontSize: Theme.typography.body.fontSize,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 280,
+    fontStyle: 'italic',
+    opacity: 0.85,
+  },
+  retakeQuizBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  retakeQuizText: {
+    color: Colors.gold,
+    fontSize: 13,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+    textDecorationLine: 'underline',
+  },
+
+  // ── Upgrade CTA Row ──
+  upgradeCtaRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  upgradeCta: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: Colors.gold + '12',
+    borderWidth: 1,
+    borderColor: Colors.gold + '25',
+  },
+  upgradeCtaText: {
+    fontSize: Theme.typography.caption.fontSize,
+    fontWeight: '600',
+    color: Colors.gold,
+    letterSpacing: 0.1,
+  },
+
+  // ── Watchlist Summary Row ──
+  watchlistSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: Colors.cardSolid,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingVertical: 12,
+    paddingHorizontal: Spacing.md,
+    minHeight: 80,
+    ...Shadows.light,
+  },
+  watchlistSummaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  /** Overlapping poster stack container — width set dynamically */
+  watchlistPosterStack: {
+    height: 54,
+    position: 'relative',
+  },
+  /** Individual mini poster thumbnail */
+  watchlistMiniPoster: {
+    position: 'absolute',
+    top: 0,
+    width: 36,
+    height: 54,
+    borderRadius: 6,
+    backgroundColor: Colors.white05,
+    borderWidth: 1.5,
+    borderColor: Colors.cardSolid,
+  },
+  /** Empty state placeholder when no posters */
+  watchlistEmptyPoster: {
+    width: 36,
+    height: 54,
+    borderRadius: 6,
+    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: Colors.white10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  watchlistSummaryText: {
+    color: Colors.textWhite,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
 
   // ── Section heading ──
