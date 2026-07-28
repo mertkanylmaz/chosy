@@ -17,6 +17,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticHeavy } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches } from '@/services/gameService';
+import { getStreakInfo } from '@/services/gamification';
+import { DnaSummaryCard } from '@/components/games/DnaSummaryCard';
+import { DailyChest } from '@/components/games/DailyChest';
+import { RecommendedRoute } from '@/components/games/RecommendedRoute';
 
 interface GameCardData {
   gameType: string;
@@ -58,6 +62,27 @@ const GAME_DEFINITIONS = [
     descriptionKey: 'games.quoted.description',
     icon: 'chatbubble-ellipses',
   },
+  {
+    gameType: 'cinemetrics',
+    route: '/games/cinemetrics',
+    titleKey: 'games.cinemetrics.title',
+    descriptionKey: 'games.cinemetrics.description',
+    icon: 'stats-chart',
+  },
+  {
+    gameType: 'spotlight',
+    route: '/games/spotlight',
+    titleKey: 'games.spotlight.title',
+    descriptionKey: 'games.spotlight.hub_description',
+    icon: 'flashlight',
+  },
+  {
+    gameType: 'detective',
+    route: '/games/detective',
+    titleKey: 'games.detective.title',
+    descriptionKey: 'games.detective.hub_description',
+    icon: 'search',
+  },
 ] as const;
 
 export default function GamesHubScreen() {
@@ -67,6 +92,7 @@ export default function GamesHubScreen() {
 
   const [games, setGames] = useState<GameCardData[]>([]);
   const [totalStreak, setTotalStreak] = useState(0);
+  const [freezesRemaining, setFreezesRemaining] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -99,6 +125,12 @@ export default function GamesHubScreen() {
 
     setGames(cards);
     setTotalStreak(maxStreak);
+
+    // Freeze bilgisini çek
+    const streakInfo = await getStreakInfo();
+    if (streakInfo) {
+      setFreezesRemaining(streakInfo.freezesRemaining);
+    }
   }, []);
 
   const playedCount = games.filter((g) => g.played).length;
@@ -159,6 +191,24 @@ export default function GamesHubScreen() {
             <Text style={styles.summaryLabel}>{t('games.hub.streak')}</Text>
           </View>
         )}
+        {freezesRemaining > 0 && (
+          <View style={styles.summaryItem}>
+            <Text style={styles.summaryNumber}>❄️ {freezesRemaining}</Text>
+            <Text style={styles.summaryLabel}>{t('games.hub.freeze')}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Cinema DNA summary */}
+      <DnaSummaryCard />
+
+      {/* Daily Chest — 7/7 completion reward */}
+      <View style={styles.chestContainer}>
+        <DailyChest
+          totalGames={GAME_DEFINITIONS.length}
+          completedGames={playedCount}
+          completedGameTypes={games.filter((g) => g.played).map((g) => g.gameType)}
+        />
       </View>
 
       {/* Game cards */}
@@ -167,6 +217,9 @@ export default function GamesHubScreen() {
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* Recommended route based on DNA gaps */}
+        <RecommendedRoute playedGames={games.filter((g) => g.played).map((g) => g.gameType)} />
+
         {games.map((game, index) => (
           <Animated.View key={game.gameType} entering={FadeInUp.delay(index * 100).duration(300)}>
             <TouchableOpacity
@@ -265,6 +318,9 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: 13,
     color: Colors.textSecondary,
+  },
+  chestContainer: {
+    paddingHorizontal: Theme.spacing.md,
   },
   scrollContent: {
     flex: 1,

@@ -11,7 +11,7 @@
  *
  * Share: useShareCapture + GameShareCard ile PNG capture.
  */
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -26,6 +26,13 @@ import { getPosterUrl } from '@/services/tmdb';
 import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
 import { GameShareCard, useShareCapture } from '@/components/ShareCards';
+import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { formatFactor } from '@/components/games/ConfidenceSelector';
+import type { DnaSignal } from '@/components/games/DnaXpReveal';
+import { PlayNextBridge } from '@/components/games/PlayNextBridge';
+import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
+import { trackResultCardViewed, trackFilmPageOpened } from '@/utils/gameAnalytics';
+import type { DimensionProgress, RankProgress } from '@/types/game';
 
 interface ResultCardProps {
   /** Bildi mi? */
@@ -45,6 +52,23 @@ interface ResultCardProps {
   gameTitle: string;
   /** Oyun tipi (share card emoji grid icin) */
   gameType?: 'imposter' | 'logline' | 'quoted' | 'fadein';
+  /** Server-side XP (Edge Function'dan — varsa local hesaplama yerine bunu goster) */
+  xpAwarded?: number;
+  /** DNA guncellendi mi */
+  dnaUpdated?: boolean;
+  /** DNA sinyal detaylari */
+  dnaSignals?: DnaSignal[];
+  /** Imposter guven bahsi carpani — 1 ise gosterilmez */
+  confidenceFactor?: number | null;
+  /** DNA boyut before/after degerleri (server destegiyle) */
+  dimensionProgress?: DimensionProgress[];
+  /** Rank ilerleme bilgisi (server destegiyle) */
+  rankProgress?: RankProgress;
+  /** WhyThisMovie funnel data (server-side) */
+  whyThisMovie?: {
+    why_text?: string;
+    fun_fact?: string;
+  };
 }
 
 /** XP hesaplama — erken tahmin = daha fazla XP */
@@ -65,13 +89,31 @@ export function ResultCard({
   streak,
   gameTitle,
   gameType,
+  xpAwarded,
+  confidenceFactor,
+  dnaUpdated,
+  dnaSignals,
+  dimensionProgress,
+  rankProgress,
+  whyThisMovie,
 }: ResultCardProps) {
   const { t } = useLanguage();
   const router = useRouter();
   const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
   const posterUrl = getPosterUrl(filmPosterPath, 'w342');
-  const xp = calculateXP(solved, attempts, maxAttempts);
+  // Use server XP if provided, otherwise fall back to local calculation
+  const xp = xpAwarded ?? calculateXP(solved, attempts, maxAttempts);
+  const hasDnaReveal = xpAwarded != null; // Edge Function path provides xpAwarded
+
+  // Track result card view once on mount
+  const hasTrackedView = useRef(false);
+  useEffect(() => {
+    if (!hasTrackedView.current) {
+      hasTrackedView.current = true;
+      trackResultCardViewed(gameType ?? 'unknown', solved);
+    }
+  }, []);
 
   return (
     <>
@@ -110,11 +152,32 @@ export function ResultCard({
           </Text>
         </View>
 
-        {/* ── XP Badge ── */}
-        <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.xpBadge}>
-          <Ionicons name="star" size={16} color={Colors.gold} />
-          <Text style={styles.xpText}>+{xp} XP</Text>
-        </Animated.View>
+        {/* ── XP + DNA Reveal ── */}
+        {hasDnaReveal ? (
+          <DnaXpReveal
+            xpAwarded={xp}
+            dnaUpdated={dnaUpdated ?? false}
+            dnaSignals={dnaSignals}
+            solved={solved}
+            dimensionProgress={dimensionProgress}
+            rankProgress={rankProgress}
+          />
+        ) : (
+          <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.xpBadge}>
+            <Ionicons name="star" size={16} color={Colors.gold} />
+            <Text style={styles.xpText}>+{xp} XP</Text>
+          </Animated.View>
+        )}
+
+        {/* ── Guven bahsi kirilimi — notr bahiste gizli ── */}
+        {confidenceFactor != null && confidenceFactor !== 1 && (
+          <Animated.View entering={FadeInUp.delay(220).duration(300)} style={styles.confidenceRow}>
+            <Text style={styles.confidenceLabel}>
+              {t('games.imposter.confidence_multiplier')}
+            </Text>
+            <Text style={styles.confidenceValue}>×{formatFactor(confidenceFactor)}</Text>
+          </Animated.View>
+        )}
 
         {/* ── Film Info ── */}
         <View style={styles.filmRow}>
@@ -154,6 +217,17 @@ export function ResultCard({
           </Animated.View>
         )}
 
+        {/* ── Why This Movie? ── */}
+        {whyThisMovie && (
+          <WhyThisMovieFunnel
+            whyText={whyThisMovie.why_text}
+            funFact={whyThisMovie.fun_fact}
+            filmTitle={filmTitle}
+            filmId={filmId}
+            gameType={gameType ?? 'unknown'}
+          />
+        )}
+
         {/* ── Actions ── */}
         <View style={styles.actions}>
           {isShareAvailable && (
@@ -177,6 +251,7 @@ export function ResultCard({
             activeOpacity={0.7}
             onPress={async () => {
               hapticHeavy();
+              trackFilmPageOpened(gameType ?? 'unknown', filmId);
               try {
                 const { data } = await supabase
                   .from('films')
@@ -199,6 +274,11 @@ export function ResultCard({
             </Text>
           </TouchableOpacity>
         </View>
+
+        {/* ── Play Next Bridge ── */}
+        {gameType && (
+          <PlayNextBridge currentGame={gameType} />
+        )}
       </Animated.View>
     </>
   );
@@ -251,6 +331,24 @@ const styles = StyleSheet.create({
   },
 
   // ── XP Badge ──
+  confidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    marginTop: 6,
+  },
+  confidenceLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: Colors.textTertiary,
+  },
+  confidenceValue: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: Colors.gold,
+  },
   xpBadge: {
     flexDirection: 'row',
     alignItems: 'center',

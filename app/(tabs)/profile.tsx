@@ -56,6 +56,7 @@ import DiscoveryStats from '@/components/Profile/DiscoveryStats';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
+import CollectionsCard from '@/components/Profile/CollectionsCard';
 // import StreakCard from '@/components/Profile/StreakCard';
 // import type { StreakCardProps } from '@/components/Profile/StreakCard';
 import {
@@ -1462,7 +1463,10 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* f) Watchlist summary row — mini poster previews + count */}
+            {/* f) Collections */}
+            <CollectionsCard />
+
+            {/* g) Watchlist summary row — mini poster previews + count */}
             <TouchableOpacity
               style={styles.watchlistSummaryRow}
               onPress={() => router.push('/watchlist-detail' as never)}
