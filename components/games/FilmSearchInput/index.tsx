@@ -123,7 +123,7 @@ export function FilmSearchInput({
           style={styles.input}
           value={query}
           onChangeText={handleChange}
-          placeholder={placeholder ?? t('games.logline.search_placeholder')}
+          placeholder={placeholder ?? t('games.search_placeholder')}
           placeholderTextColor={Colors.textTertiary}
           editable={!disabled}
           autoCapitalize="words"

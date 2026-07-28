@@ -4,8 +4,10 @@
  * 5 ipucu soyuttan somuta açılır.
  * Her yanlış tahminde sonraki ipucu açılır.
  * İlk ipucunda bilen = "Kusursuz Tahmin" rozeti.
+ *
+ * Edge Function tabanlı — tahmin doğrulaması sunucuda.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,167 +18,242 @@ import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import {
-  fetchDailyPuzzle,
-  submitGameScore,
-  getGameStreak,
-  getCachedResult,
-  getFilmAnswer,
-  getTodayDate,
-} from '@/services/gameService';
-import type { GameState, GameClue, GameResult, FilmSearchResult } from '@/services/gameTypes';
+import { getGameStreak } from '@/services/gameService';
+import { getDailyChallenge, submitGameGuess } from '@/services/gameApi';
+import type { DailyChallenge, GuessResult, LoglineSemanticHints, WhyThisMovieText } from '@/types/game';
+import type { DnaSignal } from '@/components/games/DnaXpReveal';
+import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useGamePaywall } from '@/hooks/useGamePaywall';
+import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/utils/gameAnalytics';
+
+/** Logline ipucu */
+interface LoglineClue {
+  order: number;
+  content: string;
+}
 
 export default function LoglineScreen() {
   const { t } = useLanguage();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
+  // Analytics timing refs
+  const openTimeRef = useRef(Date.now());
+  const guessStartTime = useRef(Date.now());
+
   const [gameState, setGameState] = useState<GameState>('loading');
-  const [clues, setClues] = useState<GameClue[]>([]);
+  const [clues, setClues] = useState<LoglineClue[]>([]);
   const [revealedCount, setRevealedCount] = useState(1); // İlk ipucu açık başlar
   const [attempts, setAttempts] = useState(0);
-  const [puzzleFilmId, setPuzzleFilmId] = useState(0);
+  const [maxAttempts, setMaxAttempts] = useState(5);
   const [puzzleId, setPuzzleId] = useState('');
-  const [result, setResult] = useState<GameResult | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [wrongGuess, setWrongGuess] = useState<string | null>(null);
+  const [semanticHints, setSemanticHints] = useState<LoglineSemanticHints | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  // Result state (Edge Function response)
+  const [solved, setSolved] = useState(false);
+  const [xpAwarded, setXpAwarded] = useState(0);
+  const [dnaUpdated, setDnaUpdated] = useState(false);
+  const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
   const [filmInfo, setFilmInfo] = useState<{
     title: string;
     year: number;
     posterPath: string | null;
+    filmId: number;
   } | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [wrongGuess, setWrongGuess] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
 
-  // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
+  // Her focus'ta tarih kontrolü
   useFocusEffect(
     useCallback(() => {
       setGameState('loading');
       setClues([]);
       setRevealedCount(1);
       setAttempts(0);
-      setResult(null);
+      setSolved(false);
       setFilmInfo(null);
       setWrongGuess(null);
+      setSemanticHints(null);
       setLoadError(false);
       loadPuzzle();
     }, []),
   );
 
+  /** Puzzle yükle — Edge Function */
   const loadPuzzle = useCallback(async () => {
     try {
-      const cached = await getCachedResult('logline');
-      if (cached) {
-        const film = await getFilmAnswer(cached.filmId);
+      const puzzleDate = new Date().toLocaleDateString('en-CA');
+      const data: DailyChallenge = await getDailyChallenge('logline', puzzleDate);
+      const puzzle = data.puzzle;
+      const progress = data.progress;
+
+      setPuzzleId(puzzle.id);
+      setPuzzleNo(data.puzzle_no);
+      setMaxAttempts(puzzle.max_attempts);
+
+      // puzzle_data: { clues: [{ order, content }], poster_url?, tmdb_id?, film_title? }
+      const pd = puzzle.puzzle_data;
+      const clueList = (pd.clues as LoglineClue[]) ?? [];
+      setClues(clueList.sort((a, b) => a.order - b.order));
+
+      // Bugün zaten oynanmış mı?
+      if (progress?.completed) {
         const streakInfo = await getGameStreak('logline');
-        setResult(cached);
-        setFilmInfo(film);
         setStreak(streakInfo.currentStreak);
+        setSolved(progress.won);
+        setAttempts(progress.guesses?.length ?? 0);
+
+        // Çözüm sunucudan gelir — puzzle_data film adı taşımaz (migration 064)
+        const solution = data.revealed_solution;
+        setFilmInfo({
+          title: solution?.title ?? t('games.result.unknown_film'),
+          year: solution?.year ?? 0,
+          posterPath: solution?.poster_url ?? null,
+          filmId: 0,
+        });
+
+        setWhyThisMovie(data.why_this_movie ?? null);
+
         setGameState('complete');
         return;
       }
 
-      const puzzle = await fetchDailyPuzzle('logline');
-      if (!puzzle) {
-        logger.error('[logline] Puzzle yüklenemedi');
-        setLoadError(true);
-        return;
+      // Devam eden oyun — önceki tahmin sayısını yükle
+      if (progress?.guesses) {
+        const used = progress.guesses.length;
+        setAttempts(used);
+        setRevealedCount(Math.min(used + 1, clueList.length));
       }
 
-      setClues(puzzle.clues.sort((a, b) => a.order - b.order));
-      setPuzzleFilmId(puzzle.filmId);
-      setPuzzleId(puzzle.id);
-
-      const film = await getFilmAnswer(puzzle.filmId);
-      setFilmInfo(film);
-
       setGameState('playing');
+      openTimeRef.current = Date.now();
+      guessStartTime.current = Date.now();
+      trackGameOpened('logline', 0, 'hub');
     } catch (err) {
       logger.error('[logline] Load hatası:', err);
       setLoadError(true);
     }
   }, []);
 
+  /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
       if (gameState !== 'playing') return;
 
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
+      const filmUuid = film.uuid;
+      if (!filmUuid) {
+        logger.error('[logline] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+        return;
+      }
 
-      const solved = film.id === puzzleFilmId;
+      try {
+        const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
+        const newAttempts = result.guesses_used;
+        setAttempts(newAttempts);
+        trackGuessSubmitted('logline', newAttempts, Date.now() - guessStartTime.current);
+        guessStartTime.current = Date.now();
 
-      if (solved) {
-        hapticSuccess();
-        setGameState('reveal');
+        if (result.correct) {
+          hapticSuccess();
+          setSolved(true);
+          setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
+          setDnaUpdated(result.dna_updated);
+          if (result.dna_updated) {
+            setDnaSignals([
+              { dimension: 'deduction', delta: 0.5 },
+              { dimension: 'knowledge', delta: 0.3 },
+            ]);
+          }
 
-        await new Promise((r) => setTimeout(r, 600));
-
-        const today = getTodayDate();
-        const gameResult: GameResult = {
-          puzzleId,
-          date: today,
-          gameType: 'logline',
-          solved: true,
-          attempts: newAttempts,
-          maxAttempts: 5,
-          filmId: puzzleFilmId,
-        };
-
-        await submitGameScore(gameResult);
-        const streakInfo = await getGameStreak('logline');
-
-        setResult(gameResult);
-        setStreak(streakInfo.currentStreak);
-        setGameState('complete');
-        checkGamePaywall(streakInfo.currentStreak, true);
-      } else {
-        hapticWarning();
-        setWrongGuess(film.title);
-        setTimeout(() => setWrongGuess(null), 1500);
-
-        // Sonraki ipucunu aç
-        if (revealedCount < clues.length) {
-          setRevealedCount((prev) => prev + 1);
-        }
-
-        // Son deneme — oyun biter
-        if (newAttempts >= 5) {
-          hapticHeavy();
           setGameState('reveal');
-
+          trackGameCompleted({
+            gameId: 'logline',
+            won: true,
+            guessesUsed: newAttempts,
+            timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+            xp: result.xp_awarded,
+          });
           await new Promise((r) => setTimeout(r, 600));
 
-          const today = getTodayDate();
-          const gameResult: GameResult = {
-            puzzleId,
-            date: today,
-            gameType: 'logline',
-            solved: false,
-            attempts: newAttempts,
-            maxAttempts: 5,
-            filmId: puzzleFilmId,
-          };
+          if (result.revealed_solution) {
+            setFilmInfo({
+              title: result.revealed_solution.title,
+              year: result.revealed_solution.year,
+              posterPath: result.revealed_solution.poster_url ?? null,
+              filmId: 0,
+            });
+          }
 
-          await submitGameScore(gameResult);
           const streakInfo = await getGameStreak('logline');
-
-          setResult(gameResult);
           setStreak(streakInfo.currentStreak);
           setGameState('complete');
+          checkGamePaywall(streakInfo.currentStreak, true);
+        } else {
+          hapticWarning();
+          setWrongGuess(film.title);
+          setSemanticHints(result.logline_hints ?? null);
+          setTimeout(() => {
+            setWrongGuess(null);
+            setSemanticHints(null);
+          }, 3000);
+
+          // Sonraki ipucunu aç
+          if (revealedCount < clues.length) {
+            setRevealedCount((prev) => prev + 1);
+          }
+
+          // Son deneme — oyun biter
+          if (result.completed) {
+            hapticHeavy();
+            setSolved(false);
+            setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
+            setDnaUpdated(result.dna_updated);
+
+            setGameState('reveal');
+            trackGameCompleted({
+              gameId: 'logline',
+              won: false,
+              guessesUsed: newAttempts,
+              timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+              xp: result.xp_awarded,
+            });
+            await new Promise((r) => setTimeout(r, 600));
+
+            if (result.revealed_solution) {
+              setFilmInfo({
+                title: result.revealed_solution.title,
+                year: result.revealed_solution.year,
+                posterPath: result.revealed_solution.poster_url ?? null,
+                filmId: 0,
+              });
+            }
+
+            const streakInfo = await getGameStreak('logline');
+            setStreak(streakInfo.currentStreak);
+            setGameState('complete');
+          }
         }
+      } catch (err) {
+        logger.error('[logline] Submit hatası:', err);
       }
     },
-    [gameState, attempts, puzzleFilmId, puzzleId, revealedCount, clues.length],
+    [gameState, puzzleId, revealedCount, clues.length, checkGamePaywall],
   );
 
   // Error
   if (loadError) {
     return (
-      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={5}>
+      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <View style={styles.center}>
           <Text style={styles.errorEmoji}>🎬</Text>
           <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
@@ -189,7 +266,7 @@ export default function LoglineScreen() {
   // Loading
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={5}>
+      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <View style={styles.center}>
           <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
         </View>
@@ -198,13 +275,13 @@ export default function LoglineScreen() {
   }
 
   // Complete
-  if (gameState === 'complete' && result && filmInfo) {
-    const isPerfect = result.solved && result.attempts === 1;
+  if (gameState === 'complete' && filmInfo) {
+    const isPerfect = solved && attempts === 1;
     return (
       <GameShell
         title={t('games.logline.title')}
-        currentAttempt={result.attempts}
-        maxAttempts={5}
+        currentAttempt={attempts}
+        maxAttempts={maxAttempts}
         hideProgress
       >
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
@@ -215,16 +292,21 @@ export default function LoglineScreen() {
             </Animated.View>
           )}
           <ResultCard
-            solved={result.solved}
-            attempts={result.attempts}
-            maxAttempts={result.maxAttempts}
+            solved={solved}
+            attempts={attempts}
+            maxAttempts={maxAttempts}
             filmTitle={filmInfo.title}
             filmYear={filmInfo.year}
             filmPosterPath={filmInfo.posterPath}
-            filmId={result.filmId}
+            filmId={filmInfo.filmId}
             streak={streak}
             gameTitle={t('games.logline.title')}
             gameType="logline"
+            puzzleNo={puzzleNo}
+            whyThisMovie={whyThisMovie ?? undefined}
+            xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
+            dnaUpdated={dnaUpdated}
+            dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
       </GameShell>
@@ -236,7 +318,7 @@ export default function LoglineScreen() {
     <GameShell
       title={t('games.logline.title')}
       currentAttempt={attempts}
-      maxAttempts={5}
+      maxAttempts={maxAttempts}
     >
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Clues */}
@@ -265,11 +347,41 @@ export default function LoglineScreen() {
           })}
         </View>
 
-        {/* Wrong guess feedback */}
+        {/* Wrong guess feedback + semantic hints */}
         {wrongGuess && (
-          <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
-            <Ionicons name="close-circle" size={16} color={Colors.error} />
-            <Text style={styles.wrongText}>{wrongGuess}</Text>
+          <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuessContainer}>
+            <View style={styles.wrongGuess}>
+              <Ionicons name="close-circle" size={16} color={Colors.error} />
+              <Text style={styles.wrongText}>{wrongGuess}</Text>
+            </View>
+            {semanticHints && (
+              <View style={styles.semanticHints}>
+                <View style={styles.hintChip}>
+                  <Ionicons
+                    name={semanticHints.genre_match === 'same' ? 'checkmark-circle' : semanticHints.genre_match === 'close' ? 'swap-horizontal' : 'close-circle'}
+                    size={14}
+                    color={semanticHints.genre_match === 'same' ? Colors.success : semanticHints.genre_match === 'close' ? Colors.gold : Colors.textTertiary}
+                  />
+                  <Text style={[styles.hintChipText, {
+                    color: semanticHints.genre_match === 'same' ? Colors.success : semanticHints.genre_match === 'close' ? Colors.gold : Colors.textTertiary,
+                  }]}>
+                    {t(`games.logline.hint_genre_${semanticHints.genre_match}`)}
+                  </Text>
+                </View>
+                <View style={styles.hintChip}>
+                  <Ionicons
+                    name={semanticHints.decade_match === 'same' ? 'checkmark-circle' : semanticHints.decade_match === 'close' ? 'swap-horizontal' : 'close-circle'}
+                    size={14}
+                    color={semanticHints.decade_match === 'same' ? Colors.success : semanticHints.decade_match === 'close' ? Colors.gold : Colors.textTertiary}
+                  />
+                  <Text style={[styles.hintChipText, {
+                    color: semanticHints.decade_match === 'same' ? Colors.success : semanticHints.decade_match === 'close' ? Colors.gold : Colors.textTertiary,
+                  }]}>
+                    {t(`games.logline.hint_decade_${semanticHints.decade_match}`)}
+                  </Text>
+                </View>
+              </View>
+            )}
           </Animated.View>
         )}
       </ScrollView>
@@ -389,19 +501,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.textTertiary,
   },
+  wrongGuessContainer: {
+    marginTop: Theme.spacing.sm,
+    gap: Theme.spacing.xs,
+  },
   wrongGuess: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Theme.spacing.sm,
     paddingVertical: Theme.spacing.sm,
     paddingHorizontal: Theme.spacing.md,
-    marginTop: Theme.spacing.sm,
     backgroundColor: 'rgba(239,68,68,0.1)',
     borderRadius: Theme.borderRadius.sm,
   },
   wrongText: {
     fontSize: 14,
     color: Colors.error,
+  },
+  semanticHints: {
+    flexDirection: 'row',
+    gap: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.sm,
+  },
+  hintChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: Theme.spacing.sm,
+    backgroundColor: Colors.white05,
+    borderRadius: Theme.borderRadius.sm,
+  },
+  hintChipText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
   searchContainer: {
     paddingTop: Theme.spacing.md,

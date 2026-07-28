@@ -718,6 +718,7 @@ export async function searchFilms(query: string): Promise<FilmSearchResult[]> {
     if (dbResults.length > 0) {
       return dbResults.map((r) => ({
         id: r.tmdb_id,
+        uuid: r.id,
         title: r.title,
         year: r.year?.toString() ?? '',
         posterPath: r.poster_url ?? null,

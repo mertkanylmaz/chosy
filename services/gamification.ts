@@ -24,6 +24,7 @@ export interface StreakInfo {
   longestStreak: number;
   totalActiveDays: number;
   lastActiveDate: string | null;
+  freezesRemaining: number;
 }
 
 /** Sistem tanımlı milestone */
@@ -57,6 +58,8 @@ export interface ActivityResult {
   streakUpdated: boolean;
   currentStreak: number;
   longestStreak: number;
+  freezeUsed: boolean;
+  freezesRemaining: number;
   newMilestones: NewMilestoneNotification[];
 }
 
@@ -93,6 +96,8 @@ export async function recordActivity(): Promise<ActivityResult | null> {
       current_streak: number;
       longest_streak: number;
       total_active_days?: number;
+      freeze_used?: boolean;
+      freezes_remaining?: number;
       new_milestones: Array<{ slug: string; title: string; icon: string | null }>;
     };
 
@@ -144,6 +149,8 @@ export async function recordActivity(): Promise<ActivityResult | null> {
       streakUpdated: streakData.streak_updated,
       currentStreak,
       longestStreak: streakData.longest_streak ?? 0,
+      freezeUsed: streakData.freeze_used ?? false,
+      freezesRemaining: streakData.freezes_remaining ?? 0,
       newMilestones: allNewMilestones,
     };
   } catch (err) {
@@ -166,7 +173,7 @@ export async function getStreakInfo(): Promise<StreakInfo | null> {
 
     const { data, error } = await supabase
       .from('user_streaks')
-      .select('current_streak, longest_streak, total_active_days, last_active_date')
+      .select('current_streak, longest_streak, total_active_days, last_active_date, streak_freezes_remaining')
       .eq('user_id', userId)
       .single();
 
@@ -178,6 +185,7 @@ export async function getStreakInfo(): Promise<StreakInfo | null> {
           longestStreak: 0,
           totalActiveDays: 0,
           lastActiveDate: null,
+          freezesRemaining: 0,
         };
       }
       if (__DEV__) {
@@ -192,6 +200,7 @@ export async function getStreakInfo(): Promise<StreakInfo | null> {
       longestStreak: data.longest_streak,
       totalActiveDays: data.total_active_days,
       lastActiveDate: data.last_active_date,
+      freezesRemaining: data.streak_freezes_remaining ?? 0,
     };
   } catch (err) {
     if (__DEV__) {
@@ -344,6 +353,92 @@ export async function getAllMilestones(): Promise<Milestone[]> {
       // eslint-disable-next-line no-console
       console.error('[gamification] getAllMilestones beklenmedik hata:', err);
     }
+    return [];
+  }
+}
+
+// ─── Collection Types ───────────────────────────────────────────────────────
+
+/** Collection level definition */
+export interface CollectionLevel {
+  level: number;
+  threshold: number;
+  reward: string;
+}
+
+/** Milestone collection definition */
+export interface MilestoneCollection {
+  id: string;
+  nameKey: string;
+  descriptionKey: string;
+  icon: string;
+  levels: CollectionLevel[];
+}
+
+/** User's progress in a collection */
+export interface CollectionProgress {
+  collection: MilestoneCollection;
+  currentCount: number;
+  currentLevel: number;
+  nextLevel: CollectionLevel | null;
+  progressPercent: number;
+}
+
+/**
+ * Fetch all collections with user's progress.
+ * Used in the profile CollectionsCard component.
+ */
+export async function getCollectionProgress(): Promise<CollectionProgress[]> {
+  try {
+    const userId = await getAppUserId();
+    if (!userId) return [];
+
+    const [collectionsRes, progressRes] = await Promise.all([
+      supabase.from('milestone_collections').select('*').order('id'),
+      supabase.from('user_collection_progress').select('*').eq('user_id', userId),
+    ]);
+
+    if (collectionsRes.error || !collectionsRes.data) {
+      logger.warn('[gamification] getCollectionProgress collections error:', collectionsRes.error?.message);
+      return [];
+    }
+
+    const progressMap = new Map<string, { current_count: number; current_level: number }>();
+    if (progressRes.data) {
+      for (const row of progressRes.data) {
+        progressMap.set(row.collection_id as string, {
+          current_count: row.current_count as number,
+          current_level: row.current_level as number,
+        });
+      }
+    }
+
+    return collectionsRes.data.map((col) => {
+      const levels = (col.levels_json as CollectionLevel[]) ?? [];
+      const progress = progressMap.get(col.id as string);
+      const currentCount = progress?.current_count ?? 0;
+      const currentLevel = progress?.current_level ?? 0;
+      const nextLevel = levels.find((l) => l.level === currentLevel + 1) ?? null;
+      const progressPercent = nextLevel
+        ? Math.min((currentCount / nextLevel.threshold) * 100, 100)
+        : 100;
+
+      return {
+        collection: {
+          id: col.id as string,
+          nameKey: col.name_key as string,
+          descriptionKey: col.description_key as string,
+          icon: col.icon as string,
+          levels,
+        },
+        currentCount,
+        currentLevel,
+        nextLevel,
+        progressPercent,
+      };
+    });
+  } catch (err) {
+    logger.warn('[gamification] getCollectionProgress error:', err);
     return [];
   }
 }

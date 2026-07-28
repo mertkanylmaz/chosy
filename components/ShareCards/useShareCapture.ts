@@ -121,8 +121,8 @@ export interface UseShareCaptureOptions {
 export interface UseShareCaptureReturn {
   /** Share card'in render edilecegi ref */
   cardRef: React.RefObject<View | null>;
-  /** PNG capture + native share tetikleme */
-  share: () => Promise<void>;
+  /** PNG capture + native share tetikleme — paylasim tamamlandiysa true doner */
+  share: () => Promise<boolean>;
   /** Capture islemi devam ediyor mu */
   isCapturing: boolean;
   /** Native share modülleri bu build'da mevcut mu */
@@ -158,8 +158,14 @@ export function useShareCapture(options?: UseShareCaptureOptions): UseShareCaptu
     });
   }, []);
 
-  const share = useCallback(async () => {
-    if (!cardRef.current || isCapturing) return;
+  /**
+   * Karti PNG'ye cevirip paylasim sayfasini acar.
+   *
+   * @returns Paylasim gercekten tamamlandiysa true. Cagiranlar bu degeri
+   *   telemetride kullanir — basarisiz paylasim "tamamlandi" sayilmamalidir.
+   */
+  const share = useCallback(async (): Promise<boolean> => {
+    if (!cardRef.current || isCapturing) return false;
 
     posthogAnalytics.track('app_share_initiated', {
       card_type: cardType,
@@ -176,7 +182,7 @@ export function useShareCapture(options?: UseShareCaptureOptions): UseShareCaptu
           i18n.t('share.notAvailableTitle'),
           i18n.t('share.notAvailableMessage'),
         );
-        return;
+        return false;
       }
 
       const uri = await captureRef(cardRef, {
@@ -189,7 +195,7 @@ export function useShareCapture(options?: UseShareCaptureOptions): UseShareCaptu
       const isAvailable = await Sharing.isAvailableAsync();
       if (!isAvailable) {
         logger.log('[share] Sharing not available on this device');
-        return;
+        return false;
       }
 
       await Sharing.shareAsync(uri, {
@@ -202,8 +208,10 @@ export function useShareCapture(options?: UseShareCaptureOptions): UseShareCaptu
         card_type: cardType,
         ...trackingProps,
       });
+      return true;
     } catch (err) {
       logger.error('[share] Capture/share error:', err);
+      return false;
     } finally {
       setIsCapturing(false);
     }

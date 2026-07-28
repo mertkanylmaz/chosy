@@ -1,16 +1,16 @@
 /**
  * Fade In (Pikselli Afis) — Wordle-tarzi gunluk poster tahmin oyunu.
  *
- * Backend-first: edge function'lardan puzzle/guess alir.
- * Fallback: backend yoksa client-side gameService kullanir.
+ * Edge Function tabanlı — tahmin doğrulaması sunucuda.
  *
  * Mekanik:
  *   - Poster blur'lu baslar, her yanlis tahminde blur azalir
- *   - 6 deneme hakki — her yanlista 1 ipucu acilir (backend archetype-aware)
+ *   - 6 deneme hakki — her yanlis tahmin 1 ipucu kredisi kazandirir
+ *   - Krediyi oyuncu ISTEDIGI ipucu kategorisine harcar (sirali acilma YOK)
  *   - Dogruyu bilirsen poster tamamen net acilir (reveal)
  *   - 6/6 yanlis → loss state + filmi kesfet CTA
  *
- * Blur seviyeleri: [50, 40, 28, 18, 10, 4]
+ * Blur seviyeleri: [45, 30, 20, 12, 6, 2] — ilk adımda görsel fark net olacak
  */
 import React, { useCallback, useRef, useState } from 'react';
 import {
@@ -25,34 +25,31 @@ import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
+import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { getPosterUrl } from '@/services/tmdb';
-import { supabase } from '@/services/supabase';
-import {
-  fetchDailyPuzzle,
-  submitGameScore,
-  getGameStreak,
-  getCachedResult,
-  getFilmAnswer,
-  getTodayDate,
-} from '@/services/gameService';
-import {
-  fetchPosterlePuzzle,
-  submitPosterleGuess,
-  type PosterlePuzzleState,
-  type PosterleHint,
-} from '@/services/posterleApi';
-import type { GameState, GameClue, GameResult, FilmSearchResult } from '@/services/gameTypes';
+import { getGameStreak } from '@/services/gameService';
+import { getDailyChallenge, revealHint, submitGameGuess } from '@/services/gameApi';
+import type { DailyChallenge, FadeInHintStub, GuessResult, WhyThisMovieText } from '@/types/game';
+import type { DnaSignal } from '@/components/games/DnaXpReveal';
+import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { HintBoard } from '@/components/games/HintBoard';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useGamePaywall } from '@/hooks/useGamePaywall';
+import {
+  trackGameOpened,
+  trackGuessSubmitted,
+  trackGameCompleted,
+  trackHintUsed,
+} from '@/utils/gameAnalytics';
 
 // ─── Sabitler ───────────────────────────────────────────────────────────────
 
@@ -60,8 +57,10 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const POSTER_W = Math.floor(SCREEN_W * 0.7);
 const POSTER_H = Math.floor(POSTER_W * 1.5);
 
-/** Blur seviyeleri — index = kullanilan deneme sayisi */
-const BLUR_LEVELS = [50, 40, 28, 18, 10, 4];
+/** Blur seviyeleri — index = kullanilan deneme sayisi.
+ * Eski: [50,40,28,18,10,4] — ilk adımda fark görülmüyordu.
+ * Yeni: Daha agresif azalma, her adımda bariz görsel fark. */
+const BLUR_LEVELS = [45, 30, 20, 12, 6, 2];
 const MAX_ATTEMPTS = 6;
 
 // ─── FadeInScreen ───────────────────────────────────────────────────────────
@@ -70,35 +69,47 @@ export default function FadeInScreen() {
   const { t } = useLanguage();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
+  // Analytics timing refs
+  const openTimeRef = useRef(Date.now());
+  const guessStartTime = useRef(Date.now());
+
   // State
   const [gameState, setGameState] = useState<GameState>('loading');
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
-  const [clues, setClues] = useState<GameClue[]>([]);
+  const [hints, setHints] = useState<FadeInHintStub[]>([]);
+  /** Acilmis ipuclarinin icerigi (order -> metin) — yalnizca sunucudan gelir */
+  const [hintContents, setHintContents] = useState<Record<number, string>>({});
+  /** Acilmis ipuclarinin order degerleri — secim sirasiyla */
+  const [revealedOrders, setRevealedOrders] = useState<number[]>([]);
   const [attempts, setAttempts] = useState(0);
-  const [revealedHints, setRevealedHints] = useState(0);
-  const [puzzleFilmId, setPuzzleFilmId] = useState(0);
   const [puzzleId, setPuzzleId] = useState('');
-  const [result, setResult] = useState<GameResult | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [wrongGuess, setWrongGuess] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  /** Tahmin/ipucu istegi hatasi — sessiz fallback YASAK */
+  const [actionError, setActionError] = useState(false);
+
+  // Result state (Edge Function response)
+  const [solved, setSolved] = useState(false);
+  const [xpAwarded, setXpAwarded] = useState(0);
+  const [dnaUpdated, setDnaUpdated] = useState(false);
+  const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
   const [filmInfo, setFilmInfo] = useState<{
     title: string;
     year: number;
     posterPath: string | null;
+    filmId: number;
   } | null>(null);
-  const [streak, setStreak] = useState(0);
-  const [wrongGuess, setWrongGuess] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
-
-  /** Backend hints (archetype-aware, from edge function) */
-  const [backendHints, setBackendHints] = useState<PosterleHint[]>([]);
-
-  /** Whether we're using backend mode */
-  const isBackendMode = useRef(false);
-
-  /** Backend puzzle film UUID (for guess submission) */
-  const backendFilmUUID = useRef<string | null>(null);
 
   /** Mevcut blur seviyesi */
   const currentBlur = BLUR_LEVELS[Math.min(attempts, BLUR_LEVELS.length - 1)];
+
+  /** Harcanabilir ipucu hakki — her yanlis tahmin 1 kredi verir */
+  const hintCredits = Math.max(0, attempts - revealedOrders.length);
 
   // ── Load puzzle ─────────────────────────────────────────────────────────────
 
@@ -106,330 +117,227 @@ export default function FadeInScreen() {
     useCallback(() => {
       setGameState('loading');
       setPosterUrl(null);
-      setClues([]);
+      setHints([]);
+      setHintContents({});
+      setRevealedOrders([]);
       setAttempts(0);
-      setRevealedHints(0);
-      setResult(null);
+      setSolved(false);
       setFilmInfo(null);
       setWrongGuess(null);
       setLoadError(false);
-      setBackendHints([]);
-      isBackendMode.current = false;
-      backendFilmUUID.current = null;
+      setActionError(false);
       loadPuzzle();
     }, []),
   );
 
+  /** Puzzle yükle — Edge Function */
   const loadPuzzle = useCallback(async () => {
-    // Try backend first
     try {
-      const backendState = await fetchPosterlePuzzle();
-      if (backendState) {
-        logger.log('[fadein] Backend puzzle loaded');
-        isBackendMode.current = true;
-        applyBackendState(backendState);
-        return;
+      const puzzleDate = new Date().toLocaleDateString('en-CA');
+      const data: DailyChallenge = await getDailyChallenge('fadein', puzzleDate);
+      const puzzle = data.puzzle;
+      const progress = data.progress;
+
+      setPuzzleId(puzzle.id);
+      setPuzzleNo(data.puzzle_no);
+
+      // puzzle_data: { poster_url, hints: [{ order, type }] } — icerik/film adi YOK
+      const pd = puzzle.puzzle_data;
+      const posterPath = pd.poster_url as string | undefined;
+      if (posterPath) {
+        setPosterUrl(getPosterUrl(posterPath, 'w500'));
       }
-    } catch (err) {
-      logger.warn('[fadein] Backend unavailable, using fallback:', err);
-    }
 
-    // Fallback to client-side
-    logger.log('[fadein] Using client-side fallback');
-    await loadClientSidePuzzle();
-  }, []);
+      // puzzle_data yalnızca ipucu iskeletini taşır (order + type);
+      // içerik sunucudan gelir (migration 064, Hard Rule 1).
+      const hintList = (pd.hints as FadeInHintStub[]) ?? [];
+      setHints(hintList.sort((a, b) => a.order - b.order));
 
-  /** Apply backend state to UI */
-  const applyBackendState = useCallback((state: PosterlePuzzleState) => {
-    // Poster URL
-    if (state.puzzle.poster_url) {
-      setPosterUrl(getPosterUrl(state.puzzle.poster_url, 'w500'));
-    }
+      // Açılmış ipuçlarının içerikleri — resume
+      if (data.revealed_hint_contents?.length) {
+        setHintContents(
+          Object.fromEntries(data.revealed_hint_contents.map((h) => [h.order, h.content])),
+        );
+      }
 
-    // Attempts & hints
-    setAttempts(state.attempt.attempts_used);
-    setBackendHints(state.hints);
-    setRevealedHints(state.hints.length);
-    setStreak(state.streak.current_streak);
-
-    // Game complete?
-    if (state.attempt.result !== 'in_progress' && state.film) {
-      const gameResult: GameResult = {
-        puzzleId: `fadein_${state.puzzle.date}`,
-        date: state.puzzle.date,
-        gameType: 'fadein',
-        solved: state.attempt.result === 'won',
-        attempts: state.attempt.attempts_used,
-        maxAttempts: MAX_ATTEMPTS,
-        filmId: state.film.tmdb_id,
-      };
-      setResult(gameResult);
-      setFilmInfo({
-        title: state.film.title,
-        year: state.film.year ?? 0,
-        posterPath: state.film.poster_url,
-      });
-      setGameState('complete');
-    } else {
-      setGameState('playing');
-    }
-  }, []);
-
-  /** Client-side fallback (same as before) */
-  const loadClientSidePuzzle = useCallback(async () => {
-    try {
-      const cached = await getCachedResult('fadein');
-      if (cached) {
-        const film = await getFilmAnswer(cached.filmId);
+      // Bugün zaten oynanmış mı?
+      if (progress?.completed) {
         const streakInfo = await getGameStreak('fadein');
-        setResult(cached);
-        setFilmInfo(film);
         setStreak(streakInfo.currentStreak);
-        if (film?.posterPath) {
-          setPosterUrl(getPosterUrl(film.posterPath, 'w500'));
-        }
+        setSolved(progress.won);
+        setAttempts(progress.guesses?.length ?? 0);
+
+        // Çözüm sunucudan gelir — puzzle_data film adı taşımaz
+        const solution = data.revealed_solution;
+        setFilmInfo({
+          title: solution?.title ?? t('games.result.unknown_film'),
+          year: solution?.year ?? 0,
+          posterPath: solution?.poster_url ?? posterPath ?? null,
+          filmId: 0,
+        });
+
+        setWhyThisMovie(data.why_this_movie ?? null);
+
         setGameState('complete');
         return;
       }
 
-      const puzzle = await fetchDailyPuzzle('fadein');
-      if (!puzzle) {
-        logger.error('[fadein] Puzzle yuklenemedi');
-        setLoadError(true);
-        return;
+      // Devam eden oyun — tahmin sayisi ve acilmis ipuclari sunucudan
+      if (progress?.guesses) {
+        setAttempts(progress.guesses.length);
       }
-
-      const posterClue = puzzle.clues.find((c) => c.type === 'poster');
-      if (posterClue?.content) {
-        setPosterUrl(getPosterUrl(posterClue.content, 'w500'));
+      if (progress?.revealed_hints) {
+        setRevealedOrders(progress.revealed_hints);
       }
-
-      const hintClues = puzzle.clues
-        .filter((c) => c.type === 'hint')
-        .sort((a, b) => a.order - b.order);
-      setClues(hintClues);
-
-      setPuzzleFilmId(puzzle.filmId);
-      setPuzzleId(puzzle.id);
-
-      const film = await getFilmAnswer(puzzle.filmId);
-      setFilmInfo(film);
 
       setGameState('playing');
+      openTimeRef.current = Date.now();
+      guessStartTime.current = Date.now();
+      trackGameOpened('fadein', 0, 'hub');
     } catch (err) {
-      logger.error('[fadein] Load hatasi:', err);
+      logger.error('[fadein] Load hatası:', err);
       setLoadError(true);
     }
   }, []);
 
   // ── Guess handler ─────────────────────────────────────────────────────────
 
+  /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
       if (gameState !== 'playing') return;
 
-      if (isBackendMode.current) {
-        await handleBackendGuess(film);
-      } else {
-        await handleClientSideGuess(film);
-      }
-    },
-    [gameState, attempts, puzzleFilmId, puzzleId, revealedHints, clues.length],
-  );
-
-  /** Backend guess — server validates, returns hint + result */
-  const handleBackendGuess = useCallback(
-    async (film: FilmSearchResult) => {
-      // Lookup film UUID from tmdb_id for backend submission
-      let filmUUID: string | undefined;
-      try {
-        const { data } = await supabase
-          .from('films')
-          .select('id')
-          .eq('tmdb_id', film.id)
-          .maybeSingle();
-        filmUUID = data?.id ?? undefined;
-      } catch {
-        // If UUID lookup fails, send text guess
-      }
-
-      const guessResult = await submitPosterleGuess(
-        filmUUID,
-        film.title,
-      );
-
-      if (!guessResult) {
-        // Backend error — show wrong guess toast, don't advance
-        hapticWarning();
-        setWrongGuess(film.title);
-        setTimeout(() => setWrongGuess(null), 1500);
+      const filmUuid = film.uuid;
+      if (!filmUuid) {
+        logger.error('[fadein] Film UUID bulunamadı — TMDb fallback kullanılamaz');
         return;
       }
 
-      setAttempts(guessResult.attempts_used);
+      try {
+        const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
+        const newAttempts = result.guesses_used;
+        setAttempts(newAttempts);
+        trackGuessSubmitted('fadein', newAttempts, Date.now() - guessStartTime.current);
+        guessStartTime.current = Date.now();
 
-      if (guessResult.correct) {
-        // Win!
-        hapticSuccess();
-        setGameState('reveal');
-        await new Promise((r) => setTimeout(r, 800));
+        if (result.correct) {
+          hapticSuccess();
+          setSolved(true);
+          setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
+          setDnaUpdated(result.dna_updated);
+          if (result.dna_updated) {
+            setDnaSignals([
+              { dimension: 'visual_sense', delta: 0.5 },
+              { dimension: 'knowledge', delta: 0.3 },
+            ]);
+          }
 
-        const today = getTodayDate();
-        const gameResult: GameResult = {
-          puzzleId: `fadein_${today}`,
-          date: today,
-          gameType: 'fadein',
-          solved: true,
-          attempts: guessResult.attempts_used,
-          maxAttempts: MAX_ATTEMPTS,
-          filmId: guessResult.film?.tmdb_id ?? film.id,
-        };
-
-        // Also save to local cache for other game systems
-        await submitGameScore(gameResult);
-
-        setResult(gameResult);
-        if (guessResult.film) {
-          setFilmInfo({
-            title: guessResult.film.title,
-            year: guessResult.film.year ?? 0,
-            posterPath: guessResult.film.poster_url ?? null,
-          });
-        }
-        setStreak(
-          (guessResult.streak as Record<string, number>)?.current_streak ?? streak + 1,
-        );
-        setGameState('complete');
-      } else {
-        // Wrong
-        hapticWarning();
-        setWrongGuess(film.title);
-        setTimeout(() => setWrongGuess(null), 1500);
-
-        // Add server hint
-        if (guessResult.hint) {
-          setBackendHints((prev) => [
-            ...prev,
-            {
-              attempt_number: guessResult.attempts_used,
-              hint_type: guessResult.hint!.type,
-              hint_value: guessResult.hint!.value,
-            },
-          ]);
-          setRevealedHints((prev) => prev + 1);
-        }
-
-        // Game over?
-        if (guessResult.result === 'lost') {
-          hapticHeavy();
           setGameState('reveal');
+          trackGameCompleted({
+            gameId: 'fadein',
+            won: true,
+            guessesUsed: newAttempts,
+            timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+            xp: result.xp_awarded,
+          });
           await new Promise((r) => setTimeout(r, 800));
 
-          const today = getTodayDate();
-          const gameResult: GameResult = {
-            puzzleId: `fadein_${today}`,
-            date: today,
-            gameType: 'fadein',
-            solved: false,
-            attempts: guessResult.attempts_used,
-            maxAttempts: MAX_ATTEMPTS,
-            filmId: guessResult.film?.tmdb_id ?? film.id,
-          };
-
-          await submitGameScore(gameResult);
-
-          setResult(gameResult);
-          if (guessResult.film) {
+          if (result.revealed_solution) {
             setFilmInfo({
-              title: guessResult.film.title,
-              year: guessResult.film.year ?? 0,
-              posterPath: guessResult.film.poster_url ?? null,
+              title: result.revealed_solution.title,
+              year: result.revealed_solution.year,
+              posterPath: result.revealed_solution.poster_url ?? null,
+              filmId: 0,
             });
           }
-          setStreak(0);
-          setGameState('complete');
-        }
-      }
-    },
-    [streak],
-  );
 
-  /** Client-side guess — same logic as before */
-  const handleClientSideGuess = useCallback(
-    async (film: FilmSearchResult) => {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-
-      const solved = film.id === puzzleFilmId;
-
-      if (solved) {
-        hapticSuccess();
-        setGameState('reveal');
-        await new Promise((r) => setTimeout(r, 800));
-
-        const today = getTodayDate();
-        const gameResult: GameResult = {
-          puzzleId,
-          date: today,
-          gameType: 'fadein',
-          solved: true,
-          attempts: newAttempts,
-          maxAttempts: MAX_ATTEMPTS,
-          filmId: puzzleFilmId,
-        };
-
-        await submitGameScore(gameResult);
-        const streakInfo = await getGameStreak('fadein');
-        setResult(gameResult);
-        setStreak(streakInfo.currentStreak);
-        setGameState('complete');
-        checkGamePaywall(streakInfo.currentStreak, true);
-      } else {
-        hapticWarning();
-        setWrongGuess(film.title);
-        setTimeout(() => setWrongGuess(null), 1500);
-
-        if (revealedHints < clues.length) {
-          setRevealedHints((prev) => prev + 1);
-        }
-
-        if (newAttempts >= MAX_ATTEMPTS) {
-          hapticHeavy();
-          setGameState('reveal');
-          await new Promise((r) => setTimeout(r, 800));
-
-          const today = getTodayDate();
-          const gameResult: GameResult = {
-            puzzleId,
-            date: today,
-            gameType: 'fadein',
-            solved: false,
-            attempts: newAttempts,
-            maxAttempts: MAX_ATTEMPTS,
-            filmId: puzzleFilmId,
-          };
-
-          await submitGameScore(gameResult);
           const streakInfo = await getGameStreak('fadein');
-          setResult(gameResult);
           setStreak(streakInfo.currentStreak);
           setGameState('complete');
+          checkGamePaywall(streakInfo.currentStreak, true);
+        } else {
+          hapticWarning();
+          setWrongGuess(film.title);
+          setTimeout(() => setWrongGuess(null), 1500);
+
+          // İpucu otomatik açılmaz — bu yanlış tahmin 1 kredi kazandırır,
+          // oyuncu krediyi HintBoard'dan istediği kategoriye harcar.
+
+          // Son deneme — oyun biter
+          if (result.completed) {
+            hapticHeavy();
+            setSolved(false);
+            setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
+            setDnaUpdated(result.dna_updated);
+
+            setGameState('reveal');
+            trackGameCompleted({
+              gameId: 'fadein',
+              won: false,
+              guessesUsed: newAttempts,
+              timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+              xp: result.xp_awarded,
+            });
+            await new Promise((r) => setTimeout(r, 800));
+
+            if (result.revealed_solution) {
+              setFilmInfo({
+                title: result.revealed_solution.title,
+                year: result.revealed_solution.year,
+                posterPath: result.revealed_solution.poster_url ?? null,
+                filmId: 0,
+              });
+            }
+
+            const streakInfo = await getGameStreak('fadein');
+            setStreak(streakInfo.currentStreak);
+            setGameState('complete');
+          }
         }
+      } catch (err) {
+        // Sessiz fallback YASAK — kullanıcıya görünür hata + retry
+        logger.error('[fadein] Submit hatası:', err);
+        Sentry.captureException(err, { tags: { game: 'fadein', action: 'submit_guess' } });
+        hapticHeavy();
+        setActionError(true);
       }
     },
-    [attempts, puzzleFilmId, puzzleId, revealedHints, clues.length],
+    [gameState, puzzleId, checkGamePaywall],
   );
 
-  // ── Render helpers ────────────────────────────────────────────────────────
+  // ── Hint handler ──────────────────────────────────────────────────────────
 
-  /** Get displayable hints based on mode */
-  const displayHints = isBackendMode.current
-    ? backendHints.map((h, i) => ({
-        order: h.attempt_number,
-        type: 'hint' as const,
-        content: `${h.hint_type}: ${h.hint_value}`,
-      }))
-    : clues.slice(0, revealedHints);
+  /** Seçilen ipucunu açar — sunucu kredi kontrolünü yapar */
+  const handleRevealHint = useCallback(
+    async (hint: FadeInHintStub) => {
+      if (gameState !== 'playing') return;
+      // Optimistic: kart hemen açılır, sunucu reddederse geri alınır
+      if (revealedOrders.includes(hint.order)) return;
+
+      const previous = revealedOrders;
+      setRevealedOrders([...previous, hint.order]);
+      setActionError(false);
+      hapticMedium();
+
+      try {
+        const result = await revealHint(puzzleId, hint.order);
+        setRevealedOrders(result.revealed_hints);
+        setHintContents((prev) => ({ ...prev, [result.hint.order]: result.hint.content }));
+        trackHintUsed('fadein', hint.type, result.hints_used);
+      } catch (err) {
+        logger.error('[fadein] İpucu açma hatası:', err);
+        Sentry.captureException(err, {
+          tags: { game: 'fadein', action: 'reveal_hint', hint_type: hint.type },
+        });
+        setRevealedOrders(previous);
+        hapticWarning();
+        setActionError(true);
+      }
+    },
+    [gameState, puzzleId, revealedOrders],
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -458,11 +366,11 @@ export default function FadeInScreen() {
   }
 
   /** Complete state */
-  if (gameState === 'complete' && result && filmInfo) {
+  if (gameState === 'complete' && filmInfo) {
     return (
       <GameShell
         title={t('games.fadein.title')}
-        currentAttempt={result.attempts}
+        currentAttempt={attempts}
         maxAttempts={MAX_ATTEMPTS}
       >
         <ScrollView
@@ -481,16 +389,21 @@ export default function FadeInScreen() {
           )}
 
           <ResultCard
-            solved={result.solved}
-            attempts={result.attempts}
+            solved={solved}
+            attempts={attempts}
             maxAttempts={MAX_ATTEMPTS}
             filmTitle={filmInfo.title}
             filmYear={filmInfo.year}
             filmPosterPath={filmInfo.posterPath}
-            filmId={result.filmId}
+            filmId={filmInfo.filmId}
             streak={streak}
             gameTitle={t('games.fadein.title')}
             gameType="fadein"
+            puzzleNo={puzzleNo}
+            whyThisMovie={whyThisMovie ?? undefined}
+            xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
+            dnaUpdated={dnaUpdated}
+            dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
       </GameShell>
@@ -534,26 +447,28 @@ export default function FadeInScreen() {
           )}
         </View>
 
-        {/* Acilan ipuclari */}
-        {displayHints.length > 0 && (
+        {/* İpucu tahtası — oyuncu hangisini açacağını seçer */}
+        {gameState === 'playing' && (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.hintsContainer}>
-            <Text style={styles.hintsTitle}>{t('games.fadein.hints_title')}</Text>
-            {displayHints.map((hint, i) => (
-              <Animated.View
-                key={`hint-${hint.order}-${i}`}
-                entering={FadeInDown.delay(i * 100).duration(300)}
-                style={styles.hintRow}
-              >
-                <View style={styles.hintNumber}>
-                  <Text style={styles.hintNumberText}>{i + 1}</Text>
-                </View>
-                <Text style={styles.hintText}>{hint.content}</Text>
-              </Animated.View>
-            ))}
+            <HintBoard
+              hints={hints}
+              revealedOrders={revealedOrders}
+              contents={hintContents}
+              credits={hintCredits}
+              onReveal={handleRevealHint}
+            />
           </Animated.View>
         )}
 
-        {/* Yanlis tahmin toast */}
+        {/* İstek hatası — sessiz fallback YASAK */}
+        {actionError && (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.actionErrorBox}>
+            <Ionicons name="cloud-offline-outline" size={18} color={Colors.error} />
+            <Text style={styles.actionErrorText}>{t('games.result.error_subtitle')}</Text>
+          </Animated.View>
+        )}
+
+        {/* Yanlış tahmin toast */}
         {wrongGuess && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.wrongToast}>
             <Ionicons name="close-circle" size={18} color={Colors.error} />
@@ -563,7 +478,7 @@ export default function FadeInScreen() {
           </Animated.View>
         )}
 
-        {/* Deneme gostergesi */}
+        {/* Deneme göstergesi */}
         {gameState === 'playing' && (
           <View style={styles.attemptsRow}>
             {Array.from({ length: MAX_ATTEMPTS }).map((_, i) => (
@@ -667,40 +582,22 @@ const styles = StyleSheet.create({
   hintsContainer: {
     width: '100%',
     marginTop: Theme.spacing.lg,
-    gap: Theme.spacing.sm,
   },
-  hintsTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: 4,
-  },
-  hintRow: {
+  actionErrorBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Theme.spacing.sm,
-    backgroundColor: Colors.white05,
+    marginTop: Theme.spacing.md,
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.md,
+    backgroundColor: 'rgba(239,68,68,0.12)',
   },
-  hintNumber: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: Colors.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hintNumberText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.accentPrimary,
-  },
-  hintText: {
+  actionErrorText: {
     flex: 1,
-    fontSize: 14,
-    color: Colors.textWhite,
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.error,
   },
   wrongToast: {
     flexDirection: 'row',

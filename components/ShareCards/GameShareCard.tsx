@@ -1,8 +1,10 @@
 /**
  * GameShareCard — Oyun sonucu paylasim template'i (1080x1350 PNG).
  *
- * Oyun adi + emoji grid + film bilgisi + streak.
- * Chosy.ai branding.
+ * Oyun adi + emoji grid + skor + streak + bulmaca no.
+ *
+ * HARD RULE 9: Kartta film adi, yili veya afisi ASLA yer almaz. Paylasim
+ * spoiler icermez — sirri koruma zorunlulugu viral mekanigin kendisidir.
  */
 import React, { forwardRef } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
@@ -23,14 +25,12 @@ export interface GameShareCardProps {
   attempts: number;
   /** Maks deneme */
   maxAttempts: number;
-  /** Film adi */
-  filmTitle: string;
-  /** Film yili */
-  filmYear: number;
   /** Streak */
   streak: number;
   /** Oyun tipi (emoji grid icin) */
-  gameType: 'imposter' | 'logline' | 'quoted' | 'fadein';
+  gameType: 'imposter' | 'logline' | 'quoted' | 'fadein' | 'cinemetrics' | 'spotlight' | 'detective';
+  /** Gunun bulmaca numarasi — kimlik icin (film adi YERINE) */
+  puzzleNo?: number;
 }
 
 /** Emoji grid olustur — oyun tipine gore */
@@ -40,47 +40,29 @@ function buildEmojiGrid(
   attempts: number,
   maxAttempts: number,
 ): string {
-  switch (gameType) {
-    case 'imposter':
-      return solved ? '\u{1F7E2}' : '\u{1F534}';
-    case 'logline': {
-      const squares: string[] = [];
-      for (let i = 0; i < maxAttempts; i++) {
-        if (i < attempts - 1) {
-          squares.push('\u{1F534}'); // yanlis tahminler
-        } else if (i === attempts - 1 && solved) {
-          squares.push('\u{1F7E2}'); // dogru tahmin
-        } else if (i === attempts - 1 && !solved) {
-          squares.push('\u{1F534}'); // son yanlis
-        } else {
-          squares.push('\u{26AB}'); // kullanilmadi
-        }
-      }
-      return squares.join('');
-    }
-    case 'quoted': {
-      const dots: string[] = [];
-      for (let i = 0; i < maxAttempts; i++) {
-        if (i < attempts - 1) {
-          dots.push('\u{1F534}');
-        } else if (i === attempts - 1 && solved) {
-          dots.push('\u{1F7E2}');
-        } else if (i === attempts - 1 && !solved) {
-          dots.push('\u{1F534}');
-        } else {
-          dots.push('\u{26AB}');
-        }
-      }
-      return dots.join('');
-    }
-    default:
-      return solved ? '\u{2705}' : '\u{274C}';
+  // Imposter 3 round uzerinden oynanir — tek sonuc rozeti daha okunakli
+  if (gameType === 'imposter') {
+    return solved ? '\u{1F7E2}' : '\u{1F534}';
   }
+
+  // Deneme tabanli oyunlar (logline, quoted, fadein, cinemetrics, spotlight,
+  // detective): her deneme bir kare
+  const cells: string[] = [];
+  for (let i = 0; i < maxAttempts; i++) {
+    if (i < attempts - 1) {
+      cells.push('\u{1F534}'); // yanlis tahminler
+    } else if (i === attempts - 1) {
+      cells.push(solved ? '\u{1F7E2}' : '\u{1F534}'); // son tahmin
+    } else {
+      cells.push('\u{26AB}'); // kullanilmadi
+    }
+  }
+  return cells.join('');
 }
 
 const GameShareCard = forwardRef<View, GameShareCardProps>(
   function GameShareCard(
-    { gameTitle, solved, attempts, maxAttempts, filmTitle, filmYear, streak, gameType },
+    { gameTitle, solved, attempts, maxAttempts, streak, gameType, puzzleNo },
     ref,
   ) {
     const emojiGrid = buildEmojiGrid(gameType, solved, attempts, maxAttempts);
@@ -106,13 +88,10 @@ const GameShareCard = forwardRef<View, GameShareCardProps>(
           {solved ? `${attempts}/${maxAttempts}` : `X/${maxAttempts}`}
         </Text>
 
-        {/* Film bilgisi */}
-        <View style={cardStyles.filmBlock}>
-          <Text style={cardStyles.filmTitle} numberOfLines={2}>
-            {filmTitle}
-          </Text>
-          <Text style={cardStyles.filmYear}>{filmYear}</Text>
-        </View>
+        {/* Bulmaca kimligi — film adi ASLA yazilmaz (Hard Rule 9) */}
+        {puzzleNo != null && puzzleNo > 0 && (
+          <Text style={cardStyles.puzzleNo}>{`#${puzzleNo}`}</Text>
+        )}
 
         {/* Streak */}
         {streak > 0 && (
@@ -176,20 +155,12 @@ const cardStyles = StyleSheet.create({
     color: Colors.textPrimary,
     marginBottom: Theme.spacing.lg,
   },
-  filmBlock: {
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: Theme.spacing.md,
-  },
-  filmTitle: {
+  puzzleNo: {
     fontFamily: 'PlayfairDisplay_700Bold',
     fontSize: 18,
-    color: Colors.textPrimary,
-    textAlign: 'center',
-  },
-  filmYear: {
-    fontSize: 14,
     color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Theme.spacing.md,
   },
   streak: {
     fontSize: 16,

@@ -698,3 +698,53 @@ Get-Content docs/analytics/FAZ1_OLCUM_PLANI.md | Select-Object -First 30
 6. Her sprint sonunda retro: ne çalıştı, ne çalışmadı, ne öğrendik.
 
 Başlıyoruz patron: **Sprint G0, Task G0.0 (sağlık kontrolü)** — prompt'u Claude Code'a yapıştır, tabloyu bana getir.
+
+---
+
+# KAPANIŞ NOTU — 29 Temmuz 2026
+
+Faz 1 "oyun altyapısının tamamlanması" olarak kapatıldı. Founder kararı: **yeni oyun
+yapılmayacak**; buradan sonraki getiri mevcut oyunların birbirini besleme oranından ve
+haftalık analitik okumasından gelecek.
+
+## Kapanış sprintinde ne yapıldı
+
+**Release-blocker'lar (prod'da doğrulandı, kapatıldı):**
+- `public_daily_puzzles` view'ı çözümü istemciye indiriyordu: `puzzle_data.film_title`
+  CineMetrics/Logline/FadeIn/Detective'de cevabın kendisiydi; Imposter'da
+  `rounds[].imposter_ids`, FadeIn'de tüm ipucu içerikleri iniyordu → migration 064
+- Paylaşım kartı film adı + yıl basıyordu (Hard Rule 9 ihlali) → kart spoiler'sız
+- Bu iki durum `tests/game-system/e2e-api.test.ts` S0 testine bağlandı (kalıcı bekçi)
+
+**Ölü sistemler canlandırıldı:**
+- WhyThisMovie kartı hiçbir oyunda render edilmiyordu (`why_this_movie` yalnızca
+  Detective dalında üretiliyor, hiçbir ekran prop'u geçmiyordu)
+- Detective'in `FilmDiscoveryBridge` butonları boş handler'dı
+- "Listeye ekle" düğmesi eklemiyordu, yalnızca yönlendiriyordu → gerçek ekleme + `game_watchlist_added`
+- Daily Chest ödülleri hiç uygulanmıyordu → `get-daily-chest` (migration 066/067)
+
+**Ölçüm:**
+- Event property şemaları ayrışmıştı (`guesses_used` / `turns_used` / `total_guesses`);
+  hepsi taksonomiye çekildi — kapı metriği artık 6 oyunu da görüyor
+- `docs/analytics/FAZ1_OLCUM_PLANI.md` yazıldı (bu planın G2.5 görevi)
+
+**Üretim sağlığı:**
+- `cast_json`/`imdb_rating` filtresi sunucuya taşındı: Spotlight havuzu 4 → 147,
+  Detective 0 → 138 (Detective ilk kez üretilebildi)
+- Quoted `games_enabled` dışına alındı (havuz tükendi, Hard Rule 7)
+- Günlük tema (Tier 3.1) canlıda: migration 063 + `get-daily-theme` + hub kartı
+
+## Kapanışta AÇIK KALAN işler
+
+| Konu | Not |
+|---|---|
+| ShareCard 3 oyunda yok | CineMetrics/Spotlight/Detective kendi sonuç ekranlarını kullanıyor; paylaşım akışı eklenmedi |
+| `game_milestone_earned` hiç ateşlenmiyor | Koleksiyon seviye atlama noktasına bağlanmadı |
+| FadeIn poster sızıntısı | Blur istemcide; net poster payload'da. Sunucu tarafı blur ayrı iş |
+| `rare_poster` / `dna_boost` ödülleri | Sandık config'inden çıkarıldı, Faz 2 |
+| Quoted replik havuzu | Telif kararı gözden geçirilmeden geri açılamaz |
+
+## Faz 2 kapısı
+
+`docs/analytics/FAZ1_OLCUM_PLANI.md` → D7 farkı ≥ +10 puan **ve** haftalık medyan ≥ 3/7.
+Bu iki metrik 4 haftada karşılanmazsa tab mimarisi değişmez (kill-criteria).
