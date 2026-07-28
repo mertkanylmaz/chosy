@@ -13,6 +13,7 @@ import { logger } from '@/utils/logger';
 
 import type {
   DailyChallenge,
+  DailyChestState,
   DailyThemeState,
   DetectiveGuessResult,
   DetectiveStage,
@@ -43,6 +44,58 @@ async function ensureAuthSession(): Promise<void> {
 }
 
 // ─── API Functions ───────────────────────────────────────────────────────────
+
+/**
+ * Hub'da gosterilecek oyun listesi (app_config: games_enabled).
+ *
+ * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
+ * Okuma basarisiz olursa hata Sentry'ye duser ve null doner; cagiran taraf
+ * varsayilan listeyi gosterir (sessiz fallback degil, loglanan bilincli davranis).
+ */
+export async function getEnabledGames(): Promise<string[] | null> {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'games_enabled')
+    .single();
+
+  if (error) {
+    Sentry.captureException(error, { tags: { config: 'games_enabled' } });
+    logger.error('[gameApi] getEnabledGames failed:', error);
+    return null;
+  }
+
+  const games = (data?.value as { games?: string[] } | null)?.games;
+  return Array.isArray(games) ? games : null;
+}
+
+/**
+ * Gunluk sandigin durumu (ve istege bagli olarak odul talebi).
+ *
+ * Tamamlama sayimi, tekillik ve odul yazimi SUNUCUDA — istemci yalnizca
+ * gosterir. claim=true yalnizca kullanici sandiga dokundugunda gonderilir.
+ *
+ * @param puzzleDate - YYYY-MM-DD
+ * @param claim - true ise odul talep edilir (tek sefer uygulanir)
+ */
+export async function getDailyChest(
+  puzzleDate: string,
+  claim = false,
+): Promise<DailyChestState> {
+  await ensureAuthSession();
+
+  const { data, error } = await supabase.functions.invoke('get-daily-chest', {
+    body: { puzzle_date: puzzleDate, claim },
+  });
+
+  if (error) {
+    Sentry.captureException(error, { tags: { puzzle_date: puzzleDate, claim: String(claim) } });
+    logger.error('[gameApi] getDailyChest failed:', error);
+    throw error;
+  }
+
+  return data as DailyChestState;
+}
 
 /**
  * Günlük bulmacayı getirir.
@@ -192,8 +245,8 @@ export async function submitGameGuess(
  * FadeIn — oyuncunun seçtiği ipucunu açar.
  *
  * Tahmin hakkı harcamaz. Kredi kontrolü (yanlış tahmin sayısı > açılan ipucu
- * sayısı) sunucuda yapılır; response ipucu içeriği DÖNMEZ — içerik zaten
- * puzzle_data ile istemcide.
+ * sayısı) sunucuda yapılır. İpucu İÇERİĞİ yalnızca bu yanıtta gelir —
+ * migration 064'ten sonra puzzle_data yalnızca order + type taşır.
  *
  * @param puzzleId - Bulmaca UUID'si
  * @param hintOrder - Açılacak ipucunun order değeri

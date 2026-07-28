@@ -18,6 +18,7 @@ import { hapticLight, hapticHeavy } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches } from '@/services/gameService';
 import { getStreakInfo } from '@/services/gamification';
+import { getEnabledGames } from '@/services/gameApi';
 import { DnaSummaryCard } from '@/components/games/DnaSummaryCard';
 import { DailyChest } from '@/components/games/DailyChest';
 import { DailyThemeCard } from '@/components/games/DailyThemeCard';
@@ -105,10 +106,17 @@ export default function GamesHubScreen() {
     // Sadece eski versiyon cache'lerini temizle (bir kez calisir)
     await clearOldGameCaches();
 
+    // Aktif oyun listesi sunucudan — havuzu tukenmis oyunlar gizlenir.
+    // Config okunamazsa hata Sentry'ye duser (getEnabledGames) ve tam liste gosterilir.
+    const enabled = await getEnabledGames();
+    const visibleGames = enabled
+      ? GAME_DEFINITIONS.filter((def) => enabled.includes(def.gameType))
+      : GAME_DEFINITIONS;
+
     const cards: GameCardData[] = [];
     let maxStreak = 0;
 
-    for (const def of GAME_DEFINITIONS) {
+    for (const def of visibleGames) {
       const cachedResult = await getCachedResult(def.gameType);
       const streakInfo = await getGameStreak(def.gameType);
 
@@ -183,7 +191,7 @@ export default function GamesHubScreen() {
       {/* Streak summary */}
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>{playedCount}/{GAME_DEFINITIONS.length}</Text>
+          <Text style={styles.summaryNumber}>{playedCount}/{games.length}</Text>
           <Text style={styles.summaryLabel}>{t('games.hub.played')}</Text>
         </View>
         {totalStreak > 0 && (
@@ -210,11 +218,7 @@ export default function GamesHubScreen() {
 
       {/* Daily Chest — 7/7 completion reward */}
       <View style={styles.chestContainer}>
-        <DailyChest
-          totalGames={GAME_DEFINITIONS.length}
-          completedGames={playedCount}
-          completedGameTypes={games.filter((g) => g.played).map((g) => g.gameType)}
-        />
+        <DailyChest />
       </View>
 
       {/* Game cards */}

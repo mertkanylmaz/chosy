@@ -886,8 +886,8 @@
       "chest_title": "Gunun Gorevi",
       "chest_progress": "%{completed}/%{total}",
       "chest_open": "Sandigi Ac",
+      "chest_error": "Sandık durumu alınamadı — dokunup tekrar dene",
       "chest_claimed": "Sandik Alindi",
-      "chest_reward_dna": "+%25 DNA Gucu",
       "chest_reward_shield": "Seri Kalkani",
       "chest_reward_xp": "Yarin Cift XP"
     },

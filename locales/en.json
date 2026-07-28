@@ -886,8 +886,8 @@
       "chest_title": "Today's Challenge",
       "chest_progress": "%{completed}/%{total}",
       "chest_open": "Open Chest",
+      "chest_error": "Chest status unavailable — tap to retry",
       "chest_claimed": "Chest Claimed",
-      "chest_reward_dna": "+25% DNA Boost",
       "chest_reward_shield": "Streak Shield",
       "chest_reward_xp": "Double XP Tomorrow"
     },

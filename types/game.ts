@@ -131,6 +131,25 @@ export interface DailyChallenge {
   why_this_movie?: WhyThisMovieText;
 }
 
+// ─── Günlük Sandık ───────────────────────────────────────────────────────────
+
+/**
+ * get-daily-chest response'u.
+ *
+ * Tamamlama sayımı ve ödül yazımı sunucuda; `claimed` istemci state'i değil,
+ * `daily_chest_log` kaydının varlığıdır.
+ */
+export interface DailyChestState {
+  total: number;
+  completed: number;
+  unlocked: boolean;
+  claimed: boolean;
+  rewards?: {
+    streak_shield_count?: number;
+    double_xp_tomorrow?: boolean;
+  };
+}
+
 // ─── Günlük Tema (Cross-Game Connection) ─────────────────────────────────────
 
 /** Tema tipi — get-daily-theme yalnızca AÇIK durumda döner */

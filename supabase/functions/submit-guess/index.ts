@@ -150,6 +150,33 @@ async function applyStreakMultiplier(
   return baseXp
 }
 
+/**
+ * Daily Chest'in "yarin cift XP" odulunu uygular.
+ *
+ * Odul get-daily-chest tarafindan user_streaks.double_xp_date'e yazilir;
+ * burada yalnizca o tarihte kazanilan XP ikiye katlanir. Bayrak tuketilmez —
+ * gun boyunca gecerlidir, ertesi gun kendiliginden duser.
+ */
+async function applyDoubleXp(
+  service: ReturnType<typeof getServiceClient>,
+  userId: string,
+  baseXp: number,
+  puzzleDate: string,
+): Promise<number> {
+  const { data, error } = await service
+    .from('user_streaks')
+    .select('double_xp_date')
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (error) {
+    logError('submit-guess.double_xp_read_failed', error, { userId })
+    return baseXp
+  }
+
+  return data?.double_xp_date === puzzleDate ? baseXp * 2 : baseXp
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
@@ -321,7 +348,7 @@ Deno.serve(async (req: Request) => {
     // ─── 3. Fetch puzzle (service role — full data including solution) ──────
     const { data: puzzle, error: puzzleError } = await service
       .from('daily_puzzles')
-      .select('id, solution_ref, film_id, puzzle_data, game_type, max_attempts')
+      .select('id, solution_ref, film_id, puzzle_data, game_type, max_attempts, date')
       .eq('id', puzzleId)
       .single()
 
@@ -500,6 +527,7 @@ Deno.serve(async (req: Request) => {
             ? (xpConfig.guess_ladder[Math.min(turn - 1, xpConfig.guess_ladder.length - 1)] ?? xpConfig.fail_xp)
             : xpConfig.fail_xp
           xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
         }
         const updatePayload: Record<string, unknown> = { progress_json: updatedProgress, attempts: turn }
         if (completed) {
@@ -570,6 +598,7 @@ Deno.serve(async (req: Request) => {
           xpAwarded = xpConfig.fail_xp
         }
         xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
         // DNA signals: knowledge, deduction, auteur
         const knowledgeSignal = won ? 0.4 + 0.1 * (5 - eliminatedIds.length) : 0.1
@@ -808,6 +837,7 @@ Deno.serve(async (req: Request) => {
 
         // Streak XP çarpanı — bahis uygulandıktan SONRA
         xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
         // DNA: Knowledge (cast recognition) — bahisten etkilenmez
         const knowledgeSignal = 0.1 + correctCount * 0.2 // 0.1 to 0.7
@@ -965,6 +995,7 @@ Deno.serve(async (req: Request) => {
           const ladderIdx = Math.min(totalGuesses - 1, xpConfig.guess_ladder.length - 1)
           let xpAwarded = xpConfig.guess_ladder[ladderIdx] ?? xpConfig.fail_xp
           xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
           const dnaSignals = [
             { dim: 'knowledge', val: 0.3 + 0.1 * (12 - totalGuesses) },
@@ -1175,6 +1206,7 @@ Deno.serve(async (req: Request) => {
             ? (xpConfig.guess_ladder[ladderIdx] ?? xpConfig.fail_xp)
             : xpConfig.fail_xp
           xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
           // DNA signals
           const dnaSignals = [
@@ -1423,6 +1455,7 @@ Deno.serve(async (req: Request) => {
       }
       // Streak XP çarpanı
       xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
       // ─── 9. DNA signals ────────────────────────────────────────────────
       const difficulty = puzzle.puzzle_data?.difficulty ?? 1

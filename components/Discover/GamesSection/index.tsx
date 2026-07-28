@@ -1,7 +1,8 @@
 /**
  * GamesSection — Sinefil oyunlari 2x2 grid.
  *
- * Mevcut oyun listesini gosterir (fadein, imposter, logline, quoted).
+ * Mevcut oyun listesini gosterir. Quoted listede DEGIL: replik havuzu
+ * tukendi (Hard Rule 7) ve app_config.games_enabled disinda birakildi.
  * Tap → /games/[route]
  */
 
@@ -40,13 +41,6 @@ const GAMES = [
     titleKey: 'games.logline.title',
     descKey: 'games.logline.description',
     icon: 'bulb' as const,
-  },
-  {
-    id: 'quoted',
-    route: '/games/quoted',
-    titleKey: 'games.quoted.title',
-    descKey: 'games.quoted.description',
-    icon: 'chatbubble-ellipses' as const,
   },
   {
     id: 'cinemetrics',

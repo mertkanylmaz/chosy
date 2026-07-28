@@ -1504,7 +1504,21 @@ serve(async (req: Request) => {
   // Opsiyonel: sadece belirli oyunu çalıştır (?game=cinemetrics)
   const url = new URL(req.url)
   const onlyGame = url.searchParams.get('game') as GameType | null
-  const games: GameType[] = onlyGame ? [onlyGame] : ['cinemetrics', 'logline', 'spotlight', 'imposter', 'fadein', 'quoted', 'detective']
+  const allGames: GameType[] = ['cinemetrics', 'logline', 'spotlight', 'imposter', 'fadein', 'quoted', 'detective']
+
+  // Devre disi oyunlar icin uretim denenmez — quoted'in tukenmis replik havuzu
+  // her calismada 13 gereksiz hata + Sentry kaydi uretiyordu (app_config: games_enabled).
+  const { data: enabledCfg } = await db()
+    .from('app_config')
+    .select('value')
+    .eq('key', 'games_enabled')
+    .single()
+  const enabledList = (enabledCfg as { value?: { games?: string[] } } | null)?.value?.games
+  const enabledGames = Array.isArray(enabledList) ? enabledList : allGames
+
+  const games: GameType[] = onlyGame
+    ? [onlyGame]
+    : allGames.filter(g => enabledGames.includes(g))
 
   const rpt: Report = {
     generated: 0, rejected: 0, emergency_used: 0,
