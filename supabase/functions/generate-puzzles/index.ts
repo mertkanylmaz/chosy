@@ -35,6 +35,27 @@ interface Report {
   errors: string[]
   min_vote_count?: number
   pool_sizes?: Record<string, number>
+  themes?: { generated: number; dropped: number; per_type: Record<string, number> }
+}
+
+type ThemeType = 'director' | 'actor' | 'genre' | 'decade' | 'country'
+
+interface ThemeRow {
+  theme_date: string
+  theme_type: ThemeType
+  theme_key: string
+  theme_label: string
+  game_types: string[]
+}
+
+interface ThemeConfig {
+  enabled: boolean
+  target_game_count: number
+  min_matched_games: number
+  repeat_cooldown_days: number
+  type_weights: Record<ThemeType, number>
+  min_pool_per_type: Record<ThemeType, number>
+  eligible_games: string[]
 }
 
 type GameType = 'cinemetrics' | 'logline' | 'spotlight' | 'imposter' | 'fadein' | 'quoted' | 'detective'
@@ -186,6 +207,241 @@ async function getMinVoteCount(rpt: Report): Promise<number> {
   // Fallback: en yüksek eşik
   rpt.min_vote_count = 15000
   return 15000
+}
+
+// ─── Günlük tema ────────────────────────────────────────────────────────────
+// Günün oyunlarından bir kısmı gizli bir bağlantıyla birbirine bağlanır.
+// Tema puzzle_data'ya YAZILMAZ ve public_daily_puzzles view'ına girmez —
+// etiket oynanmamış bulmaca için çözüm ipucudur (Hard Rule 1).
+
+/** Tema config'i her çağrıda app_config'ten okunur (Hard Rule 4) */
+async function getThemeConfig(rpt: Report): Promise<ThemeConfig | null> {
+  const { data, error } = await db()
+    .from('app_config')
+    .select('value')
+    .eq('key', 'daily_theme_config')
+    .single()
+
+  if (error) {
+    console.error(`[gen] daily_theme_config okunamadı: ${error.message}`)
+    rpt.errors.push(`theme_config_error: ${error.message}`)
+    return null
+  }
+
+  const cfg = (data as { value?: ThemeConfig } | null)?.value
+  if (!cfg?.enabled) return null
+  return cfg
+}
+
+/** Film o günün temasına uyuyor mu? */
+function filmMatchesTheme(f: FilmRow, theme: ThemeRow): boolean {
+  const key = theme.theme_key
+  switch (theme.theme_type) {
+    case 'director':
+      return (f.director ?? '').toLowerCase() === key
+    case 'actor':
+      return (f.cast_json ?? []).some(c => c.name?.toLowerCase() === key)
+    case 'genre':
+      return (f.genres ?? []).some(g => g.toLowerCase() === key)
+    case 'decade':
+      return f.year != null && String(Math.floor(f.year / 10) * 10) === key
+    case 'country':
+      return (f.country ?? []).some(c => c.toLowerCase() === key)
+  }
+}
+
+interface ThemeCandidate { type: ThemeType; key: string; label: string; count: number }
+
+/** Havuzdan tema adaylarını çıkarır; havuzu yetersiz olanlar elenir */
+function buildThemeCandidates(pool: FilmRow[], cfg: ThemeConfig): ThemeCandidate[] {
+  const buckets: Record<ThemeType, Map<string, { label: string; count: number }>> = {
+    director: new Map(), actor: new Map(), genre: new Map(), decade: new Map(), country: new Map(),
+  }
+
+  const bump = (type: ThemeType, key: string, label: string) => {
+    if (!key) return
+    const m = buckets[type]
+    const cur = m.get(key)
+    if (cur) cur.count++
+    else m.set(key, { label, count: 1 })
+  }
+
+  for (const f of pool) {
+    if (f.director) bump('director', f.director.toLowerCase(), f.director)
+    for (const c of (f.cast_json ?? []).slice(0, 3)) {
+      if (c.name) bump('actor', c.name.toLowerCase(), c.name)
+    }
+    for (const g of f.genres ?? []) bump('genre', g.toLowerCase(), g)
+    if (f.year) {
+      const dec = Math.floor(f.year / 10) * 10
+      bump('decade', String(dec), `${dec}s`)
+    }
+    for (const c of f.country ?? []) bump('country', c.toLowerCase(), c)
+  }
+
+  const out: ThemeCandidate[] = []
+  for (const type of Object.keys(buckets) as ThemeType[]) {
+    const min = cfg.min_pool_per_type[type] ?? 6
+    for (const [key, v] of buckets[type]) {
+      if (v.count >= min) out.push({ type, key, label: v.label, count: v.count })
+    }
+  }
+  return out
+}
+
+/**
+ * Ağırlıklı deterministik seçim (A-Res): u^(1/w) en büyük olan kazanır.
+ * Aynı tarih için her çalıştırmada aynı temayı verir (Hard Rule 10).
+ */
+function pickThemeCandidate(
+  candidates: ThemeCandidate[],
+  cfg: ThemeConfig,
+  s: number,
+): ThemeCandidate | null {
+  let best: ThemeCandidate | null = null
+  let bestScore = -1
+  for (const c of candidates) {
+    const w = cfg.type_weights[c.type] ?? 1
+    if (w <= 0) continue
+    const u = (hashFilm(`${c.type}:${c.key}`, s) + 1) / 4294967297
+    const score = Math.pow(u, 1 / w)
+    if (score > bestScore) { bestScore = score; best = c }
+  }
+  return best
+}
+
+/**
+ * Eksik tarihler için tema satırlarını oluşturur.
+ * Tema yalnızca o tarihte HENÜZ ÜRETİLMEMİŞ uygun oyunlara atanır —
+ * zaten üretilmiş bulmacalar tema baskısını göremezdi.
+ */
+async function ensureThemes(
+  dates: string[],
+  pool: FilmRow[],
+  cfg: ThemeConfig,
+  rpt: Report,
+): Promise<Map<string, ThemeRow>> {
+  const themes = new Map<string, ThemeRow>()
+  if (dates.length === 0) return themes
+
+  // Mevcut tema satırları
+  const { data: existing } = await db()
+    .from('daily_themes')
+    .select('theme_date, theme_type, theme_key, theme_label, game_types')
+    .in('theme_date', dates)
+
+  for (const row of (existing ?? []) as ThemeRow[]) themes.set(row.theme_date, row)
+
+  // Cooldown: son N günde kullanılmış tema anahtarları
+  const cutoff = new Date(Date.now() - cfg.repeat_cooldown_days * 24*60*60*1000)
+    .toISOString().split('T')[0]
+  const { data: recent } = await db()
+    .from('daily_themes')
+    .select('theme_key')
+    .gte('theme_date', cutoff)
+  const blocked = new Set((recent ?? []).map((r: { theme_key: string }) => r.theme_key))
+
+  // O tarihlerde zaten üretilmiş bulmacalar
+  const { data: puzzles } = await db()
+    .from('daily_puzzles')
+    .select('date, game_type')
+    .in('date', dates)
+    .eq('is_emergency_pool', false)
+  const done = new Set(
+    (puzzles ?? []).map((p: { date: string; game_type: string }) => `${p.date}:${p.game_type}`),
+  )
+
+  const candidates = buildThemeCandidates(pool, cfg)
+  console.log(`[gen] Tema adayı: ${candidates.length}`)
+
+  for (const d of dates) {
+    if (themes.has(d)) continue
+
+    const openGames = cfg.eligible_games.filter(g => !done.has(`${d}:${g}`))
+    if (openGames.length < cfg.min_matched_games) continue
+
+    const s = await seed(d, 'theme')
+    const usable = candidates.filter(c => !blocked.has(c.key))
+    const pick = pickThemeCandidate(usable, cfg, s)
+    if (!pick) continue
+
+    // Oyun seçimi de deterministik
+    const gameTypes = [...openGames]
+      .sort((a, b) => hashFilm(a, s) - hashFilm(b, s))
+      .slice(0, cfg.target_game_count)
+
+    const row: ThemeRow = {
+      theme_date: d,
+      theme_type: pick.type,
+      theme_key: pick.key,
+      theme_label: pick.label,
+      game_types: gameTypes,
+    }
+
+    const { error } = await db().from('daily_themes').insert({
+      ...row,
+      meta: { pool_count: pick.count },
+    })
+
+    if (error) {
+      if (error.code !== '23505') {
+        console.error(`[gen] Tema INSERT ${d}: ${error.message}`)
+        rpt.errors.push(`theme_insert/${d}: ${error.message}`)
+        continue
+      }
+    }
+
+    blocked.add(pick.key)
+    themes.set(d, row)
+    if (!rpt.themes) rpt.themes = { generated: 0, dropped: 0, per_type: {} }
+    rpt.themes.generated++
+    rpt.themes.per_type[pick.type] = (rpt.themes.per_type[pick.type] ?? 0) + 1
+    console.log(`[gen] Tema ${d}: ${pick.type}/${pick.label} → ${gameTypes.join(',')}`)
+  }
+
+  return themes
+}
+
+/**
+ * Üretim sonrası: game_types'ı gerçekten eşleşen oyunlarla günceller.
+ * Eşik altında kalan temalar silinir — 2 oyunluk "bağlantı" bağlantı değildir.
+ */
+async function reconcileThemes(
+  themes: Map<string, ThemeRow>,
+  cfg: ThemeConfig,
+  rpt: Report,
+): Promise<void> {
+  for (const [date, theme] of themes) {
+    const { data } = await db()
+      .from('daily_puzzles')
+      .select('game_type')
+      .eq('date', date)
+      .eq('theme_matched', true)
+      .eq('is_emergency_pool', false)
+
+    const matched = (data ?? []).map((r: { game_type: string }) => r.game_type)
+
+    if (matched.length < cfg.min_matched_games) {
+      await db().from('daily_puzzles')
+        .update({ theme_matched: false })
+        .eq('date', date)
+        .eq('theme_matched', true)
+      await db().from('daily_themes').delete().eq('theme_date', date)
+
+      if (!rpt.themes) rpt.themes = { generated: 0, dropped: 0, per_type: {} }
+      rpt.themes.dropped++
+      console.warn(`[gen] Tema ${date} düşürüldü: yalnızca ${matched.length} eşleşme`)
+      continue
+    }
+
+    if (matched.length !== theme.game_types.length ||
+        matched.some(g => !theme.game_types.includes(g))) {
+      const { error } = await db().from('daily_themes')
+        .update({ game_types: matched })
+        .eq('theme_date', date)
+      if (error) rpt.errors.push(`theme_update/${date}: ${error.message}`)
+    }
+  }
 }
 
 // ─── Film havuzu — KÜÇÜK BATCH ─────────────────────────────────────────────
@@ -977,6 +1233,7 @@ async function genOne(
   pool: FilmRow[],
   rpt: Report,
   usedInRun: Set<string>,
+  theme: ThemeRow | null,
 ): Promise<boolean> {
   const s = await seed(dateStr, game)
   const dow = new Date(dateStr + 'T00:00:00Z').getUTCDay()
@@ -987,8 +1244,19 @@ async function genOne(
   const available = pool.filter(f => !usedInRun.has(f.id))
   const sorted = [...available].sort((a, b) => hashFilm(a.id, s) - hashFilm(b.id, s))
 
-  for (let i = 0; i < 3 && i < sorted.length; i++) {
-    const f = sorted[i]
+  // Yumuşak tema baskısı: önce temaya uyanlar denenir, tükenirse normal havuz.
+  // Tema hiçbir zaman bulmacayı üretilemez hale getirmez.
+  const themeApplies = theme != null && theme.game_types.includes(game)
+  const themed = themeApplies ? sorted.filter(f => filmMatchesTheme(f, theme!)) : []
+  const themedIds = new Set(themed.map(f => f.id))
+
+  if (themed.length > 0 && await tryCandidates(themed, true)) return true
+  return await tryCandidates(sorted.filter(f => !themedIds.has(f.id)), false)
+
+  /** Aday listesinden ilk üretilebilen bulmacayı yazar */
+  async function tryCandidates(list: FilmRow[], isThemed: boolean): Promise<boolean> {
+  for (let i = 0; i < 3 && i < list.length; i++) {
+    const f = list[i]
 
     let puzzleData: Record<string, unknown>
     let redWords: string[] | undefined
@@ -1070,6 +1338,7 @@ async function genOne(
       validation_status: 'valid',
       max_attempts: maxAttempts,
       clues: cluesValue,
+      theme_matched: isThemed,
     })
 
     if (error) {
@@ -1084,6 +1353,7 @@ async function genOne(
     return true
   }
   return false
+  }
 }
 
 // ─── Acil havuz ─────────────────────────────────────────────────────────────
@@ -1243,6 +1513,27 @@ serve(async (req: Request) => {
     const dirs = await recentDirectors()
     const usedInRun = new Set(used)
 
+    // ─── Günlük tema (oyun döngüsünden ÖNCE — tema tarih eksenlidir) ────────
+    // ?game= ile tek oyun çalıştırıldığında tema atlanır: tek oyunla
+    // "bağlantı" kurulamaz, yarım tema satırı reconciliation'da düşerdi.
+    let themes = new Map<string, ThemeRow>()
+    let themeCfg: ThemeConfig | null = null
+
+    if (!onlyGame) {
+      themeCfg = await getThemeConfig(rpt)
+      if (themeCfg) {
+        const themeDates = new Set<string>()
+        for (const g of themeCfg.eligible_games) {
+          for (const d of await missingDates(g)) themeDates.add(d)
+        }
+        if (themeDates.size > 0) {
+          const themePool = await fetchFilms('cinemetrics', usedInRun, dirs, rpt)
+          themes = await ensureThemes([...themeDates].sort(), themePool, themeCfg, rpt)
+        }
+        console.log(`[gen] Tema: ${themes.size} gün`)
+      }
+    }
+
     for (const game of games) {
       console.log(`\n[gen] ═══ ${game.toUpperCase()} ═══`)
 
@@ -1313,7 +1604,7 @@ serve(async (req: Request) => {
       }
 
       for (const d of missing) {
-        const ok = await genOne(game, d, pool, rpt, usedInRun)
+        const ok = await genOne(game, d, pool, rpt, usedInRun, themes.get(d) ?? null)
         if (!ok) {
           console.warn(`[gen] ${game}/${d}: acil havuza düşülüyor`)
           const eOk = await useEmergency(game, d, rpt)
@@ -1325,6 +1616,11 @@ serve(async (req: Request) => {
       if (game !== 'logline') {
         await fillEmergency(game, pool, rpt)
       }
+    }
+
+    // Tema uzlaştırma: gerçekten eşleşen oyunları yaz, eşik altındakileri düşür
+    if (themeCfg && themes.size > 0) {
+      await reconcileThemes(themes, themeCfg, rpt)
     }
 
     await postHog(rpt)

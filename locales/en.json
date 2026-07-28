@@ -861,6 +861,17 @@
     "compactPlaceholder": "What do you feel like watching?"
   },
   "games": {
+    "theme": {
+      "locked_subtitle": "Today's hidden connection unlocks when you finish the linked games",
+      "unlocked_title": "Today's Connection",
+      "type_director": "Same director",
+      "type_actor": "Same actor",
+      "type_genre": "Same genre",
+      "type_decade": "Same decade",
+      "type_country": "Same country",
+      "error": "Couldn't load today's connection",
+      "retry": "Retry"
+    },
     "hub": {
       "title": "Daily Games",
       "subtitle": "Test your cinema IQ",

@@ -103,3 +103,13 @@ export function trackRecommendedRouteTapped(gameId: string): void {
 export function trackMilestoneEarned(milestoneId: string, category: string): void {
   posthogAnalytics.track('game_milestone_earned', { milestone_id: milestoneId, category });
 }
+
+/** Gunluk tema karti kilitliyken goruntulendi */
+export function trackThemeTeaserViewed(completed: number, total: number): void {
+  posthogAnalytics.track('game_theme_teaser_viewed', { completed, total });
+}
+
+/** Gunluk tema baglantisi acildi */
+export function trackThemeRevealed(themeType: string, gameCount: number): void {
+  posthogAnalytics.track('game_theme_revealed', { theme_type: themeType, game_count: gameCount });
+}

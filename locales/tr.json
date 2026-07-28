@@ -861,6 +861,17 @@
     "compactPlaceholder": "Ne izlemek istiyorsun?"
   },
   "games": {
+    "theme": {
+      "locked_subtitle": "Bugünün gizli bağlantısı, bağlı oyunları bitirince açılır",
+      "unlocked_title": "Bugünün Bağlantısı",
+      "type_director": "Aynı yönetmen",
+      "type_actor": "Aynı oyuncu",
+      "type_genre": "Aynı tür",
+      "type_decade": "Aynı dönem",
+      "type_country": "Aynı ülke",
+      "error": "Bugünün bağlantısı yüklenemedi",
+      "retry": "Tekrar dene"
+    },
     "hub": {
       "title": "Günlük Oyunlar",
       "subtitle": "Sinema bilgini test et",

@@ -407,6 +407,72 @@ Deno.test('S8: Progress restore — guess persists across requests', async () =>
   assertEquals(guesses.length, 1, 'progress should have 1 guess after restart')
 })
 
+// ─── SENARYO 9-12: Günlük tema (get-daily-theme) ────────────────────────────
+
+Deno.test('S9: public_daily_puzzles view — theme_matched sızmıyor', async () => {
+  const rows = await supabaseRest('public_daily_puzzles?select=*&limit=5') as Array<Record<string, unknown>>
+  assert(rows.length > 0, 'view boş döndü')
+
+  const expected = new Set([
+    'id', 'game_id', 'puzzle_date', 'difficulty', 'puzzle_data', 'max_attempts', 'created_at',
+  ])
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      assert(expected.has(key), `view beklenmeyen kolon döndürüyor: ${key}`)
+    }
+    const asText = JSON.stringify(row)
+    assertEquals(asText.includes('theme_matched'), false, 'theme_matched view üzerinden sızıyor')
+    assertEquals(asText.includes('theme_key'), false, 'theme_key view üzerinden sızıyor')
+  }
+})
+
+Deno.test('S10: get-daily-theme — auth yoksa 401', async () => {
+  const { status } = await callFunction('get-daily-theme', { puzzle_date: TODAY })
+  assertEquals(status, 401)
+})
+
+Deno.test('S11: get-daily-theme — geçersiz tarih 400, temasız tarih none', async () => {
+  ctx = await getCtx()
+
+  const bad = await callFunction('get-daily-theme', { puzzle_date: '28-07-2026' }, ctx.jwt)
+  assertEquals(bad.status, 400)
+
+  // Üretim penceresinin (LOOKAHEAD=14) çok ötesi — tema satırı olamaz
+  const far = new Date(Date.now() + 400 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const { status, body } = await callFunction('get-daily-theme', { puzzle_date: far }, ctx.jwt)
+  assertEquals(status, 200)
+  assertEquals(body.state, 'none')
+})
+
+Deno.test('S12: get-daily-theme — kilitliyken tema etiketi DÖNMEZ (Hard Rule 1)', async () => {
+  ctx = await getCtx()
+
+  const { status, body } = await callFunction('get-daily-theme', { puzzle_date: TODAY }, ctx.jwt)
+  assertEquals(status, 200)
+
+  const state = body.state as string
+  assert(['none', 'locked', 'unlocked'].includes(state), `beklenmeyen state: ${state}`)
+
+  if (state === 'locked') {
+    const asText = JSON.stringify(body)
+    assertEquals(asText.includes('theme_label'), false, 'kilitliyken theme_label sızıyor')
+    assertEquals(asText.includes('theme_key'), false, 'kilitliyken theme_key sızıyor')
+    assertEquals(asText.includes('theme_type'), false, 'kilitliyken theme_type sızıyor')
+    assertEquals(asText.includes('title'), false, 'kilitliyken film başlığı sızıyor')
+
+    const completed = body.completed as number
+    const total = body.total as number
+    assert(total > 0, 'total > 0 olmalı')
+    assert(completed < total, 'kilitli durumda completed < total olmalı')
+  }
+
+  if (state === 'unlocked') {
+    assertExists(body.theme_label, 'açık durumda theme_label gelmeli')
+    const films = body.films as Array<Record<string, unknown>>
+    assertEquals(films.length, body.total as number, 'her temalı bulmaca için bir film dönmeli')
+  }
+})
+
 // ─── Cleanup ─────────────────────────────────────────────────────────────────
 
 Deno.test('CLEANUP: Remove test game_scores', async () => {

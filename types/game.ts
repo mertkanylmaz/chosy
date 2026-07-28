@@ -122,6 +122,37 @@ export interface DailyChallenge {
   community_stats?: CommunityStats;
 }
 
+// ─── Günlük Tema (Cross-Game Connection) ─────────────────────────────────────
+
+/** Tema tipi — get-daily-theme yalnızca AÇIK durumda döner */
+export type DailyThemeType = 'director' | 'actor' | 'genre' | 'decade' | 'country';
+
+/** Temaya ait tamamlanmış bulmacanın filmi */
+export interface DailyThemeFilm {
+  game_id: string;
+  title: string;
+  year: number;
+  poster_url: string | null;
+}
+
+/**
+ * get-daily-theme response'u.
+ *
+ * KİLİTLİ durumda tema etiketi GELMEZ — etiket oynanmamış bulmaca için
+ * çözüm ipucudur (Hard Rule 1). İstemci yalnızca sayaç gösterir.
+ */
+export type DailyThemeState =
+  | { state: 'none' }
+  | { state: 'locked'; completed: number; total: number; game_types: string[] }
+  | {
+      state: 'unlocked';
+      theme_type: DailyThemeType;
+      theme_label: string;
+      completed: number;
+      total: number;
+      films: DailyThemeFilm[];
+    };
+
 /** Imposter güven bahsi config'i — app_config'ten gelir, skorlama yetkisi sunucuda */
 export interface ImposterConfidenceConfig {
   levels: number[];

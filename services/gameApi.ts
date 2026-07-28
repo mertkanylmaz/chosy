@@ -13,6 +13,7 @@ import { logger } from '@/utils/logger';
 
 import type {
   DailyChallenge,
+  DailyThemeState,
   DetectiveGuessResult,
   DetectiveStage,
   GuessResult,
@@ -68,6 +69,32 @@ export async function getDailyChallenge(
   }
 
   return data as DailyChallenge;
+}
+
+/**
+ * Günün gizli bağlantısını (tema) getirir.
+ *
+ * Tema etiketi yalnızca temalı bulmacaların hepsi tamamlandığında döner;
+ * kilitliyken sunucu sadece sayaç gönderir (Hard Rule 1).
+ *
+ * @param puzzleDate - YYYY-MM-DD formatında tarih
+ */
+export async function getDailyTheme(puzzleDate: string): Promise<DailyThemeState> {
+  await ensureAuthSession();
+
+  const { data, error } = await supabase.functions.invoke('get-daily-theme', {
+    body: { puzzle_date: puzzleDate },
+  });
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { puzzle_date: puzzleDate },
+    });
+    logger.error('[gameApi] getDailyTheme failed:', error);
+    throw error;
+  }
+
+  return data as DailyThemeState;
 }
 
 /**

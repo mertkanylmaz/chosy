@@ -20,6 +20,7 @@ import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches 
 import { getStreakInfo } from '@/services/gamification';
 import { DnaSummaryCard } from '@/components/games/DnaSummaryCard';
 import { DailyChest } from '@/components/games/DailyChest';
+import { DailyThemeCard } from '@/components/games/DailyThemeCard';
 import { RecommendedRoute } from '@/components/games/RecommendedRoute';
 
 interface GameCardData {
@@ -202,6 +203,11 @@ export default function GamesHubScreen() {
       {/* Cinema DNA summary */}
       <DnaSummaryCard />
 
+      {/* Günün gizli bağlantısı — temalı oyunlar bitince açılır */}
+      <View style={styles.themeContainer}>
+        <DailyThemeCard />
+      </View>
+
       {/* Daily Chest — 7/7 completion reward */}
       <View style={styles.chestContainer}>
         <DailyChest
@@ -321,6 +327,10 @@ const styles = StyleSheet.create({
   },
   chestContainer: {
     paddingHorizontal: Theme.spacing.md,
+  },
+  themeContainer: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingBottom: Theme.spacing.sm,
   },
   scrollContent: {
     flex: 1,
