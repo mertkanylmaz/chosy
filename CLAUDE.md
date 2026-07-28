@@ -143,8 +143,11 @@ Kapanış denetiminde üçünün bazı oyunlarda ölü olduğu görüldü — o 
 | Cinema DNA + XP/Rank (`DnaXpReveal`) | 6 oyun |
 | Streak + Daily Chest (`get-daily-chest`, ödüller sunucuda) | Hub geneli |
 | Günlük tema (`get-daily-theme`) | Günde 3-4 oyun |
-| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 6 oyun |
-| ShareCard + `game_share_*` telemetrisi | 4 oyun (CineMetrics/Spotlight/Detective eksik) |
+| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 5 oyun — CineMetrics ve Spotlight kendi sonuç ekranlarını kullanıyor, kart orada YOK |
+| ShareCard + `game_share_*` telemetrisi | 4 oyun — CineMetrics/Spotlight/Detective'de paylaşım YOK |
+
+> Sunucu `why_this_movie`'yi 6 oyunun hepsi için üretiyor; eksik olan yalnızca
+> CineMetrics/Spotlight sonuç ekranlarının kartı render etmesi.
 
 ## REFERANS DOSYALAR
 
