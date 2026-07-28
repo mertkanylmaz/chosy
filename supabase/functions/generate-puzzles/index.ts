@@ -449,16 +449,21 @@ async function reconcileThemes(
 async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<string>, rpt: Report): Promise<FilmRow[]> {
   let minVotes = await getMinVoteCount(rpt)
 
-  // Imposter/FadeIn: cast_json ve poster kalitesi önemli, popülerlik eşiği düşürülebilir
-  if ((game === 'imposter' || game === 'fadein') && minVotes > 3000) {
+  // Cast gerektiren oyunlar (Imposter/Spotlight/Detective) ve FadeIn:
+  // görsel/oyuncu kalitesi önemli, popülerlik eşiği düşürülebilir
+  const needsCast = game === 'imposter' || game === 'spotlight' || game === 'detective'
+  if ((needsCast || game === 'fadein') && minVotes > 3000) {
     minVotes = 3000
   }
 
   // Bellek limiti için yalnızca gerekli kolonlar, küçük limit
   const cols = 'id,tmdb_id,title,year,poster_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
 
-  // metadata_json->>vote_count TEXT döner, cast gerekli → client-side filter
-  const { data, error } = await db()
+  // metadata_json->>vote_count TEXT döner → vote_count filtresi client-side kalır.
+  // cast_json/imdb_rating filtresi SUNUCUDA: veritabanında cast_json dolu film
+  // sayısı sınırlı (~500); istemci tarafında elemek satır bütçesini kullanılamaz
+  // filmlerle doldurup Spotlight/Detective havuzunu kurutuyordu.
+  let query = db()
     .from('films')
     .select(cols + ',metadata_json')
     .in('curation_tier', ['core', 'extended'])
@@ -466,8 +471,19 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
     .not('runtime', 'is', null)
     .not('director', 'is', null)
     .not('year', 'is', null)
+
+  if (needsCast) {
+    query = query.not('cast_json', 'is', null)
+  }
+  if (game === 'spotlight' || game === 'detective') {
+    query = query.not('imdb_rating', 'is', null)
+  }
+
+  const { data, error } = await query
     .order('vote_average', { ascending: false })
-    .limit(game === 'imposter' || game === 'fadein' ? 500 : 300)
+    // Logline'ın 30-80 kelime overview filtresi client-side; dar havuzu
+    // telafi etmek için satır bütçesi geniş tutulur.
+    .limit(needsCast || game === 'fadein' || game === 'logline' ? 500 : 300)
 
   if (error) throw new Error(`Film sorgusu: ${error.message}`)
   if (!data?.length) throw new Error('Film havuzu boş')
