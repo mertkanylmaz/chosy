@@ -1,8 +1,14 @@
 # Chosy.ai (MoodFlix) — Project Rules v5
 
 > **App Store:** `Chosy.ai - Mood Movie Finder` | **Code/comms:** `MoodFlix`
-> **Status:** V1.0.2 App Store'da live | **Aktif:** Oyun Sistemi Faz 1 Sprint
+> **Status:** V1.0.2 App Store'da live | **Aktif:** Faz 1 KAPANDI (29 Tem 2026) — ölçüm dönemi
 > **Build:** `expo-dev-client` — Expo Go degil
+
+> **YENİ OYUN EKLENMEZ.** Portföy 6 aktif oyunla donduruldu (CineMetrics, Logline,
+> Spotlight, Imposter, FadeIn, Detective; Quoted havuzu tükendiği için `games_enabled`
+> dışında). Buradan sonraki iş: her hafta analitikten okunan **tek** darboğazı
+> düzeltmek — bkz. `docs/analytics/FAZ1_OLCUM_PLANI.md`. Yeni mekanik/oyun önerisi
+> gelirse önce o dosyadaki funnel verisiyle gerekçelendirilir.
 
 ---
 
@@ -126,6 +132,20 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 - Telemetri taksonomisi: `game_*` prefix, snake_case — event listesi brief'te. Yeni event adı uydurulmaz, brief'e eklenmeden kullanılmaz.
 - Yeni oyun eklemek = ortak 5 sisteme (Daily Engine, Cinema DNA, XP/Rank, Streak, ShareCard) mekanik katmanı eklemek. Ortak sistemleri bypass eden oyun kodu yazılamaz.
 
+## ORTAK SİSTEM MATRİSİ (Faz 1 kapanışı itibarıyla)
+
+Yeni bir oyun ekleme kararı çıkarsa, bu 6 sisteme bağlanmadan "bitti" sayılmaz.
+Kapanış denetiminde üçünün bazı oyunlarda ölü olduğu görüldü — o yüzden liste burada.
+
+| Sistem | Durum |
+|--------|-------|
+| Daily Engine (`generate-puzzles` → `public_daily_puzzles` → `submit-guess`) | 6 oyun |
+| Cinema DNA + XP/Rank (`DnaXpReveal`) | 6 oyun |
+| Streak + Daily Chest (`get-daily-chest`, ödüller sunucuda) | Hub geneli |
+| Günlük tema (`get-daily-theme`) | Günde 3-4 oyun |
+| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 6 oyun |
+| ShareCard + `game_share_*` telemetrisi | 4 oyun (CineMetrics/Spotlight/Detective eksik) |
+
 ## REFERANS DOSYALAR
 
 | Konu | Dosya |
@@ -140,3 +160,4 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 | Oyun sistemi tasarim raporu (kaynak dokuman) | `docs/CHOSY_OYUN_SISTEMI_TASARIM_RAPORU.md` |
 | Faz 1 sprint plani (siralı task'lar) | `docs/CHOSY_FAZ1_SPRINT_PLANI.md` |
 | Oyun sistemi hizli referans (brief) | `.claude/game-system-brief.md` |
+| **Faz 1 olcum plani + haftalik ritual** | `docs/analytics/FAZ1_OLCUM_PLANI.md` |

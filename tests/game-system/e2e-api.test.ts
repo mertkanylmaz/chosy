@@ -229,7 +229,7 @@ Deno.test('S1: Puzzle load — no solution leakage, puzzle_no > 0, progress null
 
 // ─── SENARYO 2: Yanlış tahmin feedback tutarlılığı ──────────────────────────
 
-Deno.test('S2: Wrong guess — correct feedback structure', async () => {
+Deno.test('S2: Wrong guess — feedback yapisi + oyun bitmeden cozum sizmaz', async () => {
   ctx = await getCtx()
   await cleanup(ctx.userId, ctx.puzzleId)
 
@@ -258,11 +258,17 @@ Deno.test('S2: Wrong guess — correct feedback structure', async () => {
 
   // revealed_solution should NOT be present
   assertEquals(body.revealed_solution, null, 'revealed_solution should be null on wrong guess')
+
+  // Oyun bitmeden cozum filminin UUID'si HICBIR yerde gorunmez
+  assertEquals(
+    JSON.stringify(body).includes(ctx.solutionRef), false,
+    'oyun bitmeden cozum UUID degeri sizdi',
+  )
 })
 
 // ─── SENARYO 3: Doğru tahmin ────────────────────────────────────────────────
 
-Deno.test('S3: Correct guess — won, xp > 0, revealed_solution without solution_ref', async () => {
+Deno.test('S3: Correct guess — won, xp > 0, çözüm YALNIZCA revealed_solution içinde', async () => {
   ctx = await getCtx()
   await cleanup(ctx.userId, ctx.puzzleId)
 
@@ -284,10 +290,19 @@ Deno.test('S3: Correct guess — won, xp > 0, revealed_solution without solution
   assertExists(revealed, 'revealed_solution should exist on correct guess')
   assertExists(revealed.title, 'revealed_solution.title should exist')
 
-  // No solution_ref UUID leak in revealed_solution
-  const revealedStr = JSON.stringify(revealed)
-  assertEquals(revealedStr.includes('solution_ref'), false, 'solution_ref leaked in revealed_solution')
-  assertEquals(revealedStr.includes(ctx.solutionRef), false, 'solution_ref UUID value leaked')
+  // `solution_ref` anahtari hicbir yerde gorunmez
+  const bodyStr = JSON.stringify(body)
+  assertEquals(bodyStr.includes('solution_ref'), false, 'solution_ref anahtari sizdi')
+
+  // Cozum filminin UUID'si YALNIZCA revealed_solution.film_id icinde olabilir —
+  // oyun bittiginde film sayfasi/watchlist akisi bunu kullanir. Baska hicbir
+  // alanda gecmemeli.
+  assertEquals(revealed.film_id, ctx.solutionRef, 'revealed_solution.film_id cozum filmi olmali')
+  const withoutReveal = JSON.stringify({ ...body, revealed_solution: null })
+  assertEquals(
+    withoutReveal.includes(ctx.solutionRef), false,
+    'cozum UUID degeri revealed_solution disinda sizdi',
+  )
 })
 
 // ─── SENARYO 4: Tamamlanmış bulmacaya ikinci submit ─────────────────────────
