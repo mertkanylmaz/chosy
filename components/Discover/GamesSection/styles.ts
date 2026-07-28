@@ -42,4 +42,9 @@ export const styles = StyleSheet.create({
     ...Theme.typography.caption,
     color: Colors.textSecondary,
   },
+  seeAllText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.accentPrimary,
+  },
 });

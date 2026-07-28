@@ -151,7 +151,8 @@
     "screenSubtitle": "Film kesfet, ilham al",
     "trendingTitle": "Bu Hafta Trend",
     "upcomingTitle": "Yakinda Vizyonda",
-    "gamesTitle": "Sinefil Oyunlari"
+    "gamesTitle": "Sinefil Oyunlari",
+    "seeAll": "Tumunu Gor"
   },
   "discover": {
     "emptyTitle": "Hepsi bu kadar!",
@@ -866,35 +867,193 @@
       "played": "Bugün oynandı",
       "play": "Oyna",
       "streak": "En iyi seri",
-      "streak_count": "%{count} günlük seri"
+      "streak_count": "%{count} günlük seri",
+      "freeze": "Seri dondurma",
+      "recommended": "Bugun Onerilen",
+      "cinema_score": "Sinema Puani",
+      "coming_soon": "Yakinda",
+      "chest_title": "Gunun Gorevi",
+      "chest_progress": "%{completed}/%{total}",
+      "chest_open": "Sandigi Ac",
+      "chest_claimed": "Sandik Alindi",
+      "chest_reward_dna": "+%25 DNA Gucu",
+      "chest_reward_shield": "Seri Kalkani",
+      "chest_reward_xp": "Yarin Cift XP"
     },
+    "dna_updated": "Sinema DNA Guncellendi",
+    "dna_consistency": "+ Tutarlilik",
     "imposter": {
       "title": "Sahtekar",
-      "description": "Bir oyuncu bu filmde yok. Sahtekarı bulabilir misin?",
-      "question": "Bu filmde OLMAYAN oyuncu hangisi?"
+      "description": "3 round — filmde olmayan oyunculari bul",
+      "question": "Bu filmde OLMAYAN oyuncu hangisi?",
+      "question_multi": "Bu filmde OLMAYAN %{count} oyuncuyu sec",
+      "round_label": "Round %{n}",
+      "round_easy": "Isinma",
+      "round_medium": "Zorlaniyor",
+      "round_hard": "Uzman",
+      "round_correct": "Dogru!",
+      "round_wrong": "Yanlis!",
+      "imposters_were": "Sahtekarlar: %{names}",
+      "selected": "%{count}/%{total} secildi",
+      "submit_round": "Kilitle",
+      "confidence_label": "Ne kadar eminsin?",
+      "confidence_50": "Emin degilim",
+      "confidence_75": "Sanirim",
+      "confidence_100": "Eminim",
+      "confidence_preview": "Dogru ×%{win}  ·  Yanlis ×%{lose}",
+      "confidence_multiplier": "Guven carpani"
     },
     "logline": {
       "title": "Logline",
       "description": "5 ipucu, soyuttan somuta. Ne kadar hizli bulabilirsin?",
       "clue_locked": "Kilitli — yanlis tahmin et ve ac",
       "search_placeholder": "Film ara...",
-      "perfect": "Kusursuz Tahmin!"
+      "perfect": "Kusursuz Tahmin!",
+      "hint_genre_same": "Ayni tur",
+      "hint_genre_close": "Benzer tur",
+      "hint_genre_different": "Farkli tur",
+      "hint_decade_same": "Ayni donem",
+      "hint_decade_close": "Yakin donem",
+      "hint_decade_different": "Farkli donem"
     },
     "fadein": {
       "title": "Fade In",
       "description": "Bulanik bir afis, 6 tahmin hakki. Filmi bulabilir misin?",
       "blur_level": "Tahmin %{level}/%{max}",
       "hints_title": "Ipuclari",
+      "hint_choose": "Acmak istedigin ipucunu sec",
+      "hint_locked": "Kilitli",
+      "hint_no_credit": "Ipucu icin bir tahmin yap",
+      "hint_credits": "%{count} ipucu hakkin var",
+      "hint_credits_plural": "%{count} ipucu hakkin var",
+      "hint_type_genre": "Tur",
+      "hint_type_decade": "Donem",
+      "hint_type_director": "Yonetmen",
+      "hint_type_actor": "Oyuncu",
+      "hint_type_overview": "Konu",
       "wrong": "Bu degil!",
       "search_placeholder": "Hangi film bu?"
     },
     "quoted": {
       "title": "Quoted",
-      "description": "Gercek bir film repligi. Hangi filmden?",
+      "description": "Baglamı oku, replikten filmi tahmin et",
       "source": "Gercek film repligi",
       "quoteLabel": "Replikten filmi tahmin et",
       "hint_used": "Ipucu acildi"
     },
+    "cinemetrics": {
+      "title": "CineMetrics",
+      "description": "Istatistiklerden filmi tahmin et",
+      "columns": {
+        "year": "Yil",
+        "genres": "Tur",
+        "director": "Yonetmen",
+        "rating": "Puan",
+        "runtime": "Sure",
+        "country": "Ulke"
+      },
+      "difficulty": {
+        "easy": "Kolay",
+        "medium": "Orta",
+        "hard": "Zor"
+      },
+      "result": {
+        "won": "%{count}/%{max} tahminde buldun!",
+        "lost": "Bir dahaki sefere"
+      },
+      "next_puzzle": "Sonraki bulmaca",
+      "share": "Paylas",
+      "back_to_hub": "Hub'a Don",
+      "submit": "Tahmin Et",
+      "retry": "Tekrar Dene",
+      "try_tomorrow": "Yarin yeni bir film seni bekliyor"
+    },
+    "spotlight": {
+      "title": "Spotlight",
+      "hub_description": "Ipuclariyla filmi tahmin et",
+      "clues_title": "IPUCLARI",
+      "clue_labels": {
+        "year_range": "Donem",
+        "genres": "Tur",
+        "runtime": "Sure",
+        "imdb_rating": "Puan",
+        "cast": "Oyuncular",
+        "director": "Yonetmen",
+        "minutes": "dk"
+      },
+      "turn_indicator": "%{current} film kaldi",
+      "result_won": "%{turns} tahminde buldun!",
+      "result_lost": "Yarin tekrar dene",
+      "auto_loss": "Cevap goz onundeydi!",
+      "guess_button": "Tahmin Et"
+    },
+    "detective": {
+      "title": "Chosy Detective",
+      "hub_description": "Bugunku vakayi arastir — suphelileri ele, cevabi bul",
+      "case_number": "Vaka #%{number}",
+      "stage1_title": "SORUSTURMA",
+      "stage1_subtitle": "Film secerek suphelileri ele",
+      "stage2_title": "DEDUKSIYON",
+      "stage2_subtitle": "Kanitlari kullanarak cevabi bul",
+      "stage3_title": "DAVA KAPANDI",
+      "remaining": "%{count} supheli kaldi",
+      "stage_transition_title": "Sorusturma Tamamlandi",
+      "stage_transition_subtitle": "%{count} supheli kaldi",
+      "stage_transition_cta": "Deduksiyon Moduna Gec",
+      "clues_title": "IPUCLARI",
+      "clue_labels": {
+        "year_range": "Donem",
+        "genres": "Tur",
+        "runtime": "Sure",
+        "imdb_rating": "Puan",
+        "cast": "Oyuncular",
+        "director": "Yonetmen",
+        "minutes": "dk"
+      },
+      "evidence_for": "\"%{film}\" icin kanit",
+      "columns": {
+        "year": "Yil",
+        "genres": "Tur",
+        "director": "Yonetmen",
+        "rating": "Puan",
+        "runtime": "Sure",
+        "country": "Ulke"
+      },
+      "score_label": "Dedektif Skoru",
+      "guesses_label": "Tahmin",
+      "time_label": "Sure",
+      "hints_label": "Ipucu Kullanildi",
+      "accuracy_label": "Isabet",
+      "percentile": "Dedektiflerin %{percent}%'ini gectin",
+      "lucky_spot": "Sanli Tespit!",
+      "lucky_spot_desc": "Sorusturma asamasinda bulundu",
+      "result_solved": "Dava Cozuldu!",
+      "result_cold": "Dava Dondu",
+      "community_title": "Bugunku vakayi herkes nasil cozdu",
+      "community_failed": "Basarisiz",
+      "community_you": "Sen",
+      "why_title": "Neden Bu Film?",
+      "why_subtitle": "Fark ettin mi?",
+      "why_decoy": "%{film} ile ortak: %{trait}",
+      "film_bridge_watched": "Dedektiflerin %{percent}%'i bunu izlemis",
+      "film_bridge_watch": "Bu Aksam Izle",
+      "film_bridge_watchlist": "Listeye Ekle",
+      "film_bridge_reviews": "Yorumlari Gor",
+      "friends_title": "Arkadaslar",
+      "friends_beat": "Arkadaslarini Gec",
+      "investigate_button": "Arastir",
+      "deduce_button": "Coz",
+      "share": "Paylas",
+      "archive": "Arsiv",
+      "back_to_hub": "Hub'a Don",
+      "next_case": "Sonraki Vaka",
+      "difficulty": {
+        "easy": "Cirak Vaka",
+        "medium": "Standart Vaka",
+        "hard": "Soguk Vaka"
+      }
+    },
+    "search_placeholder": "Film ara...",
     "result": {
       "solved": "Harika Tahmin!",
       "solved_detail": "%{attempts}/%{maxAttempts} denemede bildin",
@@ -914,6 +1073,32 @@
       "title": "Günlük Oyunlar",
       "play_now": "Oyna",
       "all_played": "Bugün hepsini oynadın!"
+    },
+    "play_next": {
+      "title": "Bir Oyun Daha",
+      "suggestion": "%{dimension} boyutunu güçlendirmek için %{game} oyna",
+      "button": "%{game} Oyna"
+    },
+    "why_this_movie": {
+      "title": "Neden Bu Film?",
+      "fun_fact_title": "Ilginc Bilgi",
+      "watch_tonight": "Bu Aksam Izle",
+      "add_watchlist": "Listeye Ekle"
+    },
+    "collections": {
+      "title": "Koleksiyonlar",
+      "level": "Seviye %{level}",
+      "max_level": "MAKS",
+      "director_hunter": "Yonetmen Avcisi",
+      "director_hunter_desc": "Yonetmenleri dogru tahmin et",
+      "genre_expert": "Tur Uzmani",
+      "genre_expert_desc": "Farkli film turlerinde ustulas",
+      "streak_champion": "Seri Sampiyonu",
+      "streak_champion_desc": "Uzun gunluk seriler olustur",
+      "perfect_solver": "Kusursuz Cozucu",
+      "perfect_solver_desc": "Bulmacalari ilk denemede coz",
+      "daily_completist": "Gunluk Tamamlayici",
+      "daily_completist_desc": "Her gun 7 oyunun hepsini tamamla"
     }
   },
   "roulette": {

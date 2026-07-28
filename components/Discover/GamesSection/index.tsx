@@ -48,6 +48,27 @@ const GAMES = [
     descKey: 'games.quoted.description',
     icon: 'chatbubble-ellipses' as const,
   },
+  {
+    id: 'cinemetrics',
+    route: '/games/cinemetrics',
+    titleKey: 'games.cinemetrics.title',
+    descKey: 'games.cinemetrics.description',
+    icon: 'stats-chart' as const,
+  },
+  {
+    id: 'spotlight',
+    route: '/games/spotlight',
+    titleKey: 'games.spotlight.title',
+    descKey: 'games.spotlight.hub_description',
+    icon: 'flashlight' as const,
+  },
+  {
+    id: 'detective',
+    route: '/games/detective',
+    titleKey: 'games.detective.title',
+    descKey: 'games.detective.hub_description',
+    icon: 'search' as const,
+  },
 ] as const;
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -77,6 +98,15 @@ export default function GamesSection({ onGamePress }: GamesSectionProps) {
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('discoverTab.gamesTitle')}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            hapticLight();
+            router.push('/games' as never);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Text style={styles.seeAllText}>{t('discoverTab.seeAll')}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.grid}>

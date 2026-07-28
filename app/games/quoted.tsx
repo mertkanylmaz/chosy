@@ -4,8 +4,10 @@
  * Ikonik bir film repligi gosterilir, kullanici filmi tahmin eder.
  * Yanlis tahminlerde ipuclari acilir: karakter adi > basrol > yonetmen+yil.
  * Max 4 deneme hakki (1 replik + 3 ipucu).
+ *
+ * Edge Function tabanlı — tahmin doğrulaması sunucuda.
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,53 +18,68 @@ import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import {
-  fetchDailyPuzzle,
-  submitGameScore,
-  getGameStreak,
-  getCachedResult,
-  getFilmAnswer,
-  getTodayDate,
-} from '@/services/gameService';
-import type { GameState, GameClue, GameResult, FilmSearchResult } from '@/services/gameTypes';
+import { getGameStreak } from '@/services/gameService';
+import { getDailyChallenge, submitGameGuess } from '@/services/gameApi';
+import type { DailyChallenge, GuessResult } from '@/types/game';
+import type { DnaSignal } from '@/components/games/DnaXpReveal';
+import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useGamePaywall } from '@/hooks/useGamePaywall';
+import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/utils/gameAnalytics';
+
+/** Quoted ipucu */
+interface QuotedHint {
+  order: number;
+  content: string;
+}
 
 export default function QuotedScreen() {
   const { t } = useLanguage();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
+  // Analytics timing refs
+  const openTimeRef = useRef(Date.now());
+  const guessStartTime = useRef(Date.now());
+
   const [gameState, setGameState] = useState<GameState>('loading');
   const [quoteText, setQuoteText] = useState('');
-  const [hints, setHints] = useState<GameClue[]>([]);
+  const [contextHint, setContextHint] = useState('');
+  const [quoteGenre, setQuoteGenre] = useState('');
+  const [hints, setHints] = useState<QuotedHint[]>([]);
   const [revealedHints, setRevealedHints] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [puzzleFilmId, setPuzzleFilmId] = useState(0);
+  const [maxAttempts, setMaxAttempts] = useState(4);
   const [puzzleId, setPuzzleId] = useState('');
-  const [result, setResult] = useState<GameResult | null>(null);
-  const [filmInfo, setFilmInfo] = useState<{
-    title: string;
-    year: number;
-    posterPath: string | null;
-  } | null>(null);
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
 
-  const maxAttempts = 4; // 1 replik + 3 ipucu
+  // Result state (Edge Function response)
+  const [solved, setSolved] = useState(false);
+  const [xpAwarded, setXpAwarded] = useState(0);
+  const [dnaUpdated, setDnaUpdated] = useState(false);
+  const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  const [filmInfo, setFilmInfo] = useState<{
+    title: string;
+    year: number;
+    posterPath: string | null;
+    filmId: number;
+  } | null>(null);
 
-  // Her focus'ta tarih kontrolü — yeni gün = yeni puzzle
+  // Her focus'ta tarih kontrolü
   useFocusEffect(
     useCallback(() => {
       setGameState('loading');
       setQuoteText('');
+      setContextHint('');
+      setQuoteGenre('');
       setHints([]);
       setRevealedHints(0);
       setAttempts(0);
-      setResult(null);
+      setSolved(false);
       setFilmInfo(null);
       setWrongGuess(null);
       setLoadError(false);
@@ -70,106 +87,162 @@ export default function QuotedScreen() {
     }, []),
   );
 
-  /** Puzzle yukle — cache veya fresh */
+  /** Puzzle yükle — Edge Function */
   const loadPuzzle = useCallback(async () => {
     try {
-      const cached = await getCachedResult('quoted');
-      if (cached) {
-        const film = await getFilmAnswer(cached.filmId);
+      const puzzleDate = new Date().toLocaleDateString('en-CA');
+      const data: DailyChallenge = await getDailyChallenge('quoted', puzzleDate);
+      const puzzle = data.puzzle;
+      const progress = data.progress;
+
+      setPuzzleId(puzzle.id);
+      setMaxAttempts(puzzle.max_attempts);
+
+      // puzzle_data: { quote, context_hint?, genre?, hints, poster_url?, tmdb_id?, film_title? }
+      const pd = puzzle.puzzle_data;
+      setQuoteText((pd.quote as string) ?? '');
+      setContextHint((pd.context_hint as string) ?? '');
+      setQuoteGenre((pd.genre as string) ?? '');
+
+      const hintList = (pd.hints as QuotedHint[]) ?? [];
+      setHints(hintList.sort((a, b) => a.order - b.order));
+
+      // Bugün zaten oynanmış mı?
+      if (progress?.completed) {
         const streakInfo = await getGameStreak('quoted');
-        setResult(cached);
-        setFilmInfo(film);
         setStreak(streakInfo.currentStreak);
+        setSolved(progress.won);
+        setAttempts(progress.guesses?.length ?? 0);
+
+        const filmTitle = pd.film_title as string | undefined;
+        const tmdbId = pd.tmdb_id as number | undefined;
+        const posterUrl = pd.poster_url as string | undefined;
+        setFilmInfo({
+          title: filmTitle ?? t('games.result.unknown_film'),
+          year: 0,
+          posterPath: posterUrl ?? null,
+          filmId: tmdbId ?? 0,
+        });
+
         setGameState('complete');
         return;
       }
 
-      const puzzle = await fetchDailyPuzzle('quoted');
-      if (!puzzle) {
-        logger.error('[quoted] Puzzle yuklenemedi');
-        setLoadError(true);
-        return;
+      // Devam eden oyun — önceki tahmin sayısını yükle
+      if (progress?.guesses) {
+        setAttempts(progress.guesses.length);
+        setRevealedHints(Math.min(progress.guesses.length, hintList.length));
       }
 
-      const sortedClues = puzzle.clues.sort((a, b) => a.order - b.order);
-      // Ilk clue = replik (type: 'quote'), geri kalan = ipuclari
-      const quoteClue = sortedClues[0];
-      const hintClues = sortedClues.slice(1);
-
-      setQuoteText(quoteClue?.content ?? '');
-      setHints(hintClues);
-      setPuzzleFilmId(puzzle.filmId);
-      setPuzzleId(puzzle.id);
-
-      const film = await getFilmAnswer(puzzle.filmId);
-      setFilmInfo(film);
-
       setGameState('playing');
+      openTimeRef.current = Date.now();
+      guessStartTime.current = Date.now();
+      trackGameOpened('quoted', 0, 'hub');
     } catch (err) {
-      logger.error('[quoted] Load hatasi:', err);
+      logger.error('[quoted] Load hatası:', err);
       setLoadError(true);
     }
   }, []);
 
-  /** Tahmin yap */
+  /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
       if (gameState !== 'playing') return;
 
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
+      const filmUuid = film.uuid;
+      if (!filmUuid) {
+        logger.error('[quoted] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+        return;
+      }
 
-      const solved = film.id === puzzleFilmId;
+      try {
+        const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
+        const newAttempts = result.guesses_used;
+        setAttempts(newAttempts);
+        trackGuessSubmitted('quoted', newAttempts, Date.now() - guessStartTime.current);
+        guessStartTime.current = Date.now();
 
-      if (solved) {
-        hapticSuccess();
-        await finishGame(true, newAttempts);
-      } else {
-        hapticWarning();
-        setWrongGuess(film.title);
-        setTimeout(() => setWrongGuess(null), 1500);
+        if (result.correct) {
+          hapticSuccess();
+          setSolved(true);
+          setXpAwarded(result.xp_awarded);
+          setDnaUpdated(result.dna_updated);
+          if (result.dna_updated) {
+            setDnaSignals([
+              { dimension: 'knowledge', delta: 0.5 },
+              { dimension: 'deduction', delta: 0.3 },
+            ]);
+          }
 
-        // Sonraki ipucunu ac
-        if (revealedHints < hints.length) {
-          setRevealedHints((prev) => prev + 1);
+          setGameState('reveal');
+          trackGameCompleted({
+            gameId: 'quoted',
+            won: true,
+            guessesUsed: newAttempts,
+            timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+            xp: result.xp_awarded,
+          });
+          await new Promise((r) => setTimeout(r, 600));
+
+          if (result.revealed_solution) {
+            setFilmInfo({
+              title: result.revealed_solution.title,
+              year: result.revealed_solution.year,
+              posterPath: result.revealed_solution.poster_url ?? null,
+              filmId: 0,
+            });
+          }
+
+          const streakInfo = await getGameStreak('quoted');
+          setStreak(streakInfo.currentStreak);
+          setGameState('complete');
+          checkGamePaywall(streakInfo.currentStreak, true);
+        } else {
+          hapticWarning();
+          setWrongGuess(film.title);
+          setTimeout(() => setWrongGuess(null), 1500);
+
+          // Sonraki ipucunu aç
+          if (revealedHints < hints.length) {
+            setRevealedHints((prev) => prev + 1);
+          }
+
+          // Son deneme — oyun biter
+          if (result.completed) {
+            hapticHeavy();
+            setSolved(false);
+            setXpAwarded(result.xp_awarded);
+            setDnaUpdated(result.dna_updated);
+
+            setGameState('reveal');
+            trackGameCompleted({
+              gameId: 'quoted',
+              won: false,
+              guessesUsed: newAttempts,
+              timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+              xp: result.xp_awarded,
+            });
+            await new Promise((r) => setTimeout(r, 600));
+
+            if (result.revealed_solution) {
+              setFilmInfo({
+                title: result.revealed_solution.title,
+                year: result.revealed_solution.year,
+                posterPath: result.revealed_solution.poster_url ?? null,
+                filmId: 0,
+              });
+            }
+
+            const streakInfo = await getGameStreak('quoted');
+            setStreak(streakInfo.currentStreak);
+            setGameState('complete');
+          }
         }
-
-        // Son deneme
-        if (newAttempts >= maxAttempts) {
-          hapticHeavy();
-          await finishGame(false, newAttempts);
-        }
+      } catch (err) {
+        logger.error('[quoted] Submit hatası:', err);
       }
     },
-    [gameState, attempts, puzzleFilmId, puzzleId, revealedHints, hints.length],
-  );
-
-  /** Oyunu bitir */
-  const finishGame = useCallback(
-    async (solved: boolean, totalAttempts: number) => {
-      setGameState('reveal');
-      await new Promise((r) => setTimeout(r, 600));
-
-      const today = getTodayDate();
-      const gameResult: GameResult = {
-        puzzleId,
-        date: today,
-        gameType: 'quoted',
-        solved,
-        attempts: totalAttempts,
-        maxAttempts,
-        filmId: puzzleFilmId,
-      };
-
-      await submitGameScore(gameResult);
-      const streakInfo = await getGameStreak('quoted');
-
-      setResult(gameResult);
-      setStreak(streakInfo.currentStreak);
-      setGameState('complete');
-      checkGamePaywall(streakInfo.currentStreak, solved);
-    },
-    [puzzleId, puzzleFilmId, checkGamePaywall],
+    [gameState, puzzleId, revealedHints, hints.length, checkGamePaywall],
   );
 
   // ─── Error ───
@@ -197,16 +270,16 @@ export default function QuotedScreen() {
   }
 
   // ─── Complete ───
-  if (gameState === 'complete' && result && filmInfo) {
+  if (gameState === 'complete' && filmInfo) {
     return (
       <GameShell
         title={t('games.quoted.title')}
-        currentAttempt={result.attempts}
+        currentAttempt={attempts}
         maxAttempts={maxAttempts}
         hideProgress
       >
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
-          {/* Repligi tekrar goster */}
+          {/* Repliği tekrar göster */}
           <View style={styles.quoteCardSmall}>
             <Ionicons name="chatbubble-ellipses" size={18} color={Colors.gold} />
             <Text style={styles.quoteTextSmall} numberOfLines={3}>
@@ -214,16 +287,19 @@ export default function QuotedScreen() {
             </Text>
           </View>
           <ResultCard
-            solved={result.solved}
-            attempts={result.attempts}
-            maxAttempts={result.maxAttempts}
+            solved={solved}
+            attempts={attempts}
+            maxAttempts={maxAttempts}
             filmTitle={filmInfo.title}
             filmYear={filmInfo.year}
             filmPosterPath={filmInfo.posterPath}
-            filmId={result.filmId}
+            filmId={filmInfo.filmId}
             streak={streak}
             gameTitle={t('games.quoted.title')}
             gameType="quoted"
+            xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
+            dnaUpdated={dnaUpdated}
+            dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
       </GameShell>
@@ -238,19 +314,31 @@ export default function QuotedScreen() {
       maxAttempts={maxAttempts}
     >
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Film ikonu badge */}
-        <View style={styles.quoteBadge}>
-          <Ionicons name="film-outline" size={20} color={Colors.gold} />
-          <Text style={styles.quoteBadgeLabel}>{t('games.quoted.quoteLabel')}</Text>
-        </View>
+        {/* Bağlam ipucu — replikten ÖNCE gösterilir (dedüksiyon katmanı) */}
+        {contextHint ? (
+          <Animated.View entering={FadeInDown.duration(300)} style={styles.contextCard}>
+            <Ionicons name="information-circle" size={18} color={Colors.gold} />
+            <View style={styles.contextContent}>
+              {quoteGenre ? (
+                <Text style={styles.contextGenre}>{quoteGenre}</Text>
+              ) : null}
+              <Text style={styles.contextText}>{contextHint}</Text>
+            </View>
+          </Animated.View>
+        ) : (
+          <View style={styles.quoteBadge}>
+            <Ionicons name="film-outline" size={20} color={Colors.gold} />
+            <Text style={styles.quoteBadgeLabel}>{t('games.quoted.quoteLabel')}</Text>
+          </View>
+        )}
 
-        {/* Replik karti */}
-        <Animated.View entering={FadeInDown.duration(400)} style={styles.quoteCard}>
+        {/* Replik kartı */}
+        <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.quoteCard}>
           <Ionicons name="chatbubble-ellipses" size={28} color={Colors.gold} style={styles.quoteIcon} />
           <Text style={styles.quoteMainText}>{`"${quoteText}"`}</Text>
         </Animated.View>
 
-        {/* Acilan ipuclari */}
+        {/* Açılan ipuçları */}
         {hints.slice(0, revealedHints).map((hint, index) => (
           <Animated.View
             key={hint.order}
@@ -262,7 +350,7 @@ export default function QuotedScreen() {
           </Animated.View>
         ))}
 
-        {/* Yanlis tahmin */}
+        {/* Yanlış tahmin */}
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
             <Ionicons name="close-circle" size={16} color={Colors.error} />
@@ -334,6 +422,34 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flex: 1,
+  },
+  contextCard: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Theme.spacing.sm,
+    backgroundColor: Colors.goldDim,
+    borderRadius: Theme.borderRadius.md,
+    padding: Theme.spacing.md,
+    marginTop: Theme.spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(218,165,32,0.15)',
+  },
+  contextContent: {
+    flex: 1,
+    gap: 4,
+  },
+  contextGenre: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.gold,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  contextText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    lineHeight: 19,
+    fontStyle: 'italic',
   },
   quoteBadge: {
     flexDirection: 'row',

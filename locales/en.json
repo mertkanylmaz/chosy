@@ -151,7 +151,8 @@
     "screenSubtitle": "Explore films, find inspiration",
     "trendingTitle": "Trending This Week",
     "upcomingTitle": "Coming Soon",
-    "gamesTitle": "Cinema Games"
+    "gamesTitle": "Cinema Games",
+    "seeAll": "See All"
   },
   "discover": {
     "emptyTitle": "That's all!",
@@ -866,35 +867,193 @@
       "played": "Played today",
       "play": "Play",
       "streak": "Best streak",
-      "streak_count": "%{count} day streak"
+      "streak_count": "%{count} day streak",
+      "freeze": "Streak freeze",
+      "recommended": "Recommended Today",
+      "cinema_score": "Cinema Score",
+      "coming_soon": "Coming Soon",
+      "chest_title": "Today's Challenge",
+      "chest_progress": "%{completed}/%{total}",
+      "chest_open": "Open Chest",
+      "chest_claimed": "Chest Claimed",
+      "chest_reward_dna": "+25% DNA Boost",
+      "chest_reward_shield": "Streak Shield",
+      "chest_reward_xp": "Double XP Tomorrow"
     },
+    "dna_updated": "Cinema DNA Updated",
+    "dna_consistency": "+ Consistency",
     "imposter": {
       "title": "Imposter",
-      "description": "Find the actor who wasn't in the film",
-      "question": "Which actor is NOT in this film?"
+      "description": "3 rounds — spot the actors who weren't in the film",
+      "question": "Which actor is NOT in this film?",
+      "question_multi": "Select %{count} actors NOT in this film",
+      "round_label": "Round %{n}",
+      "round_easy": "Warm-up",
+      "round_medium": "Getting harder",
+      "round_hard": "Expert",
+      "round_correct": "Correct!",
+      "round_wrong": "Not quite!",
+      "imposters_were": "The imposters were: %{names}",
+      "selected": "%{count}/%{total} selected",
+      "submit_round": "Lock In",
+      "confidence_label": "How sure are you?",
+      "confidence_50": "Not sure",
+      "confidence_75": "Fairly sure",
+      "confidence_100": "Certain",
+      "confidence_preview": "Right ×%{win}  ·  Wrong ×%{lose}",
+      "confidence_multiplier": "Confidence multiplier"
     },
     "logline": {
       "title": "Logline",
       "description": "Identify the film from cryptic clues",
       "clue_locked": "Locked — guess wrong to reveal",
       "search_placeholder": "Search for a film...",
-      "perfect": "Perfect Guess!"
+      "perfect": "Perfect Guess!",
+      "hint_genre_same": "Same genre",
+      "hint_genre_close": "Similar genre",
+      "hint_genre_different": "Different genre",
+      "hint_decade_same": "Same era",
+      "hint_decade_close": "Close era",
+      "hint_decade_different": "Different era"
     },
     "fadein": {
       "title": "Fade In",
       "description": "Guess the film from the blurred poster",
       "blur_level": "Guess %{level}/%{max}",
       "hints_title": "Clues",
+      "hint_choose": "Pick a clue to unlock",
+      "hint_locked": "Locked",
+      "hint_no_credit": "Make a guess to earn a clue",
+      "hint_credits": "%{count} clue available",
+      "hint_credits_plural": "%{count} clues available",
+      "hint_type_genre": "Genre",
+      "hint_type_decade": "Decade",
+      "hint_type_director": "Director",
+      "hint_type_actor": "Cast",
+      "hint_type_overview": "Plot",
       "wrong": "Not this one!",
       "search_placeholder": "Which film is this?"
     },
     "quoted": {
       "title": "Quoted",
-      "description": "Name the film from its iconic line",
+      "description": "Read the context clue, then name the film from its iconic line",
       "source": "Real movie quote",
       "quoteLabel": "Guess the movie from the quote",
       "hint_used": "Hint revealed"
     },
+    "cinemetrics": {
+      "title": "CineMetrics",
+      "description": "Guess the film from its stats",
+      "columns": {
+        "year": "Year",
+        "genres": "Genre",
+        "director": "Director",
+        "rating": "Rating",
+        "runtime": "Runtime",
+        "country": "Country"
+      },
+      "difficulty": {
+        "easy": "Easy",
+        "medium": "Medium",
+        "hard": "Hard"
+      },
+      "result": {
+        "won": "Found in %{count}/%{max} guesses!",
+        "lost": "Better luck next time"
+      },
+      "next_puzzle": "Next puzzle",
+      "share": "Share",
+      "back_to_hub": "Back to Hub",
+      "submit": "Guess",
+      "retry": "Try Again",
+      "try_tomorrow": "A new film awaits you tomorrow"
+    },
+    "spotlight": {
+      "title": "Spotlight",
+      "hub_description": "Guess the film from progressive clues",
+      "clues_title": "CLUES",
+      "clue_labels": {
+        "year_range": "Decade",
+        "genres": "Genre",
+        "runtime": "Runtime",
+        "imdb_rating": "Rating",
+        "cast": "Cast",
+        "director": "Director",
+        "minutes": "min"
+      },
+      "turn_indicator": "%{current} films remaining",
+      "result_won": "Found it in %{turns} guess(es)!",
+      "result_lost": "Better luck tomorrow",
+      "auto_loss": "The answer was hiding in plain sight!",
+      "guess_button": "Guess"
+    },
+    "detective": {
+      "title": "Chosy Detective",
+      "hub_description": "Investigate today's case — eliminate suspects, deduce the answer",
+      "case_number": "Case #%{number}",
+      "stage1_title": "INVESTIGATION",
+      "stage1_subtitle": "Eliminate suspects by selecting films",
+      "stage2_title": "DEDUCTION",
+      "stage2_subtitle": "Use evidence to find the answer",
+      "stage3_title": "CASE CLOSED",
+      "remaining": "%{count} suspects remaining",
+      "stage_transition_title": "Investigation Complete",
+      "stage_transition_subtitle": "%{count} suspects remain",
+      "stage_transition_cta": "Enter Deduction Mode",
+      "clues_title": "CLUES",
+      "clue_labels": {
+        "year_range": "Decade",
+        "genres": "Genre",
+        "runtime": "Runtime",
+        "imdb_rating": "Rating",
+        "cast": "Cast",
+        "director": "Director",
+        "minutes": "min"
+      },
+      "evidence_for": "Evidence for \"%{film}\"",
+      "columns": {
+        "year": "Year",
+        "genres": "Genre",
+        "director": "Director",
+        "rating": "Rating",
+        "runtime": "Runtime",
+        "country": "Country"
+      },
+      "score_label": "Detective Score",
+      "guesses_label": "Guesses",
+      "time_label": "Time",
+      "hints_label": "Hints Used",
+      "accuracy_label": "Accuracy",
+      "percentile": "You beat %{percent}% of detectives",
+      "lucky_spot": "Lucky Spot!",
+      "lucky_spot_desc": "Spotted in the investigation phase",
+      "result_solved": "Case Solved!",
+      "result_cold": "Case Gone Cold",
+      "community_title": "How everyone solved today's case",
+      "community_failed": "Failed",
+      "community_you": "You",
+      "why_title": "Why This Movie?",
+      "why_subtitle": "Did you notice?",
+      "why_decoy": "Shared with %{film}: %{trait}",
+      "film_bridge_watched": "%{percent}% of detectives have watched this",
+      "film_bridge_watch": "Watch Tonight",
+      "film_bridge_watchlist": "Add to Watchlist",
+      "film_bridge_reviews": "See Reviews",
+      "friends_title": "Friends",
+      "friends_beat": "Beat Your Friends",
+      "investigate_button": "Investigate",
+      "deduce_button": "Deduce",
+      "share": "Share",
+      "archive": "Archive",
+      "back_to_hub": "Back to Hub",
+      "next_case": "Next Case",
+      "difficulty": {
+        "easy": "Rookie Case",
+        "medium": "Standard Case",
+        "hard": "Cold Case"
+      }
+    },
+    "search_placeholder": "Search for a film...",
     "result": {
       "solved": "Great Guess!",
       "solved_detail": "Solved in %{attempts}/%{maxAttempts} guesses",
@@ -914,6 +1073,32 @@
       "title": "Daily Games",
       "play_now": "Play Now",
       "all_played": "All played today!"
+    },
+    "play_next": {
+      "title": "One More Game",
+      "suggestion": "Play %{game} to boost your %{dimension}",
+      "button": "Play %{game}"
+    },
+    "why_this_movie": {
+      "title": "Why This Movie?",
+      "fun_fact_title": "Fun Fact",
+      "watch_tonight": "Watch Tonight",
+      "add_watchlist": "Add to List"
+    },
+    "collections": {
+      "title": "Collections",
+      "level": "Level %{level}",
+      "max_level": "MAX",
+      "director_hunter": "Director Hunter",
+      "director_hunter_desc": "Correctly identify directors",
+      "genre_expert": "Genre Expert",
+      "genre_expert_desc": "Master different film genres",
+      "streak_champion": "Streak Champion",
+      "streak_champion_desc": "Build long daily streaks",
+      "perfect_solver": "Perfect Solver",
+      "perfect_solver_desc": "Solve puzzles on first try",
+      "daily_completist": "Daily Completist",
+      "daily_completist_desc": "Complete all 7 daily games"
     }
   },
   "roulette": {

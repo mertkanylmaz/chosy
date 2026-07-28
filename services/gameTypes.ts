@@ -51,6 +51,8 @@ export interface GameStreakInfo {
 /** Film arama sonucu (autocomplete için) */
 export interface FilmSearchResult {
   id: number;
+  /** Supabase films.id (UUID) — Edge Function tabanlı oyunlar için */
+  uuid?: string;
   title: string;
   year: string;
   posterPath: string | null;
