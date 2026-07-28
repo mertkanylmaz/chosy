@@ -7,17 +7,23 @@
  *
  * Analytics: fires view event on mount, film page event on CTA tap.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Lightbulb, FilmReel, BookmarkSimple } from 'phosphor-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
 import { hapticLight } from '@/utils/haptics';
-import { trackWhyThisMovieViewed, trackFilmPageOpened } from '@/utils/gameAnalytics';
+import { addToWatchlist } from '@/services/watchlist';
+import {
+  trackWhyThisMovieViewed,
+  trackFilmPageOpened,
+  trackWatchlistAdded,
+} from '@/utils/gameAnalytics';
 import { Colors } from '@/constants/Colors';
 import { styles, TEAL } from './styles';
 
@@ -46,6 +52,9 @@ export function WhyThisMovieFunnel({
 }: WhyThisMovieFunnelProps) {
   const { t } = useLanguage();
   const router = useRouter();
+  const [isAdding, setIsAdding] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [addError, setAddError] = useState(false);
 
   // Track view once on mount
   const hasTracked = useRef(false);
@@ -76,6 +85,54 @@ export function WhyThisMovieFunnel({
       }
     } catch (err) {
       logger.error('[WhyThisMovie] Film lookup error:', err);
+    }
+  };
+
+  /**
+   * Add the puzzle film to the watchlist.
+   *
+   * This is the "oyun → film keşfi" conversion — the button used to only
+   * navigate, so the action its label promised never happened and the
+   * funnel had no measurable end point.
+   */
+  const handleAddToWatchlist = async () => {
+    if (added || isAdding) return;
+    hapticLight();
+    setIsAdding(true);
+    try {
+      const { data, error } = await supabase
+        .from('films')
+        .select('id, title, year, poster_url, overview, runtime, vote_average, director')
+        .eq('tmdb_id', filmId)
+        .single();
+
+      if (error || !data) {
+        throw error ?? new Error(`Film not found: tmdb_id=${filmId}`);
+      }
+
+      await addToWatchlist({
+        id: data.id,
+        title: data.title,
+        year: data.year,
+        posterUrl: data.poster_url ?? '',
+        matchScore: 0,
+        moodTags: [],
+        whyThisFilm: whyText ?? '',
+        overview: data.overview ?? undefined,
+        runtime: data.runtime ?? undefined,
+        voteAverage: data.vote_average ?? undefined,
+        director: data.director ?? undefined,
+      });
+
+      trackWatchlistAdded(gameType, filmId);
+      setAdded(true);
+    } catch (err) {
+      // Hard Rule 5: sessiz fallback yok — Sentry + görünür durum
+      logger.error('[WhyThisMovie] Watchlist add error:', err);
+      Sentry.captureException(err, { tags: { game: gameType, action: 'watchlist_add' } });
+      setAddError(true);
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -119,12 +176,21 @@ export function WhyThisMovieFunnel({
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.addButton}
-          onPress={handleWatchTonight}
+          onPress={handleAddToWatchlist}
+          disabled={isAdding || added}
           activeOpacity={0.7}
         >
-          <BookmarkSimple size={16} color={Colors.accentPrimary} weight="duotone" />
+          <BookmarkSimple
+            size={16}
+            color={added ? Colors.success : Colors.accentPrimary}
+            weight={added ? 'fill' : 'duotone'}
+          />
           <Text style={styles.addButtonText}>
-            {t('games.why_this_movie.add_watchlist')}
+            {added
+              ? t('games.why_this_movie.added_watchlist')
+              : addError
+                ? t('games.why_this_movie.add_failed')
+                : t('games.why_this_movie.add_watchlist')}
           </Text>
         </TouchableOpacity>
       </View>

@@ -35,7 +35,7 @@ import { logger } from '@/utils/logger';
 import { getPosterUrl } from '@/services/tmdb';
 import { getGameStreak } from '@/services/gameService';
 import { getDailyChallenge, revealHint, submitGameGuess } from '@/services/gameApi';
-import type { DailyChallenge, FadeInHint, GuessResult } from '@/types/game';
+import type { DailyChallenge, FadeInHintStub, GuessResult, WhyThisMovieText } from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
@@ -76,7 +76,9 @@ export default function FadeInScreen() {
   // State
   const [gameState, setGameState] = useState<GameState>('loading');
   const [posterUrl, setPosterUrl] = useState<string | null>(null);
-  const [hints, setHints] = useState<FadeInHint[]>([]);
+  const [hints, setHints] = useState<FadeInHintStub[]>([]);
+  /** Acilmis ipuclarinin icerigi (order -> metin) — yalnizca sunucudan gelir */
+  const [hintContents, setHintContents] = useState<Record<number, string>>({});
   /** Acilmis ipuclarinin order degerleri — secim sirasiyla */
   const [revealedOrders, setRevealedOrders] = useState<number[]>([]);
   const [attempts, setAttempts] = useState(0);
@@ -92,6 +94,10 @@ export default function FadeInScreen() {
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
   const [filmInfo, setFilmInfo] = useState<{
     title: string;
     year: number;
@@ -112,6 +118,7 @@ export default function FadeInScreen() {
       setGameState('loading');
       setPosterUrl(null);
       setHints([]);
+      setHintContents({});
       setRevealedOrders([]);
       setAttempts(0);
       setSolved(false);
@@ -132,16 +139,26 @@ export default function FadeInScreen() {
       const progress = data.progress;
 
       setPuzzleId(puzzle.id);
+      setPuzzleNo(data.puzzle_no);
 
-      // puzzle_data: { poster_url, hints: [{ order, content }], tmdb_id?, film_title? }
+      // puzzle_data: { poster_url, hints: [{ order, type }] } — icerik/film adi YOK
       const pd = puzzle.puzzle_data;
       const posterPath = pd.poster_url as string | undefined;
       if (posterPath) {
         setPosterUrl(getPosterUrl(posterPath, 'w500'));
       }
 
-      const hintList = (pd.hints as FadeInHint[]) ?? [];
+      // puzzle_data yalnızca ipucu iskeletini taşır (order + type);
+      // içerik sunucudan gelir (migration 064, Hard Rule 1).
+      const hintList = (pd.hints as FadeInHintStub[]) ?? [];
       setHints(hintList.sort((a, b) => a.order - b.order));
+
+      // Açılmış ipuçlarının içerikleri — resume
+      if (data.revealed_hint_contents?.length) {
+        setHintContents(
+          Object.fromEntries(data.revealed_hint_contents.map((h) => [h.order, h.content])),
+        );
+      }
 
       // Bugün zaten oynanmış mı?
       if (progress?.completed) {
@@ -150,14 +167,16 @@ export default function FadeInScreen() {
         setSolved(progress.won);
         setAttempts(progress.guesses?.length ?? 0);
 
-        const filmTitle = pd.film_title as string | undefined;
-        const tmdbId = pd.tmdb_id as number | undefined;
+        // Çözüm sunucudan gelir — puzzle_data film adı taşımaz
+        const solution = data.revealed_solution;
         setFilmInfo({
-          title: filmTitle ?? t('games.result.unknown_film'),
-          year: 0,
-          posterPath: posterPath ?? null,
-          filmId: tmdbId ?? 0,
+          title: solution?.title ?? t('games.result.unknown_film'),
+          year: solution?.year ?? 0,
+          posterPath: solution?.poster_url ?? posterPath ?? null,
+          filmId: 0,
         });
+
+        setWhyThisMovie(data.why_this_movie ?? null);
 
         setGameState('complete');
         return;
@@ -205,6 +224,7 @@ export default function FadeInScreen() {
           hapticSuccess();
           setSolved(true);
           setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
           setDnaUpdated(result.dna_updated);
           if (result.dna_updated) {
             setDnaSignals([
@@ -249,6 +269,7 @@ export default function FadeInScreen() {
             hapticHeavy();
             setSolved(false);
             setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
             setDnaUpdated(result.dna_updated);
 
             setGameState('reveal');
@@ -290,7 +311,7 @@ export default function FadeInScreen() {
 
   /** Seçilen ipucunu açar — sunucu kredi kontrolünü yapar */
   const handleRevealHint = useCallback(
-    async (hint: FadeInHint) => {
+    async (hint: FadeInHintStub) => {
       if (gameState !== 'playing') return;
       // Optimistic: kart hemen açılır, sunucu reddederse geri alınır
       if (revealedOrders.includes(hint.order)) return;
@@ -303,6 +324,7 @@ export default function FadeInScreen() {
       try {
         const result = await revealHint(puzzleId, hint.order);
         setRevealedOrders(result.revealed_hints);
+        setHintContents((prev) => ({ ...prev, [result.hint.order]: result.hint.content }));
         trackHintUsed('fadein', hint.type, result.hints_used);
       } catch (err) {
         logger.error('[fadein] İpucu açma hatası:', err);
@@ -377,6 +399,8 @@ export default function FadeInScreen() {
             streak={streak}
             gameTitle={t('games.fadein.title')}
             gameType="fadein"
+            puzzleNo={puzzleNo}
+            whyThisMovie={whyThisMovie ?? undefined}
             xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
             dnaUpdated={dnaUpdated}
             dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
@@ -429,6 +453,7 @@ export default function FadeInScreen() {
             <HintBoard
               hints={hints}
               revealedOrders={revealedOrders}
+              contents={hintContents}
               credits={hintCredits}
               onReveal={handleRevealHint}
             />

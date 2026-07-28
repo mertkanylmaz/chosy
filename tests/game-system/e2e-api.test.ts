@@ -407,6 +407,92 @@ Deno.test('S8: Progress restore — guess persists across requests', async () =>
   assertEquals(guesses.length, 1, 'progress should have 1 guess after restart')
 })
 
+// ─── SENARYO 0: Çözüm sızıntısı — TÜM oyunlar (release-blocker) ─────────────
+
+Deno.test('S0: public_daily_puzzles — hiçbir oyunda çözüm sızmıyor (Hard Rule 1)', async () => {
+  const puzzles = await supabaseRest(
+    `daily_puzzles?date=eq.${TODAY}&is_emergency_pool=eq.false&select=id,game_type,solution_ref`,
+  ) as Array<{ id: string; game_type: string; solution_ref: string | null }>
+  assert(puzzles.length > 0, `${TODAY} için bulmaca yok`)
+
+  const solutionIds = puzzles.map(p => p.solution_ref).filter(Boolean)
+  const films = await supabaseRest(
+    `films?id=in.(${solutionIds.join(',')})&select=id,title,tmdb_id`,
+  ) as Array<{ id: string; title: string; tmdb_id: number }>
+  const filmById = new Map(films.map(f => [f.id, f]))
+
+  const viewRows = await supabaseRest(
+    `public_daily_puzzles?puzzle_date=eq.${TODAY}&select=id,game_id,puzzle_data`,
+  ) as Array<{ id: string; game_id: string; puzzle_data: Record<string, unknown> }>
+
+  for (const row of viewRows) {
+    const puzzle = puzzles.find(p => p.id === row.id)
+    if (!puzzle?.solution_ref) continue
+    const film = filmById.get(puzzle.solution_ref)
+    if (!film) continue
+
+    const payload = JSON.stringify(row.puzzle_data)
+
+    // Çoktan seçmeli oyunlarda (spotlight/detective) doğru film aday listesinde
+    // GEÇMELİ — oyun bu. Sızıntı kontrolü options dışındaki alanlarda yapılır;
+    // options'ın kendisi ayrıca "hangisi doğru" işareti taşımamalı.
+    // options (yeni format) / options_per_turn (eski Spotlight formatı)
+    const { options, options_per_turn, ...rest } = row.puzzle_data as Record<string, unknown>
+    const scanned = JSON.stringify(rest)
+
+    const optionLists: Array<Record<string, unknown>> = []
+    if (Array.isArray(options)) optionLists.push(...options as Array<Record<string, unknown>>)
+    if (Array.isArray(options_per_turn)) {
+      for (const turn of options_per_turn as Array<Record<string, unknown>>) {
+        if (Array.isArray(turn.options)) {
+          optionLists.push(...turn.options as Array<Record<string, unknown>>)
+        }
+      }
+    }
+    for (const opt of optionLists) {
+      for (const marker of ['correct', 'is_correct', 'is_answer', 'solution']) {
+        assertEquals(
+          marker in opt, false,
+          `${row.game_id}: aday listesi doğru cevabı işaretliyor (${marker})`,
+        )
+      }
+    }
+
+    // Imposter'da cevap AKTÖR — film adı ekranın parçası, sızıntı değil.
+    // Diğer tüm oyunlarda film adı doğrudan cevaptır.
+    if (row.game_id !== 'imposter') {
+      assertEquals(
+        scanned.includes(film.title), false,
+        `${row.game_id}: çözüm film adı "${film.title}" istemciye iniyor`,
+      )
+      assertEquals(
+        scanned.includes(`"tmdb_id":${film.tmdb_id}`), false,
+        `${row.game_id}: çözümün tmdb_id'si istemciye iniyor`,
+      )
+    }
+
+    // FadeIn: ipucu içerikleri (yönetmen/konu özeti) sunucuda kalmalı
+    if (row.game_id === 'fadein') {
+      const hints = (row.puzzle_data as Record<string, unknown>).hints
+      assert(Array.isArray(hints), 'fadein hints dizisi bekleniyor')
+      for (const hint of hints as Array<Record<string, unknown>>) {
+        assertEquals(
+          'content' in hint, false,
+          'fadein: ipucu içeriği istemciye iniyor — reveal sunucudan gelmeli',
+        )
+      }
+    }
+
+    // Imposter: sahte aktör kimlikleri hiçbir seviyede görünmemeli
+    assertEquals(payload.includes('imposter_ids'), false, `${row.game_id}: imposter_ids sızıyor`)
+    assertEquals(payload.includes('imposter_actor_id'), false, `${row.game_id}: imposter_actor_id sızıyor`)
+
+    // Genel çözüm anahtarları
+    assertEquals(payload.includes('"solution"'), false, `${row.game_id}: solution sızıyor`)
+    assertEquals(payload.includes('redaction_words'), false, `${row.game_id}: redaction_words sızıyor`)
+  }
+})
+
 // ─── SENARYO 9-12: Günlük tema (get-daily-theme) ────────────────────────────
 
 Deno.test('S9: public_daily_puzzles view — theme_matched sızmıyor', async () => {

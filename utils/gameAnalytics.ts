@@ -13,9 +13,24 @@ export function trackGameOpened(gameId: string, puzzleNo: number, source: 'hub' 
   posthogAnalytics.track('game_daily_opened', { game_id: gameId, puzzle_no: puzzleNo, source });
 }
 
-/** Tahmin gonderildi */
-export function trackGuessSubmitted(gameId: string, guessNo: number, latencyMs: number): void {
-  posthogAnalytics.track('game_guess_submitted', { game_id: gameId, guess_no: guessNo, latency_ms: latencyMs });
+/**
+ * Tahmin gonderildi.
+ *
+ * `guess_no` tum oyunlarda ayni anlami tasir; oyuna ozel alanlar (ornegin
+ * Detective'in stage bilgisi) `extra` ile eklenir.
+ */
+export function trackGuessSubmitted(
+  gameId: string,
+  guessNo: number,
+  latencyMs: number,
+  extra?: Record<string, string | number | boolean>,
+): void {
+  posthogAnalytics.track('game_guess_submitted', {
+    game_id: gameId,
+    guess_no: guessNo,
+    latency_ms: latencyMs,
+    ...(extra ?? {}),
+  });
 }
 
 /** Ipucu kullanildi */
@@ -28,13 +43,20 @@ export function trackConfidenceSet(gameId: string, round: number, confidence: nu
   posthogAnalytics.track('game_confidence_set', { game_id: gameId, round, confidence });
 }
 
-/** Oyun tamamlandi */
+/**
+ * Oyun tamamlandi.
+ *
+ * `guesses_used` TUM oyunlarda ayni anlami tasir (harcanan deneme sayisi) —
+ * kapi metrigi bu alan uzerinden okunur. Oyuna ozel ek alanlar `extra` ile
+ * gonderilir; taksonomi alanlarinin adi degistirilmez.
+ */
 export function trackGameCompleted(params: {
   gameId: string;
   won: boolean;
   guessesUsed: number;
   timeToSolveS: number;
   xp: number;
+  extra?: Record<string, string | number | boolean>;
 }): void {
   posthogAnalytics.track('game_daily_completed', {
     game_id: params.gameId,
@@ -42,6 +64,7 @@ export function trackGameCompleted(params: {
     guesses_used: params.guessesUsed,
     time_to_solve_s: params.timeToSolveS,
     xp: params.xp,
+    ...(params.extra ?? {}),
   });
 }
 

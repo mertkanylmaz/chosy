@@ -20,6 +20,7 @@ import {
   logError,
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { buildWhyThisMovie, type WhyThisMovieText } from '../_shared/whyThisMovie.ts'
 
 /** Imposter güven bahsi config'i (app_config: imposter_confidence_config) */
 interface ImposterConfidenceConfig {
@@ -160,6 +161,79 @@ Deno.serve(async (req: Request) => {
         }
       : null
 
+    // ─── 4a. Çözüm / ipucu içeriği — YALNIZCA hak edilmişse ───────────────
+    // Migration 064'ten sonra film adı, poster ve ipucu içeriği view'dan
+    // çıkmıyor (Hard Rule 1). İstemcinin tamamlanmış oyunu yeniden açtığında
+    // sonucu gösterebilmesi için çözüm buradan, sunucu kontrolüyle döner.
+    let revealedSolution: {
+      film_id: string
+      title: string
+      year: number
+      director: string | null
+      poster_url: string | null
+    } | null = null
+
+    let revealedHintContents: Array<{ order: number; type: string; content: string }> | null = null
+    let whyThisMovie: WhyThisMovieText | null = null
+
+    const isCompleted = scoreRow?.completed_at != null
+    const needsSolution = isCompleted
+    const revealedOrders = (progressJson?.revealed_hints as number[] | undefined) ?? []
+    const needsHints = gameId === 'fadein' && revealedOrders.length > 0
+
+    if (needsSolution || needsHints) {
+      const { data: fullPuzzle, error: fullPuzzleError } = await service
+        .from('daily_puzzles')
+        .select('solution_ref, puzzle_data')
+        .eq('id', puzzle.id)
+        .single()
+
+      if (fullPuzzleError) {
+        logError('get-daily-challenge.solution_fetch_failed', fullPuzzleError, { puzzleId: puzzle.id })
+        await sentryCapture({
+          message: `get-daily-challenge solution fetch error: ${fullPuzzleError.message}`,
+          tags: { fn: 'get-daily-challenge', game_id: gameId },
+        })
+        return errorResponse('SOLUTION_FETCH_FAILED', 'Could not load puzzle state', 500)
+      }
+
+      if (needsSolution && fullPuzzle?.solution_ref) {
+        const { data: film, error: filmError } = await service
+          .from('films')
+          .select('title, year, director, poster_url, genres, runtime, vote_average, metadata_json')
+          .eq('id', fullPuzzle.solution_ref)
+          .single()
+
+        if (filmError) {
+          logError('get-daily-challenge.film_fetch_failed', filmError, { puzzleId: puzzle.id })
+          await sentryCapture({
+            message: `get-daily-challenge film fetch error: ${filmError.message}`,
+            tags: { fn: 'get-daily-challenge', game_id: gameId },
+          })
+          return errorResponse('SOLUTION_FETCH_FAILED', 'Could not load solution', 500)
+        }
+
+        revealedSolution = {
+          film_id: fullPuzzle.solution_ref,
+          title: film.title,
+          year: film.year,
+          director: film.director ?? null,
+          poster_url: film.poster_url ?? null,
+        }
+        whyThisMovie = buildWhyThisMovie(film)
+      }
+
+      if (needsHints) {
+        const hints =
+          (fullPuzzle?.puzzle_data?.hints as
+            | Array<{ order: number; type?: string; content?: string }>
+            | undefined) ?? []
+        revealedHintContents = hints
+          .filter(h => revealedOrders.includes(h.order))
+          .map(h => ({ order: h.order, type: h.type ?? 'unknown', content: h.content ?? '' }))
+      }
+    }
+
     // ─── 4b. Community stats for completed detective games ───────────────
     let communityStats = null
     if (gameId === 'detective' && progress?.completed) {
@@ -234,6 +308,11 @@ Deno.serve(async (req: Request) => {
       },
       progress,
       puzzle_no: puzzleNo,
+      // Yalnızca oyun tamamlanmışsa
+      ...(revealedSolution ? { revealed_solution: revealedSolution } : {}),
+      ...(whyThisMovie ? { why_this_movie: whyThisMovie } : {}),
+      // FadeIn — açılmış ipuçlarının içeriği (resume)
+      ...(revealedHintContents ? { revealed_hint_contents: revealedHintContents } : {}),
       // Detective-only
       ...(communityStats ? { community_stats: communityStats } : {}),
       // Imposter-only

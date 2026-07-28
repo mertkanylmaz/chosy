@@ -48,6 +48,7 @@ import type {
   ImposterConfidenceConfig,
   ImposterGuessResult,
   ImposterRound,
+  WhyThisMovieText,
 } from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState } from '@/services/gameTypes';
@@ -119,6 +120,10 @@ export default function ImposterScreen() {
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
   const [filmInfo, setFilmInfo] = useState<{
     title: string;
     year: number;
@@ -174,6 +179,7 @@ export default function ImposterScreen() {
       const progress = data.progress;
 
       setPuzzleId(puzzle.id);
+      setPuzzleNo(data.puzzle_no);
 
       // puzzle_data.rounds: [{ round, film_title, poster_url, options }]
       const roundsData = puzzle.puzzle_data.rounds as ImposterRound[] | undefined;
@@ -209,6 +215,8 @@ export default function ImposterScreen() {
             xpFactor: 1,
           })) ?? [],
         );
+
+        setWhyThisMovie(data.why_this_movie ?? null);
 
         setGameState('complete');
         return;
@@ -317,6 +325,7 @@ export default function ImposterScreen() {
           xp: result.xp_awarded,
         });
         setXpAwarded(result.xp_awarded);
+        setWhyThisMovie(result.why_this_movie ?? null);
         setConfidenceFactor(result.confidence_factor ?? null);
         setDnaUpdated(result.dna_updated);
         if (result.dna_updated) {
@@ -438,6 +447,8 @@ export default function ImposterScreen() {
             streak={streak}
             gameTitle={t('games.imposter.title')}
             gameType="imposter"
+            puzzleNo={puzzleNo}
+            whyThisMovie={whyThisMovie ?? undefined}
             xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
             confidenceFactor={confidenceFactor}
             dnaUpdated={dnaUpdated}

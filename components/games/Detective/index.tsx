@@ -40,7 +40,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
-import { posthogAnalytics } from '@/services/posthog';
+import * as Sentry from '@sentry/react-native';
+import { addToWatchlist } from '@/services/watchlist';
+import {
+  trackGameOpened,
+  trackGuessSubmitted,
+  trackGameCompleted,
+  trackFilmPageOpened,
+  trackWatchlistAdded,
+} from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitDetectiveGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -375,6 +383,7 @@ export function DetectiveGame() {
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
+  const [watchlistAdded, setWatchlistAdded] = useState(false);
   const [detectiveScore, setDetectiveScore] = useState(0);
   const [luckySpot, setLuckySpot] = useState(false);
   const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovie | null>(null);
@@ -463,11 +472,7 @@ export function DetectiveGame() {
         setScreenState('stage1');
       }
 
-      posthogAnalytics.track('game_daily_opened', {
-        game_id: 'detective',
-        puzzle_no: data.puzzle_no,
-        source: 'hub',
-      });
+      trackGameOpened('detective', data.puzzle_no, 'hub');
     } catch (err) {
       logger.error('[Detective] Load hatasi:', err);
       setLoadError(true);
@@ -520,12 +525,7 @@ export function DetectiveGame() {
       const newTotal = (totalGuesses + 1);
       setTotalGuesses(newTotal);
 
-      posthogAnalytics.track('game_guess_submitted', {
-        game_id: 'detective',
-        stage: 1,
-        guess_no: newTotal,
-        latency_ms: Date.now() - startMs,
-      });
+      trackGuessSubmitted('detective', newTotal, Date.now() - startMs, { stage: 1 });
 
       if (result.correct) {
         // Lucky Spot — solved in Stage 1!
@@ -542,12 +542,13 @@ export function DetectiveGame() {
         setCommunityStats(result.community_stats ?? null);
         setScreenState('completed');
 
-        posthogAnalytics.track('game_daily_completed', {
-          game_id: 'detective',
+        trackGameCompleted({
+          gameId: 'detective',
           won: true,
-          lucky_spot: true,
-          total_guesses: newTotal,
+          guessesUsed: newTotal,
+          timeToSolveS: Math.round((Date.now() - (timerStartRef.current ?? Date.now())) / 1000),
           xp: result.xp_awarded,
+          extra: { lucky_spot: true },
         });
       } else {
         // Wrong — eliminate + next clue
@@ -611,12 +612,7 @@ export function DetectiveGame() {
       const newTotal = totalGuesses + 1;
       setTotalGuesses(newTotal);
 
-      posthogAnalytics.track('game_guess_submitted', {
-        game_id: 'detective',
-        stage: 2,
-        guess_no: newTotal,
-        latency_ms: Date.now() - startMs,
-      });
+      trackGuessSubmitted('detective', newTotal, Date.now() - startMs, { stage: 2 });
 
       if (result.correct) {
         setCardResult({ [selectedStage2Film]: 'correct' });
@@ -631,12 +627,13 @@ export function DetectiveGame() {
         setCommunityStats(result.community_stats ?? null);
         setScreenState('completed');
 
-        posthogAnalytics.track('game_daily_completed', {
-          game_id: 'detective',
+        trackGameCompleted({
+          gameId: 'detective',
           won: true,
-          total_guesses: newTotal,
+          guessesUsed: newTotal,
+          timeToSolveS: Math.round((Date.now() - (timerStartRef.current ?? Date.now())) / 1000),
           xp: result.xp_awarded,
-          detective_score: result.detective_score,
+          extra: { detective_score: result.detective_score ?? 0 },
         });
       } else {
         // Wrong — show feedback, dim poster
@@ -675,10 +672,11 @@ export function DetectiveGame() {
           setCommunityStats(result.community_stats ?? null);
           setScreenState('completed');
 
-          posthogAnalytics.track('game_daily_completed', {
-            game_id: 'detective',
+          trackGameCompleted({
+            gameId: 'detective',
             won: false,
-            total_guesses: newTotal,
+            guessesUsed: newTotal,
+            timeToSolveS: Math.round((Date.now() - (timerStartRef.current ?? Date.now())) / 1000),
             xp: result.xp_awarded,
           });
         }
@@ -714,6 +712,38 @@ export function DetectiveGame() {
     if (!selectedFeedbackFilm) return null;
     return stage2Guesses.find(g => g.film_id === selectedFeedbackFilm) ?? null;
   }, [selectedFeedbackFilm, stage2Guesses]);
+
+  // ─── Film kesfi ─────────────────────────────────────────────────────────
+
+  /** Cozum filminin detay sayfasina gider */
+  const handleOpenFilm = useCallback(() => {
+    if (!revealedFilm?.film_id) return;
+    trackFilmPageOpened('detective', 0);
+    router.push(`/film/${revealedFilm.film_id}`);
+  }, [revealedFilm, router]);
+
+  /** Cozum filmini izleme listesine ekler */
+  const handleAddToWatchlist = useCallback(async () => {
+    if (!revealedFilm?.film_id || watchlistAdded) return;
+    try {
+      await addToWatchlist({
+        id: revealedFilm.film_id,
+        title: revealedFilm.title,
+        year: revealedFilm.year,
+        posterUrl: revealedFilm.poster_url ?? '',
+        matchScore: 0,
+        moodTags: [],
+        whyThisFilm: '',
+        director: revealedFilm.director ?? undefined,
+      });
+      trackWatchlistAdded('detective', 0);
+      setWatchlistAdded(true);
+    } catch (err) {
+      // Hard Rule 5: sessiz fallback yok
+      logger.error('[Detective] Watchlist ekleme hatasi:', err);
+      Sentry.captureException(err, { tags: { game: 'detective', action: 'watchlist_add' } });
+    }
+  }, [revealedFilm, watchlistAdded]);
 
   // ─── Render: Error ─────────────────────────────────────────────────────────
 
@@ -851,9 +881,9 @@ export function DetectiveGame() {
           {revealedFilm && (
             <FilmDiscoveryBridge
               filmTitle={revealedFilm.title}
-              onWatch={() => {}}
-              onWatchlist={() => {}}
-              onReviews={() => {}}
+              onWatch={handleOpenFilm}
+              onWatchlist={handleAddToWatchlist}
+              onReviews={handleOpenFilm}
             />
           )}
 

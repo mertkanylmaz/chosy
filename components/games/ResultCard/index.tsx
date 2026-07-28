@@ -31,7 +31,12 @@ import { formatFactor } from '@/components/games/ConfidenceSelector';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
-import { trackResultCardViewed, trackFilmPageOpened } from '@/utils/gameAnalytics';
+import {
+  trackResultCardViewed,
+  trackFilmPageOpened,
+  trackShareRendered,
+  trackShareCompleted,
+} from '@/utils/gameAnalytics';
 import type { DimensionProgress, RankProgress } from '@/types/game';
 
 interface ResultCardProps {
@@ -51,7 +56,9 @@ interface ResultCardProps {
   /** Oyun adi (paylasim icin) */
   gameTitle: string;
   /** Oyun tipi (share card emoji grid icin) */
-  gameType?: 'imposter' | 'logline' | 'quoted' | 'fadein';
+  gameType?: 'imposter' | 'logline' | 'quoted' | 'fadein' | 'cinemetrics' | 'spotlight' | 'detective';
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  puzzleNo?: number;
   /** Server-side XP (Edge Function'dan — varsa local hesaplama yerine bunu goster) */
   xpAwarded?: number;
   /** DNA guncellendi mi */
@@ -89,6 +96,7 @@ export function ResultCard({
   streak,
   gameTitle,
   gameType,
+  puzzleNo,
   xpAwarded,
   confidenceFactor,
   dnaUpdated,
@@ -125,10 +133,9 @@ export function ResultCard({
           solved={solved}
           attempts={attempts}
           maxAttempts={maxAttempts}
-          filmTitle={filmTitle}
-          filmYear={filmYear}
           streak={streak}
           gameType={gameType ?? 'imposter'}
+          puzzleNo={puzzleNo}
         />
       </View>
 
@@ -233,9 +240,13 @@ export function ResultCard({
           {isShareAvailable && (
             <TouchableOpacity
               style={[styles.shareButton, isCapturing && styles.shareButtonDisabled]}
-              onPress={() => {
+              onPress={async () => {
                 hapticLight();
-                share();
+                trackShareRendered(gameType ?? 'unknown');
+                const shared = await share();
+                if (shared) {
+                  trackShareCompleted(gameType ?? 'unknown', 'image');
+                }
               }}
               disabled={isCapturing}
               activeOpacity={0.7}

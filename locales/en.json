@@ -1094,7 +1094,9 @@
       "title": "Why This Movie?",
       "fun_fact_title": "Fun Fact",
       "watch_tonight": "Watch Tonight",
-      "add_watchlist": "Add to List"
+      "add_watchlist": "Add to List",
+      "added_watchlist": "Added",
+      "add_failed": "Try again"
     },
     "collections": {
       "title": "Collections",

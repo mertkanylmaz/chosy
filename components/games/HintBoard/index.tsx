@@ -15,19 +15,21 @@ import { Lightbulb, Lock } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { FadeInHint } from '@/types/game';
+import type { FadeInHintStub } from '@/types/game';
 
 import { styles } from './styles';
 
 interface HintBoardProps {
-  /** Bulmacadaki tum ipuclari (order'a gore sirali) */
-  hints: FadeInHint[];
+  /** Bulmacadaki tum ipucu iskeletleri (order'a gore sirali) — icerik tasimazlar */
+  hints: FadeInHintStub[];
   /** Acilmis ipuclarinin order degerleri */
   revealedOrders: number[];
+  /** Acilmis ipuclarinin icerigi (order -> metin) — sunucudan gelir */
+  contents: Record<number, string>;
   /** Harcanabilir ipucu hakki */
   credits: number;
   /** Bir kart acilmak istendiginde */
-  onReveal: (hint: FadeInHint) => void;
+  onReveal: (hint: FadeInHintStub) => void;
   /** Oyun bitti/istek ucusta — etkilesim kapali */
   disabled?: boolean;
 }
@@ -38,6 +40,7 @@ interface HintBoardProps {
 export function HintBoard({
   hints,
   revealedOrders,
+  contents,
   credits,
   onReveal,
   disabled = false,
@@ -102,7 +105,7 @@ export function HintBoard({
                 <Text style={styles.typeLabel}>{t(`games.fadein.hint_type_${hint.type}`)}</Text>
                 {isRevealed ? (
                   <Animated.Text entering={FadeIn.duration(260)} style={styles.content}>
-                    {hint.content}
+                    {contents[hint.order] ?? ''}
                   </Animated.Text>
                 ) : (
                   <Text style={styles.lockedLabel}>{t('games.fadein.hint_locked')}</Text>

@@ -20,7 +20,7 @@ import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils
 import { logger } from '@/utils/logger';
 import { getGameStreak } from '@/services/gameService';
 import { getDailyChallenge, submitGameGuess } from '@/services/gameApi';
-import type { DailyChallenge, GuessResult, LoglineSemanticHints } from '@/types/game';
+import type { DailyChallenge, GuessResult, LoglineSemanticHints, WhyThisMovieText } from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
@@ -60,6 +60,10 @@ export default function LoglineScreen() {
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
+  /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
   const [filmInfo, setFilmInfo] = useState<{
     title: string;
     year: number;
@@ -92,6 +96,7 @@ export default function LoglineScreen() {
       const progress = data.progress;
 
       setPuzzleId(puzzle.id);
+      setPuzzleNo(data.puzzle_no);
       setMaxAttempts(puzzle.max_attempts);
 
       // puzzle_data: { clues: [{ order, content }], poster_url?, tmdb_id?, film_title? }
@@ -106,15 +111,16 @@ export default function LoglineScreen() {
         setSolved(progress.won);
         setAttempts(progress.guesses?.length ?? 0);
 
-        const filmTitle = pd.film_title as string | undefined;
-        const tmdbId = pd.tmdb_id as number | undefined;
-        const posterUrl = pd.poster_url as string | undefined;
+        // Çözüm sunucudan gelir — puzzle_data film adı taşımaz (migration 064)
+        const solution = data.revealed_solution;
         setFilmInfo({
-          title: filmTitle ?? t('games.result.unknown_film'),
-          year: 0,
-          posterPath: posterUrl ?? null,
-          filmId: tmdbId ?? 0,
+          title: solution?.title ?? t('games.result.unknown_film'),
+          year: solution?.year ?? 0,
+          posterPath: solution?.poster_url ?? null,
+          filmId: 0,
         });
+
+        setWhyThisMovie(data.why_this_movie ?? null);
 
         setGameState('complete');
         return;
@@ -159,6 +165,7 @@ export default function LoglineScreen() {
           hapticSuccess();
           setSolved(true);
           setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
           setDnaUpdated(result.dna_updated);
           if (result.dna_updated) {
             setDnaSignals([
@@ -209,6 +216,7 @@ export default function LoglineScreen() {
             hapticHeavy();
             setSolved(false);
             setXpAwarded(result.xp_awarded);
+          setWhyThisMovie(result.why_this_movie ?? null);
             setDnaUpdated(result.dna_updated);
 
             setGameState('reveal');
@@ -294,6 +302,8 @@ export default function LoglineScreen() {
             streak={streak}
             gameTitle={t('games.logline.title')}
             gameType="logline"
+            puzzleNo={puzzleNo}
+            whyThisMovie={whyThisMovie ?? undefined}
             xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
             dnaUpdated={dnaUpdated}
             dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}

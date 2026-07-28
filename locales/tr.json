@@ -1094,7 +1094,9 @@
       "title": "Neden Bu Film?",
       "fun_fact_title": "Ilginc Bilgi",
       "watch_tonight": "Bu Aksam Izle",
-      "add_watchlist": "Listeye Ekle"
+      "add_watchlist": "Listeye Ekle",
+      "added_watchlist": "Eklendi",
+      "add_failed": "Tekrar dene"
     },
     "collections": {
       "title": "Koleksiyonlar",

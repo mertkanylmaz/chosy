@@ -120,6 +120,15 @@ export interface DailyChallenge {
   confidence_config?: ImposterConfidenceConfig;
   /** Detective — tamamlanmış oyunlarda topluluk dağılımı */
   community_stats?: CommunityStats;
+  /**
+   * Çözüm — YALNIZCA kullanıcı o bulmacayı tamamlamışsa gelir.
+   * puzzle_data artık film adı/posteri taşımıyor (migration 064).
+   */
+  revealed_solution?: RevealedFilm;
+  /** FadeIn — daha önce açılmış ipuçlarının içerikleri (resume) */
+  revealed_hint_contents?: FadeInHint[];
+  /** Film keşfi köprüsü — tamamlanmış oyunda resume'da da gösterilir */
+  why_this_movie?: WhyThisMovieText;
 }
 
 // ─── Günlük Tema (Cross-Game Connection) ─────────────────────────────────────
@@ -177,6 +186,8 @@ export interface LoglineSemanticHints {
 
 /** Çözüm açıklandığında dönen film bilgisi */
 export interface RevealedFilm {
+  /** Çözüm filminin UUID'si — oyun bittiğinde gelir, keşif akışı için */
+  film_id?: string;
   title: string;
   year: number;
   director: string;
@@ -201,6 +212,12 @@ export interface RankProgress {
   total_dailies: number;
 }
 
+/** Oyun sonrasi film kesfi koprusu metni (submit-guess'ten gelir) */
+export interface WhyThisMovieText {
+  why_text?: string;
+  fun_fact?: string;
+}
+
 /** submit-guess Edge Function response'u */
 export interface GuessResult {
   correct: boolean;
@@ -216,6 +233,8 @@ export interface GuessResult {
   xp_awarded: number;
   dna_updated: boolean;
   revealed_solution: RevealedFilm | null;
+  /** Film kesfi koprusu — yalnizca tamamlanmada gelir */
+  why_this_movie?: WhyThisMovieText | null;
   /** DNA boyut before/after degerleri (opsiyonel — server destegiyle gelir) */
   dimension_progress?: DimensionProgress[];
   /** Rank ilerleme bilgisi (opsiyonel — server destegiyle gelir) */
@@ -236,6 +255,8 @@ export interface ImposterGuessResult {
   xp_awarded: number;
   dna_updated: boolean;
   revealed_solution: RevealedFilm | null;
+  /** Film kesfi koprusu — yalnizca tamamlanmada gelir */
+  why_this_movie?: WhyThisMovieText | null;
   /** Bu round için gönderilen güven seviyesi (50 | 75 | 100) */
   confidence: number;
   /** Bu round'un XP çarpanı — güven × sonuç (reveal kartında gösterilir) */
@@ -257,10 +278,23 @@ export interface FadeInHint {
   content: string;
 }
 
-/** submit-guess ipucu açma response'u — ipucu İÇERİĞİ dönmez */
+/**
+ * puzzle_data'dan gelen ipucu iskeleti — İÇERİK YOK.
+ * İçerik `revealHint()` (yeni açılan) veya `revealed_hint_contents` (resume)
+ * üzerinden gelir.
+ */
+export type FadeInHintStub = Pick<FadeInHint, 'order' | 'type'>;
+
+/**
+ * submit-guess ipucu açma response'u.
+ *
+ * İçerik yalnızca BURADAN gelir: migration 064'ten sonra puzzle_data yalnızca
+ * `order` + `type` taşır, ipucu metni sunucuda yaşar (Hard Rule 1).
+ */
 export interface HintRevealResult {
   revealed_hints: number[];
   hints_used: number;
+  hint: FadeInHint;
 }
 
 /** Imposter V2 round yapısı (puzzle_data'dan) */

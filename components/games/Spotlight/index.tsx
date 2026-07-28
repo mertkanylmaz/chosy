@@ -38,7 +38,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
-import { posthogAnalytics } from '@/services/posthog';
+import {
+  trackGameOpened,
+  trackGuessSubmitted,
+  trackGameCompleted,
+} from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
 import type {
@@ -310,11 +314,7 @@ export function SpotlightGame() {
 
       setScreenState('playing');
 
-      posthogAnalytics.track('game_daily_opened', {
-        game_id: 'spotlight',
-        puzzle_no: data.puzzle_no,
-        source: 'hub',
-      });
+      trackGameOpened('spotlight', data.puzzle_no, 'hub');
 
       openTimeRef.current = Date.now();
     } catch (err) {
@@ -355,11 +355,7 @@ export function SpotlightGame() {
         currentTurn,
       );
 
-      posthogAnalytics.track('game_guess_submitted', {
-        game_id: 'spotlight',
-        turn: currentTurn,
-        latency_ms: Date.now() - startMs,
-      });
+      trackGuessSubmitted('spotlight', currentTurn, Date.now() - startMs);
 
       if (result.correct) {
         // Doğru — kartı yeşile boya
@@ -374,10 +370,11 @@ export function SpotlightGame() {
         setRevealedFilm(result.revealed_solution ?? null);
         setScreenState('completed');
 
-        posthogAnalytics.track('game_daily_completed', {
-          game_id: 'spotlight',
+        trackGameCompleted({
+          gameId: 'spotlight',
           won: true,
-          turns_used: currentTurn,
+          guessesUsed: currentTurn,
+          timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
           xp: result.xp_awarded,
         });
       } else {
@@ -408,10 +405,11 @@ export function SpotlightGame() {
           setRevealedFilm(result.revealed_solution ?? null);
           setScreenState('completed');
 
-          posthogAnalytics.track('game_daily_completed', {
-            game_id: 'spotlight',
+          trackGameCompleted({
+            gameId: 'spotlight',
             won: false,
-            turns_used: currentTurn,
+            guessesUsed: currentTurn,
+            timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
             xp: result.xp_awarded,
           });
         } else {

@@ -25,6 +25,7 @@ import {
   logError,
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { buildWhyThisMovie } from '../_shared/whyThisMovie.ts'
 import {
   calculateCineMetricsFeedback,
   calculateLoglineFeedback,
@@ -108,6 +109,8 @@ interface GameXpConfig {
 }
 
 interface RevealedSolution {
+  /** Cozum filminin UUID'si — oyun BITTIGINDE doner, kesif akisi icin gerekli */
+  film_id: string
   title: string
   year: number | null
   director: string | null
@@ -329,14 +332,17 @@ Deno.serve(async (req: Request) => {
 
     // ─── FadeIn: ipucu açma ────────────────────────────────────────────────
     // Tahmin hattına girmez — attempts artmaz, XP/DNA'ya dokunulmaz.
-    // İpucu İÇERİĞİ dönmez; içerik zaten puzzle_data ile istemcide.
+    // İpucu İÇERİĞİ yalnızca burada döner: migration 064'ten sonra view
+    // yalnızca order+type gönderiyor, içerik sunucuda yaşıyor (Hard Rule 1).
     if (hintOrder != null) {
       if (puzzle.game_type !== 'fadein') {
         return errorResponse('INVALID_HINT', 'hint_order is only supported for fadein', 400)
       }
 
-      const puzzleHints = (puzzle.puzzle_data?.hints as Array<{ order: number }> | undefined) ?? []
-      if (!puzzleHints.some(h => h.order === hintOrder)) {
+      const puzzleHints =
+        (puzzle.puzzle_data?.hints as Array<{ order: number; type?: string; content?: string }> | undefined) ?? []
+      const hint = puzzleHints.find(h => h.order === hintOrder)
+      if (!hint) {
         return errorResponse('INVALID_HINT', `Hint ${hintOrder} not found in this puzzle`, 400)
       }
 
@@ -383,7 +389,11 @@ Deno.serve(async (req: Request) => {
         hints_used: updatedHints.length,
       })
 
-      return jsonResponse({ revealed_hints: updatedHints, hints_used: updatedHints.length })
+      return jsonResponse({
+        revealed_hints: updatedHints,
+        hints_used: updatedHints.length,
+        hint: { order: hintOrder, type: hint.type ?? 'unknown', content: hint.content ?? '' },
+      })
     }
 
     // Check max attempts
@@ -506,7 +516,8 @@ Deno.serve(async (req: Request) => {
           next_turn: completed ? null : turn + 1,
           next_clue: nextClue, next_options: nextTurnData?.options ?? null,
           completed, won, xp_awarded: xpAwarded, dna_updated: false,
-          revealed_solution: completed ? { title: solutionFilm.title, year: solutionFilm.year, director: solutionFilm.director, poster_url: solutionFilm.poster_url } : null,
+          revealed_solution: completed ? { film_id: solutionFilm.id, title: solutionFilm.title, year: solutionFilm.year, director: solutionFilm.director, poster_url: solutionFilm.poster_url } : null,
+          why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
         })
       }
 
@@ -629,6 +640,7 @@ Deno.serve(async (req: Request) => {
       let revealedSolution: RevealedSolution | null = null
       if (completed) {
         revealedSolution = {
+          film_id: solutionFilm.id,
           title: solutionFilm.title,
           year: solutionFilm.year,
           director: solutionFilm.director,
@@ -653,6 +665,7 @@ Deno.serve(async (req: Request) => {
         eliminated_ids: eliminatedIds,
         next_clue: nextClue,
         revealed_solution: revealedSolution,
+        why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
       }
 
       logInfo('submit-guess.processed', {
@@ -872,11 +885,13 @@ Deno.serve(async (req: Request) => {
         round_xp_factor: roundXpFactor,
         confidence_factor: confidenceFactor,
         revealed_solution: completed ? {
+          film_id: solutionFilm.id,
           title: solutionFilm.title,
           year: solutionFilm.year,
           director: solutionFilm.director,
           poster_url: solutionFilm.poster_url,
         } : null,
+        why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
       }
 
       logInfo('submit-guess.processed', {
@@ -1023,6 +1038,7 @@ Deno.serve(async (req: Request) => {
             lucky_spot: true,
             eliminated_ids: eliminatedIds,
             revealed_solution: {
+              film_id: solutionFilm.id,
               title: solutionFilm.title,
               year: solutionFilm.year,
               director: solutionFilm.director,
@@ -1248,6 +1264,7 @@ Deno.serve(async (req: Request) => {
             dna_updated: dnaUpdated,
             eliminated_ids: newEliminatedIds,
             revealed_solution: {
+              film_id: solutionFilm.id,
               title: solutionFilm.title,
               year: solutionFilm.year,
               director: solutionFilm.director,
@@ -1535,6 +1552,7 @@ Deno.serve(async (req: Request) => {
     let revealedSolution: RevealedSolution | null = null
     if (completed) {
       revealedSolution = {
+        film_id: solutionFilm.id,
         title: solutionFilm.title,
         year: solutionFilm.year,
         director: solutionFilm.director,
@@ -1554,6 +1572,8 @@ Deno.serve(async (req: Request) => {
       xp_awarded: xpAwarded,
       dna_updated: dnaUpdated,
       revealed_solution: revealedSolution,
+      // Film kesfi koprusu — tamamlanmada tum oyunlarda doner
+      why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
     }
 
     logInfo('submit-guess.processed', {

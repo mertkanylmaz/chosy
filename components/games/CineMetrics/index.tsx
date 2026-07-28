@@ -27,7 +27,11 @@ import * as Haptics from 'expo-haptics';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
-import { posthogAnalytics } from '@/services/posthog';
+import {
+  trackGameOpened,
+  trackGuessSubmitted,
+  trackGameCompleted,
+} from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -210,11 +214,7 @@ export function CineMetricsGame() {
       setScreenState('playing');
 
       // Telemetri
-      posthogAnalytics.track('game_daily_opened', {
-        game_id: 'cinemetrics',
-        puzzle_no: data.puzzle_no,
-        source: 'hub',
-      });
+      trackGameOpened('cinemetrics', data.puzzle_no, 'hub');
 
       openTimeRef.current = Date.now();
     } catch (err) {
@@ -275,11 +275,7 @@ export function CineMetricsGame() {
         setSelectedFilm(null);
 
         // Telemetri
-        posthogAnalytics.track('game_guess_submitted', {
-          game_id: 'cinemetrics',
-          guess_no: newGuesses.length,
-          latency_ms: Date.now() - startMs,
-        });
+        trackGuessSubmitted('cinemetrics', newGuesses.length, Date.now() - startMs);
 
         // Animasyon bitimini bekle (6 hücre × 80ms + 160ms buffer)
         const animDuration = 6 * 80 + 160;
@@ -296,13 +292,13 @@ export function CineMetricsGame() {
 
           // Telemetri
           const timeToSolve = Math.round((Date.now() - openTimeRef.current) / 1000);
-          posthogAnalytics.track('game_daily_completed', {
-            game_id: 'cinemetrics',
+          trackGameCompleted({
+            gameId: 'cinemetrics',
             won: result.won,
-            guesses_used: result.guesses_used,
+            guessesUsed: result.guesses_used,
+            timeToSolveS: timeToSolve,
             xp: result.xp_awarded,
-            hard_mode: false,
-            time_to_solve_s: timeToSolve,
+            extra: { hard_mode: false },
           });
         }
       }
