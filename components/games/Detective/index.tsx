@@ -44,6 +44,7 @@ import {
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitDetectiveGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
@@ -240,6 +241,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
         onPress={handlePress}
         activeOpacity={0.85}
         disabled={disabled || eliminated}
+      accessibilityRole="button"
       >
         {option.poster_url ? (
           <Image
@@ -331,9 +333,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       {showResult && hasDirection && feedback.result !== 'green' && (
         <View style={styles.directionArrow}>
           {feedback.direction === 'up' ? (
-            <ArrowUp size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowUp size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           ) : (
-            <ArrowDown size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowDown size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           )}
         </View>
       )}
@@ -700,9 +702,9 @@ export function DetectiveGame() {
 
   const difficultyInfo = useMemo(() => {
     const d = challenge?.puzzle.difficulty ?? 3;
-    if (d <= 2) return { color: '#22C55E', label: t('games.detective.difficulty.easy') };
-    if (d <= 3) return { color: '#D4A843', label: t('games.detective.difficulty.medium') };
-    return { color: '#EF4444', label: t('games.detective.difficulty.hard') };
+    if (d <= 2) return { color: Colors.greenBright, label: t('games.detective.difficulty.easy') };
+    if (d <= 3) return { color: Colors.gold, label: t('games.detective.difficulty.medium') };
+    return { color: Colors.error, label: t('games.detective.difficulty.hard') };
   }, [challenge?.puzzle.difficulty, t]);
 
   const remainingCount = allOptions.length - eliminatedIds.length;
@@ -767,13 +769,7 @@ export function DetectiveGame() {
   if (loadError) {
     return (
       <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={12}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -783,18 +779,7 @@ export function DetectiveGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={12}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Animated.View entering={FadeInDown.duration(300)} style={styles.skeletonPanel} />
-          <View style={styles.cardGridSmall}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <Animated.View
-                key={i}
-                entering={FadeInDown.delay(i * 50).duration(300)}
-                style={styles.skeletonCardSmall}
-              />
-            ))}
-          </View>
-        </ScrollView>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -1070,6 +1055,7 @@ export function DetectiveGame() {
             onPress={handleStage2Submit}
             disabled={!hasSelection || isSubmitting || hasCardResultPending}
             activeOpacity={0.7}
+          accessibilityRole="button"
           >
             <Text
               style={[
@@ -1182,6 +1168,7 @@ export function DetectiveGame() {
           onPress={handleStage1Submit}
           disabled={!hasSelection || isSubmitting || hasCardResultPending}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text
             style={[

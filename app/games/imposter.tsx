@@ -53,6 +53,7 @@ import type {
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { ConfidenceSelector, formatFactor } from '@/components/games/ConfidenceSelector';
 import { ResultCard } from '@/components/games/ResultCard';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -386,11 +387,7 @@ export default function ImposterScreen() {
   if (loadError) {
     return (
       <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
-        <View style={styles.center}>
-          <Text style={styles.errorEmoji}>🎬</Text>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -399,9 +396,7 @@ export default function ImposterScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -659,6 +654,7 @@ export default function ImposterScreen() {
               onPress={handleSubmitRound}
               disabled={selectedIds.size !== requiredSelections || isSubmitting}
               activeOpacity={0.7}
+            accessibilityRole="button"
             >
               <Text style={styles.submitText}>
                 {t('games.imposter.submit_round')}

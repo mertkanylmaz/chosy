@@ -57,11 +57,13 @@ export function GameShell({
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={title}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           onPress={() => {
             hapticLight();
             router.back();
           }}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <CaretLeft size={24} color={Colors.textWhite} weight="duotone" />
         </TouchableOpacity>

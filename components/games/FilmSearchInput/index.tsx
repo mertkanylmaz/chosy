@@ -90,6 +90,8 @@ export function FilmSearchInput({
                 <TouchableOpacity
                   key={String(item.id)}
                   style={styles.resultRow}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
                   onPress={() => handleSelect(item)}
                 >
                   {poster ? (
@@ -132,12 +134,13 @@ export function FilmSearchInput({
         />
         {query.length > 0 && (
           <TouchableOpacity
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             onPress={() => {
               setQuery('');
               setResults([]);
               setShowDropdown(false);
             }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <XCircle size={20} color={Colors.textTertiary} weight="duotone" />
           </TouchableOpacity>
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: Colors.shadowBlack,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

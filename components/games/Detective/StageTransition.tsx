@@ -24,7 +24,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { styles } from './styles';
 
 // ─── Teal accent ─────────────────────────────────────────────────────────────
-const TEAL = '#0D9488';
+const TEAL = Colors.tealDeep;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -75,6 +75,7 @@ export function StageTransition({ remainingCount, onContinue }: StageTransitionP
           style={styles.transitionButton}
           onPress={onContinue}
           activeOpacity={0.8}
+        accessibilityRole="button"
         >
           <Text style={styles.transitionButtonText}>
             {t('games.detective.stage_transition_cta')}

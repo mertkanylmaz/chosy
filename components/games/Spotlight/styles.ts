@@ -16,7 +16,7 @@ const CARD_H = Math.round(CARD_W * 1.35);
 export { CARD_W, CARD_H, SCREEN_W };
 
 /** Spotlight oyun rengi — violet-500 */
-const VIOLET = '#8B5CF6';
+const VIOLET = Colors.violet;
 const VIOLET_DIM = 'rgba(139,92,246,0.15)';
 
 export const styles = StyleSheet.create({
@@ -213,7 +213,7 @@ export const styles = StyleSheet.create({
   guessButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
     letterSpacing: 0.5,
   },
   guessButtonTextDisabled: {
@@ -317,7 +317,7 @@ export const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   hubButton: {
     height: 50,

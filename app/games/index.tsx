@@ -196,6 +196,7 @@ export default function GamesHubScreen() {
           style={styles.backButton}
           onPress={handleResetCaches}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityRole="button"
         >
           <ArrowClockwise size={22} color={Colors.textTertiary} weight="duotone" />
         </TouchableOpacity>

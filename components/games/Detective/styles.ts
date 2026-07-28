@@ -34,7 +34,7 @@ const CARD_W = Math.floor((SCREEN_W - GRID_PADDING * 2 - GRID_GAP) / 2);
 const CARD_H = Math.round(CARD_W * 1.35);
 
 /** Detective accent — teal-600 */
-const TEAL = '#0D9488';
+const TEAL = Colors.tealDeep;
 const TEAL_DIM = 'rgba(13,148,136,0.15)';
 const TEAL_BORDER = 'rgba(13,148,136,0.35)';
 
@@ -90,7 +90,7 @@ export const styles = StyleSheet.create({
   retryButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
 
   // ─── Case Header ─────────────────────────────────────────────────────────────
@@ -427,7 +427,7 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   flipCellGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.greenBright,
   },
   flipCellYellow: {
     backgroundColor: Colors.gold,
@@ -445,7 +445,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   flipCellTextGreen: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   flipCellTextYellow: {
     color: Colors.textOnAccent,
@@ -454,7 +454,7 @@ export const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   flipCellTextTeal: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   flipCellLabel: {
     fontSize: 9,
@@ -484,7 +484,7 @@ export const styles = StyleSheet.create({
   guessButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
     letterSpacing: 0.5,
   },
   guessButtonTextDisabled: {
@@ -736,7 +736,7 @@ export const styles = StyleSheet.create({
   histogramYouText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   histogramXAxis: {
     flexDirection: 'row',
@@ -871,7 +871,7 @@ export const styles = StyleSheet.create({
   shareButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   hubButton: {
     height: 50,
@@ -970,7 +970,7 @@ export const styles = StyleSheet.create({
   transitionButtonText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: Colors.white,
     letterSpacing: 0.5,
   },
 
@@ -1109,19 +1109,19 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   cellGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.greenBright,
   },
   cellYellow: {
-    backgroundColor: '#D4A843',
+    backgroundColor: Colors.gold,
   },
   cellGray: {
     backgroundColor: Colors.bgSubtle,
   },
   cellTextGreen: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   cellTextYellow: {
-    color: '#0A0A0F',
+    color: Colors.bgPrimary,
   },
   cellTextGray: {
     color: Colors.textTertiary,
@@ -1176,10 +1176,10 @@ export const styles = StyleSheet.create({
     borderRadius: 4,
   },
   dotGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.greenBright,
   },
   dotYellow: {
-    backgroundColor: '#D4A843',
+    backgroundColor: Colors.gold,
   },
   dotGray: {
     backgroundColor: Colors.bgSubtle,
@@ -1258,7 +1258,7 @@ export const styles = StyleSheet.create({
   histogramYouBadgeText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   histogramPercentile: {
     fontSize: 13,

@@ -169,6 +169,7 @@ export function WhyThisMovieFunnel({
           style={styles.watchButton}
           onPress={handleWatchTonight}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text style={styles.watchButtonText}>
             {t('games.why_this_movie.watch_tonight')}
@@ -179,6 +180,7 @@ export function WhyThisMovieFunnel({
           onPress={handleAddToWatchlist}
           disabled={isAdding || added}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <BookmarkSimple
             size={16}

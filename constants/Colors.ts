@@ -89,6 +89,25 @@ export const Colors = {
   /** IMDb badge yellow */
   imdbYellow: '#F5C518',
 
+  // ─── Oyun vurgu renkleri ────────────────────────────────────────────────────
+  // Oyun ekranlarında hardcoded hex bırakılmaz. Aşağıdaki değerler mevcut
+  // görünümü birebir korur — iki ayrı teal tonu bilinçli olarak ayrı tutuldu
+  // (Detective koyu, keşif kartı parlak); birleştirme kararı görsel QA sonrası.
+  /** Saf beyaz — kontrast gerektiren küçük etiketler (textWhite kırık beyazdır) */
+  white: '#FFFFFF',
+  /** Detective vurgusu — koyu teal */
+  tealDeep: '#0D9488',
+  /** Keşif kartı vurgusu — parlak teal */
+  teal: '#2DD4BF',
+  /** Spotlight vurgusu */
+  violet: '#8B5CF6',
+  /** Doğru cevap rozeti — success'ten daha doygun yeşil */
+  greenBright: '#22C55E',
+  /** DNA artış göstergesi — yumuşak yeşil */
+  greenSoft: '#4ADE80',
+  /** Gölge rengi — iOS shadowColor için */
+  shadowBlack: '#000000',
+
   // ─── Tab Bar ────────────────────────────────────────────────────────────────
   /** Tab bar background — warm deep with opacity */
   tabBarBg: 'rgba(10,10,15,0.95)',

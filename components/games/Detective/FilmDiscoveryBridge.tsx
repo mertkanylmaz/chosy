@@ -48,21 +48,21 @@ export function FilmDiscoveryBridge({
 
       {/* Action buttons */}
       <View style={styles.bridgeActions}>
-        <TouchableOpacity style={styles.bridgeActionButton} onPress={onWatch} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.bridgeActionButton} onPress={onWatch} activeOpacity={0.7} accessibilityRole="button" >
           <Play size={16} color={TEAL} weight="duotone" />
           <Text style={styles.bridgeActionText}>
             {t('games.detective.film_bridge_watch')}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.bridgeSecondaryButton} onPress={onWatchlist} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.bridgeSecondaryButton} onPress={onWatchlist} activeOpacity={0.7} accessibilityRole="button" >
           <BookmarkSimple size={16} color="#9CA3AF" weight="duotone" />
           <Text style={styles.bridgeSecondaryText}>
             {t('games.detective.film_bridge_watchlist')}
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.bridgeSecondaryButton} onPress={onReviews} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.bridgeSecondaryButton} onPress={onReviews} activeOpacity={0.7} accessibilityRole="button" >
           <ChatCircle size={16} color="#9CA3AF" weight="duotone" />
           <Text style={styles.bridgeSecondaryText}>
             {t('games.detective.film_bridge_reviews')}

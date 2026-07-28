@@ -132,10 +132,10 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   cellGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.greenBright,
   },
   cellYellow: {
-    backgroundColor: '#D4A843',
+    backgroundColor: Colors.gold,
   },
   cellGray: {
     backgroundColor: Colors.bgSubtle,
@@ -147,10 +147,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 1,
   },
   cellTextGreen: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   cellTextYellow: {
-    color: '#0A0A0F',
+    color: Colors.bgPrimary,
   },
   cellTextGray: {
     color: Colors.textTertiary,

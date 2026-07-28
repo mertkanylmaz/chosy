@@ -247,6 +247,9 @@ export function ResultCard({
           {isShareAvailable && (
             <TouchableOpacity
               style={[styles.shareButton, isCapturing && styles.shareButtonDisabled]}
+              accessibilityRole="button"
+              accessibilityLabel={t('games.result.share_score')}
+              accessibilityState={{ disabled: isCapturing }}
               onPress={async () => {
                 hapticLight();
                 trackShareRendered(gameType ?? 'unknown');
@@ -267,6 +270,8 @@ export function ResultCard({
           <TouchableOpacity
             style={styles.watchlistButton}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('games.result.add_watchlist')}
             onPress={async () => {
               hapticHeavy();
               trackFilmPageOpened(gameType ?? 'unknown', filmId);

@@ -39,6 +39,7 @@ import type { DailyChallenge, FadeInHintStub, GuessResult, WhyThisMovieText } fr
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { HintBoard } from '@/components/games/HintBoard';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -345,11 +346,7 @@ export default function FadeInScreen() {
   if (loadError) {
     return (
       <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
-        <View style={styles.errorContainer}>
-          <CloudSlash size={48} color={Colors.textTertiary} weight="duotone" />
-          <Text style={styles.errorTitle}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtitle}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -358,9 +355,7 @@ export default function FadeInScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }

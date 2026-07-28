@@ -1078,7 +1078,8 @@
       "streak": "%{count} day streak!",
       "loading": "Loading puzzle...",
       "error_title": "Puzzle Unavailable",
-      "error_subtitle": "We couldn't load today's puzzle. Check your connection and try again later."
+      "error_subtitle": "We couldn't load today's puzzle. Check your connection and try again later.",
+      "retry": "Try Again"
     },
     "home_widget": {
       "title": "Daily Games",

@@ -39,6 +39,7 @@ import {
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
@@ -130,9 +131,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       {showResult && hasDirection && feedback.result !== 'green' && (
         <View style={styles.directionArrow}>
           {feedback.direction === 'up' ? (
-            <ArrowUp size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowUp size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           ) : (
-            <ArrowDown size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowDown size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           )}
         </View>
       )}
@@ -337,9 +338,9 @@ export function CineMetricsGame() {
 
   const difficultyInfo = useMemo(() => {
     const d = challenge?.puzzle.difficulty ?? 3;
-    if (d <= 2) return { color: '#22C55E', label: t('games.cinemetrics.difficulty.easy') };
-    if (d <= 3) return { color: '#D4A843', label: t('games.cinemetrics.difficulty.medium') };
-    return { color: '#EF4444', label: t('games.cinemetrics.difficulty.hard') };
+    if (d <= 2) return { color: Colors.greenBright, label: t('games.cinemetrics.difficulty.easy') };
+    if (d <= 3) return { color: Colors.gold, label: t('games.cinemetrics.difficulty.medium') };
+    return { color: Colors.error, label: t('games.cinemetrics.difficulty.hard') };
   }, [challenge?.puzzle.difficulty, t]);
 
   /** Hücre değerini formatla — gerçek metadata değerleri gösterir */
@@ -399,13 +400,7 @@ export function CineMetricsGame() {
   if (loadError) {
     return (
       <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -415,9 +410,7 @@ export function CineMetricsGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -616,6 +609,7 @@ export function CineMetricsGame() {
           onPress={handleSubmit}
           disabled={!selectedFilm || isSubmitting}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text style={styles.submitButtonText}>
             {t('games.cinemetrics.submit')}

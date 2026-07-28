@@ -24,6 +24,7 @@ import type { DailyChallenge, GuessResult, WhyThisMovieText } from '@/types/game
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -257,11 +258,7 @@ export default function QuotedScreen() {
   if (loadError) {
     return (
       <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.errorEmoji}>🎬</Text>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -270,9 +267,7 @@ export default function QuotedScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }

@@ -1078,7 +1078,8 @@
       "streak": "%{count} gunluk seri!",
       "loading": "Bulmaca yukleniyor...",
       "error_title": "Bulmaca Yuklenemedi",
-      "error_subtitle": "Bugunku bulmaca yuklenemedi. Baglantini kontrol edip daha sonra tekrar dene."
+      "error_subtitle": "Bugunku bulmaca yuklenemedi. Baglantini kontrol edip daha sonra tekrar dene.",
+      "retry": "Tekrar Dene"
     },
     "home_widget": {
       "title": "Günlük Oyunlar",

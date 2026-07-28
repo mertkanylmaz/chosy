@@ -165,6 +165,7 @@ export function PlayNextBridge({ currentGame }: PlayNextBridgeProps) {
       <TouchableOpacity
         style={styles.card}
         activeOpacity={0.7}
+        accessibilityRole="button"
         onPress={() => {
           trackPlayNextTapped(currentGame, suggestion.gameType);
           const route = GAME_ROUTES[suggestion.gameType];

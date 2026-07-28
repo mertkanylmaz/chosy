@@ -41,6 +41,7 @@ import {
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import type {
   DailyChallenge,
   RevealedFilm,
@@ -186,6 +187,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
         onPress={handlePress}
         activeOpacity={0.85}
         disabled={disabled || eliminated}
+      accessibilityRole="button"
       >
         {option.poster_url ? (
           <Image
@@ -460,13 +462,7 @@ export function SpotlightGame() {
   if (loadError) {
     return (
       <GameShell title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={6}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -476,23 +472,7 @@ export function SpotlightGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={6}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Skeleton — clue panel */}
-          <Animated.View
-            entering={FadeInDown.duration(300)}
-            style={styles.skeletonPanel}
-          />
-          {/* Skeleton — 2×3 grid */}
-          <View style={styles.cardGrid}>
-            {[0, 1, 2, 3, 4, 5].map(i => (
-              <Animated.View
-                key={i}
-                entering={FadeInDown.delay(i * 80).duration(300)}
-                style={styles.skeletonCard}
-              />
-            ))}
-          </View>
-        </ScrollView>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -682,6 +662,7 @@ export function SpotlightGame() {
           onPress={handleSubmit}
           disabled={!hasSelection || isSubmitting || hasCardResult}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text
             style={[

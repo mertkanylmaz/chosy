@@ -190,6 +190,7 @@ export function RecommendedRoute({ playedGames }: RecommendedRouteProps) {
           return (
             <TouchableOpacity
               key={rec.gameType}
+              accessibilityRole="button"
               style={[styles.card, isHighest && styles.cardHighlight]}
               activeOpacity={0.7}
               onPress={() => {
