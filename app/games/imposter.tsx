@@ -32,7 +32,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Check, CheckCircle, CloudSlash, X, XCircle } from 'phosphor-react-native';
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -425,11 +425,11 @@ export default function ImposterScreen() {
               const outcome = roundOutcomes.find((o) => o.round === r);
               return (
                 <View key={r} style={styles.roundDot}>
-                  <Ionicons
-                    name={outcome?.correct ? 'checkmark-circle' : 'close-circle'}
-                    size={28}
-                    color={outcome?.correct ? Colors.success : Colors.error}
-                  />
+                  {outcome?.correct ? (
+                    <CheckCircle size={28} weight="duotone" color={Colors.success} />
+                  ) : (
+                    <XCircle size={28} weight="duotone" color={Colors.error} />
+                  )}
                   <Text style={styles.roundDotLabel}>R{r}</Text>
                 </View>
               );
@@ -503,11 +503,11 @@ export default function ImposterScreen() {
                 styles.prevRoundChip,
                 o.correct ? styles.prevRoundCorrect : styles.prevRoundWrong,
               ]}>
-                <Ionicons
-                  name={o.correct ? 'checkmark' : 'close'}
-                  size={14}
-                  color={o.correct ? Colors.success : Colors.error}
-                />
+                {o.correct ? (
+                  <Check size={14} weight="bold" color={Colors.success} />
+                ) : (
+                  <X size={14} weight="bold" color={Colors.error} />
+                )}
                 <Text style={[
                   styles.prevRoundText,
                   { color: o.correct ? Colors.success : Colors.error },
@@ -547,11 +547,11 @@ export default function ImposterScreen() {
             styles.revealCard,
             lastRoundOutcome.correct ? styles.revealCorrect : styles.revealWrong,
           ]}>
-            <Ionicons
-              name={lastRoundOutcome.correct ? 'checkmark-circle' : 'close-circle'}
-              size={24}
-              color={lastRoundOutcome.correct ? Colors.success : Colors.error}
-            />
+            {lastRoundOutcome.correct ? (
+              <CheckCircle size={24} weight="duotone" color={Colors.success} />
+            ) : (
+              <XCircle size={24} weight="duotone" color={Colors.error} />
+            )}
             <View style={styles.revealContent}>
               <Text style={[
                 styles.revealTitle,
@@ -611,7 +611,7 @@ export default function ImposterScreen() {
                     {option.name}
                   </Text>
                   {isSelected && (
-                    <Ionicons name="checkmark-circle" size={18} color={Colors.accentPrimary} />
+                    <CheckCircle size={18} color={Colors.accentPrimary} weight="duotone" />
                   )}
                 </TouchableOpacity>
               );
@@ -637,7 +637,7 @@ export default function ImposterScreen() {
         {/* Gonderim hatasi — sessiz fallback YASAK */}
         {submitError && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.submitErrorBox}>
-            <Ionicons name="cloud-offline-outline" size={18} color={Colors.error} />
+            <CloudSlash size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.submitErrorText}>{t('games.result.error_subtitle')}</Text>
           </Animated.View>
         )}

@@ -12,6 +12,8 @@ import { Image } from 'expo-image';
 import { CircleIcon as Circle, ArrowUp, ArrowDown } from 'phosphor-react-native';
 
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
+import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import Animated, {
   useSharedValue,
@@ -31,6 +33,9 @@ import {
   trackGameOpened,
   trackGuessSubmitted,
   trackGameCompleted,
+  trackResultCardViewed,
+  trackShareRendered,
+  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
@@ -43,6 +48,7 @@ import type {
   GuessEntry,
   GuessResult,
   RevealedFilm,
+  WhyThisMovieText,
 } from '@/types/game';
 
 import { styles, DATA_COL_W, FILM_COL_W } from './styles';
@@ -182,6 +188,14 @@ export function CineMetricsGame() {
 
   // Completed state
   const [won, setWon] = useState(false);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
+  /** Film kesfi koprusu metni — sunucudan gelir */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'game',
+    trackingProps: { game_id: 'cinemetrics' },
+  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -200,6 +214,10 @@ export function CineMetricsGame() {
       const data = await getDailyChallenge('cinemetrics', puzzleDate);
 
       setChallenge(data);
+
+      setPuzzleNo(data.puzzle_no);
+      setWhyThisMovie(data.why_this_movie ?? null);
+      if (data.revealed_solution) setRevealedFilm(data.revealed_solution);
 
       // Mevcut ilerleme varsa yükle
       if (data.progress) {
@@ -288,6 +306,7 @@ export function CineMetricsGame() {
           setXpAwarded(result.xp_awarded);
           setDnaUpdated(result.dna_updated);
           setRevealedFilm(result.revealed_solution);
+          setWhyThisMovie(result.why_this_movie ?? null);
           setScreenState('completed');
 
           // Telemetri
@@ -359,6 +378,22 @@ export function CineMetricsGame() {
     return '✗';
   }, []);
 
+  /** Sonuc ekrani bir kez olculur */
+  const hasTrackedResultRef = useRef(false);
+  useEffect(() => {
+    if (screenState === 'completed' && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      trackResultCardViewed('cinemetrics', won);
+    }
+  }, [screenState, won]);
+
+  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
+  const handleShare = useCallback(async () => {
+    trackShareRendered('cinemetrics');
+    const shared = await share();
+    if (shared) trackShareCompleted('cinemetrics', 'image');
+  }, [share]);
+
   // ─── Render: Error ───────────────────────────────────────────────────────
 
   if (loadError) {
@@ -397,6 +432,20 @@ export function CineMetricsGame() {
         maxAttempts={maxAttempts}
         hideProgress
       >
+        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
+        <View style={styles.offscreenCard} pointerEvents="none">
+          <GameShareCard
+            ref={cardRef}
+            gameTitle={t('games.cinemetrics.title')}
+            solved={won}
+            attempts={guesses.length}
+            maxAttempts={maxAttempts}
+            streak={0}
+            gameType="cinemetrics"
+            puzzleNo={puzzleNo}
+          />
+        </View>
+
         <ScrollView contentContainerStyle={styles.completedContainer} showsVerticalScrollIndicator={false}>
           {/* Poster */}
           {revealedFilm?.poster_url && (
@@ -438,6 +487,17 @@ export function CineMetricsGame() {
             solved={won}
           />
 
+          {/* Film kesfi koprusu — oyun -> film donusumu buradan olculur */}
+          {whyThisMovie && revealedFilm && (
+            <WhyThisMovieFunnel
+              whyText={whyThisMovie.why_text}
+              funFact={whyThisMovie.fun_fact}
+              filmTitle={revealedFilm.title}
+              filmId={0}
+              gameType="cinemetrics"
+            />
+          )}
+
           {/* Countdown */}
           <View>
             <Text style={styles.countdownLabel}>{t('games.cinemetrics.next_puzzle')}</Text>
@@ -448,7 +508,13 @@ export function CineMetricsGame() {
 
           {/* Actions */}
           <View style={styles.completedActions}>
-            <TouchableOpacity style={styles.shareButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              disabled={isCapturing || !isShareAvailable}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
+            >
               <Text style={styles.shareButtonText}>{t('games.cinemetrics.share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>

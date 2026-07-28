@@ -11,19 +11,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import {
-  ArrowDown,
-  ArrowUp,
-  CalendarBlank,
-  FilmSlate,
-  Star,
-  Timer,
-  UsersThree,
-  VideoCamera,
-  XCircle,
-} from 'phosphor-react-native';
+import { ArrowDown, ArrowUp, CalendarBlank, FilmSlate, Star, Timer, UsersThree, VideoCamera, XCircle } from 'phosphor-react-native';
 
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import Animated, {
   FadeInDown,
@@ -35,7 +26,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -48,6 +38,9 @@ import {
   trackGameCompleted,
   trackFilmPageOpened,
   trackWatchlistAdded,
+  trackResultCardViewed,
+  trackShareRendered,
+  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitDetectiveGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
@@ -257,7 +250,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
           />
         ) : (
           <View style={[styles.filmPosterPlaceholder, { height: cardH }]}>
-            <Ionicons name="film-outline" size={small ? 24 : 32} color={Colors.textTertiary} />
+            <FilmSlate size={small ? 24 : 32} color={Colors.textTertiary} weight="duotone" />
           </View>
         )}
         <View style={styles.filmInfoBar}>
@@ -380,6 +373,12 @@ export function DetectiveGame() {
 
   // Completed state
   const [won, setWon] = useState(false);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'game',
+    trackingProps: { game_id: 'detective' },
+  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -408,6 +407,8 @@ export function DetectiveGame() {
       const pd = data.puzzle.puzzle_data as unknown as DetectivePuzzleData;
       setPuzzleData(pd);
       setAllOptions(pd.options);
+
+      setPuzzleNo(data.puzzle_no);
 
       // Mevcut ilerleme varsa yukle
       if (data.progress?.completed) {
@@ -745,6 +746,22 @@ export function DetectiveGame() {
     }
   }, [revealedFilm, watchlistAdded]);
 
+  /** Sonuc ekrani bir kez olculur */
+  const hasTrackedResultRef = useRef(false);
+  useEffect(() => {
+    if (screenState === 'completed' && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      trackResultCardViewed('detective', won);
+    }
+  }, [screenState, won]);
+
+  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
+  const handleShare = useCallback(async () => {
+    trackShareRendered('detective');
+    const shared = await share();
+    if (shared) trackShareCompleted('detective', 'image');
+  }, [share]);
+
   // ─── Render: Error ─────────────────────────────────────────────────────────
 
   if (loadError) {
@@ -810,6 +827,20 @@ export function DetectiveGame() {
         maxAttempts={12}
         hideProgress
       >
+        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
+        <View style={styles.offscreenCard} pointerEvents="none">
+          <GameShareCard
+            ref={cardRef}
+            gameTitle={t('games.detective.title')}
+            solved={won}
+            attempts={totalGuesses}
+            maxAttempts={12}
+            streak={0}
+            gameType="detective"
+            puzzleNo={puzzleNo}
+          />
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.completedContainer}
           showsVerticalScrollIndicator={false}
@@ -898,7 +929,13 @@ export function DetectiveGame() {
 
           {/* Actions */}
           <View style={styles.completedActions}>
-            <TouchableOpacity style={styles.shareButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              disabled={isCapturing || !isShareAvailable}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
+            >
               <Text style={styles.shareButtonText}>{t('games.detective.share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>

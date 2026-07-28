@@ -15,7 +15,14 @@ import React, { useEffect, useRef } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  BookmarkSimple,
+  CalendarBlank,
+  CheckCircle,
+  ShareNetwork,
+  Star,
+  XCircle,
+} from 'phosphor-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
@@ -143,11 +150,11 @@ export function ResultCard({
         {/* ── Status Hero ── */}
         <View style={styles.statusSection}>
           <View style={[styles.statusIconRing, solved ? styles.statusIconRingSuccess : styles.statusIconRingFail]}>
-            <Ionicons
-              name={solved ? 'checkmark-circle' : 'close-circle'}
-              size={44}
-              color={solved ? Colors.success : Colors.error}
-            />
+            {solved ? (
+              <CheckCircle size={44} weight="duotone" color={Colors.success} />
+            ) : (
+              <XCircle size={44} weight="duotone" color={Colors.error} />
+            )}
           </View>
           <Text style={styles.statusTitle}>
             {solved ? t('games.result.solved') : t('games.result.failed')}
@@ -171,7 +178,7 @@ export function ResultCard({
           />
         ) : (
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.xpBadge}>
-            <Ionicons name="star" size={16} color={Colors.gold} />
+            <Star size={16} color={Colors.gold} weight="duotone" />
             <Text style={styles.xpText}>+{xp} XP</Text>
           </Animated.View>
         )}
@@ -202,7 +209,7 @@ export function ResultCard({
             </Text>
             {filmYear > 0 && (
               <View style={styles.yearRow}>
-                <Ionicons name="calendar-outline" size={13} color={Colors.textTertiary} />
+                <CalendarBlank size={13} color={Colors.textTertiary} weight="duotone" />
                 <Text style={styles.filmYearLabel}>
                   {t('games.result.release_year', { year: filmYear })}
                 </Text>
@@ -251,7 +258,7 @@ export function ResultCard({
               disabled={isCapturing}
               activeOpacity={0.7}
             >
-              <Ionicons name="share-outline" size={18} color={Colors.accentPrimary} />
+              <ShareNetwork size={18} color={Colors.accentPrimary} weight="duotone" />
               <Text style={styles.shareText}>
                 {t('games.result.share_score')}
               </Text>
@@ -279,7 +286,7 @@ export function ResultCard({
               }
             }}
           >
-            <Ionicons name="bookmark-outline" size={18} color={Colors.textOnAccent} />
+            <BookmarkSimple size={18} color={Colors.textOnAccent} weight="duotone" />
             <Text style={styles.watchlistText}>
               {t('games.result.add_watchlist')}
             </Text>

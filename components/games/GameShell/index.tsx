@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { CaretLeft } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
@@ -63,7 +63,7 @@ export function GameShell({
           }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
+          <CaretLeft size={24} color={Colors.textWhite} weight="duotone" />
         </TouchableOpacity>
         <Text style={styles.title}>{title}</Text>
         <View style={styles.backButton} />

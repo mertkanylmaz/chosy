@@ -41,6 +41,13 @@ const TEAL_BORDER = 'rgba(13,148,136,0.35)';
 export { CARD_W, CARD_H, CARD_W_SMALL, CARD_H_SMALL, SCREEN_W, TEAL, TEAL_DIM };
 
 export const styles = StyleSheet.create({
+  /** Paylasim karti ekran disinda render edilir (PNG capture) */
+  offscreenCard: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    opacity: 0,
+  },
   // ─── Layout ──────────────────────────────────────────────────────────────────
   /** Full-screen centering — used for loading / error states */
   center: {

@@ -7,7 +7,20 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  ArrowClockwise,
+  CaretLeft,
+  ChartBar,
+  ChatCircleDots,
+  CheckCircle,
+  Flashlight,
+  ImageSquare,
+  Lightbulb,
+  MagnifyingGlass,
+  UsersThree,
+  XCircle,
+} from 'phosphor-react-native';
+import type { IconProps } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
@@ -29,7 +42,7 @@ interface GameCardData {
   route: string;
   titleKey: string;
   descriptionKey: string;
-  icon: string;
+  icon: React.ComponentType<IconProps>;
   played: boolean;
   solved: boolean;
   streak: number;
@@ -41,49 +54,49 @@ const GAME_DEFINITIONS = [
     route: '/games/fadein',
     titleKey: 'games.fadein.title',
     descriptionKey: 'games.fadein.description',
-    icon: 'image',
+    icon: ImageSquare,
   },
   {
     gameType: 'imposter',
     route: '/games/imposter',
     titleKey: 'games.imposter.title',
     descriptionKey: 'games.imposter.description',
-    icon: 'people',
+    icon: UsersThree,
   },
   {
     gameType: 'logline',
     route: '/games/logline',
     titleKey: 'games.logline.title',
     descriptionKey: 'games.logline.description',
-    icon: 'bulb',
+    icon: Lightbulb,
   },
   {
     gameType: 'quoted',
     route: '/games/quoted',
     titleKey: 'games.quoted.title',
     descriptionKey: 'games.quoted.description',
-    icon: 'chatbubble-ellipses',
+    icon: ChatCircleDots,
   },
   {
     gameType: 'cinemetrics',
     route: '/games/cinemetrics',
     titleKey: 'games.cinemetrics.title',
     descriptionKey: 'games.cinemetrics.description',
-    icon: 'stats-chart',
+    icon: ChartBar,
   },
   {
     gameType: 'spotlight',
     route: '/games/spotlight',
     titleKey: 'games.spotlight.title',
     descriptionKey: 'games.spotlight.hub_description',
-    icon: 'flashlight',
+    icon: Flashlight,
   },
   {
     gameType: 'detective',
     route: '/games/detective',
     titleKey: 'games.detective.title',
     descriptionKey: 'games.detective.hub_description',
-    icon: 'search',
+    icon: MagnifyingGlass,
   },
 ] as const;
 
@@ -176,7 +189,7 @@ export default function GamesHubScreen() {
           }}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
+          <CaretLeft size={24} color={Colors.textWhite} weight="duotone" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
         <TouchableOpacity
@@ -184,7 +197,7 @@ export default function GamesHubScreen() {
           onPress={handleResetCaches}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="refresh" size={22} color={Colors.textTertiary} />
+          <ArrowClockwise size={22} color={Colors.textTertiary} weight="duotone" />
         </TouchableOpacity>
       </View>
 
@@ -245,9 +258,9 @@ export default function GamesHubScreen() {
               activeOpacity={0.7}
             >
               <View style={styles.gameIconContainer}>
-                <Ionicons
-                  name={game.icon as never}
+                <game.icon
                   size={28}
+                  weight="duotone"
                   color={game.played ? Colors.textTertiary : Colors.accentPrimary}
                 />
               </View>
@@ -266,11 +279,11 @@ export default function GamesHubScreen() {
               </View>
               <View style={styles.gameStatus}>
                 {game.played ? (
-                  <Ionicons
-                    name={game.solved ? 'checkmark-circle' : 'close-circle'}
-                    size={24}
-                    color={game.solved ? Colors.success : Colors.error}
-                  />
+                  game.solved ? (
+                    <CheckCircle size={24} weight="duotone" color={Colors.success} />
+                  ) : (
+                    <XCircle size={24} weight="duotone" color={Colors.error} />
+                  )
                 ) : (
                   <View style={styles.playBadge}>
                     <Text style={styles.playText}>{t('games.hub.play')}</Text>

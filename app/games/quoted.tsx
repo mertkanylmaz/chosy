@@ -10,7 +10,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ChatCircleDots, FilmSlate, Info, Lightbulb, XCircle } from 'phosphor-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
@@ -289,7 +289,7 @@ export default function QuotedScreen() {
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
           {/* Repliği tekrar göster */}
           <View style={styles.quoteCardSmall}>
-            <Ionicons name="chatbubble-ellipses" size={18} color={Colors.gold} />
+            <ChatCircleDots size={18} color={Colors.gold} weight="duotone" />
             <Text style={styles.quoteTextSmall} numberOfLines={3}>
               {`"${quoteText}"`}
             </Text>
@@ -327,7 +327,7 @@ export default function QuotedScreen() {
         {/* Bağlam ipucu — replikten ÖNCE gösterilir (dedüksiyon katmanı) */}
         {contextHint ? (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.contextCard}>
-            <Ionicons name="information-circle" size={18} color={Colors.gold} />
+            <Info size={18} color={Colors.gold} weight="duotone" />
             <View style={styles.contextContent}>
               {quoteGenre ? (
                 <Text style={styles.contextGenre}>{quoteGenre}</Text>
@@ -337,14 +337,14 @@ export default function QuotedScreen() {
           </Animated.View>
         ) : (
           <View style={styles.quoteBadge}>
-            <Ionicons name="film-outline" size={20} color={Colors.gold} />
+            <FilmSlate size={20} color={Colors.gold} weight="duotone" />
             <Text style={styles.quoteBadgeLabel}>{t('games.quoted.quoteLabel')}</Text>
           </View>
         )}
 
         {/* Replik kartı */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.quoteCard}>
-          <Ionicons name="chatbubble-ellipses" size={28} color={Colors.gold} style={styles.quoteIcon} />
+          <ChatCircleDots size={28} color={Colors.gold} style={styles.quoteIcon} weight="duotone" />
           <Text style={styles.quoteMainText}>{`"${quoteText}"`}</Text>
         </Animated.View>
 
@@ -355,7 +355,7 @@ export default function QuotedScreen() {
             entering={FadeInUp.delay(index * 100).duration(300)}
             style={styles.hintRow}
           >
-            <Ionicons name="bulb" size={16} color={Colors.gold} />
+            <Lightbulb size={16} color={Colors.gold} weight="duotone" />
             <Text style={styles.hintText}>{hint.content}</Text>
           </Animated.View>
         ))}
@@ -363,7 +363,7 @@ export default function QuotedScreen() {
         {/* Yanlış tahmin */}
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
-            <Ionicons name="close-circle" size={16} color={Colors.error} />
+            <XCircle size={16} color={Colors.error} weight="duotone" />
             <Text style={styles.wrongText}>{wrongGuess}</Text>
           </Animated.View>
         )}

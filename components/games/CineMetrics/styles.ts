@@ -16,6 +16,13 @@ const DATA_COL_W = (SCREEN_W - GRID_PADDING * 2 - FILM_COL_W) / 6;
 export { FILM_COL_W, DATA_COL_W, SCREEN_W };
 
 export const styles = StyleSheet.create({
+  /** Paylasim karti ekran disinda render edilir (PNG capture) */
+  offscreenCard: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    opacity: 0,
+  },
   // ─── Layout ────────────────────────────────────────────────────────────────
   center: {
     flex: 1,

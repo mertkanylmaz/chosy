@@ -20,6 +20,13 @@ const VIOLET = '#8B5CF6';
 const VIOLET_DIM = 'rgba(139,92,246,0.15)';
 
 export const styles = StyleSheet.create({
+  /** Paylasim karti ekran disinda render edilir (PNG capture) */
+  offscreenCard: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    opacity: 0,
+  },
   // ─── Layout ──────────────────────────────────────────────────────────────
   center: {
     flex: 1,

@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { CloudSlash, EyeSlash, XCircle } from 'phosphor-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
 
@@ -346,7 +346,7 @@ export default function FadeInScreen() {
     return (
       <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
         <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={48} color={Colors.textTertiary} />
+          <CloudSlash size={48} color={Colors.textTertiary} weight="duotone" />
           <Text style={styles.errorTitle}>{t('games.result.error_title')}</Text>
           <Text style={styles.errorSubtitle}>{t('games.result.error_subtitle')}</Text>
         </View>
@@ -437,7 +437,7 @@ export default function FadeInScreen() {
 
               {gameState === 'playing' && (
                 <View style={styles.blurBadge}>
-                  <Ionicons name="eye-off-outline" size={14} color={Colors.textWhite} />
+                  <EyeSlash size={14} color={Colors.textWhite} weight="duotone" />
                   <Text style={styles.blurBadgeText}>
                     {t('games.fadein.blur_level', { level: attempts + 1, max: MAX_ATTEMPTS })}
                   </Text>
@@ -463,7 +463,7 @@ export default function FadeInScreen() {
         {/* İstek hatası — sessiz fallback YASAK */}
         {actionError && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.actionErrorBox}>
-            <Ionicons name="cloud-offline-outline" size={18} color={Colors.error} />
+            <CloudSlash size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.actionErrorText}>{t('games.result.error_subtitle')}</Text>
           </Animated.View>
         )}
@@ -471,7 +471,7 @@ export default function FadeInScreen() {
         {/* Yanlış tahmin toast */}
         {wrongGuess && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.wrongToast}>
-            <Ionicons name="close-circle" size={18} color={Colors.error} />
+            <XCircle size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.wrongText} numberOfLines={1}>
               {wrongGuess} — {t('games.fadein.wrong')}
             </Text>
