@@ -358,7 +358,7 @@ export const styles = StyleSheet.create({
   },
   stageTransitionTitle: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontWeight: '700',
     color: Colors.textWhite,
     textAlign: 'center',
     letterSpacing: -0.3,
@@ -948,7 +948,7 @@ export const styles = StyleSheet.create({
   },
   transitionTitle: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontWeight: '700',
     color: Colors.textWhite,
     textAlign: 'center',
     letterSpacing: -0.3,

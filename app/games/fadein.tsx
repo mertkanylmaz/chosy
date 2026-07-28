@@ -87,6 +87,8 @@ export default function FadeInScreen() {
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
   /** Tahmin/ipucu istegi hatasi — sessiz fallback YASAK */
   const [actionError, setActionError] = useState(false);
 
@@ -206,7 +208,7 @@ export default function FadeInScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -214,6 +216,7 @@ export default function FadeInScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -303,9 +306,11 @@ export default function FadeInScreen() {
         Sentry.captureException(err, { tags: { game: 'fadein', action: 'submit_guess' } });
         hapticHeavy();
         setActionError(true);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, checkGamePaywall],
+    [gameState, puzzleId, checkGamePaywall, isSubmitting],
   );
 
   // ── Hint handler ──────────────────────────────────────────────────────────
@@ -495,6 +500,7 @@ export default function FadeInScreen() {
           <FilmSearchInput
             onSelect={handleGuess}
             placeholder={t('games.fadein.search_placeholder')}
+            disabled={isSubmitting}
           />
         </Animated.View>
       )}

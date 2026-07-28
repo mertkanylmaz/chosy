@@ -75,6 +75,8 @@ export default function LoglineScreen() {
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [semanticHints, setSemanticHints] = useState<LoglineSemanticHints | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Result state (Edge Function response)
   const [solved, setSolved] = useState(false);
@@ -167,7 +169,7 @@ export default function LoglineScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -175,6 +177,7 @@ export default function LoglineScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -266,9 +269,11 @@ export default function LoglineScreen() {
         }
       } catch (err) {
         logger.error('[logline] Submit hatası:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, revealedCount, clues.length, checkGamePaywall],
+    [gameState, puzzleId, revealedCount, clues.length, checkGamePaywall, isSubmitting],
   );
 
   // Error
@@ -397,7 +402,7 @@ export default function LoglineScreen() {
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
-          disabled={gameState !== 'playing'}
+          disabled={gameState !== 'playing' || isSubmitting}
         />
       </View>
       <ContextualPaywall {...paywallProps} />

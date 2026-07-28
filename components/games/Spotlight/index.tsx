@@ -26,7 +26,7 @@ import Animated, {
   FadeInDown,
   FadeInUp,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { hapticHeavy, hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -142,7 +142,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
   useEffect(() => {
     if (result === 'correct') {
       scale.value = withTiming(1.05, { duration: 200 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      hapticHeavy();
     } else if (result === 'wrong') {
       shakeX.value = withSequence(
         withTiming(-10, { duration: 75 }),
@@ -150,7 +150,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
         withTiming(-10, { duration: 75 }),
         withTiming(0, { duration: 75 }),
       );
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       // Shake sonrası soluklaştır
       opacity.value = withDelay(300, withTiming(0.35, { duration: 400 }));
     }
@@ -169,7 +169,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
       withTiming(0.95, { duration: 75 }),
       withTiming(1, { duration: 75 }),
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onPress();
   };
 

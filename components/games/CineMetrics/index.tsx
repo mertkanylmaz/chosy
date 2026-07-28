@@ -24,7 +24,7 @@ import Animated, {
   runOnJS,
   FadeInUp,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -95,9 +95,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       setShowResult(true);
       // Haptic — son hücrede medium, diğerlerinde light
       if (index === 5) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        hapticMedium();
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
       }
     }, delay + 80);
 

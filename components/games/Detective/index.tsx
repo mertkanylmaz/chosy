@@ -25,7 +25,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { hapticHeavy, hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -195,7 +195,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
   useEffect(() => {
     if (result === 'correct') {
       scale.value = withTiming(1.05, { duration: 200 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      hapticHeavy();
     } else if (result === 'wrong') {
       shakeX.value = withSequence(
         withTiming(-10, { duration: 75 }),
@@ -203,7 +203,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
         withTiming(-10, { duration: 75 }),
         withTiming(0, { duration: 75 }),
       );
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       opacity.value = withDelay(300, withTiming(0.35, { duration: 400 }));
     }
   }, [result, scale, shakeX, opacity]);
@@ -220,7 +220,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
       withTiming(0.95, { duration: 75 }),
       withTiming(1, { duration: 75 }),
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onPress();
   };
 
@@ -298,9 +298,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
     const timer = setTimeout(() => {
       setShowResult(true);
       if (index === 5) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        hapticMedium();
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
       }
     }, delay + 80);
     return () => clearTimeout(timer);
@@ -694,7 +694,7 @@ export function DetectiveGame() {
   // ─── Transition Continue ─────────────────────────────────────────────────
 
   const handleTransitionContinue = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     setScreenState('stage2');
   }, []);
 

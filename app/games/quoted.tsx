@@ -57,6 +57,8 @@ export default function QuotedScreen() {
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Result state (Edge Function response)
   const [solved, setSolved] = useState(false);
@@ -154,7 +156,7 @@ export default function QuotedScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -162,6 +164,7 @@ export default function QuotedScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -249,9 +252,11 @@ export default function QuotedScreen() {
         }
       } catch (err) {
         logger.error('[quoted] Submit hatası:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, revealedHints, hints.length, checkGamePaywall],
+    [gameState, puzzleId, revealedHints, hints.length, checkGamePaywall, isSubmitting],
   );
 
   // ─── Error ───
@@ -368,7 +373,7 @@ export default function QuotedScreen() {
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
-          disabled={gameState !== 'playing'}
+          disabled={gameState !== 'playing' || isSubmitting}
         />
       </View>
       <ContextualPaywall {...paywallProps} />
