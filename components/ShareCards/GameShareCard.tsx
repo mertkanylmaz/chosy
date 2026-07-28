@@ -156,7 +156,7 @@ const cardStyles = StyleSheet.create({
     marginBottom: Theme.spacing.lg,
   },
   puzzleNo: {
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontWeight: '700',
     fontSize: 18,
     color: Colors.textSecondary,
     textAlign: 'center',

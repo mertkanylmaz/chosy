@@ -75,7 +75,7 @@ export function DailyChest(): React.JSX.Element | null {
   if (error) {
     return (
       <Animated.View entering={FadeInUp.duration(300)} style={styles.container}>
-        <TouchableOpacity onPress={loadChest} activeOpacity={0.7}>
+        <TouchableOpacity onPress={loadChest} activeOpacity={0.7} accessibilityRole="button" >
           <Text style={styles.progressText}>{t('games.hub.chest_error')}</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -140,6 +140,7 @@ export function DailyChest(): React.JSX.Element | null {
               onPress={handleOpenChest}
               disabled={isClaiming}
               activeOpacity={0.7}
+            accessibilityRole="button"
             >
               <Gift size={22} weight="fill" color={Colors.bgPrimary} />
               <Text style={styles.chestButtonText}>

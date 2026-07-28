@@ -47,7 +47,7 @@ export const styles = StyleSheet.create({
   dnaDelta: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#4ade80',
+    color: Colors.greenSoft,
   },
 
   // ── Before/After Bars ──
@@ -78,7 +78,7 @@ export const styles = StyleSheet.create({
   dimDelta: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#4ade80',
+    color: Colors.greenSoft,
   },
   barBg: {
     height: 6,

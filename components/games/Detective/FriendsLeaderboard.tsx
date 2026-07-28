@@ -50,7 +50,7 @@ export function FriendsLeaderboard({ friends }: FriendsLeaderboardProps) {
         </View>
       ))}
 
-      <TouchableOpacity style={localStyles.ctaButton} activeOpacity={0.7}>
+      <TouchableOpacity style={localStyles.ctaButton} activeOpacity={0.7} accessibilityRole="button" >
         <Text style={localStyles.ctaText}>{t('games.detective.friends_beat')}</Text>
       </TouchableOpacity>
     </Animated.View>
@@ -108,6 +108,6 @@ const localStyles = StyleSheet.create({
   ctaText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0D9488',
+    color: Colors.tealDeep,
   },
 });

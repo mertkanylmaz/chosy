@@ -10,17 +10,11 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import {
-  CalendarBlank,
-  FilmSlate,
-  Star,
-  Timer,
-  UsersThree,
-  VideoCamera,
-  XCircle,
-} from 'phosphor-react-native';
+import { CalendarBlank, FilmSlate, Star, Timer, UsersThree, VideoCamera, XCircle } from 'phosphor-react-native';
 
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
+import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import Animated, {
   useSharedValue,
@@ -32,8 +26,7 @@ import Animated, {
   FadeInDown,
   FadeInUp,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
+import { hapticHeavy, hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -42,15 +35,20 @@ import {
   trackGameOpened,
   trackGuessSubmitted,
   trackGameCompleted,
+  trackResultCardViewed,
+  trackShareRendered,
+  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import type {
   DailyChallenge,
   RevealedFilm,
   SpotlightClue,
   SpotlightOption,
   SpotlightPuzzleData,
+  WhyThisMovieText,
 } from '@/types/game';
 
 import { styles, CARD_W, CARD_H } from './styles';
@@ -144,7 +142,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
   useEffect(() => {
     if (result === 'correct') {
       scale.value = withTiming(1.05, { duration: 200 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      hapticHeavy();
     } else if (result === 'wrong') {
       shakeX.value = withSequence(
         withTiming(-10, { duration: 75 }),
@@ -152,7 +150,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
         withTiming(-10, { duration: 75 }),
         withTiming(0, { duration: 75 }),
       );
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       // Shake sonrası soluklaştır
       opacity.value = withDelay(300, withTiming(0.35, { duration: 400 }));
     }
@@ -171,7 +169,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
       withTiming(0.95, { duration: 75 }),
       withTiming(1, { duration: 75 }),
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onPress();
   };
 
@@ -189,6 +187,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
         onPress={handlePress}
         activeOpacity={0.85}
         disabled={disabled || eliminated}
+      accessibilityRole="button"
       >
         {option.poster_url ? (
           <Image
@@ -199,7 +198,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled }: F
           />
         ) : (
           <View style={styles.filmPosterPlaceholder}>
-            <Ionicons name="film-outline" size={32} color={Colors.textTertiary} />
+            <FilmSlate size={32} color={Colors.textTertiary} weight="duotone" />
           </View>
         )}
         <View style={styles.filmInfoBar}>
@@ -268,6 +267,14 @@ export function SpotlightGame() {
 
   // Completed state
   const [won, setWon] = useState(false);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
+  /** Film kesfi koprusu metni — sunucudan gelir */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'game',
+    trackingProps: { game_id: 'spotlight' },
+  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -290,6 +297,10 @@ export function SpotlightGame() {
 
       const pd = data.puzzle.puzzle_data as unknown as SpotlightPuzzleData;
       setPuzzleData(pd);
+
+      setPuzzleNo(data.puzzle_no);
+      setWhyThisMovie(data.why_this_movie ?? null);
+      if (data.revealed_solution) setRevealedFilm(data.revealed_solution);
 
       // Mevcut ilerleme varsa yükle
       if (data.progress?.completed) {
@@ -368,6 +379,7 @@ export function SpotlightGame() {
         setXpAwarded(result.xp_awarded);
         setDnaUpdated(result.dna_updated);
         setRevealedFilm(result.revealed_solution ?? null);
+        setWhyThisMovie(result.why_this_movie ?? null);
         setScreenState('completed');
 
         trackGameCompleted({
@@ -403,6 +415,7 @@ export function SpotlightGame() {
           setXpAwarded(result.xp_awarded);
           setDnaUpdated(result.dna_updated);
           setRevealedFilm(result.revealed_solution ?? null);
+        setWhyThisMovie(result.why_this_movie ?? null);
           setScreenState('completed');
 
           trackGameCompleted({
@@ -428,18 +441,28 @@ export function SpotlightGame() {
     }
   }, [selectedFilmId, challenge, isSubmitting, currentTurn, allOptions]);
 
+  /** Sonuc ekrani bir kez olculur */
+  const hasTrackedResultRef = useRef(false);
+  useEffect(() => {
+    if (screenState === 'completed' && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      trackResultCardViewed('spotlight', won);
+    }
+  }, [screenState, won]);
+
+  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
+  const handleShare = useCallback(async () => {
+    trackShareRendered('spotlight');
+    const shared = await share();
+    if (shared) trackShareCompleted('spotlight', 'image');
+  }, [share]);
+
   // ─── Render: Error ────────────────────────────────────────────────────────
 
   if (loadError) {
     return (
       <GameShell title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={6}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -449,23 +472,7 @@ export function SpotlightGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={6}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Skeleton — clue panel */}
-          <Animated.View
-            entering={FadeInDown.duration(300)}
-            style={styles.skeletonPanel}
-          />
-          {/* Skeleton — 2×3 grid */}
-          <View style={styles.cardGrid}>
-            {[0, 1, 2, 3, 4, 5].map(i => (
-              <Animated.View
-                key={i}
-                entering={FadeInDown.delay(i * 80).duration(300)}
-                style={styles.skeletonCard}
-              />
-            ))}
-          </View>
-        </ScrollView>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -480,6 +487,20 @@ export function SpotlightGame() {
         maxAttempts={6}
         hideProgress
       >
+        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
+        <View style={styles.offscreenCard} pointerEvents="none">
+          <GameShareCard
+            ref={cardRef}
+            gameTitle={t('games.spotlight.title')}
+            solved={won}
+            attempts={currentTurn}
+            maxAttempts={6}
+            streak={0}
+            gameType="spotlight"
+            puzzleNo={puzzleNo}
+          />
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.completedContainer}
           showsVerticalScrollIndicator={false}
@@ -515,6 +536,17 @@ export function SpotlightGame() {
             solved={won}
           />
 
+          {/* Film kesfi koprusu — oyun -> film donusumu buradan olculur */}
+          {whyThisMovie && revealedFilm && (
+            <WhyThisMovieFunnel
+              whyText={whyThisMovie.why_text}
+              funFact={whyThisMovie.fun_fact}
+              filmTitle={revealedFilm.title}
+              filmId={0}
+              gameType="spotlight"
+            />
+          )}
+
           <View>
             <Text style={styles.countdownLabel}>{t('games.cinemetrics.next_puzzle')}</Text>
             <Text style={styles.countdownTime}>{countdown}</Text>
@@ -523,7 +555,13 @@ export function SpotlightGame() {
           <PlayNextBridge currentGame="spotlight" />
 
           <View style={styles.completedActions}>
-            <TouchableOpacity style={styles.shareButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              disabled={isCapturing || !isShareAvailable}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
+            >
               <Text style={styles.shareButtonText}>{t('games.cinemetrics.share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>
@@ -624,6 +662,7 @@ export function SpotlightGame() {
           onPress={handleSubmit}
           disabled={!hasSelection || isSubmitting || hasCardResult}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text
             style={[

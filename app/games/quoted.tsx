@@ -10,7 +10,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ChatCircleDots, FilmSlate, Info, Lightbulb, XCircle } from 'phosphor-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
@@ -24,6 +24,7 @@ import type { DailyChallenge, GuessResult, WhyThisMovieText } from '@/types/game
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -56,6 +57,8 @@ export default function QuotedScreen() {
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Result state (Edge Function response)
   const [solved, setSolved] = useState(false);
@@ -153,7 +156,7 @@ export default function QuotedScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -161,6 +164,7 @@ export default function QuotedScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -248,20 +252,18 @@ export default function QuotedScreen() {
         }
       } catch (err) {
         logger.error('[quoted] Submit hatası:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, revealedHints, hints.length, checkGamePaywall],
+    [gameState, puzzleId, revealedHints, hints.length, checkGamePaywall, isSubmitting],
   );
 
   // ─── Error ───
   if (loadError) {
     return (
       <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.errorEmoji}>🎬</Text>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -270,9 +272,7 @@ export default function QuotedScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -289,7 +289,7 @@ export default function QuotedScreen() {
         <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
           {/* Repliği tekrar göster */}
           <View style={styles.quoteCardSmall}>
-            <Ionicons name="chatbubble-ellipses" size={18} color={Colors.gold} />
+            <ChatCircleDots size={18} color={Colors.gold} weight="duotone" />
             <Text style={styles.quoteTextSmall} numberOfLines={3}>
               {`"${quoteText}"`}
             </Text>
@@ -327,7 +327,7 @@ export default function QuotedScreen() {
         {/* Bağlam ipucu — replikten ÖNCE gösterilir (dedüksiyon katmanı) */}
         {contextHint ? (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.contextCard}>
-            <Ionicons name="information-circle" size={18} color={Colors.gold} />
+            <Info size={18} color={Colors.gold} weight="duotone" />
             <View style={styles.contextContent}>
               {quoteGenre ? (
                 <Text style={styles.contextGenre}>{quoteGenre}</Text>
@@ -337,14 +337,14 @@ export default function QuotedScreen() {
           </Animated.View>
         ) : (
           <View style={styles.quoteBadge}>
-            <Ionicons name="film-outline" size={20} color={Colors.gold} />
+            <FilmSlate size={20} color={Colors.gold} weight="duotone" />
             <Text style={styles.quoteBadgeLabel}>{t('games.quoted.quoteLabel')}</Text>
           </View>
         )}
 
         {/* Replik kartı */}
         <Animated.View entering={FadeInDown.delay(200).duration(400)} style={styles.quoteCard}>
-          <Ionicons name="chatbubble-ellipses" size={28} color={Colors.gold} style={styles.quoteIcon} />
+          <ChatCircleDots size={28} color={Colors.gold} style={styles.quoteIcon} weight="duotone" />
           <Text style={styles.quoteMainText}>{`"${quoteText}"`}</Text>
         </Animated.View>
 
@@ -355,7 +355,7 @@ export default function QuotedScreen() {
             entering={FadeInUp.delay(index * 100).duration(300)}
             style={styles.hintRow}
           >
-            <Ionicons name="bulb" size={16} color={Colors.gold} />
+            <Lightbulb size={16} color={Colors.gold} weight="duotone" />
             <Text style={styles.hintText}>{hint.content}</Text>
           </Animated.View>
         ))}
@@ -363,7 +363,7 @@ export default function QuotedScreen() {
         {/* Yanlış tahmin */}
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuess}>
-            <Ionicons name="close-circle" size={16} color={Colors.error} />
+            <XCircle size={16} color={Colors.error} weight="duotone" />
             <Text style={styles.wrongText}>{wrongGuess}</Text>
           </Animated.View>
         )}
@@ -373,7 +373,7 @@ export default function QuotedScreen() {
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
-          disabled={gameState !== 'playing'}
+          disabled={gameState !== 'playing' || isSubmitting}
         />
       </View>
       <ContextualPaywall {...paywallProps} />

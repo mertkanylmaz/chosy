@@ -16,6 +16,13 @@ const DATA_COL_W = (SCREEN_W - GRID_PADDING * 2 - FILM_COL_W) / 6;
 export { FILM_COL_W, DATA_COL_W, SCREEN_W };
 
 export const styles = StyleSheet.create({
+  /** Paylasim karti ekran disinda render edilir (PNG capture) */
+  offscreenCard: {
+    position: 'absolute',
+    top: -9999,
+    left: -9999,
+    opacity: 0,
+  },
   // ─── Layout ────────────────────────────────────────────────────────────────
   center: {
     flex: 1,
@@ -125,10 +132,10 @@ export const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   cellGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: Colors.greenBright,
   },
   cellYellow: {
-    backgroundColor: '#D4A843',
+    backgroundColor: Colors.gold,
   },
   cellGray: {
     backgroundColor: Colors.bgSubtle,
@@ -140,10 +147,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 1,
   },
   cellTextGreen: {
-    color: '#FFFFFF',
+    color: Colors.white,
   },
   cellTextYellow: {
-    color: '#0A0A0F',
+    color: Colors.bgPrimary,
   },
   cellTextGray: {
     color: Colors.textTertiary,

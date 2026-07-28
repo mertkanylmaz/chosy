@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
@@ -90,6 +90,8 @@ export function FilmSearchInput({
                 <TouchableOpacity
                   key={String(item.id)}
                   style={styles.resultRow}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.title}
                   onPress={() => handleSelect(item)}
                 >
                   {poster ? (
@@ -100,7 +102,7 @@ export function FilmSearchInput({
                     />
                   ) : (
                     <View style={[styles.resultPoster, styles.noPoster]}>
-                      <Ionicons name="film" size={16} color={Colors.textTertiary} />
+                      <FilmSlate size={16} color={Colors.textTertiary} weight="duotone" />
                     </View>
                   )}
                   <View style={styles.resultInfo}>
@@ -118,7 +120,7 @@ export function FilmSearchInput({
 
       {/* Input */}
       <View style={styles.inputRow}>
-        <Ionicons name="search" size={20} color={Colors.textTertiary} />
+        <MagnifyingGlass size={20} color={Colors.textTertiary} weight="duotone" />
         <TextInput
           style={styles.input}
           value={query}
@@ -132,14 +134,15 @@ export function FilmSearchInput({
         />
         {query.length > 0 && (
           <TouchableOpacity
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             onPress={() => {
               setQuery('');
               setResults([]);
               setShowDropdown(false);
             }}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
+            <XCircle size={20} color={Colors.textTertiary} weight="duotone" />
           </TouchableOpacity>
         )}
       </View>
@@ -180,7 +183,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.cardBorder,
     elevation: 10,
-    shadowColor: '#000',
+    shadowColor: Colors.shadowBlack,
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

@@ -9,7 +9,7 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 
 /** Teal accent for the lightbulb icon */
-export const TEAL = '#2DD4BF';
+export const TEAL = Colors.teal;
 const TEAL_DIM = 'rgba(45,212,191,0.12)';
 
 export const styles = StyleSheet.create({

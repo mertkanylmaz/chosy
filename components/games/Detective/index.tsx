@@ -11,19 +11,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
-import {
-  ArrowDown,
-  ArrowUp,
-  CalendarBlank,
-  FilmSlate,
-  Star,
-  Timer,
-  UsersThree,
-  VideoCamera,
-  XCircle,
-} from 'phosphor-react-native';
+import { ArrowDown, ArrowUp, CalendarBlank, FilmSlate, Star, Timer, UsersThree, VideoCamera, XCircle } from 'phosphor-react-native';
 
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import Animated, {
   FadeInDown,
@@ -34,8 +25,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { Ionicons } from '@expo/vector-icons';
+import { hapticHeavy, hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -48,9 +38,13 @@ import {
   trackGameCompleted,
   trackFilmPageOpened,
   trackWatchlistAdded,
+  trackResultCardViewed,
+  trackShareRendered,
+  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitDetectiveGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
@@ -201,7 +195,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
   useEffect(() => {
     if (result === 'correct') {
       scale.value = withTiming(1.05, { duration: 200 });
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      hapticHeavy();
     } else if (result === 'wrong') {
       shakeX.value = withSequence(
         withTiming(-10, { duration: 75 }),
@@ -209,7 +203,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
         withTiming(-10, { duration: 75 }),
         withTiming(0, { duration: 75 }),
       );
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       opacity.value = withDelay(300, withTiming(0.35, { duration: 400 }));
     }
   }, [result, scale, shakeX, opacity]);
@@ -226,7 +220,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
       withTiming(0.95, { duration: 75 }),
       withTiming(1, { duration: 75 }),
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onPress();
   };
 
@@ -247,6 +241,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
         onPress={handlePress}
         activeOpacity={0.85}
         disabled={disabled || eliminated}
+      accessibilityRole="button"
       >
         {option.poster_url ? (
           <Image
@@ -257,7 +252,7 @@ function FilmCard({ option, selected, result, eliminated, onPress, disabled, sma
           />
         ) : (
           <View style={[styles.filmPosterPlaceholder, { height: cardH }]}>
-            <Ionicons name="film-outline" size={small ? 24 : 32} color={Colors.textTertiary} />
+            <FilmSlate size={small ? 24 : 32} color={Colors.textTertiary} weight="duotone" />
           </View>
         )}
         <View style={styles.filmInfoBar}>
@@ -303,9 +298,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
     const timer = setTimeout(() => {
       setShowResult(true);
       if (index === 5) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        hapticMedium();
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
       }
     }, delay + 80);
     return () => clearTimeout(timer);
@@ -338,9 +333,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       {showResult && hasDirection && feedback.result !== 'green' && (
         <View style={styles.directionArrow}>
           {feedback.direction === 'up' ? (
-            <ArrowUp size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowUp size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           ) : (
-            <ArrowDown size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowDown size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           )}
         </View>
       )}
@@ -380,6 +375,12 @@ export function DetectiveGame() {
 
   // Completed state
   const [won, setWon] = useState(false);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'game',
+    trackingProps: { game_id: 'detective' },
+  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -408,6 +409,8 @@ export function DetectiveGame() {
       const pd = data.puzzle.puzzle_data as unknown as DetectivePuzzleData;
       setPuzzleData(pd);
       setAllOptions(pd.options);
+
+      setPuzzleNo(data.puzzle_no);
 
       // Mevcut ilerleme varsa yukle
       if (data.progress?.completed) {
@@ -691,7 +694,7 @@ export function DetectiveGame() {
   // ─── Transition Continue ─────────────────────────────────────────────────
 
   const handleTransitionContinue = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     setScreenState('stage2');
   }, []);
 
@@ -699,9 +702,9 @@ export function DetectiveGame() {
 
   const difficultyInfo = useMemo(() => {
     const d = challenge?.puzzle.difficulty ?? 3;
-    if (d <= 2) return { color: '#22C55E', label: t('games.detective.difficulty.easy') };
-    if (d <= 3) return { color: '#D4A843', label: t('games.detective.difficulty.medium') };
-    return { color: '#EF4444', label: t('games.detective.difficulty.hard') };
+    if (d <= 2) return { color: Colors.greenBright, label: t('games.detective.difficulty.easy') };
+    if (d <= 3) return { color: Colors.gold, label: t('games.detective.difficulty.medium') };
+    return { color: Colors.error, label: t('games.detective.difficulty.hard') };
   }, [challenge?.puzzle.difficulty, t]);
 
   const remainingCount = allOptions.length - eliminatedIds.length;
@@ -745,18 +748,28 @@ export function DetectiveGame() {
     }
   }, [revealedFilm, watchlistAdded]);
 
+  /** Sonuc ekrani bir kez olculur */
+  const hasTrackedResultRef = useRef(false);
+  useEffect(() => {
+    if (screenState === 'completed' && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      trackResultCardViewed('detective', won);
+    }
+  }, [screenState, won]);
+
+  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
+  const handleShare = useCallback(async () => {
+    trackShareRendered('detective');
+    const shared = await share();
+    if (shared) trackShareCompleted('detective', 'image');
+  }, [share]);
+
   // ─── Render: Error ─────────────────────────────────────────────────────────
 
   if (loadError) {
     return (
       <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={12}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -766,18 +779,7 @@ export function DetectiveGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={12}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Animated.View entering={FadeInDown.duration(300)} style={styles.skeletonPanel} />
-          <View style={styles.cardGridSmall}>
-            {Array.from({ length: 12 }).map((_, i) => (
-              <Animated.View
-                key={i}
-                entering={FadeInDown.delay(i * 50).duration(300)}
-                style={styles.skeletonCardSmall}
-              />
-            ))}
-          </View>
-        </ScrollView>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -810,6 +812,20 @@ export function DetectiveGame() {
         maxAttempts={12}
         hideProgress
       >
+        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
+        <View style={styles.offscreenCard} pointerEvents="none">
+          <GameShareCard
+            ref={cardRef}
+            gameTitle={t('games.detective.title')}
+            solved={won}
+            attempts={totalGuesses}
+            maxAttempts={12}
+            streak={0}
+            gameType="detective"
+            puzzleNo={puzzleNo}
+          />
+        </View>
+
         <ScrollView
           contentContainerStyle={styles.completedContainer}
           showsVerticalScrollIndicator={false}
@@ -898,7 +914,13 @@ export function DetectiveGame() {
 
           {/* Actions */}
           <View style={styles.completedActions}>
-            <TouchableOpacity style={styles.shareButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              disabled={isCapturing || !isShareAvailable}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
+            >
               <Text style={styles.shareButtonText}>{t('games.detective.share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>
@@ -1033,6 +1055,7 @@ export function DetectiveGame() {
             onPress={handleStage2Submit}
             disabled={!hasSelection || isSubmitting || hasCardResultPending}
             activeOpacity={0.7}
+          accessibilityRole="button"
           >
             <Text
               style={[
@@ -1145,6 +1168,7 @@ export function DetectiveGame() {
           onPress={handleStage1Submit}
           disabled={!hasSelection || isSubmitting || hasCardResultPending}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text
             style={[

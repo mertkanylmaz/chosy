@@ -23,7 +23,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { CloudSlash, EyeSlash, XCircle } from 'phosphor-react-native';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Sentry from '@sentry/react-native';
 
@@ -39,6 +39,7 @@ import type { DailyChallenge, FadeInHintStub, GuessResult, WhyThisMovieText } fr
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { HintBoard } from '@/components/games/HintBoard';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -86,6 +87,8 @@ export default function FadeInScreen() {
   const [streak, setStreak] = useState(0);
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
   /** Tahmin/ipucu istegi hatasi — sessiz fallback YASAK */
   const [actionError, setActionError] = useState(false);
 
@@ -205,7 +208,7 @@ export default function FadeInScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -213,6 +216,7 @@ export default function FadeInScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -302,9 +306,11 @@ export default function FadeInScreen() {
         Sentry.captureException(err, { tags: { game: 'fadein', action: 'submit_guess' } });
         hapticHeavy();
         setActionError(true);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, checkGamePaywall],
+    [gameState, puzzleId, checkGamePaywall, isSubmitting],
   );
 
   // ── Hint handler ──────────────────────────────────────────────────────────
@@ -345,11 +351,7 @@ export default function FadeInScreen() {
   if (loadError) {
     return (
       <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="cloud-offline-outline" size={48} color={Colors.textTertiary} />
-          <Text style={styles.errorTitle}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtitle}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -358,9 +360,7 @@ export default function FadeInScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -437,7 +437,7 @@ export default function FadeInScreen() {
 
               {gameState === 'playing' && (
                 <View style={styles.blurBadge}>
-                  <Ionicons name="eye-off-outline" size={14} color={Colors.textWhite} />
+                  <EyeSlash size={14} color={Colors.textWhite} weight="duotone" />
                   <Text style={styles.blurBadgeText}>
                     {t('games.fadein.blur_level', { level: attempts + 1, max: MAX_ATTEMPTS })}
                   </Text>
@@ -463,7 +463,7 @@ export default function FadeInScreen() {
         {/* İstek hatası — sessiz fallback YASAK */}
         {actionError && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.actionErrorBox}>
-            <Ionicons name="cloud-offline-outline" size={18} color={Colors.error} />
+            <CloudSlash size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.actionErrorText}>{t('games.result.error_subtitle')}</Text>
           </Animated.View>
         )}
@@ -471,7 +471,7 @@ export default function FadeInScreen() {
         {/* Yanlış tahmin toast */}
         {wrongGuess && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.wrongToast}>
-            <Ionicons name="close-circle" size={18} color={Colors.error} />
+            <XCircle size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.wrongText} numberOfLines={1}>
               {wrongGuess} — {t('games.fadein.wrong')}
             </Text>
@@ -500,6 +500,7 @@ export default function FadeInScreen() {
           <FilmSearchInput
             onSelect={handleGuess}
             placeholder={t('games.fadein.search_placeholder')}
+            disabled={isSubmitting}
           />
         </Animated.View>
       )}

@@ -15,7 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { styles } from './styles';
 
 // ─── Teal accent (Detective tema rengi) ─────────────────────────────────────
-const TEAL = '#0D9488';
+const TEAL = Colors.tealDeep;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

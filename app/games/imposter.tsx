@@ -32,7 +32,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { Check, CheckCircle, CloudSlash, X, XCircle } from 'phosphor-react-native';
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -53,6 +53,7 @@ import type {
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { ConfidenceSelector, formatFactor } from '@/components/games/ConfidenceSelector';
 import { ResultCard } from '@/components/games/ResultCard';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -386,11 +387,7 @@ export default function ImposterScreen() {
   if (loadError) {
     return (
       <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
-        <View style={styles.center}>
-          <Text style={styles.errorEmoji}>🎬</Text>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -399,9 +396,7 @@ export default function ImposterScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -425,11 +420,11 @@ export default function ImposterScreen() {
               const outcome = roundOutcomes.find((o) => o.round === r);
               return (
                 <View key={r} style={styles.roundDot}>
-                  <Ionicons
-                    name={outcome?.correct ? 'checkmark-circle' : 'close-circle'}
-                    size={28}
-                    color={outcome?.correct ? Colors.success : Colors.error}
-                  />
+                  {outcome?.correct ? (
+                    <CheckCircle size={28} weight="duotone" color={Colors.success} />
+                  ) : (
+                    <XCircle size={28} weight="duotone" color={Colors.error} />
+                  )}
                   <Text style={styles.roundDotLabel}>R{r}</Text>
                 </View>
               );
@@ -503,11 +498,11 @@ export default function ImposterScreen() {
                 styles.prevRoundChip,
                 o.correct ? styles.prevRoundCorrect : styles.prevRoundWrong,
               ]}>
-                <Ionicons
-                  name={o.correct ? 'checkmark' : 'close'}
-                  size={14}
-                  color={o.correct ? Colors.success : Colors.error}
-                />
+                {o.correct ? (
+                  <Check size={14} weight="bold" color={Colors.success} />
+                ) : (
+                  <X size={14} weight="bold" color={Colors.error} />
+                )}
                 <Text style={[
                   styles.prevRoundText,
                   { color: o.correct ? Colors.success : Colors.error },
@@ -547,11 +542,11 @@ export default function ImposterScreen() {
             styles.revealCard,
             lastRoundOutcome.correct ? styles.revealCorrect : styles.revealWrong,
           ]}>
-            <Ionicons
-              name={lastRoundOutcome.correct ? 'checkmark-circle' : 'close-circle'}
-              size={24}
-              color={lastRoundOutcome.correct ? Colors.success : Colors.error}
-            />
+            {lastRoundOutcome.correct ? (
+              <CheckCircle size={24} weight="duotone" color={Colors.success} />
+            ) : (
+              <XCircle size={24} weight="duotone" color={Colors.error} />
+            )}
             <View style={styles.revealContent}>
               <Text style={[
                 styles.revealTitle,
@@ -611,7 +606,7 @@ export default function ImposterScreen() {
                     {option.name}
                   </Text>
                   {isSelected && (
-                    <Ionicons name="checkmark-circle" size={18} color={Colors.accentPrimary} />
+                    <CheckCircle size={18} color={Colors.accentPrimary} weight="duotone" />
                   )}
                 </TouchableOpacity>
               );
@@ -637,7 +632,7 @@ export default function ImposterScreen() {
         {/* Gonderim hatasi — sessiz fallback YASAK */}
         {submitError && (
           <Animated.View entering={FadeIn.duration(200)} style={styles.submitErrorBox}>
-            <Ionicons name="cloud-offline-outline" size={18} color={Colors.error} />
+            <CloudSlash size={18} color={Colors.error} weight="duotone" />
             <Text style={styles.submitErrorText}>{t('games.result.error_subtitle')}</Text>
           </Animated.View>
         )}
@@ -659,6 +654,7 @@ export default function ImposterScreen() {
               onPress={handleSubmitRound}
               disabled={selectedIds.size !== requiredSelections || isSubmitting}
               activeOpacity={0.7}
+            accessibilityRole="button"
             >
               <Text style={styles.submitText}>
                 {t('games.imposter.submit_round')}

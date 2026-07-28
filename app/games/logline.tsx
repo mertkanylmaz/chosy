@@ -10,7 +10,7 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowsLeftRight, CheckCircle, Lock, XCircle } from 'phosphor-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
@@ -20,10 +20,17 @@ import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils
 import { logger } from '@/utils/logger';
 import { getGameStreak } from '@/services/gameService';
 import { getDailyChallenge, submitGameGuess } from '@/services/gameApi';
-import type { DailyChallenge, GuessResult, LoglineSemanticHints, WhyThisMovieText } from '@/types/game';
+import type {
+  DailyChallenge,
+  GuessResult,
+  LoglineSemanticHints,
+  SemanticMatch,
+  WhyThisMovieText,
+} from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -34,6 +41,20 @@ import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/util
 interface LoglineClue {
   order: number;
   content: string;
+}
+
+/**
+ * Semantik yakinlik rozeti — Logline'in tur/donem ipuclarinda kullanilir.
+ * same: yesil onay · close: altin cift ok · different: soluk capraz
+ */
+function MatchIcon({ match }: { match: SemanticMatch }): React.JSX.Element {
+  if (match === 'same') {
+    return <CheckCircle size={14} weight="duotone" color={Colors.success} />;
+  }
+  if (match === 'close') {
+    return <ArrowsLeftRight size={14} weight="duotone" color={Colors.gold} />;
+  }
+  return <XCircle size={14} weight="duotone" color={Colors.textTertiary} />;
 }
 
 export default function LoglineScreen() {
@@ -54,6 +75,8 @@ export default function LoglineScreen() {
   const [wrongGuess, setWrongGuess] = useState<string | null>(null);
   const [semanticHints, setSemanticHints] = useState<LoglineSemanticHints | null>(null);
   const [loadError, setLoadError] = useState(false);
+  /** Tahmin ucusta — cift gonderimi engeller */
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Result state (Edge Function response)
   const [solved, setSolved] = useState(false);
@@ -146,7 +169,7 @@ export default function LoglineScreen() {
   /** Tahmin yap — Edge Function doğrular */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (gameState !== 'playing') return;
+      if (gameState !== 'playing' || isSubmitting) return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -154,6 +177,7 @@ export default function LoglineScreen() {
         return;
       }
 
+      setIsSubmitting(true);
       try {
         const result: GuessResult = await submitGameGuess(puzzleId, filmUuid);
         const newAttempts = result.guesses_used;
@@ -245,20 +269,18 @@ export default function LoglineScreen() {
         }
       } catch (err) {
         logger.error('[logline] Submit hatası:', err);
+      } finally {
+        setIsSubmitting(false);
       }
     },
-    [gameState, puzzleId, revealedCount, clues.length, checkGamePaywall],
+    [gameState, puzzleId, revealedCount, clues.length, checkGamePaywall, isSubmitting],
   );
 
   // Error
   if (loadError) {
     return (
       <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.errorEmoji}>🎬</Text>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -267,9 +289,7 @@ export default function LoglineScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -338,7 +358,7 @@ export default function LoglineScreen() {
                   <Text style={styles.clueText}>{clue.content}</Text>
                 ) : (
                   <View style={styles.lockedRow}>
-                    <Ionicons name="lock-closed" size={14} color={Colors.textTertiary} />
+                    <Lock size={14} color={Colors.textTertiary} weight="duotone" />
                     <Text style={styles.lockedText}>{t('games.logline.clue_locked')}</Text>
                   </View>
                 )}
@@ -351,17 +371,13 @@ export default function LoglineScreen() {
         {wrongGuess && (
           <Animated.View entering={FadeInUp.duration(200)} style={styles.wrongGuessContainer}>
             <View style={styles.wrongGuess}>
-              <Ionicons name="close-circle" size={16} color={Colors.error} />
+              <XCircle size={16} color={Colors.error} weight="duotone" />
               <Text style={styles.wrongText}>{wrongGuess}</Text>
             </View>
             {semanticHints && (
               <View style={styles.semanticHints}>
                 <View style={styles.hintChip}>
-                  <Ionicons
-                    name={semanticHints.genre_match === 'same' ? 'checkmark-circle' : semanticHints.genre_match === 'close' ? 'swap-horizontal' : 'close-circle'}
-                    size={14}
-                    color={semanticHints.genre_match === 'same' ? Colors.success : semanticHints.genre_match === 'close' ? Colors.gold : Colors.textTertiary}
-                  />
+                  <MatchIcon match={semanticHints.genre_match} />
                   <Text style={[styles.hintChipText, {
                     color: semanticHints.genre_match === 'same' ? Colors.success : semanticHints.genre_match === 'close' ? Colors.gold : Colors.textTertiary,
                   }]}>
@@ -369,11 +385,7 @@ export default function LoglineScreen() {
                   </Text>
                 </View>
                 <View style={styles.hintChip}>
-                  <Ionicons
-                    name={semanticHints.decade_match === 'same' ? 'checkmark-circle' : semanticHints.decade_match === 'close' ? 'swap-horizontal' : 'close-circle'}
-                    size={14}
-                    color={semanticHints.decade_match === 'same' ? Colors.success : semanticHints.decade_match === 'close' ? Colors.gold : Colors.textTertiary}
-                  />
+                  <MatchIcon match={semanticHints.decade_match} />
                   <Text style={[styles.hintChipText, {
                     color: semanticHints.decade_match === 'same' ? Colors.success : semanticHints.decade_match === 'close' ? Colors.gold : Colors.textTertiary,
                   }]}>
@@ -390,7 +402,7 @@ export default function LoglineScreen() {
       <View style={styles.searchContainer}>
         <FilmSearchInput
           onSelect={handleGuess}
-          disabled={gameState !== 'playing'}
+          disabled={gameState !== 'playing' || isSubmitting}
         />
       </View>
       <ContextualPaywall {...paywallProps} />

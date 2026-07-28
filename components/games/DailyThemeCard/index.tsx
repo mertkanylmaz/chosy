@@ -59,7 +59,7 @@ export function DailyThemeCard(): React.JSX.Element | null {
       <View style={styles.container}>
         <View style={styles.errorRow}>
           <Text style={styles.errorText}>{t('games.theme.error')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadTheme} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.retryButton} onPress={loadTheme} activeOpacity={0.7} accessibilityRole="button" >
             <Text style={styles.retryText}>{t('games.theme.retry')}</Text>
           </TouchableOpacity>
         </View>

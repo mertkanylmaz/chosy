@@ -12,6 +12,8 @@ import { Image } from 'expo-image';
 import { CircleIcon as Circle, ArrowUp, ArrowDown } from 'phosphor-react-native';
 
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
+import { GameShareCard, useShareCapture } from '@/components/ShareCards';
+import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import Animated, {
   useSharedValue,
@@ -22,7 +24,7 @@ import Animated, {
   runOnJS,
   FadeInUp,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium } from '@/utils/haptics';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -31,9 +33,13 @@ import {
   trackGameOpened,
   trackGuessSubmitted,
   trackGameCompleted,
+  trackResultCardViewed,
+  trackShareRendered,
+  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
+import { GameStateView } from '@/components/games/GameStateView';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
@@ -43,6 +49,7 @@ import type {
   GuessEntry,
   GuessResult,
   RevealedFilm,
+  WhyThisMovieText,
 } from '@/types/game';
 
 import { styles, DATA_COL_W, FILM_COL_W } from './styles';
@@ -88,9 +95,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       setShowResult(true);
       // Haptic — son hücrede medium, diğerlerinde light
       if (index === 5) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        hapticMedium();
       } else {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
       }
     }, delay + 80);
 
@@ -124,9 +131,9 @@ function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps)
       {showResult && hasDirection && feedback.result !== 'green' && (
         <View style={styles.directionArrow}>
           {feedback.direction === 'up' ? (
-            <ArrowUp size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowUp size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           ) : (
-            <ArrowDown size={10} color={feedback.result === 'yellow' ? '#0A0A0F' : '#FFFFFF'} weight="duotone" />
+            <ArrowDown size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
           )}
         </View>
       )}
@@ -182,6 +189,14 @@ export function CineMetricsGame() {
 
   // Completed state
   const [won, setWon] = useState(false);
+  /** Gunun bulmaca numarasi — paylasim kartinda film adi YERINE gosterilir */
+  const [puzzleNo, setPuzzleNo] = useState(0);
+  /** Film kesfi koprusu metni — sunucudan gelir */
+  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'game',
+    trackingProps: { game_id: 'cinemetrics' },
+  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -200,6 +215,10 @@ export function CineMetricsGame() {
       const data = await getDailyChallenge('cinemetrics', puzzleDate);
 
       setChallenge(data);
+
+      setPuzzleNo(data.puzzle_no);
+      setWhyThisMovie(data.why_this_movie ?? null);
+      if (data.revealed_solution) setRevealedFilm(data.revealed_solution);
 
       // Mevcut ilerleme varsa yükle
       if (data.progress) {
@@ -288,6 +307,7 @@ export function CineMetricsGame() {
           setXpAwarded(result.xp_awarded);
           setDnaUpdated(result.dna_updated);
           setRevealedFilm(result.revealed_solution);
+          setWhyThisMovie(result.why_this_movie ?? null);
           setScreenState('completed');
 
           // Telemetri
@@ -318,9 +338,9 @@ export function CineMetricsGame() {
 
   const difficultyInfo = useMemo(() => {
     const d = challenge?.puzzle.difficulty ?? 3;
-    if (d <= 2) return { color: '#22C55E', label: t('games.cinemetrics.difficulty.easy') };
-    if (d <= 3) return { color: '#D4A843', label: t('games.cinemetrics.difficulty.medium') };
-    return { color: '#EF4444', label: t('games.cinemetrics.difficulty.hard') };
+    if (d <= 2) return { color: Colors.greenBright, label: t('games.cinemetrics.difficulty.easy') };
+    if (d <= 3) return { color: Colors.gold, label: t('games.cinemetrics.difficulty.medium') };
+    return { color: Colors.error, label: t('games.cinemetrics.difficulty.hard') };
   }, [challenge?.puzzle.difficulty, t]);
 
   /** Hücre değerini formatla — gerçek metadata değerleri gösterir */
@@ -359,18 +379,28 @@ export function CineMetricsGame() {
     return '✗';
   }, []);
 
+  /** Sonuc ekrani bir kez olculur */
+  const hasTrackedResultRef = useRef(false);
+  useEffect(() => {
+    if (screenState === 'completed' && !hasTrackedResultRef.current) {
+      hasTrackedResultRef.current = true;
+      trackResultCardViewed('cinemetrics', won);
+    }
+  }, [screenState, won]);
+
+  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
+  const handleShare = useCallback(async () => {
+    trackShareRendered('cinemetrics');
+    const shared = await share();
+    if (shared) trackShareCompleted('cinemetrics', 'image');
+  }, [share]);
+
   // ─── Render: Error ───────────────────────────────────────────────────────
 
   if (loadError) {
     return (
       <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.errorText}>{t('games.result.error_title')}</Text>
-          <Text style={styles.errorSubtext}>{t('games.result.error_subtitle')}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadPuzzle}>
-            <Text style={styles.retryButtonText}>{t('games.cinemetrics.retry')}</Text>
-          </TouchableOpacity>
-        </View>
+        <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
   }
@@ -380,9 +410,7 @@ export function CineMetricsGame() {
   if (screenState === 'loading') {
     return (
       <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
-        <View style={styles.center}>
-          <Text style={styles.loadingText}>{t('games.result.loading')}</Text>
-        </View>
+        <GameStateView state="loading" />
       </GameShell>
     );
   }
@@ -397,6 +425,20 @@ export function CineMetricsGame() {
         maxAttempts={maxAttempts}
         hideProgress
       >
+        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
+        <View style={styles.offscreenCard} pointerEvents="none">
+          <GameShareCard
+            ref={cardRef}
+            gameTitle={t('games.cinemetrics.title')}
+            solved={won}
+            attempts={guesses.length}
+            maxAttempts={maxAttempts}
+            streak={0}
+            gameType="cinemetrics"
+            puzzleNo={puzzleNo}
+          />
+        </View>
+
         <ScrollView contentContainerStyle={styles.completedContainer} showsVerticalScrollIndicator={false}>
           {/* Poster */}
           {revealedFilm?.poster_url && (
@@ -438,6 +480,17 @@ export function CineMetricsGame() {
             solved={won}
           />
 
+          {/* Film kesfi koprusu — oyun -> film donusumu buradan olculur */}
+          {whyThisMovie && revealedFilm && (
+            <WhyThisMovieFunnel
+              whyText={whyThisMovie.why_text}
+              funFact={whyThisMovie.fun_fact}
+              filmTitle={revealedFilm.title}
+              filmId={0}
+              gameType="cinemetrics"
+            />
+          )}
+
           {/* Countdown */}
           <View>
             <Text style={styles.countdownLabel}>{t('games.cinemetrics.next_puzzle')}</Text>
@@ -448,7 +501,13 @@ export function CineMetricsGame() {
 
           {/* Actions */}
           <View style={styles.completedActions}>
-            <TouchableOpacity style={styles.shareButton} onPress={() => {}}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={handleShare}
+              disabled={isCapturing || !isShareAvailable}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
+            >
               <Text style={styles.shareButtonText}>{t('games.cinemetrics.share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>
@@ -550,6 +609,7 @@ export function CineMetricsGame() {
           onPress={handleSubmit}
           disabled={!selectedFilm || isSubmitting}
           activeOpacity={0.7}
+        accessibilityRole="button"
         >
           <Text style={styles.submitButtonText}>
             {t('games.cinemetrics.submit')}

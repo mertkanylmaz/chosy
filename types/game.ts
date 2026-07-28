@@ -376,6 +376,8 @@ export interface SpotlightGuessResult {
   eliminated_ids: string[];
   next_clue: SpotlightClue | null;
   revealed_solution: RevealedFilm | null;
+  /** Film kesfi koprusu — yalnizca tamamlanmada gelir */
+  why_this_movie?: WhyThisMovieText | null;
 }
 
 // ─── Detective Types ────────────────────────────────────────────────────────
