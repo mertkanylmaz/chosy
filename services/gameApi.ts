@@ -16,11 +16,11 @@ import type {
   DailyChestState,
   DailyThemeState,
   DetectiveGuessResult,
-  DetectiveStage,
   GuessResult,
   HintRevealResult,
   ImposterGuessResult,
   SpotlightGuessResult,
+  SpotlightLetterResult,
 } from '@/types/game';
 
 // ─── Auth Helper ─────────────────────────────────────────────────────────────
@@ -67,6 +67,52 @@ export async function getEnabledGames(): Promise<string[] | null> {
 
   const games = (data?.value as { games?: string[] } | null)?.games;
   return Array.isArray(games) ? games : null;
+}
+
+/** Cinema DNA rank yapilandirmasi (app_config: dna_config) */
+export interface DnaRankConfig {
+  /** Rank basina gereken DNA ortalamasi — index 0 = rank 1 */
+  rankThresholds: number[];
+  /** Rank basina gereken tamamlanmis gunluk sayisi */
+  rankMinDailies: number[];
+}
+
+/**
+ * Rank esiklerini app_config'ten okur.
+ *
+ * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
+ * Okuma basarisiz olursa Sentry'ye duser ve null doner; cagiran taraf
+ * ilerleme cubugunu gizler (uydurma esik gostermez).
+ */
+export async function getDnaConfig(): Promise<DnaRankConfig | null> {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'dna_config')
+    .single();
+
+  if (error) {
+    Sentry.captureException(error, { tags: { config: 'dna_config' } });
+    logger.error('[gameApi] getDnaConfig failed:', error);
+    return null;
+  }
+
+  const value = data?.value as {
+    rank_thresholds?: number[];
+    rank_min_dailies?: number[];
+  } | null;
+
+  if (!Array.isArray(value?.rank_thresholds) || !Array.isArray(value?.rank_min_dailies)) {
+    const shapeError = new Error('dna_config missing rank_thresholds/rank_min_dailies');
+    Sentry.captureException(shapeError, { tags: { config: 'dna_config' } });
+    logger.error('[gameApi] getDnaConfig shape invalid');
+    return null;
+  }
+
+  return {
+    rankThresholds: value.rank_thresholds,
+    rankMinDailies: value.rank_min_dailies,
+  };
 }
 
 /**
@@ -273,16 +319,16 @@ export async function revealHint(
 }
 
 /**
- * Detective tahmin gönderir (aşama bazlı).
+ * Detective tahmin gönderir.
+ *
+ * Tek fazlı eleme oyunu — aşama parametresi kaldırıldı.
  *
  * @param puzzleId - Bulmaca UUID'si
  * @param guessFilmId - Seçilen filmin UUID'si
- * @param currentStage - Aktif aşama (1=investigation, 2=deduction)
  */
 export async function submitDetectiveGuess(
   puzzleId: string,
   guessFilmId: string,
-  currentStage: DetectiveStage,
 ): Promise<DetectiveGuessResult> {
   await ensureAuthSession();
 
@@ -290,13 +336,12 @@ export async function submitDetectiveGuess(
     body: {
       puzzle_id: puzzleId,
       guess_film_id: guessFilmId,
-      detective_stage: currentStage,
     },
   });
 
   if (error) {
     Sentry.captureException(error, {
-      tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId, stage: String(currentStage) },
+      tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
     logger.error('[gameApi] submitDetectiveGuess failed:', error);
     throw error;
@@ -312,10 +357,14 @@ export async function submitDetectiveGuess(
  * @param guessFilmId - Seçilen filmin UUID'si
  * @param currentTurn - Aktif tur numarası (1-6)
  */
+/**
+ * Spotlight V3 — film tahmini ("filmi biliyorum").
+ *
+ * Harf acma icin `submitSpotlightLetter` kullanilir; ikisi ayri eylemdir.
+ */
 export async function submitSpotlightGuess(
   puzzleId: string,
   guessFilmId: string,
-  currentTurn: number,
 ): Promise<SpotlightGuessResult> {
   await ensureAuthSession();
 
@@ -323,17 +372,86 @@ export async function submitSpotlightGuess(
     body: {
       puzzle_id: puzzleId,
       guess_film_id: guessFilmId,
-      current_turn: currentTurn,
     },
   });
 
   if (error) {
     Sentry.captureException(error, {
-      tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId, turn: String(currentTurn) },
+      tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
     logger.error('[gameApi] submitSpotlightGuess failed:', error);
     throw error;
   }
 
   return data as SpotlightGuessResult;
+}
+
+/**
+ * Spotlight V3 — harf tahmini.
+ *
+ * Dogru harf bedavadir ve basliktaki tum pozisyonlarini acar; yanlis harf
+ * bir hak goturur. Dogrulama sunucuda — istemci basligi hic gormez.
+ */
+export async function submitSpotlightLetter(
+  puzzleId: string,
+  letter: string,
+): Promise<SpotlightLetterResult> {
+  await ensureAuthSession();
+
+  const { data, error } = await supabase.functions.invoke('submit-guess', {
+    body: {
+      puzzle_id: puzzleId,
+      spotlight_letter: letter,
+    },
+  });
+
+  if (error) {
+    Sentry.captureException(error, {
+      tags: { puzzle_id: puzzleId, letter },
+    });
+    logger.error('[gameApi] submitSpotlightLetter failed:', error);
+    throw error;
+  }
+
+  return data as SpotlightLetterResult;
+}
+
+/** dev-reset-games yanitı */
+export interface DevResetResult {
+  /** Silinen skor satiri sayisi */
+  reset: number;
+  puzzle_date: string;
+  /** O gun sifirlanan oyun tipleri */
+  games: string[];
+  /** Cagiran hesabin users.id'si — allowlist teshisi icin */
+  user_id: string;
+}
+
+/**
+ * TEST — gunluk oyun ilerlemesini sifirlar (yalnizca allowlist'teki hesaplar).
+ *
+ * `game_scores` uzerinde DELETE politikasi bilincli olarak yok; silme yetkisi
+ * sunucudaki dev-reset-games fonksiyonunda ve allowlist ile korunuyor.
+ * Cagiran taraf bunu YALNIZCA __DEV__ altinda kullanmali.
+ *
+ * @param puzzleDate - YYYY-MM-DD; verilmezse sunucu bugunu kullanir
+ * @param gameId - Yalnizca tek oyunu sifirlamak icin
+ */
+export async function resetGameProgress(
+  puzzleDate?: string,
+  gameId?: string,
+): Promise<DevResetResult> {
+  await ensureAuthSession();
+
+  const { data, error } = await supabase.functions.invoke('dev-reset-games', {
+    body: { puzzle_date: puzzleDate, game_id: gameId },
+  });
+
+  if (error) {
+    Sentry.captureException(error, { tags: { fn: 'dev-reset-games' } });
+    logger.error('[gameApi] resetGameProgress failed:', error);
+    throw error;
+  }
+
+  return data as DevResetResult;
 }

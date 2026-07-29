@@ -67,18 +67,25 @@ export interface GameProgress {
   turns_played?: number;
   spotlight_guesses?: Array<{ turn: number; film_id: string; title: string; correct: boolean }>;
   eliminated_ids?: string[];
+  /** Spotlight V3 — denenmis harfler */
+  spotlight_letters?: string[];
+  /** Spotlight V3 — acilmis pozisyonlar ve harfleri */
+  spotlight_revealed?: RevealedTitleChar[];
   /** FadeIn — oyuncunun açtığı ipuçlarının order değerleri (seçim sırasıyla) */
   revealed_hints?: number[];
   /** Açılan ipucu sayısı (FadeIn/Detective) */
   hints_used?: number;
   /** Imposter V2 — oynanmış round'ların özeti (resume için) */
   imposter_rounds?: Array<{ round: number; correct: boolean; confidence?: number }>;
-  /** Detective — hangi aşamada kalındı (1: eleme, 2: tahmin) */
+  /**
+   * Detective — aşama (1: eleme, 3: bitti).
+   *
+   * 2 artık üretilmiyor; ikinci faz kaldırıldı. Eski kayıtlarda 2 görülebilir,
+   * istemci onu 1 gibi ele alır.
+   */
   stage?: DetectiveStage;
-  /** Detective — Stage 1 tahminleri */
+  /** Detective — eleme tahminleri */
   stage1_guesses?: GuessEntry[];
-  /** Detective — Stage 2 tahminleri */
-  stage2_guesses?: GuessEntry[];
   /** Detective — sunucudaki sayaç başlangıcı (resume'da süre kaybolmasın) */
   timer_start_ms?: number;
   /** Detective — iki aşamanın toplam tahmin sayısı */
@@ -321,12 +328,103 @@ export interface ImposterRound {
   round: number;
   film_title: string;
   poster_url: string | null;
-  options: Array<{ id: number; name: string }>;
+  /**
+   * profile_path TMDb oyuncu fotografi yolu. Eski bulmacalarda yok —
+   * istemci fotografsiz duruma dusup bas harflerini gosterir.
+   */
+  options: Array<{ id: number; name: string; profile_path?: string | null }>;
 }
 
 // ─── Spotlight Types ──────────────────────────────────────────────────────────
 
-/** Spotlight ipucu tipi */
+/**
+ * Baslik maskesinin tek karakteri.
+ *
+ * HARD RULE 1: Istemci basligin METNINI asla gormez — yalnizca hangi
+ * pozisyonun tahmin edilecek yuva, hangisinin gorunur ayrac oldugunu bilir.
+ * Acilmis harfler `SpotlightState.revealed` uzerinden gelir.
+ */
+export interface TitleMaskToken {
+  /** 'slot' = tahmin edilecek karakter · 'sep' = gorunur ayrac (bosluk, tire...) */
+  t: 'slot' | 'sep';
+  /** Yalnizca 'sep' icin gorunen karakter */
+  c?: string;
+}
+
+/** puzzle_data yapisi — V3: tek gorsel + baslik maskesi */
+export interface SpotlightPuzzleData {
+  /** Surum bayragi. 3 = harf acma mekanigi. Eski (V2, eleme) istemcide desteklenmez. */
+  v?: number;
+  /** Filmden bir kare — afis DEGIL (FadeIn afisle oynuyor) */
+  backdrop_url: string;
+  title_mask: TitleMaskToken[];
+  letter_count: number;
+}
+
+/** Istemci tarafi oyun durumu */
+export interface SpotlightProgress {
+  completed: boolean;
+  won: boolean;
+  /** Denenmis harfler — klavyede isaretli gosterilir */
+  spotlight_letters?: string[];
+  /** Acilmis pozisyonlar ve harfleri (title_mask indeksleri) */
+  spotlight_revealed?: RevealedTitleChar[];
+  guesses?: Array<{ turn: number; film_id: string; title: string; correct: boolean }>;
+}
+
+/** Acilmis tek karakter — pozisyon ve harf */
+export interface RevealedTitleChar {
+  pos: number;
+  ch: string;
+}
+
+/** submit-guess spotlight harf tahmini response'u */
+export interface SpotlightLetterResult {
+  letter: string;
+  /** Harf baslikta var mi */
+  hit: boolean;
+  /** Bu harfin baslikta bulundugu pozisyonlar */
+  positions: number[];
+  tried_letters: string[];
+  revealed: RevealedTitleChar[];
+  attempts_used: number;
+  max_attempts: number;
+  out_of_attempts: boolean;
+  /**
+   * Haklar bitti ve oyun kapandi. Bu durumda asagidaki alanlar dolar —
+   * istemci dogrudan sonuc ekranina gecer.
+   */
+  completed: boolean;
+  won: boolean;
+  xp_awarded: number;
+  dna_updated: boolean;
+  revealed_solution: RevealedFilm | null;
+  why_this_movie?: WhyThisMovieText | null;
+}
+
+/** submit-guess spotlight film tahmini response'u */
+export interface SpotlightGuessResult {
+  correct: boolean;
+  attempts_used: number;
+  max_attempts: number;
+  completed: boolean;
+  won: boolean;
+  xp_awarded: number;
+  dna_updated: boolean;
+  tried_letters: string[];
+  revealed: RevealedTitleChar[];
+  revealed_solution: RevealedFilm | null;
+  /** Film kesfi koprusu — yalnizca tamamlanmada gelir */
+  why_this_movie?: WhyThisMovieText | null;
+}
+
+// ─── Detective Types ────────────────────────────────────────────────────────
+
+// Not: Asagidaki uc tip eskiden Spotlight'a aitti ve Detective onlari
+// paylasiyordu. Spotlight V3'te eleme mekanigi kaldirilinca sahipligi
+// Detective'e gecti; adlar degistirilmedi (Detective genelinde kullanimda).
+
+/** Ipucu tipi — Detective'in 6 sirali ipucu */
 export type SpotlightClueType =
   | 'year_range'
   | 'genres'
@@ -342,45 +440,13 @@ export interface SpotlightClue {
   value: string | number | string[];
 }
 
-/** Film seçeneği (poster kartı) */
+/** Film secenegi (poster karti) */
 export interface SpotlightOption {
   film_id: string;
   title: string;
   year: number;
   poster_url: string | null;
 }
-
-/** puzzle_data yapısı — V2: tek options dizisi (6 film) */
-export interface SpotlightPuzzleData {
-  clues: SpotlightClue[];
-  options: SpotlightOption[];
-}
-
-/** İstemci tarafı oyun durumu */
-export interface SpotlightProgress {
-  turns_played: number;
-  eliminated_ids: string[];
-  guesses: Array<{ turn: number; film_id: string; title: string; correct: boolean }>;
-  completed: boolean;
-  won: boolean;
-}
-
-/** submit-guess spotlight response'u */
-export interface SpotlightGuessResult {
-  correct: boolean;
-  current_turn: number;
-  completed: boolean;
-  won: boolean;
-  xp_awarded: number;
-  dna_updated: boolean;
-  eliminated_ids: string[];
-  next_clue: SpotlightClue | null;
-  revealed_solution: RevealedFilm | null;
-  /** Film kesfi koprusu — yalnizca tamamlanmada gelir */
-  why_this_movie?: WhyThisMovieText | null;
-}
-
-// ─── Detective Types ────────────────────────────────────────────────────────
 
 /** Detective oyun aşaması */
 export type DetectiveStage = 1 | 2 | 3;
@@ -402,7 +468,6 @@ export interface DetectiveProgress {
     title: string;
     correct: boolean;
   }>;
-  stage2_guesses: GuessEntry[];
   guess_timestamps: string[];
   timer_start_ms: number;
   total_guesses: number;
@@ -411,24 +476,28 @@ export interface DetectiveProgress {
   won: boolean;
 }
 
-/** İpucu-çözüm ilişki açıklaması */
+/**
+ * İpucu-çözüm ilişki açıklaması.
+ *
+ * Sunucu yalnızca ham değeri gönderir; etiket ve biçimlendirme istemcide
+ * `formatClueValue` ile yapılır — aksi halde `genres: Action,Comedy` gibi
+ * çevrilmemiş ham enum ekrana düşüyordu.
+ */
 export interface ClueExplanation {
   clue_type: SpotlightClueType;
-  clue_value: string;
-  connection: string;
+  clue_value: string | number | string[];
 }
 
 /** Decoy-çözüm bağlantı açıklaması */
 export interface DecoyConnection {
   decoy_title: string;
-  shared_trait: string;
+  shared_traits: string[];
 }
 
-/** "Why This Movie?" öğrenme kartı verisi */
-export interface WhyThisMovie {
+/** Detective ipucu çözümlemesi — oyun sonu öğrenme kartı verisi */
+export interface DetectiveClueBreakdown {
   clue_explanations: ClueExplanation[];
   decoy_connections: DecoyConnection[];
-  fun_fact?: string;
 }
 
 /** Topluluk tahmin dağılımı istatistikleri */
@@ -442,20 +511,13 @@ export interface CommunityStats {
 /** submit-guess detective response'u */
 export interface DetectiveGuessResult {
   correct: boolean;
-  /** Mevcut aşama */
+  /** Mevcut aşama — 1: eleme sürüyor, 3: bitti */
   stage: DetectiveStage;
 
-  // Stage 1 (investigation) fields
+  // Eleme alanları
   eliminated_ids?: string[];
   next_clue?: SpotlightClue | null;
   remaining_count?: number;
-  /** Stage 1 -> 2 geçişi tetiklendi mi */
-  stage_transition?: boolean;
-
-  // Stage 2 (deduction) fields
-  feedback?: FeedbackRow | null;
-  guess_values?: GuessValues | null;
-  guesses_used?: number;
 
   // Completion fields
   completed: boolean;
@@ -466,7 +528,10 @@ export interface DetectiveGuessResult {
   revealed_solution: RevealedFilm | null;
 
   // Post-game data (sadece completed=true ise)
-  why_this_movie?: WhyThisMovie | null;
+  /** Film keşfi köprüsü metni — diğer oyunlarla aynı şekil */
+  why_this_movie?: WhyThisMovieText | null;
+  /** İpucu çözümlemesi — Detective'e özgü öğrenme kartı */
+  clue_breakdown?: DetectiveClueBreakdown | null;
   community_stats?: CommunityStats | null;
   /** "Lucky Spot" — Stage 1'de çözdü mü */
   lucky_spot?: boolean;

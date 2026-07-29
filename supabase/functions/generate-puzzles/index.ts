@@ -17,6 +17,8 @@ interface FilmRow {
   title: string
   year: number
   poster_url: string | null
+  /** Spotlight V2 gorseli — afis degil, filmden bir kare/backdrop */
+  backdrop_url: string | null
   overview: string | null
   genres: string[]
   runtime: number
@@ -451,13 +453,15 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
 
   // Cast gerektiren oyunlar (Imposter/Spotlight/Detective) ve FadeIn:
   // görsel/oyuncu kalitesi önemli, popülerlik eşiği düşürülebilir
-  const needsCast = game === 'imposter' || game === 'spotlight' || game === 'detective'
-  if ((needsCast || game === 'fadein') && minVotes > 3000) {
+  const needsCast = game === 'imposter' || game === 'detective'
+  // Spotlight V3 gorsel tanima oyunu — FadeIn gibi populerlik esigi dusuk
+  // tutulur. (V2'de spotlight needsCast icindeydi ve tabani oradan aliyordu.)
+  if ((needsCast || game === 'fadein' || game === 'spotlight') && minVotes > 3000) {
     minVotes = 3000
   }
 
   // Bellek limiti için yalnızca gerekli kolonlar, küçük limit
-  const cols = 'id,tmdb_id,title,year,poster_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
+  const cols = 'id,tmdb_id,title,year,poster_url,backdrop_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
 
   // metadata_json->>vote_count TEXT döner → vote_count filtresi client-side kalır.
   // cast_json/imdb_rating filtresi SUNUCUDA: veritabanında cast_json dolu film
@@ -475,15 +479,19 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
   if (needsCast) {
     query = query.not('cast_json', 'is', null)
   }
-  if (game === 'spotlight' || game === 'detective') {
+  if (game === 'detective') {
     query = query.not('imdb_rating', 'is', null)
+  }
+  // Spotlight V3: oyunun tamami gorsel uzerine kurulu — backdrop sart
+  if (game === 'spotlight') {
+    query = query.not('backdrop_url', 'is', null)
   }
 
   const { data, error } = await query
     .order('vote_average', { ascending: false })
     // Logline'ın 30-80 kelime overview filtresi client-side; dar havuzu
     // telafi etmek için satır bütçesi geniş tutulur.
-    .limit(needsCast || game === 'fadein' || game === 'logline' ? 500 : 300)
+    .limit(needsCast || game === 'fadein' || game === 'logline' || game === 'spotlight' ? 500 : 300)
 
   if (error) throw new Error(`Film sorgusu: ${error.message}`)
   if (!data?.length) throw new Error('Film havuzu boş')
@@ -505,11 +513,13 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
       const wc = f.overview.trim().split(/\s+/).length
       return wc >= 30 && wc <= 80
     })
-  } else if (game === 'spotlight' || game === 'detective') {
+  } else if (game === 'detective') {
     pool = pool.filter(f =>
       f.cast_json != null && f.cast_json.length >= 3 &&
       f.imdb_rating != null
     )
+  } else if (game === 'spotlight') {
+    pool = pool.filter(f => f.backdrop_url != null)
   } else if (game === 'imposter') {
     // Imposter: en az 3 cast member gerekli
     pool = pool.filter(f =>
@@ -649,7 +659,7 @@ function shuffle<T>(arr: T[]): T[] {
  * Solution havuzundan bağımsız — decoylar daha düşük eşikle seçilir.
  */
 async function fetchDecoyPool(rpt: Report): Promise<FilmRow[]> {
-  const cols = 'id,tmdb_id,title,year,poster_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
+  const cols = 'id,tmdb_id,title,year,poster_url,backdrop_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
 
   const { data, error } = await db()
     .from('films')
@@ -690,95 +700,72 @@ function pickDecoys(
 }
 
 /**
- * Spotlight V2: 6 film + 6 ipucu eleme mekaniği.
+ * Spotlight V3: tek gorsel + harf harf acilan baslik.
  *
- * 6 film baştan gösterilir (1 doğru + 5 decoy). Her turda 1 ipucu açılır.
- * Yanlış tahmin kartı eler (yerinde kalır), doğru tahmin = oyun biter.
- * 5 yanlış = kayıp (son kart otomatik açılır).
+ * Eski V2 (6 film eleme) Detective'in kucuk kopyasiydi — ayni fiil, ayni his.
+ * V3 farkli bir soru soruyor: "bu kareyi taniyor musun?"
  *
- * Decoy zorluk kademesi:
- * - 2 zor: aynı decade + örtüşen genre (erken ipuçlarıyla elenemez)
- * - 2 orta: aynı decade VEYA örtüşen genre
- * - 1 kolay: farklı decade VE farklı genre (ilk ipucuyla elenebilir)
+ * Mekanik:
+ *   - Filmden bir kare (backdrop) bulanik baslar
+ *   - Baslik maskeli: her harf bir kutu
+ *   - Oyuncu harf tahmin eder; dogru harf acilir ve bulaniklik azalir,
+ *     yanlis harf bir hak goturur
+ *   - Filmi istedigi an arama kutusundan tahmin edebilir
+ *
+ * HARD RULE 1: Baslik metni puzzle_data'ya GIRMEZ. Istemciye yalnizca
+ * maskenin yapisi (hangi pozisyon harf, hangisi ayrac) iner. Dogrulama
+ * submit-guess'te solution_ref uzerinden yapilir.
  */
-function spotlightData(
-  solution: FilmRow,
-  decoyPool: FilmRow[],
-): Record<string, unknown> | null {
-  if (!solution.cast_json?.length || !solution.imdb_rating || !solution.director) {
-    console.warn(`[gen] Spotlight reject: eksik veri — ${solution.title}`)
+
+/** Maske tokeni — istemci yalnizca bu yapiyi gorur, harfleri gormez */
+interface TitleMaskToken {
+  /** 'slot' = tahmin edilecek karakter · 'sep' = gorunur ayrac */
+  t: 'slot' | 'sep'
+  /** Yalnizca 'sep' icin: gorunen karakter (bosluk, tire, iki nokta...) */
+  c?: string
+}
+
+/**
+ * Basligi maskeye cevirir.
+ *
+ * Alfanumerik karakterler tahmin edilecek yuva olur; noktalama ve bosluk
+ * gorunur kalir (hangman gelenegi — kelime sinirlari gorunur).
+ */
+function buildTitleMask(title: string): { tokens: TitleMaskToken[]; letterCount: number } {
+  const tokens: TitleMaskToken[] = []
+  let letterCount = 0
+  for (const ch of title) {
+    if (/[\p{L}\p{N}]/u.test(ch)) {
+      tokens.push({ t: 'slot' })
+      letterCount++
+    } else {
+      tokens.push({ t: 'sep', c: ch })
+    }
+  }
+  return { tokens, letterCount }
+}
+
+function spotlightData(solution: FilmRow): Record<string, unknown> | null {
+  // Gorsel olmadan oyun yok — afise dusmek FadeIn ile ayni ekrani uretirdi
+  if (!solution.backdrop_url) {
+    console.warn(`[gen] Spotlight reject: backdrop yok — ${solution.title}`)
     return null
   }
 
-  const decade = Math.floor(solution.year / 10) * 10
-  const yearRange = `${decade}s`
-  const sGenres = new Set(solution.genres.map(g => g.toLowerCase()))
-  const castNames = solution.cast_json.slice(0, 3).map(c => c.name)
+  const { tokens, letterCount } = buildTitleMask(solution.title)
 
-  const clues: SpotlightClue[] = [
-    { turn: 1, type: 'year_range', value: yearRange },
-    { turn: 2, type: 'genres', value: solution.genres },
-    { turn: 3, type: 'runtime', value: solution.runtime },
-    { turn: 4, type: 'imdb_rating', value: solution.imdb_rating },
-    { turn: 5, type: 'cast', value: castNames },
-    { turn: 6, type: 'director', value: solution.director },
-  ]
-
-  const solutionOption: SpotlightOption = {
-    film_id: solution.id,
-    title: solution.title,
-    year: solution.year,
-    poster_url: solution.poster_url ?? '',
-  }
-
-  const usedIds = new Set<string>()
-
-  // --- 2 zor decoy: aynı decade + örtüşen genre ---
-  const hardPool = decoyPool.filter(f =>
-    f.year >= decade && f.year <= decade + 9 &&
-    f.genres.some(g => sGenres.has(g.toLowerCase()))
-  )
-  const hardDecoys = pickDecoys(hardPool, solution.id, usedIds, 2)
-
-  // --- 2 orta decoy: aynı decade VEYA örtüşen genre (ikisi birden değil) ---
-  const medPool = decoyPool.filter(f => {
-    const sameDecade = f.year >= decade && f.year <= decade + 9
-    const sameGenre = f.genres.some(g => sGenres.has(g.toLowerCase()))
-    return (sameDecade || sameGenre) && !(sameDecade && sameGenre)
-  })
-  const medDecoys = pickDecoys(medPool, solution.id, usedIds, 2)
-
-  // --- 1 kolay decoy: farklı decade VE farklı genre ---
-  const easyPool = decoyPool.filter(f =>
-    (f.year < decade || f.year > decade + 9) &&
-    !f.genres.some(g => sGenres.has(g.toLowerCase()))
-  )
-  const easyDecoys = pickDecoys(easyPool, solution.id, usedIds, 1)
-
-  const allDecoys = [...hardDecoys, ...medDecoys, ...easyDecoys]
-
-  // Yetersiz decoy varsa fallback
-  if (allDecoys.length < 5) {
-    const extra = pickDecoys(decoyPool, solution.id, usedIds, 5 - allDecoys.length)
-    allDecoys.push(...extra)
-  }
-
-  if (allDecoys.length < 5) {
-    console.error(`[gen] Spotlight REJECT: yetersiz decoy (${allDecoys.length}/5) — ${solution.title}`)
+  // Cok kisa baslik tahmin edilemeyecek kadar acik, cok uzun baslik ekrana sigmaz
+  if (letterCount < 3 || letterCount > 30) {
+    console.warn(`[gen] Spotlight reject: baslik uzunlugu ${letterCount} — ${solution.title}`)
     return null
   }
 
-  const options: SpotlightOption[] = shuffle([
-    solutionOption,
-    ...allDecoys.map(d => ({
-      film_id: d.id,
-      title: d.title,
-      year: d.year,
-      poster_url: d.poster_url ?? '',
-    })),
-  ])
-
-  return { clues, options }
+  return {
+    v: 3,
+    backdrop_url: solution.backdrop_url,
+    title_mask: tokens,
+    letter_count: letterCount,
+  }
 }
 
 // ─── Detective puzzle_data (12 film + entropy-based decoys) ───────────────
@@ -962,7 +949,7 @@ interface ImposterRound {
   film_title: string
   poster_url: string | null
   tmdb_id: number
-  options: Array<{ id: number; name: string }>
+  options: Array<{ id: number; name: string; profile_path: string | null }>
   /** Sahte aktör ID'leri — view tarafından striplenir */
   imposter_ids: number[]
 }
@@ -1023,7 +1010,9 @@ async function imposterData(
     realActors.forEach(a => allUsedNames.add(a.name.toLowerCase()))
 
     // Sahte aktörler — diğer filmlerden
-    const fakeActors: Array<{ id: number; name: string }> = []
+    // profile_path UI icin — gercek ve sahte aktorlerin ikisi de tasir,
+    // dolayisiyla cozum sizintisi degildir (Hard Rule 1).
+    const fakeActors: Array<{ id: number; name: string; profile_path: string | null }> = []
     const otherFilms = shuffle(allPool.filter(
       f => f.id !== film.id && f.cast_json && f.cast_json.length >= 3,
     ))
@@ -1035,7 +1024,11 @@ async function imposterData(
         if (fakeActors.length >= cfg.fakeCount) break
         const nameLower = actor.name.toLowerCase()
         if (!allUsedNames.has(nameLower)) {
-          fakeActors.push({ id: hashFilmName(actor.name), name: actor.name })
+          fakeActors.push({
+            id: hashFilmName(actor.name),
+            name: actor.name,
+            profile_path: actor.profile_path ?? null,
+          })
           allUsedNames.add(nameLower)
         }
       }
@@ -1045,7 +1038,11 @@ async function imposterData(
 
     const imposterIds = fakeActors.map(a => a.id)
     const options = shuffle([
-      ...realActors.map(a => ({ id: hashFilmName(a.name), name: a.name })),
+      ...realActors.map(a => ({
+        id: hashFilmName(a.name),
+        name: a.name,
+        profile_path: a.profile_path ?? null,
+      })),
       ...fakeActors,
     ])
 
@@ -1285,15 +1282,9 @@ async function genOne(
       puzzleData = { ...res.puzzleData, redaction_words: res.redactionWords }
       redWords = res.redactionWords
     } else if (game === 'spotlight') {
-      if (!_spotlightDecoyPool) {
-        _spotlightDecoyPool = await fetchDecoyPool(rpt)
-      }
-      const spData = spotlightData(f, _spotlightDecoyPool)
+      // V3: decoy havuzu gerekmiyor — tek gorsel + baslik maskesi
+      const spData = spotlightData(f)
       if (!spData) { rpt.rejected++; rpt.per_game[game].rejected++; continue }
-
-      const dataSize = JSON.stringify(spData).length
-      console.log(`[gen] Spotlight puzzle_data boyutu: ${(dataSize / 1024).toFixed(1)} KB — ${f.title}`)
-
       puzzleData = spData
     } else if (game === 'detective') {
       if (!_spotlightDecoyPool) {
@@ -1324,8 +1315,12 @@ async function genOne(
     // clues: backward-compat fallback field
     const cluesValue = game === 'cinemetrics'
       ? puzzleData
-      : game === 'spotlight' || game === 'detective'
+      : game === 'detective'
         ? { clues: puzzleData.clues }
+      : game === 'spotlight'
+        // V3: ipucu yok — istemci maske ve gorseli puzzle_data'dan okur
+        ? { v: puzzleData.v, backdrop_url: puzzleData.backdrop_url,
+            title_mask: puzzleData.title_mask, letter_count: puzzleData.letter_count }
         : game === 'imposter'
           ? { rounds: (puzzleData.rounds as ImposterRound[]).map(r => ({
               round: r.round,
@@ -1337,11 +1332,11 @@ async function genOne(
             ? { poster_url: puzzleData.poster_url, hints: puzzleData.hints }
             : { overview_masked: puzzleData.overview_masked }
 
-    // Per-game max attempts (detective: 6 Stage1 + 6 Stage2 = 12 max)
+    // Per-game max attempts (detective: tek fazli eleme, 6 yanlis hak)
     const maxAttempts = game === 'imposter' ? 3
       : game === 'logline' ? 5
       : game === 'quoted' ? 4
-      : game === 'detective' ? 12
+      : game === 'detective' ? 6
       : 6
 
     const { error } = await db().from('daily_puzzles').insert({
@@ -1395,10 +1390,7 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
     if (game === 'cinemetrics') {
       pd = cmData(f)
     } else if (game === 'spotlight') {
-      if (!_spotlightDecoyPool) {
-        _spotlightDecoyPool = await fetchDecoyPool(rpt)
-      }
-      const spData = spotlightData(f, _spotlightDecoyPool)
+      const spData = spotlightData(f)
       if (!spData) continue
       pd = spData
     } else if (game === 'detective') {
@@ -1425,7 +1417,7 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
     const emergencyMaxAttempts = game === 'imposter' ? 3
       : game === 'logline' ? 5
       : game === 'quoted' ? 4
-      : game === 'detective' ? 12
+      : game === 'detective' ? 6
       : 6
 
     const { error } = await db().from('daily_puzzles').insert({

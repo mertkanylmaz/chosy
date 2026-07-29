@@ -44,6 +44,16 @@ import {
   type ImposterConfidenceConfig,
 } from '../_shared/confidence.ts'
 
+// ─── Sabitler ────────────────────────────────────────────────────────────────
+
+/**
+ * Detective'de izin verilen yanlis tahmin sayisi.
+ *
+ * 12 secenegin hepsi denenebilseydi oyun garanti kazanilirdi; 6 hak, 6 ipucuyla
+ * birebir ortusuyor (her yanlis tahmin bir ipucu aciyor).
+ */
+const DETECTIVE_MAX_GUESSES = 6
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 interface GuessValues {
@@ -93,6 +103,14 @@ interface ProgressJson {
   turns_played?: number
   spotlight_guesses?: SpotlightGuessEntry[]
   eliminated_ids?: string[]
+  /** Spotlight V3: oyuncunun denedigi harfler (buyuk harf, tekil) */
+  spotlight_letters?: string[]
+  /**
+   * Spotlight V3: acilmis pozisyonlar ve harfleri.
+   * Harf oyuncuya zaten gosterilmis oldugu icin sizinti degil; oyuna geri
+   * donuldugunde maskeyi yeniden cizebilmek icin gerekli.
+   */
+  spotlight_revealed?: Array<{ pos: number; ch: string }>
   // Imposter V2 fields
   imposter_rounds?: ImposterRoundResult[]
   // FadeIn fields — oyuncunun seçerek açtığı ipuçları
@@ -214,10 +232,10 @@ Deno.serve(async (req: Request) => {
   let guessActorIds: number[] | undefined
   // Imposter V2: güven bahsi (50 | 75 | 100)
   let confidence: number | undefined
-  // Detective: aşama bazlı submit
-  let detectiveStage: number | undefined
   // FadeIn: ipucu açma (tahmin harcamaz)
   let hintOrder: number | undefined
+  // Spotlight V3: harf tahmini (tek karakter)
+  let spotlightLetter: string | undefined
 
   try {
     const body = await req.json()
@@ -231,15 +249,18 @@ Deno.serve(async (req: Request) => {
       guessActorIds = body.guess_actor_ids.map(Number)
     }
     confidence = body.confidence != null ? Number(body.confidence) : undefined
-    // Detective params
-    detectiveStage = body.detective_stage != null ? Number(body.detective_stage) : undefined
+    // Not: `detective_stage` artik okunmuyor — Detective tek fazli.
+    // Eski istemciler gondermeye devam edebilir, yok sayilir.
     // FadeIn hint reveal
     hintOrder = body.hint_order != null ? Number(body.hint_order) : undefined
+    spotlightLetter = typeof body.spotlight_letter === 'string'
+      ? body.spotlight_letter.trim().toLocaleUpperCase('tr-TR')
+      : undefined
   } catch {
     return errorResponse('INVALID_INPUT', 'Invalid request body', 400)
   }
 
-  if (!puzzleId || (!guessFilmId && guessActorId == null && !guessActorIds && hintOrder == null)) {
+  if (!puzzleId || (!guessFilmId && guessActorId == null && !guessActorIds && hintOrder == null && !spotlightLetter)) {
     return errorResponse('MISSING_PARAMS', 'puzzle_id and guess_film_id (or guess_actor_id/guess_actor_ids for imposter, hint_order for a hint reveal) are required', 400)
   }
 
@@ -423,6 +444,188 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    // ─── Spotlight V3: harf tahmini ────────────────────────────────────
+    // Tahmin harcamaz degil — yanlis harf bir hak goturur. Dogru harf
+    // basliktaki tum pozisyonlarini acar ve gorseli netlestirir.
+    //
+    // HARD RULE 1: Baslik metni response'a GIRMEZ. Yalnizca tahmin edilen
+    // harfin pozisyonlari doner; acilmamis harfler istemcide yoktur.
+    if (spotlightLetter != null) {
+      if (puzzle.game_type !== 'spotlight') {
+        return errorResponse('INVALID_ACTION', 'spotlight_letter is only valid for spotlight', 400)
+      }
+      if ([...spotlightLetter].length !== 1) {
+        return errorResponse('INVALID_LETTER', 'spotlight_letter must be a single character', 400)
+      }
+
+      const spProgress = scoreRow.progress_json as ProgressJson
+      if (spProgress?.completed) {
+        return errorResponse('ALREADY_COMPLETED', 'Puzzle already completed', 409)
+      }
+
+      // Hak biten oyuncu harf acmaya devam edememeli — bu dal genel
+      // max-attempts kontrolunden ONCE calisiyor, kendi kontrolunu yapar.
+      if (scoreRow.attempts >= puzzle.max_attempts) {
+        return errorResponse('MAX_ATTEMPTS', 'No more attempts remaining', 409)
+      }
+
+      const triedLetters = spProgress?.spotlight_letters ?? []
+      if (triedLetters.includes(spotlightLetter)) {
+        return errorResponse('LETTER_ALREADY_TRIED', 'Letter already guessed', 400)
+      }
+
+      const { data: solFilm, error: solErr } = await service
+        .from('films')
+        .select('title')
+        .eq('id', puzzle.solution_ref)
+        .single()
+
+      if (solErr || !solFilm) {
+        logError('submit-guess.solution_film_not_found', solErr, { solution_ref: puzzle.solution_ref })
+        return errorResponse('SOLUTION_MISSING', 'Puzzle configuration error', 500)
+      }
+
+      // Pozisyonlar baslik karakter dizisi uzerinden — maske ile ayni indeksleme
+      const titleChars = [...(solFilm.title as string)]
+      const positions: number[] = []
+      titleChars.forEach((ch, i) => {
+        if (ch.toLocaleUpperCase('tr-TR') === spotlightLetter) positions.push(i)
+      })
+
+      const hit = positions.length > 0
+      const updatedLetters = [...triedLetters, spotlightLetter]
+      const prevRevealed = spProgress?.spotlight_revealed ?? []
+      const seenPositions = new Set(prevRevealed.map(r => r.pos))
+      const revealed = [
+        ...prevRevealed,
+        ...positions
+          .filter(pos => !seenPositions.has(pos))
+          .map(pos => ({ pos, ch: titleChars[pos] })),
+      ]
+
+      // Yanlis harf bir hak goturur; dogru harf bedava
+      const attemptsAfter = hit ? scoreRow.attempts : scoreRow.attempts + 1
+      const outOfAttempts = attemptsAfter >= puzzle.max_attempts
+
+      // Haklar bittiyse oyun BURADA kapanir. Onceki surumde yalnizca
+      // out_of_attempts bayragi donuyor, oyun hic tamamlanmiyordu; oyuncu
+      // "0 hak" ile ekranda kilitli kaliyor ve sonraki harf 409 aliyordu.
+      const updatedProgress: ProgressJson = {
+        ...spProgress,
+        guesses: spProgress?.guesses ?? [],
+        guess_timestamps: spProgress?.guess_timestamps ?? [],
+        completed: outOfAttempts,
+        won: false,
+        revealed_count: spProgress?.revealed_count ?? 0,
+        spotlight_letters: updatedLetters,
+        spotlight_revealed: revealed,
+      }
+
+      const letterUpdatePayload: Record<string, unknown> = {
+        progress_json: updatedProgress,
+        attempts: attemptsAfter,
+      }
+
+      let letterXp = 0
+      const letterDnaSignals: { dim: string; val: number }[] = []
+
+      if (outOfAttempts) {
+        const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
+        letterXp = xpConfig.fail_xp
+        letterXp = await applyStreakMultiplier(service, userId, letterXp, xpConfig)
+        letterXp = await applyDoubleXp(service, userId, letterXp, puzzle.date)
+        letterDnaSignals.push({ dim: 'knowledge', val: 0.1 })
+
+        letterUpdatePayload.solved = false
+        letterUpdatePayload.completed_at = nowISO
+        letterUpdatePayload.xp_awarded = letterXp
+        letterUpdatePayload.dna_signals = letterDnaSignals
+      }
+
+      const { error: letterUpdateError } = await service
+        .from('game_scores')
+        .update(letterUpdatePayload)
+        .eq('id', scoreRow.id)
+
+      if (letterUpdateError) {
+        logError('submit-guess.letter_update_failed', letterUpdateError, { userId, puzzleId })
+        return errorResponse('UPDATE_FAILED', 'Could not save letter state', 500)
+      }
+
+      // Oyun kapandiysa cozum ve kesif metni doner (film tahmini yolundaki
+      // ile ayni sozlesme) — istemci sonuc ekranina gecebilsin diye.
+      let letterSolution: RevealedSolution | null = null
+      let letterWhy: ReturnType<typeof buildWhyThisMovie> | null = null
+      let letterDnaUpdated = false
+
+      if (outOfAttempts) {
+        const { data: solFull } = await service
+          .from('films')
+          .select('id, title, year, genres, director, runtime, vote_average, country, metadata_json, poster_url')
+          .eq('id', puzzle.solution_ref)
+          .single()
+
+        if (solFull) {
+          letterSolution = {
+            film_id: solFull.id,
+            title: solFull.title,
+            year: solFull.year,
+            director: solFull.director,
+            poster_url: solFull.poster_url,
+          }
+          letterWhy = buildWhyThisMovie(solFull)
+        }
+
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+          const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          const dnaResponse = await fetch(
+            `${supabaseUrl}/functions/v1/recompute-cinema-dna`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${serviceKey}`,
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                signals: letterDnaSignals,
+                daily_completed: true,
+              }),
+            },
+          )
+          letterDnaUpdated = dnaResponse.ok
+        } catch (err) {
+          logError('submit-guess.dna_recompute_error', err, { userId })
+        }
+      }
+
+      logInfo('submit-guess.spotlight_letter', {
+        user_id: userId,
+        puzzle_id: puzzleId,
+        game_type: 'spotlight',
+        hit,
+        attempts: attemptsAfter,
+      })
+
+      return jsonResponse({
+        letter: spotlightLetter,
+        hit,
+        positions,
+        tried_letters: updatedLetters,
+        revealed: revealed,
+        attempts_used: attemptsAfter,
+        max_attempts: puzzle.max_attempts,
+        out_of_attempts: outOfAttempts,
+        completed: outOfAttempts,
+        won: false,
+        xp_awarded: letterXp,
+        dna_updated: letterDnaUpdated,
+        revealed_solution: letterSolution,
+        why_this_movie: letterWhy,
+      })
+    }
+
     // Check max attempts
     if (scoreRow.attempts >= puzzle.max_attempts) {
       return errorResponse(
@@ -477,122 +680,41 @@ Deno.serve(async (req: Request) => {
     let loglineReveal: { revealed_index: number; revealed_word: string } | null = null
     let loglineHints: LoglineSemanticHints | null = null
 
-    // ─── Spotlight V2: eleme mekaniği ──────────────────────────────────
+    // ─── Spotlight V3: film tahmini (tek gorsel + baslik maskesi) ──────
+    // Harf tahmini yukarida ayri bir dalda islenir. Buraya yalnizca
+    // "filmi biliyorum" tahmini duser.
     if (puzzle.game_type === 'spotlight') {
-      const turn = currentTurn ?? 1
-      if (turn < 1 || turn > 6) {
-        return errorResponse('INVALID_TURN', 'current_turn must be between 1 and 6', 400)
-      }
-
-      // V2: düz options dizisi / Legacy: options_per_turn
-      const isLegacy = !!(puzzle.puzzle_data as Record<string, unknown>)?.options_per_turn
-      const allOptions = isLegacy
-        ? null
-        : (puzzle.puzzle_data?.options as Array<{ film_id: string; title: string }> | undefined)
-
-      // ─── Legacy path (geçiş dönemi — eski puzzle formatı) ───
-      if (isLegacy || !allOptions) {
-        const optionsPerTurn = (puzzle.puzzle_data as Record<string, unknown>)?.options_per_turn as
-          Array<{ turn: number; options: Array<{ film_id: string; title: string }> }> | undefined
-        if (!optionsPerTurn) {
-          return errorResponse('PUZZLE_DATA_INVALID', 'Spotlight puzzle data missing options', 500)
-        }
-        const turnData = optionsPerTurn.find(t => t.turn === turn)
-        if (!turnData) {
-          return errorResponse('INVALID_TURN', `Turn ${turn} not found in puzzle data`, 400)
-        }
-        const validOption = turnData.options.find(o => o.film_id === guessFilmId)
-        if (!validOption) {
-          return errorResponse('INVALID_GUESS', 'Guessed film not in options for this turn', 400)
-        }
-        // Legacy: eski davranış — basit ileri/geri
-        const spotlightGuesses: SpotlightGuessEntry[] = [
-          ...(progress.spotlight_guesses ?? []),
-          { turn, film_id: guessFilm.id, title: guessFilm.title, correct: isCorrect },
-        ]
-        const isLastTurn = turn >= 6
-        const completed = isCorrect || isLastTurn
-        const won = isCorrect
-        const updatedProgress: ProgressJson = {
-          guesses: progress.guesses,
-          guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
-          completed, won, revealed_count: 0,
-          turns_played: turn,
-          spotlight_guesses: spotlightGuesses,
-        }
-        let xpAwarded = 0
-        if (completed) {
-          const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
-          xpAwarded = won
-            ? (xpConfig.guess_ladder[Math.min(turn - 1, xpConfig.guess_ladder.length - 1)] ?? xpConfig.fail_xp)
-            : xpConfig.fail_xp
-          xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
-        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
-        }
-        const updatePayload: Record<string, unknown> = { progress_json: updatedProgress, attempts: turn }
-        if (completed) {
-          updatePayload.solved = won
-          updatePayload.completed_at = nowISO
-          updatePayload.xp_awarded = xpAwarded
-        }
-        await service.from('game_scores').update(updatePayload).eq('id', scoreRow.id)
-        const cluesLegacy = puzzle.puzzle_data?.clues as Array<{ turn: number }> | undefined
-        const nextClue = (!completed && turn < 6) ? (cluesLegacy?.find(c => c.turn === turn + 1) ?? null) : null
-        const nextTurnData = (!completed && turn < 6) ? (optionsPerTurn.find(t => t.turn === turn + 1) ?? null) : null
-        return jsonResponse({
-          correct: isCorrect, current_turn: turn,
-          next_turn: completed ? null : turn + 1,
-          next_clue: nextClue, next_options: nextTurnData?.options ?? null,
-          completed, won, xp_awarded: xpAwarded, dna_updated: false,
-          revealed_solution: completed ? { film_id: solutionFilm.id, title: solutionFilm.title, year: solutionFilm.year, director: solutionFilm.director, poster_url: solutionFilm.poster_url } : null,
-          why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
-        })
-      }
-
-      // ─── V2 path: eleme mekaniği ───
-      const eliminatedIds: string[] = [...(progress.eliminated_ids ?? [])]
-
-      // Validate: guess must be in options AND not already eliminated
-      const validOption = allOptions.find(o => o.film_id === guessFilmId)
-      if (!validOption) {
-        return errorResponse('INVALID_GUESS', 'Guessed film not in options', 400)
-      }
-      if (eliminatedIds.includes(guessFilmId)) {
-        return errorResponse('ALREADY_ELIMINATED', 'Film already eliminated', 400)
-      }
+      const spProgress = progress
+      const triedLetters = spProgress.spotlight_letters ?? []
+      const revealed = spProgress.spotlight_revealed ?? []
 
       const spotlightGuesses: SpotlightGuessEntry[] = [
-        ...(progress.spotlight_guesses ?? []),
-        { turn, film_id: guessFilm.id, title: guessFilm.title, correct: isCorrect },
+        ...(spProgress.spotlight_guesses ?? []),
+        { turn: newAttempts, film_id: guessFilm!.id, title: guessFilm!.title, correct: isCorrect },
       ]
 
-      if (!isCorrect) {
-        eliminatedIds.push(guessFilmId)
-      }
-
-      const completed = isCorrect || eliminatedIds.length >= 5
+      const completed = isCorrect || newAttempts >= puzzle.max_attempts
       const won = isCorrect
 
       const updatedProgress: ProgressJson = {
-        guesses: progress.guesses,
-        guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
+        guesses: spProgress.guesses,
+        guess_timestamps: [...(spProgress.guess_timestamps ?? []), nowISO],
         completed,
         won,
-        revealed_count: 0,
-        turns_played: turn,
+        revealed_count: spProgress.revealed_count ?? 0,
+        turns_played: newAttempts,
         spotlight_guesses: spotlightGuesses,
-        eliminated_ids: eliminatedIds,
+        spotlight_letters: triedLetters,
+        spotlight_revealed: revealed,
       }
 
-      // XP & DNA
       let xpAwarded = 0
       const dnaSignals: { dim: string; val: number }[] = []
 
       if (completed) {
         const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
         if (won) {
-          // turn = kaçıncı tahmin (1-based). Daha az tahmin = daha yüksek XP
-          const ladderIndex = Math.min(turn - 1, xpConfig.guess_ladder.length - 1)
+          const ladderIndex = Math.min(newAttempts - 1, xpConfig.guess_ladder.length - 1)
           xpAwarded = xpConfig.guess_ladder[ladderIndex] ?? xpConfig.fail_xp
         } else {
           xpAwarded = xpConfig.fail_xp
@@ -600,22 +722,15 @@ Deno.serve(async (req: Request) => {
         xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
         xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
 
-        // DNA signals: knowledge, deduction, auteur
-        const knowledgeSignal = won ? 0.4 + 0.1 * (5 - eliminatedIds.length) : 0.1
-        const deductionSignal = won ? (6 - turn) / 5 : 0
-        const auteurSignal = won && turn <= 4 ? 0.6 : 0
-
-        dnaSignals.push({ dim: 'knowledge', val: knowledgeSignal })
-        dnaSignals.push({ dim: 'deduction', val: deductionSignal })
-        if (auteurSignal > 0) {
-          dnaSignals.push({ dim: 'auteur_sense', val: auteurSignal })
-        }
+        // V3 gorsel bir oyun: az harfle bilmek visual_sense'i besler
+        const letterPenalty = triedLetters.length * 0.05
+        dnaSignals.push({ dim: 'knowledge', val: won ? Math.max(0.2, 0.8 - letterPenalty) : 0.1 })
+        dnaSignals.push({ dim: 'visual_sense', val: won ? Math.max(0.2, 0.9 - letterPenalty) : 0 })
       }
 
-      // Update game_scores
       const updatePayload: Record<string, unknown> = {
         progress_json: updatedProgress,
-        attempts: turn,
+        attempts: newAttempts,
       }
       if (completed) {
         updatePayload.solved = won
@@ -638,7 +753,6 @@ Deno.serve(async (req: Request) => {
         return errorResponse('UPDATE_FAILED', 'Could not save game state', 500)
       }
 
-      // DNA recompute
       let dnaUpdated = false
       if (completed && dnaSignals.length > 0) {
         try {
@@ -665,7 +779,6 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Build response
       let revealedSolution: RevealedSolution | null = null
       if (completed) {
         revealedSolution = {
@@ -677,39 +790,31 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Next clue (only if not completed)
-      const clues = puzzle.puzzle_data?.clues as
-        Array<{ turn: number; type: string; value: unknown }> | undefined
-      const nextClue = (!completed && turn < 6)
-        ? (clues?.find(c => c.turn === turn + 1) ?? null)
-        : null
-
-      const response = {
-        correct: isCorrect,
-        current_turn: turn,
-        completed,
-        won,
-        xp_awarded: xpAwarded,
-        dna_updated: dnaUpdated,
-        eliminated_ids: eliminatedIds,
-        next_clue: nextClue,
-        revealed_solution: revealedSolution,
-        why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
-      }
-
       logInfo('submit-guess.processed', {
         user_id: userId,
         puzzle_id: puzzleId,
         game_type: 'spotlight',
         correct: isCorrect,
-        turn,
+        attempts: newAttempts,
+        letters_tried: triedLetters.length,
         completed,
         won,
-        eliminated_count: eliminatedIds.length,
         xp_awarded: xpAwarded,
       })
 
-      return jsonResponse(response)
+      return jsonResponse({
+        correct: isCorrect,
+        attempts_used: newAttempts,
+        max_attempts: puzzle.max_attempts,
+        completed,
+        won,
+        xp_awarded: xpAwarded,
+        dna_updated: dnaUpdated,
+        tried_letters: triedLetters,
+        revealed: revealed,
+        revealed_solution: revealedSolution,
+        why_this_movie: completed ? buildWhyThisMovie(solutionFilm) : null,
+      })
     }
 
     // ─── Imposter V2: round-based actor selection ──────────────────────
@@ -941,13 +1046,13 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(response)
     }
 
-    // ─── Detective: 3-stage unified game ───────────────────────────────────
+    // ─── Detective: tek fazli eleme oyunu ──────────────────────────────────
+    // Ikinci faz (karsilastirmali feedback) kaldirildi — zaten 1. fazda
+    // ogrenilen ipuclarini tekrar ediyordu, yeni bilgi uretmiyordu.
     if (puzzle.game_type === 'detective') {
       if (!guessFilm) {
         return errorResponse('INTERNAL_ERROR', 'Missing guess film data', 500)
       }
-
-      const detStage = detectiveStage ?? 1
 
       // Validate film is in options and not eliminated
       const puzzleOptions = (puzzle.puzzle_data?.options as Array<{ film_id: string; title: string }>) ?? []
@@ -963,8 +1068,6 @@ Deno.serve(async (req: Request) => {
 
       const stage1Guesses: Array<{ film_id: string; title: string; correct: boolean }> =
         (progress as Record<string, unknown>).stage1_guesses as typeof stage1Guesses ?? []
-      const stage2Guesses: GuessEntry[] =
-        (progress as Record<string, unknown>).stage2_guesses as GuessEntry[] ?? []
       const timerStart: number =
         (progress as Record<string, unknown>).timer_start_ms as number ?? Date.now()
       const hintsUsed: number =
@@ -972,377 +1075,256 @@ Deno.serve(async (req: Request) => {
 
       const isDetectiveCorrect = guessFilm.id === solutionFilm.id
 
-      // ── Stage 1: Investigation (elimination) ──
-      if (detStage === 1) {
-        const newStage1Guesses = [
-          ...stage1Guesses,
-          { film_id: guessFilm.id, title: guessFilm.title, correct: isDetectiveCorrect },
+      const newStage1Guesses = [
+        ...stage1Guesses,
+        { film_id: guessFilm.id, title: guessFilm.title, correct: isDetectiveCorrect },
+      ]
+
+      if (isDetectiveCorrect) {
+        // Cozuldu
+        const totalGuesses = newStage1Guesses.length
+        const elapsedMs = Date.now() - timerStart
+
+        // Kazanma skoru — Tahmin %60, Ipucu %25, Sure %15
+        const minutes = elapsedMs / 60000
+        const timeScore = minutes <= 2 ? 150 : minutes <= 5
+          ? Math.round(150 - (minutes - 2) * (100 / 3))
+          : 50
+        const guessScore = Math.max(0, 600 - (totalGuesses - 1) * 100)
+        const hintScore = hintsUsed === 0 ? 250 : hintsUsed === 1 ? 150 : 50
+        const difficulty = (puzzle.puzzle_data as Record<string, unknown>)?.difficulty as number ?? 1
+        const diffMult = 1 + (difficulty - 1) * 0.125
+        const detectiveScore = Math.min(
+          1000,
+          Math.round((guessScore + hintScore + timeScore) * diffMult),
+        )
+
+        const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
+        const ladderIdx = Math.min(totalGuesses - 1, xpConfig.guess_ladder.length - 1)
+        let xpAwarded = xpConfig.guess_ladder[ladderIdx] ?? xpConfig.fail_xp
+        xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+      xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
+
+        const dnaSignals = [
+          { dim: 'knowledge', val: 0.3 + 0.1 * (DETECTIVE_MAX_GUESSES - totalGuesses) },
+          { dim: 'deduction', val: (DETECTIVE_MAX_GUESSES - totalGuesses + 1) / DETECTIVE_MAX_GUESSES },
+          { dim: 'visual_sense', val: 0.3 },
         ]
 
-        if (isDetectiveCorrect) {
-          // Lucky Spot! Solved in Stage 1
-          const totalGuesses = newStage1Guesses.length + stage2Guesses.length
-          const elapsedMs = Date.now() - timerStart
-
-          // Lucky Spot score (capped at ~550)
-          const minutes = elapsedMs / 60000
-          const timeScore = minutes <= 2 ? 150 : minutes <= 5
-            ? Math.round(150 - (minutes - 2) * (100 / 3))
-            : 50
-          const luckySpotScore = Math.min(550, 400 + timeScore)
-
-          const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
-          const ladderIdx = Math.min(totalGuesses - 1, xpConfig.guess_ladder.length - 1)
-          let xpAwarded = xpConfig.guess_ladder[ladderIdx] ?? xpConfig.fail_xp
-          xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
-        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
-
-          const dnaSignals = [
-            { dim: 'knowledge', val: 0.3 + 0.1 * (12 - totalGuesses) },
-            { dim: 'deduction', val: 0.5 },
-            { dim: 'visual_sense', val: 0.3 },
-          ]
-
-          const updatedProgress = {
-            ...progress,
-            stage: 3,
-            stage1_guesses: newStage1Guesses,
-            eliminated_ids: eliminatedIds,
-            guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
-            timer_start_ms: timerStart,
-            total_guesses: totalGuesses,
-            hints_used: hintsUsed,
-            completed: true,
-            won: true,
-          }
-
-          // Build WhyThisMovie
-          const decoyConns = (puzzle.puzzle_data?.decoy_connections as Array<{ decoy_title: string; shared_traits: string[] }>) ?? []
-          const cluesList = (puzzle.puzzle_data?.clues as Array<{ type: string; value: unknown }>) ?? []
-          const whyThisMovie = {
-            clue_explanations: cluesList.map(c => ({
-              clue_type: c.type,
-              clue_value: String(c.value),
-              connection: `${c.type}: ${c.value}`,
-            })),
-            decoy_connections: decoyConns.map(d => ({
-              decoy_title: d.decoy_title,
-              shared_trait: d.shared_traits.join(', '),
-            })),
-          }
-
-          // Update game_scores
-          await service
-            .from('game_scores')
-            .update({
-              progress_json: updatedProgress,
-              attempts: newAttempts,
-              solved: true,
-              completed_at: nowISO,
-              xp_awarded: xpAwarded,
-              dna_signals: dnaSignals,
-              detective_score: luckySpotScore,
-            })
-            .eq('id', scoreRow.id)
-
-          // DNA recompute (fire-and-forget)
-          let dnaUpdated = false
-          try {
-            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-            const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            const dnaResp = await fetch(`${supabaseUrl}/functions/v1/recompute-cinema-dna`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
-              body: JSON.stringify({ user_id: userId, signals: dnaSignals, daily_completed: true }),
-            })
-            dnaUpdated = dnaResp.ok
-          } catch { /* fire-and-forget */ }
-
-          return jsonResponse({
-            correct: true,
-            stage: 3,
-            completed: true,
-            won: true,
-            detective_score: luckySpotScore,
-            xp_awarded: xpAwarded,
-            dna_updated: dnaUpdated,
-            lucky_spot: true,
-            eliminated_ids: eliminatedIds,
-            revealed_solution: {
-              film_id: solutionFilm.id,
-              title: solutionFilm.title,
-              year: solutionFilm.year,
-              director: solutionFilm.director,
-              poster_url: solutionFilm.poster_url,
-            },
-            why_this_movie: whyThisMovie,
-            community_stats: null, // Will be populated on get-daily-challenge
-          })
-        }
-
-        // Wrong guess in Stage 1: eliminate the film
-        const newEliminatedIds = [...eliminatedIds, guessFilmId]
-        const remainingCount = puzzleOptions.length - newEliminatedIds.length
-
-        // Get next clue (turn = number of eliminations + 1)
-        const cluesList = (puzzle.puzzle_data?.clues as Array<{ turn: number; type: string; value: unknown }>) ?? []
-        const nextClueIdx = newEliminatedIds.length + 1
-        const nextClue = cluesList.find(c => c.turn === nextClueIdx) ?? null
-
-        // Check if transition to Stage 2 (remaining <= 6)
-        const stageTransition = remainingCount <= 6
-
         const updatedProgress = {
           ...progress,
-          stage: stageTransition ? 2 : 1,
-          stage1_guesses: [
-            ...stage1Guesses,
-            { film_id: guessFilm.id, title: guessFilm.title, correct: false },
-          ],
-          eliminated_ids: newEliminatedIds,
+          stage: 3,
+          stage1_guesses: newStage1Guesses,
+          eliminated_ids: eliminatedIds,
           guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
           timer_start_ms: timerStart,
+          total_guesses: totalGuesses,
           hints_used: hintsUsed,
-          completed: false,
-          won: false,
+          completed: true,
+          won: true,
         }
 
+        // Ipucu cozumlemesi — ham deger gonderilir, etiket/bicim istemcide
+        const decoyConns = (puzzle.puzzle_data?.decoy_connections as Array<{ decoy_title: string; shared_traits: string[] }>) ?? []
+        const cluesList = (puzzle.puzzle_data?.clues as Array<{ type: string; value: unknown }>) ?? []
+        const clueBreakdown = {
+          clue_explanations: cluesList.map(c => ({
+            clue_type: c.type,
+            clue_value: c.value,
+          })),
+          decoy_connections: decoyConns.map(d => ({
+            decoy_title: d.decoy_title,
+            shared_traits: d.shared_traits,
+          })),
+        }
+
+        // Update game_scores
         await service
           .from('game_scores')
-          .update({ progress_json: updatedProgress, attempts: newAttempts })
-          .eq('id', scoreRow.id)
-
-        return jsonResponse({
-          correct: false,
-          stage: stageTransition ? 2 : 1,
-          eliminated_ids: newEliminatedIds,
-          next_clue: nextClue,
-          remaining_count: remainingCount,
-          stage_transition: stageTransition,
-          completed: false,
-          won: false,
-          detective_score: null,
-          xp_awarded: 0,
-          dna_updated: false,
-          revealed_solution: null,
-        })
-      }
-
-      // ── Stage 2: Deduction (CineMetrics feedback) ──
-      if (detStage === 2) {
-        // Calculate CineMetrics feedback
-        const guessData: FilmData = {
-          year: guessFilm.year,
-          genres: guessFilm.genres,
-          director: guessFilm.director,
-          vote_average: guessFilm.vote_average,
-          runtime: guessFilm.runtime,
-          country: guessFilm.country,
-        }
-        const solutionData: FilmData = {
-          year: solutionFilm.year,
-          genres: solutionFilm.genres,
-          director: solutionFilm.director,
-          vote_average: solutionFilm.vote_average,
-          runtime: solutionFilm.runtime,
-          country: solutionFilm.country,
-        }
-        const detFeedback = calculateCineMetricsFeedback(guessData, solutionData)
-        const detGuessValues: GuessValues = {
-          year: guessFilm.year,
-          genres: guessFilm.genres,
-          director: guessFilm.director,
-          rating: guessFilm.vote_average,
-          runtime: guessFilm.runtime,
-          country: guessFilm.country,
-        }
-
-        const newStage2Entry: GuessEntry = {
-          film_id: guessFilm.id,
-          title: guessFilm.title,
-          feedback: detFeedback,
-          timestamp: nowISO,
-          values: detGuessValues,
-        }
-        const newStage2Guesses = [...stage2Guesses, newStage2Entry]
-        const totalGuesses = stage1Guesses.length + newStage2Guesses.length
-        const stage2Max = 6
-        const stage2Used = newStage2Guesses.length
-
-        // Mark eliminated if wrong
-        const newEliminatedIds = isDetectiveCorrect
-          ? eliminatedIds
-          : [...eliminatedIds, guessFilmId]
-
-        const completed = isDetectiveCorrect || stage2Used >= stage2Max
-        const won = isDetectiveCorrect
-
-        if (completed) {
-          // Calculate Detective Score
-          const elapsedMs = Date.now() - timerStart
-          const minutes = elapsedMs / 60000
-
-          let detectiveScore: number
-          if (won) {
-            // Guess 60%, Hint 25%, Time 15%
-            const guessScore = Math.max(0, 600 - (totalGuesses - 1) * 50)
-            const hintScore = hintsUsed === 0 ? 250 : hintsUsed === 1 ? 150 : 50
-            const timeScore = minutes <= 2 ? 150
-              : minutes <= 5 ? Math.round(150 - (minutes - 2) * (100 / 3))
-              : 50
-
-            const difficulty = (puzzle.puzzle_data as Record<string, unknown>)?.difficulty as number ?? 1
-            const diffMult = 1 + (difficulty - 1) * 0.125
-
-            detectiveScore = Math.min(1000, Math.round((guessScore + hintScore + timeScore) * diffMult))
-          } else {
-            detectiveScore = Math.max(50, 150 - totalGuesses * 10)
-          }
-
-          // XP
-          const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
-          const ladderIdx = Math.min(totalGuesses - 1, xpConfig.guess_ladder.length - 1)
-          let xpAwarded = won
-            ? (xpConfig.guess_ladder[ladderIdx] ?? xpConfig.fail_xp)
-            : xpConfig.fail_xp
-          xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
-        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
-
-          // DNA signals
-          const dnaSignals = [
-            { dim: 'knowledge', val: won ? 0.3 + 0.1 * (12 - totalGuesses) : 0.1 },
-            { dim: 'deduction', val: won ? (6 - stage2Used) / 6 : 0 },
-            { dim: 'visual_sense', val: 0.3 },
-          ]
-
-          // Auteur sense: director green in first 2 Stage 2 guesses
-          let auteurSignal = 0
-          for (let i = 0; i < Math.min(2, newStage2Guesses.length); i++) {
-            if (newStage2Guesses[i]?.feedback?.director?.result === 'green') {
-              auteurSignal = 0.7
-              break
-            }
-          }
-          if (auteurSignal > 0) {
-            dnaSignals.push({ dim: 'auteur_sense', val: auteurSignal })
-          }
-
-          const updatedProgress = {
-            ...progress,
-            stage: 3,
-            stage1_guesses: stage1Guesses,
-            stage2_guesses: newStage2Guesses,
-            eliminated_ids: newEliminatedIds,
-            guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
-            timer_start_ms: timerStart,
-            total_guesses: totalGuesses,
-            hints_used: hintsUsed,
-            completed: true,
-            won,
-          }
-
-          // WhyThisMovie
-          const decoyConns = (puzzle.puzzle_data?.decoy_connections as Array<{ decoy_title: string; shared_traits: string[] }>) ?? []
-          const puzzleClues = (puzzle.puzzle_data?.clues as Array<{ type: string; value: unknown }>) ?? []
-          const whyThisMovie = {
-            clue_explanations: puzzleClues.map(c => ({
-              clue_type: c.type,
-              clue_value: String(c.value),
-              connection: `${c.type}: ${c.value}`,
-            })),
-            decoy_connections: decoyConns.map(d => ({
-              decoy_title: d.decoy_title,
-              shared_trait: d.shared_traits.join(', '),
-            })),
-          }
-
-          // Update game_scores
-          await service
-            .from('game_scores')
-            .update({
-              progress_json: updatedProgress,
-              attempts: newAttempts,
-              solved: won,
-              completed_at: nowISO,
-              xp_awarded: xpAwarded,
-              dna_signals: dnaSignals,
-              detective_score: detectiveScore,
-            })
-            .eq('id', scoreRow.id)
-
-          // DNA recompute
-          let dnaUpdated = false
-          try {
-            const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-            const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-            const dnaResp = await fetch(`${supabaseUrl}/functions/v1/recompute-cinema-dna`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
-              body: JSON.stringify({ user_id: userId, signals: dnaSignals, daily_completed: true }),
-            })
-            dnaUpdated = dnaResp.ok
-          } catch { /* fire-and-forget */ }
-
-          return jsonResponse({
-            correct: isDetectiveCorrect,
-            stage: 3,
-            feedback: detFeedback,
-            guess_values: detGuessValues,
-            guesses_used: stage2Used,
-            completed: true,
-            won,
+          .update({
+            progress_json: updatedProgress,
+            attempts: newAttempts,
+            solved: true,
+            completed_at: nowISO,
+            xp_awarded: xpAwarded,
+            dna_signals: dnaSignals,
             detective_score: detectiveScore,
-            xp_awarded: xpAwarded,
-            dna_updated: dnaUpdated,
-            eliminated_ids: newEliminatedIds,
-            revealed_solution: {
-              film_id: solutionFilm.id,
-              title: solutionFilm.title,
-              year: solutionFilm.year,
-              director: solutionFilm.director,
-              poster_url: solutionFilm.poster_url,
-            },
-            why_this_movie: whyThisMovie,
-            community_stats: null,
-            lucky_spot: false,
           })
-        }
+          .eq('id', scoreRow.id)
 
-        // Not completed — update progress and continue
+        // DNA recompute (fire-and-forget)
+        let dnaUpdated = false
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+          const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          const dnaResp = await fetch(`${supabaseUrl}/functions/v1/recompute-cinema-dna`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+            body: JSON.stringify({ user_id: userId, signals: dnaSignals, daily_completed: true }),
+          })
+          dnaUpdated = dnaResp.ok
+        } catch { /* fire-and-forget */ }
+
+        return jsonResponse({
+          correct: true,
+          stage: 3,
+          completed: true,
+          won: true,
+          detective_score: detectiveScore,
+          xp_awarded: xpAwarded,
+          dna_updated: dnaUpdated,
+          // Lucky Spot mekanigi kaldirildi (tek fazli eleme oyunu)
+          lucky_spot: false,
+          eliminated_ids: eliminatedIds,
+          revealed_solution: {
+            film_id: solutionFilm.id,
+            title: solutionFilm.title,
+            year: solutionFilm.year,
+            director: solutionFilm.director,
+            poster_url: solutionFilm.poster_url,
+          },
+          why_this_movie: buildWhyThisMovie(solutionFilm),
+          clue_breakdown: clueBreakdown,
+          community_stats: null, // Will be populated on get-daily-challenge
+        })
+      }
+
+      // ── Yanlis tahmin: filmi ele, yeni ipucu ver ──
+      // `newStage1Guesses` yukarida kuruldu (correct: false olarak)
+      const newEliminatedIds = [...eliminatedIds, guessFilmId]
+      const remainingCount = puzzleOptions.length - newEliminatedIds.length
+      const wrongGuesses = newStage1Guesses.length
+
+      // Sonraki ipucu (tur = eleme sayisi + 1)
+      const cluesList = (puzzle.puzzle_data?.clues as Array<{ turn: number; type: string; value: unknown }>) ?? []
+      const nextClue = cluesList.find(c => c.turn === wrongGuesses + 1) ?? null
+
+      // Ipucu cozumlemesi — ham deger gonderilir, etiket/bicim istemcide
+      const decoyConns = (puzzle.puzzle_data?.decoy_connections as Array<{ decoy_title: string; shared_traits: string[] }>) ?? []
+      const puzzleClues = (puzzle.puzzle_data?.clues as Array<{ type: string; value: unknown }>) ?? []
+      const clueBreakdown = {
+        clue_explanations: puzzleClues.map(c => ({
+          clue_type: c.type,
+          clue_value: c.value,
+        })),
+        decoy_connections: decoyConns.map(d => ({
+          decoy_title: d.decoy_title,
+          shared_traits: d.shared_traits,
+        })),
+      }
+
+      // ── Deneme hakki bitti: kayip ──
+      if (wrongGuesses >= DETECTIVE_MAX_GUESSES) {
+        const elapsedMs = Date.now() - timerStart
+        const detectiveScore = Math.max(50, 150 - wrongGuesses * 10)
+
+        const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
+        let xpAwarded = xpConfig.fail_xp
+        xpAwarded = await applyStreakMultiplier(service, userId, xpAwarded, xpConfig)
+        xpAwarded = await applyDoubleXp(service, userId, xpAwarded, puzzle.date)
+
+        const dnaSignals = [
+          { dim: 'knowledge', val: 0.1 },
+          { dim: 'deduction', val: 0 },
+          { dim: 'visual_sense', val: 0.3 },
+        ]
+
         const updatedProgress = {
           ...progress,
-          stage: 2,
-          stage2_guesses: newStage2Guesses,
+          stage: 3,
+          stage1_guesses: newStage1Guesses,
           eliminated_ids: newEliminatedIds,
           guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
           timer_start_ms: timerStart,
+          total_guesses: wrongGuesses,
           hints_used: hintsUsed,
-          completed: false,
+          completed: true,
           won: false,
         }
 
         await service
           .from('game_scores')
-          .update({ progress_json: updatedProgress, attempts: newAttempts })
+          .update({
+            progress_json: updatedProgress,
+            attempts: newAttempts,
+            solved: false,
+            completed_at: nowISO,
+            xp_awarded: xpAwarded,
+            dna_signals: dnaSignals,
+            detective_score: detectiveScore,
+          })
           .eq('id', scoreRow.id)
+
+        // DNA recompute (fire-and-forget)
+        let dnaUpdated = false
+        try {
+          const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+          const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          const dnaResp = await fetch(`${supabaseUrl}/functions/v1/recompute-cinema-dna`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${serviceKey}` },
+            body: JSON.stringify({ user_id: userId, signals: dnaSignals, daily_completed: true }),
+          })
+          dnaUpdated = dnaResp.ok
+        } catch { /* fire-and-forget */ }
+
+        logInfo('submit-guess.detective.lost', { userId, elapsedMs, wrongGuesses })
 
         return jsonResponse({
           correct: false,
-          stage: 2,
-          feedback: detFeedback,
-          guess_values: detGuessValues,
-          guesses_used: stage2Used,
-          eliminated_ids: newEliminatedIds,
-          completed: false,
+          stage: 3,
+          completed: true,
           won: false,
-          detective_score: null,
-          xp_awarded: 0,
-          dna_updated: false,
-          revealed_solution: null,
+          detective_score: detectiveScore,
+          xp_awarded: xpAwarded,
+          dna_updated: dnaUpdated,
+          lucky_spot: false,
+          eliminated_ids: newEliminatedIds,
+          remaining_count: remainingCount,
+          revealed_solution: {
+            film_id: solutionFilm.id,
+            title: solutionFilm.title,
+            year: solutionFilm.year,
+            director: solutionFilm.director,
+            poster_url: solutionFilm.poster_url,
+          },
+          why_this_movie: buildWhyThisMovie(solutionFilm),
+          clue_breakdown: clueBreakdown,
+          community_stats: null,
         })
       }
 
-      return errorResponse('INVALID_STAGE', 'detective_stage must be 1 or 2', 400)
+      // ── Oyun devam ediyor ──
+      const updatedProgress = {
+        ...progress,
+        stage: 1,
+        stage1_guesses: newStage1Guesses,
+        eliminated_ids: newEliminatedIds,
+        guess_timestamps: [...(progress.guess_timestamps ?? []), nowISO],
+        timer_start_ms: timerStart,
+        hints_used: hintsUsed,
+        completed: false,
+        won: false,
+      }
+
+      await service
+        .from('game_scores')
+        .update({ progress_json: updatedProgress, attempts: newAttempts })
+        .eq('id', scoreRow.id)
+
+      return jsonResponse({
+        correct: false,
+        stage: 1,
+        eliminated_ids: newEliminatedIds,
+        next_clue: nextClue,
+        remaining_count: remainingCount,
+        completed: false,
+        won: false,
+        detective_score: null,
+        xp_awarded: 0,
+        dna_updated: false,
+        revealed_solution: null,
+      })
     }
 
     // ─── CineMetrics / Logline / Quoted / FadeIn feedback ──────────────────
