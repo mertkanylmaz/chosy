@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.goldHairline,
     overflow: 'hidden',
   },
   row: {
@@ -43,9 +43,11 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   name: {
-    ...Theme.typography.caption,
+    fontSize: 15,
+    lineHeight: 20,
+    fontFamily: Theme.fonts.display,
+    fontWeight: '700',
     color: Colors.textPrimary,
-    fontWeight: '600',
   },
   levelBadge: {
     paddingHorizontal: 6,
@@ -54,10 +56,13 @@ export const styles = StyleSheet.create({
     marginLeft: Theme.spacing.xs,
   },
   levelBadgeActive: {
-    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   levelBadgeMax: {
-    backgroundColor: Colors.accentDim,
+    borderWidth: 1,
+    borderColor: Colors.gold,
+    backgroundColor: Colors.goldSeal,
   },
   levelText: {
     ...Theme.typography.micro,
@@ -67,7 +72,7 @@ export const styles = StyleSheet.create({
     color: Colors.gold,
   },
   levelTextMax: {
-    color: Colors.accentPrimary,
+    color: Colors.gold,
   },
   progressContainer: {
     flexDirection: 'row',
@@ -76,17 +81,17 @@ export const styles = StyleSheet.create({
   },
   progressBarBg: {
     flex: 1,
-    height: 4,
+    height: 3,
     borderRadius: 2,
-    backgroundColor: Colors.bgSubtle,
+    backgroundColor: Colors.white05,
     marginRight: Theme.spacing.xs + 2,
   },
   progressBarFill: {
-    height: 4,
+    height: 3,
     borderRadius: 2,
   },
   progressBarActive: {
-    backgroundColor: Colors.info,
+    backgroundColor: Colors.goldDark,
   },
   progressBarComplete: {
     backgroundColor: Colors.gold,

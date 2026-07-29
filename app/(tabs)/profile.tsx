@@ -57,6 +57,7 @@ import DiscoveryStats from '@/components/Profile/DiscoveryStats';
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
 import CollectionsCard from '@/components/Profile/CollectionsCard';
+import { CinemaIdentity } from '@/components/Profile/CinemaIdentity';
 // import StreakCard from '@/components/Profile/StreakCard';
 // import type { StreakCardProps } from '@/components/Profile/StreakCard';
 import {
@@ -1431,6 +1432,9 @@ export default function ProfileScreen() {
                 </Text>
               </View>
             ) : null}
+
+            {/* c2) Cinema Identity — oyun sisteminin profildeki karsiligi */}
+            <CinemaIdentity />
 
             {/* d) Taste DNA */}
             <SectionHeading title={t('profile.tasteDNA')} />
