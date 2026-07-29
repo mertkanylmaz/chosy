@@ -49,6 +49,10 @@ export const Colors = {
   goldDim: 'rgba(212,168,67,0.12)',
   /** Gold glow — overlay and blur backgrounds */
   goldGlow: 'rgba(212,168,67,0.18)',
+  /** Festival katmanı: kart kenarlığı — altın saç teli çizgi (gölge yerine) */
+  goldHairline: 'rgba(212,168,67,0.22)',
+  /** Festival katmanı: tamamlandı mührü zemini */
+  goldSeal: 'rgba(212,168,67,0.10)',
 
   // ─── Text (Warm Scale) ──────────────────────────────────────────────────────
   /** Primary text — soft off-white */
@@ -135,6 +139,8 @@ export const Colors = {
   // ─── Overlays & Utilities ───────────────────────────────────────────────────
   /** Modal/overlay background */
   overlay: 'rgba(10,10,15,0.95)',
+  /** Afiş/backdrop üstü metin okunurluğu — festival katmanı */
+  scrim: 'rgba(10,10,15,0.72)',
   /** 10% white — fine borders / surfaces */
   white10: 'rgba(255,255,255,0.10)',
   /** 5% white — very subtle surfaces */

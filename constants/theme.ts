@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, type TextStyle } from 'react-native';
 
 import { Colors } from './Colors';
 
@@ -20,6 +20,7 @@ const FONT_INTER = Platform.select({
 });
 const FONT_DISPLAY = 'PlayfairDisplay_700Bold';
 const FONT_DISPLAY_BLACK = 'PlayfairDisplay_900Black';
+const FONT_DISPLAY_ITALIC = 'PlayfairDisplay_400Regular_Italic';
 
 export const Theme = {
   // ─── Spacing (synced with DESIGN_SYSTEM.md) ─────────────────────────────
@@ -44,9 +45,15 @@ export const Theme = {
   },
 
   // ─── Typography ─────────────────────────────────────────────────────────
-  // Rule: System font (SF Pro) is the workhorse. PlayfairDisplay is the
-  // "premium sprinkle" — ONLY for film detail titles (display) and ratings.
-  // Never for buttons, labels, or body text.
+  // Rule (v3 — Festival Layer, 2026-07-29):
+  //   System font (SF Pro) is still the workhorse for anything the user ACTS on:
+  //   buttons, labels, inputs, counters, meta. PlayfairDisplay is the voice of
+  //   AUTHORITY — the "published" elements of a screen: film titles, case titles,
+  //   game names, theme names, logline/quote body, result moment.
+  //   Serif in a button, chip or form label is still forbidden.
+  //
+  //   Ekran anatomisi: eyebrow → serif başlık → kahraman görsel → aksiyon → meta
+  //   Ayrıntı: DESIGN_SYSTEM.md › "Festival Layer — Games"
   //
   // Type Scale (v2 — 2026-06-23):
   //   display  32/38  — hero text, archetype reveal
@@ -123,6 +130,62 @@ export const Theme = {
       fontFamily: FONT_INTER,
       color: Colors.accentPrimary,
     },
+    // ── Festival Layer (oyun ekranları) ──────────────────────────────────
+    // Bu beş token yalnız oyun/profil festival katmanında kullanılır.
+    // Uygulamanın geri kalanı yukarıdaki ölçeği kullanmaya devam eder.
+
+    /**
+     * Bölüm üstü mikro etiket — "TODAY'S THEME", "CLUE 01", "ACTIVE CLUES".
+     * Metin `t()` üzerinden zaten büyük harf gelmiyorsa textTransform ile büyütülür.
+     */
+    eyebrow: {
+      fontSize: 11,
+      lineHeight: 14,
+      fontWeight: '600' as const,
+      fontFamily: FONT_INTER,
+      letterSpacing: 1.6,
+      textTransform: 'uppercase' as const,
+      color: Colors.textTertiary,
+    },
+    /** Oyun adı, dava başlığı — PlayfairDisplay Bold 26 */
+    serifTitle: {
+      fontSize: 26,
+      lineHeight: 32,
+      fontFamily: FONT_DISPLAY,
+      fontWeight: '700' as const,
+      letterSpacing: -0.2,
+      color: Colors.textPrimary,
+    },
+    /** Tema adı, sonuç anı, film adı — PlayfairDisplay Black 34 */
+    serifHero: {
+      fontSize: 34,
+      lineHeight: 40,
+      fontFamily: FONT_DISPLAY_BLACK,
+      fontWeight: '900' as const,
+      letterSpacing: -0.4,
+      color: Colors.textPrimary,
+    },
+    /** Logline ve alıntı gövdesi — PlayfairDisplay Italic 22 */
+    serifQuote: {
+      fontSize: 22,
+      lineHeight: 32,
+      fontFamily: FONT_DISPLAY_ITALIC,
+      fontWeight: '400' as const,
+      color: Colors.textPrimary,
+    },
+    /** Skor, DNA, level sayıları — sistem fontu, tabular hizalama */
+    stat: {
+      fontSize: 28,
+      lineHeight: 32,
+      fontWeight: '700' as const,
+      fontFamily: FONT_INTER,
+      // Dosya sonundaki `as const` diziyi readonly yapar ve TextStyle'a atanamaz
+      // hâle getirir — açık tip ataması bunu engelliyor.
+      fontVariant: ['tabular-nums'] as NonNullable<TextStyle['fontVariant']>,
+      letterSpacing: -0.5,
+      color: Colors.textPrimary,
+    },
+
     /** Rating numbers — PlayfairDisplay Bold 16, gold */
     rating: {
       fontSize: 16,
@@ -182,6 +245,7 @@ export const Theme = {
     inter: FONT_INTER,
     display: FONT_DISPLAY,
     displayBlack: FONT_DISPLAY_BLACK,
+    displayItalic: FONT_DISPLAY_ITALIC,
   },
 } as const;
 

@@ -1,32 +1,34 @@
 /**
- * GameShell — Tüm oyunları saran ortak wrapper.
+ * GameShell — Tüm oyunları saran ortak wrapper (Festival Layer).
  *
- * Header: geri butonu + oyun adı
- * Progress: attempt göstergesi (dolu/boş noktalar)
+ * Header: geri butonu + (opsiyonel eyebrow) + serif oyun adı + opsiyonel sağ slot
+ * Progress: altın segment çubuğu (harcanan deneme dolu)
  * Children: oyun içeriği
  * KeyboardAvoidingView: keyboard açıldığında içerik yukarı kayar
  * paddingBottom: 83 (tab bar clearance)
  */
 import React from 'react';
-import {
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CaretLeft } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 
+import { styles } from './styles';
+
 interface GameShellProps {
-  /** Oyun başlığı */
+  /** Oyun başlığı — serif, header ortası */
   title: string;
+  /**
+   * Başlığın üstündeki mikro etiket — "CASE #041", "LOG #128".
+   * Büyük harfe stil katmanında çevrilir, çağıran tarafta uppercase yazmaya gerek yok.
+   */
+  subtitle?: string;
+  /** Header sağ slotu — paylaş, bilgi vb. Verilmezse boş bırakılır (başlık ortalı kalsın diye) */
+  headerRight?: React.ReactNode;
   /** Mevcut deneme sayısı */
   currentAttempt: number;
   /** Maksimum deneme sayısı */
@@ -37,8 +39,14 @@ interface GameShellProps {
   hideProgress?: boolean;
 }
 
+/**
+ * Oyun ekranlarının ortak kabuğu. Header, ilerleme çubuğu ve klavye davranışını
+ * tek yerde toplar — oyunlar yalnız kendi içeriklerini render eder.
+ */
 export function GameShell({
   title,
+  subtitle,
+  headerRight,
   currentAttempt,
   maxAttempts,
   children,
@@ -46,6 +54,7 @@ export function GameShell({
 }: GameShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
 
   return (
     <KeyboardAvoidingView
@@ -56,9 +65,9 @@ export function GameShell({
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.headerSlot}
           accessibilityRole="button"
-          accessibilityLabel={title}
+          accessibilityLabel={t('games.common.back')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           onPress={() => {
             hapticLight();
@@ -67,20 +76,35 @@ export function GameShell({
         >
           <CaretLeft size={24} color={Colors.textWhite} weight="duotone" />
         </TouchableOpacity>
-        <Text style={styles.title}>{title}</Text>
-        <View style={styles.backButton} />
+
+        <View style={styles.titleBlock}>
+          {subtitle ? (
+            <Text style={styles.eyebrow} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          ) : null}
+          <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+            {title}
+          </Text>
+        </View>
+
+        <View style={styles.headerSlot}>{headerRight}</View>
       </View>
 
-      {/* Progress */}
+      {/* Progress — harcanan deneme altın, kalan sönük */}
       {!hideProgress && maxAttempts > 1 && (
-        <View style={styles.progressRow}>
+        <View
+          style={styles.progressRow}
+          accessibilityRole="progressbar"
+          accessibilityLabel={t('games.common.progress_label', {
+            current: currentAttempt,
+            total: maxAttempts,
+          })}
+        >
           {Array.from({ length: maxAttempts }).map((_, i) => (
             <View
               key={i}
-              style={[
-                styles.dot,
-                i < currentAttempt ? styles.dotUsed : styles.dotEmpty,
-              ]}
+              style={[styles.segment, i < currentAttempt ? styles.segmentUsed : styles.segmentEmpty]}
             />
           ))}
         </View>
@@ -91,51 +115,3 @@ export function GameShell({
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    paddingBottom: 83,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Theme.spacing.md,
-    height: 48,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    textAlign: 'center',
-  },
-  progressRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: Theme.spacing.sm,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  dotUsed: {
-    backgroundColor: Colors.accentPrimary,
-  },
-  dotEmpty: {
-    backgroundColor: Colors.bgSubtle,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: Theme.spacing.md,
-  },
-});
