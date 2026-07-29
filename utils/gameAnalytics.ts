@@ -80,13 +80,19 @@ export function trackWhyThisMovieViewed(gameId: string): void {
   posthogAnalytics.track('game_why_this_movie_viewed', { game_id: gameId });
 }
 
-/** Film sayfasina gecis */
-export function trackFilmPageOpened(gameId: string, filmId: number): void {
+/**
+ * Film sayfasina gecis.
+ *
+ * `filmId` TMDb numarasi ya da Supabase UUID'si olabilir — oyunlarin elindeki
+ * kimlik farkli (Spotlight/CineMetrics yalnizca UUID tasiyor). Event adi ve
+ * alan adi degismedi.
+ */
+export function trackFilmPageOpened(gameId: string, filmId: number | string): void {
   posthogAnalytics.track('game_film_page_opened', { game_id: gameId, film_id: filmId });
 }
 
 /** Watchlist'e ekleme */
-export function trackWatchlistAdded(gameId: string, filmId: number): void {
+export function trackWatchlistAdded(gameId: string, filmId: number | string): void {
   posthogAnalytics.track('game_watchlist_added', { game_id: gameId, film_id: filmId });
 }
 

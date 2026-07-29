@@ -54,6 +54,10 @@ export const styles = StyleSheet.create({
     fontFamily: 'PlayfairDisplay_700Bold',
     lineHeight: 34,
   },
+  /** 0 degeri altin vurguyu hak etmiyor — "basarisiz" hissini yumusatir */
+  statValueEmpty: {
+    color: Colors.textGrey,
+  },
   statLabel: {
     color: Colors.textGrey,
     fontSize: 11,

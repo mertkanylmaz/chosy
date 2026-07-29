@@ -142,7 +142,6 @@ Deno.serve(async (req: Request) => {
           // Detective-specific fields
           stage: progressJson?.stage,
           stage1_guesses: progressJson?.stage1_guesses,
-          stage2_guesses: progressJson?.stage2_guesses,
           timer_start_ms: progressJson?.timer_start_ms,
           total_guesses: progressJson?.total_guesses,
           hints_used: progressJson?.hints_used,

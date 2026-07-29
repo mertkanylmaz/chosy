@@ -41,18 +41,24 @@ function StatCard({
   value,
   label,
   IconComp,
+  emptyHint,
 }: {
-  value: string | number;
+  value: number;
   label: string;
   IconComp: React.ComponentType<IconProps>;
+  /** 0 degerinde ciplak "0" yerine gosterilecek yonlendirme */
+  emptyHint?: string;
 }) {
+  const isEmpty = value === 0;
   return (
     <View style={styles.statCard}>
       <View style={styles.statIconRow}>
         <IconComp size={14} color={Colors.textGrey} weight="duotone" />
       </View>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
+      <Text style={[styles.statValue, isEmpty && styles.statValueEmpty]}>{value}</Text>
+      <Text style={styles.statLabel}>
+        {isEmpty && emptyHint ? emptyHint : label}
+      </Text>
     </View>
   );
 }
@@ -85,13 +91,14 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
         <Text style={styles.empty}>{t('profile.statsNoInsights')}</Text>
       ) : (
         <>
-          {/* 1×3 stat grid — Top Genre kaldırıldı (aşağıdaki chip'lerde zaten var) */}
+          {/*
+            Sira: gercekten dolu olanlar once. "Movies Watched" swipe turevi
+            (`user_stats.total_discovered`) — oyundan/film detayindan eklenen
+            filmler swipe satiri uretmedigi icin watchlist doluyken bile 0
+            kalabiliyor. En sona alindi ve 0'da ciplak sayi yerine yonlendirme
+            gosteriliyor.
+          */}
           <View style={styles.grid}>
-            <StatCard
-              value={stats?.total_discovered ?? discovered}
-              label={t('profile.statsMoviesWatched')}
-              IconComp={Eye}
-            />
             <StatCard
               value={stats?.saved_films ?? 0}
               label={t('profile.statsMoviesSaved')}
@@ -101,6 +108,12 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
               value={stats?.total_sessions ?? 0}
               label={t('profile.statsMoodSessions')}
               IconComp={Lightbulb}
+            />
+            <StatCard
+              value={stats?.total_discovered ?? discovered}
+              label={t('profile.statsMoviesWatched')}
+              emptyHint={t('profile.statsMoviesWatchedEmpty')}
+              IconComp={Eye}
             />
           </View>
 
