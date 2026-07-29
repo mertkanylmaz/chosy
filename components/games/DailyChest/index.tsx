@@ -9,13 +9,7 @@ import React, { useCallback, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import {
-  Gift,
-  ShieldCheck,
-  Lightning,
-  CheckCircle,
-  CircleIcon as Circle,
-} from 'phosphor-react-native';
+import { Gift, ShieldCheck, Lightning, CheckCircle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -92,43 +86,37 @@ export function DailyChest(): React.JSX.Element | null {
       entering={FadeInUp.delay(50).duration(400)}
       style={[styles.container, isComplete && styles.containerComplete]}
     >
-      {/* Header row */}
+      {/* Header: gorev eyebrow'u + sayac */}
       <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <Gift
-            size={20}
-            weight="duotone"
-            color={isComplete ? Colors.gold : Colors.textSecondary}
-          />
-          <Text style={styles.title}>{t('games.hub.chest_title')}</Text>
-        </View>
-        <Text
-          style={[
-            styles.progressText,
-            isComplete && styles.progressTextComplete,
-          ]}
-        >
-          {t('games.hub.chest_progress', {
-            completed: state.completed,
-            total: state.total,
-          })}
+        <Text style={isComplete ? styles.eyebrowComplete : styles.eyebrow}>
+          {t('games.hub.chest_eyebrow', { total: state.total })}
         </Text>
+        <View style={styles.headerMeta}>
+          <Gift size={13} weight="duotone" color={isComplete ? Colors.gold : Colors.textTertiary} />
+          <Text style={[styles.progressText, isComplete && styles.progressTextComplete]}>
+            {t('games.hub.chest_progress', {
+              completed: state.completed,
+              total: state.total,
+            })}
+          </Text>
+        </View>
       </View>
 
-      {/* Progress dots */}
-      <View style={styles.dotsRow}>
-        {Array.from({ length: state.total }, (_, i) => {
-          const isFilled = i < state.completed;
-          return (
-            <View key={i} style={[styles.dot, isFilled && styles.dotFilled]}>
-              {isFilled ? (
-                <CheckCircle size={16} weight="fill" color={Colors.gold} />
-              ) : (
-                <Circle size={16} weight="regular" color={Colors.textTertiary} />
-              )}
-            </View>
-          );
+      {/* Odul adi — festival dilinde, "sandik" degil */}
+      <Text style={styles.awardTitle}>{t('games.hub.chest_award')}</Text>
+
+      {/* Ilerleme — GameShell ile ayni segment dili */}
+      <View
+        style={styles.progressRow}
+        accessibilityRole="progressbar"
+        accessibilityLabel={t('games.common.progress_label', {
+          current: state.completed,
+          total: state.total,
         })}
+      >
+        {Array.from({ length: state.total }, (_, i) => (
+          <View key={i} style={[styles.segment, i < state.completed && styles.segmentFilled]} />
+        ))}
       </View>
 
       {/* Chest card — yalnızca tüm oyunlar bitince */}
@@ -149,7 +137,7 @@ export function DailyChest(): React.JSX.Element | null {
             </TouchableOpacity>
           ) : (
             <View style={styles.claimedRow}>
-              <CheckCircle size={20} weight="fill" color={Colors.success} />
+              <CheckCircle size={16} weight="fill" color={Colors.gold} />
               <Text style={styles.claimedText}>
                 {t('games.hub.chest_claimed')}
               </Text>

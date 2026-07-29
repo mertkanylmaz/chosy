@@ -1,8 +1,8 @@
 /**
- * Games Hub — Günlük oyun listesi.
+ * Games Hub — gunun sinema ritueli (Festival Layer).
  *
- * 3 oyun kartı: Imposter, 5 İpucu, Acımasız Eleştiri.
- * Her kart: oyun durumu (oynandı/oynanmadı) + streak.
+ * Kompozisyon: hero → gunun temasi → gunluk odul → gunun rotasi → DNA.
+ * Bu dosya yalnizca veri toplar; gorsel parcalar components/games/ altinda.
  */
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,43 +12,51 @@ import {
   CaretLeft,
   ChartBar,
   ChatCircleDots,
-  CheckCircle,
   Flashlight,
   ImageSquare,
   Lightbulb,
   MagnifyingGlass,
   UsersThree,
-  XCircle,
 } from 'phosphor-react-native';
-import type { IconProps } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCinemaDna } from '@/hooks/useCinemaDna';
 import { hapticLight, hapticHeavy } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { getCachedResult, getGameStreak, clearOldGameCaches, clearAllGameCaches } from '@/services/gameService';
+import { rankByDnaImpact } from '@/utils/gameRecommendation';
+import {
+  getCachedResult,
+  getGameStreak,
+  clearOldGameCaches,
+  clearAllGameCaches,
+} from '@/services/gameService';
 import { getStreakInfo } from '@/services/gamification';
-import { getEnabledGames } from '@/services/gameApi';
+import { getEnabledGames, resetGameProgress } from '@/services/gameApi';
+import { getUserDisplayName } from '@/services/homeService';
 import { DnaSummaryCard } from '@/components/games/DnaSummaryCard';
 import { DailyChest } from '@/components/games/DailyChest';
 import { DailyThemeCard } from '@/components/games/DailyThemeCard';
-import { RecommendedRoute } from '@/components/games/RecommendedRoute';
-
-interface GameCardData {
-  gameType: string;
-  route: string;
-  titleKey: string;
-  descriptionKey: string;
-  icon: React.ComponentType<IconProps>;
-  played: boolean;
-  solved: boolean;
-  streak: number;
-}
+import { DailyRoute, type RouteGame } from '@/components/games/DailyRoute';
+import { HubHero } from '@/components/games/HubHero';
 
 const GAME_DEFINITIONS = [
+  {
+    gameType: 'detective',
+    route: '/games/detective',
+    titleKey: 'games.detective.title',
+    descriptionKey: 'games.detective.hub_description',
+    icon: MagnifyingGlass,
+  },
+  {
+    gameType: 'spotlight',
+    route: '/games/spotlight',
+    titleKey: 'games.spotlight.title',
+    descriptionKey: 'games.spotlight.hub_description',
+    icon: Flashlight,
+  },
   {
     gameType: 'fadein',
     route: '/games/fadein',
@@ -84,36 +92,20 @@ const GAME_DEFINITIONS = [
     descriptionKey: 'games.cinemetrics.description',
     icon: ChartBar,
   },
-  {
-    gameType: 'spotlight',
-    route: '/games/spotlight',
-    titleKey: 'games.spotlight.title',
-    descriptionKey: 'games.spotlight.hub_description',
-    icon: Flashlight,
-  },
-  {
-    gameType: 'detective',
-    route: '/games/detective',
-    titleKey: 'games.detective.title',
-    descriptionKey: 'games.detective.hub_description',
-    icon: MagnifyingGlass,
-  },
 ] as const;
 
 export default function GamesHubScreen() {
   const { t } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { dna, progress, reload: reloadDna } = useCinemaDna();
 
-  const [games, setGames] = useState<GameCardData[]>([]);
+  const [games, setGames] = useState<RouteGame[]>([]);
   const [totalStreak, setTotalStreak] = useState(0);
   const [freezesRemaining, setFreezesRemaining] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadGameStates();
-    }, []),
-  );
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  /** DEV sıfırlama uçuşta — çift tetiklemeyi engeller */
+  const [isResetting, setIsResetting] = useState(false);
 
   const loadGameStates = useCallback(async () => {
     // Sadece eski versiyon cache'lerini temizle (bir kez calisir)
@@ -126,7 +118,7 @@ export default function GamesHubScreen() {
       ? GAME_DEFINITIONS.filter((def) => enabled.includes(def.gameType))
       : GAME_DEFINITIONS;
 
-    const cards: GameCardData[] = [];
+    const cards: RouteGame[] = [];
     let maxStreak = 0;
 
     for (const def of visibleGames) {
@@ -148,152 +140,146 @@ export default function GamesHubScreen() {
     setGames(cards);
     setTotalStreak(maxStreak);
 
-    // Freeze bilgisini çek
     const streakInfo = await getStreakInfo();
     if (streakInfo) {
       setFreezesRemaining(streakInfo.freezesRemaining);
     }
+
+    setDisplayName(await getUserDisplayName());
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadGameStates();
+      reloadDna();
+    }, [loadGameStates, reloadDna]),
+  );
 
   const playedCount = games.filter((g) => g.played).length;
 
-  /** DEV: Title'a long press → tüm game cache'leri sıfırla (test için) */
-  const handleResetCaches = useCallback(() => {
+  // DNA'daki en buyuk bosugu kapatacak oynanmamis oyun — rotada isaretlenir
+  const recommendedGameType =
+    rankByDnaImpact(
+      dna,
+      games.filter((g) => g.played).map((g) => g.gameType),
+      games.map((g) => g.gameType),
+    )[0]?.gameType ?? null;
+
+  /**
+   * TEST: bugünkü oyun ilerlemesini sıfırla.
+   *
+   * Yalnızca yerel cache'i silmek yetmiyordu — asıl durum sunucudaki
+   * `game_scores`'ta ve oyun yine "oynandı" görünüyordu. Bu yüzden önce
+   * sunucu ilerlemesi silinir (dev-reset-games, allowlist korumalı),
+   * sonra yerel cache temizlenir.
+   *
+   * Buton yalnızca __DEV__ altında render edilir.
+   */
+  const handleResetProgress = useCallback(() => {
     Alert.alert(
-      'Reset Games',
-      'Tüm oyun cache\'leri silinecek. Bugünkü oyunlar sıfırlanır, yeni puzzle üretilir.',
+      'Bugünü sıfırla',
+      'Bugünkü oyun ilerlemen silinecek ve hepsini yeniden oynayabileceksin. Bulmacalar aynı kalır.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Vazgeç', style: 'cancel' },
         {
-          text: 'Reset',
+          text: 'Sıfırla',
           style: 'destructive',
           onPress: async () => {
+            if (isResetting) return;
+            setIsResetting(true);
             hapticHeavy();
-            await clearAllGameCaches();
-            loadGameStates();
+            try {
+              const res = await resetGameProgress();
+              await clearAllGameCaches();
+              await loadGameStates();
+              await reloadDna();
+              Alert.alert(
+                'Sıfırlandı',
+                res.reset > 0
+                  ? `${res.reset} oyun ilerlemesi silindi. Hepsini yeniden oynayabilirsin.`
+                  : `Bugün silinecek ilerleme bulunamadı.\n\nHesap: ${res.user_id}\n\nOyunlar hâlâ "oynandı" görünüyorsa bu ID allowlist'te olsa bile skorlar başka bir hesaba ait demektir.`,
+              );
+            } catch (err) {
+              // Sessiz fallback YASAK — hata görünür olmalı
+              logger.error('[hub] Reset başarısız:', err);
+              Alert.alert(
+                'Sıfırlanamadı',
+                'Sunucu ilerlemesi silinemedi. Test hesabın allowlist\'te mi?',
+              );
+            } finally {
+              setIsResetting(false);
+            }
           },
         },
       ],
     );
-  }, []);
+  }, [isResetting, loadGameStates, reloadDna]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header — title'a long press: DEV reset */}
+      {/* Header — sag butona basis: DEV reset */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
+          style={styles.headerSlot}
           onPress={() => {
             hapticLight();
             router.back();
           }}
+          accessibilityRole="button"
+          accessibilityLabel={t('games.common.back')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
           <CaretLeft size={24} color={Colors.textWhite} weight="duotone" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('games.hub.title')}</Text>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={handleResetCaches}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityRole="button"
-        >
-          <ArrowClockwise size={22} color={Colors.textTertiary} weight="duotone" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Streak summary */}
-      <View style={styles.summaryRow}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>{playedCount}/{games.length}</Text>
-          <Text style={styles.summaryLabel}>{t('games.hub.played')}</Text>
-        </View>
-        {totalStreak > 0 && (
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>🔥 {totalStreak}</Text>
-            <Text style={styles.summaryLabel}>{t('games.hub.streak')}</Text>
-          </View>
-        )}
-        {freezesRemaining > 0 && (
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>❄️ {freezesRemaining}</Text>
-            <Text style={styles.summaryLabel}>{t('games.hub.freeze')}</Text>
-          </View>
+        <Text style={styles.headerTitle} accessibilityRole="header">
+          {t('games.hub.title')}
+        </Text>
+        {__DEV__ ? (
+          <TouchableOpacity
+            style={styles.headerSlot}
+            onPress={handleResetProgress}
+            disabled={isResetting}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityRole="button"
+            accessibilityLabel="Bugünü sıfırla"
+          >
+            <ArrowClockwise
+              size={20}
+              color={isResetting ? Colors.textTertiary : Colors.gold}
+              weight="duotone"
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerSlot} />
         )}
       </View>
 
-      {/* Cinema DNA summary */}
-      <DnaSummaryCard />
-
-      {/* Günün gizli bağlantısı — temalı oyunlar bitince açılır */}
-      <View style={styles.themeContainer}>
-        <DailyThemeCard />
-      </View>
-
-      {/* Daily Chest — 7/7 completion reward */}
-      <View style={styles.chestContainer}>
-        <DailyChest />
-      </View>
-
-      {/* Game cards */}
       <ScrollView
         style={styles.scrollContent}
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* Recommended route based on DNA gaps */}
-        <RecommendedRoute playedGames={games.filter((g) => g.played).map((g) => g.gameType)} />
+        <HubHero
+          dna={dna}
+          progress={progress}
+          displayName={displayName}
+          playedCount={playedCount}
+          totalGames={games.length}
+          streak={totalStreak}
+          freezes={freezesRemaining}
+        />
 
-        {games.map((game, index) => (
-          <Animated.View key={game.gameType} entering={FadeInUp.delay(index * 100).duration(300)}>
-            <TouchableOpacity
-              style={[
-                styles.gameCard,
-                game.played && styles.gameCardPlayed,
-              ]}
-              onPress={() => {
-                hapticLight();
-                // Oyunlar FREE — kota/paywall yok (engagement oncelikli)
-                router.push(game.route as never);
-              }}
-              activeOpacity={0.7}
-            >
-              <View style={styles.gameIconContainer}>
-                <game.icon
-                  size={28}
-                  weight="duotone"
-                  color={game.played ? Colors.textTertiary : Colors.accentPrimary}
-                />
-              </View>
-              <View style={styles.gameInfo}>
-                <Text style={[styles.gameTitle, game.played && styles.gameTitlePlayed]}>
-                  {t(game.titleKey)}
-                </Text>
-                <Text style={styles.gameDescription}>
-                  {t(game.descriptionKey)}
-                </Text>
-                {game.streak > 0 && (
-                  <Text style={styles.gameStreak}>
-                    🔥 {t('games.hub.streak_count', { count: game.streak })}
-                  </Text>
-                )}
-              </View>
-              <View style={styles.gameStatus}>
-                {game.played ? (
-                  game.solved ? (
-                    <CheckCircle size={24} weight="duotone" color={Colors.success} />
-                  ) : (
-                    <XCircle size={24} weight="duotone" color={Colors.error} />
-                  )
-                ) : (
-                  <View style={styles.playBadge}>
-                    <Text style={styles.playText}>{t('games.hub.play')}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-        ))}
+        <View style={styles.section}>
+          <DailyThemeCard />
+        </View>
+
+        <View style={styles.section}>
+          <DailyChest />
+        </View>
+
+        <DailyRoute games={games} recommendedGameType={recommendedGameType} />
+
+        <DnaSummaryCard dna={dna} />
       </ScrollView>
     </View>
   );
@@ -312,107 +298,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     height: 48,
   },
-  backButton: {
+  headerSlot: {
     width: 44,
     height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: Theme.spacing.xl,
-    paddingVertical: Theme.spacing.md,
-    paddingHorizontal: Theme.spacing.md,
-  },
-  summaryItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  summaryNumber: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  chestContainer: {
-    paddingHorizontal: Theme.spacing.md,
-  },
-  themeContainer: {
-    paddingHorizontal: Theme.spacing.md,
-    paddingBottom: Theme.spacing.sm,
+    ...Theme.typography.eyebrow,
   },
   scrollContent: {
     flex: 1,
   },
   scrollContainer: {
-    padding: Theme.spacing.md,
-    gap: Theme.spacing.md,
+    paddingBottom: Theme.spacing.xl,
   },
-  gameCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgCard,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.lg,
-    gap: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  gameCardPlayed: {
-    opacity: 0.6,
-  },
-  gameIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gameInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  gameTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  gameTitlePlayed: {
-    color: Colors.textSecondary,
-  },
-  gameDescription: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-  gameStreak: {
-    fontSize: 12,
-    color: Colors.gold,
-    marginTop: 2,
-  },
-  gameStatus: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  playBadge: {
-    backgroundColor: Colors.accentPrimary,
+  section: {
     paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
-    borderRadius: Theme.borderRadius.full,
-  },
-  playText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
+    paddingBottom: Theme.spacing.md,
   },
 });

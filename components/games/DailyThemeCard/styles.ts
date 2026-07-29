@@ -1,3 +1,9 @@
+/**
+ * DailyThemeCard stilleri — Festival Layer.
+ *
+ * Acilmis tema: arkada ilk filmin afisi + scrim, ustte eyebrow,
+ * ortada serif tema adi, altta afis seridi.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -8,72 +14,99 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.border,
     padding: Theme.spacing.lg,
-    gap: Theme.spacing.md,
+    gap: Theme.spacing.sm,
+    overflow: 'hidden',
   },
   containerUnlocked: {
-    borderColor: Colors.goldDim,
+    borderColor: Colors.goldHairline,
+    // Arka plan afisi tasarken ic bosluk daha genis — metin nefes alsin
+    paddingTop: Theme.spacing.xl,
+    paddingBottom: Theme.spacing.lg,
   },
+
+  /** Acilmis temada arkada duran afis — scrim ile bastirilir */
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    opacity: 0.35,
+  },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: Colors.scrim,
+  },
+  /** Metin katmani — arka plan uzerinde kalmasi icin */
+  content: {
+    gap: Theme.spacing.sm,
+  },
+
+  eyebrow: {
+    ...Theme.typography.eyebrow,
+  },
+  eyebrowUnlocked: {
+    ...Theme.typography.eyebrow,
+    color: Colors.gold,
+  },
+  /** Kilitli durumdaki "???" — tema adinin yerini tutar */
+  titleLocked: {
+    ...Theme.typography.serifHero,
+    color: Colors.textTertiary,
+    letterSpacing: 4,
+  },
+  themeLabel: {
+    ...Theme.typography.serifHero,
+    color: Colors.textPrimary,
+  },
+  subtitle: {
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+  },
+
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Theme.spacing.sm,
   },
-  headerLeft: {
+  /** Sagdaki ikon + sayac grubu — headerRow'un space-between'i buraya sizmasin */
+  headerMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Theme.spacing.sm,
-    flexShrink: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  titleLocked: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textSecondary,
-    letterSpacing: 2,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: Colors.textSecondary,
+    gap: 4,
   },
   progressText: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...Theme.typography.micro,
     color: Colors.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
   progressTextUnlocked: {
     color: Colors.gold,
   },
+
+  // ─── Kilitli ilerleme noktalari ───────────────────────────────────────────
   dotsRow: {
     flexDirection: 'row',
     gap: Theme.spacing.sm,
     alignItems: 'center',
+    marginTop: Theme.spacing.xs,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.bgSubtle,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.border,
   },
   dotFilled: {
     backgroundColor: Colors.gold,
     borderColor: Colors.gold,
   },
-  themeLabel: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.gold,
-  },
+
+  // ─── Afis seridi ──────────────────────────────────────────────────────────
   filmStrip: {
     gap: Theme.spacing.sm,
     paddingRight: Theme.spacing.sm,
+    marginTop: Theme.spacing.sm,
   },
   filmCard: {
     width: 84,
@@ -84,16 +117,21 @@ export const styles = StyleSheet.create({
     height: 126,
     borderRadius: Theme.borderRadius.md,
     backgroundColor: Colors.bgSubtle,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   filmTitle: {
-    fontSize: 11,
+    ...Theme.typography.micro,
+    color: Colors.textPrimary,
     fontWeight: '600',
-    color: Colors.textWhite,
   },
   filmGame: {
-    fontSize: 10,
-    color: Colors.textSecondary,
+    ...Theme.typography.eyebrow,
+    fontSize: 9,
+    lineHeight: 12,
   },
+
+  // ─── Hata ─────────────────────────────────────────────────────────────────
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -101,7 +139,7 @@ export const styles = StyleSheet.create({
     gap: Theme.spacing.sm,
   },
   errorText: {
-    fontSize: 13,
+    ...Theme.typography.caption,
     color: Colors.textSecondary,
     flexShrink: 1,
   },
@@ -109,11 +147,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.xs,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: Colors.bgSubtle,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   retryText: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...Theme.typography.micro,
     color: Colors.gold,
+    fontWeight: '600',
   },
 });

@@ -73,14 +73,15 @@ export function DailyThemeCard(): React.JSX.Element | null {
     return (
       <Animated.View entering={FadeInUp.duration(300)} style={styles.container}>
         <View style={styles.headerRow}>
-          <View style={styles.headerLeft}>
-            <Lock size={20} color={Colors.textSecondary} weight="duotone" />
-            <Text style={styles.titleLocked}>???</Text>
+          <Text style={styles.eyebrow}>{t('games.hub.theme_eyebrow')}</Text>
+          <View style={styles.headerMeta}>
+            <Lock size={13} color={Colors.textTertiary} weight="duotone" />
+            <Text style={styles.progressText}>
+              {theme.completed}/{theme.total}
+            </Text>
           </View>
-          <Text style={styles.progressText}>
-            {theme.completed}/{theme.total}
-          </Text>
         </View>
+        <Text style={styles.titleLocked}>???</Text>
         <Text style={styles.subtitle}>{t('games.theme.locked_subtitle')}</Text>
         <View style={styles.dotsRow}>
           {Array.from({ length: theme.total }).map((_, i) => (
@@ -91,47 +92,59 @@ export function DailyThemeCard(): React.JSX.Element | null {
     );
   }
 
+  // Acilmis tema: ilk filmin afisi arkada durur, metin scrim uzerinde okunur
+  const backdropUrl = theme.films.find((f) => f.poster_url)?.poster_url ?? null;
+
   return (
     <Animated.View
       entering={FadeInUp.duration(400)}
       style={[styles.container, styles.containerUnlocked]}
     >
-      <View style={styles.headerRow}>
-        <View style={styles.headerLeft}>
-          <LinkSimple size={20} color={Colors.gold} weight="duotone" />
-          <Text style={styles.title}>{t('games.theme.unlocked_title')}</Text>
-        </View>
-        <Text style={[styles.progressText, styles.progressTextUnlocked]}>
-          {theme.completed}/{theme.total}
-        </Text>
-      </View>
+      {backdropUrl ? (
+        <>
+          <Image source={{ uri: backdropUrl }} style={styles.backdrop} resizeMode="cover" />
+          <View style={styles.scrim} />
+        </>
+      ) : null}
 
-      <Text style={styles.themeLabel}>{theme.theme_label}</Text>
-      <Text style={styles.subtitle}>{t(`games.theme.type_${theme.theme_type}`)}</Text>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filmStrip}
-      >
-        {theme.films.map((film, index) => (
-          <Animated.View
-            key={`${film.game_id}-${film.title}`}
-            entering={FadeInUp.delay(200 + index * 100).duration(300)}
-            style={styles.filmCard}
-          >
-            {film.poster_url ? (
-              <Image source={{ uri: film.poster_url }} style={styles.poster} resizeMode="cover" />
-            ) : (
-              <View style={styles.poster} />
-            )}
-            <Text style={styles.filmTitle} numberOfLines={2}>
-              {film.title}
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
+          <Text style={styles.eyebrowUnlocked}>{t('games.hub.theme_eyebrow')}</Text>
+          <View style={styles.headerMeta}>
+            <LinkSimple size={13} color={Colors.gold} weight="duotone" />
+            <Text style={[styles.progressText, styles.progressTextUnlocked]}>
+              {theme.completed}/{theme.total}
             </Text>
-            <Text style={styles.filmGame}>{t(`games.${film.game_id}.title`)}</Text>
-          </Animated.View>
-        ))}
-      </ScrollView>
+          </View>
+        </View>
+
+        <Text style={styles.themeLabel}>{theme.theme_label}</Text>
+        <Text style={styles.subtitle}>{t(`games.theme.type_${theme.theme_type}`)}</Text>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filmStrip}
+        >
+          {theme.films.map((film, index) => (
+            <Animated.View
+              key={`${film.game_id}-${film.title}`}
+              entering={FadeInUp.delay(200 + index * 100).duration(300)}
+              style={styles.filmCard}
+            >
+              {film.poster_url ? (
+                <Image source={{ uri: film.poster_url }} style={styles.poster} resizeMode="cover" />
+              ) : (
+                <View style={styles.poster} />
+              )}
+              <Text style={styles.filmTitle} numberOfLines={2}>
+                {film.title}
+              </Text>
+              <Text style={styles.filmGame}>{t(`games.${film.game_id}.title`)}</Text>
+            </Animated.View>
+          ))}
+        </ScrollView>
+      </View>
     </Animated.View>
   );
 }

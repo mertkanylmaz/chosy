@@ -50,6 +50,19 @@ async function fetchUserProfile(): Promise<UserProfileRow | null> {
   return (data as UserProfileRow | null);
 }
 
+/**
+ * Yalnızca kullanıcının görüntü adını çeker.
+ *
+ * Games Hub hero'su selamlama için sadece ismi istiyor; getHomeData() ise
+ * watchlist'i de çekiyor. Hub'da o yükü ödememek için ayrı ince çağrı.
+ *
+ * @returns display_name — oturum yoksa veya isim girilmemişse null
+ */
+export async function getUserDisplayName(): Promise<string | null> {
+  const profile = await fetchUserProfile();
+  return profile?.display_name ?? null;
+}
+
 // ─── Ana Fonksiyon ────────────────────────────────────────────────────────────
 
 /**

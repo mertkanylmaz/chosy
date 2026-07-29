@@ -1,3 +1,9 @@
+/**
+ * DailyChest stilleri — Festival Layer.
+ *
+ * "Lootbox" degil festival odulu: altin sac teli cerceve, eyebrow gorev
+ * metni, serif odul adi. Renk dolgusu yerine cizgi ve bosluk.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -8,61 +14,72 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.border,
     padding: Theme.spacing.lg,
-    gap: Theme.spacing.md,
+    gap: Theme.spacing.sm,
   },
   containerComplete: {
-    borderColor: Colors.goldDim,
+    borderColor: Colors.goldHairline,
+    backgroundColor: Colors.goldSeal,
   },
+
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: Theme.spacing.sm,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textWhite,
+  /** Sagdaki sayac grubu */
+  headerMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  eyebrow: {
+    ...Theme.typography.eyebrow,
+    flexShrink: 1,
+  },
+  eyebrowComplete: {
+    ...Theme.typography.eyebrow,
+    color: Colors.gold,
+    flexShrink: 1,
+  },
+  /** Odul adi — serif, sadece tamamlaninca gorunur */
+  awardTitle: {
+    ...Theme.typography.serifTitle,
+    fontSize: 22,
+    lineHeight: 28,
   },
   progressText: {
-    fontSize: 14,
-    fontWeight: '600',
+    ...Theme.typography.micro,
     color: Colors.textSecondary,
+    fontVariant: ['tabular-nums'],
   },
   progressTextComplete: {
     color: Colors.gold,
   },
-  dotsRow: {
+
+  // ─── Ilerleme: nokta degil segment cubugu (GameShell ile ayni dil) ─────────
+  progressRow: {
     flexDirection: 'row',
-    gap: Theme.spacing.sm,
-    alignItems: 'center',
+    gap: 4,
+    marginTop: Theme.spacing.xs,
   },
-  dot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.bgSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+  segment: {
+    flex: 1,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: Colors.white05,
   },
-  dotFilled: {
-    backgroundColor: Colors.goldDim,
-    borderColor: Colors.gold,
+  segmentFilled: {
+    backgroundColor: Colors.gold,
   },
+
+  // ─── Odul alani ───────────────────────────────────────────────────────────
   chestCard: {
-    backgroundColor: Colors.goldDim,
-    borderRadius: Theme.borderRadius.md,
-    padding: Theme.spacing.md,
     alignItems: 'center',
     gap: Theme.spacing.sm,
+    marginTop: Theme.spacing.sm,
   },
   chestButton: {
     backgroundColor: Colors.gold,
@@ -84,9 +101,9 @@ export const styles = StyleSheet.create({
     gap: Theme.spacing.xs,
   },
   claimedText: {
-    fontSize: 15,
+    ...Theme.typography.micro,
+    color: Colors.gold,
     fontWeight: '600',
-    color: Colors.success,
   },
   rewardsRow: {
     flexDirection: 'row',
@@ -98,14 +115,14 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: Colors.bgSubtle,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
     paddingHorizontal: Theme.spacing.sm,
     paddingVertical: Theme.spacing.xs,
     borderRadius: Theme.borderRadius.full,
   },
   rewardText: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...Theme.typography.micro,
     color: Colors.textSecondary,
   },
 });
