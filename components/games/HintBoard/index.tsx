@@ -55,17 +55,26 @@ export function HintBoard({
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{t('games.fadein.hints_title')}</Text>
-        {credits > 0 && (
-          <Animated.View entering={FadeIn.duration(220)} style={styles.creditChip}>
-            <Lightbulb size={13} weight="duotone" color={Colors.gold} />
-            <Text style={styles.creditText}>
-              {t(
-                credits === 1 ? 'games.fadein.hint_credits' : 'games.fadein.hint_credits_plural',
-                { count: credits },
-              )}
-            </Text>
-          </Animated.View>
-        )}
+        {/*
+          Cip 0 kredide de gorunur. Gizlendiginde oyuncu kredi diye bir
+          mekanik oldugunu hic fark etmiyordu.
+        */}
+        <Animated.View
+          entering={FadeIn.duration(220)}
+          style={[styles.creditChip, credits === 0 && styles.creditChipEmpty]}
+        >
+          <Lightbulb
+            size={13}
+            weight="duotone"
+            color={credits > 0 ? Colors.gold : Colors.textGrey}
+          />
+          <Text style={[styles.creditText, credits === 0 && styles.creditTextEmpty]}>
+            {t(
+              credits === 1 ? 'games.fadein.hint_credits' : 'games.fadein.hint_credits_plural',
+              { count: credits },
+            )}
+          </Text>
+        </Animated.View>
       </View>
 
       <Text style={styles.prompt}>
@@ -108,7 +117,8 @@ export function HintBoard({
                     {contents[hint.order] ?? ''}
                   </Animated.Text>
                 ) : (
-                  <Text style={styles.lockedLabel}>{t('games.fadein.hint_locked')}</Text>
+                  // Maliyet her kilitli kartta yazili — mekanik bu satirdan okunuyor
+                  <Text style={styles.lockedLabel}>{t('games.fadein.hint_cost')}</Text>
                 )}
               </View>
             </TouchableOpacity>

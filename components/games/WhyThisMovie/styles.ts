@@ -1,54 +1,62 @@
 /**
- * WhyThisMovieFunnel — StyleSheet definitions.
+ * WhyThisMovieFunnel — StyleSheet definitions (Festival Layer).
  *
- * Accent: teal (#2DD4BF) for lightbulb, amber for CTA.
+ * Eskiden ampul ikonu teal (#2DD4BF) idi — oyun ekranlarinda kalan son
+ * yabanci vurgu rengiydi. Tek altin kurali geregi altina cevrildi.
  */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 
-/** Teal accent for the lightbulb icon */
-export const TEAL = Colors.teal;
-const TEAL_DIM = 'rgba(45,212,191,0.12)';
+/** Kesif kartinin vurgu rengi — festival katmaninda tek altin */
+export const ACCENT = Colors.gold;
+
+/** Katlanabilir baslikta caret'i ters cevirir (acik durum) */
+export const CARET_UP_STYLE = { transform: [{ rotate: '180deg' }] } as const;
 
 export const styles = StyleSheet.create({
   container: {
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-    padding: 16,
-    gap: 12,
+    borderColor: Colors.goldHairline,
+    padding: Theme.spacing.md,
+    gap: Theme.spacing.sm,
   },
 
   // ── Header ──
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Theme.spacing.sm,
   },
   iconWrap: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: Colors.goldSeal,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textWhite,
+    ...Theme.typography.eyebrow,
+    flex: 1,
+  },
+  /** Katlanabilir baslik — dokunma hedefi 44pt'a tamamlanir */
+  headerToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.sm,
+    minHeight: 44,
   },
 
   // ── Why Text ──
   whyText: {
-    fontSize: 14,
-    fontWeight: '400',
+    ...Theme.typography.serifQuote,
+    fontSize: 16,
+    lineHeight: 24,
     color: Colors.textSecondary,
-    lineHeight: 20,
-    fontStyle: 'italic',
   },
 
   // ── Fun Fact ──
@@ -61,30 +69,30 @@ export const styles = StyleSheet.create({
     gap: 6,
   },
   funFactLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    ...Theme.typography.eyebrow,
+    fontSize: 10,
+    lineHeight: 13,
   },
   funFactText: {
-    fontSize: 14,
-    fontWeight: '400',
+    ...Theme.typography.body,
     color: Colors.textSecondary,
-    lineHeight: 20,
   },
 
   // ── Divider ──
   divider: {
     height: 1,
-    backgroundColor: Colors.borderSubtle,
+    backgroundColor: Colors.goldHairline,
   },
 
-  // ── CTA Row ──
-  ctaRow: {
-    flexDirection: 'row',
-    gap: 10,
+  // ── CTA ──
+  /**
+   * Dikey yigin — "Watch Tonight" en buyuk alani kaplayan birincil eylem.
+   * Eskiden yan yanaydi ve bilgi bloklarinin altinda kaliyordu.
+   */
+  ctaColumn: {
+    gap: Theme.spacing.sm,
   },
   watchButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -94,24 +102,24 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.accentPrimary,
   },
   watchButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.textOnAccent,
   },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: 6,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: Theme.spacing.md,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.accentPrimary,
+    borderColor: Colors.goldHairline,
   },
   addButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: Colors.accentPrimary,
+    color: Colors.gold,
   },
 });

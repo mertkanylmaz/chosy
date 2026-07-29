@@ -57,6 +57,11 @@ export function ConfidenceSelector({
       <View style={styles.segments}>
         {config.levels.map((level) => {
           const isActive = level === value;
+          // Carpanlar her segmentin icinde — risk farki secim yapmadan okunur.
+          // Degerler app_config'ten gelir, sabitlenmez (Hard Rule 4).
+          const levelKey = String(level);
+          const levelWin = config.correct_factor[levelKey] ?? 1;
+          const levelLose = config.wrong_factor[levelKey] ?? 1;
           return (
             <TouchableOpacity
               key={level}
@@ -80,6 +85,12 @@ export function ConfidenceSelector({
                 numberOfLines={1}
               >
                 {t(`games.imposter.confidence_${level}`)}
+              </Text>
+              <Text
+                style={[styles.segmentFactors, isActive && styles.segmentFactorsActive]}
+                numberOfLines={1}
+              >
+                ×{formatFactor(levelWin)} / ×{formatFactor(levelLose)}
               </Text>
             </TouchableOpacity>
           );

@@ -12,13 +12,12 @@
  * Share: useShareCapture + GameShareCard ile PNG capture.
  */
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
 import {
-  BookmarkSimple,
   CalendarBlank,
   CheckCircle,
+  Fire,
   ShareNetwork,
   Star,
   XCircle,
@@ -26,12 +25,9 @@ import {
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticLight, hapticHeavy } from '@/utils/haptics';
+import { hapticLight } from '@/utils/haptics';
 import { getPosterUrl } from '@/services/tmdb';
-import { supabase } from '@/services/supabase';
-import { logger } from '@/utils/logger';
 import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
 import { formatFactor } from '@/components/games/ConfidenceSelector';
@@ -40,11 +36,12 @@ import { PlayNextBridge } from '@/components/games/PlayNextBridge';
 import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
 import {
   trackResultCardViewed,
-  trackFilmPageOpened,
   trackShareRendered,
   trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import type { DimensionProgress, RankProgress } from '@/types/game';
+
+import { styles } from './styles';
 
 interface ResultCardProps {
   /** Bildi mi? */
@@ -56,8 +53,17 @@ interface ResultCardProps {
   /** Film bilgisi */
   filmTitle: string;
   filmYear: number;
-  filmPosterPath: string | null;
-  filmId: number;
+  /** TMDb poster yolu — `filmPosterUrl` verilmediyse kullanilir */
+  filmPosterPath?: string | null;
+  /**
+   * Tam poster URL'i. Spotlight/CineMetrics/Detective sunucudan hazir URL
+   * aliyor, TMDb yolu tasimıyor.
+   */
+  filmPosterUrl?: string | null;
+  /** TMDb ID — `filmUuid` yoksa kesif kartinin film cozumu icin kullanilir */
+  filmId?: number;
+  /** Supabase `films.id` — varsa tmdb_id aramasi atlanir */
+  filmUuid?: string;
   /** Streak */
   streak: number;
   /** Oyun adi (paylasim icin) */
@@ -83,6 +89,14 @@ interface ResultCardProps {
     why_text?: string;
     fun_fact?: string;
   };
+  /** Bir sonraki bulmacaya kalan sure (hh:mm:ss) — verilirse gosterilir */
+  countdown?: string;
+  /** Geri sayim etiketi (varsayilan: games.result.next_puzzle) */
+  countdownLabel?: string;
+  /** "Hub'a don" eylemi — verilirse buton gosterilir */
+  onBackToHub?: () => void;
+  /** Sonuc basligi yerine oyuna ozel mesaj (orn. "3 tahminde buldun!") */
+  resultMessage?: string;
 }
 
 /** XP hesaplama — erken tahmin = daha fazla XP */
@@ -99,7 +113,9 @@ export function ResultCard({
   filmTitle,
   filmYear,
   filmPosterPath,
+  filmPosterUrl,
   filmId,
+  filmUuid,
   streak,
   gameTitle,
   gameType,
@@ -111,12 +127,16 @@ export function ResultCard({
   dimensionProgress,
   rankProgress,
   whyThisMovie,
+  countdown,
+  countdownLabel,
+  onBackToHub,
+  resultMessage,
 }: ResultCardProps) {
   const { t } = useLanguage();
-  const router = useRouter();
   const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
-  const posterUrl = getPosterUrl(filmPosterPath, 'w342');
+  // Hazir URL varsa TMDb yolu cozumlemesine gerek yok
+  const posterUrl = filmPosterUrl ?? getPosterUrl(filmPosterPath ?? null, 'w342');
   // Use server XP if provided, otherwise fall back to local calculation
   const xp = xpAwarded ?? calculateXP(solved, attempts, maxAttempts);
   const hasDnaReveal = xpAwarded != null; // Edge Function path provides xpAwarded
@@ -147,22 +167,44 @@ export function ResultCard({
       </View>
 
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
-        {/* ── Status Hero ── */}
+        {/* ── Perde: cozum filmi kahraman, kesif hedefi bu ── */}
+        <View style={styles.filmHero}>
+          {posterUrl && (
+            <Image
+              source={{ uri: posterUrl }}
+              style={styles.poster}
+              contentFit="cover"
+              transition={200}
+            />
+          )}
+          <Text style={styles.filmTitle}>{filmTitle}</Text>
+          {filmYear > 0 && (
+            <View style={styles.yearRow}>
+              <CalendarBlank size={13} color={Colors.textTertiary} weight="duotone" />
+              <Text style={styles.filmYearLabel}>
+                {t('games.result.release_year', { year: filmYear })}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* ── Durum — semantik renk yalnizca ikon ve metinde, yuzeyde degil ── */}
         <View style={styles.statusSection}>
-          <View style={[styles.statusIconRing, solved ? styles.statusIconRingSuccess : styles.statusIconRingFail]}>
+          <View style={styles.statusRow}>
             {solved ? (
-              <CheckCircle size={44} weight="duotone" color={Colors.success} />
+              <CheckCircle size={16} weight="duotone" color={Colors.gold} />
             ) : (
-              <XCircle size={44} weight="duotone" color={Colors.error} />
+              <XCircle size={16} weight="duotone" color={Colors.textTertiary} />
             )}
+            <Text style={[styles.statusTitle, solved && styles.statusTitleSolved]}>
+              {solved ? t('games.result.solved') : t('games.result.failed')}
+            </Text>
           </View>
-          <Text style={styles.statusTitle}>
-            {solved ? t('games.result.solved') : t('games.result.failed')}
-          </Text>
           <Text style={styles.statusSubtitle}>
-            {solved
-              ? t('games.result.solved_detail', { attempts, maxAttempts })
-              : t('games.result.failed_detail', { maxAttempts })}
+            {resultMessage ??
+              (solved
+                ? t('games.result.solved_detail', { attempts, maxAttempts })
+                : t('games.result.failed_detail', { maxAttempts }))}
           </Text>
         </View>
 
@@ -183,7 +225,30 @@ export function ResultCard({
           </Animated.View>
         )}
 
-        {/* ── Guven bahsi kirilimi — notr bahiste gizli ── */}
+        {/* ── Kesif koprusu — birincil CTA'lar burada ── */}
+        {whyThisMovie && (
+          <WhyThisMovieFunnel
+            whyText={whyThisMovie.why_text}
+            funFact={whyThisMovie.fun_fact}
+            filmTitle={filmTitle}
+            filmId={filmId}
+            filmUuid={filmUuid}
+            gameType={gameType ?? 'unknown'}
+          />
+        )}
+
+        {/* ── Streak + guven bahsi — ikincil bilgi, CTA'lardan sonra ── */}
+        {streak > 0 && (
+          <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.streakRow}>
+            {/* Emoji yerine Phosphor duotone — oyun ekranlarinda tek ikon dili */}
+            <Fire size={16} weight="duotone" color={Colors.gold} />
+            <Text style={styles.streakCount}>{streak}</Text>
+            <Text style={styles.streakText}>
+              {t('games.result.streak', { count: streak })}
+            </Text>
+          </Animated.View>
+        )}
+
         {confidenceFactor != null && confidenceFactor !== 1 && (
           <Animated.View entering={FadeInUp.delay(220).duration(300)} style={styles.confidenceRow}>
             <Text style={styles.confidenceLabel}>
@@ -191,55 +256,6 @@ export function ResultCard({
             </Text>
             <Text style={styles.confidenceValue}>×{formatFactor(confidenceFactor)}</Text>
           </Animated.View>
-        )}
-
-        {/* ── Film Info ── */}
-        <View style={styles.filmRow}>
-          {posterUrl && (
-            <Image
-              source={{ uri: posterUrl }}
-              style={styles.poster}
-              contentFit="cover"
-              transition={200}
-            />
-          )}
-          <View style={styles.filmInfo}>
-            <Text style={styles.filmTitle} numberOfLines={3}>
-              {filmTitle}
-            </Text>
-            {filmYear > 0 && (
-              <View style={styles.yearRow}>
-                <CalendarBlank size={13} color={Colors.textTertiary} weight="duotone" />
-                <Text style={styles.filmYearLabel}>
-                  {t('games.result.release_year', { year: filmYear })}
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* ── Streak ── */}
-        {streak > 0 && (
-          <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.streakRow}>
-            <View style={styles.streakBadge}>
-              <Text style={styles.streakEmoji}>🔥</Text>
-              <Text style={styles.streakCount}>{streak}</Text>
-            </View>
-            <Text style={styles.streakText}>
-              {t('games.result.streak', { count: streak })}
-            </Text>
-          </Animated.View>
-        )}
-
-        {/* ── Why This Movie? ── */}
-        {whyThisMovie && (
-          <WhyThisMovieFunnel
-            whyText={whyThisMovie.why_text}
-            funFact={whyThisMovie.fun_fact}
-            filmTitle={filmTitle}
-            filmId={filmId}
-            gameType={gameType ?? 'unknown'}
-          />
         )}
 
         {/* ── Actions ── */}
@@ -261,42 +277,36 @@ export function ResultCard({
               disabled={isCapturing}
               activeOpacity={0.7}
             >
-              <ShareNetwork size={18} color={Colors.accentPrimary} weight="duotone" />
+              <ShareNetwork size={18} color={Colors.gold} weight="duotone" />
               <Text style={styles.shareText}>
                 {t('games.result.share_score')}
               </Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity
-            style={styles.watchlistButton}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={t('games.result.add_watchlist')}
-            onPress={async () => {
-              hapticHeavy();
-              trackFilmPageOpened(gameType ?? 'unknown', filmId);
-              try {
-                const { data } = await supabase
-                  .from('films')
-                  .select('id')
-                  .eq('tmdb_id', filmId)
-                  .single();
-                if (data?.id) {
-                  router.push(`/film/${data.id}`);
-                } else {
-                  logger.warn(`[ResultCard] Film UUID bulunamadi: tmdb_id=${filmId}`);
-                }
-              } catch (err) {
-                logger.error('[ResultCard] Film lookup hatasi:', err);
-              }
-            }}
-          >
-            <BookmarkSimple size={18} color={Colors.textOnAccent} weight="duotone" />
-            <Text style={styles.watchlistText}>
-              {t('games.result.add_watchlist')}
-            </Text>
-          </TouchableOpacity>
+          {onBackToHub && (
+            <TouchableOpacity
+              style={styles.hubButton}
+              accessibilityRole="button"
+              onPress={() => {
+                hapticLight();
+                onBackToHub();
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.hubText}>{t('games.result.back_to_hub')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {/* ── Bir sonraki bulmacaya geri sayim ── */}
+        {countdown ? (
+          <View style={styles.countdownSection}>
+            <Text style={styles.countdownLabel}>
+              {countdownLabel ?? t('games.result.next_puzzle_label')}
+            </Text>
+            <Text style={styles.countdownTime}>{countdown}</Text>
+          </View>
+        ) : null}
 
         {/* ── Play Next Bridge ── */}
         {gameType && (
@@ -306,194 +316,3 @@ export function ResultCard({
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  offscreen: {
-    position: 'absolute',
-    top: -9999,
-    left: -9999,
-    opacity: 0,
-  },
-  container: {
-    alignSelf: 'stretch' as const,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Theme.borderRadius.lg,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-
-  // ── Status Hero ──
-  statusSection: {
-    alignItems: 'center',
-    gap: 6,
-  },
-  statusIconRing: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  statusIconRingSuccess: {
-    backgroundColor: 'rgba(34,197,94,0.12)',
-  },
-  statusIconRingFail: {
-    backgroundColor: 'rgba(239,68,68,0.12)',
-  },
-  statusTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  statusSubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-  },
-
-  // ── XP Badge ──
-  confidenceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    alignSelf: 'center',
-    marginTop: 6,
-  },
-  confidenceLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: Colors.textTertiary,
-  },
-  confidenceValue: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: Colors.gold,
-  },
-  xpBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    alignSelf: 'center',
-    backgroundColor: Colors.goldDim,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Theme.borderRadius.full,
-  },
-  xpText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.gold,
-  },
-
-  // ── Film Info ──
-  filmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Theme.borderRadius.md,
-    padding: 12,
-  },
-  poster: {
-    width: 80,
-    height: 120,
-    borderRadius: Theme.borderRadius.sm,
-  },
-  filmInfo: {
-    flex: 1,
-    paddingLeft: 14,
-    gap: 6,
-  },
-  filmTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-  },
-  yearRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  filmYearLabel: {
-    fontSize: 13,
-    color: Colors.textTertiary,
-  },
-
-  // ── Streak ──
-  streakRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    paddingVertical: 10,
-    backgroundColor: Colors.goldDim,
-    borderRadius: Theme.borderRadius.md,
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  streakEmoji: {
-    fontSize: 20,
-  },
-  streakCount: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Colors.gold,
-  },
-  streakText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.gold,
-  },
-
-  // ── Actions ──
-  actions: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 4,
-  },
-  shareButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.accentPrimary,
-  },
-  shareButtonDisabled: {
-    opacity: 0.5,
-  },
-  shareText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.accentPrimary,
-  },
-  watchlistButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    borderRadius: Theme.borderRadius.md,
-    backgroundColor: Colors.accentPrimary,
-  },
-  watchlistText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textOnAccent,
-  },
-});

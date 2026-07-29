@@ -5,25 +5,18 @@
  * Dropdown INPUT'UN ÜSTÜNDE açılır (keyboard çakışmasını önlemek için).
  */
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  Keyboard,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 import { searchFilms } from '@/services/gameService';
 import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
+
+import { styles } from './styles';
 
 interface FilmSearchInputProps {
   /** Film seçildiğinde çağrılır */
@@ -149,75 +142,3 @@ export function FilmSearchInput({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: 'relative',
-    zIndex: 10,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.inputBg,
-    borderWidth: 1,
-    borderColor: Colors.inputBorder,
-    borderRadius: Theme.borderRadius.md,
-    paddingHorizontal: Theme.spacing.md,
-    height: 48,
-    gap: Theme.spacing.sm,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: Colors.textWhite,
-  },
-  dropdown: {
-    position: 'absolute',
-    bottom: 52,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Theme.borderRadius.md,
-    maxHeight: 280,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    elevation: 10,
-    shadowColor: Colors.shadowBlack,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  resultRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
-    gap: Theme.spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.cardBorder,
-  },
-  resultPoster: {
-    width: 36,
-    height: 54,
-    borderRadius: 4,
-  },
-  noPoster: {
-    backgroundColor: Colors.bgSubtle,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  resultInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  resultTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textWhite,
-  },
-  resultYear: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-});

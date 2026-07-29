@@ -1,3 +1,9 @@
+/**
+ * HintBoard stilleri — Festival Layer.
+ *
+ * Ipucu paneli bir festival dosyasi gibi okunur: eyebrow baslik,
+ * kilitli satirlar sonuk, acilan satir altin kenarlik.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -17,30 +23,33 @@ export const styles = StyleSheet.create({
     gap: Theme.spacing.sm,
   },
   title: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: Colors.textLightGrey,
+    ...Theme.typography.eyebrow,
   },
   creditChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: Theme.borderRadius.full,
   },
+  /** 0 kredi — cip yine gorunur ama sonuk */
+  creditChipEmpty: {
+    borderColor: Colors.borderSubtle,
+  },
   creditText: {
-    fontSize: 12,
-    fontWeight: '700',
+    ...Theme.typography.micro,
     color: Colors.gold,
+    fontWeight: '700',
+  },
+  creditTextEmpty: {
+    color: Colors.textTertiary,
   },
   prompt: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: Colors.textGrey,
+    ...Theme.typography.caption,
+    color: Colors.textTertiary,
   },
 
   // ── Kart listesi ──
@@ -51,22 +60,21 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Theme.spacing.sm,
-    backgroundColor: Colors.white05,
     borderWidth: 1,
-    borderColor: Colors.inputBorder,
+    borderColor: Colors.borderSubtle,
     borderRadius: Theme.borderRadius.md,
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
     minHeight: 48,
   },
+  /** Acilmis ipucu — altin sac teli, hafif muhur zemini */
   cardRevealed: {
-    backgroundColor: Colors.white10,
-    borderColor: Colors.goldDim,
+    borderColor: Colors.goldHairline,
+    backgroundColor: Colors.goldSeal,
   },
   /** Kredi varken kilitli kart — dokunulabilir oldugu belli olsun */
   cardUnlockable: {
-    borderColor: Colors.goldDim,
-    backgroundColor: Colors.white10,
+    borderColor: Colors.goldHairline,
   },
   cardDisabled: {
     opacity: 0.4,
@@ -81,20 +89,16 @@ export const styles = StyleSheet.create({
     gap: 2,
   },
   typeLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    color: Colors.textGrey,
+    ...Theme.typography.eyebrow,
+    fontSize: 10,
+    lineHeight: 13,
   },
   content: {
-    fontSize: 14,
+    ...Theme.typography.body,
     fontWeight: '600',
-    color: Colors.textWhite,
   },
   lockedLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textGrey,
+    ...Theme.typography.caption,
+    color: Colors.textTertiary,
   },
 });

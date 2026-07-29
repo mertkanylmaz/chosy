@@ -1,3 +1,10 @@
+/**
+ * DnaXpReveal stilleri — Festival Layer.
+ *
+ * Eskiden DNA cubuklari ve etiketleri mavi (Colors.info) idi; tek altin
+ * kurali geregi altina cevrildi. Artis gostergesi yesil kaldi — o bir
+ * geri bildirim ani, yuzey rengi degil.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -6,22 +13,22 @@ import { Theme } from '@/constants/theme';
 export const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    gap: 8,
-    marginTop: 4,
+    gap: Theme.spacing.sm,
   },
   xpChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.goldDim,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: Theme.borderRadius.full,
   },
   xpText: {
-    fontSize: 14,
-    fontWeight: '700',
+    ...Theme.typography.micro,
     color: Colors.gold,
+    fontWeight: '700',
   },
 
   // ── Chip fallback (legacy) ──
@@ -29,9 +36,10 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(96,165,250,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 5,
     borderRadius: Theme.borderRadius.full,
   },
   dnaSignalRow: {
@@ -40,14 +48,13 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   dnaText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.info,
+    ...Theme.typography.micro,
+    color: Colors.textSecondary,
   },
   dnaDelta: {
-    fontSize: 12,
-    fontWeight: '700',
+    ...Theme.typography.micro,
     color: Colors.greenSoft,
+    fontWeight: '700',
   },
 
   // ── Before/After Bars ──
@@ -55,7 +62,6 @@ export const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: 6,
     paddingHorizontal: 4,
-    marginTop: 4,
   },
   dimRow: {
     gap: 3,
@@ -66,41 +72,44 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dimLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+    ...Theme.typography.eyebrow,
+    fontSize: 10,
+    lineHeight: 13,
   },
   dimValue: {
-    fontSize: 12,
+    ...Theme.typography.micro,
+    color: Colors.textPrimary,
     fontWeight: '700',
-    color: Colors.textWhite,
+    fontVariant: ['tabular-nums'],
   },
   dimDelta: {
-    fontSize: 11,
-    fontWeight: '700',
+    ...Theme.typography.micro,
+    fontSize: 10,
     color: Colors.greenSoft,
+    fontWeight: '700',
   },
   barBg: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.white10,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.white05,
     overflow: 'hidden',
   },
   barFill: {
     position: 'absolute',
     top: 0,
     left: 0,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.info,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.gold,
   },
+  /** "Once" isareti — artisin nereden basladigini gosterir */
   barMarker: {
     position: 'absolute',
     top: -1,
     width: 2,
-    height: 8,
+    height: 6,
     borderRadius: 1,
-    backgroundColor: 'rgba(255,255,255,0.4)',
+    backgroundColor: Colors.white10,
   },
 
   // ── Rank Progress ──
@@ -108,25 +117,23 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: Theme.borderRadius.full,
-    marginTop: 4,
   },
   rankChipCelebrate: {
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.goldDark,
+    borderColor: Colors.gold,
+    backgroundColor: Colors.goldSeal,
   },
   rankText: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...Theme.typography.micro,
     color: Colors.textSecondary,
   },
   rankTextCelebrate: {
-    fontSize: 13,
-    fontWeight: '700',
+    ...Theme.typography.micro,
     color: Colors.gold,
+    fontWeight: '700',
   },
 });

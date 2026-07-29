@@ -1,3 +1,9 @@
+/**
+ * ConfidenceSelector stilleri — Festival Layer.
+ *
+ * Mockup: uc segment, secili olan altin dolgu + koyu metin.
+ * Carpanlar segmentin altinda kalir — risk secmeden once okunur.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -10,11 +16,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: Colors.textLightGrey,
+    ...Theme.typography.eyebrow,
   },
 
   // ── Segment satiri ──
@@ -32,31 +34,43 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: Colors.inputBorder,
-    backgroundColor: Colors.white05,
-    minHeight: 52,
+    borderColor: Colors.border,
+    minHeight: 56,
   },
+  /** Secili segment — altin dolgu, uzerinde koyu metin (mockup) */
   segmentActive: {
     borderColor: Colors.gold,
-    backgroundColor: Colors.goldDim,
+    backgroundColor: Colors.gold,
+  },
+  segmentValue: {
+    ...Theme.typography.stat,
+    fontSize: 17,
+    lineHeight: 22,
+    color: Colors.textSecondary,
+  },
+  segmentValueActive: {
+    color: Colors.bgPrimary,
   },
   segmentText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textGrey,
+    ...Theme.typography.eyebrow,
+    fontSize: 9,
+    lineHeight: 12,
     textAlign: 'center',
   },
   segmentTextActive: {
-    color: Colors.gold,
-    fontWeight: '700',
+    color: Colors.bgPrimary,
   },
-  segmentValue: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: Colors.textLightGrey,
+  /** Dogru/yanlis carpani — segment icinde, kucuk */
+  segmentFactors: {
+    ...Theme.typography.micro,
+    fontSize: 10,
+    lineHeight: 13,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    fontVariant: ['tabular-nums'],
   },
-  segmentValueActive: {
-    color: Colors.gold,
+  segmentFactorsActive: {
+    color: Colors.bgPrimary,
   },
 
   disabled: {
@@ -65,8 +79,7 @@ export const styles = StyleSheet.create({
 
   /** Secilen bahsin bedeli — secmeden once gorunur olmali */
   preview: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textGrey,
+    ...Theme.typography.micro,
+    color: Colors.textSecondary,
   },
 });

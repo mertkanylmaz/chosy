@@ -1,3 +1,7 @@
+/**
+ * GameStateView stilleri — Festival Layer.
+ * Hata ekrani da kuratoryal: eyebrow + serif baslik + sakin retry.
+ */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -15,28 +19,27 @@ export const styles = StyleSheet.create({
     marginBottom: Theme.spacing.xs,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    ...Theme.typography.serifTitle,
+    fontSize: 22,
+    lineHeight: 28,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 14,
+    ...Theme.typography.body,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
   },
   retryButton: {
     marginTop: Theme.spacing.sm,
     paddingHorizontal: Theme.spacing.lg,
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: Colors.accentPrimary,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   retryText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
+    ...Theme.typography.eyebrow,
+    color: Colors.gold,
   },
 
   // ─── Loading skeleton ──────────────────────────────────────────────────────
@@ -49,18 +52,20 @@ export const styles = StyleSheet.create({
     width: 160,
     height: 240,
     borderRadius: Theme.borderRadius.lg,
-    backgroundColor: Colors.bgSubtle,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   skeletonLineWide: {
     width: '70%',
-    height: 16,
+    height: 14,
     borderRadius: Theme.borderRadius.sm,
-    backgroundColor: Colors.bgSubtle,
+    backgroundColor: Colors.bgCard,
   },
   skeletonLineNarrow: {
     width: '45%',
-    height: 12,
+    height: 10,
     borderRadius: Theme.borderRadius.sm,
-    backgroundColor: Colors.bgSubtle,
+    backgroundColor: Colors.bgCard,
   },
 });

@@ -153,7 +153,7 @@ export function DnaXpReveal({
             style={styles.dnaChip}
           >
             <View style={styles.dnaSignalRow}>
-              <Dna size={14} color={Colors.info} weight="duotone" />
+              <Dna size={14} color={Colors.gold} weight="duotone" />
               <Text style={styles.dnaText}>
                 {DIMENSION_LABELS[signal.dimension]?.[language === 'tr' ? 'tr' : 'en'] ?? signal.dimension}
               </Text>
@@ -166,7 +166,7 @@ export function DnaXpReveal({
         ))
       ) : dnaUpdated ? (
         <Animated.View entering={FadeInUp.delay(400).duration(300)} style={styles.dnaChip}>
-          <Dna size={14} color={Colors.info} weight="duotone" />
+          <Dna size={14} color={Colors.gold} weight="duotone" />
           <Text style={styles.dnaText}>
             {solved ? t('games.dna_updated') : t('games.dna_consistency')}
           </Text>
