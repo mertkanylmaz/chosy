@@ -1,17 +1,12 @@
 /**
  * DetectiveScoreCard — Oyun sonu skor özet kartı.
  *
- * Animasyonlu count-up ile büyük skor sayısı (0 → score, 1.5s),
- * üç satır özet (Tahmin, Süre, İpucu), isteğe bağlı "Lucky Spot!" rozeti.
+ * Animasyonlu count-up ile büyük skor sayısı (0 → score, 1.5s) ve
+ * üç satır özet (Tahmin, Süre, İpucu).
  */
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
-import {
-  Crosshair,
-  Timer,
-  Lightbulb,
-  Star,
-} from 'phosphor-react-native';
+import { Crosshair, Timer, Lightbulb } from 'phosphor-react-native';
 import Animated, {
   FadeInUp,
   useSharedValue,
@@ -21,12 +16,10 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { styles } from './styles';
 
 // ─── Teal accent ─────────────────────────────────────────────────────────────
-const TEAL = Colors.tealDeep;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -41,8 +34,6 @@ interface DetectiveScoreCardProps {
   timeSeconds: number;
   /** Oyun kazanıldı mı? */
   won: boolean;
-  /** Şanslı spot rozeti gösterilsin mi? */
-  luckySpot: boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -122,7 +113,6 @@ export function DetectiveScoreCard({
   hintsUsed,
   timeSeconds,
   won,
-  luckySpot,
 }: DetectiveScoreCardProps) {
   const { t } = useLanguage();
 
@@ -134,38 +124,25 @@ export function DetectiveScoreCard({
         <Text style={styles.scoreCardOutOf}>{t('games.detective.score_label')}</Text>
       </View>
 
-      {/* Lucky Spot rozeti */}
-      {luckySpot && (
-        <Animated.View
-          entering={FadeInUp.delay(200).duration(300)}
-          style={styles.scoreCardLuckyBadge}
-        >
-          <Star size={14} color={Colors.gold} weight="duotone" />
-          <Text style={styles.scoreCardLuckyText}>
-            {t('games.detective.lucky_spot')}
-          </Text>
-        </Animated.View>
-      )}
-
       {/* Özet satırları */}
       <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.scoreCardBreakdown}>
         {/* Tahminler */}
         <View style={styles.scoreCardRow}>
-          <Crosshair size={16} color={TEAL} weight="duotone" />
+          <Crosshair size={16} color={Colors.gold} weight="duotone" />
           <Text style={styles.scoreCardRowLabel}>{t('games.detective.guesses_label')}</Text>
           <Text style={styles.scoreCardRowValue}>{totalGuesses}</Text>
         </View>
 
         {/* Süre */}
         <View style={styles.scoreCardRow}>
-          <Timer size={16} color={TEAL} weight="duotone" />
+          <Timer size={16} color={Colors.gold} weight="duotone" />
           <Text style={styles.scoreCardRowLabel}>{t('games.detective.time_label')}</Text>
           <Text style={styles.scoreCardRowValue}>{formatTime(timeSeconds)}</Text>
         </View>
 
         {/* İpuçları */}
         <View style={styles.scoreCardRow}>
-          <Lightbulb size={16} color={TEAL} weight="duotone" />
+          <Lightbulb size={16} color={Colors.gold} weight="duotone" />
           <Text style={styles.scoreCardRowLabel}>{t('games.detective.hints_label')}</Text>
           <Text style={styles.scoreCardRowValue}>{hintsUsed}</Text>
         </View>

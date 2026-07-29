@@ -8,7 +8,7 @@
  * Edge Function tabanlı — tahmin doğrulaması sunucuda.
  */
 import React, { useCallback, useRef, useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { ArrowsLeftRight, CheckCircle, Lock, XCircle } from 'phosphor-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -16,7 +16,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
+import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { getGameStreak } from '@/services/gameService';
 import { getDailyChallenge, submitGameGuess } from '@/services/gameApi';
@@ -341,31 +341,42 @@ export default function LoglineScreen() {
       maxAttempts={maxAttempts}
     >
       <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Clues */}
-        <View style={styles.cluesContainer}>
-          {clues.map((clue, index) => {
-            const isRevealed = index < revealedCount;
-            return (
-              <Animated.View
-                key={clue.order}
-                entering={isRevealed ? FadeInUp.delay(index * 100).duration(300) : undefined}
-                style={[styles.clueRow, isRevealed ? styles.clueRevealed : styles.clueLocked]}
-              >
-                <View style={styles.clueNumber}>
-                  <Text style={styles.clueNumberText}>{clue.order}</Text>
-                </View>
-                {isRevealed ? (
-                  <Text style={styles.clueText}>{clue.content}</Text>
-                ) : (
-                  <View style={styles.lockedRow}>
-                    <Lock size={14} color={Colors.textTertiary} weight="duotone" />
-                    <Text style={styles.lockedText}>{t('games.logline.clue_locked')}</Text>
-                  </View>
-                )}
-              </Animated.View>
-            );
-          })}
-        </View>
+        {/*
+          Ilk ipucu logline metninin kendisi — ekranin kahramani.
+          Kalan ipuclari (donem, yonetmen, oyuncu) altta birikir.
+        */}
+        {clues[0] ? (
+          <Animated.View entering={FadeInUp.duration(400)} style={styles.loglineHero}>
+            <Text style={styles.loglineText}>{clues[0].content}</Text>
+          </Animated.View>
+        ) : null}
+
+        {/* Ek ipuclari — yanlis tahminle sirayla acilir */}
+        {clues.length > 1 ? (
+          <View style={styles.cluesContainer}>
+            <Text style={styles.cluesLabel}>{t('games.logline.clues_label')}</Text>
+            {clues.slice(1).map((clue, index) => {
+              // clues[0] hero'ya gittigi icin indeks bir kayiyor
+              const isRevealed = index + 1 < revealedCount;
+              return (
+                <Animated.View
+                  key={clue.order}
+                  entering={isRevealed ? FadeInUp.delay(index * 100).duration(300) : undefined}
+                  style={[styles.clueRow, isRevealed ? styles.clueRevealed : styles.clueLocked]}
+                >
+                  {isRevealed ? (
+                    <Text style={styles.clueText}>{clue.content}</Text>
+                  ) : (
+                    <View style={styles.lockedRow}>
+                      <Lock size={14} color={Colors.textTertiary} weight="duotone" />
+                      <Text style={styles.lockedText}>{t('games.logline.clue_locked')}</Text>
+                    </View>
+                  )}
+                </Animated.View>
+              );
+            })}
+          </View>
+        ) : null}
 
         {/* Wrong guess feedback + semantic hints */}
         {wrongGuess && (
@@ -400,6 +411,7 @@ export default function LoglineScreen() {
 
       {/* Search input — fixed at bottom */}
       <View style={styles.searchContainer}>
+        <Text style={styles.searchLabel}>{t('games.logline.which_film')}</Text>
         <FilmSearchInput
           onSelect={handleGuess}
           disabled={gameState !== 'playing' || isSubmitting}
@@ -462,46 +474,48 @@ const styles = StyleSheet.create({
   scrollContent: {
     flex: 1,
   },
+  /**
+   * Logline metni — ekranin kahramani. Afis yok, genis bosluk;
+   * hedef kitap okuma hissi (Festival Layer).
+   */
+  loglineHero: {
+    paddingVertical: Theme.spacing.xxl,
+    paddingHorizontal: Theme.spacing.sm,
+  },
+  loglineText: {
+    ...Theme.typography.serifQuote,
+    textAlign: 'center',
+  },
+
   cluesContainer: {
-    gap: Theme.spacing.sm,
+    gap: Theme.spacing.xs,
     paddingTop: Theme.spacing.md,
+  },
+  cluesLabel: {
+    ...Theme.typography.eyebrow,
+    marginBottom: Theme.spacing.xs,
   },
   clueRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Theme.spacing.md,
-    padding: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.md,
     borderRadius: Theme.borderRadius.md,
-    minHeight: 52,
+    borderWidth: 1,
+    minHeight: 44,
   },
   clueRevealed: {
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
+    backgroundColor: Colors.goldSeal,
   },
   clueLocked: {
-    backgroundColor: Colors.white05,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  clueNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.accentDim,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  clueNumberText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.accentPrimary,
+    borderColor: Colors.borderSubtle,
   },
   clueText: {
     flex: 1,
-    fontSize: 15,
-    color: Colors.textWhite,
-    lineHeight: 22,
+    ...Theme.typography.body,
+    fontWeight: '600',
   },
   lockedRow: {
     flex: 1,
@@ -510,7 +524,7 @@ const styles = StyleSheet.create({
     gap: Theme.spacing.xs,
   },
   lockedText: {
-    fontSize: 14,
+    ...Theme.typography.caption,
     color: Colors.textTertiary,
   },
   wrongGuessContainer: {
@@ -523,7 +537,8 @@ const styles = StyleSheet.create({
     gap: Theme.spacing.sm,
     paddingVertical: Theme.spacing.sm,
     paddingHorizontal: Theme.spacing.md,
-    backgroundColor: 'rgba(239,68,68,0.1)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
     borderRadius: Theme.borderRadius.sm,
   },
   wrongText: {
@@ -553,5 +568,11 @@ const styles = StyleSheet.create({
     paddingTop: Theme.spacing.md,
     paddingBottom: Theme.spacing.sm,
     marginBottom: Platform.OS === 'ios' ? 20 : 10,
+    gap: Theme.spacing.sm,
+  },
+  /** Input ustundeki "WHICH FILM?" etiketi */
+  searchLabel: {
+    ...Theme.typography.eyebrow,
+    textAlign: 'center',
   },
 });

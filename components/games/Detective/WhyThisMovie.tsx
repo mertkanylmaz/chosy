@@ -10,22 +10,15 @@ import { Lightbulb } from 'phosphor-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { styles, TEAL } from './styles';
+import type { ClueExplanation, DecoyConnection } from '@/types/game';
+import { formatClueLine } from './formatClue';
+import { styles, ACCENT } from './styles';
 
 interface WhyThisMovieCardProps {
-  /** Ipucu aciklamalari */
-  clueExplanations: Array<{
-    clue_type: string;
-    clue_value: string;
-    connection: string;
-  }>;
+  /** Ipucu aciklamalari — ham degerler, bicimlendirme burada yapilir */
+  clueExplanations: ClueExplanation[];
   /** Decoy-cozum baglantilari */
-  decoyConnections: Array<{
-    decoy_title: string;
-    shared_trait: string;
-  }>;
-  /** Opsiyonel eglenceli bilgi */
-  funFact?: string;
+  decoyConnections: DecoyConnection[];
 }
 
 /**
@@ -34,7 +27,6 @@ interface WhyThisMovieCardProps {
 export function WhyThisMovieCard({
   clueExplanations,
   decoyConnections,
-  funFact,
 }: WhyThisMovieCardProps) {
   const { t } = useLanguage();
 
@@ -45,7 +37,7 @@ export function WhyThisMovieCard({
       {/* Header */}
       <View style={styles.whyTitleRow}>
         <View style={styles.whyIconWrap}>
-          <Lightbulb size={16} color={TEAL} weight="duotone" />
+          <Lightbulb size={16} color={ACCENT} weight="duotone" />
         </View>
         <Text style={styles.whyTitle}>{t('games.detective.why_title')}</Text>
       </View>
@@ -56,7 +48,9 @@ export function WhyThisMovieCard({
       {clueExplanations.map((exp, idx) => (
         <View key={`clue-${idx}`} style={styles.whyBullet}>
           <View style={styles.whyBulletDot} />
-          <Text style={styles.whyBulletText}>{exp.connection}</Text>
+          <Text style={styles.whyBulletText}>
+            {formatClueLine(exp.clue_type, exp.clue_value, t)}
+          </Text>
         </View>
       ))}
 
@@ -70,19 +64,11 @@ export function WhyThisMovieCard({
               <Text style={styles.whyBulletText}>
                 {t('games.detective.why_decoy', {
                   film: dc.decoy_title,
-                  trait: dc.shared_trait,
+                  trait: dc.shared_traits.join(', '),
                 })}
               </Text>
             </View>
           ))}
-        </>
-      )}
-
-      {/* Fun fact */}
-      {funFact && (
-        <>
-          <View style={styles.whyDivider} />
-          <Text style={styles.whyFunFact}>{funFact}</Text>
         </>
       )}
     </Animated.View>

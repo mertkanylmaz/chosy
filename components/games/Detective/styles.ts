@@ -33,12 +33,17 @@ const CARD_H_SMALL = Math.round(CARD_W_SMALL * 1.4);
 const CARD_W = Math.floor((SCREEN_W - GRID_PADDING * 2 - GRID_GAP) / 2);
 const CARD_H = Math.round(CARD_W * 1.35);
 
-/** Detective accent — teal-600 */
-const TEAL = Colors.tealDeep;
-const TEAL_DIM = 'rgba(13,148,136,0.15)';
-const TEAL_BORDER = 'rgba(13,148,136,0.35)';
+/**
+ * Detective vurgusu — Festival Layer.
+ *
+ * Ekran bastan sona teal (#0D9488) idi; tek altin kurali geregi altina
+ * cevrildi. Renk tek noktadan geliyor, asagidaki stiller degismedi.
+ */
+const ACCENT = Colors.gold;
+const ACCENT_DIM = Colors.goldSeal;
+const ACCENT_BORDER = Colors.goldHairline;
 
-export { CARD_W, CARD_H, CARD_W_SMALL, CARD_H_SMALL, SCREEN_W, TEAL, TEAL_DIM };
+export { CARD_W, CARD_H, CARD_W_SMALL, CARD_H_SMALL, SCREEN_W, ACCENT, ACCENT_DIM };
 
 export const styles = StyleSheet.create({
   /** Paylasim karti ekran disinda render edilir (PNG capture) */
@@ -82,7 +87,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
   },
   retryButton: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     paddingHorizontal: 28,
     paddingVertical: 12,
     borderRadius: Theme.borderRadius.md,
@@ -102,11 +107,9 @@ export const styles = StyleSheet.create({
     marginBottom: Theme.spacing.md,
   },
   caseNumber: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.textTertiary,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
+    ...Theme.typography.eyebrow,
+    fontSize: 12,
+    lineHeight: 16,
   },
 
   // ─── Timer ───────────────────────────────────────────────────────────────────
@@ -119,7 +122,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
   },
   timerText: {
     fontSize: 14,
@@ -137,16 +140,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     borderWidth: 1,
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
   },
   stageBadgeText: {
+    ...Theme.typography.eyebrow,
     fontSize: 10,
-    fontWeight: '800',
-    color: TEAL,
-    letterSpacing: 1.0,
-    textTransform: 'uppercase',
+    lineHeight: 13,
+    color: ACCENT,
   },
 
   // ─── Turn Indicator ──────────────────────────────────────────────────────────
@@ -158,7 +160,7 @@ export const styles = StyleSheet.create({
   turnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: TEAL,
+    color: ACCENT,
     letterSpacing: 0.5,
   },
   progressBarTrack: {
@@ -170,7 +172,7 @@ export const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     borderRadius: 2,
   },
 
@@ -181,16 +183,12 @@ export const styles = StyleSheet.create({
     padding: Theme.spacing.md,
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: 10,
   },
   cluePanelTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.textTertiary,
-    letterSpacing: 1.5,
+    ...Theme.typography.eyebrow,
     marginBottom: 4,
-    textTransform: 'uppercase',
   },
   clueRow: {
     flexDirection: 'row',
@@ -201,7 +199,7 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -218,7 +216,7 @@ export const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   clueValueRevealed: {
-    color: TEAL,
+    color: ACCENT,
   },
   clueValueHidden: {
     color: Colors.textTertiary,
@@ -307,7 +305,7 @@ export const styles = StyleSheet.create({
 
   // ─── Film Card State Borders ──────────────────────────────────────────────────
   filmCardSelected: {
-    borderColor: TEAL,
+    borderColor: ACCENT,
   },
   filmCardCorrect: {
     borderColor: Colors.success,
@@ -339,7 +337,7 @@ export const styles = StyleSheet.create({
   // ─── Stage Transition (fullscreen cinematic overlay) ─────────────────────────
   stageTransitionOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,15,0.97)',
+    backgroundColor: Colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100,
@@ -349,9 +347,9 @@ export const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     borderWidth: 2,
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Theme.spacing.sm,
@@ -374,7 +372,7 @@ export const styles = StyleSheet.create({
     width: 48,
     height: 3,
     borderRadius: 2,
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     marginVertical: Theme.spacing.sm,
   },
 
@@ -389,7 +387,7 @@ export const styles = StyleSheet.create({
     padding: Theme.spacing.md,
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
   },
   feedbackPanelTitle: {
@@ -436,7 +434,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgSubtle,
   },
   flipCellTeal: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
   },
   flipCellText: {
     fontSize: 9,
@@ -467,14 +465,14 @@ export const styles = StyleSheet.create({
   // ─── Guess / Action Buttons ───────────────────────────────────────────────────
   /** Primary action button — teal, pill shape */
   guessButton: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     height: 50,
     borderRadius: Theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: Theme.spacing.md,
     ...Theme.shadow.card,
-    shadowColor: TEAL,
+    shadowColor: ACCENT,
   },
   guessButtonDisabled: {
     backgroundColor: Colors.bgSubtle,
@@ -535,17 +533,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     borderWidth: 1,
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
     marginBottom: Theme.spacing.xs,
   },
   finalRevealBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: TEAL,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    ...Theme.typography.eyebrow,
+    letterSpacing: 2,
+    color: ACCENT,
   },
   finalRevealPoster: {
     width: SCREEN_W * 0.42,
@@ -555,11 +551,10 @@ export const styles = StyleSheet.create({
     borderColor: Colors.white10,
   },
   finalRevealTitle: {
-    fontSize: 24,
-    fontFamily: 'PlayfairDisplay_900Black',
-    color: Colors.textWhite,
+    ...Theme.typography.serifHero,
+    fontSize: 28,
+    lineHeight: 34,
     textAlign: 'center',
-    letterSpacing: -0.3,
   },
   wonMessage: {
     fontSize: 16,
@@ -587,16 +582,12 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
     ...Theme.shadow.card,
   },
   scoreCardTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: Colors.textTertiary,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
+    ...Theme.typography.eyebrow,
     marginBottom: 4,
   },
   scoreMainRow: {
@@ -607,7 +598,7 @@ export const styles = StyleSheet.create({
   scoreMainValue: {
     fontSize: 48,
     fontFamily: 'PlayfairDisplay_900Black',
-    color: TEAL,
+    color: ACCENT,
     lineHeight: 56,
   },
   scoreMainLabel: {
@@ -617,7 +608,7 @@ export const styles = StyleSheet.create({
   },
   scoreDivider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.goldHairline,
     marginVertical: Theme.spacing.xs,
   },
   scoreBreakdownRow: {
@@ -651,7 +642,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.3)',
+    borderColor: Colors.goldHairline,
   },
   xpText: {
     fontSize: 14,
@@ -662,17 +653,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
   },
   dnaText: {
     fontSize: 13,
     fontWeight: '600',
-    color: TEAL,
+    color: ACCENT,
   },
 
   // ─── Community Histogram ──────────────────────────────────────────────────────
@@ -682,7 +673,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
   },
   histogramTitle: {
@@ -712,7 +703,7 @@ export const styles = StyleSheet.create({
     minHeight: 4,
   },
   histogramBarActive: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
   },
   histogramBarLabel: {
     fontSize: 9,
@@ -721,14 +712,14 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   histogramBarLabelActive: {
-    color: TEAL,
+    color: ACCENT,
   },
   /** "You" marker above the player's bar */
   histogramYouMarker: {
     position: 'absolute',
     top: -18,
     alignSelf: 'center',
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: Theme.borderRadius.full,
@@ -756,7 +747,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
   },
   whyCardHeader: {
@@ -769,7 +760,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -784,7 +775,7 @@ export const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   whyCardHighlight: {
-    color: TEAL,
+    color: ACCENT,
     fontWeight: '600',
   },
 
@@ -794,7 +785,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     overflow: 'hidden',
   },
   discoveryBridgeInner: {
@@ -833,7 +824,7 @@ export const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -860,13 +851,13 @@ export const styles = StyleSheet.create({
     marginTop: Theme.spacing.sm,
   },
   shareButton: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     height: 50,
     borderRadius: Theme.borderRadius.full,
     alignItems: 'center',
     justifyContent: 'center',
     ...Theme.shadow.card,
-    shadowColor: TEAL,
+    shadowColor: ACCENT,
   },
   shareButtonText: {
     fontSize: 15,
@@ -900,12 +891,17 @@ export const styles = StyleSheet.create({
     color: Colors.textTertiary,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
+    // Uzun cevirilerin ortadaki sayaci ezmesini onler
+    flexShrink: 1,
   },
   caseHeaderTimer: {
     fontSize: 14,
     fontWeight: '700',
     color: Colors.textPrimary,
     fontVariant: ['tabular-nums'],
+    // Sayac hicbir zaman kirpilmaz — "00" gibi yarim gorunmesinin sebebi buydu
+    flexShrink: 0,
+    paddingHorizontal: Theme.spacing.sm,
   },
   caseHeaderStageBadge: {
     flexDirection: 'row',
@@ -914,65 +910,18 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     borderWidth: 1,
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
   },
   caseHeaderStageLabel: {
     fontSize: 10,
     fontWeight: '800',
-    color: TEAL,
+    color: ACCENT,
     letterSpacing: 1.0,
     textTransform: 'uppercase',
   },
 
-  // ─── Stage Transition (used by StageTransition.tsx) ─────────────────────────
-  transitionOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(10,10,15,0.97)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Theme.spacing.md,
-  },
-  transitionGlow: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: TEAL_DIM,
-    opacity: 0.4,
-  },
-  transitionTitleWrap: {
-    alignItems: 'center',
-    gap: Theme.spacing.sm,
-  },
-  transitionTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    textAlign: 'center',
-    letterSpacing: -0.3,
-  },
-  transitionSubtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: Theme.spacing.xl,
-    lineHeight: 22,
-  },
-  transitionButton: {
-    backgroundColor: TEAL,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: Theme.borderRadius.full,
-    marginTop: Theme.spacing.md,
-  },
-  transitionButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.white,
-    letterSpacing: 0.5,
-  },
 
   // ─── Score Card (used by DetectiveScoreCard.tsx) ────────────────────────────
   scoreCardContainer: {
@@ -981,7 +930,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
     ...Theme.shadow.card,
   },
@@ -993,7 +942,7 @@ export const styles = StyleSheet.create({
   scoreCardBigScore: {
     fontSize: 48,
     fontFamily: 'PlayfairDisplay_900Black',
-    color: TEAL,
+    color: ACCENT,
     lineHeight: 56,
   },
   scoreCardOutOf: {
@@ -1010,7 +959,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(212,168,67,0.3)',
+    borderColor: Colors.goldHairline,
     alignSelf: 'flex-start',
   },
   scoreCardLuckyText: {
@@ -1084,7 +1033,7 @@ export const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     borderRadius: 2,
   },
 
@@ -1158,7 +1107,7 @@ export const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   prevGuessRowActive: {
-    borderColor: TEAL_BORDER,
+    borderColor: ACCENT_BORDER,
   },
   prevGuessTitle: {
     flex: 1,
@@ -1192,7 +1141,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
   },
   histogramHeaderText: {
@@ -1220,7 +1169,7 @@ export const styles = StyleSheet.create({
     textAlign: 'right',
   },
   histogramLabelActive: {
-    color: TEAL,
+    color: ACCENT,
     fontWeight: '800',
   },
   histogramBarTrack: {
@@ -1236,7 +1185,7 @@ export const styles = StyleSheet.create({
     borderRadius: 3,
   },
   histogramBarFillActive: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
   },
   histogramCount: {
     width: 28,
@@ -1245,11 +1194,11 @@ export const styles = StyleSheet.create({
     color: Colors.textTertiary,
   },
   histogramCountActive: {
-    color: TEAL,
+    color: ACCENT,
     fontWeight: '800',
   },
   histogramYouBadge: {
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: Theme.borderRadius.full,
@@ -1263,7 +1212,7 @@ export const styles = StyleSheet.create({
   histogramPercentile: {
     fontSize: 13,
     fontWeight: '600',
-    color: TEAL,
+    color: ACCENT,
     textAlign: 'center',
     marginTop: 4,
   },
@@ -1275,7 +1224,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: Colors.goldHairline,
     gap: Theme.spacing.sm,
   },
   whyTitleRow: {
@@ -1287,7 +1236,7 @@ export const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: TEAL_DIM,
+    backgroundColor: ACCENT_DIM,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1310,7 +1259,7 @@ export const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: TEAL,
+    backgroundColor: ACCENT,
     marginTop: 6,
   },
   whyBulletText: {
@@ -1320,12 +1269,12 @@ export const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   whyBulletHighlight: {
-    color: TEAL,
+    color: ACCENT,
     fontWeight: '600',
   },
   whyDivider: {
     height: 1,
-    backgroundColor: Colors.cardBorder,
+    backgroundColor: Colors.goldHairline,
     marginVertical: 4,
   },
   whyFunFact: {
@@ -1335,53 +1284,4 @@ export const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // ─── Film Discovery Bridge (used by FilmDiscoveryBridge.tsx) ───────────────
-  bridgeContainer: {
-    width: '100%',
-    backgroundColor: Colors.bgCard,
-    borderRadius: Theme.borderRadius.lg,
-    padding: Theme.spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    gap: Theme.spacing.sm,
-  },
-  bridgeWatchedText: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  bridgeActions: {
-    gap: 8,
-  },
-  bridgeActionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: TEAL_DIM,
-    paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: TEAL_BORDER,
-  },
-  bridgeActionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: TEAL,
-  },
-  bridgeSecondaryButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-  },
-  bridgeSecondaryText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
 });

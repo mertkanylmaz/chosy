@@ -69,10 +69,23 @@ const { width: SCREEN_W } = Dimensions.get('window');
 const POSTER_W = SCREEN_W * 0.5;
 const POSTER_H = POSTER_W * 1.5;
 
-/** Aktör seçeneği */
-interface ActorOption {
-  id: number;
-  name: string;
+/**
+ * Yuz karti izgarasi — 2 sutun. Round 3'te 6 secenek var, 2x3 olur.
+ * Genislik ekran genisliginden yatay padding ve aradaki bosluk dusulerek
+ * hesaplanir; boylece son sutun tasmaz.
+ */
+const FACE_GAP = Theme.spacing.sm;
+const FACE_W = Math.floor((SCREEN_W - Theme.spacing.md * 2 - FACE_GAP) / 2);
+const FACE_PHOTO_H = Math.round(FACE_W * 1.15);
+
+/** Fotografi olmayan aktor icin bas harfler */
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? '')
+    .join('');
 }
 
 /** Nötr bahis — seçim yapılmazsa XP bugünküyle birebir aynı kalır */
@@ -585,29 +598,47 @@ export default function ImposterScreen() {
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.optionsGrid}>
             {activeRound.options.map((option) => {
               const isSelected = selectedIds.has(option.id);
+              // Eski bulmacalarda profile_path yok — fotografsiz duruma dus
+              const photoUrl = getPosterUrl(option.profile_path ?? null, 'w185');
               return (
                 <TouchableOpacity
                   key={option.id}
                   style={[
-                    styles.optionButton,
-                    isSelected ? styles.optionSelected : styles.optionDefault,
+                    styles.faceCard,
+                    isSelected ? styles.faceCardSelected : styles.faceCardDefault,
                   ]}
                   onPress={() => handleToggle(option.id)}
                   disabled={isSubmitting || showRoundReveal}
-                  activeOpacity={0.7}
+                  activeOpacity={0.85}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isSelected }}
+                  accessibilityLabel={option.name}
                 >
+                  {photoUrl ? (
+                    <Image
+                      source={{ uri: photoUrl }}
+                      style={styles.facePhoto}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : (
+                    <View style={[styles.facePhoto, styles.facePhotoEmpty]}>
+                      <Text style={styles.faceInitials}>{getInitials(option.name)}</Text>
+                    </View>
+                  )}
+
+                  {isSelected && (
+                    <View style={styles.faceCheck}>
+                      <CheckCircle size={20} color={Colors.gold} weight="fill" />
+                    </View>
+                  )}
+
                   <Text
-                    style={[
-                      styles.optionText,
-                      isSelected && styles.optionTextSelected,
-                    ]}
+                    style={[styles.faceName, isSelected && styles.faceNameSelected]}
                     numberOfLines={1}
                   >
                     {option.name}
                   </Text>
-                  {isSelected && (
-                    <CheckCircle size={18} color={Colors.accentPrimary} weight="duotone" />
-                  )}
                 </TouchableOpacity>
               );
             })}
@@ -720,20 +751,18 @@ const styles = StyleSheet.create({
     marginBottom: Theme.spacing.sm,
   },
   roundBadge: {
-    backgroundColor: Colors.accentDim,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: Theme.borderRadius.full,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   roundBadgeText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: Colors.accentPrimary,
+    ...Theme.typography.eyebrow,
+    color: Colors.gold,
   },
   roundDifficulty: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.textTertiary,
+    ...Theme.typography.eyebrow,
   },
 
   // ── Prev rounds chips ─────────────────────────────────────────────────
@@ -751,10 +780,12 @@ const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.full,
   },
   prevRoundCorrect: {
-    backgroundColor: 'rgba(34,197,94,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   prevRoundWrong: {
-    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   prevRoundText: {
     fontSize: 12,
@@ -770,11 +801,13 @@ const styles = StyleSheet.create({
     width: POSTER_W,
     height: POSTER_H,
     borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   filmTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textWhite,
+    ...Theme.typography.serifTitle,
+    fontSize: 20,
+    lineHeight: 26,
     textAlign: 'center',
     marginTop: Theme.spacing.sm,
     paddingHorizontal: Theme.spacing.lg,
@@ -782,9 +815,9 @@ const styles = StyleSheet.create({
 
   // ── Question ──────────────────────────────────────────────────────────
   question: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: Colors.textSecondary,
+    ...Theme.typography.eyebrow,
+    fontSize: 12,
+    lineHeight: 16,
     textAlign: 'center',
     marginBottom: Theme.spacing.md,
     paddingHorizontal: Theme.spacing.md,
@@ -802,11 +835,9 @@ const styles = StyleSheet.create({
     width: SCREEN_W - Theme.spacing.md * 2,
   },
   revealCorrect: {
-    backgroundColor: 'rgba(34,197,94,0.1)',
-    borderColor: Colors.success,
+    borderColor: Colors.gold,
   },
   revealWrong: {
-    backgroundColor: 'rgba(239,68,68,0.1)',
     borderColor: Colors.error,
   },
   revealContent: {
@@ -823,38 +854,56 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // ── Options grid ──────────────────────────────────────────────────────
+  // ── Yuz karti izgarasi (IMDb cast sayfasi hissi) ──────────────────────
   optionsGrid: {
     width: SCREEN_W - Theme.spacing.md * 2,
-    gap: Theme.spacing.sm,
-  },
-  optionButton: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: Theme.spacing.md,
+    flexWrap: 'wrap',
+    gap: FACE_GAP,
+  },
+  faceCard: {
+    width: FACE_W,
     borderRadius: Theme.borderRadius.md,
-    minHeight: 48,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingBottom: Theme.spacing.sm,
   },
-  optionDefault: {
+  faceCardDefault: {
+    borderColor: Colors.borderSubtle,
+  },
+  /** Secim = altin cerceve (mockup) */
+  faceCardSelected: {
+    borderColor: Colors.gold,
+  },
+  facePhoto: {
+    width: '100%',
+    height: FACE_PHOTO_H,
     backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
-  optionSelected: {
-    backgroundColor: Colors.accentDim,
-    borderWidth: 1,
-    borderColor: Colors.accentPrimary,
+  facePhotoEmpty: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  optionText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textWhite,
-    flex: 1,
+  /** Fotograf yoksa bas harfleri — bos kutu birakma */
+  faceInitials: {
+    ...Theme.typography.serifTitle,
+    color: Colors.textTertiary,
   },
-  optionTextSelected: {
-    color: Colors.accentPrimary,
+  faceCheck: {
+    position: 'absolute',
+    top: Theme.spacing.sm,
+    right: Theme.spacing.sm,
+  },
+  faceName: {
+    ...Theme.typography.micro,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: 6,
+    paddingTop: Theme.spacing.sm,
+  },
+  faceNameSelected: {
+    color: Colors.gold,
+    fontWeight: '700',
   },
 
   // ── Submit area ───────────────────────────────────────────────────────
@@ -868,7 +917,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.goldDim,
   },
   factorBadgeLose: {
-    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   factorBadgeText: {
     fontSize: 14,
@@ -888,7 +938,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.md,
-    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   submitErrorText: {
     flex: 1,

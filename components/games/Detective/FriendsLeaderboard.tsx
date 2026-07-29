@@ -35,7 +35,7 @@ export function FriendsLeaderboard({ friends }: FriendsLeaderboardProps) {
   return (
     <Animated.View entering={FadeInUp.delay(1000).duration(400)} style={localStyles.container}>
       <View style={localStyles.header}>
-        <Users size={16} color="#0D9488" weight="duotone" />
+        <Users size={16} color={Colors.gold} weight="duotone" />
         <Text style={localStyles.title}>{t('games.detective.friends_title')}</Text>
       </View>
 
@@ -97,17 +97,17 @@ const localStyles = StyleSheet.create({
     color: Colors.error,
   },
   ctaButton: {
-    backgroundColor: 'rgba(13,148,136,0.15)',
+    backgroundColor: Colors.goldSeal,
     paddingVertical: 10,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(13,148,136,0.35)',
+    borderColor: Colors.goldHairline,
     alignItems: 'center',
     marginTop: 4,
   },
   ctaText: {
     fontSize: 13,
     fontWeight: '600',
-    color: Colors.tealDeep,
+    color: Colors.gold,
   },
 });

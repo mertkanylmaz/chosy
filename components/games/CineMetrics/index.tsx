@@ -8,13 +8,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { CircleIcon as Circle, ArrowUp, ArrowDown } from 'phosphor-react-native';
 
-import { DnaXpReveal } from '@/components/games/DnaXpReveal';
-import { GameShareCard, useShareCapture } from '@/components/ShareCards';
-import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
-import { PlayNextBridge } from '@/components/games/PlayNextBridge';
+import { ResultCard } from '@/components/games/ResultCard';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -34,8 +30,6 @@ import {
   trackGuessSubmitted,
   trackGameCompleted,
   trackResultCardViewed,
-  trackShareRendered,
-  trackShareCompleted,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
 import { GameShell } from '@/components/games/GameShell';
@@ -193,10 +187,6 @@ export function CineMetricsGame() {
   const [puzzleNo, setPuzzleNo] = useState(0);
   /** Film kesfi koprusu metni — sunucudan gelir */
   const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
-  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
-    cardType: 'game',
-    trackingProps: { game_id: 'cinemetrics' },
-  });
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
@@ -388,12 +378,7 @@ export function CineMetricsGame() {
     }
   }, [screenState, won]);
 
-  /** Sonucu paylas — kapi metrigi game_share_* uzerinden okunur */
-  const handleShare = useCallback(async () => {
-    trackShareRendered('cinemetrics');
-    const shared = await share();
-    if (shared) trackShareCompleted('cinemetrics', 'image');
-  }, [share]);
+  // Paylasim artik ResultCard'da — game_share_* telemetrisi oradan akiyor.
 
   // ─── Render: Error ───────────────────────────────────────────────────────
 
@@ -425,95 +410,30 @@ export function CineMetricsGame() {
         maxAttempts={maxAttempts}
         hideProgress
       >
-        {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
-        <View style={styles.offscreenCard} pointerEvents="none">
-          <GameShareCard
-            ref={cardRef}
-            gameTitle={t('games.cinemetrics.title')}
+        <ScrollView contentContainerStyle={styles.completedContainer} showsVerticalScrollIndicator={false}>
+          <ResultCard
             solved={won}
             attempts={guesses.length}
             maxAttempts={maxAttempts}
+            filmTitle={revealedFilm?.title ?? ''}
+            filmYear={revealedFilm?.year ?? 0}
+            filmPosterUrl={revealedFilm?.poster_url ?? null}
+            filmUuid={revealedFilm?.film_id}
             streak={0}
+            gameTitle={t('games.cinemetrics.title')}
             gameType="cinemetrics"
             puzzleNo={puzzleNo}
-          />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.completedContainer} showsVerticalScrollIndicator={false}>
-          {/* Poster */}
-          {revealedFilm?.poster_url && (
-            <Image
-              source={{ uri: revealedFilm.poster_url }}
-              style={styles.completedPoster}
-              contentFit="cover"
-              transition={300}
-            />
-          )}
-
-          {/* Film Title */}
-          {revealedFilm && (
-            <Text style={styles.completedTitle}>{revealedFilm.title}</Text>
-          )}
-
-          {/* Result Message */}
-          {won ? (
-            <Text style={styles.wonMessage}>
-              {t('games.cinemetrics.result.won', { count: guesses.length, max: maxAttempts })}
-            </Text>
-          ) : (
-            <>
-              {revealedFilm && (
-                <Text style={styles.lostMessage}>
-                  {t('games.cinemetrics.result.lost')}
-                </Text>
-              )}
-              <Text style={styles.lostSubtext}>
-                {t('games.cinemetrics.result.try_tomorrow')}
-              </Text>
-            </>
-          )}
-
-          {/* XP + DNA Reveal */}
-          <DnaXpReveal
             xpAwarded={xpAwarded}
             dnaUpdated={dnaUpdated}
-            solved={won}
+            whyThisMovie={whyThisMovie ?? undefined}
+            resultMessage={
+              won
+                ? t('games.cinemetrics.result.won', { count: guesses.length, max: maxAttempts })
+                : t('games.cinemetrics.try_tomorrow')
+            }
+            countdown={countdown}
+            onBackToHub={() => router.back()}
           />
-
-          {/* Film kesfi koprusu — oyun -> film donusumu buradan olculur */}
-          {whyThisMovie && revealedFilm && (
-            <WhyThisMovieFunnel
-              whyText={whyThisMovie.why_text}
-              funFact={whyThisMovie.fun_fact}
-              filmTitle={revealedFilm.title}
-              filmId={0}
-              gameType="cinemetrics"
-            />
-          )}
-
-          {/* Countdown */}
-          <View>
-            <Text style={styles.countdownLabel}>{t('games.cinemetrics.next_puzzle')}</Text>
-            <Text style={styles.countdownTime}>{countdown}</Text>
-          </View>
-
-          <PlayNextBridge currentGame="cinemetrics" />
-
-          {/* Actions */}
-          <View style={styles.completedActions}>
-            <TouchableOpacity
-              style={styles.shareButton}
-              onPress={handleShare}
-              disabled={isCapturing || !isShareAvailable}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: isCapturing || !isShareAvailable }}
-            >
-              <Text style={styles.shareButtonText}>{t('games.cinemetrics.share')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.hubButton} onPress={() => router.back()}>
-              <Text style={styles.hubButtonText}>{t('games.cinemetrics.back_to_hub')}</Text>
-            </TouchableOpacity>
-          </View>
         </ScrollView>
       </GameShell>
     );
@@ -582,15 +502,42 @@ export function CineMetricsGame() {
             </View>
           ))}
 
-          {/* Empty rows */}
+          {/* Empty rows — ilk sira aktif olarak vurgulanir */}
           {Array.from({ length: emptyRows }).map((_, i) => (
             <View key={`empty-${i}`} style={styles.emptyRow}>
               <View style={styles.emptyFilmCol} />
               {COLUMN_KEYS.map((key) => (
-                <View key={`empty-${i}-${key}`} style={[styles.cell, styles.cellEmpty]} />
+                <View
+                  key={`empty-${i}-${key}`}
+                  style={[
+                    styles.cell,
+                    styles.cellEmpty,
+                    i === 0 && styles.cellActiveRow,
+                  ]}
+                />
               ))}
             </View>
           ))}
+        </View>
+
+        {/*
+          Renk/ok dili aciklamasi. Grid ilk acilista 36 bos kutudan ibaretti ve
+          hicbir yerde ne anlama geldikleri yazmiyordu.
+        */}
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendSwatch, styles.cellGreen]} />
+            <Text style={styles.legendText}>{t('games.cinemetrics.legend_green')}</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendSwatch, styles.cellYellow]} />
+            <Text style={styles.legendText}>{t('games.cinemetrics.legend_yellow')}</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <ArrowUp size={12} color={Colors.textTertiary} weight="duotone" />
+            <ArrowDown size={12} color={Colors.textTertiary} weight="duotone" />
+            <Text style={styles.legendText}>{t('games.cinemetrics.legend_arrows')}</Text>
+          </View>
         </View>
       </ScrollView>
 

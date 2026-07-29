@@ -58,22 +58,24 @@ export const styles = StyleSheet.create({
     paddingHorizontal: GRID_PADDING,
   },
   puzzleNo: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textWhite,
+    ...Theme.typography.eyebrow,
+    fontSize: 12,
+    lineHeight: 16,
   },
   difficultyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: Theme.spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: Colors.white05,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   difficultyText: {
-    fontSize: 12,
-    fontWeight: '600',
+    ...Theme.typography.eyebrow,
+    fontSize: 10,
+    lineHeight: 13,
   },
 
   // ─── Grid ──────────────────────────────────────────────────────────────────
@@ -94,11 +96,11 @@ export const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   colHeaderText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.textTertiary,
+    ...Theme.typography.eyebrow,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 1,
     textAlign: 'center',
-    textTransform: 'uppercase',
   },
   guessRow: {
     flexDirection: 'row',
@@ -128,8 +130,13 @@ export const styles = StyleSheet.create({
   },
   cellEmpty: {
     borderWidth: 1,
-    borderColor: Colors.bgSubtle,
+    borderColor: Colors.borderSubtle,
     backgroundColor: 'transparent',
+  },
+  /** Siradaki tahmin satiri — bos grid'de "buraya yazacaksin" isareti */
+  cellActiveRow: {
+    borderColor: Colors.accentPrimary,
+    backgroundColor: Colors.white05,
   },
   cellGreen: {
     backgroundColor: Colors.greenBright,
@@ -249,15 +256,16 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(96,165,250,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: Theme.borderRadius.full,
   },
   dnaText: {
-    fontSize: 13,
+    ...Theme.typography.micro,
+    color: Colors.gold,
     fontWeight: '600',
-    color: Colors.info,
   },
   countdownLabel: {
     fontSize: 14,
@@ -314,5 +322,28 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.textOnAccent,
+  },
+
+  // ── Legend (renk/ok dili) ──
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: Theme.spacing.md,
+    marginTop: Theme.spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  legendSwatch: {
+    width: 12,
+    height: 12,
+    borderRadius: 3,
+  },
+  legendText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
   },
 });

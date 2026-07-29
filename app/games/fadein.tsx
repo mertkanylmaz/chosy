@@ -55,7 +55,8 @@ import {
 // ─── Sabitler ───────────────────────────────────────────────────────────────
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const POSTER_W = Math.floor(SCREEN_W * 0.7);
+// Festival kurali 4: afis ekranin kahramani — ekran genisliginin %82'si
+const POSTER_W = Math.floor(SCREEN_W * 0.82);
 const POSTER_H = Math.floor(POSTER_W * 1.5);
 
 /** Blur seviyeleri — index = kullanilan deneme sayisi.
@@ -553,6 +554,8 @@ const styles = StyleSheet.create({
     height: POSTER_H,
     borderRadius: Theme.borderRadius.lg,
     backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.goldHairline,
   },
   blurBadge: {
     position: 'absolute',
@@ -561,15 +564,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: 'rgba(10,10,10,0.7)',
+    backgroundColor: Colors.scrim,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: Theme.borderRadius.full,
   },
   blurBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textWhite,
+    ...Theme.typography.eyebrow,
+    color: Colors.textPrimary,
   },
   revealPosterContainer: {
     alignItems: 'center',
@@ -592,7 +594,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.md,
-    backgroundColor: 'rgba(239,68,68,0.12)',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
   },
   actionErrorText: {
     flex: 1,
@@ -607,10 +610,9 @@ const styles = StyleSheet.create({
     marginTop: Theme.spacing.md,
     paddingHorizontal: Theme.spacing.md,
     paddingVertical: Theme.spacing.sm,
-    backgroundColor: 'rgba(239,68,68,0.12)',
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: 'rgba(239,68,68,0.3)',
+    borderColor: Colors.borderSubtle,
   },
   wrongText: {
     fontSize: 14,
