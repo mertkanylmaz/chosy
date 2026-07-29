@@ -132,10 +132,9 @@ import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons
 - Telemetri taksonomisi: `game_*` prefix, snake_case — event listesi brief'te. Yeni event adı uydurulmaz, brief'e eklenmeden kullanılmaz.
 - Yeni oyun eklemek = ortak 5 sisteme (Daily Engine, Cinema DNA, XP/Rank, Streak, ShareCard) mekanik katmanı eklemek. Ortak sistemleri bypass eden oyun kodu yazılamaz.
 
-## ORTAK SİSTEM MATRİSİ (Faz 1 kapanışı itibarıyla)
+## ORTAK SİSTEM MATRİSİ (29 Tem 2026 denetimi)
 
 Yeni bir oyun ekleme kararı çıkarsa, bu 6 sisteme bağlanmadan "bitti" sayılmaz.
-Kapanış denetiminde üçünün bazı oyunlarda ölü olduğu görüldü — o yüzden liste burada.
 
 | Sistem | Durum |
 |--------|-------|
@@ -143,11 +142,16 @@ Kapanış denetiminde üçünün bazı oyunlarda ölü olduğu görüldü — o 
 | Cinema DNA + XP/Rank (`DnaXpReveal`) | 6 oyun |
 | Streak + Daily Chest (`get-daily-chest`, ödüller sunucuda) | Hub geneli |
 | Günlük tema (`get-daily-theme`) | Günde 3-4 oyun |
-| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 5 oyun — CineMetrics ve Spotlight kendi sonuç ekranlarını kullanıyor, kart orada YOK |
-| ShareCard + `game_share_*` telemetrisi | 4 oyun — CineMetrics/Spotlight/Detective'de paylaşım YOK |
+| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 6 oyun |
+| ShareCard + `game_share_*` telemetrisi | 6 oyun |
 
-> Sunucu `why_this_movie`'yi 6 oyunun hepsi için üretiyor; eksik olan yalnızca
-> CineMetrics/Spotlight sonuç ekranlarının kartı render etmesi.
+> **Düzeltme (29 Tem 2026):** Bu tablo Faz 1 kapanışında son iki satırda
+> "CineMetrics/Spotlight'ta keşif kartı yok, CineMetrics/Spotlight/Detective'de
+> paylaşım yok" diyordu. Kod denetiminde ikisi de yanlış çıktı:
+> CineMetrics, Spotlight, FadeIn, Imposter, Logline ortak `ResultCard`'ı
+> kullanıyor (kart + paylaşım oradan geliyor); Detective kendi sonuç ekranını
+> kullanıyor ama `WhyThisMovieFunnel` ve `GameShareCard`'ı doğrudan render edip
+> `game_share_*` telemetrisini kendisi atıyor. Altı sistem de 6 oyunda canlı.
 
 ## REFERANS DOSYALAR
 
