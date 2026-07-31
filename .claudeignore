@@ -8,3 +8,18 @@ pnpm-lock.yaml
 *.log
 .env*
 .cache/
+
+# Tasarim kaynak gorselleri — kodda referans yok, arama sonuclarini sisiriyor
+figurler/
+design-reference/
+docs/referans/
+
+# Arsivlenmis dokumanlar ve tek seferlik veri boruhattı ciktilari
+docs/archive/
+data/
+tests/*/output/
+tests/*/baselines/
+
+# Prebuild ciktisi (gitignore'da da var)
+android/
+ios/

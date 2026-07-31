@@ -161,7 +161,6 @@ Yeni bir oyun ekleme kararı çıkarsa, bu 6 sisteme bağlanmadan "bitti" sayıl
 | Tasarim sistemi, renkler, tipografi, component spec | `DESIGN_SYSTEM.md` |
 | V1.1+ roadmap, gelecek planlar | `ROADMAP.md` |
 | App Store listing, ASO, launch checklist | `docs/LAUNCH_CHECKLIST.md` |
-| Eski changelog, session log, specs | `docs/archive/` |
 | RevenueCat offerings, webhooks, entitlements | `docs/REVENUECAT_FINAL_SETUP.md` |
 | Yatirimci metrikleri (SQL queries) | `docs/INVESTOR_METRICS.md` |
 | Oyun sistemi tasarim raporu (kaynak dokuman) | `docs/CHOSY_OYUN_SISTEMI_TASARIM_RAPORU.md` |
