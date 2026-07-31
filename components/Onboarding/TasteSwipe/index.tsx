@@ -6,10 +6,10 @@
  * alinmis olur → hybrid recommendation ilk aramadan itibaren aktif.
  *
  * Her kart kendi shared value'larina sahip TasteSwipeCard instance'i
- * olarak render edilir (key={film.id}). Bu sayede kart gecisinde
+ * olarak render edilir (key={film.tmdbId}). Bu sayede kart gecisinde
  * translateX sifirlanmasi kaynaklı poster flash/glitch onlenir.
  */
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   StyleSheet,
@@ -35,6 +35,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Colors } from '@/constants/Colors';
 import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { supabase } from '@/services/supabase';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -48,10 +49,20 @@ const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w500';
 
 /**
  * 6 curated film — genre dengeli, universally recognized.
- * DB'deki film_id'ler ile eslesmeli. posterPath TMDB w500 format.
+ *
+ * ── ONEMLI (30 Tem 2026) ────────────────────────────────────────────────────
+ * Bu liste TMDb ID tasir. `user_taste_signals.film_id` ise `films.id` (UUID)
+ * FK'sidir. Eskiden `id: '278'` dogrudan sinyal servisine geciriliyordu ve her
+ * insert `22P02 invalid input syntax for type uuid` ile reddedilip offline
+ * kuyruga dusuyordu — kuyruk kalici olarak kilitleniyor, onboarding'in 6
+ * kalibrasyon sinyali hicbir zaman yazilmiyordu.
+ *
+ * Alan artik `tmdbId: number`; UUID mount'ta `films` tablosundan cozuluyor.
+ * posterPath TMDB w500 format.
  */
 export interface ColdStartFilm {
-  id: string;
+  /** TMDb film ID — sinyal yazmadan once UUID'ye cozulur */
+  tmdbId: number;
   title: string;
   year: number;
   posterPath: string;
@@ -60,12 +71,12 @@ export interface ColdStartFilm {
 
 /** Curated cold-start films — well-known, genre-diverse */
 const COLD_START_FILMS: ColdStartFilm[] = [
-  { id: '278', title: 'The Shawshank Redemption', year: 1994, posterPath: '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg', genre: 'Drama' },
-  { id: '27205', title: 'Inception', year: 2010, posterPath: '/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg', genre: 'Sci-Fi' },
-  { id: '129', title: 'Spirited Away', year: 2001, posterPath: '/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', genre: 'Animation' },
-  { id: '120467', title: 'The Grand Budapest Hotel', year: 2014, posterPath: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', genre: 'Comedy' },
-  { id: '419430', title: 'Get Out', year: 2017, posterPath: '/mE24wUCfjK8AoBBjaMjho7Rczr7.jpg', genre: 'Thriller' },
-  { id: '313369', title: 'La La Land', year: 2016, posterPath: '/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', genre: 'Romance' },
+  { tmdbId: 278, title: 'The Shawshank Redemption', year: 1994, posterPath: '/9cqNxx0GxF0bflZmeSMuL5tnGzr.jpg', genre: 'Drama' },
+  { tmdbId: 27205, title: 'Inception', year: 2010, posterPath: '/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg', genre: 'Sci-Fi' },
+  { tmdbId: 129, title: 'Spirited Away', year: 2001, posterPath: '/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', genre: 'Animation' },
+  { tmdbId: 120467, title: 'The Grand Budapest Hotel', year: 2014, posterPath: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg', genre: 'Comedy' },
+  { tmdbId: 419430, title: 'Get Out', year: 2017, posterPath: '/mE24wUCfjK8AoBBjaMjho7Rczr7.jpg', genre: 'Thriller' },
+  { tmdbId: 313369, title: 'La La Land', year: 2016, posterPath: '/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', genre: 'Romance' },
 ];
 
 const TOTAL_CARDS = COLD_START_FILMS.length;
@@ -86,7 +97,7 @@ interface TasteSwipeCardProps {
 
 /**
  * Tek bir swipe karti — kendi shared value'larina sahip.
- * key={film.id} ile mount edilir → her kart gecisinde temiz state baslar,
+ * key={film.tmdbId} ile mount edilir → her kart gecisinde temiz state baslar,
  * translateX sifirlanma kaynaklı poster flash onlenir.
  */
 function TasteSwipeCard({ film, onSwipeComplete }: TasteSwipeCardProps) {
@@ -259,11 +270,90 @@ function TasteSwipeCard({ film, onSwipeComplete }: TasteSwipeCardProps) {
 /**
  * Cold-start onboarding swipe — 6 film, zorunlu swipe.
  * Her swipe bir taste signal kaydeder.
- * Her kart kendi TasteSwipeCard instance'i — key={film.id} ile mount/unmount.
+ * Her kart kendi TasteSwipeCard instance'i — key={film.tmdbId} ile mount/unmount.
  */
 export function TasteSwipe({ onComplete }: TasteSwipeProps) {
   const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  /**
+   * TMDb ID → `films.id` (UUID) esleme. Sinyal servisi UUID bekler.
+   * `null` = henuz cozulmedi; bos obje = cozuldu ama eslesme cikmadi.
+   */
+  const [filmUuids, setFilmUuids] = useState<Record<number, string> | null>(null);
+
+  /**
+   * Esleme gelmeden yapilan swipe'lar burada bekler. Kullanici ilk karti
+   * sorgu donmeden kaydirabilir; sinyali dusurmek yerine kuyruga aliyoruz.
+   */
+  const pendingSwipes = useRef<{ tmdbId: number; direction: 'right' | 'left' }[]>([]);
+
+  /** Tek bir swipe'i UUID ile yazar */
+  const writeSignal = useCallback(
+    (uuidMap: Record<number, string>, tmdbId: number, direction: 'right' | 'left') => {
+      const filmUuid = uuidMap[tmdbId];
+      if (!filmUuid) {
+        // Sessiz fallback yok — film DB'de yoksa gorunur olsun
+        logger.error(`[TasteSwipe] Film not in DB, signal dropped: tmdb_id=${tmdbId}`);
+        return;
+      }
+
+      const record =
+        direction === 'right'
+          ? tasteSignals.recordSwipeRight(filmUuid)
+          : tasteSignals.recordSwipeLeft(filmUuid);
+
+      record.catch((err) => {
+        logger.error(`[TasteSwipe] swipe_${direction} signal failed:`, err);
+      });
+    },
+    [],
+  );
+
+  /** Mount'ta TMDb ID'leri UUID'ye cozer */
+  useEffect(() => {
+    let cancelled = false;
+
+    const resolve = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('films')
+          .select('id, tmdb_id')
+          .in('tmdb_id', COLD_START_FILMS.map((f) => f.tmdbId));
+
+        if (error) throw error;
+        if (cancelled) return;
+
+        const map: Record<number, string> = {};
+        for (const row of (data ?? []) as { id: string; tmdb_id: number }[]) {
+          map[row.tmdb_id] = row.id;
+        }
+        setFilmUuids(map);
+      } catch (err) {
+        if (cancelled) return;
+        // Cozulemedi: onboarding akisi BLOKLANMAZ, yalnizca sinyaller yazilmaz
+        logger.error('[TasteSwipe] Cold-start film UUID lookup failed:', err);
+        setFilmUuids({});
+      }
+    };
+
+    resolve();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /** Esleme geldi — bekleyen swipe'lari yaz */
+  useEffect(() => {
+    if (!filmUuids) return;
+    const pending = pendingSwipes.current;
+    if (pending.length === 0) return;
+
+    pendingSwipes.current = [];
+    for (const { tmdbId, direction } of pending) {
+      writeSignal(filmUuids, tmdbId, direction);
+    }
+  }, [filmUuids, writeSignal]);
 
   /** Swipe tamamlandi — signal kaydet, sonraki karta gec */
   const handleSwipeComplete = useCallback(
@@ -271,17 +361,17 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
       const film = COLD_START_FILMS[currentIndex];
       if (!film) return;
 
-      // Taste signal kaydi — fire-and-forget
       if (direction === 'right') {
         hapticMedium();
-        tasteSignals.recordSwipeRight(film.id).catch((err) => {
-          logger.error('[TasteSwipe] swipe_right signal failed:', err);
-        });
       } else {
         hapticLight();
-        tasteSignals.recordSwipeLeft(film.id).catch((err) => {
-          logger.error('[TasteSwipe] swipe_left signal failed:', err);
-        });
+      }
+
+      // Taste signal kaydi — fire-and-forget, esleme yoksa beklet
+      if (filmUuids) {
+        writeSignal(filmUuids, film.tmdbId, direction);
+      } else {
+        pendingSwipes.current.push({ tmdbId: film.tmdbId, direction });
       }
 
       const nextIndex = currentIndex + 1;
@@ -293,7 +383,7 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
         setCurrentIndex(nextIndex);
       }
     },
-    [currentIndex, onComplete],
+    [currentIndex, onComplete, filmUuids, writeSignal],
   );
 
   // ── Back card scale animation (shared — parent level) ───────────────────────
@@ -348,9 +438,9 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
           </View>
         )}
 
-        {/* Active card — key={film.id} ile her geciste fresh mount */}
+        {/* Active card — key={film.tmdbId} ile her geciste fresh mount */}
         <TasteSwipeCard
-          key={currentFilm.id}
+          key={currentFilm.tmdbId}
           film={currentFilm}
           onSwipeComplete={handleSwipeComplete}
         />

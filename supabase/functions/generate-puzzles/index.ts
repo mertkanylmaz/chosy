@@ -26,7 +26,22 @@ interface FilmRow {
   director: string
   country: string[]
   imdb_rating: number | null
-  cast_json: Array<{ name: string; profile_path: string | null }> | null
+  /**
+   * Kadro. Iki farkli sekilde yazilmis, ikisini de tolere ediyoruz:
+   *   scripts/enrich-films.ts + enrich-films-metadata.ts -> profile_url (TAM URL)
+   *   scripts/backfill-cast.ts                          -> profile_path (ham yol)
+   * Uretim verisinde bugun %100 `profile_url`. Bkz. actorPhoto().
+   */
+  cast_json: Array<{
+    name: string
+    profile_path?: string | null
+    profile_url?: string | null
+    /**
+     * Oyuncunun bu filmdeki rol adi. Eski kayitlarda yok —
+     * scripts/backfill-imposter-characters.ts dolduruyor.
+     */
+    character?: string | null
+  }> | null
 }
 
 interface Report {
@@ -38,7 +53,16 @@ interface Report {
   min_vote_count?: number
   pool_sizes?: Record<string, number>
   themes?: { generated: number; dropped: number; per_type: Record<string, number> }
+  /**
+   * Imposter seceneklerinde fotograf kapsami. `profile_path`/`profile_url`
+   * sema uyusmazligi bir kez sessizce %0'a dusmustu; artik her uretimde
+   * olculuyor ve esigin altina inince errors'a yaziliyor.
+   */
+  imposter_photo_coverage?: { with: number; without: number; pct: number }
 }
+
+/** Fotograf kapsami bu oranin altina duserse rapor hata olarak isaretlenir */
+const IMPOSTER_PHOTO_MIN_PCT = 80
 
 type ThemeType = 'director' | 'actor' | 'genre' | 'decade' | 'country'
 
@@ -949,16 +973,31 @@ interface ImposterRound {
   film_title: string
   poster_url: string | null
   tmdb_id: number
-  options: Array<{ id: number; name: string; profile_path: string | null }>
+  options: Array<{
+    id: number
+    name: string
+    profile_path: string | null
+    /** Rol adı — her seçenekte DOLU (bkz. imposterData) */
+    character: string
+  }>
   /** Sahte aktör ID'leri — view tarafından striplenir */
   imposter_ids: number[]
 }
 
 /**
- * Imposter V2: 3 round, artan zorluk.
- * Round 1: 4 seçenek, 1 sahte (kolay — farklı dönem/tür aktörü)
- * Round 2: 5 seçenek, 2 sahte (orta — benzer dönem aktörleri)
- * Round 3: 6 seçenek, 2 sahte (zor — aynı türden aktörler)
+ * Imposter V2: 3 round, HER ROUNDDA 4 seçenek.
+ * Round 1: 3 gerçek + 1 sahte (kolay)
+ * Round 2: 2 gerçek + 2 sahte (orta)
+ * Round 3: 2 gerçek + 2 sahte (zor)
+ *
+ * Seçenek sayısı 4'te sabit (31 Tem 2026): oynanış ekranı tek sayfa, kaydırmasız
+ * ve büyük portreli olacak şekilde yeniden kuruldu; 5-6 seçenek o ızgaraya
+ * sığmıyor. Zorluk artık seçenek sayısıyla değil sahte oyuncu sayısıyla artıyor.
+ *
+ * `character` alanı her seçenekte ZORUNLU: gerçek oyuncu ekrandaki filmdeki
+ * rolünü, sahte oyuncu oynadığı BAŞKA filmdeki rolünü taşır. Rolü bilinmeyen
+ * oyuncu seçeneğe alınmaz; yeterli aday yoksa bulmaca reddedilir. Bazı kartta
+ * satır olup bazısında olmaması cevabı ele verirdi (Hard Rule 1).
  *
  * Her round ayrı bir film kullanır.
  * imposter_ids sunucu tarafında kalır — view strip eder.
@@ -985,11 +1024,11 @@ async function imposterData(
   }
   if (roundFilms.length < 3) return null
 
-  // Round konfigürasyonları
+  // Round konfigürasyonları — seçenek sayısı her roundda 4
   const roundConfigs = [
-    { round: 1, realCount: 3, fakeCount: 1 },  // 4 seçenek, 1 sahte
-    { round: 2, realCount: 3, fakeCount: 2 },  // 5 seçenek, 2 sahte
-    { round: 3, realCount: 4, fakeCount: 2 },  // 6 seçenek, 2 sahte
+    { round: 1, realCount: 3, fakeCount: 1 },
+    { round: 2, realCount: 2, fakeCount: 2 },
+    { round: 3, realCount: 2, fakeCount: 2 },
   ]
 
   // Tüm roundlardan kullanılan aktör isimlerini takip et (çakışma engeli)
@@ -1001,18 +1040,36 @@ async function imposterData(
     const cfg = roundConfigs[i]
     const cast = film.cast_json!
 
-    // Gerçek aktörler — ilk 10'dan seç
+    /*
+     * Gerçek aktörler — ilk 10'dan seç.
+     *
+     * `character` ZORUNLU. Rol adı her kartta görünüyor; bazı kartlarda satır
+     * çıkıp bazılarında çıkmazsa satırın VARLIĞI cevabı ele verir. Bu yüzden
+     * rolü bilinmeyen oyuncu seçeneğe hiç girmez, gerekli sayı tutmazsa bulmaca
+     * reddedilir (sessiz eksik render YASAK — Hard Rule 1 + 5).
+     */
     const topCast = cast.slice(0, 10)
-    const availableReal = topCast.filter(a => !allUsedNames.has(a.name.toLowerCase()))
+    const availableReal = topCast.filter(
+      a => !allUsedNames.has(a.name.toLowerCase()) && !!a.character,
+    )
     if (availableReal.length < cfg.realCount) return null
 
     const realActors = shuffle([...availableReal]).slice(0, cfg.realCount)
     realActors.forEach(a => allUsedNames.add(a.name.toLowerCase()))
 
-    // Sahte aktörler — diğer filmlerden
-    // profile_path UI icin — gercek ve sahte aktorlerin ikisi de tasir,
-    // dolayisiyla cozum sizintisi degildir (Hard Rule 1).
-    const fakeActors: Array<{ id: number; name: string; profile_path: string | null }> = []
+    /*
+     * Sahte aktörler — diğer filmlerden.
+     *
+     * Rol adı GELDİĞİ filmin kadrosundan gelir: yani sahtekârın ekrandaki filmde
+     * değil, oynadığı BAŞKA bir filmdeki karakteri. Oyunun ipucu katmanı bu
+     * kıyas. Rolü bilinmeyen aday atlanır — alan hiçbir kartta boş kalmaz.
+     */
+    const fakeActors: Array<{
+      id: number
+      name: string
+      profile_path: string | null
+      character: string
+    }> = []
     const otherFilms = shuffle(allPool.filter(
       f => f.id !== film.id && f.cast_json && f.cast_json.length >= 3,
     ))
@@ -1023,11 +1080,12 @@ async function imposterData(
       for (const actor of otherCast) {
         if (fakeActors.length >= cfg.fakeCount) break
         const nameLower = actor.name.toLowerCase()
-        if (!allUsedNames.has(nameLower)) {
+        if (!allUsedNames.has(nameLower) && actor.character) {
           fakeActors.push({
             id: hashFilmName(actor.name),
             name: actor.name,
-            profile_path: actor.profile_path ?? null,
+            profile_path: actorPhoto(actor),
+            character: actor.character,
           })
           allUsedNames.add(nameLower)
         }
@@ -1041,7 +1099,9 @@ async function imposterData(
       ...realActors.map(a => ({
         id: hashFilmName(a.name),
         name: a.name,
-        profile_path: a.profile_path ?? null,
+        profile_path: actorPhoto(a),
+        // availableReal filtresi character'ı zorunlu kıldı
+        character: a.character as string,
       })),
       ...fakeActors,
     ])
@@ -1065,6 +1125,26 @@ async function imposterData(
     imposter_actor_id: rounds[0].imposter_ids[0], // Backward compat — view strip
     all_imposter_ids: rounds.flatMap(r => r.imposter_ids),
   }
+}
+
+/**
+ * Aktör fotoğrafını çözer.
+ *
+ * BUG (30 Tem 2026): burada yalnızca `actor.profile_path` okunuyordu, ama
+ * `cast_json`'ı dolduran scriptler `profile_url` yazıyor. Üretim verisinde
+ * 1958 aktör kaydının 1958'inde `profile_url`, 0'ında `profile_path` var —
+ * yani alan HER ZAMAN undefined'a düşüyor, `?? null` oluyordu ve istemci
+ * fotoğraf yerine baş harf kartı ("JM", "RD") çiziyordu.
+ *
+ * İstemci tarafında değişiklik gerekmiyor: services/tmdb.ts `getPosterUrl`
+ * `http` ile başlayan değeri olduğu gibi geçiriyor, ham yolu ise TMDb tabanı
+ * ile birleştiriyor. Dolayısıyla iki şekil de çalışır.
+ */
+function actorPhoto(actor: {
+  profile_path?: string | null
+  profile_url?: string | null
+}): string | null {
+  return actor.profile_path ?? actor.profile_url ?? null
 }
 
 /** İsimden deterministik ID üret */
@@ -1300,6 +1380,28 @@ async function genOne(
     } else if (game === 'imposter') {
       const impData = await imposterData(f, pool)
       if (!impData) { rpt.rejected++; rpt.per_game[game].rejected++; continue }
+
+      // Fotograf kapsamini olc — sema uyusmazligi sessizce geri donmesin
+      if (!rpt.imposter_photo_coverage) {
+        rpt.imposter_photo_coverage = { with: 0, without: 0, pct: 0 }
+      }
+      const cov = rpt.imposter_photo_coverage
+      for (const round of impData.rounds as ImposterRound[]) {
+        for (const opt of round.options) {
+          if (opt.profile_path) cov.with++
+          else cov.without++
+          // Rol adı sözleşmesi: boş kalırsa satır bazı kartlarda çıkmaz ve
+          // cevabı ele verir. Sessizce geçmesin (Hard Rule 5).
+          if (!opt.character) {
+            rpt.errors.push(
+              `imposter_missing_character: ${f.title} / round ${round.round} / ${opt.name}`,
+            )
+          }
+        }
+      }
+      const total = cov.with + cov.without
+      cov.pct = total > 0 ? Math.round((cov.with / total) * 100) : 0
+
       puzzleData = impData
     } else if (game === 'fadein') {
       const fiData = fadeinData(f)
@@ -1643,6 +1745,18 @@ serve(async (req: Request) => {
     // Tema uzlaştırma: gerçekten eşleşen oyunları yaz, eşik altındakileri düşür
     if (themeCfg && themes.size > 0) {
       await reconcileThemes(themes, themeCfg, rpt)
+    }
+
+    /*
+     * Imposter fotoğraf kapsamı eşiği (Hard Rule 5: sessiz kabul yok).
+     * Bu alan bir kez şema uyuşmazlığı yüzünden fark edilmeden %0'a düşmüştü
+     * ve oyun aylarca baş harf kartlarıyla oynandı. Artık rapora hata düşer.
+     */
+    const cov = rpt.imposter_photo_coverage
+    if (cov && cov.with + cov.without > 0 && cov.pct < IMPOSTER_PHOTO_MIN_PCT) {
+      rpt.errors.push(
+        `imposter_low_photo_coverage: %${cov.pct} (${cov.with}/${cov.with + cov.without})`,
+      )
     }
 
     await postHog(rpt)

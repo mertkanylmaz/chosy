@@ -932,6 +932,7 @@
       "round_correct": "Correct!",
       "round_wrong": "Not quite!",
       "imposters_were": "The imposters were: %{names}",
+      "character_as": "as %{name}",
       "selected": "%{count}/%{total} selected",
       "submit_round": "Lock In",
       "confidence_label": "How sure are you?",
@@ -1098,6 +1099,7 @@
     "result": {
       "solved": "Great Guess!",
       "solved_detail": "Solved in %{attempts}/%{maxAttempts} guesses",
+      "quick_score": "%{score} of %{total} correct",
       "failed": "So Close!",
       "failed_detail": "Used all %{maxAttempts} guesses",
       "share": "Share",

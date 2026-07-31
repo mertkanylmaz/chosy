@@ -448,9 +448,31 @@ export async function resetGameProgress(
   });
 
   if (error) {
-    Sentry.captureException(error, { tags: { fn: 'dev-reset-games' } });
-    logger.error('[gameApi] resetGameProgress failed:', error);
-    throw error;
+    /*
+     * FunctionsHttpError yalnizca "non-2xx status code" diyor; asil sebep
+     * yanit govdesinde. Govde okunmadigi icin allowlist 403'u ile gercek bir
+     * sunucu hatasi ayirt edilemiyordu (Hard Rule 5: hata gorunur olmali).
+     * `context` invoke'un dondugu ham Response'tur.
+     */
+    const response = (error as { context?: Response }).context;
+    let detail = '';
+    if (response && typeof response.text === 'function') {
+      const body = await response.text().catch(() => '');
+      try {
+        const parsed = JSON.parse(body) as { error?: string; message?: string };
+        detail = parsed.message ?? parsed.error ?? body;
+      } catch {
+        detail = body;
+      }
+      if (detail) detail = `[${response.status}] ${detail}`;
+    }
+
+    Sentry.captureException(error, {
+      tags: { fn: 'dev-reset-games' },
+      extra: { detail },
+    });
+    logger.error('[gameApi] resetGameProgress failed:', detail || error);
+    throw new Error(detail || 'dev-reset-games failed');
   }
 
   return data as DevResetResult;

@@ -47,6 +47,45 @@ interface SignalPayload {
   metadata: Record<string, unknown>;
 }
 
+// ─── Validation ──────────────────────────────────────────────────────────────
+
+/**
+ * `user_taste_signals.film_id` → `films.id` (UUID) FK'sidir. TMDb ID DEGIL.
+ *
+ * Ayni desen watchlist.ts ve film/[id].tsx'te de var; buraya eklenmemisti ve
+ * onboarding TasteSwipe TMDb ID'si ("278") gonderdiginde insert
+ * `22P02 invalid input syntax for type uuid` ile patliyordu.
+ */
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Postgres SQLSTATE kodlari — bu hatalar TEKRAR DENENEMEZ. Ayni satir yarin
+ * da ayni sekilde reddedilir, kuyrukta tutmak kuyrugu kalici olarak zehirler.
+ *
+ * 22P02 invalid_text_representation (UUID alanina TMDb ID)
+ * 23502 not_null_violation
+ * 23503 foreign_key_violation   (DB'de olmayan film)
+ * 23505 unique_violation
+ * 23514 check_violation         (strength araligi)
+ * 42501 insufficient_privilege  (RLS)
+ * 42703 undefined_column / 42P01 undefined_table (sema kaymasi)
+ */
+const PERMANENT_ERROR_CODES = new Set([
+  '22P02', '23502', '23503', '23505', '23514', '42501', '42703', '42P01',
+]);
+
+/** Hata kalici mi (yeniden denemek anlamsiz mi)? */
+function isPermanentError(code: string | undefined): boolean {
+  return code !== undefined && PERMANENT_ERROR_CODES.has(code);
+}
+
+/** Payload sematik olarak gecerli mi — gonderilmeden once ucuz kontrol */
+function isValidPayload(payload: SignalPayload): boolean {
+  if (!UUID_REGEX.test(payload.user_id)) return false;
+  if (payload.film_id !== null && !UUID_REGEX.test(payload.film_id)) return false;
+  return true;
+}
+
 // ─── Strength Formulas ───────────────────────────────────────────────────────
 
 /**
@@ -131,7 +170,19 @@ async function enqueueOffline(payload: SignalPayload): Promise<void> {
 /**
  * Offline queue'daki tüm bekleyen sinyalleri Supabase'e flush eder.
  * App açılışında veya network reconnect'te çağrılır.
- * Başarılı insert'lerden sonra queue temizlenir.
+ *
+ * ── Kuyruk zehirlenmesi (30 Tem 2026) ──────────────────────────────────────
+ * Eskiden batch insert tek hata alinca kuyruk OLDUGU GIBI korunuyordu. Tek bir
+ * gecersiz satir (onboarding'in TMDb ID'si "278") kuyrugu kalici olarak
+ * kilitliyordu: her acilista ayni hata, hicbir sinyal asla yazilamiyor,
+ * kuyruk 200'e kadar buyuyup gecerli sinyalleri de FIFO ile disari atiyordu.
+ *
+ * Yeni davranis:
+ *   1. Gecersiz satirlar (UUID olmayan film_id/user_id) gonderilmeden atilir.
+ *   2. Batch kalici bir hata alirsa satir satir denenir — kalici hata alan
+ *      satir atilir, gecici hata alan satir kuyrukta kalir.
+ *   3. Gecici hata (ag/timeout) durumunda kuyruk eskisi gibi korunur.
+ * Sessiz fallback degil: her atilan satir logger.error ile gorunur olur.
  */
 async function flushOfflineQueue(): Promise<void> {
   try {
@@ -141,19 +192,81 @@ async function flushOfflineQueue(): Promise<void> {
     const queue: QueuedSignal[] = JSON.parse(raw);
     if (queue.length === 0) return;
 
-    logger.warn(`[tasteSignals] Flushing ${queue.length} offline signals`);
-
-    // Tek batch insert — performans
     const inserts: SignalPayload[] = queue.map(({ queued_at, ...rest }) => rest);
-    const { error } = await supabase.from('user_taste_signals').insert(inserts);
 
-    if (error) {
-      logger.error('[tasteSignals] Flush failed, keeping queue:', error.message);
+    // 1) Sematik olarak asla yazilamayacak satirlari bastan at
+    const valid = inserts.filter(isValidPayload);
+    const dropped = inserts.length - valid.length;
+    if (dropped > 0) {
+      logger.error(
+        `[tasteSignals] Dropping ${dropped} unwritable queued signals (invalid uuid)`,
+      );
+    }
+
+    if (valid.length === 0) {
+      await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
       return;
     }
 
-    await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
-    logger.warn(`[tasteSignals] Flushed ${queue.length} signals successfully`);
+    logger.warn(`[tasteSignals] Flushing ${valid.length} offline signals`);
+
+    // 2) Tek batch insert — mutlu yol, tek gidis-donus
+    const { error } = await supabase.from('user_taste_signals').insert(valid);
+
+    if (!error) {
+      await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+      logger.warn(`[tasteSignals] Flushed ${valid.length} signals successfully`);
+      return;
+    }
+
+    // 3) Gecici hata → kuyrugu koru, sonraki acilista tekrar dene.
+    //    Gecersiz satirlar geri YAZILMAZ; bir daha denenmelerinin anlami yok.
+    if (!isPermanentError(error.code)) {
+      const kept: QueuedSignal[] = valid.map((row) => ({
+        ...row,
+        queued_at: new Date().toISOString(),
+      }));
+      await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(kept));
+      logger.error('[tasteSignals] Flush failed (transient), keeping queue:', error.message);
+      return;
+    }
+
+    /*
+     * 4) Kalici hata: batch hangi satirin suclu oldugunu soylemez. Satir satir
+     *    dene — sucluyu at, digerlerini kurtar.
+     */
+    logger.error(
+      `[tasteSignals] Batch rejected permanently (${error.code}), retrying row by row:`,
+      error.message,
+    );
+
+    const survivors: QueuedSignal[] = [];
+    let discarded = 0;
+
+    for (const row of valid) {
+      const { error: rowError } = await supabase.from('user_taste_signals').insert(row);
+      if (!rowError) continue;
+
+      if (isPermanentError(rowError.code)) {
+        discarded += 1;
+        logger.error(
+          `[tasteSignals] Discarding signal ${row.signal_type}/${row.film_id} (${rowError.code}):`,
+          rowError.message,
+        );
+      } else {
+        survivors.push({ ...row, queued_at: new Date().toISOString() });
+      }
+    }
+
+    if (survivors.length > 0) {
+      await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(survivors));
+    } else {
+      await AsyncStorage.removeItem(OFFLINE_QUEUE_KEY);
+    }
+
+    logger.warn(
+      `[tasteSignals] Row-by-row flush done — discarded ${discarded}, kept ${survivors.length}`,
+    );
   } catch (err) {
     logger.error('[tasteSignals] Flush exception:', err);
   }
@@ -189,9 +302,30 @@ async function recordSignal(
       metadata,
     };
 
+    /*
+     * film_id `films.id` (UUID) olmak zorunda. TMDb ID gelirse sinyal BURADA
+     * dusurulur — kuyruga alinmaz. Kuyruga almak, asla yazilamayacak bir satiri
+     * her acilista yeniden denemek ve kuyrugu kilitlemek demekti.
+     */
+    if (!isValidPayload(payload)) {
+      logger.error(
+        `[tasteSignals] Invalid film_id for ${signalType}, signal dropped:`,
+        filmId,
+      );
+      return;
+    }
+
     const { error } = await supabase.from('user_taste_signals').insert(payload);
 
     if (error) {
+      if (isPermanentError(error.code)) {
+        // Yeniden denemek anlamsiz — kuyruga alma, gorunur birak
+        logger.error(
+          `[tasteSignals] Insert rejected permanently (${error.code}), dropping:`,
+          error.message,
+        );
+        return;
+      }
       // Network/Supabase fail → offline queue
       logger.warn('[tasteSignals] Insert failed, queuing offline:', error.message);
       await enqueueOffline(payload);

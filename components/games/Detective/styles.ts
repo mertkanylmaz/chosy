@@ -10,27 +10,31 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+import { gameContentWidth, gridItemWidth } from '@/constants/gameLayout';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
 // ─── Shared Grid Constants ────────────────────────────────────────────────────
-const GRID_PADDING = Theme.spacing.md;
 const GRID_GAP = Theme.spacing.sm;
 
 /**
- * Stage 1 — 3 columns, so cards are narrower.
- * (SCREEN_W - left_pad - right_pad - gap1 - gap2) / 3
+ * Kullanilabilir genislik — GameShell'in verdigi yatay padding dusulmus hali.
+ *
+ * Eskiden burada `GRID_PADDING = Theme.spacing.md` vardi ve hem kart
+ * genisligi hesabindan hem de `scrollContent`'ten dusuluyordu. Ama GameShell
+ * zaten ayni padding'i veriyor (components/games/GameShell/styles.ts) —
+ * yani padding iki kez uygulaniyor, kart hesabi ise bir kez dusuyordu.
+ * Sonuc: 3 sutunluk izgara sigmayip 2 sutuna dusuyordu (12 kart 4 satir
+ * yerine 6 satir). Sozlesme: constants/gameLayout.ts
  */
-const CARD_W_SMALL = Math.floor(
-  (SCREEN_W - GRID_PADDING * 2 - GRID_GAP * 2) / 3,
-);
+const CONTENT_W = gameContentWidth(SCREEN_W);
+
+/** Stage 1 — 3 sutun, kartlar dar */
+const CARD_W_SMALL = gridItemWidth(CONTENT_W, 3, GRID_GAP);
 const CARD_H_SMALL = Math.round(CARD_W_SMALL * 1.4);
 
-/**
- * Stage 2 — 2 columns, same formula as Spotlight.
- * (SCREEN_W - left_pad - right_pad - gap) / 2
- */
-const CARD_W = Math.floor((SCREEN_W - GRID_PADDING * 2 - GRID_GAP) / 2);
+/** Stage 2 — 2 sutun, daha buyuk kartlar */
+const CARD_W = gridItemWidth(CONTENT_W, 2, GRID_GAP);
 const CARD_H = Math.round(CARD_W * 1.35);
 
 /**
@@ -61,9 +65,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     padding: Theme.spacing.lg,
   },
+  /** Yatay padding YOK — GameShell veriyor (bkz. constants/gameLayout.ts) */
   scrollContent: {
-    padding: GRID_PADDING,
-    paddingBottom: 100,
+    paddingTop: Theme.spacing.sm,
+    paddingBottom: Theme.spacing.xl,
   },
 
   // ─── Loading / Error ─────────────────────────────────────────────────────────
@@ -523,11 +528,11 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Final Reveal / Case Closed ──────────────────────────────────────────────
+  /** Yatay padding YOK — GameShell veriyor */
   finalRevealContainer: {
     alignItems: 'center',
-    paddingHorizontal: Theme.spacing.md,
     gap: Theme.spacing.md,
-    paddingBottom: 20,
+    paddingBottom: Theme.spacing.lg,
   },
   finalRevealBadge: {
     paddingHorizontal: 14,
@@ -998,11 +1003,12 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Completed Container (Stage 3 wrapper) ─────────────────────────────────
+  /** Yatay padding YOK — GameShell veriyor */
   completedContainer: {
     alignItems: 'center',
-    padding: Theme.spacing.lg,
+    paddingTop: Theme.spacing.lg,
     gap: Theme.spacing.md,
-    paddingBottom: 20,
+    paddingBottom: Theme.spacing.lg,
   },
   completedPoster: {
     width: SCREEN_W * 0.42,

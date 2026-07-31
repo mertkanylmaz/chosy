@@ -331,8 +331,17 @@ export interface ImposterRound {
   /**
    * profile_path TMDb oyuncu fotografi yolu. Eski bulmacalarda yok —
    * istemci fotografsiz duruma dusup bas harflerini gosterir.
+   *
+   * character: oyuncunun GELDIGI filmdeki rol adi. Gercek oyuncular icin
+   * ekrandaki filmin karakteri, sahtekarlar icin BASKA bir filmdeki karakteri —
+   * ipucu bu kiyastan cikar. Eski bulmacalarda yok, o zaman gosterilmez.
    */
-  options: Array<{ id: number; name: string; profile_path?: string | null }>;
+  options: Array<{
+    id: number;
+    name: string;
+    profile_path?: string | null;
+    character?: string | null;
+  }>;
 }
 
 // ─── Spotlight Types ──────────────────────────────────────────────────────────

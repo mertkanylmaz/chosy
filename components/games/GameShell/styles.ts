@@ -11,15 +11,35 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
+  /**
+   * paddingTop/paddingBottom runtime'da insets ile veriliyor (index.tsx).
+   * Eski sabit `paddingBottom: 83` kaldırıldı — oyun ekranları root Stack'te,
+   * tab bar yok, o 83px ölü alandı.
+   */
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingBottom: 83,
+  },
+  /**
+   * Ambiyans katmanı — `background` prop'u verilirse dolar. top/bottom
+   * runtime'da negatif inset ile geçilir (index.tsx), burada yalnız yatay
+   * kenarlar ve yığın sırası tanımlı.
+   */
+  backdrop: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    // zIndex verilmiyor: bu ilk çocuk, çizim sırası zaten header/içeriğin
+    // altında bırakıyor. Negatif zIndex Android'de görünümü tamamen gizliyor.
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: Theme.spacing.md,
+    // Dynamic Island nefesi: insets.top adanın ALT kenarına yapıştırıyor,
+    // başlığın kendi üst boşluğu ayrıca gerekiyor. 8px yetmiyordu — eyebrow
+    // satırı adanın dibine değiyordu.
+    paddingTop: Theme.spacing.md,
     paddingBottom: Theme.spacing.sm,
     minHeight: 56,
   },
@@ -62,18 +82,27 @@ export const styles = StyleSheet.create({
   },
   segment: {
     flex: 1,
-    height: 3,
-    borderRadius: 2,
+    height: 5,
+    borderRadius: 3,
   },
   segmentUsed: {
     backgroundColor: Colors.gold,
   },
+  /** white05 (%6 opak) koyu zeminde görünmüyordu — boş segment okunabilir olmalı */
   segmentEmpty: {
-    backgroundColor: Colors.white05,
+    backgroundColor: Colors.white10,
   },
 
+  /**
+   * Yatay padding sözleşmesi burada. Oyunlar bunun üstüne kendi
+   * paddingHorizontal'ını EKLEMEZ — bkz. constants/gameLayout.ts
+   */
   content: {
     flex: 1,
     paddingHorizontal: Theme.spacing.md,
+  },
+  /** contentPadding={false} — tam kanamalı içerik, padding'i ekran yönetir */
+  contentFlush: {
+    flex: 1,
   },
 });

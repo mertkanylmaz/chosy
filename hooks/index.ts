@@ -13,3 +13,5 @@ export { useScalePress } from './useScalePress';
 
 export { useCinemaDna, DNA_DIMENSIONS } from './useCinemaDna';
 export type { CinemaDna, DnaDimension, RankProgressInfo } from './useCinemaDna';
+
+export { useGameContentWidth, useGridItemWidth } from './useGameLayout';

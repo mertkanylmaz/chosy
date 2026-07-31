@@ -1,107 +1,102 @@
 /**
- * Imposter V2 — 3 Round Kadro Bilgisi Oyunu.
+ * Imposter — 60 saniye prototipi.
  *
- * 3 round, artan zorluk:
- *   Round 1: 4 secenek, 1 sahte bul (kolay)
- *   Round 2: 5 secenek, 2 sahte bul (orta)
- *   Round 3: 6 secenek, 2 sahte bul (zor)
+ * 3 round, her roundda 4 secenek; zorluk sahte sayisiyla artar:
+ *   Round 1: 3 gercek + 1 sahte (kolay)
+ *   Round 2: 2 gercek + 2 sahte (orta)
+ *   Round 3: 2 gercek + 2 sahte (zor)
  *
  * Yanlis round'da oyun BITMEZ — 3 round daima oynanir.
  * Her round sonrasi dogru cevap gosterilir (ogrenme ani).
  * Skor: 0-3 (dogru round sayisi).
  *
  * Edge Function tabanli — cozum istemciye inmez.
+ *
+ * ── Prototip notu (30 Tem 2026) ───────────────────────────────────────────
+ * Oyun "acip 1 dakikada cikilabilir" hedefine gore sadelestirildi. Kaldirilan
+ * ve degisen katmanlar:
+ *
+ * 1. Guven bahsi (ConfidenceSelector) ekrandan kaldirildi. Her round'dan once
+ *    carpan okuyup risk secmek akisi kesiyordu — GAME_INNER_DYNAMICS.md'nin
+ *    kendisi de "Confidence wager EKLEME, over-engineering" diyordu ama katman
+ *    yine de eklenmisti. Sunucuya notr bahis (%50) gonderilmeye devam ediyor,
+ *    yani sunucu sozlesmesi ve XP hesabi degismedi.
+ * 2. "Lock In" butonu ve "1/2 secildi" sayaci kaldirildi. Gereken sayida yuz
+ *    secilince round kendiliginden gonderiliyor — round 1 tek tap.
+ * 3. Ogrenme ani 2500ms -> 900ms. Bilgi ayni, bekleme yok.
+ * 4. Oynanis ekrani TEK SAYFA, ScrollView yok (31 Tem 2026): secenek sayisi
+ *    her roundda 4'e sabitlendi, izgara 2x2, kart olculeri olculen yukseklige
+ *    gore hesaplaniyor. Poster kirpilmiyor (contain), oyuncu adinin altinda
+ *    rol adi var. Ayrinti: components/games/ImposterPilot/index.tsx dosya basi.
+ * 5. Sonuc ekrani ResultCard yerine QuickResult — kisa icerikte tek ekran.
+ *    (Tur 2: kesif karti acilinca kirpilmasin diye ScrollView'a alindi.)
+ *
+ * Bilerek DOKUNULMAYAN: seceneklerin ayirt edici bilgi tasimamasi sorunu.
+ * Oyuncu bir aktoru taniyorsa biliyor, tanimiyorsa sans — bunu duzeltmek
+ * generate-puzzles tarafinda celdirici kalitesi isi, istemci degisikligi degil.
  */
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import { useFocusEffect } from 'expo-router';
-import { Image } from 'expo-image';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StyleSheet } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeInUp,
   useSharedValue,
   useAnimatedStyle,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { Check, CheckCircle, CloudSlash, X, XCircle } from 'phosphor-react-native';
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticHeavy, hapticWarning, hapticSuccess, hapticMedium } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { getPosterUrl } from '@/services/tmdb';
 import { getGameStreak } from '@/services/gameService';
 import { getDailyChallenge, submitImposterGuess } from '@/services/gameApi';
 import type {
   DailyChallenge,
-  ImposterConfidenceConfig,
   ImposterGuessResult,
   ImposterRound,
   WhyThisMovieText,
 } from '@/types/game';
-import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
-import { ConfidenceSelector, formatFactor } from '@/components/games/ConfidenceSelector';
-import { ResultCard } from '@/components/games/ResultCard';
+import { ImposterPilot, ImposterBackdrop } from '@/components/games/ImposterPilot';
+import { PilotTokens } from '@/components/games/ImposterPilot/pilotTokens';
+import { QuickResult } from '@/components/games/QuickResult';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useGamePaywall } from '@/hooks/useGamePaywall';
 import {
   trackGameOpened,
   trackGuessSubmitted,
   trackGameCompleted,
-  trackConfidenceSet,
 } from '@/utils/gameAnalytics';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const POSTER_W = SCREEN_W * 0.5;
-const POSTER_H = POSTER_W * 1.5;
+/**
+ * Ogrenme ani suresi — dogru cevabi okumaya yeter, akisi kesmez.
+ * (Izgara olculeri artik components/games/ImposterPilot icinde.)
+ */
+const REVEAL_MS = 900;
+
+/** Ikinci secimden sonra kilitlenmeden once birakilan nefes */
+const AUTO_SUBMIT_MS = 250;
 
 /**
- * Yuz karti izgarasi — 2 sutun. Round 3'te 6 secenek var, 2x3 olur.
- * Genislik ekran genisliginden yatay padding ve aradaki bosluk dusulerek
- * hesaplanir; boylece son sutun tasmaz.
+ * Notr bahis. Guven secici kaldirildi ama sunucu bu alani bekliyor;
+ * %50 gonderildiginde carpan 1 kalir ve XP eski davranisla birebir ayni olur.
  */
-const FACE_GAP = Theme.spacing.sm;
-const FACE_W = Math.floor((SCREEN_W - Theme.spacing.md * 2 - FACE_GAP) / 2);
-const FACE_PHOTO_H = Math.round(FACE_W * 1.15);
+const NEUTRAL_CONFIDENCE = 50;
 
-/** Fotografi olmayan aktor icin bas harfler */
-function getInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
-/** Nötr bahis — seçim yapılmazsa XP bugünküyle birebir aynı kalır */
-const DEFAULT_CONFIDENCE = 50;
-
-/** Round sonuç state'i */
+/** Round sonuc state'i */
 interface RoundOutcome {
   round: number;
   correct: boolean;
   revealedImposters: string[];
-  /** Bu round'un XP çarpanı — reveal kartında rozet olarak gösterilir */
-  xpFactor: number;
 }
 
 export default function ImposterScreen() {
   const { t } = useLanguage();
+  const router = useRouter();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
   // Analytics timing refs
@@ -125,15 +120,9 @@ export default function ImposterScreen() {
   const [showRoundReveal, setShowRoundReveal] = useState(false);
   const [lastRoundOutcome, setLastRoundOutcome] = useState<RoundOutcome | null>(null);
 
-  // Guven bahsi
-  const [confidenceConfig, setConfidenceConfig] = useState<ImposterConfidenceConfig | null>(null);
-  const [confidence, setConfidence] = useState(DEFAULT_CONFIDENCE);
-  const [confidenceFactor, setConfidenceFactor] = useState<number | null>(null);
-
   // Final result state
   const [xpAwarded, setXpAwarded] = useState(0);
   const [dnaUpdated, setDnaUpdated] = useState(false);
-  const [dnaSignals, setDnaSignals] = useState<DnaSignal[]>([]);
   /** Film kesfi koprusu metni — sunucudan gelir, tamamlanmada dolar */
   const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
   /** Gunun bulmaca numarasi — paylasim kartinda film adi yerine gosterilir */
@@ -165,25 +154,6 @@ export default function ImposterScreen() {
 
   // ── Load puzzle ─────────────────────────────────────────────────────────────
 
-  useFocusEffect(
-    useCallback(() => {
-      setGameState('loading');
-      setRounds([]);
-      setCurrentRound(1);
-      setSelectedIds(new Set());
-      setRoundOutcomes([]);
-      setIsSubmitting(false);
-      setShowRoundReveal(false);
-      setLastRoundOutcome(null);
-      setLoadError(false);
-      setSubmitError(false);
-      setFilmInfo(null);
-      setConfidence(DEFAULT_CONFIDENCE);
-      setConfidenceFactor(null);
-      loadPuzzle();
-    }, []),
-  );
-
   /** Puzzle yukle */
   const loadPuzzle = useCallback(async () => {
     try {
@@ -203,12 +173,6 @@ export default function ImposterScreen() {
       }
       setRounds(roundsData);
 
-      // Guven bahsi config'i — seviyeler ve carpanlar sunucudan
-      if (data.confidence_config) {
-        setConfidenceConfig(data.confidence_config);
-        setConfidence(data.confidence_config.levels[0] ?? DEFAULT_CONFIDENCE);
-      }
-
       // Bugun zaten oynanmis mi?
       if (progress?.completed) {
         const streakInfo = await getGameStreak('imposter');
@@ -226,7 +190,6 @@ export default function ImposterScreen() {
             round: r.round,
             correct: r.correct,
             revealedImposters: [],
-            xpFactor: 1,
           })) ?? [],
         );
 
@@ -245,7 +208,6 @@ export default function ImposterScreen() {
             round: r.round,
             correct: r.correct,
             revealedImposters: [],
-            xpFactor: 1,
           })),
         );
       }
@@ -258,7 +220,145 @@ export default function ImposterScreen() {
       logger.error('[imposter] Load hatasi:', err);
       setLoadError(true);
     }
-  }, []);
+  }, [t]);
+
+  useFocusEffect(
+    useCallback(() => {
+      setGameState('loading');
+      setRounds([]);
+      setCurrentRound(1);
+      setSelectedIds(new Set());
+      setRoundOutcomes([]);
+      setIsSubmitting(false);
+      setShowRoundReveal(false);
+      setLastRoundOutcome(null);
+      setLoadError(false);
+      setSubmitError(false);
+      setFilmInfo(null);
+      loadPuzzle();
+    }, [loadPuzzle]),
+  );
+
+  // ── Round gonderimi ─────────────────────────────────────────────────────────
+
+  /** Round gonder — gereken secim tamamlaninca otomatik cagrilir */
+  const handleSubmitRound = useCallback(async () => {
+    if (selectedIds.size !== requiredSelections || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setSubmitError(false);
+
+    try {
+      const result: ImposterGuessResult = await submitImposterGuess(
+        puzzleId,
+        currentRound,
+        [...selectedIds],
+        NEUTRAL_CONFIDENCE,
+      );
+      trackGuessSubmitted('imposter', currentRound, Date.now() - guessStartTime.current);
+      guessStartTime.current = Date.now();
+
+      const outcome: RoundOutcome = {
+        round: currentRound,
+        correct: result.round_correct,
+        revealedImposters: result.revealed_imposters,
+      };
+
+      if (result.round_correct) {
+        hapticSuccess();
+      } else {
+        hapticWarning();
+        flashOpacity.value = withSequence(
+          withTiming(0.3, { duration: 150 }),
+          withTiming(0, { duration: 300 }),
+        );
+      }
+
+      // Ogrenme ani goster — kisa, akisi kesmeyecek kadar
+      setLastRoundOutcome(outcome);
+      setShowRoundReveal(true);
+      setRoundOutcomes((prev) => [...prev, outcome]);
+
+      await new Promise((r) => setTimeout(r, REVEAL_MS));
+
+      if (result.completed) {
+        // Oyun bitti — final sonuc
+        trackGameCompleted({
+          gameId: 'imposter',
+          won: result.won,
+          guessesUsed: 3,
+          timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
+          xp: result.xp_awarded,
+        });
+        setXpAwarded(result.xp_awarded);
+        setWhyThisMovie(result.why_this_movie ?? null);
+        setDnaUpdated(result.dna_updated);
+
+        if (result.revealed_solution) {
+          setFilmInfo({
+            title: result.revealed_solution.title,
+            year: result.revealed_solution.year,
+            posterPath: result.revealed_solution.poster_url ?? null,
+            filmId: 0,
+          });
+        }
+
+        const streakInfo = await getGameStreak('imposter');
+        setStreak(streakInfo.currentStreak);
+        setGameState('complete');
+        checkGamePaywall(streakInfo.currentStreak, result.won);
+      } else {
+        // Sonraki round
+        setShowRoundReveal(false);
+        setLastRoundOutcome(null);
+        setSelectedIds(new Set());
+        setCurrentRound((prev) => prev + 1);
+      }
+    } catch (err) {
+      // Sessiz fallback YASAK — kullaniciya gorunur hata + tekrar deneme
+      logger.error('[imposter] Submit hatasi:', err);
+      Sentry.captureException(err, {
+        tags: { game: 'imposter', action: 'submit_round', round: String(currentRound) },
+      });
+      hapticHeavy();
+      setShowRoundReveal(false);
+      setLastRoundOutcome(null);
+      // Secim geri alinir — oyuncu yeniden secip tekrar deneyebilsin
+      setSelectedIds(new Set());
+      setSubmitError(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [
+    selectedIds,
+    requiredSelections,
+    isSubmitting,
+    puzzleId,
+    currentRound,
+    flashOpacity,
+    checkGamePaywall,
+  ]);
+
+  /**
+   * Otomatik kilitleme: gereken sayida yuz secilince round kendiliginden
+   * gonderilir. "Lock In" butonu bu yuzden kaldirildi — round 1 tek tap,
+   * round 2-3 iki tap. Kisa gecikme son secimin altin tikinin gorulmesi icin.
+   */
+  useEffect(() => {
+    if (gameState !== 'playing') return;
+    if (selectedIds.size !== requiredSelections) return;
+    if (isSubmitting || showRoundReveal) return;
+
+    const timer = setTimeout(handleSubmitRound, AUTO_SUBMIT_MS);
+    return () => clearTimeout(timer);
+  }, [
+    gameState,
+    selectedIds,
+    requiredSelections,
+    isSubmitting,
+    showRoundReveal,
+    handleSubmitRound,
+  ]);
 
   // ── Selection handler ───────────────────────────────────────────────────────
 
@@ -286,120 +386,18 @@ export default function ImposterScreen() {
     [gameState, isSubmitting, showRoundReveal, requiredSelections],
   );
 
-  /** Round gonder */
-  const handleSubmitRound = useCallback(async () => {
-    if (selectedIds.size !== requiredSelections || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setSubmitError(false);
-
-    try {
-      const result: ImposterGuessResult = await submitImposterGuess(
-        puzzleId,
-        currentRound,
-        [...selectedIds],
-        confidence,
-      );
-      trackGuessSubmitted('imposter', currentRound, Date.now() - guessStartTime.current);
-      guessStartTime.current = Date.now();
-
-      const outcome: RoundOutcome = {
-        round: currentRound,
-        correct: result.round_correct,
-        revealedImposters: result.revealed_imposters,
-        // Bahis alani donmeyen bir sunucu surumunde notre dus — rozet gizlenir
-        xpFactor: result.round_xp_factor ?? 1,
-      };
-
-      if (result.round_correct) {
-        hapticSuccess();
-      } else {
-        hapticWarning();
-        flashOpacity.value = withSequence(
-          withTiming(0.3, { duration: 150 }),
-          withTiming(0, { duration: 300 }),
-        );
-      }
-
-      // Ogrenme ani goster
-      setLastRoundOutcome(outcome);
-      setShowRoundReveal(true);
-      setRoundOutcomes((prev) => [...prev, outcome]);
-
-      // 2.5 saniye ogrenme ani
-      await new Promise((r) => setTimeout(r, 2500));
-
-      if (result.completed) {
-        // Oyun bitti — final sonuc
-        trackGameCompleted({
-          gameId: 'imposter',
-          won: result.won,
-          guessesUsed: 3,
-          timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
-          xp: result.xp_awarded,
-        });
-        setXpAwarded(result.xp_awarded);
-        setWhyThisMovie(result.why_this_movie ?? null);
-        setConfidenceFactor(result.confidence_factor ?? null);
-        setDnaUpdated(result.dna_updated);
-        if (result.dna_updated) {
-          setDnaSignals([
-            { dimension: 'knowledge', delta: result.correct_count * 0.2 },
-          ]);
-        }
-
-        if (result.revealed_solution) {
-          setFilmInfo({
-            title: result.revealed_solution.title,
-            year: result.revealed_solution.year,
-            posterPath: result.revealed_solution.poster_url ?? null,
-            filmId: 0,
-          });
-        }
-
-        const streakInfo = await getGameStreak('imposter');
-        setStreak(streakInfo.currentStreak);
-        setGameState('complete');
-        checkGamePaywall(streakInfo.currentStreak, result.won);
-      } else {
-        // Sonraki round — bahis notre doner, her round bagimsiz karar
-        setShowRoundReveal(false);
-        setLastRoundOutcome(null);
-        setSelectedIds(new Set());
-        setCurrentRound((prev) => prev + 1);
-        setConfidence(confidenceConfig?.levels[0] ?? DEFAULT_CONFIDENCE);
-      }
-    } catch (err) {
-      // Sessiz fallback YASAK — kullaniciya gorunur hata + tekrar deneme
-      logger.error('[imposter] Submit hatasi:', err);
-      Sentry.captureException(err, {
-        tags: { game: 'imposter', action: 'submit_round', round: String(currentRound) },
-      });
-      hapticHeavy();
-      setShowRoundReveal(false);
-      setLastRoundOutcome(null);
-      setSubmitError(true);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [
-    selectedIds,
-    requiredSelections,
-    isSubmitting,
-    puzzleId,
-    currentRound,
-    confidence,
-    confidenceConfig,
-    flashOpacity,
-    checkGamePaywall,
-  ]);
-
   // ── Render ──────────────────────────────────────────────────────────────────
 
   /** Error state */
   if (loadError) {
     return (
-      <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
+      <GameShell
+        title={t('games.imposter.title')}
+        currentAttempt={0}
+        maxAttempts={3}
+        background={<ImposterBackdrop />}
+        progressGradient={PilotTokens.progressGradient}
+      >
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -408,16 +406,21 @@ export default function ImposterScreen() {
   /** Loading state */
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.imposter.title')} currentAttempt={0} maxAttempts={3}>
+      <GameShell
+        title={t('games.imposter.title')}
+        currentAttempt={0}
+        maxAttempts={3}
+        background={<ImposterBackdrop />}
+        progressGradient={PilotTokens.progressGradient}
+      >
         <GameStateView state="loading" />
       </GameShell>
     );
   }
 
-  /** Complete state */
+  /** Complete state — tek ekran */
   if (gameState === 'complete') {
     const correctCount = roundOutcomes.filter((r) => r.correct).length;
-    const solved = correctCount === 3;
 
     return (
       <GameShell
@@ -425,49 +428,45 @@ export default function ImposterScreen() {
         currentAttempt={3}
         maxAttempts={3}
         hideProgress
+        background={<ImposterBackdrop />}
       >
-        <ScrollView contentContainerStyle={styles.completeScroll} showsVerticalScrollIndicator={false}>
-          {/* Round sonuclari ozeti */}
-          <View style={styles.roundsSummary}>
-            {[1, 2, 3].map((r) => {
-              const outcome = roundOutcomes.find((o) => o.round === r);
-              return (
-                <View key={r} style={styles.roundDot}>
-                  {outcome?.correct ? (
-                    <CheckCircle size={28} weight="duotone" color={Colors.success} />
-                  ) : (
-                    <XCircle size={28} weight="duotone" color={Colors.error} />
-                  )}
-                  <Text style={styles.roundDotLabel}>R{r}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          <ResultCard
-            solved={solved}
-            attempts={correctCount}
-            maxAttempts={3}
-            filmTitle={filmInfo?.title ?? ''}
-            filmYear={filmInfo?.year ?? 0}
-            filmPosterPath={filmInfo?.posterPath ?? null}
-            filmId={filmInfo?.filmId ?? 0}
-            streak={streak}
-            gameTitle={t('games.imposter.title')}
-            gameType="imposter"
-            puzzleNo={puzzleNo}
-            whyThisMovie={whyThisMovie ?? undefined}
-            xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
-            confidenceFactor={confidenceFactor}
-            dnaUpdated={dnaUpdated}
-            dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
-          />
-        </ScrollView>
+        <QuickResult
+          solved={correctCount === 3}
+          score={correctCount}
+          total={3}
+          filmTitle={filmInfo?.title ?? ''}
+          filmYear={filmInfo?.year}
+          filmPosterPath={filmInfo?.posterPath ?? null}
+          filmId={filmInfo?.filmId ?? 0}
+          streak={streak}
+          gameTitle={t('games.imposter.title')}
+          gameType="imposter"
+          puzzleNo={puzzleNo}
+          xpAwarded={xpAwarded}
+          dnaUpdated={dnaUpdated}
+          whyThisMovie={whyThisMovie ?? undefined}
+          onBackToHub={() => router.back()}
+        />
       </GameShell>
     );
   }
 
   // ── Playing state ───────────────────────────────────────────────────────────
+
+  if (!activeRound) {
+    // Round verisi yoksa sessizce bos ekran cizme — Hard Rule 5
+    return (
+      <GameShell
+        title={t('games.imposter.title')}
+        currentAttempt={0}
+        maxAttempts={3}
+        background={<ImposterBackdrop />}
+        progressGradient={PilotTokens.progressGradient}
+      >
+        <GameStateView state="error" onRetry={loadPuzzle} />
+      </GameShell>
+    );
+  }
 
   const roundLabel = currentRound === 1
     ? t('games.imposter.round_easy')
@@ -475,518 +474,46 @@ export default function ImposterScreen() {
       ? t('games.imposter.round_medium')
       : t('games.imposter.round_hard');
 
-  const posterUrl = activeRound?.poster_url
-    ? getPosterUrl(activeRound.poster_url, 'w500')
-    : null;
-
   return (
     <GameShell
       title={t('games.imposter.title')}
+      subtitle={`${t('games.imposter.round_label', { n: currentRound })} · ${roundLabel}`}
       currentAttempt={currentRound - 1}
       maxAttempts={3}
+      // PILOT: hero tam kanamali olsun diye padding sorumlulugu ekrana geciyor
+      contentPadding={false}
+      background={<ImposterBackdrop />}
+      progressGradient={PilotTokens.progressGradient}
     >
-      {/* Flash overlay */}
+      {/* Flash overlay — yanlis roundda kisa kirmizi parlama */}
       <Animated.View style={[styles.flashOverlay, flashStyle]} pointerEvents="none" />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
-        {/* Round indicator */}
-        <Animated.View entering={FadeIn.duration(300)} style={styles.roundHeader}>
-          <View style={styles.roundBadge}>
-            <Text style={styles.roundBadgeText}>
-              {t('games.imposter.round_label', { n: currentRound })}
-            </Text>
-          </View>
-          <Text style={styles.roundDifficulty}>{roundLabel}</Text>
-        </Animated.View>
+      <ImposterPilot
+        round={activeRound}
+        currentRound={currentRound}
+        requiredSelections={requiredSelections}
+        selectedIds={selectedIds}
+        onToggle={handleToggle}
+        disabled={isSubmitting || showRoundReveal}
+        showReveal={showRoundReveal}
+        outcome={lastRoundOutcome}
+        submitError={submitError}
+      />
 
-        {/* Round sonuclari (onceki roundlar) */}
-        {roundOutcomes.length > 0 && (
-          <View style={styles.prevRoundsRow}>
-            {roundOutcomes.map((o) => (
-              <View key={o.round} style={[
-                styles.prevRoundChip,
-                o.correct ? styles.prevRoundCorrect : styles.prevRoundWrong,
-              ]}>
-                {o.correct ? (
-                  <Check size={14} weight="bold" color={Colors.success} />
-                ) : (
-                  <X size={14} weight="bold" color={Colors.error} />
-                )}
-                <Text style={[
-                  styles.prevRoundText,
-                  { color: o.correct ? Colors.success : Colors.error },
-                ]}>
-                  R{o.round}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Poster */}
-        <View style={styles.posterContainer}>
-          {posterUrl && (
-            <Image
-              source={{ uri: posterUrl }}
-              style={styles.poster}
-              contentFit="cover"
-              transition={300}
-            />
-          )}
-          <Text style={styles.filmTitle} numberOfLines={2}>
-            {activeRound?.film_title ?? ''}
-          </Text>
-        </View>
-
-        {/* Soru */}
-        <Text style={styles.question}>
-          {requiredSelections === 1
-            ? t('games.imposter.question')
-            : t('games.imposter.question_multi', { count: requiredSelections })}
-        </Text>
-
-        {/* Round reveal (ogrenme ani) */}
-        {showRoundReveal && lastRoundOutcome && (
-          <Animated.View entering={FadeInDown.duration(400)} style={[
-            styles.revealCard,
-            lastRoundOutcome.correct ? styles.revealCorrect : styles.revealWrong,
-          ]}>
-            {lastRoundOutcome.correct ? (
-              <CheckCircle size={24} weight="duotone" color={Colors.success} />
-            ) : (
-              <XCircle size={24} weight="duotone" color={Colors.error} />
-            )}
-            <View style={styles.revealContent}>
-              <Text style={[
-                styles.revealTitle,
-                { color: lastRoundOutcome.correct ? Colors.success : Colors.error },
-              ]}>
-                {lastRoundOutcome.correct
-                  ? t('games.imposter.round_correct')
-                  : t('games.imposter.round_wrong')}
-              </Text>
-              <Text style={styles.revealSubtext}>
-                {t('games.imposter.imposters_were', {
-                  names: lastRoundOutcome.revealedImposters.join(', '),
-                })}
-              </Text>
-            </View>
-
-            {/* Bahsin karsiligi — notr (x1) ise gosterilmez */}
-            {lastRoundOutcome.xpFactor !== 1 && (
-              <View style={[
-                styles.factorBadge,
-                lastRoundOutcome.correct ? styles.factorBadgeWin : styles.factorBadgeLose,
-              ]}>
-                <Text style={[
-                  styles.factorBadgeText,
-                  { color: lastRoundOutcome.correct ? Colors.gold : Colors.error },
-                ]}>
-                  ×{formatFactor(lastRoundOutcome.xpFactor)}
-                </Text>
-              </View>
-            )}
-          </Animated.View>
-        )}
-
-        {/* Aktor secenekleri */}
-        {!showRoundReveal && activeRound && (
-          <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.optionsGrid}>
-            {activeRound.options.map((option) => {
-              const isSelected = selectedIds.has(option.id);
-              // Eski bulmacalarda profile_path yok — fotografsiz duruma dus
-              const photoUrl = getPosterUrl(option.profile_path ?? null, 'w185');
-              return (
-                <TouchableOpacity
-                  key={option.id}
-                  style={[
-                    styles.faceCard,
-                    isSelected ? styles.faceCardSelected : styles.faceCardDefault,
-                  ]}
-                  onPress={() => handleToggle(option.id)}
-                  disabled={isSubmitting || showRoundReveal}
-                  activeOpacity={0.85}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isSelected }}
-                  accessibilityLabel={option.name}
-                >
-                  {photoUrl ? (
-                    <Image
-                      source={{ uri: photoUrl }}
-                      style={styles.facePhoto}
-                      contentFit="cover"
-                      transition={200}
-                    />
-                  ) : (
-                    <View style={[styles.facePhoto, styles.facePhotoEmpty]}>
-                      <Text style={styles.faceInitials}>{getInitials(option.name)}</Text>
-                    </View>
-                  )}
-
-                  {isSelected && (
-                    <View style={styles.faceCheck}>
-                      <CheckCircle size={20} color={Colors.gold} weight="fill" />
-                    </View>
-                  )}
-
-                  <Text
-                    style={[styles.faceName, isSelected && styles.faceNameSelected]}
-                    numberOfLines={1}
-                  >
-                    {option.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </Animated.View>
-        )}
-
-        {/* Guven bahsi — round kilitlenmeden ONCE yatirilir */}
-        {!showRoundReveal && confidenceConfig && (
-          <Animated.View entering={FadeInUp.delay(260).duration(300)} style={styles.confidenceArea}>
-            <ConfidenceSelector
-              config={confidenceConfig}
-              value={confidence}
-              onChange={(next) => {
-                setConfidence(next);
-                trackConfidenceSet('imposter', currentRound, next);
-              }}
-              disabled={isSubmitting}
-            />
-          </Animated.View>
-        )}
-
-        {/* Gonderim hatasi — sessiz fallback YASAK */}
-        {submitError && (
-          <Animated.View entering={FadeIn.duration(200)} style={styles.submitErrorBox}>
-            <CloudSlash size={18} color={Colors.error} weight="duotone" />
-            <Text style={styles.submitErrorText}>{t('games.result.error_subtitle')}</Text>
-          </Animated.View>
-        )}
-
-        {/* Secim sayaci + gonder butonu */}
-        {!showRoundReveal && (
-          <View style={styles.submitArea}>
-            <Text style={styles.selectionCount}>
-              {t('games.imposter.selected', {
-                count: selectedIds.size,
-                total: requiredSelections,
-              })}
-            </Text>
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                selectedIds.size !== requiredSelections && styles.submitDisabled,
-              ]}
-              onPress={handleSubmitRound}
-              disabled={selectedIds.size !== requiredSelections || isSubmitting}
-              activeOpacity={0.7}
-            accessibilityRole="button"
-            >
-              <Text style={styles.submitText}>
-                {t('games.imposter.submit_round')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
       <ContextualPaywall {...paywallProps} />
     </GameShell>
   );
 }
 
+/**
+ * Bu ekranda kalan tek stil. Oynanis gorselleri artik
+ * components/games/ImposterPilot/styles.ts icinde.
+ */
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  errorEmoji: {
-    fontSize: 48,
-    marginBottom: Theme.spacing.md,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    marginBottom: Theme.spacing.sm,
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: Theme.spacing.xl,
-  },
+  /** Yanlis roundda kisa kirmizi parlama — tum ekrani kaplar */
   flashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: Colors.error,
     zIndex: 100,
-  },
-  scrollContent: {
-    alignItems: 'center',
-    paddingBottom: Theme.spacing.xl,
-  },
-  completeScroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Theme.spacing.md,
-    paddingBottom: Theme.spacing.lg,
-  },
-
-  // ── Round header ──────────────────────────────────────────────────────
-  roundHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacing.sm,
-    marginTop: Theme.spacing.md,
-    marginBottom: Theme.spacing.sm,
-  },
-  roundBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: Theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.goldHairline,
-  },
-  roundBadgeText: {
-    ...Theme.typography.eyebrow,
-    color: Colors.gold,
-  },
-  roundDifficulty: {
-    ...Theme.typography.eyebrow,
-  },
-
-  // ── Prev rounds chips ─────────────────────────────────────────────────
-  prevRoundsRow: {
-    flexDirection: 'row',
-    gap: Theme.spacing.sm,
-    marginBottom: Theme.spacing.sm,
-  },
-  prevRoundChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Theme.borderRadius.full,
-  },
-  prevRoundCorrect: {
-    borderWidth: 1,
-    borderColor: Colors.goldHairline,
-  },
-  prevRoundWrong: {
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  prevRoundText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  // ── Poster ────────────────────────────────────────────────────────────
-  posterContainer: {
-    alignItems: 'center',
-    marginBottom: Theme.spacing.md,
-  },
-  poster: {
-    width: POSTER_W,
-    height: POSTER_H,
-    borderRadius: Theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.goldHairline,
-  },
-  filmTitle: {
-    ...Theme.typography.serifTitle,
-    fontSize: 20,
-    lineHeight: 26,
-    textAlign: 'center',
-    marginTop: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.lg,
-  },
-
-  // ── Question ──────────────────────────────────────────────────────────
-  question: {
-    ...Theme.typography.eyebrow,
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: 'center',
-    marginBottom: Theme.spacing.md,
-    paddingHorizontal: Theme.spacing.md,
-  },
-
-  // ── Round reveal (ogrenme ani) ─────────────────────────────────────────
-  revealCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacing.md,
-    padding: Theme.spacing.md,
-    marginHorizontal: Theme.spacing.md,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    width: SCREEN_W - Theme.spacing.md * 2,
-  },
-  revealCorrect: {
-    borderColor: Colors.gold,
-  },
-  revealWrong: {
-    borderColor: Colors.error,
-  },
-  revealContent: {
-    flex: 1,
-    gap: 4,
-  },
-  revealTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  revealSubtext: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-    lineHeight: 18,
-  },
-
-  // ── Yuz karti izgarasi (IMDb cast sayfasi hissi) ──────────────────────
-  optionsGrid: {
-    width: SCREEN_W - Theme.spacing.md * 2,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: FACE_GAP,
-  },
-  faceCard: {
-    width: FACE_W,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    overflow: 'hidden',
-    paddingBottom: Theme.spacing.sm,
-  },
-  faceCardDefault: {
-    borderColor: Colors.borderSubtle,
-  },
-  /** Secim = altin cerceve (mockup) */
-  faceCardSelected: {
-    borderColor: Colors.gold,
-  },
-  facePhoto: {
-    width: '100%',
-    height: FACE_PHOTO_H,
-    backgroundColor: Colors.bgCard,
-  },
-  facePhotoEmpty: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  /** Fotograf yoksa bas harfleri — bos kutu birakma */
-  faceInitials: {
-    ...Theme.typography.serifTitle,
-    color: Colors.textTertiary,
-  },
-  faceCheck: {
-    position: 'absolute',
-    top: Theme.spacing.sm,
-    right: Theme.spacing.sm,
-  },
-  faceName: {
-    ...Theme.typography.micro,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: 6,
-    paddingTop: Theme.spacing.sm,
-  },
-  faceNameSelected: {
-    color: Colors.gold,
-    fontWeight: '700',
-  },
-
-  // ── Submit area ───────────────────────────────────────────────────────
-  /** Guven bahsi carpan rozeti — reveal kartinin sagi */
-  factorBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Theme.borderRadius.full,
-  },
-  factorBadgeWin: {
-    backgroundColor: Colors.goldDim,
-  },
-  factorBadgeLose: {
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  factorBadgeText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  confidenceArea: {
-    width: SCREEN_W - Theme.spacing.md * 2,
-    marginTop: Theme.spacing.lg,
-  },
-  submitErrorBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacing.sm,
-    width: SCREEN_W - Theme.spacing.md * 2,
-    marginTop: Theme.spacing.md,
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
-  },
-  submitErrorText: {
-    flex: 1,
-    fontSize: 13,
-    fontWeight: '500',
-    color: Colors.error,
-  },
-  submitArea: {
-    width: SCREEN_W - Theme.spacing.md * 2,
-    marginTop: Theme.spacing.lg,
-    gap: Theme.spacing.sm,
-    alignItems: 'center',
-  },
-  selectionCount: {
-    fontSize: 13,
-    color: Colors.textTertiary,
-  },
-  submitButton: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
-    backgroundColor: Colors.accentPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitDisabled: {
-    opacity: 0.4,
-  },
-  submitText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
-  },
-
-  // ── Complete state ────────────────────────────────────────────────────
-  roundsSummary: {
-    flexDirection: 'row',
-    gap: Theme.spacing.lg,
-    marginBottom: Theme.spacing.lg,
-  },
-  roundDot: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  roundDotLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.textTertiary,
   },
 });

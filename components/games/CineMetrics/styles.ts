@@ -5,13 +5,24 @@ import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+import { gameContentWidth } from '@/constants/gameLayout';
 
 const { width: SCREEN_W } = Dimensions.get('window');
-const GRID_PADDING = Theme.spacing.sm;
+
+/**
+ * Kullanilabilir genislik — GameShell'in verdigi yatay padding dusulmus hali.
+ *
+ * Eskiden burada `GRID_PADDING = Theme.spacing.sm` vardi ve satir genisligi
+ * `SCREEN_W - 16` varsayiliyordu; GameShell ayrica 32px daha dusuyordu.
+ * `guessRow`'da `flexWrap` olmadigi icin fazlalik sarmiyor, KIRPILIYORDU:
+ * 6. sutun (Ulke) ekranin disinda kaliyordu. Sozlesme: constants/gameLayout.ts
+ */
+const CONTENT_W = gameContentWidth(SCREEN_W);
+
 /** Film adı sütunu genişliği — metadata değerleri için daraltıldı */
 const FILM_COL_W = 84;
 /** 6 data sütunu — kalan alan eşit bölünür */
-const DATA_COL_W = (SCREEN_W - GRID_PADDING * 2 - FILM_COL_W) / 6;
+const DATA_COL_W = (CONTENT_W - FILM_COL_W) / 6;
 
 export { FILM_COL_W, DATA_COL_W, SCREEN_W };
 
@@ -50,12 +61,12 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Header info ───────────────────────────────────────────────────────────
+  /** Yatay padding YOK — GameShell veriyor */
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Theme.spacing.sm,
-    paddingHorizontal: GRID_PADDING,
   },
   puzzleNo: {
     ...Theme.typography.eyebrow,
@@ -79,9 +90,11 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Grid ──────────────────────────────────────────────────────────────────
-  gridContainer: {
-    paddingHorizontal: GRID_PADDING,
-  },
+  /**
+   * Yatay padding YOK — GameShell veriyor. DATA_COL_W bu genislige gore
+   * hesaplandi, buraya padding eklenirse 6. sutun yine kirpilir.
+   */
+  gridContainer: {},
   columnHeaders: {
     flexDirection: 'row',
     marginBottom: Theme.spacing.xs,
@@ -112,8 +125,13 @@ export const styles = StyleSheet.create({
     paddingRight: 4,
     justifyContent: 'center',
   },
+  /**
+   * Iki satira kadar sarar. 84px'e uzun film adlari tek satirda sigmiyordu ve
+   * kesiliyordu; hucre yuksekligi 40 oldugu icin iki satir rahat siger.
+   */
   filmNameText: {
     fontSize: 11,
+    lineHeight: 14,
     fontWeight: '600',
     color: Colors.textWhite,
   },
@@ -179,9 +197,9 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Input Area ────────────────────────────────────────────────────────────
+  /** Yatay padding YOK — GameShell veriyor */
   inputArea: {
     paddingTop: Theme.spacing.md,
-    paddingHorizontal: GRID_PADDING,
     paddingBottom: Theme.spacing.sm,
   },
   submitButton: {
@@ -202,11 +220,11 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Completed State ───────────────────────────────────────────────────────
+  /** Yatay padding YOK — GameShell veriyor */
   completedContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Theme.spacing.md,
     gap: Theme.spacing.md,
   },
   completedPoster: {

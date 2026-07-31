@@ -70,9 +70,19 @@ Deno.serve(async (req: Request) => {
 
   const allowed = (cfgRow?.value as DevResetConfig | null)?.user_ids
   if (!Array.isArray(allowed) || !allowed.includes(userId)) {
-    // Kasten ayrintisiz: allowlist'te olmayan icin fonksiyon "yok" gibidir
-    logInfo('dev-reset-games.forbidden', { user_id: userId })
-    return errorResponse('FORBIDDEN', 'Not available', 403)
+    logInfo('dev-reset-games.forbidden', {
+      user_id: userId,
+      config_missing: !Array.isArray(allowed),
+    })
+    // Cagirana KENDI users.id'si donuluyor — baskasinin bilgisi degil, sizinti
+    // degil. Eskiden yanit tamamen ayrintisizdi ve allowlist satiri hic
+    // olusturulmadigi icin buton herkese 403 veriyordu; hangi kimligin
+    // listeye eklenecegi yanittan okunamiyordu.
+    return errorResponse(
+      'FORBIDDEN',
+      `Not allowlisted. Add this users.id to app_config.dev_reset_user_ids: ${userId}`,
+      403,
+    )
   }
 
   // ─── Parse input ───────────────────────────────────────────────────────────

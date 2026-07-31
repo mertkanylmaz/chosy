@@ -485,7 +485,8 @@ export function CineMetricsGame() {
           {guesses.map((guess, rowIdx) => (
             <View key={`guess-${rowIdx}`} style={styles.guessRow}>
               <View style={styles.filmNameCol}>
-                <Text style={styles.filmNameText} numberOfLines={1}>
+                {/* 2 satir: uzun film adlari 84px'e tek satirda sigmiyordu */}
+                <Text style={styles.filmNameText} numberOfLines={2}>
                   {guess.title}
                 </Text>
               </View>

@@ -200,11 +200,15 @@ export default function GamesHubScreen() {
                   : `Bugün silinecek ilerleme bulunamadı.\n\nHesap: ${res.user_id}\n\nOyunlar hâlâ "oynandı" görünüyorsa bu ID allowlist'te olsa bile skorlar başka bir hesaba ait demektir.`,
               );
             } catch (err) {
-              // Sessiz fallback YASAK — hata görünür olmalı
+              // Sessiz fallback YASAK — hata görünür olmalı.
+              // Sunucunun gerçek mesajı gösteriliyor: 403 ise allowlist'e
+              // eklenecek users.id doğrudan bu metinde geliyor.
               logger.error('[hub] Reset başarısız:', err);
               Alert.alert(
                 'Sıfırlanamadı',
-                'Sunucu ilerlemesi silinemedi. Test hesabın allowlist\'te mi?',
+                err instanceof Error && err.message
+                  ? err.message
+                  : 'Sunucu ilerlemesi silinemedi.',
               );
             } finally {
               setIsResetting(false);
@@ -216,7 +220,16 @@ export default function GamesHubScreen() {
   }, [isResetting, loadGameStates, reloadDna]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          // Sabit 83 (tab bar payı) kaldırıldı — hub da tab bar'ın içinde değil
+          paddingBottom: Math.max(insets.bottom, Theme.spacing.sm),
+        },
+      ]}
+    >
       {/* Header — sag butona basis: DEV reset */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -286,17 +299,20 @@ export default function GamesHubScreen() {
 }
 
 const styles = StyleSheet.create({
+  /** paddingTop/paddingBottom runtime'da insets ile veriliyor */
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-    paddingBottom: 83,
   },
+  /** GameShell header'ı ile hizalı — hub→oyun geçişinde başlık zıplamasın */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Theme.spacing.md,
-    height: 48,
+    paddingTop: Theme.spacing.sm,
+    paddingBottom: Theme.spacing.sm,
+    minHeight: 56,
   },
   headerSlot: {
     width: 44,

@@ -5,15 +5,25 @@
  * Progress: altın segment çubuğu (harcanan deneme dolu)
  * Children: oyun içeriği
  * KeyboardAvoidingView: keyboard açıldığında içerik yukarı kayar
- * paddingBottom: 83 (tab bar clearance)
+ *
+ * ── YERLEŞİM SÖZLEŞMESİ ───────────────────────────────────────────────────
+ * Yatay 16px padding'i BU bileşen verir (`styles.content`). Oyunlar kendi
+ * içeriklerine `paddingHorizontal` EKLEMEZ ve genişlik hesabında
+ * `gameContentWidth()` kullanır — ayrıntı: constants/gameLayout.ts.
+ *
+ * Alt boşluk `insets.bottom`'dan gelir. Eskiden sabit `paddingBottom: 83`
+ * vardı (tab bar payı), ama oyun ekranları root Stack'te — tab bar yok.
+ * O sabit 83px ölü alan yaratıp içeriği dikeyde sıkıştırıyordu.
  */
 import React from 'react';
 import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { CaretLeft } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 
@@ -37,6 +47,26 @@ interface GameShellProps {
   children: React.ReactNode;
   /** Progress göstergesini gizle (opsiyonel) */
   hideProgress?: boolean;
+  /**
+   * İçerik alanının yatay padding'i. Varsayılan `true`.
+   *
+   * `false` verildiğinde içerik tam kanamalı (edge-to-edge) olur ve padding
+   * sorumluluğu ekrana geçer — tam genişlik portre/poster ızgaraları için.
+   */
+  contentPadding?: boolean;
+  /**
+   * Header ve içeriğin ARKASINA çizilen ambiyans katmanı (gradyan, parıltı).
+   * Mutlak konumlu, dokunma almaz.
+   *
+   * Verilmezse ekran düz `Colors.background` kalır — beş oyunun davranışı
+   * değişmez. Şu an yalnız ImposterPilot kullanıyor (bkz. pilotTokens.ts).
+   */
+  background?: React.ReactNode;
+  /**
+   * Harcanan ilerleme segmentlerinin gradyanı. Verilmezse düz altın kullanılır
+   * (Festival Layer varsayılanı).
+   */
+  progressGradient?: readonly [string, string];
 }
 
 /**
@@ -51,6 +81,9 @@ export function GameShell({
   maxAttempts,
   children,
   hideProgress = false,
+  contentPadding = true,
+  background,
+  progressGradient,
 }: GameShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -58,10 +91,38 @@ export function GameShell({
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          // Sabit 83 (tab bar payı) kaldırıldı — oyunlar tab bar'ın içinde değil.
+          // Gesture bar'ı olmayan cihazlarda insets.bottom 0 gelir, o yüzden taban.
+          paddingBottom: Math.max(insets.bottom, Theme.spacing.sm),
+        },
+      ]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 83 : 0}
+      // paddingBottom 83 iken klavye telafisi de 83 idi; padding gidince
+      // offset de gitmeli, yoksa klavye açılınca içerik 83px fazla kayar.
+      keyboardVerticalOffset={0}
     >
+      {/*
+        Ambiyans — her şeyin arkasında, dokunma almaz.
+        Negatif inset'ler: mutlak konumlu çocuk ebeveynin PADDING kenarına göre
+        yerleşir, yani safe-area padding'i kadar içeride başlar. Gradyanın
+        durum çubuğunun ve gesture bar'ın altını da boyaması gerekiyor.
+      */}
+      {background ? (
+        <View
+          style={[
+            styles.backdrop,
+            { top: -insets.top, bottom: -Math.max(insets.bottom, Theme.spacing.sm) },
+          ]}
+          pointerEvents="none"
+        >
+          {background}
+        </View>
+      ) : null}
+
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -101,17 +162,33 @@ export function GameShell({
             total: maxAttempts,
           })}
         >
-          {Array.from({ length: maxAttempts }).map((_, i) => (
-            <View
-              key={i}
-              style={[styles.segment, i < currentAttempt ? styles.segmentUsed : styles.segmentEmpty]}
-            />
-          ))}
+          {Array.from({ length: maxAttempts }).map((_, i) => {
+            const used = i < currentAttempt;
+            if (used && progressGradient) {
+              return (
+                <LinearGradient
+                  key={i}
+                  colors={progressGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.segment}
+                />
+              );
+            }
+            return (
+              <View
+                key={i}
+                style={[styles.segment, used ? styles.segmentUsed : styles.segmentEmpty]}
+              />
+            );
+          })}
         </View>
       )}
 
-      {/* Content */}
-      <View style={styles.content}>{children}</View>
+      {/* Content — padding sözleşmesi: yatay boşluğu burası verir */}
+      <View style={contentPadding ? styles.content : styles.contentFlush}>
+        {children}
+      </View>
     </KeyboardAvoidingView>
   );
 }
