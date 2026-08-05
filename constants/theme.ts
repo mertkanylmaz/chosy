@@ -13,9 +13,16 @@ import { Colors } from './Colors';
  */
 
 // ─── Font Family Constants ──────────────────────────────────────────────────
+/**
+ * Sistem fontu. Adı tarihsel bir yanlış anlamadan geliyor — **Inter yüklenmiyor**,
+ * repoda Inter TTF yok. iOS'ta bu doğrudan SF Pro'dur, yani
+ * `.claude/apple-design-standard-2026.md` §2'nin "SF Pro kullan" maddesi
+ * zaten karşılanmış durumda (§6.5, no-op).
+ * Adı `Theme.fonts.inter` üzerinden geniş kullanımda olduğu için değiştirilmedi.
+ */
 const FONT_INTER = Platform.select({
-  ios: 'System',        // San Francisco ≈ Inter on iOS
-  android: 'sans-serif', // Roboto ≈ Inter on Android
+  ios: 'System',        // San Francisco — SF Pro
+  android: 'sans-serif', // Roboto
   default: undefined,
 });
 const FONT_DISPLAY = 'PlayfairDisplay_700Bold';
@@ -34,15 +41,35 @@ export const Theme = {
   },
 
   // ─── Border Radius (synced with DESIGN_SYSTEM.md) ──────────────────────
+  // Not: bağlayıcı olan bu merdiven DEĞİL, aşağıdaki `concentric` kuralıdır.
+  // Merdiven yalnız başlangıç değerlerini verir.
   borderRadius: {
+    xs: 4,
     sm: 8,
     md: 12,
     lg: 16,
     xl: 24,
+    xxl: 28,
     full: 9999,
     /** @deprecated Use 'full' — kept for backward compat */
     pill: 9999,
   },
+
+  /**
+   * Concentric geometri — Apple 2026 "Harmony" prensibi.
+   * İç içe yüzeylerin köşeleri eş merkezli görünmeli: `iç = dış − padding`.
+   *
+   * Tipik cam kullanımı: dış node radius + 1px kenarlık taşır, iç node
+   * `overflow:'hidden'` ile `concentric(dış, 1)` alır.
+   *
+   * @param outer   Dış container'ın border radius'u
+   * @param padding Dış ile iç arasındaki boşluk (padding veya borderWidth)
+   * @returns İç elemanın alması gereken radius (asla 0'ın altına inmez)
+   *
+   * @example Theme.concentric(Theme.borderRadius.lg, Theme.spacing.sm) // 16 − 8 = 8
+   */
+  concentric: (outer: number, padding: number): number =>
+    Math.max(0, outer - padding),
 
   // ─── Typography ─────────────────────────────────────────────────────────
   // Rule (v3 — Festival Layer, 2026-07-29):
@@ -96,6 +123,7 @@ export const Theme = {
       lineHeight: 22,
       fontWeight: '600' as const,
       fontFamily: FONT_INTER,
+      letterSpacing: -0.4,
       color: Colors.textPrimary,
     },
     /** Main content, descriptions — System Regular 15 */
@@ -104,6 +132,7 @@ export const Theme = {
       lineHeight: 22,
       fontWeight: '400' as const,
       fontFamily: FONT_INTER,
+      letterSpacing: -0.2,
       color: Colors.textPrimary,
     },
     /** Meta info, timestamps, year, director — System Regular 13 */
@@ -112,6 +141,7 @@ export const Theme = {
       lineHeight: 18,
       fontWeight: '400' as const,
       fontFamily: FONT_INTER,
+      letterSpacing: -0.1,
       color: Colors.textSecondary,
     },
     /** Badges, chips, tags, micro labels — System Medium 11 */

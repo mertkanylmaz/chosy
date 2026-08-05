@@ -154,6 +154,27 @@ export const Colors = {
   /** Accent border — amber tint */
   borderAccent: 'rgba(232,168,56,0.30)',
 
+  // ─── Chrome Cam Katmanı (Liquid Glass yaklaşımı) ───────────────────────────
+  // Karar: 1 Ağu 2026. Cam YALNIZ kontrol/navigasyon katmanında kullanılır —
+  // asla içerik yüzeyinde (kart, poster, liste). İçerik `bgCard` + `goldHairline`
+  // kalır (DESIGN_SYSTEM.md Festival Layer Kural 5).
+  // Gerekçe + ImposterPilot RED verdict'i: .claude/apple-design-standard-2026.md §6
+  // Tek tüketici: components/games/GlassSurface/
+  /** BlurView'ın ÜSTÜNE binen ince beyaz yıkama — camın kendi kalınlığı */
+  chromeGlassSurface: 'rgba(255,255,255,0.06)',
+  /** Cam kenarı — üstten gelen ışığın yakaladığı hat */
+  chromeGlassBorder: 'rgba(255,255,255,0.16)',
+  /** BlurView yokken düşülen opak zemin — bgCard (#12121A) tabanlı */
+  chromeGlassFallback: 'rgba(18,18,26,0.92)',
+
+  /**
+   * Başarı yıkaması — `greenBright` (#22C55E) tabanlı düşük alfa zemin.
+   * Festival Layer Kural 1: kart/çip yüzeyi düz semantik renge BOYANMAZ;
+   * geri bildirim kenarlık + metin + bu yıkama ile verilir.
+   * Sarı karşılığı zaten var: `goldSeal`.
+   */
+  successWash: 'rgba(34,197,94,0.14)',
+
   // ─── Profile Gradients ──────────────────────────────────────────────────────
   /** Profile header gradient start — amber tint */
   profileHeaderStart: 'rgba(232,168,56,0.25)',

@@ -19,6 +19,28 @@ export const SOFT_SPRING = {
   stiffness: 120,
 } as const;
 
+/**
+ * Dokunma geri bildirimi — tuş, çip, buton basışı.
+ * Apple 2026 motion standardı: damping oranı ~0.85, sabit ease-in-out değil.
+ * Kaynak: .claude/apple-design-standard-2026.md §2 › Motion
+ */
+export const PRESS_SPRING = {
+  damping: 18,
+  stiffness: 220,
+  mass: 0.9,
+} as const;
+
+/**
+ * İçerik açılışı — hücre flip, harf açılışı, reveal anı.
+ * Festival Layer Kural 6 hâlâ geçerli: ekran başına en fazla BİR anlamlı
+ * animasyon. Bu config o tek animasyonun kalitesini değiştirir, sayısını değil.
+ */
+export const REVEAL_SPRING = {
+  damping: 16,
+  stiffness: 140,
+  mass: 1,
+} as const;
+
 /** Standart timing — renk, opaklık animasyonları */
 export const TIMING_CONFIG = {
   duration: 300,
