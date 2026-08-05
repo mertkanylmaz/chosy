@@ -114,6 +114,49 @@ tip hatası vermeden sessizce eksik kalır.
 
 ---
 
+## `generate-puzzles` — `db()` tiplenmemiş, `upsert`'te `as never`
+
+`generate-puzzles/index.ts:97` istemciyi şöyle tutuyor:
+
+```ts
+let _db: ReturnType<typeof createClient> | null = null
+```
+
+`ReturnType<typeof createClient>` jenerikleri **varsayılanlarıyla** örnekliyor
+ve `never` şeklindeki varyantı üretiyor — bu, `createClient(url, key)`'in
+gerçekte döndürdüğü tip değil. Sonuç: tablo satır tipleri `never`'a çöküyor.
+
+Görünen etkiler:
+
+| Satır | Belirti |
+|---|---|
+| `:453`, `:467` | `.update({...})` → "argument of type … is not assignable to `never`" |
+| `:204`, `:219` | `data?.value` / `minRow.date` → "property does not exist on type `never`" |
+| `:1470` | `.upsert(row as never, …)` — cast **bu yüzden** var |
+
+`insert()` overload'u bu durumu kazara kurtarıyor, `upsert()` kurtarmıyor;
+onarım yolu (`?force=1`) eklenirken cast'siz hâli baseline'ı 45 → 46'ya
+çıkarıyordu.
+
+**Çözüm — `winback-sequencer/index.ts:100` deseni:**
+
+```ts
+function makeServiceClient(url: string, key: string) {
+  return createClient(url, key)
+}
+type ServiceClient = ReturnType<typeof makeServiceClient>
+```
+
+Tip gerçek bir çağrı yerinden çıkarılıyor, `never` varyantı hiç oluşmuyor.
+`generate-puzzles`'a uygulandığında yukarıdaki beş belirti birlikte kapanır
+ve `as never` cast'i silinir.
+
+**Risk:** Cast, `daily_puzzles`'a yazılan satırın şeklini tip denetiminden
+tamamen çıkarıyor. Bugün doğru; yarın bir kolon adı değişirse derleyici
+uyarmaz, hata çalışma anında Sentry'ye düşer.
+
+---
+
 ## Tasarım token
 
 Amber `#E8A838` üç ayrı anahtarda tekrarlıyor: `Colors.accentPrimary`,

@@ -383,9 +383,15 @@ export function SpotlightGame() {
     return map;
   }, [revealed]);
 
-  /** Baslikta cikan harfler — klavyede altin isaretlenir */
+  /**
+   * Baslikta cikan harfler — klavyede altin isaretlenir.
+   *
+   * Locale'siz `toUpperCase()`: sunucu da ayni sekilde buyutuyor
+   * (submit-guess:256/492). `tr-TR` ile 'i' → 'İ' oluyor ve klavyedeki 'I'
+   * tusu acilmis harfle eslesmiyordu, tus altin isaretlenmiyordu.
+   */
   const hitLetters = useMemo(
-    () => new Set(revealed.map((r) => r.ch.toLocaleUpperCase('tr-TR'))),
+    () => new Set(revealed.map((r) => r.ch.toUpperCase())),
     [revealed],
   );
 
@@ -533,7 +539,8 @@ export function SpotlightGame() {
                   <View key={index} style={[styles.slot, ch != null && styles.slotRevealed]}>
                     {ch != null ? (
                       <Animated.Text entering={FadeInUp.duration(250)} style={styles.slotText}>
-                        {ch.toLocaleUpperCase('tr-TR')}
+                        {/* Locale'siz — sunucu ile ayni buyutme, bkz. hitLetters */}
+                        {ch.toUpperCase()}
                       </Animated.Text>
                     ) : null}
                   </View>

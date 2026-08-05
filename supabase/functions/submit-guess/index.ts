@@ -26,6 +26,7 @@ import {
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildWhyThisMovie } from '../_shared/whyThisMovie.ts'
+import { findLetterPositions, normalizeLetter } from '../_shared/spotlightLetters.ts'
 import {
   calculateCineMetricsFeedback,
   calculateLoglineFeedback,
@@ -253,8 +254,9 @@ Deno.serve(async (req: Request) => {
     // Eski istemciler gondermeye devam edebilir, yok sayilir.
     // FadeIn hint reveal
     hintOrder = body.hint_order != null ? Number(body.hint_order) : undefined
+    // Normalizasyon ve eslestirme tek kaynakta: _shared/spotlightLetters.ts
     spotlightLetter = typeof body.spotlight_letter === 'string'
-      ? body.spotlight_letter.trim().toLocaleUpperCase('tr-TR')
+      ? normalizeLetter(body.spotlight_letter)
       : undefined
   } catch {
     return errorResponse('INVALID_INPUT', 'Invalid request body', 400)
@@ -487,10 +489,7 @@ Deno.serve(async (req: Request) => {
 
       // Pozisyonlar baslik karakter dizisi uzerinden — maske ile ayni indeksleme
       const titleChars = [...(solFilm.title as string)]
-      const positions: number[] = []
-      titleChars.forEach((ch, i) => {
-        if (ch.toLocaleUpperCase('tr-TR') === spotlightLetter) positions.push(i)
-      })
+      const positions = findLetterPositions(solFilm.title as string, spotlightLetter)
 
       const hit = positions.length > 0
       const updatedLetters = [...triedLetters, spotlightLetter]

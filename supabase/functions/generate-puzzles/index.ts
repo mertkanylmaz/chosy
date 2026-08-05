@@ -8,6 +8,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { buildTitleMask } from '../_shared/spotlightLetters.ts'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -741,55 +742,68 @@ function pickDecoys(
  * submit-guess'te solution_ref uzerinden yapilir.
  */
 
-/** Maske tokeni — istemci yalnizca bu yapiyi gorur, harfleri gormez */
-interface TitleMaskToken {
-  /** 'slot' = tahmin edilecek karakter · 'sep' = gorunur ayrac */
-  t: 'slot' | 'sep'
-  /** Yalnizca 'sep' icin: gorunen karakter (bosluk, tire, iki nokta...) */
-  c?: string
-}
-
 /**
- * Basligi maskeye cevirir.
- *
- * Alfanumerik karakterler tahmin edilecek yuva olur; noktalama ve bosluk
- * gorunur kalir (hangman gelenegi — kelime sinirlari gorunur).
+ * Maske uretimi ve karakter siniflandirmasi `_shared/spotlightLetters.ts`te —
+ * submit-guess'teki harf eslestirmesiyle ayni kaynak. Ikisi ayri yerde
+ * yasadiginda 'slot' sayilan bir karakter eslestirmede acilamiyordu.
  */
-function buildTitleMask(title: string): { tokens: TitleMaskToken[]; letterCount: number } {
-  const tokens: TitleMaskToken[] = []
-  let letterCount = 0
-  for (const ch of title) {
-    if (/[\p{L}\p{N}]/u.test(ch)) {
-      tokens.push({ t: 'slot' })
-      letterCount++
-    } else {
-      tokens.push({ t: 'sep', c: ch })
-    }
-  }
-  return { tokens, letterCount }
-}
-
-function spotlightData(solution: FilmRow): Record<string, unknown> | null {
+async function spotlightData(solution: FilmRow): Promise<Record<string, unknown> | null> {
   // Gorsel olmadan oyun yok — afise dusmek FadeIn ile ayni ekrani uretirdi
   if (!solution.backdrop_url) {
     console.warn(`[gen] Spotlight reject: backdrop yok — ${solution.title}`)
     return null
   }
 
-  const { tokens, letterCount } = buildTitleMask(solution.title)
+  const { tokens, slotCount, hasUnreachable, unreachableChars } = buildTitleMask(solution.title)
 
-  // Cok kisa baslik tahmin edilemeyecek kadar acik, cok uzun baslik ekrana sigmaz
-  if (letterCount < 3 || letterCount > 30) {
-    console.warn(`[gen] Spotlight reject: baslik uzunlugu ${letterCount} — ${solution.title}`)
+  // Klavyede (A-Z) karsiligi olmayan harf varsa bulmaca oynanamaz: o yuva
+  // hicbir tusla acilmaz, blur hicbir zaman sifira inmez. Reddedilir.
+  if (hasUnreachable) {
+    console.warn(
+      `[gen] Spotlight reject: acilamaz karakter [${unreachableChars.join(' ')}] — ${solution.title}`,
+    )
     return null
   }
 
-  return {
+  // Sinir YALNIZCA slot sayisina: rakamlar bastan gorunur oldugu icin
+  // zorluga katkisi yok, "Detective Chinatown 1900" gibi basliklar
+  // eskiden sirf rakamlarla uzun sayiliyordu.
+  if (slotCount < 3 || slotCount > 30) {
+    console.warn(`[gen] Spotlight reject: slot sayisi ${slotCount} — ${solution.title}`)
+    return null
+  }
+
+  const pd = {
     v: 3,
     backdrop_url: solution.backdrop_url,
     title_mask: tokens,
-    letter_count: letterCount,
+    letter_count: slotCount,
   }
+
+  // ─── Son kontrol: letter_count === maskedeki slot sayisi ─────────────────
+  //
+  // letter_count istemcide blur'un paydasi. Sapmasi demek, oyuncu TUM
+  // harfleri acsa bile gorselin netlesmemesi demek — sessiz, oyunun icinden
+  // fark edilemeyen bir bozulma (2026-08-07 "Miracle in Cell No. 7" boyle
+  // uretilmisti: letter_count 16, gercek slot 15).
+  //
+  // Bozuk bulmaca uretmektense o gun bulmaca olmasin: null donuluyor,
+  // cagiran taraf bu filmi atlayip bir sonrakini deniyor.
+  const maskSlotCount = tokens.filter((tk) => tk.t === 'slot').length
+  if (pd.letter_count !== maskSlotCount) {
+    const msg =
+      `[gen] Spotlight invariant IHLALI: letter_count=${pd.letter_count} ` +
+      `ama title_mask'te ${maskSlotCount} slot var — ${solution.title}`
+    console.error(msg)
+    await sentryCapture({
+      message: msg,
+      level: 'fatal',
+      tags: { function: 'generate-puzzles', game: 'spotlight' },
+    })
+    return null
+  }
+
+  return pd
 }
 
 // ─── Detective puzzle_data (12 film + entropy-based decoys) ───────────────
@@ -1327,6 +1341,12 @@ async function genOne(
   rpt: Report,
   usedInRun: Set<string>,
   theme: ThemeRow | null,
+  /**
+   * true ise o tarihin mevcut satiri UZERINE YAZILIR (upsert).
+   * Yalnizca `?date=...&force=1` ile gelir — normal gunluk uretimde daima
+   * false, yani var olan bulmaca asla ezilmez.
+   */
+  force = false,
 ): Promise<boolean> {
   const s = await seed(dateStr, game)
   const dow = new Date(dateStr + 'T00:00:00Z').getUTCDay()
@@ -1363,7 +1383,7 @@ async function genOne(
       redWords = res.redactionWords
     } else if (game === 'spotlight') {
       // V3: decoy havuzu gerekmiyor — tek gorsel + baslik maskesi
-      const spData = spotlightData(f)
+      const spData = await spotlightData(f)
       if (!spData) { rpt.rejected++; rpt.per_game[game].rejected++; continue }
       puzzleData = spData
     } else if (game === 'detective') {
@@ -1441,7 +1461,7 @@ async function genOne(
       : game === 'detective' ? 6
       : 6
 
-    const { error } = await db().from('daily_puzzles').insert({
+    const row = {
       date: dateStr,
       game_type: game,
       film_id: f.tmdb_id,
@@ -1452,7 +1472,18 @@ async function genOne(
       max_attempts: maxAttempts,
       clues: cluesValue,
       theme_matched: isThemed,
-    })
+    }
+
+    // force: mevcut satiri UZERINE yazar (UNIQUE(date, game_type) uzerinden).
+    // Bozuk uretilmis bir bulmacayi elle UPDATE etmeden veya silip arada
+    // bosluk birakmadan yenilemenin tek yolu. Normal akista insert.
+    const { error } = force
+      // `as never`: db() tiplenmemis createClient donduruyor, tablo satir
+      // tipleri `never`e cokuyor. Ayni sebeple :453/:467'deki update()'ler de
+      // hata veriyor (mevcut baseline). insert() overload'u kurtariyor,
+      // upsert() kurtarmiyor — cast yalnizca bu bosluk icin.
+      ? await db().from('daily_puzzles').upsert(row as never, { onConflict: 'date,game_type' })
+      : await db().from('daily_puzzles').insert(row)
 
     if (error) {
       if (error.code === '23505') return true // zaten var
@@ -1492,7 +1523,7 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
     if (game === 'cinemetrics') {
       pd = cmData(f)
     } else if (game === 'spotlight') {
-      const spData = spotlightData(f)
+      const spData = await spotlightData(f)
       if (!spData) continue
       pd = spData
     } else if (game === 'detective') {
@@ -1598,6 +1629,41 @@ serve(async (req: Request) => {
   // Opsiyonel: sadece belirli oyunu çalıştır (?game=cinemetrics)
   const url = new URL(req.url)
   const onlyGame = url.searchParams.get('game') as GameType | null
+
+  /**
+   * Onarim modu: `?date=YYYY-MM-DD&force=1`
+   *
+   * Bozuk uretilmis tek bir gunu, satiri silmeden ve elle UPDATE etmeden
+   * yenilemek icin. `force=1` olmadan `date` yalnizca hedefi daraltir,
+   * mevcut satir korunur (missingDates ile ayni davranis).
+   *
+   * `game` ile birlikte kullanilmasi beklenir — aksi halde o tarihin TUM
+   * oyunlari yeniden uretilir, istenmeyen yan etki olur.
+   */
+  const dateParam = url.searchParams.get('date')
+  const forceParam = url.searchParams.get('force') === '1'
+
+  if (dateParam != null && !/^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+    return new Response(
+      JSON.stringify({ error: 'INVALID_DATE', message: 'date must be YYYY-MM-DD' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+  if (forceParam && dateParam == null) {
+    return new Response(
+      JSON.stringify({ error: 'FORCE_WITHOUT_DATE', message: 'force=1 requires date' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+  if (forceParam && onlyGame == null) {
+    return new Response(
+      JSON.stringify({ error: 'FORCE_WITHOUT_GAME', message: 'force=1 requires game' }),
+      { status: 400, headers: { 'Content-Type': 'application/json' } },
+    )
+  }
+
+  /** Uzerine yazma yalnizca force=1 ile — `date` tek basina guvenli */
+  const forceDate = forceParam ? dateParam : null
   const allGames: GameType[] = ['cinemetrics', 'logline', 'spotlight', 'imposter', 'fadein', 'quoted', 'detective']
 
   // Devre disi oyunlar icin uretim denenmez — quoted'in tukenmis replik havuzu
@@ -1661,8 +1727,16 @@ serve(async (req: Request) => {
     for (const game of games) {
       console.log(`\n[gen] ═══ ${game.toUpperCase()} ═══`)
 
-      const missing = await missingDates(game)
-      console.log(`[gen] Eksik: ${missing.length} tarih`)
+      // force ile hedef tarih zaten dolu oldugu icin missingDates onu
+      // dondurmez; hedef listesi dogrudan parametreden kurulur.
+      const missing = dateParam != null
+        ? (forceDate != null ? [dateParam] : (await missingDates(game)).filter(d => d === dateParam))
+        : await missingDates(game)
+      console.log(
+        forceDate != null
+          ? `[gen] ONARIM modu: ${game}/${forceDate} üzerine yazılacak`
+          : `[gen] Eksik: ${missing.length} tarih`,
+      )
       if (missing.length === 0) continue
 
       // Quoted: replik havuzundan seçim — ayrı akış
@@ -1728,8 +1802,17 @@ serve(async (req: Request) => {
       }
 
       for (const d of missing) {
-        const ok = await genOne(game, d, pool, rpt, usedInRun, themes.get(d) ?? null)
+        const ok = await genOne(game, d, pool, rpt, usedInRun, themes.get(d) ?? null, forceDate != null)
         if (!ok) {
+          // force ile tek tarih hedeflenmisse acil havuza dusulmez: acil
+          // bulmacalar `date: null` ile duruyor, hedef tarihi doldurmazlar
+          // ve bozuk satir yerinde kalirdi. Gorunur hata birakilir.
+          if (forceDate != null) {
+            const msg = `${game}/${d}: force ile üretilemedi — mevcut satır DEĞİŞMEDİ`
+            console.error(`[gen] ${msg}`)
+            rpt.errors.push(msg)
+            continue
+          }
           console.warn(`[gen] ${game}/${d}: acil havuza düşülüyor`)
           const eOk = await useEmergency(game, d, rpt)
           if (!eOk) rpt.errors.push(`${game}/${d}: üretilemedi`)
