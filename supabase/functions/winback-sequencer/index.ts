@@ -16,6 +16,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { sentryCapture } from '../_shared/sentry.ts'
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -87,6 +89,75 @@ const WINBACK_STAGES: Record<string, { minDays: number; maxDays: number; stage: 
   },
 }
 
+/**
+ * Service-role client factory.
+ *
+ * Exists so `ServiceClient` can be inferred from a real call site.
+ * `ReturnType<typeof createClient>` instantiates the generics with their
+ * defaults and yields the `never`-shaped variant, which does not match what
+ * `createClient(url, key)` actually returns.
+ */
+function makeServiceClient(url: string, key: string) {
+  return createClient(url, key)
+}
+
+type ServiceClient = ReturnType<typeof makeServiceClient>
+
+/**
+ * Grant a bonus search, reporting every failure to Sentry.
+ *
+ * Previously this was `await db.rpc(...).catch(() => {})`. That never worked:
+ * PostgrestFilterBuilder is a PromiseLike, not a Promise — it has `then` but no
+ * `catch`. The expression threw `TypeError: .catch is not a function` on every
+ * day14/day60 user, aborting the whole sequencer run rather than being the
+ * "non-critical" no-op the comment claimed.
+ *
+ * Two failure modes are handled separately because the RPC signals them
+ * differently: PostgREST returns `{ error }` for query-level failures and only
+ * throws on transport/runtime errors. Neither may be swallowed silently
+ * (CLAUDE.md Hard Rule 5).
+ *
+ * The grant stays advisory — a failure is logged, not fatal, so one user's
+ * failed bonus does not stop the remaining win-back notifications.
+ *
+ * @param db      Service-role Supabase client
+ * @param userId  Recipient
+ * @param reason  Audit reason written to the ledger (`winback_day14` etc.)
+ * @param step    Sentry tag identifying the call site
+ */
+async function grantBonusSearch(
+  db: ServiceClient,
+  userId: string,
+  reason: string,
+  step: string,
+): Promise<void> {
+  try {
+    const { error } = await db.rpc('grant_bonus_searches', {
+      p_user_id: userId,
+      p_amount: 1,
+      p_reason: reason,
+    })
+
+    if (error) {
+      await sentryCapture({
+        message: `[winback-sequencer] grant_bonus_searches failed: ${error.message}`,
+        level: 'warning',
+        tags: { fn: 'winback-sequencer', step },
+        extra: { user_id: userId, reason, code: error.code },
+      })
+    }
+  } catch (err) {
+    await sentryCapture({
+      message: `[winback-sequencer] grant_bonus_searches threw: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+      level: 'error',
+      tags: { fn: 'winback-sequencer', step },
+      extra: { user_id: userId, reason },
+    })
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
@@ -95,7 +166,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const db = createClient(supabaseUrl, serviceKey)
+    const db = makeServiceClient(supabaseUrl, serviceKey)
 
     const now = new Date()
     let processed = 0
@@ -158,20 +229,12 @@ serve(async (req) => {
         // ── Stage-specific actions ────────────────────────────────
         if (key === 'day14') {
           // Grant 1 bonus search
-          await db.rpc('grant_bonus_searches', {
-            p_user_id: user.id,
-            p_amount: 1,
-            p_reason: 'winback_day14',
-          }).catch(() => { /* Non-critical */ })
+          await grantBonusSearch(db, user.id, 'winback_day14', 'day14_bonus_search')
         }
 
         if (key === 'day60') {
           // Grant 1 free search for comeback
-          await db.rpc('grant_bonus_searches', {
-            p_user_id: user.id,
-            p_amount: 1,
-            p_reason: 'winback_day60',
-          }).catch(() => { /* Non-critical */ })
+          await grantBonusSearch(db, user.id, 'winback_day60', 'day60_bonus_search')
         }
 
         notified++

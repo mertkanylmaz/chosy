@@ -29,6 +29,8 @@
  * render eder — oyun ekranı ambiyanstan haberdar değildir.
  */
 
+import { Colors } from './Colors';
+
 /**
  * Oyun kimlikleri. Bu union eskiden üç yerde ayrı ayrı yazılıydı
  * (`QuickResult/index.tsx`, `ShareCards/GameShareCard.tsx`, `ResultCard/index.tsx`);
@@ -86,7 +88,7 @@ export interface GameTheme {
  * (CLAUDE.md Oyun Sistemi Hard Rule 5).
  */
 export const DEFAULT_GAME_THEME: GameTheme = {
-  accent: '#E8A838',
+  accent: Colors.accentPrimary,
   accentOn: '#0A0A0F',
   accentDim: 'rgba(232,168,56,0.15)',
   accentGlow: 'rgba(232,168,56,0.55)',
@@ -141,7 +143,7 @@ export const GAME_THEMES: Record<GameType, GameTheme> = {
    * ışıktan gelir: tek oyun `beam` varyantı kullanır, yanal huzme çizer.
    */
   spotlight: {
-    accent: '#E8A838',
+    accent: Colors.accentPrimary,
     accentOn: '#0A0A0F',
     accentDim: 'rgba(232,168,56,0.15)',
     accentGlow: 'rgba(232,168,56,0.60)',
