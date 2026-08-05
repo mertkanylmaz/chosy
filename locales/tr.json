@@ -1011,7 +1011,8 @@
       "try_tomorrow": "Yarin yeni bir film seni bekliyor",
       "legend_green": "Tam eslesme",
       "legend_yellow": "Yakin",
-      "legend_arrows": "Daha yuksek / dusuk"
+      "legend_arrows": "Daha yuksek / dusuk",
+      "attempts_left": "%{count} hak kaldi"
     },
     "spotlight": {
       "title": "Spotlight",

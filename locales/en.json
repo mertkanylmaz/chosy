@@ -1011,7 +1011,8 @@
       "try_tomorrow": "A new film awaits you tomorrow",
       "legend_green": "Exact match",
       "legend_yellow": "Close",
-      "legend_arrows": "Higher / lower"
+      "legend_arrows": "Higher / lower",
+      "attempts_left": "%{count} guesses left"
     },
     "spotlight": {
       "title": "Spotlight",
