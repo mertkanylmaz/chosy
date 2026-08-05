@@ -1,9 +1,36 @@
 /**
  * CineMetrics — Wordle-tarzı film tahmin oyunu.
  *
- * 6 sütun (Yıl, Tür, Yönetmen, Puan, Süre, Ülke) × max 6 tahmin.
+ * 6 öznitelik (Yıl, Tür, Yönetmen, Puan, Süre, Ülke) × max 6 tahmin.
  * Feedback sunucudan gelir (green/yellow/gray + yön okları).
  * Çözüm istemciye İNMEZ — submit-guess Edge Function doğrulama yapar.
+ *
+ * ── YERLEŞİM (1 Ağu 2026 — Apple 2026 standardı) ──────────────────────────
+ * Eskiden 6 sabit ~46px sütunlu bir tablo idi: 9px metin, kolon başlıkları,
+ * düz doygun renk dolguları. "Çok kolon = çok bilgi" tuzağı.
+ *
+ * Şimdi her tahmin bir KART: üstte film adı (serif), altında 3'erli sarılan
+ * öznitelik çipleri. Etiket kolon başlığında değil çipin içinde, yani 9px
+ * tipografiye gerek kalmıyor.
+ *
+ * Çipler yatay KAYDIRILMAZ, SARILIR (wrap). Yatay kaydırma her kartın kaydırma
+ * pozisyonunu bağımsız yapıp sütun karşılaştırmasını bozardı — oyunun çekirdek
+ * mekaniği tam olarak "aynı özniteliği tahminler arasında karşılaştırmak".
+ * Sabit 3'lü ızgara hizalamayı korur.
+ *
+ * ── TEK SAYFA (Festival Layer Kural 7) ────────────────────────────────────
+ * Oynanışta `ScrollView` yok. Ama altı açık kart sığmıyor:
+ *   6 kart × 148px ≈ 890px   ·   kullanılabilir alan ≈ 480px
+ *
+ * Çözüm: **son tahmin** tam kart olarak durur (dikkat orada), önceki tahminler
+ * tek satırlık geçmiş şeridine iner — film adı + 6 renk noktası. Karşılaştırma
+ * renk deseninden okunur; bu Wordle'ın kendi çözümü ve 9px tipografiye geri
+ * dönmeden sığar.
+ *
+ * Aksiyon barı da yüzmeyi bıraktı: ekran kaymadığı için altından geçecek içerik
+ * yok, cam orada Kural 5'in derinlik testini geçmezdi.
+ *
+ * Ayrıntı: .claude/apple-design-standard-2026.md §6 · DESIGN_SYSTEM.md Kural 7
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -15,12 +42,14 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withSpring,
   withDelay,
   withSequence,
   runOnJS,
   FadeInUp,
 } from 'react-native-reanimated';
 import { hapticLight, hapticMedium } from '@/utils/haptics';
+import { REVEAL_SPRING } from '@/constants/animations';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -32,7 +61,7 @@ import {
   trackResultCardViewed,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitGuess } from '@/services/gameApi';
-import { GameShell } from '@/components/games/GameShell';
+import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
@@ -46,93 +75,156 @@ import type {
   WhyThisMovieText,
 } from '@/types/game';
 
-import { styles, DATA_COL_W, FILM_COL_W } from './styles';
+import { createStyles } from './styles';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type ScreenState = 'loading' | 'playing' | 'completed';
 
-/** Feedback sütun anahtarları (grid sırası) */
+/** Bu ekranin oyun kimligi — tema ve GameShell ayni sabiti okur,
+ *  ikisi birbirinden kayamaz. */
+const GAME_TYPE = 'cinemetrics' as const;
+
+/** Feedback öznitelik anahtarları (çip sırası — kartlar arası sabit) */
 const COLUMN_KEYS: (keyof FeedbackRow)[] = [
-  'year', 'genres', 'director', 'rating', 'runtime', 'country',
+  'year',
+  'genres',
+  'director',
+  'rating',
+  'runtime',
+  'country',
 ];
 
-// ─── Flip Cell Component ─────────────────────────────────────────────────────
+/** Çipler arası açılma gecikmesi */
+const CHIP_STAGGER_MS = 70;
+/** Flip'in yarısı — çip "sırtını döndüğü" ve değerin göründüğü an */
+const FLIP_HALF_MS = 110;
+/**
+ * Bir satırın açılışının toplam süresi. Submit handler bu süre kadar bekler,
+ * yani sabit sayı iki yerde yaşamaz — tek kaynak burası.
+ * Son çipin gecikmesi + flip yarısı + spring'in oturma payı.
+ */
+export const ROW_REVEAL_MS = (COLUMN_KEYS.length - 1) * CHIP_STAGGER_MS + FLIP_HALF_MS + 280;
 
-interface FlipCellProps {
+// ─── Flip Chip Component ─────────────────────────────────────────────────────
+
+interface FlipChipProps {
   feedback: FeedbackCell;
+  label: string;
   value: string;
   index: number;
   columnKey: keyof FeedbackRow;
   animate: boolean;
+  /**
+   * Tema stilleri ebeveynden gecirilir; her cip kendi `createStyles()`'ini
+   * calistirsaydi her renderda 6 StyleSheet uretilirdi.
+   */
+  styles: ReturnType<typeof createStyles>;
 }
 
-/** Tek bir grid hücresi — flip animasyonu ile feedback gösterir */
-function FlipCell({ feedback, value, index, columnKey, animate }: FlipCellProps) {
+/**
+ * Tek bir öznitelik çipi — flip ile feedback açılır.
+ *
+ * Açılış anı animasyonun kendi callback'inden geliyor; eskiden paralel bir
+ * `setTimeout` aynı süreyi ikinci kez tanımlıyordu ve ikisi kayabiliyordu.
+ * Artık tek kaynak var: flip'in ilk yarısı bitince `runOnJS` tetikler.
+ */
+function FlipChip({
+  feedback,
+  label,
+  value,
+  index,
+  columnKey,
+  animate,
+  styles,
+}: FlipChipProps) {
   const rotateY = useSharedValue(animate ? 90 : 0);
   const [showResult, setShowResult] = useState(!animate);
 
+  /** Değer göründüğü an — haptik de buradan, çünkü aynı kare */
+  const handleReveal = useCallback(() => {
+    setShowResult(true);
+    if (index === COLUMN_KEYS.length - 1) {
+      hapticMedium();
+    } else {
+      hapticLight();
+    }
+  }, [index]);
+
   useEffect(() => {
     if (!animate) return;
-    const delay = index * 80;
 
     rotateY.value = withDelay(
-      delay,
+      index * CHIP_STAGGER_MS,
       withSequence(
-        withTiming(90, { duration: 80 }),
-        withTiming(0, { duration: 80 }),
+        withTiming(90, { duration: FLIP_HALF_MS }, (finished) => {
+          if (finished) runOnJS(handleReveal)();
+        }),
+        // Geri dönüş spring — Apple 2026 motion standardı (sabit easing değil)
+        withSpring(0, REVEAL_SPRING),
       ),
     );
-
-    // Reveal sonucu flip'in ortasında göster
-    const timer = setTimeout(() => {
-      setShowResult(true);
-      // Haptic — son hücrede medium, diğerlerinde light
-      if (index === 5) {
-        hapticMedium();
-      } else {
-        hapticLight();
-      }
-    }, delay + 80);
-
-    return () => clearTimeout(timer);
-  }, [animate, index, rotateY]);
+  }, [animate, index, rotateY, handleReveal]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ perspective: 600 }, { rotateY: `${rotateY.value}deg` }],
   }));
 
-  const hasDirection = feedback.direction &&
+  const hasDirection =
+    feedback.direction &&
     (columnKey === 'year' || columnKey === 'rating' || columnKey === 'runtime');
 
-  const cellBgStyle = showResult
-    ? feedback.result === 'green' ? styles.cellGreen
-      : feedback.result === 'yellow' ? styles.cellYellow
-        : styles.cellGray
-    : styles.cellEmpty;
+  const surfaceStyle = showResult
+    ? feedback.result === 'green'
+      ? styles.chipGreen
+      : feedback.result === 'yellow'
+        ? styles.chipYellow
+        : styles.chipGray
+    : styles.chipPending;
 
-  const textStyle = showResult
-    ? feedback.result === 'green' ? styles.cellTextGreen
-      : feedback.result === 'yellow' ? styles.cellTextYellow
-        : styles.cellTextGray
-    : styles.cellTextGray;
+  const valueStyle = showResult
+    ? feedback.result === 'green'
+      ? styles.chipValueGreen
+      : feedback.result === 'yellow'
+        ? styles.chipValueYellow
+        : styles.chipValueGray
+    : styles.chipValueGray;
+
+  const arrowColor = feedback.result === 'yellow' ? Colors.gold : Colors.textSecondary;
 
   return (
-    <Animated.View style={[styles.cell, cellBgStyle, animatedStyle]}>
-      <Text style={[styles.cellText, textStyle]} numberOfLines={1}>
-        {showResult ? value : ''}
+    <Animated.View style={[styles.chip, surfaceStyle, animatedStyle]}>
+      <Text style={styles.chipLabel} numberOfLines={1}>
+        {label}
       </Text>
-      {showResult && hasDirection && feedback.result !== 'green' && (
-        <View style={styles.directionArrow}>
-          {feedback.direction === 'up' ? (
-            <ArrowUp size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
+      <View style={styles.chipValueRow}>
+        <Text style={[styles.chipValue, valueStyle]} numberOfLines={1}>
+          {showResult ? value : ''}
+        </Text>
+        {showResult &&
+          hasDirection &&
+          feedback.result !== 'green' &&
+          (feedback.direction === 'up' ? (
+            <ArrowUp size={12} color={arrowColor} weight="duotone" />
           ) : (
-            <ArrowDown size={10} color={feedback.result === 'yellow' ? Colors.bgPrimary : Colors.white} weight="duotone" />
-          )}
-        </View>
-      )}
+            <ArrowDown size={12} color={arrowColor} weight="duotone" />
+          ))}
+      </View>
     </Animated.View>
   );
+}
+
+/**
+ * Geçmiş şeridindeki tek noktanın rengi.
+ *
+ * Çiplerle AYNI stilleri kullanır (`chipGreen`/`chipYellow`/`chipGray`) —
+ * geçmiş ile açık kart aynı dili konuşmalı, yoksa oyuncu iki ayrı renk kodu
+ * öğrenmek zorunda kalır. Geri bildirim renkleri temadan bağımsızdır.
+ */
+function dotStyleFor(cell: FeedbackCell, styles: ReturnType<typeof createStyles>) {
+  if (cell.result === 'green') return styles.chipGreen;
+  if (cell.result === 'yellow') return styles.chipYellow;
+  return styles.chipGray;
 }
 
 // ─── Countdown Hook ──────────────────────────────────────────────────────────
@@ -171,6 +263,12 @@ export function CineMetricsGame() {
   const { t } = useLanguage();
   const router = useRouter();
   const countdown = useCountdown();
+
+  const theme = useGameThemeFor(GAME_TYPE);
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // Ölçülen aksiyon barı yüksekliği ve scroll takibi KALDIRILDI (Kural 7):
+  // ekran artık kaymıyor, aksiyon barı normal akışta duruyor.
 
   // State
   const [screenState, setScreenState] = useState<ScreenState>('loading');
@@ -263,10 +361,7 @@ export function CineMetricsGame() {
     const startMs = Date.now();
 
     try {
-      const result: GuessResult = await submitGuess(
-        challenge.puzzle.id,
-        filmUuid,
-      );
+      const result: GuessResult = await submitGuess(challenge.puzzle.id, filmUuid);
 
       // Feedback row'u GuessEntry'e çevir
       if (result.feedback) {
@@ -286,9 +381,8 @@ export function CineMetricsGame() {
         // Telemetri
         trackGuessSubmitted('cinemetrics', newGuesses.length, Date.now() - startMs);
 
-        // Animasyon bitimini bekle (6 hücre × 80ms + 160ms buffer)
-        const animDuration = 6 * 80 + 160;
-        await new Promise((r) => setTimeout(r, animDuration));
+        // Satır açılışının bitimini bekle — süre FlipChip ile aynı kaynaktan
+        await new Promise((r) => setTimeout(r, ROW_REVEAL_MS));
         setAnimatingRow(null);
 
         // Oyun tamamlandı mı?
@@ -328,9 +422,20 @@ export function CineMetricsGame() {
 
   const difficultyInfo = useMemo(() => {
     const d = challenge?.puzzle.difficulty ?? 3;
-    if (d <= 2) return { color: Colors.greenBright, label: t('games.cinemetrics.difficulty.easy') };
-    if (d <= 3) return { color: Colors.gold, label: t('games.cinemetrics.difficulty.medium') };
-    return { color: Colors.error, label: t('games.cinemetrics.difficulty.hard') };
+    if (d <= 2)
+      return {
+        color: Colors.greenBright,
+        label: t('games.cinemetrics.difficulty.easy'),
+      };
+    if (d <= 3)
+      return {
+        color: Colors.gold,
+        label: t('games.cinemetrics.difficulty.medium'),
+      };
+    return {
+      color: Colors.error,
+      label: t('games.cinemetrics.difficulty.hard'),
+    };
   }, [challenge?.puzzle.difficulty, t]);
 
   /** Hücre değerini formatla — gerçek metadata değerleri gösterir */
@@ -338,9 +443,12 @@ export function CineMetricsGame() {
     // guess.values varsa gerçek metadata değerlerini göster (yakınsama hissi)
     if (guess.values) {
       switch (key) {
-        case 'year': return String(guess.values.year);
-        case 'rating': return guess.values.rating.toFixed(1);
-        case 'runtime': return `${guess.values.runtime}m`;
+        case 'year':
+          return String(guess.values.year);
+        case 'rating':
+          return guess.values.rating.toFixed(1);
+        case 'runtime':
+          return `${guess.values.runtime}m`;
         case 'genres': {
           const g = guess.values.genres;
           if (g.length === 0) return '?';
@@ -358,7 +466,8 @@ export function CineMetricsGame() {
           const c = guess.values.country;
           return c.length > 0 ? c[0] : '?';
         }
-        default: return '?';
+        default:
+          return '?';
       }
     }
 
@@ -384,7 +493,7 @@ export function CineMetricsGame() {
 
   if (loadError) {
     return (
-      <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType={GAME_TYPE} title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -394,7 +503,7 @@ export function CineMetricsGame() {
 
   if (screenState === 'loading') {
     return (
-      <GameShell title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType={GAME_TYPE} title={t('games.cinemetrics.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -405,12 +514,18 @@ export function CineMetricsGame() {
   if (screenState === 'completed') {
     return (
       <GameShell
+        gameType={GAME_TYPE}
         title={t('games.cinemetrics.title')}
         currentAttempt={guesses.length}
         maxAttempts={maxAttempts}
         hideProgress
+        floatingHeader
       >
-        <ScrollView contentContainerStyle={styles.completedContainer} showsVerticalScrollIndicator={false}>
+        {({ topInset }) => (
+        <ScrollView
+          contentContainerStyle={[styles.completedContainer, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}
+        >
           <ResultCard
             solved={won}
             attempts={guesses.length}
@@ -421,20 +536,24 @@ export function CineMetricsGame() {
             filmUuid={revealedFilm?.film_id}
             streak={0}
             gameTitle={t('games.cinemetrics.title')}
-            gameType="cinemetrics"
+            gameType={GAME_TYPE}
             puzzleNo={puzzleNo}
             xpAwarded={xpAwarded}
             dnaUpdated={dnaUpdated}
             whyThisMovie={whyThisMovie ?? undefined}
             resultMessage={
               won
-                ? t('games.cinemetrics.result.won', { count: guesses.length, max: maxAttempts })
+                ? t('games.cinemetrics.result.won', {
+                    count: guesses.length,
+                    max: maxAttempts,
+                  })
                 : t('games.cinemetrics.try_tomorrow')
             }
             countdown={countdown}
             onBackToHub={() => router.back()}
           />
         </ScrollView>
+        )}
       </GameShell>
     );
   }
@@ -443,22 +562,25 @@ export function CineMetricsGame() {
 
   const emptyRows = Math.max(0, maxAttempts - guesses.length);
 
+  /**
+   * Son tahmin tam kart olarak, öncekiler geçmiş şeridinde.
+   * Kural 7 gereği altı açık kart tek sayfaya sığmıyor (6 × 148px ≈ 890px,
+   * kullanılabilir alan ≈ 480px); açık kart dikkatin olduğu yerde tutuluyor.
+   */
+  const lastGuess = guesses.length > 0 ? guesses[guesses.length - 1] : null;
+  const history = guesses.slice(0, -1);
+
   return (
     <GameShell
+      gameType={GAME_TYPE}
       title={t('games.cinemetrics.title')}
       currentAttempt={guesses.length}
       maxAttempts={maxAttempts}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header: Puzzle No + Difficulty */}
+      <View style={styles.screen}>
+        {/* Puzzle No + zorluk */}
         <View style={styles.headerRow}>
-          <Text style={styles.puzzleNo}>
-            Chosy #{challenge?.puzzle_no ?? 0}
-          </Text>
+          <Text style={styles.puzzleNo}>Chosy #{challenge?.puzzle_no ?? 0}</Text>
           <View style={styles.difficultyBadge}>
             <Circle size={10} color={difficultyInfo.color} weight="fill" />
             <Text style={[styles.difficultyText, { color: difficultyInfo.color }]}>
@@ -467,102 +589,119 @@ export function CineMetricsGame() {
           </View>
         </View>
 
-        {/* Grid */}
-        <View style={styles.gridContainer}>
-          {/* Column Headers */}
-          <View style={styles.columnHeaders}>
-            <View style={styles.filmColHeader} />
-            {COLUMN_KEYS.map((key) => (
-              <View key={key} style={styles.colHeader}>
-                <Text style={styles.colHeaderText}>
-                  {t(`games.cinemetrics.columns.${key}`)}
+        {/*
+          GEÇMİŞ ŞERİDİ — son tahminden önceki her tahmin tek satır.
+          Film adı + 6 renk noktası; karşılaştırma renk deseninden okunur.
+          Kural 7 (oynanış tek sayfa) 6 açık kartı imkânsız kılıyor:
+          6 × 148px ≈ 890px, kullanılabilir alan ≈ 480px. Açık kart yalnız
+          dikkatin olduğu yerde — son tahminde — duruyor.
+        */}
+        {history.length > 0 && (
+          <View style={styles.history}>
+            {history.map((guess, rowIdx) => (
+              <View key={`hist-${rowIdx}`} style={styles.historyRow}>
+                <Text style={styles.historyTitle} numberOfLines={1}>
+                  {guess.title}
                 </Text>
+                <View style={styles.historyDots}>
+                  {COLUMN_KEYS.map((key) => (
+                    <View
+                      key={`hist-${rowIdx}-${key}`}
+                      style={[styles.historyDot, dotStyleFor(guess.feedback[key], styles)]}
+                    />
+                  ))}
+                </View>
               </View>
             ))}
           </View>
+        )}
 
-          {/* Filled rows */}
-          {guesses.map((guess, rowIdx) => (
-            <View key={`guess-${rowIdx}`} style={styles.guessRow}>
-              <View style={styles.filmNameCol}>
-                {/* 2 satir: uzun film adlari 84px'e tek satirda sigmiyordu */}
-                <Text style={styles.filmNameText} numberOfLines={2}>
-                  {guess.title}
-                </Text>
-              </View>
+        {/* SON TAHMİN — tam kart, açılan çipler burada */}
+        {lastGuess && (
+          <Animated.View
+            key={`guess-${guesses.length - 1}`}
+            entering={FadeInUp.duration(260)}
+            style={styles.guessCard}
+          >
+            <Text style={styles.guessTitle} numberOfLines={1}>
+              {lastGuess.title}
+            </Text>
+            <View style={styles.chipGrid}>
               {COLUMN_KEYS.map((key, colIdx) => (
-                <FlipCell
-                  key={`${rowIdx}-${key}`}
-                  feedback={guess.feedback[key]}
-                  value={formatCellValue(key, guess)}
+                <FlipChip
+                  key={`${guesses.length - 1}-${key}`}
+                  feedback={lastGuess.feedback[key]}
+                  label={t(`games.cinemetrics.columns.${key}`)}
+                  value={formatCellValue(key, lastGuess)}
                   index={colIdx}
                   columnKey={key}
-                  animate={animatingRow === rowIdx}
+                  animate={animatingRow === guesses.length - 1}
+                  styles={styles}
                 />
               ))}
             </View>
-          ))}
+          </Animated.View>
+        )}
 
-          {/* Empty rows — ilk sira aktif olarak vurgulanir */}
-          {Array.from({ length: emptyRows }).map((_, i) => (
-            <View key={`empty-${i}`} style={styles.emptyRow}>
-              <View style={styles.emptyFilmCol} />
-              {COLUMN_KEYS.map((key) => (
+        {/* Esnek boşluk — aksiyon barını dibe iter, içerik yukarıda toplanır */}
+        <View style={styles.spacer} />
+
+        {/* Kalan hak + renk dili — tek satırda, legend kısaldı */}
+        <View style={styles.metaRow}>
+          {emptyRows > 0 && (
+            <View style={styles.remainingRow}>
+              {Array.from({ length: emptyRows }).map((_, i) => (
                 <View
-                  key={`empty-${i}-${key}`}
-                  style={[
-                    styles.cell,
-                    styles.cellEmpty,
-                    i === 0 && styles.cellActiveRow,
-                  ]}
+                  key={`empty-${i}`}
+                  style={[styles.remainingPip, i === 0 && styles.remainingPipActive]}
                 />
               ))}
+              <Text style={styles.remainingText}>
+                {t('games.cinemetrics.attempts_left', { count: emptyRows })}
+              </Text>
             </View>
-          ))}
+          )}
+          <View style={styles.legend}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendSwatch, styles.chipGreen]} />
+              <Text style={styles.legendText}>{t('games.cinemetrics.legend_green')}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendSwatch, styles.chipYellow]} />
+              <Text style={styles.legendText}>{t('games.cinemetrics.legend_yellow')}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <ArrowUp size={12} color={Colors.textTertiary} weight="duotone" />
+              <ArrowDown size={12} color={Colors.textTertiary} weight="duotone" />
+              <Text style={styles.legendText}>{t('games.cinemetrics.legend_arrows')}</Text>
+            </View>
+          </View>
         </View>
 
         {/*
-          Renk/ok dili aciklamasi. Grid ilk acilista 36 bos kutudan ibaretti ve
-          hicbir yerde ne anlama geldikleri yazmiyordu.
+          Aksiyon barı — artık YÜZMÜYOR, normal akışta. Ekran kaymadığı için
+          altından geçecek içerik yok; cam orada dekorasyona düşerdi
+          (DESIGN_SYSTEM.md Kural 5, derinlik testi).
         */}
-        <View style={styles.legend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendSwatch, styles.cellGreen]} />
-            <Text style={styles.legendText}>{t('games.cinemetrics.legend_green')}</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendSwatch, styles.cellYellow]} />
-            <Text style={styles.legendText}>{t('games.cinemetrics.legend_yellow')}</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <ArrowUp size={12} color={Colors.textTertiary} weight="duotone" />
-            <ArrowDown size={12} color={Colors.textTertiary} weight="duotone" />
-            <Text style={styles.legendText}>{t('games.cinemetrics.legend_arrows')}</Text>
-          </View>
+        <View style={styles.inputArea}>
+          <FilmSearchInput
+            onSelect={(film) => setSelectedFilm(film)}
+            disabled={isGameOver || isSubmitting}
+            placeholder={t('games.search_placeholder')}
+          />
+          <TouchableOpacity
+            style={[
+              styles.submitButton,
+              (!selectedFilm || isSubmitting) && styles.submitButtonDisabled,
+            ]}
+            onPress={handleSubmit}
+            disabled={!selectedFilm || isSubmitting}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+          >
+            <Text style={styles.submitButtonText}>{t('games.cinemetrics.submit')}</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-
-      {/* Input Area */}
-      <View style={styles.inputArea}>
-        <FilmSearchInput
-          onSelect={(film) => setSelectedFilm(film)}
-          disabled={isGameOver || isSubmitting}
-          placeholder={t('games.search_placeholder')}
-        />
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            (!selectedFilm || isSubmitting) && styles.submitButtonDisabled,
-          ]}
-          onPress={handleSubmit}
-          disabled={!selectedFilm || isSubmitting}
-          activeOpacity={0.7}
-        accessibilityRole="button"
-        >
-          <Text style={styles.submitButtonText}>
-            {t('games.cinemetrics.submit')}
-          </Text>
-        </TouchableOpacity>
       </View>
     </GameShell>
   );

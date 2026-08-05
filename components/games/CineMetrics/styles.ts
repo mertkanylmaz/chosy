@@ -1,210 +1,292 @@
 /**
  * CineMetrics — StyleSheet definitions.
+ *
+ * ── 1 Ağu 2026 yeniden yazımı ─────────────────────────────────────────────
+ * Eski dosya 6 sabit sütunlu bir tabloyu tarif ediyordu (`FILM_COL_W`,
+ * `DATA_COL_W`, `columnHeaders`, `guessRow`, `cell*`) ve `ResultCard`'a
+ * geçildiğinden beri referanssız kalmış ~120 satır ölü stil taşıyordu
+ * (`completedPoster`, `wonMessage`, `xpChip`, `shareButton`, `retryButton`,
+ * `offscreenCard`…). İkisi de silindi.
+ *
+ * Yeni dil: tahmin = kart, öznitelik = çip. Çipler 3'erli sarılır, kartlar
+ * arası hizalama korunur.
  */
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 import { gameContentWidth } from '@/constants/gameLayout';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
 /**
- * Kullanilabilir genislik — GameShell'in verdigi yatay padding dusulmus hali.
- *
- * Eskiden burada `GRID_PADDING = Theme.spacing.sm` vardi ve satir genisligi
- * `SCREEN_W - 16` varsayiliyordu; GameShell ayrica 32px daha dusuyordu.
- * `guessRow`'da `flexWrap` olmadigi icin fazlalik sarmiyor, KIRPILIYORDU:
- * 6. sutun (Ulke) ekranin disinda kaliyordu. Sozlesme: constants/gameLayout.ts
+ * Kullanılabilir genişlik — GameShell'in verdiği yatay padding düşülmüş hali.
+ * Sözleşme: constants/gameLayout.ts
  */
 const CONTENT_W = gameContentWidth(SCREEN_W);
 
-/** Film adı sütunu genişliği — metadata değerleri için daraltıldı */
-const FILM_COL_W = 84;
-/** 6 data sütunu — kalan alan eşit bölünür */
-const DATA_COL_W = (CONTENT_W - FILM_COL_W) / 6;
+/** Kartın iç boşluğu — concentric hesabın girdisi */
+const CARD_PADDING = Theme.spacing.md;
+/** Çipler arası boşluk */
+const CHIP_GAP = Theme.spacing.sm;
+/** Satır başına 3 çip — sabit ızgara, kartlar arası sütun karşılaştırması korunur */
+const CHIPS_PER_ROW = 3;
+/** Çip genişliği: kart içi alandan boşluklar düşülüp 3'e bölünür */
+const CHIP_W = (CONTENT_W - CARD_PADDING * 2 - CHIP_GAP * (CHIPS_PER_ROW - 1)) / CHIPS_PER_ROW;
 
-export { FILM_COL_W, DATA_COL_W, SCREEN_W };
+/** Kartın dış yarıçapı — çip yarıçapı bundan concentric türetilir */
+const CARD_RADIUS = Theme.borderRadius.xl;
 
-export const styles = StyleSheet.create({
-  /** Paylasim karti ekran disinda render edilir (PNG capture) */
-  offscreenCard: {
-    position: 'absolute',
-    top: -9999,
-    left: -9999,
-    opacity: 0,
-  },
-  // ─── Layout ────────────────────────────────────────────────────────────────
-  center: {
+export { SCREEN_W, CHIP_W };
+
+export const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
+  /**
+   * Tek sayfa kabı — ScrollView YOK (Festival Layer Kural 7).
+   * Yatay padding GameShell'den; burası yalnız dikey akışı kurar.
+   */
+  screen: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingBottom: Theme.spacing.sm,
   },
-  loadingText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
+  /** Esnek boşluk — aksiyon barını dibe iter, içerik yukarıda toplanır */
+  spacer: {
+    flex: 1,
+    minHeight: Theme.spacing.sm,
   },
-  errorText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: Colors.textWhite,
+
+  // ─── Geçmiş şeridi ─────────────────────────────────────────────────────────
+  /**
+   * Son tahminden önceki tahminler. Her biri tek satır: film adı + 6 renk
+   * noktası. Altı açık kart tek sayfaya sığmadığı için (6 × 148px ≈ 890px,
+   * kullanılabilir alan ≈ 480px) karşılaştırma renk desenine indirgendi —
+   * Wordle'ın kendi çözümü.
+   */
+  history: {
+    gap: 2,
     marginBottom: Theme.spacing.sm,
   },
-  errorSubtext: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: Theme.spacing.xl,
+  historyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.sm,
+    paddingVertical: 5,
   },
-  scrollContent: {
-    paddingBottom: Theme.spacing.md,
+  historyTitle: {
+    flex: 1,
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+  },
+  historyDots: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  /**
+   * Nokta ölçüsü: 10px'in altında renk ayrımı iPhone SE'de kayboluyor.
+   * Renk stilleri çiplerle ORTAK (`chipGreen`/`chipYellow`/`chipGray`) —
+   * geçmiş ve açık kart aynı dili konuşmalı.
+   */
+  historyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
   },
 
-  // ─── Header info ───────────────────────────────────────────────────────────
-  /** Yatay padding YOK — GameShell veriyor */
+  /** Kalan hak + legend tek şeritte — Kural 7 dikey bütçesi dar */
+  metaRow: {
+    gap: Theme.spacing.xs,
+    paddingBottom: Theme.spacing.sm,
+  },
+
+  // ─── Üst şerit: puzzle no + zorluk ─────────────────────────────────────────
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: Theme.spacing.sm,
+    marginBottom: Theme.spacing.sm,
   },
   puzzleNo: {
     ...Theme.typography.eyebrow,
-    fontSize: 12,
-    lineHeight: 16,
   },
   difficultyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Theme.spacing.sm,
-    paddingVertical: 3,
-    borderRadius: Theme.borderRadius.full,
-    borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    gap: Theme.spacing.xs,
   },
   difficultyText: {
-    ...Theme.typography.eyebrow,
-    fontSize: 10,
-    lineHeight: 13,
+    ...Theme.typography.micro,
+    fontWeight: '600',
   },
 
-  // ─── Grid ──────────────────────────────────────────────────────────────────
+  // ─── Tahmin kartı ──────────────────────────────────────────────────────────
   /**
-   * Yatay padding YOK — GameShell veriyor. DATA_COL_W bu genislige gore
-   * hesaplandi, buraya padding eklenirse 6. sutun yine kirpilir.
+   * İÇERİK yüzeyi — cam DEĞİL. Tahmin geçmişi kartı Kural 5'in üç sorusundan
+   * hiçbirini geçmiyor (dokunulamaz, state değiştirmez, seçili hali yok):
+   * düz `bgCard` + accent hairline. Cam yalnız chrome katmanında.
    */
-  gridContainer: {},
-  columnHeaders: {
+  guessCard: {
+    backgroundColor: Colors.bgCard,
+    borderRadius: CARD_RADIUS,
+    borderWidth: 1,
+    borderColor: accentHairline,
+    padding: CARD_PADDING,
+    marginBottom: Theme.spacing.sm,
+  },
+  /** Film adı = "yayın" öğesi, serif (Kural 2) */
+  guessTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontFamily: Theme.fonts.display,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    color: Colors.textPrimary,
+    marginBottom: Theme.spacing.md,
+  },
+  chipGrid: {
     flexDirection: 'row',
-    marginBottom: Theme.spacing.xs,
+    flexWrap: 'wrap',
+    gap: CHIP_GAP,
   },
-  filmColHeader: {
-    width: FILM_COL_W,
-  },
-  colHeader: {
-    width: DATA_COL_W,
-    alignItems: 'center',
+
+  // ─── Öznitelik çipi ────────────────────────────────────────────────────────
+  /**
+   * Concentric: kart radius'u CARD_RADIUS, iç boşluk CARD_PADDING →
+   * çipin radius'u aradaki farktan türetilir, köşeler eş merkezli görünür.
+   */
+  chip: {
+    width: CHIP_W,
+    borderRadius: Theme.concentric(CARD_RADIUS, CARD_PADDING),
+    borderWidth: 1,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.sm,
+    minHeight: 52,
     justifyContent: 'center',
-    paddingVertical: 6,
   },
-  colHeaderText: {
+  /** Etiket artık kolon başlığında değil çipin içinde — 9px tipografi gerekmiyor */
+  chipLabel: {
     ...Theme.typography.eyebrow,
     fontSize: 9,
-    lineHeight: 12,
-    letterSpacing: 1,
-    textAlign: 'center',
+    letterSpacing: 1.1,
+    marginBottom: 2,
   },
-  guessRow: {
+  chipValueRow: {
     flexDirection: 'row',
-    marginBottom: 4,
     alignItems: 'center',
+    gap: Theme.spacing.xs,
   },
-  filmNameCol: {
-    width: FILM_COL_W,
-    paddingRight: 4,
-    justifyContent: 'center',
-  },
-  /**
-   * Iki satira kadar sarar. 84px'e uzun film adlari tek satirda sigmiyordu ve
-   * kesiliyordu; hucre yuksekligi 40 oldugu icin iki satir rahat siger.
-   */
-  filmNameText: {
-    fontSize: 11,
-    lineHeight: 14,
+  chipValue: {
+    flexShrink: 1,
+    fontSize: 14,
+    lineHeight: 18,
     fontWeight: '600',
-    color: Colors.textWhite,
+    letterSpacing: -0.2,
   },
 
-  // ─── Grid Cells ────────────────────────────────────────────────────────────
-  cell: {
-    width: DATA_COL_W - 2,
-    height: 40,
-    marginHorizontal: 1,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
+  /**
+   * Geri bildirim yüzeyleri. Kural 1: çip yüzeyi düz doygun semantik renge
+   * BOYANMAZ — kenarlık + düşük alfa yıkama + renkli metin ile verilir.
+   * Eski hâli `backgroundColor: '#22C55E'` gibi tam doygun dolgulardı.
+   */
+  chipGreen: {
+    borderColor: Colors.greenBright,
+    backgroundColor: Colors.successWash,
   },
-  cellEmpty: {
-    borderWidth: 1,
+  chipYellow: {
+    borderColor: Colors.gold,
+    backgroundColor: Colors.goldSeal,
+  },
+  chipGray: {
+    borderColor: Colors.borderSubtle,
+    backgroundColor: Colors.white05,
+  },
+  /** Flip'in ilk yarısı — değer henüz görünmüyor */
+  chipPending: {
     borderColor: Colors.borderSubtle,
     backgroundColor: 'transparent',
   },
-  /** Siradaki tahmin satiri — bos grid'de "buraya yazacaksin" isareti */
-  cellActiveRow: {
-    borderColor: Colors.accentPrimary,
-    backgroundColor: Colors.white05,
+  chipValueGreen: {
+    color: Colors.greenBright,
   },
-  cellGreen: {
-    backgroundColor: Colors.greenBright,
+  chipValueYellow: {
+    color: Colors.gold,
   },
-  cellYellow: {
-    backgroundColor: Colors.gold,
+  chipValueGray: {
+    color: Colors.textSecondary,
   },
-  cellGray: {
-    backgroundColor: Colors.bgSubtle,
+
+  // ─── Kalan deneme göstergesi ───────────────────────────────────────────────
+  /**
+   * Eskiden burada 36 boş hairline kutu vardı ve ekran ilk açılışta boş bir
+   * tabloya benziyordu. Artık tek satır: kaç hakkın kaldı.
+   */
+  remainingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.xs,
+    paddingVertical: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.xs,
   },
-  cellText: {
-    fontSize: 9,
-    fontWeight: '600',
-    textAlign: 'center',
-    paddingHorizontal: 1,
+  remainingPip: {
+    width: 8,
+    height: 8,
+    borderRadius: Theme.borderRadius.xs,
+    backgroundColor: Colors.white10,
   },
-  cellTextGreen: {
-    color: Colors.white,
+  /** Sıradaki deneme — accent, "sıra sende" sinyali */
+  remainingPipActive: {
+    backgroundColor: theme.accent,
   },
-  cellTextYellow: {
-    color: Colors.bgPrimary,
+  remainingText: {
+    ...Theme.typography.caption,
+    marginLeft: Theme.spacing.xs,
   },
-  cellTextGray: {
+
+  // ─── Legend ────────────────────────────────────────────────────────────────
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.xs,
+  },
+  /** Çip dilinin küçültülmüş hâli — legend ile çipler aynı şeyi göstermeli */
+  legendSwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: Theme.borderRadius.xs,
+    borderWidth: 1,
+  },
+  legendText: {
+    ...Theme.typography.caption,
     color: Colors.textTertiary,
   },
-  directionArrow: {
-    position: 'absolute',
-    bottom: 2,
-    right: 3,
-  },
 
-  // ─── Empty rows placeholder ────────────────────────────────────────────────
-  emptyRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-    alignItems: 'center',
-  },
-  emptyFilmCol: {
-    width: FILM_COL_W,
-  },
-
-  // ─── Input Area ────────────────────────────────────────────────────────────
-  /** Yatay padding YOK — GameShell veriyor */
+  // ─── Aksiyon barı (chrome — cam) ───────────────────────────────────────────
+  /**
+   * Aksiyon barı — artık YÜZMÜYOR, normal akışta ekranın dibinde.
+   *
+   * Eskiden `position: 'absolute'` + `GlassSurface` idi; gerekçesi "içerik
+   * altından akıyor"du. Kural 7 (oynanış tek sayfa) ile ekran kaymayı bıraktı,
+   * yani altından geçecek içerik kalmadı — cam orada Kural 5'in derinlik
+   * testini geçmezdi ve dekorasyona düşerdi.
+   */
   inputArea: {
-    paddingTop: Theme.spacing.md,
-    paddingBottom: Theme.spacing.sm,
+    paddingTop: Theme.spacing.sm,
   },
   submitButton: {
     marginTop: Theme.spacing.sm,
-    backgroundColor: Colors.accentPrimary,
+    backgroundColor: theme.accent,
     borderRadius: Theme.borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
@@ -216,7 +298,8 @@ export const styles = StyleSheet.create({
   submitButtonText: {
     fontSize: 16,
     fontWeight: '700',
-    color: Colors.textOnAccent,
+    letterSpacing: -0.2,
+    color: theme.accentOn,
   },
 
   // ─── Completed State ───────────────────────────────────────────────────────
@@ -227,141 +310,5 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: Theme.spacing.md,
   },
-  completedPoster: {
-    width: 200,
-    height: 300,
-    borderRadius: Theme.borderRadius.lg,
-  },
-  completedTitle: {
-    fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    color: Colors.textWhite,
-    textAlign: 'center',
-  },
-  wonMessage: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.success,
-    textAlign: 'center',
-  },
-  lostMessage: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  lostSubtext: {
-    fontSize: 14,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    marginTop: -8,
-  },
-  xpChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: Colors.goldDim,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Theme.borderRadius.full,
-  },
-  xpText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.gold,
-  },
-  dnaChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: Colors.goldHairline,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Theme.borderRadius.full,
-  },
-  dnaText: {
-    ...Theme.typography.micro,
-    color: Colors.gold,
-    fontWeight: '600',
-  },
-  countdownLabel: {
-    fontSize: 14,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-  },
-  countdownTime: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    fontVariant: ['tabular-nums'],
-  },
-  completedActions: {
-    flexDirection: 'row',
-    gap: Theme.spacing.sm,
-    width: '100%',
-    paddingHorizontal: Theme.spacing.md,
-  },
-  shareButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.accentPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  shareButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.accentPrimary,
-  },
-  hubButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: Theme.borderRadius.md,
-    backgroundColor: Colors.accentPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hubButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textOnAccent,
-  },
-  retryButton: {
-    marginTop: Theme.spacing.md,
-    paddingVertical: 12,
-    paddingHorizontal: Theme.spacing.xl,
-    borderRadius: Theme.borderRadius.md,
-    backgroundColor: Colors.accentPrimary,
-  },
-  retryButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.textOnAccent,
-  },
-
-  // ── Legend (renk/ok dili) ──
-  legend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: Theme.spacing.md,
-    marginTop: Theme.spacing.md,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  legendSwatch: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-  },
-  legendText: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-  },
-});
+  });
+};
