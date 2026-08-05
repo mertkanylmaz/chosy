@@ -55,7 +55,10 @@ async function extractStructuredError(error: { message?: string; context?: unkno
   // Strategy 1: context bir Response objesi ise body'yi oku
   if (ctx && typeof ctx === 'object' && 'status' in ctx && '_bodyBlob' in ctx) {
     try {
-      const resp = ctx as Response;
+      // React Native'in polyfill Response'u DOM Response degil (_bodyBlob
+      // tasir, headers/ok/redirected yok). Iki asamali donusum dogru olan:
+      // tek asamali `as Response` iki tipin ortustugunu iddia ederdi.
+      const resp = ctx as unknown as Response;
       const body = await resp.json();
       logger.log('[slot] Edge Function response body:', JSON.stringify(body));
       if (body && typeof body.error === 'string') {
