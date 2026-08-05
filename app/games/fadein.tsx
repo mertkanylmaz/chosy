@@ -12,7 +12,7 @@
  *
  * Blur seviyeleri: [45, 30, 20, 12, 6, 2] — ilk adımda görsel fark net olacak
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Platform,
@@ -28,6 +28,7 @@ import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated'
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticHeavy, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
@@ -38,7 +39,7 @@ import { getDailyChallenge, revealHint, submitGameGuess } from '@/services/gameA
 import type { DailyChallenge, FadeInHintStub, GuessResult, WhyThisMovieText } from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
-import { GameShell } from '@/components/games/GameShell';
+import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
 import { HintBoard } from '@/components/games/HintBoard';
 import { ResultCard } from '@/components/games/ResultCard';
@@ -67,7 +68,15 @@ const MAX_ATTEMPTS = 6;
 
 // ─── FadeInScreen ───────────────────────────────────────────────────────────
 
+/**
+ * Bu ekranin oyun kimligi. Tema ve GameShell AYNI sabiti okur —
+ * biri digerinden kayamaz.
+ */
+const GAME_TYPE = 'fadein' as const;
+
 export default function FadeInScreen() {
+  const theme = useGameThemeFor(GAME_TYPE);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
@@ -351,7 +360,7 @@ export default function FadeInScreen() {
   /** Error state */
   if (loadError) {
     return (
-      <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
+      <GameShell gameType={GAME_TYPE} title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -360,7 +369,7 @@ export default function FadeInScreen() {
   /** Loading state */
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
+      <GameShell gameType={GAME_TYPE} title={t('games.fadein.title')} currentAttempt={0} maxAttempts={MAX_ATTEMPTS}>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -370,13 +379,16 @@ export default function FadeInScreen() {
   if (gameState === 'complete' && filmInfo) {
     return (
       <GameShell
+        gameType={GAME_TYPE}
         title={t('games.fadein.title')}
         currentAttempt={attempts}
         maxAttempts={MAX_ATTEMPTS}
+        floatingHeader
       >
+        {({ topInset }) => (
         <ScrollView
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.completeScroll}
+          contentContainerStyle={[styles.completeScroll, { paddingTop: topInset }]}
         >
           {posterUrl && (
             <Animated.View entering={FadeIn.duration(600)} style={styles.revealPosterContainer}>
@@ -399,7 +411,7 @@ export default function FadeInScreen() {
             filmId={filmInfo.filmId}
             streak={streak}
             gameTitle={t('games.fadein.title')}
-            gameType="fadein"
+            gameType={GAME_TYPE}
             puzzleNo={puzzleNo}
             whyThisMovie={whyThisMovie ?? undefined}
             xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
@@ -407,6 +419,7 @@ export default function FadeInScreen() {
             dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
+        )}
       </GameShell>
     );
   }
@@ -415,15 +428,13 @@ export default function FadeInScreen() {
 
   return (
     <GameShell
+      gameType={GAME_TYPE}
       title={t('games.fadein.title')}
       currentAttempt={attempts}
       maxAttempts={MAX_ATTEMPTS}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.playScroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      {/* Tek sayfa — ScrollView YOK (Festival Layer Kural 7) */}
+      <View style={styles.playScroll}>
         {/* Blur'lu poster */}
         <View style={styles.posterContainer}>
           {posterUrl && (
@@ -493,7 +504,7 @@ export default function FadeInScreen() {
             ))}
           </View>
         )}
-      </ScrollView>
+      </View>
 
       {/* Film arama input'u */}
       {gameState === 'playing' && (
@@ -512,7 +523,11 @@ export default function FadeInScreen() {
 
 // ─── Stiller ────────────────────────────────────────────────────────────────
 
-const styles = StyleSheet.create({
+const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -555,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     backgroundColor: Colors.bgCard,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
   },
   blurBadge: {
     position: 'absolute',
@@ -646,4 +661,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.md,
     paddingBottom: 40,
   },
-});
+  });
+};

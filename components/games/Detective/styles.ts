@@ -9,6 +9,7 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { GAME_THEMES, withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 import { gameContentWidth, gridItemWidth } from '@/constants/gameLayout';
 
@@ -37,19 +38,26 @@ const CARD_H_SMALL = Math.round(CARD_W_SMALL * 1.4);
 const CARD_W = gridItemWidth(CONTENT_W, 2, GRID_GAP);
 const CARD_H = Math.round(CARD_W * 1.35);
 
+export { CARD_W, CARD_H, CARD_W_SMALL, CARD_H_SMALL, SCREEN_W };
+
 /**
- * Detective vurgusu — Festival Layer.
+ * Detective vurgusu.
  *
- * Ekran bastan sona teal (#0D9488) idi; tek altin kurali geregi altina
- * cevrildi. Renk tek noktadan geliyor, asagidaki stiller degismedi.
+ * ── TARIHCE ───────────────────────────────────────────────────────────────
+ * Ekran bastan sona teal (#0D9488) idi. 29 Tem 2026'da "tek altin" kurali
+ * geregi altina cevrildi ve bu uc sabit tanimlandi — ama HICBIRI kullanilmadi,
+ * stiller `ACCENT_BORDER` yazmaya devam etti. Yani indirection vardi,
+ * bagli degildi.
+ *
+ * 1 Agu 2026: oyun basina tema geldi ve Detective kendi rengine dondu.
+ * Sabitler artik gercekten bagli ve temadan besleniyor.
  */
-const ACCENT = Colors.gold;
-const ACCENT_DIM = Colors.goldSeal;
-const ACCENT_BORDER = Colors.goldHairline;
+export const createStyles = (theme: GameTheme) => {
+  const ACCENT = theme.accent;
+  const ACCENT_DIM = theme.accentDim;
+  const ACCENT_BORDER = withAlpha(theme.accent, 0.22);
 
-export { CARD_W, CARD_H, CARD_W_SMALL, CARD_H_SMALL, SCREEN_W, ACCENT, ACCENT_DIM };
-
-export const styles = StyleSheet.create({
+  return StyleSheet.create({
   /** Paylasim karti ekran disinda render edilir (PNG capture) */
   offscreenCard: {
     position: 'absolute',
@@ -127,7 +135,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
   },
   timerText: {
     fontSize: 14,
@@ -188,7 +196,7 @@ export const styles = StyleSheet.create({
     padding: Theme.spacing.md,
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: 10,
   },
   cluePanelTitle: {
@@ -392,7 +400,7 @@ export const styles = StyleSheet.create({
     padding: Theme.spacing.md,
     marginBottom: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
   },
   feedbackPanelTitle: {
@@ -433,7 +441,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.greenBright,
   },
   flipCellYellow: {
-    backgroundColor: Colors.gold,
+    backgroundColor: ACCENT,
   },
   flipCellGray: {
     backgroundColor: Colors.bgSubtle,
@@ -587,7 +595,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
     ...Theme.shadow.card,
   },
@@ -613,7 +621,7 @@ export const styles = StyleSheet.create({
   },
   scoreDivider: {
     height: 1,
-    backgroundColor: Colors.goldHairline,
+    backgroundColor: ACCENT_BORDER,
     marginVertical: Theme.spacing.xs,
   },
   scoreBreakdownRow: {
@@ -642,17 +650,17 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.goldDim,
+    backgroundColor: ACCENT_DIM,
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
   },
   xpText: {
     fontSize: 14,
     fontWeight: '700',
-    color: Colors.gold,
+    color: ACCENT,
   },
   dnaChip: {
     flexDirection: 'row',
@@ -678,7 +686,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
   },
   histogramTitle: {
@@ -752,7 +760,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
   },
   whyCardHeader: {
@@ -790,7 +798,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.bgCard,
     borderRadius: Theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     overflow: 'hidden',
   },
   discoveryBridgeInner: {
@@ -935,7 +943,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
     ...Theme.shadow.card,
   },
@@ -959,18 +967,18 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.goldDim,
+    backgroundColor: ACCENT_DIM,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     alignSelf: 'flex-start',
   },
   scoreCardLuckyText: {
     fontSize: 12,
     fontWeight: '700',
-    color: Colors.gold,
+    color: ACCENT,
   },
   scoreCardBreakdown: {
     gap: Theme.spacing.sm,
@@ -1067,7 +1075,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.greenBright,
   },
   cellYellow: {
-    backgroundColor: Colors.gold,
+    backgroundColor: ACCENT,
   },
   cellGray: {
     backgroundColor: Colors.bgSubtle,
@@ -1134,7 +1142,7 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.greenBright,
   },
   dotYellow: {
-    backgroundColor: Colors.gold,
+    backgroundColor: ACCENT,
   },
   dotGray: {
     backgroundColor: Colors.bgSubtle,
@@ -1147,7 +1155,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
   },
   histogramHeaderText: {
@@ -1230,7 +1238,7 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     padding: Theme.spacing.md,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: ACCENT_BORDER,
     gap: Theme.spacing.sm,
   },
   whyTitleRow: {
@@ -1280,7 +1288,7 @@ export const styles = StyleSheet.create({
   },
   whyDivider: {
     height: 1,
-    backgroundColor: Colors.goldHairline,
+    backgroundColor: ACCENT_BORDER,
     marginVertical: 4,
   },
   whyFunFact: {
@@ -1290,4 +1298,29 @@ export const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-});
+  });
+};
+
+/**
+ * Detective'in bagli stilleri.
+ *
+ * Fabrika modul seviyesinde CAGRILIYOR, hook'la degil: bu ekranin `gameType`'i
+ * her zaman 'detective', yani tema calisma zamaninda degismiyor. Hook'a
+ * baglamak `styles`'i tuketen bes dosyaya (CaseHeader, CommunityHistogram,
+ * DetectiveScoreCard, WhyThisMovie, index) prop ya da ayri `useMemo` tasimayi
+ * gerektirirdi — sabit bir deger icin gereksiz.
+ *
+ * `useGameTheme()` context'i, hangi oyunda oldugunu BILMEYEN paylasilan
+ * bilesenler icindir (FilmSearchInput, GameStateView, HintBoard).
+ */
+/**
+ * Bu ekranin oyun kimligi. Hem tema hem GameShell bunu okur — iki ayri
+ * literal birbirinden kayamaz.
+ */
+export const GAME_TYPE = 'detective' as const;
+
+export const styles = createStyles(GAME_THEMES[GAME_TYPE]);
+
+/** JSX icinde ikon/metin rengi olarak kullanilan vurgu — stille ayni kaynak */
+export const ACCENT = GAME_THEMES.detective.accent;
+export const ACCENT_DIM = GAME_THEMES.detective.accentDim;

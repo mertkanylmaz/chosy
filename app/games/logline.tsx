@@ -7,13 +7,14 @@
  *
  * Edge Function tabanlı — tahmin doğrulaması sunucuda.
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { ArrowsLeftRight, CheckCircle, Lock, XCircle } from 'phosphor-react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticHeavy, hapticSuccess, hapticWarning } from '@/utils/haptics';
@@ -29,7 +30,7 @@ import type {
 } from '@/types/game';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import type { GameState, FilmSearchResult } from '@/services/gameTypes';
-import { GameShell } from '@/components/games/GameShell';
+import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -57,7 +58,15 @@ function MatchIcon({ match }: { match: SemanticMatch }): React.JSX.Element {
   return <XCircle size={14} weight="duotone" color={Colors.textTertiary} />;
 }
 
+/**
+ * Bu ekranin oyun kimligi. Tema ve GameShell AYNI sabiti okur —
+ * biri digerinden kayamaz.
+ */
+const GAME_TYPE = 'logline' as const;
+
 export default function LoglineScreen() {
+  const theme = useGameThemeFor(GAME_TYPE);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
   const { checkGamePaywall, paywallProps } = useGamePaywall();
 
@@ -279,7 +288,7 @@ export default function LoglineScreen() {
   // Error
   if (loadError) {
     return (
-      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType={GAME_TYPE} title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -288,7 +297,7 @@ export default function LoglineScreen() {
   // Loading
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType={GAME_TYPE} title={t('games.logline.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -299,12 +308,18 @@ export default function LoglineScreen() {
     const isPerfect = solved && attempts === 1;
     return (
       <GameShell
+        gameType={GAME_TYPE}
         title={t('games.logline.title')}
         currentAttempt={attempts}
         maxAttempts={maxAttempts}
         hideProgress
+        floatingHeader
       >
-        <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
+        {({ topInset }) => (
+        <ScrollView
+          contentContainerStyle={[styles.resultContainer, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}
+        >
           {isPerfect && (
             <Animated.View entering={FadeInDown.duration(400)} style={styles.perfectBadge}>
               <Text style={styles.perfectEmoji}>🎯</Text>
@@ -321,7 +336,7 @@ export default function LoglineScreen() {
             filmId={filmInfo.filmId}
             streak={streak}
             gameTitle={t('games.logline.title')}
-            gameType="logline"
+            gameType={GAME_TYPE}
             puzzleNo={puzzleNo}
             whyThisMovie={whyThisMovie ?? undefined}
             xpAwarded={xpAwarded > 0 ? xpAwarded : undefined}
@@ -329,6 +344,7 @@ export default function LoglineScreen() {
             dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
+        )}
       </GameShell>
     );
   }
@@ -336,11 +352,13 @@ export default function LoglineScreen() {
   // Playing
   return (
     <GameShell
+      gameType={GAME_TYPE}
       title={t('games.logline.title')}
       currentAttempt={attempts}
       maxAttempts={maxAttempts}
     >
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* Tek sayfa — ScrollView YOK (Festival Layer Kural 7) */}
+      <View style={styles.playScreen}>
         {/*
           Ilk ipucu logline metninin kendisi — ekranin kahramani.
           Kalan ipuclari (donem, yonetmen, oyuncu) altta birikir.
@@ -407,7 +425,7 @@ export default function LoglineScreen() {
             )}
           </Animated.View>
         )}
-      </ScrollView>
+      </View>
 
       {/* Search input — fixed at bottom */}
       <View style={styles.searchContainer}>
@@ -422,7 +440,11 @@ export default function LoglineScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -471,8 +493,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.gold,
   },
-  scrollContent: {
+  /**
+   * Tek sayfa kabi — ScrollView YOK (Festival Layer Kural 7).
+   * Icerik dikeyde dagilir, tasma olmaz; sigmazsa yogunluk tabanina inilir.
+   */
+  playScreen: {
     flex: 1,
+    paddingBottom: Theme.spacing.sm,
   },
   /**
    * Logline metni — ekranin kahramani. Afis yok, genis bosluk;
@@ -506,8 +533,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   clueRevealed: {
-    borderColor: Colors.goldHairline,
-    backgroundColor: Colors.goldSeal,
+    borderColor: accentHairline,
+    backgroundColor: theme.accentDim,
   },
   clueLocked: {
     borderColor: Colors.borderSubtle,
@@ -575,4 +602,5 @@ const styles = StyleSheet.create({
     ...Theme.typography.eyebrow,
     textAlign: 'center',
   },
-});
+  });
+};

@@ -262,7 +262,7 @@ export default function QuotedScreen() {
   // ─── Error ───
   if (loadError) {
     return (
-      <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType="quoted" title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -271,7 +271,7 @@ export default function QuotedScreen() {
   // ─── Loading ───
   if (gameState === 'loading') {
     return (
-      <GameShell title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
+      <GameShell gameType="quoted" title={t('games.quoted.title')} currentAttempt={0} maxAttempts={maxAttempts}>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -281,12 +281,18 @@ export default function QuotedScreen() {
   if (gameState === 'complete' && filmInfo) {
     return (
       <GameShell
+        gameType="quoted"
         title={t('games.quoted.title')}
         currentAttempt={attempts}
         maxAttempts={maxAttempts}
         hideProgress
+        floatingHeader
       >
-        <ScrollView contentContainerStyle={styles.resultContainer} showsVerticalScrollIndicator={false}>
+        {({ topInset }) => (
+        <ScrollView
+          contentContainerStyle={[styles.resultContainer, { paddingTop: topInset }]}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Repliği tekrar göster */}
           <View style={styles.quoteCardSmall}>
             <ChatCircleDots size={18} color={Colors.gold} weight="duotone" />
@@ -312,6 +318,7 @@ export default function QuotedScreen() {
             dnaSignals={dnaSignals.length > 0 ? dnaSignals : undefined}
           />
         </ScrollView>
+        )}
       </GameShell>
     );
   }
@@ -319,11 +326,13 @@ export default function QuotedScreen() {
   // ─── Playing ───
   return (
     <GameShell
+      gameType="quoted"
       title={t('games.quoted.title')}
       currentAttempt={attempts}
       maxAttempts={maxAttempts}
     >
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* Tek sayfa — ScrollView YOK (Festival Layer Kural 7) */}
+      <View style={styles.playScreen}>
         {/* Bağlam ipucu — replikten ÖNCE gösterilir (dedüksiyon katmanı) */}
         {contextHint ? (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.contextCard}>
@@ -367,7 +376,7 @@ export default function QuotedScreen() {
             <Text style={styles.wrongText}>{wrongGuess}</Text>
           </Animated.View>
         )}
-      </ScrollView>
+      </View>
 
       {/* Film arama */}
       <View style={styles.searchContainer}>
@@ -430,8 +439,13 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     lineHeight: 20,
   },
-  scrollContent: {
+  /**
+   * Tek sayfa kabi — ScrollView YOK (Festival Layer Kural 7).
+   * Icerik dikeyde dagilir, tasma olmaz; sigmazsa yogunluk tabanina inilir.
+   */
+  playScreen: {
     flex: 1,
+    paddingBottom: Theme.spacing.sm,
   },
   contextCard: {
     flexDirection: 'row',

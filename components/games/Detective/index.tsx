@@ -64,7 +64,7 @@ import { DetectiveScoreCard } from './DetectiveScoreCard';
 import { CommunityHistogram } from './CommunityHistogram';
 import { WhyThisMovieCard } from './WhyThisMovie';
 import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
-import { styles, CARD_W_SMALL, CARD_H_SMALL, CARD_W, CARD_H } from './styles';
+import { styles, GAME_TYPE, CARD_W_SMALL, CARD_H_SMALL, CARD_W, CARD_H } from './styles';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -457,7 +457,7 @@ export function DetectiveGame() {
 
   if (loadError) {
     return (
-      <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={DETECTIVE_MAX_GUESSES}>
+      <GameShell gameType={GAME_TYPE} title={t('games.detective.title')} currentAttempt={0} maxAttempts={DETECTIVE_MAX_GUESSES}>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -467,7 +467,7 @@ export function DetectiveGame() {
 
   if (screenState === 'loading') {
     return (
-      <GameShell title={t('games.detective.title')} currentAttempt={0} maxAttempts={DETECTIVE_MAX_GUESSES}>
+      <GameShell gameType={GAME_TYPE} title={t('games.detective.title')} currentAttempt={0} maxAttempts={DETECTIVE_MAX_GUESSES}>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -478,11 +478,15 @@ export function DetectiveGame() {
   if (screenState === 'completed') {
     return (
       <GameShell
+        gameType={GAME_TYPE}
         title={t('games.detective.title')}
         currentAttempt={totalGuesses}
         maxAttempts={DETECTIVE_MAX_GUESSES}
         hideProgress
+        floatingHeader
       >
+        {({ topInset }) => (
+        <>
         {/* Offscreen paylasim karti — PNG capture icin (film adi YOK) */}
         <View style={styles.offscreenCard} pointerEvents="none">
           <GameShareCard
@@ -492,13 +496,13 @@ export function DetectiveGame() {
             attempts={totalGuesses}
             maxAttempts={DETECTIVE_MAX_GUESSES}
             streak={0}
-            gameType="detective"
+            gameType={GAME_TYPE}
             puzzleNo={puzzleNo}
           />
         </View>
 
         <ScrollView
-          contentContainerStyle={styles.completedContainer}
+          contentContainerStyle={[styles.completedContainer, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Film Poster */}
@@ -541,7 +545,7 @@ export function DetectiveGame() {
               funFact={whyThisMovie?.fun_fact}
               filmTitle={revealedFilm.title}
               filmUuid={revealedFilm.film_id}
-              gameType="detective"
+              gameType={GAME_TYPE}
             />
           )}
 
@@ -598,6 +602,8 @@ export function DetectiveGame() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        </>
+        )}
       </GameShell>
     );
   }
@@ -609,14 +615,13 @@ export function DetectiveGame() {
 
   return (
     <GameShell
+      gameType={GAME_TYPE}
       title={t('games.detective.title')}
       currentAttempt={totalGuesses}
       maxAttempts={DETECTIVE_MAX_GUESSES}
     >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Tek sayfa — ScrollView YOK (Festival Layer Kural 7) */}
+      <View style={styles.scrollContent}>
         {/* Case Header */}
         <CaseHeader
           caseNumber={challenge?.puzzle_no ?? 0}
@@ -710,7 +715,7 @@ export function DetectiveGame() {
             {t('games.detective.investigate_button')}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
+      </View>
     </GameShell>
   );
 }
