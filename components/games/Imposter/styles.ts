@@ -1,5 +1,5 @@
 /**
- * ImposterPilot stilleri — tek sayfa (kaydırmasız) düzen.
+ * Imposter stilleri — tek sayfa (kaydırmasız) düzen.
  *
  * Ölçüm gerektiren değerler (kart genişliği/yüksekliği, portre yüksekliği,
  * poster çerçevesi) runtime'da hesaplanıp dizi ile birleştirilir — bkz.
@@ -9,18 +9,45 @@
  * yönetilir (`screen.paddingHorizontal`), ve genişlik hesabı
  * `useGameContentWidth()` ile aynı 16px'i varsayar.
  *
- * Renkler `PilotTokens` üzerinden gelir — Colors.ts'te olmayan neon/cam
- * değerleri global palete sızmasın diye (bkz. pilotTokens.ts).
+ * ── RENK KAYNAKLARI (1 Ağu 2026, pilot promosyonu) ────────────────────────
+ * Eski `pilotTokens.ts` silindi. Değerler üç yere dağıldı:
+ *   cam       → `Colors.chromeGlass*`      (global, altı oyunda ortak)
+ *   accent    → `theme.*`                  (constants/gameThemes.ts)
+ *   ambiyans  → `GameBackdrop`             (GameShell otomatik render eder)
+ * Geriye yalnız aşağıdaki üç süs değeri kaldı.
  */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import type { GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 import { GAME_CONTENT_PADDING } from '@/constants/gameLayout';
 
-import { PilotTokens } from './pilotTokens';
+/**
+ * Imposter'a özel süs renkleri — soru etiketi ve round rozeti.
+ *
+ * Bunlar `gameThemes.ts`'e TAŞINMADI çünkü tek örnekli: başka hiçbir oyunda
+ * "soru etiketi" ya da "round rozeti" yok. Altı oyuna yayılmayan bir değeri
+ * paylaşılan tema sözleşmesine koymak sözleşmeyi şişirir.
+ *
+ * Kural: bu değerler temanın renk ailesiyle ÇELİŞMEZ — Imposter'ın
+ * `progressGradient`'i mor→pembe, bunlar da o ailenin içinde. Tema değişirse
+ * bunlar da elle güncellenir.
+ */
+const ImposterOrnaments = {
+  /** Round rozeti metin + kenar — açık lavanta */
+  roundAccent: '#C4B5FD',
+  /** Round rozeti zemini */
+  roundWash: 'rgba(139,92,246,0.18)',
+  /** Soru etiketinin halesi */
+  questionGlow: 'rgba(168,85,247,0.55)',
+} as const;
 
-export const styles = StyleSheet.create({
+/**
+ * Tema bağımlı stiller. `theme.accent` seçim durumunda kullanıldığı için
+ * StyleSheet modül seviyesinde sabitlenemiyor — bileşen `useMemo` ile çağırır.
+ */
+export const createStyles = (theme: GameTheme) => StyleSheet.create({
   /** Tek sayfa kabı — ScrollView YOK, yükseklik onLayout ile ölçülür */
   screen: {
     flex: 1,
@@ -28,34 +55,8 @@ export const styles = StyleSheet.create({
     paddingBottom: Theme.spacing.sm,
   },
 
-  // ─── Ambiyans (GameShell `background` slotu) ──────────────────────────
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  backdropBase: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  /**
-   * Neon küreler. Yuvarlatılmış kutu + şeffafa inen gradyan = ucuz radyal
-   * parıltı. Ekran dışına taşarlar; kenarları görünmesin diye kasıtlı.
-   */
-  glowTop: {
-    position: 'absolute',
-    top: -220,
-    left: -140,
-    width: 460,
-    height: 460,
-    borderRadius: 230,
-  },
-  glowBottom: {
-    position: 'absolute',
-    bottom: -260,
-    right: -160,
-    width: 500,
-    height: 500,
-    borderRadius: 250,
-  },
+  // Ambiyans stilleri buradan KALDIRILDI — artık components/games/GameBackdrop/
+  // sahibi. Ölçüler oraya birebir taşındı, GameShell otomatik render ediyor.
 
   // ─── Brief şeridi: TAM poster + film adı + soru ───────────────────────
   brief: {
@@ -70,9 +71,9 @@ export const styles = StyleSheet.create({
   posterFrame: {
     borderRadius: Theme.borderRadius.md,
     overflow: 'hidden',
-    backgroundColor: PilotTokens.photoEmpty,
+    backgroundColor: Colors.bgElevated,
     borderWidth: 1,
-    borderColor: PilotTokens.glassBorder,
+    borderColor: Colors.chromeGlassBorder,
   },
   posterImage: {
     ...StyleSheet.absoluteFillObject,
@@ -88,13 +89,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: Theme.borderRadius.full,
-    backgroundColor: PilotTokens.roundWash,
+    backgroundColor: ImposterOrnaments.roundWash,
     borderWidth: 1,
-    borderColor: PilotTokens.roundAccent,
+    borderColor: ImposterOrnaments.roundAccent,
   },
   roundPillText: {
     ...Theme.typography.micro,
-    color: PilotTokens.roundAccent,
+    color: ImposterOrnaments.roundAccent,
     letterSpacing: 1.2,
   },
   /**
@@ -115,7 +116,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Theme.spacing.sm,
     paddingVertical: 7,
     borderRadius: Theme.borderRadius.full,
-    shadowColor: PilotTokens.questionGlow,
+    shadowColor: ImposterOrnaments.questionGlow,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 14,
@@ -131,7 +132,7 @@ export const styles = StyleSheet.create({
   },
   selectionHint: {
     ...Theme.typography.micro,
-    color: PilotTokens.selectAccent,
+    color: theme.accent,
     letterSpacing: 1,
   },
 
@@ -156,7 +157,7 @@ export const styles = StyleSheet.create({
   card: {
     borderRadius: 18,
     borderWidth: 1,
-    shadowColor: PilotTokens.glassShadow,
+    shadowColor: Colors.shadowBlack,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
     shadowRadius: 14,
@@ -167,15 +168,15 @@ export const styles = StyleSheet.create({
     borderRadius: 17,
     overflow: 'hidden',
     padding: 5,
-    backgroundColor: PilotTokens.glassSurface,
+    backgroundColor: Colors.chromeGlassSurface,
   },
   cardIdle: {
-    borderColor: PilotTokens.glassBorder,
+    borderColor: Colors.chromeGlassBorder,
   },
   /** Seçili: neon camgöbeği kenar + hale */
   cardSelected: {
-    borderColor: PilotTokens.selectAccent,
-    shadowColor: PilotTokens.selectGlow,
+    borderColor: theme.accent,
+    shadowColor: theme.accentGlow,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 16,
@@ -203,7 +204,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 13,
     overflow: 'hidden',
-    backgroundColor: PilotTokens.photoEmpty,
+    backgroundColor: Colors.bgElevated,
   },
   photo: {
     ...StyleSheet.absoluteFillObject,
@@ -211,7 +212,7 @@ export const styles = StyleSheet.create({
   photoEmpty: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: PilotTokens.photoEmpty,
+    backgroundColor: Colors.bgElevated,
   },
   initials: {
     fontSize: 26,
@@ -223,7 +224,7 @@ export const styles = StyleSheet.create({
   /** Seçili kartın portresine binen ince neon yıkama */
   selectWash: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: PilotTokens.selectWash,
+    backgroundColor: theme.accentDim,
   },
   checkBadge: {
     position: 'absolute',
@@ -253,7 +254,7 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nameSelected: {
-    color: PilotTokens.selectAccent,
+    color: theme.accent,
   },
   /** Rol adı — ipucu katmanı, isimden bir kademe sönük */
   character: {
@@ -274,14 +275,14 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.lg,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: PilotTokens.glassBorder,
+    borderColor: Colors.chromeGlassBorder,
   },
   revealBand: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Theme.spacing.sm,
     padding: Theme.spacing.md,
-    backgroundColor: PilotTokens.glassFallback,
+    backgroundColor: Colors.chromeGlassFallback,
   },
   revealBody: {
     flex: 1,
@@ -308,8 +309,8 @@ export const styles = StyleSheet.create({
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.md,
     borderWidth: 1,
-    borderColor: PilotTokens.glassBorder,
-    backgroundColor: PilotTokens.glassFallback,
+    borderColor: Colors.chromeGlassBorder,
+    backgroundColor: Colors.chromeGlassFallback,
   },
   errorText: {
     ...Theme.typography.caption,

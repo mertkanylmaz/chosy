@@ -27,7 +27,7 @@
  * 4. Oynanis ekrani TEK SAYFA, ScrollView yok (31 Tem 2026): secenek sayisi
  *    her roundda 4'e sabitlendi, izgara 2x2, kart olculeri olculen yukseklige
  *    gore hesaplaniyor. Poster kirpilmiyor (contain), oyuncu adinin altinda
- *    rol adi var. Ayrinti: components/games/ImposterPilot/index.tsx dosya basi.
+ *    rol adi var. Ayrinti: components/games/Imposter/index.tsx dosya basi.
  * 5. Sonuc ekrani ResultCard yerine QuickResult — kisa icerikte tek ekran.
  *    (Tur 2: kesif karti acilinca kirpilmasin diye ScrollView'a alindi.)
  *
@@ -61,8 +61,7 @@ import type {
 import type { GameState } from '@/services/gameTypes';
 import { GameShell } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
-import { ImposterPilot, ImposterBackdrop } from '@/components/games/ImposterPilot';
-import { PilotTokens } from '@/components/games/ImposterPilot/pilotTokens';
+import { ImposterBoard } from '@/components/games/Imposter';
 import { QuickResult } from '@/components/games/QuickResult';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useGamePaywall } from '@/hooks/useGamePaywall';
@@ -74,7 +73,7 @@ import {
 
 /**
  * Ogrenme ani suresi — dogru cevabi okumaya yeter, akisi kesmez.
- * (Izgara olculeri artik components/games/ImposterPilot icinde.)
+ * (Izgara olculeri artik components/games/Imposter icinde.)
  */
 const REVEAL_MS = 900;
 
@@ -392,11 +391,10 @@ export default function ImposterScreen() {
   if (loadError) {
     return (
       <GameShell
+        gameType="imposter"
         title={t('games.imposter.title')}
         currentAttempt={0}
         maxAttempts={3}
-        background={<ImposterBackdrop />}
-        progressGradient={PilotTokens.progressGradient}
       >
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
@@ -407,11 +405,10 @@ export default function ImposterScreen() {
   if (gameState === 'loading') {
     return (
       <GameShell
+        gameType="imposter"
         title={t('games.imposter.title')}
         currentAttempt={0}
         maxAttempts={3}
-        background={<ImposterBackdrop />}
-        progressGradient={PilotTokens.progressGradient}
       >
         <GameStateView state="loading" />
       </GameShell>
@@ -424,11 +421,11 @@ export default function ImposterScreen() {
 
     return (
       <GameShell
+        gameType="imposter"
         title={t('games.imposter.title')}
         currentAttempt={3}
         maxAttempts={3}
         hideProgress
-        background={<ImposterBackdrop />}
       >
         <QuickResult
           solved={correctCount === 3}
@@ -457,11 +454,10 @@ export default function ImposterScreen() {
     // Round verisi yoksa sessizce bos ekran cizme — Hard Rule 5
     return (
       <GameShell
+        gameType="imposter"
         title={t('games.imposter.title')}
         currentAttempt={0}
         maxAttempts={3}
-        background={<ImposterBackdrop />}
-        progressGradient={PilotTokens.progressGradient}
       >
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
@@ -476,19 +472,18 @@ export default function ImposterScreen() {
 
   return (
     <GameShell
+      gameType="imposter"
       title={t('games.imposter.title')}
       subtitle={`${t('games.imposter.round_label', { n: currentRound })} · ${roundLabel}`}
       currentAttempt={currentRound - 1}
       maxAttempts={3}
       // PILOT: hero tam kanamali olsun diye padding sorumlulugu ekrana geciyor
       contentPadding={false}
-      background={<ImposterBackdrop />}
-      progressGradient={PilotTokens.progressGradient}
     >
       {/* Flash overlay — yanlis roundda kisa kirmizi parlama */}
       <Animated.View style={[styles.flashOverlay, flashStyle]} pointerEvents="none" />
 
-      <ImposterPilot
+      <ImposterBoard
         round={activeRound}
         currentRound={currentRound}
         requiredSelections={requiredSelections}
@@ -507,7 +502,7 @@ export default function ImposterScreen() {
 
 /**
  * Bu ekranda kalan tek stil. Oynanis gorselleri artik
- * components/games/ImposterPilot/styles.ts icinde.
+ * components/games/Imposter/styles.ts icinde.
  */
 const styles = StyleSheet.create({
   /** Yanlis roundda kisa kirmizi parlama — tum ekrani kaplar */

@@ -1,8 +1,14 @@
 /**
- * ImposterPilot — Imposter oynanış ekranının alternatif görsel dili.
+ * ImposterBoard — Imposter oynanış tahtası.
  *
- * PILOT. Kabul/red kararı verilene kadar geçici. Doktrin gerekçesi ve
- * silme talimatı: ./pilotTokens.ts dosya başı.
+ * ── PİLOT DEĞİL ARTIK (1 Ağu 2026) ────────────────────────────────────────
+ * Bu ekran "ImposterPilot" adıyla, oyuna özel görsel dilin denemesi olarak
+ * yazılmıştı ve kabul/red kararı bekliyordu. Cihazda test edildi ve **kabul**
+ * edildi: dili altı oyuna yayılan tema sistemine dönüştü.
+ *   ambiyans + accent → `constants/gameThemes.ts`
+ *   cam              → `Colors.chromeGlass*` + `components/games/GlassSurface/`
+ *   ödül renkleri    → altına döndü (QuickResult)
+ * Karar tarihçesi: `.claude/apple-design-standard-2026.md` §6.4
  *
  * Bu bileşen YALNIZCA görsel. Veri yükleme, tahmin gönderimi, otomatik
  * kilitleme, telemetri, paywall ve sonuç ekranı `app/games/imposter.tsx`'te
@@ -26,7 +32,7 @@
  * Satır ya tüm kartlarda vardır ya hiçbirinde: eksik satır "bu oyuncunun rolü
  * yok" sinyali verip cevabı ele verirdi (bkz. `showCharacters`).
  */
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
@@ -41,8 +47,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { getPosterUrl } from '@/services/tmdb';
 import type { ImposterRound } from '@/types/game';
 
-import { PilotTokens } from './pilotTokens';
-import { styles } from './styles';
+import { useGameTheme } from '../GameShell';
+import { createStyles } from './styles';
 
 /** Izgara sütun sayısı — 4 seçenek 2x2 olsun diye sabit */
 const COLUMNS = 2;
@@ -83,7 +89,7 @@ interface RoundOutcome {
   revealedImposters: string[];
 }
 
-interface ImposterPilotProps {
+interface ImposterBoardProps {
   /** Aktif round verisi */
   round: ImposterRound;
   /** Kaçıncı round (1-3) */
@@ -114,33 +120,12 @@ function getInitials(name: string): string {
     .join('');
 }
 
-/**
- * Ekran ambiyansı — GameShell'in `background` slotuna verilir.
- *
- * Zifiri siyah yerine gece mavisi bir taban, üstüne iki yumuşak neon küre.
- * Küreler `LinearGradient`in şeffafa inen hâlidir; radyal gradyan yerine
- * yuvarlatılmış kutu kullanılıyor — ek bağımlılık gerektirmiyor ve cam
- * yüzeylerin arkasında renk oynaması yaratmaya yetiyor.
+/*
+ * `ImposterBackdrop` buradan KALDIRILDI (1 Ağu 2026, pilot promosyonu).
+ * Ambiyans artık altı oyunun ortak katmanı: `components/games/GameBackdrop/`,
+ * `GameShell` tarafından `gameType`'a göre otomatik render ediliyor.
+ * Değerler `constants/gameThemes.ts` › `imposter` girdisinde.
  */
-export function ImposterBackdrop(): React.ReactElement {
-  return (
-    <View style={styles.backdrop}>
-      <LinearGradient colors={PilotTokens.ambientBase} style={styles.backdropBase} />
-      <LinearGradient
-        colors={PilotTokens.ambientGlowViolet}
-        start={{ x: 0.3, y: 0 }}
-        end={{ x: 0.9, y: 1 }}
-        style={styles.glowTop}
-      />
-      <LinearGradient
-        colors={PilotTokens.ambientGlowCyan}
-        start={{ x: 0.7, y: 1 }}
-        end={{ x: 0.1, y: 0 }}
-        style={styles.glowBottom}
-      />
-    </View>
-  );
-}
 
 /**
  * Imposter oynanış ekranı — tek sayfa, kaydırmasız.
@@ -150,7 +135,7 @@ export function ImposterBackdrop(): React.ReactElement {
  * sınırının küçüğünden seçilir. Böylece küçük ekranda kartlar küçülür,
  * hiçbir yerde taşma ya da kaydırma oluşmaz.
  */
-export function ImposterPilot({
+export function ImposterBoard({
   round,
   currentRound,
   requiredSelections,
@@ -160,9 +145,11 @@ export function ImposterPilot({
   showReveal,
   outcome,
   submitError,
-}: ImposterPilotProps): React.ReactElement {
+}: ImposterBoardProps): React.ReactElement {
   const { t } = useLanguage();
   const contentWidth = useGameContentWidth();
+  const theme = useGameTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
 
   /** Kullanılabilir dikey alan — ilk çizimde 0, ölçümden sonra gerçek değer */
   const [availableHeight, setAvailableHeight] = useState(0);
@@ -250,7 +237,7 @@ export function ImposterPilot({
           </Text>
 
           <LinearGradient
-            colors={PilotTokens.questionGradient}
+            colors={theme.progressGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.questionTag}
@@ -353,7 +340,7 @@ export function ImposterPilot({
                                 ? Colors.error
                                 : isRevealed
                                   ? Colors.success
-                                  : PilotTokens.selectAccent
+                                  : theme.accent
                             }
                           />
                         </Animated.View>
