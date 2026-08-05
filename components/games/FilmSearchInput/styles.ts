@@ -7,9 +7,14 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
   container: {
     position: 'relative',
     zIndex: 10,
@@ -18,7 +23,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
     borderRadius: Theme.borderRadius.md,
     paddingHorizontal: Theme.spacing.md,
     height: 52,
@@ -39,7 +44,7 @@ export const styles = StyleSheet.create({
     maxHeight: 280,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
     elevation: 10,
     shadowColor: Colors.shadowBlack,
     shadowOffset: { width: 0, height: -4 },
@@ -77,4 +82,5 @@ export const styles = StyleSheet.create({
   resultYear: {
     ...Theme.typography.caption,
   },
-});
+  });
+};

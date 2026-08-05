@@ -8,16 +8,17 @@
  * Kilitli kartlar yalnizca kategori etiketini gosterir; icerik
  * ancak acilinca gorunur.
  */
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Lightbulb, Lock } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
+import { useGameTheme } from '@/components/games/GameShell';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { FadeInHintStub } from '@/types/game';
 
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface HintBoardProps {
   /** Bulmacadaki tum ipucu iskeletleri (order'a gore sirali) — icerik tasimazlar */
@@ -45,6 +46,8 @@ export function HintBoard({
   onReveal,
   disabled = false,
 }: HintBoardProps): React.ReactElement | null {
+  const theme = useGameTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
 
   if (hints.length === 0) return null;
@@ -66,7 +69,7 @@ export function HintBoard({
           <Lightbulb
             size={13}
             weight="duotone"
-            color={credits > 0 ? Colors.gold : Colors.textGrey}
+            color={credits > 0 ? theme.accent : Colors.textGrey}
           />
           <Text style={[styles.creditText, credits === 0 && styles.creditTextEmpty]}>
             {t(
@@ -104,7 +107,7 @@ export function HintBoard({
             >
               <View style={styles.iconSlot}>
                 {isRevealed ? (
-                  <Lightbulb size={18} weight="duotone" color={Colors.gold} />
+                  <Lightbulb size={18} weight="duotone" color={theme.accent} />
                 ) : (
                   <Lock size={18} weight="duotone" color={Colors.textGrey} />
                 )}

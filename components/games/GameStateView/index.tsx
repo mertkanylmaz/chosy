@@ -5,7 +5,7 @@
  * retry butonu hiç yoktu (Hard Rule 5: her hata görünür durum + retry sunar).
  * Yükleme durumu DESIGN_SYSTEM'deki 1.5s pulse skeleton'ı kullanır.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -17,10 +17,11 @@ import Animated, {
 import { CloudSlash } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
+import { useGameTheme } from '@/components/games/GameShell';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface GameStateViewProps {
   /** Hangi durum gösterilecek */
@@ -42,6 +43,8 @@ export function GameStateView({
   title,
   subtitle,
 }: GameStateViewProps): React.JSX.Element {
+  const theme = useGameTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
   const pulse = useSharedValue(0.4);
 

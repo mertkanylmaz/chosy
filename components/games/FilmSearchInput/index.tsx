@@ -4,19 +4,20 @@
  * Kullanıcı yazar → TMDb arama → dropdown sonuçlar → seçim.
  * Dropdown INPUT'UN ÜSTÜNDE açılır (keyboard çakışmasını önlemek için).
  */
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
+import { useGameTheme } from '@/components/games/GameShell';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 import { searchFilms } from '@/services/gameService';
 import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
-import { styles } from './styles';
+import { createStyles } from './styles';
 
 interface FilmSearchInputProps {
   /** Film seçildiğinde çağrılır */
@@ -32,6 +33,8 @@ export function FilmSearchInput({
   disabled = false,
   placeholder,
 }: FilmSearchInputProps) {
+  const theme = useGameTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FilmSearchResult[]>([]);

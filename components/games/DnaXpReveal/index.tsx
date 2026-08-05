@@ -157,7 +157,9 @@ export function DnaXpReveal({
               <Text style={styles.dnaText}>
                 {DIMENSION_LABELS[signal.dimension]?.[language === 'tr' ? 'tr' : 'en'] ?? signal.dimension}
               </Text>
-              <ArrowUp size={12} color="#4ade80" weight="bold" />
+              {/* Ödül katmanı: tema DEĞİL. Hardcoded #4ade80 idi — aynı değer,
+                  artık token üzerinden (repodaki tek Colors-dışı hex'ti). */}
+              <ArrowUp size={12} color={Colors.greenSoft} weight="bold" />
               <Text style={styles.dnaDelta}>
                 +{Math.round(signal.delta * 10)}
               </Text>

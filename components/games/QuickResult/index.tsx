@@ -19,18 +19,23 @@
  * ikincil bloklar. Hub zaten sonraki oyunu gosteriyor.
  *
  * ── TUR 2 (30 Tem 2026) ───────────────────────────────────────────────────
- * Su an YALNIZ Imposter bu bileseni kullaniyor, bu yuzden gorsel dili
- * ImposterPilot ile ayni tutuluyor (`PilotTokens`). Pilot reddedilirse bu
- * import'un geri alinmasi gerekir — talimat: ImposterPilot/pilotTokens.ts.
- *
  * Geri bildirim karsiliklari:
  *   "Amadeus hala serif"        → film adi sans-serif, agir agirlik
  *   "metin kesiliyor"           → ekran artik ScrollView; kesif karti acilinca
  *                                 icerik tasmiyor, kayiyor ("tek ekran, scroll
  *                                 yok" varsayimi acik aciklamada kiriliyordu)
  *   "poster kucuk"              → 120x180, daha yuvarlak, golgeli
- *   "skor sonuk"                → neon tur isaretleri + mor XP rozeti
  *   "butonlar duz"              → gradyan birincil buton + cam ikincil buton
+ *
+ * ── ODUL KATMANI (1 Ağu 2026) ─────────────────────────────────────────────
+ * Bu ekran eskiden `PilotTokens`'tan besleniyordu: camgobegi tur isaretleri,
+ * mor XP rozeti, pembe seri, mor→pembe paylas butonu.
+ *
+ * Oyun basina tema sistemine gecilirken kimlik sabiti RENK degil KATMAN oldu:
+ * *oynanis oyunun temasi, odul Chosy'nin altini.* QuickResult odul ekrani,
+ * dolayisiyla ALTIN — diger bes oyunun `ResultCard`'i ile ayni hizada.
+ * Bu ekranin gorunumu bilerek degisti; oynanis ekrani (ImposterBoard) degismedi.
+ * Karar: `.claude/apple-design-standard-2026.md` §6.4
  */
 import React, { useEffect, useRef } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -40,7 +45,6 @@ import { CheckCircle, Fire, ShareNetwork, Star, XCircle } from 'phosphor-react-n
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
-import { PilotTokens } from '@/components/games/ImposterPilot/pilotTokens';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 import { getPosterUrl } from '@/services/tmdb';
@@ -176,10 +180,10 @@ export function QuickResult({
             {Array.from({ length: total }).map((_, i) =>
               i < score ? (
                 <View key={i} style={styles.dotHit}>
-                  <CheckCircle size={24} weight="fill" color={PilotTokens.scoreHit} />
+                  <CheckCircle size={24} weight="fill" color={Colors.gold} />
                 </View>
               ) : (
-                <XCircle key={i} size={24} weight="duotone" color={PilotTokens.scoreMiss} />
+                <XCircle key={i} size={24} weight="duotone" color={Colors.textTertiary} />
               ),
             )}
           </View>
@@ -191,7 +195,7 @@ export function QuickResult({
           {/* XP + DNA tek satirda — DnaXpReveal'in animasyon dizisi yerine */}
           {xpAwarded != null && xpAwarded > 0 ? (
             <View style={styles.metaRow}>
-              <Star size={14} color={PilotTokens.xpAccent} weight="fill" />
+              <Star size={14} color={Colors.gold} weight="fill" />
               <Text style={styles.metaText}>+{xpAwarded} XP</Text>
               {dnaUpdated ? (
                 <>
@@ -204,7 +208,7 @@ export function QuickResult({
 
           {streak > 0 ? (
             <View style={styles.streakRow}>
-              <Fire size={14} weight="fill" color={PilotTokens.streakAccent} />
+              <Fire size={14} weight="fill" color={Colors.gold} />
               <Text style={styles.streakText}>
                 {t('games.result.streak', { count: streak })}
               </Text>
@@ -243,13 +247,15 @@ export function QuickResult({
                   }
                 }}
               >
+                {/* Ödül katmanı: altın. Mor→pembe gradyan 1 Ağu 2026'da bırakıldı. */}
                 <LinearGradient
-                  colors={PilotTokens.questionGradient}
+                  colors={[Colors.gold, Colors.goldDark]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={styles.shareFill}
                 >
-                  <ShareNetwork size={16} color={Colors.white} weight="bold" />
+                  {/* Altın zeminde koyu metin — beyaz kontrastı yetersizdi */}
+                  <ShareNetwork size={16} color={Colors.textOnAccent} weight="bold" />
                   <Text style={styles.shareText}>{t('games.result.share_score')}</Text>
                 </LinearGradient>
               </TouchableOpacity>

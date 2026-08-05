@@ -9,14 +9,16 @@
  *   ekrandan tasip kirpiliyordu; artik ScrollView, kisa icerikte hala
  *   dikeyde ortali duruyor.
  * - Serif film adi sans-serif oldu (geri bildirim: "gazete mansetli tutarsizlik").
- * - Renkler PilotTokens uzerinden — bu bilesen yalnizca Imposter'da kullaniliyor
- *   ve oynanis ekraniyla ayni dili konusmasi gerekiyor.
+ *
+ * 1 Agu 2026 — odul katmani:
+ * - Renkler artik ALTIN. Bu bilesen yalnizca Imposter'da kullaniliyor ama odul
+ *   ekrani, yani oynanis temasini DEGIL Chosy'nin kimlik sabitini konusur.
+ *   Ayrinti: index.tsx dosya basi.
  */
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
-import { PilotTokens } from '@/components/games/ImposterPilot/pilotTokens';
 
 export const styles = StyleSheet.create({
   /** Paylasim karti yakalama alani — ekran disinda tutulur */
@@ -44,7 +46,7 @@ export const styles = StyleSheet.create({
   /** Golge overflow ile ayni dugumde calismaz — sarmalayici tasiyor */
   posterWrap: {
     borderRadius: Theme.borderRadius.lg,
-    shadowColor: PilotTokens.glassShadow,
+    shadowColor: Colors.shadowBlack,
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.55,
     shadowRadius: 20,
@@ -79,11 +81,18 @@ export const styles = StyleSheet.create({
     gap: Theme.spacing.sm,
     marginTop: Theme.spacing.xs,
   },
-  /** Kazanilan turun neon halesi */
+  /**
+   * Kazanilan turun altin halesi.
+   *
+   * shadowColor DUZ renk olmali: `Colors.goldGlow` zaten rgba 0.18 tasiyor,
+   * shadowOpacity ile carpilinca hale gorunmez oluyordu. Eski `selectGlow`
+   * alfayi kendi tasiyip shadowOpacity:1 kullaniyordu — burada siddet
+   * shadowOpacity'ye tasindi.
+   */
   dotHit: {
-    shadowColor: PilotTokens.selectGlow,
+    shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.75,
     shadowRadius: 10,
     elevation: 6,
   },
@@ -93,7 +102,7 @@ export const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   scoreLineSolved: {
-    color: PilotTokens.scoreHit,
+    color: Colors.gold,
   },
 
   // ── XP + DNA tek satir ────────────────────────────────────────────────
@@ -105,13 +114,13 @@ export const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: PilotTokens.xpAccent,
-    backgroundColor: PilotTokens.xpWash,
+    borderColor: Colors.gold,
+    backgroundColor: Colors.goldSeal,
   },
   metaText: {
     ...Theme.typography.caption,
     fontWeight: '700',
-    color: PilotTokens.xpAccent,
+    color: Colors.gold,
   },
   metaDivider: {
     ...Theme.typography.caption,
@@ -146,12 +155,12 @@ export const styles = StyleSheet.create({
     gap: Theme.spacing.sm,
     marginTop: Theme.spacing.sm,
   },
-  /** Birincil eylem — gradyan dolgu + yukselti */
+  /** Birincil eylem — altin gradyan dolgu + yukselti (siddet: dotHit ile ayni gerekce) */
   shareButton: {
     borderRadius: Theme.borderRadius.full,
-    shadowColor: PilotTokens.questionGlow,
+    shadowColor: Colors.gold,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 1,
+    shadowOpacity: 0.55,
     shadowRadius: 16,
     elevation: 10,
   },
@@ -170,7 +179,9 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: Theme.fonts.inter,
     fontWeight: '700',
-    color: Colors.white,
+    // Altın zeminde koyu metin (1 Ağu 2026) — beyaz, gold #D4A843 üstünde
+    // kontrast eşiğini geçmiyordu.
+    color: Colors.textOnAccent,
   },
   /** Ikincil eylem — cam yuzey */
   hubButton: {
@@ -179,8 +190,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 13,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: PilotTokens.glassBorder,
-    backgroundColor: PilotTokens.glassSurface,
+    borderColor: Colors.chromeGlassBorder,
+    backgroundColor: Colors.chromeGlassSurface,
   },
   hubText: {
     fontSize: 14,

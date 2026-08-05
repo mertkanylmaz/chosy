@@ -7,9 +7,14 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
   container: {
     width: '100%',
     gap: Theme.spacing.sm,
@@ -30,7 +35,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: Theme.borderRadius.full,
@@ -41,7 +46,7 @@ export const styles = StyleSheet.create({
   },
   creditText: {
     ...Theme.typography.micro,
-    color: Colors.gold,
+    color: theme.accent,
     fontWeight: '700',
   },
   creditTextEmpty: {
@@ -69,12 +74,12 @@ export const styles = StyleSheet.create({
   },
   /** Acilmis ipucu — altin sac teli, hafif muhur zemini */
   cardRevealed: {
-    borderColor: Colors.goldHairline,
-    backgroundColor: Colors.goldSeal,
+    borderColor: accentHairline,
+    backgroundColor: theme.accentDim,
   },
   /** Kredi varken kilitli kart — dokunulabilir oldugu belli olsun */
   cardUnlockable: {
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
   },
   cardDisabled: {
     opacity: 0.4,
@@ -101,4 +106,5 @@ export const styles = StyleSheet.create({
     ...Theme.typography.caption,
     color: Colors.textTertiary,
   },
-});
+  });
+};

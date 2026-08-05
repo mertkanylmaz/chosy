@@ -5,9 +5,14 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
-export const styles = StyleSheet.create({
+export const createStyles = (theme: GameTheme) => {
+  /** Accent'in hairline hali — %22 alfa */
+  const accentHairline = withAlpha(theme.accent, 0.22);
+
+  return StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
@@ -35,11 +40,11 @@ export const styles = StyleSheet.create({
     paddingVertical: Theme.spacing.sm,
     borderRadius: Theme.borderRadius.full,
     borderWidth: 1,
-    borderColor: Colors.goldHairline,
+    borderColor: accentHairline,
   },
   retryText: {
     ...Theme.typography.eyebrow,
-    color: Colors.gold,
+    color: theme.accent,
   },
 
   // ─── Loading skeleton ──────────────────────────────────────────────────────
@@ -68,4 +73,5 @@ export const styles = StyleSheet.create({
     borderRadius: Theme.borderRadius.sm,
     backgroundColor: Colors.bgCard,
   },
-});
+  });
+};

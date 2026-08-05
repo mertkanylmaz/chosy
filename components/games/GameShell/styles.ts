@@ -32,6 +32,22 @@ export const styles = StyleSheet.create({
     // zIndex verilmiyor: bu ilk çocuk, çizim sırası zaten header/içeriğin
     // altında bırakıyor. Negatif zIndex Android'de görünümü tamamen gizliyor.
   },
+  /**
+   * Yüzen cam chrome — `floatingHeader` açıkken header + progress'i sarar.
+   * Ekranın üstüne yapışır, içerik altından kayar.
+   *
+   * Tam kanamalı olduğu için yan/üst kenarlık yok (GlassSurface'a `noBorder`
+   * geçiliyor); ayrım yalnız alt hairline'dan gelir. `borderBottomWidth`
+   * `borderWidth: 0`'dan daha spesifik olduğu için sonda uygulanır ve kazanır.
+   */
+  floatingChrome: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: Colors.chromeGlassBorder,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
