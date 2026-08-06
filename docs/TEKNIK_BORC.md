@@ -188,3 +188,71 @@ adlandırılacak.
 
 `typecheck` 14'ü aşarsa veya `scripts/` dışında hata çıkarsa **dur**.
 Sıfır hedefi bu sprintte yok.
+
+---
+
+## Faz B veri katmanı — çeşitlilik güvenlik ağı (`generate-gauntlet` yazılırken uygulanacak)
+
+`generate-gauntlet`'in çeşitlilik kuralları üç alana bakar: `director`
+("aynı yönetmen ≤1"), `original_language` ("aynı dil ≤3") ve `imdb_votes`
+(tanınırlık yüzdeliği). **Alan NULL ise kural hata vermez, sadece uygulanmaz** —
+yani veri katmanında sessiz fallback. Kod tarafında açık korumalar gerekiyor:
+
+1. **`director` NULL → "bilinmeyen yönetmen" tek bir bucket sayılır** ve bir
+   dörtlüde **en fazla 1** tane olur. NULL'ları "hepsi farklı yönetmen" gibi
+   ele almak kuralı delik bırakır.
+2. **`original_language` NULL → dil kotasında ayrı bir bucket** ("bilinmeyen"),
+   dil kısıtını atlatan serbest geçiş olarak sayılmaz.
+3. **`imdb_votes` NULL → tanınırlık yüzdeliğinden çıkarılır**, 0 varsayılmaz.
+
+### Havuzun mevcut durumu (6 Ağu 2026 backfill sonrası)
+
+`core + extended + trending` = 1866 film:
+
+| Alan | NULL |
+|---|---|
+| `director` | 0 |
+| `original_language` | 0 |
+| `imdb_votes` | 50 |
+| `profile_vector` | 0 |
+
+Düello-uygun havuz: **1816 film (%97.3)**.
+
+`imdb_votes`'un 50'ye çıkması gerileme değil, sahte veriden arınmadır: 49 trending
+satırı TMDb `vote_count` taşıyordu (aşağıya bkz.) ve dürüst değerleri NULL'dır.
+49'unun `imdb_id`'si mevcut, yani `OMDB_API_KEY` eklendiğinde gerçek değerlerle
+doldurulabilirler.
+
+Kurallar bugün pratikte boşa düşmüyor; korumalar `sync-trending` ile sonradan
+eklenen filmler için gerekli — yeni gelen kayıtlar `director`/`imdb_votes`
+alanlarını eksik getirebiliyor.
+
+### İki açık kalem
+
+- **`OMDB_API_KEY` `.env`'de yok.** `imdb_votes`'un tek kaynağı OMDb'dir
+  (`scripts/lib/omdb-client.ts`); TMDb `vote_count` farklı bir metriktir ve bu
+  kolona yazılmaz. Anahtar eklendiğinde
+  `npx tsx --env-file=.env scripts/backfill-film-metadata.ts` kalan satırı
+  doldurur. `archive` tier'ında ayrıca 957 NULL var (`--tiers=` ile kapsanabilir),
+  ancak bunların yalnızca 439'unda `imdb_id` mevcut.
+- **~~`sync-trending` `imdb_votes = 0` yazıyor~~ — ÇÖZÜLDÜ (6 Ağu 2026).**
+  Kök neden sanıldığından genişti: `detailToRow` `imdb_votes` kolonuna TMDb'nin
+  `vote_count`'unu yazıyordu (`index.ts:214`). Sıfırlar bunun yalnızca vizyona
+  girmemiş filmlerdeki alt kümesiydi. TMDb oy sayısı IMDb oyu değildir; iki
+  metrik karışınca tanınırlık yüzdeliği hem sıfırlarda hem sıfır olmayan
+  satırlarda bozulur — ikincisi daha sinsidir, çünkü meşru görünür.
+  Düzeltme: `imdb_votes: null` + `FilmInsertRow.imdb_votes` tipi `null`'a
+  daraltıldı (regresyonu derleme anında yakalar). Ham TMDb sayısı
+  `metadata_json.vote_count`'ta korunuyor. Veri tarafında 49 trending satırı
+  NULL'landı; `imdb_rating`'i dolu ve değeri TMDb'den farklı olan 9 satır
+  (gerçek OMDb verisi) korundu. `scripts/audit-film-metadata-gaps.ts` artık
+  regresyon uyarısı basıyor. **Deploy edilmedi** — `sync-trending` bir sonraki
+  fonksiyon deploy'unda güncellenecek, o ana kadar canlı sürüm eski davranışta.
+
+### İlgili script'ler
+
+| Script | İş |
+|---|---|
+| `scripts/audit-film-metadata-gaps.ts` | Salt-okunur boşluk denetimi (öncesi/sonrası doğrulama) |
+| `scripts/backfill-film-metadata.ts` | `director` + `original_language` (TMDb), `imdb_votes` (OMDb) |
+| `scripts/ai-profile-films.ts --from-db` | `profile_vector`'ü DB'den okuyarak üretir (`films-raw.json` sonradan eklenen filmleri içermez) |

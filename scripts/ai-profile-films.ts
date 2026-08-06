@@ -11,6 +11,13 @@
  *   npx tsx scripts/ai-profile-films.ts --film-id=278    # single film (tmdb_id)
  *   npx tsx scripts/ai-profile-films.ts --dry-run        # plan only, no API calls
  *   npx tsx scripts/ai-profile-films.ts --force           # re-profile everything
+ *   npx tsx scripts/ai-profile-films.ts --from-db        # DB'den oku: profile_vector NULL
+ *                                                        # veya hiç profil satırı olmayan filmler
+ *
+ * --from-db notu: films-raw.json yalnızca ilk seed'deki filmleri içerir.
+ * sync-trending ile sonradan eklenen filmler o dosyada YOKTUR, dolayısıyla
+ * --only-missing onları göremez. --from-db girdiyi doğrudan films tablosundan
+ * alır ve bu boşluğu kapatır.
  *
  * Env: ANTHROPIC_API_KEY, SUPABASE_URL (or EXPO_PUBLIC_SUPABASE_URL), SUPABASE_SERVICE_ROLE_KEY
  */
@@ -93,6 +100,15 @@ interface ProfilingError {
   title: string;
   error: string;
   timestamp: string;
+}
+
+/** CLI flags. */
+interface Flags {
+  onlyMissing: boolean;
+  filmId: number | null;
+  dryRun: boolean;
+  force: boolean;
+  fromDb: boolean;
 }
 
 interface ProfilingStats {
@@ -556,6 +572,121 @@ async function getFilmsWithNullVector(sb: SupabaseClient): Promise<Set<string>> 
   return ids;
 }
 
+/** films tablosunun AI profilleme için gereken kolonları. */
+interface DbFilmRow {
+  id: string;
+  tmdb_id: number | null;
+  title: string;
+  original_title: string | null;
+  original_language: string | null;
+  overview: string | null;
+  release_date: string | null;
+  runtime: number | null;
+  vote_average: number | null;
+  genres: string[] | null;
+  country: string[] | null;
+  director: string | null;
+  cast: string[] | null;
+  tmdb_keywords: string[] | null;
+  imdb_id: string | null;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  imdb_rating: number | null;
+  imdb_votes: number | null;
+  metascore: number | null;
+  oscar_wins: number | null;
+  oscar_nominations: number | null;
+  content_rating: string | null;
+  metadata_json: Record<string, unknown> | null;
+}
+
+/** Sayfalayarak tüm satırları çeker. */
+async function fetchAllRows<T>(
+  sb: SupabaseClient,
+  table: string,
+  select: string,
+): Promise<T[]> {
+  const PAGE = 1000;
+  const rows: T[] = [];
+  let from = 0;
+
+  for (;;) {
+    const { data, error } = await sb.from(table).select(select).range(from, from + PAGE - 1);
+    if (error) throw new Error(`${table} query error: ${error.message}`);
+    if (!data || data.length === 0) break;
+    rows.push(...(data as unknown as T[]));
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+
+  return rows;
+}
+
+/** DB satırını prompt'un beklediği RawFilmJSON şekline dönüştürür. */
+function dbRowToRawFilm(row: DbFilmRow): RawFilmJSON {
+  const voteCount = Number(row.metadata_json?.vote_count ?? 0);
+
+  return {
+    tmdb_id: row.tmdb_id ?? 0,
+    title: row.title,
+    original_title: row.original_title ?? row.title,
+    original_language: row.original_language ?? 'en',
+    overview: row.overview ?? '',
+    release_date: row.release_date ?? '',
+    runtime: row.runtime,
+    vote_average: row.vote_average ?? 0,
+    vote_count: isNaN(voteCount) ? 0 : voteCount,
+    genres: (row.genres ?? []).map((name) => ({ id: 0, name })),
+    production_countries: row.country ?? [],
+    director: row.director,
+    cast: row.cast ?? [],
+    keywords: row.tmdb_keywords ?? [],
+    imdb_id: row.imdb_id,
+    poster_url: row.poster_url,
+    backdrop_url: row.backdrop_url,
+    country: row.country?.[0] ?? null,
+    imdb_rating: row.imdb_rating,
+    imdb_votes: row.imdb_votes,
+    metascore: row.metascore,
+    oscar_wins: row.oscar_wins ?? 0,
+    oscar_nominations: row.oscar_nominations ?? 0,
+    content_rating: row.content_rating,
+  };
+}
+
+/**
+ * Vektörü olmayan filmleri doğrudan films tablosundan çeker:
+ * profile_vector NULL olan satırlar + hiç film_profiles satırı olmayan filmler.
+ * Her film için UUID de döner (tmdb_id eşleşmesine güvenilmez).
+ */
+async function getFilmsNeedingVectorFromDb(
+  sb: SupabaseClient,
+): Promise<{ film: RawFilmJSON; uuid: string; title: string }[]> {
+  const profiles = await fetchAllRows<{ film_id: string; profile_vector: unknown }>(
+    sb,
+    'film_profiles',
+    'film_id, profile_vector',
+  );
+
+  const hasVector = new Set(
+    profiles.filter((p) => !!p.profile_vector).map((p) => p.film_id),
+  );
+
+  const films = await fetchAllRows<DbFilmRow>(
+    sb,
+    'films',
+    'id, tmdb_id, title, original_title, original_language, overview, release_date, runtime, ' +
+      'vote_average, genres, country, director, cast, tmdb_keywords, imdb_id, poster_url, ' +
+      'backdrop_url, imdb_rating, imdb_votes, metascore, oscar_wins, oscar_nominations, ' +
+      'content_rating, metadata_json',
+  );
+
+  // Profil satırı hiç olmayan film de bu filtreye takılır; upsert ikisini de kapsar.
+  return films
+    .filter((f) => !hasVector.has(f.id))
+    .map((f) => ({ film: dbRowToRawFilm(f), uuid: f.id, title: f.title }));
+}
+
 /**
  * Upserts a single profiled film to DB.
  */
@@ -611,14 +742,10 @@ function printProgress(current: number, total: number, label: string, startTime:
   if (current === total) process.stdout.write('\n');
 }
 
-function parseArgs(): {
-  onlyMissing: boolean;
-  filmId: number | null;
-  dryRun: boolean;
-  force: boolean;
-} {
+function parseArgs(): Flags {
   const args = process.argv.slice(2);
   return {
+    fromDb: args.includes('--from-db'),
     onlyMissing: args.includes('--only-missing'),
     filmId: (() => {
       const filmArg = args.find((a) => a.startsWith('--film-id='));
@@ -643,6 +770,26 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
+  // Supabase connection
+  const sb = getSupabaseClient();
+  if (!sb) {
+    console.warn('No Supabase credentials — will only log results, no DB writes.');
+  }
+
+  // ── --from-db: girdi films tablosundan gelir, films-raw.json okunmaz ────
+  if (flags.fromDb) {
+    if (!sb) {
+      console.error('--from-db requires Supabase credentials.');
+      process.exit(1);
+    }
+    const rows = await getFilmsNeedingVectorFromDb(sb);
+    console.log(`--from-db: ${rows.length} films have no profile_vector (source: films table)`);
+    // tmdb_id → UUID eşlemesi doğrudan aynı satırlardan kurulur
+    const dbIdMap = new Map(rows.map((r) => [r.film.tmdb_id, r.uuid]));
+    await runProfiling(rows.map((r) => r.film), sb, dbIdMap, flags, apiKey);
+    return;
+  }
+
   // Load films
   if (!fs.existsSync(INPUT_PATH)) {
     console.error(`Input file not found: ${INPUT_PATH}\nRun fetch-films first.`);
@@ -651,12 +798,6 @@ async function main(): Promise<void> {
 
   const allFilms: RawFilmJSON[] = JSON.parse(fs.readFileSync(INPUT_PATH, 'utf-8'));
   console.log(`Loaded ${allFilms.length} films from ${INPUT_PATH}`);
-
-  // Supabase connection
-  const sb = getSupabaseClient();
-  if (!sb) {
-    console.warn('No Supabase credentials — will only log results, no DB writes.');
-  }
 
   // Filter films based on flags
   let filmsToProcess: RawFilmJSON[];
@@ -686,6 +827,22 @@ async function main(): Promise<void> {
     filmsToProcess = allFilms;
   }
 
+  await runProfiling(filmsToProcess, sb, null, flags, apiKey);
+}
+
+/**
+ * Profiles the given films and writes the resulting vectors to film_profiles.
+ *
+ * @param presetIdMap  tmdb_id → film UUID map when the caller already knows it
+ *                     (--from-db); null makes the map get resolved from DB.
+ */
+async function runProfiling(
+  filmsToProcess: RawFilmJSON[],
+  sb: SupabaseClient | null,
+  presetIdMap: Map<number, string> | null,
+  flags: Flags,
+  apiKey: string | undefined,
+): Promise<void> {
   // Dry run
   if (flags.dryRun) {
     const estInputTokens = filmsToProcess.length * 600;
@@ -718,9 +875,11 @@ async function main(): Promise<void> {
   const client = new Anthropic({ apiKey });
 
   // Get UUID map for DB writes
-  let idMap: Map<number, string> | null = null;
-  if (sb) {
-    idMap = await getTmdbToUuidMap(sb, allFilms.map((f) => f.tmdb_id));
+  let idMap: Map<number, string> | null = presetIdMap;
+  if (sb && !idMap) {
+    idMap = await getTmdbToUuidMap(sb, filmsToProcess.map((f) => f.tmdb_id));
+  }
+  if (idMap) {
     console.log(`Mapped ${idMap.size} film UUIDs from DB.`);
   }
 

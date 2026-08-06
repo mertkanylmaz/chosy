@@ -1,0 +1,40 @@
+{
+  "timestamp": "2026-08-06T09:38:43.732Z",
+  "tiers": [
+    "core",
+    "extended",
+    "trending"
+  ],
+  "pool_size": 1866,
+  "omdb_key_present": false,
+  "films_processed": 2,
+  "rows_updated": 2,
+  "fields": {
+    "director": {
+      "before": 2,
+      "after": 0,
+      "filled": 2
+    },
+    "original_language": {
+      "before": 1,
+      "after": 0,
+      "filled": 1
+    },
+    "imdb_votes": {
+      "before": 1,
+      "after": 1,
+      "filled": 0
+    }
+  },
+  "unfilled": [
+    {
+      "film_id": "043911e2-307b-4092-b4df-8f062b5df800",
+      "tmdb_id": 2503,
+      "imdb_id": null,
+      "title": "The Bourne Ultimatum",
+      "curation_tier": "core",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    }
+  ]
+}

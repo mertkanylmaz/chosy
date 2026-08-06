@@ -96,7 +96,8 @@ interface FilmInsertRow {
   tmdb_keywords: string[]
   imdb_id: string | null
   imdb_rating: null
-  imdb_votes: number | null
+  /** Daima null — bkz. detailToRow. Tip regresyonu derleme aninda yakalar. */
+  imdb_votes: null
   metascore: null
   oscar_wins: number
   oscar_nominations: number
@@ -211,7 +212,12 @@ function detailToRow(
     tmdb_keywords: keywords,
     imdb_id: detail.external_ids?.imdb_id ?? null,
     imdb_rating: null,
-    imdb_votes: detail.vote_count,
+    // 0 gercek deger gibi gorunur ve taninirlik yuzdeligini bozar; bilinmeyen
+    // deger NULL'dur. Ayrica buraya daha once TMDb'nin vote_count'u yaziliyordu
+    // — o farkli bir metriktir, imdb_votes'un tek kaynagi OMDb'dir
+    // (scripts/lib/omdb-client.ts). Ham TMDb sayisi metadata_json.vote_count'ta
+    // korunuyor; IMDb oyu OMDb enrichment ile doldurulur.
+    imdb_votes: null,
     metascore: null,
     oscar_wins: 0,
     oscar_nominations: 0,
