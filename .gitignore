@@ -53,3 +53,6 @@ google-service-account.json
 figurler/
 design-reference/
 supabase/.temp/
+
+# Agent calisma hafizasi — yerel kalir, repoya girmez
+.claude/agent-memory/
