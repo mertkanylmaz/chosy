@@ -1,169 +1,102 @@
-# Chosy.ai (MoodFlix) — Project Rules v5
+# Chosy — Proje Anayasası
 
-> **App Store:** `Chosy.ai - Mood Movie Finder` | **Code/comms:** `MoodFlix`
-> **Status:** V1.0.2 App Store'da live | **Aktif:** Faz 1 KAPANDI (29 Tem 2026) — ölçüm dönemi
-> **Build:** `expo-dev-client` — Expo Go degil
+Bu dosya KISA tutulur. Bağlama özel bilgi `.claude/skills/` altına taşınır.
+Ürün kararları için tek doğruluk kaynağı: `docs/os/1_CHOSY_PRODUCT_OS.md`.
 
-> **YENİ OYUN EKLENMEZ.** Portföy 6 aktif oyunla donduruldu (CineMetrics, Logline,
-> Spotlight, Imposter, FadeIn, Detective; Quoted havuzu tükendiği için `games_enabled`
-> dışında). Buradan sonraki iş: her hafta analitikten okunan **tek** darboğazı
-> düzeltmek — bkz. `docs/analytics/FAZ1_OLCUM_PLANI.md`. Yeni mekanik/oyun önerisi
-> gelirse önce o dosyadaki funnel verisiyle gerekçelendirilir.
+## Ürün (özet)
 
----
+Chosy günlük bir film ritüelidir: her akşam 4 film, 3 turluk eleme, 1 şampiyon.
+Serbest metin girdisi yok — bağlam tahmin edilir ve düzeltilebilir.
+Detay: `docs/os/1_CHOSY_PRODUCT_OS.md`.
 
-## VİZYON (v2 — 23 Temmuz 2026, CTO onaylı)
+Bonus oyun olarak yalnızca **Spotlight** aktiftir. Diğer 6 oyun `app_config` ile
+dondurulur, kodları silinmez. Yeni oyun eklenmez.
 
-Chosy, **"sinefil olmak için kullanılan günlük antrenman uygulaması"**dır. Çekirdek döngü: her gün herkese aynı günlük görevler (CineMetrics, The Logline) → her cevap Cinema DNA'ya sinyal yazar → sonuç paylaşılabilir film şeridi kartı üretir → streak + rank ilerler.
+## Yetki sınırı
 
-- Rakip konumlandırma: NYT Games'in sinema versiyonu; **Letterboxd kullanıcılarının açacağı ikinci uygulama.** Letterboxd ile loglama/inceleme alanında REKABET ETMEYİZ.
-- Mood search / öneri motoru SİLİNMEDİ: "Pro katman" olarak yaşıyor (Faz 2'de Tonight sekmesine taşınacak). Bu koda dokunan işlerde mevcut davranış korunur.
-- Geçiş kademeli ve kapı metriklerine bağlı: Faz 1 kapısı (D7 farkı ≥ +10 puan, haftalık tamamlama medyanı ≥ 3/7) geçilmeden Faz 2 vitrin/tab değişikliği YAPILMAZ.
+Claude Code'un **mimari karar yetkisi yoktur**. Yeni tablo, yeni pattern,
+yeni bağımlılık, sözleşme değişikliği gerekiyorsa **DUR ve sor**.
+Onaysız alınan mimari karar protokol ihlalidir.
 
-**Karar hiyerarşisi:** Mimari kararlar CTO'ya (Claude chat) aittir. Claude Code implementasyon yapar; spec'te belirsizlik varsa varsayım üretmek yerine sorar. Kaynak sıralaması: (1) sprint planındaki task prompt'u → (2) `docs/CHOSY_OYUN_SISTEMI_TASARIM_RAPORU.md` → (3) `.claude/game-system-brief.md`.
+## Değişmez kod kuralları
 
-## Kod Kurallari
+1. Sessiz fallback yasak. Hata Sentry'ye ve/veya kullanıcıya yansımalı.
+2. Boş catch bloğu yasak.
+3. Migration'lar sadece `supabase db push`. SQL editor migration takibini bozar.
+4. Film verisinde DELETE yok — `curation_tier` ile arşivle.
+5. Feature flag'ler lazy getter ile okunur. Modül seviyesi sabit yasak.
+6. `app_config` değerleri istek başına lazy okunur, modül seviyesinde cache yok.
+7. Tüm string'ler `t()` üzerinden. `en.json` + `tr.json` tam parite.
+8. `types/gauntlet.ts` KİLİTLİ sözleşmedir. Değişimi CTO onayı ister.
+9. Tasarım: token dosyaları tek kaynak. Görseller implementasyon girdisi değil.
+10. Görsel retrofit işlerinde oyun/gauntlet **logic'i değişmez**.
+11. Spotlight'ta çözüm istemciye inmez — detay: `chosy-conventions` skill'i.
 
-- TypeScript strict — `any` YASAK
-- Fonksiyonel component — class component YASAK
-- Her component: `ComponentName/index.tsx` + `styles.ts` (ayri klasor)
-- `StyleSheet.create` zorunlu — inline style YASAK
-- `Theme.xxx` kullan (Theme.spacing, Theme.borderRadius, Theme.typography, Theme.shadow)
-- Tum metinler i18n uzerinden: `t('key')` — hardcoded string YASAK
-- `console.log` birakma — `utils/logger.ts` kullan
-- JSDoc: her fonksiyon ve component ustune yorum
-- Import sirasi: React > kutuphaneler > yerel (aralarinda bos satir)
-
-## Kritik Import Kurallari
+## Kritik import kuralları
 
 ```typescript
-import { Colors } from '@/constants/Colors'          // Buyuk C — kucuk c crash!
+import { Colors } from '@/constants/Colors'          // Büyük C — küçük c CRASH!
 import { Theme } from '@/constants/theme'
-import * as watchlist from 'services/watchlist'       // watchlistService.ts DEGIL
-import { encodeVector } from 'services/vectorEncoder' // Tek kaynak — baska yerde YASAK
-// expo-localization dogrudan import YASAK > LanguageContext kullan
-
-// Ikon sistemi — tek kaynak
-import { EmotionIcons, ArchetypeIcons, MoodIcons, AvatarIcons, GamificationIcons, CalibrationIcons, TasteDNAIcons } from '@/constants/icons'
-// archetype.image kullan (ImageSourcePropType) — archetype.icon MEVCUT DEGIL
+import * as watchlist from 'services/watchlist'      // watchlistService.ts DEĞİL
+import { encodeVector } from 'services/vectorEncoder' // Tek kaynak — başka yerde YASAK
+// expo-localization doğrudan import YASAK → LanguageContext kullan
 ```
 
-## Mimari
+Bunlar tip kontrolünün yakalamadığı runtime hatalarıdır.
 
-- `app/(tabs)/index.tsx` = Home — Mood search + AI processing + result (3 state: input/processing/result)
-- `app/discover.tsx` = Film swipe feed (STACK screen, tab degil)
-- `app/(tabs)/mood.tsx` = Discover placeholder (gelecek: browse/explore)
-- `app/(tabs)/watchlist.tsx` = Izleme listesi (2x2 grid + grouped view)
-- `app/(tabs)/profile.tsx` = Profil, arketip, stats, settings
-- `app/film/[id].tsx` = Film detay
-- `app/onboarding.tsx` = Taste calibration + archetype reveal
-- `app/gate.tsx` = Auth guard (anonim > /auth'a yonlendir)
-- `app/auth.tsx` = Apple Sign-In (zorunlu)
-- `app/paywall.tsx` = 3 plan (weekly/monthly/yearly) + purchase + restore
-- `app/games/_layout.tsx` = Games stack navigator (YENİ)
-- `app/games/index.tsx` = Games Hub — oyun listesi (YENİ)
-- `app/games/imposter.tsx` = Imposter oyunu (YENİ)
-- `app/games/pinpoint.tsx` = 5 Ipucu oyunu (YENİ)
-- `app/games/roast.tsx` = Acimasiz Elestiri oyunu (YENİ)
-- `app/lifetime.tsx` = Founding Member ozel satis (modal, scarcity counter)
-- `app/referral.tsx` = Davet programi (milestone rewards, share)
-- Provider zinciri: GestureHandlerRootView > SafeAreaProvider > LanguageProvider > MoodProvider > SubscriptionProvider > ThemeProvider > Stack
-- Vector kodlama: sadece `services/vectorEncoder.ts` (384 boyut)
-- Her ekranda `paddingBottom: 83` — tab bar floating pill
+## Komutlar
 
-## Teknoloji
+```powershell
+npm run test:founder         # kurucu kabul testleri (5 case)
+npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
+npm run typecheck:functions  # → 45 hata (deno check)
+npx expo start               # cihaz testi
+supabase db push             # migration deploy
+supabase db diff             # değişiklik kontrolü
+```
 
-- React Native 0.83.2 + Expo SDK 55 + Expo Router v7
-- Supabase (PostgreSQL + pgvector + Edge Functions)
-- RevenueCat (subscriptions)
-- Claude API (mood parsing)
-- TMDb API (film data)
-- react-native-reanimated v4 + gesture-handler
-- i18n-js + expo-localization (EN + TR)
-- 69 custom PNG icon (assets/icons/, constants/icons.ts)
+`typecheck` 14'ten fazlaysa veya `scripts/` dışında hata varsa **yeni regresyon
+vardır — dur.**
 
-## Subscription & Kota
+## Ortam
 
-- Free: 3 mood search/gun
-- Monthly ($6.99/m): 15/gun, sinirsiz slot/game
-- Annual ($39.99/y): 25/gun, sinirsiz slot/game
-- Lifetime ($89.99): 50/gun, sinirsiz her sey, Founding Member (ilk 1000)
-- Auth gating AKTIF — Apple Sign-In zorunlu
-- Referral: 1/3/5/10 milestone rewards (free months, slot tokens, lifetime upgrade)
+Windows / PowerShell. Komut örnekleri PowerShell sözdiziminde olmalı.
 
-## Bilinen Sorunlar
+## İş akışı
 
-| Sorun | Not |
-|-------|-----|
-| `match_films` overload | Yeni overload olusturma |
-| Pre-existing TS hatalari | `supabase/functions/`, `ExternalLink.tsx`, `SkeletonLoader`, `watchlist.tsx:122,144` — dokunma |
-| Google Sign-In | Stub — native rebuild gerekli, V1.1'de degerlendirilecek |
+- Her task yeni `/clear` ile başlar.
+- İzin modu her zaman Manual. Bypass yok.
+- Doğrulama komutu yeşil gelmeden sonraki adıma geçilmez.
+- Maliyet gerektiren işte onay iste.
+- Bitince: hangi dosyalar değişti, hangi doğrulama çalıştırıldı, ne çıktı verdi.
+- `AskUserQuestion` ile alınan onay geçerli onaydır; raporda hangi soruya hangi
+  cevabın verildiği açıkça listelenir.
 
-## Agent Briefleri (Aktif Sprint)
+## Proje yapısı
 
-| Brief | Dosya |
-|-------|-------|
-| CDO: Mini Games UI Specs | `.claude/briefs/CDO_MINI_GAMES_SPECS.md` |
-| CTO: Mini Games Implementation | `.claude/briefs/CTO_MINI_GAMES_IMPL.md` |
-| CMO: Mini Games Copy | `.claude/briefs/CMO_MINI_GAMES_COPY.md` |
+**`src/` klasörü YOKTUR.** Düz kök yapısı:
+`app/` (Expo Router ekranları) · `components/` · `services/` · `constants/` ·
+`hooks/` · `contexts/` · `utils/` · `types/` · `locales/` · `supabase/`
 
----
+OS dokümanları: `docs/os/` (1_PRODUCT · 2_BUSINESS_MODEL · 3_DESIGN · 4_CLAUDE_CODE)
 
-## OYUN SİSTEMİ HARD RULES (ihlal = diff reddedilir)
+## Sürümler
 
-1. **Çözüm istemciye asla inmez.** `solution_ref`, sansür kelimeleri ve her türlü cevap verisi yalnızca sunucuda yaşar. İstemci `daily_puzzles` tablosuna DEĞİL, yalnızca `public_daily_puzzles` view'ına erişir. Herhangi bir response, log veya cache'te çözüm sızıntısı release-blocker'dır.
-2. **Tahmin doğrulama sunucuda.** Feedback hesabı (renk kuralları) Edge Function'dadır; istemcide feedback mantığı kopyası yazılamaz.
-3. **Oyun durumu sunucuda.** `game_scores.progress_json` tek gerçek kaynak; istemci restart'ı durumu sıfırlayamaz.
-4. **Config'ler lazy getter ile.** XP katsayıları, DNA ağırlıkları, feature flag'ler `app_config`'ten her kullanımda okunur. Module-level constant'a atamak YASAK (hydration race dersi).
-5. **Silent fallback yasak** (genel kural, oyunlarda da geçerli): her hata Sentry'ye düşer, kullanıcıya görünür durum/retry sunulur. Boş catch bloğu yazılamaz.
-6. **Migration'lar yalnızca `supabase db push`** (Rule 10). SQL editor kullanılmaz.
-7. **Replik Tahmin havuzu DONMUŞTUR.** `movieQuotes.ts`'e yeni replik eklenmez (telif taban çizgisi kararı, 23 Tem 2026).
-8. **Telif taban çizgisi:** TMDB poster/backdrop/metadata dışında görsel-işitsel materyal (film karesi, ses, gerçek eleştirmen alıntısı) hiçbir oyuna eklenemez.
-9. **Paylaşım kartlarında film adı ve açılmış sansür kelimeleri asla görünmez** (spoiler yasağı = viral mekaniğin kendisi).
-10. **Günlük bulmaca herkes için aynıdır** ve cihaz yerel tarihine anahtarlıdır; kullanıcıya özel bulmaca üretilmez.
+Expo ~54.0.34 · React Native 0.81.5 · Reanimated ~4.1.1 · expo-router ~6.0.23
+**Kurulu DEĞİL:** `@shopify/react-native-skia`, `expo-secure-store`
+(yerel depolama için `@react-native-async-storage/async-storage` kullanılır)
 
-## OYUN SİSTEMİ KOD KURALLARI
+## Şema notları
 
-- API çağrılarının tek kaynağı: `services/gameApi.ts` (her çağrı `ensureAuthSession()` ile sarılı).
-- Film arama tek component: `components/games/FilmSearchInput/` — kopyalanmaz, genişletilir.
-- DNA/skor yazımı yalnızca Edge Function üzerinden; istemciden `cinema_dna`'ya yazma yolu yoktur.
-- Oyun ekranlarında Phosphor duotone kullanılır; Ionicons ile aynı ekranda karışmaz.
-- Tüm UI metinleri `t()` üzerinden (en.json + tr.json); bulmaca içerik metni (overview) İngilizce kalır, çevrilmez.
-- Telemetri taksonomisi: `game_*` prefix, snake_case — event listesi brief'te. Yeni event adı uydurulmaz, brief'e eklenmeden kullanılmaz.
-- Yeni oyun eklemek = ortak 5 sisteme (Daily Engine, Cinema DNA, XP/Rank, Streak, ShareCard) mekanik katmanı eklemek. Ortak sistemleri bypass eden oyun kodu yazılamaz.
+- `films` kolonları: `poster_url` (`poster_path` DEĞİL), `imdb_votes` ve
+  `vote_average` (`vote_count` DEĞİL), `director`, `country text[]`,
+  `genres text[]`, `runtime`, `curation_tier`, `dimensions_json`
+- `profile_vector` → `film_profiles` tablosunda (`films`'te değil)
+- İzlenmiş film: ayrı tablo yok — `watchlist.watched_at`
+- Oyun temaları: `constants/gameThemes.ts` (`gameTokens.ts` YOKTUR)
+- Oyun kabuğu: `GameShell` (`GameScreenShell` YOKTUR)
 
-## ORTAK SİSTEM MATRİSİ (29 Tem 2026 denetimi)
+## Migration numaralandırma
 
-Yeni bir oyun ekleme kararı çıkarsa, bu 6 sisteme bağlanmadan "bitti" sayılmaz.
-
-| Sistem | Durum |
-|--------|-------|
-| Daily Engine (`generate-puzzles` → `public_daily_puzzles` → `submit-guess`) | 6 oyun |
-| Cinema DNA + XP/Rank (`DnaXpReveal`) | 6 oyun |
-| Streak + Daily Chest (`get-daily-chest`, ödüller sunucuda) | Hub geneli |
-| Günlük tema (`get-daily-theme`) | Günde 3-4 oyun |
-| Film keşfi köprüsü (`why_this_movie` + watchlist ekleme) | 6 oyun |
-| ShareCard + `game_share_*` telemetrisi | 6 oyun |
-
-> **Düzeltme (29 Tem 2026):** Bu tablo Faz 1 kapanışında son iki satırda
-> "CineMetrics/Spotlight'ta keşif kartı yok, CineMetrics/Spotlight/Detective'de
-> paylaşım yok" diyordu. Kod denetiminde ikisi de yanlış çıktı:
-> CineMetrics, Spotlight, FadeIn, Imposter, Logline ortak `ResultCard`'ı
-> kullanıyor (kart + paylaşım oradan geliyor); Detective kendi sonuç ekranını
-> kullanıyor ama `WhyThisMovieFunnel` ve `GameShareCard`'ı doğrudan render edip
-> `game_share_*` telemetrisini kendisi atıyor. Altı sistem de 6 oyunda canlı.
-
-## REFERANS DOSYALAR
-
-| Konu | Dosya |
-|------|-------|
-| Teknik mimari, folder map, data flow, DB schema | `ARCHITECTURE.md` |
-| Tasarim sistemi, renkler, tipografi, component spec | `DESIGN_SYSTEM.md` |
-| V1.1+ roadmap, gelecek planlar | `ROADMAP.md` |
-| App Store listing, ASO, launch checklist | `docs/LAUNCH_CHECKLIST.md` |
-| RevenueCat offerings, webhooks, entitlements | `docs/REVENUECAT_FINAL_SETUP.md` |
-| Yatirimci metrikleri (SQL queries) | `docs/INVESTOR_METRICS.md` |
-| Oyun sistemi tasarim raporu (kaynak dokuman) | `docs/CHOSY_OYUN_SISTEMI_TASARIM_RAPORU.md` |
-| Faz 1 sprint plani (siralı task'lar) | `docs/CHOSY_FAZ1_SPRINT_PLANI.md` |
-| Oyun sistemi hizli referans (brief) | `.claude/game-system-brief.md` |
-| **Faz 1 olcum plani + haftalik ritual** | `docs/analytics/FAZ1_OLCUM_PLANI.md` |
+En yüksek mevcut numara **068**. Yeni migration 069'dan başlar.
+Yine de eklemeden önce `supabase/migrations/` klasörünü listele ve doğrula.
