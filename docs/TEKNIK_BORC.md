@@ -274,3 +274,19 @@ Faz C/D işi bu veriye ihtiyaç duymuyor ve şema kilitleniyor — spekülatif k
 eklemek "bir gün lazım olur" mantığıdır, mimari ihtiyaç çıkınca genişler.
 
 Fraud veya analitik ihtiyacı doğarsa ayrı bir migration ile eklenir.
+
+---
+
+## game_scores — 9 sahipsiz satır
+
+**Kayıt tarihi:** 7 Ağustos 2026 (migration 070)
+
+`game_scores` 12 satırın 9'unda `user_id` değeri ne `public.users`'ta ne de
+`auth.users`'ta karşılık buluyor — ölü satırlar, muhtemelen silinmiş test
+kullanıcılarından kalma. Bir app user'a çevrilemiyorlar.
+
+070 yalnız policy düzeltir, veriye dokunmaz. Sonuç: bu 9 satır erişilemez
+durumda kalır (zaten bozuk policy yüzünden erişilemiyorlardı).
+
+`game_scores.user_id` üzerinde FK yok (`016:19`) ve bu 9 satır durdukça FK
+eklenemez. Temizlik + FK ekleme gerekirse ayrı bir migration ile yapılır.
