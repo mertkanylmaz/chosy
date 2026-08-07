@@ -6,6 +6,11 @@
 
 > ✅ doğrulandı (repo/kod, 5 Ağu 2026) · ⚠️ varsayım
 
+> **05.08.2026 sonrası** — B.2 sırasında üç netleştirme B.4'e taşındı:
+> DB CHECK/422 davranışı, latencyMs reddet-clamp-değil, baseline ölçüm sırası.
+> Ayrıca B.4'teki "Zod ile doğrula" talimatı geçersiz kılındı (silinmedi,
+> altına gerekçe yazıldı) — B.2'de Zod eklenmeme kararı alındı.
+
 ---
 
 ## 0. TEK CÜMLE
@@ -577,8 +582,17 @@ Mevcut submit-guess'i desen olarak oku (jsr değil esm.sh kullanıyor —
 YENİ fonksiyon jsr kullanacak).
 
 ## GÖREV
+0. Önce baseline doğrula: npm run typecheck:functions çalıştır, 45 olduğunu
+   teyit et ve raporla. types/gauntlet.ts import'unu eklemeden ÖNCE.
+   Bu Edge Function'ların types/ klasöründen ilk import'u — precedent kırıyor.
+
 1. supabase/functions/submit-choice/index.ts
    Girdi: ChoiceSubmission (Zod ile doğrula)
+   ⚠️ 7 Ağu 2026 — "Zod ile doğrula" GEÇERSİZ. B.2'de Zod eklenmedi:
+   zod package.json'da tanımlı değil (transitif) ve 20+ Edge Function elle
+   doğrulama deseninde. Yerine `types/gauntlet.ts`'teki
+   `isValidChoiceSubmission()` import edilir, mevcut
+   errorResponse('INVALID_INPUT', ..., 400) desenine bağlanır.
    Çıktı: { next: 'round2'|'round3'|'champion'|'refresh'|'exhausted',
             champion?: GauntletFilm }
 
@@ -606,6 +620,12 @@ YENİ fonksiyon jsr kullanacak).
 - Idempotent: aynı (gauntletId, round) ikinci POST yeni kayıt açmaz.
 - jsr: kanalı. ServiceClient deseni.
 - Sessiz fallback yasak, boş catch yasak.
+- DB CHECK ihlali (örn. choice_events_distinct_films,
+  choice_events_outcome_winner_coherence) guard'ı geçip Postgres'e ulaşırsa:
+  yakala, 422 + anlamlı mesaj döndür, Sentry fatal. Ham Postgres hatası
+  client'a asla sızmaz.
+- latencyMs: Number.isInteger(latencyMs) && latencyMs <= 600000 — clamp
+  değil, reddet (422). Sessizce 600000'e indirme.
 
 ## DOĞRULAMA
 Tam akış: choice → round2 · neither → refresh (TUR İLERLEMEMELİ) ·
@@ -614,10 +634,14 @@ choice → round3 · choice → champion
 select count(*) from choice_events where gauntlet_id = '<test>';
 select pair_key from duel_impressions limit 5;   → yön bağımsız
 
+- npm run typecheck:functions → önce (baseline) ve sonra (import eklendikten
+  sonra) ölçülüp fark raporlanır. 45'i aşarsa DUR.
+
 ## RAPOR
 - Tam akış çıktısı
 - Idempotency testi
 - neither'da tur ilerledi mi (İLERLEMEMELİ)
+- typecheck:functions önce/sonra farkı
 ```
 
 ---
@@ -725,4 +749,5 @@ C.4 üç iş birden yapar: (a) AsyncStorage → sunucu senkronu, (b) "dün izled
 ---
 
 *5 Ağustos 2026 · Bağlı: 1_PRODUCT_OS · 2_BUSINESS_MODEL · 3_DESIGN_OS*
-*Konfigürasyon paketi: `claude-config/` — CLAUDE.md, settings.json, hooks, agents, skills*
+*Konfigürasyon: kök `CLAUDE.md` · `.claude/` — settings.json, hooks/, agents/, skills/*
+*Emekli agent/skill/command'lar: `.claude/_archive/` (7 Ağu 2026)*
