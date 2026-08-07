@@ -13,7 +13,10 @@
  *   Today's Pick cold-start fallback'i icin kullanilir.
  */
 
-import type { TasteProfile } from '../types/index';
+// Uzantı BİLİNÇLİ: bu modül Deno'dan (recompute-taste-vector) da import edilir
+// ve Deno extensionless yolu çözemez (TS2307). `types/index.ts` bağımlılıksız
+// saf tip dosyası olduğu için zincir Deno'da güvenle çözülür.
+import type { TasteProfile } from '../types/index.ts';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 

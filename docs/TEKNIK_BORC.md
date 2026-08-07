@@ -383,3 +383,74 @@ değil. Diğer dışlama sorguları şimdiden index kullanıyor: `watchlist` →
 uyuşmuyor — index'i okuyan biri var olmayan bir sorgu deseni varsayar.
 C fazında ya filtre GIN üzerinden yazılır ya index düşürülür; ikisi de
 karar gerektirir, ölü index tek başına düşürmeye değmez.
+
+---
+
+## taste_vector norm uzayı — w→1'de fark vektörü film vektörüyle kıyaslanamaz
+
+**Kayıt tarihi:** 7 Ağustos 2026 (B.5, migration 074 ile birlikte)
+
+`recompute-taste-vector` iki farklı uzaydan sinyal topluyor ve tek bir vektörde
+harmanlıyor:
+
+- `choice_events` → **fark vektörü**: `ağırlık × (kazanan − kaybeden)`.
+  Yaklaşık sıfır ortalamalı, bileşenleri negatif olabilir.
+- `watch_feedback` + arketip merkezleri → **mutlak vektör**: `[0,1]` aralığında,
+  tamamı pozitif (`vectorEncoder.tasteProfileToVector` çıktısı).
+
+Shrinkage her ikisini de harmanlamadan önce birim uzunluğa indiriyor, yani `w`
+gerçekten ağırlık kontrolü yapıyor, vektör büyüklüğü değil — bu doğru. Sorun
+formülün ucunda:
+
+```
+taste_vector = normalize( w × normalize(gözlem) + (1−w) × normalize(prior) )
+w = min(1, sinyal_sayısı / 50)
+```
+
+`w` küçükken sonuca mutlak arketip merkezi hâkim ve vektör film uzayında
+duruyor. **`w` 1.0'a yaklaştıkça (50+ sinyal) prior payı sıfıra iner ve
+`taste_vector` saf fark vektörüne dönüşür** — artık bir film vektörüne
+benzemez.
+
+**Neden sessiz ve tehlikeli:** `film_profiles.profile_vector` mutlak/pozitif
+uzayda. Faz F (kişiselleştirme, MMR) `taste_vector`'ü aday puanlamasında cosine
+ile kullanmaya başladığında bu **hata vermez** — sadece anlamsız benzerlik
+skorları döner. Tip kontrolü, CHECK kısıtı, Sentry: hiçbiri yakalamaz.
+
+**Bugün ısırmıyor:** 136 kullanıcının hiçbiri 50 sinyale yakın değil
+(`choice_events` prod'da **0 satır**). `w ≈ 0`, sonuç fiilen arketip prior'u.
+
+### İkinci uç: `w→0` tarafı da kırılgan (cto-reviewer bulgusu, aynı kök)
+
+Yukarıdaki `w→1` ucu geleceğe ait. Ama aynı uzay uyuşmazlığı **bugünkü
+rejimde** başka bir yerden ısırıyor: `computeTasteVector` gözlem varsa prior'u
+`nearestArchetype(gözlem)` ile seçiyor, `users.archetype_id` yalnızca sıfır
+sinyalde kullanılıyor. Yani:
+
+- Tek bir `choice` olayı bile gelse, kullanıcının **atanmış arketipi devre dışı
+  kalır** ve prior'u artık o tek olayın fark vektörü seçer.
+- `w ≈ 0.02` olduğu için sonucun **%98'i** bu prior. Prior seçimi = sonucun
+  kendisi.
+- Seçimi yapan karşılaştırma, sıfır-ortalamalı bir fark vektörü ile tamamı
+  pozitif arketip merkezleri arasında cosine — yani tam da bu kaydın konusu
+  olan kıyaslanamaz iki uzay. Tek olayda bu karşılaştırma gürültü hâkimiyetinde.
+
+**Ölçüm noktası (bu uç için):** İlk gerçek gauntlet turlarından sonra, aynı
+kullanıcının 1., 2. ve 5. olayında seçilen `nearest_archetype_id` kararlı mı,
+yoksa her olayda zıplıyor mu? Zıplıyorsa prior seçimi `users.archetype_id` ile
+harmanlanmalı ya da minimum sinyal eşiğine bağlanmalı.
+
+`prior_source` alanı bu ölçümü mümkün kılmak için yanıtta ve logda zaten
+raporlanıyor (`nearest_archetype:N` / `user_archetype:N` / `population_mean`).
+
+**Ölçüm noktası:** İlk kullanıcı 50 sinyale ulaştığında — `taste_vector` ile
+`profile_vector` arasındaki cosine dağılımını gerçek film eşleşmeleriyle
+karşılaştır. Dağılım gürültüden ayrılamıyorsa formül fark uzayından mutlak
+uzaya taşınmalı (ör. gözlemi kazanan vektörlerinin ağırlıklı ortalaması olarak
+kurup kaybedeni indirimli çıkarmak — sonuç film uzayında kalır).
+
+**Neden şimdi değil:** Ağırlık sıralaması B.3/B.4'te kilitlendi ve `w` formülü
+CTO onayıyla bu haliyle geçti. Faz F gelmeden gerçek dağılım ölçülemez;
+ölçmeden formülü değiştirmek kilitli sözleşmeyi tahminle bozmak olur.
+`--full` bayrağı zaten bu senaryo için var: formül değişirse
+`taste_algorithm_version` artırılır ve geçmiş yeniden kurulur.

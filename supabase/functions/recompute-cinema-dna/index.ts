@@ -112,9 +112,20 @@ Deno.serve(async (req: Request) => {
       .from('cinema_dna')
       .upsert({ user_id }, { onConflict: 'user_id', ignoreDuplicates: true })
 
+    // Acik kolon listesi — `select('*')` DEGIL. Migration 074 tabloya ZEVK
+    // ekseni kolonlarini ekledi; `*` her cagrida 384 boyutlu taste_vector'u de
+    // JSON olarak cekerdi (~6 KB/istek) ve BILGI ekseni onu hic kullanmaz.
+    // Bu fonksiyon submit-guess yolundan tetiklenir, yani gauntlet'ten cok
+    // daha sik calisir.
+    //
+    // Liste asagida GERCEKTEN okunan kolonlardan olusur: identity_title,
+    // cinema_score ve visual_sense okunmaz (ilk ikisi hesaplanip yazilir),
+    // bu yuzden listede YOKLAR.
     const { data: dnaRow, error: dnaError } = await service
       .from('cinema_dna')
-      .select('*')
+      .select(
+        'knowledge, deduction, auteur_sense, instinct, consistency, total_dailies_completed, rank_id',
+      )
       .eq('user_id', user_id)
       .single()
 

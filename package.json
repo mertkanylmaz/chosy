@@ -9,6 +9,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "typecheck:functions": "cd supabase/functions && deno check **/index.ts",
+    "test:taste": "cd supabase/functions && deno test --allow-read _shared/tasteVector.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",
     "enrich:imdb": "tsx scripts/enrich-imdb-ratings.ts",
     "enrich:metadata": "tsx scripts/enrich-films-metadata.ts",
