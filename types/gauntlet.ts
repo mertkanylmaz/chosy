@@ -1,0 +1,96 @@
+/**
+ * 🔒 KİLİTLİ SÖZLEŞME
+ * Bu arayüzü değiştirmek CTO onayı gerektirir.
+ * Arkadaki algoritma serbestçe değişebilir; bu şekil değişemez.
+ * Değiştirmek zorundaysan DUR ve sor.
+ */
+
+export interface GauntletContext {
+  companion: 'alone' | 'partner' | 'friends' | 'family';
+  duration: 'short' | 'medium' | 'any';
+  energy: 'drained' | 'normal' | 'open';
+}
+
+export interface OklchColor {
+  l: number;
+  c: number;
+  h: number;
+}
+
+export interface GauntletFilm {
+  id: string;
+  title: string;
+  year: number;
+  runtime: number;
+  posterUrl: string;
+  dominantColor?: OklchColor; // opsiyonel — ışık sızması
+}
+
+export interface DailyGauntlet {
+  gauntletId: string;
+  date: string;
+  context: GauntletContext;
+  contextPredicted: boolean;
+  films: GauntletFilm[]; // tam 4, sırası karışık
+  slotTypes: ('global' | 'personal' | 'discovery')[];
+  userConfidence: number; // 0-1
+  refreshesRemaining: number;
+  algorithmVersion: string;
+}
+
+/**
+ * Migration 069'daki `choice_events.outcome` CHECK kısıtıyla birebir aynı küme.
+ * Sapma olursa doğrulama katmanı DB'nin kabul etmediği bir değeri geçirir.
+ */
+export type ChoiceOutcome = 'choice' | 'neither' | 'seen' | 'timeout';
+
+export interface ChoiceSubmission {
+  gauntletId: string;
+  round: 1 | 2 | 3;
+  filmA: string;
+  filmB: string;
+  winner: string | null;
+  outcome: ChoiceOutcome;
+  positionOfWinner: 'left' | 'right' | null;
+  latencyMs: number;
+}
+
+// ─── Çalışma zamanı doğrulaması ──────────────────────────────────────────────
+// Dış paket YOK — yalnız typeof/literal kontrolü. Böylece aynı dosya hem RN
+// hem Deno tarafında çalışır. B.4'te submit-choice bunu doğrudan import edip
+// mevcut errorResponse('INVALID_INPUT', ...) desenine bağlar.
+
+/**
+ * Migration 069 `choice_events.outcome` CHECK kısıtıyla birebir.
+ * CHECK değişirse burası da değişir — ikisi ayrı yerde senkron tutulur.
+ */
+export function isValidChoiceOutcome(v: unknown): v is ChoiceOutcome {
+  return v === 'choice' || v === 'neither' || v === 'seen' || v === 'timeout';
+}
+
+/**
+ * Şekil doğrulaması. İŞ KURALI DEĞİL:
+ * - `latencyMs` tam sayı ve üst sınır kontrolü burada yok — B.4'te
+ *   `Number.isInteger(v) && v <= 600000`, sınırı aşan değer 422 ile
+ *   REDDEDİLİR. Clamp edilmez: sessizce veri değiştirmek yasak.
+ * - `filmA <> filmB` ve outcome/winner tutarlılığı 069'da DB CHECK olarak var,
+ *   burada tekrarlanmaz. B.4 bu ihlalleri yakalayıp 422 döndürür — ham
+ *   Postgres hatası istemciye sızmaz.
+ */
+export function isValidChoiceSubmission(v: unknown): v is ChoiceSubmission {
+  if (typeof v !== 'object' || v === null) return false;
+  const s = v as Record<string, unknown>;
+  return (
+    typeof s.gauntletId === 'string' &&
+    (s.round === 1 || s.round === 2 || s.round === 3) &&
+    typeof s.filmA === 'string' &&
+    typeof s.filmB === 'string' &&
+    (s.winner === null || typeof s.winner === 'string') &&
+    isValidChoiceOutcome(s.outcome) &&
+    (s.positionOfWinner === null ||
+      s.positionOfWinner === 'left' ||
+      s.positionOfWinner === 'right') &&
+    typeof s.latencyMs === 'number' &&
+    s.latencyMs >= 0
+  );
+}
