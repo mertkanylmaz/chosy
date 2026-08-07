@@ -454,3 +454,129 @@ CTO onayıyla bu haliyle geçti. Faz F gelmeden gerçek dağılım ölçülemez;
 ölçmeden formülü değiştirmek kilitli sözleşmeyi tahminle bozmak olur.
 `--full` bayrağı zaten bu senaryo için var: formül değişirse
 `taste_algorithm_version` artırılır ve geçmiş yeniden kurulur.
+
+---
+
+## 🔴 pg_cron job'larının çoğu aylardır sessizce ölü — ayarlanmamış GUC
+
+**Öncelik: yüksek.** Tip hatası değil, üretimde hiç çalışmayan iş.
+
+`cron.job_run_details` ölçümü (7 Ağu 2026): en az iki job her tetiklemede
+şu hatayla düşüyor —
+
+```
+unrecognized configuration parameter "app.supabase_functions_url"
+```
+
+`cron.job` tablosunda kayıt **var**, `active = true`, tetikleme **oluyor**.
+Dışarıdan bakınca sistem çalışıyor görünüyor; yaptığı iş sıfır. Hiçbir alarm
+çalmadı çünkü hata pg_cron'un kendi log tablosunda kalıyor — Sentry'ye
+ulaşmıyor, kimse `job_run_details`'e bakmıyor.
+
+### Kök neden
+
+Cron gövdeleri hedef URL'yi ve service-role anahtarını `current_setting()` ile
+okuyor. Bu GUC'lar bu projede **hiç kurulmamış**. Üstelik tek bir isim değil,
+iki ayrı isim ailesi dolaşıyor:
+
+| Migration | Okuduğu GUC | Durum |
+|---|---|---|
+| 019 | `app.settings.supabase_url` · `app.settings.service_role_key` | ayarlanmamış |
+| 040, 041 | `app.supabase_functions_url` · `app.service_role_key` | ayarlanmamış |
+
+Postgres ilk `current_setting` çağrısında patladığı için hata mesajında hep
+URL parametresi görünüyor; anahtar parametresine hiç sıra gelmiyor.
+
+### Etkilenen job'lar (migration dosyalarından tespit edildi)
+
+| jobname | Migration | Zamanlama | Kaybedilen iş |
+|---|---|---|---|
+| `send-daily-pick-hourly` | 040 | `0 * * * *` | **Günlük film push bildirimi** |
+| `watchlist-activation-weekend` | 041 | Cuma 15:00 UTC | Hafta sonu izleme listesi bildirimi |
+| `watchlist-activation-mood-recall` | 041 | Çarşamba 17:00 UTC | Mood hatırlatma bildirimi |
+| `posterle-daily-curation` | 019 | 23:00 UTC | Posterle günlük bulmaca üretimi |
+
+Sağlam olanlar: `cleanup-rate-limits` (033 — düz SQL, `current_setting` yok) ve
+`weekly-trending-sync` (049 — URL sabit yazılmış, header yok).
+
+En ağır kalem `send-daily-pick-hourly`: bildirim altyapısının tamamı buna
+bağlı, yani retention kolunun tek tetikleyicisi. `posterle-daily-curation`
+görece hafif — Posterle zaten `app_config` ile dondurulmuş oyunlardan biri.
+
+### Bu risk zaten yazılıydı, kontrol edilmedi
+
+`040_daily_pick_notifications.sql:26`:
+
+```sql
+-- current_setting calismiyorsa hardcode URL kullanilmali — deploy sonrasi kontrol et.
+```
+
+041'de aynı uyarı iki kez tekrarlanıyor, hatta **çalışan sabit-URL alternatifi
+yorum satırı olarak dosyada duruyor** (041:65-82). "Deploy sonrası kontrol et"
+adımı hiç yapılmadı, alternatif hiç açılmadı. Kayıt edilmiş bir risk,
+kapatılmamış bir döngü.
+
+### Düzeltme yönü
+
+049 desenine geçiş: sabit fonksiyon URL'si + `--no-verify-jwt` ile deploy +
+service-role auth'un fonksiyon içinde `Deno.env`'den çözülmesi. Bu, bu DB'de
+çalıştığı **kanıtlı** tek desen. Alternatif (GUC'ları `ALTER DATABASE ... SET`
+ile kurmak) service-role anahtarını `pg_db_role_setting` içine yazar ve SQL
+erişimi olan herkese açar — tercih edilmiyor.
+
+### Kapanış koşulu
+
+`cron.job` kaydına bakmak **yeterli değil** — bu kaydın tamamı zaten o yanılgının
+ürünü. Her düzeltilen job için `cron.job_run_details`'te `status = 'succeeded'`
+bir gerçek çalışma görülmeden kalem kapanmaz.
+
+### Yeni cron yazan herkes için kural
+
+Bu tespitten sonra **yeni migration'larda `current_setting('app.*')` deseni
+kullanılmaz** (CTO kararı, 7 Ağu 2026). Migration 075 (`generate-global-slot`)
+bu kararla 049 desenini kullanan ilk migration'dır.
+
+**Neden hemen tamamı düzeltilmiyor:** Bu kalem C.2'den önce ele alınacak, ancak
+her job'ın hedef Edge Function'ının hâlâ canlı ve doğru olduğu ayrıca
+doğrulanmalı — `send-daily-pick` ve `watchlist-activation` mood-search dönemine
+ait, gauntlet pivotundan sonra içeriklerinin geçerli olup olmadığı ayrı bir
+karar. Cron'u körlemesine diriltmek aylardır susan bir bildirim akışını yanlış
+içerikle aniden açabilir.
+
+---
+
+## 🔴 `explain-match` ve `generate-puzzles` — auth'suz ve ücretli
+
+**Öncelik: yüksek.** 7 Ağu 2026'da `supabase/config.toml` yazılırken tespit edildi.
+
+İki Edge Function `--no-verify-jwt` ile deploy ediliyor **ve içeride de hiçbir
+kimlik kontrolü yapmıyor**. Ölçüldü — dosyalarda `requireAuthUser`,
+`getUserClient`, `auth.getUser` veya bir paylaşılan sır kontrolü yok:
+
+| Fonksiyon | İç auth | Ücretli çağrı |
+|---|---|---|
+| `explain-match` | **yok** | LLM API |
+| `generate-puzzles` | **yok** | LLM API |
+
+Karşılaştırma: `parse-mood`, `slot-triple`, `slot-pure-random`,
+`slot-mood-filtered` de `--no-verify-jwt` ile deploy ediliyor ama dördü de
+`auth.getUser` ile çağıranı fonksiyon içinde doğruluyor. `revenuecat-webhook`
+kendi paylaşılan sırrını kontrol ediyor. Yani desen projede zaten var; bu iki
+fonksiyon deseni uygulamıyor.
+
+Sonuç: URL'i bilen herkes bu iki endpoint'i sınırsız çağırıp API kredisi
+harcatabilir. Kota altyapısı (`check-quota`, `api_rate_limits`, migration 033)
+projede mevcut ama bu iki yolda kullanılmıyor.
+
+`supabase/config.toml` bu iki fonksiyon için `verify_jwt = false` beyanı
+içeriyor. Bu beyan mevcut gerçeği KAYDEDER, onaylamaz — satırlar önce içeriye
+auth eklenmeden silinirse fonksiyonlar çalışmayı bırakır.
+
+**Düzeltme yönü:** `parse-mood` deseni (fonksiyon içinde `auth.getUser`) ya da
+`generate-puzzles` cron'dan tetikleniyorsa paylaşılan sır kontrolü. Hangisinin
+doğru olduğu çağrı yerine bağlı ve önce tespit edilmeli.
+
+**Neden şimdi değil:** B.5 kapsamında değil ve iki fonksiyonun çağrı yerleri
+(istemci mi, cron mu, ikisi birden mi) doğrulanmadan auth eklemek canlı bir
+akışı kırabilir. `generate-puzzles` mood-search/oyun dönemine ait — gauntlet
+pivotundan sonra hâlâ çağrılıp çağrılmadığı ayrıca kontrol edilmeli.

@@ -1,0 +1,77 @@
+# ============================================================================
+# Supabase CLI yapılandırması — BİLİNÇLİ OLARAK MİNİMAL
+#
+# Bu dosya tek bir sorun için var: `--no-verify-jwt` yalnızca deploy komutunun
+# bayrağıdır, kalıcı bir özellik değil. Bayrak unutulursa fonksiyon JWT
+# doğrulaması açık şekilde yeniden deploy edilir, pg_cron'un header'sız çağrısı
+# 401 alır ve bu HİÇBİR YERDE GÖRÜNMEZ: pg_net fire-and-forget olduğu için
+# `cron.job_run_details` yine `succeeded` yazar. Yani tam olarak 7 Ağu 2026'da
+# keşfedilen ölü cron sınıfından bir hata (docs/TEKNIK_BORC.md → "pg_cron
+# job'larının çoğu aylardır sessizce ölü"). Beyanın kalıcı olması gerekiyor.
+#
+# ── Neden başka hiçbir bölüm yok ────────────────────────────────────────────
+# `[db]`, `[api]`, `[auth]`, `[storage]` vb. blokları YAZILMADI. Bu dosya
+# yokken CLI uzak projenin gerçek ayarlarını kullanıyor; blok eklemek yerel
+# varsayılanları "beyan edilmiş gerçek" hâline getirir ve uzak/yerel drift
+# riski doğurur. Bu task'ın kapsamı yalnızca verify_jwt beyanıdır.
+#
+# Yeni bölüm eklemek mimari karardır — CTO onayı ister.
+# ============================================================================
+
+# ── Liste neden EKSİKSİZ tutuluyor ──────────────────────────────────────────
+# Aşağıdaki her fonksiyon bugün `--no-verify-jwt` ile deploy ediliyor. Beyan
+# etmemek mekanik bir regresyon YARATMAZDI (beyansız varsayılan zaten `true`,
+# bu dosya olmadan da öyleydi), ama dosyanın kendisi otorite gibi görünüyor:
+# birinin buraya bakıp "JWT ayarları beyan edilmiş" diyerek isimsiz toplu
+# deploy yapması, beyan dışı kalanları sessizce kırardı. Liste eksiksiz.
+#
+# Yeni bir Edge Function `--no-verify-jwt` ile deploy edilecekse buraya da
+# eklenir. Ekleme yoksa fonksiyon JWT doğrulaması AÇIK çalışır.
+
+# ─── Cron ile tetiklenenler ─────────────────────────────────────────────────
+# Çağrı pg_net'ten gelir, Authorization header'ı taşımaz. Service-role yetkisi
+# fonksiyonun İÇİNDE Deno.env'den çözülür. JWT açık kalırsa cron sessizce ölür.
+
+[functions.generate-global-slot]
+verify_jwt = false
+
+[functions.sync-trending]
+verify_jwt = false
+
+# ─── Kendi sırrını doğrulayan webhook ───────────────────────────────────────
+# RevenueCat Supabase JWT'si GÖNDERMEZ; `Bearer <REVENUECAT_WEBHOOK_SECRET>`
+# gönderir ve fonksiyon bunu index.ts:75'te kendisi doğrular. verify_jwt
+# açılırsa ödeme webhook'u 401 döner ve RevenueCat retry'ları sessizce tükenir.
+# Bu satır pazarlık dışıdır.
+
+[functions.revenuecat-webhook]
+verify_jwt = false
+
+# ─── İstemciden çağrılan, auth'unu kendi yapanlar ───────────────────────────
+# Dördü de `auth.getUser` ile çağıranın kimliğini fonksiyon içinde doğrular.
+
+[functions.parse-mood]
+verify_jwt = false
+
+[functions.slot-mood-filtered]
+verify_jwt = false
+
+[functions.slot-pure-random]
+verify_jwt = false
+
+[functions.slot-triple]
+verify_jwt = false
+
+# ─── ⚠️ Auth'suz ve ücretli ─────────────────────────────────────────────────
+# İkisi de `--no-verify-jwt` ile deploy ediliyor ve İÇERİDE DE hiçbir kimlik
+# kontrolü yapmıyor — yani bugün herkes çağırabiliyor. İkisi de ücretli LLM
+# API'si çağırdığı için bu doğrudan bir maliyet yüzeyi.
+# Buradaki satırlar mevcut gerçeği KAYDEDER, onaylamaz: durumun düzeltilmesi
+# ayrı bir kalem (docs/TEKNIK_BORC.md). Bu satırlar silinirse fonksiyonlar
+# çalışmayı bırakır — önce içeriye auth eklenmesi gerekir.
+
+[functions.explain-match]
+verify_jwt = false
+
+[functions.generate-puzzles]
+verify_jwt = false

@@ -111,10 +111,11 @@ function isValidContext(v: unknown): v is GauntletContext {
  * v0'da `personal` ve `discovery` aynı mantıktır, yalnızca etikettir —
  * kişiselleştirme yok. Sinyalsiz kullanıcıda dördü de `global` etiketlenir.
  *
- * ⚠️ Global slotun gerçek kaynağı (`scope = 'global'` günlük satır) henüz
- * üretilmiyor: generate-global-slot cron'u B.3 kapsamının dışında bırakıldı.
- * Bugün dört film de aynı boru hattından gelir; etiketler C fazında gerçek
- * kaynaklara bağlanacak.
+ * ⚠️ Global slotun gerçek kaynağı (`scope = 'global'` günlük satır) artık
+ * ÜRETİLİYOR: `generate-global-slot` + migration 075 cron'u (7 Ağu 2026).
+ * Ama bu dosya onu HENÜZ OKUMUYOR — dört film hâlâ aynı kişisel boru hattından
+ * gelir, `global` burada yalnızca bir ETİKETTİR. Üretici hazır, tüketici değil;
+ * slotların gerçek kaynaklara bağlanması C fazının işi.
  */
 function slotTypesFor(signalCount: number): DailyGauntlet['slotTypes'] {
   if (signalCount === 0) return ['global', 'global', 'global', 'global']

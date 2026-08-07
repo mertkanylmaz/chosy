@@ -346,6 +346,47 @@ export async function fetchExclusions(
   return { watched, recentlyShown, recentlyRejected, shownPairs }
 }
 
+/**
+ * Global slotun dışlama kümesi: son 21 günün `scope = 'global'` satırlarında
+ * gösterilmiş filmler. BAŞKA KURAL YOK (CTO kararı, 7 Ağu 2026).
+ *
+ * Diğer üç küme BİLİNÇLİ OLARAK boş kalır — üçü de KULLANICI bazlıdır ve
+ * global satırın kullanıcısı yoktur:
+ *   - `watched`          → "kimin izlediği" sorusunun global karşılığı yok
+ *   - `recentlyRejected` → aynı şekilde kişisel; toplu (agregat) reddetme
+ *                          dışlaması Faz F'nin işi, bugün ERKEN
+ *   - `shownPairs`       → `duel_impressions` kullanıcı/cihaz bazlı
+ * Boş küme burada sessiz bir fallback DEĞİL, tanımın kendisidir.
+ *
+ * `SHOWN_COOLDOWN_DAYS` yeniden kullanılır: pencere kullanıcı bazlı filtreyle
+ * AYNI. Global için ayrı bir sabit uydurmak iki gerçek üretirdi.
+ */
+export async function fetchGlobalExclusions(
+  service: SupabaseClient,
+): Promise<Exclusions> {
+  const { data, error } = await service
+    .from('daily_gauntlets')
+    .select('film_ids')
+    .eq('scope', 'global')
+    .gte('date', utcDateString(-SHOWN_COOLDOWN_DAYS))
+
+  if (error) {
+    throw new Error(`global dışlama sorgusu başarısız: ${error.message}`)
+  }
+
+  const recentlyShown = new Set<string>()
+  for (const r of (data ?? []) as { film_ids: string[] }[]) {
+    for (const id of r.film_ids ?? []) recentlyShown.add(id)
+  }
+
+  return {
+    watched: new Set(),
+    recentlyShown,
+    recentlyRejected: new Set(),
+    shownPairs: new Set(),
+  }
+}
+
 // ─── ADIM 2 — TANINIRLIK (YÜZDELİK) ──────────────────────────────────────────
 
 /**
@@ -648,19 +689,52 @@ export interface ScoredPool {
 }
 
 /**
+ * `buildScoredPool` çağrı yerine göre değişen üç noktası. Üçü de OPSİYONEL ve
+ * varsayılanları B.3/B.4 davranışını birebir korur — `generate-gauntlet` ve
+ * `submit-choice` çağrıları bu parametreleme sonrası DEĞİŞMEDİ.
+ */
+export interface ScoredPoolOptions {
+  /** ADIM 1 tier listesi. Varsayılan `ACTIVE_TIERS` (core+extended+trending). */
+  tiers?: string[]
+  /**
+   * Gevşetme merdiveninin tier basamağı. Varsayılan `RELAXED_TIERS`.
+   * `null` → tier gevşetmesi YOK; havuz yetersizse fonksiyon throw eder.
+   * Global slot bunu kullanır: aynı listeyi ikinci kez çekip yanıltıcı bir
+   * "archive ile genişletildi" uyarısı üretmek yerine basamak atlanır.
+   */
+  relaxedTiers?: string[] | null
+  /**
+   * Dışlama kümesi. Varsayılan `fetchExclusions(service, appUserId)`.
+   * Global slot `fetchGlobalExclusions(service)` sonucunu geçirir.
+   */
+  exclusions?: Exclusions
+}
+
+/**
  * ADIM 1 (sert filtre + gevşetme merdiveni) → ADIM 2 (tanınırlık) →
  * süre yayılımı eşikleri.
  *
- * `generate-gauntlet` ve `submit-choice` bu fonksiyonun AYNI çıktısını kullanır;
- * iki tarafın havuz tanımı ıraksayamaz.
+ * `generate-gauntlet`, `submit-choice` ve `generate-global-slot` bu fonksiyonun
+ * AYNI çıktısını kullanır; üç tarafın havuz tanımı ıraksayamaz. İkinci bir
+ * kopya çekirdek YAZILMAZ — değişen tek şey `opts` ile verilen üç nokta.
+ *
+ * `appUserId` **null olabilir**: global slotun kullanıcısı yoktur. Null iken
+ * `opts.exclusions` ZORUNLUDUR — aksi halde fonksiyon "dışlama yok" moduna
+ * sessizce düşerdi, bu yüzden throw eder.
+ *
+ * `context` yalnızca `duration` alanını okur (süre tavanı). Tam
+ * `GauntletContext` istemek, global çağrıyı anlamsız `companion`/`energy`
+ * değerleri uydurmaya zorlardı. İki mevcut çağrı yeri tam nesne geçiyor,
+ * yapısal olarak uyumlu.
  *
  * `logPrefix` yalnız log olayı adını ayırır — davranış farkı yaratmaz.
  */
 export async function buildScoredPool(
   service: SupabaseClient,
-  appUserId: string,
-  context: GauntletContext,
+  appUserId: string | null,
+  context: Pick<GauntletContext, 'duration'>,
   logPrefix: string,
+  opts: ScoredPoolOptions = {},
 ): Promise<ScoredPool> {
   // app_config LAZY okunur — modül seviyesinde cache YOK. Anahtar eksikse
   // getAppConfig throw eder; kod içi sabitle sessizce devam edilmez.
@@ -672,13 +746,29 @@ export async function buildScoredPool(
   ])
 
   const maxRuntime = CONTEXT_MAX_RUNTIME[context.duration]
-  const exclusions = await fetchExclusions(service, appUserId)
+  const tiers = opts.tiers ?? ACTIVE_TIERS
+  // `undefined` = parametre verilmedi → varsayılan. `null` = basamak kapalı.
+  const relaxedTiers = opts.relaxedTiers === undefined
+    ? RELAXED_TIERS
+    : opts.relaxedTiers
+
+  let exclusions: Exclusions
+  if (opts.exclusions) {
+    exclusions = opts.exclusions
+  } else if (appUserId === null) {
+    throw new Error(
+      'buildScoredPool: appUserId null iken opts.exclusions zorunlu — ' +
+        'dışlamasız havuz sessiz fallback olur',
+    )
+  } else {
+    exclusions = await fetchExclusions(service, appUserId)
+  }
 
   // ── ADIM 1 — gevşetme merdiveni: cooldown → tier ────────────────────────────
   const relaxations: string[] = []
   let pool: Candidate[] = []
 
-  const rawPool = await fetchPool(service, maxRuntime, ACTIVE_TIERS)
+  const rawPool = await fetchPool(service, maxRuntime, tiers)
   pool = rawPool.filter(
     (c) =>
       !exclusions.watched.has(c.id) &&
@@ -697,17 +787,25 @@ export async function buildScoredPool(
     pool = rawPool.filter((c) => !exclusions.watched.has(c.id))
   }
 
-  if (pool.length < 4) {
+  if (pool.length < 4 && relaxedTiers) {
     relaxations.push('tier')
     logInfo(`${logPrefix}_relax_tier`, { user_id: appUserId, pool_size: pool.length })
     await sentryCapture({
+      // Metin BİLİNÇLİ olarak değiştirilmedi: Sentry issue gruplaması mesaja
+      // bağlı. Ulaşılabilir tek gevşetme hâlâ archive'dır — global slot bu
+      // basamağı `relaxedTiers: null` ile tamamen kapatır.
       message: `${logPrefix}: aday havuzu archive tier ile genişletildi`,
       level: 'warning',
       tags: { function: logPrefix },
-      extra: { user_id: appUserId, pool_size: pool.length, context },
+      extra: {
+        user_id: appUserId,
+        pool_size: pool.length,
+        context,
+        relaxed_tiers: relaxedTiers,
+      },
     })
-    const archivePool = await fetchPool(service, maxRuntime, RELAXED_TIERS)
-    pool = archivePool.filter((c) => !exclusions.watched.has(c.id))
+    const relaxedPool = await fetchPool(service, maxRuntime, relaxedTiers)
+    pool = relaxedPool.filter((c) => !exclusions.watched.has(c.id))
   }
 
   if (pool.length < 4) {

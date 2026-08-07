@@ -56,3 +56,9 @@ supabase/.temp/
 
 # Agent calisma hafizasi — yerel kalir, repoya girmez
 .claude/agent-memory/
+
+# Deno typecheck ciktisi (npm run typecheck:functions kendi lock dosyasini uretir)
+supabase/functions/deno.lock
+
+# Kurucu kabul testi ciktisi (baselines/ takip edilir, output/ edilmez)
+tests/founder-acceptance/output/
