@@ -311,6 +311,27 @@ neredeyse tamamı burada:
 
 Uçtan uca: cold start 8,0 s · sıcak çağrı 2,0–3,3 s (ortalama 3,4 s).
 
+**Maliyet DB'de değil, veri transferinde.** `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)`
+ile ölçüldü (pooler üzerinden doğrudan bağlantı):
+
+| Sorgu | Plan | Execution |
+|---|---|---:|
+| Havuz, `any` (LIMIT 1000) | Merge Join · Index Scan `film_profiles_film_id_key` + `films_pkey` | **5,0 ms** |
+| Havuz, `short` (791 satır) | Hash Join · Seq Scan `film_profiles` + Index Scan `idx_films_curation_tier` | **88,5 ms** |
+
+Yani 886 ms'lik POOL çağrısının ~880 ms'i ağ gecikmesi + PostgREST serialize.
+`short` bağlamı en pahalı plan: seçicilik yüksek olduğu için `LIMIT 1000` erken
+kesemiyor, planner tam taramaya geçiyor.
+
+`film_profiles` üzerindeki Seq Scan **kaçınılmaz**: `enable_seqscan = off` ile
+bile Seq Scan seçiliyor (10 milyar maliyet cezasına rağmen), çünkü
+`profile_vector IS NOT NULL` için kullanılabilir index yok —
+`idx_film_profiles_vector` bir vektör index'i, bu predicate'e uymuyor.
+Ayrıca ölçüldü: `film_profiles` 3.394 satırın **0'ında** `profile_vector` NULL,
+yani filtre bugün hiçbir satır elemiyor. Buna rağmen kaldırılamaz:
+`sync-trending/index.ts:365` yeni filmler için `profile_vector: null`
+placeholder satırı açıyor — filtre gerçek bir korumadır, faydası bugün sıfır.
+
 **Bu bir quantile sorunu DEĞİL.** Süre yayılımı eşiği DB'de `percentile_cont`
 ile değil, zaten çekilmiş havuzun `runtime` dizisi üzerinde JS'de hesaplanıyor:
 1.000 satırda 100 sort = 21,4 ms, yani çağrı başına **0,21 ms**. Faz D'de havuz
@@ -342,6 +363,21 @@ Aynı taramada gauntlet zincirinin geri kalanı temiz (Seq scan 0):
 `film_profiles_film_id_key` 2.764.649 · `films_pkey` 3.068.328 ·
 `idx_films_curation_tier` 191 · `daily_gauntlets_user_date_uniq` 27 ·
 `duel_impressions_user_pair_uniq` 39.
+
+`EXPLAIN` ayrıca `daily_gauntlets` üzerinde iki Seq Scan gösteriyor (idempotency
+SELECT'i ve "son 21 gün" filtresi). Sebebi tablo boyutu: **0 satır, 1 sayfa** —
+bu boyutta Seq Scan doğru plan. Index'lerin kullanılabilir olduğu
+`enable_seqscan = off` ile doğrulandı:
+
+- idempotency SELECT → `daily_gauntlets_user_date_uniq` (partial unique), Index
+  Cond `(user_id, date)` — tam uyum
+- son 21 gün → `daily_gauntlets_scope_date`, `user_id` filtre olarak kalıyor
+
+Tablo büyüdükçe planner kendiliğinden index'e geçer; bugünkü Seq Scan regresyon
+değil. Diğer dışlama sorguları şimdiden index kullanıyor: `watchlist` →
+`idx_watchlist_user_id` · `choice_events` → `choice_events_user_recent`
+(bileşik `user_id, created_at`, tam uyum) · `duel_impressions` →
+`duel_impressions_user_pair_uniq` (Bitmap Index Scan).
 
 **Neden şimdi değil:** 24 KB, zararsız. Ama 069'daki yorumu gerçekle
 uyuşmuyor — index'i okuyan biri var olmayan bir sorgu deseni varsayar.
