@@ -256,3 +256,21 @@ alanlarını eksik getirebiliyor.
 | `scripts/audit-film-metadata-gaps.ts` | Salt-okunur boşluk denetimi (öncesi/sonrası doğrulama) |
 | `scripts/backfill-film-metadata.ts` | `director` + `original_language` (TMDb), `imdb_votes` (OMDb) |
 | `scripts/ai-profile-films.ts --from-db` | `profile_vector`'ü DB'den okuyarak üretir (`films-raw.json` sonradan eklenen filmleri içermez) |
+
+---
+
+## claim_device_data — cihaz provenance'i korunmuyor
+
+**Kayıt tarihi:** 7 Ağustos 2026 (B.1 / migration 069)
+
+`claim_device_data(p_device_id, p_user_id)` anonim satırları kayıtlı kullanıcıya
+devrederken `daily_gauntlets`'te `device_id = NULL` yazıyor. Bunun sebebi
+`daily_gauntlets_scope_integrity` kısıtı: `scope = 'personal'` satırında
+`device_id IS NULL` olmak zorunda. Sonuç: devir sonrası "bu satır hangi
+cihazdan geldi" bilgisi kayboluyor.
+
+Bilinçli karar. `claimed_from_device` gibi bir kolon eklenmedi çünkü hiçbir
+Faz C/D işi bu veriye ihtiyaç duymuyor ve şema kilitleniyor — spekülatif kolon
+eklemek "bir gün lazım olur" mantığıdır, mimari ihtiyaç çıkınca genişler.
+
+Fraud veya analitik ihtiyacı doğarsa ayrı bir migration ile eklenir.
