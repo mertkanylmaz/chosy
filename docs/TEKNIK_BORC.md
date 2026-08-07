@@ -290,3 +290,60 @@ durumda kalır (zaten bozuk policy yüzünden erişilemiyorlardı).
 
 `game_scores.user_id` üzerinde FK yok (`016:19`) ve bu 9 satır durdukça FK
 eklenemez. Temizlik + FK ekleme gerekirse ayrı bir migration ile yapılır.
+
+---
+
+## generate-gauntlet — havuzun tamamı her istekte çekiliyor
+
+**Kayıt tarihi:** 7 Ağustos 2026 (B.3 gate incelemesi)
+
+ADIM 1, aday havuzunu PostgREST üzerinden sayfalayarak belleğe çekiyor
+(`any` bağlamında 1.866 satır, 2 sayfa). Ölçüldü — çağrı başı yanıt süresinin
+neredeyse tamamı burada:
+
+| Aşama | Süre |
+|---|---:|
+| POOL sayfa 1 (1000 satır) | 886 ms |
+| POOL sayfa 2 (866 satır) | 845 ms |
+| `app_config` ×4 (paralel) | 210–609 ms |
+| dışlama sorguları ×4 (paralel) | 211–225 ms |
+| `countSignals` | 284 ms |
+
+Uçtan uca: cold start 8,0 s · sıcak çağrı 2,0–3,3 s (ortalama 3,4 s).
+
+**Bu bir quantile sorunu DEĞİL.** Süre yayılımı eşiği DB'de `percentile_cont`
+ile değil, zaten çekilmiş havuzun `runtime` dizisi üzerinde JS'de hesaplanıyor:
+1.000 satırda 100 sort = 21,4 ms, yani çağrı başına **0,21 ms**. Faz D'de havuz
+3.394'e çıksa `n log n` ile ~0,4 ms. Cache'lenmesi gereken şey eşik değil,
+havuzun kendisi.
+
+Eşiği precompute etmek ayrıca migration 071'in commit'lenmiş gerekçesine aykırı:
+eşik, ADIM 1 **sonrası** havuzun kendi dağılımından hesaplanmak zorunda —
+`short` bağlamında havuz 791'e düşerken 1.866'lık dağılımın eşiğini kullanmak
+tam da 071'in reddettiği hata.
+
+**Neden şimdi değil:** Gauntlet ekranı henüz yok (C.2). Havuz cache'i bağlam ×
+tier kırılımında invalidasyon stratejisi ister (yeni film, `curation_tier`
+değişimi, `profile_vector` doldurma hepsi cache'i bozar) — bu mimari karar,
+ekran ölçülmeden alınmamalı. C.2'de gerçek açılış süresi ölçülüp karar verilir.
+
+---
+
+## daily_gauntlets_film_ids_gin — ölü index
+
+**Kayıt tarihi:** 7 Ağustos 2026 (B.3 gate incelemesi)
+
+Migration 069 bu GIN index'ini açıkça *"B.3'teki 'son 21 gün gösterilen
+filmler' filtresi için"* ekledi. B.3 o filtreyi `user_id + date` ile çekip
+`film_ids` dizisini bellekte açacak şekilde yazıldı, dolayısıyla GIN'e hiç
+uğramıyor: `index-stats` → **0 tarama, unused**.
+
+Aynı taramada gauntlet zincirinin geri kalanı temiz (Seq scan 0):
+`film_profiles_film_id_key` 2.764.649 · `films_pkey` 3.068.328 ·
+`idx_films_curation_tier` 191 · `daily_gauntlets_user_date_uniq` 27 ·
+`duel_impressions_user_pair_uniq` 39.
+
+**Neden şimdi değil:** 24 KB, zararsız. Ama 069'daki yorumu gerçekle
+uyuşmuyor — index'i okuyan biri var olmayan bir sorgu deseni varsayar.
+C fazında ya filtre GIN üzerinden yazılır ya index düşürülür; ikisi de
+karar gerektirir, ölü index tek başına düşürmeye değmez.
