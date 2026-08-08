@@ -783,10 +783,43 @@ araması, `getAppUserId()`'yi tetikleyen herhangi bir eylemden ÖNCE oluyor.
 Yani fail-open yolu marjinal bir kenar durum değil — anonim kullanıcıların
 %54'ü herhangi bir anda köprüsüz ve ilk arama tam bu pencerede.
 
-**Düzeltme yönü (mimari karar — CTO onayı ister):** ya `checkSearchQuota`
-`appUserId` yokken kotayı `authUserId` kovasında tutar, ya `requireUser()`
-satırı yoksa oluşturur (Edge tarafında `getAppUserId` muadili), ya da
-fail-open kapatılıp 409 dönülür. Üçü farklı ürün davranışı — seçim senin.
+**Düzeltme yönü — KARAR VERİLDİ (CTO, 8 Ağu 2026): Edge'de satırı oluştur.**
+
+Üç seçenek değerlendirildi:
+
+| Seçenek | Karar | Gerekçe |
+|---|---|---|
+| Kotayı `authUserId` kovasında tut | ❌ | `public.users`'ın neden var olduğu sorusunu atlıyor. İki UUID uzayının ayrı tutulma sebebi (`app_user_id()` SECURITY INVOKER + RLS) hâlâ geçerli; kısayol o modelde delik açar |
+| **Edge'de tembel satır oluştur** | ✅ | Zaten var olan `getAppUserId()` desenini (`services/auth-utils.ts:31`) `parse-mood`'un kendisine taşımak. Yeni mimari değil, mevcut desenin yer değiştirmesi |
+| Fail-open'ı kapat, 409 dön | ❌ | İlk kullanıcıyı anlık olarak reddeder. Kötü ilk izlenim; "sistem beni öğreniyor" hissinin tam tersi |
+
+Uygulama notu: `auth-utils.ts`'teki 23505 (unique_violation) toleransı Edge
+tarafında da korunmalı — eşzamanlı iki istek aynı `auth_id` için yarışabilir.
+
+---
+
+## 🟢 `test:founder` ölçütü — `expectedConcepts` hiç puanlanmıyor
+
+**Öncelik: düşük, C.0'ı bloklamıyor.** 8 Ağu 2026, runner onarımı sırasında bulundu.
+
+`tests/founder-acceptance/runner.ts:103` → `titleMatches()` yalnızca **başlık
+dizisi** karşılaştırıyor. `cases.ts`'teki `expectedConcepts` alanı (örn.
+`['arthouse', 'classic', 'non-mainstream']`) hiçbir yerde okunmuyor.
+
+Sonuç: sistem doğru cevap verdiğinde bile test yanlış soruyor. `no_marvel`
+case'i (8 Ağu koşumu) — negatif kısıt tam çalışıyor (`unacceptable: 0`), ama
+dönen Fellini / Lynch / Kiarostami üçlüsü `acceptableExamples`'daki Bergman /
+Tarkovski listesinde geçmediği için `acc:0` yazıyor ve case PARTIAL kalıyor.
+
+**Karar (CTO, 8 Ağu 2026): `expectedConcepts` gerçekten puanlansın.**
+`acceptableExamples` listesini genişletmek REDDEDİLDİ — kanon arthouse listesi
+sonsuz genişletilebilir, her "doğru ama listede olmayan film" tekrar eden bakım
+yükü üretir. Kavram bazlı puanlama (dönen filmlerin tür/dönem/köken meta
+verisinin `expectedConcepts` ile eşleşmesi) daha az kırılgan.
+
+**Bekleyen ikinci soru:** aynı koşumda `Joy Ride (2001)` (gerilim) ve
+`Cobain: Montage of Heck` (müzik belgeseli) top-10'a sızdı — algoritmada gürültü
+sinyali olabilir. Ölçüt düzeltilmeden ayırt edilemez; düzelince tekrar bakılacak.
 
 ---
 
