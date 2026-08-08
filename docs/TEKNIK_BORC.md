@@ -564,9 +564,55 @@ Karşılaştırma: `parse-mood`, `slot-triple`, `slot-pure-random`,
 kendi paylaşılan sırrını kontrol ediyor. Yani desen projede zaten var; bu iki
 fonksiyon deseni uygulamıyor.
 
-Sonuç: URL'i bilen herkes bu iki endpoint'i sınırsız çağırıp API kredisi
+### `explain-match`'teki rate limit KORUMA SAĞLAMIYOR (kod okundu, 8 Ağu 2026)
+
+`explain-match` `checkRateLimit(req, 'explain-match')` çağırıyor — yani
+dışarıdan bakınca 30/dakika korumalı görünüyor. **Üç ayrı nedenle korumuyor:**
+
+**1. Sayaç her istekte 1'e sıfırlanıyor — limit HİÇ tetiklenmiyor.**
+`_shared/rateLimit.ts:70-98` upsert'ü `request_count: 1` sabitiyle yapıyor ve
+`ignoreDuplicates: false` veriyor. Çakışmada `ON CONFLICT DO UPDATE` sayacı
+mevcut değerin üzerine **1 yazıyor**. Dönen değer bu yüzden her zaman 1, ve
+hemen ardındaki `if (data.request_count === 1) return` her istekte erken
+dönüyor. Altındaki artırma bloğu (`:100-122`) **ulaşılamaz kod** — `throw new
+RateLimitError` satırı hiç çalışmıyor. Tablo yalnızca "bu dakikada çağrıldı"
+kaydı tutuyor, sayım yapmıyor.
+
+**2. Kimlik doğrulanmadan JWT'den okunuyor — sahtelenebilir.**
+`rateLimit.ts:33-45` `extractUserId` JWT'yi **imza doğrulamadan** base64 decode
+edip `payload.sub`'ı alıyor (yorumu bunu açıkça yazıyor: "imza doğrulaması
+gerekmiyor, sadece kimlik için"). Saldırgan her istekte uydurma bir `sub`
+göndererek sınırsız sayıda taze kova açabilir. Sayaç çalışsaydı bile bu tek
+başına limiti etkisiz kılardı.
+
+**3. DB hatasında sessizce geçiriyor.**
+`rateLimit.ts:88-92` — hata olursa `console.error` + `return`, yani istek
+geçiyor. Sentry'ye düşmüyor. Proje kuralı 1 ihlali (sessiz fallback yasak).
+
+Sonuç: URL'i bilen herkes bu iki endpoint'i **sınırsız** çağırıp API kredisi
 harcatabilir. Kota altyapısı (`check-quota`, `api_rate_limits`, migration 033)
-projede mevcut ama bu iki yolda kullanılmıyor.
+mevcut ama `explain-match` yolunda çalışmıyor, `generate-puzzles` yolunda hiç
+yok.
+
+### ⚠️ `verify_jwt = true` bu sorunu ÇÖZMEZ
+
+İlk akla gelen düzeltme yanıltıcı: `verify_jwt` Supabase proje anahtarıyla
+imzalanmış herhangi bir JWT'yi kabul eder — **anon anahtarı dahil**. Anon
+anahtarı React Native bundle'ında bulunuyor (`EXPO_PUBLIC_SUPABASE_ANON_KEY`),
+yani saldırganın onu elde etmesi tam olarak fonksiyon URL'ini elde etmesi kadar
+kolay. `verify_jwt` açmak yalnızca "URL'i buldum, körlemesine curl atıyorum"
+seviyesini keser; hedefli sömürüyü kesmez.
+
+Gerçek düzeltme üç parçalı:
+1. Fonksiyon içinde `auth.getUser` ile **gerçek kullanıcı** doğrulaması
+   (`parse-mood` deseni); anon reddedilir.
+2. `rateLimit.ts`'in sayaç hatası düzeltilir (upsert yerine atomik
+   `increment` RPC'si) ve `extractUserId` doğrulanmış kimliği kullanır.
+3. DB hatasında sessiz geçiş kaldırılır — Sentry + fail-closed.
+
+`rateLimit.ts` düzeltmesi `parse-mood` ve `rerank-films`'i de kapsar: üçü de
+aynı kırık sayacı kullanıyor. O ikisinde kimlik doğrulaması olduğu için etki
+daha düşük, ama sayaç orada da çalışmıyor.
 
 `supabase/config.toml` bu iki fonksiyon için `verify_jwt = false` beyanı
 içeriyor. Bu beyan mevcut gerçeği KAYDEDER, onaylamaz — satırlar önce içeriye
