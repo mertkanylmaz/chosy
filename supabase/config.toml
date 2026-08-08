@@ -48,9 +48,19 @@ verify_jwt = false
 verify_jwt = false
 
 # ─── İstemciden çağrılan, auth'unu kendi yapanlar ───────────────────────────
-# Dördü de `auth.getUser` ile çağıranın kimliğini fonksiyon içinde doğrular.
+# Beşi de çağıranın kimliğini fonksiyon içinde `auth.getUser` ile doğrular.
+# parse-mood ve explain-match bunu `_shared/auth.ts` → `requireUser()` ile
+# yapar; slot-* üçlüsü kendi kopyasını taşır.
+#
+# ⚠️ Bu bölümdeki bir fonksiyona `verify_jwt = true` yapmak KORUMA EKLEMEZ,
+# sadece anon key şartı koyar — o key uygulama binary'sinde gömülüdür. Gerçek
+# koruma fonksiyonun içindedir; bu satırlar onu devre dışı bırakmak için değil,
+# platformun ikinci kez aynı işi yapmasını önlemek için var.
 
 [functions.parse-mood]
+verify_jwt = false
+
+[functions.explain-match]
 verify_jwt = false
 
 [functions.slot-mood-filtered]
@@ -63,15 +73,16 @@ verify_jwt = false
 verify_jwt = false
 
 # ─── ⚠️ Auth'suz ve ücretli ─────────────────────────────────────────────────
-# İkisi de `--no-verify-jwt` ile deploy ediliyor ve İÇERİDE DE hiçbir kimlik
-# kontrolü yapmıyor — yani bugün herkes çağırabiliyor. İkisi de ücretli LLM
-# API'si çağırdığı için bu doğrudan bir maliyet yüzeyi.
-# Buradaki satırlar mevcut gerçeği KAYDEDER, onaylamaz: durumun düzeltilmesi
-# ayrı bir kalem (docs/TEKNIK_BORC.md). Bu satırlar silinirse fonksiyonlar
-# çalışmayı bırakır — önce içeriye auth eklenmesi gerekir.
-
-[functions.explain-match]
-verify_jwt = false
+# `--no-verify-jwt` ile deploy ediliyor ve İÇERİDE DE hiçbir kimlik kontrolü
+# yapmıyor — yani bugün herkes çağırabiliyor, üstelik ücretli LLM API'si
+# çağırıyor. Doğrudan maliyet yüzeyi.
+#
+# 8 Ağu 2026: explain-match bu bölümden ÇIKARILDI (auth eklendi). Geriye
+# generate-puzzles kaldı; auth eklenmedi çünkü çağıranı cron'dur ve cron
+# `cron.schedule` ile SQL Editor'den kurulmuş, repoda migration'ı yok —
+# hangi header'ı gönderdiği doğrulanmadan auth eklemek yeni bir sessiz ölü
+# cron üretirdi. Ayrı kalem: docs/TEKNIK_BORC.md.
+# Bu satır silinirse fonksiyon çalışmayı bırakır.
 
 [functions.generate-puzzles]
 verify_jwt = false

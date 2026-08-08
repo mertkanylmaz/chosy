@@ -9,7 +9,8 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
-import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -66,13 +67,20 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  // ── Kimlik ────────────────────────────────────────────────────────────────
+  // `verify_jwt` varsayılanı bu fonksiyonu koruyor GÖRÜNÜYORDU, ama o kontrol
+  // anon key'in kendisini geçerli JWT sayar — ve anon key uygulama binary'sinde
+  // gömülüdür. Yani gerçek kimlik kontrolü buydu, burada yapılıyor.
+  const auth = await requireUser(req)
+  if (!auth.ok) {
+    return unauthorizedResponse(auth, CORS_HEADERS)
+  }
+
   // ── Rate limit ────────────────────────────────────────────────────────────
   try {
-    await checkRateLimit(req, 'rerank-films')
+    await checkRateLimit(auth.authUserId, 'rerank-films')
   } catch (err) {
-    if (err instanceof RateLimitError) {
-      return rateLimitResponse(err, CORS_HEADERS)
-    }
+    return rateLimitResponse(err, CORS_HEADERS)
   }
 
   // ── API key guard ─────────────────────────────────────────────────────────

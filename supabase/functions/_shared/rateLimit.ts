@@ -1,24 +1,56 @@
 /**
- * Edge Function Rate Limiter — Supabase tablosu ile server-side rate limiting.
+ * Edge Function Rate Limiter — `api_rate_limits` tablosu ile server-side limit.
  *
- * In-memory Map yerine `api_rate_limits` tablosunu kullanır:
- * - Uygulama yeniden başlasa bile limit korunur
- * - Tüm cihazlar/instancelar aynı limiti paylaşır
+ * ════════════════════════════════════════════════════════════════════════════
+ * 8 Ağu 2026 ONARIMI — bu dosyanın önceki hâli HİÇBİR ŞEYİ SINIRLAMIYORDU.
+ * Üç bağımsız kusur vardı, üçü de burada kapatıldı:
+ *
+ *  1. SAYAÇ ARTMIYORDU. PostgREST `upsert` gövdeye sabit `request_count: 1`
+ *     yazıyordu; çakışmada `ON CONFLICT DO UPDATE` mevcut sayacın ÜZERİNE 1
+ *     yazıyordu. Dönen değer hep 1 olduğu için `if (count === 1) return`
+ *     her istekte erken dönüyor, `throw new RateLimitError` ULAŞILAMAZ kod
+ *     oluyordu. → Artırma migration 076'daki `increment_rate_limit` RPC'sine
+ *     taşındı; artırma artık tek ifadede, atomik.
+ *
+ *  2. KİMLİK DOĞRULANMIYORDU. JWT `atob` ile imza doğrulanmadan açılıp `sub`
+ *     alanına güveniliyordu. Saldırgan her istekte uydurma bir `sub`
+ *     göndererek sınırsız temiz kova açabilirdi — yani limit, limit koymak
+ *     isteyen herkes için geçerliydi, aşmak isteyen için değil.
+ *     → Bu dosyada ARTIK JWT KODU YOK. Kimlik dışarıdan, `_shared/auth.ts`
+ *     `requireUser()` tarafından İMZA DOĞRULANARAK verilir. `userId`
+ *     parametresi zorunlu: kimliksiz çağrı yapısal olarak imkânsız.
+ *
+ *  3. DB HATASINDA SESSİZCE GEÇİYORDU. `console.error` + `return`, Sentry yok.
+ *     → FAIL-CLOSED. Sayaç okunamıyorsa istek reddedilir (503) ve Sentry'ye
+ *     `level: 'error'` ile yazılır. Sessiz fallback proje kuralı 1'in ihlali.
+ * ════════════════════════════════════════════════════════════════════════════
+ *
+ * Pencere semantiği: SABİT (tumbling) bucket — `floor(now / windowMs) * windowMs`.
+ * Kayan pencere DEĞİL. Dakika sınırında 2× burst mümkündür; 033'ten beri
+ * böyle ve bu onarımın kapsamı değil. Eski satırları `cleanup_rate_limits()`
+ * saat başı siler.
  *
  * Kullanım:
- *   import { checkRateLimit } from '../_shared/rateLimit.ts'
- *   await checkRateLimit(req, 'parse-mood')  // limit aşılırsa hata döner
+ *   const auth = await requireUser(req)
+ *   if (!auth.ok) return unauthorizedResponse(auth, CORS_HEADERS)
+ *   try {
+ *     await checkRateLimit(auth.authUserId, 'explain-match')
+ *   } catch (err) {
+ *     return rateLimitResponse(err, CORS_HEADERS)
+ *   }
  */
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getServiceClient } from './gameUtils.ts'
+import { sentryCapture } from './sentry.ts'
 
 /** Her fonksiyon için limit konfigürasyonu */
 const LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
   'parse-mood':    { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
   'explain-match': { maxRequests: 30, windowMs: 60_000 },  // 30/dakika
   'rerank-films':  { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
+  'recommend':     { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
 }
 
-/** Rate limit aşımında dönen HTTP yanıtı için hata sınıfı */
+/** Limit aşıldı — istemci beklemeli (429) */
 export class RateLimitError extends Error {
   constructor(public retryAfterMs: number) {
     super('Rate limit exceeded')
@@ -27,120 +59,133 @@ export class RateLimitError extends Error {
 }
 
 /**
- * İstek sahibini tanımlar: Authorization header'dan JWT decode eder.
- * JWT yoksa (veya geçersizse) 'anon' döner.
+ * Sayaç OKUNAMADI — limit uygulanamıyor (503).
+ *
+ * Fail-open ile fail-closed arasındaki tercih burada yapılıyor: sayaç
+ * çalışmıyorken isteği geçirmek, tam olarak onarmaya çalıştığımız duruma
+ * (sınırsız ücretli LLM çağrısı) geri dönmek olurdu.
  */
-function extractUserId(req: Request): string {
-  const auth = req.headers.get('authorization') ?? ''
-  const token = auth.replace(/^Bearer\s+/i, '')
-  if (!token) return 'anon'
-
-  try {
-    // JWT payload base64 decode (imza doğrulaması gerekmiyor, sadece kimlik için)
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return (payload.sub as string) ?? 'anon'
-  } catch {
-    return 'anon'
+export class RateLimitUnavailableError extends Error {
+  constructor(public reason: string) {
+    super('Rate limit backend unavailable')
+    this.name = 'RateLimitUnavailableError'
   }
 }
 
 /**
- * Supabase tablosu üzerinden rate limit kontrolü yapar.
+ * Rate limit kontrolü — sayacı atomik artırır ve limiti karşılaştırır.
  *
- * @param req     - Gelen HTTP isteği (Authorization header okunur)
- * @param fnName  - Edge Function adı ('parse-mood' | 'explain-match')
- * @throws {RateLimitError} - Limit aşılırsa
+ * @param userId - **Doğrulanmış** kullanıcı kimliği (`requireUser().authUserId`).
+ *                 Ham JWT'den okunmuş bir değer BURAYA GEÇİRİLMEZ.
+ * @param fnName - Edge Function adı (LIMITS anahtarı)
+ * @throws {RateLimitError}            Limit aşıldıysa → 429
+ * @throws {RateLimitUnavailableError} Sayaç okunamadıysa → 503 (fail-closed)
  */
-export async function checkRateLimit(req: Request, fnName: string): Promise<void> {
+export async function checkRateLimit(userId: string, fnName: string): Promise<void> {
   const limit = LIMITS[fnName]
   if (!limit) return  // Tanımsız fonksiyon için limit yok
 
-  const userId = extractUserId(req)
+  if (!userId) {
+    // Çağıran auth adımını atlamış demektir — geçirmek eski kusuru geri getirir.
+    throw new RateLimitUnavailableError('userId boş — auth adımı atlanmış')
+  }
 
-  // Mevcut dakika penceresinin başlangıcını hesapla
-  const windowMs = limit.windowMs
+  const { windowMs, maxRequests } = limit
   const now = Date.now()
   const windowStart = new Date(Math.floor(now / windowMs) * windowMs).toISOString()
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-  const serviceKey  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  const client = createClient(supabaseUrl, serviceKey)
+  let count: number
 
-  // UPSERT: kayıt yoksa oluştur, varsa count'u artır
-  const { data, error } = await client
-    .from('api_rate_limits')
-    .upsert(
-      {
-        user_id:       userId,
-        function_name: fnName,
-        window_start:  windowStart,
-        request_count: 1,
-        updated_at:    new Date().toISOString(),
-      },
-      {
-        onConflict:    'user_id,function_name,window_start',
-        ignoreDuplicates: false,
-      },
-    )
-    .select('request_count')
-    .single()
-
-  if (error) {
-    // DB hatası durumunda yanlış pozitif vermemek için geçiriyoruz
-    console.error('[rateLimit] DB error:', error.message)
-    return
-  }
-
-  // Eğer UPSERT yeni kayıt oluşturmadıysa (conflict), count'u artır
-  if (data && data.request_count === 1) {
-    // Yeni kayıt — sayaç zaten 1, limit geçilmedi
-    return
-  }
-
-  // Mevcut sayacı oku ve artır
-  const { data: updated, error: updateErr } = await client
-    .from('api_rate_limits')
-    .update({
-      request_count: (data?.request_count ?? 0) + 1,
-      updated_at:    new Date().toISOString(),
+  try {
+    const { data, error } = await getServiceClient().rpc('increment_rate_limit', {
+      p_user_id:       userId,
+      p_function_name: fnName,
+      p_window_start:  windowStart,
     })
-    .eq('user_id',       userId)
-    .eq('function_name', fnName)
-    .eq('window_start',  windowStart)
-    .select('request_count')
-    .single()
 
-  if (updateErr) {
-    console.error('[rateLimit] Update error:', updateErr.message)
-    return
+    if (error) throw new Error(`RPC hatası: ${error.message}`)
+
+    // NULL dönüşü sessizce 0/1'e çevirmek sayacı yeniden kör ederdi (kural 1).
+    if (typeof data !== 'number') {
+      throw new Error(`RPC beklenmeyen dönüş: ${JSON.stringify(data)}`)
+    }
+
+    count = data
+  } catch (e) {
+    const reason = e instanceof Error ? e.message : String(e)
+    console.error('[rateLimit] FAIL-CLOSED —', fnName, ':', reason)
+
+    await sentryCapture({
+      message: `rateLimit sayacı okunamadı — istek reddedildi: ${reason}`,
+      level: 'error',
+      tags: { function: fnName, error_code: 'RATE_LIMIT_UNAVAILABLE' },
+      extra: { user_id: userId, window_start: windowStart },
+    })
+
+    throw new RateLimitUnavailableError(reason)
   }
 
-  const currentCount = updated?.request_count ?? 1
-  if (currentCount > limit.maxRequests) {
-    const retryAfterMs = windowMs - (now % windowMs)
-    throw new RateLimitError(retryAfterMs)
+  if (count > maxRequests) {
+    throw new RateLimitError(windowMs - (now % windowMs))
   }
 }
 
 /**
- * RateLimitError için HTTP 429 yanıtı üretir.
+ * Rate limit yolundan gelen HERHANGİ bir hatayı HTTP yanıtına çevirir.
+ *
+ * `unknown` alması bilinçli: eski kod `if (err instanceof RateLimitError)`
+ * yazıp `else` dalını boş bırakıyordu, yani limiter'ın fırlattığı diğer her
+ * hata SESSİZCE YUTULUYOR ve istek LLM'e ulaşıyordu. Bu imza o hatayı
+ * yapısal olarak imkânsız kılar — beklenmeyen her hata 503 olur.
  */
 export function rateLimitResponse(
-  err: RateLimitError,
+  err: unknown,
   corsHeaders: Record<string, string>,
 ): Response {
+  if (err instanceof RateLimitError) {
+    const retryAfterSeconds = Math.ceil(err.retryAfterMs / 1000)
+    return new Response(
+      JSON.stringify({
+        error: 'Too many requests. Please wait before trying again.',
+        code:  'RATE_LIMIT_EXCEEDED',
+        retryAfterSeconds,
+      }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'Retry-After':  String(retryAfterSeconds),
+        },
+      },
+    )
+  }
+
+  // RateLimitUnavailableError zaten checkRateLimit içinde Sentry'ye yazıldı.
+  // Buraya düşen BAŞKA bir hata varsa görünmesi gerekir — sessizce 503'e
+  // dönüşmesi eski "boş else" kusurunun tekrarı olurdu.
+  if (!(err instanceof RateLimitUnavailableError)) {
+    const reason = err instanceof Error ? err.message : String(err)
+    console.error('[rateLimit] Beklenmeyen hata:', reason)
+    sentryCapture({
+      message: `rateLimit yolunda beklenmeyen hata: ${reason}`,
+      level: 'error',
+      tags: { error_code: 'RATE_LIMIT_UNEXPECTED' },
+    }).catch(() => {})
+  }
+
   return new Response(
     JSON.stringify({
-      error: 'Too many requests. Please wait before trying again.',
-      code:  'RATE_LIMIT_EXCEEDED',
-      retryAfterSeconds: Math.ceil(err.retryAfterMs / 1000),
+      error: 'Service temporarily unavailable. Please try again shortly.',
+      code:  'RATE_LIMIT_UNAVAILABLE',
+      retry_after: 60,
     }),
     {
-      status: 429,
+      status: 503,
       headers: {
         ...corsHeaders,
-        'Content-Type':  'application/json',
-        'Retry-After':   String(Math.ceil(err.retryAfterMs / 1000)),
+        'Content-Type': 'application/json',
+        'Retry-After':  '60',
       },
     },
   )

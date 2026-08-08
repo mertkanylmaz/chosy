@@ -3,6 +3,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
 import { tasteProfileToVector } from "../../../services/vectorEncoder.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { requireUser, unauthorizedResponse } from "../_shared/auth.ts";
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
@@ -292,6 +294,21 @@ serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: "Sadece POST destekleniyor", code: "METHOD_NOT_ALLOWED" } satisfies ErrorResponse),
       { status: 405, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
+  }
+
+  // ── Kimlik + rate limit ─────────────────────────────────────────────────────
+  // Bu fonksiyonun istemcide çağıranı YOK (8 Ağu 2026 taraması) ama deploy
+  // edilmiş ve `api.anthropic.com`'a istek atıyor. Çağrılmıyor olması koruma
+  // değildir — kapı açık kaldığı sürece maliyet yüzeyidir.
+  const auth = await requireUser(req);
+  if (!auth.ok) {
+    return unauthorizedResponse(auth, CORS_HEADERS);
+  }
+
+  try {
+    await checkRateLimit(auth.authUserId, "recommend");
+  } catch (err) {
+    return rateLimitResponse(err, CORS_HEADERS);
   }
 
   let body: RecommendRequest;

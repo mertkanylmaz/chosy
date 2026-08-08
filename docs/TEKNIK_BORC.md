@@ -545,7 +545,36 @@ içerikle aniden açabilir.
 
 ---
 
-## 🔴 `explain-match` ve `generate-puzzles` — auth'suz ve ücretli
+## 🟡 `generate-puzzles` — auth'suz ve ücretli (kalem daraldı)
+
+> **8 Ağu 2026 — C.0a kapanışı.** Bu kalemin BÜYÜK KISMI ÇÖZÜLDÜ. Aşağıdaki
+> teşhis tarihsel kayıt olarak korunuyor; güncel durum:
+>
+> | Fonksiyon | Durum |
+> |---|---|
+> | `explain-match` | ✅ `requireUser()` eklendi, deploy edildi |
+> | `parse-mood` | ✅ anon boşluğu kapatıldı (header yoksa artık 401) |
+> | `rerank-films` | ✅ `requireUser()` eklendi |
+> | `recommend` | ✅ `requireUser()` + rate limit eklendi (öncesinde hiç yoktu) |
+> | `generate-puzzles` | 🔴 **HÂLÂ AÇIK** — tek kalan kalem |
+>
+> **Kırık sayaç onarıldı.** Aşağıda 1/2/3 diye sayılan üç kusurun üçü de
+> kapandı: artırma migration 076'daki `increment_rate_limit` RPC'sine taşındı
+> (atomik, `ON CONFLICT DO UPDATE ... + 1`), `extractUserId`'nin imzasız
+> `atob` decode'u **dosyadan tamamen silindi** (kimlik artık `_shared/auth.ts`
+> → `requireUser()` ile imza doğrulanarak geliyor), DB hatası **fail-closed**
+> (503 + Sentry `level: 'error'`).
+>
+> Ölçüldü (8 Ağu 2026): `recommend`'e 13 istek → sayaç tam 13, ilk 10 geçti,
+> 3'ü 429. Sahte `sub` taşıyan imzasız JWT → 401. Anon key → 401.
+>
+> **`generate-puzzles` neden hâlâ açık:** çağıranı cron'dur ve o cron
+> `cron.schedule` ile SQL Editor'den kurulmuş — repoda migration'ı YOK, yani
+> hangi header'ı gönderdiği kod tabanından doğrulanamıyor. Doğrulamadan auth
+> eklemek tam olarak bu dosyanın "pg_cron job'ları sessizce ölü" kaleminde
+> anlatılan hatanın yenisini üretirdi. Kapanış koşulu: `cron.job` listesi
+> görülecek; listede yoksa (elle tetikleniyorsa) auth eklenmesi hiçbir şeyi
+> kırmaz ve doğrudan eklenir.
 
 **Öncelik: yüksek.** 7 Ağu 2026'da `supabase/config.toml` yazılırken tespit edildi.
 
@@ -626,3 +655,69 @@ doğru olduğu çağrı yerine bağlı ve önce tespit edilmeli.
 (istemci mi, cron mu, ikisi birden mi) doğrulanmadan auth eklemek canlı bir
 akışı kırabilir. `generate-puzzles` mood-search/oyun dönemine ait — gauntlet
 pivotundan sonra hâlâ çağrılıp çağrılmadığı ayrıca kontrol edilmeli.
+
+---
+
+## 🔴 `slot-mood-filtered` — `body.user_id` fallback'i kimlik taklidine açık
+
+**Öncelik: yüksek. Kalem: C.0c.** 8 Ağu 2026'da C.0a auth taraması sırasında
+bulundu, o turda bilinçli olarak kapsam dışı bırakıldı.
+
+`supabase/functions/slot-mood-filtered/index.ts:48-95` kimliği **iki
+stratejiyle** çözüyor ve ikincisi hiçbir şey doğrulamıyor:
+
+```
+// Strategy 1: JWT auth        → auth.getUser() ile DOĞRULANMIŞ kimlik ✓
+// Strategy 2: body.user_id fallback  → gövdeden okunan ham string ✗
+const bodyUserId = body.user_id as string | undefined
+if (bodyUserId) {
+  const { data } = await admin.from('users').select('id, subscription_tier').eq('id', bodyUserId)
+  if (data) return { userId: data.id, tier: data.subscription_tier ?? 'free' }
+}
+```
+
+Strateji 1 başarısız olduğunda — ya da hiç Authorization header'ı
+gönderilmediğinde — çağıran, **gövdeye başka bir kullanıcının `user_id`'sini
+yazarak o kullanıcı olarak işlem görür**. Lookup `admin` (service role)
+client'ı ile yapıldığı için RLS de devrede değil. Bu bir rate limit boşluğu
+değil, doğrudan **kimlik taklidi (impersonation)** açığıdır:
+
+- Kurbanın `subscription_tier` değeri okunur (premium hakları kullanılabilir)
+- İşlem kurbanın kimliğine yazılır
+- Ücretli LLM çağrısı kurbanın kotasından harcanır
+
+`user_id`'ler tahmin edilemez UUID'ler ama gizli değil — istemciye dönen pek
+çok yanıtta ve paylaşılan içerikte görünürler. Gizlilik kimlik doğrulaması
+değildir.
+
+**Neden C.0a'da kapatılmadı:** o turun kapsamı "kimliksiz çağrılabilen + LLM
+harcayan" fonksiyonlardı ve kapsamı büyütmek bilinçli olarak reddedildi. Bu
+kalem ayrı ele alınacak çünkü fallback'in **neden** eklendiği kod tabanından
+anlaşılmıyor — muhtemelen oturum kurulmadan önceki bir akış için. Fallback'i
+körlemesine silmek o akışı sessizce kırabilir; önce çağıranı doğrulanmalı.
+
+**Düzeltme yönü:** Strateji 2 tamamen kaldırılır ve `_shared/auth.ts` →
+`requireUser()` kullanılır (C.0a'da 4 fonksiyonda uygulanan desen). Fallback'e
+gerçekten ihtiyaç duyan bir akış varsa, o akış anonim oturum açmalı —
+`app/_layout.tsx:196` zaten her istemci için `signInAnonymously()` çağırıyor,
+yani doğrulanmış bir kimlik HER ZAMAN mevcut.
+
+---
+
+## 🟡 `parse-taste` — anon isteklerde kota sessizce atlanıyor
+
+**Öncelik: orta. Kalem: C.0c ile birlikte.** 8 Ağu 2026'da bulundu.
+
+`supabase/functions/parse-taste/index.ts:293-330` `checkSearchQuota`'sı,
+`parse-mood`'un 8 Ağu'da onarılan hâlinin aynısını yapıyor: header yoksa ya da
+`getUser` başarısız olursa `{ allowed: true }` dönüyor, yani **kota kontrol
+edilmeden ücretli Claude çağrısı yapılıyor**.
+
+`parse-mood`'dan farkı: `config.toml`'de beyanı yok, yani platform
+`verify_jwt = true` uyguluyor ve çağıranın en azından anon key taşıması
+gerekiyor. Ama o key uygulama binary'sinde gömülü — bu kalemin hemen üstündeki
+"`verify_jwt = true` bu sorunu ÇÖZMEZ" bölümü aynen geçerli.
+
+**Düzeltme yönü:** `parse-mood`'un C.0a'daki onarımının birebir aynısı —
+handler başında `requireUser()`, ardından `checkRateLimit(auth.authUserId, …)`,
+ve `checkSearchQuota` doğrulanmış `appUserId` alır. Şablon hazır.

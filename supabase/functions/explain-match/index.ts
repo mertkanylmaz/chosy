@@ -8,7 +8,8 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
-import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -47,12 +48,20 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  // ── Kimlik ────────────────────────────────────────────────────────────────
+  // Bu fonksiyon 8 Ağu 2026'ya kadar hiçbir kimlik kontrolü yapmadan ücretli
+  // Claude çağırıyordu (config.toml: "Auth'suz ve ücretli"). Kimlik doğrulaması
+  // rate limit'ten ÖNCE gelir — sayacın kovası doğrulanmış kimliğe bağlıdır.
+  const auth = await requireUser(req)
+  if (!auth.ok) {
+    return unauthorizedResponse(auth, CORS_HEADERS)
+  }
+
   try {
-    await checkRateLimit(req, 'explain-match')
+    await checkRateLimit(auth.authUserId, 'explain-match')
   } catch (err) {
-    if (err instanceof RateLimitError) {
-      return rateLimitResponse(err, CORS_HEADERS)
-    }
+    // Her hata ele alınır — eski kodun boş `else` dalı isteği LLM'e geçiriyordu.
+    return rateLimitResponse(err, CORS_HEADERS)
   }
 
   let userProfile: unknown

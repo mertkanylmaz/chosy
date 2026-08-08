@@ -7,7 +7,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { checkRateLimit, RateLimitError, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
+import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 
 // ─── Shared Admin Client ──────────────────────────────────────────────────────
@@ -155,74 +156,71 @@ search_keywords rules (IMPORTANT — these enable thematic film matching):
 // ─── Quota Check Helper ───────────────────────────────────────────────────────
 
 /**
- * JWT'den user_id alip quota kontrolu yapar.
+ * Gunluk arama kotasini kontrol eder ve tuketir.
  * allowed=false ise Claude API call engellenir (maliyet tasarrufu).
  *
- * Auth pattern: slot-mood-filtered/delete-account ile ayni —
- * anon key + Authorization header ile userClient olustur, getUser() cagir.
- * Manual atob JWT decode KALDIRILDI (Deno Deploy'da guvenilmezdi).
+ * ── 8 Ağu 2026 degisikligi ───────────────────────────────────────────────
+ * Kimlik dogrulamasi buradan CIKARILDI: artik handler basinda `requireUser()`
+ * yapiliyor ve bu fonksiyon zaten dogrulanmis `appUserId` aliyor. Onceki hali
+ * hem kendi `getUser()` cagrisini yapiyor hem de basarisiz olunca
+ * `{ allowed: true }` donuyordu — yani header'siz istek kotayi ATLAYIP ucretli
+ * Claude'a ulasabiliyordu. O bosluk artik handler seviyesinde kapali.
+ *
+ * `appUserId` null ise (kimlik dogrulanmis ama `public.users` satiri yok)
+ * kota kontrol EDILEMEZ. Istek gecirilir ama Sentry'ye yazilir — sessiz
+ * gecis degil, gorunur bir veri tutarsizligi kaydi.
  */
 async function checkSearchQuota(
-  req: Request,
+  appUserId: string | null,
 ): Promise<{ allowed: boolean; userId?: string; quotaResult?: Record<string, unknown>; error?: string }> {
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
-    // Auth yoksa quota kontrol etme (rate limiter yeterli)
+  if (!appUserId) {
+    await sentryCapture({
+      message: 'parse-mood: dogrulanmis kullanicinin public.users satiri yok — kota atlandi',
+      level: 'warning',
+      tags: { function: 'parse-mood', error_code: 'APP_USER_MISSING' },
+    })
     return { allowed: true }
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     const admin = getAdmin()
 
-    // ── Step 1: JWT'den auth user id al (getUser pattern) ────────────────
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    })
-
-    const { data: { user: authUser }, error: authError } = await userClient.auth.getUser()
-    if (authError || !authUser) {
-      console.warn('[parse-mood] getUser failed:', authError?.message ?? 'no user', '— anon key or expired token')
-      return { allowed: true }
-    }
-
-    const authUserId = authUser.id
-
-    // ── Step 2: users tablosundan app user id'yi al (service role ile) ───
-    const { data: userData, error: userError } = await admin
-      .from('users')
-      .select('id')
-      .eq('auth_id', authUserId)
-      .single()
-
-    if (userError || !userData) {
-      console.warn('[parse-mood] User lookup failed:', userError?.message ?? 'no row', '| auth_id:', authUserId)
-      return { allowed: true }
-    }
-
-    // ── Step 3: Atomic quota check + consume ─────────────────────────────
+    // Atomic quota check + consume
     const { data, error } = await admin.rpc('check_and_consume_quota', {
-      p_user_id: userData.id,
+      p_user_id: appUserId,
       p_quota_type: 'search',
     })
 
     if (error) {
       console.error('[parse-mood] Quota check error:', error.message)
-      // fail-open: quota hatasi olursa gecir — AMA userId'yi koru (logging icin)
-      return { allowed: true, userId: userData.id }
+      // fail-open: kota altyapisi coktugunde gercek kullaniciyi kesmiyoruz.
+      // Maliyet tarafi artik rate limiter ile kapali (o FAIL-CLOSED).
+      // Sessiz gecis olmamasi icin Sentry'ye yaziliyor (proje kurali 1).
+      await sentryCapture({
+        message: `parse-mood kota kontrolu basarisiz — istek gecirildi: ${error.message}`,
+        level: 'error',
+        tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_FAILED' },
+        extra: { user_id: appUserId },
+      })
+      return { allowed: true, userId: appUserId }
     }
 
     const result = data as Record<string, unknown>
     return {
       allowed: result.allowed as boolean,
-      userId: userData.id,
+      userId: appUserId,
       quotaResult: result,
     }
   } catch (err) {
-    console.error('[parse-mood] Quota check exception:', err)
-    return { allowed: true } // fail-open
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[parse-mood] Quota check exception:', msg)
+    await sentryCapture({
+      message: `parse-mood kota kontrolu istisna firlatti — istek gecirildi: ${msg}`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_EXCEPTION' },
+      extra: { user_id: appUserId },
+    })
+    return { allowed: true, userId: appUserId } // fail-open
   }
 }
 
@@ -240,18 +238,25 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  // ── Kimlik ────────────────────────────────────────────────────────────────
+  // Onceki hal: header yoksa kota da rate limit de fiilen atlaniyor, istek
+  // dogrudan ucretli Claude'a gidiyordu. Reddedilen sey ANONIM KULLANICI DEGIL,
+  // kimliksiz istektir — `signInAnonymously()` oturumu imzali ve gecerlidir.
+  const auth = await requireUser(req)
+  if (!auth.ok) {
+    return unauthorizedResponse(auth, CORS_HEADERS)
+  }
+
   try {
-    await checkRateLimit(req, 'parse-mood')
+    await checkRateLimit(auth.authUserId, 'parse-mood')
   } catch (err) {
-    if (err instanceof RateLimitError) {
-      return rateLimitResponse(err, CORS_HEADERS)
-    }
+    return rateLimitResponse(err, CORS_HEADERS)
   }
 
   const startTime = Date.now()
 
   // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
-  const quotaCheck = await checkSearchQuota(req)
+  const quotaCheck = await checkSearchQuota(auth.appUserId)
   if (!quotaCheck.allowed) {
     // Log quota exceeded (no mood_text available yet — body not parsed)
     if (quotaCheck.userId) {
