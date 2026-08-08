@@ -749,3 +749,62 @@ gerekiyor. Ama o key uygulama binary'sinde gömülü — bu kalemin hemen üstü
 **Düzeltme yönü:** `parse-mood`'un C.0a'daki onarımının birebir aynısı —
 handler başında `requireUser()`, ardından `checkRateLimit(auth.authUserId, …)`,
 ve `checkSearchQuota` doğrulanmış `appUserId` alır. Şablon hazır.
+
+---
+
+## 🟠 `parse-mood` — `APP_USER_MISSING` yolunda kota fail-open
+
+**Öncelik: yüksek. Kalem: C.0b.** 8 Ağu 2026, C.0a kapanış incelemesinde bulundu.
+
+`supabase/functions/parse-mood/index.ts:176-183` — `requireUser()` kimliği
+doğruluyor ama `public.users` satırı yoksa `appUserId === null` geliyor ve
+`checkSearchQuota` **`return { allowed: true }`** diyor. Yani kimliği doğru,
+kotası yok: ücretli Claude çağrısı sınırsız. Üstelik her istekte bir Sentry
+`warning` yazılıyor.
+
+**Bu bir veri bütünlüğü sorunu DEĞİL — ölçüldü (8 Ağu 2026):**
+
+| Ölçüm | Değer |
+|---|---|
+| `auth.users` | 225 (161'i anonim) |
+| `public.users` | 137 — **hepsinin `auth_id`'si dolu**, NULL yok |
+| Köprüsüz `auth.users` | 88 |
+| ...bunların anonim olanı | 87 |
+| ...anonim olmayan | 1 — `provider=email`, `last_sign_in_at` **boş** (kaydolmuş, hiç giriş yapmamış) |
+| Anonim + köprülü | 74 / 161 |
+
+Trigger yok ve **olması da beklenmiyor**: köprü `services/auth-utils.ts:31`
+→ `getAppUserId()` tarafından **tembel** kuruluyor, ilk ihtiyaç anında
+(watchlist, taste sinyali vb.). 87 anonim kullanıcı bu eylemlerin hiçbirini
+yapmamış. İki tanesi bugünkü `test:founder` koşumlarının kendisi.
+
+**Asıl sorun bu tembelliğin sırası:** yeni bir kullanıcının **ilk** mood
+araması, `getAppUserId()`'yi tetikleyen herhangi bir eylemden ÖNCE oluyor.
+Yani fail-open yolu marjinal bir kenar durum değil — anonim kullanıcıların
+%54'ü herhangi bir anda köprüsüz ve ilk arama tam bu pencerede.
+
+**Düzeltme yönü (mimari karar — CTO onayı ister):** ya `checkSearchQuota`
+`appUserId` yokken kotayı `authUserId` kovasında tutar, ya `requireUser()`
+satırı yoksa oluşturur (Edge tarafında `getAppUserId` muadili), ya da
+fail-open kapatılıp 409 dönülür. Üçü farklı ürün davranışı — seçim senin.
+
+---
+
+## 🟠 İstemci tarafı — 401'ler sessizce yutuluyor
+
+**Öncelik: orta. Kalem: C.0c.** 8 Ağu 2026, C.0a kapanış incelemesinde bulundu.
+
+C.0a Edge Function'lara gerçek auth ekledi. İstemcideki iki çağrı yolu bu
+401'i **kullanıcıya hiç yansıtmıyor** — kural 1 ihlali. Kusur C.0a'dan önce de
+vardı; C.0a onu erişilebilir hâle getirdi (oturumsuz durum önceden çalışıyordu).
+
+| Dosya | Davranış |
+|---|---|
+| `services/recommendations.ts:751-770` | `session?.access_token ?? SUPABASE_ANON_KEY` fallback'i artık kesin 401. 401 yalnızca `__DEV__` console'a yazılıp `return null`. Production'da rerank sessizce devre dışı, kullanıcı boş/zayıf sonuç görür ve nedenini bilmez |
+| `services/matchExplanation.ts:132-140` | `if (!error && data?.explanations)` — hata hiç incelenmiyor, 401 sessizce şablon metnine düşüyor |
+
+`services/tasteParser.ts:107` aynı deseni taşıyor ama en azından
+`MoodParseError` fırlatıyor — hedef davranış o.
+
+**Düzeltme yönü:** anon key fallback'lerini kaldır (oturum yoksa istek atma),
+401'i Sentry'ye yaz ve kullanıcıya "oturum yenilenmeli" hatası göster.
