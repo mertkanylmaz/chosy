@@ -571,6 +571,11 @@ içerikle aniden açabilir.
 > güvenli; `generate-puzzles`'ta `verify_jwt = false` olduğu için forge
 > edilebilirdi. Gerekçenin tamamı `_shared/auth.ts` başında.
 >
+> **Pozitif yol doğrulandı (8 Ağu 2026):** `sb_secret_…` ile çağrı **400
+> `FORCE_WITHOUT_DATE`** dönüyor — auth geçiyor, üretim tetiklenmiyor.
+> Negatif yolların hepsi (header yok / anon key / uydurma token / legacy JWT)
+> 401 `SERVICE_ROLE_REQUIRED`. Kalem tam olarak kapandı.
+>
 > **Anahtar kuşağı sürprizi.** Deploy sonrası ölçüldü: fonksiyona enjekte
 > edilen `SUPABASE_SERVICE_ROLE_KEY` **yeni biçim** (`sb_secret_…`, 41 kr),
 > `.env`/`scripts/` altındaki ise **legacy JWT** (`eyJ…`, 219 kr). İkisi farklı

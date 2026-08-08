@@ -34,7 +34,22 @@ etme seçeneği değerlendirildi ve reddedildi.)
 
 Doğru değeri almak: **Dashboard → Project Settings → API Keys → `default`
 (secret)**. `supabase projects api-keys` CLI komutu secret değerleri
-`·····` ile **maskeler**, oradan kopyalanamaz.
+`·····` ile **maskeler**, oradan kopyalanamaz. Yerelde `.env` →
+`SUPABASE_SECRET_KEY` altında duruyor (`.env` gitignore'da).
+
+### Ölçüldü (8 Ağu 2026, canlı deploy üzerinde)
+
+| Çağrı | Sonuç |
+|---|---|
+| Authorization header yok | 401 `SERVICE_ROLE_REQUIRED` |
+| Anon key | 401 `SERVICE_ROLE_REQUIRED` |
+| Uydurma/imzasız token | 401 `SERVICE_ROLE_REQUIRED` |
+| Legacy `service_role` JWT | 401 `SERVICE_ROLE_REQUIRED` |
+| **`sb_secret_…`** | **400 `FORCE_WITHOUT_DATE`** — auth geçti |
+
+Son satır kapının açıldığının kanıtı: `force=1` doğrulaması auth'tan hemen
+sonra, herhangi bir DB/LLM işinden önce çalışır. Yani pozitif yolu ücretsiz
+ve yan etkisiz test edebilirsin — beklenen 400'dür, 200 değil.
 
 ## Deploy
 
