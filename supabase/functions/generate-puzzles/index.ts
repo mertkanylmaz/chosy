@@ -7,6 +7,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildTitleMask } from '../_shared/spotlightLetters.ts'
 
@@ -1625,6 +1626,21 @@ async function postHog(rpt: Report) {
 
 serve(async (req: Request) => {
   const t0 = Date.now()
+
+  /**
+   * Yalnızca service-role. Bu bir kullanıcı fonksiyonu değil, batch üretim işi:
+   * her koşum ücretli Claude çağırıyor ve `daily_puzzles`'a yazıyor. Kimliksiz
+   * çağrıya açık kalması doğrudan maliyet ve veri yüzeyiydi.
+   *
+   * `requireUser` DEĞİL — çağıran bir kullanıcı değil, sistemin kendisi.
+   * `verify_jwt = false` olduğu için doğrulama tamamen burada yapılır;
+   * gerekçesi `_shared/auth.ts` → `requireServiceRole`.
+   */
+  const svc = await requireServiceRole(req)
+  // CORS map'i boş: bu fonksiyon tarayıcıdan çağrılmaz, dosyada hiç OPTIONS
+  // işleyicisi yok. Header eklemek olmayan bir çağrı sınıfına izin verir gibi
+  // görünürdü — bilinçli olarak boş.
+  if (!svc.ok) return unauthorizedResponse(svc, {})
 
   // Opsiyonel: sadece belirli oyunu çalıştır (?game=cinemetrics)
   const url = new URL(req.url)

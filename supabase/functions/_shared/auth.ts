@@ -29,6 +29,7 @@
  *   // auth.appUserId   → public.users.id (quota/iş mantığı), yoksa null
  */
 import { AuthError, getServiceClient, getUserClient } from './gameUtils.ts'
+import { sentryCapture } from './sentry.ts'
 
 /** Doğrulanmış kimlik */
 export interface AuthOk {
@@ -46,7 +47,7 @@ export interface AuthFail {
   ok: false
   /** İstemciye dönecek HTTP durumu */
   status: 401
-  code: 'AUTH_REQUIRED' | 'AUTH_INVALID'
+  code: 'AUTH_REQUIRED' | 'AUTH_INVALID' | 'SERVICE_ROLE_REQUIRED'
   message: string
 }
 
@@ -133,7 +134,100 @@ export async function requireUser(req: Request): Promise<AuthResult> {
   return { ok: true, authUserId, appUserId, isAnonymous }
 }
 
-/** `requireUser` reddi için HTTP 401 yanıtı üretir. */
+/**
+ * İsteğin service-role anahtarıyla geldiğini DOĞRULAR.
+ *
+ * Kullanıcı fonksiyonları için değildir — batch/cron üretim işleri içindir
+ * (`generate-puzzles` gibi). `requireUser` burada yanlış araçtır: çağıran bir
+ * kullanıcı değil, sistemin kendisidir.
+ *
+ * ── Neden `atob` ile role claim'i okunmuyor ────────────────────────────────
+ * `recompute-cinema-dna` / `recompute-taste-vector` JWT payload'ını imza
+ * doğrulamadan açıp `role === 'service_role'` bakıyor. O iki fonksiyonda bu
+ * güvenli, çünkü ikisi de `config.toml`'da beyan edilmemiş → gateway JWT'yi
+ * imzasıyla doğruladıktan SONRA fonksiyona veriyor. `generate-puzzles`'ta ise
+ * `verify_jwt = false` — imzayı kimse doğrulamıyor. Orada aynı deseni
+ * kullanmak, saldırganın `{"role":"service_role"}` payload'lı İMZASIZ bir
+ * token uydurmasına izin verirdi. Yani desen kopyalanabilir değil.
+ *
+ * Bunun yerine token'ın kendisi sırla karşılaştırılır: service-role anahtarı
+ * zaten sabit bir sırdır, imza matematiği gerekmez. Bu kontrol gateway'e
+ * bağımlı değildir — `verify_jwt` yarın açılsa da kapansa da aynı korumayı
+ * verir. JWT olmayan (`sb_secret_*`) anahtar biçimleriyle de çalışır.
+ *
+ * Ham `Authorization` başlığının fonksiyona bozulmadan ulaştığının üretim
+ * kanıtı: `revenuecat-webhook` (verify_jwt = false) tam olarak bunu yapıyor ve
+ * ödemeler aylardır çalışıyor. `recompute-*` dosyalarındaki "gateway başlığı
+ * yeniden yazıyor" yorumu bu yüzden dayanaksız.
+ *
+ * ── Hangi anahtar eşleşir ─────────────────────────────────────────────────
+ * Edge runtime'ın enjekte ettiği `SUPABASE_SERVICE_ROLE_KEY` bu projede YENİ
+ * biçimdedir (`sb_secret_…`, 41 karakter). `.env` ve `scripts/` altında duran
+ * legacy `service_role` JWT'si (`eyJ…`, 219 karakter) BAŞKA bir anahtardır ve
+ * burada 401 alır — geçersiz olduğu için değil, farklı olduğu için. Bu
+ * bilinçli: kapı tek anahtara bakar (CTO kararı, 8 Ağu 2026). Legacy JWT'yi
+ * `SUPABASE_JWKS` ile imza doğrulayıp kabul etme seçeneği değerlendirildi ve
+ * reddedildi; gerekmezse ikinci bir kabul yolu açılmıyor.
+ *
+ * Karşılaştırma sabit zamanlıdır: iki taraf da SHA-256'ya indirgenir (her zaman
+ * 32 bayt, uzunluk sızmaz) ve baytlar erken çıkışsız XOR ile taranır.
+ *
+ * Fail-CLOSED: header yoksa, eşleşmiyorsa veya ortamda anahtar yoksa 401.
+ */
+export async function requireServiceRole(req: Request): Promise<{ ok: true } | AuthFail> {
+  const fail: AuthFail = {
+    ok: false,
+    status: 401,
+    code: 'SERVICE_ROLE_REQUIRED',
+    message: 'Service role credentials required.',
+  }
+
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  if (!serviceKey) {
+    // Yapılandırma hatası: fonksiyon artık HİÇBİR çağrıyı kabul edemez, yani
+    // üretim hattı tamamen durur. Sadece console.error yazmak bunu görünmez
+    // kılardı — 401'ler dışarıdan "yanlış anahtar"dan ayırt edilemez.
+    console.error('[auth] SUPABASE_SERVICE_ROLE_KEY tanımsız — service-role kontrolü yapılamıyor')
+    await sentryCapture({
+      message: 'SUPABASE_SERVICE_ROLE_KEY tanımsız — service-role korumalı fonksiyon her çağrıyı reddediyor',
+      level: 'fatal',
+      tags: { area: 'auth', check: 'service_role' },
+    })
+    return fail
+  }
+
+  const authHeader = req.headers.get('Authorization') ?? ''
+  const match = /^Bearer\s+(\S+)$/i.exec(authHeader)
+  if (!match) return fail
+
+  const [presented, expected] = await Promise.all([
+    sha256(match[1]),
+    sha256(serviceKey),
+  ])
+
+  if (!constantTimeEqual(presented, expected)) {
+    console.warn('[auth] service-role eşleşmedi — istek reddedildi')
+    return fail
+  }
+
+  return { ok: true }
+}
+
+async function sha256(value: string): Promise<Uint8Array> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return new Uint8Array(digest)
+}
+
+/** Erken çıkışsız bayt karşılaştırması — eşleşmeyen ilk bayt zamanı sızdırmaz. */
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  let diff = a.length ^ b.length
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i % b.length]
+  }
+  return diff === 0
+}
+
+/** `requireUser` / `requireServiceRole` reddi için HTTP 401 yanıtı üretir. */
 export function unauthorizedResponse(
   fail: AuthFail,
   corsHeaders: Record<string, string>,

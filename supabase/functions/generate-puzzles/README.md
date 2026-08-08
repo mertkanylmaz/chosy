@@ -1,7 +1,40 @@
 # generate-puzzles Edge Function
 
-Haftalık cron ile çalışır. 14 gün ilerisine kadar CineMetrics ve Logline bulmacaları üretir.
+14 gün ilerisine kadar günlük bulmacaları üretir.
 Acil havuzu (oyun başına 15) her koşumda tamamlar.
+
+**Elle tetiklenir — cron'u YOKTUR.** Bu README eskiden "haftalık cron ile
+çalışır" diyordu; 8 Ağu 2026'da `cron.job` listesi doğrulandı, böyle bir job
+kurulmamış. `daily_puzzles`'ın dolu olması elle çalıştırmalardan geliyor.
+
+## Auth — service-role zorunlu
+
+Fonksiyon `_shared/auth.ts` → `requireServiceRole` ile korunuyor. Bearer
+token'ı `SUPABASE_SERVICE_ROLE_KEY` ile sabit-zamanlı karşılaştırır;
+eşleşmeyen her çağrı **401**. Gerekçe: her koşum ücretli Claude çağırıyor.
+
+`verify_jwt = false` bilerek korunuyor (`supabase/config.toml`) — doğrulama
+gateway'de değil, fonksiyonun içinde.
+
+### ⚠️ Hangi anahtar — legacy JWT DEĞİL
+
+Bu projede iki anahtar kuşağı yan yana yaşıyor ve **ikisi aynı şey değil**:
+
+| Anahtar | Biçim | Uzunluk | Nerede |
+|---|---|---|---|
+| Legacy `service_role` | `eyJ…` (JWT) | 219 | `.env` → `SUPABASE_SERVICE_ROLE_KEY`, `scripts/` |
+| Yeni secret key | `sb_secret_…` | 41 | Edge runtime'ın enjekte ettiği `SUPABASE_SERVICE_ROLE_KEY` |
+
+Fonksiyonun içindeki değer **yeni biçim** olandır. Bu yüzden `.env`'deki legacy
+JWT ile çağrı **401 alır** — geçersiz olduğu için değil, farklı bir anahtar
+olduğu için. Legacy JWT REST/DB için hâlâ geçerlidir, `scripts/` çalışmaya
+devam eder; sadece bu fonksiyonun kapısını açmaz. (CTO kararı, 8 Ağu 2026:
+kapı tek anahtara bakar. Legacy JWT'yi `SUPABASE_JWKS` ile doğrulayıp kabul
+etme seçeneği değerlendirildi ve reddedildi.)
+
+Doğru değeri almak: **Dashboard → Project Settings → API Keys → `default`
+(secret)**. `supabase projects api-keys` CLI komutu secret değerleri
+`·····` ile **maskeler**, oradan kopyalanamaz.
 
 ## Deploy
 
@@ -9,49 +42,38 @@ Acil havuzu (oyun başına 15) her koşumda tamamlar.
 supabase functions deploy generate-puzzles --no-verify-jwt
 ```
 
-## Cron Kurulumu
-
-Supabase Dashboard → Database → Extensions → `pg_cron` aktif olmalı.
-
-SQL Editor'de (tek seferlik):
-
-```sql
-SELECT cron.schedule(
-  'generate-puzzles-weekly',
-  '0 6 * * 1',  -- Her Pazartesi 06:00 UTC
-  $$
-  SELECT net.http_post(
-    url := (SELECT value FROM vault.decrypted_secrets WHERE name = 'supabase_url') || '/functions/v1/generate-puzzles',
-    headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || (SELECT value FROM vault.decrypted_secrets WHERE name = 'service_role_key'),
-      'Content-Type', 'application/json'
-    ),
-    body := '{}'::jsonb
-  );
-  $$
-);
-```
-
-Alternatif (vault yoksa, doğrudan key ile):
-
-```sql
-SELECT cron.schedule(
-  'generate-puzzles-weekly',
-  '0 6 * * 1',
-  $$
-  SELECT net.http_post(
-    url := 'https://YOUR_PROJECT_REF.supabase.co/functions/v1/generate-puzzles',
-    headers := '{"Authorization": "Bearer YOUR_SERVICE_ROLE_KEY", "Content-Type": "application/json"}'::jsonb,
-    body := '{}'::jsonb
-  );
-  $$
-);
-```
-
 ## Manuel Çalıştırma
 
-```bash
-supabase functions invoke generate-puzzles
+⚠️ `supabase functions invoke generate-puzzles` **artık 401 döner** — CLI anon
+key gönderir. Yukarıdaki `sb_secret_…` değeriyle çağır:
+
+```powershell
+$env:SERVICE_KEY = "sb_secret_..."   # Dashboard → API Keys → default (secret)
+curl.exe -X POST "https://<PROJECT_REF>.supabase.co/functions/v1/generate-puzzles" `
+  -H "Authorization: Bearer $env:SERVICE_KEY" `
+  -H "Content-Type: application/json" `
+  -d '{}'
+```
+
+Tek oyun / onarım modu aynı şekilde query param ile:
+`...\generate-puzzles?game=spotlight&date=2026-08-12&force=1`
+
+## Cron kurulacaksa
+
+Cron **migration ile** kurulur, SQL Editor'den değil (049 deseni). Header'sız
+`net.http_post` 401 alır ve pg_net fire-and-forget olduğu için
+`cron.job_run_details` yine `succeeded` yazar — yani sessizce ölür.
+`Authorization` header'ı zorunludur:
+
+```sql
+SELECT net.http_post(
+  url := '<SUPABASE_URL>/functions/v1/generate-puzzles',
+  headers := jsonb_build_object(
+    'Authorization', 'Bearer ' || '<service_role_key>',
+    'Content-Type', 'application/json'
+  ),
+  body := '{}'::jsonb
+);
 ```
 
 ## Env Gereksinimleri

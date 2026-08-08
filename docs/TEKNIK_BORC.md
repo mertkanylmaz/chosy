@@ -545,10 +545,10 @@ içerikle aniden açabilir.
 
 ---
 
-## 🟡 `generate-puzzles` — auth'suz ve ücretli (kalem daraldı)
+## ✅ `generate-puzzles` — auth'suz ve ücretli (KAPANDI)
 
-> **8 Ağu 2026 — C.0a kapanışı.** Bu kalemin BÜYÜK KISMI ÇÖZÜLDÜ. Aşağıdaki
-> teşhis tarihsel kayıt olarak korunuyor; güncel durum:
+> **8 Ağu 2026 — C.0a kapanışı.** Bu kalem KAPANDI. Aşağıdaki teşhis tarihsel
+> kayıt olarak korunuyor; güncel durum:
 >
 > | Fonksiyon | Durum |
 > |---|---|
@@ -556,7 +556,35 @@ içerikle aniden açabilir.
 > | `parse-mood` | ✅ anon boşluğu kapatıldı (header yoksa artık 401) |
 > | `rerank-films` | ✅ `requireUser()` eklendi |
 > | `recommend` | ✅ `requireUser()` + rate limit eklendi (öncesinde hiç yoktu) |
-> | `generate-puzzles` | 🔴 **HÂLÂ AÇIK** — tek kalan kalem |
+> | `generate-puzzles` | ✅ `requireServiceRole()` eklendi |
+>
+> **Kapanış koşulu sağlandı.** `cron.job` listesi görüldü: 7 job var, hiçbiri
+> `generate-puzzles` çağırmıyor. "Auth eklersem cron sessizce ölür" endişesinin
+> dayanağı yoktu — ortada cron yok, `daily_puzzles`'ın dolu olması elle
+> çalıştırmalardan geliyordu. Bunun üzerine `_shared/auth.ts` →
+> `requireServiceRole()` eklendi: Bearer token'ı `SUPABASE_SERVICE_ROLE_KEY`
+> ile SHA-256 üzerinden sabit-zamanlı karşılaştırıyor, eşleşmeyen her çağrı 401.
+>
+> `requireUser()` KULLANILMADI — çağıran bir kullanıcı değil, batch üretim işi.
+> `recompute-*` dosyalarındaki imzasız `atob` role-claim deseni de kullanılmadı:
+> o desen yalnızca gateway JWT'yi doğruladığında (`verify_jwt` beyansız)
+> güvenli; `generate-puzzles`'ta `verify_jwt = false` olduğu için forge
+> edilebilirdi. Gerekçenin tamamı `_shared/auth.ts` başında.
+>
+> **Anahtar kuşağı sürprizi.** Deploy sonrası ölçüldü: fonksiyona enjekte
+> edilen `SUPABASE_SERVICE_ROLE_KEY` **yeni biçim** (`sb_secret_…`, 41 kr),
+> `.env`/`scripts/` altındaki ise **legacy JWT** (`eyJ…`, 219 kr). İkisi farklı
+> anahtar; legacy JWT ile çağrı 401 alıyor. Kapının tek anahtara bakması CTO
+> kararı. Doğru değer yalnızca Dashboard'dan alınır — `supabase projects
+> api-keys` secret'ları `·····` ile maskeliyor.
+>
+> Yan bulgu: `_shared/auth.ts` yorumundaki "gateway Authorization başlığını
+> yeniden yazıyor" iddiası (`recompute-*` dosyalarından geliyor) **yanlış**.
+> Ölçüldü: başlık fonksiyona bozulmadan ulaşıyor (`Bearer eyJ…`, 219 kr).
+>
+> **Yan etki (giderildi):** `tests/founder-acceptance/runner.ts` anon key ile
+> `parse-mood` çağırıyordu, `requireUser()` sonrası 401 alacaktı. Runner artık
+> uygulamanın kendisi gibi `signInAnonymously()` ile oturum açıyor.
 >
 > **Kırık sayaç onarıldı.** Aşağıda 1/2/3 diye sayılan üç kusurun üçü de
 > kapandı: artırma migration 076'daki `increment_rate_limit` RPC'sine taşındı

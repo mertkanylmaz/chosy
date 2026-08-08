@@ -108,6 +108,28 @@ function titleMatches(filmTitle: string, examples: string[]): boolean {
   });
 }
 
+// ─── Oturum ──────────────────────────────────────────────────────────────────
+
+/**
+ * parse-mood 8 Ağu 2026'dan beri `requireUser()` ile korunuyor: anon key bir
+ * kullanıcı değil bir API anahtarıdır, `auth.getUser()` ondan kimlik üretemez
+ * ve istek 401 alır. Runner bu yüzden tıpkı uygulamanın kendisi gibi
+ * (`app/_layout.tsx`) anonim oturum açar — testin doğruladığı yol böylece
+ * gerçek istemcinin yoludur.
+ */
+let accessToken = '';
+
+async function signIn(): Promise<void> {
+  const { data, error } = await supabase.auth.signInAnonymously();
+  if (error || !data?.session?.access_token) {
+    throw new Error(
+      `Anonim oturum açılamadı: ${error?.message ?? 'session yok'}. ` +
+        'parse-mood kimlik ister; oturumsuz koşum 401 alır.',
+    );
+  }
+  accessToken = data.session.access_token;
+}
+
 // ─── Parse-mood Edge Function call ───────────────────────────────────────────
 
 async function callParseMood(input: string): Promise<TasteProfile> {
@@ -119,7 +141,7 @@ async function callParseMood(input: string): Promise<TasteProfile> {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${accessToken}`,
         apikey: SUPABASE_ANON_KEY,
       },
       body: JSON.stringify({ raw_input: input }),
@@ -223,6 +245,10 @@ async function main(): Promise<void> {
   console.log(`${C.bold}${C.cyan}  FOUNDER ACCEPTANCE TEST - ${dateStr}${C.reset}`);
   console.log(`${C.bold}${C.cyan}  RPC: match_films_v2${C.reset}`);
   console.log(`${C.bold}${C.cyan}${'='.repeat(50)}${C.reset}\n`);
+
+  // Kimlik olmadan tek bir case bile çalışmaz — burada patlaması, 5 case'in
+  // ayrı ayrı 401 ile düşüp nedeni gizlemesinden iyidir.
+  await signIn();
 
   const results: CaseResult[] = [];
 

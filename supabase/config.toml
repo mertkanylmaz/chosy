@@ -72,17 +72,22 @@ verify_jwt = false
 [functions.slot-triple]
 verify_jwt = false
 
-# ─── ⚠️ Auth'suz ve ücretli ─────────────────────────────────────────────────
-# `--no-verify-jwt` ile deploy ediliyor ve İÇERİDE DE hiçbir kimlik kontrolü
-# yapmıyor — yani bugün herkes çağırabiliyor, üstelik ücretli LLM API'si
-# çağırıyor. Doğrudan maliyet yüzeyi.
+# ─── Elle tetiklenen batch üretimi ──────────────────────────────────────────
+# 8 Ağu 2026: bu bölüm eskiden "⚠️ Auth'suz ve ücretli" başlığını taşıyordu ve
+# içinde explain-match + generate-puzzles vardı. İkisine de auth eklendi,
+# bölüm kapandı.
 #
-# 8 Ağu 2026: explain-match bu bölümden ÇIKARILDI (auth eklendi). Geriye
-# generate-puzzles kaldı; auth eklenmedi çünkü çağıranı cron'dur ve cron
-# `cron.schedule` ile SQL Editor'den kurulmuş, repoda migration'ı yok —
-# hangi header'ı gönderdiği doğrulanmadan auth eklemek yeni bir sessiz ölü
-# cron üretirdi. Ayrı kalem: docs/TEKNIK_BORC.md.
-# Bu satır silinirse fonksiyon çalışmayı bırakır.
+# generate-puzzles'a auth eklenmesi daha önce ertelenmişti çünkü çağıranının
+# SQL Editor'den kurulmuş, repoda migration'ı olmayan bir cron olduğu ve hangi
+# header'ı gönderdiği bilinmiyordu. `cron.job` listesi doğrulandı: böyle bir
+# cron YOK — 7 job'ın hiçbiri generate-puzzles çağırmıyor. Tek çağıran elle
+# tetikleme. "Sessiz ölü cron üretme" riski gerçekte mevcut değildi.
+#
+# Artık fonksiyon içinde `requireServiceRole` var: Bearer token'ı
+# SUPABASE_SERVICE_ROLE_KEY ile sabit-zamanlı karşılaştırıyor, eşleşmeyen her
+# çağrı 401. verify_jwt = false BİLEREK kalıyor — doğrulama gateway'e değil
+# fonksiyona ait, ve anon key şartı koymanın koruma değeri yok (o key
+# uygulama binary'sinde gömülü). Gerekçenin tamamı: _shared/auth.ts.
 
 [functions.generate-puzzles]
 verify_jwt = false

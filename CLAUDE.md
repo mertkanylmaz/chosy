@@ -98,5 +98,5 @@ Expo ~54.0.34 · React Native 0.81.5 · Reanimated ~4.1.1 · expo-router ~6.0.23
 
 ## Migration numaralandırma
 
-En yüksek mevcut numara **074**. Yeni migration 075'ten başlar.
+En yüksek mevcut numara **076**. Yeni migration 077'den başlar.
 Yine de eklemeden önce `supabase/migrations/` klasörünü listele ve doğrula.
