@@ -62,3 +62,7 @@ supabase/functions/deno.lock
 
 # Kurucu kabul testi ciktisi (baselines/ takip edilir, output/ edilmez)
 tests/founder-acceptance/output/
+
+# Sprint kapanis artefaktlari: uretilmeleri engellenmez, commit edilmez
+# (mevcut 3 baseline zaten takipte — gitignore onlari cikarmaz)
+tests/founder-acceptance/baselines/
