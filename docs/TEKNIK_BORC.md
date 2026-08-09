@@ -26,9 +26,15 @@ Dosyalar: `enrich-films.ts`, `seed-database.ts`, `ai-profile-films.ts`,
 değiştirebilir ve şu an o riski almaya değmez. supabase-js sürüm yükseltmesiyle
 birlikte ele alınacak.
 
-### `supabase/functions` — 45 hata
+### `supabase/functions` — 42 hata
 
 `npm run typecheck:functions` (Deno 2.9.4, `deno check **/index.ts`).
+
+> **Baseline 45 → 42** (8 Ağu 2026'da yeniden ölçüldü, 9 Ağu C.0b kapanışında
+> teyit edildi). 45 değeri 5 Ağu ölçümüydü ve eskimişti. Aşağıdaki kod kırılımı
+> hâlâ 5 Ağu'nun kırılımıdır ve toplamı 45 verir — yeniden sayılmadı, çünkü
+> ölçüm aracının çıktısı (`Found 42 errors.`) tek doğruluk kaynağı. Kırılım
+> tabloya değil, ihtiyaç anında komutun kendisine bakılarak alınmalı.
 
 | Kod | Adet | Ne demek |
 |---|---:|---|
@@ -457,7 +463,10 @@ CTO onayıyla bu haliyle geçti. Faz F gelmeden gerçek dağılım ölçülemez;
 
 ---
 
-## 🔴 pg_cron job'larının çoğu aylardır sessizce ölü — ayarlanmamış GUC
+## ✅ pg_cron job'larının çoğu aylardır sessizce ölü — ayarlanmamış GUC (KAPANDI)
+
+**KAPANDI: 9 Ağu 2026, C.0b.** Migration 077 + beş fonksiyona service-role
+kapısı. Kapanış kanıtı bölümün sonunda.
 
 **Öncelik: yüksek.** Tip hatası değil, üretimde hiç çalışmayan iş.
 
@@ -542,6 +551,36 @@ doğrulanmalı — `send-daily-pick` ve `watchlist-activation` mood-search döne
 ait, gauntlet pivotundan sonra içeriklerinin geçerli olup olmadığı ayrı bir
 karar. Cron'u körlemesine diriltmek aylardır susan bir bildirim akışını yanlış
 içerikle aniden açabilir.
+
+### ✅ Kapanış — 9 Ağu 2026
+
+**Ne yapıldı:** Migration 077 altı HTTP cron'unu tek desende birleştirdi (sabit
+tam URL + Vault'tan runtime okunan `Authorization` header'ı, `current_setting`
+hiçbir biçimde yok). Beş hedef fonksiyona `requireServiceRole()` kapısı takıldı
+ve `config.toml`'daki üç eksik `verify_jwt` beyanı tamamlandı (commit `54213d1`).
+
+**Kapanış koşulu neydi:** "Her düzeltilen job için `cron.job_run_details`'te
+gerçek bir çalışma görülmeden kalem kapanmaz." Koşul, `job_run_details`'in
+yetersizliği anlaşıldığı için **sıkılaştırılarak** karşılandı — pg_net
+fire-and-forget olduğu için `succeeded` bir şey kanıtlamaz; kanıt
+`net._http_response.status_code` ve yan etki satırlarıdır.
+
+| Ölçüm | Sonuç |
+|---|---|
+| Deploy öncesi canlı doğrulama | `generate-global-slot` 200×3, `generate-puzzles?force=1` 400×3 |
+| Deploy sonrası (5.1) | `generate-global-slot` **200×2**, `generate-puzzles` 400×2 |
+| Yan etki (5.2, `sync-trending`) | `films` 3394 → **3404**, `max(updated_at)` 6 Ağu → **9 Ağu 14:10**, son 15 dk **69 satır** |
+| Negatif yol (5 fonksiyon, header'sız) | hepsi **401 `SERVICE_ROLE_REQUIRED`** |
+| `cron.job` envanteri | 7 job, jobid'ler korundu, `current_setting` = 0, `functions/v1/` = 6 |
+| pg_net ömür boyu istek | 7 → **20** |
+| Geçici job temizliği | `tmp-verify-077` + `tmp-verify-sync` unschedule, `count = 7` |
+
+5.2 kritik olan: 200 tek başına yalnızca kapının açıldığını söyler. `updated_at`
+hareketi ve +10 satır, iş mantığının gerçekten koştuğunu söyler. Aylardır sıfır
+iş yapan sınıf, ilk kez ölçülebilir yan etki üretti.
+
+**Kalan iş kalem olarak ayrıldı:** dört job hâlâ `active = false` — desenleri
+onarıldı ama içerikleri emekli ürüne ait. Aşağıdaki iki kaleme bakılmalı.
 
 ---
 
@@ -880,3 +919,107 @@ parça parça değil.
 
 Şimdilik yalnızca `.env` ve `.env.example`'a uyarı yorumu eklendi — değer,
 isim ve satır sayısı değiştirilmedi.
+
+---
+
+## 🟠 C.2 kapsamı — `send-daily-pick` + `watchlist-activation` içerik borcu
+
+**Öncelik: orta. Kalem: C.2.** 9 Ağu 2026, C.0b kapanışında ayrıldı.
+
+İki fonksiyonun **deseni onarıldı ve kapısı takıldı** (077 + `54213d1`), ama
+cron'ları `active = false` bırakıldı. Sebep teknik değil, içerik: metinler
+mood-search dönemine ait ve gauntlet ritüelini hiç anmıyor. `active = true`
+yapmadan önce aşağıdaki dördü çözülmeli — aksi halde 135 gerçek kullanıcıya
+emekli ürün metni gider.
+
+| Alt kalem | Durum |
+|---|---|
+| `t()` kullanılmıyor | Metinler fonksiyon içinde hardcoded. Proje kuralı 7 ihlali — tüm string'ler `t()` üzerinden olmalı, `en.json` + `tr.json` tam parite |
+| Dil timezone'dan tahmin ediliyor | `users.language` kolonu okunmuyor. Kullanıcının açık dil tercihi varken tahmine düşmek yanlış |
+| TR metinlerde diakritik yok | "gunun filmi" gibi. Bildirim ürünün sesidir, bu ses kırık |
+| `mood_recall` dalı emekli ürüne ait | `mood_searches.mood_text` serbest metnini kullanıcıya geri gösteriyor. Chosy'de serbest metin girdisi YOK — bu dal silinecek veya gauntlet seçim geçmişine dayalı olarak yeniden yazılacak |
+
+Son satır bir karar gerektiriyor: `mood_recall` **silinsin mi, yeniden mi
+yazılsın**. Silinirse `watchlist-activation-mood-recall` job'ı da kalkar (bugün
+7 olan job sayısı 6'ya iner). CTO kararı, C.2'de.
+
+---
+
+## 🟠 `posterle-daily-curation` — `active = false`, karar C.6'da
+
+**Öncelik: orta. Kalem: C.6.** 9 Ağu 2026.
+
+Deseni 077'de onarıldı, `curate-posterle`'ye kapı takıldı, ama job kapalı.
+Posterle `app_config` ile **dondurulmuş** altı oyundan biri; kodu silinmiyor
+ama günlük bulmaca üretmesinin de bugün bir karşılığı yok.
+
+Karar C.6'da: oyun kalıcı olarak emekli edilirse job `unschedule` edilir;
+geri açılırsa tek bayrakla `active = true` yeterli — desen hazır.
+
+---
+
+## 🟡 `sync-trending` çalışma süresi `timeout_milliseconds`'i aşabilir
+
+**Öncelik: düşük-orta.** 9 Ağu 2026, C.0b 5.2 doğrulamasında fark edildi.
+
+077 tüm cron'lara `timeout_milliseconds := 30000` veriyor. `sync-trending`
+TMDB'ye üç liste çağrısı + film başına detay çağrısı yapıyor
+(`TMDB_DELAY_MS = 260`, `PARALLEL_DETAIL_BATCH = 5`) — 40 filmlik bir turda
+tek başına 30 saniyeye yaklaşabilir.
+
+**Risk sessiz:** pg_net timeout'a düşerse `net._http_response`'ta yanıt
+yakalanamaz. Fonksiyon Edge tarafında çalışmaya devam edip işini bitirebilir,
+ama biz bunu göremeyiz. Yani "başarısız göründü, aslında çalıştı" veya tersi
+ayırt edilemez — 077'nin kapattığı görünmezlik sınıfının daha hafif bir biçimi.
+
+5.2 ölçümünde 200 alındı, yani o koşum 30 sn'nin altında bitti. Ama havuz
+büyüdükçe süre artar.
+
+**Yapılacak:** gerçek süre ölçülsün (fonksiyon başında/sonunda `Date.now()`
+farkı zaten `startTime` ile tutuluyor, loglanıyor mu bakılacak). 30 sn'ye
+yaklaşıyorsa ya `timeout_milliseconds` yükseltilecek ya da iş parçalanacak.
+
+---
+
+## 🟡 `db diff` koşulamıyor — Docker yok
+
+**Öncelik: düşük şimdi, C.1 ÖNCESİ ZORUNLU.** 9 Ağu 2026.
+
+`supabase db diff` gölge veritabanı için Docker Desktop istiyor; makinede
+çalışmıyor. 077 push'unda diff **koşulamadı**; 077 yalnızca `cron` şemasına ve
+uzantılara dokunduğu ve `db diff` zaten `cron` şemasını raporlamadığı için CTO
+tarafından kabul edildi.
+
+**Bu muafiyet C.1'e taşınamaz.** Tasarım token katmanı gerçek DDL içerecek ve
+orada şema kayması kontrolsüz kalamaz. C.1'e girmeden önce Docker çalışır
+durumda olmalı.
+
+---
+
+## 🟢 `rateLimit` muafiyeti — bugün hedefi yok, ileride düşünülecek
+
+**Öncelik: düşük.** 9 Ağu 2026, C.0b ADIM 3'te ölçüldü.
+
+CTO talimatı "service-role çağrıları rateLimit'e takılmamalı — açık koşulla
+muaf tut, sessizce değil" idi. Beş fonksiyonun **hiçbiri** `rateLimit`
+kullanmıyor (`rateLimit` yalnızca `explain-match`, `recommend`, `parse-mood`,
+`rerank-films`'te). Uygulanacak hedef olmadığı için muafiyet kodu yazılmadı —
+yazılsaydı olmayan bir çağrı yolu için ölü kod olurdu.
+
+**Kural olarak kayda geçsin:** bu beş fonksiyondan birine ileride `rateLimit`
+eklenirse, service-role muafiyeti **aynı commit'te** düşünülecek. Ayrı bir
+commit'e bırakmak, cron'un kendi rate limit'ine takıldığı sessiz bir pencere
+açar.
+
+---
+
+## 🟢 `net._http_response` TTL ~24 saat (6 değil) — ölçüldü
+
+**Öncelik: bilgi.** 9 Ağu 2026.
+
+Doğrulama penceresini 6 saat sanıyorduk. Ölçüm: `id = 8` kaydı 13 saat sonra
+hâlâ duruyordu. Gerçek TTL ~24 saat.
+
+Pencere sandığımızdan geniş, ama **"hemen oku" kuralı korunuyor**: tetikleme
+ile okuma arasına başka iş girerse hangi satırın hangi tetiklemeye ait olduğu
+karışır, `id` sıralaması tek başına ayırt etmeye yetmez.
