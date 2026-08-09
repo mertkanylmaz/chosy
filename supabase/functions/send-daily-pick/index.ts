@@ -17,6 +17,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -120,6 +121,19 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
   }
+
+  /**
+   * Service-role kapısı (C.0b). Çağıran `send-daily-pick-hourly` cron'udur —
+   * bir kullanıcı değil, sistemin kendisi. Bu yüzden `requireUser` DEĞİL.
+   *
+   * ⚠️ Bu fonksiyon 9 Ağu 2026'ya kadar sunucuda `verify_jwt = true` ile
+   * çalışıyordu (config.toml'da beyanı yoktu, CLI varsayılanı `true`).
+   * `sb_secret_` bir JWT olmadığı için cron çağrısı gateway'de takılırdı.
+   * Beyan artık config.toml'da ve deploy `--no-verify-jwt` ile yapılıyor;
+   * doğrulama buraya taşındı. Gerekçenin tamamı: `_shared/auth.ts`.
+   */
+  const svc = await requireServiceRole(req)
+  if (!svc.ok) return unauthorizedResponse(svc, CORS_HEADERS)
 
   const stats = { processed: 0, sent: 0, skipped: 0, errors: 0 }
 

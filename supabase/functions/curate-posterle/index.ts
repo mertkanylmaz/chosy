@@ -14,7 +14,9 @@ import {
   logInfo,
   logError,
   handleCors,
+  corsHeaders,
 } from '../_shared/posterleUtils.ts'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 
 // ----------------------------------------------------------------------------
 // Configuration
@@ -48,6 +50,16 @@ const TOP_N_RANDOM_PICK = 5
 Deno.serve(async (req: Request) => {
   const cors = handleCors(req)
   if (cors) return cors
+
+  /**
+   * Service-role kapısı (C.0b). Çağıran `posterle-daily-curation` cron'udur —
+   * bir kullanıcı değil, sistemin kendisi. Bu yüzden `requireUser` DEĞİL.
+   *
+   * `verify_jwt = false` olduğu için gateway hiçbir doğrulama yapmıyor;
+   * doğrulama tamamen burada. Gerekçenin tamamı: `_shared/auth.ts`.
+   */
+  const svc = await requireServiceRole(req)
+  if (!svc.ok) return unauthorizedResponse(svc, corsHeaders)
 
   const url = new URL(req.url)
   const targetDate = computeTargetDate(url.searchParams.get('date'))

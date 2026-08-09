@@ -29,13 +29,36 @@
 # eklenir. Ekleme yoksa fonksiyon JWT doğrulaması AÇIK çalışır.
 
 # ─── Cron ile tetiklenenler ─────────────────────────────────────────────────
-# Çağrı pg_net'ten gelir, Authorization header'ı taşımaz. Service-role yetkisi
-# fonksiyonun İÇİNDE Deno.env'den çözülür. JWT açık kalırsa cron sessizce ölür.
+# 9 Ağu 2026 (C.0b) öncesinde bu bölümün açıklaması şuydu: "Çağrı pg_net'ten
+# gelir, Authorization header'ı TAŞIMAZ." Artık taşıyor — migration 077 altı
+# cron'un komutuna Vault'tan okunan `Bearer` header'ı ekledi ve bu beş
+# fonksiyona `requireServiceRole()` kapısı takıldı. Yani doğrulama var, ama
+# gateway'de değil fonksiyonun içinde: `verify_jwt = false` bu yüzden ZORUNLU.
+#
+# ⚠️ `sb_secret_…` bir JWT DEĞİLDİR. `verify_jwt = true` olan bir fonksiyona
+# cron'un header'ı gateway'de reddedilir ve istek fonksiyona hiç ulaşmaz —
+# fonksiyon içindeki kapı hiç çalışmaz, 401 dışarıdan "yanlış anahtar" gibi
+# görünür. Bu bölümdeki bir satırı `true` yapmak cron'u öldürür.
+#
+# 9 Ağu 2026 ölçümü (`supabase functions list -o json`): send-daily-pick ve
+# watchlist-activation sunucuda `verify_jwt = true` idi çünkü bu dosyada
+# beyanları YOKTU ve CLI varsayılanı `true`. İkisinin cron'ları o sırada
+# `active = false` olduğu için üretimde görünmüyordu; C.2'de açılsalardı
+# gateway'de sessizce ölürlerdi. Beyanlar aşağıya eklendi.
 
 [functions.generate-global-slot]
 verify_jwt = false
 
 [functions.sync-trending]
+verify_jwt = false
+
+[functions.curate-posterle]
+verify_jwt = false
+
+[functions.send-daily-pick]
+verify_jwt = false
+
+[functions.watchlist-activation]
 verify_jwt = false
 
 # ─── Kendi sırrını doğrulayan webhook ───────────────────────────────────────

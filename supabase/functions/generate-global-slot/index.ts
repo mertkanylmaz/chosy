@@ -41,6 +41,7 @@
  */
 
 import {
+  corsHeaders,
   errorResponse,
   getServiceClient,
   handleCors,
@@ -48,6 +49,7 @@ import {
   logError,
   logInfo,
 } from '../_shared/gameUtils.ts'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import {
   arrangeUnseen,
@@ -148,6 +150,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (req.method !== 'POST') {
     return errorResponse('METHOD_NOT_ALLOWED', 'POST bekleniyor', 405)
   }
+
+  /**
+   * Service-role kapısı (C.0b). Çağıran `global-slot-daily` cron'udur —
+   * bir kullanıcı değil, sistemin kendisi. Bu yüzden `requireUser` DEĞİL.
+   *
+   * `verify_jwt = false` olduğu için gateway hiçbir doğrulama yapmıyor;
+   * doğrulama tamamen burada. Gerekçenin tamamı: `_shared/auth.ts`.
+   */
+  const svc = await requireServiceRole(req)
+  if (!svc.ok) return unauthorizedResponse(svc, corsHeaders)
 
   const service = getServiceClient()
   const date = utcDateString()

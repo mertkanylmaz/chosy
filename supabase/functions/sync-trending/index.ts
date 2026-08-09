@@ -19,6 +19,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -237,7 +238,24 @@ function detailToRow(
 
 // ─── Main Handler ────────────────────────────────────────────────────────────
 
-serve(async (_req: Request) => {
+serve(async (req: Request) => {
+  /**
+   * Service-role kapısı (C.0b). Çağıran `weekly-trending-sync` cron'udur —
+   * bir kullanıcı değil, sistemin kendisi. Bu yüzden `requireUser` DEĞİL.
+   *
+   * `verify_jwt = false` olduğu için gateway hiçbir doğrulama yapmıyor;
+   * doğrulama tamamen burada. Gerekçenin tamamı: `_shared/auth.ts`.
+   *
+   * CORS map'i boş: bu fonksiyon tarayıcıdan çağrılmaz, dosyada hiç OPTIONS
+   * işleyicisi yok. Header eklemek olmayan bir çağrı sınıfına izin verir gibi
+   * görünürdü — `generate-puzzles` ile aynı gerekçe, bilinçli olarak boş.
+   *
+   * Parametre daha önce `_req` idi (istek hiç okunmuyordu); kapı onu okuduğu
+   * için `req` oldu. İş mantığı değişmedi.
+   */
+  const svc = await requireServiceRole(req)
+  if (!svc.ok) return unauthorizedResponse(svc, {})
+
   const startTime = Date.now()
   const errors: SyncError[] = []
   const syncedTmdbIds: number[] = []
