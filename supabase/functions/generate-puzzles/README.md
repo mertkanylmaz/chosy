@@ -16,40 +16,54 @@ eşleşmeyen her çağrı **401**. Gerekçe: her koşum ücretli Claude çağır
 `verify_jwt = false` bilerek korunuyor (`supabase/config.toml`) — doğrulama
 gateway'de değil, fonksiyonun içinde.
 
-### ⚠️ Hangi anahtar — legacy JWT DEĞİL
+### ⚠️ Hangi anahtar — `.env`'deki İSME GÜVENME
 
 Bu projede iki anahtar kuşağı yan yana yaşıyor ve **ikisi aynı şey değil**:
 
-| Anahtar | Biçim | Uzunluk | Nerede |
+| Kuşak | Biçim | Uzunluk | Kapıyı açar mı |
 |---|---|---|---|
-| Legacy `service_role` | `eyJ…` (JWT) | 219 | `.env` → `SUPABASE_SERVICE_ROLE_KEY`, `scripts/` |
-| Yeni secret key | `sb_secret_…` | 41 | Edge runtime'ın enjekte ettiği `SUPABASE_SERVICE_ROLE_KEY` |
+| Legacy `service_role` | `eyJ…` (JWT) | 219 | **Hayır** |
+| Yeni secret key | `sb_secret_…` | 41 | Runtime'ın enjekte ettiğiyle **birebir aynı** olan açar |
 
-Fonksiyonun içindeki değer **yeni biçim** olandır. Bu yüzden `.env`'deki legacy
-JWT ile çağrı **401 alır** — geçersiz olduğu için değil, farklı bir anahtar
-olduğu için. Legacy JWT REST/DB için hâlâ geçerlidir, `scripts/` çalışmaya
-devam eder; sadece bu fonksiyonun kapısını açmaz. (CTO kararı, 8 Ağu 2026:
-kapı tek anahtara bakar. Legacy JWT'yi `SUPABASE_JWKS` ile doğrulayıp kabul
-etme seçeneği değerlendirildi ve reddedildi.)
+Fonksiyonun içindeki değer **yeni biçim** olandır. Legacy JWT ile çağrı 401
+alır — geçersiz olduğu için değil, farklı bir anahtar olduğu için. (CTO kararı,
+8 Ağu 2026: kapı tek anahtara bakar. Legacy JWT'yi `SUPABASE_JWKS` ile
+doğrulayıp kabul etme seçeneği değerlendirildi ve reddedildi.)
+
+⚠️ **`sb_secret_` olması yetmez.** 9 Ağu 2026 rotasyonundan sonra `.env` içinde
+iki AYRI `sb_secret_` değeri bulundu — ikisi de 41 karakter, biri
+`SUPABASE_SECRET_KEY` biri `SUPABASE_SERVICE_ROLE_KEY` adı altında — ve
+yalnızca `SUPABASE_SECRET_KEY` kapıyı açtı. `requireServiceRole` eşitlik
+karşılaştırması yapar; "doğru kuşak" olmak değil, "runtime'daki değerin ta
+kendisi" olmak gerekir. Bu yüzden anahtarı adına bakarak seçme — **kapıya
+sorarak seç** (aşağıdaki test).
 
 Doğru değeri almak: **Dashboard → Project Settings → API Keys → `default`
 (secret)**. `supabase projects api-keys` CLI komutu secret değerleri
-`·····` ile **maskeler**, oradan kopyalanamaz. Yerelde `.env` →
-`SUPABASE_SECRET_KEY` altında duruyor (`.env` gitignore'da).
+`·····` ile **maskeler**, oradan kopyalanamaz.
 
-### Ölçüldü (8 Ağu 2026, canlı deploy üzerinde)
+### Ölçüldü (9 Ağu 2026, service_role rotasyonundan sonra, canlı deploy üzerinde)
 
 | Çağrı | Sonuç |
 |---|---|
 | Authorization header yok | 401 `SERVICE_ROLE_REQUIRED` |
 | Anon key | 401 `SERVICE_ROLE_REQUIRED` |
 | Uydurma/imzasız token | 401 `SERVICE_ROLE_REQUIRED` |
-| Legacy `service_role` JWT | 401 `SERVICE_ROLE_REQUIRED` |
-| **`sb_secret_…`** | **400 `FORCE_WITHOUT_DATE`** — auth geçti |
+| `.env` → `SUPABASE_SERVICE_ROLE_KEY` (`sb_secret_…`) | 401 `SERVICE_ROLE_REQUIRED` — runtime'dakiyle aynı değil |
+| **`.env` → `SUPABASE_SECRET_KEY` (`sb_secret_…`)** | **400 `FORCE_WITHOUT_DATE`** — auth geçti |
+
+Legacy `service_role` JWT satırı (8 Ağu ölçümünde 401'di) bu koşumda **yeniden
+ölçülemedi**: rotasyondan sonra `.env`'de legacy JWT kalmadı. Aynı korumayı
+"uydurma/imzasız token" satırı zaten kanıtlıyor; uydurma bir JWT üretip o satırı
+doldurmak ölçüm değil, ölçüm taklidi olurdu.
 
 Son satır kapının açıldığının kanıtı: `force=1` doğrulaması auth'tan hemen
 sonra, herhangi bir DB/LLM işinden önce çalışır. Yani pozitif yolu ücretsiz
 ve yan etkisiz test edebilirsin — beklenen 400'dür, 200 değil.
+
+**Anahtar her rotasyonda bu tablo yeniden koşulmalı.** Beş çağrı sınıfını
+sırayla deneyen betik geçici (scratchpad) tutulur; özü tek satır: `?force=1` ile
+POST at, 400 dönen anahtar doğru anahtardır.
 
 ## Deploy
 

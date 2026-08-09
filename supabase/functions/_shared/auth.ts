@@ -162,12 +162,19 @@ export async function requireUser(req: Request): Promise<AuthResult> {
  *
  * ── Hangi anahtar eşleşir ─────────────────────────────────────────────────
  * Edge runtime'ın enjekte ettiği `SUPABASE_SERVICE_ROLE_KEY` bu projede YENİ
- * biçimdedir (`sb_secret_…`, 41 karakter). `.env` ve `scripts/` altında duran
- * legacy `service_role` JWT'si (`eyJ…`, 219 karakter) BAŞKA bir anahtardır ve
- * burada 401 alır — geçersiz olduğu için değil, farklı olduğu için. Bu
- * bilinçli: kapı tek anahtara bakar (CTO kararı, 8 Ağu 2026). Legacy JWT'yi
- * `SUPABASE_JWKS` ile imza doğrulayıp kabul etme seçeneği değerlendirildi ve
- * reddedildi; gerekmezse ikinci bir kabul yolu açılmıyor.
+ * biçimdedir (`sb_secret_…`, 41 karakter). Legacy `service_role` JWT'si
+ * (`eyJ…`, 219 karakter) BAŞKA bir anahtardır ve burada 401 alır — geçersiz
+ * olduğu için değil, farklı olduğu için. Bu bilinçli: kapı tek anahtara bakar
+ * (CTO kararı, 8 Ağu 2026). Legacy JWT'yi `SUPABASE_JWKS` ile imza doğrulayıp
+ * kabul etme seçeneği değerlendirildi ve reddedildi; gerekmezse ikinci bir
+ * kabul yolu açılmıyor.
+ *
+ * ⚠️ Bu bir EŞİTLİK kontrolüdür, bir BİÇİM kontrolü değil. `sb_secret_` ile
+ * başlayan her değer geçmez; yalnızca runtime'daki değerin ta kendisi geçer.
+ * 9 Ağu 2026 rotasyonundan sonra `.env` içinde iki ayrı `sb_secret_` değeri
+ * bulundu ve yalnızca biri kapıyı açtı (ölçüm:
+ * `generate-puzzles/README.md`). Çağıran taraf (cron, script, elle test)
+ * anahtarı ADINA bakarak seçerse sessizce 401 alır.
  *
  * Karşılaştırma sabit zamanlıdır: iki taraf da SHA-256'ya indirgenir (her zaman
  * 32 bayt, uzunluk sızmaz) ve baytlar erken çıkışsız XOR ile taranır.
