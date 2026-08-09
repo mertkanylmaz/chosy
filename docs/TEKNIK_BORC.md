@@ -846,3 +846,37 @@ vardı; C.0a onu erişilebilir hâle getirdi (oturumsuz durum önceden çalış�
 
 **Düzeltme yönü:** anon key fallback'lerini kaldır (oturum yoksa istek atma),
 401'i Sentry'ye yaz ve kullanıcıya "oturum yenilenmeli" hatası göster.
+
+---
+
+## 🟠 `.env`'de iki `sb_secret_` — isimlendirme yanıltıcı
+
+**Öncelik: orta.** 9 Ağu 2026, `service_role` rotasyonu sonrası C.0a yeniden
+doğrulanırken bulundu.
+
+`.env` içinde iki ayrı `sb_secret_` değeri var; ikisi de 41 karakter, ikisi de
+doğru kuşak, **değerleri farklı**. Canlı ölçüm
+(`generate-puzzles?force=1`, 9 Ağu 2026):
+
+| `.env` adı | Edge kapısı |
+|---|---|
+| `SUPABASE_SECRET_KEY` | **400 `FORCE_WITHOUT_DATE`** — açıyor |
+| `SUPABASE_SERVICE_ROLE_KEY` | **401 `SERVICE_ROLE_REQUIRED`** — açmıyor |
+
+Yani kapıyı açan değer, adı onu çağrıştırmayan değişkende duruyor. `VT_l` ile
+biten değerin kaynağı bilinmiyor — rotasyondan artakalmış olabilir.
+
+**Etkisi bugün:** `requireServiceRole()` eşitlik karşılaştırması yapar, biçim
+kontrolü değil. Migration 077'nin Vault guard'ı (`LIKE 'sb\_secret\_%'`)
+**kuşağı eler, değeri elemez** — iki değerin ikisi de guard'ı geçer. Yanlış
+olanı Vault'a yazılırsa `db push` başarılı olur ve altı cron sessizce 401 alır.
+Bu yüzden 077 push'undan sonra canlı çağrı doğrulaması zorunlu kılındı
+(ayrıntı: `supabase/functions/generate-puzzles/README.md`).
+
+**Kapanış koşulu:** kaynak netleşince tek isme indirilecek. İsim değişikliği
+`scripts/` (14 dosya `process.env.SUPABASE_SERVICE_ROLE_KEY` okuyor) + Edge
+Function secrets + Vault + EAS/CI'yı **birlikte** etkiler; atomik yapılmalı,
+parça parça değil.
+
+Şimdilik yalnızca `.env` ve `.env.example`'a uyarı yorumu eklendi — değer,
+isim ve satır sayısı değiştirilmedi.
