@@ -124,6 +124,17 @@ export function toUserError(
       };
     }
 
+    // C.0c — `public.users` satiri yok. Tekrar denemek ayni 403'u verir,
+    // o yuzden retryable: false. Cagiran ekran metni t() ile degistirir.
+    if (code === 'APP_USER_MISSING') {
+      return {
+        type: 'auth',
+        title: 'Setup unfinished',
+        message: error.userMessage,
+        retryable: false,
+      };
+    }
+
     // INVALID_INPUT, PARSE_FAILED, UNKNOWN_ERROR, etc
     return {
       type: 'server',

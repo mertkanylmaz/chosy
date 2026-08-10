@@ -796,7 +796,16 @@ ve `checkSearchQuota` doğrulanmış `appUserId` alır. Şablon hazır.
 
 ---
 
-## 🟠 `parse-mood` — `APP_USER_MISSING` yolunda kota fail-open
+## ✅ `parse-mood` — `APP_USER_MISSING` yolunda kota fail-open (KAPANDI)
+
+**Kapandı: 10 Ağu 2026, C.0c kalem 3.** Fail-open kaldırıldı, dal artık 403
+döndürüyor. Uygulama detayı bu bölümün sonunda.
+
+⚠️ **8 Ağu kararı 10 Ağu'da DEĞİŞTİ.** Aşağıdaki tabloda "Edge'de tembel satır
+oluştur" ✅ ile, "fail-open'ı kapat" ❌ ile işaretli. C.0c oturumunda CTO bunun
+tersine karar verdi: satır oluşturma (lazy insert) **C.7'ye ertelendi**, kısa
+vadeli çözüm fail-closed oldu. Tablo tarihsel kayıt olarak bırakılıyor —
+silinmiyor ki kararın hangi gerekçeyle döndüğü izlenebilsin.
 
 **Öncelik: yüksek. Kalem: C.0b.** 8 Ağu 2026, C.0a kapanış incelemesinde bulundu.
 
@@ -839,6 +848,196 @@ Yani fail-open yolu marjinal bir kenar durum değil — anonim kullanıcıların
 
 Uygulama notu: `auth-utils.ts`'teki 23505 (unique_violation) toleransı Edge
 tarafında da korunmalı — eşzamanlı iki istek aynı `auth_id` için yarışabilir.
+
+**Ne yapıldı (10 Ağu 2026, C.0c):** `checkSearchQuota` `appUserId === null`
+dalı `{ allowed: false, reason: 'APP_USER_MISSING' }` döndürüyor; handler bu
+sebebi ayırıp **403** dönüyor (401 değil — kimlik geçerli, eksik olan uygulama
+satırı). Sentry seviyesi `warning` → `error`. İstemci zinciri:
+`tasteParser.ts` → `MoodParseError('APP_USER_MISSING')` →
+`errorHelpers.ts` (`type: 'auth'`, `retryable: false`) →
+`app/(tabs)/index.tsx` `t('errors.accountSetupIncomplete')`.
+
+Kabul edilen bedel: 838. satırdaki ❌ gerekçesi ("ilk kullanıcıyı anlık olarak
+reddeder") hâlâ geçerli ve şimdi gerçekleşiyor. Sayaçsız ücretli LLM yolunu
+açık bırakmaya tercih edildi. Kalıcı çözüm C.7.
+
+---
+
+## 🔴 `public.users` satırı anonim kimlikler için HİÇ oluşmuyor (kalıcı)
+
+**Öncelik: yüksek. Kalem: C.7 — C.1'den ÖNCE.** 10 Ağu 2026, senaryo B
+doğrulandı.
+
+87 kimlik, **2026-04-23'ten** beri satırsız. En yenisi 2026-08-08. Son 48
+saatte **0** yeni çözülme; dağılım 3,5 aya kesintisiz yayılmış. Yarış koşulu
+olsaydı satırsızlar son saatlerde kümelenirdi — kümelenmiyor. Satır **hiç
+oluşmuyor ve kendiliğinden de oluşmayacak.**
+
+**Sonuç:** ürüne dokunan kimliklerin **~%58'i** (87 / 150) hiçbir sinyal
+üretmedi. LLM çağrıları yapılıyordu, sonuçları hiçbir yere yazılmıyordu —
+109 gün boyunca saf maliyet.
+
+**Kod tarafı ölçüldü (10 Ağu 2026, C.0c adım 2):** `public.users`'a INSERT
+yapan **tek** kod yolu `services/auth-utils.ts:31-33` → `getAppUserId()`.
+Repo genelinde başka `users` INSERT'i yok. Auth akışının hiçbir adımı bu
+fonksiyonu çağırmıyor (detay: bir sonraki kalem). Satır yalnızca
+`getAppUserId()`'yi çağıran bir ürün eylemi gerçekleşirse açılıyor.
+
+Şema ve RLS bu yolu engellemiyor — `users` tablosunda `auth_id` dışında NOT
+NULL kolon yok (001:14-21) ve `"users: self insert"` policy'si
+`WITH CHECK (auth_id = auth.uid()::text)` ile INSERT'e izin veriyor
+(001:143-145). Yani INSERT teknik olarak mümkün; sorun çağrılmaması.
+
+⚠️ **Kök neden HÂLÂ tam kapanmadı.** `app/(tabs)/index.tsx:145`
+(`useFocusEffect`) ekrana her girişte `getAppUserId()` çağırıyor — bu satırı
+açmalıydı. Neden açmadığı kod okumasıyla belirlenemedi. O bloğun `catch`'i
+(149-151) hatayı **sessizce yutuyor** ("recent searches opsiyonel"), yani
+INSERT başarısız olsa iz kalmıyor. C.7'nin ilk işi bu.
+
+C.0c'de `parse-mood` bu durumu 403 ile reddeder hâle geldi — tutarsızlık artık
+kullanıcıya yansıyor, sessiz değil. Bu borcu kapatmaz, görünür kılar.
+
+**Yapılacak (C.7):** satır oluşturmanın tek ve deterministik bir noktası
+belirlenecek. Seçenekler — Edge'de tembel insert (8 Ağu'nun geri alınan
+kararı), `auth.users` trigger'ı, ya da anon-signin/signup akışında açık adım.
+Karar CTO'ya ait; bu satır seçenek listesidir, öneri değildir.
+
+---
+
+## 🔴 Sosyal giriş akışı `public.users` satırı AÇMIYOR — sadece UPDATE ediyor
+
+**Öncelik: yüksek. Kalem: C.7.** 10 Ağu 2026, C.0c adım 2'de kod yolu izlendi.
+
+Köprüsüz 88 kimliğin 87'si anonim; **1 tanesi anonim değil** —
+`provider = email`, `last_sign_in_at` **boş**.
+
+**Kök neden bulundu.** `services/authService.ts`'teki giriş sonrası adımların
+**hepsi UPDATE**, hiçbiri INSERT değil:
+
+| Kod yolu | İşlem | Satır yoksa |
+|---|---|---|
+| `signInWithApple` → `syncAuthProvider('apple')` (`:141-144`) | `UPDATE users SET auth_provider` | 0 satır, `error` **null** |
+| `signInWithApple` → `syncDisplayName` (`:113-117`) | `UPDATE users SET display_name` | 0 satır, `error` **null** |
+| `signInWithGoogle` → `syncAuthProvider('google')` (`:141-144`) | `UPDATE users SET auth_provider` | 0 satır, `error` **null** |
+| `setup-profile.tsx` → `updateUserProfile` (`:376-379`) | `UPDATE users SET username, avatar_url` | 0 satır, `error` **null**, **`{success:true}` döner** |
+
+PostgREST'te 0 satır etkileyen UPDATE hata değildir. Dolayısıyla kullanıcı
+Apple/Google ile giriş yapar, `setup-profile` ekranını doldurur, ekran
+"başarılı" der ve `/(tabs)`'a yönlendirir — **`public.users`'ta hiçbir şey
+oluşmamıştır.** Kayıt akışının tamamı, var olmayan bir satırı güncellemeye
+çalışıp sessizce başarılı görünüyor.
+
+`authService.ts` `getAppUserId`'yi import ediyor (`:28`) ama yalnızca
+`deleteAccount` içinde (`:470`) kullanıyor — yani satır, hesap **silinirken**
+açılıyor olabilir; oluşturulurken değil.
+
+**Bu, "hesap oluştur" yönlendirmesini geçersiz kılar.** Kullanıcıyı kayda
+göndermek `public.users` satırını açmaz; C.7 kapanmadan hiçbir kullanıcı
+yönlendirmesi bu boşluğu çözemez.
+
+**Yapılacak (C.7):** giriş/kayıt akışında satır oluşturma açık ve koşulsuz bir
+adım hâline getirilecek; UPDATE'lerin 0 satır etkilemesi hata olarak
+raporlanacak.
+
+---
+
+## 🔴 2026-04-23 → 2026-08-08 arası kohort/retention ölçümleri geçersiz
+
+**Öncelik: yüksek. Kalem: C.7 sonrası.** 10 Ağu 2026.
+
+Yukarıdaki boşluk 3,5 ay boyunca açık kaldığı için o dönemin tüm
+retention/kohort sayıları **eksik payda** üzerinden hesaplandı: ürüne dokunan
+kimliklerin ~%58'i hiçbir satır, sinyal veya olay üretmedi.
+
+**Geçmiş veri kurtarılamaz.** `auth.users` tarafında kimlikler duruyor ama
+davranış verisi hiç yazılmadı — geriye dönük türetilecek bir kayıt yok.
+
+Etkilenenler:
+- 3,5 aylık retention ve kohort analizleri — yeniden kullanılmamalı
+- C.4 watched-it rate — ölçüm C.7 kapanmadan başlarsa aynı boşluğu tekrarlar
+- 1.000 kullanıcı gate'i — payda tanımı §1'de kilitli ve doğru, ama boşluk
+  kapanmazsa gate hiç dolmaz
+
+**Yapılacak:** ölçüm C.7 sonrası sıfırdan başlar. Önceki dönem raporlarına
+"eksik payda" notu düşülecek.
+
+---
+
+## 🟠 2026-05-11 haftasında 32 kimlik kaybı — tek sürümde 3-4 kat sıçrama
+
+**Öncelik: orta. Kalem: C.7 araştırması.** 10 Ağu 2026, C.0c kalem 4.
+
+Satırsız 87 kimliğin dağılımı 3,5 aya yayılmış ama **2026-05-11 haftası tek
+başına 32 kayıp** taşıyor — normalin 3-4 katı. Dağılımın geri kalanı düzgünse
+bu hafta bir sürümle örtüşüyor olabilir.
+
+**Yapılacak:** `git log 2026-05-04..2026-05-18` incelenecek. Aranan şey yalnız
+kimlik zinciri değil: o sürümde başka bir regresyon da girmiş olabilir ve aynı
+sessizlik sınıfından olduğu için hâlâ fark edilmemiş olabilir.
+
+Not: kimlik boşluğunun **kök nedeni bu hafta değil** — kayıplar 2026-04-23'te
+başlıyor. Bu sıçrama nedeni değil, ağırlaştırıcısı.
+
+---
+
+## 🔴 `getAppUserId()` 22 çağrı noktasında hâlâ INSERT yapabiliyor
+
+**Öncelik: yüksek. Kalem: C.0c-5.** 10 Ağu 2026.
+
+"Satır oluşturma tek noktadan yönetilir" kararı yalnızca
+`app/(tabs)/index.tsx`'te uygulandı. `getAppUserId()` (`auth-utils.ts:14`,
+içinde `INSERT`) hâlâ **7 ekran + 15 servis** dosyasından çağrılıyor:
+
+`app/gate.tsx` · `app/roulette.tsx` · `app/lifetime.tsx` ·
+`app/onboarding.tsx` · `app/discover.tsx` · `app/referral.tsx` ·
+`app/(tabs)/profile.tsx` · `components/ReferralPromptSheet` ·
+`contexts/SubscriptionContext` · `hooks/useFeedManager` ·
+`components/paywalls/PaywallBase` + `services/` (watchlist, history,
+gamification, pushNotifications, roulette, recommendations, gameService,
+tasteSignalService, analytics, offlineQueue, conversion/triggerOrchestrator,
+authService)
+
+**Neden borç:** `gate.tsx:62` veya `onboarding.tsx:263` bootstrap'tan ÖNCE
+çalışırsa satırı orada açar. O çağrı yolunun Sentry bağlantısı yok, retry'ı
+yok, hata yolu `logger.error` ile bitiyor — yani bootstrap'ın sağladığı
+görünürlük ve dayanıklılık garantilerinin hiçbiri geçerli değil. Sonuç
+"çalışır ama izlenemez": tam olarak 87 kimliği doğuran sınıf.
+
+**Yapılacak (C.0c-5):** 22 çağrı noktası `readAppUserId()`'ye çevrilecek;
+`getAppUserId()` ya kaldırılacak ya da yalnız `deleteAccount` için bırakılıp
+`@deprecated` işaretlenecek. Okuma/oluşturma ayrımı (`readAppUserId` vs
+`ensureAppUser`) C.7'nin de deseni olarak kabul edildi.
+
+---
+
+## 🔴 75 `.update()` çağrısının en az 63'ü 0-satır durumunu tespit edemiyor
+
+**Öncelik: yüksek. C.4'ten ÖNCE çözülmeli.** 10 Ağu 2026, C.0c kalem 4 taraması.
+
+PostgREST'te 0 satır etkileyen `UPDATE` **hata değildir**: `error` null döner,
+çağıran başarılı sanır. Repo genelinde 75 `.update()` çağrısı var; yalnızca
+**12'sinin** zincirinde dönen satırı görebilecek bir ifade var
+(`.select()` / `.single()` / `.maybeSingle()` / `count:`). Kalan **63'ü kör.**
+
+63 bir **alt sınırdır** — 12'sinin dönen satırı gerçekten kontrol edip
+etmediği tek tek doğrulanmadı.
+
+Kritik olanlar (hepsi `users` tablosuna yazıyor, hepsi kör):
+
+| Dosya:satır | Ne yazıyor | Satırsız kullanıcıda |
+|---|---|---|
+| `services/authService.ts:115` | `display_name` | sessizce hiçbir şey |
+| `services/authService.ts:143` | `auth_provider` | sessizce hiçbir şey |
+| `services/authService.ts:378` | `username`, `avatar_url` | **`{success:true}` döner** — ürün kullanıcıya doğrudan yanlış söylüyor |
+| `services/userProfile.ts:169/255/310/349` | `preferences_vector` | kişiselleştirme verisi kayboluyor |
+| `services/offlineQueue.ts:182/197` | `archetype_id`, `preferences_vector` | kuyruk "işlendi" sayıyor |
+
+**Neden C.4'ten önce:** `watchlist.watched_at` yazımı da aynı desene düşerse
+watched-it rate ölçülemez — C.4'ün tek çıktısı o metrik.
+
+**Yapılacak:** desen düzeltmesi — kritik `UPDATE`'ler `.select()` ile dönen
+satırı okuyacak ve 0 satır hata olarak raporlanacak. Tüm 63'ü değil, önce
+`users` ve `watchlist` yazanlar.
 
 ---
 

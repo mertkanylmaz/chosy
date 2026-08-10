@@ -35,6 +35,7 @@ import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
+import { ensureAppUser } from '@/services/auth-utils';
 import {
   savePushTokenToServer,
   shouldAskForPermission,
@@ -84,6 +85,51 @@ export const unstable_settings = {
 
 // Splash ekranın font yüklemesi bitmeden kapanmasını engelle
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Oturum bootstrap'ı: `public.users` satırının varlığını garanti eder.
+ *
+ * Başarısızlık SESSİZ GEÇMEZ. Geçici ağ hatalarını kurtarmak için bir kez
+ * yeniden denenir; ikinci deneme de başarısızsa Sentry'ye `fatal` yazılır —
+ * çünkü o kimlik kotaya, analitiğe ve ödeme sistemine hiç giremez ve
+ * `parse-mood` ona 403 döner (C.0c kalem 3).
+ *
+ * Kullanıcı akışı bloklanmaz: hata ekranı göstermek yeni bir UI pattern'i ve
+ * ayrı bir mimari karar olurdu. Kullanıcı tarafındaki görünürlük 403 yolundan
+ * geliyor; buradaki iş, arızanın BİZE görünür olmasını sağlamak.
+ */
+async function bootstrapAppUser(): Promise<void> {
+  const first = await ensureAppUser();
+  if (first.ok) return;
+
+  // NO_SESSION yeniden denemeye değmez — oturum yoksa `SIGNED_IN` zaten
+  // tutarsızdır ve ikinci deneme aynı sonucu verir.
+  if (first.reason === 'NO_SESSION') {
+    Sentry.captureMessage('bootstrapAppUser: SIGNED_IN olayında oturum yok', {
+      level: 'error',
+      tags: { function: 'bootstrapAppUser', error_code: 'APP_USER_CREATE_FAILED' },
+    });
+    return;
+  }
+
+  await new Promise<void>((resolve) => setTimeout(resolve, 1500));
+
+  const second = await ensureAppUser();
+  if (second.ok) {
+    logger.warn('[layout] ensureAppUser ilk denemede başarısız, ikincide düzeldi');
+    return;
+  }
+
+  logger.error('[layout] ensureAppUser iki denemede de başarısız:', second.reason);
+  Sentry.captureMessage(
+    'bootstrapAppUser: public.users satırı iki denemede de oluşturulamadı — kimlik sisteme giremiyor',
+    {
+      level: 'fatal',
+      tags: { function: 'bootstrapAppUser', error_code: 'APP_USER_CREATE_FAILED' },
+      extra: { reason: second.reason },
+    },
+  );
+}
 
 /**
  * Root layout — font yükleme ve onboarding durumu kontrolünü yönetir.
@@ -204,7 +250,28 @@ export default function RootLayout() {
 
     // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
+      (event, session) => {
+        // `public.users` satırını GARANTİ et — oturum bootstrap'ı.
+        // Anonim/kayıtlı ayrımı YOK: her oturum satır alır. Bu çağrı 10 Ağu
+        // 2026'da UI katmanından (app/(tabs)/index.tsx useFocusEffect) buraya
+        // taşındı; orada 87 kimlik 3,5 ay boyunca satırsız kalmıştı.
+        //
+        // ⚠️ INITIAL_SESSION şart. Oturum AsyncStorage'dan geri yüklendiğinde
+        // Supabase `SIGNED_IN` DEĞİL `INITIAL_SESSION` yayınlar. Yalnızca
+        // `SIGNED_IN` dinlenirse mevcut 87 satırsız kimlik bu düzeltmeden hiç
+        // faydalanamaz — onlar zaten oturum sahibi. Bu dal sayesinde kimlik
+        // uygulamayı bir kez daha açtığında satır kendiliğinden oluşur.
+        //
+        // `session?.user` guard'ı çağrı noktasında: INITIAL_SESSION oturum
+        // YOKKEN de (session: null) yayınlanır; o dalda ensureAppUser
+        // NO_SESSION dönüp gereksiz Sentry error üretirdi.
+        //
+        // Her açılışta çalışması sorunsuz: ensureAppUser idempotent upsert,
+        // tek `onConflict` isteği.
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+          void bootstrapAppUser();
+        }
+
         if (event === 'TOKEN_REFRESHED') {
           // Token yenilendi — offline queue'daki bekleyen islemleri sync et
           processOfflineQueue().catch(() => {});

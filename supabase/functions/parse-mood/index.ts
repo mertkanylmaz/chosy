@@ -166,20 +166,40 @@ search_keywords rules (IMPORTANT — these enable thematic film matching):
  * `{ allowed: true }` donuyordu — yani header'siz istek kotayi ATLAYIP ucretli
  * Claude'a ulasabiliyordu. O bosluk artik handler seviyesinde kapali.
  *
- * `appUserId` null ise (kimlik dogrulanmis ama `public.users` satiri yok)
- * kota kontrol EDILEMEZ. Istek gecirilir ama Sentry'ye yazilir — sessiz
- * gecis degil, gorunur bir veri tutarsizligi kaydi.
+ * ── 10 Agu 2026 degisikligi (C.0c) ───────────────────────────────────────
+ * `appUserId` null dali FAIL-CLOSED yapildi. Onceki hal `{ allowed: true }`
+ * donuyordu: kota sayaci hic okunmuyor, `logMoodSearch` da atlaniyordu (o da
+ * `quotaCheck.userId` istiyor) ve akis dogrudan ucretli Haiku cagrisina
+ * ulasiyordu. Yani sayacsiz, izsiz, ucretli bir LLM yolu.
+ *
+ * Olcum (9 Agu 2026, SQL): auth.users 226 · anonim 162 · `public.users`
+ * satiri olmayan 88 (87 anonim + 1 kayitli). Yani her 4 kimlikten 1'i bu
+ * daldan geciyordu.
+ *
+ * Artik istek REDDEDILIR (403). Kimlik gecerli oldugu icin 401 DEGIL:
+ * dogrulama basarili, eksik olan uygulama satiri — yani yetki/veri durumu.
+ * `public.users` satiri BURADA acilmaz; lazy insert mimari karardir ve C.7
+ * kapsamindadir (bkz. docs/TEKNIK_BORC.md).
  */
 async function checkSearchQuota(
   appUserId: string | null,
-): Promise<{ allowed: boolean; userId?: string; quotaResult?: Record<string, unknown>; error?: string }> {
+): Promise<{
+  allowed: boolean
+  userId?: string
+  quotaResult?: Record<string, unknown>
+  reason?: string
+  error?: string
+}> {
   if (!appUserId) {
+    // level: 'warning' → 'error'. Bu artik "gecti ama tuhaf" degil, kullanici
+    // arama yapamiyor demek. Ayri alert kurali `error_code:APP_USER_MISSING`
+    // tag'i uzerinden kurulur — `sentryCapture` fingerprint tasimiyor.
     await sentryCapture({
-      message: 'parse-mood: dogrulanmis kullanicinin public.users satiri yok — kota atlandi',
-      level: 'warning',
+      message: 'parse-mood: dogrulanmis kullanicinin public.users satiri yok — istek reddedildi',
+      level: 'error',
       tags: { function: 'parse-mood', error_code: 'APP_USER_MISSING' },
     })
-    return { allowed: true }
+    return { allowed: false, reason: 'APP_USER_MISSING' }
   }
 
   try {
@@ -257,6 +277,21 @@ serve(async (req: Request): Promise<Response> => {
 
   // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
   const quotaCheck = await checkSearchQuota(auth.appUserId)
+
+  // `public.users` satiri yok → kota sayilamaz, istek burada BITER.
+  // `logMoodSearch` cagrilmaz: `mood_searches.user_id` bir `public.users`
+  // satiri bekler, o satir zaten yok. Bu yolun tek izi yukaridaki Sentry
+  // kaydidir — sessiz degil, ama analitikte gorunmez (C.7 kalemi).
+  if (!quotaCheck.allowed && quotaCheck.reason === 'APP_USER_MISSING') {
+    return new Response(
+      JSON.stringify({
+        error: 'Account setup is incomplete.',
+        code: 'APP_USER_MISSING',
+      }),
+      { status: 403, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
+  }
+
   if (!quotaCheck.allowed) {
     // Log quota exceeded (no mood_text available yet — body not parsed)
     if (quotaCheck.userId) {

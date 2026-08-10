@@ -406,6 +406,8 @@
     "watchlistRemove": "Film kaldırılamadı. Lütfen tekrar dene.",
     "watchlistClear": "İzleme listesi temizlenemedi. Lütfen tekrar dene.",
     "pullToRefresh": "Bir şeyler ters gitti. Yenilemek için çek.",
+    "accountSetupIncompleteTitle": "Arama kullanılamıyor",
+    "accountSetupIncomplete": "Bu hesapta mood araması şu an çalışmıyor. Bildirim bize ulaştı.",
     "retry": "Tekrar Dene"
   },
   "profile": {

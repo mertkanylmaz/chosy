@@ -64,7 +64,8 @@ import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/ser
 import { startPreload, clearPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
 import { parseMood } from '@/services/tasteParser';
-import { saveSession, getAppUserId } from '@/services/watchlist';
+import { saveSession } from '@/services/watchlist';
+import { readAppUserId } from '@/services/auth-utils';
 import { FilmFilters, TasteProfile } from '@/types';
 import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
@@ -141,13 +142,19 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       (async () => {
+        // Kimlik OLUŞTURULMAZ, yalnızca okunur. Satır açma işi oturum
+        // bootstrap'ına ait (`app/_layout.tsx` → SIGNED_IN → ensureAppUser).
+        // Eski hâli burada `getAppUserId()` çağırıp INSERT deniyordu ve
+        // hatayı boş `catch` ile yutuyordu — 87 kimliğin 3,5 ay boyunca
+        // satırsız kalması bu sessizlik yüzünden görülemedi.
+        const userId = await readAppUserId();
+        if (!userId) return;
+
         try {
-          const userId = await getAppUserId();
-          if (!userId) return;
           const history = await getMoodHistory(userId);
           setRecentSearches(history.slice(0, 3));
-        } catch {
-          // Sessizce devam — recent searches opsiyonel
+        } catch (err) {
+          logger.error('[HomeScreen] recent searches yüklenemedi:', err);
         }
       })();
     }, []),
@@ -264,7 +271,7 @@ export default function HomeScreen() {
       setPhase('result');
 
       // Session'i arka planda kaydet — hata akisini engellemez
-      getAppUserId().then((userId) => {
+      readAppUserId().then((userId) => {
         if (userId) {
           saveSession(userId, trimmed, profile).then((sessionId) => {
             setCurrentSessionId(sessionId);
@@ -285,7 +292,11 @@ export default function HomeScreen() {
       });
 
       const userError = toUserError(err, 'mood');
-      setMoodError({ type: userError.type, message: userError.message });
+      // APP_USER_MISSING metni Edge'den cevrilmemis gelir — t() ile degistir.
+      const message = errorCode === 'APP_USER_MISSING'
+        ? t('errors.accountSetupIncomplete')
+        : userError.message;
+      setMoodError({ type: userError.type, message });
       setPhase('input');
 
       // Quota exceeded from edge function — show paywall

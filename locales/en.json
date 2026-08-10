@@ -406,6 +406,8 @@
     "watchlistRemove": "Could not remove film. Please try again.",
     "watchlistClear": "Could not clear watchlist. Please try again.",
     "pullToRefresh": "Something went wrong. Pull to refresh.",
+    "accountSetupIncompleteTitle": "Search unavailable",
+    "accountSetupIncomplete": "Mood search can't run on this account right now. We've been notified.",
     "retry": "Retry"
   },
   "profile": {

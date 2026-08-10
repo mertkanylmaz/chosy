@@ -150,6 +150,12 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
     if (code === 'SERVICE_UNAVAILABLE') {
       throw new MoodParseError('SERVICE_UNAVAILABLE', 'AI service is temporarily unavailable. Please try again later.', errorData);
     }
+    // 403 — kimlik gecerli ama `public.users` satiri yok (C.0c fail-closed).
+    // Kullaniciya gosterilen metin UI katmaninda t() ile uretilir; buradaki
+    // metin yalnizca cevrilmemis son caredir.
+    if (code === 'APP_USER_MISSING') {
+      throw new MoodParseError('APP_USER_MISSING', 'Account setup is incomplete.', errorData);
+    }
 
     // Generic server error
     throw new MoodParseError(
