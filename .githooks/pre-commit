@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# pre-commit — typecheck baseline kapisi.
+#
+# Neden var: 12 Agu 2026'da `services/tmdb.ts` kaza eseri 0 byte'a dustu.
+# Typecheck 14 yerine 35 hata veriyordu ve bir uretim ekrani kirikti; buna
+# ragmen ayni gun uc ayri raporda "typecheck 14 OK" yazildi. Insan ya da ajan
+# raporuna guvenmek yerine kapi koyuyoruz: olcumu commit'in kendisi yapar.
+#
+# Iki kontrol:
+#   1. Stage'lenmis .ts/.tsx dosyalarindan hicbiri 0 byte olamaz.
+#   2. `npm run typecheck` hata sayisi baseline'i asamaz.
+#
+# Kacis kapisi: `git commit --no-verify`. Bilincli olarak birakildi — kapi
+# gercekten yanlis alarm verdiginde is akisi tikanmasin.
+
+BASELINE=14
+
+fail=0
+
+# ── 1. Bosaltilmis kaynak dosyasi ───────────────────────────────────────────
+staged=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.tsx?$' || true)
+
+for file in $staged; do
+  [ -f "$file" ] || continue
+  if [ ! -s "$file" ]; then
+    echo "pre-commit: $file 0 byte — bos kaynak dosyasi commit edilemez."
+    fail=1
+  fi
+done
+
+# ── 2. Typecheck baseline ───────────────────────────────────────────────────
+echo "pre-commit: typecheck calisiyor (baseline $BASELINE)..."
+output=$(npm run typecheck 2>&1)
+count=$(printf '%s\n' "$output" | grep -c 'error TS' || true)
+
+if [ "$count" -gt "$BASELINE" ]; then
+  echo ""
+  echo "pre-commit: typecheck $count hata — baseline $BASELINE asildi, commit reddedildi."
+  echo ""
+  printf '%s\n' "$output" | grep 'error TS' | head -30
+  echo ""
+  echo "Baseline disindaki her hata yeni regresyondur. Duzelt, ya da baseline"
+  echo "gercekten degistiyse .githooks/pre-commit icindeki BASELINE degerini"
+  echo "gerekcesiyle birlikte guncelle."
+  fail=1
+elif [ "$count" -lt "$BASELINE" ]; then
+  echo "pre-commit: typecheck $count hata — baseline $BASELINE'in altinda."
+  echo "  Iyilesme kalici ise .githooks/pre-commit icindeki BASELINE'i $count yap."
+else
+  echo "pre-commit: typecheck $count hata — baseline korunuyor."
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo ""
+  echo "Kapiyi bilincli olarak atlamak icin: git commit --no-verify"
+  exit 1
+fi
+
+exit 0

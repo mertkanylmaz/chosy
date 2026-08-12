@@ -16,6 +16,7 @@
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { sentryCapture } from '../_shared/sentry.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -70,10 +71,28 @@ serve(async (req: Request) => {
 
   try {
     // ── 1. Verify webhook secret ──────────────────────────────────────────────
+    // FAIL-CLOSED: secret yoksa istek islenmez. Onceki `if (webhookSecret && ...)`
+    // kalibi secret tanimsizken dogrulamayi tamamen atliyordu — 12 Agu 2026'da
+    // secret'in `RC_WEBHOOK_SECRET` adiyla set edildigi, kodun ise
+    // `REVENUECAT_WEBHOOK_SECRET` okudugu tespit edildi; yani bu webhook
+    // aylarca kimlik dogrulamasiz calisti ve herkes entitlement yazabilirdi.
     const webhookSecret = Deno.env.get('REVENUECAT_WEBHOOK_SECRET')
+    if (!webhookSecret) {
+      console.error('[rc-webhook] REVENUECAT_WEBHOOK_SECRET tanimsiz — istek reddedildi')
+      await sentryCapture({
+        message: 'revenuecat-webhook: REVENUECAT_WEBHOOK_SECRET tanimsiz, webhook fail-closed reddetti',
+        level: 'fatal',
+        tags: { error_code: 'WEBHOOK_SECRET_MISSING', function: 'revenuecat-webhook' },
+      })
+      return new Response(
+        JSON.stringify({ error: 'WEBHOOK_SECRET_MISSING' }),
+        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
     const authHeader = req.headers.get('authorization') || ''
 
-    if (webhookSecret && authHeader !== `Bearer ${webhookSecret}`) {
+    if (authHeader !== `Bearer ${webhookSecret}`) {
       console.warn('[rc-webhook] Invalid auth header')
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED' }),

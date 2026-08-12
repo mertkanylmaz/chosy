@@ -9,15 +9,20 @@
  * event gondermiyor, film detay ekrani TMDb 401 aliyor, analitik sessizce
  * kapali. Bu script o durumu build baslamadan once yakalar.
  *
- * Iki mod:
- *   1. Yerel  — `process.env` + `.env` dosyasi okunur. `npx expo start` /
+ * Uc mod:
+ *   1. Yerel    — `process.env` + `.env` dosyasi okunur. `npx expo start` /
  *      `expo run:*` gibi yerelde bundle uretilen akislar icin dogru kaynak.
- *   2. EAS    — `--eas <environment>` ile `eas env:list` cikti olarak alinir.
+ *   2. EAS      — `--eas <environment>` ile `eas env:list` cikti olarak alinir.
  *      EAS build sunucuda kosar ve YEREL `.env` DOSYASINI GORMEZ; production
  *      build'i dogrulayan tek gecerli kontrol budur.
+ *   3. Supabase — `--supabase` ile `supabase secrets list` okunur. Edge
+ *      Function'lar ne `.env` ne EAS ortamini gorur; ucuncu ve ayri bir
+ *      dunyadir. Zorunlu liste elle yazilmaz, `Deno.env.get` cagrilarindan
+ *      turetilir.
  *
  * Kullanim:
  *   npm run check:env                      # yerel .env
+ *   npm run check:env:supabase             # Edge secret'lari
  *   npx tsx scripts/check-env.ts --eas production
  *
  * Eksik zorunlu degisken varsa exit code 1 → npm pre-hook build'i durdurur.
@@ -53,6 +58,38 @@ const OPTIONAL: readonly string[] = [
   'EXPO_PUBLIC_RC_ANDROID_KEY',
 ];
 
+// ── Supabase Edge secret'lari ────────────────────────────────────────────────
+
+/**
+ * Supabase'in her Edge Function'a otomatik enjekte ettigi degiskenler.
+ *
+ * `supabase secrets list` bunlari gosterir ama elle set EDILMEZLER. Zorunlu
+ * listeye alinirlarsa guard hicbir zaman yesile donmez; surekli yanlis alarm
+ * veren kapi, gorulmezden gelinen kapidir.
+ */
+const SUPABASE_AUTO_INJECTED: ReadonlySet<string> = new Set([
+  'SUPABASE_URL',
+  'SUPABASE_ANON_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY',
+  'SUPABASE_DB_URL',
+  'SUPABASE_JWKS',
+  'SUPABASE_PUBLISHABLE_KEYS',
+  'SUPABASE_SECRET_KEYS',
+]);
+
+/**
+ * Kodda okunuyor ama yoklugunda bilincli ve zararsiz bir varsayilana dusuyor.
+ * Eksikse uyarilir, exit 0 korunur.
+ */
+const SUPABASE_WARN_ONLY: ReadonlyMap<string, string> = new Map([
+  ['CHOSY_ENV', "yoksa Sentry ortam etiketi 'production' kabul eder — staging event'leri production diye damgalanir"],
+  // Opsiyonel Slack/Discord bildirim webhook'u. Yoklugunda lifetime satisi
+  // yine islenir, yalnizca kutlama mesaji gitmez — para akisini etkilemez.
+  // Zorunlu tutulursa kapi kalici kirmizi kalir; kirilmayan kirmizi, guveni
+  // biten kapidir. C.0d'de kodun atlamayi loglamasi eklenecek.
+  ['FOUNDING_MEMBER_NOTIFY_URL', 'yoksa yeni Founding Member bildirimi gonderilmez — satis yine islenir'],
+]);
+
 /** `.env.example`'dan kopyalanmis, doldurulmamis degerler. */
 const PLACEHOLDER_PATTERNS: readonly RegExp[] = [
   /^your-/i,
@@ -60,7 +97,7 @@ const PLACEHOLDER_PATTERNS: readonly RegExp[] = [
   /\.\.\.$/,
 ];
 
-type Source = 'local' | 'eas';
+type Source = 'local' | 'eas' | 'supabase';
 
 interface CheckResult {
   /** Degisken adi */
@@ -171,6 +208,94 @@ function collectEas(environment: string): Map<string, { value: string; origin: s
   return collected;
 }
 
+/**
+ * `supabase/functions/` altindaki her `.ts` dosyasini tarar ve
+ * `Deno.env.get('NAME')` cagrilarindan okunan secret adlarini toplar.
+ *
+ * Neden sabit liste degil: 12 Agu 2026'da secret'larin `RC_WEBHOOK_SECRET`
+ * adiyla set edildigi ama kodun `REVENUECAT_WEBHOOK_SECRET` okudugu tespit
+ * edildi — iki RevenueCat webhook'u aylarca dogrulamasiz calisti. Elle yazilan
+ * bir liste bu uyusmazligi tanim geregi yakalayamaz; tek dogruluk kaynagi kod.
+ *
+ * @returns secret adi → onu okuyan dosyalarin repo-goreli yollari
+ */
+function scanFunctionSecrets(): Map<string, string[]> {
+  const readers = new Map<string, string[]>();
+  const functionsRoot = path.join(ROOT, 'supabase', 'functions');
+  if (!fs.existsSync(functionsRoot)) return readers;
+
+  const envCall = /Deno\.env\.get\(\s*['"]([A-Z][A-Z0-9_]*)['"]\s*\)/g;
+
+  const walk = (dir: string): void => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!entry.name.endsWith('.ts')) continue;
+
+      const source = fs.readFileSync(full, 'utf-8');
+      const relative = path.relative(ROOT, full).replace(/\\/g, '/');
+      for (const match of source.matchAll(envCall)) {
+        const name = match[1];
+        const existing = readers.get(name);
+        if (existing === undefined) {
+          readers.set(name, [relative]);
+        } else if (!existing.includes(relative)) {
+          existing.push(relative);
+        }
+      }
+    }
+  };
+
+  walk(functionsRoot);
+  return readers;
+}
+
+/**
+ * Supabase kaynak: `supabase secrets list` ciktisini ayristirir.
+ *
+ * Cikti `NAME | DIGEST` tablosudur — degerler asla okunamaz, yalnizca VARLIK
+ * dogrulanir. Kontrol icin bu yeterli: aranan sey "set edilmis mi", "dogru mu"
+ * degil.
+ *
+ * CLI hata verirse sessizce gecmez: exception firlatir, kapi kirmizi olur.
+ */
+function collectSupabase(): Map<string, { value: string; origin: string }> {
+  const collected = new Map<string, { value: string; origin: string }>();
+
+  let output: string;
+  try {
+    output = execSync('npx supabase secrets list', {
+      cwd: ROOT,
+      encoding: 'utf-8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      'supabase secrets list calistirilamadi. Proje link\'li mi ' +
+        `(supabase link)? Oturum acik mi (supabase login)?\n  ${message}`
+    );
+  }
+
+  // "  NAME  | DIGEST" — basliktaki "NAME | DIGEST" satiri da eslesir,
+  // asagida ad kalibiyla elenir.
+  for (const rawLine of output.split(/\r?\n/)) {
+    const pipe = rawLine.indexOf('|');
+    if (pipe <= 0) continue;
+
+    const name = rawLine.slice(0, pipe).trim();
+    if (!/^[A-Z][A-Z0-9_]*$/.test(name)) continue;
+    if (name === 'NAME') continue;
+
+    collected.set(name, { value: 'set', origin: 'supabase secrets' });
+  }
+
+  return collected;
+}
+
 // ── Degerlendirme ────────────────────────────────────────────────────────────
 
 function evaluate(
@@ -199,7 +324,103 @@ const STATUS_LABEL: Record<CheckResult['status'], string> = {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
+/**
+ * Supabase Edge secret kapisi.
+ *
+ * Zorunlu liste kodun kendisinden turer: `Deno.env.get` ile okunan her ad
+ * zorunludur — otomatik enjekte edilenler ve bilincli varsayilani olanlar
+ * disinda. Ek olarak "yetim" secret'lari raporlar: set edilmis ama hicbir
+ * fonksiyonun okumadigi adlar, neredeyse her zaman bir isim uyusmazliginin
+ * isaretidir.
+ */
+function runSupabase(): void {
+  const collected = collectSupabase();
+  const readers = scanFunctionSecrets();
+
+  console.log('\ncheck-env — kaynak: supabase secrets list\n');
+
+  const required: string[] = [];
+  const warnOnly: string[] = [];
+  for (const name of [...readers.keys()].sort()) {
+    if (SUPABASE_AUTO_INJECTED.has(name)) continue;
+    if (SUPABASE_WARN_ONLY.has(name)) warnOnly.push(name);
+    else required.push(name);
+  }
+
+  const requiredResults = required.map((name) => evaluate(name, collected));
+  const warnResults = warnOnly.map((name) => evaluate(name, collected));
+
+  for (const result of requiredResults) {
+    const isOk = result.status === 'ok';
+    const mark = isOk ? '\x1b[32m✓\x1b[0m' : '\x1b[31m✗\x1b[0m';
+    const detail = isOk ? result.origin : STATUS_LABEL[result.status];
+    console.log(`  ${mark} ${result.name.padEnd(28)} ${detail}`);
+  }
+  // Uyari seviyesi asla kirmizi basmaz: kapiyi kirmayan kirmizi, kapiya olan
+  // guveni asindirir.
+  for (const result of warnResults) {
+    const isOk = result.status === 'ok';
+    const mark = isOk ? '\x1b[32m✓\x1b[0m' : '\x1b[33m!\x1b[0m';
+    const detail = isOk ? result.origin : `${STATUS_LABEL[result.status]} (uyari)`;
+    console.log(`  ${mark} ${result.name.padEnd(28)} ${detail}`);
+  }
+
+  // Otomatik enjekte edilenler: bilgi amacli, hicbir zaman kapiyi kirmaz.
+  const auto = [...collected.keys()].filter((name) => SUPABASE_AUTO_INJECTED.has(name));
+  if (auto.length > 0) {
+    console.log(`\n  (otomatik enjekte, kontrol disi: ${auto.sort().join(', ')})`);
+  }
+
+  // Yetim: set edilmis ama kod okumuyor → isim uyusmazligi suphesi.
+  const orphans = [...collected.keys()].filter(
+    (name) => !SUPABASE_AUTO_INJECTED.has(name) && !readers.has(name)
+  );
+  if (orphans.length > 0) {
+    console.log('');
+    for (const name of orphans.sort()) {
+      console.log(
+        `\x1b[33m!\x1b[0m ${name} set edilmis ama hicbir Edge Function okumuyor — ` +
+          'isim uyusmazligi mi?'
+      );
+    }
+  }
+
+  for (const result of warnResults) {
+    if (result.status === 'ok') continue;
+    console.log(
+      `\x1b[33m!\x1b[0m ${result.name} ${STATUS_LABEL[result.status]} — ` +
+        `${SUPABASE_WARN_ONLY.get(result.name)}`
+    );
+  }
+
+  const failed = requiredResults.filter((result) => result.status !== 'ok');
+  if (failed.length === 0) {
+    console.log(
+      `\n\x1b[32m✓\x1b[0m ${requiredResults.length}/${requiredResults.length} zorunlu Edge secret'i tanimli.\n`
+    );
+    return;
+  }
+
+  console.error(`\n\x1b[31m✗\x1b[0m ${failed.length} zorunlu Edge secret'i eksik.\n`);
+  for (const result of failed) {
+    const who = (readers.get(result.name) ?? []).join(', ');
+    console.error(`  ${result.name} → ${STATUS_LABEL[result.status]}`);
+    console.error(`    okuyan: ${who}`);
+  }
+  console.error('\nDuzeltme:');
+  for (const result of failed) {
+    console.error(`  supabase secrets set ${result.name}="<deger>"`);
+  }
+  console.error('');
+
+  process.exit(1);
+}
+
 function parseArgs(argv: readonly string[]): { source: Source; environment: string } {
+  if (argv.includes('--supabase')) {
+    return { source: 'supabase', environment: 'supabase' };
+  }
+
   const easIndex = argv.indexOf('--eas');
   if (easIndex === -1) {
     return { source: 'local', environment: 'local' };
@@ -217,6 +438,11 @@ function parseArgs(argv: readonly string[]): { source: Source; environment: stri
 
 function main(): void {
   const { source, environment } = parseArgs(process.argv.slice(2));
+
+  if (source === 'supabase') {
+    runSupabase();
+    return;
+  }
 
   const collected =
     source === 'eas' ? collectEas(environment) : collectLocal();

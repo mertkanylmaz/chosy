@@ -20,6 +20,7 @@
     "db:tier-stats": "tsx scripts/verify-db-state.ts",
     "check:env": "tsx scripts/check-env.ts",
     "check:env:eas": "tsx scripts/check-env.ts --eas production",
+    "check:env:supabase": "tsx scripts/check-env.ts --supabase",
     "prebuild:dev": "tsx scripts/check-env.ts --eas development",
     "build:dev": "eas build --profile development --platform all",
     "prebuild:preview": "tsx scripts/check-env.ts --eas preview",

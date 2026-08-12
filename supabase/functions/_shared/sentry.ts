@@ -40,7 +40,7 @@ export async function sentryCapture(params: SentryEventParams): Promise<void> {
       logger: 'edge-function',
       message: { formatted: params.message },
       tags: {
-        environment: Deno.env.get('SUPABASE_ENV') || 'production',
+        environment: Deno.env.get('CHOSY_ENV') || 'production',
         ...params.tags,
       },
       extra: params.extra || {},
