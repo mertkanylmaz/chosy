@@ -55,13 +55,14 @@ Expo **~54.0.34** · React Native **0.81.5** · Reanimated ~4.1.1 · expo-router
 
 ### 1.4 Migration
 
-En yüksek: **068**. Yeni migration **069**'dan başlar. Yine de eklemeden önce klasörü listele.
+En yüksek: **077** (`077_cron_pattern_repair.sql`, 12.08.2026 doğrulandı).
+Yeni migration **078**'den başlar. Yine de eklemeden önce klasörü listele.
 
 ### 1.5 Gate'ler
 
 ```powershell
 npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
-npm run typecheck:functions  # → 45 hata (deno check, düşüş hedefli değil)
+npm run typecheck:functions  # → 42 hata (deno check, düşüş hedefli değil)
 ```
 
 ⚠️ **Sapma varsa dur.** 14'ten fazlaysa veya `scripts/` dışında hata varsa yeni regresyon vardır.
@@ -134,6 +135,18 @@ Aracın kendisi mi tehlikeli?           → Permission denial
 > **`AskUserQuestion` üzerinden alınan onay geçerli onaydır.** Kurucu bir seçenek işaretlediyse karar verilmiştir. CTO oturumunda görünmüyor olması onayı geçersiz kılmaz.
 >
 > **Karşılığında:** Claude Code raporlarında **onay alınan kararlar açıkça listelenir** — "onayınla" gibi geçiştirilmiş ifade yerine hangi soruya hangi cevabın verildiği. Asenkron akışta CTO o ekranı görmez.
+
+### 3.2 Sürüm kararı 🔒 (12.08.2026)
+
+> **App Store sürümü Faz C tamamlanana kadar ÇIKMAZ.** Eksiksiz ürün, tek seferde.
+
+Sonuçları — bunlar regresyon değil, **beklenen davranış:**
+
+| Durum | Açıklama |
+|---|---|
+| 87 yetim kimlik onarılmıyor | `f44fac2` yalnızca TestFlight'ta. C.7 backfill'ine kadar böyle kalır |
+| `parse-mood` 403 deploy'u ⏸ | Kod hazır, sürümle birlikte gidecek (§3 kural 7) |
+| Sentry alert'leri sessiz | **"Veri yok" ≠ "sorun yok."** Sessizliği doğrulama sayma |
 
 ---
 
@@ -274,14 +287,65 @@ Ayrıca (Claude Code yapamaz, kurucuya sorulur): **Anthropic kredi durumu** · S
 
 ---
 
-# BÖLÜM II — KALAN FAZ PROMPTLARI
+# BÖLÜM II — FAZ DURUMU
 
-> ✅ Tamamlandı: Faz A (atlandı) · B.0a (G1 kapanışı) · B.0b (veri hijyeni)
-> Havuz: 1.865/1.866 · `profile_vector` NULL: 0 · repo temiz
+> **⚠️ B.1–B.5 promptları ARŞİVLENDİ — uygulanmıştır, yeniden koşturulamaz.**
+> Aşağıdaki bloklar tarihsel kayıttır. İçlerindeki migration numaraları, "PLAN MODU"
+> işaretleri ve DUR NOKTALARI **geçersizdir.** Yeni iş için §1.4'e bak.
+
+## Faz B — ✅ KAPANDI (Ağustos 2026)
+
+| # | İş | Sonuç |
+|---|---|---|
+| B.1 | Migration 069 — 6 tablo | ✅ Uygulandı. ⚠️ `device_id` kolonları kimlik anti-pattern'i — C.7'de sökülecek |
+| B.2 | `types/gauntlet.ts` | ✅ 🔒 Kilitli sözleşme yürürlükte |
+| B.3 | `generate-gauntlet` v0 | ⚠️ Kısmen — bkz. aşağıdaki eksik listesi |
+| B.4 | `submit-choice` | ✅ |
+| B.5 | `recompute-cinema-dna` | ⚠️ `submit-guess`'ten 403 alıyor, 3 haftadır ongoing |
+
+### B.3'ün teslim ETMEDİKLERİ 🔴
+
+`gauntletCore.ts` "yazıldı" ama sözleşmenin üç maddesi karşılanmadı. Bunlar
+bug değil, **eksik teslim** — C.2 planlamasında kapsam sayılır:
+
+| Eksik | Durum | Nereye |
+|---|---|---|
+| Global slot | `generate-global-slot` üretiyor, `generate-gauntlet` **okumuyor**. Slot yalnızca etiket. "Ortak konuşma zemini" ve paylaşım kartı dayanaksız | C.2 |
+| `contextPredicted` | Her zaman `false`. Bağlam tahmin motoru yazılmadı | C.3 |
+| `refreshesRemaining` | Sabit 2. Harcanan hak düşülmüyor, entitlement kontrolü yok | C.2 |
+| Eksen zıtlığı | Yazılmadı — **bilinçli**, Faz F'e ertelendi | F |
+
+## Faz C.0 — üretim öncesi altyapı onarımı
+
+| # | İş | Durum |
+|---|---|---|
+| C.0b | Cron deseni (migration 077), pg_net doğrulaması | ✅ `last_value` 7→24 |
+| C.0c | Kimlik zinciri: `body.user_id` → JWT, `ensureAppUser`, parse-mood 403 | ✅ *(parse-mood deploy'u sürüme bağlı)* |
+| C.0d | Migration 078 + `sync-trending` onarımı | 🔄 **AKTİF** |
+| C.0e | Havuz kalite filtresi (`gauntletCore.ts`) | ⏸ 078 raporundaki sayılarla başlar |
+
+## Faz sırası 🔒 (12.08.2026 — değiştirildi)
+
+```
+C.0d → C.0e → C.7 → C.1 → C.2 → C.3 → C.4 → ...
+```
+
+~~C.1 → C.2 → ... → C.7~~
+
+**C.7 neden öne alındı:** 069'daki `device_id` kolonları, C.0c'de kapattığımız
+`body.user_id` anti-pattern'inin çekirdek döngüdeki tekrarı. Gauntlet ekranını
+kimlik zinciri sağlam olmadan inşa etmek, aynı hatayı daha pahalı bir yerde
+yapmaktır. Doğru mekanizma: Supabase Anonymous Sign-In (gerçek `auth.users`
+satırı + JWT), cihaz takma adı değil.
+
+**C.7 zorunlu kapsamı:** backfill migration'ı. 87 yetim kimlik kendiliğinden
+onarılmayacak — `f44fac2` yalnızca yeni oturumlarda çalışıyor.
 
 ---
 
 ## B.1 — Gauntlet şeması 🔴 PLAN MODU
+
+> 🗄️ ARŞİV — uygulandı, yeniden koşturma.
 
 ```
 ## BAĞLAM
@@ -402,6 +466,8 @@ select table_name from information_schema.tables
 
 ## B.2 — Kilitli sözleşme
 
+> 🗄️ ARŞİV — uygulandı, yeniden koşturma.
+
 ```
 ## BAĞLAM
 Client ↔ backend sözleşmesi. KİLİTLİ olacak: arkadaki algoritma ne kadar
@@ -479,6 +545,8 @@ npm run typecheck → 14
 ---
 
 ## B.3 — generate-gauntlet v0
+
+> 🗄️ ARŞİV — uygulandı, yeniden koşturma.
 
 ```
 ## BAĞLAM
@@ -575,6 +643,8 @@ npm run typecheck:functions → 45'i geçmemeli
 
 ## B.4 — submit-choice
 
+> 🗄️ ARŞİV — uygulandı, yeniden koşturma.
+
 ```
 ## BAĞLAM
 Her turdaki seçimi kaydeden Edge Function.
@@ -648,6 +718,8 @@ select pair_key from duel_impressions limit 5;   → yön bağımsız
 
 ## B.5 — recompute-cinema-dna uyarlaması
 
+> 🗄️ ARŞİV — uygulandı, yeniden koşturma.
+
 ```
 ## BAĞLAM
 cinema_dna artık CACHE. Kaynak: choice_events + watch_feedback.
@@ -698,26 +770,58 @@ Mevcut supabase/functions/recompute-cinema-dna var (053_cinema_dna migration).
 
 ---
 
-## Faz C — Ürün
+## Faz C — Ürün (iş tanımları)
+
+> **⚠️ Bu tablo sırasız.** Faz sırası tek yerde tanımlıdır: BÖLÜM II → "Faz sırası 🔒".
+> Buradaki satır düzeni uygulama sırası DEĞİLDİR.
 
 | # | İş | Not |
 |---|---|---|
 | C.1 | Token katmanı — **159 hardcoded renk** temizliği dahil | `3_DESIGN_OS` §12 |
-| C.2 | Gauntlet ekranı → oynanabilir ürün | `3_DESIGN_OS` §10.1 |
+| C.2 | Gauntlet ekranı → oynanabilir ürün. **B.3 eksik teslimleri kapsam içinde:** global slot okuma + `refreshesRemaining` gerçek düşüm + entitlement | `3_DESIGN_OS` §10.1 · BÖLÜM II |
 | C.2b | Işık sızması backend (`films.dominant_color`, w92, LLM yok) | ✅ onaylı |
 | C.2c | Işık sızması istemci + erişilebilirlik kapatmaları | |
-| C.3 | `ContextBar` | |
-| **C.4** | **"Dün izledin mi?" + izleme sinyali kurtarma** | 🔴 kritik yol — Faz A atlandı |
-| C.5 | Metin paylaşım kartı | Still kullanılmaz |
-| C.6 | Oyun budaması: Spotlight aktif, 6 oyun dondurulur, Roulette/Slot kaldırılır | `app_config.games_enabled` mevcut yapıyı ÖNCE oku |
-| C.7 | Onboarding sıfırlama + anonim oyun (AsyncStorage, SecureStore yok) | |
-| C.8 | Cihaz testi + TestFlight | |
+| C.3 | `ContextBar` + **bağlam tahmin motoru** (`contextPredicted` bugün hep `false`) | |
+| **C.4** | **"Dün izledin mi?" + izleme sinyali kurtarma** | 🔴 kritik yol |
+| C.5 | Metin paylaşım kartı | Still kullanılmaz. ⚠️ Global slot okunmadan dayanaksız → C.2'ye bağımlı |
+| C.6 | Oyun budaması: Spotlight aktif, 6 oyun dondurulur, Roulette/Slot kaldırılır | `app_config.games_enabled` yapısını ÖNCE oku |
+| **C.7** | **Kimlik mimarisi + anonim oyun** | 🔴 C.2'nin ön koşulu — aşağıya bak |
+| C.8 | Cihaz testi + TestFlight | Sürüm kararı: §3.2 |
+
+### C.7 — tanım değişti 🔒 (12.08.2026)
+
+> ~~**C.7:** Onboarding sıfırlama + anonim oyun (AsyncStorage, SecureStore yok)~~
+>
+> **Bu tanım mimari olarak yanlıştı ve geri alındı.** AsyncStorage'da tutulan
+> cihaz takma kimliği, C.0c'de kapattığımız `body.user_id` anti-pattern'inin
+> aynısıdır: kimlik istemcinin beyanından türetiliyor. Kilitli kural (K1) —
+> **kimlik çağrı kanalından türetilir.**
+
+**Yeni C.7 kapsamı:**
+
+| # | İş |
+|---|---|
+| 1 | **Supabase Anonymous Sign-In** — gerçek `auth.users` satırı + JWT. Cihaz takma adı yok |
+| 2 | **069 `device_id` kolonlarının sökülmesi** — `choice_events`, `watch_feedback`, `duel_impressions`. Kolon DROP edilmez, yazma yolu kapatılır ve deprecated işaretlenir |
+| 3 | **Backfill migration'ı — ZORUNLU.** 87 yetim kimlik (`auth.users` var, `public.users` yok, 2026-04-23'ten beri). `f44fac2` yalnızca yeni oturumlarda çalışıyor; kendiliğinden onarım bu 87'ye ulaşmayacak |
+| 4 | `getAppUserId()` 22 çağrı noktasından INSERT yetkisinin alınması (C.0c-5 borcu) |
+| 5 | Anonim → kayıtlı geçişte veri taşıma (`auth.users` satırı korunur, kimlik yükseltilir) |
+| 6 | Onboarding sıfırlama (quiz kaldırma) — tek bu madde eski tanımdan devam ediyor |
+
+**Neden C.2'den önce:** Gauntlet ekranı `choice_events`'e yazar. Kimlik zinciri
+kırıkken yazılan her satır, sonradan hangi kullanıcıya ait olduğu bilinemeyen
+ölü veridir. Cinema DNA'nın kaynağı bu tablo — kirli başlarsa `--full`
+yeniden hesaplama bile kurtaramaz.
 
 ### C.4 neden kritik yol
 
-`watchlist.watched_at` = 0/318 ✅. İzleme bilgisi yalnızca `AsyncStorage: chosy_watched_films`, sunucuya hiç yazılmıyor. Faz A atlandığı için **watched-it rate'in tek kaynağı C.4.** Ertelenirse ikinci kez kör kalırız.
+`watchlist.watched_at` = 0/318 ✅. İzleme bilgisi yalnızca
+`AsyncStorage: chosy_watched_films`, sunucuya hiç yazılmıyor. Faz A atlandığı
+için **watched-it rate'in tek kaynağı C.4.**
 
-C.4 üç iş birden yapar: (a) AsyncStorage → sunucu senkronu, (b) "dün izledin mi?" halkası, (c) `watchlist.watched_source` kolonu (`manual` | `gauntlet_feedback` | `local_sync`).
+C.4 dört iş birden yapar: (a) **63 kör `.update()` denetimi — ilk madde**,
+(b) AsyncStorage → sunucu senkronu, (c) "dün izledin mi?" halkası,
+(d) `watchlist.watched_source` kolonu (`manual` | `gauntlet_feedback` | `local_sync`).
 
 ---
 
@@ -731,20 +835,44 @@ C.4 üç iş birden yapar: (a) AsyncStorage → sunucu senkronu, (b) "dün izled
 
 ## 10. AÇIK BORÇLAR ✅
 
-`docs/TEKNIK_BORC.md`'de kayıtlı:
+`docs/TEKNIK_BORC.md`'de kayıtlı. Öncelik = *ne zaman patlar*, ne kadar büyük değil.
 
-| Kalem | Öncelik |
+### 🔴 Kritik — bloklayıcı
+
+| Kalem | Bloklar |
 |---|---|
-| `send-notifications/index.ts:188` — PromiseLike üzerinde `.catch()`, runtime bug | 🔴 Yüksek |
-| `scripts/` 14 tip hatası — supabase-js jenerik uyuşmazlığı | 🟡 |
-| `supabase/functions` 45 tip hatası (generate-puzzles 19, sync-trending 10, parse-mood 6) | 🟡 |
-| supabase-js iki kanal (esm.sh ×16, jsr ×5) → iki ayrı `SupabaseClient` tipi | 🟠 Yeni fonksiyonlar jsr |
-| `generate-puzzles` `db()` tiplenmemiş → `as never` gerekti | 🟠 `ServiceClient` deseni |
-| `QuickResult:83` ve `ResultCard:72` inline `GameType` union | 🟡 |
-| Spotlight V2 kalıntı tipleri (`SpotlightClue/Option/ClueType` → aslında Detective) | 🟡 |
-| `The Bourne Ultimatum` `imdb_votes` NULL (`imdb_id` de NULL, OMDB anahtarı yok) | 🟢 |
-| archive tier metadata boşlukları (508/506/957) | 🟢 Terfi halinde |
-| 159 hardcoded renk | 🟡 C.1 kapsamı |
+| `webhook_events` tablosu **hiç yok** — BUSINESS_MODEL §10 Kural 3 ihlali. Webhook düşerse "ödedi ama erişemiyor" sessizce oluşur | Faz D |
+| `getAppUserId()` 22 çağrı noktasında hâlâ INSERT yapabiliyor (C.0c-5) | C.7 |
+| 75 `.update()`'in ≥63'ü 0-satır durumunu göremiyor → **sessiz başarı** | C.4 |
+| `device_id` kimlik olarak kullanılamaz (069 şeması) | C.7 |
+
+> ⚠️ **63 kör `.update()` ile C.4 yazılamaz.** C.4 tek gerçek başarı metriğini
+> (watched-it rate) üretiyor. `.update()` 0 satır etkileyip başarı dönerse
+> metrik sessizce sıfır kalır ve bunu **fark etmenin yolu olmaz.** C.4'ün ilk
+> maddesi yazma yolu denetimidir, "dün izledin mi?" halkası değil.
+
+### 🟠 Yüksek
+
+| Kalem |
+|---|
+| `submit-guess` → `recompute-cinema-dna` **403**, 3 haftadır ongoing (C.0c-6) |
+| 401 sınıflandırıcı: `recommendations.ts:732` anon-key fallback + `matchExplanation` cache zehirlenmesi |
+| PostHog Edge'de 3 ayrı isimle okunuyor (`POSTHOG_API_KEY` / `EXPO_PUBLIC_POSTHOG_KEY` / `POSTHOG_HOST`) → tek isme indir |
+| 2026-05-11 haftası **32 kimlik kaybı** — `git log 05-04..05-18` incelenmedi |
+| supabase-js iki kanal (esm.sh ×16, jsr ×5) → iki ayrı `SupabaseClient` tipi |
+| `generate-puzzles` `db()` tiplenmemiş → `as never` gerekti |
+
+### 🟡 Orta
+
+`_shared/sentry.ts` fingerprint iletmiyor · hata kodu→metin eşlemesi iki yerde (`tasteParser.ts` + `errorHelpers.ts`) · `scripts/` 14 tip hatası · `supabase/functions` 42 tip hatası · `QuickResult:83` + `ResultCard:72` inline `GameType` union · Spotlight V2 kalıntı tipleri · **159 hardcoded renk** (C.1 kapsamı)
+
+### 🟢 Düşük
+
+`The Bourne Ultimatum` `imdb_votes` NULL · archive tier metadata boşlukları (508/506/957)
+
+### Kapandı ✅
+
+~~`send-notifications/index.ts:188` PromiseLike `.catch()`~~ · ~~cron desen bozukluğu (077)~~ · ~~RevenueCat fail-open~~ · ~~legacy `eyJhbGci` JWT~~
 
 ---
 
