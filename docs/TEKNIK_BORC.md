@@ -1410,3 +1410,56 @@ hafıza aynı şeyi söylemeli, biri "kapandı" diğeri "onay bekliyor" dememeli
 **Kapanış koşulu:** kod yolu okunup fail-open dalının gerçekten kapandığı
 doğrulanmalı **ve** düzeltme deploy edilmeli. İkisi olmadan bu kalem
 "Kapandı"ya geri dönmez.
+
+---
+
+## 🟠 Vizyon penceresi / yayın erişilebilirliği verisi yok
+
+**Öncelik: yüksek.** 13 Ağu 2026, C.0e ölçümünde doğdu.
+
+`release_date` geçmiş ama evde izlenemeyen **~11 film** havuzda. C.0e'nin 1A
+filtresi yalnızca *gelecek tarihli* filmleri eliyor; sinemada olan ama dijital
+platforma düşmemiş filmler tarih testini geçiyor.
+
+**Neden yüksek öncelik:** C.4 watched-it rate paydasını kirletir. Kullanıcı
+filmi seçiyor, şampiyon ekranına gidiyor, ama film fiziksel olarak
+izlenemiyor → "izlemedim" olarak sayılıyor. **Kill criteria (500 kullanıcıda
+watched-it rate <%20) yanlış tetiklenebilir** — mekanik suçlanır, oysa sorun
+havuzda.
+
+**Çözüm** TMDb `watch/providers` veya JustWatch entegrasyonu gerektirir —
+yeni dış bağımlılık, yeni maliyet. **Faz D affiliate işiyle birlikte
+değerlendirilir**, tek başına açılmaz.
+
+---
+
+## 🟡 0-sentinel taraması yapılmadı
+
+**Öncelik: orta.** 13 Ağu 2026, C.0e BAŞLIK 3 kararının (3B) ön koşulu.
+
+`films` + `film_profiles` + `users` sayısal kolonlarında **kaç kolonun `0`'ı
+"ölçülmedi" anlamında kullandığı bilinmiyor.** C.0e yalnızca `imdb_votes` ve
+`vote_average` çiftini ölçtü; tarama yapılmadı.
+
+Sentinel kuralı bu yüzden **3B** olarak yazıldı (yalnızca ileriye dönük,
+`chosy-conventions` skill'i). **Tarama tamamlanınca kural 3B'den 3A'ya
+(mevcut kod dahil) terfi eder** ve bulunan ihlaller bu dosyaya listelenir.
+
+---
+
+## 🔵 `trending_type` güvenilir ayraç değil
+
+**Öncelik: düşük.** 13 Ağu 2026, C.0e ölçümü.
+
+`films.trending_type` (`'weekly_trending' | 'upcoming'`) filtrelemede
+kullanılabilir görünüyor ama **tutmuyor:**
+
+| kesişim | sayı |
+|---|---|
+| gelecek tarihli 9 filmin `upcoming` OLMAYANI | **3** |
+| tanınırlıksız 20 filmin `upcoming` OLMAYANI | **11** |
+| `trending_type IS NULL` (havuzun geri kalanı) | 1.811 |
+
+**Filtrelemede kullanılmaz.** `release_date` ve `vote_average` doğrudan
+ölçülmeli. Bu kayıt, ileride birinin aynı kestirmeyi denemesini önlemek
+içindir.

@@ -270,6 +270,25 @@ görünür kalsın diye.
 > profilliyor — arada iki saatlik bir pencere var. Havuz o pencerede geçici
 > olarak %100'ün altına düşebilir.
 
+> **⏳ C.0f sonrası yeniden ölçülecek (13 Ağustos 2026, C.0e kararı).**
+> Düello-uygun sayı **1.846**'ya inecek, **21 film** elenecek:
+>
+> | filtre | eler | not |
+> |---|---:|---|
+> | 1A `release_date` | **10** | 9 gelecek tarihli + 1 `release_date IS NULL` (*The Bourne Ultimatum*) |
+> | 2A `recognition_missing` | **20** | tamamı `trending`, tamamı `year=2026` |
+> | **birleşim** | **21** | örtüşme 9 → 10 + 20 − 9 |
+>
+> Havuz toplamı (1.867) **değişmez** — bu filmler `archive`'a taşınmıyor,
+> yalnızca düello seçiminden eleniyor. Yukarıdaki **%100** oranı C.0e öncesi
+> düello-uygunluk tanımına aittir.
+>
+> ⚠️ **Beklenen sayı önce ~1.847 sanılmıştı; doğrusu 1.846.** Hata `release_date
+> IS NULL` olan tek filmin (Bourne) 1A tarafından da elendiğinin atlanmasından
+> geldi. Sayı 13 Ağustos'ta doğrudan ölçüldü — hesapla değil sorguyla:
+> `release_date=not.is.null & release_date=lte.<bugün> & or=(imdb_votes.gt.0,vote_average.gt.0)`
+> → **1.846**.
+
 > **Yöntem notu (13 Ağustos 2026):** Bu sayılar PostgREST üzerinden
 > `Prefer: count=exact` başlığıyla, tier başına ayrı istekle ölçüldü. Düz
 > `select=curation_tier` ile satır çekip istemcide saymak **yanlış sonuç verir** —
@@ -298,11 +317,27 @@ WHERE profile_vector IS NOT NULL
   AND id NOT IN (son 21 gün gösterilenler)
   AND id NOT IN (son 45 gün reddedilenler)
   AND (film_a, film_b) çifti gösterilmemiş
+  AND release_date IS NOT NULL AND release_date <= now()   -- 1A, C.0e
+  AND NOT (recognition_missing)                            -- 2A, C.0e
 ```
+
+> `recognition_missing` = normalizasyon sonrası `imdbVotes === null && voteAverage === null`.
+> Sentinel normalizasyonu (`0 → null`, her iki kolonda) `_shared/gauntletCore.ts`
+> içinde C.0e'den **önce de mevcuttu**; eksik olan eleme adımıydı. C.0e bu 20
+> filmi düello havuzundan çıkarır. Kural veri doğruluğu kuralıdır, `app_config`'e
+> bağlı değildir.
 
 Az aday çıkarsa **sırayla gevşet** (cooldown → tier). Asla boş dönme; gevşetildiyse logla.
 
 ### 6.5 Tanınırlık — yüzdelik, mutlak eşik değil
+
+> ⚠️ **Bu bölüm spesifikasyondur, implementasyon değildir.**
+> 13 Ağustos 2026 doğrulaması: `generate-global-slot` ve
+> `generate-gauntlet` içinde `percent_rank`, `imdb_votes` veya
+> `recognition_*` okuması YOK. Config anahtarları migration 071 ile
+> yazılmış, hesap yazılmamış. Tanınırlık puanlaması **F fazında**
+> implemente edilecek. O güne kadar bu bölüm üzerine davranış
+> çıkarımı yapılmaz.
 
 ⚠️ **Uyarı: `imdb_votes` kolonu kirli.** Kaynak OMDb ✅ (`scripts/lib/omdb-client.ts:101`), ama `sync-trending:214` TMDb `vote_count` yazıyordu ✅. İki farklı metrik aynı kolonda. Trending temizliği yapıldı; kalan kirlilik borç kaydında.
 
