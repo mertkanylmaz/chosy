@@ -49,7 +49,7 @@ Bunlar tip kontrolünün yakalamadığı runtime hatalarıdır.
 ```powershell
 npm run test:founder         # kurucu kabul testleri (5 case)
 npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
-npm run typecheck:functions  # → 42 hata (deno check)
+npm run typecheck:functions  # → 32 hata (deno check)
 npx expo start               # cihaz testi
 supabase db push             # migration deploy
 supabase db diff             # değişiklik kontrolü
