@@ -96,6 +96,7 @@ interface FilmRow {
   original_language: string | null
   imdb_votes: number | null
   vote_average: number | null
+  release_date: string | null
 }
 
 interface PoolRow {
@@ -176,7 +177,47 @@ function rowToCandidate(f: FilmRow): Candidate | null {
 
 const FILM_COLUMNS =
   'id,title,year,runtime,poster_url,director,genres,original_language,' +
-  'imdb_votes,vote_average'
+  'imdb_votes,vote_average,release_date'
+
+// ─── DÜELLO-UYGUNLUK (C.0e) ──────────────────────────────────────────────────
+// Bu üç yardımcı YALNIZCA havuz kurarken (`fetchPool`) uygulanır.
+// `fetchCandidatesByIds` bunları ÇAĞIRMAZ — gerekçe orada yazılı.
+
+/**
+ * 2A — tanınırlık sinyallerinin ikisi de yok.
+ *
+ * `rowToCandidate` normalizasyonundan SONRA çalışır: orada `imdb_votes = 0` ve
+ * `vote_average = 0` zaten `null`a çevrilmiştir. Bu yüzden burada `0`
+ * kontrolü tekrarlanmaz — sentinel kuralı tek yerde, normalizasyonda.
+ */
+function recognitionMissing(c: Candidate): boolean {
+  return c.imdbVotes === null && c.voteAverage === null
+}
+
+/**
+ * 1A — film vizyona girmiş mi.
+ *
+ * `cutoff` istek başında BİR KEZ hesaplanır ve hem PostgREST `.lte()`
+ * koşuluna hem buraya aynı değer olarak geçer. İki ayrı `now()` çağrısı,
+ * gün dönümünde sunucu filtresi ile bellek kontrolünün ayrışmasına yol açar —
+ * dar bir pencere ama sonradan teşhisi zor.
+ */
+function releasedBy(f: FilmRow, cutoff: string): boolean {
+  return f.release_date !== null && f.release_date <= cutoff
+}
+
+/** ADIM 1 düello-uygunluk kapısı: 1A + 2A. */
+function isDuelEligible(f: FilmRow, c: Candidate, cutoff: string): boolean {
+  return releasedBy(f, cutoff) && !recognitionMissing(c)
+}
+
+/**
+ * Düello-uygunluk eşiği: bugünün UTC tarihi (`YYYY-MM-DD`).
+ * `release_date` bir DATE kolonu, karşılaştırma da tarih düzeyinde yapılır.
+ */
+export function duelEligibilityCutoff(): string {
+  return utcDateString()
+}
 
 export function toGauntletFilm(c: Candidate): GauntletFilm {
   // dominantColor opsiyonel ve şu an kaynağı yok: films tablosunda baskın
@@ -213,6 +254,7 @@ async function fetchPool(
   service: SupabaseClient,
   maxRuntime: number,
   tiers: string[],
+  cutoff: string,
 ): Promise<Candidate[]> {
   const rows: PoolRow[] = []
 
@@ -224,6 +266,8 @@ async function fetchPool(
       .not('films.poster_url', 'is', null)
       .not('films.runtime', 'is', null)
       .not('films.year', 'is', null)
+      .not('films.release_date', 'is', null)
+      .lte('films.release_date', cutoff)
       .in('films.curation_tier', tiers)
       .lte('films.runtime', maxRuntime)
       .range(offset, offset + PAGE_SIZE - 1)
@@ -237,11 +281,17 @@ async function fetchPool(
     if (page.length < PAGE_SIZE) break
   }
 
+  // Sunucu tarafı `release_date` koşulu ile buradaki `isDuelEligible` aynı
+  // `cutoff`u kullanır. Çift kontrol kasıtlı: `poster_url`/`runtime`/`year`
+  // de hem sorguda hem `rowToCandidate`'te doğrulanıyor, aynı desen.
+  // `recognition_missing` yalnızca burada elenir — sunucuda ifade edilebilirdi
+  // (`imdb_votes.gt.0,vote_average.gt.0`) ama o, sentinel kuralını ikinci bir
+  // yerde yeniden tanımlamak olurdu.
   const candidates: Candidate[] = []
   for (const row of rows) {
     if (!row.films) continue
     const c = rowToCandidate(row.films)
-    if (c) candidates.push(c)
+    if (c && isDuelEligible(row.films, c, cutoff)) candidates.push(c)
   }
   return candidates
 }
@@ -254,6 +304,16 @@ async function fetchPool(
  * karşılaştırma tarafında durur, ama havuzda BULUNMAZ: bugünün gauntlet'ında
  * gösterildiği için `recentlyShown` onu zaten elemiştir. Havuzdan okumaya
  * çalışmak sessizce `undefined` üretir ve yönetmen/tür kuralı çalışmaz.
+ *
+ * ⚠️ **Düello-uygunluk kapısı (`isDuelEligible`) burada UYGULANMAZ.**
+ * `chosy-conventions` → "Seçim filtresi ile çözümleme yolu ayrıdır": bir film
+ * havuza girmeye uygun olmayabilir, ama bir kez gösterildiyse sonradan
+ * filtreye takılsa bile çözülebilir kalmalıdır. `daily_gauntlets` kalıcıdır;
+ * geçmiş bir gauntlet'in şampiyonu bugünkü filtre kurallarıyla yeniden
+ * değerlendirilmez. Filtre burada uygulanırsa `championFilm()` ve `seen`/
+ * `neither` dalındaki elde-kalan çözümlemesi throw eder — filtre kuralları
+ * her sertleştiğinde geçmiş gauntlet'ler kırılır ve Pro arşiv özelliği
+ * taban aldığı veriyle birlikte çöker.
  */
 export async function fetchCandidatesByIds(
   service: SupabaseClient,
@@ -768,7 +828,18 @@ export async function buildScoredPool(
   const relaxations: string[] = []
   let pool: Candidate[] = []
 
-  const rawPool = await fetchPool(service, maxRuntime, tiers)
+  // C.0e — düello-uygunluk eşiği istek başında BİR KEZ. Aşağıdaki iki
+  // `fetchPool` çağrısı da aynı değeri kullanır; ayrı `now()` hesaplanmaz.
+  const cutoff = duelEligibilityCutoff()
+
+  const rawPool = await fetchPool(service, maxRuntime, tiers, cutoff)
+  logInfo(`${logPrefix}_pool_eligible`, {
+    user_id: appUserId,
+    pool_size: rawPool.length,
+    cutoff,
+    tiers,
+    max_runtime: maxRuntime,
+  })
   pool = rawPool.filter(
     (c) =>
       !exclusions.watched.has(c.id) &&
@@ -804,7 +875,7 @@ export async function buildScoredPool(
         relaxed_tiers: relaxedTiers,
       },
     })
-    const relaxedPool = await fetchPool(service, maxRuntime, relaxedTiers)
+    const relaxedPool = await fetchPool(service, maxRuntime, relaxedTiers, cutoff)
     pool = relaxedPool.filter((c) => !exclusions.watched.has(c.id))
   }
 
