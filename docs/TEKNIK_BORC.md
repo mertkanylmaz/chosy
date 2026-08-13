@@ -1347,6 +1347,19 @@ ilk andır.
 - [ ] **3. `profile-missing-films` 08:00'de çalışıp yeni filmleri yakaladı mı?**
       Beklenen: aktif tier'da `profile_vector IS NULL` sayısı **0**.
       13 Ağu ölçümü 0/1.867 idi.
+- [ ] **4. `weekly-trending-sync` sonrası yeni giren filmler `recognition_missing`
+      filtresine takılıyor mu — havuz sayısı beklenmedik şekilde artmadı mı?**
+      Referans: **1.846** (`any`). Yeni trending filmler `vote_average = 0` ve
+      `imdb_votes IS NULL` ile girer, yani C.0e filtresi (commit `970e262`)
+      onları elemeli. Düello-uygun sayı 1.846'nın **belirgin üstüne çıktıysa**
+      filtre taze girenleri yakalamıyor demektir → DUR.
+
+> **17 Ağustos artık İKİ şeyi birden test ediyor** (13 Ağu 2026, C.0e sonrası):
+> (a) cron zincirinin kendi kendine çalıştığını, (b) C.0e sert filtresinin
+> taze girenleri doğru elediğini. `weekly-trending-sync` tam olarak filtrenin
+> hedeflediği türden film ekliyor — yeni trending, oyu henüz oluşmamış. Bu iki
+> testi ayırmayın: havuz sayısı beklenmedik çıkarsa hangisinin bozulduğu
+> (cron mu, filtre mi) ayrıca teşhis edilmeli.
 
 ### Neden bu kayıt var
 
@@ -1444,6 +1457,27 @@ değerlendirilir**, tek başına açılmaz.
 Sentinel kuralı bu yüzden **3B** olarak yazıldı (yalnızca ileriye dönük,
 `chosy-conventions` skill'i). **Tarama tamamlanınca kural 3B'den 3A'ya
 (mevcut kod dahil) terfi eder** ve bulunan ihlaller bu dosyaya listelenir.
+
+---
+
+## 🔵 C.0f son maddesi — §6.2 dipnotu ölçülmüş sayılarla güncellenecek
+
+**Öncelik: düşük ama unutulmamalı.** 13 Ağu 2026, C.0e GÖREV 2 sonrası.
+
+`1_CHOSY_PRODUCT_OS.md` §6.2 dipnotu hâlâ **beklenti** dilinde:
+*"C.0f sonrası yeniden ölçülecek: 1.846"*. Sayı 13 Ağustos'ta **fiilen
+üretildi** (gerçek `buildScoredPool`, commit `970e262` doğrulaması) — dipnot
+ölçülmüş dile çevrilmeli:
+
+> 13 Ağustos 2026'da ölçüldü: **1.846** (`any`), **1.655** (`medium`),
+> **778** (`short`).
+
+**Üç sayı birden yazılacak.** `duration` kırılımı ileride havuz tükenmesi
+tartışmasında (RİSK #7) referans olacak: `short` bağlamında havuz zaten
+778'e iniyor, yani gevşetme merdiveni en çok orada baskı altında.
+
+Kod commit'ine doküman karıştırılmadığı için bu turda yapılmadı (iki commit
+disiplini). C.0f'nin **son maddesi**.
 
 ---
 
