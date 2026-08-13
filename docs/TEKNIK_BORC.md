@@ -1222,3 +1222,50 @@ hâlâ duruyordu. Gerçek TTL ~24 saat.
 Pencere sandığımızdan geniş, ama **"hemen oku" kuralı korunuyor**: tetikleme
 ile okuma arasına başka iş girerse hangi satırın hangi tetiklemeye ait olduğu
 karışır, `id` sıralaması tek başına ayırt etmeye yetmez.
+
+---
+
+## 🟡 `dbRowToRawFilm` iki ayrı kopya — CLI ve Edge Function
+
+**Öncelik: orta.** 13 Ağu 2026, GATE 3 ile birlikte doğdu.
+
+DB satırı → `RawFilmJSON` dönüşümü hem `scripts/ai-profile-films.ts` hem
+`supabase/functions/profile-missing-films/index.ts` içinde **ayrı yazılı**.
+Ayrışırsa aynı film için iki farklı prompt girdisi doğar — yani aynı film
+CLI'den ve cron'dan profillenince farklı vektör alabilir.
+
+Prompt, doğrulama, `CLAUDE_MODEL` ve `PROFILING_METHOD` GATE 3'te
+`services/filmProfilePrompt.ts` ortak modülüne çıkarıldı; bu dönüşüm
+fonksiyonu ekstraksiyon kapsamı dışında kaldığı için geride kaldı.
+
+**Yapılacak:** `dbRowToRawFilm` de `filmProfilePrompt.ts`'e taşınmalı. Tek
+engel, iki tarafın satır şekillerinin birebir aynı olmaması: CLI supabase-js
+üzerinden okuyor (`release_date` string), Edge Function ham SQL üzerinden
+(`release_date` Date nesnesi olabiliyor). Ortak imza bu farkı normalize
+etmeli.
+
+---
+
+## 🔴 `recommend/index.ts:338-346` — aynı SCRAM/ASCII bug'ı
+
+**Öncelik: yüksek (ama kapsamı belirsiz).** 13 Ağu 2026'da
+`profile-missing-films` yazılırken keşfedildi.
+
+Aynı desen: ham `SUPABASE_DB_URL` doğrudan `new Client(dbUrl)`'a veriliyor,
+decode yok. `deno-postgres@0.17` SCRAM uygulaması kullanıcı adı/parolada
+ASCII dışı karakter kabul etmiyor ve bağlantı
+`"scram username/password is currently limited to safe ascii characters"`
+ile düşüyor. `profile-missing-films` canlı testinde birebir bu hata alındı;
+`SUPABASE_DB_URL` kullanan yalnızca bu iki fonksiyon var.
+
+Yani `recommend` canlıda büyük olasılıkla **her çağrıda 500 veriyor** ve bu
+fark edilmemiş — fonksiyon mood-search döneminden kalma, güncel çağrı durumu
+bilinmiyor.
+
+**Bu turda BİLEREK dokunulmadı** (tur kapsamı GATE 3). Ayrı turda:
+- (a) `recommend` hâlâ çağrılıyor mu, hangi ekrandan — doğrula
+- (b) kullanılıyorsa B/D/E'den biriyle düzelt — **A (elle decode) 13 Ağu'da
+  `profile-missing-films`'te denendi ve BAŞARISIZ oldu**: parola gerçekten
+  ASCII dışı karakter taşıyor, SASLprep eksikliği sürücü sınırı. Çalışan
+  çözüm: PostgREST/supabase-js'e geçmek (`profile-missing-films` bunu yaptı)
+- (c) kullanılmıyorsa C.6 kapsamında dondurma listesine ekle
