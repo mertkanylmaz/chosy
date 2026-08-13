@@ -240,17 +240,41 @@ Zayıf öneriyi mazur gösterir · ilerleme yaratır · "sistem beni öğreniyor
 
 ### 6.2 Gerçek havuz ✅
 
+**13 Ağustos 2026'da yeniden ölçüldü** (C.0d ölçüm turu — kapanış 17 Ağustos'a
+bağlı, bkz. 4_OS "C.0d DURUM ÖZETİ"). Tüm satırlar güncellendi;
+eski değerler ~~üstü çizili~~ bırakıldı — sayıların hangi yönde hareket ettiği
+görünür kalsın diye.
+
 | Katman | Film | Not |
 |---|---|---|
-| archive | 1.528 | Migration 050 ile eşleştirmeden dışlanıyor |
-| extended | 948 | |
-| core | 860 | |
-| trending | 58 | |
-| **Toplam** | **3.394** | |
-| **Öneri havuzu** | **1.866** | archive hariç |
-| **Düello-uygun** | **1.865** (%99,9) | tüm alanlar dolu + profile_vector var |
+| archive | ~~1.528~~ → **1.537** | Migration 050 ile eşleştirmeden dışlanıyor |
+| extended | ~~948~~ → **949** | |
+| core | ~~860~~ → **862** | |
+| trending | ~~58~~ → **56** | 079 tier restorasyonu + 081 sonrası gerçek değer |
+| **Toplam** | ~~**3.394**~~ → **3.404** | |
+| **Öneri havuzu** | ~~**1.866**~~ → **1.867** | archive hariç |
+| **Düello-uygun** | ~~**1.865** (%99,9)~~ → **1.867 (%100)** | tüm alanlar dolu + profile_vector var |
 
 `profile_vector` NULL: **0** ✅ (84 film 5 Ağustos'ta profillendi, $0,163)
+
+> **13 Ağustos 2026 — düello-uygunluk %99,9'dan %100'e çıktı.** Eski satır
+> "1.865/1.866" diyordu; tek eksik film artık yok. Ölçüm üç bağımsız sorguyla
+> doğrulandı: aktif tier'daki 1.867 filmin **tamamının** `film_profiles` satırı
+> var, hiçbirinde `profile_vector` NULL değil, hiçbirinde `poster_url` NULL
+> değil. Sebep: GATE 3 (migration 080, commit `f1e0163`) `profile-missing-films`
+> cron'unu devreye aldı — vektörsüz film artık havuzda birikmiyor, haftalık
+> kapatılıyor.
+>
+> ⚠️ Bu **%100 kalıcı bir garanti değil, o günkü ölçüm.** `weekly-trending-sync`
+> Pazartesi 06:00 UTC'de yeni film ekliyor, `profile-missing-films` 08:00 UTC'de
+> profilliyor — arada iki saatlik bir pencere var. Havuz o pencerede geçici
+> olarak %100'ün altına düşebilir.
+
+> **Yöntem notu (13 Ağustos 2026):** Bu sayılar PostgREST üzerinden
+> `Prefer: count=exact` başlığıyla, tier başına ayrı istekle ölçüldü. Düz
+> `select=curation_tier` ile satır çekip istemcide saymak **yanlış sonuç verir** —
+> PostgREST varsayılan `max-rows` sınırı 1000'dir ve sessizce keser. İlk deneme
+> bu tuzağa düştü (toplam 3.404 yerine 1.000 gösterdi).
 
 ### 6.3 Boru hattı
 
@@ -423,9 +447,24 @@ Aktivasyon %70+ · D1 %40+ · D7 %25+ · D30 %15+ · haftalık tamamlama ≥4/7 
 
 ### 8.6 İstatistiksel gerçeklik
 
-Mevcut veri ✅: `users` 135 · `game_scores` **12** · `mood_searches` 49 · `swipes` 0
+Mevcut veri ✅: `users` ~~135~~ → **139** · `game_scores` **12** · `mood_searches` ~~49~~ → **56** · `swipes` 0
 
-> **135 kullanıcıda D7 kohortu gürültüdür.** Retention gate'leri **min 400 aktif kohorta** bağlı. Altında proxy: D1 + 2. oturum dönüşü. A/B testleri 1.000+ kullanıcıdan önce yapılmaz.
+> **13 Ağustos 2026'da yeniden ölçüldü.** `users` +4 (beklenen organik büyüme),
+> `mood_searches` +7. `mood_searches` burada **toplam** tanımıyla sayılır —
+> 2_BUSINESS_MODEL §2'de 12 Ağustos'ta aynı kalem toplam tanımıyla 49→57
+> yapılmıştı, bu satır o tanımla hizalanıyor.
+>
+> ⚠️ **90 günlük pencere farklı bir sayıdır (13 Ağustos ölçümü: 39)** ve bu
+> satırda kullanılmaz. İki tanım karıştırılırsa metrik ters yönde okunur:
+> toplam artarken 90-günlük düşüyor.
+>
+> ⚠️ `game_scores` (12) ve `swipes` (0) bu turda **yeniden ölçülmedi** — 5
+> Ağustos değerleri olduğu gibi duruyor. Ölçülmemiş sayı güncellenmez.
+
+> **139 kullanıcıda D7 kohortu gürültüdür.** Retention gate'leri **min 400 aktif kohorta** bağlı. Altında proxy: D1 + 2. oturum dönüşü. A/B testleri 1.000+ kullanıcıdan önce yapılmaz.
+>
+> ~~135 kullanıcıda~~ → 139 (13 Ağustos 2026). Eşiğe uzaklık anlamlı ölçüde
+> değişmedi; sonuç aynı: kohort analizi hâlâ yapılamaz.
 
 ---
 

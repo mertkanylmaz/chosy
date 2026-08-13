@@ -26,15 +26,21 @@ Dosyalar: `enrich-films.ts`, `seed-database.ts`, `ai-profile-films.ts`,
 değiştirebilir ve şu an o riski almaya değmez. supabase-js sürüm yükseltmesiyle
 birlikte ele alınacak.
 
-### `supabase/functions` — 42 hata
+### `supabase/functions` — ~~42~~ → **32** hata
 
 `npm run typecheck:functions` (Deno 2.9.4, `deno check **/index.ts`).
 
-> **Baseline 45 → 42** (8 Ağu 2026'da yeniden ölçüldü, 9 Ağu C.0b kapanışında
-> teyit edildi). 45 değeri 5 Ağu ölçümüydü ve eskimişti. Aşağıdaki kod kırılımı
-> hâlâ 5 Ağu'nun kırılımıdır ve toplamı 45 verir — yeniden sayılmadı, çünkü
-> ölçüm aracının çıktısı (`Found 42 errors.`) tek doğruluk kaynağı. Kırılım
-> tabloya değil, ihtiyaç anında komutun kendisine bakılarak alınmalı.
+> **Baseline geçmişi: 45 (5 Ağu) → 42 (8 Ağu) → 32 (13 Ağu 2026).**
+> 45 → 42 adımı 8 Ağu'da ölçüldü, 9 Ağu C.0b kapanışında teyit edildi.
+> **42 → 32 adımı 13 Ağu 2026'da CTO onayıyla güncellendi**; ham çıktı
+> `Found 32 errors.`, iki bağımsız koşumda teyitli. Düşüş 13 Ağu turunda
+> olmadı — daha önceki bir turda gerçekleşmiş ve yalnızca kök `CLAUDE.md`'ye
+> yansıtılmıştı; bu tur belgeleri hizaladı.
+>
+> ⚠️ **Aşağıdaki kod kırılımı ESKİDİR — toplamı 43 verir, güncel 32 değil.**
+> 5 Ağu'nun kırılımıdır ve iki baseline güncellemesi boyunca yeniden sayılmadı.
+> Tek doğruluk kaynağı ölçüm aracının çıktısıdır (`Found 32 errors.`), bu tablo
+> değil. Kırılım gerektiğinde komutun kendisi çalıştırılarak alınmalı.
 
 | Kod | Adet | Ne demek |
 |---|---:|---|
@@ -142,7 +148,8 @@ Görünen etkiler:
 
 `insert()` overload'u bu durumu kazara kurtarıyor, `upsert()` kurtarmıyor;
 onarım yolu (`?force=1`) eklenirken cast'siz hâli baseline'ı 45 → 46'ya
-çıkarıyordu.
+çıkarıyordu. *(O tarihteki baseline 45'ti; bugün 32 — bkz. yukarıdaki baseline
+geçmişi. Bu satır tarihsel anlatıdır, güncel eşik değildir.)*
 
 **Çözüm — `winback-sequencer/index.ts:100` deseni:**
 
@@ -190,10 +197,15 @@ adlandırılacak.
 | Komut | Beklenen | Durum |
 |---|---|---|
 | `npm run typecheck` | tam **14** hata, hepsi `scripts/` altında | ✅ |
-| `npm run typecheck:functions` | **45** — düşüş hedefli değil, regresyon bekçisi | ✅ |
+| `npm run typecheck:functions` | ~~**45**~~ → **32** — düşüş hedefli değil, regresyon bekçisi | ✅ |
 
 `typecheck` 14'ü aşarsa veya `scripts/` dışında hata çıkarsa **dur**.
 Sıfır hedefi bu sprintte yok.
+
+> **13 Ağustos 2026 — `typecheck:functions` baseline'ı ~~45~~ → 32.** CTO
+> onaylı kasıtlı güncelleme. Ham çıktı: `Found 32 errors.` (iki bağımsız
+> koşum). Bu dosya ile `docs/os/4_CHOSY_CLAUDE_CODE_OS.md`'nin altı yeri ve
+> kök `CLAUDE.md` aynı turda hizalandı; başka yerde eski değer kalmadı.
 
 ---
 
@@ -1269,3 +1281,132 @@ bilinmiyor.
   ASCII dışı karakter taşıyor, SASLprep eksikliği sürücü sınırı. Çalışan
   çözüm: PostgREST/supabase-js'e geçmek (`profile-missing-films` bunu yaptı)
 - (c) kullanılmıyorsa C.6 kapsamında dondurma listesine ekle
+
+---
+
+## 🔵 `cron_job_status()` — `command` kolonu bilerek dışarıda
+
+**Öncelik: düşük.** 13 Ağu 2026.
+
+`cron_job_status()` (079'da migration takibine alındı) `jobid, jobname,
+schedule, active` döndürüyor; `command` kolonunu **bilerek** dışarıda
+bırakıyor. 079'daki gerekçe: sır sızıntısı riski.
+
+13 Ağu'da `weekly-trending-sync` açma kontrolü sırasında doğrulandı ki
+`command` içinde açık sır **yok** — Vault'a yalnızca isimle başvuruluyor
+(`SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name =
+'cron_service_role_key'`) ve değer çalışma anında okunuyor. Bu, 077'nin
+bilinçli tasarımıydı. Yani **sızıntı gerekçesi zayıfladı.**
+
+Yine de eklenmedi, iki sebeple:
+1. Bu fonksiyon bir teşhis aracı, ürün yüzeyi değil — kapsamı dar tutmak
+   kendi başına bir değer.
+2. Dashboard SQL Editor'dan manuel erişim hâlâ mümkün; ihtiyaç istisnai.
+
+**Yeniden değerlendirme koşulu:** tüm erişim yolları tükenirse (PostgREST
+`cron` şemasını göstermiyor · Docker yok · doğrudan Postgres yok ·
+deno-postgres SCRAM/ASCII engeline takılıyor) ve `command` okumaya düzenli
+ihtiyaç doğarsa.
+
+---
+
+## 🔵 Kök `CLAUDE.md` ile `docs/os/` arasında senkron borcu
+
+**Öncelik: düşük.** 13 Ağu 2026.
+
+CLAUDE.md (kök) iki hata taşıyor: `dimensions_json` `films`'te değil
+(`film_profiles`'ta), migration numarası 076 yazıyor (gerçek 081). `docs/os/`
+turu 13 Ağustos'ta bunları düzeltti, kök CLAUDE.md kapsam dışı bırakıldı —
+ayrı turda senkronlanmalı.
+
+---
+
+## ⏳ DUR ve DOĞRULA — 17 Ağustos 2026, ilk otomatik cron koşumu
+
+**Öncelik: yüksek. Tarih: 17 Ağustos 2026 (Pazartesi).** 13 Ağu 2026'da açıldı.
+
+**C.0d bu doğrulama yapılmadan KAPANMAZ.** `weekly-trending-sync` 081 ile
+`active=true` yapıldı ama **hiç otomatik koşmadı** — bugüne kadarki tüm
+doğrulamalar elle tetiklendi. 17 Ağustos, zincirin kendi kendine çalıştığı
+ilk andır.
+
+| saat (UTC) | job | ne yapar |
+|---|---|---|
+| **06:00** | `weekly-trending-sync` (jobid 6) | `sync-trending` fonksiyonunu çağırır, yeni trending filmleri ekler |
+| **08:00** | `profile-missing-films` (jobid 18) | Vektörsüz kalan yeni filmleri profiller |
+
+### Kontrol listesi — üçü de işaretlenmeden C.0d kapanmaz
+
+- [ ] **1. `films.curation_tier` dağılımı beklenmedik şekilde kaymadı mı?**
+      13 Ağu referansı: `core 862 · extended 949 · trending 56 · archive 1.537`
+      (toplam 3.404). Ölçüm yöntemi: PostgREST `Prefer: count=exact`, tier
+      başına ayrı istek — düz satır çekip saymak `max-rows=1000` yüzünden
+      yanlış sonuç verir.
+- [ ] **2. `pre_trending_tier` doğru çalıştı mı?** Yeni trending filmler için
+      mandal kuruldu mu — 079'un restore ettiği hasarın tekrarı var mı.
+- [ ] **3. `profile-missing-films` 08:00'de çalışıp yeni filmleri yakaladı mı?**
+      Beklenen: aktif tier'da `profile_vector IS NULL` sayısı **0**.
+      13 Ağu ölçümü 0/1.867 idi.
+
+### Neden bu kayıt var
+
+13 Ağustos'ta bu iş yalnızca `4_CHOSY_CLAUDE_CODE_OS.md` metninde bir **uyarı
+cümlesi** olarak duruyordu — kimsenin takip edeceği bir checklist item değildi.
+Takip edilebilir bir kalem olmadan üç gün sonra unutulur ve "muhtemelen
+çalışmıştır" varsayımıyla sessizce kapanır. Bu tam olarak önlemeye çalıştığımız
+şeydir: doğrulanmamış bir olayın doğrulanmış gibi kaydedilmesi.
+
+**Koşum sonrası:** üç madde de yeşilse C.0d kapanabilir (RevenueCat kalemi
+hariç — o ayrı, bkz. aşağıdaki kayıt). Herhangi biri kırmızıysa **C.0e
+başlamaz.**
+
+---
+
+## 🔵 `weekly-trending-sync` / `sync-trending` isim uyumsuzluğu
+
+**Öncelik: düşük — kozmetik, C.0e'yi bloklamaz.** 13 Ağu 2026.
+
+Cron job'un adı `weekly-trending-sync` (jobid 6, migration 049'da yaratıldı),
+çağırdığı Edge Function'ın slug'ı `sync-trending`
+(`supabase/functions/sync-trending/`). **İkisi aynı işin iki adı**, farklı
+şeyler değil — job'un `command`'ı `…/functions/v1/sync-trending` URL'ini
+çağırıyor.
+
+Kafa karışıklığı gerçek: 13 Ağustos'ta CTO incelemesinde "bunlar iki farklı
+şey mi, migration numarası hangisi" sorusu doğdu. Cevap: tek iş, ve job 049'da
+yaratıldı — 081 yalnızca `active=true` yaptı.
+
+**Yapılacak:** ya job yeniden adlandırılır (`cron.unschedule` + `cron.schedule`,
+jobid değişir — 081'deki jobid=6 sabiti kırılır, dikkat), ya da fonksiyon slug'ı
+değişir (deploy gerektirir, cron `command`'ı da güncellenmeli). İkisi de
+migration ister. Aceleye gerek yok; **çözülene kadar bu kayıt referans olsun.**
+
+---
+
+## 🟠 RevenueCat webhook fail-open — "Kapandı"dan geri alındı
+
+**Öncelik: yüksek.** 13 Ağu 2026'da yeniden açıldı.
+
+`4_CHOSY_CLAUDE_CODE_OS.md` §10'da bu kalem **"Kapandı ✅"** listesinde
+duruyordu. 13 Ağustos C.0d belge turunda seçenek **(a)** kararıyla oradan
+çıkarıldı ve 🟠 Yüksek'e taşındı.
+
+**Sorun:** webhook secret yokken auth atlanıyor (fail-open). İsim uyuşmazlığı
+bu yolu bir süre canlıda aktif hale getirmişti.
+
+**Neden hâlâ açık — üç sebep:**
+1. **Kod düzeltmesi yazıldı ama CTO onayı bekliyor.** Onaysız deploy edilmedi,
+   dolayısıyla canlıda fail-open yolu kapanmış **değil**.
+2. §3.2 sürüm kararı gereği düzeltme App Store sürümüne kadar deploy
+   edilmiyor.
+3. **Hiçbir turda kod yolu yeniden ölçülmedi** — 13 Ağustos C.0d turunun
+   kapsamı `docs/os/` ile sınırlıydı, kod okunmadı.
+
+**Bağlı kayıt:** `MEMORY.md` → `project_revenuecat_webhook_fail_open.md`
+("secret yokken auth atlanıyor, isim uyuşmazlığı bunu canlı yapmıştı; kod
+düzeltmesi onay bekliyor"). İki kayıt bilerek birbirine bağlandı — belge ve
+hafıza aynı şeyi söylemeli, biri "kapandı" diğeri "onay bekliyor" dememeli.
+
+**Kapanış koşulu:** kod yolu okunup fail-open dalının gerçekten kapandığı
+doğrulanmalı **ve** düzeltme deploy edilmeli. İkisi olmadan bu kalem
+"Kapandı"ya geri dönmez.

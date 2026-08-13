@@ -48,22 +48,56 @@ Expo **~54.0.34** · React Native **0.81.5** · Reanimated ~4.1.1 · expo-router
 | `films.backdrop_url` | — |
 | `films.imdb_votes` (OMDb kaynaklı) · `vote_average` | ~~`vote_count`~~ |
 | `films.title` (TMDb `en-US` zorlanmış) · `tr_title` | — |
-| `films.country text[]` · `genres text[]` · `dimensions_json` · `metadata_json` | — |
+| `films.country text[]` · `genres text[]` · `metadata_json` | ~~`films.dimensions_json`~~ |
+| `film_profiles.dimensions_json` · `film_profiles.profile_vector` | Bu ikisi `films`'te DEĞİL |
+| `films.tmdb_vote_count` (TMDb kaynaklı, `imdb_votes`'tan ayrı kolon) | — |
 | İzlenmiş film → `watchlist.watched_at` | Ayrı tablo yok |
 | Oyun temaları → `constants/gameThemes.ts` | ~~`gameTokens.ts`~~ |
 | Oyun kabuğu → `GameShell` | ~~`GameScreenShell`~~ |
 
+> **13 Ağustos 2026 düzeltmesi — `dimensions_json` yer değiştirmedi, tablo baştan yanlıştı.**
+> Canlı şema PostgREST kolon probu ile doğrulandı: `films.dimensions_json` **YOK**,
+> `film_profiles.dimensions_json` **VAR**. Bu satır `films.*` grubunun içinde
+> yazıldığı için okuyanı `films`'te sanmaya itiyordu. `profile_vector` zaten
+> `film_profiles`'ta — iki kolon aynı tabloda, birlikte anılıyor.
+>
+> ⚠️ **Aynı hata kök `CLAUDE.md`'nin "Şema notları" bölümünde de var**
+> ("`films` kolonları: … `dimensions_json`"). Bu turun kapsamı `docs/os/` ile
+> sınırlı olduğu için oraya dokunulmadı — **ayrı turda düzeltilmeli.**
+>
+> `tmdb_vote_count` ölçümde çıktı ve belgede hiç geçmiyordu. `imdb_votes`
+> kirliliğiyle (OMDb ve TMDb iki farklı metrik aynı kolonda) doğrudan ilgili
+> olduğu için eklendi.
+
 ### 1.4 Migration
 
-En yüksek: **077** (`077_cron_pattern_repair.sql`, 12.08.2026 doğrulandı).
-Yeni migration **078**'den başlar. Yine de eklemeden önce klasörü listele.
+En yüksek: ~~**077** (`077_cron_pattern_repair.sql`, 12.08.2026)~~ →
+**081** (`081_activate_weekly_trending_sync.sql`, **13.08.2026** doğrulandı).
+Yeni migration **082**'den başlar. Yine de eklemeden önce klasörü listele.
+
+> **13 Ağustos 2026:** C.0d dört migration üretti (078-081, ayrıntı → "C.0d
+> DURUM ÖZETİ ⏳ KOŞULLU"). `supabase migration list` local/remote **081'e
+> kadar tam senkron**, sarkan migration yok.
+>
+> ⚠️ Kök `CLAUDE.md` hâlâ "En yüksek mevcut numara **076**" diyor — iki tur
+> geride. Kapsam dışı, ayrı turda düzeltilmeli.
 
 ### 1.5 Gate'ler
 
 ```powershell
 npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
-npm run typecheck:functions  # → 42 hata (deno check, düşüş hedefli değil)
+npm run typecheck:functions  # → 32 hata (deno check, düşüş hedefli değil)
 ```
+
+> **13 Ağustos 2026 senkronu: ~~42~~ → 32.** Bu düşüş bu turda olmadı — daha
+> önceki bir turda gerçekleşmiş ve kök `CLAUDE.md`'ye 32 olarak yazılmıştı; bu
+> dosya güncellenmeyi kaçırmış. 13 Ağustos'ta `npm run typecheck:functions`
+> canlı koşuldu, çıktı **"Found 32 errors"**. İki dosya artık hizalı.
+>
+> **`npm run typecheck` → 14 doğrulandı**, hepsi `scripts/` altında:
+> `seed-database.ts` 6 · `enrich-films.ts` 3 · `ai-profile-films.ts` 1 ·
+> `enrich-imdb-ratings.ts` 1 · `verify-ai-profiles.ts` 1 · `verify-db-state.ts` 1.
+> Regresyon yok.
 
 ⚠️ **Sapma varsa dur.** 14'ten fazlaysa veya `scripts/` dışında hata varsa yeni regresyon vardır.
 
@@ -147,6 +181,31 @@ Sonuçları — bunlar regresyon değil, **beklenen davranış:**
 | 87 yetim kimlik onarılmıyor | `f44fac2` yalnızca TestFlight'ta. C.7 backfill'ine kadar böyle kalır |
 | `parse-mood` 403 deploy'u ⏸ | Kod hazır, sürümle birlikte gidecek (§3 kural 7) |
 | Sentry alert'leri sessiz | **"Veri yok" ≠ "sorun yok."** Sessizliği doğrulama sayma |
+
+### 3.3 PowerShell'den PostgREST/RPC çağrısı ⚠️ (13.08.2026)
+
+**Her `Invoke-WebRequest` çağrısına `-UserAgent 'chosy-cli/1.0'` ekle.**
+
+Varsayılan PowerShell User-Agent'ı (`Mozilla/5.0 … WindowsPowerShell/5.1`)
+tarayıcı gibi görünüyor ve Supabase'in secret-key koruması devreye giriyor:
+
+```
+Forbidden use of secret API key in browser
+```
+
+Bu **yanlış alarmdır** — anahtar geçerli, izin doğru, sorun yalnızca User-Agent.
+Hata metni anahtarı suçladığı için tur kaybettirir: 13 Ağustos'ta
+`cron_job_status()` çağrılırken tam olarak bu yaşandı ve `.env`'deki iki anahtar
+kuşağı (`sb_secret_` vs legacy JWT) boş yere şüpheli sanıldı.
+
+**Bilinen PowerShell 5.1 tuzakları — aynı yol üzerinde:**
+
+| Tuzak | Belirti | Çözüm |
+|---|---|---|
+| `Range` başlığı | `'Range' üst bilgisi uygun özellik veya metot kullanılarak değiştirilmelidir` | Başlığı kullanma; `Prefer: count=exact` + `&limit=1` yeterli, sayı `Content-Range` yanıt başlığından okunur |
+| `max-rows=1000` | Satır çekip istemcide saymak sessizce yanlış sonuç verir | Toplam için **her zaman** `Prefer: count=exact` |
+| `information_schema` | PostgREST göstermiyor | Kolon varlığı `?select=<kolon>&limit=1` probuyla ölçülür (200 = var, 400 = yok) |
+| `cron` şeması | PostgREST göstermiyor | `cron_job_status()` RPC'si (079) üzerinden |
 
 ---
 
@@ -277,9 +336,18 @@ Keşif işleri için subagent kullan — kendi context'inde okur, sana özet dö
 ```powershell
 npm run test:founder
 npm run typecheck            # → 14
-npm run typecheck:functions  # → 45
+npm run typecheck:functions  # → 32   (13 Ağu 2026'da ~~45~~'ten güncellendi)
 git status                   # → temiz
 ```
+
+> **13 Ağustos 2026 — baseline ~~45~~ → 32, kasıtlı güncelleme.** Bu bir sessiz
+> düşüş değil: `npm run typecheck:functions` iki bağımsız koşumda `Found 32
+> errors.` verdi. Düşüş bu turda olmadı, daha önceki bir turda gerçekleşti ve
+> belgeye yansıtılmamıştı. Değer CTO onayıyla güncellendi (13 Ağustos 2026).
+>
+> ⚠️ Bu dosya güncellemeden önce **üç farklı sayı** taşıyordu: §1.5'te 42,
+> burada ve B.3/B.4 prompt bloklarında 45, gerçek 32. Altı yerin tamamı aynı
+> turda hizalandı — biri güncellenip diğeri bırakılırsa tutarsızlık geri gelir.
 
 Ayrıca (Claude Code yapamaz, kurucuya sorulur): **Anthropic kredi durumu** · Sentry 7 günlük hata oranı.
 
@@ -624,7 +692,7 @@ archive (1528) migration 050 ile zaten dışlanıyor.
 
 ## DOĞRULAMA
 supabase functions deploy generate-gauntlet     ← DEPLOY İÇİN ONAY İSTE
-npm run typecheck:functions → 45'i geçmemeli
+npm run typecheck:functions → 32'yi geçmemeli   (~~45~~, 13 Ağu 2026)
 
 10 test çağrısı (3 farklı bağlam):
 → 4 film · 4 farklı yönetmen · ≥1 film <110dk · ≥1 film >130dk
@@ -634,7 +702,7 @@ npm run typecheck:functions → 45'i geçmemeli
 - 10 çağrıda çeşitlilik kuralları kaç kez gevşetildi
 - Ortalama aday havuzu (filtre sonrası)
 - En sık ihlal edilen kural
-- typecheck:functions kaç (45'ten artmamalı)
+- typecheck:functions kaç (32'den artmamalı — ~~45~~, 13 Ağu 2026)
 ```
 
 **🚦 GATE B.3:** 10 test çağrısı CTO incelemesinden geçmeden B.4'e geçilmez.
@@ -652,8 +720,9 @@ Mevcut submit-guess'i desen olarak oku (jsr değil esm.sh kullanıyor —
 YENİ fonksiyon jsr kullanacak).
 
 ## GÖREV
-0. Önce baseline doğrula: npm run typecheck:functions çalıştır, 45 olduğunu
+0. Önce baseline doğrula: npm run typecheck:functions çalıştır, 32 olduğunu
    teyit et ve raporla. types/gauntlet.ts import'unu eklemeden ÖNCE.
+   (baseline ~~45~~ → 32, 13 Ağu 2026'da güncellendi)
    Bu Edge Function'ların types/ klasöründen ilk import'u — precedent kırıyor.
 
 1. supabase/functions/submit-choice/index.ts
@@ -705,7 +774,7 @@ select count(*) from choice_events where gauntlet_id = '<test>';
 select pair_key from duel_impressions limit 5;   → yön bağımsız
 
 - npm run typecheck:functions → önce (baseline) ve sonra (import eklendikten
-  sonra) ölçülüp fark raporlanır. 45'i aşarsa DUR.
+  sonra) ölçülüp fark raporlanır. 32'yi aşarsa DUR.   (~~45~~, 13 Ağu 2026)
 
 ## RAPOR
 - Tam akış çıktısı
@@ -833,6 +902,130 @@ C.4 dört iş birden yapar: (a) **63 kör `.update()` denetimi — ilk madde**,
 
 ---
 
+## C.0d DURUM ÖZETİ ⏳ KOŞULLU — kapanmadı (13 Ağustos 2026)
+
+> **Bu bölüm bir kapanış kaydı DEĞİLDİR.** C.0d'nin kod ve migration tarafı
+> bitti; kapanış **17 Ağustos 2026, 06:00 UTC** koşumunun doğrulanmasına
+> bağlıdır ve o koşum **bugün itibarıyla henüz gerçekleşmemiştir.**
+>
+> Gerçekleşmemiş bir olayı geçmiş zamanla kaydetmek, kodda yasakladığımız
+> sessiz fallback'in belge karşılığıdır. Aşağıdaki ✅'ler yalnızca
+> **13 Ağustos'ta fiilen ölçülmüş** kalemler içindir.
+>
+> **Kapsam ayrımı (a) — 13 Ağustos CTO kararı:** kapanışa aday olan kalemler
+> yalnızca **cron pattern (077)** ve **legacy JWT**'dir; bu ikisi ölçümle
+> doğrulandı. **RevenueCat fail-open bu pakete DAHİL DEĞİL** — kod tarafı bu
+> turda doğrulanmadı, §10'da 🟠 Yüksek altında açık kalem olarak duruyor.
+> Gerekçe: doğrulanmış iki bulguyu doğrulanmamış üçüncüye bağlamak, ileride
+> "zaten kapattık" yanılgısı üretir.
+
+Tek bakışta neredeyiz.
+
+### Üretilen migration'lar
+
+| # | Dosya | Tek satır özet |
+|---|---|---|
+| 078 | `films_schema_reconciliation.sql` | `films` şema borçlarının kapatılması |
+| 079 | `trending_tier_restore.sql` | 3 kurban film + 44 filmlik `pre_trending_tier` backfill; `cron_job_status()` migration takibine alındı |
+| 080 | `profile_missing_films_cron.sql` | GATE 3 — `profile-missing-films` cron'u, vektörsüz film birikmesini kapatır |
+| 081 | `activate_weekly_trending_sync.sql` | Şema değiştirmez; `weekly-trending-sync` `active=true`. Açma kararının denetlenebilir kaydı |
+
+Commit zinciri: `f91e1ae` → `80857fc` → `8fd5f82` → `f1e0163` → `c6947f5`.
+
+**⚠️ 081 job'u yaratmadı, AÇTI.** `weekly-trending-sync`'in kökeni C.0d'den
+çok eski — tam geçmiş:
+
+| migration | ne yaptı |
+|---|---|
+| **049** `trending_sync_cron.sql` | Job'u **yarattı** |
+| **077** `cron_pattern_repair.sql` | Desen onarımı — sabit tam URL |
+| 078, 079 | `active=false` bırakıldı ("GATE 3 sonrası açılır" notuyla) |
+| **081** | `active=true` — **açtı** |
+
+**İsim uyumsuzluğu:** cron job'un adı `weekly-trending-sync`, çağırdığı Edge
+Function'ın slug'ı `sync-trending`. İkisi **aynı işin iki adı**, farklı şeyler
+değil. Job'un `command`'ı `https://…/functions/v1/sync-trending` URL'ini
+çağırıyor (081 yorumunda teyit kaydı var). 049'dan beri süregelen isimlendirme
+borcu — `TEKNIK_BORC.md`'ye 🔵 düşük öncelikle kaydedildi.
+
+### Cron durumu — 8 job, **4 aktif**
+
+| jobid | job | schedule | active |
+|---|---|---|---|
+| 1 | `posterle-daily-curation` | `0 23 * * *` | ❌ |
+| **2** | **`cleanup-rate-limits`** | `0 * * * *` | **✅** |
+| 3 | `send-daily-pick-hourly` | `0 * * * *` | ❌ |
+| 4 | `watchlist-activation-weekend` | `0 15 * * 5` | ❌ |
+| 5 | `watchlist-activation-mood-recall` | `0 17 * * 3` | ❌ |
+| **6** | **`weekly-trending-sync`** | `0 6 * * 1` | **✅ ← 081 açtı** |
+| **7** | **`global-slot-daily`** | `5 0 * * *` | **✅** |
+| **18** | **`profile-missing-films`** | `0 8 * * 1` | **✅ ← 080 açtı** |
+
+**🔎 4 pasif job'un durumu belirsiz — C.0e öncesi teyit bekliyor.**
+`posterle-daily-curation`, `send-daily-pick-hourly`,
+`watchlist-activation-weekend`, `watchlist-activation-mood-recall` pasif.
+Bu pasiflik **kasıtlı bir ürün kararı mı**, yoksa C.0b/C.0c'nin "dead cron"
+bulgusunun kalıntısı mı **belirlenmedi** — bu tur yalnızca durumu okudu,
+sebebini araştırmadı. Kasıtlıysa geçilir; değilse ayrı borç kalemi açılmalı.
+C.0e'yi bloklamaz ama C.0e'den önce tek cümleyle teyit edilmeli.
+
+### Sayılar — yalnızca 13 Ağustos'ta fiilen ölçülenler
+
+| Gate | Değer | Ölçüm durumu |
+|---|---|---|
+| Öneri havuzu | **1.867** film | ✅ ölçüldü (archive hariç) |
+| Düello-uygun | **1.867 (%100)** | ✅ ölçüldü (vektör + poster tam) |
+| `profile_vector` NULL (aktif tier) | **0** | ✅ ölçüldü |
+| `npm run typecheck` | **14** | ✅ koşuldu, hepsi `scripts/` altında |
+| `npm run typecheck:functions` | **32** | ✅ koşuldu (`Found 32 errors.`, ~~45~~ baseline'ı bu turda güncellendi) |
+| `supabase migration list` | **081** | ✅ koşuldu, local/remote senkron |
+| 17 Ağustos otomatik koşum | — | ⏳ **BEKLİYOR — henüz gerçekleşmedi** |
+| RevenueCat fail-open kod yolu | — | ⏳ **ölçülmedi**, §10'da açık kalem |
+
+### GATE 3 — 13 Ağustos ölçümü ✅, sürekliliği doğrulanmadı ⏳
+
+**Ölçülen (kesin):** aktif tier'daki (`core`+`extended`+`trending`) **1.867
+filmin tamamının** `film_profiles` satırı var ve hiçbirinde `profile_vector`
+NULL değil.
+
+**Ölçülmeyen (iddia):** `profile-missing-films` cron'unun bu durumu *sürekli*
+koruyacağı. Cron `active=true` ve 080 ile kuruldu, ama **hiç otomatik koşmadı** —
+ilk koşumu 17 Ağustos 08:00 UTC. Yani "kendini onaran bir duruma dönüştü"
+cümlesi şu an **tasarım iddiasıdır, ölçüm değil.** 17 Ağustos'ta doğrulanacak.
+
+### 🔭 Bir sonraki gerçek test: **17 Ağustos 2026, 06:00 UTC**
+
+`weekly-trending-sync`'in **ilk otomatik koşumu.** Bugüne kadarki tüm
+doğrulamalar elle tetiklenmişti; bu, zincirin kendi kendine çalıştığı ilk an.
+İki saat sonra (08:00 UTC) `profile-missing-films` devreye girecek.
+
+**İzlenecek 3 madde** (081 migration yorumundan, birebir):
+
+1. `films.curation_tier` dağılımı beklenmedik şekilde kaymadı mı
+   *(13 Ağu referansı: core 862 · extended 949 · trending 56 · archive 1.537)*
+2. `pre_trending_tier` doğru çalıştı mı — yeni trending filmler için
+3. `profile-missing-films` 08:00'de çalışıp yeni filmleri yakaladı mı
+
+> ⚠️ 17 Ağustos koşumu **doğrulanmadan C.0d gerçekten kapanmış sayılmaz.**
+> Kod ve migration tarafı bitti; kanıt bekleniyor.
+
+### 🔎 Açık soru — DESIGN_OS mood arama sayısı tanım belirsizliği
+
+`3_CHOSY_DESIGN_OS.md:496` "**57 arama/90 gün**" diyor (mood-search dondurma
+gerekçesi). 13 Ağustos ölçümü aynı pencerede **39** verdi — %30 düşüş.
+
+Ancak 13 Ağustos'ta `mood_searches` **toplamı** da 56 ölçüldü, yani 57'ye çok
+yakın. Bu, DESIGN_OS'taki "57"nin aslında **90-günlük değil toplam** olması
+ihtimalini güçlü kılıyor — yani sapma gerçek bir düşüş değil, etiket hatası
+olabilir.
+
+**Yapılacak:** iki sorgu yan yana karşılaştırılmalı — büyük olasılıkla farklı
+tanım ya da farklı join kullanılıyor. Çözülene kadar **DESIGN_OS §496'ya
+dokunulmadı** (13 Ağustos, CTO kararı): yanlış olduğu kanıtlanmamış bir sayıyı
+değiştirmek, doğru olanı bozma riski taşır.
+
+---
+
 ## 10. AÇIK BORÇLAR ✅
 
 `docs/TEKNIK_BORC.md`'de kayıtlı. Öncelik = *ne zaman patlar*, ne kadar büyük değil.
@@ -861,18 +1054,51 @@ C.4 dört iş birden yapar: (a) **63 kör `.update()` denetimi — ilk madde**,
 | 2026-05-11 haftası **32 kimlik kaybı** — `git log 05-04..05-18` incelenmedi |
 | supabase-js iki kanal (esm.sh ×16, jsr ×5) → iki ayrı `SupabaseClient` tipi |
 | `generate-puzzles` `db()` tiplenmemiş → `as never` gerekti |
+| 🔺 **RevenueCat webhook fail-open** — "Kapandı"dan **geri alındı** (13 Ağu 2026, seçenek (a)). Secret yokken auth atlanıyor; isim uyuşmazlığı bunu bir süre canlı yapmıştı. **Neden hâlâ açık:** kod düzeltmesi yazıldı ama **CTO onayı bekliyor** — onaysız deploy edilmedi, dolayısıyla canlıda fail-open yolu kapanmış DEĞİL. Ayrıca §3.2 sürüm kararı gereği düzeltme App Store sürümüne kadar deploy edilmiyor. Kaynak kayıt: `MEMORY.md` → `project_revenuecat_webhook_fail_open.md` ("kod düzeltmesi onay bekliyor"). **Hiçbir turda kod yolu yeniden ölçülmedi** |
+| 🔴→🟠 `recommend/index.ts:338-346` — **SCRAM/ASCII bug'ı**, ham `SUPABASE_DB_URL` → `new Client()`. `profile-missing-films` canlı testinde birebir bu hata alındı; `recommend` canlıda muhtemelen **her çağrıda 500** veriyor ve fark edilmemiş. Çözüm A (elle decode) 13 Ağu'da denendi ve **BAŞARISIZ** — çalışan yol PostgREST/supabase-js. Önce (a) hâlâ çağrılıyor mu doğrula (13 Ağu 2026, C.0d) |
 
 ### 🟡 Orta
 
-`_shared/sentry.ts` fingerprint iletmiyor · hata kodu→metin eşlemesi iki yerde (`tasteParser.ts` + `errorHelpers.ts`) · `scripts/` 14 tip hatası · `supabase/functions` 42 tip hatası · `QuickResult:83` + `ResultCard:72` inline `GameType` union · Spotlight V2 kalıntı tipleri · **159 hardcoded renk** (C.1 kapsamı)
+`_shared/sentry.ts` fingerprint iletmiyor · hata kodu→metin eşlemesi iki yerde (`tasteParser.ts` + `errorHelpers.ts`) · `scripts/` 14 tip hatası · `supabase/functions` ~~42~~ **32** tip hatası (13 Ağu 2026 ölçümü) · `QuickResult:83` + `ResultCard:72` inline `GameType` union · Spotlight V2 kalıntı tipleri · **159 hardcoded renk** (C.1 kapsamı)
+
+**13 Ağustos 2026'da eklenenler (C.0d):**
+
+- **`dbRowToRawFilm` iki ayrı kopya** — `scripts/ai-profile-films.ts` ve
+  `supabase/functions/profile-missing-films/index.ts` aynı DB satırı →
+  `RawFilmJSON` dönüşümünü ayrı ayrı yazıyor. Ayrışırsa **aynı film CLI'den ve
+  cron'dan profillenince farklı vektör alır.** Prompt/doğrulama/`CLAUDE_MODEL`
+  GATE 3'te `services/filmProfilePrompt.ts`'e çıkarıldı, bu fonksiyon kapsam
+  dışında kaldı. Engel: CLI supabase-js üzerinden okuyor (`release_date`
+  string), Edge ham SQL üzerinden (`release_date` Date olabiliyor) — ortak
+  imza bu farkı normalize etmeli.
+
+- **⏱️ PostToolUse hook `npx tsc --noEmit` bloke ediyor** —
+  `PostToolUse [Edit|Write]` → `npx tsc --noEmit`, **ortalama 20 sn, en kötü
+  77 sn**. Ölçüm penceresinde **1.122 çalışma ≈ 6,2 saat kümülatif** bloke
+  süre. *Kaynak: 13 Ağustos 2026 `/doctor` bakım oturumu tespiti; o turda
+  ertelendi, kayıt borcu unutulmuştu — bu satır o borcu kapatıyor.*
 
 ### 🟢 Düşük
 
-`The Bourne Ultimatum` `imdb_votes` NULL · archive tier metadata boşlukları (508/506/957)
+`The Bourne Ultimatum` `imdb_votes` NULL · archive tier metadata boşlukları (508/506/957) · **`cron_job_status()` `command` kolonunu bilerek döndürmüyor** — yalnızca `jobid, jobname, schedule, active`. 079'daki gerekçe sır sızıntısıydı; 13 Ağu'da doğrulandı ki `command` içinde açık sır **yok** (Vault'a yalnızca isimle başvuruluyor, değer çalışma anında okunuyor — 077'nin bilinçli tasarımı), yani **sızıntı gerekçesi zayıfladı.** Yine de eklenmedi: (1) teşhis aracı, ürün yüzeyi değil — dar kapsam kendi başına değer, (2) Dashboard SQL Editor'dan manuel erişim mümkün. **Yeniden değerlendirme koşulu:** tüm erişim yolları tükenir (PostgREST `cron` şemasını göstermiyor · Docker yok · doğrudan Postgres yok · deno-postgres SCRAM/ASCII engeli) **ve** `command` okumaya düzenli ihtiyaç doğarsa
 
 ### Kapandı ✅
 
-~~`send-notifications/index.ts:188` PromiseLike `.catch()`~~ · ~~cron desen bozukluğu (077)~~ · ~~RevenueCat fail-open~~ · ~~legacy `eyJhbGci` JWT~~
+~~`send-notifications/index.ts:188` PromiseLike `.catch()`~~ · ~~cron desen bozukluğu (077)~~ · ~~legacy `eyJhbGci` JWT~~
+
+> **13 Ağustos 2026 teyidi — C.0d-partial (cron + JWT).** İki kalem C.0d
+> ölçümleriyle yeniden kontrol edildi ve kapalı olduğu **doğrulandı**:
+> - **cron desen bozukluğu (077)** — `cron_job_status()` 8 job'ın tamamını
+>   sağlam schedule ifadeleriyle döndürüyor; 081 aynı deseni (`cron.alter_job`)
+>   kullanarak sorunsuz uygulandı.
+> - **legacy `eyJhbGci` JWT** — 13 Ağustos'un tüm canlı sorguları
+>   `sb_secret_` kuşağı anahtarla koşuldu, hepsi geçti.
+>
+> ⚠️ **RevenueCat fail-open bu listeden ÇIKARILDI** (13 Ağustos, CTO kararı,
+> seçenek (a)). Daha önce burada "kapandı" olarak duruyordu; kod tarafı hiçbir
+> turda yeniden doğrulanmamıştı. 🟠 Yüksek'e taşındı. Gerekçe: ölçülmüş iki
+> bulguyu ölçülmemiş bir üçüncüyle aynı torbada kapatmak, ileride "zaten
+> kapattık" yanılgısı üretir ve doğrulanmış kapanışı doğrulanmamışa bağlar.
 
 ---
 
