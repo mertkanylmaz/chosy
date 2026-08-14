@@ -1383,6 +1383,7 @@
     "cancel": "Cancel",
     "championTitle": "Today's film",
     "championAccessibilityLabel": "Today's film: %{title}, %{year}, %{runtime} minutes",
+    "close": "Close",
     "confidence": "I know %{percent}% of you",
     "loadError": "Today's films couldn't load. Try again.",
     "submitError": "Your pick wasn't saved. Try again.",

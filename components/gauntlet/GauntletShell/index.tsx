@@ -627,7 +627,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     if (champion) {
       return (
         <View style={styles.root}>
-          <ChampionReveal champion={champion} animateReveal={animateReveal} />
+          <ChampionReveal champion={champion} animateReveal={animateReveal} onDismiss={onDismiss} />
         </View>
       );
     }

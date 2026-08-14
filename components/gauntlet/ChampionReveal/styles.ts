@@ -43,4 +43,7 @@ export const styles = StyleSheet.create({
     color: color.text.secondary,
     textAlign: 'center',
   },
+  dismissWrapper: {
+    marginTop: space.lg,
+  },
 });

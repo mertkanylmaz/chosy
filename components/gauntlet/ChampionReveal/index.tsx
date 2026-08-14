@@ -14,8 +14,14 @@
  *
  * Resume yolunda (`animateReveal: false`) sekans atlanır, doğrudan gösterilir.
  *
- * Şampiyon watchlist'e OTOMATİK YAZILMAZ (PRODUCT_OS §3.7) — bu bileşende
- * hiçbir yazma eylemi yok; "Sonraya bırak" Faz D kapsamı.
+ * Şampiyon watchlist'e OTOMATİK YAZILMAZ (PRODUCT_OS §3.7) — `onDismiss`
+ * yalnızca ekranı kapatır, hiçbir yazma eylemi tetiklemez. "Sonraya bırak"
+ * Faz D kapsamı.
+ *
+ * ⚠️ 14.08.2026 cihaz testinde bulundu: bu bileşende çıkış eylemi hiç
+ * YOKTU — kullanıcı şampiyon ekranında sıkışıyordu (kök neden: plan
+ * boşluğu, GauntletShell'in oyun içi olaylar tablosu completed_today→
+ * champion dalına hiçbir eylem bağlamamıştı). `onDismiss` bu turda eklendi.
  */
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
@@ -29,6 +35,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   BLACKOUT_SEQUENCE,
@@ -44,11 +51,14 @@ interface ChampionRevealProps {
   champion: GauntletFilm;
   /** true: canlı final geçişi (kara boşluk sekansı); false: resume, doğrudan göster */
   animateReveal: boolean;
+  /** Ekranı kapatır — YAZMA eylemi DEĞİL (§3.7). Yoksa çıkış kontrolü gösterilmez. */
+  onDismiss?: () => void;
 }
 
 export function ChampionReveal({
   champion,
   animateReveal,
+  onDismiss,
 }: ChampionRevealProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
@@ -108,6 +118,12 @@ export function ChampionReveal({
       <Animated.Text style={[styles.metaLine, metaStyle]} numberOfLines={1}>
         {t('gauntlet.posterMeta', { year: champion.year, runtime: champion.runtime })}
       </Animated.Text>
+
+      {onDismiss && (
+        <Animated.View style={[styles.dismissWrapper, metaStyle]}>
+          <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />
+        </Animated.View>
+      )}
     </View>
   );
 }

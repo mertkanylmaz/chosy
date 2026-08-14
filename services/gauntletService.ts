@@ -109,6 +109,25 @@ async function ensureAuthSession(): Promise<void> {
  * gövdesinde (gameApi.ts resetGameProgress deseni). Status + gövde detayı
  * çıkarılır ki 401 (bootstrap penceresi) diğer hatalardan ayrılabilsin.
  */
+/**
+ * ⏱ GEÇİCİ — C.2-2 cihaz retest'i için round-trip ölçümü (14 Ağu 2026).
+ * Ölçüm sonrası __DEV__ console.log kaldırılacak; Sentry breadcrumb kalıcı
+ * debug aracı olarak kalabilir (kalıcı koda konsol logu GİRMEZ kısıtı).
+ */
+function recordTiming(fn: string, startedAt: number, outcome: 'ok' | 'error'): void {
+  const durationMs = Math.round(performance.now() - startedAt);
+  Sentry.addBreadcrumb({
+    category: 'gauntlet.perf',
+    message: `${fn} ${outcome}`,
+    level: 'info',
+    data: { duration_ms: durationMs },
+  });
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log(`[gauntlet.perf] ${fn} ${outcome} — ${durationMs}ms`);
+  }
+}
+
 async function parseInvokeError(
   error: unknown,
 ): Promise<{ status: number | null; detail: string }> {
@@ -147,11 +166,13 @@ export async function getTodayGauntlet(
 ): Promise<DailyGauntlet> {
   await ensureAuthSession();
 
+  const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('generate-gauntlet', {
     body: { context },
   });
 
   if (error) {
+    recordTiming('generate-gauntlet', startedAt, 'error');
     const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       // Sentry kararı çağıranda: ilk denemeler beklenen pencere, 5. deneme
@@ -166,6 +187,7 @@ export async function getTodayGauntlet(
     throw new Error(detail || 'generate-gauntlet failed');
   }
 
+  recordTiming('generate-gauntlet', startedAt, 'ok');
   return data as DailyGauntlet;
 }
 
@@ -182,11 +204,13 @@ export async function submitChoice(
 ): Promise<ChoiceResult> {
   await ensureAuthSession();
 
+  const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('submit-choice', {
     body: submission,
   });
 
   if (error) {
+    recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'error');
     const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
@@ -203,6 +227,7 @@ export async function submitChoice(
     throw new Error(detail || 'submit-choice failed');
   }
 
+  recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok');
   return data as ChoiceResult;
 }
 

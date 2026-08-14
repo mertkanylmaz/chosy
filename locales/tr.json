@@ -1383,6 +1383,7 @@
     "cancel": "Vazgeç",
     "championTitle": "Bugünün filmi",
     "championAccessibilityLabel": "Bugünün filmi: %{title}, %{year}, %{runtime} dakika",
+    "close": "Kapat",
     "confidence": "Seni %%{percent} tanıyorum",
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
     "submitError": "Seçim kaydedilemedi. Tekrar dene.",
