@@ -1368,5 +1368,13 @@
     "promptShareButton": "Davet Linkini Paylas",
     "promptLater": "Belki sonra",
     "promptShareMessage": "Chosy'de bana katil 🎬\nKodum ile kaydol ve +5 arama kazan: %{code}"
+  },
+  "gauntlet": {
+    "posterAccessibilityLabel": "%{title}, %{year}, %{runtime} dakika, seçmek için çift dokun",
+    "posterMeta": "%{year} · %{runtime}dk",
+    "posterUnavailable": "Poster yok",
+    "roundLabel": "Tur %{current}/%{total}",
+    "rejectNeither": "İkisi de değil",
+    "markWatched": "Bunu izledim"
   }
 }

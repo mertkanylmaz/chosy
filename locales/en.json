@@ -1368,5 +1368,13 @@
     "promptShareButton": "Share Invite Link",
     "promptLater": "Maybe later",
     "promptShareMessage": "Join me on Chosy 🎬\nGet +5 searches when you sign up with code %{code}"
+  },
+  "gauntlet": {
+    "posterAccessibilityLabel": "%{title}, %{year}, %{runtime} minutes, double tap to select",
+    "posterMeta": "%{year} · %{runtime}min",
+    "posterUnavailable": "No poster",
+    "roundLabel": "Round %{current}/%{total}",
+    "rejectNeither": "Neither",
+    "markWatched": "I've watched this"
   }
 }
