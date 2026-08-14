@@ -1584,3 +1584,27 @@ gelmeli) ve idempotency katmanı çoğu tekrarı zaten eler. submit-choice ayrı
 bir işte ele alınmalı; düzeltme tek satır: UPDATE'e `.is('watched_at', null)`
 eklemek + 0 satır etkilenirse loglamak.
 
+---
+
+## 🔵 `generate-gauntlet` deriveProgress — canlı smoke YAPILDI (14 Ağu 2026)
+
+JS port ile 11/11 sentetik senaryo doğrulandıktan sonra **deploy edilmiş Deno
+kodu üzerinde canlı smoke testi 14 Ağu 2026'da koşuldu: 30/30 PASS.** Kapsam:
+dört zorunlu senaryo (yeni→0 · choice→defender=kazanan · neither→tur
+sabit/çift değişmiş · 3 tur→champion) + **timeout zinciri** (3× timeout →
+`exhausted`/`timeout_no_winner`, defender konvansiyonu `films[0]` iki ara
+adımda doğrulandı) + resume çifti === submit-choice `replacement` çifti
+tutarlılık kontrolü.
+
+**Kalıntı:** Smoke, canlı DB'de 2 anonim test kimliği bıraktı
+(`public.users`: `d4128b7c…`, `9247f8e8…` — service key bootstrap'lı, orphan
+DEĞİL) + 2 `daily_gauntlets` + 9 `choice_events` + `duel_impressions`
+satırları. C.2-0 kısıtı gereği (choice_events/duel_impressions'a DELETE yok)
+temizlenmedi. Orphan-auth sayımı yapan biri bu iki kimliği test olarak
+tanımalı. Temizlik gerekirse ayrı onaylı iş.
+
+**Not:** Anon kimlikle ilk çağrı 401 verdi — kök neden bilinen 🔴 borç
+("anonim kimlikler için `public.users` satırı hiç oluşmuyor"); smoke,
+istemcinin `getAppUserId` INSERT bootstrap'ını taklit ederek geçti. Bu borç
+C.2 istemci işinde yeniden görünür olacak.
+
