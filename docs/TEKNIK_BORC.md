@@ -1608,3 +1608,54 @@ tanımalı. Temizlik gerekirse ayrı onaylı iş.
 istemcinin `getAppUserId` INSERT bootstrap'ını taklit ederek geçti. Bu borç
 C.2 istemci işinde yeniden görünür olacak.
 
+---
+
+## 🟡 `gauntlet_unlock_hour` app_config'e taşınmalı
+
+**Kayıt: 14 Ağu 2026, C.2-2 (CTO kararı).**
+
+18:00 kapısı (`PRODUCT_OS §3.6`) şu an yerel sabit:
+`components/gauntlet/GauntletShell/index.tsx` → `UNLOCK_HOUR = 18`.
+app_config anahtarı yok; değiştirmek **app release gerektiriyor**. Anahtar
+eklemek migration ister (C.2-2'de migration yasaktı). `__DEV__` bypass'ı
+sabitin yanında — taşımada birlikte düşünülmeli.
+
+---
+
+## 🟡 `submit-choice` — `choice` outcome'unda `replacement`/`nextPair` dönmüyor
+
+**Kayıt: 14 Ağu 2026, C.2-2 (CTO 🔴1 kararı). Hedef: Faz F.**
+
+`choice` sonrası sıradaki çifti sunucu bildirmiyor; istemci
+`nextChallengerForRound(round, films)` (GauntletShell) ile deriveProgress'in
+POZİSYONEL mantığını **ayna** olarak taşıyor. `film_ids` in-place
+güncellendiği için bugün doğru; backend seçim mantığı değişirse istemci
+sessizce yanlış film gösterir. Güvence: şampiyon anında istemci/backend
+uyuşmazlık tespiti Sentry'ye `GAUNTLET_MIRROR_DIVERGENCE` yazar. Kalıcı
+çözüm: submit-choice `choice` dalında da `replacement`/`nextPair` dönmeli.
+
+---
+
+## 🟡 `ChoiceResult` ayna tipi iki yerde
+
+**Kayıt: 14 Ağu 2026, C.2-2.**
+
+`services/gauntletService.ts` (istemci) ile
+`supabase/functions/submit-choice/index.ts:111` (sunucu) aynı yanıt tipini
+ayrı ayrı tanımlıyor — derleyici iki kopyayı KONTROL ETMEZ (kilitli sözleşme
+`types/gauntlet.ts` yanıt şeklini kapsamıyor, B.4 kararı). İki dosyada da
+karşılıklı referans yorumu var; biri değişirse ikisi birden değişmeli.
+
+---
+
+## 🟡 `recompute-cinema-dna` — `outcome='seen'` satırları tercih sinyali sayılmamalı
+
+**Kayıt: 14 Ağu 2026, C.2-2 (CTO 🟡5 kararı).**
+
+`submit-choice`, `seen` outcome'unda `winner` alanına **izlenen filmi** yazar
+(ölçüldü: `validateBusinessRules` + `markWatched` yolu). Yani `choice_events`'te
+izlenmiş bir film "kazanan" olarak durur. B.5/`recompute-cinema-dna` bu
+satırları `outcome` ile filtrelemezse "izledim" bir **tercih** sinyali gibi
+okunur — oysa izlemiş olmak beğenmiş olmak değil. Vektör hesabına girmeden
+önce `outcome = 'choice'` filtresi doğrulanmalı.
+
