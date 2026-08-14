@@ -50,3 +50,9 @@ export const BLACKOUT_SEQUENCE = {
 export const REDUCED_MOTION_DURATION = {
   crossFade: 100,
 } as const;
+
+/**
+ * Şampiyon haptik çifti — §8: `notificationSuccess` + 300ms sonra
+ * `impactHeavy`. Süre bileşene hardcode edilmez, buradan okunur.
+ */
+export const CHAMPION_HAPTIC_DELAY = 300;

@@ -1375,6 +1375,18 @@
     "posterUnavailable": "Poster yok",
     "roundLabel": "Tur %{current}/%{total}",
     "rejectNeither": "İkisi de değil",
-    "markWatched": "Bunu izledim"
+    "markWatched": "Bunu izledim",
+    "before18": "Bugünün dörtlüsü 18:00'de hazır.",
+    "exhausted": "Bugün ikna olmadın galiba. Yarın yeni bir dörtlü hazır olacak.",
+    "question": "Bu akşam hangisi?",
+    "seenPrompt": "Hangisini izledin?",
+    "cancel": "Vazgeç",
+    "championTitle": "Bugünün filmi",
+    "championAccessibilityLabel": "Bugünün filmi: %{title}, %{year}, %{runtime} dakika",
+    "confidence": "Seni %%{percent} tanıyorum",
+    "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
+    "submitError": "Seçim kaydedilemedi. Tekrar dene.",
+    "retry": "Tekrar dene",
+    "dismissTomorrow": "Boşver, yarın"
   }
 }

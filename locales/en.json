@@ -1375,6 +1375,18 @@
     "posterUnavailable": "No poster",
     "roundLabel": "Round %{current}/%{total}",
     "rejectNeither": "Neither",
-    "markWatched": "I've watched this"
+    "markWatched": "I've watched this",
+    "before18": "Today's four will be ready at 6 PM.",
+    "exhausted": "Not convinced today, it seems. A fresh four will be ready tomorrow.",
+    "question": "Which one tonight?",
+    "seenPrompt": "Which one have you watched?",
+    "cancel": "Cancel",
+    "championTitle": "Today's film",
+    "championAccessibilityLabel": "Today's film: %{title}, %{year}, %{runtime} minutes",
+    "confidence": "I know %{percent}% of you",
+    "loadError": "Today's films couldn't load. Try again.",
+    "submitError": "Your pick wasn't saved. Try again.",
+    "retry": "Try again",
+    "dismissTomorrow": "Never mind, tomorrow"
   }
 }
