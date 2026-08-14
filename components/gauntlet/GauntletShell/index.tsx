@@ -676,6 +676,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         <View style={styles.posterRow}>
           <View style={styles.posterSlot}>
             <PosterTile
+              key={pair.left.id}
               film={pair.left}
               disabled={submitting || transitioning}
               animationState={tileStates.left}
@@ -684,6 +685,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           </View>
           <View style={styles.posterSlot}>
             <PosterTile
+              key={pair.right.id}
               film={pair.right}
               disabled={submitting || transitioning}
               animationState={tileStates.right}
