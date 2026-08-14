@@ -408,6 +408,24 @@ export default function HomeScreen() {
   return (
     <>
       <StatusBar style="light" backgroundColor={Colors.background} />
+      {/* GEÇİCİ — C.2-2 cihaz testi için, TestFlight öncesi kaldırılacak */}
+      {__DEV__ && (
+        <TouchableOpacity
+          onPress={() => router.push('/dev-gauntlet')}
+          style={{
+            position: 'absolute',
+            top: 50,
+            right: 12,
+            zIndex: 999,
+            backgroundColor: '#000',
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 8,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 12 }}>🎬 Gauntlet Test</Text>
+        </TouchableOpacity>
+      )}
       <SafeAreaView style={styles.safe} edges={['top']}>
         <KeyboardAvoidingView
           style={styles.keyboardAvoid}
