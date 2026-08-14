@@ -173,10 +173,12 @@ Ek uyum: Spotlight `ambientVariant: 'beam'` kullanan tek oyun ✅ — mor bir sa
 | Rol | Aile | Neden |
 |---|---|---|
 | **Arayüz / gövde** | **SF Pro** (Text + Display) | Platform yerlisi. Dynamic Type, optik boyut, erişilebilirlik bedava gelir |
-| **Marka anı** | **Archivo Expanded** (variable) ⚠️ | Sinema **marki** tipografisi soyu — geniş, ışıklı tabela. Editoryal serif değil |
-| **Veri / meta** | **Martian Mono** ⚠️ | Film kutusu etiketi / teknik slate. Paylaşım metninde hizalama için zorunlu |
+| **Marka anı** | **Archivo Expanded** (variable) ⚠️ → ✅ | Sinema **marki** tipografisi soyu — geniş, ışıklı tabela. Editoryal serif değil |
+| **Veri / meta** | **Martian Mono** ⚠️ → ✅ | Film kutusu etiketi / teknik slate. Paylaşım metninde hizalama için zorunlu |
 
 ✅ Not: `constants/theme.ts` içinde `FONT_INTER` sabiti var ama yorumu açıkça *"Inter yüklenmiyor, bu SF Pro"* diyor. Yani gövde zaten SF Pro; sadece isimlendirme yanıltıcı.
+
+⚠️ → ✅ **14 Ağustos 2026, C.1a:** `@expo-google-fonts/archivo` paketinde "Expanded" adında ayrı bir statik kesit **yok** — yalnızca Roman genişlik ağırlıkları var. Resmi variable font (`google/fonts` reposu, `ofl/archivo/Archivo[wdth,wght].ttf`) STAT tablosunda `wdth=125` değeri "Expanded" olarak etiketli (fvar max da 125) — bu doğrulanmış gerçek değer, tahmin değil. `fonttools.varLib.instancer` ile `wght=600/wdth=125` ve `wght=700/wdth=125` iki statik kesit üretildi (`ArchivoExpanded-SemiBold.ttf`, `ArchivoExpanded-Bold.ttf`), `assets/fonts/`'a commit'lendi. `@expo-google-fonts/martian-mono` paketi sorunsuz, `400Regular` + `600SemiBold` doğrudan kuruldu.
 
 ### 3.2 Playfair Display emekli
 
@@ -423,6 +425,132 @@ Işık sızması burada **en güçlü** — tek poster, rengi netleşiyor, alfa 
 
 Eksenler yatay çubuk, `graphite` zemin + `beam` dolgu. Arketip adı `display-l`. Güven: 9 segment, dolu olanlar `marquee`.
 
+### 10.5 NAVİGASYON SÖZLEŞMESİ 🔒
+
+**Karar tarihi:** 13 Ağustos 2026 · **Yeniden değerlendirme:** 1.000 aktif kullanıcı
+
+#### 10.5.1 Yapı
+
+```
+(tabs)/
+├── index.tsx      BUGÜN     ← kök ekran
+│                              durum makinesi: bekleyiş | gauntlet | şampiyon
+└── profile.tsx    PROFİL    ← Cinema DNA · Kütüphane · Arşiv 🔒 · Ayarlar
+```
+
+**İki sekme. Üçüncüsü yok.**
+
+#### 10.5.2 Tab bar davranışı
+
+| Durum | Tab bar |
+|---|---|
+| Bekleyiş (18:00 öncesi) | Görünür |
+| **Gauntlet — 3 tur** | **GİZLİ** |
+| Şampiyon açıklaması | Geri gelir |
+| Profil ve alt ekranları | Görünür |
+
+Gizleme ekran bazında (`options.tabBarStyle`), koşullu render ile DEĞİL —
+koşullu render layout sıçraması üretir.
+
+#### 10.5.3 Kararın gerekçesi
+
+Tasarım tezi (§0) ile gelir modeli (`2_BUSINESS_MODEL` §4) bu ekranda çatışıyor:
+
+| Belge | Talep |
+|---|---|
+| DESIGN_OS §0 | Arayüz geri çekilir; kalıcı chrome tezi zayıflatır |
+| BUSINESS_MODEL §4 | Gelirin **tamamı** ritüelin dışındaki yüzeylerde |
+
+**Çözüm çatışmayı ortadan kaldırıyor:** Tez 40 saniyelik ritüelin bölünmemesini
+talep ediyor — o 40 saniye korunuyor. Geri kalan zamanda navigasyon var, çünkü
+gelir orada.
+
+**Belirleyici argüman:** Faz 0'da tek paywall arşivdir ve tek bir sayıyı ölçer:
+*"streak'i olan insanlar bunun için para verir mi?"* Sıfır-chrome mimarisinde
+arşive giden yol 3 dokunuştur. O sayı ölçülemezse **"ödemedi" ile "bulamadı"
+ayrımı yapılamaz** ve gelir modelinin tamamı test edilmemiş kalır.
+
+**Referans sınıfı düzeltmesi:** `1_PRODUCT_OS` §1.2 "Wordle / NYT Games" diyor.
+Bu ikisi aynı sınıf değil. Navigasyonu olmayan ritüel ürünleri (Wordle) para
+kazanmadı; ritüelin etrafından para kazanan her ürün (NYT Games, Duolingo) o
+etrafı kalıcı görünür tuttu. Chosy'nin gelir modeli NYT Games kopyasıdır
+(BUSINESS_MODEL §3) — navigasyon modelini Wordle'dan almak tutarsızdır.
+
+**Platform uyumu:** iOS 26'da tab bar içeriğin üzerinde yüzer, kaydırmada
+küçülür ve üzerine aksesuar shelf eklenebilir. Apple HIG Liquid Glass'ı
+"içeriğin üzerinde yüzen navigasyon katmanı" için ayırır — §6 katman kuralımızın
+aynısı. Tab bar'ı silmek, tasarım sistemimizin en olgun bölümünü kullanılamaz
+hale getirirdi.
+
+**Neden 2 sekme, 3 değil:** Üçüncü sekmenin bugün içeriği yok. Boş sekme,
+olmayan sekmeden kötüdür. Faz 2'de grup gauntlet gelirse üçüncü sekme tek
+satırla açılır; sıfır-chrome mimarisinde aynı iş router yeniden yazımıdır.
+
+#### 10.5.4 Ekran envanteri
+
+| Ekran | Karar | Gerekçe |
+|---|---|---|
+| **Bugün** | 🆕 Kök | Gauntlet + bekleyiş + şampiyon tek durum makinesi |
+| **Profil** | 🆕 İkinci sekme | Kimlik + gelir yüzeyi |
+| ~~Home~~ | ❌ Silinir | Ayrı ana ekranın göstereceği şey gauntlet'ın kendisi |
+| ~~Games~~ | ❌ Silinir | 7 oyundan 1 kaldı (C.6). Spotlight şampiyon sonrası tek kart |
+| ~~Watchlist~~ | ❌ Sekme değil | Profil → Kütüphane'ye taşınır (§10.6) |
+| ~~Mood search~~ | 🧊 Dondurulur | 57 arama/90 gün. Pro mode altında kalır |
+
+⚠️ **Silinen ekranların kodu C.6'ya kadar durur** — `app_config` ile kapatılır,
+dosya silinmez. C.1 renk denetimi bu dosyaları KAPSAM DIŞI sayar.
+
+#### 10.5.5 Profil — sözleşme (düzen DEĞİL)
+
+Bu bölüm hangi bilginin nerede yaşadığını tanımlar. Görsel anatomi
+**C.2 tamamlandıktan sonra** yazılır — gerekçe §10.5.7.
+
+| Blok | İçerik | Durum |
+|---|---|---|
+| Kimlik | Arketip adı + güven göstergesi (§10.4) | C.2 sonrası |
+| Streak | Gün sayısı, `marquee` | C.2 |
+| **Kütüphane** | İzlenenler + watchlist (§10.6) | C.4'e bağımlı |
+| **Arşiv** | Kaçırılan günler · 🔒 Pro · **Faz 0'ın tek paywall'ı** | Faz D |
+| Ayarlar | Bildirim, haptik, dil, hesap | C.7 |
+
+#### 10.5.6 Kütüphane — sözleşme
+
+`1_PRODUCT_OS` §3.7: watchlist bugün ölü depo (318 satır, `watched_at` 0/318).
+**C.4 öncesi tasarlanamaz** — bugünkü ölü ekranın yeniden inşası olur.
+
+C.4 sonrası iki bölüm: **İzlenenler** (`watched_source`: manual ·
+gauntlet_feedback · local_sync) ve **Sonraya bırakılanlar**. Şampiyon otomatik
+girmez (§3.7).
+
+#### 10.5.7 Neden anatomiler şimdi yazılmıyor
+
+| Blok | Engel |
+|---|---|
+| Cinema DNA | Gerçek eksen ayrışması C.2+C.4 verisi olmadan bilinmiyor |
+| Kütüphane | C.4'ten önce ölü listeyi yeniden inşa etmek olur |
+| Görsel dil | Işık sızması + `PosterTile` cihazda görülmeden ikincil ekranlar kâğıt üstünde kalır (§6 kurucu testi kuralı) |
+
+Faz A maliyet gerekçesiyle atlandı. Kullanım verisi sıfır olan ekranlar için
+şimdi detaylı tasarım turu açmak o kararla çelişir.
+
+#### 10.5.8 Kararın ölçümü
+
+Karar veriyle geri alınabilir. PostHog'da C.2 ile kurulur:
+
+| Sinyal | Eşik | Sonuç |
+|---|---|---|
+| Profil sekmesi açılma | DAU'nun <%5'i / 30 gün | İkinci sekme gereksiz → sıfır-chrome |
+| Gauntlet tamamlama | Tab bar'lı sürümde belirgin düşüş | Gizleme bozuk, ritüel bölünüyor |
+| Arşiv paywall görüntülenme | Kaçıranların <%40'ı | Keşif sorunu, fiyat sorunu değil |
+
+#### 10.5.9 Kilitli / açık
+
+**🔒 Kilitli:** iki sekme · kök ekran gauntlet · gauntlet sırasında tab bar gizli ·
+Arşiv Profil altında ve Faz 0'ın tek paywall yüzeyi
+
+**🔓 Açık:** sekme ikon/etiketleri · `minimizeBehavior` ayarı · Profil içi düzen ·
+aksesuar shelf kullanımı (streak için cazip, C.2 sonrası değerlendirilir)
+
 ---
 
 ## 11. DARK-ONLY
@@ -495,7 +623,7 @@ export const color = {
 ### 12.3 Denetim ✅
 
 ```powershell
-# Hardcoded renk — mevcut sayı: 159
+# Hardcoded renk — mevcut sayı: 94
 Get-ChildItem -Recurse -Include *.tsx,*.ts app,components,services,constants,hooks,contexts,utils |
   Select-String -Pattern '#[0-9a-fA-F]{6}'
 
@@ -508,7 +636,7 @@ Get-ChildItem -Recurse -Include *.tsx app,components |
   Select-String -Pattern 'duration:\s*[0-9]+'
 ```
 
-⚠️ **159 hardcoded renk** ✅ mevcut, çoğu yeni festival katmanında. C.1'in gerçek kapsamı bu.
+⚠️ **94 hardcoded renk** ✅ mevcut (önceki 159 kaydı yanlış ölçümdü, C.1a'da düzeltildi), çoğu yeni festival katmanında. C.1'in gerçek kapsamı bu.
 
 ---
 
@@ -533,6 +661,10 @@ Get-ChildItem -Recurse -Include *.tsx app,components |
 | `ConfidenceMeter` | 🆕 |
 | `QuietAction` | 🆕 |
 | `LightBleed` | 🆕 |
+| `TabShell` | 🆕 İki sekmeli kabuk. Gauntlet'ta gizleme mantığı burada tek noktada |
+| `ProfileScreen` | 🆕 Sözleşme §10.5.5. Anatomi C.2 sonrası |
+| `LibraryScreen` | 🆕 Sözleşme §10.5.6. **C.4'e bağımlı, önce inşa edilmez** |
+| Home / Games / Watchlist ekranları | ❌ Silinir (§10.5.4) — C.6'ya kadar `app_config` ile kapalı, C.1 kapsamı DIŞI |
 
 **Değişmez:** Paylaşılan ödül bileşenleri oyun/gauntlet temasından **muaftır**. Ödül katmanı her yerde aynı görünür.
 
@@ -596,7 +728,8 @@ Bekleyiş:     Bugünün dörtlüsü 18:00'de hazır.
 
 | # | İş | Faz |
 |---|---|---|
-| 1 | Hardcoded renk denetimi (159 ihlal) + rapor | C.1 |
+| 0 | **Navigasyon iskeleti (`TabShell`, 2 sekme)** — §10.5 | **C.1 başı** |
+| 1 | Hardcoded renk denetimi (94 ihlal) + rapor | C.1 |
 | 2 | `constants/design/primitives.ts` + `semantic.ts` | C.1 |
 | 3 | `gauntletTokens.ts` + `design/motion.ts` | C.1 |
 | 4 | Archivo Expanded + Martian Mono yükle, Playfair emekli | C.1 |
@@ -609,6 +742,9 @@ Bekleyiş:     Bugünün dörtlüsü 18:00'de hazır.
 | 11 | `ContextBar` | C.3 |
 | 12 | Paylaşım kartı (metin öncelikli) | C.5 |
 | 13 | Erişilebilirlik geçişi (Bölüm 14) | C.8 |
+| 14 | Profil + Kütüphane anatomileri (§10.5.7) | **C.4 sonrası** |
+
+⚠️ Sıra 0 kasıtlı: `TabShell` C.1'in ilk işi. Token katmanı router iskeleti otururken yazılırsa ikinci kez dokunulmaz.
 
 **Disiplin:** Ekran başına tek commit · `design/before/` ve `design/after/` ekran görüntüsü · `DESIGN_SYSTEM.md`'ye üstü çizili karar kaydı.
 
@@ -638,6 +774,21 @@ Bekleyiş:     Bugünün dörtlüsü 18:00'de hazır.
 > **Gerekçe:** Gauntlet mekaniği ekranın %70'ini kontrol dışı poster görsellerine bıraktı. Renkli marka paleti bu görsellerle çatışıyordu. Vurguyu hue'dan ışığa taşımak ve rengi içerikten türetmek, çatışmayı kimlik kaybı olmadan çözüyor.
 >
 > **Yeniden değerlendirme:** 1.000 aktif kullanıcı veya Işık Sızması A/B testi
+
+> **13.08.2026 — Navigasyon sözleşmesi 🔒**
+>
+> ~~Tab bar tamamen kalkar, kök ekran gauntlet, Profil köşe ikonundan push~~
+> *(aynı gün, uygulanmadan reddedildi)*
+>
+> **Karar:** İki sekme (Bugün · Profil), tab bar gauntlet sırasında gizli.
+> Home/Games/Watchlist sekmeleri silindi.
+>
+> **Gerekçe:** Sıfır-chrome önerisi tasarım tezini optimize ediyor, gelir
+> modelini görmüyordu. Faz 0'ın tek paywall'ı arşiv ve tek işi bir sayı
+> ölçmek; 3 dokunuş derinliğinde o sayı ölçülemez. "Ödemedi" ile "bulamadı"
+> ayrımı yapılamayan bir mimari, gelir modelini test edilemez kılar.
+>
+> **Değişmeyen:** Ritüelin 40 saniyesi bölünmez — tez bu noktada korunuyor.
 
 ---
 

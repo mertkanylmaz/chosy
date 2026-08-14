@@ -11,6 +11,10 @@ import {
   PlayfairDisplay_700Bold_Italic,
   PlayfairDisplay_900Black,
 } from '@expo-google-fonts/playfair-display';
+import {
+  MartianMono_400Regular,
+  MartianMono_600SemiBold,
+} from '@expo-google-fonts/martian-mono';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -145,6 +149,14 @@ export default function RootLayout() {
     PlayfairDisplay_700Bold,
     PlayfairDisplay_700Bold_Italic,
     PlayfairDisplay_900Black,
+    // "Karanlık Salon" — DESIGN_OS §3.1, §3.3. Archivo Expanded'ın statik
+    // Expanded kesiti @expo-google-fonts/archivo'da yok (yalnızca Roman
+    // genişlik) — resmi variable font'tan (wdth=125, STAT tablosunda
+    // "Expanded" olarak etiketli) fonttools ile üretildi.
+    ArchivoExpanded_600SemiBold: require('../assets/fonts/ArchivoExpanded-SemiBold.ttf'),
+    ArchivoExpanded_700Bold: require('../assets/fonts/ArchivoExpanded-Bold.ttf'),
+    MartianMono_400Regular,
+    MartianMono_600SemiBold,
   });
 
   useEffect(() => {
