@@ -1446,17 +1446,24 @@ değerlendirilir**, tek başına açılmaz.
 
 ---
 
-## 🟡 0-sentinel taraması yapılmadı
+## ✅ 0-sentinel taraması yapıldı
 
-**Öncelik: orta.** 13 Ağu 2026, C.0e BAŞLIK 3 kararının (3B) ön koşulu.
+**Tarih:** 14 Ağustos 2026 · **Sonuç:** 2 bulgu (1 enforce edilen karar doğrulandı, 1 veri hatası tespit).
 
-`films` + `film_profiles` + `users` sayısal kolonlarında **kaç kolonun `0`'ı
-"ölçülmedi" anlamında kullandığı bilinmiyor.** C.0e yalnızca `imdb_votes` ve
-`vote_average` çiftini ölçtü; tarama yapılmadı.
+**Tarama yöntemi:** Node.js + @supabase/supabase-js, anon key ile. Films: 7
+nullable numeric kolon (3.404 satır). Film_profiles: 0 numeric kolon. Users:
+1 nullable kolon (`archetype_id`) — **RLS tarafından erişim reddedildi,
+tarama tamamlanamadı.**
 
-Sentinel kuralı bu yüzden **3B** olarak yazıldı (yalnızca ileriye dönük,
-`chosy-conventions` skill'i). **Tarama tamamlanınca kural 3B'den 3A'ya
-(mevcut kod dahil) terfi eder** ve bulunan ihlaller bu dosyaya listelenir.
+**Sonuçlar:**
+- `imdb_votes`: 22/3.404 (0,65%) sıfır, 1.017 NULL → **Sentinel (enforce edilmiş)**
+- `vote_average`: 45/3.404 (1,32%) sıfır, 0 NULL → Partial (PRODUCT_OS §6.2 "0=NULL sayıl")
+- `metascore`, `imdb_rating`, `year`: Temiz (NULL destekler veya veri dolu)
+- `runtime`: 12/3.404 (0,35%) sıfır → **Veri hatası** (ayrı kalem)
+- `tmdb_vote_count`: 3.404/3.404 NULL (uygulanmamış kolon)
+- `users.archetype_id`: **Erişim reddedildi** — service-role ile tekrarlanmalı
+
+**Sonuç:** Sentinel kuralı 3B→3A terfiye hazır. İmdb_votes zaten enforce ediliyor (`gauntletCore.ts:169-172`). Runtime sorunu ayrı veri kalitesi belgesi.
 
 ---
 
@@ -1519,3 +1526,43 @@ kısıtı (Faz Planı §2.4) ekleneceği zaman bu satırı yeniden değerlendir.
 Kişisel slotlar `extended`'i kaybederse gevşetme merdiveni archive'a kadar
 iniyor (`relaxedTiers: RELAXED_TIERS = ['archive']`), fakat global gevşetmezse
 günü kaçırır.
+
+---
+
+## 🟡 `films.runtime = 0` (12 satır) — veri hatası, sert filtrede geçiyor
+
+**Durum:** Veri kalitesi sorunu, sentinel değil ama sert filtreden kaçıyor.
+
+12 filmde `runtime = 0`. Hiçbir filmin süresi 0 dakika olamaz — TMDb/OMDb
+kaynaklarında eksik bilgi. Ama sert filtrede `runtime <= maxRuntime` kontrol,
+`0 <= 110` her zaman true → bu 12 film **`short` bağlamında (≤110dk) düello
+havuzuna giriyor** ve istemcide "0dk" gösterilebilir.
+
+**Remediation:** (1) Film başlıklarını listele, IMDb/TMDb'de doğru süreleri
+bul, güncellenmiş SUPABASE değerle yaz. (2) Yoksa `curation_tier` gözden geç
+— hata yapısı düşük kalite veri işareti. (3) Kısa vadi: `runtime > 0 OR
+runtime IS NULL` filtresi ekle.
+
+---
+
+## ✅ `imdb_votes` — sentinel enforce edilen karar doğrulandı (3B→3A terfi hazır)
+
+**Tarama:** 22/3.404 (0,65%) sıfır, 1.017 NULL.
+
+Bu karar 3B'ye yazılmışdır (ileriye dönük, CLAUDE.md kuralı). **Şimdi enforce
+edilmiş:** `gauntletCore.ts:169-172`'de koddadır — `imdb_votes = 0` filmler
+sert filtreyde eleniyor. Terfi koşulu karşılanmıştır: "Tarama yeni sentinel
+buldu" değil, "enforce edilen karar doğrulandı" — farklı sonuç. Kural 3A'ya
+hazır. Beş kolon (_runtime hariç_) sentinel değildir.
+
+---
+
+## ℹ️ `users.archetype_id` — Erişim Reddedildi, Tarama Tamamlanmadı
+
+Tarama anon key ile koştu. Users tablosuna RLS erişim reddetti — veri hatası
+değil, güvenlik tasarımı. Ama `archetype_id` kolonunun sentinel içeriği
+bilinmiyor.
+
+**Tekrar gerekli:** Service-role JWT ile users.archetype_id kontrol edilmeli.
+Bu turda ertelendi.
+

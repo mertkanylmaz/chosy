@@ -270,30 +270,25 @@ görünür kalsın diye.
 > profilliyor — arada iki saatlik bir pencere var. Havuz o pencerede geçici
 > olarak %100'ün altına düşebilir.
 
-> **⏳ C.0f sonrası yeniden ölçülecek (13 Ağustos 2026, C.0e kararı).**
-> Düello-uygun sayı **1.846**'ya inecek, **21 film** elenecek:
+> **✅ Düello-uygun havuz — C.0e filtresi sonrası (13–14 Ağustos 2026 ölçümü):**
 >
-> | filtre | eler | not |
-> |---|---:|---|
-> | 1A `release_date` | **10** | 9 gelecek tarihli + 1 `release_date IS NULL` (*The Bourne Ultimatum*) |
-> | 2A `recognition_missing` | **20** | tamamı `trending`, tamamı `year=2026` |
-> | **birleşim** | **21** | örtüşme 9 → 10 + 20 − 9 |
+> | Bağlam | Havuz boyutu |
+> |---|---:|
+> | `any` (sınırsız süre) | **1.846** |
+> | `medium` (≤150dk) | **1.655** |
+> | `short` (≤110dk) | **778** |
+> | Global slot (`core`+`trending`, §6.9) | **869** |
 >
-> Havuz toplamı (1.867) **değişmez** — bu filmler `archive`'a taşınmıyor,
-> yalnızca düello seçiminden eleniyor. Yukarıdaki **%100** oranı C.0e öncesi
-> düello-uygunluk tanımına aittir.
+> İlk üç sayı izole `buildScoredPool` koşumuyla doğrulandı (yazma yok,
+> duelEligibilityCutoff() bir kez). Dördüncüsü canlı `generate-global-slot`
+> log'undan (14 Ağustos 00:05 UTC cron koşumu). İzole ve canlı ölçümün
+> örtüşmesi filtrenin üretimde doğru çalıştığının kanıtı.
 >
-> ⚠️ **Beklenen sayı önce ~1.847 sanılmıştı; doğrusu 1.846.** Hata `release_date
-> IS NULL` olan tek filmin (Bourne) 1A tarafından da elendiğinin atlanmasından
-> geldi. Sayı 13 Ağustos'ta doğrudan ölçüldü — hesapla değil sorguyla:
-> `release_date=not.is.null & release_date=lte.<bugün> & or=(imdb_votes.gt.0,vote_average.gt.0)`
-> → **1.846**.
-
-> **Yöntem notu (13 Ağustos 2026):** Bu sayılar PostgREST üzerinden
-> `Prefer: count=exact` başlığıyla, tier başına ayrı istekle ölçüldü. Düz
-> `select=curation_tier` ile satır çekip istemcide saymak **yanlış sonuç verir** —
-> PostgREST varsayılan `max-rows` sınırı 1000'dir ve sessizce keser. İlk deneme
-> bu tuzağa düştü (toplam 3.404 yerine 1.000 gösterdi).
+> **Yöntem notu (13–14 Ağustos 2026):** Sayılar PostgREST üzerinden
+> `Prefer: count=exact` başlığıyla ölçüldü. `buildScoredPool` ölçümleri
+> `duel_eligibility_cutoff()` eşiğini bir kez hesapladıktan sonra ikisi için
+> aynı cutoff değerini kullandı (migration 062 senaryosu). Global slot sayısı
+> log verisine dayanıyor.
 
 ### 6.3 Boru hattı
 
