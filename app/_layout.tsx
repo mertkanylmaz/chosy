@@ -36,6 +36,7 @@ import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
 import { ensureAppUser } from '@/services/auth-utils';
+import { syncWatchedFilms } from '@/services/watchSync';
 import {
   savePushTokenToServer,
   shouldAskForPermission,
@@ -248,6 +249,10 @@ export default function RootLayout() {
       }
     });
 
+    // watchSync: chosy_watched_films → watchlist.watched_at kurtarma senkronu.
+    // Yalnızca INITIAL_SESSION'da, tek seferlik (bu effect bir kez kurulur).
+    let hasSyncedWatchedFilms = false;
+
     // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -269,7 +274,19 @@ export default function RootLayout() {
         // Her açılışta çalışması sorunsuz: ensureAppUser idempotent upsert,
         // tek `onConflict` isteği.
         if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-          void bootstrapAppUser();
+          const bootstrapPromise = bootstrapAppUser();
+          void bootstrapPromise;
+
+          // AsyncStorage'daki izlenmiş filmleri sunucuya taşı — bootstrap
+          // (public.users satırı garanti) tamamlandıktan sonra, arka planda.
+          if (event === 'INITIAL_SESSION' && !hasSyncedWatchedFilms) {
+            hasSyncedWatchedFilms = true;
+            void bootstrapPromise.then(() =>
+              syncWatchedFilms().catch((err) => {
+                logger.error('[layout] syncWatchedFilms beklenmedik hata:', err);
+              }),
+            );
+          }
         }
 
         if (event === 'TOKEN_REFRESHED') {

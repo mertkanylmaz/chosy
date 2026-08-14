@@ -80,12 +80,15 @@ export async function saveFeedback(payload: FeedbackPayload): Promise<void> {
 
     if (fbError) throw fbError;
 
-    // watchlist'te izlenme zamanını işaretle
+    // watchlist'te izlenme zamanını işaretle — yalnızca henüz işaretlenmemişse.
+    // Dolu watched_at bugünün tarihiyle ezilirse gerçek izleme tarihi geri
+    // getirilemez (bkz. submit-choice/index.ts aynı koruma).
     const { error: wlError } = await supabase
       .from('watchlist')
       .update({ watched_at: new Date().toISOString() })
       .eq('user_id', userId)
-      .eq('film_id', filmId);
+      .eq('film_id', filmId)
+      .is('watched_at', null);
 
     if (wlError) throw wlError;
   } catch (err) {

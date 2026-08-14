@@ -18,7 +18,7 @@ import { getAppUserId } from './auth-utils'; // re-export aşağıda, iç kullan
 
 // ─── Watched Status (local) ──────────────────────────────────────────────────
 
-const WATCHED_KEY = 'chosy_watched_films';
+export const WATCHED_KEY = 'chosy_watched_films';
 
 /**
  * Filmin izlendi durumunu toggle eder.
