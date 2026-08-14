@@ -392,6 +392,8 @@ Slot 4  →  keşif
 
 Global slot ortak konuşma zeminini korur — paylaşım kartının dayanağı. Yeni kullanıcıda 4'ü de global.
 
+**Global slot yalnızca `core` + `trending` tier'lerinden seçilir** (`extended` hariç) — düşük tanınırlık tabanı paylaşım kartının dayanağını zayıflatır. Kişisel ve keşif slotları üç tier'in tamamını kullanır (§6.4).
+
 ### 6.10 v0 — ilk sürüm
 
 Kişiselleştirme yok: bağlam filtresi + çeşitlilik kuralları + rastgele 4. Asıl işi çeşitlilik ve bağlam yapıyor; kişiselleştirme veri biriktikçe eklenen **çarpan**.

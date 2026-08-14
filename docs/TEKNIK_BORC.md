@@ -1497,3 +1497,25 @@ kullanılabilir görünüyor ama **tutmuyor:**
 **Filtrelemede kullanılmaz.** `release_date` ve `vote_average` doğrudan
 ölçülmeli. Bu kayıt, ileride birinin aynı kestirmeyi denemesini önlemek
 içindir.
+
+---
+
+## 🟡 `global-slot-daily` — `relaxedTiers: null`, gevşetme yok
+
+**Öncelik: orta, izlenecek.** 14 Ağu 2026.
+
+`generate-global-slot` cron'u (migration 075, her gün 00:05 UTC) havuzda
+tierler daralmış (`core` + `trending` yalnızca, `extended` hariç — §6.9). Dışarıdan
+**hiç gevşetme merdivenesi yok:** `relaxedTiers: null` parametresi ile,
+havuz 4 film altına düşerse fonksiyon `throw` eder — ürün **hiç slot üretmez** bu gün.
+
+`buildScoredPool(..., { tiers: GLOBAL_TIERS, relaxedTiers: null, ...})`
+— `_shared/gauntletCore.ts:861-880`, **tier basamağı tamamen kapalı.**
+
+**Mevcut durumu (13 Ağu 2026):** havuz `pool_size = 869` (log okundu).
+Taban 4'e karşı geniş aman, güvenli. Ama C.0e sert filtresi (release_date,
+recognition_missing) ileride sıkılaştırılacak — F fazı "vizyon penceresi"
+kısıtı (Faz Planı §2.4) ekleneceği zaman bu satırı yeniden değerlendir.
+Kişisel slotlar `extended`'i kaybederse gevşetme merdiveni archive'a kadar
+iniyor (`relaxedTiers: RELAXED_TIERS = ['archive']`), fakat global gevşetmezse
+günü kaçırır.
