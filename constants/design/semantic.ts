@@ -50,3 +50,29 @@ export const type = {
   meta: { fontFamily: 'MartianMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
   'meta-strong': { fontFamily: 'MartianMono_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
 } as const;
+
+/**
+ * Boşluk merdiveni — DESIGN_OS §4.1. `Theme.spacing`'in xs/xxl adlarıyla
+ * KARIŞTIRILMAZ — bu ayrı, gauntlet bileşenlerine özel bir ölçek.
+ */
+export const space = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+  xxxl: 64,
+} as const;
+
+/**
+ * Köşe yarıçapı — DESIGN_OS §4.2. `chrome`, `Theme.borderRadius.xxl` ile
+ * aynı değeri taşır (28) — theme.ts değiştirilmez, yalnızca referans verilir.
+ */
+export const radius = {
+  poster: 14,
+  surface: 20,
+  chrome: Theme.borderRadius.xxl,
+  pill: 999,
+} as const;
