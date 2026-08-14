@@ -26,6 +26,33 @@ export interface GauntletFilm {
   dominantColor?: OklchColor; // opsiyonel — ışık sızması
 }
 
+/**
+ * "Bu gauntlet'ta nerede kaldın" — resume yolu (CTO onayı 14.08.2026).
+ * Yalnızca DURUM bilgisi taşır; skor, aday havuzu ya da eleme gerekçesi
+ * ASLA taşımaz.
+ *
+ * Invariant:
+ *   status === 'in_progress' → defender ve challenger dolu, champion null
+ *   status === 'champion'    → defender/challenger null, champion dolu,
+ *                              completedRounds === 3
+ *   status === 'exhausted'   → defender/challenger/champion hepsi null
+ *                              olabilir, exhaustedReason dolu
+ *   progress undefined       → istemci Tur 1'den başlar (eski istemci yolu)
+ */
+export interface GauntletProgress {
+  /** Tamamlanmış tur sayısı. 3 = gauntlet bitti. */
+  completedRounds: 0 | 1 | 2 | 3;
+  status: 'in_progress' | 'champion' | 'exhausted';
+  /** "Şu anki seçimin". */
+  defender: GauntletFilm | null;
+  /** Karşısına çıkan film. */
+  challenger: GauntletFilm | null;
+  /** Yalnızca status === 'champion' ise dolu. */
+  champion: GauntletFilm | null;
+  /** Yalnızca status === 'exhausted' ise dolu. */
+  exhaustedReason?: 'no_candidates' | 'timeout_no_winner';
+}
+
 export interface DailyGauntlet {
   gauntletId: string;
   date: string;
@@ -36,6 +63,7 @@ export interface DailyGauntlet {
   userConfidence: number; // 0-1
   refreshesRemaining: number;
   algorithmVersion: string;
+  progress?: GauntletProgress; // opsiyonel — geriye dönük uyumlu
 }
 
 /**

@@ -588,6 +588,15 @@ D: Arşiv + paywall · E: Web gauntlet + dağıtım · F: Kişiselleştirme (MMR
 >
 > **Yeniden değerlendirme:** 1.000 aktif kullanıcı
 
+> **14.08.2026 — GauntletProgress sözleşmeye eklendi (C.2-0, CTO onaylı).**
+> Gerekçe: resume yolu yoktu — istemci 2. turdan sonra kapatıp açınca Tur
+> 1'e düşüyor, idempotency koruması ilerlemeyi kilitliyordu. Resume,
+> `daily_gauntlets.film_ids`'in submit-choice tarafından güncel tutulan
+> haliyle deterministik türetilir; yeniden seçim gerekmez. Timeout'ta
+> defender pozisyonel konvansiyonla belirlenir, skorlamayı etkilemez
+> (`winner` null kalır). Tur 3 timeout ayrı `status: 'exhausted'` durumudur
+> (§15.3 metnine bağlanır), şampiyon uydurulmaz.
+
 ---
 
 ## 12. AÇIK SORULAR

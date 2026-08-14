@@ -1566,3 +1566,21 @@ bilinmiyor.
 **Tekrar gerekli:** Service-role JWT ile users.archetype_id kontrol edilmeli.
 Bu turda ertelendi.
 
+---
+
+## 🔵 `submit-choice` — `seen` yazımı read-then-write, teorik yarış penceresi
+
+**Kayıt: 14 Ağu 2026, C.2-0 sırasında kod okunurken görüldü.**
+
+`markWatched()` (`supabase/functions/submit-choice/index.ts:375-424`) önce
+`watchlist` satırını okuyor, `watched_at` doluysa dokunmuyor, boşsa `id` ile
+UPDATE ediyor. Okuma ile yazma arasında ikinci bir istek aynı satırı
+doldurursa gerçek izleme tarihi bugünle ezilebilir — UPDATE'te
+`.is('watched_at', null)` guard'ı yok.
+
+**Neden şimdi değil:** C.2-0'ın kısıtı "submit-choice DEĞİŞTİRİLMEYECEK".
+Pencere pratikte dar (aynı kullanıcının çift `seen` isteği aynı milisaniyelerde
+gelmeli) ve idempotency katmanı çoğu tekrarı zaten eler. submit-choice ayrı
+bir işte ele alınmalı; düzeltme tek satır: UPDATE'e `.is('watched_at', null)`
+eklemek + 0 satır etkilenirse loglamak.
+

@@ -535,6 +535,13 @@ select table_name from information_schema.tables
 ## B.2 — Kilitli sözleşme
 
 > 🗄️ ARŞİV — uygulandı, yeniden koşturma.
+>
+> **➕ EK — 14.08.2026 (C.2-0, CTO onaylı):** `DailyGauntlet`'a
+> `progress?: GauntletProgress` eklendi (resume yolu: `completedRounds` ·
+> `status` · `defender` · `challenger` · `champion` · `exhaustedReason?`).
+> Alan EKLEMESİ, şekil değişikliği değil — aşağıdaki arayüzlerin hiçbir
+> mevcut alanı değişmedi. Güncel şekil: `types/gauntlet.ts`; gerekçe:
+> PRODUCT_OS §11 (14.08.2026).
 
 ```
 ## BAĞLAM

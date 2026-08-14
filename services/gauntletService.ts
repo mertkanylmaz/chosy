@@ -14,6 +14,11 @@ import type { ChoiceSubmission, DailyGauntlet } from '@/types/gauntlet';
 /**
  * Günün gauntlet'ını getirir. Yoksa sunucu üretir.
  * Client "neden bu 4 film" bilgisini ASLA almaz.
+ *
+ * Dönüş `progress?` taşır (C.2-0, CTO onayı 14.08.2026): sunucu "nerede
+ * kaldın"ı `choice_events` + güncel `film_ids`'ten türetir. İstemci
+ * `progress` doluysa oradan devam eder; `undefined` ise Tur 1'den başlar
+ * (eski istemci yolu). İstemci turu ASLA kendisi saymaz.
  */
 export async function getTodayGauntlet(): Promise<DailyGauntlet> {
   throw new Error('not implemented: getTodayGauntlet (B.3)');

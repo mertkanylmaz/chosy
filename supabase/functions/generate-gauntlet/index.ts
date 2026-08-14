@@ -59,6 +59,7 @@ import type {
   DailyGauntlet,
   GauntletContext,
   GauntletFilm,
+  GauntletProgress,
 } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -171,6 +172,173 @@ async function countSignals(
 
   if (error) throw new Error(`sinyal sayımı başarısız: ${error.message}`)
   return count ?? 0
+}
+
+// ─── Progress türetimi (C.2-0) ───────────────────────────────────────────────
+
+interface AdvancingEvent {
+  round: number
+  outcome: 'choice' | 'timeout'
+  winner: string | null
+  film_a: string
+  film_b: string
+}
+
+/**
+ * `types/gauntlet.ts`'teki invariant'ın çalışma zamanı karşılığı. Zod YOK —
+ * B.2 kararı (4_OS: "B.2'de Zod eklenmedi") ve sözleşme dosyasının kendi
+ * "dış paket yok" kuralı korunur. İhlal üretim hatasıdır: sessizce
+ * düzeltilmez, throw → dış catch → Sentry fatal + gerçek hata.
+ */
+function assertProgressInvariant(p: GauntletProgress): void {
+  const fail = (reason: string): never => {
+    throw new Error(`GauntletProgress invariant ihlali: ${reason}`)
+  }
+  if (p.status === 'in_progress') {
+    if (!p.defender || !p.challenger) fail('in_progress: defender/challenger boş')
+    if (p.champion !== null) fail('in_progress: champion dolu olamaz')
+  } else if (p.status === 'champion') {
+    if (p.defender !== null || p.challenger !== null) {
+      fail('champion: defender/challenger null olmalı')
+    }
+    if (!p.champion) fail('champion: champion boş')
+    if (p.completedRounds !== 3) fail('champion: completedRounds 3 olmalı')
+  } else if (!p.exhaustedReason) {
+    fail('exhausted: exhaustedReason zorunlu')
+  }
+}
+
+/**
+ * "Bu gauntlet'ta nerede kaldın" — `choice_events` + `film_ids`'in GÜNCEL
+ * halinden deterministik türetilir (CTO kararı 14.08.2026). Yeniden aday
+ * seçimi YOK: submit-choice yenilemede filmleri AYNI index'e yazdığı için
+ * (submit-choice DAL 2) tur çiftlerinin pozisyonları sabittir:
+ *
+ *   Tur r çifti = { savunma slotu dIdx, meydan okuyucu slotu r }  (0-tabanlı
+ *   dizi, 1-tabanlı tur) · dIdx(1) = 0 · dIdx(r+1) = kazanan meydan
+ *   okuyucuysa r, savunansa dIdx(r) · timeout'ta dIdx DEĞİŞMEZ — konvansiyon:
+ *   winner null kalır, skorlamaya girmez, yalnız ekran sürekliliği sağlar.
+ *
+ * Kazananın hangi slotta olduğu KAYBEDENİN pozisyonundan bulunur: kaybeden
+ * elendiği andan sonra bir daha değiştirilmez, bugünkü film_ids'te hâlâ aynı
+ * index'tedir. Kazanan ise sonraki turda `seen` ile değiştirilmiş olabilir —
+ * id ile `indexOf` bu yüzden güvenilmezdir.
+ *
+ * `champion_film_id` yalnızca DOĞRULAMA için okunur; completedRounds'un
+ * kaynağı choice_events'tir. submit-choice'ın kalıcı iz bırakmayan
+ * `no_candidates` exhaustion'ı buraya YANSITILMAZ — yalnız DB'ye yazılmış
+ * duruma göre türetilir.
+ */
+async function deriveProgress(
+  service: SupabaseClient,
+  row: { id: string; film_ids: string[]; champion_film_id: string | null },
+  films: GauntletFilm[],
+): Promise<GauntletProgress> {
+  const { data, error } = await service
+    .from('choice_events')
+    .select('round,outcome,winner,film_a,film_b')
+    .eq('gauntlet_id', row.id)
+    .in('outcome', ['choice', 'timeout'])
+    .order('round', { ascending: true })
+
+  if (error) {
+    throw new Error(
+      `progress türetimi: choice_events sorgusu başarısız: ${error.message}`,
+    )
+  }
+
+  const events = (data ?? []) as AdvancingEvent[]
+  const completedRounds = events.length
+
+  // 072'nin partial UNIQUE index'i tur başına tek ilerleten olay garanti
+  // eder; taşma/boşluk veri anomalisidir ve sessizce düzeltilmez.
+  if (completedRounds > 3) {
+    throw new Error(
+      `progress türetimi: ${completedRounds} ilerleten olay (beklenen ≤3), ` +
+        `gauntlet ${row.id}`,
+    )
+  }
+  events.forEach((e, i) => {
+    if (e.round !== i + 1) {
+      throw new Error(
+        `progress türetimi: tur dizisi boşluklu ` +
+          `(${events.map((x) => x.round).join(',')}), gauntlet ${row.id}`,
+      )
+    }
+  })
+
+  let dIdx = 0
+  for (const e of events) {
+    if (e.outcome === 'timeout') continue
+    if (!e.winner) {
+      throw new Error(
+        `progress türetimi: outcome='choice' ama winner null, ` +
+          `tur ${e.round}, gauntlet ${row.id}`,
+      )
+    }
+    const loser = e.winner === e.film_a ? e.film_b : e.film_a
+    if (row.film_ids[e.round] === loser) {
+      // Kaybeden meydan okuyucu slotunda → kazanan savunandı, dIdx sabit.
+    } else if (row.film_ids[dIdx] === loser) {
+      dIdx = e.round
+    } else {
+      throw new Error(
+        `progress türetimi: tur ${e.round} kaybedeni film_ids'te beklenen ` +
+          `slotlarda değil, gauntlet ${row.id}`,
+      )
+    }
+  }
+
+  if (completedRounds === 3) {
+    const last = events[2]
+    if (last.outcome === 'timeout') {
+      return {
+        completedRounds: 3,
+        status: 'exhausted',
+        exhaustedReason: 'timeout_no_winner',
+        defender: null,
+        challenger: null,
+        champion: null,
+      }
+    }
+    if (!row.champion_film_id || row.champion_film_id !== last.winner) {
+      throw new Error(
+        `progress türetimi: champion_film_id (${row.champion_film_id}) ` +
+          `3. tur kazananıyla (${last.winner}) uyuşmuyor, gauntlet ${row.id}`,
+      )
+    }
+    const champion = films.find((f) => f.id === row.champion_film_id)
+    if (!champion) {
+      throw new Error(
+        `progress türetimi: şampiyon film_ids dışında: ` +
+          `${row.champion_film_id}, gauntlet ${row.id}`,
+      )
+    }
+    return {
+      completedRounds: 3,
+      status: 'champion',
+      defender: null,
+      challenger: null,
+      champion,
+    }
+  }
+
+  // Sıradaki tur = completedRounds + 1 → meydan okuyucu slotu aynı index.
+  const defender = films[dIdx]
+  const challenger = films[completedRounds + 1]
+  if (!defender || !challenger) {
+    throw new Error(
+      `progress türetimi: slot çözümlenemedi (dIdx=${dIdx}, ` +
+        `tur=${completedRounds + 1}), gauntlet ${row.id}`,
+    )
+  }
+  return {
+    completedRounds: completedRounds as 0 | 1 | 2,
+    status: 'in_progress',
+    defender,
+    challenger,
+    champion: null,
+  }
 }
 
 // ─── Üretim ──────────────────────────────────────────────────────────────────
@@ -289,7 +457,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // ── Idempotency: aynı kullanıcı + gün ikinci çağrıda YENİ üretim yapmaz ──
     const existing = await service
       .from('daily_gauntlets')
-      .select('id,film_ids,slot_types,context,relaxed,algorithm_version')
+      .select(
+        'id,film_ids,slot_types,context,relaxed,algorithm_version,champion_film_id',
+      )
       .eq('user_id', appUserId)
       .eq('scope', 'personal')
       .eq('date', date)
@@ -309,19 +479,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
         slot_types: string[]
         context: GauntletContext | null
         algorithm_version: string
+        champion_film_id: string | null
       }
+      const films = await fetchFilmsByIds(service, row.film_ids)
+      const progress = await deriveProgress(service, row, films)
+      assertProgressInvariant(progress)
       const response: DailyGauntlet = {
         gauntletId: row.id,
         date,
         context: row.context ?? context,
         contextPredicted: false,
-        films: await fetchFilmsByIds(service, row.film_ids),
+        films,
         slotTypes: row.slot_types as DailyGauntlet['slotTypes'],
         userConfidence,
         refreshesRemaining: REFRESHES_PER_DAY_FREE,
         algorithmVersion: row.algorithm_version,
+        progress,
       }
-      logInfo('gauntlet_served_cached', { user_id: appUserId, gauntlet_id: row.id })
+      logInfo('gauntlet_served_cached', {
+        user_id: appUserId,
+        gauntlet_id: row.id,
+        completed_rounds: progress.completedRounds,
+        progress_status: progress.status,
+      })
       return jsonResponse(response)
     }
 
@@ -350,7 +530,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
         logInfo('gauntlet_insert_race', { user_id: appUserId, date })
         const retry = await service
           .from('daily_gauntlets')
-          .select('id,film_ids,slot_types,context,algorithm_version')
+          .select(
+            'id,film_ids,slot_types,context,algorithm_version,champion_film_id',
+          )
           .eq('user_id', appUserId)
           .eq('scope', 'personal')
           .eq('date', date)
@@ -366,17 +548,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
           slot_types: string[]
           context: GauntletContext | null
           algorithm_version: string
+          champion_film_id: string | null
         }
+        const films = await fetchFilmsByIds(service, row.film_ids)
+        // Yarışı kazanan istekle aynı yol: satır az önce açılmış olsa da
+        // progress TÜRETİLİR — istemcide ikinci bir kod yolu doğmasın.
+        const progress = await deriveProgress(service, row, films)
+        assertProgressInvariant(progress)
         const response: DailyGauntlet = {
           gauntletId: row.id,
           date,
           context: row.context ?? context,
           contextPredicted: false,
-          films: await fetchFilmsByIds(service, row.film_ids),
+          films,
           slotTypes: row.slot_types as DailyGauntlet['slotTypes'],
           userConfidence,
           refreshesRemaining: REFRESHES_PER_DAY_FREE,
           algorithmVersion: row.algorithm_version,
+          progress,
         }
         return jsonResponse(response)
       }
@@ -394,17 +583,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
       film_ids: generated.films.map((f) => f.id),
     })
 
+    const films = generated.films.map(toGauntletFilm)
+    // Yeni gauntlet'ta da progress döner — istemcinin iki ayrı kod yolu olmaz.
+    const progress: GauntletProgress = {
+      completedRounds: 0,
+      status: 'in_progress',
+      defender: films[0],
+      challenger: films[1],
+      champion: null,
+    }
+    assertProgressInvariant(progress)
+
     const response: DailyGauntlet = {
       gauntletId: insert.data.id,
       date,
       context,
       // v0'da bağlam istemciden gelir; tahmin motoru C fazında bunu true yapar.
       contextPredicted: false,
-      films: generated.films.map(toGauntletFilm),
+      films,
       slotTypes,
       userConfidence,
       refreshesRemaining: REFRESHES_PER_DAY_FREE,
       algorithmVersion: ALGORITHM_VERSION,
+      progress,
     }
     return jsonResponse(response)
   } catch (err) {
