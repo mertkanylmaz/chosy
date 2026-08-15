@@ -64,6 +64,17 @@ export interface DailyGauntlet {
   refreshesRemaining: number;
   algorithmVersion: string;
   progress?: GauntletProgress; // opsiyonel — geriye dönük uyumlu
+  pendingWatchFeedback?: PendingWatchFeedback; // opsiyonel — C.4 "dün izledin mi?"
+}
+
+/**
+ * "Dün izledin mi?" sorusu — dünün gauntlet'i champion'a ulaştı ve henüz
+ * watch_feedback satırı yok. Yalnızca SORULACAK filmi taşır; bu ekranın
+ * kendi gauntlet'iyle karışmaz (ayrı gauntletId).
+ */
+export interface PendingWatchFeedback {
+  gauntletId: string;
+  film: GauntletFilm;
 }
 
 /**
@@ -105,6 +116,17 @@ export function isValidChoiceOutcome(v: unknown): v is ChoiceOutcome {
  *   burada tekrarlanmaz. B.4 bu ihlalleri yakalayıp 422 döndürür — ham
  *   Postgres hatası istemciye sızmaz.
  */
+/**
+ * Migration 086'daki `watch_feedback.response` CHECK kısıtıyla birebir aynı küme.
+ */
+export type WatchFeedbackResponse = 'loved' | 'ok' | 'abandoned' | 'not_watched' | 'skipped';
+
+export function isValidWatchFeedbackResponse(v: unknown): v is WatchFeedbackResponse {
+  return (
+    v === 'loved' || v === 'ok' || v === 'abandoned' || v === 'not_watched' || v === 'skipped'
+  );
+}
+
 export function isValidChoiceSubmission(v: unknown): v is ChoiceSubmission {
   if (typeof v !== 'object' || v === null) return false;
   const s = v as Record<string, unknown>;
