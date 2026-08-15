@@ -30,6 +30,17 @@ export const color = {
 } as const;
 
 /**
+ * Işık sızmasının zemindeki opaklık tavanı — DESIGN_OS §5.2
+ * `BLEED_CONSTRAINTS.maxAlpha`. Bileşene hardcode EDİLMEZ.
+ *
+ * §10.2 şampiyon ekranı için 0.14 yazar; CTO kararı 15.08.2026 ile 0.10 her
+ * yerde tavandır ve şampiyon sızması bu işin kapsamı dışındadır.
+ * Renk/parlaklık tavanları (maxChroma, maxLightness) burada YOK — onlar
+ * backend'in işi (migration 084+085), istemci tekrar kırpmaz.
+ */
+export const BLEED_ALPHA = 0.1;
+
+/**
  * Tipografi ölçeği — DESIGN_OS §3.3. `display-*` → Archivo Expanded,
  * `meta*` → Martian Mono, geri kalanı SF Pro (`Theme.fonts.inter`).
  *

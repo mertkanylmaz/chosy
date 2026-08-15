@@ -146,6 +146,18 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const [pair, setPair] = useState<Pair | null>(null);
   const [tileStates, setTileStates] = useState<TileStates>({ left: 'idle', right: 'idle' });
   const [champion, setChampion] = useState<GauntletFilm | null>(null);
+  /**
+   * Işık sızmasını süren film (DESIGN_OS §5, CTO kararı 15.08.2026: defender).
+   * SALT GÖRSEL — hiçbir dal bu değere göre karar vermez, oyun mantığına
+   * girmez. Film NESNESİ tutulur, id değil: `neither`/`seen` yenilemesinden
+   * gelen filmler `gauntlet.films` içinde YOKTUR (backend `film_ids`'i günceller,
+   * istemcideki kopya eskir), id'den çözmek başarısız olurdu.
+   *
+   * Yalnızca `choice` / `seen` / resume güncellenir — `neither` onu DEĞİŞTİRMEZ,
+   * renk son geçerli defender'da kalır. Gerekçe: `neither` iki filmi de eler
+   * (submit-choice DAL 2), geriye taşınacak bir defender kalmaz.
+   */
+  const [defenderFilm, setDefenderFilm] = useState<GauntletFilm | null>(null);
   const [animateReveal, setAnimateReveal] = useState(false);
   const [refreshesRemaining, setRefreshesRemaining] = useState(0);
   const [seenMode, setSeenMode] = useState(false);
@@ -224,6 +236,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         // KESİN koşul: status==='in_progress' && completedRounds>0 → resume
         setRound((p.completedRounds + 1) as 2 | 3);
         setPair({ left: p.defender as GauntletFilm, right: p.challenger as GauntletFilm });
+        setDefenderFilm(p.defender as GauntletFilm); // sızma rengi (§5)
         setTileStates({ left: 'idle', right: 'idle' });
         setShellState('in_progress');
         return;
@@ -236,6 +249,8 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           ? { left: p.defender, right: p.challenger }
           : { left: g.films[0], right: g.films[1] },
       );
+      // Tur 1'de defender backend'in dIdx=0 konvansiyonudur (§5 sızma rengi).
+      setDefenderFilm(p?.defender ?? g.films[0]);
       setTileStates({ left: 'idle', right: 'idle' });
       setShellState('ready');
     },
@@ -453,6 +468,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           const [left, right] = orderPair(winner, incoming);
           setRound(newRound);
           setPair({ left, right });
+          setDefenderFilm(winner); // kazanan yeni defender — sızma rengi (§5)
           setTileStates({
             left: left.id === incoming.id ? 'entering' : 'idle',
             right: right.id === incoming.id ? 'entering' : 'idle',
@@ -559,6 +575,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (!mountedRef.current) return;
       setSeenMode(false);
       if (!result) return;
+      // İzlenen film defender'sa sızma rengi elde kalan filme geçer
+      // (submit-choice DAL 2: 'seen'de KAYBEDEN kalır). Değilse dokunulmaz.
+      const retained = side === 'left' ? pair.right : pair.left;
+      setDefenderFilm((prev) => (prev && prev.id === seenFilm.id ? retained : prev));
       applyRefreshResult(result, pair);
     },
     [pair, gauntlet, submitting, transitioning, round, submit, applyRefreshResult],
@@ -666,7 +686,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   return (
     <View style={styles.root}>
-      <LightBleed />
+      <LightBleed dominantColor={defenderFilm?.dominantColor} />
       <View style={styles.content}>
         <View style={styles.header}>
           <ConfidenceMeter userConfidence={gauntlet.userConfidence} />
