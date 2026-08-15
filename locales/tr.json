@@ -1388,6 +1388,14 @@
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
     "submitError": "Seçim kaydedilemedi. Tekrar dene.",
     "retry": "Tekrar dene",
-    "dismissTomorrow": "Boşver, yarın"
+    "dismissTomorrow": "Boşver, yarın",
+    "pendingFeedback": {
+      "question": "Dünün filmini izledin mi?",
+      "loved": "Sevdim",
+      "ok": "İyiydi",
+      "abandoned": "Yarım bıraktım",
+      "notWatched": "İzlemedim",
+      "skip": "Şimdi değil"
+    }
   }
 }

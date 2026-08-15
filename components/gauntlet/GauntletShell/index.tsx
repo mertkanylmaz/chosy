@@ -26,6 +26,7 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import { ChampionReveal } from '@/components/gauntlet/ChampionReveal';
 import { ConfidenceMeter } from '@/components/gauntlet/ConfidenceMeter';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
+import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
@@ -39,10 +40,16 @@ import {
   GauntletAuthPendingError,
   getTodayGauntlet,
   submitChoice,
+  submitWatchFeedback,
   type ChoiceResult,
 } from '@/services/gauntletService';
 import { supabase } from '@/services/supabase';
-import type { ChoiceSubmission, DailyGauntlet, GauntletFilm } from '@/types/gauntlet';
+import type {
+  ChoiceSubmission,
+  DailyGauntlet,
+  GauntletFilm,
+  WatchFeedbackResponse,
+} from '@/types/gauntlet';
 import {
   hapticHeavy,
   hapticLight,
@@ -162,6 +169,14 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const [refreshesRemaining, setRefreshesRemaining] = useState(0);
   const [seenMode, setSeenMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  /**
+   * "Dün izledin mi?" kartı görünür mü (C.4). ŞellState'e YENİ bir üye
+   * DEĞİL — CTO'nun onayladığı "BEŞ durum" sözleşmesi bozulmaz, bu yalnız
+   * normal ready/in_progress/completed_today render'ının ÜSTÜNE binen bir
+   * interstitial. Yanıtlanınca veya atlanınca kapanır, altındaki ekran
+   * (zaten hazır durumda) hemen görünür.
+   */
+  const [pendingFeedbackVisible, setPendingFeedbackVisible] = useState(false);
   /** Eleme/yenileme geçişi oynarken dokunma kilidi — çifte submit önlenir. */
   const [transitioning, setTransitioning] = useState(false);
 
@@ -199,6 +214,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setGauntlet(g);
       setRefreshesRemaining(g.refreshesRemaining);
       setActionError(null);
+      if (g.pendingWatchFeedback) setPendingFeedbackVisible(true);
       const p = g.progress;
 
       if (p && p.status === 'champion') {
@@ -547,6 +563,35 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     applyRefreshResult(result, pair);
   }, [pair, gauntlet, submitting, transitioning, round, submit, applyRefreshResult]);
 
+  /**
+   * "Dün izledin mi?" cevabı (C.4). Kart ANINDA kapanır — network sonucu
+   * BEKLENMEZ (CTO şartı: "sonucu beklemeden normal akışa devam et, asla
+   * bloklamaz"). Optimistic: başarısız olursa `watch_feedback` satırı hiç
+   * yazılmaz, bir sonraki generate-gauntlet çağrısında soru KENDİLİĞİNDEN
+   * yeniden görünür — veri kaybı yok, sessiz fallback değil, kendi kendini
+   * onaran bir yol. Hata yalnızca Sentry'ye gider (kullanıcıya gösterilmez);
+   * `silent_retry` etiketi bu sınıfı "kullanıcı etkilenmedi, otomatik
+   * telafi var" olarak işaretler — Sentry'deki hata oranı taramasında
+   * gürültüden ayıklanabilsin diye.
+   */
+  const handlePendingFeedback = useCallback(
+    (response: WatchFeedbackResponse) => {
+      const pending = gauntlet?.pendingWatchFeedback;
+      setPendingFeedbackVisible(false);
+      if (!pending) return; // savunma: kart yanlışlıkla pending olmadan gösterildiyse
+      submitWatchFeedback(pending.gauntletId, pending.film.id, response).catch((err) => {
+        Sentry.captureException(err, {
+          tags: {
+            component: 'GauntletShell',
+            flow: 'pendingWatchFeedback',
+            silent_retry: 'next_gauntlet_fetch',
+          },
+        });
+      });
+    },
+    [gauntlet],
+  );
+
   /** "Bunu izledim" moduna gir/çık (CTO kararı 4: soru satırı + "Vazgeç"). */
   const handleSeenToggle = useCallback(() => {
     if (submitting) return;
@@ -596,6 +641,18 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
+
+  // C.4: normal akışın ÜSTÜNE biner, ShellState'e dahil DEĞİL (bkz. state
+  // tanımı yorumu). Yanıtlanana/atlanana kadar altındaki ready/in_progress/
+  // completed_today ekranı render edilmez — ama state olarak zaten hazırdır.
+  if (pendingFeedbackVisible && gauntlet?.pendingWatchFeedback) {
+    return (
+      <PendingWatchFeedbackCard
+        film={gauntlet.pendingWatchFeedback.film}
+        onRespond={handlePendingFeedback}
+      />
+    );
+  }
 
   if (shellState === 'before_18') {
     return (

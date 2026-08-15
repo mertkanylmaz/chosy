@@ -23,6 +23,7 @@ import type {
   DailyGauntlet,
   GauntletContext,
   GauntletFilm,
+  WatchFeedbackResponse,
 } from '@/types/gauntlet';
 
 // ─── Yanıt tipleri ───────────────────────────────────────────────────────────
@@ -229,6 +230,51 @@ export async function submitChoice(
 
   recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok');
   return data as ChoiceResult;
+}
+
+/**
+ * `POST /submit-watch-feedback` YANITI — `supabase/functions/submit-watch-feedback/
+ * index.ts:WatchFeedbackResult` ile ayna tip (aynı gerekçe: ChoiceResult).
+ */
+export interface WatchFeedbackResult {
+  status: 'answered' | 'already_answered';
+  response: WatchFeedbackResponse;
+}
+
+/**
+ * "Dün izledin mi?" cevabını kaydeder (C.4).
+ *
+ * ⚠️ Diğer servis fonksiyonlarından FARKLI olarak burada Sentry.captureException
+ * ÇAĞRILMAZ — bu fonksiyon GauntletShell'de fire-and-forget (bloklamayan)
+ * bir akıştan çağrılır ve çağıran taraf kendi Sentry raporunu kendi
+ * sınıflandırma etiketiyle (`silent_retry`) atar. Burada da rapor edilirse
+ * AYNI hata iki kez Sentry'ye düşer — gürültü azaltma amacını boşa çıkarır.
+ * Hata burada yalnızca ayrıştırılıp fırlatılır, sessizce YUTULMAZ.
+ */
+export async function submitWatchFeedback(
+  gauntletId: string,
+  filmId: string,
+  response: WatchFeedbackResponse,
+): Promise<WatchFeedbackResult> {
+  await ensureAuthSession();
+
+  const startedAt = performance.now();
+  const { data, error } = await supabase.functions.invoke('submit-watch-feedback', {
+    body: { gauntletId, filmId, response },
+  });
+
+  if (error) {
+    recordTiming(`submit-watch-feedback(${response})`, startedAt, 'error');
+    const { status, detail } = await parseInvokeError(error);
+    if (status === 401) {
+      throw new GauntletAuthPendingError(detail);
+    }
+    logger.error('[gauntletService] submitWatchFeedback failed:', detail);
+    throw new Error(detail || 'submit-watch-feedback failed');
+  }
+
+  recordTiming(`submit-watch-feedback(${response})`, startedAt, 'ok');
+  return data as WatchFeedbackResult;
 }
 
 /**

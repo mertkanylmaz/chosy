@@ -1388,6 +1388,14 @@
     "loadError": "Today's films couldn't load. Try again.",
     "submitError": "Your pick wasn't saved. Try again.",
     "retry": "Try again",
-    "dismissTomorrow": "Never mind, tomorrow"
+    "dismissTomorrow": "Never mind, tomorrow",
+    "pendingFeedback": {
+      "question": "Did you watch yesterday's film?",
+      "loved": "Loved it",
+      "ok": "It was fine",
+      "abandoned": "Didn't finish it",
+      "notWatched": "Haven't watched it",
+      "skip": "Not now"
+    }
   }
 }
