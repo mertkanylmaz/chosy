@@ -1661,7 +1661,7 @@ okunur — oysa izlemiş olmak beğenmiş olmak değil. Vektör hesabına girmed
 
 ---
 
-## 🟢 Işık sızması — çok karanlık posterlerde görünmüyor, tabanı yok
+## 🟢 Işık sızması — düşük-chroma posterlerde her koşulda cılız kalıyor
 
 **Kayıt: 15 Ağu 2026, C.2c.**
 
@@ -1682,12 +1682,31 @@ sapması):
 Δ3 görünmez (referans: `ink → charcoal` yükseklik adımı Δ15). Yani gerçekten
 karanlık/akromatik posterli filmlerde imza öğe çalışmaz.
 
+**⚠️ 15 Ağu 2026 düzeltmesi — sorun lightness tabanı DEĞİL, chroma tabanı.**
+Bu madde önce "clamp yalnızca tavan koyar, taban yok" diye yazılmıştı. Lightness
+eşleme adayları (A/B/C, `l = taban + k × hamL`) ölçüldüğünde görüldü ki **taban
+eklemek de yetmiyor**:
+
+| Film | ham L | ham c | A → Δ | B → Δ | C → Δ | clamp → Δ |
+|---|---:|---:|---:|---:|---:|---:|
+| Double Indemnity | 0,051 | **0,026** | 3 | 2 | 2 | 3 |
+| Ikiru | 0,071 | **0,030** | 3 | 2 | 2 | 3 |
+
+Lightness tabanı `l`'yi yükseltiyor ama Δ düzelmiyor: bu filmlerin asıl sorunu
+**chroma** — ham `c` değerleri 0,026 ve 0,030, yani tavanın (0,08) üçte biri.
+Renksiz bir rengi parlatmak ink'e yakın bir gri üretir. Yani **düşük-chroma
+filmlerde (c < ~0,03) sızma her koşulda cılız kalır**; çözüm için ayrı bir
+**minimum chroma tabanı** gerekir.
+
 **Karar bekliyor — iki seçenek:**
-1. **Minimum lightness tabanı** eklensin (ör. `minLightness ≈ 0.12`): her filmde
-   görünür sızma olur, ama karanlık poster ile aydınlık poster arasındaki ayrım
-   silinir ve renk artık posteri temsil etmez.
-2. **"Karanlık film karanlık ışık yayar"** olarak kabul edilsin: fiziksel olarak
+1. **Minimum chroma tabanı** eklensin (ör. `minChroma ≈ 0.03`): akromatik
+   posterlerde de renk görünür, ama o renk artık posteri temsil etmez —
+   gri bir posterden uydurulmuş bir hue yayılır.
+2. **"Renksiz film renksiz ışık yayar"** olarak kabul edilsin: fiziksel olarak
    doğru, tasarım tezine sadık, ama bazı filmlerde imza öğe hiç görünmez.
+
+Bu karar **lightness eşleme kararından (A/B/C) bağımsızdır** — hangisi seçilirse
+seçilsin düşük-chroma filmler etkilenmeye devam eder.
 
 **Etkilenen oran ölçüldü** (15 Ağu, tam havuz yeniden hesaplandıktan sonra):
 `dominant_color.l < 0.15` olan **62 film / 1867 (%3,3)**. Filmlerin %94,3'ü
