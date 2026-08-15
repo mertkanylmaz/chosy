@@ -46,6 +46,7 @@ import {
   buildScoredPool,
   type Candidate,
   fetchCandidatesByIds,
+  markWatched,
   pairKey,
   pickReplacements,
   toGauntletFilm,
@@ -380,63 +381,9 @@ async function recordImpression(
   }
 }
 
-/**
- * `seen` → film izlenmiş olarak işaretlenir.
- *
- * Zaten `watched_at` dolu olan satıra DOKUNULMAZ: kullanıcının gerçek izleme
- * tarihi bugünün tarihiyle ezilirse geri getirilemez. Bu bir fallback değil,
- * idempotency kuralıdır — ve loglanır.
- */
-async function markWatched(
-  service: SupabaseClient,
-  appUserId: string,
-  filmId: string,
-): Promise<void> {
-  const existing = await service
-    .from('watchlist')
-    .select('id,watched_at')
-    .eq('user_id', appUserId)
-    .eq('film_id', filmId)
-    .maybeSingle()
-
-  if (existing.error) {
-    throw new Error(`watchlist okuması başarısız: ${existing.error.message}`)
-  }
-
-  const now = new Date().toISOString()
-
-  if (!existing.data) {
-    const insert = await service.from('watchlist').insert({
-      user_id: appUserId,
-      film_id: filmId,
-      watched_at: now,
-      watched_source: 'gauntlet_feedback',
-    })
-    if (insert.error) {
-      throw new Error(`watchlist yazımı başarısız: ${insert.error.message}`)
-    }
-    return
-  }
-
-  const row = existing.data as { id: string; watched_at: string | null }
-  if (row.watched_at) {
-    logInfo('choice_watched_already_marked', {
-      user_id: appUserId,
-      film_id: filmId,
-      watched_at: row.watched_at,
-    })
-    return
-  }
-
-  const update = await service
-    .from('watchlist')
-    .update({ watched_at: now, watched_source: 'gauntlet_feedback' })
-    .eq('id', row.id)
-
-  if (update.error) {
-    throw new Error(`watchlist güncellemesi başarısız: ${update.error.message}`)
-  }
-}
+// `markWatched` (C.4'te `_shared/gauntletCore.ts`'e taşındı — submit-watch-feedback
+// ile paylaşılıyor, davranış birebir korunur): watchlist.watched_at yalnızca
+// NULL ise yazılır, seen dalı burada çağırır.
 
 // ─── Tur ilerletme ───────────────────────────────────────────────────────────
 

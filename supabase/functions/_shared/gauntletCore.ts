@@ -464,6 +464,69 @@ export async function fetchGlobalExclusions(
   }
 }
 
+/**
+ * Bir filmi izlenmiş işaretler — `watchlist.watched_at` yalnızca NULL ise
+ * yazılır.
+ *
+ * Zaten `watched_at` dolu olan satıra DOKUNULMAZ: kullanıcının gerçek izleme
+ * tarihi bugünün tarihiyle ezilirse geri getirilemez. Bu bir fallback değil,
+ * idempotency kuralıdır — ve loglanır.
+ *
+ * submit-choice (`seen` dalı) ve submit-watch-feedback (C.4, `loved`/`ok`/
+ * `abandoned`) ikisi de bu fonksiyonu çağırır — davranış tek yerde, iki
+ * çağıran arasında ıraksama riski yok.
+ */
+export async function markWatched(
+  service: SupabaseClient,
+  appUserId: string,
+  filmId: string,
+): Promise<void> {
+  const existing = await service
+    .from('watchlist')
+    .select('id,watched_at')
+    .eq('user_id', appUserId)
+    .eq('film_id', filmId)
+    .maybeSingle()
+
+  if (existing.error) {
+    throw new Error(`watchlist okuması başarısız: ${existing.error.message}`)
+  }
+
+  const now = new Date().toISOString()
+
+  if (!existing.data) {
+    const insert = await service.from('watchlist').insert({
+      user_id: appUserId,
+      film_id: filmId,
+      watched_at: now,
+      watched_source: 'gauntlet_feedback',
+    })
+    if (insert.error) {
+      throw new Error(`watchlist yazımı başarısız: ${insert.error.message}`)
+    }
+    return
+  }
+
+  const row = existing.data as { id: string; watched_at: string | null }
+  if (row.watched_at) {
+    logInfo('watchlist_already_watched', {
+      user_id: appUserId,
+      film_id: filmId,
+      watched_at: row.watched_at,
+    })
+    return
+  }
+
+  const update = await service
+    .from('watchlist')
+    .update({ watched_at: now, watched_source: 'gauntlet_feedback' })
+    .eq('id', row.id)
+
+  if (update.error) {
+    throw new Error(`watchlist güncellemesi başarısız: ${update.error.message}`)
+  }
+}
+
 // ─── ADIM 2 — TANINIRLIK (YÜZDELİK) ──────────────────────────────────────────
 
 /**
