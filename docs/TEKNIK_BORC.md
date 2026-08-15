@@ -1659,3 +1659,42 @@ satırları `outcome` ile filtrelemezse "izledim" bir **tercih** sinyali gibi
 okunur — oysa izlemiş olmak beğenmiş olmak değil. Vektör hesabına girmeden
 önce `outcome = 'choice'` filtresi doğrulanmalı.
 
+---
+
+## 🟢 Işık sızması — çok karanlık posterlerde görünmüyor, tabanı yok
+
+**Kayıt: 15 Ağu 2026, C.2c.**
+
+`compute-dominant-colors.ts` `lightnessMode` varsayılanı bugün `clamp`
+(15 Ağu'da `scale`'den değiştirildi — `scale` ham L'yi 0.22 ile çarpıyordu ve
+sızmayı görünmez kılıyordu). Ama `clamp` yalnızca **tavan** koyar, **taban**
+koymaz: ham L zaten tavanın altındaysa renk olduğu gibi kalır.
+
+Ölçüldü (α 0.30, `ink` #08090B zemin, Δ = kompozitin zeminden en büyük kanal
+sapması):
+
+| Film | ham L | depolanan `l` | Δ |
+|---|---|---|---:|
+| Çoğu film | ~0.43-0.84 | 0.2200 (tavan) | **12-14** |
+| `Double Indemnity` | 0.0512 | 0.0512 | **3** |
+| `Ikiru` | 0.0712 | 0.0712 | **3** |
+
+Δ3 görünmez (referans: `ink → charcoal` yükseklik adımı Δ15). Yani gerçekten
+karanlık/akromatik posterli filmlerde imza öğe çalışmaz.
+
+**Karar bekliyor — iki seçenek:**
+1. **Minimum lightness tabanı** eklensin (ör. `minLightness ≈ 0.12`): her filmde
+   görünür sızma olur, ama karanlık poster ile aydınlık poster arasındaki ayrım
+   silinir ve renk artık posteri temsil etmez.
+2. **"Karanlık film karanlık ışık yayar"** olarak kabul edilsin: fiziksel olarak
+   doğru, tasarım tezine sadık, ama bazı filmlerde imza öğe hiç görünmez.
+
+**Etkilenen oran ölçüldü** (15 Ağu, tam havuz yeniden hesaplandıktan sonra):
+`dominant_color.l < 0.15` olan **62 film / 1867 (%3,3)**. Filmlerin %94,3'ü
+tavana (`l = 0.22`) oturuyor. α 0.30'da havuz genelinde Δ dağılımı:
+medyan 12 · p25 9 · p75 14 · max 16 — **%84,5'i Δ ≥ 8** (fark edilir),
+**%3,6'sı Δ ≤ 4** (görünmez). Yani sorun dar bir azınlıkta.
+
+**Neden şimdi değil:** Bu bir ürün/tasarım kararı, teknik düzeltme değil —
+etkilenen oran da (%3,3) acil müdahaleyi gerektirmiyor.
+

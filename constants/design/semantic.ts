@@ -30,15 +30,26 @@ export const color = {
 } as const;
 
 /**
- * Işık sızmasının zemindeki opaklık tavanı — DESIGN_OS §5.2
- * `BLEED_CONSTRAINTS.maxAlpha`. Bileşene hardcode EDİLMEZ.
+ * Işık sızmasının zemindeki opaklığı — DESIGN_OS §5.2 `BLEED_CONSTRAINTS`.
+ * Bileşene hardcode EDİLMEZ.
  *
- * §10.2 şampiyon ekranı için 0.14 yazar; CTO kararı 15.08.2026 ile 0.10 her
- * yerde tavandır ve şampiyon sızması bu işin kapsamı dışındadır.
- * Renk/parlaklık tavanları (maxChroma, maxLightness) burada YOK — onlar
- * backend'in işi (migration 084+085), istemci tekrar kırpmaz.
+ * 0.10 → 0.30 (CTO kararı 15.08.2026, cihaz testi bulgusu). §5.2'nin özgün
+ * 0.10 değeri `ink` (#08090B) zemininde ölçülebilir ama GÖRÜLEMEZ bir sızma
+ * üretiyordu: 400 filmlik ölçümde kompozit, zeminden medyan 1/255 ayrışıyordu
+ * (%90'ı Δ ≤ 2). Teorik tavanda bile (l=0.22, c=0.08) yalnız Δ5.
+ *
+ * 0.30, `clamp` modunda yeniden hesaplanmış renklerle **Δ14-16** verir — bu
+ * tam olarak sistemin kendi `elev-0 → elev-1` (`ink` → `charcoal`, Δ15)
+ * yükseklik adımıdır, yani görünürlüğün sistem içindeki referansı.
+ *
+ * Erişilebilirlik marjı korunuyor: bu alfada `bone` metin kontrastı 15.7:1,
+ * §5.3 eşiği 4.5:1. Kontrol yine de her renk değişiminde çalışır.
+ *
+ * Renk/parlaklık tavanları (maxChroma 0.08, maxLightness 0.22) DEĞİŞMEDİ ve
+ * burada YOK — onlar backend'in işi (migration 084+085), istemci tekrar
+ * kırpmaz.
  */
-export const BLEED_ALPHA = 0.1;
+export const BLEED_ALPHA = 0.3;
 
 /**
  * Tipografi ölçeği — DESIGN_OS §3.3. `display-*` → Archivo Expanded,

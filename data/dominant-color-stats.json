@@ -1,13 +1,13 @@
 {
-  "total_films": 1857,
-  "computed": 1857,
+  "total_films": 1867,
+  "computed": 1867,
   "failed": 0,
   "db_write_errors": 0,
-  "lightness_mode": "scale",
+  "lightness_mode": "clamp",
   "constraints": {
     "maxChroma": 0.08,
     "maxLightness": 0.22
   },
-  "duration_seconds": 515,
-  "finished_at": "2026-08-14T21:13:52.272Z"
+  "duration_seconds": 499,
+  "finished_at": "2026-08-15T15:44:01.134Z"
 }

@@ -461,9 +461,25 @@ async function processFilm(film: FilmRow, flags: Flags): Promise<FilmResult> {
 
   try {
     const analysis = analyzeDominantColor(decoded.data, decoded.width, decoded.height);
+    const constrained = applyBleedConstraints(analysis.color, flags.lightnessMode);
+
+    // Tavan asimi SESSIZ GECILMEZ. applyBleedConstraints zaten kirpiyor, bu
+    // yuzden buraya dusulmemeli; dusulurse kirpma mantigi bozulmus demektir ve
+    // 085 CHECK kisiti INSERT'i reddederdi. Once burada gorunur olsun.
+    if (
+      constrained.l > BLEED_CONSTRAINTS.maxLightness ||
+      constrained.c > BLEED_CONSTRAINTS.maxChroma ||
+      constrained.h < 0 || constrained.h >= 360
+    ) {
+      return fail(
+        'analyze',
+        `kisitlama sonrasi tavan asildi: l=${constrained.l} c=${constrained.c} h=${constrained.h}`,
+      );
+    }
+
     return {
       film,
-      color: applyBleedConstraints(analysis.color, flags.lightnessMode),
+      color: constrained,
       raw: analysis.color,
       posterQualityOk: true,
       achromatic: analysis.achromatic,
@@ -572,7 +588,13 @@ function parseFlags(argv: string[]): Flags {
     onlyMissing: argv.includes('--only-missing'),
     retryFailed: argv.includes('--retry-failed'),
     selfTest: argv.includes('--self-test'),
-    lightnessMode: (modeRaw as 'scale' | 'clamp' | null) ?? 'scale',
+    // 15.08.2026 — VARSAYILAN 'scale' → 'clamp'. Gerekce: 'scale' ham L'yi
+    // 0.22 ile CARPIYORDU, tipik poster L~0.5 oldugu icin depolanan l ~0.11'de
+    // kaliyor ve maxLightness tavani hic kullanilmiyordu. Sonuc: ink zemininde
+    // %10 alfada kompozit ink'ten yalnizca 1-2/255 ayrisiyor, yani sizma
+    // olculebilir ama GORULEMEZ hale geliyordu (olcum: 400 filmde medyan Δ=1).
+    // 'clamp' tavani gercekten kullanir. Tavanlarin KENDISI degismedi.
+    lightnessMode: (modeRaw as 'scale' | 'clamp' | null) ?? 'clamp',
   };
 }
 
