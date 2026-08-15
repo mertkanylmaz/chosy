@@ -184,32 +184,47 @@ function validateBusinessRules(s: ChoiceSubmission): string | null {
 
 // ─── Entitlement (SUNUCU tarafı — istemciden gelen tier'a asla güvenilmez) ───
 
+/**
+ * Hangi app_config anahtarının okunacağı (`_pro` vs `_free`) tier sonucuna
+ * BAĞLI — bu yüzden tier ile config sorgusu klasik Promise.all ile paralel
+ * ATILAMAZ (henüz hangi anahtar gerektiği bilinmiyor). Bunun yerine iki
+ * olası anahtar da TEK sorguda (.in) tier sorgusuyla birlikte paralel
+ * çekilir; tier gelince doğru satır seçilir. İkisi de LAZY okunur, sonuç
+ * hiçbir yerde cache'lenmez (CLAUDE.md kural 6).
+ */
 async function resolveRefreshLimit(
   service: SupabaseClient,
   appUserId: string,
 ): Promise<{ limit: number; tier: string }> {
-  const { data, error } = await service
-    .from('users')
-    .select('subscription_tier')
-    .eq('id', appUserId)
-    .single()
+  const [userRes, configRes] = await Promise.all([
+    service.from('users').select('subscription_tier').eq('id', appUserId).single(),
+    service
+      .from('app_config')
+      .select('key,value')
+      .in('key', ['gauntlet_refresh_limit_free', 'gauntlet_refresh_limit_pro']),
+  ])
 
-  if (error || !data) {
+  if (userRes.error || !userRes.data) {
     // Free'ye DÜŞÜRÜLMEZ. Bilinmeyen entitlement = hata, varsayım değil.
     throw new EntitlementError(
-      `subscription_tier okunamadı: ${error?.message ?? 'satır yok'}`,
+      `subscription_tier okunamadı: ${userRes.error?.message ?? 'satır yok'}`,
     )
   }
+  if (configRes.error) {
+    throw new Error(`app_config yenileme limiti okunamadı: ${configRes.error.message}`)
+  }
 
-  const tier = (data.subscription_tier as string | null) ?? 'free'
+  const tier = (userRes.data.subscription_tier as string | null) ?? 'free'
   const isPaid = PAID_TIERS.includes(tier)
+  const key = isPaid ? 'gauntlet_refresh_limit_pro' : 'gauntlet_refresh_limit_free'
 
-  // app_config LAZY okunur — modül seviyesinde cache YOK (CLAUDE.md kural 6).
-  const limit = await getAppConfig<number>(
-    service,
-    isPaid ? 'gauntlet_refresh_limit_pro' : 'gauntlet_refresh_limit_free',
-  )
-  return { limit, tier }
+  const rows = (configRes.data ?? []) as { key: string; value: number }[]
+  const row = rows.find((r) => r.key === key)
+  if (!row) {
+    throw new Error(`app_config key "${key}" not found`)
+  }
+
+  return { limit: row.value, tier }
 }
 
 // ─── Sayaçlar ────────────────────────────────────────────────────────────────
@@ -510,12 +525,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
 
   try {
-    // ── Gauntlet doğrulama: sahiplik + filmlerin gerçekten bu turnuvada olması ─
-    const gauntletRes = await service
-      .from('daily_gauntlets')
-      .select('id,user_id,film_ids,champion_film_id,context,algorithm_version')
-      .eq('id', submission.gauntletId)
-      .maybeSingle()
+    // ── Gauntlet doğrulama + idempotency kontrolü ─────────────────────────────
+    // İkisi de submission.gauntletId üzerinden bağımsız okur (gauntlet
+    // doğrulanmadan ÖNCE settled sorgusu paralel başlar) — settled.data
+    // yalnızca gauntlet sahiplik/varlık kontrolü GEÇTİKTEN sonra kullanılır,
+    // bu yüzden başka kullanıcının turnuvasına ait olay sızmaz.
+    const [gauntletRes, settled] = await Promise.all([
+      service
+        .from('daily_gauntlets')
+        .select('id,user_id,film_ids,champion_film_id,context,algorithm_version')
+        .eq('id', submission.gauntletId)
+        .maybeSingle(),
+      service
+        .from('choice_events')
+        .select('id,outcome,winner')
+        .eq('gauntlet_id', submission.gauntletId)
+        .eq('round', submission.round)
+        .in('outcome', ['choice', 'timeout'])
+        .maybeSingle(),
+    ])
 
     if (gauntletRes.error) {
       throw new Error(`gauntlet sorgusu başarısız: ${gauntletRes.error.message}`)
@@ -557,23 +585,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Sadece ikinci `choice` değil, tur kapandıktan sonra gelen GEÇ bir
     // `neither`/`seen` de buraya düşer: tur bitmiştir, geriye dönük yenileme
     // yapılamaz.
-    const settled = await service
-      .from('choice_events')
-      .select('id,outcome,winner')
-      .eq('gauntlet_id', gauntlet.id)
-      .eq('round', submission.round)
-      .in('outcome', ['choice', 'timeout'])
-      .maybeSingle()
-
     if (settled.error) {
       throw new Error(`idempotency sorgusu başarısız: ${settled.error.message}`)
     }
 
-    const { limit: refreshLimit, tier } = await resolveRefreshLimit(
-      service,
-      appUserId,
-    )
-    const usedBefore = await countRefreshesUsed(service, gauntlet.id)
+    // resolveRefreshLimit ve countRefreshesUsed birbirinden bağımsız —
+    // biri kullanıcı tier'ı, diğeri gauntlet'in kendi olay sayımı okur.
+    const [{ limit: refreshLimit, tier }, usedBefore] = await Promise.all([
+      resolveRefreshLimit(service, appUserId),
+      countRefreshesUsed(service, gauntlet.id),
+    ])
     const remainingOf = (used: number) =>
       refreshLimit === UNLIMITED ? UNLIMITED : Math.max(0, refreshLimit - used)
 
@@ -660,12 +681,14 @@ Deno.serve(async (req: Request): Promise<Response> => {
       submission.filmB,
     )
 
-    const lowIntentSession = await isLowIntentSession(service, gauntlet.id)
-    // Eşik app_config'ten LAZY okunur — veriyle ayarlanabilir kalsın.
-    const minSample = await getAppConfig<number>(
-      service,
-      'gauntlet_rejection_min_sample',
-    )
+    // isLowIntentSession ve minSample birbirinden bağımsız — paralel.
+    // rejectionRate ise minSample PARAMETRESİNİ alıyor (query .limit(minSample)),
+    // bu yüzden üçü birden paralel olamaz: minSample gelmeden başlatılamaz.
+    const [lowIntentSession, minSample] = await Promise.all([
+      isLowIntentSession(service, gauntlet.id),
+      // Eşik app_config'ten LAZY okunur — veriyle ayarlanabilir kalsın.
+      getAppConfig<number>(service, 'gauntlet_rejection_min_sample'),
+    ])
     const rate = await rejectionRate(service, appUserId, minSample)
     const suggestSingleFilm = rate !== null && rate > REJECTION_RATE_THRESHOLD
 
