@@ -60,6 +60,7 @@ import type {
   GauntletContext,
   GauntletFilm,
   GauntletProgress,
+  OklchColor,
 } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -131,7 +132,7 @@ async function fetchFilmsByIds(
 ): Promise<GauntletFilm[]> {
   const { data, error } = await service
     .from('films')
-    .select('id,title,year,runtime,poster_url')
+    .select('id,title,year,runtime,poster_url,dominant_color')
     .in('id', ids)
 
   if (error) throw new Error(`film getirme başarısız: ${error.message}`)
@@ -142,6 +143,7 @@ async function fetchFilmsByIds(
     year: number
     runtime: number
     poster_url: string
+    dominant_color: OklchColor | null
   }[]
   const byId = new Map(rows.map((r) => [r.id, r]))
 
@@ -150,13 +152,18 @@ async function fetchFilmsByIds(
   for (const id of ids) {
     const r = byId.get(id)
     if (!r) throw new Error(`gauntlet filmi bulunamadı: ${id}`)
-    films.push({
+    const film: GauntletFilm = {
       id: r.id,
       title: r.title,
       year: r.year,
       runtime: r.runtime,
       posterUrl: r.poster_url,
-    })
+    }
+    // toGauntletFilm ile AYNI kural (C.2b): renk yoksa alan hiç eklenmez.
+    // İki yolun ıraksaması, günün ilk çağrısında renkli / ikinci çağrısında
+    // renksiz gauntlet demek olurdu.
+    if (r.dominant_color) film.dominantColor = r.dominant_color
+    films.push(film)
   }
   return films
 }

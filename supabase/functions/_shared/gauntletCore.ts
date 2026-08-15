@@ -20,7 +20,11 @@
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 import { getAppConfig, logInfo } from './gameUtils.ts'
 import { sentryCapture } from './sentry.ts'
-import type { GauntletContext, GauntletFilm } from '../../../types/gauntlet.ts'
+import type {
+  GauntletContext,
+  GauntletFilm,
+  OklchColor,
+} from '../../../types/gauntlet.ts'
 
 // ─── Sabitler ────────────────────────────────────────────────────────────────
 
@@ -81,6 +85,11 @@ export interface Candidate {
   language: string | null
   imdbVotes: number | null
   voteAverage: number | null
+  /**
+   * Poster hâkim rengi (C.2b). Puanlamaya GİRMEZ — yalnız response'a taşınır.
+   * NULL = henüz hesaplanmadı ya da poster kalitesi yetersizdi (migration 084).
+   */
+  dominantColor: OklchColor | null
   /** ADIM 2'de doldurulur. */
   score: number
 }
@@ -97,6 +106,9 @@ interface FilmRow {
   imdb_votes: number | null
   vote_average: number | null
   release_date: string | null
+  /** jsonb. Şekli migration 084 + 085 CHECK'i garantiler; burada yeniden
+   * doğrulanmaz, clamp EDİLMEZ — sınırlar DB tarafında. */
+  dominant_color: OklchColor | null
 }
 
 interface PoolRow {
@@ -171,13 +183,14 @@ function rowToCandidate(f: FilmRow): Candidate | null {
     imdbVotes: f.imdb_votes !== null && f.imdb_votes > 0 ? f.imdb_votes : null,
     voteAverage:
       f.vote_average !== null && f.vote_average > 0 ? f.vote_average : null,
+    dominantColor: f.dominant_color ?? null,
     score: 0,
   }
 }
 
 const FILM_COLUMNS =
   'id,title,year,runtime,poster_url,director,genres,original_language,' +
-  'imdb_votes,vote_average,release_date'
+  'imdb_votes,vote_average,release_date,dominant_color'
 
 // ─── DÜELLO-UYGUNLUK (C.0e) ──────────────────────────────────────────────────
 // Bu üç yardımcı YALNIZCA havuz kurarken (`fetchPool`) uygulanır.
@@ -220,15 +233,19 @@ export function duelEligibilityCutoff(): string {
 }
 
 export function toGauntletFilm(c: Candidate): GauntletFilm {
-  // dominantColor opsiyonel ve şu an kaynağı yok: films tablosunda baskın
-  // renk kolonu bulunmuyor. Uydurulmuş renk göndermek yerine alan atlanır.
-  return {
+  const film: GauntletFilm = {
     id: c.id,
     title: c.title,
     year: c.year,
     runtime: c.runtime,
     posterUrl: c.posterUrl,
   }
+  // C.2b: `dominantColor` sözleşmede OPSİYONEL (`OklchColor`, `| null` DEĞİL).
+  // Renk yoksa alan hiç eklenmez — `null` göndermek tipi yalanlar ve
+  // istemcide gereksiz narrowing doğurur. Alanın yokluğu istemcide sessiz
+  // fallback değil: LightBleed bunu açık 'ink' dalı olarak ele alır.
+  if (c.dominantColor) film.dominantColor = c.dominantColor
+  return film
 }
 
 // ─── ADIM 1 — SERT FİLTRE ────────────────────────────────────────────────────
