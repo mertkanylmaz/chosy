@@ -50,6 +50,7 @@ import {
   arrangeUnseen,
   buildScoredPool,
   type Candidate,
+  fetchCandidatesByIds,
   MAX_QUARTET_ATTEMPTS,
   selectQuartet,
   toGauntletFilm,
@@ -61,6 +62,7 @@ import type {
   GauntletFilm,
   GauntletProgress,
   OklchColor,
+  PendingWatchFeedback,
 } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -179,6 +181,75 @@ async function countSignals(
 
   if (error) throw new Error(`sinyal sayımı başarısız: ${error.message}`)
   return count ?? 0
+}
+
+// ─── Pending watch feedback (C.4) ────────────────────────────────────────────
+
+/**
+ * "Dün izledin mi?" adayı — bu kullanıcının BUGÜNDEN ÖNCEKİ en son tarihli
+ * champion'a ulaşmış gauntlet'i, henüz watch_feedback satırı yoksa.
+ * FK yok (gauntlet_id watch_feedback'te serbest UUID) → PostgREST embed
+ * kurulamaz, iki adımlı çözüm fetchExclusions'daki Promise.all deseniyle
+ * aynı ruhta: aday satırları çek, feedback'i olanları çıkar.
+ */
+async function findPendingWatchFeedbackCandidate(
+  service: SupabaseClient,
+  appUserId: string,
+  todayDate: string,
+): Promise<{ gauntletId: string; filmId: string } | null> {
+  const { data, error } = await service
+    .from('daily_gauntlets')
+    .select('id,champion_film_id')
+    .eq('user_id', appUserId)
+    .eq('scope', 'personal')
+    .not('champion_film_id', 'is', null)
+    .lt('date', todayDate)
+    .order('date', { ascending: false })
+    .limit(30) // birkaç günlük olası backlog için tampon — sınırsız değil
+
+  if (error) {
+    throw new Error(`pendingWatchFeedback aday sorgusu başarısız: ${error.message}`)
+  }
+  const rows = (data ?? []) as { id: string; champion_film_id: string }[]
+  if (rows.length === 0) return null
+
+  const gauntletIds = rows.map((r) => r.id)
+  const { data: fbRows, error: fbError } = await service
+    .from('watch_feedback')
+    .select('gauntlet_id')
+    .in('gauntlet_id', gauntletIds)
+
+  if (fbError) {
+    throw new Error(`pendingWatchFeedback feedback sorgusu başarısız: ${fbError.message}`)
+  }
+  const answered = new Set((fbRows ?? []).map((r) => r.gauntlet_id as string))
+  const pending = rows.find((r) => !answered.has(r.id))
+  return pending ? { gauntletId: pending.id, filmId: pending.champion_film_id } : null
+}
+
+/**
+ * Adayı `PendingWatchFeedback`e çözer — dominantColor dahil, gauntletCore'un
+ * mevcut toGauntletFilm/fetchCandidatesByIds deseniyle (LightBleed bu ekranda
+ * da temalanabilsin diye bedava tutarlılık).
+ */
+async function resolvePendingWatchFeedback(
+  service: SupabaseClient,
+  appUserId: string,
+  todayDate: string,
+): Promise<PendingWatchFeedback | null> {
+  const candidate = await findPendingWatchFeedbackCandidate(service, appUserId, todayDate)
+  if (!candidate) return null
+
+  const filmsById = await fetchCandidatesByIds(service, [candidate.filmId])
+  const c = filmsById.get(candidate.filmId)
+  if (!c) {
+    // Film verisinde DELETE yasak (CLAUDE.md #4) — bu olmamalı. Olursa veri
+    // bütünlüğü anomalisi, sessizce atlanmaz.
+    throw new Error(
+      `pendingWatchFeedback: şampiyon film bulunamadı: ${candidate.filmId}`,
+    )
+  }
+  return { gauntletId: candidate.gauntletId, film: toGauntletFilm(c) }
 }
 
 // ─── Progress türetimi (C.2-0) ───────────────────────────────────────────────
@@ -460,6 +531,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
   try {
     const date = utcDateString()
+    const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, date)
 
     // ── Idempotency: aynı kullanıcı + gün ikinci çağrıda YENİ üretim yapmaz ──
     const existing = await service
@@ -502,6 +574,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         refreshesRemaining: REFRESHES_PER_DAY_FREE,
         algorithmVersion: row.algorithm_version,
         progress,
+        ...(pendingWatchFeedback ? { pendingWatchFeedback } : {}),
       }
       logInfo('gauntlet_served_cached', {
         user_id: appUserId,
@@ -573,6 +646,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
           refreshesRemaining: REFRESHES_PER_DAY_FREE,
           algorithmVersion: row.algorithm_version,
           progress,
+          ...(pendingWatchFeedback ? { pendingWatchFeedback } : {}),
         }
         return jsonResponse(response)
       }
@@ -613,6 +687,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       refreshesRemaining: REFRESHES_PER_DAY_FREE,
       algorithmVersion: ALGORITHM_VERSION,
       progress,
+      ...(pendingWatchFeedback ? { pendingWatchFeedback } : {}),
     }
     return jsonResponse(response)
   } catch (err) {
