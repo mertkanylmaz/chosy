@@ -53,8 +53,16 @@ const BLEED_CONSTRAINTS = {
   maxLightness: 0.22,
 } as const;
 
-/** Duello havuzu. archive'a DOKUNULMAZ. */
-const POOL_TIERS = ['core', 'extended', 'trending'] as const;
+/**
+ * Renk hesaplanacak havuz.
+ *
+ * 15 Ago 2026 — `archive` EKLENDI (CTO onayi). Gerekce: gauntletCore son care
+ * gevsetmesinde `RELAXED_TIERS` archive'i havuza ALIYOR; o filmler renksiz
+ * oldugu icin sizma sessizce ink'e dusuyordu (1537 film, hepsi NULL).
+ * Bu YALNIZ bu script'in okuma filtresidir — gauntletCore'un tier mantigina
+ * dokunulmadi, arsivlenmis film hala duelloya normal yoldan girmez.
+ */
+const POOL_TIERS = ['core', 'extended', 'trending', 'archive'] as const;
 
 const TMDB_IMAGE_HOST = 'image.tmdb.org';
 const POSTER_SIZE = 'w92';               // §5.4: tam boyut kabul edilemez
@@ -130,7 +138,7 @@ interface Flags {
   onlyMissing: boolean;
   retryFailed: boolean;
   selfTest: boolean;
-  lightnessMode: 'scale' | 'clamp';
+  lightnessMode: 'scale' | 'clamp' | 'mapped';
 }
 
 // ---------------------------------------------------------------------------
@@ -235,18 +243,33 @@ function oklabToLch(lab: Oklab): OklchColor {
  * BLEED_CONSTRAINTS uygulanmasi. DB'ye YALNIZCA bu cikti yazilir.
  *
  * lightnessMode:
- *   'scale' — ham L [0,1] araligindan [0, maxLightness]'e olceklenir.
- *             Karanlik poster dusuk l, aydinlik poster tavana yakin l alir;
- *             posterler arasi ayrim korunur.
- *   'clamp' — duz tavan. Cogu poster L ~0.5+ oldugu icin neredeyse hepsi
- *             0.22'ye yapisir ve lightness bilgi tasimaz.
+ *   'mapped' — VARSAYILAN (15 Ago 2026, CTO karari "aday B").
+ *              l = MAPPED_BASE + MAPPED_SLOPE × hamL
+ *              Iki ucun de sorununu cozer: 'clamp' filmlerin %94'unu tavana
+ *              yapistirip AYNI zemini uretiyordu (ayni hue'da iki filmin
+ *              ayrimi = 0), 'scale' ise ayrimi koruyordu ama neredeyse hicbir
+ *              film gorunur olmuyordu (medyan Δ=1). 'mapped' ile medyan Δ=8,
+ *              ayni-hue filmler arasi ayrim Δ=3-4.
+ *   'scale'  — ham L [0,1] araligindan [0, maxLightness]'e olceklenir.
+ *              Ayrim korunur ama sonuc gorunmez. Karsilastirma icin duruyor.
+ *   'clamp'  — duz tavan. Gorunur ama tekduze. Karsilastirma icin duruyor.
+ *
+ * Tavanlar (maxLightness 0.22, maxChroma 0.08) UC MODDA DA degismez; asagidaki
+ * clamp+round4 guvenlik agidir. 'mapped' formulu hamL=1'de tam 0.22 verir,
+ * yani teorik olarak tavani asmaz — ama kirpma SAVUNMA amaciyla korunur
+ * (formul degisirse 085 CHECK'i INSERT'i reddetmeden once burada yakalanir).
  */
+const MAPPED_BASE = 0.10;
+const MAPPED_SLOPE = 0.12;
+
 function applyBleedConstraints(
   rawColor: OklchColor,
-  lightnessMode: 'scale' | 'clamp',
+  lightnessMode: 'scale' | 'clamp' | 'mapped',
 ): OklchColor {
   const l = lightnessMode === 'scale'
     ? rawColor.l * BLEED_CONSTRAINTS.maxLightness
+    : lightnessMode === 'mapped'
+    ? MAPPED_BASE + MAPPED_SLOPE * rawColor.l
     : Math.min(rawColor.l, BLEED_CONSTRAINTS.maxLightness);
 
   return {
@@ -575,8 +598,8 @@ function parseFlags(argv: string[]): Flags {
   }
 
   const modeRaw = get('lightness-mode');
-  if (modeRaw !== null && modeRaw !== 'scale' && modeRaw !== 'clamp') {
-    console.error(`${c.red}ERROR: --lightness-mode yalnizca 'scale' veya 'clamp'.${c.reset}`);
+  if (modeRaw !== null && modeRaw !== 'scale' && modeRaw !== 'clamp' && modeRaw !== 'mapped') {
+    console.error(`${c.red}ERROR: --lightness-mode yalnizca 'mapped', 'clamp' veya 'scale'.${c.reset}`);
     process.exit(1);
   }
 
@@ -588,13 +611,15 @@ function parseFlags(argv: string[]): Flags {
     onlyMissing: argv.includes('--only-missing'),
     retryFailed: argv.includes('--retry-failed'),
     selfTest: argv.includes('--self-test'),
-    // 15.08.2026 — VARSAYILAN 'scale' → 'clamp'. Gerekce: 'scale' ham L'yi
-    // 0.22 ile CARPIYORDU, tipik poster L~0.5 oldugu icin depolanan l ~0.11'de
-    // kaliyor ve maxLightness tavani hic kullanilmiyordu. Sonuc: ink zemininde
-    // %10 alfada kompozit ink'ten yalnizca 1-2/255 ayrisiyor, yani sizma
-    // olculebilir ama GORULEMEZ hale geliyordu (olcum: 400 filmde medyan Δ=1).
-    // 'clamp' tavani gercekten kullanir. Tavanlarin KENDISI degismedi.
-    lightnessMode: (modeRaw as 'scale' | 'clamp' | null) ?? 'clamp',
+    // VARSAYILAN GECMISI (tavanlarin KENDISI hic degismedi):
+    //   'scale' → 'clamp'  (15.08, sabah): 'scale' ham L'yi 0.22 ile CARPIYOR,
+    //     tipik poster l~0.11'de kaliyordu → %10 alfada kompozit ink'ten 1-2/255
+    //     ayrisiyor, sizma GORULEMEZ oluyordu (400 filmde medyan Δ=1).
+    //   'clamp' → 'mapped' (15.08, aksam): 'clamp' bu kez ters uca dustu —
+    //     filmlerin %94'u tavana yapisip AYNI zemini uretti, ayni hue'daki iki
+    //     filmin ayrimi 0 oldu (cihaz testi: "3 tur boyunca renk degismiyor").
+    //     'mapped' ikisinin arasi: gorunur KALIR, ayrim GERI GELIR.
+    lightnessMode: (modeRaw as 'scale' | 'clamp' | 'mapped' | null) ?? 'mapped',
   };
 }
 
@@ -637,7 +662,7 @@ async function main(): Promise<void> {
   const sb = getSupabaseClient();
 
   console.log(`${c.cyan}Dominant color extraction${c.reset}`);
-  console.log(`  Havuz: ${POOL_TIERS.join(', ')} (archive HARIC)`);
+  console.log(`  Havuz: ${POOL_TIERS.join(', ')}`);
   console.log(`  Poster boyutu: ${POSTER_SIZE}`);
   console.log(`  Kisitlar: maxLightness ${BLEED_CONSTRAINTS.maxLightness} · maxChroma ${BLEED_CONSTRAINTS.maxChroma}`);
   console.log(`  Lightness modu: ${flags.lightnessMode}`);
