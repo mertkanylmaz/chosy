@@ -43,7 +43,26 @@ export const styles = StyleSheet.create({
     color: color.text.secondary,
     textAlign: 'center',
   },
-  dismissWrapper: {
+  /** "Paylaş · Kapat" — sessiz eylemler, cam yok (§4.4 muafiyet listesi). */
+  actionsWrapper: {
     marginTop: space.lg,
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.md,
+  },
+  actionSeparator: {
+    ...type.caption,
+    color: color.text.secondary,
+    opacity: 0.7,
+  },
+  /** Pano onayı — kısa ömürlü, eylemin ÜSTÜNDE (düzen zıplamasın diye sabit sıra) */
+  shareNotice: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
   },
 });

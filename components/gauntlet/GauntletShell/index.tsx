@@ -53,6 +53,7 @@ import type {
   GauntletFilm,
   WatchFeedbackResponse,
 } from '@/types/gauntlet';
+import type { ShareRound } from '@/utils/gauntletShareText';
 import {
   hapticHeavy,
   hapticLight,
@@ -182,6 +183,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const [pendingFeedbackVisible, setPendingFeedbackVisible] = useState(false);
   /** Eleme/yenileme geçişi oynarken dokunma kilidi — çifte submit önlenir. */
   const [transitioning, setTransitioning] = useState(false);
+  /**
+   * Paylaşım metninin braket zinciri (C.5). YALNIZCA bu oturumda gerçekten
+   * gerçekleşmiş `choice` turları buraya yazılır — `gauntlet.films`'ten
+   * TÜRETİLMEZ: `neither`/`seen` yenilemelerinden sonra istemcideki film
+   * kopyası eskir (backend `film_ids`'i günceller), oradan üretilen zincir
+   * hiç yarışmamış filmleri gösterirdi. Resume yolunda boş kalır ve paylaşım
+   * metni yalnız şampiyon satırını taşır — uydurma yok.
+   */
+  const [shareRounds, setShareRounds] = useState<ShareRound[]>([]);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -217,6 +227,9 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setGauntlet(g);
       setRefreshesRemaining(g.refreshesRemaining);
       setActionError(null);
+      // Sunucudan gelen durum tur GEÇMİŞİ taşımaz (kilitli sözleşme) —
+      // ölçülmemiş bir zinciri elde tutmak yerine sıfırlanır (C.5).
+      setShareRounds([]);
       if (g.pendingWatchFeedback) setPendingFeedbackVisible(true);
       const p = g.progress;
 
@@ -462,6 +475,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       });
       if (!result || !mountedRef.current) return;
       setRefreshesRemaining(result.refreshesRemaining);
+
+      // Braket zinciri (C.5): tur GERÇEKLEŞTİ — kazanan ve elenen belli.
+      const eliminated = side === 'left' ? pair.right : pair.left;
+      setShareRounds((prev) => [
+        ...prev,
+        { round, winnerTitle: winner.title, loserTitle: eliminated.title },
+      ]);
 
       if (result.next === 'round2' || result.next === 'round3') {
         const newRound = result.next === 'round2' ? 2 : 3;
@@ -732,7 +752,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     if (champion) {
       return (
         <View style={styles.root}>
-          <ChampionReveal champion={champion} animateReveal={animateReveal} onDismiss={onDismiss} />
+          <ChampionReveal
+            champion={champion}
+            animateReveal={animateReveal}
+            onDismiss={onDismiss}
+            date={gauntlet?.date}
+            rounds={shareRounds}
+          />
         </View>
       );
     }

@@ -22,10 +22,15 @@
  * YOKTU — kullanıcı şampiyon ekranında sıkışıyordu (kök neden: plan
  * boşluğu, GauntletShell'in oyun içi olaylar tablosu completed_today→
  * champion dalına hiçbir eylem bağlamamıştı). `onDismiss` bu turda eklendi.
+ *
+ * C.5: "Paylaş" sessiz eylemi. Paylaşılan şey METİNDİR (§16 madde 12) —
+ * ekran görüntüsü alınmaz, poster/still gönderilmez.
  */
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
+import * as Clipboard from 'expo-clipboard';
+import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
@@ -44,8 +49,13 @@ import {
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
 import type { GauntletFilm } from '@/types/gauntlet';
+import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
+import { hapticLight } from '@/utils/haptics';
 
 import { styles } from './styles';
+
+/** "Kopyalandı" onayının ekranda kalma süresi. */
+const COPIED_NOTICE_MS = 2400;
 
 interface ChampionRevealProps {
   champion: GauntletFilm;
@@ -53,15 +63,74 @@ interface ChampionRevealProps {
   animateReveal: boolean;
   /** Ekranı kapatır — YAZMA eylemi DEĞİL (§3.7). Yoksa çıkış kontrolü gösterilmez. */
   onDismiss?: () => void;
+  /**
+   * `DailyGauntlet.date` (YYYY-MM-DD). Yoksa paylaşım eylemi GÖSTERİLMEZ —
+   * tarihsiz braket metni üretmektense eylemi hiç sunmamak dürüst olandır.
+   */
+  date?: string;
+  /**
+   * Bu oturumda ölçülen tur zinciri. Boşsa metin yalnız şampiyon satırını
+   * taşır (resume yolu — istemcide geçmiş yok, bkz. gauntletShareText).
+   */
+  rounds?: ShareRound[];
 }
 
 export function ChampionReveal({
   champion,
   animateReveal,
   onDismiss,
+  date,
+  rounds,
 }: ChampionRevealProps): React.JSX.Element {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isReducedMotion = useReducedMotion();
+  const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    };
+  }, []);
+
+  /**
+   * Panoya kopyalar. `expo-sharing` KULLANILMAZ: o API bir dosya URI'si ister
+   * (`shareAsync(url)`), düz metni paylaşamaz — kullanmak için metni tekrar
+   * görsele çevirmek gerekirdi ki bu §16 madde 12'nin "metin öncelikli"
+   * kararına aykırı. Pano hem çevrimdışı hem her hedefe yapıştırılabilir.
+   *
+   * Hata sessizce yutulmaz: Sentry + kullanıcıya görünür mesaj (§15.2).
+   */
+  const handleShare = useCallback(async () => {
+    if (!date) return;
+    const text = buildGauntletShareText({
+      championTitle: champion.title,
+      championYear: champion.year,
+      date,
+      rounds: rounds ?? [],
+      locale: language,
+      t,
+    });
+    void hapticLight();
+    try {
+      await Clipboard.setStringAsync(text);
+      if (!mountedRef.current) return;
+      setShareNotice(t('gauntlet.share.copied'));
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { component: 'ChampionReveal', flow: 'share' },
+      });
+      if (!mountedRef.current) return;
+      setShareNotice(t('gauntlet.share.copyError'));
+    }
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setShareNotice(null);
+    }, COPIED_NOTICE_MS);
+  }, [champion.title, champion.year, date, rounds, language, t]);
 
   const posterOpacity = useSharedValue(animateReveal ? 0 : 1);
   const titleOpacity = useSharedValue(animateReveal ? 0 : 1);
@@ -119,11 +188,21 @@ export function ChampionReveal({
         {t('gauntlet.posterMeta', { year: champion.year, runtime: champion.runtime })}
       </Animated.Text>
 
-      {onDismiss && (
-        <Animated.View style={[styles.dismissWrapper, metaStyle]}>
-          <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />
-        </Animated.View>
-      )}
+      <Animated.View style={[styles.actionsWrapper, metaStyle]}>
+        {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
+        <View style={styles.actionsRow}>
+          {date !== undefined && (
+            <>
+              <QuietAction
+                label={t('gauntlet.share.action')}
+                onPress={() => void handleShare()}
+              />
+              {onDismiss && <Text style={styles.actionSeparator}>·</Text>}
+            </>
+          )}
+          {onDismiss && <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />}
+        </View>
+      </Animated.View>
     </View>
   );
 }

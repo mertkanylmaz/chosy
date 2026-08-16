@@ -1389,6 +1389,14 @@
     "submitError": "Seçim kaydedilemedi. Tekrar dene.",
     "retry": "Tekrar dene",
     "dismissTomorrow": "Boşver, yarın",
+    "share": {
+      "action": "Paylaş",
+      "copied": "Panoya kopyalandı",
+      "copyError": "Kopyalanamadı. Tekrar dene.",
+      "header": "CHOSY · %{date}",
+      "roundLine": "Tur %{round}: %{winner} > %{loser}",
+      "championLine": "Bugünün filmi: %{title} (%{year})"
+    },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",
       "editorTitle": "Bugün nasılsın?",

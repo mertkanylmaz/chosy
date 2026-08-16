@@ -1389,6 +1389,14 @@
     "submitError": "Your pick wasn't saved. Try again.",
     "retry": "Try again",
     "dismissTomorrow": "Never mind, tomorrow",
+    "share": {
+      "action": "Share",
+      "copied": "Copied to clipboard",
+      "copyError": "Couldn't copy. Try again.",
+      "header": "CHOSY · %{date}",
+      "roundLine": "Round %{round}: %{winner} over %{loser}",
+      "championLine": "Tonight's film: %{title} (%{year})"
+    },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",
       "editorTitle": "How's today?",
