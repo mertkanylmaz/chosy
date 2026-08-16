@@ -168,14 +168,49 @@ function quantile(sorted: number[], q: number): number {
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo)
 }
 
+const TMDB_IMAGE_HOST = 'image.tmdb.org'
+const TMDB_W500_BASE = `https://${TMDB_IMAGE_HOST}/t/p/w500`
+
+/**
+ * `poster_url` iki formatta olabilir (bkz. scripts/compute-dominant-colors.ts
+ * normalizePosterUrl — orası w92'ye normalize eder, bu w500'e): tam TMDb URL'i
+ * (herhangi bir boyutla) ya da ham `poster_path` (`/abc.jpg`). İkisi de
+ * w500'e sabitlenir. Tanınmayan biçim `null` döner — çağıran, `runtime`/`year`
+ * NULL'ında olduğu gibi adayı havuzdan eler (mevcut desen, yeni fallback DEĞİL).
+ */
+function toW500PosterUrl(raw: string): string | null {
+  const value = raw.trim()
+  if (value === '') return null
+
+  if (/^https?:\/\//i.test(value)) {
+    let parsed: URL
+    try {
+      parsed = new URL(value)
+    } catch {
+      return null
+    }
+    if (parsed.hostname !== TMDB_IMAGE_HOST) return parsed.toString()
+    const match = parsed.pathname.match(/^\/t\/p\/[^/]+\/(.+)$/)
+    if (!match) return null
+    return `${TMDB_W500_BASE}/${match[1]}`
+  }
+
+  if (value.includes('://')) return null
+  const file = value.startsWith('/') ? value.slice(1) : value
+  if (!/^[\w.\-/]+$/.test(file)) return null
+  return `${TMDB_W500_BASE}/${file}`
+}
+
 function rowToCandidate(f: FilmRow): Candidate | null {
   if (!f.poster_url || f.runtime === null || f.year === null) return null
+  const posterUrl = toW500PosterUrl(f.poster_url)
+  if (!posterUrl) return null
   return {
     id: f.id,
     title: f.title,
     year: f.year,
     runtime: f.runtime,
-    posterUrl: f.poster_url,
+    posterUrl,
     director: f.director,
     primaryGenre: f.genres && f.genres.length > 0 ? f.genres[0] : null,
     language: f.original_language,

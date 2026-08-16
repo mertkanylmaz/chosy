@@ -8,7 +8,7 @@
  *  - 'entering':   opaklık 0→1 + aşağıdan 16px (§7.2)
  * Reduce Motion açıkken tümü REDUCED_MOTION_DURATION.crossFade'e döner (§7.5).
  */
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { Image } from 'expo-image';
@@ -36,6 +36,9 @@ import { styles } from './styles';
 
 export type PosterTileAnimationState = 'idle' | 'eliminated' | 'remaining' | 'entering';
 
+/** Poster yüklenemezse denenecek gecikmeler (ms) — sonrasında placeholder kalıcı olur. */
+const POSTER_RETRY_DELAYS_MS = [500, 1500];
+
 interface PosterTileProps {
   film: GauntletFilm;
   selected?: boolean;
@@ -60,6 +63,24 @@ export function PosterTile({
   const scale = useSharedValue(1);
   const [posterFailed, setPosterFailed] = React.useState(false);
   const [posterLoaded, setPosterLoaded] = React.useState(false);
+  const [retryAttempt, setRetryAttempt] = React.useState(0);
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
+  }, []);
+
+  const handlePosterError = useCallback(() => {
+    if (retryAttempt < POSTER_RETRY_DELAYS_MS.length) {
+      retryTimeoutRef.current = setTimeout(() => {
+        setRetryAttempt((n) => n + 1);
+      }, POSTER_RETRY_DELAYS_MS[retryAttempt]);
+    } else {
+      setPosterFailed(true);
+    }
+  }, [retryAttempt]);
 
   useEffect(() => {
     if (isReducedMotion) {
@@ -141,10 +162,11 @@ export function PosterTile({
           ) : (
             <>
               <Image
+                key={retryAttempt}
                 source={{ uri: film.posterUrl }}
                 style={styles.poster}
                 contentFit="cover"
-                onError={() => setPosterFailed(true)}
+                onError={handlePosterError}
                 onLoad={() => setPosterLoaded(true)}
               />
               {!posterLoaded && (
