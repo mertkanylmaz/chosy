@@ -102,6 +102,12 @@ export const DEFAULT_GAME_THEME: GameTheme = {
 /**
  * Tür kodlu palet — her rengin gerekçesi oyunun sinema türünden gelir.
  * Renkler keyfi atanmaz; yeni bir oyun eklenirse gerekçesi de yazılır.
+ *
+ * ⚠️ C.6 (PRODUCT_OS §7.4): tek aktif bonus oyun **Spotlight**. `cinemetrics`,
+ * `detective`, `imposter`, `fadein`, `logline`, `quoted` DONDURULDU —
+ * `app_config.games_enabled` dışında bırakıldılar. Tema tanımları bu dosyada
+ * KALIR (kod silinmez), yalnızca kullanılmaz. Yeniden açılırlarsa renkleri
+ * gerekçeleriyle birlikte hazırdır.
  */
 export const GAME_THEMES: Record<GameType, GameTheme> = {
   /**
@@ -139,19 +145,26 @@ export const GAME_THEMES: Record<GameType, GameTheme> = {
   },
 
   /**
-   * Projektör ışığı — accent base'in kendisi (amber). Ayrışma renkten değil
-   * ışıktan gelir: tek oyun `beam` varyantı kullanır, yanal huzme çizer.
+   * Mor sahne huzmesi — tiyatro ışığı (DESIGN_OS §2.6, C.6).
+   *
+   * ~~accent: Colors.accentPrimary (#E8A838)~~ → `#8B5CF6`. Gerekçe: eski
+   * değer ödül altınıyla (`marquee`, XP/rank/streak) aynı aileydi; aynı
+   * ekranda ödül katmanı ile oynanış katmanı ayırt edilemiyordu — bu
+   * dosyanın kendi doktrininin ("oynanış oyunun teması, ödül Chosy'nin
+   * altını") ihlaliydi. `#8B5CF6` dondurulan Logline'dan devralındı.
+   *
+   * `ambientVariant: 'beam'` korunur — mor huzme gerekçeyi güçlendirir.
    */
   spotlight: {
-    accent: Colors.accentPrimary,
-    accentOn: '#0A0A0F',
-    accentDim: 'rgba(232,168,56,0.15)',
-    accentGlow: 'rgba(232,168,56,0.60)',
-    ambientBase: ['#1A1206', '#0F0C08', '#07080F'],
-    ambientGlowA: ['rgba(240,215,140,0.28)', 'rgba(240,215,140,0)'],
-    ambientGlowB: ['rgba(232,168,56,0.16)', 'rgba(232,168,56,0)'],
+    accent: '#8B5CF6',
+    accentOn: '#F0F0F5',
+    accentDim: 'rgba(139,92,246,0.14)',
+    accentGlow: 'rgba(139,92,246,0.70)',
+    ambientBase: ['#180F2E', '#100C1D', '#07080F'],
+    ambientGlowA: ['rgba(167,139,250,0.28)', 'rgba(167,139,250,0)'],
+    ambientGlowB: ['rgba(139,92,246,0.16)', 'rgba(139,92,246,0)'],
     ambientVariant: 'beam',
-    progressGradient: ['#E8A838', '#F0D78C'],
+    progressGradient: ['#8B5CF6', '#A78BFA'],
   },
 
   /** Karanlık oda kırmızısı — banyo lambası, henüz gelişmemiş görüntü */

@@ -41,6 +41,7 @@ import {
   WatchlistItem,
 } from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
+import { isRouletteEnabled } from '@/services/gameApi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticSelection, hapticWarning } from '@/utils/haptics';
@@ -104,6 +105,12 @@ export default function WatchlistDetailScreen() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [loadErrorType, setLoadErrorType] = useState<import('@/utils/errorHelpers').ErrorType>('unknown');
+  /**
+   * Roulette erisim yolu acik mi (C.6, PRODUCT_OS §7.4). Varsayilan `false`:
+   * flag okunana kadar kisayol GOSTERILMEZ. Kod ve /roulette rotasi duruyor.
+   * Aynen `app/(tabs)/watchlist.tsx` — iki ekran ayni kisayolu tasiyor.
+   */
+  const [rouletteEnabled, setRouletteEnabled] = useState(false);
 
   // ── Veri yukleme ──────────────────────────────────────────────────────────
 
@@ -146,6 +153,20 @@ export default function WatchlistDetailScreen() {
     useCallback(() => {
       loadWatchlist();
     }, [loadWatchlist]),
+  );
+
+  // Roulette flag'i her odakta lazy okunur (CLAUDE.md kural 6). Okuma hatasi
+  // isRouletteEnabled icinde Sentry'ye duser ve kapali doner (fail-closed).
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      void isRouletteEnabled().then((enabled) => {
+        if (!cancelled) setRouletteEnabled(enabled);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
   );
 
   /** Gorunum modunu degistir; grouped ilk kez acilinca yukle */
@@ -328,8 +349,8 @@ export default function WatchlistDetailScreen() {
             <Text style={styles.title}>{t('tabs.watchlist')}</Text>
           </View>
           <View style={styles.headerIcons}>
-            {/* Roulette — header kisayol ikonu */}
-            {items.length >= 3 && (
+            {/* Roulette — header kisayol ikonu (C.6: flag kapaliysa yok) */}
+            {rouletteEnabled && items.length >= 3 && (
               <TouchableOpacity
                 style={styles.iconBtn}
                 activeOpacity={0.7}
@@ -475,7 +496,7 @@ export default function WatchlistDetailScreen() {
       </Animated.View>
 
       {/* ── Roulette CTA (>=3 film varsa, her filter modunda) ── */}
-      {!initialLoading && !loadError && items.length >= 3 && (
+      {rouletteEnabled && !initialLoading && !loadError && items.length >= 3 && (
         <Animated.View style={chipsAnimStyle}>
           <TouchableOpacity
             style={styles.rouletteCta}

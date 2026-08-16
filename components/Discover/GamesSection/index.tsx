@@ -1,24 +1,38 @@
 /**
- * GamesSection — Sinefil oyunlari 2x2 grid.
+ * GamesSection — Sinefil oyunlari grid'i.
  *
- * Mevcut oyun listesini gosterir. Quoted listede DEGIL: replik havuzu
- * tukendi (Hard Rule 7) ve app_config.games_enabled disinda birakildi.
+ * ⚠️ C.6'da bulunan BUG: bu bileşen `app_config.games_enabled`'i HİÇ
+ * okumuyordu — asagidaki `GAMES` modül seviyesi sabiti tek kaynaktı. Yani
+ * hub'da (`app/games/index.tsx`) config ile gizlenen bir oyun burada
+ * gorunmeye devam ediyordu; Quoted'in gizlenmesi de yalnizca listeden
+ * elle cikarilmis olmasi sayesinde calisiyordu. Artik liste her odakta
+ * lazy okunuyor (CLAUDE.md kural 6).
+ *
+ * Tanimlar SILINMEZ — dondurulan oyunlar flag geri acilinca donebilsin.
  * Tap → /games/[route]
  */
 
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { getEnabledGames } from '@/services/gameApi';
 import { hapticLight } from '@/utils/haptics';
 
 import { styles } from './styles';
 
 // ─── Oyun Tanimlari ───────────────────────────────────────────────────────────
+
+/**
+ * Config okunamadiginda gosterilecek liste (C.6). Hub ekranindaki
+ * `FALLBACK_ENABLED_GAMES` ile ayni urun karari: tek aktif bonus oyun.
+ */
+const FALLBACK_ENABLED_GAMES: readonly string[] = ['spotlight'];
 
 const GAMES = [
   {
@@ -79,11 +93,48 @@ export default function GamesSection({ onGamePress }: GamesSectionProps) {
   const { t } = useLanguage();
   const router = useRouter();
 
+  /**
+   * null = henuz okunmadi → hicbir kart cizilmez. Kapali bir oyunu bir kare
+   * bile gostermektense bos beklemek dogru: aksi halde flag'in kapattigi
+   * oyun her ekran acilisinda kisa sureligine goruunurdu.
+   */
+  const [enabledGames, setEnabledGames] = useState<readonly string[] | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      // Lazy okuma (CLAUDE.md kural 6) — modul seviyesinde cache YOK.
+      // Hata Sentry'ye getEnabledGames icinde dusuyor; null donerse
+      // emniyet tarafi (yalniz Spotlight) gosterilir.
+      void getEnabledGames()
+        .then((enabled) => {
+          if (!cancelled) setEnabledGames(enabled ?? FALLBACK_ENABLED_GAMES);
+        })
+        .catch((err) => {
+          // getEnabledGames hatayi kendi yakalayip null donuyor; buraya
+          // ancak beklenmedik bir runtime hatasi duser — yutulmaz.
+          Sentry.captureException(err, { tags: { component: 'GamesSection' } });
+          if (!cancelled) setEnabledGames(FALLBACK_ENABLED_GAMES);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  const visibleGames = enabledGames
+    ? GAMES.filter((game) => enabledGames.includes(game.id))
+    : [];
+
   const handlePress = (game: (typeof GAMES)[number]) => {
     hapticLight();
     onGamePress?.(game.id);
     router.push(game.route as never);
   };
+
+  // Gorunur oyun yoksa bolum HIC cizilmez — "Sinefil oyunlari" basligi
+  // altinda bos bir izgara birakmak yerine bolum kapanir.
+  if (visibleGames.length === 0) return null;
 
   return (
     <Animated.View
@@ -104,7 +155,7 @@ export default function GamesSection({ onGamePress }: GamesSectionProps) {
       </View>
 
       <View style={styles.grid}>
-        {GAMES.map((game) => (
+        {visibleGames.map((game) => (
           <TouchableOpacity
             key={game.id}
             style={styles.card}

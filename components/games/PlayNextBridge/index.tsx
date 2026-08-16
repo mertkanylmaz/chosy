@@ -18,6 +18,7 @@ import { Lightning } from 'phosphor-react-native';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCinemaDna } from '@/hooks/useCinemaDna';
+import { getEnabledGames } from '@/services/gameApi';
 import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
 import { trackPlayNextTapped } from '@/utils/gameAnalytics';
@@ -74,6 +75,16 @@ export function PlayNextBridge({ currentGame }: PlayNextBridgeProps) {
 
       if (!puzzles?.length) return;
 
+      /**
+       * C.6: dondurulan oyunlar onerilmez. `generate-puzzles` zaten yalnizca
+       * `games_enabled` icin uretiyor, ama flag kapandigi GUN eski satirlar
+       * hala bugune ait — o pencerede bu kopru kapali bir oyuna acilan tek
+       * yol olurdu. Liste her cagrida lazy okunur (CLAUDE.md kural 6);
+       * okunamazsa hata Sentry'ye duser ve hicbir oneri yapilmaz.
+       */
+      const enabled = await getEnabledGames();
+      if (!enabled) return;
+
       // Bugün tamamlanan oyun tipleri
       const completedPuzzleIds = new Set(
         (scores ?? []).map((s: { puzzle_id: string }) => s.puzzle_id),
@@ -82,6 +93,7 @@ export function PlayNextBridge({ currentGame }: PlayNextBridgeProps) {
       const availableGames: string[] = [];
 
       for (const p of puzzles) {
+        if (!enabled.includes(p.game_id)) continue;
         availableGames.push(p.game_id);
         if (completedPuzzleIds.has(p.id)) playedGames.push(p.game_id);
       }

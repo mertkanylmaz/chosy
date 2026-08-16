@@ -38,6 +38,7 @@ import {
   WatchlistItem,
 } from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
+import { isRouletteEnabled } from '@/services/gameApi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticSelection, hapticWarning } from '@/utils/haptics';
@@ -114,6 +115,14 @@ export default function WatchlistScreen() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [loadErrorType, setLoadErrorType] = useState<import('@/utils/errorHelpers').ErrorType>('unknown');
+  /**
+   * Roulette erişim yolu açık mı (C.6, PRODUCT_OS §7.4).
+   *
+   * Varsayılan `false`: flag okunana kadar kısayol GÖSTERİLMEZ. Kapalı bir
+   * özelliğin bir kare bile görünmesi, sonra kaybolması kabul edilmez.
+   * Kod ve `/roulette` rotası duruyor — kaldırılan yalnız erişim yolu.
+   */
+  const [rouletteEnabled, setRouletteEnabled] = useState(false);
 
   // ── Veri yükleme ──────────────────────────────────────────────────────────
 
@@ -156,6 +165,21 @@ export default function WatchlistScreen() {
     useCallback(() => {
       loadWatchlist();
     }, [loadWatchlist]),
+  );
+
+  // Roulette flag'i her odakta lazy okunur — modül seviyesi cache YASAK
+  // (CLAUDE.md kural 6). Okuma hatası isRouletteEnabled içinde Sentry'ye
+  // düşer ve kapalı döner (fail-closed).
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      void isRouletteEnabled().then((enabled) => {
+        if (!cancelled) setRouletteEnabled(enabled);
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, []),
   );
 
   /** Görünüm modunu değiştir; grouped ilk kez açılınca yükle */
@@ -332,8 +356,8 @@ export default function WatchlistScreen() {
         <View style={styles.header}>
           <Text style={styles.title}>{t('tabs.watchlist')}</Text>
           <View style={styles.headerIcons}>
-            {/* Roulette — header kısayol ikonu */}
-            {items.length >= 3 && (
+            {/* Roulette — header kısayol ikonu (C.6: flag kapalıysa yok) */}
+            {rouletteEnabled && items.length >= 3 && (
               <TouchableOpacity
                 style={styles.iconBtn}
                 activeOpacity={0.7}
@@ -478,8 +502,8 @@ export default function WatchlistScreen() {
         </ScrollView>
       </Animated.View>
 
-      {/* ── Roulette CTA (≥3 film varsa, her filter modunda) ── */}
-      {!initialLoading && !loadError && items.length >= 3 && (
+      {/* ── Roulette CTA (≥3 film varsa; C.6: flag kapalıysa hiç çizilmez) ── */}
+      {rouletteEnabled && !initialLoading && !loadError && items.length >= 3 && (
         <Animated.View style={chipsAnimStyle}>
           <TouchableOpacity
             style={styles.rouletteCta}

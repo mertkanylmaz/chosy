@@ -42,6 +42,20 @@ import { DailyThemeCard } from '@/components/games/DailyThemeCard';
 import { DailyRoute, type RouteGame } from '@/components/games/DailyRoute';
 import { HubHero } from '@/components/games/HubHero';
 
+/**
+ * Config okunamadiginda gosterilecek liste (C.6, PRODUCT_OS §7.4).
+ *
+ * Bu bir "varsayilan oyun listesi" DEGIL — tek aktif bonus oyunun adi.
+ * Gorunurlugun tek dogruluk kaynagi hala `app_config.games_enabled`;
+ * burasi yalnizca okuma basarisiz oldugunda devreye giren emniyet tarafi.
+ */
+const FALLBACK_ENABLED_GAMES: readonly string[] = ['spotlight'];
+
+/**
+ * Rota tanimlari. C.6'da DONDURULAN oyunlarin satirlari SILINMEZ — kod ve
+ * rota duruyor, gorunurlugu `games_enabled` belirliyor. Liste kisaltilirsa
+ * flag geri acildiginda kart geri gelmez.
+ */
 const GAME_DEFINITIONS = [
   {
     gameType: 'detective',
@@ -111,12 +125,17 @@ export default function GamesHubScreen() {
     // Sadece eski versiyon cache'lerini temizle (bir kez calisir)
     await clearOldGameCaches();
 
-    // Aktif oyun listesi sunucudan — havuzu tukenmis oyunlar gizlenir.
-    // Config okunamazsa hata Sentry'ye duser (getEnabledGames) ve tam liste gosterilir.
+    // Aktif oyun listesi sunucudan — dondurulmus oyunlar gizlenir.
+    //
+    // C.6: config okunamazsa artik TAM LISTE gosterilmez. Eski davranis
+    // (fallback = hepsi) budamadan sonra tersine dondu: bir okuma hatasi
+    // dondurulmus alti oyunu geri acardi. Yeni fallback SPOTLIGHT_ONLY —
+    // urun karari neyse o. Hata yine Sentry'ye dusuyor (getEnabledGames),
+    // sessiz degil.
     const enabled = await getEnabledGames();
-    const visibleGames = enabled
-      ? GAME_DEFINITIONS.filter((def) => enabled.includes(def.gameType))
-      : GAME_DEFINITIONS;
+    const visibleGames = GAME_DEFINITIONS.filter((def) =>
+      (enabled ?? FALLBACK_ENABLED_GAMES).includes(def.gameType),
+    );
 
     const cards: RouteGame[] = [];
     let maxStreak = 0;

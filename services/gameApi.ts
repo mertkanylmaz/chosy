@@ -69,6 +69,40 @@ export async function getEnabledGames(): Promise<string[] | null> {
   return Array.isArray(games) ? games : null;
 }
 
+/**
+ * Watchlist Roulette acik mi (app_config: games_enabled → `roulette`).
+ *
+ * C.6 (PRODUCT_OS §7.4): Roulette/Slot gauntlet'i kanibalize ediyor —
+ * "bugun ne izlesem" sorusuna ikinci bir cevap veriyor. Kod SILINMEZ
+ * (app/roulette.tsx, components/Roulette/* duruyor), erisim yolu kapatilir.
+ *
+ * Ayri bir app_config anahtari acilmadi: ayni satirin yanindaki alan okunur,
+ * `games` dizisine DOKUNULMAZ. Gerekce — generate-puzzles yalnizca `.games`
+ * uzerinde donuyor; Roulette'in bulmaca ureteci yok, o diziye yazilsaydi her
+ * calismada hatali uretim denemesi olurdu.
+ *
+ * Alan YOKSA sonuc `false`. Bu sessiz fallback degil, yazili varsayilan:
+ * C.6 sonrasi dogru durum kapali olmak. Okuma HATASI ayri bir yol —
+ * Sentry'ye duser ve yine kapali doner (fail-closed).
+ *
+ * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
+ */
+export async function isRouletteEnabled(): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('app_config')
+    .select('value')
+    .eq('key', 'games_enabled')
+    .single();
+
+  if (error) {
+    Sentry.captureException(error, { tags: { config: 'games_enabled.roulette' } });
+    logger.error('[gameApi] isRouletteEnabled failed:', error);
+    return false;
+  }
+
+  return (data?.value as { roulette?: boolean } | null)?.roulette === true;
+}
+
 /** Cinema DNA rank yapilandirmasi (app_config: dna_config) */
 export interface DnaRankConfig {
   /** Rank basina gereken DNA ortalamasi — index 0 = rank 1 */
