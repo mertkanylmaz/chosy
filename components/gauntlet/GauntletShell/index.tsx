@@ -25,6 +25,7 @@ import { useReducedMotion } from 'react-native-reanimated';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { ChampionReveal } from '@/components/gauntlet/ChampionReveal';
 import { ConfidenceMeter } from '@/components/gauntlet/ConfidenceMeter';
+import { ContextBar } from '@/components/gauntlet/ContextBar';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
@@ -40,6 +41,7 @@ import {
   GauntletAuthPendingError,
   getTodayGauntlet,
   submitChoice,
+  submitContextCorrection,
   submitWatchFeedback,
   type ChoiceResult,
 } from '@/services/gauntletService';
@@ -47,6 +49,7 @@ import { supabase } from '@/services/supabase';
 import type {
   ChoiceSubmission,
   DailyGauntlet,
+  GauntletContext,
   GauntletFilm,
   WatchFeedbackResponse,
 } from '@/types/gauntlet';
@@ -592,6 +595,31 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     [gauntlet],
   );
 
+  /**
+   * ContextBar düzeltmesi (C.3, CTO kararı 16.08.2026). Fire-and-forget —
+   * `handlePendingFeedback` ile aynı desen: bugünün ekranı zaten bundan
+   * etkilenmez (idempotency korunur, `daily_gauntlets`'e dokunulmaz),
+   * network sonucu beklemenin kullanıcıya bir faydası yok. Hata yalnızca
+   * Sentry'ye gider — kullanıcı ContextBar'ı kapattığında "kaydedildi"
+   * zaten optimistic gösterildi (§4.3 dürüstlük, kaybolan tekil bir
+   * düzeltme yarının tahminini bozacak kritiklikte değil).
+   */
+  const handleContextCorrect = useCallback(
+    (corrected: GauntletContext) => {
+      if (!gauntlet) return;
+      submitContextCorrection(gauntlet.gauntletId, corrected).catch((err) => {
+        Sentry.captureException(err, {
+          tags: {
+            component: 'GauntletShell',
+            flow: 'contextCorrection',
+            silent_retry: 'none',
+          },
+        });
+      });
+    },
+    [gauntlet],
+  );
+
   /** "Bunu izledim" moduna gir/çık (CTO kararı 4: soru satırı + "Vazgeç"). */
   const handleSeenToggle = useCallback(() => {
     if (submitting) return;
@@ -746,6 +774,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       <LightBleed dominantColor={defenderFilm?.dominantColor} />
       <View style={styles.content}>
         <View style={styles.header}>
+          <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
           <ConfidenceMeter userConfidence={gauntlet.userConfidence} />
           <RoundIndicator current={round} />
         </View>

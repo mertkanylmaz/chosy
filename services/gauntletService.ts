@@ -278,6 +278,50 @@ export async function submitWatchFeedback(
 }
 
 /**
+ * `POST /submit-context-correction` YANITI — `supabase/functions/
+ * submit-context-correction/index.ts:ContextCorrectionResult` ile ayna tip
+ * (aynı gerekçe: ChoiceResult).
+ */
+export interface ContextCorrectionResult {
+  status: 'saved';
+}
+
+/**
+ * ContextBar düzeltmesini kaydeder (C.3, CTO kararı 16.08.2026).
+ *
+ * Bugünün dörtlüsüne DOKUNMAZ — yalnız `context_corrections`'a ham gözlem
+ * yazar, Faz F'in tahmin motorunu besler. YARINKİ gauntlet'ı etkiler.
+ */
+export async function submitContextCorrection(
+  gauntletId: string,
+  corrected: GauntletContext,
+): Promise<ContextCorrectionResult> {
+  await ensureAuthSession();
+
+  const startedAt = performance.now();
+  const { data, error } = await supabase.functions.invoke('submit-context-correction', {
+    body: { gauntletId, corrected },
+  });
+
+  if (error) {
+    recordTiming('submit-context-correction', startedAt, 'error');
+    const { status, detail } = await parseInvokeError(error);
+    if (status === 401) {
+      throw new GauntletAuthPendingError(detail);
+    }
+    Sentry.captureException(error, {
+      tags: { fn: 'submit-context-correction' },
+      extra: { detail, gauntlet_id: gauntletId },
+    });
+    logger.error('[gauntletService] submitContextCorrection failed:', detail);
+    throw new Error(detail || 'submit-context-correction failed');
+  }
+
+  recordTiming('submit-context-correction', startedAt, 'ok');
+  return data as ContextCorrectionResult;
+}
+
+/**
  * Turu yeniler (yeni çift getirir). KANONİK DEĞİL — tek gerçek yol
  * `submitChoice(outcome: 'neither')`; bu sarmalayıcı geriye dönük uyum için
  * durur ve ona delege eder. Kalan hak yanıttaki `refreshesRemaining`'de;
