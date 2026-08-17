@@ -10,6 +10,7 @@
  *   posthogAnalytics.identify()   — auth sonrasi user traits
  *   posthogAnalytics.reset()      — logout'ta cagir
  */
+import * as Sentry from '@sentry/react-native';
 import PostHog from 'posthog-react-native';
 
 import { logger } from '@/utils/logger';
@@ -51,7 +52,11 @@ export const posthogAnalytics = {
    * @param props      Event ozellikleri
    */
   track(eventName: string, props?: Record<string, string | number | boolean | null>): void {
-    posthog?.capture(eventName, props);
+    if (!posthog) {
+      Sentry.captureMessage(`PostHog not initialized, event "${eventName}" dropped`, 'warning');
+      return;
+    }
+    posthog.capture(eventName, props);
   },
 
   /**
