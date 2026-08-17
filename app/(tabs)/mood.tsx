@@ -16,7 +16,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import * as Sentry from '@sentry/react-native';
@@ -27,6 +27,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { supabase } from '@/services/supabase';
+import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
 
 import TrendingSection from '@/components/Discover/TrendingSection';
 import type { DiscoverFilm } from '@/components/Discover/TrendingSection';
@@ -138,6 +139,26 @@ export default function DiscoverScreen() {
       source: 'discover_tab',
     });
   }, []);
+
+  // ── C.9a (bible K-02): dead route guard ──────────────────────────────────
+  // Tab bar erişimi _layout.tsx'te href:null ile kapatıldı ama bu route
+  // (`/mood`) dosya olarak var olduğu için doğrudan navigasyon/deep link hâlâ
+  // buraya düşebilir. `null` (henüz çözülmedi) durumunda içerik gösterilmeye
+  // devam eder — yalnızca flag KESİN false döndüğünde Home'a yönlendirilir.
+  const [discoverEnabled, setDiscoverEnabled] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    isDiscoverTabEnabled().then((enabled) => {
+      if (!cancelled) setDiscoverEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (discoverEnabled === false) {
+    return <Redirect href="/(tabs)" />;
+  }
 
   return (
     <>
