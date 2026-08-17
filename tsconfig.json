@@ -17,6 +17,7 @@
   "exclude": [
     "node_modules",
     "supabase/functions",
-    "tests/game-system"
+    "tests/game-system",
+    "tests/identity"
   ]
 }

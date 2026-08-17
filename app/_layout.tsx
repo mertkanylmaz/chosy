@@ -50,6 +50,12 @@ import {
   type NotificationData,
 } from '@/services/pushNotifications';
 import SentryErrorBoundary from '@/components/ErrorBoundary';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  authIdSuffix,
+  persistAuthIdSuffix,
+  reconcileColdStartIdentity,
+} from '@/utils/identityReset';
 
 // ── Sentry initialization ───────────────────────────────────────────────────
 // Expo Router kendi entry'sini yonetir — Sentry.wrap() yerine Sentry.init()
@@ -103,20 +109,6 @@ SplashScreen.preventAutoHideAsync();
  * ayrı bir mimari karar olurdu. Kullanıcı tarafındaki görünürlük 403 yolundan
  * geliyor; buradaki iş, arızanın BİZE görünür olmasını sağlamak.
  */
-/**
- * Ham `auth_id`'yi analitiğe sokmadan kimliği ayırt edilebilir kılar.
- *
- * PostHog'a ham auth id GÖNDERİLMEZ: PostHog kimliği kalıcı olarak saklar ve
- * dışa aktarılabilir; ham id ile analitik profili doğrudan auth kaydına
- * bağlanabilir hale gelir. Son 8 karakter iki koşumu ayırt etmeye yeter
- * (`identity_reset_detected` olayında eski/yeni kimliğin farklı olduğunu
- * görmek için) ama tek başına kimliği çözmeye yetmez.
- */
-function authIdSuffix(authId: string | null | undefined): string | null {
-  if (!authId) return null;
-  return authId.slice(-8);
-}
-
 async function bootstrapAppUser(): Promise<void> {
   const first = await ensureAppUser();
   if (first.ok) return;
@@ -271,6 +263,52 @@ export default function RootLayout() {
     // raporlanabilsin; PostHog'a yalnızca son 8 karakter gider (authIdSuffix).
     let lastKnownAuthId: string | null = null;
 
+    // ── Cold-start sıfırlama tespiti ───────────────────────────────────────
+    // `lastKnownAuthId` yalnızca BU koşum içinde yaşar: uygulama kapalıyken
+    // kaybolan kimliği göremez. AsyncStorage temizlenmesi veya cold start'ta
+    // oturumun geri yüklenememesi hiç `SIGNED_OUT` yayınlamaz — o yol
+    // yukarıdaki dalların kör noktasıdır. Kalıcı iz `utils/identityReset`
+    // içinde, Supabase'in auth token anahtarından AYRI bir anahtarda tutulur.
+    //
+    // Tek giriş noktası: çözülmüş bir oturum id'si gördüğümüz her yer burayı
+    // çağırır. İlk çağrı uzlaştırır (oku → raporla → yaz), sonrakiler yalnızca
+    // izi tazeler — tazeleme olmadan kullanıcının KASITLI kimlik değişimi
+    // (Apple/Google ile giriş) bir sonraki açılışta sıfırlama sanılırdı.
+    //
+    // Yazmalar tek zincirde serileşir: bir tazeleme uzlaştırmadan önce
+    // koşarsa referans değer ezilir ve sıfırlama sonsuza dek görünmez olur.
+    let coldStartChecked = false;
+    let identityChain: Promise<unknown> = Promise.resolve();
+
+    const noteResolvedIdentity = (authId: string): void => {
+      const task: () => Promise<void> = coldStartChecked
+        ? () => persistAuthIdSuffix(AsyncStorage, authId)
+        : async () => {
+            await reconcileColdStartIdentity(AsyncStorage, authId, (previousSuffix, currentSuffix) => {
+              // Kimlik cold start'ta değişmiş: kullanıcı watchlist'ini,
+              // gauntlet geçmişini ve DNA'sını kaybetti — ama hiçbir
+              // SIGNED_OUT yayınlanmadı, açılış temiz kurulum gibi göründü.
+              posthogAnalytics.track('identity_reset_detected', {
+                had_previous_session: true,
+                previous_auth_id_suffix: previousSuffix,
+                new_auth_id_suffix: currentSuffix,
+                trigger: 'cold_start',
+              });
+            });
+          };
+
+      coldStartChecked = true;
+
+      identityChain = identityChain.then(task).catch((err) => {
+        // Depo okunamadı/yazılamadı: ÖLÇÜM körleşir ama kullanıcı akışı
+        // etkilenmez — bu yüzden warning, fatal değil.
+        Sentry.captureException(err, {
+          level: 'warning',
+          tags: { flow: 'identity_reset_visibility' },
+        });
+      });
+    };
+
     // İlk açılış: oturum yoksa anonim oluştur
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -312,6 +350,12 @@ export default function RootLayout() {
         // YAZMA burada olmalı (SIGNED_OUT dalı bir öncekini okur).
         if (session?.user?.id) {
           lastKnownAuthId = session.user.id;
+
+          // Cold start uzlaştırması buradan tetiklenir: INITIAL_SESSION
+          // (oturum geri yüklendi) ya da anonim oturumun açılmasıyla gelen
+          // SIGNED_IN — hangisi önce çözülürse. İkisi de "oturum kuruldu"
+          // anıdır ve `noteResolvedIdentity` yalnızca ilkinde uzlaştırır.
+          noteResolvedIdentity(session.user.id);
         }
 
         // `public.users` satırını GARANTİ et — oturum bootstrap'ı.
