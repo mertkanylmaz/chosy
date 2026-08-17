@@ -31,6 +31,7 @@ export const posthogAnalytics = {
     const host = process.env.EXPO_PUBLIC_POSTHOG_HOST;
     if (!key || !host) {
       logger.log('[posthog] PostHog disabled — no key');
+      Sentry.captureMessage('PostHog init skipped — missing key/host', 'warning');
       return;
     }
     posthog = new PostHog(key, { host, flushAt: 20, flushInterval: 30_000 });
