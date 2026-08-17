@@ -1,126 +1,27 @@
 /**
- * Tab navigasyon layout'u — Premium Bumble tab bar.
+ * Tab navigasyon layout'u — Native tab bar (C.9a-2 Faz 2, Senaryo A).
  *
- * Sıra: Home (Sparkle) → Discover (Compass) → Profile (User)
+ * Sıra: Home (sparkle) → Discover (safari, gizli) → Profile (person)
  *
- * İkon kütüphanesi: Phosphor (duotone weight) — marka anı ikonları.
- * Aktif tab: duotone weight, accentPrimary renk + label (11px bold) + dot + bounce
- * Pasif tab: regular weight, tabInactive renk + label yok
+ * K-04: "Tab bar native-feeling. Custom glass taklidi yok; sistemin Liquid
+ * Glass davranışı kullanılır." Bu yüzden `expo-router/unstable-native-tabs`
+ * kullanılır — pill/shadow/bounce/dot indicator bilinçli olarak bırakıldı,
+ * native API bunları expose etmiyor (Faz 1 araştırması).
  *
- * UX Redesign v3: Home tab = Mood search (eski mood.tsx icerigi index.tsx'e tasindi).
- * Discover tab = placeholder (gelecek: browse/explore). Watchlist tab gizli.
+ * ⚠️ BİLİNEN RİSK (bkz. docs/TEKNIK_BORC.md): discoverEnabled flag'i `hidden`
+ * prop'una async fetch sonrası set ediliyor — flag `true` olursa native tab
+ * navigator'ı remount eder. Flag bugün K-02 gereği hep false, tetiklenmiyor.
  */
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Tabs } from 'expo-router';
-import { Sparkle, Compass, User, type IconWeight } from 'phosphor-react-native';
+import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withSequence,
-  withSpring,
-  withTiming,
-  useReducedMotion,
-} from 'react-native-reanimated';
-
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
-import { BOUNCE_CONFIG, SPRING_CONFIG, FAST_TIMING } from '@/constants/animations';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
-
-// ─── Phosphor ikon boyutu (tab bar standart) ────────────────────────────────
-
-const TAB_ICON_SIZE = 24;
-
-// ─── Animated Tab Icon ────────────────────────────────────────────────────────
-
-interface AnimatedTabIconProps {
-  focused: boolean;
-  children: React.ReactNode;
-}
-
-/**
- * Tab ikonu wrapper'ı.
- * Aktif olunca ikon scale 1→1.2→1 bounce yapar.
- * Altında küçük violet dot indicator fade in/out.
- */
-function AnimatedTabIcon({ focused, children }: AnimatedTabIconProps) {
-  const scale = useSharedValue(1);
-  const dotOpacity = useSharedValue(focused ? 1 : 0);
-  const dotScale = useSharedValue(focused ? 1 : 0);
-  const isReducedMotion = useReducedMotion();
-
-  useEffect(() => {
-    // Dot fade in/out
-    dotOpacity.value = withTiming(focused ? 1 : 0, FAST_TIMING);
-    dotScale.value = withSpring(focused ? 1 : 0, SPRING_CONFIG);
-
-    // İkon bounce — sadece aktif olunca
-    if (focused && !isReducedMotion) {
-      scale.value = withSequence(
-        withSpring(1.2, BOUNCE_CONFIG),
-        withSpring(1.0, SPRING_CONFIG),
-      );
-    }
-  }, [focused, isReducedMotion, scale, dotOpacity, dotScale]);
-
-  const iconStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const dotStyle = useAnimatedStyle(() => ({
-    opacity: dotOpacity.value,
-    transform: [{ scale: dotScale.value }],
-  }));
-
-  return (
-    <View style={tabIconStyles.wrapper}>
-      <Animated.View style={iconStyle}>{children}</Animated.View>
-      <Animated.View style={[tabIconStyles.dot, dotStyle]} />
-    </View>
-  );
-}
-
-// ─── Phosphor Tab Icon Renderer ─────────────────────────────────────────────
-
-/** Phosphor ikon bileşen tipi (Sparkle, Compass, User vb.) */
-type PhosphorIcon = React.ComponentType<{
-  size?: number;
-  color?: string;
-  weight?: IconWeight;
-}>;
-
-/**
- * Phosphor duotone/regular ikon seçimi — focused durumuna göre.
- * Aktif: duotone weight (dolgu + kontur), pasif: regular weight (sadece kontur).
- */
-function TabIcon({
-  focused,
-  Icon,
-}: {
-  focused: boolean;
-  Icon: PhosphorIcon;
-}) {
-  return (
-    <AnimatedTabIcon focused={focused}>
-      <Icon
-        size={TAB_ICON_SIZE}
-        color={focused ? Colors.accentPrimary : Colors.tabInactive}
-        weight={focused ? 'duotone' : 'regular'}
-      />
-    </AnimatedTabIcon>
-  );
-}
-
-// ─── Layout ───────────────────────────────────────────────────────────────────
 
 /**
  * Tab navigasyon layout'u.
- * Sıra: Home (Mood Search) → Discover (placeholder) → Profile
- *
- * UX Redesign v3: Home tab = Mood search. Discover = gelecek browse/explore.
+ * Sıra: Home (Mood Search) → Discover (placeholder, gizli) → Profile
  */
 export default function TabLayout() {
   const { t } = useLanguage();
@@ -141,123 +42,30 @@ export default function TabLayout() {
   }, []);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors.accentPrimary,
-        tabBarInactiveTintColor: Colors.tabInactive,
-        tabBarStyle: styles.tabBar,
-        tabBarBackground: () => null,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarItemStyle: styles.tabItem,
-        headerShown: useClientOnlyValue(false, true),
-        headerStyle: { backgroundColor: Colors.background },
-        headerTintColor: Colors.textWhite,
-        headerTitleStyle: { fontFamily: 'PlayfairDisplay_700Bold' },
-      }}>
-      {/* 1 — Home: Mood search + AI processing (kendi floating header'ı var — nav header gizle) */}
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('tabs.home'),
-          headerShown: false,
-          tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.home')}</Text> : null,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} Icon={Sparkle} />
-          ),
-        }}
-      />
+    <NativeTabs tintColor={Colors.accentPrimary}>
+      {/* 1 — Home: Mood search + AI processing */}
+      <NativeTabs.Trigger name="index">
+        <Icon sf={{ default: 'sparkle', selected: 'sparkles' }} />
+        <Label>{t('tabs.home')}</Label>
+      </NativeTabs.Trigger>
       {/* 2 — Discover: C.9a (bible K-02) — nav'dan kaldırıldı, flag ile donduruldu.
           Kod (mood.tsx ve içindeki section'lar) SİLİNMEZ, yalnızca tab bar
-          erişimi discover_tab_enabled flag'ine bağlı. */}
-      <Tabs.Screen
-        name="mood"
-        options={{
-          title: t('tabs.discover'),
-          headerShown: false,
-          href: discoverEnabled ? undefined : null,
-          tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} Icon={Compass} />
-          ),
-        }}
-      />
-      {/* 3 — Profile: avatar + isim zaten kimlik gösteriyor — nav header gizle */}
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: t('tabs.profile'),
-          headerShown: false,
-          tabBarLabel: ({ focused }) =>
-            focused ? <Text style={styles.activeLabel}>{t('tabs.profile')}</Text> : null,
-          tabBarIcon: ({ focused }) => (
-            <TabIcon focused={focused} Icon={User} />
-          ),
-        }}
-      />
+          erişimi discover_tab_enabled flag'ine bağlı.
+          ⚠️ hidden, discoverEnabled değişince navigator'ı remount eder — bkz.
+          docs/TEKNIK_BORC.md, flag true yapılmadan önce oku. */}
+      <NativeTabs.Trigger name="mood" hidden={!discoverEnabled}>
+        <Icon sf={{ default: 'safari', selected: 'safari.fill' }} />
+        <Label>{t('tabs.discover')}</Label>
+      </NativeTabs.Trigger>
+      {/* 3 — Profile */}
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: 'person', selected: 'person.fill' }} />
+        <Label>{t('tabs.profile')}</Label>
+      </NativeTabs.Trigger>
       {/* Watchlist — tab bar'dan gizle, dosya dizinde kalıyor (expo-router gerekliliği) */}
-      <Tabs.Screen
-        name="watchlist"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
+      <NativeTabs.Trigger name="watchlist" hidden>
+        <Label>{t('tabs.watchlist')}</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
-
-// ─── Stiller ──────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: Colors.tabBarBg,
-    // Pill görünüm
-    borderTopWidth: 0,
-    borderTopColor: 'transparent',
-    borderRadius: 36,
-    marginHorizontal: 16,
-    // Floating gölge
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.40,
-    shadowRadius: 18,
-    elevation: 18,
-    // Pozisyon: bottom 10 + height 64 = 74px → paddingBottom:83 ile uyumlu (9px nefes)
-    position: 'absolute',
-    bottom: 10,
-    height: 64,
-    paddingBottom: 10,
-    paddingTop: 6,
-  },
-  tabLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    marginTop: 2,
-  },
-  tabItem: {
-    gap: 2,
-  },
-  activeLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.accentPrimary,
-    letterSpacing: 0.3,
-    marginTop: 1,
-  },
-});
-
-const tabIconStyles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: Colors.accentPrimary,
-  },
-});

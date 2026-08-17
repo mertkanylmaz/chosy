@@ -264,7 +264,12 @@ görsel olarak geri çekilir; içerik her zaman öncelikli kalır.
 
 | Katman | Cam | Örnekler |
 |--------|-----|----------|
-| **Chrome** — kontrol/navigasyon | ✅ | `GameShell` header (yalnız **sonuç** ekranlarında yüzer), tab bar, yüzen rozetler (`attemptsBadge`) |
+| **Chrome** — kontrol/navigasyon | ✅ | `GameShell` header (yalnız **sonuç** ekranlarında yüzer), yüzen rozetler (`attemptsBadge`) |
+
+> **Tab bar istisnası (C.9a-2, 17 Ağu 2026, K-04):** Tab bar artık `expo-router/unstable-native-tabs`
+> ile native — `GlassSurface`/`BlurView` tabanlı custom cam taklidinden çıktı. Pill şekli, custom
+> shadow, Reanimated bounce ve dot indicator bilinçli olarak bırakıldı; native API bunları expose
+> etmiyor. Sistemin kendi Liquid Glass davranışı kullanılıyor (K-04: "custom glass taklidi yok").
 | **İnteraktif içerik** — Kural 5'in üç sorusunu geçen | ✅ | Imposter aktör kartı, Detective şüpheli ızgarası, Spotlight klavye tuşu |
 | **Pasif içerik** | ❌ | `ResultCard`, tahmin geçmişi kartları/çipleri, still/poster, mask row, film listeleri |
 

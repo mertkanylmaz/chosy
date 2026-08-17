@@ -1874,3 +1874,18 @@ ayrı bir kod kararı, 088 kapsamında bilinçli olarak yapılmadı. Aynı dosya
   kullanılmıyor → kural 6 ihlali (chosy-conventions §2). app_config flag okuma
   şu an gameApi.ts üzerinden kurala uygun gidiyor, remoteConfig.ts kullanılmıyor
   olsa da temizlenmeli. Tespit: C.9a keşfi, 17 Ağu 2026.
+
+---
+
+## 🟡 `app/(tabs)/_layout.tsx` — discoverEnabled → native `hidden` remount riski
+
+**Öncelik: orta. Tespit: C.9a-2 Faz 2, 17 Ağustos 2026.**
+
+- app/(tabs)/_layout.tsx: discoverEnabled flag'i NativeTabs.Trigger'ın
+  `hidden` prop'una bağlı. expo-router dokümantasyonu: tab'lar görünürken
+  gizlenmemeli (navigator remount + state kaybı riski). Şu an flag hep
+  false (K-02, Discover donduruldu) olduğu için tetiklenmiyor.
+  ⚠️ discover_tab_enabled app_config'te true yapılmadan önce bu satır
+  düzeltilmeli — doğru çözüm: flag'i (tabs) layout mount olmadan ÖNCE
+  (boot/gate aşamasında) çözüp initial render'a sabit değer olarak
+  geçirmek. Tespit: C.9a-2 Faz 2, 17 Ağu 2026.
