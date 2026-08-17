@@ -1863,3 +1863,14 @@ o dal artık **kanıtlanabilir biçimde ulaşılamaz** — sayaç kalıcı olara
 Zararsız: sıfır dönen bir gözlem sayacı yanlış sonuç üretmiyor. Kaldırılması
 ayrı bir kod kararı, 088 kapsamında bilinçli olarak yapılmadı. Aynı dosyadaki
 `claim_device_data`'ya atıf yapan yorum da bayat (fonksiyon 088'de düştü).
+
+---
+
+## 🟡 `remoteConfig.ts` — modül seviyesi cache, kural 6 ihlali
+
+**Öncelik: orta. Tespit: C.9a keşfi, 17 Ağustos 2026.**
+
+- remoteConfig.ts: modül seviyesi cache (memoryCache), CACHE_TTL_MS tanımlı ama
+  kullanılmıyor → kural 6 ihlali (chosy-conventions §2). app_config flag okuma
+  şu an gameApi.ts üzerinden kurala uygun gidiyor, remoteConfig.ts kullanılmıyor
+  olsa da temizlenmeli. Tespit: C.9a keşfi, 17 Ağu 2026.
