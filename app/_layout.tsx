@@ -103,6 +103,20 @@ SplashScreen.preventAutoHideAsync();
  * ayrı bir mimari karar olurdu. Kullanıcı tarafındaki görünürlük 403 yolundan
  * geliyor; buradaki iş, arızanın BİZE görünür olmasını sağlamak.
  */
+/**
+ * Ham `auth_id`'yi analitiğe sokmadan kimliği ayırt edilebilir kılar.
+ *
+ * PostHog'a ham auth id GÖNDERİLMEZ: PostHog kimliği kalıcı olarak saklar ve
+ * dışa aktarılabilir; ham id ile analitik profili doğrudan auth kaydına
+ * bağlanabilir hale gelir. Son 8 karakter iki koşumu ayırt etmeye yeter
+ * (`identity_reset_detected` olayında eski/yeni kimliğin farklı olduğunu
+ * görmek için) ama tek başına kimliği çözmeye yetmez.
+ */
+function authIdSuffix(authId: string | null | undefined): string | null {
+  if (!authId) return null;
+  return authId.slice(-8);
+}
+
 async function bootstrapAppUser(): Promise<void> {
   const first = await ensureAppUser();
   if (first.ok) return;
@@ -249,16 +263,41 @@ export default function RootLayout() {
   // Anonim oturum — oturum yoksa signInAnonymously() ile aç
   // Auth state listener ile oturum expire olduğunda otomatik recovery
   useEffect(() => {
+    // ── E-08: kimlik sıfırlamasının görünürlüğü ────────────────────────────
+    // Anonim kimlik kaybolduğunda kullanıcı tüm geçmişini kaybeder ama
+    // uygulama "çalışıyor" görünür. Bu blok KURTARMA yapmaz — yalnızca olayın
+    // Sentry ve PostHog'a yansımasını sağlar. Son bilinen auth id burada
+    // tutulur ki SIGNED_OUT recovery'de eski kimliğin var olup olmadığı
+    // raporlanabilsin; PostHog'a yalnızca son 8 karakter gider (authIdSuffix).
+    let lastKnownAuthId: string | null = null;
+
     // İlk açılış: oturum yoksa anonim oluştur
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
-        supabase.auth.signInAnonymously().catch(() => {
+        // ⚠️ `signInAnonymously()` API hatasında REDDETMEZ, `{ error }` ile
+        // resolve eder. Eski `.catch()` yalnızca ağ istisnasını görüyordu;
+        // 4xx/5xx yanıtlar sessizce düşüyordu. `throw` ikisini de tek yola
+        // sokar — akış davranışı değişmez, yalnızca görünürlük eklenir.
+        supabase.auth.signInAnonymously().then(({ error }) => {
+          if (error) throw error;
+        }).catch((err) => {
           if (__DEV__) {
             // eslint-disable-next-line no-console
             console.error('[auth] signInAnonymously başarısız');
           }
+          Sentry.captureException(err, {
+            level: 'fatal',
+            tags: { flow: 'anonymous_session_recovery' },
+          });
         });
       }
+    }).catch((err) => {
+      // getSession reddederse anonim oturum HİÇ açılmaz: kullanıcı kimliksiz
+      // kalır ve bu dal daha önce hiçbir iz bırakmıyordu.
+      Sentry.captureException(err, {
+        level: 'fatal',
+        tags: { flow: 'anonymous_session_recovery' },
+      });
     });
 
     // watchSync: chosy_watched_films → watchlist.watched_at kurtarma senkronu.
@@ -268,6 +307,13 @@ export default function RootLayout() {
     // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Kimlik sıfırlaması tespiti için son bilinen auth id'yi taze tut.
+        // SIGNED_OUT'ta `session` zaten null gelir, bu yüzden okuma değil
+        // YAZMA burada olmalı (SIGNED_OUT dalı bir öncekini okur).
+        if (session?.user?.id) {
+          lastKnownAuthId = session.user.id;
+        }
+
         // `public.users` satırını GARANTİ et — oturum bootstrap'ı.
         // Anonim/kayıtlı ayrımı YOK: her oturum satır alır. Bu çağrı 10 Ağu
         // 2026'da UI katmanından (app/(tabs)/index.tsx useFocusEffect) buraya
@@ -303,18 +349,37 @@ export default function RootLayout() {
 
         if (event === 'TOKEN_REFRESHED') {
           // Token yenilendi — offline queue'daki bekleyen islemleri sync et
-          processOfflineQueue().catch(() => {});
+          // Kuyruk işlenemezse kullanıcı eylemi kaybolur ama akış durmaz:
+          // warning seviyesi, sonraki token yenilemesinde yeniden denenir.
+          processOfflineQueue().catch((err) => {
+            Sentry.captureException(err, {
+              level: 'warning',
+              tags: { flow: 'offline_queue_token_refresh' },
+            });
+          });
 
           // Token yenilemesi başarısız olursa yeniden anonim oturum aç
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
-              supabase.auth.signInAnonymously().catch(() => {
+              // `{ error }` resolve'u için: bkz. ilk açılış dalındaki not.
+              supabase.auth.signInAnonymously().then(({ error }) => {
+                if (error) throw error;
+              }).catch((err) => {
                 if (__DEV__) {
                   // eslint-disable-next-line no-console
                   console.error('[auth] Session recovery başarısız');
                 }
+                Sentry.captureException(err, {
+                  level: 'fatal',
+                  tags: { flow: 'anonymous_session_recovery' },
+                });
               });
             }
+          }).catch((err) => {
+            Sentry.captureException(err, {
+              level: 'fatal',
+              tags: { flow: 'anonymous_session_recovery' },
+            });
           });
         }
 
@@ -322,15 +387,44 @@ export default function RootLayout() {
         // Sosyal auth geçişi sırasında (Apple/Google linkIdentity)
         // auth.tsx'teki kullanıcı akışı kendi oturumunu yönetir.
         if (event === 'SIGNED_OUT') {
+          // Recovery'ye girerken bilinen ESKİ kimlik. Aşağıdaki başarı dalı
+          // yeni kimliği yazmadan önce burada dondurulur.
+          const previousAuthId = lastKnownAuthId;
+
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
-              supabase.auth.signInAnonymously().catch(() => {
+              supabase.auth.signInAnonymously().then(({ data, error }) => {
+                if (error) throw error;
+
+                // Yeni anonim kimlik açıldı — yani kullanıcı sessizce
+                // sıfırlandı: watchlist, gauntlet geçmişi ve DNA'sı artık
+                // erişilemez durumda. Kurtarma YOK (ayrı mimari karar);
+                // buradaki iş olayın ölçülebilir olması.
+                const newAuthId = data.session?.user?.id ?? null;
+                lastKnownAuthId = newAuthId ?? lastKnownAuthId;
+
+                posthogAnalytics.track('identity_reset_detected', {
+                  had_previous_session: previousAuthId !== null,
+                  previous_auth_id_suffix: authIdSuffix(previousAuthId),
+                  new_auth_id_suffix: authIdSuffix(newAuthId),
+                  trigger: 'signed_out_recovery',
+                });
+              }).catch((err) => {
                 if (__DEV__) {
                   // eslint-disable-next-line no-console
                   console.error('[auth] signInAnonymously (SIGNED_OUT recovery) başarısız');
                 }
+                Sentry.captureException(err, {
+                  level: 'fatal',
+                  tags: { flow: 'anonymous_session_recovery' },
+                });
               });
             }
+          }).catch((err) => {
+            Sentry.captureException(err, {
+              level: 'fatal',
+              tags: { flow: 'anonymous_session_recovery' },
+            });
           });
         }
       },
@@ -344,21 +438,40 @@ export default function RootLayout() {
   // ── Push Notifications setup ─────────────────────────────────────────────
   useEffect(() => {
     // Refresh push token on every launch (token can rotate)
-    savePushTokenToServer().catch(() => {
-      // Non-critical — will retry next launch
+    // Non-critical — will retry next launch. Yine de sessiz kalmaz: token
+    // kalıcı olarak yazılamıyorsa kullanıcı bildirim almayı tamamen keser.
+    savePushTokenToServer().catch((err) => {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { flow: 'push_token_save' },
+      });
     });
 
     // Clear badge on app launch
-    clearBadge().catch(() => {});
+    clearBadge().catch((err) => {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { flow: 'push_clear_badge' },
+      });
+    });
 
     // Check if we should prompt for permission (2nd session)
     shouldAskForPermission().then((shouldAsk) => {
       if (shouldAsk) {
         registerForPushNotifications().catch((err) => {
           logger.warn('[layout] Push registration failed:', err);
+          Sentry.captureException(err, {
+            level: 'warning',
+            tags: { flow: 'push_registration' },
+          });
         });
       }
-    }).catch(() => {});
+    }).catch((err) => {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { flow: 'push_permission_check' },
+      });
+    });
   }, []);
 
   // Font yüklemesi tamamlanınca (veya hata olunca) splash'i kaldır.
