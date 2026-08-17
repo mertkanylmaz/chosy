@@ -790,6 +790,23 @@ gerçekten ihtiyaç duyan bir akış varsa, o akış anonim oturum açmalı —
 `app/_layout.tsx:196` zaten her istemci için `signInAnonymously()` çağırıyor,
 yani doğrulanmış bir kimlik HER ZAMAN mevcut.
 
+**🔴 önceliği korunuyor — 16 Ağu 2026 notu.** Bu, migration **088** ile şemadan
+kaldırılan `device_id` anti-pattern'inin **kod tarafındaki kardeşi**: her ikisi
+de "istemciden gelen doğrulanamaz kimlik". 16 Ağu'da doğrulandı, fallback hâlâ
+canlı (`index.tsx:77-80`, `console.log('[auth] Fallback to body.user_id')`).
+
+C.7 kapsamına **bilerek alınmadı** — ayrı iş kalemi. Şemadaki yolu kapatıp
+koddaki kardeşini açık bırakmak aynı deliği bir katman aşağıda sürdürmek olur,
+bu yüzden takip edilmeli.
+
+⚠️ **Önce bir doğrulama gerekiyor, düzeltme değil:** bu fonksiyon muhtemelen
+C.6'da (`087_games_portfolio_prune`) dondurulan `slot-*` ailesiyle ilişkili.
+Eğer yüzey zaten `app_config` ile kapalıysa açığın sömürülebilirliği ve
+dolayısıyla önceliği değişir — ama fonksiyon deploy edilmiş durumda kaldığı
+sürece Edge endpoint'i çağrılabilir olmaya devam eder, feature flag istemciyi
+durdurur, gateway'i durdurmaz. İlk adım: **kullanımda mı, zaten donmuş bir
+yüzey mi** — bu belirlenmeden düzeltmeye girilmemeli.
+
 ---
 
 ## 🟡 `parse-taste` — anon isteklerde kota sessizce atlanıyor
@@ -879,10 +896,28 @@ açık bırakmaya tercih edildi. Kalıcı çözüm C.7.
 
 ---
 
-## 🔴 `public.users` satırı anonim kimlikler için HİÇ oluşmuyor (kalıcı)
+## ✅ ~~`public.users` satırı anonim kimlikler için HİÇ oluşmuyor~~ (KAPANDI)
 
-**Öncelik: yüksek. Kalem: C.7 — C.1'den ÖNCE.** 10 Ağu 2026, senaryo B
-doğrulandı.
+**KAPANDI — 16 Ağu 2026, iki parça hâlinde:**
+
+1. **Birikmiş 87 kimlik:** migration **082** (14 Ağu) hepsine satır açtı —
+   `public.users` 139 → 231. `created_at` `auth.users`'tan taşındı, kohort
+   analizi bozulmadı.
+2. **Yeni kimlikler:** `ensureAppUser()` bootstrap'ı (`f44fac2`, 10 Ağu,
+   `INITIAL_SESSION` + `SIGNED_IN`) sızıntıyı durdurdu. 16 Ağu canlı ölçümü:
+   bootstrap sonrası doğan kimlikler satırı **0,2–1,3 saniyede** aldı.
+
+Başlıktaki eski **"(kalıcı)"** nitelemesi bu yüzden düştü: satır artık hem
+geçmişe dönük hem ileriye dönük oluşuyor.
+
+⚠️ Kapanış **koşulsuz değil**: bootstrap istemci kodunda yaşıyor, yani kimliği
+istemci dışından açan her yol orphan üretebilir. 16 Ağu'da ölçülen üç orphan'ın
+kaynağı tam olarak buydu — `tests/founder-acceptance/runner.ts` (düzeltildi,
+C.7). Aynı sınıftan yeni bir yol eklenirse (script, web istemcisi) boşluk geri
+gelir.
+
+**Öncelik (tarihsel): yüksek. Kalem: C.7 — C.1'den ÖNCE.** 10 Ağu 2026,
+senaryo B doğrulandı.
 
 87 kimlik, **2026-04-23'ten** beri satırsız. En yenisi 2026-08-08. Son 48
 saatte **0** yeni çözülme; dağılım 3,5 aya kesintisiz yayılmış. Yarış koşulu
@@ -904,25 +939,42 @@ NULL kolon yok (001:14-21) ve `"users: self insert"` policy'si
 `WITH CHECK (auth_id = auth.uid()::text)` ile INSERT'e izin veriyor
 (001:143-145). Yani INSERT teknik olarak mümkün; sorun çağrılmaması.
 
-⚠️ **Kök neden HÂLÂ tam kapanmadı.** `app/(tabs)/index.tsx:145`
-(`useFocusEffect`) ekrana her girişte `getAppUserId()` çağırıyor — bu satırı
-açmalıydı. Neden açmadığı kod okumasıyla belirlenemedi. O bloğun `catch`'i
-(149-151) hatayı **sessizce yutuyor** ("recent searches opsiyonel"), yani
-INSERT başarısız olsa iz kalmıyor. C.7'nin ilk işi bu.
-
 C.0c'de `parse-mood` bu durumu 403 ile reddeder hâle geldi — tutarsızlık artık
 kullanıcıya yansıyor, sessiz değil. Bu borcu kapatmaz, görünür kılar.
 
-**Yapılacak (C.7):** satır oluşturmanın tek ve deterministik bir noktası
-belirlenecek. Seçenekler — Edge'de tembel insert (8 Ağu'nun geri alınan
-kararı), `auth.users` trigger'ı, ya da anon-signin/signup akışında açık adım.
-Karar CTO'ya ait; bu satır seçenek listesidir, öneri değildir.
+**Yapıldı (C.7):** satır oluşturmanın tek ve deterministik noktası
+`app/_layout.tsx` → `onAuthStateChange` → `bootstrapAppUser()` oldu. 8 Ağu'da
+tartışılan diğer seçenekler (Edge'de tembel insert, `auth.users` trigger'ı)
+seçilmedi.
 
 ---
 
-## 🔴 Sosyal giriş akışı `public.users` satırı AÇMIYOR — sadece UPDATE ediyor
+## 🟢 `app/(tabs)/index.tsx:145` `useFocusEffect` — satır açmama kök nedeni teşhis edilmedi
 
-**Öncelik: yüksek. Kalem: C.7.** 10 Ağu 2026, C.0c adım 2'de kod yolu izlendi.
+**Öncelik: düşük. Teşhis borcu.** 10 Ağu 2026'da bulundu, 16 Ağu'da üst
+maddeden ayrıldı.
+
+`useFocusEffect` ekrana her girişte `getAppUserId()` çağırıyor ve o fonksiyonun
+içinde INSERT var — yani bu satır 87 kimliğin en azından bir kısmına satır
+açmalıydı. **Neden açmadığı kod okumasıyla belirlenemedi.** O bloğun `catch`'i
+(`149-151`) hatayı **sessizce yutuyor** ("recent searches opsiyonel"), yani
+INSERT başarısız olduysa hiçbir iz bırakmadı.
+
+**Artık kritik yolda değil** — `ensureAppUser()` bootstrap'ı satır açma işini
+bu yoldan tamamen devraldı ve boşluğu kapatıyor. Ama teşhis borcu duruyor:
+sessizce yutulan bir INSERT hatasının sebebi hâlâ bilinmiyor ve aynı sebep
+başka bir çağrı noktasında da etkin olabilir. Boş olmayan ama hatayı yutan
+`catch` bloğu ayrıca CLAUDE.md kural 1 ihlali.
+
+---
+
+## 🟡 Sosyal giriş akışı `public.users` satırı AÇMIYOR — sadece UPDATE ediyor
+
+**Öncelik: 16 Ağu 2026'da yüksekten ortaya DÜŞÜRÜLDÜ (🔴 → 🟡).** Tespitin
+kendisi geçerli, sonucu değişti — gerekçe bu maddenin sonundaki "Bugünkü
+durum" bölümünde.
+
+**Kayıt:** 10 Ağu 2026, C.0c adım 2'de kod yolu izlendi.
 
 Köprüsüz 88 kimliğin 87'si anonim; **1 tanesi anonim değil** —
 `provider = email`, `last_sign_in_at` **boş**.
@@ -947,13 +999,25 @@ oluşmamıştır.** Kayıt akışının tamamı, var olmayan bir satırı günce
 `deleteAccount` içinde (`:470`) kullanıyor — yani satır, hesap **silinirken**
 açılıyor olabilir; oluşturulurken değil.
 
-**Bu, "hesap oluştur" yönlendirmesini geçersiz kılar.** Kullanıcıyı kayda
-göndermek `public.users` satırını açmaz; C.7 kapanmadan hiçbir kullanıcı
-yönlendirmesi bu boşluğu çözemez.
+**Bugünkü durum (16 Ağu 2026) — sonuç geçersiz, kusur geçerli.**
 
-**Yapılacak (C.7):** giriş/kayıt akışında satır oluşturma açık ve koşulsuz bir
-adım hâline getirilecek; UPDATE'lerin 0 satır etkilemesi hata olarak
-raporlanacak.
+Yukarıdaki paragraf eskiden şöyle bitiyordu: *"kullanıcı Apple/Google ile giriş
+yapar, `setup-profile`'ı doldurur, ekran başarılı der ve `public.users`'ta
+hiçbir şey oluşmamıştır."* **Bu iddia artık geçersiz:** `ensureAppUser()`
+bootstrap'ı `SIGNED_IN` (ve `INITIAL_SESSION`) olayında satırı **koşulsuz**
+açıyor, sosyal giriş akışı da o olayı üretiyor. Dolayısıyla UPDATE'ler artık
+var olan bir satıra çarpıyor ve "hesap oluştur" yönlendirmesi çalışıyor.
+
+**Kusurun kendisi olduğu gibi duruyor:** bu dört kod yolunun hiçbiri kaç satır
+etkilediğini kontrol etmiyor. PostgREST'te 0 satır etkileyen UPDATE hata
+değildir — bugün satır var diye sessizlik kabul edilebilir hâle gelmiyor, sadece
+zararsızlaşıyor. Satırın herhangi bir sebeple yok olduğu (ya da bootstrap'ın
+başarısız olduğu) her senaryoda aynı sessiz başarı geri gelir. Bu, bu dosyadaki
+**"75 `.update()` çağrısının en az 63'ü 0-satır durumunu tespit edemiyor"**
+maddesinin somut bir örneği; çözümü de orayla birlikte düşünülmeli.
+
+**Yapılacak:** satır oluşturma tarafı C.7'de kapandı. Kalan iş, bu dört
+UPDATE'in 0-satır durumunu tespit edip raporlaması.
 
 ---
 
@@ -977,15 +1041,33 @@ Etkilenenler:
 **Yapılacak:** ölçüm C.7 sonrası sıfırdan başlar. Önceki dönem raporlarına
 "eksik payda" notu düşülecek.
 
+**⚠️ 082 backfill'i bu maddeyi KAPATMIYOR — tersine yeni bir tuzak ekliyor
+(16 Ağu 2026 notu).** Migration 082 (14 Ağu) 88 orphan kimliğe `public.users`
+satırı açtı: **139 → 227** (bugün 233). Ama backfill **satır** açtı,
+**davranış verisi** açmadı — o 88 satır aktivitesizdir. Yani bu maddedeki
+"eksik payda" sorunu artık **ters yönde** de var: ham `public.users` sayısı
+kullanılırsa payda şişer.
+
+`public.users` sayısı bu tarihten sonra **üç parçalı** okunmalı:
+`auth.users` 234 · `public.users` 233 (88'i backfill, aktivitesiz) ·
+**davranış geçmişi olan 139**. `docs/os/1_CHOSY_PRODUCT_OS.md` §8.6 ve
+`2_CHOSY_BUSINESS_MODEL.md` §2'deki çıplak "135/139 kullanıcı" ifadeleri bu
+yüzden güncellenmeli (ayrı doküman işi).
+
+1.000 kullanıcı gate'i **bozulmuyor**: tanımı aktivite tabanlı (son 28 günde
+≥1 tamamlanmış gauntlet), üyelik tabanlı değil.
+
 ---
 
 ## 🟠 2026-05-11 haftasında 32 kimlik kaybı — tek sürümde 3-4 kat sıçrama
 
 **Öncelik: orta. Kalem: C.7 araştırması.** 10 Ağu 2026, C.0c kalem 4.
 
-Satırsız 87 kimliğin dağılımı 3,5 aya yayılmış ama **2026-05-11 haftası tek
-başına 32 kayıp** taşıyor — normalin 3-4 katı. Dağılımın geri kalanı düzgünse
-bu hafta bir sürümle örtüşüyor olabilir.
+87 kimlik satırsız**DI** — o taraf migration **082** ile 14 Ağu'da kapandı
+(hepsine satır açıldı). **Bu maddenin açık sorusu kapanmadı:** satırsızların
+3,5 aya yayılan dağılımında **2026-05-11 haftası tek başına 32 kayıp** taşıyor
+— normalin 3-4 katı. Dağılımın geri kalanı düzgünse bu hafta bir sürümle
+örtüşüyor olabilir ve **o sürümde ne olduğu hâlâ incelenmedi.**
 
 **Yapılacak:** `git log 2026-05-04..2026-05-18` incelenecek. Aranan şey yalnız
 kimlik zinciri değil: o sürümde başka bir regresyon da girmiş olabilir ve aynı
@@ -994,15 +1076,28 @@ sessizlik sınıfından olduğu için hâlâ fark edilmemiş olabilir.
 Not: kimlik boşluğunun **kök nedeni bu hafta değil** — kayıplar 2026-04-23'te
 başlıyor. Bu sıçrama nedeni değil, ağırlaştırıcısı.
 
+Aranan şeyin kimlik zinciri **olmadığını** vurgulamak gerekiyor: kimlik tarafı
+kapandı, geriye "aynı sessizlik sınıfından, hâlâ fark edilmemiş başka bir
+regresyon" ihtimali kaldı. Madde bu yüzden açık.
+
 ---
 
-## 🔴 `getAppUserId()` 22 çağrı noktasında hâlâ INSERT yapabiliyor
+## 🔴 `getAppUserId()` çağrı noktalarında hâlâ INSERT yapabiliyor
 
 **Öncelik: yüksek. Kalem: C.0c-5.** 10 Ağu 2026.
 
 "Satır oluşturma tek noktadan yönetilir" kararı yalnızca
 `app/(tabs)/index.tsx`'te uygulandı. `getAppUserId()` (`auth-utils.ts:14`,
-içinde `INSERT`) hâlâ **7 ekran + 15 servis** dosyasından çağrılıyor:
+içinde `INSERT`) hâlâ çağrılıyor — ve sayı **azalmadı, arttı**:
+
+| Ölçüm | 10 Ağu 2026 | **16 Ağu 2026** |
+|---|---|---|
+| Çağıran dosya | 22 (7 ekran + 15 servis) | **27** |
+| Toplam geçiş | ölçülmedi | **85** |
+
+(16 Ağu ölçümü: `auth-utils.ts` tanımı hariç, `app/ components/ services/
+contexts/ hooks/` altında.) 10 Ağu'daki dosya listesi aşağıda tarihsel kayıt
+olarak bırakıldı — bugünkü 27'nin tam listesi değildir:
 
 `app/gate.tsx` · `app/roulette.tsx` · `app/lifetime.tsx` ·
 `app/onboarding.tsx` · `app/discover.tsx` · `app/referral.tsx` ·
@@ -1019,10 +1114,15 @@ yok, hata yolu `logger.error` ile bitiyor — yani bootstrap'ın sağladığı
 görünürlük ve dayanıklılık garantilerinin hiçbiri geçerli değil. Sonuç
 "çalışır ama izlenemez": tam olarak 87 kimliği doğuran sınıf.
 
-**Yapılacak (C.0c-5):** 22 çağrı noktası `readAppUserId()`'ye çevrilecek;
+**Yapılacak (C.0c-5):** çağrı noktaları `readAppUserId()`'ye çevrilecek;
 `getAppUserId()` ya kaldırılacak ya da yalnız `deleteAccount` için bırakılıp
-`@deprecated` işaretlenecek. Okuma/oluşturma ayrımı (`readAppUserId` vs
-`ensureAppUser`) C.7'nin de deseni olarak kabul edildi.
+`@deprecated` işaretlenecek.
+
+⚠️ **Okuma/oluşturma ayrımı bu maddenin çözümü olarak tasarlandı ama HENÜZ
+UYGULANMADI.** `readAppUserId()` (okuma) ve `ensureAppUser()` (oluşturma) C.0c'de
+yazıldı ve C.7'nin deseni olarak kabul edildi; bootstrap `ensureAppUser`'a
+geçirildi. Ancak **27 dosyadaki 85 geçişin dönüştürülmesi yapılmadı** — desen
+var, göç yok. C.7'nin kapanması bu maddeyi kapatmıyor.
 
 ---
 
@@ -1607,10 +1707,11 @@ satırları. C.2-0 kısıtı gereği (choice_events/duel_impressions'a DELETE yo
 temizlenmedi. Orphan-auth sayımı yapan biri bu iki kimliği test olarak
 tanımalı. Temizlik gerekirse ayrı onaylı iş.
 
-**Not:** Anon kimlikle ilk çağrı 401 verdi — kök neden bilinen 🔴 borç
-("anonim kimlikler için `public.users` satırı hiç oluşmuyor"); smoke,
-istemcinin `getAppUserId` INSERT bootstrap'ını taklit ederek geçti. Bu borç
-C.2 istemci işinde yeniden görünür olacak.
+**Not:** Anon kimlikle ilk çağrı 401 verdi — kök neden o tarihte açık olan
+"anonim kimlikler için `public.users` satırı hiç oluşmuyor" borcuydu; smoke,
+istemcinin `getAppUserId` INSERT bootstrap'ını taklit ederek geçti.
+**O borç KAPANDI (082 backfill + `ensureAppUser` bootstrap, 16 Ağu 2026)** —
+bu 401 artık aynı sebeple tekrarlanmaz.
 
 ---
 
