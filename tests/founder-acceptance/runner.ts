@@ -128,6 +128,50 @@ async function signIn(): Promise<void> {
     );
   }
   accessToken = data.session.access_token;
+
+  await ensureAppUser(data.session.user?.id);
+}
+
+/**
+ * `public.users` satırını garanti eder — uygulamanın `app/_layout.tsx`
+ * bootstrap'ının runner karşılığı.
+ *
+ * ── Neden kopyalanmış bir upsert ──────────────────────────────────────────
+ * `services/auth-utils.ts` → `services/supabase.ts` → AsyncStorage zinciri
+ * react-native'e bağlı; runner düz bir Node (tsx) süreci olduğu için o dosya
+ * import EDİLEMEZ. Bu yüzden aynı ifade runner'ın kendi istemcisiyle burada
+ * tekrarlanır: `upsert` + `onConflict: 'auth_id'`, birebir aynı sözleşme.
+ *
+ * ── Neden gerekli ─────────────────────────────────────────────────────────
+ * `signInAnonymously()` `auth.users`'ta yeni bir kimlik açar. Bu çağrı
+ * olmadan runner'ın her koşusu `public.users` satırı olmayan bir "orphan"
+ * kimlik bırakıyordu: 16 Ağu 2026 ölçümünde bootstrap sonrası doğan 10
+ * kimliğin 3'ü satırsızdı ve üçü de bu yoldan gelmişti.
+ *
+ * ── Neden throw ───────────────────────────────────────────────────────────
+ * Satır açılamadıysa kimlik kotaya, analitiğe ve `app_user_id()` tabanlı RLS
+ * policy'lerine giremez. O policy'ler hata değil SESSİZCE 0 satır döndürür;
+ * runner sessizce yanlış sonuç üretmektense burada FAIL vermelidir
+ * (CLAUDE.md kural 1).
+ */
+async function ensureAppUser(authUserId: string | undefined): Promise<void> {
+  if (!authUserId) {
+    throw new Error('Anonim oturum açıldı ama auth user id yok — bootstrap yapılamaz.');
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .upsert({ auth_id: authUserId }, { onConflict: 'auth_id' })
+    .select('id')
+    .single();
+
+  if (error || !data) {
+    throw new Error(
+      `public.users satırı oluşturulamadı (auth_id: ${authUserId}): ` +
+        `${error?.message ?? 'satır dönmedi'}. Bu kimlik orphan kalır; ` +
+        'app_user_id() tabanlı RLS policyleri sessizce 0 satır döndürür.',
+    );
+  }
 }
 
 // ─── Parse-mood Edge Function call ───────────────────────────────────────────

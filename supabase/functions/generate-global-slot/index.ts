@@ -3,7 +3,9 @@
  *
  * ── Bu fonksiyon neden var ───────────────────────────────────────────────────
  * Şema global slotu B.1'den (migration 069) beri destekliyor:
- *   daily_gauntlets_scope_integrity → scope='global' iken user_id/device_id NULL
+ *   daily_gauntlets_scope_integrity → scope='global' iken user_id NULL
+ *     (088'e kadar bu kısıt device_id'nin de NULL olmasını şart koşuyordu;
+ *      o kolon C.7'de tamamen kaldırıldı — kullanılmayan kimlik yoluydu)
  *   daily_gauntlets_global_date_uniq → günde tek global satır
  *   daily_gauntlets_global_read      → herkese açık RLS okuması
  * Eksik olan tek parça ÜRETEÇTİ. `generate-gauntlet/index.ts:114` bu boşluğu
@@ -196,7 +198,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       .from('daily_gauntlets')
       .insert({
         user_id: null,
-        device_id: null,
         scope: 'global',
         date,
         film_ids: generated.films.map((f) => f.id),

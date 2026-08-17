@@ -1717,3 +1717,44 @@ medyan 12 · p25 9 · p75 14 · max 16 — **%84,5'i Δ ≥ 8** (fark edilir),
 **Neden şimdi değil:** Bu bir ürün/tasarım kararı, teknik düzeltme değil —
 etkilenen oran da (%3,3) acil müdahaleyi gerektirmiyor.
 
+
+---
+
+## 🟡 `test:founder` 5 case vs `free.daily_search_limit = 3`
+
+**Öncelik: orta. Karar bekliyor (C.7, 16 Ağu 2026).**
+
+Runner her koşumda `signInAnonymously()` ile taze bir anonim kimlik açıyor ve
+o kimlik `free` katmanında doğuyor. Canlı `subscription_limits.free`
+`daily_search_limit = 3`; runner'ın 5 case'i var. Yani 4. ve 5. case
+**yapısal olarak** `parse-mood` üzerinden 429 `QUOTA_EXCEEDED` alıyor —
+mood eşleşmesiyle ilgisi yok. İki bağımsız koşumda birebir aynı sonuç:
+**3 PASS + 2 FAIL**.
+
+Bu, C.7'de runner'a `ensureAppUser()` eklenmesiyle *görünür* oldu, o
+değişiklikle *oluşmadı*: öncesinde runner'ın kimliği orphan olduğu için
+`parse-mood` fail-closed dalı (`APP_USER_MISSING`) beş case'e de 403
+döndürüyordu, yani test 10 Ağu'dan (C.0c) beri 5/5 FAIL'di. Şimdi 3/5 geçiyor.
+
+**Seçenekler (karar bekliyor):**
+1. Case sayısını 3'e indir — kapsam kaybı.
+2. Runner'a `grant_bonus_searches` ile bonus arama tanı — test yolu üretim
+   yolundan ayrışır.
+3. Runner'ın kullanıcısını ücretli bir katmana yaz — aynı ayrışma, artı
+   `subscription_limits` bağımlılığı.
+
+---
+
+## 🟢 `recompute-taste-vector` — `skipped_anonymous_rows` sayacı ulaşılamaz
+
+**Öncelik: düşük, zararsız. 16 Ağu 2026, migration 088 sonrası.**
+
+`supabase/functions/recompute-taste-vector/index.ts:362` çevresindeki
+`skipped_anonymous_rows` sayacı `choice_events` / `watch_feedback` tablolarında
+`user_id IS NULL` satırlarını dışlayıp sayıyordu. 088 `device_id` kolonunu
+kaldırıp `*_owner_present` CHECK'lerini `user_id NOT NULL`a dönüştürdüğü için
+o dal artık **kanıtlanabilir biçimde ulaşılamaz** — sayaç kalıcı olarak 0.
+
+Zararsız: sıfır dönen bir gözlem sayacı yanlış sonuç üretmiyor. Kaldırılması
+ayrı bir kod kararı, 088 kapsamında bilinçli olarak yapılmadı. Aynı dosyadaki
+`claim_device_data`'ya atıf yapan yorum da bayat (fonksiyon 088'de düştü).
