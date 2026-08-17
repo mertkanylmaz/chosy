@@ -22,6 +22,7 @@ import 'react-native-reanimated';
 import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AppState, AppStateStatus } from 'react-native';
 
 import * as Notifications from 'expo-notifications';
 import * as Updates from 'expo-updates';
@@ -226,6 +227,25 @@ export default function RootLayout() {
   // ── PostHog: app_launched event ───────────────────────────────────────────
   useEffect(() => {
     posthogAnalytics.track('app_launched');
+  }, []);
+
+  // ── PostHog: background/inactive geçişinde bekleyen event'leri gönder ─────
+  // flushAt/flushInterval eşiklerine ulaşmadan kapatılan oturumlarda
+  // (ör. cold-start testi: event at → hemen kapat) kuyruktaki event'ler
+  // olmadan uygulama arka plana düşerse kaybolabilir.
+  useEffect(() => {
+    const handleAppStateChange = (nextState: AppStateStatus) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        posthogAnalytics.flush().catch((err) => {
+          logger.warn('[layout] PostHog flush hatası (graceful devam):', err);
+        });
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      sub.remove();
+    };
   }, []);
 
   // Google Sign-In SDK konfigürasyonu (env'den client ID okunur)
