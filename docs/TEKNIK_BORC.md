@@ -277,7 +277,11 @@ alanlarını eksik getirebiliyor.
 
 ---
 
-## claim_device_data — cihaz provenance'i korunmuyor
+## ✅ ~~claim_device_data — cihaz provenance'i korunmuyor~~ (KAPANDI)
+
+**KAPANDI — migration 088 (16.08.2026):** fonksiyon ve `device_id` kimlik yolu
+tamamen kaldırıldı, anonim kimlik artık Anonymous Sign-In üzerinden
+`auth.users`'ta yaşıyor.
 
 **Kayıt tarihi:** 7 Ağustos 2026 (B.1 / migration 069)
 
