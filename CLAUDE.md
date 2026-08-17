@@ -72,6 +72,7 @@ Windows / PowerShell. Komut örnekleri PowerShell sözdiziminde olmalı.
 - Bitince: hangi dosyalar değişti, hangi doğrulama çalıştırıldı, ne çıktı verdi.
 - `AskUserQuestion` ile alınan onay geçerli onaydır; raporda hangi soruya hangi
   cevabın verildiği açıkça listelenir.
+- Commit formatı: `<tip>(<scope>): <açıklama>` — tip: feat/fix/chore/docs/refactor/test.
 
 ## Proje yapısı
 
