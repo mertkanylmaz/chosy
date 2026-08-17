@@ -10,7 +10,7 @@
  * UX Redesign v3: Home tab = Mood search (eski mood.tsx icerigi index.tsx'e tasindi).
  * Discover tab = placeholder (gelecek: browse/explore). Watchlist tab gizli.
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Sparkle, Compass, User, type IconWeight } from 'phosphor-react-native';
@@ -28,6 +28,7 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { BOUNCE_CONFIG, SPRING_CONFIG, FAST_TIMING } from '@/constants/animations';
+import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
 
 // ─── Phosphor ikon boyutu (tab bar standart) ────────────────────────────────
 
@@ -124,6 +125,21 @@ function TabIcon({
 export default function TabLayout() {
   const { t } = useLanguage();
 
+  // ── C.9a (bible K-02): Discover tab flag ile kontrol ediliyor ───────────
+  // Fail-closed: okuma bitene kadar VE hata durumunda tab gizli kalır.
+  // Modül seviyesi cache yok — her mount'ta taze okunur (kural 6).
+  const [discoverEnabled, setDiscoverEnabled] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    isDiscoverTabEnabled().then((enabled) => {
+      if (!cancelled) setDiscoverEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
@@ -151,12 +167,15 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* 2 — Discover: Browse/explore placeholder (gelecekte film kesfet icerigi) */}
+      {/* 2 — Discover: C.9a (bible K-02) — nav'dan kaldırıldı, flag ile donduruldu.
+          Kod (mood.tsx ve içindeki section'lar) SİLİNMEZ, yalnızca tab bar
+          erişimi discover_tab_enabled flag'ine bağlı. */}
       <Tabs.Screen
         name="mood"
         options={{
           title: t('tabs.discover'),
           headerShown: false,
+          href: discoverEnabled ? undefined : null,
           tabBarLabel: ({ focused }) =>
             focused ? <Text style={styles.activeLabel}>{t('tabs.discover')}</Text> : null,
           tabBarIcon: ({ focused }) => (
