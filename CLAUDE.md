@@ -48,15 +48,16 @@ Bunlar tip kontrolünün yakalamadığı runtime hatalarıdır.
 
 ```powershell
 npm run test:founder         # kurucu kabul testleri (5 case)
-npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
-npm run typecheck:functions  # → 32 hata (deno check)
+npm run typecheck            # baseline: .claude/skills/health-check/SKILL.md
+npm run typecheck:functions  # baseline: .claude/skills/health-check/SKILL.md
 npx expo start               # cihaz testi
 supabase db push             # migration deploy
 supabase db diff             # değişiklik kontrolü
 ```
 
-`typecheck` 14'ten fazlaysa veya `scripts/` dışında hata varsa **yeni regresyon
-vardır — dur.**
+`typecheck` baseline'ın üstündeyse veya `scripts/` dışında hata varsa
+**yeni regresyon vardır — dur.** Güncel baseline:
+`.claude/skills/health-check/SKILL.md`.
 
 ## Ortam
 
@@ -98,5 +99,6 @@ Expo ~54.0.34 · React Native 0.81.5 · Reanimated ~4.1.1 · expo-router ~6.0.23
 
 ## Migration numaralandırma
 
-En yüksek mevcut numara **090**. Yeni migration 091'den başlar.
+Yeni migration numarası, `supabase/migrations/` klasöründeki en yüksek
+mevcut numaradan +1'dir.
 Yine de eklemeden önce `supabase/migrations/` klasörünü listele ve doğrula.
