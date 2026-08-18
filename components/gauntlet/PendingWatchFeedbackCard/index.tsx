@@ -8,13 +8,14 @@
  * Tüm seçenekler `QuietAction` — DESIGN_OS §10.1: ikincil eylemler metin
  * bağlantısıdır, buton değil. Bu ekranda birincil bir "buton" hiç yok.
  */
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { posthogAnalytics } from '@/services/posthog';
 import type { GauntletFilm, WatchFeedbackResponse } from '@/types/gauntlet';
 
 import { styles } from './styles';
@@ -24,11 +25,39 @@ interface PendingWatchFeedbackCardProps {
   onRespond: (response: WatchFeedbackResponse) => void;
 }
 
+/**
+ * K-29: `loved`/`ok`/`abandoned` → izlenmiş sayılır (watched_confirmed).
+ * `not_watched`/`skipped` → izlenmemiş sayılır (watched_not_yet).
+ *
+ * ⚠️ Taxonomy'deki `watched_something_else` burada YOK — bu karta karşılık
+ * gelen "İzledim ama X'i değil" akışı (SONHALİ §16, opsiyonel film arama)
+ * henüz UI'da bulunmuyor. Uydurmak yerine bilinçli olarak eklenmedi.
+ */
+function trackWatchResponse(response: WatchFeedbackResponse): void {
+  if (response === 'loved' || response === 'ok' || response === 'abandoned') {
+    posthogAnalytics.track('watched_confirmed', { response });
+  } else {
+    posthogAnalytics.track('watched_not_yet', { response });
+  }
+}
+
 export function PendingWatchFeedbackCard({
   film,
   onRespond,
 }: PendingWatchFeedbackCardProps): React.JSX.Element {
   const { t } = useLanguage();
+
+  // Kart yalnızca pendingWatchFeedback doluyken mount edilir (GauntletShell) —
+  // mount = kullanıcıya soru gösterildi.
+  useEffect(() => {
+    posthogAnalytics.track('watched_prompted', { film_id: film.id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleRespond = (response: WatchFeedbackResponse): void => {
+    trackWatchResponse(response);
+    onRespond(response);
+  };
 
   return (
     <View style={styles.root}>
@@ -44,19 +73,19 @@ export function PendingWatchFeedbackCard({
         <View style={styles.responses}>
           <QuietAction
             label={t('gauntlet.pendingFeedback.loved')}
-            onPress={() => onRespond('loved')}
+            onPress={() => handleRespond('loved')}
           />
           <QuietAction
             label={t('gauntlet.pendingFeedback.ok')}
-            onPress={() => onRespond('ok')}
+            onPress={() => handleRespond('ok')}
           />
           <QuietAction
             label={t('gauntlet.pendingFeedback.abandoned')}
-            onPress={() => onRespond('abandoned')}
+            onPress={() => handleRespond('abandoned')}
           />
           <QuietAction
             label={t('gauntlet.pendingFeedback.notWatched')}
-            onPress={() => onRespond('not_watched')}
+            onPress={() => handleRespond('not_watched')}
           />
         </View>
 
@@ -65,7 +94,7 @@ export function PendingWatchFeedbackCard({
         <View style={styles.skipRow}>
           <QuietAction
             label={t('gauntlet.pendingFeedback.skip')}
-            onPress={() => onRespond('skipped')}
+            onPress={() => handleRespond('skipped')}
           />
         </View>
       </View>
