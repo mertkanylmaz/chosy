@@ -23,11 +23,11 @@ Cold-start kimlik sıfırlama görünürlüğü, CLAUDE.md düzeltmesi.
 |---|---|---|
 | Deno testleri | 10/10 geçmeli | 10/10 geçti |
 
-## Açık Madde
-Cihazda cold-start doğrulaması henüz yapılmadı: uygulamayı aç-kapat →
-yalnızca `sb-xpcwihldlnlmyopjubdc-auth-token` AsyncStorage anahtarını sil →
-yeniden aç → PostHog'da `identity_reset_detected` + `trigger: cold_start`
-görünmeli. C.9a test build'i dağıtılmadan önce yapılmalı.
+## Cihaz Doğrulaması
+Cihaz doğrulaması 18 Ağu 2026'da tamamlandı — PostHog Live'da
+`identity_reset_detected` event'i gözlemlendi (`Application Backgrounded →
+app_launched → identity_reset_detected → Application Opened → Application
+Became Active` sırası). Bkz. durum devri §3.
 
 ## Durum
-Açık.
+Tamamlandı — 18 Ağu 2026.
