@@ -1946,3 +1946,115 @@ hiç veri üretmez.
 Kök neden `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated` ile kapatıldı (**migration 096**) — bundan sonra `postgres` rolüyle yaratılan her yeni tablo/view kapalı doğar. `v_posterle_daily_stats` ve `public_daily_puzzles` bilinçli olarak açık bırakıldı (PII yok) ve DB nesnelerine COMMENT ile "yeniden yaratılırsa GRANT'i unutma" notu düşüldü (**migration 097**).
 
 **Kapatılamayan kalıntı risk:** `pg_default_acl` sorgusu iki ayrı grantor ortaya çıkardı — `postgres` VE `supabase_admin`. `postgres` rolü superuser değil ve `supabase_admin`'e member değil (`pg_has_role` ile doğrulandı) — bu yüzden `supabase_admin` grantor'lu default ACL kaydı REVOKE edilemedi. Bu rolle yaratılacak (migration geçmişinde şu ana kadar hiçbir dosyada örneği yok) herhangi bir gelecekteki tablo/view hâlâ doğuştan `anon`/`authenticated`'a açık gelecek. Kapatmak muhtemelen Supabase support/dashboard yetkisi gerektiriyor — Claude Code'un erişiminin ötesinde. **Öncelik: düşük** (bugüne kadar hiç kullanılmamış bir yol) ama izlenmeli — CTO'nun Supabase dashboard/support üzerinden ayrıca ele alması gerekiyor.
+
+---
+
+## 🟡 `seed-database.ts:283` — ham `poster_path` yazıyor (949 satır)
+
+**Öncelik: düşük. Tespit: M3 Faz 1, 18 Ağustos 2026.**
+
+`films.poster_url` kolonunda **iki farklı biçim** yaşıyor:
+
+| Biçim | Adet | Yazan |
+|---|---:|---|
+| `https://image.tmdb.org/t/p/original/…` | 2.459 | `fetch-films.ts:335` · `add-missing-films.ts:154` · `sync-trending/index.ts:42` |
+| ham `poster_path` (`/abc.jpg`) | **949** | `seed-database.ts:283` (`poster_url: film.poster_path`) |
+| NULL | 5 | — |
+
+Ham path **geçerli bir URI değildir**. Okuyucu taraf bugün korunuyor:
+`gauntletCore.ts` → `toW500PosterUrl` iki biçimi de w500'e normalize ediyor ve
+M3 Faz 2'de `generate-gauntlet`'in cached yolu da bu fonksiyona bağlandı (bkz.
+aşağıdaki kapanmış kalem). Ama koruma **okuma tarafında**; yazma tarafı hâlâ
+iki gerçek üretiyor.
+
+**Bugünkü canlı etki: 0.** Aktif tier'da (`core`/`extended`/`trending`) yalnızca
+2 ham-path satırı var (*Tom ve Jerry: Kayıp Pusula* [trending], *The Bourne
+Ultimatum* [core]) ve ikisi de bugün düello havuzunda değil — ikisi de
+`release_date` koşuluna takılıyor. 949'un geri kalanı `archive`.
+
+**Risk:** Normalizasyonu atlayan **yeni** bir okuma yolu yazılırsa (ör. bir
+bildirim şablonu, bir paylaşım kartı, bir Pro arşiv ekranı) o yol sessizce
+kırık görsel gösterir — tip sistemi yakalamaz, `string` her iki biçimde de
+geçerlidir. M3'te düzeltilen bug tam olarak buydu ve kaynağı bu ikilikti.
+
+**Düzeltme yönü:** `seed-database.ts` de tam URL yazsın (`fetch-films.ts`
+deseni) **ve** mevcut 949 satır tek seferlik backfill ile normalize edilsin.
+İkisi birlikte yapılmalı — yalnız kodu düzeltmek eski satırları bırakır.
+
+**Neden şimdi değil:** Veri migration'ı + script değişikliği, M3 Faz 2'nin
+kapsamı dışında (kapsam kilidi: "seed-database.ts'in kendisini yeniden yazmak
+ayrı, düşük öncelikli teknik borç"). Okuma tarafı korunduğu için acil değil.
+
+---
+
+## 🟡 `recognition_band` / `MIN_SELECTION_WEIGHT` — tuning C.9b sonrasına ertelendi
+
+**Öncelik: orta (C.9b sonrası). Tespit: M3 Faz 1, 18 Ağustos 2026.**
+
+M3 Faz 1 ölçümü: nominal düello-uygun havuz **1.847** film, ama gerçek **etkin
+havuz 840** — seçim ağırlığının %90'ını taşıyan film sayısı.
+
+Daraltan şey çeşitlilik kuralları **değil**: 365 gün × 5 senaryo simülasyonunda
+`language`/`genre`/`decade`/`runtime_spread` merdiveninin hiçbir basamağı
+tetiklenmedi, hiçbir gün üretim başarısız olmadı. Daraltan, tanınırlık bandı:
+
+```
+recognition_band_low = 55 · high = 80  →  mid 67.5 · halfWidth 32.5
+puan = 1 − |yüzdelik − 67.5| / 32.5     →  yüzdelik ≤ 35 olan her film puan 0
+```
+
+Puanı 0 olan **648 film** (havuzun %35'i) `MIN_SELECTION_WEIGHT = 0.01` ile
+toplam ağırlığın yalnızca **%1,1**'ini taşıyor. `gauntletCore.ts:594` yorumu
+`(high−low)/2` okumasını "yumuşak puanı ikinci bir sert filtreye dönüştürür"
+diye reddediyor; seçilen formül alt %35 için pratikte aynı sonucu üretiyor.
+
+Simüle edilen tekrar oranı (kümülatif, `%10`u geçtiği gün):
+
+| Bağlam | Havuz | g90 | g365 | %10 eşiği |
+|---|---:|---:|---:|---:|
+| `any` | 1.847 | 8,6% | 44,9% | 97. gün |
+| `medium` (≤150dk) | 1.655 | 13,6% | 46,5% | 72. gün |
+| `short` (≤110dk) | 778 | 22,8% | 67,9% | **53. gün** |
+
+**Neden şimdi değil — CTO kararı, 18 Ağu 2026:** Bu bir bug değil, **tasarım
+gerilimi**. Dar bant muhtemelen kasıtlı: tanınmayan/belirsiz filmleri öne
+çıkarmamak, kullanıcı güvenini korumak. Bandı genişletmek tekrar ufkunu uzatır
+ama daha az tanınan filmleri daha sık gösterir — retention/kalite ödünleşimi.
+
+Ölçüm **simülasyondan** geliyor, gerçek kullanıcı davranışından değil: bugün
+sahada 3 kullanıcı, 17 gauntlet, 18 `choice_events` satırı var — tuning kararı
+için yetersiz örneklem. C.9b gauntlet'i production'a açtığında gerçek
+`watch_feedback` / `neither` / `seen` oranlarıyla yeniden değerlendirilecek.
+97 günlük ufuk, C.9b'nin takvimi düşünüldüğünde acil değil.
+
+**Ayar noktaları DDL gerektirmez:** `recognition_band_low`/`_high` `app_config`
+satırlarıdır (lazy okunur); `MIN_SELECTION_WEIGHT` `gauntletCore.ts:56`
+sabitidir.
+
+---
+
+## 🟡 `imdb_votes` NULL + `vote_average` boş — 10 film düello-uygunluk dışında
+
+**Öncelik: düşük. Tespit: M3 Faz 1, 18 Ağustos 2026.**
+
+`isDuelEligible` her adayda en az bir tanınırlık sinyali arıyor
+(`recognitionMissing`: `imdb_votes` ve `vote_average` ikisi de yok → elenir).
+Aktif tier'da bu kapıya takılan **12 film** var; 10'u "her iki sinyal de
+eksik", 2'si `imdb_votes = 0` sentinel'i (ikisinin `vote_average`'ı da 0).
+
+Kök neden `OMDB_API_KEY`'in `.env`'de olmaması — bu dosyanın "Faz B veri
+katmanı" bölümünde zaten kayıtlı. `imdb_votes`'un tek kaynağı OMDb'dir; TMDb
+`vote_count` farklı bir metriktir ve bu kolona yazılmaz (6 Ağu 2026 kararı).
+
+Havuz genelinde: `imdb_votes` NULL olan 39 filmin 29'u `vote_average` ile
+kurtarılıyor, 10'u elenir. `films` tablosunun tamamında 1.026 NULL var.
+
+**Neden şimdi değil:** 1.847 filmlik havuzda 10 film = %0,5. Anahtar
+eklendiğinde `npx tsx --env-file=.env scripts/backfill-film-metadata.ts`
+kalanı doldurur — kod değişikliği gerektirmez.
+
+> ⚠️ İlgili düzeltme: `gauntletCore.ts:64`'teki "ÖLÇÜME GÖRE ULAŞILAMAZ
+> (7 Ağu 2026): havuzda `imdb_votes = 0` olan 0 satır" notu **artık güncel
+> değil** — 18 Ağu ölçümünde havuzda 2 satır var. `NEUTRAL_RECOGNITION_SCORE`
+> katmanı yine de ulaşılamaz durumda, çünkü o 2 film zaten `recognitionMissing`
+> ile havuz dışına düşüyor. Yorumun kendisi bir sonraki dokunuşta güncellenmeli.
