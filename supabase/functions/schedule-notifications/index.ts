@@ -3,7 +3,7 @@
  * Cron-triggered — queues daily notifications into notification_log.
  *
  * Schedules:
- *   - Daily morning hook: at user's preferred_notification_hour (default 09:00)
+ *   - Daily ritual push: 18:00 in the user's own timezone (D-02, sabit)
  *   - Sunday evening: 19:00 user TZ (Sundays only)
  *   - Streak warning: 22:00 user TZ (if no activity that day, streak > 0)
  *   - Quota refill: 00:05 next day (only if quota was exhausted yesterday)
@@ -22,6 +22,21 @@ const CORS_HEADERS = {
 }
 
 // ─── Notification Templates (server-side, simplified) ─────────────────────────
+
+/**
+ * D-02 (Kapsam Kilidi): günde TEK push, kullanıcı-yerel 18:00.
+ *
+ * `users.preferred_notification_hour` KASITLI OLARAK OKUNMUYOR. O kolon
+ * mood-search döneminin "sabah kancası" saatiydi ve M2 Faz 1 ölçümünde
+ * 237/237 satırda kolon DEFAULT'u olan 9 değerindeydi — yani hiçbir kullanıcı
+ * onu hiç değiştirmemiş, kişiselleştirme sinyali taşımıyor. Ritüel saati ürün
+ * kararıdır, kullanıcı tercihi değil (D-02). Kolon SİLİNMİYOR, yalnızca bu
+ * okuma noktası kaldırıldı.
+ *
+ * `users.timezone` ise okunmaya DEVAM EDİYOR — 18'in "kimin 18'i" olduğunu
+ * yalnızca o belirler (E-01).
+ */
+const RITUAL_HOUR = 18
 
 interface Template { title: string; body: string; data: Record<string, string> }
 
@@ -120,7 +135,6 @@ serve(async (req) => {
         push_token,
         push_enabled,
         timezone,
-        preferred_notification_hour,
         archetype_id,
         subscription_tier,
         last_activity_at,
@@ -143,7 +157,6 @@ serve(async (req) => {
     for (const user of users) {
       const tz = user.timezone || 'UTC'
       const currentHour = getCurrentHourInTZ(tz)
-      const preferredHour = user.preferred_notification_hour ?? 9
       const dayOfWeek = getDayOfWeekInTZ(tz)
 
       // ── Check 24h frequency limit (max 1/day for active users) ──
@@ -156,9 +169,8 @@ serve(async (req) => {
       // Determine locale from timezone (simple heuristic)
       const locale = (tz.includes('Istanbul') || tz.includes('Turkey')) ? 'tr' : 'en'
 
-      // ── 1. Daily Morning Hook ────────────────────────────────────────
-      // Schedule if current hour matches preferred hour
-      if (currentHour === preferredHour) {
+      // ── 1. Daily Ritual Push (18:00 user-local, D-02) ────────────────
+      if (currentHour === RITUAL_HOUR) {
         // Check if already scheduled today
         const { data: existing } = await db
           .from('notification_log')
