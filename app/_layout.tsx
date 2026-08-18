@@ -1,5 +1,6 @@
 import '@/utils/cryptoPolyfill';   // WebCrypto polyfill — ilk satır, sırası kritik
 import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { useEffect, useRef } from 'react';
 
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -61,12 +62,25 @@ import {
 // ── Sentry initialization ───────────────────────────────────────────────────
 // Expo Router kendi entry'sini yonetir — Sentry.wrap() yerine Sentry.init()
 // kullaniyoruz. Navigation integration Expo Router ile otomatik calisir.
+// ── Release health (E-04) ───────────────────────────────────────────────────
+// EAS source map upload'ı bu release/dist ile eşleşmezse stack trace'ler
+// üründeki sürüme bağlanamaz — Sentry'de "unminified" ham JS görünür.
+// `release` sürüm + slug taşır (EAS source map hook'unun bindiği anahtar),
+// `dist` native build numarasıdır (aynı version içindeki farklı build'leri
+// ayırt eder — appVersionSource: remote + autoIncrement ile her build farklı).
+const appVersion = Constants.expoConfig?.version ?? 'unknown';
+const appSlug = Constants.expoConfig?.slug ?? 'chosy-ai';
+const sentryRelease = `${appSlug}@${appVersion}`;
+const sentryDist = Constants.nativeBuildVersion ?? undefined;
+
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   enableAutoSessionTracking: true,
   environment: __DEV__ ? 'development' : 'production',
   tracesSampleRate: __DEV__ ? 1.0 : 0.2,
   enableNative: true,
+  release: sentryRelease,
+  dist: sentryDist,
   // Production'da debug kapali — verbose log istemiyoruz
   debug: __DEV__,
   // Hassas veri filtreleme
