@@ -2058,3 +2058,73 @@ kalanı doldurur — kod değişikliği gerektirmez.
 > değil** — 18 Ağu ölçümünde havuzda 2 satır var. `NEUTRAL_RECOGNITION_SCORE`
 > katmanı yine de ulaşılamaz durumda, çünkü o 2 film zaten `recognitionMissing`
 > ile havuz dışına düşüyor. Yorumun kendisi bir sonraki dokunuşta güncellenmeli.
+
+---
+
+## 🟡 `poster_quality_ok` doldurulmuyor — D-03 gate'i bilinçli olarak bağlanmadı
+
+**Öncelik: orta. Tespit: M3 Faz 2, 18 Ağustos 2026.**
+
+`films.poster_quality_ok` kolonu **var** (migration 084) ama onu dolduran
+`scripts/compute-dominant-colors.ts` bir **yerel `npx tsx` script'i** — Edge
+Function değil, cron'a bağlı değil, elle çalıştırılıyor. Üç kanıt:
+
+1. `supabase/functions/` altında karşılığı yok; pg_cron `net.http_post` ile
+   Edge Function çağırır, yerel script yapısal olarak bağlanamaz.
+2. Cron envanterinde yok — 8 job'ın hiçbiri poster kalitesi hesaplamıyor
+   (`posterle-daily-curation` · `send-daily-pick-hourly` ·
+   `watchlist-activation-weekend` · `watchlist-activation-mood-recall` ·
+   `weekly-trending-sync` · `global-slot-daily` · `profile-missing-films` ·
+   `cleanup-rate-limits`).
+3. Senaryo zaten gerçekleşmiş: `weekly-trending-sync` 17 Ağu'da **9 trending
+   film** ekledi, dokuzunun da `poster_quality_ok = NULL` ve
+   `dominant_color_computed_at = NULL`. Tablodaki en son hesap tarihi
+   **15 Ağu** — elle çalıştırma. Son 30 günde eklenen 62 filmin 9'u NULL.
+
+### Gate neden bağlanmadı (CTO kararı, 18 Ağu 2026)
+
+Fail-open gate (`poster_quality_ok IS NOT false`) bugün **yapısal olarak 0 film**
+eler: `= false` olan 5 satırın tamamı `archive` tier'da ve `poster_url`'leri
+zaten NULL, yani mevcut `poster_url IS NOT NULL` filtresi onları çoktan eliyor.
+Gate'in korumak için var olduğu filmler — yeni ingest edilmiş, posteri ölü
+olabilecekler — script manuel olduğu sürece **her zaman NULL** kalır ve
+fail-open'da hep geçer.
+
+**Sonuç: sıfır kapsama, tam koruma görüntüsü.** Bu, D-03'ün yasakladığı *sessiz
+eleme*nin ikiz kardeşi: **sessiz sahte-güvence**. Kural 1'in ruhu ("hata görünür
+olmalı") burada da geçerli — olmayan bir korumayı var gibi göstermek, hatayı
+gizlemenin başka bir biçimidir. Kod okuyan biri "poster kalitesi kontrol
+ediliyor" sanır. Bu yüzden gate koda dökülmedi.
+
+**D-03'ün gerçek ön koşulu kolonu okumak değil, kolonun doldurulmasını
+otomatikleştirmektir.**
+
+### Tasarım notu — ingestion-time HEAD kontrolü (kod YAZILMADI)
+
+Onaylanan yön (18 Ağu 2026), ayrı ve küçük bir takip işi olarak açılacak:
+
+1. **Nereye:** `sync-trending/index.ts:491-492` — `detailToRow(detail,
+   trendingType)` ile `films` upsert'i (`:493-497`) **arasına**. Poster URL'i
+   `detailToRow` içinde `:254`'te kuruluyor (`TMDB_IMAGE_BASE` = `/t/p/original`).
+2. **Ne:** Yazılacak poster'a **bir kez** `HEAD` at, sonucu `row` üzerine
+   `poster_quality_ok: boolean` olarak koy. `FilmInsertRow` (`:96-120`) bu alanı
+   kazanır — kolon zaten mevcut olduğu için **şema değişikliği değil**, yalnız
+   tip genişlemesi.
+3. **Hangi boyut:** `w500` varyantına atılmalı, `original`'a değil — istemcinin
+   gerçekten yüklediği boyut odur (`toW500PosterUrl`, M3 Faz 2 fix'i sonrası).
+4. **Başarısızlık semantiği:** HEAD düşerse film yine de INSERT edilir
+   (`poster_quality_ok = false`), satır **atlanmaz/silinmez** (CLAUDE.md #4).
+   Hata `console.error` + `sentryCapture` ile görünür olur — sessiz geçilmez.
+   Mevcut `:483` "no poster" atlaması farklı bir vakadır (`poster_path` hiç yok);
+   bu kontrol "path var ama ölü" vakasını yakalar.
+5. **Neden D-03'ü ihlal etmez:** Kontrol **ingestion anında**, haftada bir,
+   ~9 film için çalışır (5'li paralel batch içinde) — D-03'ün yasakladığı şey
+   **request-time** kontrolüdür (generation anında, kullanıcı beklerken, aday
+   başına network çağrısı). İkisi farklı zaman ekseni.
+
+Bu doldurma yolu canlıya çıktıktan **sonra** `gauntletCore.ts:318` filtresine
+fail-open gate eklenmesi anlamlı hale gelir — o zaman gerçek kapsaması olur.
+
+> Alternatif ve daha büyük çözüm — `compute-dominant-colors`'ı Edge Function +
+> cron'a taşımak — **reddedilmedi, ertelendi**: yeni Deno görsel indirme/decode
+> mimarisi ve yeni cron demektir, kendi sprint'ini hak eder.
