@@ -1933,12 +1933,16 @@ hiç veri üretmez.
 
 ---
 
-## 🔴 `v_mood_searches_recent` (032) — RLS bypass, satır düzeyi PII sızıntısı
+## ✅ ÇÖZÜLDÜ — RLS bypass / PII sızıntısı taraması (032, 010, 059, kök neden)
 
-**Öncelik: yüksek. Tespit: v_algorithm_daily (092) migration-guard denetimi, 18 Ağustos 2026.**
+**Tespit: v_algorithm_daily (092) migration-guard denetimi, 18 Ağustos 2026. Kapatıldı: 18 Ağustos 2026, migration 093-098.**
 
-`032_mood_searches_enrichment.sql` satır 89: `GRANT SELECT ON public.v_mood_searches_recent TO authenticated`. Bu view'ı yaratan rol `mood_searches` tablosunun sahibidir; hiçbir tabloda `FORCE ROW LEVEL SECURITY` tanımlı değil, view `security_invoker` belirtmiyor (varsayılan `false`) — yani view sahibinin yetkisiyle çalışıyor ve RLS'i bypass ediyor.
+`v_algorithm_daily` (092) denetimi sırasında `v_mood_searches_recent`'te (032) bulunan RLS-bypass deseni bir tarama başlattı. Migration geçmişinde hiç `ALTER DEFAULT PRIVILEGES` yoktu — Supabase'in proje-bootstrap kuralı gereği `public` şemasında yaratılan her yeni view/tablo doğuştan `anon`+`authenticated`'a açık geliyordu. Üç view etkilenmiş bulundu, hepsi kapatıldı:
 
-`v_algorithm_daily`'den (092) farkı: o view agrege (`GROUP BY day, algorithm_version`), bu view **satır düzeyi** veri döndürüyor — `ms.user_id` ve `ms.mood_text` dahil. `authenticated` rolüne zaten GRANT verilmiş durumda, yani **herhangi bir oturum açmış kullanıcı diğer tüm kullanıcıların mood search geçmişini görebilir** — gerçek bir PII sızıntısı adayı.
+- `v_mood_searches_recent` (032) — `user_id`, `mood_text`, `parsed_profile`, anon key ile bile (kimlik doğrulamasız) erişilebiliyordu, ayrıca auto-updatable (yazma/silme riski). **Migration 093.**
+- `user_swipe_history` (010) — `user_id`, `mood_text` (raw_input), zaman penceresi bile yoktu (tüm tarihçe). **Migration 094.**
+- `detective_daily_scores` (059) — `user_id`, skor/`progress_json`. **Migration 095.**
 
-**Neden şimdi değil:** Bu bulgu 092 denetimi sırasında yan ürün olarak çıktı, mood search zaten kalkacak bir akış (bible D-01/C.9b — mood-search dönemi emekliye ayrılıyor). Ayrı bir keşif/düzeltme görevi gerektiriyor: (a) view'ın gerçekten kullanılıp kullanılmadığı (hangi ekran/servis çağırıyor), (b) REVOKE edilirse hangi akışın kırılacağı doğrulanmalı önce.
+Kök neden `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated` ile kapatıldı (**migration 096**) — bundan sonra `postgres` rolüyle yaratılan her yeni tablo/view kapalı doğar. `v_posterle_daily_stats` ve `public_daily_puzzles` bilinçli olarak açık bırakıldı (PII yok) ve DB nesnelerine COMMENT ile "yeniden yaratılırsa GRANT'i unutma" notu düşüldü (**migration 097**).
+
+**Kapatılamayan kalıntı risk:** `pg_default_acl` sorgusu iki ayrı grantor ortaya çıkardı — `postgres` VE `supabase_admin`. `postgres` rolü superuser değil ve `supabase_admin`'e member değil (`pg_has_role` ile doğrulandı) — bu yüzden `supabase_admin` grantor'lu default ACL kaydı REVOKE edilemedi. Bu rolle yaratılacak (migration geçmişinde şu ana kadar hiçbir dosyada örneği yok) herhangi bir gelecekteki tablo/view hâlâ doğuştan `anon`/`authenticated`'a açık gelecek. Kapatmak muhtemelen Supabase support/dashboard yetkisi gerektiriyor — Claude Code'un erişiminin ötesinde. **Öncelik: düşük** (bugüne kadar hiç kullanılmamış bir yol) ama izlenmeli — CTO'nun Supabase dashboard/support üzerinden ayrıca ele alması gerekiyor.
