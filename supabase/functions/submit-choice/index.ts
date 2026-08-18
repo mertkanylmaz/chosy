@@ -108,6 +108,7 @@ type NextStep = 'round2' | 'round3' | 'champion' | 'refresh' | 'exhausted'
  *   - `refreshesRemaining` / `refreshAllowed` — hak bitince istemci "yenile"yi
  *     kapatabilsin. Limit kararı sunucuda; bu alanlar yalnız sonucu bildirir.
  *   - `suggestSingleFilm` — reddetme oranı yüksek kullanıcıya tek film modu.
+ *   - `gauntletId` / `algorithmVersion` — analytics için metadata.
  */
 interface ChoiceResult {
   next: NextStep
@@ -128,6 +129,10 @@ interface ChoiceResult {
   suggestSingleFilm?: boolean
   /** Aynı oturumda 3 art arda düşük güvenli seçim. */
   lowIntentSession?: boolean
+  /** Analytics için: bu seçim hangi gauntlet'e ait. */
+  gauntletId: string
+  /** Analytics için: bu seçim hangi algoritma versiyonunda alındı. */
+  algorithmVersion: string
 }
 
 interface GauntletRow {
@@ -552,6 +557,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         next,
         refreshesRemaining: remainingOf(usedBefore),
         refreshAllowed: refreshLimit === UNLIMITED || usedBefore < refreshLimit,
+        gauntletId: gauntlet.id,
+        algorithmVersion: gauntlet.algorithm_version,
       }
       if (next === 'champion' && gauntlet.champion_film_id) {
         result.champion = await championFilm(service, gauntlet.champion_film_id)
@@ -613,6 +620,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           next,
           refreshesRemaining: remainingOf(usedBefore),
           refreshAllowed: refreshLimit === UNLIMITED || usedBefore < refreshLimit,
+          gauntletId: gauntlet.id,
+          algorithmVersion: gauntlet.algorithm_version,
         }
         if (next === 'exhausted') result.exhaustedReason = 'timeout_no_winner'
         return jsonResponse(result)
@@ -644,6 +653,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         next,
         refreshesRemaining: remainingOf(used),
         refreshAllowed: refreshLimit === UNLIMITED || used < refreshLimit,
+        gauntletId: gauntlet.id,
+        algorithmVersion: gauntlet.algorithm_version,
       }
       if (suggestSingleFilm) r.suggestSingleFilm = true
       if (lowIntentSession) r.lowIntentSession = true

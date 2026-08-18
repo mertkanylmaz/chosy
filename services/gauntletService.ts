@@ -55,6 +55,10 @@ export interface ChoiceResult {
   exhaustedReason?: 'no_candidates' | 'timeout_no_winner';
   suggestSingleFilm?: boolean;
   lowIntentSession?: boolean;
+  /** Analytics için: bu seçim hangi gauntlet'e ait. */
+  gauntletId: string;
+  /** Analytics için: bu seçim hangi algoritma versiyonunda alındı. */
+  algorithmVersion: string;
 }
 
 /**
