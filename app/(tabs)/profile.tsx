@@ -1254,6 +1254,19 @@ export default function ProfileScreen() {
             />
           }>
 
+          {/* ── [DEV] Cold-start test butonu — GEÇİCİ, TestFlight öncesi kaldırılacak ── */}
+          {__DEV__ && (
+            <TouchableOpacity
+              style={styles.devColdStartBtn}
+              onPress={async () => {
+                await AsyncStorage.removeItem('sb-xpcwihldlnlmyopjubdc-auth-token');
+                Alert.alert('Auth token silindi', 'Uygulamayı şimdi kapat ve yeniden aç.');
+              }}
+              activeOpacity={0.7}>
+              <Text style={styles.devColdStartBtnText}>[DEV] Cold-start testi: auth token sil</Text>
+            </TouchableOpacity>
+          )}
+
           {/* ── Profile Header ────────────────────────────────────────── */}
           <Animated.View style={headerAnimStyle}>
           <LinearGradient
@@ -1627,6 +1640,21 @@ const styles = StyleSheet.create({
   },
   gearBtn: {
     padding: 6,
+  },
+  /** [DEV] Cold-start test butonu — GEÇİCİ, TestFlight öncesi kaldırılacak */
+  devColdStartBtn: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: Radius.button,
+    backgroundColor: Colors.error,
+    alignItems: 'center',
+  },
+  devColdStartBtnText: {
+    color: Colors.textWhite,
+    fontSize: 12,
+    fontWeight: '600',
   },
   archetypeDesc: {
     color: Colors.textGrey,
