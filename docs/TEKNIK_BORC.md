@@ -1930,3 +1930,15 @@ hiç veri üretmez.
   yeniden inşa edilince event yeni yüzeye taşınmalı.
 - **dna_viewed** → eski TasteDNA/EmotionalState modeline bağlı, K-30'daki
   6 eksenli yeni DNA henüz yok — DNA yeniden inşa edilince taşınmalı.
+
+---
+
+## 🔴 `v_mood_searches_recent` (032) — RLS bypass, satır düzeyi PII sızıntısı
+
+**Öncelik: yüksek. Tespit: v_algorithm_daily (092) migration-guard denetimi, 18 Ağustos 2026.**
+
+`032_mood_searches_enrichment.sql` satır 89: `GRANT SELECT ON public.v_mood_searches_recent TO authenticated`. Bu view'ı yaratan rol `mood_searches` tablosunun sahibidir; hiçbir tabloda `FORCE ROW LEVEL SECURITY` tanımlı değil, view `security_invoker` belirtmiyor (varsayılan `false`) — yani view sahibinin yetkisiyle çalışıyor ve RLS'i bypass ediyor.
+
+`v_algorithm_daily`'den (092) farkı: o view agrege (`GROUP BY day, algorithm_version`), bu view **satır düzeyi** veri döndürüyor — `ms.user_id` ve `ms.mood_text` dahil. `authenticated` rolüne zaten GRANT verilmiş durumda, yani **herhangi bir oturum açmış kullanıcı diğer tüm kullanıcıların mood search geçmişini görebilir** — gerçek bir PII sızıntısı adayı.
+
+**Neden şimdi değil:** Bu bulgu 092 denetimi sırasında yan ürün olarak çıktı, mood search zaten kalkacak bir akış (bible D-01/C.9b — mood-search dönemi emekliye ayrılıyor). Ayrı bir keşif/düzeltme görevi gerektiriyor: (a) view'ın gerçekten kullanılıp kullanılmadığı (hangi ekran/servis çağırıyor), (b) REVOKE edilirse hangi akışın kırılacağı doğrulanmalı önce.
