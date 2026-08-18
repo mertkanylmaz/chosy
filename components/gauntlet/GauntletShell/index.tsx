@@ -45,6 +45,7 @@ import {
   submitWatchFeedback,
   type ChoiceResult,
 } from '@/services/gauntletService';
+import { posthogAnalytics } from '@/services/posthog';
 import { supabase } from '@/services/supabase';
 import type {
   ChoiceSubmission,
@@ -203,6 +204,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
+   *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
+   *  çağrılabilir, olay burada yinelenmemeli. */
+  const startedTrackedGauntletIdsRef = useRef<Set<string>>(new Set());
+
+  // ── PostHog: gauntlet_viewed — ekran her mount olduğunda bir kez ──────────
+  useEffect(() => {
+    posthogAnalytics.track('gauntlet_viewed');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /** Gürültü koruması (§3.5): İSTEMCİ YALNIZCA ÖLÇER — eşik/karar SUNUCUDA. */
   useEffect(() => {
@@ -285,6 +296,17 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setDefenderFilm(p?.defender ?? g.films[0]);
       setTileStates({ left: 'idle', right: 'idle' });
       setShellState('ready');
+
+      if (!startedTrackedGauntletIdsRef.current.has(g.gauntletId)) {
+        startedTrackedGauntletIdsRef.current.add(g.gauntletId);
+        posthogAnalytics.track('gauntlet_started', {
+          gauntlet_id: g.gauntletId,
+          algorithm_version: g.algorithmVersion,
+          context_companion: g.context.companion,
+          context_duration: g.context.duration,
+          context_energy: g.context.energy,
+        });
+      }
     },
     [t, toExhausted],
   );
@@ -463,6 +485,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (!pair || !gauntlet || submitting || transitioning) return;
       const winner = side === 'left' ? pair.left : pair.right;
       void hapticLight();
+      const latencyMs = measuredLatencyMs();
       const result = await submit({
         gauntletId: gauntlet.gauntletId,
         round,
@@ -471,10 +494,24 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         winner: winner.id,
         outcome: 'choice',
         positionOfWinner: side,
-        latencyMs: measuredLatencyMs(),
+        latencyMs,
       });
       if (!result || !mountedRef.current) return;
       setRefreshesRemaining(result.refreshesRemaining);
+
+      posthogAnalytics.track('choice_submitted', {
+        gauntlet_id: result.gauntletId,
+        algorithm_version: result.algorithmVersion,
+        round,
+        film_a: pair.left.id,
+        film_b: pair.right.id,
+        winner: winner.id,
+        position_of_winner: side,
+        latency_ms: latencyMs,
+        context_companion: gauntlet.context.companion,
+        context_duration: gauntlet.context.duration,
+        context_energy: gauntlet.context.energy,
+      });
 
       // Braket zinciri (C.5): tur GERÇEKLEŞTİ — kazanan ve elenen belli.
       const eliminated = side === 'left' ? pair.right : pair.left;
@@ -546,6 +583,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setAnimateReveal(true); // canlı final: 720ms kara boşluk (§7.3)
         completedDateKeyRef.current = localDateKey();
         setShellState('completed_today');
+        posthogAnalytics.track('gauntlet_completed', {
+          gauntlet_id: result.gauntletId,
+          algorithm_version: result.algorithmVersion,
+          champion_film_id: result.champion.id,
+        });
+        posthogAnalytics.track('champion_revealed', {
+          gauntlet_id: result.gauntletId,
+          champion_film_id: result.champion.id,
+        });
         void hapticSuccess();
         hapticTimerRef.current = setTimeout(() => {
           void hapticHeavy();
@@ -572,6 +618,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const handleNeither = useCallback(async () => {
     if (!pair || !gauntlet || submitting || transitioning) return;
     void hapticSelection(); // ret haptik deseni (§8)
+    const latencyMs = measuredLatencyMs();
     const result = await submit({
       gauntletId: gauntlet.gauntletId,
       round,
@@ -580,9 +627,20 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       winner: null,
       outcome: 'neither',
       positionOfWinner: null,
-      latencyMs: measuredLatencyMs(),
+      latencyMs,
     });
     if (!result || !mountedRef.current) return;
+    posthogAnalytics.track('choice_rejected', {
+      gauntlet_id: result.gauntletId,
+      algorithm_version: result.algorithmVersion,
+      round,
+      film_a: pair.left.id,
+      film_b: pair.right.id,
+      latency_ms: latencyMs,
+      context_companion: gauntlet.context.companion,
+      context_duration: gauntlet.context.duration,
+      context_energy: gauntlet.context.energy,
+    });
     applyRefreshResult(result, pair);
   }, [pair, gauntlet, submitting, transitioning, round, submit, applyRefreshResult]);
 
@@ -627,6 +685,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const handleContextCorrect = useCallback(
     (corrected: GauntletContext) => {
       if (!gauntlet) return;
+      posthogAnalytics.track('context_changed', {
+        gauntlet_id: gauntlet.gauntletId,
+        context_companion: corrected.companion,
+        context_duration: corrected.duration,
+        context_energy: corrected.energy,
+      });
       submitContextCorrection(gauntlet.gauntletId, corrected).catch((err) => {
         Sentry.captureException(err, {
           tags: {

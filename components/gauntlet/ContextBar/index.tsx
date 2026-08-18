@@ -21,6 +21,7 @@ import React, { useMemo, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { posthogAnalytics } from '@/services/posthog';
 import type { GauntletContext } from '@/types/gauntlet';
 
 import { styles } from './styles';
@@ -111,6 +112,7 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
     setDraft(context);
     setJustSaved(false);
     setExpanded(true);
+    posthogAnalytics.track('context_opened');
   };
 
   const handleSave = (): void => {
