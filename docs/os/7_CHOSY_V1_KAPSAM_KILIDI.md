@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.3
+**Sürüm:** 1.4
 **Tarih:** 17 Ağustos 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -446,6 +446,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.1 | 17 Ağu 2026 | M0 Faz 1 keşif raporu bibledeki tahminleri düzeltti. Bkz. §11. |
 | 1.2 | 17 Ağu 2026 | M0 Faz 2 tamamlandı (orphan doğrulama, E-08 görünürlük, entitlement veri düzeltmesi, grandfathering). Cold-start kör noktası bulundu, M0 Faz 3 olarak kilitlendi. Bkz. §11 F-05. |
 | 1.3 | 17 Ağu 2026 | M0 kapandı (mantık seviyesinde). Cold-start event mantığı Deno birim testleriyle kanıtlandı, cihaz doğrulaması CTO'ya devredildi — açık kalan tek madde. Full-wipe/reinstall kör noktası bilinçli olarak backlog'a alındı (`expo-secure-store` bu turda eklenmiyor). Bkz. §11 F-05, §9. |
+| 1.4 | 18 Ağu 2026 | Cold-start cihaz doğrulaması tamamlandı (F-06 kapandı) — M0'ın son açık maddesi kapandı. C.9a ve C.9a-2 (nav restructure, native tab bar) tamamlandı. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
@@ -467,6 +468,8 @@ Bu, G-9 gate'ini (relaunch sonrası mevcut kullanıcı kaybı <%20) doğrudan te
 **Durum (M0 Faz 2 sonrası, F-05):** In-app `SIGNED_OUT` yolu görünür hale getirildi (`app/_layout.tsx`, commit 07e91d3). **Ancak** en sık kayıp yolu — cold start'ta AsyncStorage restore başarısızlığı — hiç `SIGNED_OUT` yayınlamıyor, temiz kurulum gibi görünüyor ve mevcut event bunu yakalamıyor. **Karar (17 Ağu, M0 Faz 3 olarak kilitlendi):** yeni, auth session'dan bağımsız bir diagnostic persistence key (`chosy_last_known_auth_id_suffix`, AsyncStorage, hassas veri değil) eklenir; cold start'ta karşılaştırma yapılır, farklıysa `identity_reset_detected` `trigger: 'cold_start'` ile ateşlenir. C.9a'dan önce tamamlanır — build'ler test kohortuna gitmeden enstrümantasyon hazır olmalı.
 
 **Durum (M0 Faz 3 sonrası, F-06):** Mantık `utils/identityReset.ts`'e izole edildi (test edilebilirlik için, `_shared/confidence.ts` deseniyle tutarlı) ve 10/10 Deno birim testiyle kanıtlandı — iz yok/aynı/farklı, callback hatası, yazma sırası, üç-açılışlık uçtan uca senaryo. Apple/Google girişinde iz tazeleme de eklendi (kasıtlı hesap geçişini yanlış pozitif saymamak için). **Açık kalan tek madde: cihaz üzerinde canlı doğrulama yapılmadı** (Claude Code'un cihaz erişimi yok) — CTO'ya devredildi, C.9a test build'i dağıtılmadan önce manuel olarak yapılacak.
+
+**Durum (18 Ağu 2026):** Cihaz doğrulaması tamamlandı. Kanıt: PostHog Live'da olay sırası — Application Backgrounded → app_launched → identity_reset_detected → Application Opened → Application Became Active. F-06 kapandı.
 
 **Bilinçli olarak kapatılmayan kör nokta:** Tam depo silinmesi (uygulama kaldırılıp kurulması) senaryosunda hem auth token hem diagnostic iz birlikte gider, olay `first_install` gibi sınıflanır. Bunu yakalamak `expo-secure-store` (yeni bağımlılık) gerektirir ve gerçek kurtarma sağlamaz — sadece ölçüm sağlar (Supabase token'ı zaten AsyncStorage'da, Keychain'de olsa bile session geri gelmez). **Karar: bu turda eklenmiyor**, backlog'a yazıldı (§9).
 
