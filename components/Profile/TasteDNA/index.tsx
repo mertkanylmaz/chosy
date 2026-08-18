@@ -35,6 +35,7 @@ import {
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { posthogAnalytics } from '@/services/posthog';
 import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import type { SwipeInsight } from '@/types/profile';
@@ -247,6 +248,13 @@ function FilledContent({
  */
 export default function TasteDNA({ profile, insights, loading, archetypeId }: Props) {
   const { t } = useLanguage();
+
+  useEffect(() => {
+    if (!loading && profile) {
+      posthogAnalytics.track('dna_viewed');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, !!profile]);
 
   return (
     <View style={styles.card}>

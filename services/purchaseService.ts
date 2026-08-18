@@ -23,6 +23,7 @@ import Purchases, {
 } from 'react-native-purchases';
 
 import { RC_ENTITLEMENT_ID } from '@/constants/subscriptionPlans';
+import { posthogAnalytics } from '@/services/posthog';
 import { logger } from '@/utils/logger';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -268,9 +269,21 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
     return { success: false, error: 'RevenueCat başlatılmadı' };
   }
 
+  posthogAnalytics.track('purchase_started', {
+    package_id: pkg.identifier,
+    product_id: pkg.product.identifier,
+  });
+
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const isPremium = customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined;
+
+    if (isPremium) {
+      posthogAnalytics.track('purchase_completed', {
+        package_id: pkg.identifier,
+        product_id: pkg.product.identifier,
+      });
+    }
 
     return {
       success: isPremium,
@@ -321,6 +334,10 @@ export async function restorePurchases(): Promise<PurchaseResult> {
   try {
     const customerInfo = await Purchases.restorePurchases();
     const isPremium = customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined;
+
+    if (isPremium) {
+      posthogAnalytics.track('restore_completed');
+    }
 
     return {
       success: isPremium,

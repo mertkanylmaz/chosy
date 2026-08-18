@@ -394,6 +394,8 @@ export default function OnboardingScreen() {
       return;
     }
 
+    posthogAnalytics.track('onboarding_completed', { archetype_id: revealArchetypeId });
+
     // Request push permission after value delivery (archetype revealed).
     // Fire-and-forget: rejection is silent — user can enable from Settings later.
     registerForPushNotifications().catch((err) => {

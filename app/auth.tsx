@@ -15,7 +15,7 @@
  *           ileride onboarding akışından navigate edilir.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -64,6 +64,10 @@ export default function AuthScreen() {
 
   const isLoading = loading !== 'idle';
 
+  useEffect(() => {
+    posthogAnalytics.track('auth_prompt_viewed');
+  }, []);
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
 
   /**
@@ -95,6 +99,8 @@ export default function AuthScreen() {
     } catch {
       // RC/PostHog identify başarısız olsa bile akışı engelleme
     }
+
+    posthogAnalytics.track('auth_prompt_completed', { provider: 'apple' });
 
     // Gate tüm routing kararlarını verir:
     //  - onboarding tamamlanmadıysa → /onboarding

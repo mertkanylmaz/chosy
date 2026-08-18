@@ -7,9 +7,10 @@
  *   <ContextualPaywall {...paywallProps} />
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import type { PlanId } from '@/constants/subscriptionPlans';
+import { posthogAnalytics } from '@/services/posthog';
 import type { PaywallVariant } from '@/services/conversion';
 
 import PaywallQuotaExhausted from './PaywallQuotaExhausted';
@@ -40,6 +41,13 @@ export default function ContextualPaywall({
   onConvert,
   onDismiss,
 }: ContextualPaywallProps) {
+  useEffect(() => {
+    if (visible) {
+      posthogAnalytics.track('paywall_viewed', { variant: variant.name });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, variant.name]);
+
   if (!visible) return null;
 
   const commonProps = { visible, variant, onConvert, onDismiss };
