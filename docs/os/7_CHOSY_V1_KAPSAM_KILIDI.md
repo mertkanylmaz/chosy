@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.0
+**Sürüm:** 1.3
 **Tarih:** 17 Ağustos 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
