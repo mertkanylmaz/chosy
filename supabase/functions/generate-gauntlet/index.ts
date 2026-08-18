@@ -87,6 +87,20 @@ const SIGNALS_FOR_FULL_CONFIDENCE = 18
 
 interface GenerateRequest {
   context?: unknown
+  /**
+   * M2 Faz 2a — write-through saat dilimi (IANA adı, örn. "Europe/Istanbul").
+   *
+   * OPSİYONEL ve GERİYE UYUMLU: alanı hiç göndermeyen eski istemciler aynen
+   * çalışır; o durumda `users.timezone` OKUNMAZ ve DEĞİŞTİRİLMEZ. Yani bu
+   * alanın eklenmesi mevcut istemcilerde davranış değişikliği üretmez.
+   *
+   * ⚠️ Bu alan bu sprint'te yalnızca DEPOLANIR. Gauntlet'in gün anahtarı
+   * (`date`) HÂLÂ `utcDateString()`'tir — kullanıcı-yerel güne bağlama işi
+   * M2 Faz 2b'ye ertelendi (write-through verisi birikene kadar). Buradaki
+   * yazımı gün hesabına bağlamak, 229/237 kullanıcının kolon DEFAULT'u olan
+   * 'UTC' değerine düşmesi ve ritüelin saatinin kayması demek olurdu.
+   */
+  timezone?: unknown
 }
 
 // ─── Girdi doğrulama ─────────────────────────────────────────────────────────
@@ -94,6 +108,41 @@ interface GenerateRequest {
 const COMPANIONS = ['alone', 'partner', 'friends', 'family']
 const DURATIONS = ['short', 'medium', 'any']
 const ENERGIES = ['drained', 'normal', 'open']
+
+/** `users.timezone` kolonunun genişliği için makul üst sınır. */
+const MAX_TIMEZONE_LENGTH = 64
+
+/**
+ * IANA saat dilimi adı doğrulaması.
+ *
+ * Sabit offset ("+03:00", "UTC+3") KASITLI OLARAK REDDEDİLİR: DST yalnızca
+ * bölge adıyla çözülebilir, offset'te yaz/kış bilgisi yoktur. M2 Faz 1
+ * ölçümünde sahadaki 8 gerçek değerin hepsi zaten IANA'ydı
+ * ("Europe/Istanbul", "America/New_York") — bu kontrol o biçimi korur.
+ *
+ * `Intl.DateTimeFormat` bilinmeyen bölge adında RangeError atar; Deno'da ek
+ * bağımlılık gerektirmeyen tek gerçek IANA doğrulaması budur. Regex tek
+ * başına yetmez (biçimi doğru, adı uydurma bir değeri geçirirdi), Intl tek
+ * başına da yetmez ("UTC+3" gibi bazı offset biçimlerini kabul eder).
+ */
+function isValidTimeZone(v: unknown): v is string {
+  if (typeof v !== 'string') return false
+  if (v.length === 0 || v.length > MAX_TIMEZONE_LENGTH) return false
+  // "Area/Location" (çok parçalı olabilir: "America/Argentina/Buenos_Aires").
+  // "UTC" tek istisna — geçerli bir IANA adıdır ve gerçekten UTC'de yaşayan
+  // kullanıcı bunu bildirebilir.
+  if (v !== 'UTC' && !/^[A-Za-z][A-Za-z0-9_-]*(\/[A-Za-z0-9_+-]+)+$/.test(v)) {
+    return false
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: v })
+    return true
+  } catch {
+    // RangeError = bölge adı bu runtime'ın IANA veritabanında yok.
+    // Boş catch değil: doğrulama sonucu olarak false döner.
+    return false
+  }
+}
 
 /**
  * `GauntletContext` şekil doğrulaması. `types/gauntlet.ts` dış paket
@@ -107,6 +156,76 @@ function isValidContext(v: unknown): v is GauntletContext {
     typeof c.duration === 'string' && DURATIONS.includes(c.duration) &&
     typeof c.energy === 'string' && ENERGIES.includes(c.energy)
   )
+}
+
+// ─── Write-through saat dilimi ───────────────────────────────────────────────
+
+/**
+ * İstemcinin bildirdiği IANA saat dilimini `users.timezone`'a yazar.
+ *
+ * ── Neden burada ────────────────────────────────────────────────────────────
+ * M2 Faz 1 ölçümü (18 Ağu 2026, 237 satır): kullanıcıların 229'unda bu kolon
+ * kolon DEFAULT'u olan 'UTC' değerindeydi. Sebep, kolonun tek yazıcısının
+ * `save_push_token` RPC'si olması ve o yolun yalnızca push izni verilmiş
+ * kullanıcıda çalışması (`pushNotifications.ts` — push token yoksa erken
+ * return). Yani timezone, push iznine rehin düşmüştü.
+ *
+ * generate-gauntlet ritüelin HER GÜN çağrılan tek noktasıdır; buraya bağlanan
+ * write-through, push izninden bağımsız olarak kolonu doldurur.
+ *
+ * ── Neden ritüeli düşürmez ──────────────────────────────────────────────────
+ * Saat dilimi yazımı YAN ETKİDİR, gauntlet'in ön koşulu değil. Yazma hatası
+ * kullanıcının o akşamki ritüelini engellememeli. Ama sessizce de geçilmez
+ * (CLAUDE.md kural 1): hata log'a ve Sentry'ye düşer.
+ */
+async function persistTimezone(
+  service: SupabaseClient,
+  appUserId: string,
+  timezone: string,
+): Promise<void> {
+  const current = await service
+    .from('users')
+    .select('timezone')
+    .eq('id', appUserId)
+    .maybeSingle()
+
+  if (current.error) {
+    logError('gauntlet_tz_read_failed', current.error, { user_id: appUserId })
+    await sentryCapture({
+      message: 'generate-gauntlet: users.timezone okunamadı',
+      level: 'warning',
+      tags: { function: 'generate-gauntlet' },
+      extra: { user_id: appUserId, error: current.error.message },
+    })
+    return
+  }
+
+  const stored = (current.data as { timezone: string | null } | null)?.timezone ?? null
+
+  // Değişmediyse yazma: gereksiz UPDATE `users.updated_at` trigger'ını
+  // tetikler ve her gauntlet çağrısını sahte bir "profil değişti" olayına
+  // çevirirdi.
+  if (stored === timezone) return
+
+  const update = await service
+    .from('users')
+    .update({ timezone })
+    .eq('id', appUserId)
+
+  if (update.error) {
+    logError('gauntlet_tz_write_failed', update.error, { user_id: appUserId })
+    await sentryCapture({
+      message: 'generate-gauntlet: users.timezone yazılamadı',
+      level: 'warning',
+      tags: { function: 'generate-gauntlet' },
+      extra: { user_id: appUserId, error: update.error.message },
+    })
+    return
+  }
+
+  // `from` alanı seyahat/DST teşhisi için: Faz 2b'de gün sınırı kaymasının
+  // streak'i bozup bozmadığı bu iz üzerinden incelenecek.
+  logInfo('gauntlet_tz_updated', { user_id: appUserId, from: stored, to: timezone })
 }
 
 // ─── ADIM 4 — SLOT ───────────────────────────────────────────────────────────
@@ -529,7 +648,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   const context: GauntletContext = body.context
 
+  // ── M2 Faz 2a: write-through saat dilimi ───────────────────────────────────
+  // Alan YOKSA hiçbir şey yapılmaz — eski istemciler için tam geriye uyumluluk
+  // ve `users.timezone` olduğu gibi kalır.
+  //
+  // Alan VARSA ama geçersizse: istek 400 ile REDDEDİLMEZ. `timezone` ritüelin
+  // ön koşulu değil, yan bilgidir; bozuk bir değer yüzünden kullanıcının o
+  // akşamki gauntlet'ini düşürmek orantısız olurdu. Sessiz de geçilmez —
+  // Sentry'ye warning düşer, çünkü bu bir istemci hatasıdır ve görünmelidir.
+  if (body.timezone !== undefined) {
+    if (isValidTimeZone(body.timezone)) {
+      await persistTimezone(service, appUserId, body.timezone)
+    } else {
+      logError('gauntlet_tz_invalid', new Error('Geçersiz IANA saat dilimi'), {
+        user_id: appUserId,
+        received: typeof body.timezone === 'string' ? body.timezone : typeof body.timezone,
+      })
+      await sentryCapture({
+        message: 'generate-gauntlet: geçersiz timezone gövdede',
+        level: 'warning',
+        tags: { function: 'generate-gauntlet' },
+        extra: {
+          user_id: appUserId,
+          received: typeof body.timezone === 'string' ? body.timezone : typeof body.timezone,
+        },
+      })
+    }
+  }
+
   try {
+    // ⚠️ HÂLÂ UTC. Kullanıcı-yerel gün anahtarına geçiş M2 Faz 2b'dir; bu
+    // sprint yalnızca güvenilir timezone verisini TOPLAR. Yukarıdaki
+    // write-through'u buraya bağlamak, kolonu henüz dolmamış kullanıcıları
+    // 18:00 UTC'ye (İstanbul'da 21:00) kaydırırdı.
     const date = utcDateString()
     const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, date)
 
