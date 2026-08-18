@@ -61,7 +61,6 @@ import type {
   GauntletContext,
   GauntletFilm,
   GauntletProgress,
-  OklchColor,
   PendingWatchFeedback,
 } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
@@ -247,44 +246,48 @@ function slotTypesFor(signalCount: number): DailyGauntlet['slotTypes'] {
 
 // ─── Response kurulumu ───────────────────────────────────────────────────────
 
+/**
+ * Kaydedilmiş gauntlet'in filmlerini `GauntletFilm[]` olarak çözer.
+ *
+ * ⚠️ M3 Faz 2 — bu fonksiyon KENDİ sorgusunu ve KENDİ dönüşümünü yapıyordu ve
+ * `posterUrl` alanına `films.poster_url`'ü HAM haliyle koyuyordu. Yeni-üretim
+ * yolu ise `toGauntletFilm` üzerinden `toW500PosterUrl` normalizasyonunu
+ * uyguluyordu. Sonuç, günün ilk çağrısında w500 / ikinci çağrısında ham değer
+ * dönen iki ıraksak yoldu.
+ *
+ * M3 Faz 1 ölçümü (18 Ağu 2026): düello-uygun havuzun 1.859/1.859'u
+ * `poster_url`'ü `/t/p/original/` olarak saklıyor. Ölçülen fark aynı poster
+ * için 1223KB'a karşı 57KB — her cached gauntlet yüklemesinde 4 film × 21 kat
+ * fazla veri. Ayrıca `seed-database.ts` kaynaklı ham `poster_path` satırları
+ * (`/abc.jpg`) geçerli bir URI bile değildir; bu yoldan geçtiklerinde istemci
+ * sessizce kırık görsel gösterirdi.
+ *
+ * Düzeltme, ikinci bir normalizasyon kopyası yazmak DEĞİL: çözümleme artık
+ * `fetchCandidatesByIds` + `toGauntletFilm` çiftine devredilir — yeni-üretim
+ * yolunun ve `resolvePendingWatchFeedback`in kullandığı AYNI iki fonksiyon.
+ * Böylece poster biçimi tek yerde tanımlı kalır ve yollar tekrar ıraksayamaz.
+ *
+ * `fetchCandidatesByIds` düello-uygunluk kapısını bilinçli olarak UYGULAMAZ
+ * (gerekçe orada yazılı): geçmiş bir gauntlet'in filmi bugünkü havuz
+ * filtrelerine takılsa bile çözülebilir kalmalıdır.
+ */
 async function fetchFilmsByIds(
   service: SupabaseClient,
   ids: string[],
 ): Promise<GauntletFilm[]> {
-  const { data, error } = await service
-    .from('films')
-    .select('id,title,year,runtime,poster_url,dominant_color')
-    .in('id', ids)
-
-  if (error) throw new Error(`film getirme başarısız: ${error.message}`)
-
-  const rows = (data ?? []) as {
-    id: string
-    title: string
-    year: number
-    runtime: number
-    poster_url: string
-    dominant_color: OklchColor | null
-  }[]
-  const byId = new Map(rows.map((r) => [r.id, r]))
+  const byId = await fetchCandidatesByIds(service, ids)
 
   // Sıra daily_gauntlets.film_ids'ten gelir — idempotent çağrıda AYNI sıra.
   const films: GauntletFilm[] = []
   for (const id of ids) {
-    const r = byId.get(id)
-    if (!r) throw new Error(`gauntlet filmi bulunamadı: ${id}`)
-    const film: GauntletFilm = {
-      id: r.id,
-      title: r.title,
-      year: r.year,
-      runtime: r.runtime,
-      posterUrl: r.poster_url,
+    const c = byId.get(id)
+    if (!c) {
+      // Film verisinde DELETE yasak (CLAUDE.md #4). Eksik satır ya da
+      // normalize edilemeyen `poster_url` veri bütünlüğü anomalisidir —
+      // sessizce atlanmaz, dış catch üzerinden Sentry'ye fatal düşer.
+      throw new Error(`gauntlet filmi çözümlenemedi: ${id}`)
     }
-    // toGauntletFilm ile AYNI kural (C.2b): renk yoksa alan hiç eklenmez.
-    // İki yolun ıraksaması, günün ilk çağrısında renkli / ikinci çağrısında
-    // renksiz gauntlet demek olurdu.
-    if (r.dominant_color) film.dominantColor = r.dominant_color
-    films.push(film)
+    films.push(toGauntletFilm(c))
   }
   return films
 }
