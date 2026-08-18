@@ -1889,3 +1889,44 @@ ayrı bir kod kararı, 088 kapsamında bilinçli olarak yapılmadı. Aynı dosya
   düzeltilmeli — doğru çözüm: flag'i (tabs) layout mount olmadan ÖNCE
   (boot/gate aşamasında) çözüp initial render'a sabit değer olarak
   geçirmek. Tespit: C.9a-2 Faz 2, 17 Ağu 2026.
+
+---
+
+## 🟡 OTA update source map upload'ı kurulu değil
+
+**Öncelik: orta. Tespit: M1 Faz 2, 18 Ağustos 2026.**
+
+OTA update source map upload'ı kurulu değil (yalnızca native build source
+map'leri otomatik). ota_update_found/fetched event'leri OTA'nın aktif
+kullanıldığını gösteriyor — bir OTA-only JS hatası şu an düzgün
+symbolicate olmayabilir. Kurulum: .eas/workflows/ + expo-upload-sourcemaps.js
+script'i, yeni bir pattern (proje hiç kullanmıyor) → ayrı DUR NOKTASI
+gerektirir. Tetikleyici: OTA update'ler kritik/sık hale geldiğinde veya
+bir crash'in OTA kaynaklı olduğu şüphesi doğduğunda öncelik kazanır.
+Tespit: M1 Faz 2, 18 Ağu 2026.
+
+---
+
+## 🟡 M1 event enstrümantasyonu — eski/eksik UI'ya bağlı, taşınması gerekecek
+
+**Öncelik: orta. Tespit: M1 Faz 2, 18 Ağustos 2026.**
+
+M1 Faz 2'de eklenen bazı event'ler bilinçli olarak eski/eksik UI'ya
+bağlandı. C.9b/C.9c bu UI'ları yeniden inşa ettiğinde event de birlikte
+taşınmalı — aksi halde ölçüm sessizce eski yüzeyde kalır ve yeni yüzeyde
+hiç veri üretmez.
+
+- **watched_something_else**: SONHALİ §16 opsiyonel film arama akışı hiç
+  implement edilmemiş, event de yok. C.4/watch feedback yeniden ele
+  alınırsa birlikte eklenir.
+- **save_for_later, provider_clicked/where_to_watch_opened**: Champion CTA
+  gap'i (K-06/§3.9) C.9b'nin işi — CTA'lar inşa edildiğinde event'ler
+  aynı commit'te eklenmeli, unutulmasın.
+- **auth_prompt_viewed/completed**: şu an mevcut tek auth.tsx ekranına
+  bağlandı, K-13'teki "champion sonrası ayrı sheet" henüz yok — sheet
+  inşa edilince event bağlantısı oraya taşınmalı.
+- **paywall_viewed** → eski 9 varyantlı ContextualPaywall sistemine bağlı,
+  K-46 tek-tetikleyicili arşiv paywall'ı henüz yok — R-C'de paywall
+  yeniden inşa edilince event yeni yüzeye taşınmalı.
+- **dna_viewed** → eski TasteDNA/EmotionalState modeline bağlı, K-30'daki
+  6 eksenli yeni DNA henüz yok — DNA yeniden inşa edilince taşınmalı.
