@@ -86,6 +86,35 @@ export const NEUTRAL_CONTEXT: GauntletContext = {
   energy: 'normal',
 };
 
+// ─── Saat dilimi ─────────────────────────────────────────────────────────────
+
+/**
+ * Cihazın IANA saat dilimi adı (örn. "Europe/Istanbul").
+ *
+ * M2 Faz 2a write-through: `generate-gauntlet` bu değeri `users.timezone`'a
+ * yazar. Ritüel her gün bu çağrıdan geçtiği için kolon, push izninden BAĞIMSIZ
+ * olarak dolar — Faz 1 ölçümünde 237 kullanıcının 229'u kolon DEFAULT'unda
+ * ('UTC') kalmıştı, çünkü tek yazıcı push token yoluydu.
+ *
+ * `Intl.DateTimeFormat().resolvedOptions().timeZone` deseni bu kod tabanında
+ * yeni değil — `services/pushNotifications.ts` aynı çağrıyı kullanıyor, yani
+ * Hermes tarafında çalıştığı sahada kanıtlı.
+ *
+ * Sunucu geçersiz değeri reddedip yok sayar (isteği düşürmez); burada da
+ * `undefined` dönmek güvenlidir — alan gövdeden düşer ve sunucu kolonu
+ * DEĞİŞTİRMEDEN bırakır.
+ */
+function deviceTimeZone(): string | undefined {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+  } catch (err) {
+    // Sessiz yutma değil: Intl'in bulunmadığı bir runtime gerçek bir kurulum
+    // arızasıdır ve görünmelidir. Ritüel yine de çalışır — timezone opsiyonel.
+    logger.warn('[gauntletService] cihaz saat dilimi okunamadı:', err);
+    return undefined;
+  }
+}
+
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
 /**
@@ -173,7 +202,7 @@ export async function getTodayGauntlet(
 
   const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('generate-gauntlet', {
-    body: { context },
+    body: { context, timezone: deviceTimeZone() },
   });
 
   if (error) {
