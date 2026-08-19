@@ -52,7 +52,7 @@ Product Truth     Watched-it Rate
 |---|---|---|
 | **K-01** | 2 tab: **Home + Profile**. Üçüncü tab yok. | IA §2.1, SONHALİ §61 |
 | **K-02** | Discover nav'dan kalkar, `app_config` flag ile donar, **silinmez**. Today's Pick onunla birlikte söner. | IA §2.2 |
-| **K-03** | Home = **tek route, explicit state enum**: `waiting · ready · in_progress · completed · watch_feedback · error_recovery`. Ghost state yok. | SONHALİ §68 |
+| **K-03** | Home = **tek route, explicit state enum**: `waiting · ready · in_progress · completed · watch_feedback · error_recovery`. Ghost state yok. ⚠️ **Enum listesi D-12 ile güncellendi** — "tek route + explicit state + ghost state yok" ilkesi aynen geçerli, durum adları uygulamada farklı gerçekleşti. | SONHALİ §68 |
 | **K-04** | Tab bar **native-feeling**. Custom glass taklidi yok; sistemin Liquid Glass davranışı kullanılır. C.9a'da doğrulanır. | SONHALİ §62 |
 | **K-05** | Spotlight'ın ayrı hub'ı yok. Sadece champion ekranının altında "Bugünün bonusu" kartı. | IA §2.6 |
 | **K-06** | Watchlist ayrı tab değil, Profile alt sayfası. Otomatik giriş yok — tek yol champion'daki manuel "Sonraya bırak". | IA §2.4 |
@@ -260,6 +260,35 @@ Product Truth     Watched-it Rate
 
 ---
 
+### D-12 — K-03 state enum'u: 6 varsayılan durum → 5 gerçek durum + 2 gömülü semantik
+
+**Dokümanda (K-03):** Home = tek route, explicit state enum: `waiting · ready · in_progress · completed · watch_feedback · error_recovery` (SONHALİ §68).
+
+**Kilitlenen:** **K-03 uygulamada 5 durum + 2 gömülü semantik olarak gerçekleşti (ölçüm varsayımı çürüttü).** `components/gauntlet/GauntletShell/index.tsx` (C.2-2, 14.08.2026 CTO onaylı, cihazda doğrulanmış) şu enum'u taşır:
+
+```ts
+type ShellState = 'before_18' | 'bootstrapping' | 'ready' | 'in_progress' | 'completed_today';
+```
+
+Bible'ın altı adının uygulamadaki karşılığı:
+
+| Bible (K-03) | Uygulama | Not |
+|---|---|---|
+| `waiting` | `before_18` **+** `bootstrapping` | **İkiye ayrıldı.** Bekleyiş (18:00 kapısı, gauntlet ÇAĞRILMAZ — PRODUCT_OS §3.6) ile yükleme (401 bootstrap penceresi, graphite iskelet) farklı ekranlar ve farklı hata yollarıdır; tek ad ikisini gizlerdi. |
+| `ready` | `ready` | Birebir. |
+| `in_progress` | `in_progress` | Birebir. |
+| `completed` | `completed_today` | Ad netleşti; iki dallı — champion (`ChampionReveal`) ya da exhausted (§15.3). |
+| `watch_feedback` | **gömülü** | Ayrı enum dalı değil: `pendingFeedbackVisible && gauntlet.pendingWatchFeedback` erken dönüşü (`index.tsx:760`), enum kontrolünün ÖNÜNDE. Backend alanına bağlı olduğu için client-side bir durum değildir. |
+| `error_recovery` | **gömülü** | Ayrı enum dalı değil: `loadError` (`bootstrapping` dalı içinde, `:781`) ve `actionError` (oyun görünümünde inline, `:897`). Hata, içinde bulunulan durumun görünümüdür; ayrı durum yapmak kullanıcıyı bağlamından koparırdı. |
+
+**Gerekçe:** K-03'ün korunması gereken özü — **tek route · explicit state · ghost state yok** — ihlal edilmedi, aksine daha sıkı karşılandı: her durumun tek bir render dalı var ve hiçbiri belirsiz ara durumda kalmıyor. Değişen yalnızca adlar ve granülerlik. Bible'daki altı ad bir *tahminden* yazılmıştı; GauntletShell yazılırken 18:00 kapısının yüklemeden ayrılması ve hata/feedback'in ayrı durum olmaması **ölçülerek** ortaya çıktı. Çalışan, cihazda doğrulanmış 861 satırlık bileşeni literal uyum için yeniden yazmak, kanıtlanmış kodu kanıtlanmamış bir isim listesine feda etmek olurdu.
+
+**Karar (C.9b, 19.08.2026): Seçenek A — GauntletShell'e dokunulmaz, bible gerçeğe uyar.** Bu, F-02'de kurulan aynı yöntemdir (bible ismi gerçeğe uyar).
+
+**Kapsam:** Yalnızca K-03'ün enum listesi. K-03'ün kendisi, diğer K/D/R/E maddeleri ve `types/gauntlet.ts` sözleşmesi değişmedi.
+
+---
+
 ## 4. REDDEDİLENLER VE YERİNE KONAN ÇÖZÜM (R)
 
 | # | Reddedilen | Kaynak | Yerine konan çözüm |
@@ -447,6 +476,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.2 | 17 Ağu 2026 | M0 Faz 2 tamamlandı (orphan doğrulama, E-08 görünürlük, entitlement veri düzeltmesi, grandfathering). Cold-start kör noktası bulundu, M0 Faz 3 olarak kilitlendi. Bkz. §11 F-05. |
 | 1.3 | 17 Ağu 2026 | M0 kapandı (mantık seviyesinde). Cold-start event mantığı Deno birim testleriyle kanıtlandı, cihaz doğrulaması CTO'ya devredildi — açık kalan tek madde. Full-wipe/reinstall kör noktası bilinçli olarak backlog'a alındı (`expo-secure-store` bu turda eklenmiyor). Bkz. §11 F-05, §9. |
 | 1.4 | 18 Ağu 2026 | Cold-start cihaz doğrulaması tamamlandı (F-06 kapandı) — M0'ın son açık maddesi kapandı. C.9a ve C.9a-2 (nav restructure, native tab bar) tamamlandı. |
+| 1.5 | 19 Ağu 2026 | **C.9b swap.** Home route'u gauntlet'e geçti (`dev-gauntlet` → production), mood search `components/Home/MoodSearchScreen/`'e taşındı (silinmedi, C.9c'ye devredildi). **D-12 eklendi** — K-03 state enum'u 5 durum + 2 gömülü semantik olarak gerçekleşti; §2.1'deki K-03 satırına D-12 referansı düşüldü. Champion CTA'ları ("Sonraya bırak" · "Nerede izlenir") ve K-21 tek cümlelik açıklama **C.9b-2'ye** ayrıldı — bu swap cihazda doğrulandıktan sonra. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
