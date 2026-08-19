@@ -15,8 +15,13 @@
  * Resume yolunda (`animateReveal: false`) sekans atlanır, doğrudan gösterilir.
  *
  * Şampiyon watchlist'e OTOMATİK YAZILMAZ (PRODUCT_OS §3.7) — `onDismiss`
- * yalnızca ekranı kapatır, hiçbir yazma eylemi tetiklemez. "Sonraya bırak"
- * Faz D kapsamı.
+ * yalnızca ekranı kapatır, hiçbir yazma eylemi tetiklemez.
+ *
+ * C.9b-2: "Sonraya bırak" eklendi (IA §2.3). §3.7 KORUNUYOR — yazma yalnızca
+ * kullanıcının açık dokunuşuyla olur, ekranın açılması hiçbir şey yazmaz.
+ * Yazan taraf SUNUCU (`submit-choice` action: 'save_for_later'); bu bileşen
+ * `getAppUserId()` çağırmaz ve INSERT yapmaz. Kaydedilen satır İZLENDİ
+ * değildir — `watched_at` NULL kalır.
  *
  * ⚠️ 14.08.2026 cihaz testinde bulundu: bu bileşende çıkış eylemi hiç
  * YOKTU — kullanıcı şampiyon ekranında sıkışıyordu (kök neden: plan
@@ -41,6 +46,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { QuietAction } from '@/components/gauntlet/QuietAction';
+import { WatchProviders } from '@/components/gauntlet/WatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   BLACKOUT_SEQUENCE,
@@ -48,6 +54,8 @@ import {
   EASE_OUT_QUART,
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
+import { posthogAnalytics } from '@/services/posthog';
+import { saveChampionForLater } from '@/services/gauntletService';
 import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
 import { hapticLight } from '@/utils/haptics';
@@ -73,7 +81,16 @@ interface ChampionRevealProps {
    * taşır (resume yolu — istemcide geçmiş yok, bkz. gauntletShareText).
    */
   rounds?: ShareRound[];
+  /**
+   * `DailyGauntlet.gauntletId`. Yoksa "Sonraya bırak" GÖSTERİLMEZ — sunucu
+   * sahipliği bu kimlik üzerinden doğruluyor, onsuz çağrı yapılamaz. `date`
+   * ile paylaşım eylemindeki davranışın aynısı.
+   */
+  gauntletId?: string;
 }
+
+/** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
+type SaveState = 'idle' | 'saving' | 'saved';
 
 export function ChampionReveal({
   champion,
@@ -81,10 +98,12 @@ export function ChampionReveal({
   onDismiss,
   date,
   rounds,
+  gauntletId,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<SaveState>('idle');
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
@@ -95,6 +114,49 @@ export function ChampionReveal({
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
     };
   }, []);
+
+  /** Kısa ömürlü onay/hata metni — paylaşım ve kaydetme aynı satırı kullanır. */
+  const showNotice = useCallback((message: string) => {
+    if (!mountedRef.current) return;
+    setShareNotice(message);
+    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+    noticeTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setShareNotice(null);
+    }, COPIED_NOTICE_MS);
+  }, []);
+
+  /**
+   * "Sonraya bırak" — şampiyonu watchlist'e kaydeder.
+   *
+   * Yazma SUNUCUDA (`submit-choice` action: 'save_for_later'); burada kimlik
+   * çözümlemesi ya da INSERT YOKTUR. `already_saved` hata değildir: kullanıcı
+   * için sonuç aynıdır ("listende"), ayrı bir uyarı göstermek gereksiz gürültü
+   * olurdu — ayrım yalnızca analytics'e gider.
+   *
+   * Hata sessizce yutulmaz: eylem `idle`'a döner (kullanıcı tekrar deneyebilir)
+   * ve görünür bir mesaj basılır. Sentry raporu `gauntletService` katmanında
+   * atılıyor, burada tekrarlanmaz — aynı hata iki kez düşmesin.
+   */
+  const handleSaveForLater = useCallback(async () => {
+    if (!gauntletId || saveState !== 'idle') return;
+    setSaveState('saving');
+    void hapticLight();
+    try {
+      const result = await saveChampionForLater(gauntletId, champion.id);
+      posthogAnalytics.track('save_for_later', {
+        gauntlet_id: gauntletId,
+        film_id: champion.id,
+        status: result.status,
+      });
+      if (!mountedRef.current) return;
+      setSaveState('saved');
+      showNotice(t('gauntlet.saveForLater.done'));
+    } catch {
+      if (!mountedRef.current) return;
+      setSaveState('idle');
+      showNotice(t('gauntlet.saveForLater.error'));
+    }
+  }, [gauntletId, saveState, champion.id, showNotice, t]);
 
   /**
    * Panoya kopyalar. `expo-sharing` KULLANILMAZ: o API bir dosya URI'si ister
@@ -117,20 +179,14 @@ export function ChampionReveal({
     void hapticLight();
     try {
       await Clipboard.setStringAsync(text);
-      if (!mountedRef.current) return;
-      setShareNotice(t('gauntlet.share.copied'));
+      showNotice(t('gauntlet.share.copied'));
     } catch (err) {
       Sentry.captureException(err, {
         tags: { component: 'ChampionReveal', flow: 'share' },
       });
-      if (!mountedRef.current) return;
-      setShareNotice(t('gauntlet.share.copyError'));
+      showNotice(t('gauntlet.share.copyError'));
     }
-    if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
-    noticeTimerRef.current = setTimeout(() => {
-      if (mountedRef.current) setShareNotice(null);
-    }, COPIED_NOTICE_MS);
-  }, [champion.title, champion.year, date, rounds, language, t]);
+  }, [champion.title, champion.year, date, rounds, language, showNotice, t]);
 
   const posterOpacity = useSharedValue(animateReveal ? 0 : 1);
   const titleOpacity = useSharedValue(animateReveal ? 0 : 1);
@@ -188,9 +244,32 @@ export function ChampionReveal({
         {t('gauntlet.posterMeta', { year: champion.year, runtime: champion.runtime })}
       </Animated.Text>
 
+      {/* "Nerede izlenir" — meta ile aynı zamanlamada belirir (§10.2 sırası bozulmaz). */}
+      <Animated.View style={metaStyle}>
+        <WatchProviders filmId={champion.id} />
+      </Animated.View>
+
       <Animated.View style={[styles.actionsWrapper, metaStyle]}>
         {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
         <View style={styles.actionsRow}>
+          {gauntletId !== undefined && (
+            <>
+              <QuietAction
+                label={
+                  saveState === 'saved'
+                    ? t('gauntlet.saveForLater.saved')
+                    : t('gauntlet.saveForLater.action')
+                }
+                onPress={() => void handleSaveForLater()}
+                // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
+                // tamamlandı, tekrar basılacak bir şey yok.
+                disabled={saveState !== 'idle'}
+              />
+              {(date !== undefined || onDismiss) && (
+                <Text style={styles.actionSeparator}>·</Text>
+              )}
+            </>
+          )}
           {date !== undefined && (
             <>
               <QuietAction

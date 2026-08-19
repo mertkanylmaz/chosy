@@ -136,6 +136,15 @@ export interface TmdbWatchProviders {
   flatrate?: TmdbProvider[];
   rent?: TmdbProvider[];
   buy?: TmdbProvider[];
+  /**
+   * TMDB'nin bölgeye özel "nerede izlenir" sayfası. TMDB yanıtında ZATEN
+   * geliyordu, tipte eksikti (C.9b-2'de eklendi). Sağlayıcı logolarının
+   * dokunulabilir olması için tek meşru hedef budur: TMDB attribution
+   * koşulları doğrudan derin bağlantı kurmayı değil bu sayfaya yönlendirmeyi
+   * öngörür. Yoksa (`undefined`) logolar dokunulamaz kalır — çalışmayan bir
+   * dokunma alanı sunulmaz.
+   */
+  link?: string;
 }
 
 /**

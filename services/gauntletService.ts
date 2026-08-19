@@ -266,6 +266,58 @@ export async function submitChoice(
 }
 
 /**
+ * `POST /submit-choice` (action: 'save_for_later') YANITI — `supabase/functions/
+ * submit-choice/index.ts:SaveForLaterResult` ile ayna tip (aynı gerekçe:
+ * ChoiceResult).
+ */
+export interface SaveForLaterResult {
+  status: 'saved' | 'already_saved';
+  filmId: string;
+}
+
+/**
+ * Şampiyonu watchlist'e kaydeder — "Sonraya bırak" (C.9b-2).
+ *
+ * ── Neden `services/watchlist.ts` KULLANILMIYOR ─────────────────────────────
+ * O modülün `addToWatchlist(film: Film)` imzası hem tip olarak uymaz
+ * (`GauntletFilm` ≠ `Film`) hem de `getAppUserId()` üzerinden kimlik ÇÖZER.
+ * Gauntlet ekranları kimlik çözmez ve INSERT yapmaz (GauntletShell:12-14);
+ * yazma sunucuda, oturumun JWT'si üzerinden olur. Bu fonksiyon yalnızca
+ * çağırır — istemci tarafında hiçbir kimlik işlemi yoktur.
+ *
+ * Yazılan satır İZLENDİ DEĞİLDİR: `watched_at` NULL kalır, film "kaydedildi"
+ * olarak listeye girer.
+ */
+export async function saveChampionForLater(
+  gauntletId: string,
+  filmId: string,
+): Promise<SaveForLaterResult> {
+  await ensureAuthSession();
+
+  const startedAt = performance.now();
+  const { data, error } = await supabase.functions.invoke('submit-choice', {
+    body: { action: 'save_for_later', gauntletId, filmId },
+  });
+
+  if (error) {
+    recordTiming('submit-choice(save_for_later)', startedAt, 'error');
+    const { status, detail } = await parseInvokeError(error);
+    if (status === 401) {
+      throw new GauntletAuthPendingError(detail);
+    }
+    Sentry.captureException(error, {
+      tags: { fn: 'submit-choice', action: 'save_for_later' },
+      extra: { detail, gauntlet_id: gauntletId, film_id: filmId },
+    });
+    logger.error('[gauntletService] saveChampionForLater failed:', detail);
+    throw new Error(detail || 'save_for_later failed');
+  }
+
+  recordTiming('submit-choice(save_for_later)', startedAt, 'ok');
+  return data as SaveForLaterResult;
+}
+
+/**
  * `POST /submit-watch-feedback` YANITI — `supabase/functions/submit-watch-feedback/
  * index.ts:WatchFeedbackResult` ile ayna tip (aynı gerekçe: ChoiceResult).
  */

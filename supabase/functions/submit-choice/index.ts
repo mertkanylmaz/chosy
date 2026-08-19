@@ -23,7 +23,14 @@
  *   duel_impressions  — "bu çift gösterildi" durumu (B.3 bilinçli olarak
  *                       buraya bıraktı: üretim yazmaz, seçim yazar)
  *   daily_gauntlets   — champion_film_id · yenilemede film_ids
- *   watchlist         — 'seen' dalında watched_at + watched_source
+ *   watchlist         — 'seen' dalında watched_at + watched_source;
+ *                       'save_for_later' dalında SADECE satır (watched_at NULL)
+ *
+ * ── İki giriş yolu (C.9b-2) ──────────────────────────────────────────────────
+ * Gövdede `action` alanı YOKSA  → seçim yolu (kilitli `ChoiceSubmission`)
+ * Gövdede `action` alanı VARSA  → `save_for_later` ("Sonraya bırak")
+ * Ayrım gövdenin ilk okunuşunda yapılır; iki yol birbirinin doğrulamasına
+ * hiç uğramaz.
  *
  * Deploy: supabase functions deploy submit-choice
  */
@@ -142,6 +149,49 @@ interface GauntletRow {
   champion_film_id: string | null
   context: GauntletContext | null
   algorithm_version: string
+}
+
+/**
+ * "Sonraya bırak" isteği (C.9b-2, CTO onayı 19.08.2026).
+ *
+ * ── Neden burada, yeni bir Edge Function'da değil ────────────────────────────
+ * Sahiplik çözümlemesi (auth.uid() → public.users.id) ve gauntlet doğrulaması
+ * bu dosyada ZATEN var. Ayrı fonksiyon açmak o iki bloğu kopyalamak olurdu ve
+ * ıraksadıkları anda biri diğerinin kapatmadığı bir yazma yolu açardı — 099/100
+ * ile kapatılan sızıntının aynı sınıfı.
+ *
+ * ── Neden `action` ile ayrım ────────────────────────────────────────────────
+ * `ChoiceSubmission` KİLİTLİ sözleşmedir ve `action` alanı YOKTUR. Mevcut
+ * istemci gövdeleri bu alanı hiç göndermez; dispatch bu yokluğa bakar, yani
+ * eski yol bit düzeyinde değişmez. Yeni dal `isValidChoiceSubmission`'a hiç
+ * uğramaz — kilitli doğrulayıcı gevşetilmez.
+ */
+interface SaveForLaterRequest {
+  action: 'save_for_later'
+  gauntletId: string
+  filmId: string
+}
+
+/**
+ * `already_saved` bir HATA DEĞİLDİR: kullanıcı aynı şampiyonu ikinci kez
+ * kaydetmiştir. 409 dönmek istemciyi hata yoluna sokardı; durum açıkça
+ * bildirilir ve istemci aynı onay metnini gösterir.
+ */
+interface SaveForLaterResult {
+  status: 'saved' | 'already_saved'
+  filmId: string
+}
+
+function isSaveForLaterRequest(v: unknown): v is SaveForLaterRequest {
+  if (typeof v !== 'object' || v === null) return false
+  const s = v as Record<string, unknown>
+  return (
+    s.action === 'save_for_later' &&
+    typeof s.gauntletId === 'string' &&
+    s.gauntletId.length > 0 &&
+    typeof s.filmId === 'string' &&
+    s.filmId.length > 0
+  )
 }
 
 /**
@@ -415,6 +465,106 @@ function orderPair(a: Candidate, b: Candidate): [Candidate, Candidate] {
   return Math.random() < 0.5 ? [a, b] : [b, a]
 }
 
+// ─── "Sonraya bırak" ─────────────────────────────────────────────────────────
+
+/**
+ * Şampiyonu watchlist'e kaydeder. `markWatched` ile AYNI sahiplik desenini
+ * kullanır ama AYNI ŞEY DEĞİLDİR:
+ *
+ *   markWatched      → watched_at = now, watched_source = 'gauntlet_feedback'
+ *   saveForLater     → watched_at NULL, watched_source NULL
+ *
+ * "Kaydettim" ile "izledim" iki ayrı gerçektir. `watched_source` yalnızca
+ * İZLENMİŞ satırların kaynağını anlatır (072'nin COMMENT'i); kaydetme yolunda
+ * doldurulması o kolonun anlamını bozardı ve C.4'ün "dün izledin mi?" sorusunu
+ * kaydedilmiş ama izlenmemiş filmler için sessizce susturabilirdi. Bu yüzden
+ * CHECK kümesine YENİ LİTERAL EKLENMEZ — şema ve migration DEĞİŞMEZ.
+ *
+ * Yazım INSERT-only: mevcut satır varsa 23505 alınır ve DOKUNULMAZ. Önce oku-
+ * sonra yaz deseni kullanılmaz çünkü yarışta iki isteğin ikisi de "satır yok"
+ * görüp ikinci INSERT'te aynı 23505'e düşerdi — kısıt zaten son sözü söylüyor.
+ * Ayrıca bu, `watched_at` dolu bir satırın (kullanıcı 'seen' demişti) kaydetme
+ * eylemiyle SIFIRLANMASINI yapısal olarak imkânsız kılar.
+ *
+ * Şampiyon otomatik yazılmaz (PRODUCT_OS §3.7) — bu yol yalnızca kullanıcının
+ * açık eylemiyle çalışır.
+ */
+async function handleSaveForLater(
+  service: SupabaseClient,
+  appUserId: string,
+  body: SaveForLaterRequest,
+): Promise<Response> {
+  const gauntletRes = await service
+    .from('daily_gauntlets')
+    .select('id,user_id,champion_film_id')
+    .eq('id', body.gauntletId)
+    .maybeSingle()
+
+  if (gauntletRes.error) {
+    throw new Error(`gauntlet sorgusu başarısız: ${gauntletRes.error.message}`)
+  }
+  if (!gauntletRes.data) {
+    return errorResponse('GAUNTLET_NOT_FOUND', 'Gauntlet bulunamadı', 404)
+  }
+
+  const gauntlet = gauntletRes.data as {
+    id: string
+    user_id: string | null
+    champion_film_id: string | null
+  }
+
+  // Başkasının turnuvası → 404 (403 varlığı doğrulardı). `choice` dalındaki
+  // sahiplik kontrolüyle birebir aynı davranış.
+  if (gauntlet.user_id !== appUserId) {
+    logInfo('save_for_later_owner_mismatch', {
+      user_id: appUserId,
+      gauntlet_id: gauntlet.id,
+    })
+    return errorResponse('GAUNTLET_NOT_FOUND', 'Gauntlet bulunamadı', 404)
+  }
+
+  // CTO kararı 19.08.2026: yüzey ŞAMPİYONLA SINIRLI. `film_ids` içinde olmak
+  // YETMEZ — elenen filmler için bir CTA yok, olmayan ihtiyaca yüzey açılmaz.
+  if (!gauntlet.champion_film_id || body.filmId !== gauntlet.champion_film_id) {
+    return errorResponse(
+      'UNPROCESSABLE_SUBMISSION',
+      'filmId bu gauntlet\'in şampiyonu değil',
+      422,
+    )
+  }
+
+  const insert = await service.from('watchlist').insert({
+    user_id: appUserId,
+    film_id: body.filmId,
+  })
+
+  if (insert.error) {
+    if (insert.error.code === '23505') {
+      // UNIQUE (user_id, film_id) — film zaten listede. Mevcut satıra
+      // DOKUNULMAZ; watched_at dolu olabilir ve silinmemeli.
+      logInfo('save_for_later_already', {
+        user_id: appUserId,
+        gauntlet_id: gauntlet.id,
+        film_id: body.filmId,
+      })
+      const result: SaveForLaterResult = {
+        status: 'already_saved',
+        filmId: body.filmId,
+      }
+      return jsonResponse(result)
+    }
+    throw new Error(`watchlist yazımı başarısız: ${insert.error.message}`)
+  }
+
+  logInfo('save_for_later_saved', {
+    user_id: appUserId,
+    gauntlet_id: gauntlet.id,
+    film_id: body.filmId,
+  })
+  const result: SaveForLaterResult = { status: 'saved', filmId: body.filmId }
+  return jsonResponse(result)
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request): Promise<Response> => {
@@ -454,6 +604,39 @@ Deno.serve(async (req: Request): Promise<Response> => {
   } catch (err) {
     logError('choice_bad_json', err, { user_id: appUserId })
     return errorResponse('INVALID_INPUT', 'Geçersiz JSON gövdesi', 400)
+  }
+
+  // ── DISPATCH ───────────────────────────────────────────────────────────────
+  // `action` alanının VARLIĞI ayrımı yapar. Kilitli `ChoiceSubmission`'da böyle
+  // bir alan yok, yani mevcut istemci gövdeleri buraya asla düşmez ve seçim
+  // yolu değişmemiş olur. Tanınmayan bir `action` sessizce seçim yoluna
+  // DÜŞÜRÜLMEZ — şekil doğrulaması orada patlar ve kullanıcı anlamsız bir
+  // "ChoiceSubmission geçersiz" hatası alırdı; burada açık 400 döner.
+  if ((raw as { action?: unknown }).action !== undefined) {
+    if (!isSaveForLaterRequest(raw)) {
+      return errorResponse('INVALID_INPUT', 'Bilinmeyen action gövdesi', 400)
+    }
+    try {
+      return await handleSaveForLater(service, appUserId, raw)
+    } catch (err) {
+      logError('save_for_later_failed', err, {
+        user_id: appUserId,
+        gauntlet_id: raw.gauntletId,
+        film_id: raw.filmId,
+      })
+      await sentryCapture({
+        message: 'submit-choice: sonraya bırakılamadı',
+        level: 'error',
+        tags: { function: 'submit-choice', action: 'save_for_later' },
+        extra: {
+          user_id: appUserId,
+          gauntlet_id: raw.gauntletId,
+          film_id: raw.filmId,
+          error: err instanceof Error ? err.message : String(err),
+        },
+      })
+      return errorResponse('SAVE_FOR_LATER_FAILED', 'Film kaydedilemedi', 503)
+    }
   }
 
   // Kilitli sözleşmenin kendi doğrulayıcısı — Zod YOK (types/gauntlet.ts notu).

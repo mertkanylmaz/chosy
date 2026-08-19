@@ -822,6 +822,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             onDismiss={onDismiss}
             date={gauntlet?.date}
             rounds={shareRounds}
+            gauntletId={gauntlet?.gauntletId}
           />
         </View>
       );

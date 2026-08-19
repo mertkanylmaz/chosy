@@ -1397,6 +1397,17 @@
       "roundLine": "Tur %{round}: %{winner} > %{loser}",
       "championLine": "Bugünün filmi: %{title} (%{year})"
     },
+    "saveForLater": {
+      "action": "Sonraya bırak",
+      "saved": "Listende",
+      "done": "Listene eklendi",
+      "error": "Kaydedilemedi. Tekrar dene."
+    },
+    "watchProviders": {
+      "label": "NEREDE İZLENİR",
+      "openOn": "%{provider} üzerinde aç",
+      "attribution": "Yayın bilgisi TMDB'den"
+    },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",
       "editorTitle": "Bugün nasılsın?",

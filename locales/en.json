@@ -1397,6 +1397,17 @@
       "roundLine": "Round %{round}: %{winner} over %{loser}",
       "championLine": "Tonight's film: %{title} (%{year})"
     },
+    "saveForLater": {
+      "action": "Save for later",
+      "saved": "In your list",
+      "done": "Saved to your list",
+      "error": "Couldn't save. Try again."
+    },
+    "watchProviders": {
+      "label": "WHERE TO WATCH",
+      "openOn": "Open on %{provider}",
+      "attribution": "Availability from TMDB"
+    },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",
       "editorTitle": "How's today?",

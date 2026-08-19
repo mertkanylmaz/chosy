@@ -80,7 +80,7 @@ Product Truth     Watched-it Rate
 | **K-18** | Mekanik görünür kalır: Context bar · Round indicator · "Choose one". Minimal ≠ ambiguous. | SONHALİ §9 |
 | **K-19** | Motion: **CUT** = karar, **DISSOLVE** = geçiş. Champion = **720ms karanlık an**. Dekoratif animasyon değil, marka davranışı. | Design OS, EXIT §16 |
 | **K-20** | Champion **end screen değil, activation bridge**: Nerede izlenir · Sonraya bırak · Paylaş. | SONHALİ §13-14 |
-| **K-21** | Champion'da **tek cümlelik deterministic açıklama** ("Tonight you leaned toward intensity + realism"). LLM çağrısı yok, 6 eksenden türetilir. | SONHALİ §12, §20 |
+| **K-21** | Champion'da **tek cümlelik deterministic açıklama** ("Tonight you leaned toward intensity + realism"). LLM çağrısı yok, 6 eksenden türetilir. ⏸️ **ERTELENDİ** (19 Ağu 2026, C.9b-2 keşfi) — K-30'un 6 ekseni film başına HİÇBİR YERDE üretilmiyor. Yuvası: R-18 radar chart'ı ile aynı sprint (ortak eksen ingestion'ı). Bkz. §11 F-07. | SONHALİ §12, §20 |
 | **K-22** | Champion ekranı **kalıcı**. Tekrar girişte aynı ekran, yeniden oynatmaz. | IA §2.3 |
 | **K-23** | Ret merdiveni korunur (Ret 1 sessiz yeni çift · Ret 2 üç yön · Ret 3 liste/saved/yarın). Her ret **analytics sinyalidir**. | Product OS, Relaunch §9 |
 
@@ -477,6 +477,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.3 | 17 Ağu 2026 | M0 kapandı (mantık seviyesinde). Cold-start event mantığı Deno birim testleriyle kanıtlandı, cihaz doğrulaması CTO'ya devredildi — açık kalan tek madde. Full-wipe/reinstall kör noktası bilinçli olarak backlog'a alındı (`expo-secure-store` bu turda eklenmiyor). Bkz. §11 F-05, §9. |
 | 1.4 | 18 Ağu 2026 | Cold-start cihaz doğrulaması tamamlandı (F-06 kapandı) — M0'ın son açık maddesi kapandı. C.9a ve C.9a-2 (nav restructure, native tab bar) tamamlandı. |
 | 1.5 | 19 Ağu 2026 | **C.9b swap.** Home route'u gauntlet'e geçti (`dev-gauntlet` → production), mood search `components/Home/MoodSearchScreen/`'e taşındı (silinmedi, C.9c'ye devredildi). **D-12 eklendi** — K-03 state enum'u 5 durum + 2 gömülü semantik olarak gerçekleşti; §2.1'deki K-03 satırına D-12 referansı düşüldü. Champion CTA'ları ("Sonraya bırak" · "Nerede izlenir") ve K-21 tek cümlelik açıklama **C.9b-2'ye** ayrıldı — bu swap cihazda doğrulandıktan sonra. |
+| 1.6 | 19 Ağu 2026 | **C.9b-2.** Champion CTA'ları tamamlandı: "Sonraya bırak" (`submit-choice`'a `save_for_later` action'ı — yeni Edge Function YOK, şema/migration YOK, yüzey şampiyonla sınırlı) ve "Nerede izlenir" (`WatchProviders` bileşeni, `fetchMovieWatchProviders`). K-20 activation bridge'inin üç ayağı da bağlandı. **K-21 ERTELENDİ** — 6 eksen verisi hiçbir katmanda üretilmiyor; Post-C.9 radar chart sprint'ine taşındı. Bkz. §11 F-07. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
@@ -502,6 +503,38 @@ Bu, G-9 gate'ini (relaunch sonrası mevcut kullanıcı kaybı <%20) doğrudan te
 **Durum (18 Ağu 2026):** Cihaz doğrulaması tamamlandı. Kanıt: PostHog Live'da olay sırası — Application Backgrounded → app_launched → identity_reset_detected → Application Opened → Application Became Active. F-06 kapandı.
 
 **Bilinçli olarak kapatılmayan kör nokta:** Tam depo silinmesi (uygulama kaldırılıp kurulması) senaryosunda hem auth token hem diagnostic iz birlikte gider, olay `first_install` gibi sınıflanır. Bunu yakalamak `expo-secure-store` (yeni bağımlılık) gerektirir ve gerçek kurtarma sağlamaz — sadece ölçüm sağlar (Supabase token'ı zaten AsyncStorage'da, Keychain'de olsa bile session geri gelmez). **Karar: bu turda eklenmiyor**, backlog'a yazıldı (§9).
+
+### F-07 — K-21'in eksen verisi yok *(C.9b-2 keşfi, 19 Ağu 2026)*
+
+K-21 açıklama cümlesini "6 eksenden türetilir" diye tanımlıyor. **Bu 6 eksen (K-30:
+Tempo · Intensity · Darkness · Realism · Era · Language) film başına hiçbir katmanda
+üretilmiyor.** Ölçüm:
+
+- `GauntletFilm` (kilitli sözleşme) = `id · title · year · runtime · posterUrl ·
+  dominantColor?` — eksen alanı yok.
+- Backend `Candidate` (`_shared/gauntletCore.ts`) = `director · primaryGenre ·
+  language · imdbVotes · voteAverage` — eksen yok; `toGauntletFilm()` bunların
+  hiçbirini istemciye geçirmiyor.
+- `film_profiles.dimensions_json` VAR ama K-30'un ekseni DEĞİL: mood-search dönemine
+  ait 12 boyutlu ayrı bir şema (`emotional_state`, `pace_preference`, `visual_style`…)
+  ve `services/matchExplanation.ts`'in girdisi.
+
+**Değerlendirilen ve REDDEDİLEN üç ikame (CTO, 19 Ağu 2026):**
+
+| İkame | Ret gerekçesi |
+|---|---|
+| `ChoiceResult`'a yapısal sinyal alanı (sözleşme değişmeden) | Resume yolunda çalışmıyor — orada champion kilitli `DailyGauntlet.progress`'ten geliyor. Aynı gün cihazda 7/7 doğrulanmış `completed_today` resume davranışına yeni kırılganlık sokardı. |
+| İstemci tarafı, tur zincirinden türetme | Yalnız 2 eksen (süre + yıl) üretir. D-06'nın reddettiği kalıbın aynısı: "6 eksenden geliyor" izlenimi veren ama 2 eksenden türeyen bir cümle ürünün zekâ iddiasını sahte temsil eder. |
+| `GauntletFilm`'e eksen alanı (sözleşme değişikliği) | İki katmanlı iş: kilitli sözleşme + olmayan verinin ingestion'da üretilmesi. Tek sprint'e sığmaz. |
+
+**Karar:** K-21 **ertelendi**. Yuvası C.9c DEĞİL (o Profile sadeleşmesi, eksen verisiyle
+ilgisi yok) — **Post-C.9 "Cinema DNA radar chart (6-axis alignment, data
+infrastructure)"** sprint'i. R-18 radar chart'ı ile K-21 aynı ingestion çalışmasına
+muhtaç; ikisi birlikte ele alınır ki "eksen verisi yok" keşfi ikinci kez yapılmasın.
+
+**Gate riski yok:** K-21 G-1…G-9 kriterlerinin hiçbirine girmiyor (crash-free,
+tamamlama oranı, watch feedback, kullanıcı kaybı — hiçbiri açıklama cümlesine bağlı
+değil).
 
 **Değiştirme protokolü:** Herhangi bir K/D/R/E maddesinin değişmesi CTO onayı + sürüm artışı + bu tabloya satır ekleme gerektirir. Claude Code bu dokümandaki hiçbir maddeyi tek başına değiştiremez, esnetemez veya yorumlayamaz.
 
