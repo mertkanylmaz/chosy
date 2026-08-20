@@ -177,6 +177,54 @@ native geçiş, CTO kararı). `app/(tabs)/_layout.tsx` 258 → 71 satır.
 
 ---
 
+## 2f. C.9c — PROFILE SADELEŞMESİ — TAMAMLANDI (19 Ağu 2026)
+
+**Bible:** K-06, K-07, K-08, K-48, R-12 · §7.3 · **Ön koşul:** C.9b
+
+Migration yok, RevenueCat tarafında iş yok — kapsam tamamen istemci.
+
+**Kaldırılanlar** (hiçbir bileşen dosyası silinmedi, yalnızca mount kalktı):
+
+| Kaldırılan | Gerekçe |
+|---|---|
+| `CinemaIdentity` (rank + 6-eksen radar) | §7.3 Rank ve Radar donmuş; K-08'in "Cinema DNA"sı `TasteDNA`'dır. Profilde tek DNA bölümü kaldı |
+| `CollectionsCard` | K-07. Tabloya yazan servis hiç olmamıştı — 5 koleksiyon kalıcı `0/threshold` gösteriyordu. Tablo + seed'e dokunulmadı |
+| "Retake Quiz" + PersonaBadge "Discover your type" | R-12. `archetype_id` verisi duruyor, arketip kartı veri gösterimi olarak kaldı; arketipi olmayan kullanıcıda kart hiç render edilmez |
+| "Founding Member" (ana kart + Settings, 2 giriş) | §7.3 lifetime satışı donmuş. `lifetime_founding` offering'i ve `/lifetime` route'u **korundu**, yalnızca Profile'dan link kalktı |
+| "Invite Friends" (Settings) | §7.3 referral donmuş |
+| `moodHistory` · `streakInfo` · `nextMilestone` · `referralStats` + `handleShareReferral` | Dördü de fetch ediliyor, hiçbiri render edilmiyordu — profil açılışı başına 5 gereksiz sorgu |
+
+**Eklenenler:**
+
+- Tek **"Chosy Pro"** CTA'sı → `triggerPaywall({ type: 'profile_upgrade' })` →
+  `offerings.current` (default). K-48: tek entitlement `chosy_plus`.
+- **`app/pro-mode.tsx`** — mood search'ün yeni evi. C.9b'de
+  `components/Home/MoodSearchScreen/`'e taşınan kod ilk kez mount ediliyor.
+- **`hooks/useProModeAccess.ts`** — `isPremium || legacy_mood_access`. Migration
+  **090**'da eklenen grandfathering kolonu **ilk kez burada okunuyor**; M0 kilidi
+  gereği relaunch öncesi hesaplar paywall'ı atlar. Fail-closed; okuma hatası
+  "kilitli"den ayrı bir durum olarak render edilir (Kural 1).
+- Profile sırası K-08'e yaklaştırıldı: DNA → Stats → Saved → Pro → Settings.
+
+**Bilinçli boşluklar (K-08 hedefliyor, bu turda inşa EDİLMEDİ):**
+**Streak** ve **Watched** bölümleri. Backlog: R-A / R-B.
+
+**İsim çakışması — kayda geçirildi.** C.9c keşfinde `/discover` yanlışlıkla
+"donmuş Discover tab'ı" sanıldı ve `handleBrowseMovies` push'unun kaldırılması
+kararlaştırıldı; uygulama sırasında hata yakalandı ve karar geri alındı. Doğrusu:
+
+| Yol | Ne | Durum |
+|---|---|---|
+| `app/(tabs)/mood.tsx` | Discover **tab'ı** (trending · upcoming · games hub) | ❄️ K-02, `discover_tab_enabled` |
+| `app/discover.tsx` | Mood search'ün **8 filmlik swipe destesi**, stack route | ✅ Canlı, flag yok |
+
+`MoodProfileResult` yalnızca 4 boyut kartı gösterir, **hiçbir film içermez** —
+"Browse Movies" ikincil bir keşif yüzeyi değil, mood search'ün tek teslim
+kanalıdır. Push korundu; `MoodSearchScreen.handleBrowseMovies` üstüne bir daha
+aynı hataya düşülmemesi için uyarı bloğu yazıldı.
+
+---
+
 ## 2.1 C.9 KEŞİF BULGULARI (ürünle ilgisiz, gözlemlenebilirlik)
 
 C.9a-2 sırasında keşfedilen, sprint kapsamı dışında ama **Kural 1'i (sessiz
@@ -245,11 +293,11 @@ migration numarası). Detayları için commit geçmişi ve
 | **M1** | PostHog event sözlüğü · Sentry release/dist · `v_algorithm_daily` · güvenlik taraması | ✅ 18 Ağu 2026 |
 | **M3** | Havuz derinliği ölçümü · cached-yol poster bug'ı · `poster_quality_ok` kararı | ✅ 18 Ağu 2026 |
 | **M2** | Kullanıcı-yerel 18:00 · timezone · DST | 🟡 **Kısmi** — Faz 2a ✅, Faz 2b tetikleyici bekliyor (§2b) |
-| **C.9b** | Home state machine · **production gauntlet** · C.4 AÇILMASI | ⬜ Sıradaki iş |
-| **C.9c** | Profile | ⬜ Bekliyor |
-| **C.9d** | Watchlist konsolidasyonu | ⬜ Bekliyor |
-| **R-A** | İlk deneyim | ⬜ Bekliyor |
-| **R-B** | Güvenilirlik | ⬜ Bekliyor |
+| **C.9b** | Home state machine · **production gauntlet** · C.4 AÇILMASI | ✅ 19 Ağu 2026 |
+| **C.9c** | Profile sadeleşmesi · Pro Mode · tek CTA · R-12 | ✅ 19 Ağu 2026 (§2f) — cihaz testi bekliyor |
+| **C.9d** | Watchlist konsolidasyonu | ⬜ Sıradaki iş |
+| **R-A** | İlk deneyim — **+ K-08 "Streak" bölümü** (C.9c'den devir) | ⬜ Bekliyor |
+| **R-B** | Güvenilirlik — **+ K-08 "Watched" bölümü** (C.9c'den devir) | ⬜ Bekliyor |
 | **R-C** | Para | ⬜ Bekliyor |
 | **R-D** | Çıkış | ⬜ Bekliyor |
 

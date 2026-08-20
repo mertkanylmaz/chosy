@@ -324,13 +324,24 @@ export default function MoodSearchScreen() {
   }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
 
   /**
-   * "Browse Movies" → MoodContext'e kaydet → Discover'a gec
+   * "Browse Movies" → MoodContext'e kaydet → film destesine gec
+   *
+   * ⚠️ İSİM ÇAKIŞMASI — silmeden once oku (C.9c, 19.08.2026):
+   * `app/discover.tsx` ile `app/(tabs)/mood.tsx` AYNI SEY DEGILDIR.
+   *   · `(tabs)/mood.tsx` = Discover TAB'i (trending/upcoming/games browse
+   *     hub'i). K-02 ile DONDURULDU, `discover_tab_enabled` flag'i false.
+   *   · `app/discover.tsx` = bu push'un hedefi. Mood search'un 8 filmlik
+   *     swipe destesi; stack route, flag YOK, CANLI.
+   * Asagidaki push donmus tab'a degil, canli desteye gider ve mood search'un
+   * TEK teslim kanalidir: `MoodProfileResult` yalnizca 4 boyut karti gosterir,
+   * hicbir film icermez. Bu push kalkarsa Pro Mode "mood yaz → kisilik okumasi
+   * → cikmaz sokak" olur ve `startPreload()` ciktisini kimse tuketmez.
    *
    * B hibrit paywall: Free kullanici ilk aramasini yaptiktan sonra
-   * discover'a gonder, ama kota bittiyse sonraki "Find Movies"'te paywall goster.
-   * Su anki arama zaten basarili oldu — discover'a gitmesini engelleme.
+   * desteye gonder, ama kota bittiyse sonraki "Find Movies"'te paywall goster.
+   * Su anki arama zaten basarili oldu — desteye gitmesini engelleme.
    *
-   * Onboarding modu: discover'a onboarding=1 param'i gecilir → 5 film limiti aktif.
+   * Onboarding modu: `onboarding=1` param'i gecilir → 5 film limiti aktif.
    */
   const handleBrowseMovies = useCallback(() => {
     if (!tasteProfile) return;
@@ -343,10 +354,10 @@ export default function MoodSearchScreen() {
     );
     setPhase('input');
 
-    // Discover'a gonder — kota bilgisini yenile (badge guncellensin)
+    // Desteye gonder — kota bilgisini yenile (badge guncellensin)
     checkQuota();
     if (isOnboarding) {
-      // Onboarding akisi: discover 5 film limit + App Store review + paywall zinciri
+      // Onboarding akisi: 5 film limit + App Store review + paywall zinciri
       router.push({ pathname: '/discover', params: { onboarding: '1' } } as never);
     } else {
       router.push('/discover');

@@ -49,6 +49,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
+import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
@@ -56,34 +57,20 @@ import DiscoveryStats from '@/components/Profile/DiscoveryStats';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
-import CollectionsCard from '@/components/Profile/CollectionsCard';
-import { CinemaIdentity } from '@/components/Profile/CinemaIdentity';
-// import StreakCard from '@/components/Profile/StreakCard';
-// import type { StreakCardProps } from '@/components/Profile/StreakCard';
+// C.9c: CollectionsCard + CinemaIdentity kaldirildi (K-07 · bible §7.3 "Rank · Radar
+// donmus"). Bilesen dosyalari SILINMEDI, yalnizca profilden mount edilmiyor.
+// C.9c: StreakCard hala baglanmadi — K-08 "Streak" bolumu backlog (R-A).
 import {
   getLastParsedProfile,
-  getMoodHistory,
   getSwipeInsights,
   getUserStats,
 } from '@/services/profileService';
-import PersonaBadge from '@/components/Profile/PersonaBadge';
 import Purchases from 'react-native-purchases';
 
-import { clearWatchlist, getAppUserId, getWatchlist } from '@/services/watchlist';
+import { clearWatchlist, getWatchlist } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
-import {
-  getReferralStats,
-  type ReferralStats,
-} from '@/services/referralService';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { PLANS } from '@/constants/subscriptionPlans';
 import { getArchetype } from '@/constants/archetypes';
-import {
-  getStreakInfo,
-  getAllMilestones,
-  getUserMilestones,
-} from '@/services/gamification';
-import type { StreakInfo } from '@/services/gamification';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import {
@@ -95,7 +82,7 @@ import {
   toggleWatchlistReminders,
 } from '@/services/pushNotifications';
 
-import type { MoodHistoryItem, SwipeInsight, UserStats } from '@/types/profile';
+import type { SwipeInsight, UserStats } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -369,7 +356,6 @@ interface SettingsModalProps {
   onLanguageChange: (code: 'en' | 'tr') => void;
   isAnonymous: boolean;
   isPremium: boolean;
-  isLifetime: boolean;
   /** Aktif plan etiketi — Apple yonetim sayfasi oncesi gosterilir */
   currentPlanLabel: string;
   linkingAccount: boolean;
@@ -382,8 +368,6 @@ interface SettingsModalProps {
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
-  onFoundingMember: () => void;
-  onInviteFriends: () => void;
   onShareArchetype: () => void;
   onSignOut: () => void;
   /** Hesap silme akışını başlatır — iki aşamalı onay */
@@ -401,7 +385,6 @@ function SettingsModal({
   onLanguageChange,
   isAnonymous,
   isPremium: isPremiumUser,
-  isLifetime,
   currentPlanLabel,
   linkingAccount,
   notificationsEnabled,
@@ -413,8 +396,6 @@ function SettingsModal({
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
-  onFoundingMember,
-  onInviteFriends,
   onShareArchetype,
   onSignOut,
   onDeleteAccount,
@@ -604,31 +585,10 @@ function SettingsModal({
             </Text>
           )}
 
-          {/* Founding Member — sadece lifetime olmayan kullanicilar */}
-          {!isLifetime && (
-            <TouchableOpacity
-              style={settingsModalStyles.row}
-              onPress={() => { onClose(); onFoundingMember(); }}
-              activeOpacity={0.7}>
-              <View style={settingsModalStyles.rowLeft}>
-                <Ionicons name="diamond" size={16} color={Colors.gold} />
-                <Text style={settingsModalStyles.rowLabel}>{t('lifetime.settingsEntry')}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
-            </TouchableOpacity>
-          )}
-
-          {/* Invite Friends */}
-          <TouchableOpacity
-            style={settingsModalStyles.row}
-            onPress={() => { onClose(); onInviteFriends(); }}
-            activeOpacity={0.7}>
-            <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="people-outline" size={16} color={Colors.accentPrimary} />
-              <Text style={settingsModalStyles.rowLabel}>{t('referral.title')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
-          </TouchableOpacity>
+          {/* C.9c: "Founding Member" (lifetime) ve "Invite Friends" (referral)
+              satirlari kaldirildi — ikisi de bible §7.3'te donmus. Paywall'a
+              tek giris kaldi: yukaridaki abonelik satiri + Profile'daki
+              "Chosy Pro" CTA'si (ikisi de `offerings.current`). */}
 
           {/* Share My Archetype */}
           <TouchableOpacity
@@ -721,12 +681,13 @@ export default function ProfileScreen() {
   const { t, language, setLanguage } = useLanguage();
   const { isPremium, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
+  /** Pro Mode satirindaki kilit ikonu — yetki kontrolu ekranin kendisinde */
+  const proAccess = useProModeAccess();
 
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
 
   const [stats, setStats] = useState<UserStats | null>(null);
-  const [moodHistory, setMoodHistory] = useState<MoodHistoryItem[]>([]);
   const [swipeInsights, setSwipeInsights] = useState<SwipeInsight | null>(null);
   const [lastProfile, setLastProfile] = useState<TasteProfile | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -747,14 +708,14 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
   const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
-  const [referralStats, setReferralStats] = useState<ReferralStats | null>(null);
-  // const [codeCopied, setCodeCopied] = useState(false); // Referral card UI kaldirildi
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
 
-  // ── Streak state (UI'dan kaldirildi, backend dokunulmadi) ─────────────────
-  const [streakInfo, setStreakInfo] = useState<StreakInfo | null>(null);
-  const [nextMilestone, setNextMilestone] = useState<{ title: string; threshold: number; currentProgress: number } | null>(null);
+  // C.9c: moodHistory · streakInfo · nextMilestone · referralStats state'leri
+  // kaldirildi. Dordu de fetch ediliyordu ama HICBIRI render edilmiyordu —
+  // her profil acilisinda 5 gereksiz sorgu. Streak/Watched bolumleri K-08'de
+  // hedefleniyor ama bu turda insa EDILMIYOR (backlog R-A/R-B); geri
+  // geldiklerinde fetch de birlikte gelir.
 
   // ─── Avatar yukleme ───────────────────────────────────────────────────────
 
@@ -807,9 +768,8 @@ export default function ProfileScreen() {
       setArchetypeId(calibrationArchetypeId ?? null);
 
       // Faz 1: Kritik veriler (üst kısımda görünen)
-      const [profileData, streakData, pushStatus, dailyPickStatus, watchlistRemindersStatus] = await Promise.all([
+      const [profileData, pushStatus, dailyPickStatus, watchlistRemindersStatus] = await Promise.all([
         getLastParsedProfile(userId),
-        getStreakInfo(),
         getNotificationStatus(),
         getDailyPickStatus(),
         getWatchlistRemindersStatus(),
@@ -819,20 +779,14 @@ export default function ProfileScreen() {
       setWatchlistRemindersEnabled(watchlistRemindersStatus);
 
       setLastProfile(profileData);
-      setStreakInfo(streakData);
 
       // Faz 2: İkincil veriler (aşağıda, lazy)
-      const [statsData, historyData, insightsData, allMilestonesData, userMilestonesData] =
-        await Promise.all([
-          getUserStats(userId),
-          getMoodHistory(userId),
-          getSwipeInsights(userId),
-          getAllMilestones(),
-          getUserMilestones(),
-        ]);
+      const [statsData, insightsData] = await Promise.all([
+        getUserStats(userId),
+        getSwipeInsights(userId),
+      ]);
 
       setStats(statsData);
-      setMoodHistory(historyData);
       setSwipeInsights(insightsData);
 
       // Watchlist count + poster previews (non-blocking)
@@ -844,33 +798,6 @@ export default function ProfileScreen() {
           .filter((url): url is string => !!url);
         setWatchlistPosters(posters);
       }).catch(() => {});
-
-      // Referral stats (non-blocking)
-      getReferralStats(userId).then((rs) => {
-        if (rs) setReferralStats(rs);
-      }).catch(() => {});
-
-      // Sonraki streak milestone'u hesapla
-      if (streakData && allMilestonesData.length > 0) {
-        const earnedSlugs = new Set(userMilestonesData.map((m) => m.milestone.slug));
-        const streakMilestones = allMilestonesData
-          .filter((m) => m.category === 'streak')
-          .sort((a, b) => a.threshold - b.threshold);
-
-        const nextStreakMilestone = streakMilestones.find(
-          (m) => !earnedSlugs.has(m.slug) && m.threshold > streakData.currentStreak,
-        );
-
-        if (nextStreakMilestone) {
-          setNextMilestone({
-            title: nextStreakMilestone.title,
-            threshold: nextStreakMilestone.threshold,
-            currentProgress: streakData.currentStreak,
-          });
-        } else {
-          setNextMilestone(null);
-        }
-      }
     } catch (err) {
       logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);
@@ -1190,29 +1117,8 @@ export default function ProfileScreen() {
     }
   }
 
-  // ─── Referral Share ────────────────────────────────────────────────────
-
-  async function handleShareReferral(): Promise<void> {
-    if (!referralStats?.inviteCode) return;
-    const code = referralStats.inviteCode;
-
-    posthogAnalytics.track('referral_share_tapped', {
-      invite_code: code,
-      source: 'profile_card',
-    });
-
-    try {
-      const msg = `Join me on Chosy 🎬\nGet +5 searches when you sign up: chosy.vercel.app?ref=${code}`;
-      const url = `https://chosy.vercel.app?ref=${code}`;
-      await Share.share(
-        Platform.OS === 'ios'
-          ? { message: msg, url }
-          : { message: `${msg}\n${url}` },
-      );
-    } catch (err) {
-      logger.error('[Profile] shareReferral error:', err);
-    }
-  }
+  // C.9c: handleShareReferral kaldirildi — referral v1 kapsaminda donmus
+  // (bible §7.3) ve fonksiyon zaten hicbir yerden cagrilmiyordu.
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
@@ -1341,78 +1247,26 @@ export default function ProfileScreen() {
           <Animated.View style={sectionsAnimStyle}>
           <View style={styles.sections}>
 
-            {/* b) Archetype Hero Card — BÜYÜTÜLMÜŞ */}
-            <View style={styles.archetypeHeroCard}>
-              {archetypeId != null ? (
-                <>
-                  <Image
-                    source={getArchetype(archetypeId)?.image ?? AvatarIcons.clapperboard}
-                    style={styles.archetypeHeroIcon}
-                    resizeMode="contain"
-                  />
-                  <Text style={styles.archetypeHeroName}>
-                    {t(getArchetype(archetypeId)?.nameKey ?? '')}
-                  </Text>
-                  <Text style={styles.archetypeHeroTagline} numberOfLines={2}>
-                    {t(getArchetype(archetypeId)?.descKey ?? '')}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <PersonaBadge
-                    archetypeId={null}
-                    onPress={() => router.push('/onboarding' as never)}
-                  />
-                </>
-              )}
-              {/* Retake Quiz link — onay diyalogu ile */}
-              <TouchableOpacity
-                style={styles.retakeQuizBtn}
-                onPress={() => {
-                  hapticLight();
-                  Alert.alert(
-                    t('profile.retakeQuizConfirmTitle'),
-                    t('profile.retakeQuizConfirmMessage'),
-                    [
-                      { text: t('common.cancel'), style: 'cancel' },
-                      {
-                        text: t('common.continue'),
-                        onPress: () => {
-                          router.push({ pathname: '/onboarding', params: { mode: 'retake' } } as never);
-                        },
-                      },
-                    ],
-                  );
-                }}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="refresh-outline" size={14} color={Colors.gold} />
-                <Text style={styles.retakeQuizText}>{t('profile.retakeQuiz')}</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* c) Upgrade CTAs — compact, yan yana */}
-            {tier !== 'lifetime' && (
-              <View style={styles.upgradeCtaRow}>
-                {!isPremium && (
-                  <TouchableOpacity
-                    style={styles.upgradeCta}
-                    onPress={() => triggerPaywall({ type: 'profile_upgrade' })}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="sparkles" size={14} color={Colors.gold} />
-                    <Text style={styles.upgradeCtaText}>{t('profile.upgradePlus')}</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.upgradeCta, isPremium && { flex: 1 }]}
-                  onPress={() => router.push('/lifetime' as never)}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons name="diamond-outline" size={14} color={Colors.gold} />
-                  <Text style={styles.upgradeCtaText}>{t('lifetime.profileBanner')}</Text>
-                  <Ionicons name="chevron-forward" size={12} color={Colors.gold} />
-                </TouchableOpacity>
+            {/* a) Archetype Hero Card — yalnizca VERI gosterimi.
+                R-12: quiz giris noktalari kaldirildi. "Retake Quiz" linki ve
+                arketipsiz kullaniciya gosterilen PersonaBadge ("Discover your
+                type") ikisi de /onboarding'e goturuyordu. archetype_id verisi
+                SILINMEDI — cold-start seed olarak duruyor, yalnizca artik
+                quiz'den yeniden yazilamiyor. Arketipi olmayan kullanicida kart
+                hic render edilmez (bos kart / olu CTA birakmaz). */}
+            {archetypeId != null && (
+              <View style={styles.archetypeHeroCard}>
+                <Image
+                  source={getArchetype(archetypeId)?.image ?? AvatarIcons.clapperboard}
+                  style={styles.archetypeHeroIcon}
+                  resizeMode="contain"
+                />
+                <Text style={styles.archetypeHeroName}>
+                  {t(getArchetype(archetypeId)?.nameKey ?? '')}
+                </Text>
+                <Text style={styles.archetypeHeroTagline} numberOfLines={2}>
+                  {t(getArchetype(archetypeId)?.descKey ?? '')}
+                </Text>
               </View>
             )}
 
@@ -1433,10 +1287,10 @@ export default function ProfileScreen() {
               </View>
             ) : null}
 
-            {/* c2) Cinema Identity — oyun sisteminin profildeki karsiligi */}
-            <CinemaIdentity />
-
-            {/* d) Taste DNA */}
+            {/* b) Taste DNA — K-08'in "Cinema DNA" bolumu.
+                CinemaIdentity (rank + 6-eksen radar) buradan kaldirildi:
+                bible §7.3 Rank ve Radar'i donduruyor, profilde tek DNA bolumu
+                kalir. Bilesen dosyasi silinmedi. */}
             <SectionHeading title={t('profile.tasteDNA')} />
             {!isPremium ? (
               <TouchableOpacity
@@ -1459,7 +1313,7 @@ export default function ProfileScreen() {
               />
             )}
 
-            {/* e) Discovery Stats */}
+            {/* c) Discovery Stats */}
             <SectionHeading title={t('profile.discoveryStats')} />
             <DiscoveryStats
               stats={stats}
@@ -1467,10 +1321,15 @@ export default function ProfileScreen() {
               loading={loading}
             />
 
-            {/* f) Collections */}
-            <CollectionsCard />
+            {/* K-07: Badge / Collections UI kaldirildi. `CollectionsCard`
+                bilesen dosyasi, `milestone_collections` seed'i ve
+                `user_collection_progress` tablosu SILINMEDI — yalnizca render
+                edilmiyor. Karta yazan hicbir servis yoktu; 5 koleksiyon da
+                kalici olarak 0/threshold gosteriyordu. */}
 
-            {/* g) Watchlist summary row — mini poster previews + count */}
+            {/* d) Saved — watchlist ozeti (K-06: Watchlist ayri tab degil,
+                Profile alt sayfasi) */}
+            <SectionHeading title={t('profile.savedSection')} />
             <TouchableOpacity
               style={styles.watchlistSummaryRow}
               onPress={() => router.push('/watchlist-detail' as never)}
@@ -1503,6 +1362,50 @@ export default function ProfileScreen() {
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={Colors.textGrey} />
+            </TouchableOpacity>
+
+            {/* e) Pro — K-08 sirasindaki "Pro" bolumu.
+                Tek CTA (K-48: tek entitlement `chosy_plus`). Onceki iki CTA'dan
+                "Founding Member" kaldirildi: bible §7.3 lifetime satisini
+                donduruyor. `lifetime_founding` offering'i RevenueCat'te durur,
+                `/lifetime` route'u kod olarak korunur — yalnizca Profile'dan
+                link verilmez. */}
+            <SectionHeading title={t('profile.proSection')} />
+
+            {!isPremium && (
+              <TouchableOpacity
+                style={styles.proCta}
+                onPress={() => { hapticLight(); triggerPaywall({ type: 'profile_upgrade' }); }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="sparkles" size={18} color={Colors.gold} />
+                <View style={styles.proCtaTextBlock}>
+                  <Text style={styles.proCtaTitle}>{t('profile.chosyPro')}</Text>
+                  <Text style={styles.proCtaSubtitle}>{t('profile.chosyProSubtitle')}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.gold} />
+              </TouchableOpacity>
+            )}
+
+            {/* Pro Mode — mood search girisi. Gate ekranin KENDISINDE
+                (`app/pro-mode.tsx`): `isPremium || legacy_mood_access`.
+                Buradaki kilit ikonu yalnizca gorsel isarettir, yetki kontrolu
+                degildir — tek dogruluk kaynagi `useProModeAccess`. */}
+            <TouchableOpacity
+              style={styles.proModeRow}
+              onPress={() => { hapticLight(); router.push('/pro-mode' as never); }}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="color-wand-outline" size={18} color={Colors.accentPrimary} />
+              <View style={styles.proModeTextBlock}>
+                <Text style={styles.proModeTitle}>{t('profile.proMode')}</Text>
+                <Text style={styles.proModeSubtitle}>{t('profile.proModeSubtitle')}</Text>
+              </View>
+              <Ionicons
+                name={proAccess.allowed ? 'chevron-forward' : 'lock-closed'}
+                size={16}
+                color={Colors.textGrey}
+              />
             </TouchableOpacity>
 
           </View>
@@ -1561,7 +1464,6 @@ export default function ProfileScreen() {
         onLanguageChange={(code) => setLanguage(code)}
         isAnonymous={isAnonymous}
         isPremium={isPremium}
-        isLifetime={tier === 'lifetime'}
         currentPlanLabel={
           tier === 'lifetime' ? t('paywall.lifetimeTitle')
             : tier === 'annual' ? t('paywall.annualTitle')
@@ -1578,8 +1480,6 @@ export default function ProfileScreen() {
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}
-        onFoundingMember={() => router.push('/lifetime' as never)}
-        onInviteFriends={() => router.push('/referral' as never)}
         onShareArchetype={() => void handleShareArchetype()}
         onSignOut={handleSignOut}
         onDeleteAccount={handleDeleteAccount}
@@ -1848,45 +1748,64 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     opacity: 0.85,
   },
-  retakeQuizBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  retakeQuizText: {
-    color: Colors.gold,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.2,
-    textDecorationLine: 'underline',
-  },
+  // C.9c: retakeQuizBtn/retakeQuizText (R-12) ve upgradeCtaRow/upgradeCta
+  // (cift CTA) stilleri kaldirildi — kullanan JSX kalmadi.
 
-  // ── Upgrade CTA Row ──
-  upgradeCtaRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  upgradeCta: {
-    flex: 1,
+  // ── Pro bolumu ──
+  /** Tek "Chosy Pro" CTA'si — `offerings.current` (default) offering'ine gider */
+  proCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.card,
     backgroundColor: Colors.gold + '12',
     borderWidth: 1,
-    borderColor: Colors.gold + '25',
+    borderColor: Colors.gold + '30',
   },
-  upgradeCtaText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '600',
+  proCtaTextBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  proCtaTitle: {
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.gold,
-    letterSpacing: 0.1,
+    letterSpacing: 0.2,
+  },
+  proCtaSubtitle: {
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
+    color: Colors.textGrey,
+  },
+  /** Pro Mode (mood search) giris satiri */
+  proModeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: Colors.cardSolid,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    paddingVertical: 14,
+    paddingHorizontal: Spacing.md,
+    ...Shadows.light,
+  },
+  proModeTextBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  proModeTitle: {
+    color: Colors.textWhite,
+    fontSize: 15,
+    fontWeight: '600',
+    letterSpacing: 0.2,
+  },
+  proModeSubtitle: {
+    color: Colors.textGrey,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
   },
 
   // ── Watchlist Summary Row ──

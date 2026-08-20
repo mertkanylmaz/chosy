@@ -134,6 +134,12 @@ Product Truth     Watched-it Rate
 
 ### 2.8 Kalite ve çıkış
 
+> **Not (19.08.2026, C.9c Faz 1):** R-12'nin (§4) kaynak hücresindeki "IA §2.8"
+> atfı **IA dokümanına** aittir, bu bölüme değil. §2.8 quiz hakkında hiçbir karar
+> içermez. Quiz'in tek bağlayıcı hükümleri **K-11** (onboarding'de quiz yok) ve
+> **R-12** (Profile giriş noktası kaldırılır, `archetype_id` verisi cold-start
+> seed olarak korunur, şema değişikliği yok). Çakışma halinde R-12 geçerlidir.
+
 | # | Karar | Kaynak |
 |---|---|---|
 | **K-52** | **6 release gate**: Product · Data · Reliability · Monetization · Accessibility · Store. Altısı birlikte geçmeden production yok. | SONHALİ §70 |
@@ -304,7 +310,7 @@ Bible'ın altı adının uygulamadaki karşılığı:
 | **R-09** | Home Screen widget | EXIT §18 | **Ertelendi (1K–3K).** WidgetKit + Expo, config plugin ve native extension gerektirir; managed workflow'da tek sprintlik iş. Retention hipotezi test edilecek kohort mevcut değil. |
 | **R-10** | 5 Custom Product Page | EXIT §21 | **Tek sayfa + 6 ekranlık anlatı** (Stop scrolling → Four films → Three choices → One winner → Your taste evolves → Tomorrow we know you better). CPP/PPO testleri trafik ister; trafik yokken varyant üretmek gürültüdür. |
 | **R-11** | 6 growth engine (ASO derinliği, social content, creator seeding, referral, App Store events, seasonal gauntlet) | EXIT §20-31 | **Kapatıldı — tanım gereği v1 sonrası.** Marketing, bu dokümanın kapısından geçildikten sonra başlar. CMO projesinde bekletilir. |
-| **R-12** | Quiz'in kalması | IA §2.8'de açık bırakılmıştı | **Karar veriliyor: giriş noktası kaldırılır.** `archetype_id`'yi quiz'den yazmak "arketip davranıştan kazanılır" kilidiyle çelişir ve DNA anlatısını yalanlar. Mevcut değerler **silinmez**, cold-start seed olarak kalır. Şema değişikliği yok. |
+| **R-12** | Quiz'in kalması | IA §2.8'de açık bırakılmıştı *(IA dokümanının §2.8'i — bu belgenin §2.8'i değil, bkz. oradaki not)* | **Karar veriliyor: giriş noktası kaldırılır.** `archetype_id`'yi quiz'den yazmak "arketip davranıştan kazanılır" kilidiyle çelişir ve DNA anlatısını yalanlar. Mevcut değerler **silinmez**, cold-start seed olarak kalır. Şema değişikliği yok. |
 | **R-13** | Grup gauntlet altyapısı | V2 §13, EXIT §29 | **Faz 2. Kapatıldı.** |
 | **R-14** | Cinema Compatibility / sosyal karşılaştırma | EXIT §29 | **10K sonrası. Kapatıldı.** |
 | **R-15** | Android | EXIT §69 | **3–5K MAU + stabil retention sonrası. Kapatıldı.** |

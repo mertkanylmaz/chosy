@@ -239,7 +239,8 @@
     "getStarted": "Başla",
     "save": "Kaydet",
     "loading": "Yukleniyor...",
-    "remove": "Kaldir"
+    "remove": "Kaldir",
+    "back": "Geri"
   },
   "entry": {
     "howAreYouFeeling": "Bu gece nasıl\nhissediyorsun?",
@@ -545,7 +546,20 @@
     "retakeQuizConfirmTitle": "Testi Tekrarla?",
     "retakeQuizConfirmMessage": "Bu, mevcut sinefil arketipini ve zevk profilini yeniden hesaplayacak. Devam etmek istiyor musun?",
     "watchlistSummaryCount": "Izleme Listesi (%{count} film)",
-    "watchlistSummaryEmpty": "Izleme Listesi"
+    "watchlistSummaryEmpty": "Izleme Listesi",
+    "savedSection": "Kaydedilenler",
+    "proSection": "Pro",
+    "chosyPro": "Chosy Pro",
+    "chosyProSubtitle": "Kaçırdığın günleri oyna · zevkinin değişimini gör",
+    "proMode": "Pro Mode",
+    "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul"
+  },
+  "proMode": {
+    "title": "Pro Mode",
+    "lockedTitle": "Pro Mode, Chosy Pro'nun parçası",
+    "lockedBody": "Nasıl hissettiğini anlat, mood'una uyan filmi bul — bu akşamın dört filminin ötesinde.",
+    "errorTitle": "Erişimini kontrol edemedik",
+    "errorBody": "Planını doğrulayamadan bağlantı koptu. Birazdan tekrar dene."
   },
   "auth": {
     "welcomeTitle": "Mood'un. Filmlerin.",

@@ -239,7 +239,8 @@
     "getStarted": "Get Started",
     "save": "Save",
     "loading": "Loading...",
-    "remove": "Remove"
+    "remove": "Remove",
+    "back": "Back"
   },
   "entry": {
     "howAreYouFeeling": "How are you\nfeeling tonight?",
@@ -545,7 +546,20 @@
     "retakeQuizConfirmTitle": "Retake Quiz?",
     "retakeQuizConfirmMessage": "This will recalculate your cinephile archetype and taste profile. Do you want to continue?",
     "watchlistSummaryCount": "Watchlist (%{count} films)",
-    "watchlistSummaryEmpty": "Watchlist"
+    "watchlistSummaryEmpty": "Watchlist",
+    "savedSection": "Saved",
+    "proSection": "Pro",
+    "chosyPro": "Chosy Pro",
+    "chosyProSubtitle": "Replay missed days · see how your taste evolves",
+    "proMode": "Pro Mode",
+    "proModeSubtitle": "Describe a mood, get a matching film"
+  },
+  "proMode": {
+    "title": "Pro Mode",
+    "lockedTitle": "Pro Mode is part of Chosy Pro",
+    "lockedBody": "Describe how you feel and get a film matched to your mood — beyond tonight's four.",
+    "errorTitle": "We couldn't check your access",
+    "errorBody": "The connection dropped before we could confirm your plan. Try again in a moment."
   },
   "auth": {
     "welcomeTitle": "Your mood. Your movies.",
