@@ -4,7 +4,9 @@
  * UX Redesign: Watchlist tab kaldirildi, bu ekran Profile'dan
  * "See All" ile acilir. Back button ile Profile'a doner.
  *
- * Tum islevselligi mevcut watchlist.tsx'den tasindi:
+ * C.9d: Watchlist ekraninin TEK kaynagi burasi. Ikizi olan
+ * `app/(tabs)/watchlist.tsx` silindi (IA karari K-06 — Watchlist ayri tab
+ * degil, Profile alt sayfasi). Bu dosya su islevlerin tamamini tasir:
  *   - 2-sutunlu grid + grouped (by mood) gorunumleri
  *   - Arama, siralama, izlendi filtreleme
  *   - Roulette CTA, uzun basma menu, toplu silme
@@ -108,7 +110,6 @@ export default function WatchlistDetailScreen() {
   /**
    * Roulette erisim yolu acik mi (C.6, PRODUCT_OS §7.4). Varsayilan `false`:
    * flag okunana kadar kisayol GOSTERILMEZ. Kod ve /roulette rotasi duruyor.
-   * Aynen `app/(tabs)/watchlist.tsx` — iki ekran ayni kisayolu tasiyor.
    */
   const [rouletteEnabled, setRouletteEnabled] = useState(false);
 

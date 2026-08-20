@@ -62,10 +62,9 @@ export default function TabLayout() {
         <Icon sf={{ default: 'person', selected: 'person.fill' }} />
         <Label>{t('tabs.profile')}</Label>
       </NativeTabs.Trigger>
-      {/* Watchlist — tab bar'dan gizle, dosya dizinde kalıyor (expo-router gerekliliği) */}
-      <NativeTabs.Trigger name="watchlist" hidden>
-        <Label>{t('tabs.watchlist')}</Label>
-      </NativeTabs.Trigger>
+      {/* C.9d: Watchlist tab'ı ve `(tabs)/watchlist.tsx` kaldırıldı. Ekran tek
+          bir yerde yaşıyor: `app/watchlist-detail.tsx` (Profile > Saved).
+          Bkz. IA kararı K-06 — Watchlist ayrı tab değil, Profile alt sayfası. */}
     </NativeTabs>
   );
 }

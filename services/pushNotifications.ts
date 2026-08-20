@@ -54,7 +54,7 @@ Notifications.setNotificationHandler({
 
 /** Deep link data attached to push notifications */
 export interface NotificationData {
-  screen?: string;       // e.g. 'mood', 'games', 'watchlist', 'film'
+  screen?: string;       // e.g. 'mood', 'games', 'profile', 'film'
   filmId?: string;       // for film detail navigation
   gameId?: string;       // for specific game navigation
   action?: string;       // custom action identifier
@@ -406,11 +406,13 @@ export function getDeepLinkFromNotification(
 ): string | null {
   if (!data?.screen) return null;
 
+  // C.9d: `case 'watchlist'` kaldırıldı — `(tabs)/watchlist.tsx` silindi ve
+  // bu dalı üreten hiçbir bildirim yoktu. Kırık bir hedefi canlı sözleşmede
+  // bırakmıyoruz; watchlist bildirimi gerekirse hedefi o zamanki ihtiyaca
+  // göre tanımlanır. Bilinmeyen `screen` zaten default'ta null döner.
   switch (data.screen) {
     case 'mood':
       return '/(tabs)';
-    case 'watchlist':
-      return '/(tabs)/watchlist';
     case 'profile':
       return '/(tabs)/profile';
     case 'games':
