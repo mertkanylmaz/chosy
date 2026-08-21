@@ -7,12 +7,14 @@
  *  - Top 1 yönetmen satırı (SwipeInsight'tan, watchlist bazlı)
  */
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import {
   Eye,
   BookmarkSimple,
   Lightbulb,
   ChartBar,
+  CaretRight,
 } from 'phosphor-react-native';
 import type { IconProps } from 'phosphor-react-native';
 
@@ -36,30 +38,56 @@ interface Props {
 
 /**
  * Tek istatistik kutusu — Phosphor icon ile.
+ *
+ * `onPress` verilirse kutu dokunulabilir olur. Bu yalnizca Pro Mode turevi
+ * sayaclar icindir (asagidaki not): sayaci besleyen yuzeye goturur.
+ *
+ * Dokunulabilir kutuda affordance ikilidir: sag ustte chevron + etiketin
+ * altinda `hint` satiri. Chevron tek basina "bu kart bir yere gidiyor" der
+ * ama NEREYE gittigini soylemez; sayaci 0 olan kullanicinin ihtiyaci olan
+ * da tam olarak o. Statik kutularda ikisi de cizilmez.
  */
 function StatCard({
   value,
   label,
   IconComp,
-  emptyHint,
+  hint,
+  onPress,
 }: {
   value: number;
   label: string;
   IconComp: React.ComponentType<IconProps>;
-  /** 0 degerinde ciplak "0" yerine gosterilecek yonlendirme */
-  emptyHint?: string;
+  /** Dokunulabilir kutularda etiketin altinda gosterilen yonlendirme */
+  hint?: string;
+  /** Verilirse kutu dokunulabilir olur ve bu hedefe goturur */
+  onPress?: () => void;
 }) {
   const isEmpty = value === 0;
-  return (
-    <View style={styles.statCard}>
+  const body = (
+    <>
       <View style={styles.statIconRow}>
         <IconComp size={14} color={Colors.textGrey} weight="duotone" />
+        {onPress && <CaretRight size={12} weight="bold" color={Colors.textGrey} />}
       </View>
       <Text style={[styles.statValue, isEmpty && styles.statValueEmpty]}>{value}</Text>
-      <Text style={styles.statLabel}>
-        {isEmpty && emptyHint ? emptyHint : label}
-      </Text>
-    </View>
+      <Text style={styles.statLabel}>{label}</Text>
+      {onPress && hint ? <Text style={styles.statHint}>{hint}</Text> : null}
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.statCard}>{body}</View>;
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.statCard}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={hint ? `${label} — ${hint}` : label}>
+      {body}
+    </TouchableOpacity>
   );
 }
 
@@ -71,6 +99,21 @@ function StatCard({
  */
 export default function DiscoveryStats({ stats, insights, loading }: Props) {
   const { t, language } = useLanguage();
+  const router = useRouter();
+
+  /**
+   * "Mood Sessions" ve "Movies Watched" sayaclarinin hedefi (C.9d, CTO karari).
+   *
+   * Ikisi de artik kendiliginden dolmuyor: `total_sessions` yalnizca
+   * `sessions` tablosuna yazan mood search'ten gelir ve mood search C.9c'de
+   * Pro Mode arkasina alindi; `total_discovered` ise `swipes` tablosunu sayar
+   * ve o tabloya yazan client yolu kalmadi. Kartlar bugune kadar HICBIR yere
+   * gitmiyordu (bilesende tek `onPress` yoktu) — dokunus hedefi burada
+   * eklendi, sayaci besleyen tek yuzey Pro Mode oldugu icin oraya gider.
+   */
+  const goProMode = React.useCallback(() => {
+    router.push('/pro-mode' as never);
+  }, [router]);
 
   const discovered = (insights?.total_saves ?? 0) + (insights?.total_skips ?? 0);
 
@@ -95,8 +138,8 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
             Sira: gercekten dolu olanlar once. "Movies Watched" swipe turevi
             (`user_stats.total_discovered`) — oyundan/film detayindan eklenen
             filmler swipe satiri uretmedigi icin watchlist doluyken bile 0
-            kalabiliyor. En sona alindi ve 0'da ciplak sayi yerine yonlendirme
-            gosteriliyor.
+            kalabiliyor. En sona alindi; sayinin altindaki `hint` satiri ile
+            chevron sayaci besleyen yuzeye (Pro Mode) yonlendirir.
           */}
           <View style={styles.grid}>
             <StatCard
@@ -107,13 +150,16 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
             <StatCard
               value={stats?.total_sessions ?? 0}
               label={t('profile.statsMoodSessions')}
+              hint={t('profile.statsExploreInPro')}
               IconComp={Lightbulb}
+              onPress={goProMode}
             />
             <StatCard
               value={stats?.total_discovered ?? discovered}
               label={t('profile.statsMoviesWatched')}
-              emptyHint={t('profile.statsMoviesWatchedEmpty')}
+              hint={t('profile.statsExploreInPro')}
               IconComp={Eye}
+              onPress={goProMode}
             />
           </View>
 

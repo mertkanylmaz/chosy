@@ -41,6 +41,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight } from '@/utils/haptics';
 import { posthogAnalytics } from '@/services/posthog';
+import { logger } from '@/utils/logger';
+import * as Sentry from '@sentry/react-native';
 
 // ─── Ekran cercevesi ──────────────────────────────────────────────────────────
 
@@ -93,8 +95,14 @@ export default function ProModeScreen(): React.JSX.Element {
   }, [allowed, reason]);
 
   /**
-   * Kilitli ekrandaki tek CTA. Orchestrator paywall'i gostermezse (cooldown,
-   * A/B karari vb.) sessizce hicbir sey yapmayiz — tam ekran paywall'a duseriz.
+   * Kilitli ekrandaki tek CTA.
+   *
+   * ⚠️ Eski fallback `router.push('/paywall')` idi — ama `app/paywall.tsx`
+   * deprecated bir stub: acilir acilmaz `router.back()` yapiyor. Yani
+   * orchestrator `false` dondugunde kullanici bos bir ekran flash'i disinda
+   * hicbir sey gormuyordu. Kok neden (`paywall_profile_upgrade` flag'i)
+   * `triggerOrchestrator`'da giderildi; artik `false` bir anomalidir ve
+   * sessizce yutulmaz — Sentry'ye yansir (kural 1).
    */
   const handleUpgrade = useCallback(async () => {
     void hapticLight();
@@ -102,9 +110,14 @@ export default function ProModeScreen(): React.JSX.Element {
 
     const shown = await triggerPaywall({ type: 'profile_upgrade' });
     if (!shown) {
-      router.push('/paywall' as never);
+      Sentry.captureMessage('[ProMode] profile_upgrade paywall acilmadi', {
+        level: 'warning',
+        tags: { screen: 'pro_mode', flow: 'upgrade_cta' },
+        extra: { access_reason: reason },
+      });
+      logger.warn('[ProMode] profile_upgrade paywall acilmadi');
     }
-  }, [triggerPaywall, router]);
+  }, [triggerPaywall, reason]);
 
   // ── 1) Yetki okunuyor ──────────────────────────────────────────────────
   if (loading) {

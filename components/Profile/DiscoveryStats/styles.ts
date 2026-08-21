@@ -46,6 +46,7 @@ export const styles = StyleSheet.create({
   statIconRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 6,
   },
   statValue: {
@@ -62,6 +63,12 @@ export const styles = StyleSheet.create({
     color: Colors.textGrey,
     fontSize: 11,
     fontWeight: '500',
+  },
+  /** "Pro Mode'da kesfet" — chevron'un sozel karsiligi, tiklanabilirligi tasiyan vurgu */
+  statHint: {
+    color: Colors.accentPrimary,
+    fontSize: 10,
+    fontWeight: '600',
   },
 
   // ── Top Genre pills ──

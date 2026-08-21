@@ -493,7 +493,7 @@
     "watchlistProgress": "%{watched} of %{total} watched",
     "statsMoviesDiscovered": "Movies Watched",
     "statsMoviesWatched": "Movies Watched",
-    "statsMoviesWatchedEmpty": "Start swiping to track",
+    "statsExploreInPro": "Explore in Pro Mode",
     "statsMoviesSaved": "Movies Saved",
     "statsMoodSessions": "Mood Sessions",
     "statsFavoriteGenreStat": "Top Genre",
@@ -1397,6 +1397,7 @@
     "cancel": "Cancel",
     "championTitle": "Today's film",
     "championAccessibilityLabel": "Today's film: %{title}, %{year}, %{runtime} minutes",
+    "championOpenFilm": "Open details for %{title}",
     "close": "Close",
     "confidence": "I know %{percent}% of you",
     "loadError": "Today's films couldn't load. Try again.",
@@ -1419,7 +1420,7 @@
     },
     "watchProviders": {
       "label": "WHERE TO WATCH",
-      "openOn": "Open on %{provider}",
+      "viewProviders": "%{provider} — view watch options",
       "attribution": "Availability from TMDB"
     },
     "context": {

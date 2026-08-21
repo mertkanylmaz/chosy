@@ -493,7 +493,7 @@
     "watchlistProgress": "%{watched} / %{total} izlendi",
     "statsMoviesDiscovered": "İzlenen Film",
     "statsMoviesWatched": "İzlenen Film",
-    "statsMoviesWatchedEmpty": "Kaydirmaya basla, sayalim",
+    "statsExploreInPro": "Pro Mode'da keşfet",
     "statsMoviesSaved": "Kaydedilen Film",
     "statsMoodSessions": "Mood Oturumu",
     "statsFavoriteGenreStat": "En Çok Tür",
@@ -1397,6 +1397,7 @@
     "cancel": "Vazgeç",
     "championTitle": "Bugünün filmi",
     "championAccessibilityLabel": "Bugünün filmi: %{title}, %{year}, %{runtime} dakika",
+    "championOpenFilm": "%{title} detaylarını aç",
     "close": "Kapat",
     "confidence": "Seni %%{percent} tanıyorum",
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
@@ -1419,7 +1420,7 @@
     },
     "watchProviders": {
       "label": "NEREDE İZLENİR",
-      "openOn": "%{provider} üzerinde aç",
+      "viewProviders": "%{provider} — izleme seçeneklerini gör",
       "attribution": "Yayın bilgisi TMDB'den"
     },
     "context": {

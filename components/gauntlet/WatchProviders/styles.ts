@@ -44,4 +44,14 @@ export const styles = StyleSheet.create({
     opacity: 0.7,
     textAlign: 'center',
   },
+  /**
+   * "JustWatch" markası — `app/film/[id].tsx`'teki `justWatchText` ile aynı rol.
+   * Oradaki eski `Colors.textTertiary` yerine bu ekranın tokenı kullanılır
+   * (§9: iki palet aynı ağaçta karıştırılmaz); ayırt edici olan ağırlık farkı.
+   */
+  justWatchText: {
+    ...type.caption,
+    color: color.text.secondary,
+    fontWeight: '500',
+  },
 });

@@ -109,11 +109,17 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
  * Variant → remote config key mapping.
  * Listede olmayan variant'lar daima aktiftir.
  * Geri acma: DB'de ilgili key'i true yap → hydrate sonrasi aktif olur.
+ *
+ * ⚠️ `profile_upgrade` bu listede DEGILDIR (C.9d fix). 047 onu deaktif etmisti;
+ * C.9c ise Profile'daki "Chosy Pro" CTA'sini tek paywall girisi yapti ve flag
+ * geri acilmadi — CTA sessizce olu kaldi. Bu trigger `IMMEDIATE_TRIGGERS`
+ * uyesidir: kullanicinin bilerek bastigi giris, A/B kill-switch'e tabi otomatik
+ * bir varyant degil. `app_config.paywall_profile_upgrade` satiri DB'de durur
+ * ama artik okunmaz. Gate'i geri koymak = CTA'yi yeniden oldurmek.
  */
 const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
   streak_milestone: 'paywall_streak_milestone',
   streaming_link: 'paywall_streaming_link',
-  profile_upgrade: 'paywall_profile_upgrade',
   roulette_limit: 'paywall_roulette_limit',
   lifetime_soldout: 'paywall_lifetime_soldout',
 };

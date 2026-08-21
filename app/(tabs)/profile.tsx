@@ -43,6 +43,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
+import * as Sentry from '@sentry/react-native';
+
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -876,6 +878,33 @@ export default function ProfileScreen() {
   // ─── Aksiyonlar ───────────────────────────────────────────────────────────
 
   /**
+   * Upgrade niyetinin tek girisi — "Chosy Pro" CTA'si ve Settings'teki
+   * abonelik satiri buradan gecer.
+   *
+   * ⚠️ `triggerPaywall` bir Promise<boolean> dondurur ve orchestrator paywall'i
+   * gostermemeye karar verebilir. Onceden bu deger hic okunmuyordu: karar `null`
+   * oldugunda dokunus sessizce yutuluyordu (C.9d bug'i — kok neden
+   * `paywall_profile_upgrade` flag'iydi, `triggerOrchestrator`'da kaldirildi).
+   * Flag gittikten sonra `false` yalnizca beklenmedik durumda (or. trial)
+   * gelebilir; CTA zaten `!isPremium` ile korundugu icin bu bir anomalidir ve
+   * sessizce yutulmaz — Sentry'ye yansir (kural 1).
+   *
+   * `/paywall` route'una DUSULMEZ: o dosya deprecated bir stub'dir, acilir
+   * acilmaz `router.back()` yapar — olu bir fallback olurdu.
+   */
+  async function handleUpgradePress(): Promise<void> {
+    const shown = await triggerPaywall({ type: 'profile_upgrade' });
+    if (!shown) {
+      Sentry.captureMessage('[Profile] profile_upgrade paywall acilmadi', {
+        level: 'warning',
+        tags: { screen: 'profile', flow: 'upgrade_cta' },
+        extra: { isPremium, tier },
+      });
+      logger.warn('[Profile] profile_upgrade paywall acilmadi');
+    }
+  }
+
+  /**
    * Abonelik yonetimi — premium kullanicilar iOS native ayarlara,
    * free kullanicilar paywall'a yonlendirilir.
    */
@@ -891,7 +920,7 @@ export default function ProfileScreen() {
         await Linking.openURL(url);
       }
     } else {
-      triggerPaywall({ type: 'profile_upgrade' });
+      await handleUpgradePress();
     }
   }
 
@@ -1375,7 +1404,7 @@ export default function ProfileScreen() {
             {!isPremium && (
               <TouchableOpacity
                 style={styles.proCta}
-                onPress={() => { hapticLight(); triggerPaywall({ type: 'profile_upgrade' }); }}
+                onPress={() => { hapticLight(); void handleUpgradePress(); }}
                 activeOpacity={0.85}
               >
                 <Ionicons name="sparkles" size={18} color={Colors.gold} />

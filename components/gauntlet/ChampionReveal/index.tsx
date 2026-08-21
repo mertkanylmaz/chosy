@@ -32,11 +32,12 @@
  * ekran görüntüsü alınmaz, poster/still gönderilmez.
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 import * as Clipboard from 'expo-clipboard';
 import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -101,6 +102,7 @@ export function ChampionReveal({
   gauntletId,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language } = useLanguage();
+  const router = useRouter();
   const isReducedMotion = useReducedMotion();
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
@@ -188,6 +190,16 @@ export function ChampionReveal({
     }
   }, [champion.title, champion.year, date, rounds, language, showNotice, t]);
 
+  /**
+   * Afişe dokunuş → mevcut film detay ekranı (`app/film/[id].tsx`). SALT
+   * NAVİGASYON: §3.7 korunur, hiçbir şey yazılmaz. `champion.id` zaten
+   * `films.id` (UUID) ve o ekran da `.eq('id', id)` ile aynı kolonu okur.
+   */
+  const handleOpenFilm = useCallback(() => {
+    void hapticLight();
+    router.push(`/film/${champion.id}`);
+  }, [router, champion.id]);
+
   const posterOpacity = useSharedValue(animateReveal ? 0 : 1);
   const titleOpacity = useSharedValue(animateReveal ? 0 : 1);
   const metaOpacity = useSharedValue(animateReveal ? 0 : 1);
@@ -226,11 +238,19 @@ export function ChampionReveal({
       })}
     >
       <Animated.View style={[styles.posterWrapper, posterStyle]}>
-        <Image
-          source={{ uri: champion.posterUrl }}
-          style={styles.poster}
-          contentFit="cover"
-        />
+        <TouchableOpacity
+          style={styles.posterTouchable}
+          onPress={handleOpenFilm}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={t('gauntlet.championOpenFilm', { title: champion.title })}
+        >
+          <Image
+            source={{ uri: champion.posterUrl }}
+            style={styles.poster}
+            contentFit="cover"
+          />
+        </TouchableOpacity>
       </Animated.View>
 
       <Animated.View style={titleStyle}>

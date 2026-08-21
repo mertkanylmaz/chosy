@@ -178,7 +178,10 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
               style={styles.item}
               onPress={() => void handlePress(provider)}
               accessibilityRole="link"
-              accessibilityLabel={t('gauntlet.watchProviders.openOn', {
+              // ⚠️ "X'te aç" DEĞİL: `link` sağlayıcının kendi sayfası değil,
+              // TMDB'nin toplu "nerede izlenir" sayfasıdır (aşağıdaki `handlePress`
+              // her logoda AYNI adresi açar). Etiket gideceği yeri anlatır.
+              accessibilityLabel={t('gauntlet.watchProviders.viewProviders', {
                 provider: provider.provider_name,
               })}
             >
@@ -187,7 +190,16 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
           );
         })}
       </View>
-      <Text style={styles.attribution}>{t('gauntlet.watchProviders.attribution')}</Text>
+      {/*
+        Atıf: sağlayıcı verisi TMDB'ye JustWatch'tan gelir ve TMDB kullanım
+        şartları kaynağın adının gösterilmesini ister. Marka adı ÇEVRİLMEZ —
+        `app/film/[id].tsx:962`'deki desenin aynısı (düz, sönük "JustWatch").
+      */}
+      <Text style={styles.attribution}>
+        {t('gauntlet.watchProviders.attribution')}
+        {' · '}
+        <Text style={styles.justWatchText}>JustWatch</Text>
+      </Text>
     </View>
   );
 }

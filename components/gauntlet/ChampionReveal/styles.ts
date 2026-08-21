@@ -23,6 +23,11 @@ export const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: color.surface.raised,
   },
+  /** Dokunma alanı afişin TAMAMI — ayrı bir buton çizilmez (§10.2 sessizlik). */
+  posterTouchable: {
+    width: '100%',
+    height: '100%',
+  },
   poster: {
     width: '100%',
     height: '100%',
