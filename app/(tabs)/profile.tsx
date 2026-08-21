@@ -1044,10 +1044,14 @@ export default function ProfileScreen() {
                         // Başarılı — auth screen'e yönlendir
                         router.replace('/auth');
                       } else {
+                        // partial_failure: veri silindi, auth kaydi kaldi.
+                        // Oturum acik birakilir — tekrar dokunmak islemi bitirir.
                         const msg =
                           result.error === 'network_error'
                             ? t('profile.deleteAccountNetworkError')
-                            : t('profile.deleteAccountError');
+                            : result.error === 'partial_failure'
+                              ? t('profile.deleteAccountPartialError')
+                              : t('profile.deleteAccountError');
                         Alert.alert(t('profile.deleteAccountConfirmTitle'), msg);
                       }
                     } catch (err) {

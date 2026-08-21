@@ -68,8 +68,6 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
       return null; // V1.1'de eklenecek
     case 'profile_upgrade':
       return 'profile_upgrade';
-    case 'onboarding_complete':
-      return 'onboarding_complete';
     case 'roulette_limit':
       return 'roulette_limit';
     case 'lifetime_soldout':
@@ -85,7 +83,6 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
  */
 const IMMEDIATE_TRIGGERS: ReadonlySet<TriggerType> = new Set([
   'profile_upgrade',
-  'onboarding_complete',
   'roulette_limit',
   'lifetime_soldout',
 ]);

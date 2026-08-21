@@ -22,7 +22,10 @@ import * as ExpoCrypto from 'expo-crypto';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
+import * as Sentry from '@sentry/react-native';
+
 import { supabase } from './supabase';
+import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearQuotaCache } from './quotaEngine';
 import { getAppUserId } from './auth-utils';
@@ -415,7 +418,16 @@ export async function signOut(): Promise<void> {
 /** deleteAccount sonuç tipi */
 export type DeleteAccountResult =
   | { success: true }
-  | { success: false; error: 'not_authenticated' | 'server_error' | 'network_error'; message?: string };
+  | {
+      success: false;
+      /**
+       * `partial_failure` — veri silindi ama auth.users kaydi ayakta kaldi
+       * (Edge Function HTTP 207). Oturum KAPATILMAZ: ayni token'la yapilan
+       * ikinci cagri "users satiri yok" dalina duser ve auth kaydini siler.
+       */
+      error: 'not_authenticated' | 'server_error' | 'partial_failure' | 'network_error';
+      message?: string;
+    };
 
 /**
  * Kullanıcının tüm verilerini ve auth kaydını kalıcı olarak siler.
@@ -426,7 +438,7 @@ export type DeleteAccountResult =
  *   1. Supabase JWT al
  *   2. Edge Function `delete-account` çağır (servis rol yetkisi gerekli)
  *   3. Edge function: subscriptions + mood_searches + users (cascade) + auth.users siler
- *   4. Client: signOut + yerel session temizle
+ *   4. Client: RC logout + PostHog/Sentry reset + signOut + yerel session temizle
  *
  * @returns Başarı durumu ve opsiyonel hata detayı
  */
@@ -451,9 +463,26 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       },
     });
 
-    if (!response.ok && response.status !== 207) {
+    // ── HTTP 207: kismi basari — HATA sayilir ────────────────────────────
+    // Onceki kod `!response.ok && status !== 207` yaziyordu. 207 zaten 2xx
+    // oldugu icin `response.ok` true; kosul hicbir zaman girmiyordu ve
+    // auth.users silinemedigi halde client "hesap silindi" gosteriyordu
+    // (K-16 App Review blocker). Artik acikca basarisizlik.
+    if (response.status === 207) {
+      const body = await response.json().catch(() => ({}));
+      const warning = (body as { warning?: string }).warning ?? 'auth_user_delete_failed';
+      logger.error('[authService] deleteAccount kismi basari (207):', warning);
+      Sentry.captureMessage(`delete-account partial failure: ${warning}`, 'error');
+      return { success: false, error: 'partial_failure', message: warning };
+    }
+
+    if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       logger.error('[authService] deleteAccount edge function hatası:', response.status, body);
+      Sentry.captureMessage(
+        `delete-account failed: HTTP ${response.status}`,
+        'error',
+      );
       return {
         success: false,
         error: 'server_error',
@@ -472,9 +501,17 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       await clearQuotaCache(appUserId);
     }
 
+    // ── Analitik kimliklerini sifirla ────────────────────────────────────
+    // Silinen kullanicinin distinct_id'si cihazda kalirsa sonraki (anonim)
+    // oturumun event'leri silinmis kullaniciya baglanir. reset() yeni bir
+    // anonim distinct_id uretir. Sunucu tarafi PostHog silme islemi bu turun
+    // kapsami disinda (backlog).
+    posthogAnalytics.reset();
+    Sentry.setUser(null);
+
     // Tüm veri silindi — yerel oturumu kapat
     await supabase.auth.signOut();
-    logger.log('[authService] Hesap silindi, RC sıfırlandı ve oturum kapatıldı.');
+    logger.log('[authService] Hesap silindi, RC + analitik sıfırlandı, oturum kapatıldı.');
 
     return { success: true };
   } catch (err) {

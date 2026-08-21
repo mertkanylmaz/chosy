@@ -95,7 +95,7 @@ app/film/[id].tsx
 app/games/       _layout · index · cinemetrics · detective · fadein
                  imposter · logline · quoted · spotlight
 app/            auth · discover · entry · gate · lifetime · modal · onboarding
-                paywall · referral · roulette · setup-profile · splash · watchlist-detail
+                paywall · referral · roulette · setup-profile · watchlist-detail
 ```
 
 > ⚠️ Eski hafıza notu "`discover.tsx` mevcut değil" **artık geçersiz** — dosya var.

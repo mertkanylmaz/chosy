@@ -18,7 +18,6 @@ export type TriggerType =
   | 'custom_list_attempt'
   | 'share_card_generated'
   | 'profile_upgrade'
-  | 'onboarding_complete'
   | 'roulette_limit'
   | 'lifetime_soldout';
 
@@ -33,7 +32,6 @@ export type TriggerEvent =
   | { type: 'custom_list_attempt' }
   | { type: 'share_card_generated'; count: number }
   | { type: 'profile_upgrade' }
-  | { type: 'onboarding_complete' }
   | { type: 'roulette_limit' }
   | { type: 'lifetime_soldout' };
 
@@ -47,7 +45,6 @@ export type PaywallVariantName =
   | 'mood_history'
   | 'streaming_link'
   | 'profile_upgrade'
-  | 'onboarding_complete'
   | 'roulette_limit'
   | 'lifetime_soldout';
 

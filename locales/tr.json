@@ -536,6 +536,7 @@
     "deleteAccountSuccess": "Hesabın silindi.",
     "deleteAccountError": "Hesap silinemedi. Lütfen tekrar dene.",
     "deleteAccountNetworkError": "Baglanti yok. Internet baglantini kontrol edip tekrar dene.",
+    "deleteAccountPartialError": "Verilerin silindi ama giris kaydin kaldirilamadi. Islemi tamamlamak icin Hesabı Sil'e bir kez daha dokun.",
     "nicknameTitle": "Takma Adiniz",
     "nicknamePlaceholder": "Takma ad girin",
     "avatarHint": "Degistirmek icin dokun",

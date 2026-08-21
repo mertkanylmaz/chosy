@@ -19,7 +19,6 @@ import PaywallWatchlistFull from './PaywallWatchlistFull';
 import PaywallMoodHistory from './PaywallMoodHistory';
 import PaywallStreamingLink from './PaywallStreamingLink';
 import PaywallProfileUpgrade from './PaywallProfileUpgrade';
-import PaywallOnboarding from './PaywallOnboarding';
 import PaywallRouletteLimit from './PaywallRouletteLimit';
 import PaywallLifetimeSoldout from './PaywallLifetimeSoldout';
 
@@ -65,8 +64,6 @@ export default function ContextualPaywall({
       return <PaywallStreamingLink {...commonProps} />;
     case 'profile_upgrade':
       return <PaywallProfileUpgrade {...commonProps} />;
-    case 'onboarding_complete':
-      return <PaywallOnboarding {...commonProps} />;
     case 'roulette_limit':
       return <PaywallRouletteLimit {...commonProps} />;
     case 'lifetime_soldout':

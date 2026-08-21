@@ -30,7 +30,7 @@ import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 
@@ -229,10 +229,9 @@ type Phase = 'slides' | 'calibration' | 'taste_swipe' | 'reveal';
 export default function OnboardingScreen() {
   const router = useRouter();
   const { t } = useLanguage();
-  const params = useLocalSearchParams<{ mode?: string }>();
-  /** Retake mode — profile'dan tetiklenir, push/referral prompt atlanir */
-  const isRetakeMode = params.mode === 'retake';
-  const [phase, setPhase] = useState<Phase>(isRetakeMode ? 'calibration' : 'slides');
+  // C.9e: `?mode=retake` kaldirildi. Arketip quiz'i C.9c'de profilden
+  // cikarildi (R-12); parametreyi geciren tek cagri noktasi oydu.
+  const [phase, setPhase] = useState<Phase>('slides');
   const [revealArchetypeId, setRevealArchetypeId] = useState<number | null>(null);
   const [slideIndex, setSlideIndex] = useState(0);
   const flatListRef = useRef<FlatList<IntroSlide>>(null);
@@ -243,8 +242,8 @@ export default function OnboardingScreen() {
 
   // ── PostHog: onboarding_started (mount) ───────────────────────────────────
   useEffect(() => {
-    posthogAnalytics.track(isRetakeMode ? 'retake_quiz_started' : 'onboarding_started');
-  }, [isRetakeMode]);
+    posthogAnalytics.track('onboarding_started');
+  }, []);
 
   /**
    * AsyncStorage'a onboarding bitisini yazar.
@@ -387,13 +386,6 @@ export default function OnboardingScreen() {
     posthogAnalytics.track('archetype_revealed', { archetype_id: revealArchetypeId });
     await markOnboardingComplete();
 
-    if (isRetakeMode) {
-      // Retake mode — push/referral atlanir, profile'a don
-      posthogAnalytics.track('retake_quiz_completed', { archetype_id: revealArchetypeId });
-      router.replace('/(tabs)/profile' as never);
-      return;
-    }
-
     posthogAnalytics.track('onboarding_completed', { archetype_id: revealArchetypeId });
 
     // Request push permission after value delivery (archetype revealed).
@@ -405,7 +397,7 @@ export default function OnboardingScreen() {
     // Show referral prompt (one-time) — navigation deferred until dismiss
     setPendingNavigate(true);
     referralPrompt.show();
-  }, [markOnboardingComplete, referralPrompt, isRetakeMode, router, revealArchetypeId]);
+  }, [markOnboardingComplete, referralPrompt, revealArchetypeId]);
 
   /** Navigate to mood tab after referral prompt is dismissed (or immediately if already shown) */
   useEffect(() => {

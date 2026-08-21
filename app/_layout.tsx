@@ -619,7 +619,6 @@ function RootLayoutNav() {
               <Stack.Screen name="auth" />
               <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="splash" />
               <Stack.Screen
                 name="discover"
                 options={{ animation: 'slide_from_right', headerShown: false }}

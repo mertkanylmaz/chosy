@@ -30,7 +30,6 @@ app/
   auth.tsx             -> Apple Sign-In (zorunlu)
   setup-profile.tsx    -> Username + avatar secimi
   onboarding.tsx       -> 3 intro slide + 6 soru taste calibration + archetype reveal
-  splash.tsx           -> Splash screen
   paywall.tsx          -> 3 plan subscription UI + purchase + restore
   _layout.tsx          -> Root layout (providers + auth listener)
 

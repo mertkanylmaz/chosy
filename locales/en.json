@@ -536,6 +536,7 @@
     "deleteAccountSuccess": "Your account has been deleted.",
     "deleteAccountError": "Could not delete account. Please try again.",
     "deleteAccountNetworkError": "No connection. Please check your internet and try again.",
+    "deleteAccountPartialError": "Your data was deleted, but your login could not be removed. Please tap Delete Account once more to finish.",
     "nicknameTitle": "Your Nickname",
     "nicknamePlaceholder": "Enter your nickname",
     "avatarHint": "Tap to change",
