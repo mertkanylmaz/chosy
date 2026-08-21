@@ -31,6 +31,14 @@ Onaysız alınan mimari karar protokol ihlalidir.
 9. Tasarım: token dosyaları tek kaynak. Görseller implementasyon girdisi değil.
 10. Görsel retrofit işlerinde oyun/gauntlet **logic'i değişmez**.
 11. Spotlight'ta çözüm istemciye inmez — detay: `chosy-conventions` skill'i.
+12. `git commit -- <paths>` KULLANMA — `--only` semantiği index'i atlar.
+13. Parantez içeren Expo Router yol segmentleri (`(tabs)/`, `(auth)/` …)
+    `git add`'de **her zaman** tırnak içine alınır:
+    `git add 'app/(tabs)/profile.tsx'`. Tırnaksız parantez hem bash hem
+    PowerShell'de sözdizimi hatası üretir; komut **sessizce hiçbir şey stage
+    etmez**. `git commit` o an index'te ne varsa onu alır, yani önceki bir
+    `git rm`/stage kalıntısı fark edilmeden commit'e karışır
+    (bkz. 19 Ağu C.9d — iki kez tekrarlandı).
 
 ## Kritik import kuralları
 
