@@ -592,6 +592,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           gauntlet_id: result.gauntletId,
           champion_film_id: result.champion.id,
         });
+
+        // ── K-13 AUTH PROMPT TETİKLEYİCİSİ — R-A-2'de doldurulacak ─────────
+        // TODO(R-A-2, K-13): auth prompt tam BURADA açılır — champion
+        // reveal'ının hemen sonrası, kullanıcı değeri aldıktan sonra.
+        // Koşul:  isAnonymous === true  &&  authPromptSeen !== true
+        // Not: `authPromptSeen` bayrağı henüz YOK; R-A-2'de AsyncStorage
+        // (+ users tablosu) üzerinde doğacak. Magic link (K-14) ve bildirim
+        // izni taşıması (K-15) da bu tetikleyiciye bağlanacak.
+        // Bu turda UI YAZILMADI — yalnızca nokta işaretlendi.
         void hapticSuccess();
         hapticTimerRef.current = setTimeout(() => {
           void hapticHeavy();

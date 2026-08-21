@@ -1,6 +1,10 @@
 /**
  * Auth Screen — Apple/Google ile giriş + anonim misafir devam seçeneği.
  *
+ * R-A-1 sonrası bu ekran ZORUNLU DEĞİL. gate.tsx artık buraya yönlendirmiyor;
+ * geriye iki giriş yolu kaldı: profile → sign-out ve profile → hesap silme.
+ * Giriş, kullanıcının geçmişini kalıcılaştırmak/cihazlar arası taşımak içindir.
+ *
  * Akış:
  *  1. Apple/Google butonuna basılır → authService.signInWithApple/Google
  *  2. Başarılı → /(tabs)
@@ -213,18 +217,21 @@ export default function AuthScreen() {
 
       </View>
 
-      {/* Auth gating aktif — giriş zorunlu */}
+      {/* R-A-1: auth artık zorunlu değil — giriş, geçmişi cihazlar arasında
+          taşımak içindir. Not metni bu ayrımı anlatır. */}
       <View style={styles.skipSection}>
         <Text style={styles.skipNote}>{t('auth.requiredNote')}</Text>
 
-        {/* DEV ONLY: Test ortamında geçiş butonu — production build'de görünmez */}
+        {/* DEV ONLY: misafir olarak devam — production build'de görünmez.
+            Bir bypass değil: auth zorunlu olmadığı için misafir devamın
+            dev karşılığı. Prod'daki karşılığı R-A-2'de gelecek. */}
         {__DEV__ && (
           <TouchableOpacity
             style={styles.devSkipButton}
             onPress={() => router.replace('/(tabs)')}
             activeOpacity={0.7}
           >
-            <Text style={styles.devSkipText}>[ DEV ] Skip to App</Text>
+            <Text style={styles.devSkipText}>[ DEV ] Continue as guest</Text>
           </TouchableOpacity>
         )}
       </View>

@@ -3,9 +3,13 @@
  * Premium LoadingScreen gösterir, minimum 3 saniye sonra fade-out ile geçiş yapar.
  *
  * Sıra:
- *  1. Auth gating: anonim veya oturumsuz kullanıcılar → /auth
- *  2. Onboarding tamamlanmadıysa → /onboarding
- *  3. Session sayısını artır → /(tabs)
+ *  1. Onboarding tamamlanmadıysa → /onboarding
+ *  2. Session sayısını artır → /(tabs)
+ *
+ * K-12 (R-A-1): auth gating KALDIRILDI. Anonim kullanıcı uygulamanın tam
+ * akışını görür; giriş ilk şampiyon sonrasında önerilir (K-13, R-A-2).
+ * /auth ekranı silinmedi — profile'dan sign-out ve hesap silme sonrası
+ * hâlâ oraya düşülüyor.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -49,10 +53,12 @@ export default function Gate() {
       try {
         const { data: { session } } = await supabase.auth.getSession();
 
-        // Auth gating — Apple/Google ile giriş zorunlu
-        const isAnonymous = session?.user?.is_anonymous === true;
-        if (!session || isAnonymous) {
-          targetRoute.current = '/auth';
+        // Oturum henüz açılmamış olabilir (_layout.tsx signInAnonymously()
+        // yarışı). Kimlik yoksa onboarding'e gidilir — anonim oturum orada
+        // veya sonraki açılışta tamamlanır. Anonim kullanıcı ARTIK /auth'a
+        // zorlanmaz (K-12).
+        if (!session) {
+          targetRoute.current = '/onboarding';
           decisionReady.current = true;
           tryNavigate();
           return;
