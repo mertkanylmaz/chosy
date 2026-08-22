@@ -684,6 +684,36 @@ serve(async (req: Request) => {
         // Bu yazma en SONA alındı ve hatası 200 ile geçiliyor: churn zaten
         // users + subscriptions'a işlendi, eksik olan yalnız pazarlama
         // kuyruğu. Sessiz değil — Sentry'ye düşer.
+
+        // `event.id` yoksa bu satır partial indeksin DIŞINDA kalır
+        // (WHERE rc_event_id IS NOT NULL) — yani bu olay için idempotency
+        // garantisi yoktur ve bir retry mükerrer churn satırı üretir.
+        //
+        // Seviye bilerek `warning`: sistem durmuyor, churn kaydı yazılıyor,
+        // kullanıcı etkilenmiyor. İşaretlenen şey korumasız pencerenin
+        // KENDİSİ. `error` yapmak gerçek arızalarla aynı kanalı kirletirdi;
+        // hiç loglamamak ise RC şeması sessizce kayarsa bunu görünmez
+        // kılardı — entitlement_id / plan CHECK derslerinin tekrarı olurdu.
+        if (!event.id) {
+          console.warn(
+            `[rc-webhook] RC event.id eksik — idempotency korumasız (${event.type})`,
+          )
+          await sentryCapture({
+            message: 'revenuecat-webhook: RC event.id eksik — idempotency korumasız',
+            level: 'warning',
+            tags: {
+              error_code: 'RC_EVENT_ID_MISSING',
+              function: 'revenuecat-webhook',
+              event_type: event.type,
+            },
+            extra: {
+              event_type: event.type,
+              app_user_id: event.app_user_id,
+              auth_user_id: authUserId,
+            },
+          })
+        }
+
         const { error: winbackError } = await supabase.from('winback_queue').insert({
           user_id: authUserId,
           churned_at: new Date().toISOString(),
