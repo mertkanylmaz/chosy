@@ -73,6 +73,17 @@ const TIER_TO_PLAN: Record<string, string | undefined> = {
 // ─── Types ──────────────────────────────────────────────────────────────────────
 
 interface RevenueCatEvent {
+  /**
+   * RevenueCat olay kimliği. Dokümanda Common alan grubunda, "Included:
+   * Always" — her olay tipinde var. Retry'lar AYNI `id` ile gelir, bu yüzden
+   * idempotency anahtarı olarak kullanılır (migration 107).
+   *
+   * Yine de `?` opsiyonel: bu bir doküman garantisi, versiyonlanmış bir şema
+   * garantisi değil. Sağlayıcı taraflı sessiz şema kaymaları bu projede iki
+   * kez yaşandı — alan gelmezse kod çökmez, korumasız pencere Sentry'ye
+   * warning olarak düşer.
+   */
+  id?: string
   type: string
   app_user_id: string
   product_id: string
@@ -655,19 +666,39 @@ serve(async (req: Request) => {
 
         // Win-back queue'ya ekle.
         //
-        // ⚠️ İDEMPOTENT DEĞİL — `winback_queue`'de tekil kısıt YOK (027 DDL'i
-        // ve canlı şema doğrulandı: yalnız PK + FK), dolayısıyla PostgREST'e
-        // verilebilecek bir ON CONFLICT hedefi de yok. Retry mükerrer satır
-        // üretir. Kalıcı çözüm migration ister ve CTO onayı bekliyor
-        // (R-B-0b madde 3). Bu yazma en SONA alındı ve hatası 200 ile
-        // geçiliyor: 500 dönmek RevenueCat'e retry ettirir, retry de tam
-        // olarak mükerrer satırı üretir. Sessiz değil — Sentry'ye düşer.
+        // Migration 107 ile artık İDEMPOTENT: `winback_queue_rc_event_id_idx`
+        // (partial unique, WHERE rc_event_id IS NOT NULL) mükerrer event'i
+        // reddeder. RevenueCat "at least once" teslim ediyor ve retry AYNI
+        // `event.id` ile geliyor — anahtar bu.
+        //
+        // Neden `upsert` DEĞİL, düz `insert`: PostgREST'in `on_conflict`
+        // parametresi indeks predicate'ini ifade edemiyor, partial indeks ise
+        // arbiter çıkarımı için predicate'in ifadede tekrarlanmasını şart
+        // koşuyor. Canlıda doğrulandı:
+        //   ON CONFLICT (rc_event_id) DO NOTHING            → 42P10
+        //   ON CONFLICT (rc_event_id) WHERE … DO NOTHING    → çalışır
+        // Yani `.upsert({ onConflict: 'rc_event_id' })` HER çağrıda 42P10
+        // verirdi — yazma hiç gerçekleşmezdi. Bunun yerine çakışma dönüş
+        // kodundan (23505) ayırt ediliyor.
+        //
+        // Bu yazma en SONA alındı ve hatası 200 ile geçiliyor: churn zaten
+        // users + subscriptions'a işlendi, eksik olan yalnız pazarlama
+        // kuyruğu. Sessiz değil — Sentry'ye düşer.
         const { error: winbackError } = await supabase.from('winback_queue').insert({
           user_id: authUserId,
           churned_at: new Date().toISOString(),
+          rc_event_id: event.id ?? null,
         })
 
-        if (winbackError) {
+        if (winbackError && winbackError.code === '23505') {
+          // Beklenen yol: idempotency ÇALIŞTI. Aynı `rc_event_id` zaten
+          // kayıtlı, yani bu mükerrer bir teslim (RevenueCat retry'ı veya
+          // çift gönderim). Hata değil, korumanın kanıtı — Sentry'ye
+          // düşürmüyoruz, yoksa çalışan mekanizma gürültü üretirdi.
+          console.log(
+            `[rc-webhook] winback zaten kayıtlı (rc_event_id çakışması) — ${event.id ?? 'id yok'}`,
+          )
+        } else if (winbackError) {
           console.error('[rc-webhook] winback queue insert failed:', winbackError.message)
           await sentryCapture({
             message: `revenuecat-webhook: winback_queue'ya yazılamadı — ${winbackError.message}`,
