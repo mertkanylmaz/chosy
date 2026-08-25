@@ -30,6 +30,7 @@ export async function isDiscoverTabEnabled(): Promise<boolean> {
     logger.error(
       '[appConfigFlags] isDiscoverTabEnabled failed:', error,
       {
+        skipBridge: true,
         code: 'APP_CONFIG_DISCOVER_TAB_FAILED',
         sampleRate: 0.2,
       },

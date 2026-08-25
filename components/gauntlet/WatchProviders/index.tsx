@@ -83,6 +83,7 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
         logger.error(
           '[WatchProviders] tmdb_id okunamadı:', error.message,
           {
+            skipBridge: true,
             code: 'WATCH_PROVIDERS_TMDB_ID_FAILED',
             sampleRate: 0.5,
           },
@@ -145,6 +146,7 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
         logger.error(
           '[WatchProviders] bağlantı açılamadı:', err,
           {
+            skipBridge: true,
             code: 'WATCH_PROVIDERS_LINK_OPEN_FAILED',
             sampleRate: 0.5,
           },

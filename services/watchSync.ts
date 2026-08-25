@@ -67,7 +67,7 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
     .in('film_id', filmIds);
 
   if (selectError) {
-    logger.error('[watchSync] mevcut satırlar okunamadı:', selectError.message);
+    logger.error('[watchSync] mevcut satırlar okunamadı:', selectError.message, { skipBridge: true });
     Sentry.captureMessage(
       `syncWatchedFilms: watchlist okuma hatası — ${selectError.message}`,
       {
@@ -111,7 +111,7 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
       .select('film_id');
 
     if (updateError) {
-      logger.error('[watchSync] watched_at güncellemesi başarısız:', updateError.message);
+      logger.error('[watchSync] watched_at güncellemesi başarısız:', updateError.message, { skipBridge: true });
       Sentry.captureMessage(
         `syncWatchedFilms: watched_at UPDATE hatası — ${updateError.message}`,
         {
@@ -143,7 +143,7 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
       .select('film_id');
 
     if (insertError) {
-      logger.error('[watchSync] watchlist INSERT başarısız:', insertError.message);
+      logger.error('[watchSync] watchlist INSERT başarısız:', insertError.message, { skipBridge: true });
       Sentry.captureMessage(
         `syncWatchedFilms: watchlist INSERT hatası — ${insertError.message}`,
         {

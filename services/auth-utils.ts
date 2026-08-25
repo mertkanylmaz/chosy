@@ -50,7 +50,7 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
     if (!user) return { ok: false, reason: 'NO_SESSION' };
     authUserId = user.id;
   } catch (err) {
-    logger.error('[auth-utils] ensureAppUser oturum okunamadı:', err);
+    logger.error('[auth-utils] ensureAppUser oturum okunamadı:', err, { skipBridge: true });
     Sentry.captureException(err, {
       level: 'error',
       tags: { function: 'ensureAppUser', error_code: 'APP_USER_CREATE_FAILED' },
@@ -66,7 +66,7 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
       .single();
 
     if (error || !data) {
-      logger.error('[auth-utils] ensureAppUser upsert hatası:', error?.message);
+      logger.error('[auth-utils] ensureAppUser upsert hatası:', error?.message, { skipBridge: true });
       Sentry.captureMessage(
         `ensureAppUser: public.users satırı oluşturulamadı — ${error?.message ?? 'satır dönmedi'}`,
         {
@@ -80,7 +80,7 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
 
     return { ok: true, appUserId: data.id as string };
   } catch (err) {
-    logger.error('[auth-utils] ensureAppUser beklenmedik hata:', err);
+    logger.error('[auth-utils] ensureAppUser beklenmedik hata:', err, { skipBridge: true });
     Sentry.captureException(err, {
       level: 'error',
       tags: { function: 'ensureAppUser', error_code: 'APP_USER_CREATE_FAILED' },

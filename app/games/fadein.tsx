@@ -312,7 +312,7 @@ export default function FadeInScreen() {
         }
       } catch (err) {
         // Sessiz fallback YASAK — kullanıcıya görünür hata + retry
-        logger.error('[fadein] Submit hatası:', err);
+        logger.error('[fadein] Submit hatası:', err, { skipBridge: true });
         Sentry.captureException(err, { tags: { game: 'fadein', action: 'submit_guess' } });
         hapticHeavy();
         setActionError(true);
@@ -343,7 +343,7 @@ export default function FadeInScreen() {
         setHintContents((prev) => ({ ...prev, [result.hint.order]: result.hint.content }));
         trackHintUsed('fadein', hint.type, result.hints_used);
       } catch (err) {
-        logger.error('[fadein] İpucu açma hatası:', err);
+        logger.error('[fadein] İpucu açma hatası:', err, { skipBridge: true });
         Sentry.captureException(err, {
           tags: { game: 'fadein', action: 'reveal_hint', hint_type: hint.type },
         });

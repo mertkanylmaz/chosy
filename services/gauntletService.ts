@@ -217,7 +217,7 @@ export async function getTodayGauntlet(
       tags: { fn: 'generate-gauntlet' },
       extra: { detail },
     });
-    logger.error('[gauntletService] getTodayGauntlet failed:', detail);
+    logger.error('[gauntletService] getTodayGauntlet failed:', detail, { skipBridge: true });
     throw new Error(detail || 'generate-gauntlet failed');
   }
 
@@ -257,7 +257,7 @@ export async function submitChoice(
       },
       extra: { detail, gauntlet_id: submission.gauntletId },
     });
-    logger.error('[gauntletService] submitChoice failed:', detail);
+    logger.error('[gauntletService] submitChoice failed:', detail, { skipBridge: true });
     throw new Error(detail || 'submit-choice failed');
   }
 
@@ -309,7 +309,7 @@ export async function saveChampionForLater(
       tags: { fn: 'submit-choice', action: 'save_for_later' },
       extra: { detail, gauntlet_id: gauntletId, film_id: filmId },
     });
-    logger.error('[gauntletService] saveChampionForLater failed:', detail);
+    logger.error('[gauntletService] saveChampionForLater failed:', detail, { skipBridge: true });
     throw new Error(detail || 'save_for_later failed');
   }
 
@@ -398,7 +398,7 @@ export async function submitContextCorrection(
       tags: { fn: 'submit-context-correction' },
       extra: { detail, gauntlet_id: gauntletId },
     });
-    logger.error('[gauntletService] submitContextCorrection failed:', detail);
+    logger.error('[gauntletService] submitContextCorrection failed:', detail, { skipBridge: true });
     throw new Error(detail || 'submit-context-correction failed');
   }
 

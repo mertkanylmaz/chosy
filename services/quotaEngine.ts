@@ -174,6 +174,7 @@ export async function checkAndConsumeQuota(
     logger.error(
       '[quota] checkAndConsumeQuota error:', err,
       {
+        skipBridge: true,
         code: 'QUOTA_CONSUME_FAILED',
         sampleRate: 0.2,
       },
@@ -233,6 +234,7 @@ export async function checkAndConsumeGameQuota(
     logger.error(
       '[quota] checkAndConsumeGameQuota error:', err,
       {
+        skipBridge: true,
         code: 'QUOTA_GAME_CONSUME_FAILED',
         sampleRate: 0.2,
       },

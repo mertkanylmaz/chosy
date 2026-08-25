@@ -20,6 +20,11 @@ export interface LoggerMeta {
   sampleRate?: number;
   /** Sentry `extra` alanına eklenecek ek bağlam. */
   extra?: Record<string, unknown>;
+  /**
+   * Köprüyü atlar — çağrı yeri zaten elle `Sentry.capture*` çağırıyor demektir.
+   * Olmasaydı o noktalar aynı hata için iki ayrı Sentry event'i üretirdi.
+   */
+  skipBridge?: boolean;
 }
 
 export const logger = {
@@ -40,6 +45,9 @@ export const logger = {
    */
   error: (message: string, error?: unknown, meta?: LoggerMeta): void => {
     if (__DEV__) console.error(message, error);
+
+    // Çağrı yeri Sentry'ye kendisi yazıyor — köprü çift event üretmesin
+    if (meta?.skipBridge) return;
 
     const rate = meta?.sampleRate ?? 1.0;
     if (rate < 1.0 && Math.random() >= rate) return; // örneklendi — sessizce atla

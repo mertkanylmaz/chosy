@@ -146,7 +146,7 @@ async function bootstrapAppUser(): Promise<void> {
     return;
   }
 
-  logger.error('[layout] ensureAppUser iki denemede de başarısız:', second.reason);
+  logger.error('[layout] ensureAppUser iki denemede de başarısız:', second.reason, { skipBridge: true });
   Sentry.captureMessage(
     'bootstrapAppUser: public.users satırı iki denemede de oluşturulamadı — kimlik sisteme giremiyor',
     {

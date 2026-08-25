@@ -61,7 +61,7 @@ export async function getEnabledGames(): Promise<string[] | null> {
 
   if (error) {
     Sentry.captureException(error, { tags: { config: 'games_enabled' } });
-    logger.error('[gameApi] getEnabledGames failed:', error);
+    logger.error('[gameApi] getEnabledGames failed:', error, { skipBridge: true });
     return null;
   }
 
@@ -96,7 +96,7 @@ export async function isRouletteEnabled(): Promise<boolean> {
 
   if (error) {
     Sentry.captureException(error, { tags: { config: 'games_enabled.roulette' } });
-    logger.error('[gameApi] isRouletteEnabled failed:', error);
+    logger.error('[gameApi] isRouletteEnabled failed:', error, { skipBridge: true });
     return false;
   }
 
@@ -127,7 +127,7 @@ export async function getDnaConfig(): Promise<DnaRankConfig | null> {
 
   if (error) {
     Sentry.captureException(error, { tags: { config: 'dna_config' } });
-    logger.error('[gameApi] getDnaConfig failed:', error);
+    logger.error('[gameApi] getDnaConfig failed:', error, { skipBridge: true });
     return null;
   }
 
@@ -139,7 +139,7 @@ export async function getDnaConfig(): Promise<DnaRankConfig | null> {
   if (!Array.isArray(value?.rank_thresholds) || !Array.isArray(value?.rank_min_dailies)) {
     const shapeError = new Error('dna_config missing rank_thresholds/rank_min_dailies');
     Sentry.captureException(shapeError, { tags: { config: 'dna_config' } });
-    logger.error('[gameApi] getDnaConfig shape invalid');
+    logger.error('[gameApi] getDnaConfig shape invalid', { skipBridge: true });
     return null;
   }
 
@@ -170,7 +170,7 @@ export async function getDailyChest(
 
   if (error) {
     Sentry.captureException(error, { tags: { puzzle_date: puzzleDate, claim: String(claim) } });
-    logger.error('[gameApi] getDailyChest failed:', error);
+    logger.error('[gameApi] getDailyChest failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -197,7 +197,7 @@ export async function getDailyChallenge(
     Sentry.captureException(error, {
       tags: { game_id: gameId, puzzle_date: puzzleDate },
     });
-    logger.error('[gameApi] getDailyChallenge failed:', error);
+    logger.error('[gameApi] getDailyChallenge failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -223,7 +223,7 @@ export async function getDailyTheme(puzzleDate: string): Promise<DailyThemeState
     Sentry.captureException(error, {
       tags: { puzzle_date: puzzleDate },
     });
-    logger.error('[gameApi] getDailyTheme failed:', error);
+    logger.error('[gameApi] getDailyTheme failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -250,7 +250,7 @@ export async function submitGuess(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
-    logger.error('[gameApi] submitGuess failed:', error);
+    logger.error('[gameApi] submitGuess failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -286,7 +286,7 @@ export async function submitImposterGuess(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, round: String(round) },
     });
-    logger.error('[gameApi] submitImposterGuess failed:', error);
+    logger.error('[gameApi] submitImposterGuess failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -314,7 +314,7 @@ export async function submitGameGuess(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
-    logger.error('[gameApi] submitGameGuess failed:', error);
+    logger.error('[gameApi] submitGameGuess failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -345,7 +345,7 @@ export async function revealHint(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, hint_order: String(hintOrder) },
     });
-    logger.error('[gameApi] revealHint failed:', error);
+    logger.error('[gameApi] revealHint failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -377,7 +377,7 @@ export async function submitDetectiveGuess(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
-    logger.error('[gameApi] submitDetectiveGuess failed:', error);
+    logger.error('[gameApi] submitDetectiveGuess failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -413,7 +413,7 @@ export async function submitSpotlightGuess(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
     });
-    logger.error('[gameApi] submitSpotlightGuess failed:', error);
+    logger.error('[gameApi] submitSpotlightGuess failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -443,7 +443,7 @@ export async function submitSpotlightLetter(
     Sentry.captureException(error, {
       tags: { puzzle_id: puzzleId, letter },
     });
-    logger.error('[gameApi] submitSpotlightLetter failed:', error);
+    logger.error('[gameApi] submitSpotlightLetter failed:', error, { skipBridge: true });
     throw error;
   }
 
@@ -505,7 +505,7 @@ export async function resetGameProgress(
       tags: { fn: 'dev-reset-games' },
       extra: { detail },
     });
-    logger.error('[gameApi] resetGameProgress failed:', detail || error);
+    logger.error('[gameApi] resetGameProgress failed:', detail || error, { skipBridge: true });
     throw new Error(detail || 'dev-reset-games failed');
   }
 

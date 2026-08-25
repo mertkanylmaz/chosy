@@ -137,7 +137,7 @@ export function WhyThisMovieFunnel({
         });
       }
     } catch (err) {
-      logger.error('[WhyThisMovie] Film lookup error:', err);
+      logger.error('[WhyThisMovie] Film lookup error:', err, { skipBridge: true });
       Sentry.captureException(err, { tags: { game: gameType, action: 'film_page_open' } });
     }
   };
@@ -190,7 +190,7 @@ export function WhyThisMovieFunnel({
       setAdded(true);
     } catch (err) {
       // Hard Rule 5: sessiz fallback yok — Sentry + görünür durum
-      logger.error('[WhyThisMovie] Watchlist add error:', err);
+      logger.error('[WhyThisMovie] Watchlist add error:', err, { skipBridge: true });
       Sentry.captureException(err, { tags: { game: gameType, action: 'watchlist_add' } });
       setAddError(true);
     } finally {

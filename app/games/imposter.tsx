@@ -315,7 +315,7 @@ export default function ImposterScreen() {
       }
     } catch (err) {
       // Sessiz fallback YASAK — kullaniciya gorunur hata + tekrar deneme
-      logger.error('[imposter] Submit hatasi:', err);
+      logger.error('[imposter] Submit hatasi:', err, { skipBridge: true });
       Sentry.captureException(err, {
         tags: { game: 'imposter', action: 'submit_round', round: String(currentRound) },
       });

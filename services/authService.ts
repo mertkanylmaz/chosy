@@ -471,7 +471,7 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     if (response.status === 207) {
       const body = await response.json().catch(() => ({}));
       const warning = (body as { warning?: string }).warning ?? 'auth_user_delete_failed';
-      logger.error('[authService] deleteAccount kismi basari (207):', warning);
+      logger.error('[authService] deleteAccount kismi basari (207):', warning, { skipBridge: true });
       Sentry.captureMessage(`delete-account partial failure: ${warning}`, 'error');
       return { success: false, error: 'partial_failure', message: warning };
     }
@@ -479,6 +479,7 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       logger.error('[authService] deleteAccount edge function hatası:', body, {
+        skipBridge: true,
         extra: { status: response.status },
       });
       Sentry.captureMessage(
