@@ -163,7 +163,13 @@ async function enqueueOffline(payload: SignalPayload): Promise<void> {
     queue.push({ ...payload, queued_at: new Date().toISOString() });
     await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
   } catch (err) {
-    logger.error('[tasteSignals] Offline queue write failed:', err);
+    logger.error(
+      '[tasteSignals] Offline queue write failed:', err,
+      {
+        code: 'TASTE_QUEUE_WRITE_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -200,6 +206,10 @@ async function flushOfflineQueue(): Promise<void> {
     if (dropped > 0) {
       logger.error(
         `[tasteSignals] Dropping ${dropped} unwritable queued signals (invalid uuid)`,
+        {
+          code: 'TASTE_QUEUE_INVALID_DROPPED',
+          sampleRate: 0.2,
+        },
       );
     }
 
@@ -238,6 +248,10 @@ async function flushOfflineQueue(): Promise<void> {
     logger.error(
       `[tasteSignals] Batch rejected permanently (${error.code}), retrying row by row:`,
       error.message,
+      {
+        code: 'TASTE_FLUSH_REJECTED_PERMANENT',
+        sampleRate: 0.2,
+      },
     );
 
     const survivors: QueuedSignal[] = [];
@@ -252,6 +266,10 @@ async function flushOfflineQueue(): Promise<void> {
         logger.error(
           `[tasteSignals] Discarding signal ${row.signal_type}/${row.film_id} (${rowError.code}):`,
           rowError.message,
+          {
+            code: 'TASTE_SIGNAL_DISCARDED',
+            sampleRate: 0.2,
+          },
         );
       } else {
         survivors.push({ ...row, queued_at: new Date().toISOString() });
@@ -268,7 +286,13 @@ async function flushOfflineQueue(): Promise<void> {
       `[tasteSignals] Row-by-row flush done — discarded ${discarded}, kept ${survivors.length}`,
     );
   } catch (err) {
-    logger.error('[tasteSignals] Flush exception:', err);
+    logger.error(
+      '[tasteSignals] Flush exception:', err,
+      {
+        code: 'TASTE_FLUSH_EXCEPTION',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -311,6 +335,10 @@ async function recordSignal(
       logger.error(
         `[tasteSignals] Invalid film_id for ${signalType}, signal dropped:`,
         filmId,
+        {
+          code: 'TASTE_INVALID_FILM_ID',
+          sampleRate: 0.2,
+        },
       );
       return;
     }
@@ -323,6 +351,10 @@ async function recordSignal(
         logger.error(
           `[tasteSignals] Insert rejected permanently (${error.code}), dropping:`,
           error.message,
+          {
+            code: 'TASTE_INSERT_REJECTED_PERMANENT',
+            sampleRate: 0.2,
+          },
         );
         return;
       }
@@ -331,7 +363,13 @@ async function recordSignal(
       await enqueueOffline(payload);
     }
   } catch (err) {
-    logger.error('[tasteSignals] recordSignal exception:', err);
+    logger.error(
+      '[tasteSignals] recordSignal exception:', err,
+      {
+        code: 'TASTE_RECORD_EXCEPTION',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 

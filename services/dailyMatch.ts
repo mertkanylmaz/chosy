@@ -157,7 +157,13 @@ async function fetchBestMatch(
   const { data, error } = await supabase.rpc('match_films', rpcParams);
 
   if (error) {
-    logger.error('[dailyMatch] RPC hatası:', error.message);
+    logger.error(
+      '[dailyMatch] RPC hatası:', error.message,
+      {
+        code: 'DAILY_MATCH_RPC_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     return null;
   }
 
@@ -187,7 +193,13 @@ export async function clearDailyPickCache(userId: string): Promise<void> {
     await AsyncStorage.multiRemove(keys);
     logger.log('[dailyMatch] cache temizlendi (retake/calibration):', keys.join(', '));
   } catch (err) {
-    logger.error('[dailyMatch] cache temizleme hatasi:', err);
+    logger.error(
+      '[dailyMatch] cache temizleme hatasi:', err,
+      {
+        code: 'DAILY_MATCH_CACHE_CLEAR_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -226,7 +238,13 @@ export async function getDailyMatch(
       return parsed.film;
     }
   } catch (err) {
-    logger.error('[dailyMatch] cache okuma hatasi:', err);
+    logger.error(
+      '[dailyMatch] cache okuma hatasi:', err,
+      {
+        code: 'DAILY_MATCH_CACHE_READ_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     // Cache hatası match hesaplamayı engellemesin
   }
 
@@ -251,14 +269,26 @@ export async function getDailyMatch(
       };
       await AsyncStorage.setItem(key, JSON.stringify(toCache));
     } catch (err) {
-      logger.error('[dailyMatch] cache yazma hatasi:', err);
+      logger.error(
+        '[dailyMatch] cache yazma hatasi:', err,
+        {
+          code: 'DAILY_MATCH_CACHE_WRITE_FAILED',
+          sampleRate: 0.2,
+        },
+      );
       // Yazma hatası kritik değil — film yine de döner
     }
 
     logger.log('[dailyMatch] yeni oneri hesaplandi:', film.title, `(${film.matchScore}%)`);
     return film;
   } catch (err) {
-    logger.error('[dailyMatch] beklenmedik hata:', err);
+    logger.error(
+      '[dailyMatch] beklenmedik hata:', err,
+      {
+        code: 'DAILY_MATCH_UNEXPECTED',
+        sampleRate: 0.2,
+      },
+    );
     return null;
   }
 }
@@ -295,7 +325,13 @@ export async function getDailyMatchByPreferences(
       return parsed.film;
     }
   } catch (err) {
-    logger.error('[dailyMatch] sinefil cache okuma hatası:', err);
+    logger.error(
+      '[dailyMatch] sinefil cache okuma hatası:', err,
+      {
+        code: 'DAILY_MATCH_CINEPHILE_CACHE_READ_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 
   // ── 2. preferences_vector DB'den çek ──────────────────────────────────────
@@ -307,7 +343,13 @@ export async function getDailyMatchByPreferences(
       .single();
 
     if (userError) {
-      logger.error('[dailyMatch] preferences_vector okuma hatası:', userError.message);
+      logger.error(
+        '[dailyMatch] preferences_vector okuma hatası:', userError.message,
+        {
+          code: 'DAILY_MATCH_PREFS_VECTOR_READ_FAILED',
+          sampleRate: 0.2,
+        },
+      );
       return null;
     }
 
@@ -331,13 +373,25 @@ export async function getDailyMatchByPreferences(
       const toCache: CachedDailyMatch = { film, cachedAt: new Date().toISOString() };
       await AsyncStorage.setItem(key, JSON.stringify(toCache));
     } catch (err) {
-      logger.error('[dailyMatch] sinefil cache yazma hatası:', err);
+      logger.error(
+        '[dailyMatch] sinefil cache yazma hatası:', err,
+        {
+          code: 'DAILY_MATCH_CINEPHILE_CACHE_WRITE_FAILED',
+          sampleRate: 0.2,
+        },
+      );
     }
 
     logger.log('[dailyMatch] sinefil profili önerisi:', film.title, `(${film.matchScore}%)`);
     return film;
   } catch (err) {
-    logger.error('[dailyMatch] getDailyMatchByPreferences beklenmedik hata:', err);
+    logger.error(
+      '[dailyMatch] getDailyMatchByPreferences beklenmedik hata:', err,
+      {
+        code: 'DAILY_MATCH_PREFS_UNEXPECTED',
+        sampleRate: 0.2,
+      },
+    );
     return null;
   }
 }

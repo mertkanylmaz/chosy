@@ -444,7 +444,13 @@ export async function markNotificationOpened(notificationId: string): Promise<vo
       logger.warn('[push] Failed to mark notification opened:', error.message);
     }
   } catch (err) {
-    logger.error('[push] markNotificationOpened error:', err);
+    logger.error(
+      '[push] markNotificationOpened error:', err,
+      {
+        code: 'PUSH_MARK_OPENED_FAILED',
+        sampleRate: 0.5,
+      },
+    );
   }
 }
 
@@ -468,7 +474,13 @@ export async function touchActivity(): Promise<void> {
       logger.warn('[push] touchActivity error:', error.message);
     }
   } catch (err) {
-    logger.error('[push] touchActivity error:', err);
+    logger.error(
+      '[push] touchActivity error:', err,
+      {
+        code: 'PUSH_TOUCH_ACTIVITY_FAILED',
+        sampleRate: 0.5,
+      },
+    );
   }
 }
 

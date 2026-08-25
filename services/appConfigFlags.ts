@@ -27,7 +27,13 @@ export async function isDiscoverTabEnabled(): Promise<boolean> {
 
   if (error) {
     Sentry.captureException(error, { tags: { config: 'discover_tab_enabled' } });
-    logger.error('[appConfigFlags] isDiscoverTabEnabled failed:', error);
+    logger.error(
+      '[appConfigFlags] isDiscoverTabEnabled failed:', error,
+      {
+        code: 'APP_CONFIG_DISCOVER_TAB_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     return false;
   }
 

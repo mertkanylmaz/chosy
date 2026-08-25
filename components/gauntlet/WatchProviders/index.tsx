@@ -80,7 +80,13 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
           tags: { component: 'WatchProviders', flow: 'tmdb_id_lookup' },
           extra: { film_id: filmId },
         });
-        logger.error('[WatchProviders] tmdb_id okunamadı:', error.message);
+        logger.error(
+          '[WatchProviders] tmdb_id okunamadı:', error.message,
+          {
+            code: 'WATCH_PROVIDERS_TMDB_ID_FAILED',
+            sampleRate: 0.5,
+          },
+        );
         return;
       }
 
@@ -136,7 +142,13 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
           tags: { component: 'WatchProviders', flow: 'open_link' },
           extra: { film_id: filmId, link },
         });
-        logger.error('[WatchProviders] bağlantı açılamadı:', err);
+        logger.error(
+          '[WatchProviders] bağlantı açılamadı:', err,
+          {
+            code: 'WATCH_PROVIDERS_LINK_OPEN_FAILED',
+            sampleRate: 0.5,
+          },
+        );
       }
     },
     [filmId, link],

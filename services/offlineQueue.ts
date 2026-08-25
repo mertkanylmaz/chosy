@@ -123,7 +123,13 @@ export async function enqueueOperation(op: Omit<QueuedOperation, 'enqueuedAt'>):
     await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
     logger.log('[offlineQueue] Islem kuyruga alindi:', op.type);
   } catch (err) {
-    logger.error('[offlineQueue] Kuyruga ekleme hatasi:', err);
+    logger.error(
+      '[offlineQueue] Kuyruga ekleme hatasi:', err,
+      {
+        code: 'OFFLINE_QUEUE_ENQUEUE_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -162,7 +168,13 @@ export async function processOfflineQueue(): Promise<void> {
       logger.warn('[offlineQueue] Kalan islemler:', remaining.length);
     }
   } catch (err) {
-    logger.error('[offlineQueue] Kuyruk isleme hatasi:', err);
+    logger.error(
+      '[offlineQueue] Kuyruk isleme hatasi:', err,
+      {
+        code: 'OFFLINE_QUEUE_PROCESS_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -211,7 +223,13 @@ async function processOperation(op: QueuedOperation): Promise<boolean> {
         return true; // bilinmeyen tip — kuyruktan cikar
     }
   } catch (err) {
-    logger.error('[offlineQueue] Islem calistirma hatasi:', err);
+    logger.error(
+      '[offlineQueue] Islem calistirma hatasi:', err,
+      {
+        code: 'OFFLINE_QUEUE_OP_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     return false;
   }
 }

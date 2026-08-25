@@ -74,7 +74,13 @@ export function useProModeAccess(): ProModeAccess {
     } catch (err) {
       // Sessiz fallback yasak: erisim kapali kalir AMA cagiran taraf bunun bir
       // OKUMA HATASI oldugunu bilir ve "Pro'ya gec" yerine tekrar dene gosterir.
-      logger.error('[useProModeAccess] legacy_mood_access okunamadi:', err);
+      logger.error(
+        '[useProModeAccess] legacy_mood_access okunamadi:', err,
+        {
+          code: 'PRO_MODE_ACCESS_READ_FAILED',
+          sampleRate: 0.5,
+        },
+      );
       setLegacyAccess(false);
       setError(true);
     } finally {

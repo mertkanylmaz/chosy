@@ -103,7 +103,13 @@ export function useCinemaDna(): UseCinemaDnaResult {
       setDna(row);
       setProgress(await computeProgress(row));
     } catch (err) {
-      logger.error('[useCinemaDna] DNA okunamadi:', err);
+      logger.error(
+        '[useCinemaDna] DNA okunamadi:', err,
+        {
+          code: 'CINEMA_DNA_READ_FAILED',
+          sampleRate: 0.5,
+        },
+      );
       setError(true);
     } finally {
       setLoading(false);

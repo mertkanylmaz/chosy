@@ -171,7 +171,13 @@ export async function checkAndConsumeQuota(
       resetAt: startOfTomorrow(),
     };
   } catch (err) {
-    logger.error('[quota] checkAndConsumeQuota error:', err);
+    logger.error(
+      '[quota] checkAndConsumeQuota error:', err,
+      {
+        code: 'QUOTA_CONSUME_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     Sentry.captureException(err, { tags: { context: 'quota_fail_open', quota_type: quotaType } });
     // Fail-open: hata durumunda kullaniciyi kilitlemez
     return {
@@ -224,7 +230,13 @@ export async function checkAndConsumeGameQuota(
       resetAt: startOfTomorrow(),
     };
   } catch (err) {
-    logger.error('[quota] checkAndConsumeGameQuota error:', err);
+    logger.error(
+      '[quota] checkAndConsumeGameQuota error:', err,
+      {
+        code: 'QUOTA_GAME_CONSUME_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     Sentry.captureException(err, { tags: { context: 'quota_fail_open', quota_type: `game_${gameId}` } });
     // Fail-open: oyun engagement oncelikli — hata durumunda izin ver
     return {
@@ -287,7 +299,13 @@ export async function getFullQuotaStatus(userId: string): Promise<FullQuotaStatu
       reset_at: startOfTomorrow().toISOString(),
     };
   } catch (err) {
-    logger.error('[quota] getFullQuotaStatus error:', err);
+    logger.error(
+      '[quota] getFullQuotaStatus error:', err,
+      {
+        code: 'QUOTA_STATUS_FAILED',
+        sampleRate: 0.2,
+      },
+    );
     return null;
   }
 }
@@ -308,7 +326,13 @@ export async function grantBonusSearches(
     await AsyncStorage.setItem(bonusKey, String(current + amount));
     logger.log('[quota] Bonus granted:', amount, 'for user:', userId);
   } catch (err) {
-    logger.error('[quota] grantBonusSearches error:', err);
+    logger.error(
+      '[quota] grantBonusSearches error:', err,
+      {
+        code: 'QUOTA_BONUS_GRANT_FAILED',
+        sampleRate: 0.2,
+      },
+    );
   }
 }
 
@@ -421,6 +445,8 @@ export async function recordMoodSearch(userId: string): Promise<void> {
 
   if (error) {
     logger.error('[quota] Arama kaydi hatasi:', error, {
+      code: 'QUOTA_SEARCH_RECORD_FAILED',
+      sampleRate: 0.2,
       extra: { pgCode: error.code, detail: error.message ?? JSON.stringify(error) },
     });
     throw new Error(`[quota] recordMoodSearch failed: ${error.code} — ${error.message}`);
@@ -443,7 +469,13 @@ export async function hasUsedFreeTrial(email: string): Promise<boolean> {
 
   if (error) {
     if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error('[quota] Trial kontrol hatasi:', error.message);
+      logger.error(
+        '[quota] Trial kontrol hatasi:', error.message,
+        {
+          code: 'QUOTA_TRIAL_CHECK_FAILED',
+          sampleRate: 0.2,
+        },
+      );
     }
     return false;
   }
@@ -462,7 +494,13 @@ export async function claimFreeTrial(email: string): Promise<void> {
 
   if (error) {
     if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error('[quota] Trial kayit hatasi:', error.message);
+      logger.error(
+        '[quota] Trial kayit hatasi:', error.message,
+        {
+          code: 'QUOTA_TRIAL_RECORD_FAILED',
+          sampleRate: 0.2,
+        },
+      );
     }
   }
 }
