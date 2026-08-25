@@ -160,7 +160,7 @@ export default function QuotedScreen() {
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
-        logger.error('[quoted] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+        logger.warn('[quoted] Film UUID bulunamadı — TMDb fallback kullanılamaz');
         return;
       }
 

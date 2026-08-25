@@ -184,7 +184,7 @@ export default function RootLayout() {
     // Production'da font hatası uygulamayı crash etmemeli — log + devam et.
     // Font yüklenemese bile uygulama sistem fontuyla çalışmaya devam eder.
     if (fontError) {
-      logger.error('[layout] Font yükleme hatası (graceful devam):', fontError);
+      logger.warn('[layout] Font yükleme hatası (graceful devam):', fontError);
     }
   }, [fontError]);
 
@@ -272,7 +272,7 @@ export default function RootLayout() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       const userId = session?.user?.id;
       initializePurchases(userId ?? undefined).catch((err) => {
-        logger.error('[layout] RevenueCat başlatma hatası (graceful devam):', err);
+        logger.warn('[layout] RevenueCat başlatma hatası (graceful devam):', err);
       });
     }).catch((err) => {
       logger.error('[layout] Auth session alınamadı (RC başlatılmadı):', err);

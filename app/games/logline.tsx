@@ -182,7 +182,7 @@ export default function LoglineScreen() {
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
-        logger.error('[logline] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+        logger.warn('[logline] Film UUID bulunamadı — TMDb fallback kullanılamaz');
         return;
       }
 

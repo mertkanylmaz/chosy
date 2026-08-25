@@ -331,7 +331,7 @@ export function SpotlightGame() {
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
-        logger.error('[spotlight] Film UUID yok — tahmin gonderilemiyor');
+        logger.warn('[spotlight] Film UUID yok — tahmin gonderilemiyor');
         setActionError(true);
         return;
       }

@@ -227,7 +227,7 @@ async function flushOfflineQueue(): Promise<void> {
         queued_at: new Date().toISOString(),
       }));
       await AsyncStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(kept));
-      logger.error('[tasteSignals] Flush failed (transient), keeping queue:', error.message);
+      logger.warn('[tasteSignals] Flush failed (transient), keeping queue:', error.message);
       return;
     }
 

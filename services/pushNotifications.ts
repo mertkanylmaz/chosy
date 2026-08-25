@@ -79,7 +79,7 @@ export async function getExpoPushToken(): Promise<string | null> {
     // Get project ID from app config
     const projectId = Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) {
-      logger.error('[push] No EAS project ID found in app config');
+      logger.warn('[push] No EAS project ID found in app config');
       return null;
     }
 

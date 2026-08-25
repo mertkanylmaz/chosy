@@ -294,7 +294,7 @@ export function TasteSwipe({ onComplete }: TasteSwipeProps) {
       const filmUuid = uuidMap[tmdbId];
       if (!filmUuid) {
         // Sessiz fallback yok — film DB'de yoksa gorunur olsun
-        logger.error(`[TasteSwipe] Film not in DB, signal dropped: tmdb_id=${tmdbId}`);
+        logger.warn(`[TasteSwipe] Film not in DB, signal dropped: tmdb_id=${tmdbId}`);
         return;
       }
 

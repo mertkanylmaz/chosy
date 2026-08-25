@@ -353,7 +353,7 @@ export function CineMetricsGame() {
     // UUID zorunlu — DB aramasından gelmeli
     const filmUuid = selectedFilm.uuid;
     if (!filmUuid) {
-      logger.error('[CineMetrics] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+      logger.warn('[CineMetrics] Film UUID bulunamadı — TMDb fallback kullanılamaz');
       return;
     }
 

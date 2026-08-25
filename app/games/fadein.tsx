@@ -222,7 +222,7 @@ export default function FadeInScreen() {
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
-        logger.error('[fadein] Film UUID bulunamadı — TMDb fallback kullanılamaz');
+        logger.warn('[fadein] Film UUID bulunamadı — TMDb fallback kullanılamaz');
         return;
       }
 
