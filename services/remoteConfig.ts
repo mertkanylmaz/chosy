@@ -1,6 +1,8 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { logger } from '@/utils/logger';
+
 const CACHE_KEY = 'remote_config_cache';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const SAFE_DEFAULTS = {
@@ -27,9 +29,9 @@ export const remoteConfig = {
       memoryCache = { values, fetchedAt: Date.now() };
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(memoryCache));
     } catch (e) {
-      console.error('[remoteConfig] KRITIK: hydrate başarısız');
-      if (e instanceof Error) console.error('[remoteConfig] Error message:', e.message);
-      console.error('[remoteConfig] Error:', JSON.stringify(e));
+      logger.error('[remoteConfig] KRITIK: hydrate başarısız', e, {
+        code: 'REMOTE_CONFIG_HYDRATE_FAILED',
+      });
 
       // Cache fallback — son başarılı config'i AsyncStorage'dan yükle.
       // Network/Supabase hatası durumunda kullanıcı SAFE_DEFAULTS yerine
