@@ -478,7 +478,9 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      logger.error('[authService] deleteAccount edge function hatası:', response.status, body);
+      logger.error('[authService] deleteAccount edge function hatası:', body, {
+        extra: { status: response.status },
+      });
       Sentry.captureMessage(
         `delete-account failed: HTTP ${response.status}`,
         'error',

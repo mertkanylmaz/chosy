@@ -420,7 +420,9 @@ export async function recordMoodSearch(userId: string): Promise<void> {
     .insert({ user_id: userId });
 
   if (error) {
-    logger.error('[quota] Arama kaydi hatasi:', error.code, error.message ?? JSON.stringify(error));
+    logger.error('[quota] Arama kaydi hatasi:', error, {
+      extra: { pgCode: error.code, detail: error.message ?? JSON.stringify(error) },
+    });
     throw new Error(`[quota] recordMoodSearch failed: ${error.code} — ${error.message}`);
   }
 
