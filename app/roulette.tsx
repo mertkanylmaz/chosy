@@ -403,7 +403,8 @@ export default function RouletteScreen() {
         }
         triggerPaywall({ type: 'roulette_limit' });
       } else {
-        setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
+        // K-43: errorCode/errorMsg yalnizca logger'a gider — ham kod ekrana basilmaz.
+        setSpinError(t('roulette.unknownError'));
       }
     }
   }, [startSpinAnimation, tokenBalance, triggerPaywall, t]);
@@ -442,7 +443,8 @@ export default function RouletteScreen() {
       } else if (errorCode === 'PREMIUM_REQUIRED') {
         triggerPaywall({ type: 'roulette_limit' });
       } else {
-        setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
+        // K-43: errorCode/errorMsg yalnizca logger'a gider — ham kod ekrana basilmaz.
+        setSpinError(t('roulette.unknownError'));
       }
     }
   }, [moodText, selectedPreset, startSpinAnimation, triggerPaywall, t]);
@@ -484,7 +486,8 @@ export default function RouletteScreen() {
       } else if (errorCode === 'NEED_MORE_FILMS') {
         setSpinError(t('roulette.needMoreFilms', { min: errorObj.min ?? 5 }));
       } else {
-        setSpinError(errorCode || errorMsg || t('roulette.unknownError'));
+        // K-43: errorCode/errorMsg yalnizca logger'a gider — ham kod ekrana basilmaz.
+        setSpinError(t('roulette.unknownError'));
       }
     }
   }, [durationFilter, eraFilter, tripleMoodText, startSpinAnimation, triggerPaywall, t]);
