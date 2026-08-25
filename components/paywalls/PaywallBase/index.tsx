@@ -204,7 +204,9 @@ export default function PaywallBase({
         await refreshQuota();
         onConvert(selectedPlan);
       } else {
-        Alert.alert(t('paywall.purchaseError'), result.error ?? '');
+        // K-43: RevenueCat ham hata metni ekrana degil Sentry'ye gider.
+        logger.error('[paywall-base] Satin alma basarisiz:', result.error ?? 'unknown');
+        Alert.alert(t('paywall.purchaseError'));
       }
     } catch (err) {
       logger.error('[paywall-base] Satin alma hatasi:', err);

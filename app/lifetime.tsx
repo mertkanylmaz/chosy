@@ -211,7 +211,9 @@ export default function LifetimeOfferScreen() {
         Alert.alert(t('lifetime.purchaseSuccess'));
         if (router.canGoBack()) router.back();
       } else {
-        Alert.alert(t('lifetime.purchaseError'), result.error ?? '');
+        // K-43: RevenueCat ham hata metni ekrana degil Sentry'ye gider.
+        logger.error('[lifetime] Purchase failed:', result.error ?? 'unknown');
+        Alert.alert(t('lifetime.purchaseError'));
       }
     } catch (err) {
       logger.error('[lifetime] Purchase error:', err);
