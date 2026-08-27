@@ -16,6 +16,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
+import { cacheGauntlet, readCachedGauntlet, type GauntletSource } from './gauntletCache';
 import { logger } from '@/utils/logger';
 
 import type {
@@ -72,6 +73,22 @@ export class GauntletAuthPendingError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'GauntletAuthPendingError';
+  }
+}
+
+/**
+ * Sunucuya HİÇ ULAŞILAMADI — bağlantı yok, DNS düştü, istek zaman aşımına
+ * uğradı (K-42). Sunucudan gelen 4xx/5xx bu sınıfa GİRMEZ: oraya ulaşıldı,
+ * yanıtı yerel bir kopyayla gizlemek gerçek arızayı saklamak olur.
+ *
+ * Ayrım ölçütü keşifte doğrulandı: `parseInvokeError` ağ hatasında
+ * `status: null` döner, çünkü `FunctionsFetchError`'da `context` (Response)
+ * yoktur. Cache geri düşüşü ve seçim kuyruğu YALNIZ bu sınıfa bakar.
+ */
+export class GauntletFetchError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'GauntletFetchError';
   }
 }
 
@@ -213,6 +230,18 @@ export async function getTodayGauntlet(
       // gerçek kimlik arızası (GauntletShell retry politikası).
       throw new GauntletAuthPendingError(detail);
     }
+    if (status === null) {
+      // Sunucuya HİÇ ULAŞILAMADI (K-42): `error.context` yok. Bu beklenen bir
+      // saha durumu — `error` seviyesi gürültü yaratırdı, ama sessiz de
+      // geçilmez: uyarı seviyesinde görünür kalır.
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: { fn: 'generate-gauntlet', error_code: 'GAUNTLET_OFFLINE' },
+        extra: { detail },
+      });
+      logger.warn('[gauntletService] getTodayGauntlet bağlantı hatası:', detail);
+      throw new GauntletFetchError(detail || 'generate-gauntlet unreachable');
+    }
     Sentry.captureException(error, {
       tags: { fn: 'generate-gauntlet' },
       extra: { detail },
@@ -222,7 +251,82 @@ export async function getTodayGauntlet(
   }
 
   recordTiming('generate-gauntlet', startedAt, 'ok');
-  return data as DailyGauntlet;
+  const gauntlet = data as DailyGauntlet;
+
+  // K-42: başarılı yanıt diske yazılır. `await` EDİLMEZ — cache yazımı
+  // kullanıcının ekranını bekletmez; hata durumu modülün kendi içinde
+  // loglanır (sessiz değil).
+  void cacheOwnerId().then((ownerId) => {
+    if (ownerId) return cacheGauntlet(ownerId, gauntlet);
+  });
+
+  return gauntlet;
+}
+
+/**
+ * Cache anahtarının sahibi. `auth.users.id` KULLANILIR, `public.users.id`
+ * değil — ikisi bu kod tabanında ayrık uzaylardır ve burada önemli olan
+ * tek şey ANAHTARIN TUTARLI olması.
+ *
+ * Gerekçe ölçülmüş: `readAppUserId()` `users` tablosuna sorgu atar, yani AĞ
+ * ister. Tam da cache'e ihtiyaç duyulan anda (offline) `null` dönerdi.
+ * `getSession()` ise yerel oturumdan okur ve bağlantı olmadan da çalışır.
+ */
+async function cacheOwnerId(): Promise<string | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.user.id ?? null;
+  } catch (err) {
+    logger.warn('[gauntletService] Cache sahibi kimliği okunamadı:', err);
+    return null;
+  }
+}
+
+/**
+ * `getTodayGauntlet`'in offline toleranslı sarmalayıcısı (K-42 Parça 2).
+ *
+ * Ağ yolu başarılıysa davranış BİREBİR aynıdır — yalnız `source: 'network'`
+ * etiketi eklenir. Başarısızsa iki katmanlı yerel geri düşüş devreye girer:
+ *
+ *   1. Bugünün tarihiyle cache → `cache_today`
+ *   2. En son yazılmış herhangi bir gün → `cache_stale`
+ *   3. Hiçbiri yok → hata YENİDEN FIRLATILIR, çağıran mevcut hata ekranına düşer
+ *
+ * ── Hangi hata cache'e düşürür ─────────────────────────────────────────────
+ * Yalnız BAĞLANTI hataları. `GauntletAuthPendingError` (401) olduğu gibi
+ * yukarı geçer — o bootstrap penceresidir, retry politikası çağıranda.
+ * Sunucu 4xx/5xx'i de geçer: sunucuya ULAŞILDI, yanıtı yerel bir kopyayla
+ * gizlemek gerçek arızayı saklamak olurdu.
+ *
+ * Bağlantı hatası ölçütü, K-42 keşfinde doğrulanan yol: `parseInvokeError`
+ * ağ hatasında `status: null` döner (`error.context` yoktur). `GauntletFetchError`
+ * bu ayrımı hata nesnesinde taşır.
+ */
+export async function getTodayGauntletWithFallback(
+  context: GauntletContext = NEUTRAL_CONTEXT,
+): Promise<{ gauntlet: DailyGauntlet; source: GauntletSource; cachedDate?: string }> {
+  try {
+    const gauntlet = await getTodayGauntlet(context);
+    return { gauntlet, source: 'network' };
+  } catch (err) {
+    if (err instanceof GauntletAuthPendingError) throw err;
+    if (!(err instanceof GauntletFetchError)) throw err;
+
+    const ownerId = await cacheOwnerId();
+    const cached = await readCachedGauntlet(ownerId);
+
+    if (!cached) {
+      // Yerel kopya da yok — mevcut hata yolu DEĞİŞMEDEN sürer.
+      throw err;
+    }
+
+    logger.warn('[gauntletService] Bağlantı yok, yerel kopya kullanıldı:', cached.source);
+    return {
+      gauntlet: cached.gauntlet,
+      source: cached.source,
+      cachedDate: cached.date,
+    };
+  }
 }
 
 /**
