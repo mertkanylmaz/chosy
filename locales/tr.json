@@ -1397,6 +1397,9 @@
     "confidence": "Seni %%{percent} tanıyorum",
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
     "submitError": "Seçim kaydedilemedi. Tekrar dene.",
+    "offlineStale": "Bu bugünün listesi değil. Bağlantı gelince yenilenecek.",
+    "choicePending": "Seçimin bekliyor. Bağlantı gelince gönderilecek.",
+    "choiceDropped": "Seçimin gönderilemedi. Turu yeniden oyna.",
     "retry": "Tekrar dene",
     "dismissTomorrow": "Boşver, yarın",
     "share": {

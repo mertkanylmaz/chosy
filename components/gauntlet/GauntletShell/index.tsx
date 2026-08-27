@@ -37,14 +37,17 @@ import {
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
   GauntletAuthPendingError,
-  getTodayGauntlet,
+  GauntletFetchError,
+  getTodayGauntletWithFallback,
   submitChoice,
   submitContextCorrection,
   submitWatchFeedback,
   type ChoiceResult,
 } from '@/services/gauntletService';
+import { subscribeToReconnect } from '@/services/networkStatus';
 import { posthogAnalytics } from '@/services/posthog';
 import { supabase } from '@/services/supabase';
 import type {
@@ -193,6 +196,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * metni yalnız şampiyon satırını taşır — uydurma yok.
    */
   const [shareRounds, setShareRounds] = useState<ShareRound[]>([]);
+  /**
+   * K-42 offline durumu. ShellState'e üye DEĞİL — beş durum sözleşmesi
+   * bozulmaz; ikisi de mevcut render'ın üzerine binen göstergelerdir.
+   *
+   * `isStale`      → gösterilen gauntlet bugünün değil (yerel kopya)
+   * `choiceFrozen` → bir seçim kuyrukta bekliyor, tur İLERLEMEZ
+   */
+  const [isStale, setIsStale] = useState(false);
+  const [choiceFrozen, setChoiceFrozen] = useState(false);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -318,9 +330,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     loadingRef.current = true;
     setLoadError(null);
     try {
-      const g = await getTodayGauntlet();
+      // K-42: ağ → bugünün yerel kopyası → en son yerel kopya. Kaynak
+      // `source` ile gelir; `progress` HER DURUMDA sunucunun türettiği
+      // değerdir — istemci turu hâlâ SAYMAZ, yalnız kopyayı gösterir.
+      const { gauntlet: g, source } = await getTodayGauntletWithFallback();
       if (!mountedRef.current) return;
       authAttemptsRef.current = 0;
+      // `cache_today` gösterge ÜRETMEZ: yerel kopya ama bugünün verisi,
+      // kullanıcı için fark yok — görsel gürültü eklemek yanlış olurdu.
+      setIsStale(source === 'cache_stale');
       applyGauntlet(g);
     } catch (err) {
       if (!mountedRef.current) return;
@@ -348,16 +366,53 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     }
   }, [applyGauntlet, t]);
 
+  /**
+   * K-42: bekleyen seçim varsa ÖNCE onu gönder, sonra yükle.
+   *
+   * Sıra önemli: seçim sunucuya yazılmadan `load()` çağırmak, o seçimi
+   * İÇERMEYEN bir `progress` getirir ve kullanıcı turu ikinci kez oynardı.
+   * Gönderim başarılıysa gelen `progress` zaten seçimi içerir — istemci
+   * hiçbir şey türetmez (K-37 invariant'ı korunur).
+   *
+   * `still_offline`'da da yükleme denenir: bağlantı yoksa cache geri düşüşü
+   * devreye girer ve kullanıcı boş ekran yerine donmuş turu görür.
+   */
+  const flushThenLoad = useCallback(async (): Promise<void> => {
+    const outcome = await flushPendingChoice();
+    if (!mountedRef.current) return;
+
+    switch (outcome.status) {
+      case 'sent':
+        setChoiceFrozen(false);
+        setActionError(null);
+        break;
+      case 'dropped':
+        // Kalıcı ret veya süre aşımı. Sessiz kayıp YOK — kullanıcıya söylenir.
+        setChoiceFrozen(false);
+        setActionError(t('gauntlet.choiceDropped'));
+        break;
+      case 'still_offline':
+        setChoiceFrozen(true);
+        break;
+      case 'empty':
+        setChoiceFrozen(false);
+        break;
+    }
+
+    await load();
+  }, [load, t]);
+
   const retryLoad = useCallback(() => {
     authAttemptsRef.current = 0;
-    void load();
-  }, [load]);
+    void flushThenLoad();
+  }, [flushThenLoad]);
 
   // Mount: yalnız kapı açıksa çağır — before_18'de AĞ ÇAĞRISI YOK (§3.6).
   useEffect(() => {
     mountedRef.current = true;
     if (shellStateRef.current === 'bootstrapping') {
-      void load();
+      // K-42 tetikleyici (a): açılışta bekleyen seçim varsa önce o gider.
+      void flushThenLoad();
     }
     return () => {
       mountedRef.current = false;
@@ -376,12 +431,21 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         authAttemptsRef.current = 0;
         if (shellStateRef.current === 'bootstrapping') {
           if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-          void load();
+          void flushThenLoad();
         }
       }
     });
     return () => subscription.unsubscribe();
-  }, [load]);
+  }, [flushThenLoad]);
+
+  // K-42 tetikleyici (b): bağlantı geri geldi. Yalnız offline→online
+  // geçişinde ateşlenir (networkStatus), açılıştaki ilk online event'inde
+  // DEĞİL — açılış flush'ı yukarıdaki mount effect'inin işi.
+  useEffect(() => {
+    return subscribeToReconnect(() => {
+      void flushThenLoad();
+    });
+  }, [flushThenLoad]);
 
   // Dakikalık nabız: 18:00 kapısı + gün dönümü (CTO 🟠3 — ayrı mekanizma yok).
   useEffect(() => {
@@ -430,8 +494,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           authAttemptsRef.current = 0;
           setShellState('bootstrapping');
           void load();
+        } else if (err instanceof GauntletFetchError) {
+          // K-42: sunucuya ulaşılamadı. Seçim ARTIK KAYBOLMUYOR — kuyruğa
+          // alınır ve ekran donar. Tur İLERLEMEZ: çağıran `null` görüp erken
+          // döner, `progress` hâlâ yalnız sunucudan gelir (K-37 invariant'ı).
+          void enqueuePendingChoice(submission);
+          setChoiceFrozen(true);
+          setActionError(null);
         } else {
-          // Sentry servis katmanında yazıldı — kullanıcıya görünür hata.
+          // Sunucu yanıtladı ama hata döndü — Sentry servis katmanında
+          // yazıldı, kullanıcıya görünür hata (§15.2).
           setActionError(t('gauntlet.submitError'));
         }
         return null;
@@ -482,7 +554,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   const handleChoice = useCallback(
     async (side: 'left' | 'right') => {
-      if (!pair || !gauntlet || submitting || transitioning) return;
+      if (!pair || !gauntlet || submitting || transitioning || choiceFrozen) return;
       const winner = side === 'left' ? pair.left : pair.right;
       void hapticLight();
       const latencyMs = measuredLatencyMs();
@@ -620,12 +692,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       );
       setActionError(t('gauntlet.submitError'));
     },
-    [pair, gauntlet, submitting, transitioning, round, submit, isReducedMotion, t, toExhausted],
+    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted],
   );
 
   /** Seviye 1 ret — TEK buton, her rette AYNI davranış (§3.3, C.3'e kadar). */
   const handleNeither = useCallback(async () => {
-    if (!pair || !gauntlet || submitting || transitioning) return;
+    if (!pair || !gauntlet || submitting || transitioning || choiceFrozen) return;
     void hapticSelection(); // ret haptik deseni (§8)
     const latencyMs = measuredLatencyMs();
     const result = await submit({
@@ -651,7 +723,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       context_energy: gauntlet.context.energy,
     });
     applyRefreshResult(result, pair);
-  }, [pair, gauntlet, submitting, transitioning, round, submit, applyRefreshResult]);
+  }, [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, applyRefreshResult]);
 
   /**
    * "Dün izledin mi?" cevabı (C.4). Kart ANINDA kapanır — network sonucu
@@ -725,7 +797,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    *  watchlist'e AYRICA YAZMAZ. */
   const handleSeenPick = useCallback(
     async (side: 'left' | 'right') => {
-      if (!pair || !gauntlet || submitting || transitioning) return;
+      if (!pair || !gauntlet || submitting || transitioning || choiceFrozen) return;
       const seenFilm = side === 'left' ? pair.left : pair.right;
       void hapticSelection(); // "İzledim" haptik deseni (§8)
       const result = await submit({
@@ -747,7 +819,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setDefenderFilm((prev) => (prev && prev.id === seenFilm.id ? retained : prev));
       applyRefreshResult(result, pair);
     },
-    [pair, gauntlet, submitting, transitioning, round, submit, applyRefreshResult],
+    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, applyRefreshResult],
   );
 
   const handlePosterPress = useCallback(
@@ -868,6 +940,8 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }
 
   const outOfRefreshes = refreshesRemaining === 0; // -1 = sınırsız (Pro)
+  /** K-42: kuyrukta bekleyen seçim varken tüm oyun etkileşimleri kilitli. */
+  const interactionsLocked = submitting || transitioning || choiceFrozen;
 
   return (
     <View style={styles.root}>
@@ -879,12 +953,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           <RoundIndicator current={round} />
         </View>
 
+        {/* K-42: gösterilen liste bugünün değil (yerel kopya). Özür yok,
+            durum bildirilir — §15.2. */}
+        {isStale && <Text style={styles.offlineNotice}>{t('gauntlet.offlineStale')}</Text>}
+
         <View style={styles.posterRow}>
           <View style={styles.posterSlot}>
             <PosterTile
               key={pair.left.id}
               film={pair.left}
-              disabled={submitting || transitioning}
+              disabled={interactionsLocked}
               animationState={tileStates.left}
               onPress={() => handlePosterPress('left')}
             />
@@ -893,7 +971,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             <PosterTile
               key={pair.right.id}
               film={pair.right}
-              disabled={submitting || transitioning}
+              disabled={interactionsLocked}
               animationState={tileStates.right}
               onPress={() => handlePosterPress('right')}
             />
@@ -903,6 +981,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         <Text style={styles.question}>
           {seenMode ? t('gauntlet.seenPrompt') : t('gauntlet.question')}
         </Text>
+
+        {/* K-42 dondurma: seçim kuyrukta. Hata DEĞİL — bekleyen bir durum,
+            o yüzden actionError'dan ayrı stil ve ayrı metin. */}
+        {choiceFrozen && (
+          <Text style={styles.pendingNotice}>{t('gauntlet.choicePending')}</Text>
+        )}
 
         {actionError !== null && <Text style={styles.actionError}>{actionError}</Text>}
 
@@ -914,13 +998,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
               <QuietAction
                 label={t('gauntlet.rejectNeither')}
                 onPress={() => void handleNeither()}
-                disabled={submitting || transitioning || outOfRefreshes}
+                disabled={interactionsLocked || outOfRefreshes}
               />
               <Text style={styles.actionSeparator}>·</Text>
               <QuietAction
                 label={t('gauntlet.markWatched')}
                 onPress={handleSeenToggle}
-                disabled={submitting || transitioning}
+                disabled={interactionsLocked}
               />
               {outOfRefreshes && onDismiss && (
                 <>

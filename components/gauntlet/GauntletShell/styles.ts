@@ -58,6 +58,23 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: space.sm,
   },
+  /**
+   * K-42: gösterilen liste bugünün değil. Hata DEĞİL, bir durum bildirimi —
+   * bu yüzden `actionError`'ın vurgusunu almaz, ikincil renkte kalır.
+   */
+  offlineNotice: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+    marginTop: space.sm,
+  },
+  /** K-42: seçim kuyrukta bekliyor. Aynı gerekçe — bekleyiş, hata değil. */
+  pendingNotice: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+    marginTop: space.sm,
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',

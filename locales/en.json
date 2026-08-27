@@ -1397,6 +1397,9 @@
     "confidence": "I know %{percent}% of you",
     "loadError": "Today's films couldn't load. Try again.",
     "submitError": "Your pick wasn't saved. Try again.",
+    "offlineStale": "This isn't today's lineup. It'll refresh when you're back online.",
+    "choicePending": "Your pick is waiting. It'll be sent when you're back online.",
+    "choiceDropped": "Your pick didn't go through. Play the round again.",
     "retry": "Try again",
     "dismissTomorrow": "Never mind, tomorrow",
     "share": {
