@@ -2128,3 +2128,62 @@ fail-open gate eklenmesi anlamlı hale gelir — o zaman gerçek kapsaması olur
 > Alternatif ve daha büyük çözüm — `compute-dominant-colors`'ı Edge Function +
 > cron'a taşımak — **reddedilmedi, ertelendi**: yeni Deno görsel indirme/decode
 > mimarisi ve yeni cron demektir, kendi sprint'ini hak eder.
+
+---
+
+## `no_candidates` exhaustion kalıcılaşmıyor (K-37 / R2)
+
+`submit-choice:952` yenilemede aday bulunamazsa istemciye `exhausted` /
+`no_candidates` döner ve Sentry'ye yazar — ama **DB'ye hiçbir iz bırakmaz**.
+`deriveProgress` yalnız yazılmış duruma bakar; kullanıcı uygulamayı yeniden
+açtığında sunucu `in_progress` der ve tur kaldığı yerden devam eder.
+İstemci "bitti" gösterirken sunucu "devam ediyor" der — kullanıcıya görünür
+tutarsızlık.
+
+**Neden şimdi değil:** Kalıcılaştırmanın doğal yolu `choice_events.outcome`
+enum'una `'exhausted'` eklemek. Bu üç yeri birden değiştirir:
+
+1. migration 069'daki `choice_events_outcome_check` CHECK kısıtı,
+2. `types/gauntlet.ts` → `ChoiceOutcome` — **KİLİTLİ sözleşme**, CTO onayı ister,
+3. migration 072'nin partial UNIQUE index'i (`WHERE outcome IN ('choice','timeout')`)
+   — yeni değerin tur harcayıp harcamadığına göre gözden geçirilmeli.
+
+Yani migration + kilitli sözleşme değişikliği + index revizyonu. **R1
+atomikleştirmesiyle (aynı dosyanın aynı sıcak yolu) birlikte tek turda
+değerlendirilecek** — ikisini ayrı ayrı yapmak `submit-choice`'ı iki kez
+riske sokar.
+
+Alternatif (migration'sız): `no_candidates` hiç kalıcılaştırılmaz, istemcinin
+exhausted ekranı "tur devam ediyor"a çevrilir. Davranış değişikliği,
+şema değişikliği yok. Karar verilmedi.
+
+Ayrıntı: `docs/os/K37_GAUNTLET_STATE_MACHINE.md` §5 R2.
+
+---
+
+## Orphan auth teşhisi tam kapanmadı — 6 kayıt, kök neden bilinmiyor
+
+17 Ağu 2026'da runner fix'i sahada doğrulanmış ve öksüz `auth.users` sayısı
+88'den 3'e inmişti. **27 Ağu 2026 ölçümünde tekrar 6.** En yenisinin
+`last_sign_in_at` değeri **19 Ağu** — yani fix'ten SONRA da yeni öksüz
+doğmuş. Sızıntı devam ediyor, kök neden araştırılmadı.
+
+| Ölçüm (27 Ağu 2026) | Değer |
+|---|---|
+| `auth.users` | 255 |
+| `public.users` | 249 (249'unun da `auth_id`'si dolu) |
+| Öksüz `auth.users` (köprüsü yok) | **6** |
+| Hepsi anonim oturum, yaş | 8-13 gün, `last_sign_in_at ≈ created_at` |
+
+**Etki:** `resolveAppUser` (`_shared/gameUtils.ts:100`) `public.users` satırı
+bulamazsa `AuthError` fırlatır → `generate-gauntlet` **401** döner. Bu 6 kayıt
+gauntlet alamaz. Hiçbiri geri dönmemiş (tek oturum), yani aktif kullanıcı
+kaybı değil — ama her yeni öksüz bir sessiz kayıp adayıdır.
+
+**Neden şimdi değil:** Kök neden `ensureAppUser`'ın hangi koşulda iki denemede
+de düştüğü (`app/_layout.tsx:141-147`) — ağ, RLS ya da yarış olabilir, ölçüm
+yapılmadı. **K-42 (offline/fallback) öncesi gözden geçirilecek**: o iş zaten
+bootstrap ve ağ hatası yollarına dokunacak, teşhis oraya doğal olarak giriyor.
+
+İlgili: `docs/os/K37_GAUNTLET_STATE_MACHINE.md` — R7 keşfinde bulundu
+(R7'nin kendisi gerçek risk değilmiş, bu çıktı).

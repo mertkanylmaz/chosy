@@ -111,7 +111,7 @@ Product Truth     Watched-it Rate
 | # | Karar | Kaynak |
 |---|---|---|
 | **K-36** | 5 servis sınıfı (**AUTH · GAUNTLET · CHOICE · DNA · BILLING**) idempotent · observable · retryable · auditable olmak zorunda. | SONHALİ §35 |
-| **K-37** | Gauntlet backend state machine: `GENERATING → READY → STARTED → ROUND_1 → ROUND_2 → FINAL → COMPLETED → WATCH_PENDING → WATCHED`. | SONHALİ §69 |
+| **K-37** | Gauntlet backend state machine: `GENERATING → READY → STARTED → ROUND_1 → ROUND_2 → FINAL → COMPLETED → WATCH_PENDING → WATCHED`. ⚠️ **Durum listesi D-13 ile güncellendi** — 9 durumlu makine hiç implement edilmedi; gerçek model `deriveProgress` ile türetilen 5 konumdur (`in_progress(0/1/2) → champion \| exhausted`), yeni kolon yok. "Ghost state yok" ilkesi aynen geçerli. | SONHALİ §69 |
 | **K-38** | Her gauntlet kaydı: `gauntlet_id · date · user_id · context · candidate_pool_version · algorithm_version · films · seed · generation_status`. "6 ay sonra neden bu 4 film?" sorusu cevaplanabilir olmalı. | SONHALİ §36 |
 | **K-39** | Her seçim: `gauntlet_id · round · film_a · film_b · position · winner · latency_ms · context · algorithm_version`. | SONHALİ §37 |
 | **K-40** | **Ham olay saklanır, profil türetilir.** `cinema_dna` cache'tir, kaynak `choice_events` + `watch_feedback`. Bu tablolar append-only. | Product OS, chosy-conventions §6 |
@@ -292,6 +292,45 @@ Bible'ın altı adının uygulamadaki karşılığı:
 **Karar (C.9b, 19.08.2026): Seçenek A — GauntletShell'e dokunulmaz, bible gerçeğe uyar.** Bu, F-02'de kurulan aynı yöntemdir (bible ismi gerçeğe uyar).
 
 **Kapsam:** Yalnızca K-03'ün enum listesi. K-03'ün kendisi, diğer K/D/R/E maddeleri ve `types/gauntlet.ts` sözleşmesi değişmedi.
+
+---
+
+### D-13 — K-37 state machine: 9 varsayılan durum → 5 gerçek durum (türetme modeli)
+
+**Dokümanda (K-37):** Gauntlet backend state machine: `GENERATING → READY → STARTED → ROUND_1 → ROUND_2 → FINAL → COMPLETED → WATCH_PENDING → WATCHED` (SONHALİ §69).
+
+**Kilitlenen: bu 9 durumlu makine hiç implement edilmedi ve edilmeyecek.** Gerçekte durum hiçbir yerde saklanmaz; her istekte `choice_events` + `daily_gauntlets.film_ids`'ten `deriveProgress` ile deterministik **türetilir** (Seçenek 1 — yeni kolon yok, `generation_status` açılmaz).
+
+Gerçek durum uzayı `types/gauntlet.ts`'te kilitlidir: 3 değerli `GauntletProgress.status` + `completedRounds` (0-3) → fiilen ayırt edilebilir **5** konum:
+
+```
+in_progress(0) → in_progress(1) → in_progress(2) ─┬─→ champion
+                                                  └─→ exhausted
+```
+
+Bible'ın dokuz adının uygulamadaki karşılığı:
+
+| Bible (K-37) | Uygulama | Not |
+|---|---|---|
+| `GENERATING` | **yok** | Üretim `generate-gauntlet` isteğinin içinde senkron çalışır; INSERT başarılı olana kadar satır yoktur. Yarım kalan üretim iz bırakmaz. |
+| `READY` | `in_progress(0)` | Ad farkı. |
+| `STARTED` | **READY ile aynı** | "Üretildi" ile "kullanıcı açtı" arasında ayrım yapan kolon yok. |
+| `ROUND_1` | `in_progress(1)` | Eşleşiyor. |
+| `ROUND_2` | `in_progress(2)` | Eşleşiyor. |
+| `FINAL` | **ROUND_2 ile aynı** | "3. tur oynanıyor" = `completedRounds === 2`; ayrı temsili yok. |
+| `COMPLETED` | `champion` | `completedRounds === 3` + `champion_film_id` son kazananla doğrulanır. |
+| `WATCH_PENDING` | **bu makinenin durumu değil** | Çapraz satır türetmesi (`date < bugün` + şampiyon var + `watch_feedback` yok), yanıtta ayrı alan: `pendingWatchFeedback`, farklı `gauntletId`. |
+| `WATCHED` | **bu makinenin durumu değil** | `watch_feedback.response` + `watchlist.watched_at`. |
+
+Buna karşılık bible'da **adı olmayan** gerçek bir durum vardır: `exhausted`, iki gerekçeyle (`timeout_no_winner` · `no_candidates`).
+
+**Gerekçe:** K-37'nin korunması gereken özü — *gauntlet'in nerede kaldığı her an kesin bilinmeli, ghost state olmamalı* — türetme modeliyle **daha sıkı** karşılanıyor: saklanan durum yoktur, dolayısıyla "durum kolonu gerçekle uyuşmuyor" sınıfı bir hata sınıfı hiç doğmaz. `deriveProgress` tutarsızlık gördüğünde sessizce düzeltmez, **throw eder** (CLAUDE.md #1). Dokuz ad bir *tahminden* yazılmıştı; `generate-gauntlet` yazılırken beş konumun yettiği ve `GENERATING`/`STARTED`/`FINAL`'ın komşularından ayrışmadığı **ölçülerek** ortaya çıktı.
+
+**Karar (27.08.2026): Seçenek A — kod korunur, bible gerçeğe uyar.** D-12'de K-03 için kurulan aynı emsal.
+
+**Kapsam:** Yalnızca K-37'nin durum listesi. K-38 (kayıt alanları), K-39, K-40 ve `types/gauntlet.ts` sözleşmesi değişmedi. `generation_status` kolonu **açılmadı** — `092_v_algorithm_daily`'nin `champion_film_id IS NOT NULL` vekili yerinde kalır (bilinen sapması: `exhausted` biten gauntlet'leri tamamlanmamış sayar).
+
+**Kaynak:** `docs/os/K37_GAUNTLET_STATE_MACHINE.md` — 27 Ağustos 2026 keşfi (tam türetme tablosu, sapmalar, client haritalaması, ara durum riskleri). Önceki tespit: `docs/05_SPRINTS/ARCHIVE/M1_OLCUM_ONCE.md` DUR NOKTASI #2 (18 Ağu 2026).
 
 ---
 
