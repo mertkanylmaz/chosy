@@ -769,47 +769,58 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const lowConfidence = submission.outcome === 'timeout' ||
       submission.latencyMs < LOW_CONFIDENCE_LATENCY_MS
 
-    const insert = await service
-      .from('choice_events')
-      .insert({
-        user_id: appUserId,
-        gauntlet_id: gauntlet.id,
-        session_id: gauntlet.id,
-        round: submission.round,
-        film_a: submission.filmA,
-        film_b: submission.filmB,
-        winner: submission.winner,
-        outcome: submission.outcome,
-        position_of_winner: submission.positionOfWinner,
-        latency_ms: submission.latencyMs,
-        low_confidence: lowConfidence,
-        context: gauntlet.context ?? {},
-        algorithm_version: gauntlet.algorithm_version,
-      })
-      .select('id')
-      .single()
+    // K-37 R1/R3: olay yazimi ve sampiyon isaretlemesi TEK transaction.
+    // Kural tek yerde kalsin diye karar yine `advanceFrom`dan gelir; RPC onu
+    // DB tarafinda ayrica dogrular (migration 108).
+    const setChampion = isAdvancing &&
+      advanceFrom(submission.round, submission.winner !== null) === 'champion' &&
+      submission.winner !== null
+
+    const insert = await service.rpc('record_choice_event', {
+      p_user_id: appUserId,
+      p_gauntlet_id: gauntlet.id,
+      p_round: submission.round,
+      p_film_a: submission.filmA,
+      p_film_b: submission.filmB,
+      p_winner: submission.winner,
+      p_outcome: submission.outcome,
+      p_position_of_winner: submission.positionOfWinner,
+      p_latency_ms: submission.latencyMs,
+      p_low_confidence: lowConfidence,
+      p_context: gauntlet.context ?? {},
+      p_algorithm_version: gauntlet.algorithm_version,
+      p_set_champion: setChampion,
+    })
 
     if (insert.error) {
-      // 23505 → aynı tur için başka bir istek az önce ilerletici olay yazdı.
-      // Yarışın kazananı DB'dir; yutulmuyor, loglanıp mevcut durum dönüyor.
-      if (insert.error.code === '23505') {
-        logInfo('choice_insert_race', {
-          user_id: appUserId,
-          gauntlet_id: gauntlet.id,
-          round: submission.round,
-        })
-        const next = advanceFrom(submission.round, submission.winner !== null)
-        const result: ChoiceResult = {
-          next,
-          refreshesRemaining: remainingOf(usedBefore),
-          refreshAllowed: refreshLimit === UNLIMITED || usedBefore < refreshLimit,
-          gauntletId: gauntlet.id,
-          algorithmVersion: gauntlet.algorithm_version,
-        }
-        if (next === 'exhausted') result.exhaustedReason = 'timeout_no_winner'
-        return jsonResponse(result)
-      }
       throw new Error(`choice_events yazımı başarısız: ${insert.error.message}`)
+    }
+
+    // RPC 'duplicate' döndürdüyse aynı tur için başka bir istek az önce
+    // ilerletici olay yazmış demektir (072 partial UNIQUE). Yarışın kazananı
+    // DB'dir; yutulmuyor, loglanıp mevcut durum dönüyor. Eskiden bu dal
+    // PostgREST 23505 koduyla yakalanıyordu — RPC artık normal dönüşle
+    // bildiriyor, davranış birebir aynı.
+    const rpcStatus = (insert.data as { status?: string } | null)?.status
+    if (rpcStatus !== 'inserted' && rpcStatus !== 'duplicate') {
+      throw new Error(`record_choice_event beklenmeyen sonuç: ${String(rpcStatus)}`)
+    }
+    if (rpcStatus === 'duplicate') {
+      logInfo('choice_insert_race', {
+        user_id: appUserId,
+        gauntlet_id: gauntlet.id,
+        round: submission.round,
+      })
+      const next = advanceFrom(submission.round, submission.winner !== null)
+      const result: ChoiceResult = {
+        next,
+        refreshesRemaining: remainingOf(usedBefore),
+        refreshAllowed: refreshLimit === UNLIMITED || usedBefore < refreshLimit,
+        gauntletId: gauntlet.id,
+        algorithmVersion: gauntlet.algorithm_version,
+      }
+      if (next === 'exhausted') result.exhaustedReason = 'timeout_no_winner'
+      return jsonResponse(result)
     }
 
     // Her seçim → gösterim kaydı. Sıra önemli: olay yazıldıktan sonra.
@@ -850,13 +861,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const result = baseResult(next, usedBefore)
 
       if (next === 'champion' && submission.winner) {
-        const update = await service
-          .from('daily_gauntlets')
-          .update({ champion_film_id: submission.winner })
-          .eq('id', gauntlet.id)
-        if (update.error) {
-          throw new Error(`şampiyon yazımı başarısız: ${update.error.message}`)
-        }
+        // champion_film_id ARTIK BURADA YAZILMAZ — record_choice_event olay
+        // yazimiyla ayni transaction'da isaretledi (migration 108, K-37 R1).
         // Tam obje döner — istemci ekstra fetch YAPMAZ.
         result.champion = await championFilm(service, submission.winner)
       }
