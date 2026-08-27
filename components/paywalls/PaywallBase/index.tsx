@@ -153,7 +153,7 @@ export default function PaywallBase({
       const pkg = packages.find((p) => p.product.identifier === plan.rcProductId);
 
       if (!pkg) {
-        Alert.alert(t('errors.generic'), t('paywall.purchaseError'));
+        Alert.alert(t('paywall.purchaseError'));
         setPurchasing(false);
         return;
       }

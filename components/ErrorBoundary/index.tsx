@@ -16,6 +16,9 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
+// Class component — useLanguage() hook'u kullanilamaz, i18n dogrudan okunur
+// (ShareCards/useShareCapture.ts ile ayni desen).
+import { i18n } from '@/constants/i18n';
 import { Theme } from '@/constants/theme';
 
 interface Props {
@@ -61,10 +64,8 @@ export default class SentryErrorBoundary extends React.Component<Props, State> {
         <View style={styles.container}>
           <View style={styles.card}>
             <Ionicons name="warning-outline" size={48} color={Colors.gold} />
-            <Text style={styles.title}>Something went wrong</Text>
-            <Text style={styles.message}>
-              An unexpected error occurred. Our team has been notified.
-            </Text>
+            <Text style={styles.title}>{i18n.t('errorState.boundaryTitle')}</Text>
+            <Text style={styles.message}>{i18n.t('errorState.boundaryMessage')}</Text>
             {__DEV__ && this.state.error && (
               <Text style={styles.errorDetail} numberOfLines={4}>
                 {this.state.error.message}
@@ -75,7 +76,7 @@ export default class SentryErrorBoundary extends React.Component<Props, State> {
               onPress={this.handleReset}
               activeOpacity={0.8}>
               <Ionicons name="refresh" size={18} color={Colors.background} />
-              <Text style={styles.buttonText}>Try Again</Text>
+              <Text style={styles.buttonText}>{i18n.t('errorState.tryAgain')}</Text>
             </TouchableOpacity>
           </View>
         </View>

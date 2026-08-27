@@ -248,7 +248,7 @@ export default function WatchlistDetailScreen() {
       if (!success) {
         setItems(snapshot);
         setGroups(groupsSnapshot);
-        Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
+        Alert.alert(t('errors.watchlistRemove'));
       }
     },
     [items, groups, t],
@@ -272,7 +272,7 @@ export default function WatchlistDetailScreen() {
               await clearWatchlist();
             } catch {
               setItems(snapshot);
-              Alert.alert(t('errors.generic'), t('errors.watchlistClear'));
+              Alert.alert(t('errors.watchlistClear'));
             }
           },
         },

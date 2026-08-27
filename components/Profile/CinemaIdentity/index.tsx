@@ -36,7 +36,7 @@ export function CinemaIdentity(): React.JSX.Element | null {
     return (
       <View style={styles.card}>
         <Text style={styles.eyebrow}>{t('profile.cinemaIdentity')}</Text>
-        <Text style={styles.emptyText}>{t('games.result.error_subtitle')}</Text>
+        <Text style={styles.emptyText}>{t('errors.profileLoad')}</Text>
       </View>
     );
   }

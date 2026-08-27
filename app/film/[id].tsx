@@ -530,7 +530,7 @@ export default function FilmDetailScreen() {
       setWatchlistAdded(true);
       setIsInWatchlist(true);
     } catch {
-      Alert.alert(t('errors.generic'), t('errors.watchlistSave'));
+      Alert.alert(t('errors.watchlistSave'));
     }
   };
 
@@ -548,7 +548,7 @@ export default function FilmDetailScreen() {
             setIsInWatchlist(false);
             setWatchlistAdded(false);
           } else {
-            Alert.alert(t('errors.generic'), t('errors.watchlistRemove'));
+            Alert.alert(t('errors.watchlistRemove'));
           }
         },
       },
@@ -625,7 +625,6 @@ export default function FilmDetailScreen() {
             color={Colors.textGrey}
             style={{ marginBottom: 16 }}
           />
-          <Text style={styles.errorTitle}>{t('errors.generic')}</Text>
           <Text style={styles.errorText}>{t('filmDetail.loadError')}</Text>
           <TouchableOpacity onPress={loadFilm} style={styles.retryBtn} activeOpacity={0.8}>
             <Text style={styles.retryBtnText}>{t('errors.retry')}</Text>

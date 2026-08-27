@@ -161,7 +161,7 @@ export default function LifetimeOfferScreen() {
       );
 
       if (!pkg) {
-        Alert.alert(t('lifetime.purchaseError'));
+        Alert.alert(t('paywall.purchaseError'));
         setPurchasing(false);
         return;
       }
@@ -213,11 +213,11 @@ export default function LifetimeOfferScreen() {
       } else {
         // K-43: RevenueCat ham hata metni ekrana degil Sentry'ye gider.
         logger.error('[lifetime] Purchase failed:', result.error ?? 'unknown');
-        Alert.alert(t('lifetime.purchaseError'));
+        Alert.alert(t('paywall.purchaseError'));
       }
     } catch (err) {
       logger.error('[lifetime] Purchase error:', err);
-      Alert.alert(t('lifetime.purchaseError'));
+      Alert.alert(t('paywall.purchaseError'));
     } finally {
       setPurchasing(false);
     }

@@ -222,6 +222,9 @@ export default function GamesHubScreen() {
               // Sessiz fallback YASAK — hata görünür olmalı.
               // Sunucunun gerçek mesajı gösteriliyor: 403 ise allowlist'e
               // eklenecek users.id doğrudan bu metinde geliyor.
+              // K-43: bu blok bilerek t() dışında bırakıldı. Buton yalnızca
+              // __DEV__ altında render edilir (bkz. render, `{__DEV__ ? ...}`),
+              // metinler son kullanıcıya hiç basılmaz — Kural 7 kapsamı dışı.
               logger.error('[hub] Reset başarısız:', err);
               Alert.alert(
                 'Sıfırlanamadı',

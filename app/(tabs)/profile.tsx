@@ -544,10 +544,10 @@ function SettingsModal({
                 <Ionicons name="person-add-outline" size={16} color={Colors.gold} />
                 <View style={settingsModalStyles.linkTextBlock}>
                   <Text style={settingsModalStyles.linkTitle}>
-                    {t('profile.linkAccountTitle') ?? 'Link Account'}
+                    {t('profile.linkAccountTitle')}
                   </Text>
                   <Text style={settingsModalStyles.linkSubtitle}>
-                    {t('profile.linkAccountSubtitle') ?? 'Save your data permanently'}
+                    {t('profile.linkAccountSubtitle')}
                   </Text>
                 </View>
               </View>
@@ -559,8 +559,8 @@ function SettingsModal({
                 <Ionicons name="logo-apple" size={16} color={Colors.textWhite} />
                 <Text style={settingsModalStyles.appleBtnText}>
                   {linkingAccount
-                    ? (t('common.loading') ?? 'Linking...')
-                    : (t('profile.linkWithApple') ?? 'Apple')}
+                    ? t('common.loading')
+                    : t('profile.linkWithApple')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -871,7 +871,7 @@ export default function ProfileScreen() {
     } catch (err) {
       logger.error('[Profile] nickname kayit hatasi:', err);
       setDisplayName(prev); // Geri al
-      Alert.alert(t('errors.generic'), t('errors.pullToRefresh'));
+      Alert.alert(t('errors.profileLoad'));
     }
   }
 
@@ -940,10 +940,10 @@ export default function ProfileScreen() {
             try {
               await clearWatchlist();
               logger.log('[Profile] Watchlist cleared');
-              Alert.alert(t('profile.clearWatchlistSuccess') ?? 'Watchlist cleared');
+              Alert.alert(t('profile.clearWatchlistSuccess'));
             } catch (err) {
               logger.error('[Profile] clearWatchlist hatasi:', err);
-              Alert.alert(t('errors.generic'));
+              Alert.alert(t('errors.watchlistClear'));
             }
           },
         },
@@ -960,13 +960,13 @@ export default function ProfileScreen() {
       if (result.success) {
         await loadAll();
         Alert.alert(
-          t('profile.linkSuccess') ?? 'Account Linked',
-          t('profile.linkSuccessMessage') ?? 'Your account has been linked with Apple successfully.',
+          t('profile.linkSuccess'),
+          t('profile.linkSuccessMessage'),
         );
       } else if (result.error !== 'canceled') {
         Alert.alert(
-          t('profile.linkError') ?? 'Link Failed',
-          t('profile.linkErrorMessage') ?? 'Could not link account. Please try again.',
+          t('profile.linkError'),
+          t('profile.linkErrorMessage'),
         );
       }
     } catch (err) {
@@ -1161,8 +1161,7 @@ export default function ProfileScreen() {
         <StatusBar style="light" backgroundColor={Colors.background} />
         <ErrorState
           errorType="server"
-          title={t('errors.generic')}
-          message={t('errors.pullToRefresh')}
+          message={t('errors.profileLoad')}
           onRetry={async () => {
             setLoading(true);
             setLoadError(false);
