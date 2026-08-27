@@ -206,6 +206,46 @@ class EntitlementError extends Error {
   }
 }
 
+/**
+ * `record_choice_event` RPC'si hata döndürdü. AYRI sınıf çünkü DAVRANIŞI değil
+ * GÖRÜNÜRLÜĞÜ ayrı: PostgREST'in SQLSTATE'i (`error.code`) throw edilen metne
+ * girmiyordu, dış catch de sabit bir mesajla Sentry'ye yazıyordu. Sonuç: 108'in
+ * iki guard'ı da diğer tüm choice_failed nedenleriyle TEK issue'da grupleniyor,
+ * kod hiç görünmüyordu. Sınıf kodu catch'e kadar taşır; oradan tag'e çıkar.
+ *
+ * Hata yolu, HTTP yanıtı ve seviye DEĞİŞMEZ — yalnız etiketleme zenginleşir.
+ */
+class ChoiceRpcError extends Error {
+  readonly pgCode: string
+  readonly guardCode: string | null
+
+  constructor(message: string, pgCode: string, guardCode: string | null) {
+    super(message)
+    this.name = 'ChoiceRpcError'
+    this.pgCode = pgCode
+    this.guardCode = guardCode
+  }
+}
+
+/**
+ * 108'in BİLİNEN guard'ları. Eşleşme RAISE metninin başına bakar: SQLSTATE ile
+ * ayırmak yetmez — `check_violation` (23514) tablo CHECK kısıtlarından da gelir,
+ * `no_data_found` (P0002) ileride başka bir RPC dalından da gelebilir.
+ * Eşleşmeyen hata bilinçli olarak `null` döner ve genel CHOICE_FAILED koduna
+ * düşer; uydurma bir sınıf ATANMAZ.
+ */
+const RPC_GUARDS: ReadonlyArray<readonly [string, string]> = [
+  ['record_choice_event: gecersiz sampiyon yazimi', 'CHOICE_CHAMPION_GUARD'],
+  ['record_choice_event: daily_gauntlets satiri yok', 'CHOICE_GAUNTLET_NOT_FOUND'],
+]
+
+function classifyRpcGuard(message: string): string | null {
+  for (const [needle, code] of RPC_GUARDS) {
+    if (message.startsWith(needle)) return code
+  }
+  return null
+}
+
 // ─── Girdi doğrulama ─────────────────────────────────────────────────────────
 
 /**
@@ -793,7 +833,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
 
     if (insert.error) {
-      throw new Error(`choice_events yazımı başarısız: ${insert.error.message}`)
+      // SQLSTATE metne de giriyor: log satırı tek başına okunduğunda hangi
+      // sınıf hata olduğu görülebilsin (Sentry tag'i ayrıca taşıyor).
+      throw new ChoiceRpcError(
+        `choice_events yazımı başarısız: ${insert.error.code} ${insert.error.message}`,
+        insert.error.code,
+        classifyRpcGuard(insert.error.message),
+      )
     }
 
     // RPC 'duplicate' döndürdüyse aynı tur için başka bir istek az önce
@@ -1053,10 +1099,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
       round: submission.round,
       outcome: submission.outcome,
     })
+    // Tag'ler Sentry'de FİLTRELER, gruplamayı BÖLMEZ — gruplama mesaja bakar.
+    // Bu yüzden bilinen guard'larda mesaja da sınıf eklenir; mevcut metin ÖNEK
+    // olarak korunur, "submit-choice: seçim kaydedilemedi" araması çalışmaya
+    // devam eder. Bilinmeyen hatada mesaj birebir eskisi gibi kalır.
+    const rpcError = err instanceof ChoiceRpcError ? err : null
+    const tags: Record<string, string> = {
+      function: 'submit-choice',
+      error_code: rpcError?.guardCode ?? 'CHOICE_FAILED',
+    }
+    if (rpcError) tags.pg_code = rpcError.pgCode
+
     await sentryCapture({
-      message: 'submit-choice: seçim kaydedilemedi',
+      message: rpcError?.guardCode
+        ? `submit-choice: seçim kaydedilemedi — ${rpcError.guardCode}`
+        : 'submit-choice: seçim kaydedilemedi',
       level: 'fatal',
-      tags: { function: 'submit-choice' },
+      tags,
       extra: {
         user_id: appUserId,
         gauntlet_id: submission.gauntletId,
