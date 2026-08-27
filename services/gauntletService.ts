@@ -93,6 +93,22 @@ export class GauntletFetchError extends Error {
 }
 
 /**
+ * Sunucu YANITLADI ama hata döndü. `status` taşınır çünkü kuyruk kalıcı ile
+ * geçici hatayı ayırmak zorundadır: 4xx'i tekrar denemek `tasteSignalService`
+ * 30 Tem 2026 kuyruk zehirlenmesinin birebir tekrarı olurdu — tek geçersiz
+ * satır kuyruğu kalıcı kilitlemişti.
+ */
+export class GauntletHttpError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'GauntletHttpError';
+    this.status = status;
+  }
+}
+
+/**
  * Nötr varsayılan bağlam — PRODUCT_OS §4.3: "tahmin güveni <%70 → tahmin
  * etme, nötr varsayılan" ve "ilk oturumda asla tahmin etme". Bağlam seçici
  * C.3'te bağlanınca çağıran taraf gerçek bağlamı geçer (CTO onayı 14.08.2026).
@@ -353,6 +369,21 @@ export async function submitChoice(
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
     }
+    if (status === null) {
+      // K-42: sunucuya ulaşılamadı. Seçim kuyruğa alınabilir — çağıran karar
+      // verir. Uyarı seviyesi: beklenen saha durumu, ama sessiz değil.
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: {
+          fn: 'submit-choice',
+          outcome: submission.outcome,
+          error_code: 'GAUNTLET_OFFLINE',
+        },
+        extra: { detail, gauntlet_id: submission.gauntletId },
+      });
+      logger.warn('[gauntletService] submitChoice bağlantı hatası:', detail);
+      throw new GauntletFetchError(detail || 'submit-choice unreachable');
+    }
     Sentry.captureException(error, {
       tags: {
         fn: 'submit-choice',
@@ -362,7 +393,7 @@ export async function submitChoice(
       extra: { detail, gauntlet_id: submission.gauntletId },
     });
     logger.error('[gauntletService] submitChoice failed:', detail, { skipBridge: true });
-    throw new Error(detail || 'submit-choice failed');
+    throw new GauntletHttpError(detail || 'submit-choice failed', status);
   }
 
   recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok');
