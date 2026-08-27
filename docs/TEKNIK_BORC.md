@@ -2187,3 +2187,38 @@ bootstrap ve ağ hatası yollarına dokunacak, teşhis oraya doğal olarak giriy
 
 İlgili: `docs/os/K37_GAUNTLET_STATE_MACHINE.md` — R7 keşfinde bulundu
 (R7'nin kendisi gerçek risk değilmiş, bu çıktı).
+
+---
+
+## offlineQueue.ts ölü kod — silinmesi WIP temizliğini bekliyor
+
+`services/offlineQueue.ts` (241 satır) **işlevsizdir**: yazma tarafının
+tamamı bağlantısız.
+
+| Export | Çağıran |
+|---|---|
+| `enqueueOperation` | **0** — kuyruğa hiçbir şey girmiyor |
+| `cacheArchetypeId` | **0** |
+| `cacheCalibrationVector` | **0** |
+| `getCachedCalibrationVector` | **0** |
+| `processOfflineQueue` | `app/_layout.tsx:282` (açılış), `:430` (TOKEN_REFRESHED) |
+| `getCachedArchetypeId` | `services/homeService.ts:87` |
+
+Yani `chosy_offline_queue` anahtarı hiç yazılmadığı için `processOfflineQueue()`
+her açılışta boş kuyruk buluyor, `getCachedArchetypeId()` daima `null` dönüyor.
+Kök neden: dosya onboarding arketip quiz'i için yazılmıştı, o akış emekli oldu
+(bkz. gauntlet pivotu), çağrı noktaları onunla birlikte gitti.
+
+**Neden şimdi silinmedi:** silmek `app/_layout.tsx` (import + 2 çağrı) ve
+`services/homeService.ts` (import + fallback) düzenlemesi gerektiriyor.
+`app/_layout.tsx` şu an **dört ayrı yarım işin** ortasında (K-15/E-05 bildirim
+istemi, auth, vektör seed, champion prompts — 12 dosyalık WIP). Yarım işi
+"bitmiş" diye commit'e sokmamak için ertelendi.
+
+**Silme sonrası davranış değişmez:** `homeService.ts:87` fallback'i kalkınca
+`archetypeId = profile?.archetype_id ?? null` kalır — cache zaten hep boş
+olduğu için sonuç aynı.
+
+**Ne zaman:** Mertkan'ın WIP'i commit'lenince. K-42'yi bloklamıyor.
+
+İlgili: K-42 keşif turu (27 Ağu 2026).
