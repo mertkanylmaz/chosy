@@ -85,8 +85,18 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
   // EAS Build'de env secret tanimli degilse bos string gelir.
   // Bos key ile Purchases.configure() native crash'e yol acabilir — kesinlikle guard'la.
   if (!apiKey || apiKey.trim() === '') {
-    logger.warn('[purchases] RevenueCat API key bulunamadi — SDK baslatilmadi');
-    logger.warn('[purchases] EXPO_PUBLIC_RC_IOS_KEY EAS Secrets\'ta tanimli mi?');
+    // Odeme sistemi hic baslamiyor demek — bu sessiz kalmamali.
+    logger.error(
+      '[purchases] RevenueCat API key bulunamadi — SDK baslatilmadi',
+      new Error('RC api key missing'),
+      {
+        code: 'RC_API_KEY_MISSING',
+        extra: {
+          platform: Platform.OS,
+          hint: 'EXPO_PUBLIC_RC_IOS_KEY / EXPO_PUBLIC_RC_ANDROID_KEY EAS Secrets tanimli mi?',
+        },
+      },
+    );
     return;
   }
 
@@ -117,7 +127,15 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
  * Auth sonrası çağrılır (Apple/Google link).
  */
 export async function identifyUser(supabaseUserId: string): Promise<void> {
-  if (!_initialized) return;
+  if (!_initialized) {
+    // Eslenme hic olmuyor — satin alim yanlis RC customer'a baglanabilir.
+    logger.error(
+      '[purchases] identifyUser: RevenueCat baslatilmamis — eslenme atlandi',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'identifyUser' } },
+    );
+    return;
+  }
 
   try {
     await Purchases.logIn(supabaseUserId);

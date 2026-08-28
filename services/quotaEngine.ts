@@ -68,7 +68,14 @@ async function getUsedCount(key: string): Promise<number> {
   try {
     const val = await AsyncStorage.getItem(key);
     return val ? parseInt(val, 10) : 0;
-  } catch {
+  } catch (err) {
+    // Fail-open bilincli: okuma hatasi kullaniciyi bloklamaz (W2-12 ilkesi).
+    // Ancak sessiz kalmaz — sifir donmek kotayi sifirlar, Sentry'de gorunmeli.
+    logger.error('[quota] AsyncStorage read failed', err, {
+      code: 'QUOTA_READ_FAILED',
+      sampleRate: 0.2,
+      extra: { key },
+    });
     return 0;
   }
 }
@@ -78,7 +85,11 @@ async function incrementCount(key: string, current: number): Promise<void> {
   try {
     await AsyncStorage.setItem(key, String(current + 1));
   } catch (err) {
-    logger.warn('[quota] AsyncStorage write failed:', err);
+    // Sayac artmadi — kullanici kotasiz devam eder. Gelir etkisi var, gorunur olmali.
+    logger.error('[quota] AsyncStorage write failed', err, {
+      code: 'QUOTA_WRITE_FAILED',
+      extra: { key },
+    });
   }
 }
 
@@ -105,7 +116,11 @@ async function getTierFromRevenueCat(): Promise<SubscriptionTier> {
     // Entitlement aktif ama product ID tanimsiz — monthly ver (kullaniciyi cezalandirma)
     return 'monthly';
   } catch (err) {
-    logger.warn('[quota] RC getCustomerInfo failed — defaulting to free:', err);
+    // 'free'ye dusmek bilincli: asla yanlislikla premium verme.
+    // Odeme-kritik sessizlik olmasin diye Sentry'ye baglandi.
+    logger.error('[quota] RC getCustomerInfo failed — defaulting to free', err, {
+      code: 'RC_TIER_FETCH_FAILED',
+    });
     return 'free';
   }
 }
@@ -351,7 +366,12 @@ export async function clearQuotaCache(userId: string): Promise<void> {
     await AsyncStorage.multiRemove(keys);
     logger.log('[quota] Cache cleared for user:', userId);
   } catch (err) {
-    logger.warn('[quota] Cache clear failed:', err);
+    // Temizlenmeyen sayac: satin alan kullanici limitli gorunur,
+    // hesap silmede eski sayac cihazda kalir.
+    logger.error('[quota] Cache clear failed', err, {
+      code: 'QUOTA_CACHE_CLEAR_FAILED',
+      extra: { userId },
+    });
   }
 }
 
@@ -386,7 +406,10 @@ async function countSearchesSince(userId: string, since: string): Promise<number
     .gte('searched_at', since);
 
   if (error) {
-    logger.warn('[quota] Arama sayisi sorgu hatasi (fail-closed):', error.code, error.message ?? JSON.stringify(error));
+    logger.error('[quota] Arama sayisi sorgu hatasi (fail-closed)', error, {
+      code: 'QUOTA_SEARCH_COUNT_FAILED',
+      extra: { pgCode: error.code, detail: error.message ?? JSON.stringify(error) },
+    });
     return FREE_DAILY_LIMIT;
   }
 

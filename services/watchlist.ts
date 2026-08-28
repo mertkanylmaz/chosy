@@ -48,7 +48,10 @@ export async function getWatchedFilmIds(): Promise<Set<string>> {
   try {
     const raw = await AsyncStorage.getItem(WATCHED_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
+  } catch (err) {
+    logger.error('[watchlist] getWatchedFilmIds hatasi', err, {
+      code: 'WATCHLIST_WATCHED_READ_FAILED',
+    });
     return new Set();
   }
 }
@@ -124,11 +127,15 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
         { onConflict: 'user_id,film_id', ignoreDuplicates: true },
       );
 
+    if (error) {
+      logger.error('[watchlist] addToWatchlist hata', error, {
+        code: 'WATCHLIST_ADD_FAILED',
+        extra: { pgCode: error.code, filmId: film.id },
+      });
+    }
+
     if (__DEV__) {
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('[watchlist] addToWatchlist hata:', error.message, '| code:', error.code);
-      } else {
+      if (!error) {
         // eslint-disable-next-line no-console
         console.log(
           '[watchlist] eklendi:',
@@ -150,10 +157,10 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
       tasteSignals.recordWatchlistAdd(film.id).catch(() => {});
     }
   } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] addToWatchlist beklenmedik hata:', err);
-    }
+    logger.error('[watchlist] addToWatchlist beklenmedik hata', err, {
+      code: 'WATCHLIST_ADD_UNEXPECTED',
+      extra: { filmId: film.id },
+    });
   }
 }
 
@@ -210,10 +217,10 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('[watchlist] getWatchlist hata:', error?.message);
-      }
+      logger.error('[watchlist] getWatchlist hata', error, {
+        code: 'WATCHLIST_FETCH_FAILED',
+        extra: { pgCode: error?.code },
+      });
       return [];
     }
 
@@ -238,10 +245,9 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         sessionPrompt: row.sessions?.raw_input ?? null,
       }));
   } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] getWatchlist beklenmedik hata:', err);
-    }
+    logger.error('[watchlist] getWatchlist beklenmedik hata', err, {
+      code: 'WATCHLIST_FETCH_UNEXPECTED',
+    });
     return [];
   }
 }
@@ -260,15 +266,16 @@ export async function clearWatchlist(): Promise<void> {
       .delete()
       .eq('user_id', appUserId);
 
-    if (__DEV__ && error) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] clearWatchlist hata:', error.message);
+    if (error) {
+      logger.error('[watchlist] clearWatchlist hata', error, {
+        code: 'WATCHLIST_CLEAR_FAILED',
+        extra: { pgCode: error.code },
+      });
     }
   } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] clearWatchlist beklenmedik hata:', err);
-    }
+    logger.error('[watchlist] clearWatchlist beklenmedik hata', err, {
+      code: 'WATCHLIST_CLEAR_UNEXPECTED',
+    });
   }
 }
 
@@ -291,11 +298,15 @@ export async function removeFromWatchlist(filmId: string): Promise<boolean> {
       .delete()
       .match({ film_id: filmId, user_id: appUserId });
 
+    if (error) {
+      logger.error('[watchlist] removeFromWatchlist hata', error, {
+        code: 'WATCHLIST_REMOVE_FAILED',
+        extra: { pgCode: error.code, filmId },
+      });
+    }
+
     if (__DEV__) {
-      if (error) {
-        // eslint-disable-next-line no-console
-        console.error('[watchlist] removeFromWatchlist hata:', error.message, '| code:', error.code);
-      } else {
+      if (!error) {
         // eslint-disable-next-line no-console
         console.log('[watchlist] silindi: film_id=', filmId, '| user_id=', appUserId);
       }
@@ -308,10 +319,10 @@ export async function removeFromWatchlist(filmId: string): Promise<boolean> {
 
     return !error;
   } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[watchlist] removeFromWatchlist beklenmedik hata:', err);
-    }
+    logger.error('[watchlist] removeFromWatchlist beklenmedik hata', err, {
+      code: 'WATCHLIST_REMOVE_UNEXPECTED',
+      extra: { filmId },
+    });
     return false;
   }
 }
