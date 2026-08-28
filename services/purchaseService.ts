@@ -20,6 +20,7 @@ import Purchases, {
   type CustomerInfoUpdateListener,
   type PurchasesPackage,
   LOG_LEVEL,
+  PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
 
 import { RC_ENTITLEMENT_ID } from '@/constants/subscriptionPlans';
@@ -34,6 +35,45 @@ const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
+/**
+ * Bir RevenueCat çağrısının neden sonuç üretemediği.
+ *
+ * Amaç: "gerçekten yok" ile "sorgulanamadı" ayrımı. Bu ikisi aynı dönüş
+ * değerine indirgendiğinde ödeme yapmış kullanıcı free'ye düşüyor ve ağ
+ * hatası ekranda "aboneliğiniz yok" olarak görünüyordu.
+ */
+export type PurchaseErrorKind =
+  /** RC SDK configure edilmemiş — API key eksik veya init patladı */
+  | 'not_initialized'
+  /** Ağ/timeout — retry anlamlı */
+  | 'network'
+  /** RC SDK içsel hatası */
+  | 'sdk_error'
+  /** Satın alma geçti ama entitlement henüz aktif değil (RC senkron gecikmesi) */
+  | 'entitlement_pending'
+  /** Sorgu başarılı, sonuç gerçekten boş */
+  | 'no_data';
+
+/**
+ * RC hatasını PurchaseErrorKind'a çevirir.
+ * Kod eşleşmezse 'sdk_error' — sessiz sınıflandırma yok.
+ */
+function classifyPurchaseError(err: unknown): PurchaseErrorKind {
+  const code = (err as { code?: unknown } | null | undefined)?.code;
+
+  switch (String(code)) {
+    case PURCHASES_ERROR_CODE.NETWORK_ERROR:
+    case PURCHASES_ERROR_CODE.OFFLINE_CONNECTION_ERROR:
+    case PURCHASES_ERROR_CODE.API_ENDPOINT_BLOCKED:
+    case PURCHASES_ERROR_CODE.PRODUCT_REQUEST_TIMED_OUT_ERROR:
+      return 'network';
+    case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
+      return 'entitlement_pending';
+    default:
+      return 'sdk_error';
+  }
+}
+
 /** Abonelik durum özeti */
 export interface SubscriptionInfo {
   /** Premium erişimi var mı? */
@@ -46,14 +86,27 @@ export interface SubscriptionInfo {
   isInTrial: boolean;
   /** RevenueCat customer ID */
   rcCustomerId: string | null;
+  /**
+   * Dolu ise bu değerler RC'den okunmadı, fallback'tir.
+   * Çağıran taraf bu durumda mevcut state'i KORUMALI — aksi hâlde
+   * geçici bir ağ hatası ödeme yapmış kullanıcıyı free'ye düşürür.
+   */
+  errorKind?: PurchaseErrorKind;
 }
 
 /** Satın alma sonucu */
 export interface PurchaseResult {
   success: boolean;
   customerInfo?: CustomerInfo;
+  /** Ham hata metni — K-43: ekrana değil Sentry'ye gider */
   error?: string;
   cancelled?: boolean;
+  /**
+   * Başarısızlığın sınıfı. `success: false` iken 'no_data' gerçekten
+   * satın alım olmadığı anlamına gelir; diğerleri sorgulanamadı demektir.
+   * `cancelled: true` bir hata değildir — bu alan boş kalır.
+   */
+  errorKind?: PurchaseErrorKind;
 }
 
 // ─── SDK Başlatma ────────────────────────────────────────────────────────────
@@ -77,6 +130,9 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
       return;
     }
   } catch (err) {
+    // Hata yolu DEĞİL: akış aşağıda gerçek configure()'a devam ediyor.
+    // Başarısızlık burada bir sonuç değiştirmediği için warn seviyesinde kalır;
+    // asıl başlatma hatası aşağıdaki catch'te logger.error olarak raporlanır.
     logger.warn('[purchases] isConfigured() kontrolü başarısız — ilk kurulum varsayılıyor:', err);
   }
 
@@ -159,14 +215,27 @@ export async function getSubscriptionStatus(): Promise<SubscriptionInfo> {
     rcCustomerId: null,
   };
 
-  if (!_initialized) return defaultStatus;
+  if (!_initialized) {
+    logger.error(
+      '[purchases] getSubscriptionStatus: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getSubscriptionStatus' } },
+    );
+    return { ...defaultStatus, errorKind: 'not_initialized' };
+  }
 
   try {
     const customerInfo = await Purchases.getCustomerInfo();
     return parseCustomerInfo(customerInfo);
   } catch (err) {
-    logger.error('[purchases] Abonelik durumu sorgu hatası:', err);
-    return defaultStatus;
+    const errorKind = classifyPurchaseError(err);
+    logger.error('[purchases] Abonelik durumu sorgu hatasi', err, {
+      code: 'RC_STATUS_FETCH_FAILED',
+      extra: { errorKind },
+    });
+    // isPremium: false donuyoruz ama errorKind ile isaretli — cagiran
+    // bunu "free" diye state'e YAZMAMALI.
+    return { ...defaultStatus, errorKind };
   }
 }
 
@@ -200,7 +269,16 @@ function parseCustomerInfo(info: CustomerInfo): SubscriptionInfo {
 export function addSubscriptionListener(
   callback: (info: SubscriptionInfo) => void,
 ): () => void {
-  if (!_initialized) return () => {};
+  if (!_initialized) {
+    // Listener hic takilmiyor — abonelik yenilenme/expire/cancel olaylari
+    // sessizce islenmez.
+    logger.error(
+      '[purchases] addSubscriptionListener: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'addSubscriptionListener' } },
+    );
+    return () => {};
+  }
 
   // Named referans — removeCustomerInfoUpdateListener ayni fonksiyonu alir
   const listenerFn: CustomerInfoUpdateListener = (customerInfo) => {
@@ -284,7 +362,12 @@ export async function getLifetimeOffering(): Promise<PurchasesPackage[]> {
  */
 export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
   if (!_initialized) {
-    return { success: false, error: 'RevenueCat başlatılmadı' };
+    logger.error(
+      '[purchases] purchasePackage: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'purchasePackage' } },
+    );
+    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
   }
 
   posthogAnalytics.track('purchase_started', {
@@ -303,20 +386,45 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
       });
     }
 
+    if (!isPremium) {
+      // ÖDEME GİTMİŞ OLABİLİR: SDK satın almayı onayladı ama entitlement
+      // henüz aktif değil (RC senkron gecikmesi, tipik olarak saniyeler).
+      // Bu genel bir satın alma hatası DEĞİL — çağıran kullanıcıya
+      // "tekrar dene" değil "işleniyor" demeli, aksi hâlde çift ödeme riski.
+      logger.error(
+        '[purchases] Satin alma tamamlandi ama entitlement aktif degil',
+        new Error('entitlement pending after purchase'),
+        {
+          code: 'RC_ENTITLEMENT_PENDING',
+          extra: {
+            packageId: pkg.identifier,
+            productId: pkg.product.identifier,
+            rcCustomerId: customerInfo.originalAppUserId,
+          },
+        },
+      );
+    }
+
     return {
       success: isPremium,
       customerInfo,
       error: isPremium ? undefined : 'Entitlement aktif değil',
+      errorKind: isPremium ? undefined : 'entitlement_pending',
     };
   } catch (err: unknown) {
-    // Kullanıcı iptal etti
+    // Kullanıcı iptal etti — hata değil, errorKind taşımaz
     if (err && typeof err === 'object' && 'userCancelled' in err && (err as { userCancelled: boolean }).userCancelled) {
       return { success: false, cancelled: true };
     }
 
+    const errorKind = classifyPurchaseError(err);
     const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
-    logger.error('[purchases] Satın alma hatası:', message);
-    return { success: false, error: message };
+    // K-43: ham RC metni ekrana degil Sentry'ye
+    logger.error('[purchases] Satin alma hatasi', err, {
+      code: 'RC_PURCHASE_FAILED',
+      extra: { errorKind, packageId: pkg.identifier, productId: pkg.product.identifier },
+    });
+    return { success: false, error: message, errorKind };
   }
 }
 
@@ -328,7 +436,15 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
  * Çağrılmazsa eski abonelik bilgisi cihazda kalır ve yeni hesap premium görünür.
  */
 export async function logOutPurchases(): Promise<void> {
-  if (!_initialized) return;
+  if (!_initialized) {
+    // RC cache temizlenmiyor — yeni hesap premium gorunebilir (BUG-002).
+    logger.error(
+      '[purchases] logOutPurchases: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'logOutPurchases' } },
+    );
+    return;
+  }
 
   try {
     await Purchases.logOut();
@@ -346,7 +462,12 @@ export async function logOutPurchases(): Promise<void> {
  */
 export async function restorePurchases(): Promise<PurchaseResult> {
   if (!_initialized) {
-    return { success: false, error: 'RevenueCat başlatılmadı' };
+    logger.error(
+      '[purchases] restorePurchases: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'restorePurchases' } },
+    );
+    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
   }
 
   try {
@@ -355,16 +476,25 @@ export async function restorePurchases(): Promise<PurchaseResult> {
 
     if (isPremium) {
       posthogAnalytics.track('restore_completed');
+      return { success: true, customerInfo };
     }
 
+    // Sorgu BAŞARILI, gerçekten geri yüklenecek bir şey yok.
+    // Ağ hatasından ayrı tutulmalı — çağıran "aboneliğin yok" diyebilir.
     return {
-      success: isPremium,
+      success: false,
       customerInfo,
-      error: isPremium ? undefined : 'Geri yüklenecek abonelik bulunamadı',
+      error: 'Geri yüklenecek abonelik bulunamadı',
+      errorKind: 'no_data',
     };
   } catch (err) {
+    const errorKind = classifyPurchaseError(err);
     const message = err instanceof Error ? err.message : 'Bilinmeyen hata';
-    logger.error('[purchases] Geri yükleme hatası:', message);
-    return { success: false, error: message };
+    logger.error('[purchases] Geri yukleme hatasi', err, {
+      code: 'RC_RESTORE_FAILED',
+      extra: { errorKind },
+    });
+    // errorKind 'no_data' DEĞİL — çağıran "aboneliğin yok" DEMEMELİ.
+    return { success: false, error: message, errorKind };
   }
 }
