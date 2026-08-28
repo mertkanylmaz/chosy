@@ -406,6 +406,7 @@
     "offeringsLoad": "Plans couldn't load. Try again.",
     "purchasePendingTitle": "Purchase is processing",
     "purchasePending": "Your purchase went through but hasn't activated yet. This usually takes a few seconds — reopen this screen to check.",
+    "watchedToggle": "Watched status couldn't be saved. Try again.",
     "retry": "Retry"
   },
   "profile": {

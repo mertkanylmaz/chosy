@@ -23,6 +23,14 @@ export const WATCHED_KEY = 'chosy_watched_films';
 /**
  * Filmin izlendi durumunu toggle eder.
  * AsyncStorage'da JSON Set olarak saklanır.
+ *
+ * CRITICAL: Yazma başarısız olursa throw eder — çağıran taraf yakalamalı.
+ * Daha önce `false` dönüyordu; bu "izlenmedi" ile ayırt edilemiyordu ve
+ * UI kalıcı olarak yanlış durum gösteriyordu (watchSync bunu sunucuya
+ * taşıdığı için kayıp kalıcı oluyordu).
+ *
+ * @returns Yeni izlendi durumu
+ * @throws AsyncStorage okuma/yazma başarısız olursa
  */
 export async function toggleWatched(filmId: string): Promise<boolean> {
   try {
@@ -36,8 +44,13 @@ export async function toggleWatched(filmId: string): Promise<boolean> {
     }
     await AsyncStorage.setItem(WATCHED_KEY, JSON.stringify([...set]));
     return !isWatched;
-  } catch {
-    return false;
+  } catch (err) {
+    // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
+    logger.error('[watchlist] toggleWatched hata', err, {
+      code: 'WATCHLIST_TOGGLE_WATCHED_FAILED',
+      extra: { filmId },
+    });
+    throw err;
   }
 }
 

@@ -558,9 +558,16 @@ export default function FilmDetailScreen() {
   const handleToggleWatched = useCallback(async () => {
     if (!film) return;
     hapticMedium();
-    const newState = await toggleWatched(film.id);
-    setIsWatched(newState);
-  }, [film]);
+    try {
+      const newState = await toggleWatched(film.id);
+      setIsWatched(newState);
+    } catch {
+      // Yazma basarisiz — isWatched eski degerinde kalir. Sessizce
+      // "izlenmedi" yazmak yerine kullaniciya bildir; servis katmani
+      // hatayi zaten Sentry'ye yazdi.
+      Alert.alert(t('errors.watchedToggle'));
+    }
+  }, [film, t]);
 
   const handleShare = () => {
     if (film) shareFilmCard();
