@@ -85,8 +85,9 @@ export default function LifetimeOfferScreen() {
   const [counter, setCounter] = useState<LifetimeCounter | null>(null);
   const [memberInfo, setMemberInfo] = useState<FoundingMemberInfo | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
-  /** Dolu ise paketler guvenilir degil — satin alma denenmeden once uyarilir */
+  /** Dolu ise paketler guvenilir degil — gorunur hata + retry gosterilir */
   const [offeringsError, setOfferingsError] = useState<PurchaseErrorKind | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -98,6 +99,7 @@ export default function LifetimeOfferScreen() {
   // ── Load data ──────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
         const [counterData, offerings, userId] = await Promise.all([
           getLifetimeCounter(),
@@ -139,7 +141,7 @@ export default function LifetimeOfferScreen() {
       }
     }
     load();
-  }, [animatedSold, animatedProgress]);
+  }, [animatedSold, animatedProgress, reloadToken]);
 
   // ── Already lifetime? Show badge ───────────────────────────────────────
   useEffect(() => {
@@ -406,11 +408,25 @@ export default function LifetimeOfferScreen() {
           {t('lifetime.oneTimeDisclaimer')}
         </Text>
 
+        {/* ── Offering yukleme hatasi ──────────────────────────────── */}
+        {offeringsError && (
+          <View style={styles.offeringsErrorBox}>
+            <Text style={styles.offeringsErrorText}>{t('errors.offeringsLoad')}</Text>
+            <TouchableOpacity
+              onPress={() => { hapticMedium(); setReloadToken((n) => n + 1); }}
+              activeOpacity={0.8}
+              style={styles.offeringsRetryBtn}
+            >
+              <Text style={styles.offeringsRetryText}>{t('errors.retry')}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* ── CTA ──────────────────────────────────────────────────── */}
         <TouchableOpacity
-          style={[styles.ctaButton, purchasing && styles.ctaDisabled]}
+          style={[styles.ctaButton, (purchasing || !!offeringsError) && styles.ctaDisabled]}
           onPress={handlePurchase}
-          disabled={purchasing}
+          disabled={purchasing || !!offeringsError}
           activeOpacity={0.8}
         >
           <LinearGradient
@@ -680,6 +696,36 @@ const styles = StyleSheet.create({
     color: Colors.textGrey,
     textAlign: 'center',
     lineHeight: 18,
+  },
+
+  // ── Offering Yukleme Hatasi ───────────────────────────────────────────
+  offeringsErrorBox: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    gap: 12,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.error,
+  },
+  offeringsErrorText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  offeringsRetryBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.gold,
+  },
+  offeringsRetryText: {
+    fontSize: 14,
+    color: Colors.gold,
+    fontWeight: '500',
   },
 
   // ── CTA ────────────────────────────────────────────────────────────────
