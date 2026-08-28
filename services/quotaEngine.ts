@@ -328,32 +328,6 @@ export async function getFullQuotaStatus(userId: string): Promise<FullQuotaStatu
 }
 
 /**
- * Bonus search ver (streak rewards icin).
- * Client-side: mevcut search sayacini negatife cekmek yerine
- * ayri bir bonus key tutar.
- */
-export async function grantBonusSearches(
-  userId: string,
-  amount: number,
-  _reason: string,
-): Promise<void> {
-  try {
-    const bonusKey = `quota_bonus_${userId}_search_${todayDateKey()}`;
-    const current = await getUsedCount(bonusKey);
-    await AsyncStorage.setItem(bonusKey, String(current + amount));
-    logger.log('[quota] Bonus granted:', amount, 'for user:', userId);
-  } catch (err) {
-    logger.error(
-      '[quota] grantBonusSearches error:', err,
-      {
-        code: 'QUOTA_BONUS_GRANT_FAILED',
-        sampleRate: 0.2,
-      },
-    );
-  }
-}
-
-/**
  * Purchase sonrasi quota cache'ini temizle.
  * Yeni tier ile fresh quota baslar.
  */
@@ -478,54 +452,4 @@ export async function recordMoodSearch(userId: string): Promise<void> {
   }
 
   logger.log('[quota] Mood search recorded', { userId });
-}
-
-// ─── Trial Kontrol ───────────────────────────────────────────────────────────
-
-/**
- * Verilen email'in daha once free trial kullanip kullanmadigini kontrol eder.
- */
-export async function hasUsedFreeTrial(email: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('trial_claims')
-    .select('email')
-    .eq('email', email.toLowerCase())
-    .maybeSingle();
-
-  if (error) {
-    if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error(
-        '[quota] Trial kontrol hatasi:', error.message,
-        {
-          code: 'QUOTA_TRIAL_CHECK_FAILED',
-          sampleRate: 0.2,
-        },
-      );
-    }
-    return false;
-  }
-
-  return data !== null;
-}
-
-/**
- * Email'i trial_claims tablosuna kaydeder.
- * Trial satin alimindan hemen sonra cagrilir.
- */
-export async function claimFreeTrial(email: string): Promise<void> {
-  const { error } = await supabase
-    .from('trial_claims')
-    .upsert({ email: email.toLowerCase() }, { onConflict: 'email' });
-
-  if (error) {
-    if (!error.message?.includes('not find the table') && error.code !== '42P01') {
-      logger.error(
-        '[quota] Trial kayit hatasi:', error.message,
-        {
-          code: 'QUOTA_TRIAL_RECORD_FAILED',
-          sampleRate: 0.2,
-        },
-      );
-    }
-  }
 }
