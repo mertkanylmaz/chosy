@@ -169,7 +169,15 @@ export function WhyThisMovieFunnel({
       } | null;
 
       if (error || !row) {
-        throw error ?? new Error(`Film not found: ${filmUuid ?? `tmdb_id=${filmId}`}`);
+        // Bu yol servis katmanindan gecmiyor — kaynaginda raporlanmali,
+        // yoksa asagidaki catch skipBridge'li oldugu icin sessiz kalir.
+        const lookupError =
+          error ?? new Error(`Film not found: ${filmUuid ?? `tmdb_id=${filmId}`}`);
+        logger.error('[WhyThisMovie] Film sorgusu basarisiz', lookupError, {
+          code: 'GAME_FILM_LOOKUP_FAILED',
+          extra: { gameType, filmUuid, filmId },
+        });
+        throw lookupError;
       }
 
       await addToWatchlist({
@@ -189,9 +197,11 @@ export function WhyThisMovieFunnel({
       trackWatchlistAdded(gameType, analyticsFilmId);
       setAdded(true);
     } catch (err) {
-      // Hard Rule 5: sessiz fallback yok — Sentry + görünür durum
+      // Hard Rule 5: sessiz fallback yok — görünür durum + Sentry.
+      // Sentry kaydi artik kaynagindan geliyor: addToWatchlist hatalarini
+      // servis katmani, film sorgusu hatalarini yukaridaki dal yaziyor.
+      // Buradaki cagri skipBridge'li — ayni hata icin ikinci event uretmez.
       logger.error('[WhyThisMovie] Watchlist add error:', err, { skipBridge: true });
-      Sentry.captureException(err, { tags: { game: gameType, action: 'watchlist_add' } });
       setAddError(true);
     } finally {
       setIsAdding(false);

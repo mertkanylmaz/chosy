@@ -47,6 +47,7 @@ import { FilmFilters } from '@/types';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
 import * as Sentry from '@sentry/react-native';
+import { logger } from '@/utils/logger';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -191,12 +192,11 @@ export default function DiscoverScreen() {
       setShowSaveToast(true);
       toastTimer.current = setTimeout(() => setShowSaveToast(false), 1200);
 
-      // Watchlist yazma — arka planda, kullanıcıyı bloklamaz
+      // Watchlist yazma — arka planda, kullanıcıyı bloklamaz.
+      // Servis katmanı hatayı WATCHLIST_ADD_FAILED ile Sentry'ye yazıyor;
+      // burada tekrar raporlamak aynı hata için ikinci event üretirdi.
       addToWatchlist(film, currentSessionId).catch((err) => {
-        Sentry.captureException(err, {
-          tags: { action: 'swipe_right_watchlist' },
-          extra: { filmId: film.id, filmTitle: film.title },
-        });
+        logger.warn('[discover] watchlist yazma basarisiz:', err);
       });
     },
     [isPremium, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
