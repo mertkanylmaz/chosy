@@ -91,10 +91,15 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 /**
  * Filmi Supabase watchlist tablosuna ekler.
- * Kullanıcı oturum açmamışsa veya film ID'si geçerli UUID değilse işlem yapılmaz.
+ * Kullanıcı oturum açmamışsa veya film ID'si geçerli UUID değilse işlem yapılmaz
+ * (bu iki durum hata değildir — sessizce atlanır).
+ *
+ * CRITICAL: INSERT başarısız olursa throw eder — çağıran taraf yakalamalı.
+ * Daha önce hata yutuluyordu; üç çağıranın hata dalı da ölü koddu.
  *
  * @param film      - Eklenecek film
  * @param sessionId - Filmin eklendiği mood session UUID'si (opsiyonel)
+ * @throws INSERT reddedilirse veya beklenmedik hata oluşursa
  */
 export async function addToWatchlist(film: Film, sessionId?: string | null): Promise<void> {
   try {
@@ -128,39 +133,37 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
       );
 
     if (error) {
-      logger.error('[watchlist] addToWatchlist hata', error, {
-        code: 'WATCHLIST_ADD_FAILED',
-        extra: { pgCode: error.code, filmId: film.id },
-      });
+      throw new Error(
+        `[watchlist] addToWatchlist failed: ${error.code} — ${error.message}`,
+      );
     }
 
+    // Buraya gelindiyse INSERT basarili — error dali yukarida throw etti.
     if (__DEV__) {
-      if (!error) {
-        // eslint-disable-next-line no-console
-        console.log(
-          '[watchlist] eklendi:',
-          film.title,
-          '| film_id:', film.id,
-          '| session:', added_from_session ?? 'none',
-        );
-      }
+      // eslint-disable-next-line no-console
+      console.log(
+        '[watchlist] eklendi:',
+        film.title,
+        '| film_id:', film.id,
+        '| session:', added_from_session ?? 'none',
+      );
     }
 
-    if (!error) {
-      // PostHog: film_added_to_watchlist
-      posthogAnalytics.track('film_added_to_watchlist', { film_id: film.id });
+    // PostHog: film_added_to_watchlist
+    posthogAnalytics.track('film_added_to_watchlist', { film_id: film.id });
 
-      // Arka planda kullanıcı vektörünü güncelle — hata dışarıya yayılmaz
-      updateUserVector(appUserId, film.id);
+    // Arka planda kullanıcı vektörünü güncelle — hata dışarıya yayılmaz
+    updateUserVector(appUserId, film.id);
 
-      // Taste signal: watchlist add (fire-and-forget, fail ana akışı etkilemez)
-      tasteSignals.recordWatchlistAdd(film.id).catch(() => {});
-    }
+    // Taste signal: watchlist add (fire-and-forget, fail ana akışı etkilemez)
+    tasteSignals.recordWatchlistAdd(film.id).catch(() => {});
   } catch (err) {
-    logger.error('[watchlist] addToWatchlist beklenmedik hata', err, {
-      code: 'WATCHLIST_ADD_UNEXPECTED',
+    // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
+    logger.error('[watchlist] addToWatchlist hata', err, {
+      code: 'WATCHLIST_ADD_FAILED',
       extra: { filmId: film.id },
     });
+    throw err;
   }
 }
 
@@ -254,6 +257,12 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
 
 /**
  * Kullanıcının tüm watchlist'ini temizler.
+ *
+ * CRITICAL: DELETE başarısız olursa throw eder — çağıran taraf yakalamalı.
+ * Daha önce hata yutuluyordu; profile ve watchlist-detail ekranlarında
+ * silme başarısız olsa bile "temizlendi" onayı gösteriliyordu.
+ *
+ * @throws DELETE reddedilirse (örn. RLS) veya beklenmedik hata oluşursa
  */
 export async function clearWatchlist(): Promise<void> {
   try {
@@ -267,15 +276,16 @@ export async function clearWatchlist(): Promise<void> {
       .eq('user_id', appUserId);
 
     if (error) {
-      logger.error('[watchlist] clearWatchlist hata', error, {
-        code: 'WATCHLIST_CLEAR_FAILED',
-        extra: { pgCode: error.code },
-      });
+      throw new Error(
+        `[watchlist] clearWatchlist failed: ${error.code} — ${error.message}`,
+      );
     }
   } catch (err) {
-    logger.error('[watchlist] clearWatchlist beklenmedik hata', err, {
-      code: 'WATCHLIST_CLEAR_UNEXPECTED',
+    // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
+    logger.error('[watchlist] clearWatchlist hata', err, {
+      code: 'WATCHLIST_CLEAR_FAILED',
     });
+    throw err;
   }
 }
 
