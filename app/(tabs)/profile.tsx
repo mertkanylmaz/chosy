@@ -799,7 +799,11 @@ export default function ProfileScreen() {
           .map((item) => item.film.posterUrl)
           .filter((url): url is string => !!url);
         setWatchlistPosters(posters);
-      }).catch(() => {});
+      }).catch((err) => {
+        // Sayac 0 / poster yok kalir — ikincil istatistik, ekrani bloklamaz.
+        // Servis katmani hatayi Sentry'ye yazdi.
+        logger.warn('[ProfileScreen] watchlist sayaci yuklenemedi:', err);
+      });
     } catch (err) {
       logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);

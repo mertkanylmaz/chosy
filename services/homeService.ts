@@ -10,6 +10,7 @@ import { supabase } from './supabase';
 import { getWatchlist } from './watchlist';
 import { getCachedArchetypeId } from './offlineQueue';
 import type { WatchlistItem } from './watchlist';
+import { logger } from '../utils/logger';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -78,6 +79,14 @@ export async function getHomeData(): Promise<HomeData> {
 
   const profile =
     profileResult.status === 'fulfilled' ? profileResult.value : null;
+
+  // getWatchlist artik throw ediyor: reddedilme "liste bos" DEGIL,
+  // "yuklenemedi" demek. Home ekrani cokmesin diye bos liste ile devam
+  // ediyoruz ama filmCount:0 / lastFilm:null degerleri artik gorunur
+  // sekilde bir hatanin sonucu. Servis katmani Sentry'ye yazdi.
+  if (watchlistResult.status === 'rejected') {
+    logger.warn('[homeService] watchlist yuklenemedi, filmCount 0 doner:', watchlistResult.reason);
+  }
   const watchlist =
     watchlistResult.status === 'fulfilled' ? watchlistResult.value : [];
 

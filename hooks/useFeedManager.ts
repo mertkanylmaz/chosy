@@ -23,6 +23,7 @@ import { consumePreloadedRecommendations } from '@/services/recommendationPreloa
 import { updateUserVector } from '@/services/userProfile';
 import { getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
+import { logger } from '@/utils/logger';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -298,7 +299,12 @@ export function useFeedManager(
         userIdRef.current = id;
         // Mevcut watchlist + izlenmiş film ID'lerini önceden yükle — duplicate öneri engeller
         return Promise.all([
-          getWatchlist().catch(() => [] as { film: Film }[]),
+          // Feed cokmesin diye bos liste ile devam edilir. Servis katmani
+          // hatayi Sentry'ye yazdi; burada tekrar yazmiyoruz (cift event).
+          getWatchlist().catch((err) => {
+            logger.warn('[useFeedManager] watchlist yuklenemedi, bos liste ile devam:', err);
+            return [] as { film: Film }[];
+          }),
           getWatchedFilmIds().catch(() => new Set<string>()),
         ]).then(([items, watchedIds]) => {
           const watchlistIds = items.map((item) => item.film.id);

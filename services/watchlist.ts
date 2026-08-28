@@ -208,9 +208,14 @@ function toTmdbUrl(path: string | null, size = 'w780'): string {
 
 /**
  * Kullanıcının watchlist'ini Supabase'den çeker.
- * Hata durumunda boş dizi döner.
+ * Oturum yoksa boş dizi döner (hata değil).
+ *
+ * CRITICAL: Sorgu başarısız olursa throw eder — çağıran taraf yakalamalı.
+ * Daha önce `[]` dönüyordu; "liste boş" ile "yüklenemedi" ayırt edilemiyor,
+ * çağıranlar hatayı boş watchlist sanıp tekrar öneri üretiyordu.
  *
  * @returns WatchlistItem dizisi (en yeni en üstte)
+ * @throws Sorgu reddedilirse veya beklenmedik hata oluşursa
  */
 export async function getWatchlist(): Promise<WatchlistItem[]> {
   try {
@@ -233,11 +238,9 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data) {
-      logger.error('[watchlist] getWatchlist hata', error, {
-        code: 'WATCHLIST_FETCH_FAILED',
-        extra: { pgCode: error?.code },
-      });
-      return [];
+      throw new Error(
+        `[watchlist] getWatchlist failed: ${error?.code ?? 'no-data'} — ${error?.message ?? 'empty response'}`,
+      );
     }
 
     return (data as unknown as WatchlistRow[])
@@ -261,10 +264,11 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         sessionPrompt: row.sessions?.raw_input ?? null,
       }));
   } catch (err) {
-    logger.error('[watchlist] getWatchlist beklenmedik hata', err, {
-      code: 'WATCHLIST_FETCH_UNEXPECTED',
+    // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
+    logger.error('[watchlist] getWatchlist hata', err, {
+      code: 'WATCHLIST_FETCH_FAILED',
     });
-    return [];
+    throw err;
   }
 }
 

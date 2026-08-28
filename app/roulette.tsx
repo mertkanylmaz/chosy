@@ -147,6 +147,8 @@ export default function RouletteScreen() {
   const [result, setResult] = useState<RouletteResult | null>(null);
   const [slotResult, setSlotResult] = useState<SlotResult | null>(null);
   const [spinError, setSpinError] = useState<string | null>(null);
+  /** Watchlist yuklenemedi — metin render'da cozulur (effect'e t sokmamak icin) */
+  const [loadFailed, setLoadFailed] = useState(false);
   const [spinning, setSpinning] = useState(false);
 
   // -- Mood input state --
@@ -216,6 +218,12 @@ export default function RouletteScreen() {
           ]);
           logger.log('[roulette] Poster prefetch complete');
         }
+      } catch (err) {
+        // getWatchlist artik throw ediyor; catch yoksa unhandled rejection
+        // olurdu. Liste bos kalir ve mevcut hata kutusu gosterilir.
+        // Servis katmani hatayi Sentry'ye yazdi.
+        logger.warn('[roulette] Yukleme hatasi:', err);
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
@@ -241,6 +249,9 @@ export default function RouletteScreen() {
     () => items.filter((i) => !watchedIds.has(i.film.id)).length,
     [items, watchedIds],
   );
+
+  // Tek hata kanali: spin hatasi oncelikli, yoksa yukleme hatasi.
+  const errorText = spinError ?? (loadFailed ? t('errors.watchlistLoad') : null);
 
   // -- Spin counter --
   const [spinId, setSpinId] = useState(0);
@@ -725,10 +736,10 @@ export default function RouletteScreen() {
           </Animated.View>
 
           {/* Error message */}
-          {spinError && (
+          {errorText && (
             <Animated.View entering={FadeIn.duration(300)} style={styles.errorBox}>
               <Ionicons name="warning-outline" size={18} color={Colors.error} />
-              <Text style={styles.errorText}>{spinError}</Text>
+              <Text style={styles.errorText}>{errorText}</Text>
             </Animated.View>
           )}
 
@@ -795,10 +806,10 @@ export default function RouletteScreen() {
           </Animated.View>
 
           {/* Error */}
-          {spinError && (
+          {errorText && (
             <View style={styles.errorBox}>
               <Ionicons name="warning-outline" size={18} color={Colors.error} />
-              <Text style={styles.errorText}>{spinError}</Text>
+              <Text style={styles.errorText}>{errorText}</Text>
             </View>
           )}
 
@@ -891,10 +902,10 @@ export default function RouletteScreen() {
           </Animated.View>
 
           {/* Error */}
-          {spinError && (
+          {errorText && (
             <View style={styles.errorBox}>
               <Ionicons name="warning-outline" size={18} color={Colors.error} />
-              <Text style={styles.errorText}>{spinError}</Text>
+              <Text style={styles.errorText}>{errorText}</Text>
             </View>
           )}
 

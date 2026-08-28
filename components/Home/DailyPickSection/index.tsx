@@ -72,9 +72,17 @@ export default function DailyPickSection() {
       // Arketip ID'sini DB'den oku (retake sonrasi her zaman guncel)
       setArchetypeId(row.archetype_id);
 
-      // Watchlist'ten gorulmus film ID'lerini al (servis auth'u dahili alir)
-      const watchlistItems = await watchlist.getWatchlist();
-      const seenIds = watchlistItems.map((w) => w.film.id);
+      // Watchlist'ten gorulmus film ID'lerini al (servis auth'u dahili alir).
+      // Yuklenemezse bolum cokmez, sadece "gorulmus" filtresi bos kalir —
+      // en kotu ihtimalle zaten listede olan bir film onerilir.
+      // Servis katmani hatayi Sentry'ye yazdi; burada tekrar yazmiyoruz.
+      let seenIds: string[] = [];
+      try {
+        const watchlistItems = await watchlist.getWatchlist();
+        seenIds = watchlistItems.map((w) => w.film.id);
+      } catch (err) {
+        logger.warn('[DailyPickSection] watchlist yuklenemedi, seen filtresi bos:', err);
+      }
 
       // ── Oncelik 1: preferences_vector (calibration/retake her zaman gunceller) ──
       const prefFilm = await getDailyMatchByPreferences(userId, seenIds);

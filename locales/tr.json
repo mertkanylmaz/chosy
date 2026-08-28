@@ -407,6 +407,7 @@
     "purchasePendingTitle": "Satın alma işleniyor",
     "purchasePending": "Satın alman tamamlandı ama henüz aktifleşmedi. Genelde birkaç saniye sürer — kontrol etmek için bu ekranı tekrar aç.",
     "watchedToggle": "İzlendi durumu kaydedilemedi. Tekrar dene.",
+    "watchlistLoad": "Listen yüklenemedi. Tekrar dene.",
     "retry": "Tekrar Dene"
   },
   "profile": {
