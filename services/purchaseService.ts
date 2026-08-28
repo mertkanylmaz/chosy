@@ -94,6 +94,13 @@ export interface SubscriptionInfo {
   errorKind?: PurchaseErrorKind;
 }
 
+/** Offering sorgusu sonucu — boş liste ile "yüklenemedi" ayrımı için */
+export interface OfferingsResult {
+  items: PurchasesPackage[];
+  /** Dolu ise `items` güvenilir değil — çağıran paketleri render ETMEMELİ */
+  errorKind?: PurchaseErrorKind;
+}
+
 /** Satın alma sonucu */
 export interface PurchaseResult {
   success: boolean;
@@ -299,22 +306,38 @@ export function addSubscriptionListener(
  * RevenueCat'ten mevcut offering paketlerini döndürür.
  * Paywall UI bunu kullanarak fiyat/trial bilgilerini gösterir.
  */
-export async function getOfferings(): Promise<PurchasesPackage[]> {
-  if (!_initialized) return [];
+export async function getOfferings(): Promise<OfferingsResult> {
+  if (!_initialized) {
+    logger.error(
+      '[purchases] getOfferings: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getOfferings' } },
+    );
+    return { items: [], errorKind: 'not_initialized' };
+  }
 
   try {
     const offerings = await Purchases.getOfferings();
     const current = offerings.current;
 
     if (!current) {
-      logger.warn('[purchases] Aktif offering bulunamadı');
-      return [];
+      // Paywall satis yapamaz hale gelir — bu bir yapilandirma hatasi.
+      logger.error(
+        '[purchases] Aktif offering bulunamadi',
+        new Error('no current offering'),
+        { code: 'RC_NO_ACTIVE_OFFERING' },
+      );
+      return { items: [], errorKind: 'no_data' };
     }
 
-    return current.availablePackages;
+    return { items: current.availablePackages };
   } catch (err) {
-    logger.error('[purchases] Offering getirme hatası:', err);
-    return [];
+    const errorKind = classifyPurchaseError(err);
+    logger.error('[purchases] Offering getirme hatasi', err, {
+      code: 'RC_OFFERINGS_FAILED',
+      extra: { errorKind },
+    });
+    return { items: [], errorKind };
   }
 }
 
@@ -325,8 +348,15 @@ export async function getOfferings(): Promise<PurchasesPackage[]> {
  * Lifetime ürünü ayrı offering'te tutulur — paywall'daki default'tan ayrı.
  * Fallback: default offering'teki lifetime paketini arar.
  */
-export async function getLifetimeOffering(): Promise<PurchasesPackage[]> {
-  if (!_initialized) return [];
+export async function getLifetimeOffering(): Promise<OfferingsResult> {
+  if (!_initialized) {
+    logger.error(
+      '[purchases] getLifetimeOffering: RevenueCat baslatilmamis',
+      new Error('RC not initialized'),
+      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getLifetimeOffering' } },
+    );
+    return { items: [], errorKind: 'not_initialized' };
+  }
 
   try {
     const offerings = await Purchases.getOfferings();
@@ -334,7 +364,7 @@ export async function getLifetimeOffering(): Promise<PurchasesPackage[]> {
     // Önce ayrı lifetime offering'i dene
     const lifetimeOffering = offerings.all['lifetime_founding'];
     if (lifetimeOffering?.availablePackages?.length) {
-      return lifetimeOffering.availablePackages;
+      return { items: lifetimeOffering.availablePackages };
     }
 
     // Fallback: default offering'teki lifetime paketini bul
@@ -343,14 +373,26 @@ export async function getLifetimeOffering(): Promise<PurchasesPackage[]> {
       const lifetimePkg = current.availablePackages.filter(
         (p) => p.product.identifier === 'com.chosy.lifetime',
       );
-      if (lifetimePkg.length > 0) return lifetimePkg;
+      if (lifetimePkg.length > 0) return { items: lifetimePkg };
     }
 
-    logger.warn('[purchases] Lifetime offering bulunamadı — fallback: tüm paketler');
-    return current?.availablePackages ?? [];
+    // Lifetime ürünü hiçbir yerde yok. Eskiden buradan "tüm paketler"
+    // dönüyordu — lifetime ekranında lifetime OLMAYAN ürünleri 89.99
+    // iddiasıyla gösterme riski. Paketler veri kaybı olmasın diye hâlâ
+    // dönüyor ama errorKind ile işaretli: çağıran render ETMEMELİ.
+    logger.error(
+      '[purchases] Lifetime offering bulunamadi',
+      new Error('no lifetime offering'),
+      { code: 'RC_NO_LIFETIME_OFFERING' },
+    );
+    return { items: current?.availablePackages ?? [], errorKind: 'no_data' };
   } catch (err) {
-    logger.error('[purchases] Lifetime offering hatası:', err);
-    return [];
+    const errorKind = classifyPurchaseError(err);
+    logger.error('[purchases] Lifetime offering hatasi', err, {
+      code: 'RC_LIFETIME_OFFERINGS_FAILED',
+      extra: { errorKind },
+    });
+    return { items: [], errorKind };
   }
 }
 

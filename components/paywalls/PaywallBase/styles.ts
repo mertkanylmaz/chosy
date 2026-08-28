@@ -235,4 +235,29 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 8,
   },
+
+  // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────
+  offeringsErrorBox: {
+    alignItems: 'center',
+    paddingVertical: 32,
+    paddingHorizontal: 16,
+    gap: 16,
+  },
+  offeringsErrorText: {
+    fontSize: Theme.typography.body.fontSize,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: Theme.typography.body.lineHeight,
+  },
+  offeringsRetryBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: Theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: Colors.accentPrimary,
+  },
+  offeringsRetryText: {
+    fontSize: Theme.typography.body.fontSize,
+    color: Colors.accentPrimary,
+  },
 });

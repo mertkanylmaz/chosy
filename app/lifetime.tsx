@@ -40,6 +40,8 @@ import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall
 import {
   getLifetimeOffering,
   purchasePackage,
+  restorePurchases,
+  type PurchaseErrorKind,
 } from '@/services/purchaseService';
 import { upsertSubscription } from '@/services/subscriptionService';
 import {
@@ -51,7 +53,6 @@ import {
 } from '@/services/lifetimeService';
 import { getAppUserId } from '@/services/watchlist';
 import { clearQuotaCache } from '@/services/quotaEngine';
-import { restorePurchases } from '@/services/purchaseService';
 import { supabase } from '@/services/supabase';
 import { hapticSuccess, hapticMedium } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -84,6 +85,8 @@ export default function LifetimeOfferScreen() {
   const [counter, setCounter] = useState<LifetimeCounter | null>(null);
   const [memberInfo, setMemberInfo] = useState<FoundingMemberInfo | null>(null);
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  /** Dolu ise paketler guvenilir degil — satin alma denenmeden once uyarilir */
+  const [offeringsError, setOfferingsError] = useState<PurchaseErrorKind | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -96,14 +99,18 @@ export default function LifetimeOfferScreen() {
   useEffect(() => {
     async function load() {
       try {
-        const [counterData, pkgs, userId] = await Promise.all([
+        const [counterData, offerings, userId] = await Promise.all([
           getLifetimeCounter(),
           getLifetimeOffering(),
           getAppUserId(),
         ]);
 
         setCounter(counterData);
-        setPackages(pkgs);
+        // errorKind doluysa items render EDILMEZ: lifetime offering
+        // bulunamadiginda eskiden "tum paketler" donuyordu ve lifetime
+        // OLMAYAN urunler 89.99 iddiasiyla gosterilebiliyordu.
+        setPackages(offerings.errorKind ? [] : offerings.items);
+        setOfferingsError(offerings.errorKind ?? null);
 
         // Animate counter
         RNAnimated.timing(animatedSold, {
@@ -161,7 +168,8 @@ export default function LifetimeOfferScreen() {
       );
 
       if (!pkg) {
-        Alert.alert(t('paywall.purchaseError'));
+        // Paketler yuklenemediyse "satin alma basarisiz" yaniltici olur.
+        Alert.alert(offeringsError ? t('errors.offeringsLoad') : t('paywall.purchaseError'));
         setPurchasing(false);
         return;
       }
@@ -210,9 +218,12 @@ export default function LifetimeOfferScreen() {
         if (uid) await clearQuotaCache(uid);
         Alert.alert(t('lifetime.purchaseSuccess'));
         if (router.canGoBack()) router.back();
+      } else if (result.errorKind === 'entitlement_pending') {
+        // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
+        // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.
+        Alert.alert(t('errors.purchasePendingTitle'), t('errors.purchasePending'));
       } else {
-        // K-43: RevenueCat ham hata metni ekrana degil Sentry'ye gider.
-        logger.error('[lifetime] Purchase failed:', result.error ?? 'unknown');
+        // K-43: ham RC metni ekrana gitmez; servis katmani Sentry'ye yazdi.
         Alert.alert(t('paywall.purchaseError'));
       }
     } catch (err) {
@@ -221,7 +232,7 @@ export default function LifetimeOfferScreen() {
     } finally {
       setPurchasing(false);
     }
-  }, [counter, packages, purchasing, t, router, refreshSubscription]);
+  }, [counter, packages, offeringsError, purchasing, t, router, refreshSubscription]);
 
   // ── Restore handler ──────────────────────────────────────────────────
   const handleRestore = useCallback(async () => {
@@ -258,11 +269,15 @@ export default function LifetimeOfferScreen() {
           t('lifetime.restoreSuccessDesc'),
           [{ text: 'OK', onPress: () => { if (router.canGoBack()) router.back(); } }],
         );
-      } else {
+      } else if (result.errorKind === 'no_data') {
+        // Sorgu basarili, gercekten satin alim yok.
         Alert.alert(
           t('lifetime.restoreEmpty'),
           t('lifetime.restoreEmptyDesc'),
         );
+      } else {
+        // Ag/SDK hatasi — "satin alim bulunamadi" DEME.
+        Alert.alert(t('lifetime.restoreError'));
       }
     } catch (err) {
       logger.error('[lifetime] Restore error:', err);

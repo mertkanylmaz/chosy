@@ -402,6 +402,10 @@
     "moodAnalyze": "Your mood couldn't be read. Try again.",
     "accountSetupIncompleteTitle": "Search unavailable",
     "accountSetupIncomplete": "Mood search can't run on this account right now. We've been notified.",
+    "restoreFailed": "Purchases couldn't be restored. Try again.",
+    "offeringsLoad": "Plans couldn't load. Try again.",
+    "purchasePendingTitle": "Purchase is processing",
+    "purchasePending": "Your purchase went through but hasn't activated yet. This usually takes a few seconds — reopen this screen to check.",
     "retry": "Retry"
   },
   "profile": {

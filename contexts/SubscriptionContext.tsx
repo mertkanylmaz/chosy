@@ -159,7 +159,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       const rcStatus: SubscriptionInfo = await getSubscriptionStatus();
       const dbSub: SubscriptionRow | null = await getUserSubscription(userId);
 
-      if (rcStatus.isPremium && dbSub) {
+      // rcStatus.errorKind doluysa isPremium:false gercek bir cevap DEGIL,
+      // fallback'tir. RC'ye dayanan dal atlanir; DB dali calismaya devam
+      // eder (offline'da bile dogru premium sonucu verebilir).
+      if (!rcStatus.errorKind && rcStatus.isPremium && dbSub) {
         const newStatus: SubscriptionStatus = rcStatus.isInTrial ? 'trial' : 'active';
         const newTier = planIdToTier(dbSub.plan);
         setIsPremium(true);
@@ -187,6 +190,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         planIdRef.current = dbSub.plan;
         trialStartRef.current = dbSub.started_at;
         tierRef.current = newTier;
+      } else if (rcStatus.errorKind) {
+        // RC sorgulanamadi ve DB de aktif abonelik gostermiyor.
+        // Bu "kullanici free" demek DEGIL — gecici bir ag hatasi odeme
+        // yapmis kullaniciyi dusurmesin. Mevcut state korunur.
+        logger.warn(
+          '[subscription-ctx] RC durumu okunamadi, mevcut state korunuyor:',
+          rcStatus.errorKind,
+        );
       } else {
         setIsPremium(false);
         setPlanId(null);
@@ -252,7 +263,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             getUserSubscription(userId),
           ]);
 
-          if (rcStatus.isPremium && dbSub) {
+          if (rcStatus.errorKind) {
+            // Fresh-fetch RC'den cevap alamadi — ref degerleriyle devam et,
+            // asagidaki dallar kullaniciyi free'ye dusurmesin.
+            logger.warn(
+              '[subscription-ctx] Fresh-fetch RC durumu okunamadi:',
+              rcStatus.errorKind,
+            );
+          } else if (rcStatus.isPremium && dbSub) {
             currentStatus = rcStatus.isInTrial ? 'trial' : 'active';
             currentPlanId = dbSub.plan;
             currentTrialStart = dbSub.started_at;

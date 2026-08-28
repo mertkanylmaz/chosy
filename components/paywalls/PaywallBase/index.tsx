@@ -41,6 +41,7 @@ import {
 import { upsertSubscription } from '@/services/subscriptionService';
 import { clearQuotaCache } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
+import type { PurchaseErrorKind } from '@/services/purchaseService';
 import { supabase } from '@/services/supabase';
 import {
   recordPaywallShown,
@@ -114,6 +115,9 @@ export default function PaywallBase({
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('annual');
   const [purchasing, setPurchasing] = useState(false);
   const [loading, setLoading] = useState(true);
+  /** Dolu ise paketler guvenilir degil — plan kartlari yerine hata gosterilir */
+  const [offeringsError, setOfferingsError] = useState<PurchaseErrorKind | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   // Paketleri yukle
   useEffect(() => {
@@ -121,19 +125,19 @@ export default function PaywallBase({
     let cancelled = false;
 
     async function load() {
-      try {
-        const pkgs = await getOfferings();
-        if (!cancelled) setPackages(pkgs);
-      } catch (err) {
-        logger.error('[paywall-base] Paket yukleme hatasi:', err);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      setLoading(true);
+      // getOfferings artik throw etmiyor; hata errorKind ile geliyor.
+      // Servis katmani Sentry'ye zaten yazdi, burada tekrar loglamiyoruz.
+      const res = await getOfferings();
+      if (cancelled) return;
+      setPackages(res.items);
+      setOfferingsError(res.errorKind ?? null);
+      setLoading(false);
     }
     load();
 
     return () => { cancelled = true; };
-  }, [visible]);
+  }, [visible, reloadToken]);
 
   // Shown event kaydet
   useEffect(() => {
@@ -203,9 +207,12 @@ export default function PaywallBase({
         await refreshSubscription();
         await refreshQuota();
         onConvert(selectedPlan);
+      } else if (result.errorKind === 'entitlement_pending') {
+        // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
+        // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.
+        Alert.alert(t('errors.purchasePendingTitle'), t('errors.purchasePending'));
       } else {
-        // K-43: RevenueCat ham hata metni ekrana degil Sentry'ye gider.
-        logger.error('[paywall-base] Satin alma basarisiz:', result.error ?? 'unknown');
+        // K-43: ham RC metni ekrana gitmez; servis katmani Sentry'ye yazdi.
         Alert.alert(t('paywall.purchaseError'));
       }
     } catch (err) {
@@ -259,11 +266,16 @@ export default function PaywallBase({
         await refreshQuota();
         Alert.alert(t('paywall.restoreSuccess'));
         onDismiss();
-      } else {
+      } else if (result.errorKind === 'no_data') {
+        // Sorgu basarili, gercekten geri yuklenecek abonelik yok.
         Alert.alert(t('paywall.restoreEmpty'));
+      } else {
+        // Ag/SDK hatasi — "aboneligin yok" DEME. App Store zorunlu akisi.
+        Alert.alert(t('errors.restoreFailed'));
       }
     } catch (err) {
       logger.error('[paywall-base] Restore hatasi:', err);
+      Alert.alert(t('errors.restoreFailed'));
     }
   }, [t, refreshSubscription, refreshQuota, onDismiss]);
 
@@ -307,6 +319,20 @@ export default function PaywallBase({
                 size="large"
                 style={{ marginVertical: 40 }}
               />
+            ) : offeringsError ? (
+              /* Paketler yuklenemedi — sessizce bos paywall acmak yerine
+                 gorunur hata. Eskiden buraya kadar gelinip satin alma
+                 aninda genel "purchaseError" veriliyordu. */
+              <View style={styles.offeringsErrorBox}>
+                <Text style={styles.offeringsErrorText}>{t('errors.offeringsLoad')}</Text>
+                <TouchableOpacity
+                  onPress={() => { hapticMedium(); setReloadToken((n) => n + 1); }}
+                  activeOpacity={0.8}
+                  style={styles.offeringsRetryBtn}
+                >
+                  <Text style={styles.offeringsRetryText}>{t('errors.retry')}</Text>
+                </TouchableOpacity>
+              </View>
             ) : (
               <>
                 {/* Plan Cards */}
