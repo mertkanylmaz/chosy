@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.4
+**Sürüm:** 1.7
 **Tarih:** 17 Ağustos 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -399,6 +399,26 @@ SONHALİ §43'ün istediği "bug ↔ sürüm korelasyonu" source map upload'ı o
 
 Watched-it rate'i ölçebilmenin ön koşulu, sorunun cevaplanmasıdır. Yanıt oranı <%50 ise watched-it rate'i istatistiksel olarak yorumlanamaz — ürün kararı **yanıt oranı düzeltilmeden** alınmaz.
 
+### E-09 — Paywall funnel enstrümantasyonu (R-C önkoşulu)
+
+Freemium modelinde (R-01) dönüşümün kaldıracı paywall'ın tasarımı değil, tetiklendiği anın kalitesidir. K-46 tetikleyiciyi doğru kurmuş (2. kaçırılan gün → arşiv), ama bugün çalışıp çalışmadığını ölçecek enstrümantasyon doğrulanmamıştır.
+
+Gereken eventler (G-6'nın "PostHog 20/20" kapısının parçası): `paywall_triggered` (trigger_type, missed_day_count) · `paywall_viewed` · `paywall_dismissed` (dismiss_method) · `purchase_initiated` (package_id) · `purchase_completed` · `restore_attempted` (sonuç: no_data / success / error).
+
+**Kilitlenen sıra: R-C'de paywall ekranı yapılmadan ÖNCE enstrümantasyon tanımlanır ve doğrulanır.** Aksi halde dönüşmeyen bir paywall'ın nedeni ölçülemez — `recompute-taste-vector`'ün hiç çağrılmaması sınıfı bir kör nokta tekrarlanır.
+
+Kaynak: RevenueCat State of Subscription Apps 2026 incelemesi, 27 Ağustos 2026 CTO oturumu.
+
+### E-10 — Fiyat testi Faz 1'e kilitlendi (R-01 korunuyor)
+
+SOSA 2026 verisi: yüksek fiyatlı uygulamalar indirmeleri düşük fiyatlılara göre 2 kat daha iyi dönüştürüyor (yüksek fiyat medyanı %2,8 · düşük fiyat medyanı %1,4). Mevcut $29.99/yıl düşük-orta bantta.
+
+Aynı rapor sert paywall'ın freemium'a göre 35. günde 5 kat daha iyi dönüştüğünü söylüyor (%10,7 vs %2,1), ancak bir yıl sonra elde tutma oranları eşitleniyor.
+
+**Karar (27 Ağu 2026): R-01 (freemium, "ürünün kendisi trial'dır") DEĞİŞTİRİLMİYOR.** Gerekçe: (a) G-9 kapısı — 255 mevcut kullanıcının önüne sert paywall koymak "14 günde kayıp <%20" hedefini doğrudan tehdit eder; (b) gauntlet'i paywall arkasına almak fiyatlama değil ürün kararı olur, §1 Değişmez Çekirdek'e aykırı; (c) 0 ödeyen kullanıcıyla model değişikliği veriye değil tahmine dayanır.
+
+Fiyat, R-01'i bozmadan test edilebilen tek değişkendir. **Faz 1 kalemi olarak kilitlendi**, tetikleyici: G-2 geçildikten sonra ilk A/B adayı. v1'de fiyat değişmez.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -487,7 +507,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | **C.9d** Watchlist | İkili kopya biter | Tek ekran · merge kuralı (union, DELETE yok) | C.9c | Dry-run count raporu · sıfır satır kaybı | Sonnet 4.6 |
 | **R-A** İlk Deneyim | Yeni ve mevcut kullanıcı ayrı ayrı karşılanır | Onboarding 3 kart · auth-after-champion · bildirim izni (K-15) · **"Chosy değişti" köprü ekranı** · hesap silme cascade (K-16) | C.9d | Yeni kullanıcı ilk oturumu + mevcut kullanıcı köprü akışı cihazda | Fable 5 |
 | **R-B** Güvenilirlik | "Çalışıyor" → "güvenilir" | Backend state machine (K-37) · idempotency · offline fallback (K-42) · error copy (K-43) | R-A | Uçak modu senaryosu · generation failure senaryosu · beyaz ekran yok | Fable 5 |
-| **R-C** Para | Tek tetikleyici, tek entitlement | Arşiv paywall'ı (K-46) · RevenueCat state matrisi (K-49) · restore | R-B | 6 state test edilmiş · sandbox satın alma + restore | Sonnet 4.6 |
+| **R-C** Para | Tek tetikleyici, tek entitlement | Arşiv paywall'ı (K-46) · RevenueCat state matrisi (K-49) · restore · paywall funnel enstrümantasyonu (E-09) · RC Paywalls v2 fizibilitesi + offline davranış ölçümü | R-B | 6 state test edilmiş · sandbox satın alma + restore · E-09 eventleri PostHog'da doğrulanmış | Sonnet 4.6 |
 | **R-D** Çıkış | Store'a hazır | A11y (K-54) · QA matrisi (K-55) · App Store paketi · **TMDB lisansı (K-56)** · kademeli dağıtım (E-06) · 63 kişiye kurucu mesajı | R-C | 6 release gate (K-52) yeşil | Sonnet 4.6 |
 
 **Paralel iş yok.** Her sprint bir öncekinin DUR NOKTASI'ndan onay almadan başlamaz.
@@ -523,6 +543,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.4 | 18 Ağu 2026 | Cold-start cihaz doğrulaması tamamlandı (F-06 kapandı) — M0'ın son açık maddesi kapandı. C.9a ve C.9a-2 (nav restructure, native tab bar) tamamlandı. |
 | 1.5 | 19 Ağu 2026 | **C.9b swap.** Home route'u gauntlet'e geçti (`dev-gauntlet` → production), mood search `components/Home/MoodSearchScreen/`'e taşındı (silinmedi, C.9c'ye devredildi). **D-12 eklendi** — K-03 state enum'u 5 durum + 2 gömülü semantik olarak gerçekleşti; §2.1'deki K-03 satırına D-12 referansı düşüldü. Champion CTA'ları ("Sonraya bırak" · "Nerede izlenir") ve K-21 tek cümlelik açıklama **C.9b-2'ye** ayrıldı — bu swap cihazda doğrulandıktan sonra. |
 | 1.6 | 19 Ağu 2026 | **C.9b-2.** Champion CTA'ları tamamlandı: "Sonraya bırak" (`submit-choice`'a `save_for_later` action'ı — yeni Edge Function YOK, şema/migration YOK, yüzey şampiyonla sınırlı) ve "Nerede izlenir" (`WatchProviders` bileşeni, `fetchMovieWatchProviders`). K-20 activation bridge'inin üç ayağı da bağlandı. **K-21 ERTELENDİ** — 6 eksen verisi hiçbir katmanda üretilmiyor; Post-C.9 radar chart sprint'ine taşındı. Bkz. §11 F-07. |
+| 1.7 | 27 Ağu 2026 | SOSA 2026 incelemesi. R-01 korundu (gerekçe E-10). E-09 paywall enstrümantasyonu R-C önkoşulu olarak eklendi. Paywall vendor kararı: RevenueCat Paywalls v2 ile devam, ikinci vendor (Superwall/Adapty) marketing gate sonrası değerlendirilecek. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
