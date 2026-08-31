@@ -45,8 +45,6 @@ import { ensureAppUser } from '@/services/auth-utils';
 import { syncWatchedFilms } from '@/services/watchSync';
 import {
   savePushTokenToServer,
-  shouldAskForPermission,
-  registerForPushNotifications,
   clearBadge,
   getDeepLinkFromNotification,
   type NotificationData,
@@ -533,23 +531,11 @@ export default function RootLayout() {
       });
     });
 
-    // Check if we should prompt for permission (2nd session)
-    shouldAskForPermission().then((shouldAsk) => {
-      if (shouldAsk) {
-        registerForPushNotifications().catch((err) => {
-          logger.warn('[layout] Push registration failed:', err);
-          Sentry.captureException(err, {
-            level: 'warning',
-            tags: { flow: 'push_registration' },
-          });
-        });
-      }
-    }).catch((err) => {
-      Sentry.captureException(err, {
-        level: 'warning',
-        tags: { flow: 'push_permission_check' },
-      });
-    });
+    // K-15 (R-A-2): oturum-sayacı tetikleyicisi KALDIRILDI. Bildirim izni
+    // artık uygulama açılışında değil, ilk şampiyondan sonra bağlam içinde
+    // isteniyor — `NotificationPromptSheet`, GauntletShell'den açılır.
+    // Burada yalnızca mevcut token'ın tazelenmesi kalır (izin zaten
+    // verilmişse); izin İSTEĞİ bu dosyadan çıkmıştır.
   }, []);
 
   // Font yüklemesi tamamlanınca (veya hata olunca) splash'i kaldır.
@@ -616,6 +602,8 @@ function RootLayoutNav() {
               <Stack.Screen name="gate" />
               <Stack.Screen name="entry" />
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+              {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
+              <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />
               <Stack.Screen name="auth" />
               <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />

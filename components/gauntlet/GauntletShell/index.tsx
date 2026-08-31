@@ -23,6 +23,9 @@ import * as Sentry from '@sentry/react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
 import SkeletonLoader from '@/components/SkeletonLoader';
+import { AuthPromptSheet } from '@/components/auth/AuthPromptSheet';
+import { NotificationPromptSheet } from '@/components/notifications/NotificationPromptSheet';
+import { ArchiveTrigger } from '@/components/gauntlet/ArchiveTrigger';
 import { ChampionReveal } from '@/components/gauntlet/ChampionReveal';
 import { ConfidenceMeter } from '@/components/gauntlet/ConfidenceMeter';
 import { ContextBar } from '@/components/gauntlet/ContextBar';
@@ -49,7 +52,9 @@ import {
 } from '@/services/gauntletService';
 import { subscribeToReconnect } from '@/services/networkStatus';
 import { posthogAnalytics } from '@/services/posthog';
+import { resolveChampionPrompt, type ChampionPrompt } from '@/services/championPrompts';
 import { supabase } from '@/services/supabase';
+import { markUserFlag } from '@/services/userFlags';
 import type {
   ChoiceSubmission,
   DailyGauntlet,
@@ -77,6 +82,17 @@ import { styles } from './styles';
  * ürün kuralı — bu yüzden constants/design/ altında DEĞİL, burada.
  */
 const UNLOCK_HOUR = 18;
+
+/**
+ * Şampiyon reveal'ı ile tek-seferlik istem sheet'i arasındaki bekleme (ms).
+ *
+ * §7.3 kara boşluk sekansı 120 + 400 + 200 + 200 = 920ms sürüyor; sheet o
+ * bitmeden açılırsa imza anın üstüne biner. Bir tasarım token'ı DEĞİL —
+ * `constants/design/motion.ts` §7'nin birebir karşılığıdır ve oraya ürün
+ * kararı yazılmaz; bu değer bir istem orkestrasyonu sabitidir, o yüzden
+ * UNLOCK_HOUR'un yanında durur.
+ */
+const CHAMPION_PROMPT_DELAY = 1800;
 
 /**
  * 401 retry politikası (CTO 🔴2, 14.08.2026): maks 5 deneme; deneme k
@@ -197,6 +213,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [shareRounds, setShareRounds] = useState<ShareRound[]>([]);
   /**
+   * Şampiyon sonrası açılan tek-seferlik istem (R-A-2). ShellState'e üye
+   * DEĞİL — beş durum sözleşmesi bozulmaz; bu, `completed_today` render'ının
+   * üzerine binen bir sheet'tir ve altındaki şampiyon ekranı görünür kalır.
+   */
+  const [championPrompt, setChampionPrompt] = useState<ChampionPrompt>('none');
+  /**
    * K-42 offline durumu. ShellState'e üye DEĞİL — beş durum sözleşmesi
    * bozulmaz; ikisi de mevcut render'ın üzerine binen göstergelerdir.
    *
@@ -215,6 +237,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
@@ -419,6 +442,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (hapticTimerRef.current) clearTimeout(hapticTimerRef.current);
+      if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -665,18 +689,26 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           champion_film_id: result.champion.id,
         });
 
-        // ── K-13 AUTH PROMPT TETİKLEYİCİSİ — R-A-2'de doldurulacak ─────────
-        // TODO(R-A-2, K-13): auth prompt tam BURADA açılır — champion
-        // reveal'ının hemen sonrası, kullanıcı değeri aldıktan sonra.
-        // Koşul:  isAnonymous === true  &&  authPromptSeen !== true
-        // Not: `authPromptSeen` bayrağı henüz YOK; R-A-2'de AsyncStorage
-        // (+ users tablosu) üzerinde doğacak. Magic link (K-14) ve bildirim
-        // izni taşıması (K-15) da bu tetikleyiciye bağlanacak.
-        // Bu turda UI YAZILMADI — yalnızca nokta işaretlendi.
         void hapticSuccess();
         hapticTimerRef.current = setTimeout(() => {
           void hapticHeavy();
         }, CHAMPION_HAPTIC_DELAY);
+
+        // ── K-13 / K-15 İSTEM TETİKLEYİCİSİ (R-A-2) ────────────────────────
+        // Kararı `resolveChampionPrompt()` verir: anonim + bayrak yoksa auth
+        // prompt, aksi hâlde (ve yalnızca bir SONRAKİ akşam) bildirim izni.
+        // İkisi asla aynı oturumda art arda gösterilmez.
+        //
+        // Yalnızca CANLI reveal'da çalışır — resume yolundan (applyGauntlet,
+        // progress.status === 'champion') tetiklenmez: kullanıcı o şampiyonu
+        // zaten görmüştür, uygulama açılışına sheet düşürmek istem değil,
+        // kesintidir.
+        promptTimerRef.current = setTimeout(() => {
+          void resolveChampionPrompt().then((kind) => {
+            if (!mountedRef.current || kind === 'none') return;
+            setChampionPrompt(kind);
+          });
+        }, CHAMPION_PROMPT_DELAY);
         return;
       }
 
@@ -833,6 +865,28 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     [seenMode, handleSeenPick, handleChoice],
   );
 
+  // ── Şampiyon sonrası istemler (R-A-2) ──────────────────────────────────────
+
+  /**
+   * Auth prompt kapandı. "Not now" da giriş de AYNI bayrağı yazar
+   * (CTO kararı, 22 Ağu 2026): sheet ömür boyu en fazla bir kez görünür.
+   * Yazma başarısız olursa `markUserFlag` Sentry'ye yazar; sheet yine kapanır
+   * — kullanıcının kapatma eylemi bir ağ hatasına rehin edilmez.
+   */
+  const handleAuthPromptClose = useCallback((completed: boolean) => {
+    setChampionPrompt('none');
+    void markUserFlag('auth_prompt_seen');
+    posthogAnalytics.track('auth_prompt_closed', { completed });
+  }, []);
+
+  /**
+   * Bildirim istemi kapandı. "Sorduk" işareti sheet'in kendi içinde
+   * (cihaz-yerel AsyncStorage) yazılır — OS izni cihaz başınadır.
+   */
+  const handleNotificationPromptClose = useCallback(() => {
+    setChampionPrompt('none');
+  }, []);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   // C.4: normal akışın ÜSTÜNE biner, ShellState'e dahil DEĞİL (bkz. state
@@ -905,6 +959,21 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             rounds={shareRounds}
             gauntletId={gauntlet?.gauntletId}
           />
+
+          {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
+              en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
+          <AuthPromptSheet
+            visible={championPrompt === 'auth'}
+            onClose={handleAuthPromptClose}
+          />
+          <NotificationPromptSheet
+            visible={championPrompt === 'notification'}
+            onClose={handleNotificationPromptClose}
+          />
+
+          {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
+              dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
+          <ArchiveTrigger />
         </View>
       );
     }

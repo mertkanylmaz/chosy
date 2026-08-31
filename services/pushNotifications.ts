@@ -8,7 +8,8 @@
  *   3. Rebuild dev client: `npx expo prebuild && npx expo run:ios`
  *
  * Usage:
- *   - Call `registerForPushNotifications()` after onboarding (2nd session)
+ *   - Call `registerForPushNotifications()` after the user accepts the K-15
+ *     in-context prompt (first champion), NOT at launch
  *   - Call `savePushToken()` on every app launch (token can rotate)
  *   - Call `handleNotificationResponse()` for deep link navigation
  */
@@ -27,9 +28,6 @@ import { logger } from '@/utils/logger';
 
 /** AsyncStorage key: whether we already asked for permission */
 const PERMISSION_ASKED_KEY = 'chosy_push_permission_asked';
-
-/** AsyncStorage key: session count (ask on 2nd session) */
-const SESSION_COUNT_KEY = 'chosy_session_count';
 
 /** AsyncStorage key: cached push token */
 const PUSH_TOKEN_KEY = 'chosy_push_token';
@@ -359,37 +357,59 @@ export async function toggleWatchlistReminders(enabled: boolean): Promise<boolea
   }
 }
 
-// ─── Permission Flow (Post-Onboarding) ───────────────────────────────────────
+// ─── Permission Flow (K-15: bağlam içinde, şampiyon sonrası) ─────────────────
+//
+// R-A-2 öncesi tetikleyici "2. oturum, uygulama açılışı"ydı (`_layout.tsx`) ve
+// izin, kullanıcı henüz hiçbir değer görmeden isteniyordu. K-15 bunu tersine
+// çevirir: izin ilk şampiyondan SONRA, "Want your four ready every evening?"
+// bağlamıyla istenir. Oturum sayacı (`chosy_session_count`) bu yüzden kaldırıldı
+// — onu okuyan tek yer burasıydı.
+//
+// Auth prompt ile aynı oturumda ART ARDA sorulmaz (CTO kararı, 22 Ağu 2026):
+// iOS izin diyaloğu tek atışlıktır, üst üste iki sheet'in ikincisi refleks
+// olarak kapatılır ve ret kalıcıdır. Sıralamayı GauntletShell yönetir.
 
 /**
- * Increment session count and check if we should ask for notification permission.
- * Strategy: Ask on 2nd session — not too early, not too late.
+ * Bildirim izni sheet'i gösterilmeli mi.
  *
- * @returns true if we should show the permission prompt
+ * OS izni cihaz-yereldir; bu yüzden bayrak da cihaz-yereldir (AsyncStorage).
+ * Migration 103'ün DB bayrakları burada KULLANILMAZ — bir cihazda verilen izin
+ * diğerinde geçerli değildir.
+ *
+ * @returns Daha önce sorulmadıysa ve izin zaten verilmemişse true
  */
-export async function shouldAskForPermission(): Promise<boolean> {
+export async function shouldAskForNotificationPermission(): Promise<boolean> {
   try {
-    // Already asked?
     const asked = await AsyncStorage.getItem(PERMISSION_ASKED_KEY);
     if (asked === 'true') return false;
 
-    // Already granted?
+    // İzin zaten verilmiş (ör. kullanıcı Ayarlar'dan açmış) — sormaya gerek yok.
     const granted = await isPermissionGranted();
     if (granted) {
       await AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true');
       return false;
     }
 
-    // Check session count
-    const countStr = await AsyncStorage.getItem(SESSION_COUNT_KEY);
-    const count = countStr ? parseInt(countStr, 10) : 0;
-    const newCount = count + 1;
-    await AsyncStorage.setItem(SESSION_COUNT_KEY, String(newCount));
-
-    // Ask on 2nd session
-    return newCount >= 2;
-  } catch {
+    return true;
+  } catch (err) {
+    // Okunamıyorsa sorma — fail-closed. Sessiz değil: log bırakır.
+    logger.warn('[push] shouldAskForNotificationPermission okunamadı:', err);
     return false;
+  }
+}
+
+/**
+ * "Sorduk" işaretini kalıcılaştırır — kabul, ret ve kapatma dâhil.
+ *
+ * `registerForPushNotifications()` bunu yalnızca izin VERİLDİĞİNDE yazar;
+ * reddedilen ya da kapatılan sheet de bir daha gösterilmemeli, o yüzden
+ * çağıran yüzey her yolda bunu çağırır.
+ */
+export async function markNotificationPermissionAsked(): Promise<void> {
+  try {
+    await AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true');
+  } catch (err) {
+    logger.warn('[push] markNotificationPermissionAsked yazılamadı:', err);
   }
 }
 

@@ -1,12 +1,13 @@
 /**
- * Auth Screen — Apple/Google ile giriş + anonim misafir devam seçeneği.
+ * Auth Screen — Apple + e-posta magic link ile giriş (K-14: üçüncü sağlayıcı yok).
  *
  * R-A-1 sonrası bu ekran ZORUNLU DEĞİL. gate.tsx artık buraya yönlendirmiyor;
  * geriye iki giriş yolu kaldı: profile → sign-out ve profile → hesap silme.
  * Giriş, kullanıcının geçmişini kalıcılaştırmak/cihazlar arası taşımak içindir.
  *
  * Akış:
- *  1. Apple/Google butonuna basılır → authService.signInWithApple/Google
+ *  1. Apple butonuna basılır → authService.signInWithApple
+ *     ya da e-posta girilir → MagicLinkForm (K-14, AuthPromptSheet ile ORTAK)
  *  2. Başarılı → /(tabs)
  *     (TODO: setup-profile hazır olduğunda isNewUser → /setup-profile dalı)
  *  3. Skip → /(tabs) (mevcut anonim oturum korunur)
@@ -22,6 +23,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Platform,
   StyleSheet,
   Text,
@@ -41,6 +43,7 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import FilmSeridi from '@/components/FilmReelAnimation';
+import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { supabase } from '@/services/supabase';
 import { signInWithApple } from '@/services/authService';
 import { identifyUser } from '@/services/purchaseService';
@@ -80,7 +83,7 @@ export default function AuthScreen() {
    * Anonim→Apple linking akışında `created_at` değişmediğinden `isNewUser`
    * güvenilir değil; tüm routing mantığı gate'te merkezi olarak yönetilir.
    */
-  async function handleSuccess(_isNewUser: boolean): Promise<void> {
+  async function handleSuccess(provider: 'apple' | 'email'): Promise<void> {
     void hapticSuccess();
 
     // RevenueCat'e kullanıcıyı eşle — subscription tracking için kritik
@@ -104,7 +107,7 @@ export default function AuthScreen() {
       // RC/PostHog identify başarısız olsa bile akışı engelleme
     }
 
-    posthogAnalytics.track('auth_prompt_completed', { provider: 'apple' });
+    posthogAnalytics.track('auth_prompt_completed', { provider, surface: 'auth_screen' });
 
     // Gate tüm routing kararlarını verir:
     //  - onboarding tamamlanmadıysa → /onboarding
@@ -129,7 +132,7 @@ export default function AuthScreen() {
       const result = await signInWithApple();
 
       if (result.success) {
-        handleSuccess(result.isNewUser);
+        void handleSuccess('apple');
       } else if (result.error === 'canceled') {
         // Kullanıcı iptal etti — sessizce geç
       } else if (result.error === 'not_available') {
@@ -168,6 +171,11 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      {/* E-posta alanı klavyeyi açar — hero (flex:1) küçülerek yer açar. */}
+      <KeyboardAvoidingView
+        style={styles.flexFill}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
 
       {/* Geri butonu */}
       <TouchableOpacity
@@ -215,6 +223,18 @@ export default function AuthScreen() {
           <Text style={styles.errorText}>{errorMsg}</Text>
         )}
 
+        {/* K-14 ikincil sağlayıcı: e-posta magic link. AuthPromptSheet ile
+            AYNI bileşen — kopya değil; iki yüzeyin ayrışmaması için. */}
+        {Platform.OS === 'ios' && (
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('authPrompt.or')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+        )}
+
+        <MagicLinkForm onSuccess={() => void handleSuccess('email')} surface="auth_screen" />
+
       </View>
 
       {/* R-A-1: auth artık zorunlu değil — giriş, geçmişi cihazlar arasında
@@ -236,6 +256,7 @@ export default function AuthScreen() {
         )}
       </View>
 
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -246,6 +267,9 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  flexFill: {
+    flex: 1,
   },
 
   // ─── Geri ───────────────────────────────────────────────────────────────
@@ -343,6 +367,23 @@ const styles = StyleSheet.create({
     color: Colors.error,
     textAlign: 'center',
     marginTop: Theme.spacing.xs,
+  },
+
+  // ─── Apple / e-posta ayracı (K-14) ───────────────────────────────────────
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Theme.spacing.sm,
+    marginVertical: Theme.spacing.xs,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.white10,
+  },
+  dividerText: {
+    ...Theme.typography.caption,
+    color: Colors.textTertiary,
   },
 
   // ─── Misafir devam ───────────────────────────────────────────────────────

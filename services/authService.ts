@@ -131,9 +131,13 @@ async function syncDisplayName(name: string): Promise<void> {
  * Sosyal auth tamamlandıktan sonra users tablosundaki auth_provider alanını günceller.
  * Hata durumunda log bırakır; üst katmana yayılmaz (non-blocking).
  *
- * @param provider - 'apple' | 'google'
+ * `'email'` değeri K-14 ile geldi (magic link). 012'deki kolon yorumu üç değer
+ * sayıyordu ('anonymous' | 'apple' | 'google'); CHECK constraint YOK, kolon
+ * serbest metin — şema değişmedi, yalnızca sözlük genişledi.
+ *
+ * @param provider - 'apple' | 'google' | 'email'
  */
-async function syncAuthProvider(provider: 'apple' | 'google'): Promise<void> {
+async function syncAuthProvider(provider: 'apple' | 'google' | 'email'): Promise<void> {
   try {
     const {
       data: { user },
@@ -392,6 +396,201 @@ export async function updateUserProfile(
     return {
       success: false,
       error: err instanceof Error ? err.message : 'Bilinmeyen hata',
+    };
+  }
+}
+
+// ─── Email Magic Link / OTP (K-14) ────────────────────────────────────────────
+//
+// ⚠️ SUPABASE DASHBOARD GEREKSİNİMLERİ (tek seferlik kurulum):
+//   1. Authentication → Providers → Email: etkin.
+//   2. Authentication → Email Templates → "Magic Link" ve "Confirm signup"
+//      şablonlarına `{{ .Token }}` eklenmeli. Varsayılan şablonlar yalnızca
+//      `{{ .ConfirmationURL }}` içerir; kod alanı boş gelirse kullanıcı
+//      6 haneli kodu HİÇ göremez ve akış çalışmaz.
+//   3. Authentication → Providers → Email → "Secure email change" açıksa
+//      anonim hesabın e-posta bağlaması yalnızca YENİ adresi doğrular
+//      (eski adres yok) — ek adım gerekmez.
+//
+// ── Neden iki farklı Supabase çağrısı ────────────────────────────────────────
+// `signInWithOtp()` YENİ bir kullanıcı açar ya da var olana geçer. Anonim
+// kullanıcıda bu, K-13'ün vaadinin ("Save your cinema journey") tam tersini
+// yapardı: watchlist, choice_events ve DNA eski anonim `auth_id`'de kilitli
+// kalırdı. Anonim kimliği KORUYAN yol `updateUser({ email })` + `type:
+// 'email_change'` doğrulamasıdır — user id değişmez, veri taşınır.
+// Bu yüzden mod, oturumun anonim olup olmamasına göre seçilir.
+
+/** Magic link gönderim modu — doğrulama adımının OTP tipini belirler. */
+export type MagicLinkMode =
+  /** Anonim kimliğe e-posta bağlanıyor — user id korunur (`email_change`) */
+  | 'link'
+  /** Klasik giriş/kayıt — yeni ya da mevcut hesaba oturum açılır (`email`) */
+  | 'signin';
+
+/** `sendMagicLink` sonucu */
+export type MagicLinkSendResult =
+  | { success: true; mode: MagicLinkMode }
+  | {
+      success: false;
+      /**
+       * `already_registered` — anonim kimliğe bağlanmak istenen e-posta
+       * başka bir hesaba ait. Sessizce o hesaba GEÇİLMEZ: anonim veri
+       * kaybolurdu. Karar kullanıcıya bırakılır (UI ikinci bir onay sorar,
+       * `forceSignIn` ile tekrar çağırır).
+       */
+      error: 'invalid_email' | 'already_registered' | 'rate_limited' | 'network' | 'failed';
+      message?: string;
+    };
+
+/** `verifyMagicLinkCode` sonucu */
+export type MagicLinkVerifyResult =
+  | { success: true }
+  | {
+      success: false;
+      error: 'invalid_code' | 'expired' | 'network' | 'failed';
+      message?: string;
+    };
+
+/** RFC 5322'nin pratik alt kümesi — sunucu doğrulaması yerine geçmez. */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/**
+ * E-posta adresine 6 haneli doğrulama kodu gönderir.
+ *
+ * Oturum anonimse kimliği KORUYARAK e-posta bağlar (`updateUser`), aksi
+ * hâlde klasik OTP girişi açar (`signInWithOtp`).
+ *
+ * @param email - Kullanıcının girdiği adres
+ * @param forceSignIn - `already_registered` uyarısı kullanıcıya gösterildikten
+ *   sonra "yine de o hesaba gir" denirse true. Anonim veri terk edilir.
+ */
+export async function sendMagicLink(
+  email: string,
+  forceSignIn = false,
+): Promise<MagicLinkSendResult> {
+  const normalized = email.trim().toLowerCase();
+
+  if (!EMAIL_PATTERN.test(normalized)) {
+    return { success: false, error: 'invalid_email' };
+  }
+
+  try {
+    const isAnonymous = await isCurrentUserAnonymous();
+    const mode: MagicLinkMode = isAnonymous && !forceSignIn ? 'link' : 'signin';
+
+    const { error } =
+      mode === 'link'
+        ? await supabase.auth.updateUser({ email: normalized })
+        : await supabase.auth.signInWithOtp({
+            email: normalized,
+            options: { shouldCreateUser: true },
+          });
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+
+      if (isNetworkError(error)) {
+        return { success: false, error: 'network', message: error.message };
+      }
+      // Supabase rate limit: "For security purposes, you can only request this after N seconds"
+      if (error.status === 429 || msg.includes('rate limit') || msg.includes('only request this')) {
+        return { success: false, error: 'rate_limited', message: error.message };
+      }
+      // Anonim bağlama, adres başka hesapta kayıtlıysa reddedilir.
+      if (msg.includes('already been registered') || msg.includes('already registered')) {
+        return { success: false, error: 'already_registered', message: error.message };
+      }
+
+      logger.error('[authService] sendMagicLink hatası:', error.message);
+      Sentry.captureMessage(`sendMagicLink: ${error.message}`, {
+        level: 'error',
+        tags: { function: 'sendMagicLink', error_code: 'MAGIC_LINK_SEND_FAILED' },
+        extra: { mode, status: error.status },
+      });
+      return { success: false, error: 'failed', message: error.message };
+    }
+
+    return { success: true, mode };
+  } catch (err) {
+    if (isNetworkError(err)) {
+      logger.warn('[authService] sendMagicLink network hatası:', err);
+      return { success: false, error: 'network' };
+    }
+    logger.error('[authService] sendMagicLink beklenmedik hata:', err);
+    Sentry.captureException(err, {
+      level: 'error',
+      tags: { function: 'sendMagicLink', error_code: 'MAGIC_LINK_SEND_FAILED' },
+    });
+    return {
+      success: false,
+      error: 'failed',
+      message: err instanceof Error ? err.message : 'Bilinmeyen hata',
+    };
+  }
+}
+
+/**
+ * E-posta ile gelen 6 haneli kodu doğrular ve oturumu kalıcılaştırır.
+ *
+ * @param email - `sendMagicLink`'e verilen adres
+ * @param code - Kullanıcının girdiği 6 haneli kod
+ * @param mode - `sendMagicLink`'in döndürdüğü mod; OTP tipini belirler
+ */
+export async function verifyMagicLinkCode(
+  email: string,
+  code: string,
+  mode: MagicLinkMode,
+): Promise<MagicLinkVerifyResult> {
+  const normalized = email.trim().toLowerCase();
+  const token = code.trim();
+
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      email: normalized,
+      token,
+      type: mode === 'link' ? 'email_change' : 'email',
+    });
+
+    if (error) {
+      const msg = error.message.toLowerCase();
+
+      if (isNetworkError(error)) {
+        return { success: false, error: 'network', message: error.message };
+      }
+      if (msg.includes('expired')) {
+        return { success: false, error: 'expired', message: error.message };
+      }
+      if (msg.includes('invalid') || error.status === 401 || error.status === 403) {
+        return { success: false, error: 'invalid_code', message: error.message };
+      }
+
+      logger.error('[authService] verifyMagicLinkCode hatası:', error.message);
+      Sentry.captureMessage(`verifyMagicLinkCode: ${error.message}`, {
+        level: 'error',
+        tags: { function: 'verifyMagicLinkCode', error_code: 'MAGIC_LINK_VERIFY_FAILED' },
+        extra: { mode, status: error.status },
+      });
+      return { success: false, error: 'failed', message: error.message };
+    }
+
+    // users tablosundaki auth_provider güncelle (non-blocking)
+    void syncAuthProvider('email');
+
+    return { success: true };
+  } catch (err) {
+    if (isNetworkError(err)) {
+      logger.warn('[authService] verifyMagicLinkCode network hatası:', err);
+      return { success: false, error: 'network' };
+    }
+    logger.error('[authService] verifyMagicLinkCode beklenmedik hata:', err);
+    Sentry.captureException(err, {
+      level: 'error',
+      tags: { function: 'verifyMagicLinkCode', error_code: 'MAGIC_LINK_VERIFY_FAILED' },
+    });
+    return {
+      success: false,
+      error: 'failed',
+      message: err instanceof Error ? err.message : 'Bilinmeyen hata',
     };
   }
 }

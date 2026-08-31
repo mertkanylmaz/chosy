@@ -1,5 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createClient, type SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+import {
+  type BaseVectorResult,
+  type PriorSource,
+  resolveBaseVector,
+} from '../_shared/userVectorSeed.ts'
+import { sentryCapture } from '../_shared/sentry.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -67,6 +74,37 @@ function vectorToPgString(v: number[]): string {
   return '[' + v.join(',') + ']'
 }
 
+/**
+ * `dirty` bayragini temizler; taban vektor SENTEZ ise onu da yazar.
+ *
+ * Neden tohum yaziliyor: kayitli vektoru olmayan kullanicida (quiz'siz yeni
+ * kullanici) erken donus yollari eskiden yalnizca bayragi temizliyordu —
+ * `preferences_vector` NULL kaliyordu ve `dailyMatch` / `DailyPickSection`
+ * kullaniciyi sessizce atliyordu. population_mean tohumu yazilirsa kullanici
+ * ilk sinyalden once de kullanilabilir bir vektore sahip olur.
+ *
+ * Kayitli vektor GECERLI ise (source='calibration') hicbir vektor yazilmaz —
+ * ayni degeri geri yazmak `preferences_vector_updated_at`'i yaniltir.
+ */
+async function markClean(
+  // `ReturnType<typeof createClient>` KULLANILMAZ — `never` uretir ve her
+  // cagri sitesinde TS2345 verir. Tip, bu dosyanin zaten kullandigi esm.sh
+  // kanalindan alinir; jsr'den almak iki farkli SupabaseClient tipi dogurur.
+  sb: SupabaseClient,
+  userId: string,
+  base: BaseVectorResult,
+): Promise<void> {
+  const patch: Record<string, unknown> = {
+    preferences_vector_dirty: false,
+    preferences_vector_updated_at: new Date().toISOString(),
+  }
+  if (base.source === 'population_mean') {
+    patch.preferences_vector = vectorToPgString(base.vector)
+  }
+  const { error } = await sb.from('users').update(patch).eq('id', userId)
+  if (error) throw new Error('markClean update failed: ' + error.message)
+}
+
 serve(async (req: Request): Promise<Response> => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS })
@@ -99,13 +137,28 @@ serve(async (req: Request): Promise<Response> => {
       )
     }
 
-    const calibrationVector = parseVector(userRow.preferences_vector)
-    if (!calibrationVector) {
-      // Kalibrasyonsuz user — onboarding tamamlanmamış, henüz hesaplanamaz
-      return new Response(
-        JSON.stringify({ status: 'skipped', reason: 'no_calibration_vector' }),
-        { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
-      )
+    // ── 1b. Taban (prior) vektoru ──────────────────────────────────────
+    // Eskiden burada `{status:'skipped', reason:'no_calibration_vector'}`
+    // donuluyordu. Quiz onboarding'den kalkinca (R-12 + K-11) bu dal HER yeni
+    // kullanicida calisacakti ve `preferences_vector` sonsuza dek NULL
+    // kalirdi. Artik tasteVector'un 0-sinyal davranisiyla ayni: 12 arketip
+    // merkezinin ortalamasi tohum olur. Merkez hesabi PAYLASILIR, kopyalanmaz.
+    const base = resolveBaseVector(
+      userRow.preferences_vector as number[] | string | null,
+    )
+    const calibrationVector = base.vector
+
+    // Eksik vektor BEKLENEN durumdur (quiz'siz kullanici). Bozuk vektor
+    // degildir — sessizce population_mean'e dusmek yerine gorunur olur.
+    if (base.fallbackReason && base.fallbackReason !== 'stored_missing') {
+      await sentryCapture({
+        message: 'recompute-user-vector: kayitli preferences_vector ' +
+          `kullanilamadi (${base.fallbackReason}), population_mean tohumu ` +
+          'kullanildi',
+        level: 'warning',
+        tags: { fn: 'recompute-user-vector', reason: base.fallbackReason },
+        extra: { user_id },
+      })
     }
 
     // ── 2. Son 90 günün meaningful signal'larını çek ────────────────────
@@ -130,15 +183,16 @@ serve(async (req: Request): Promise<Response> => {
 
     // ── 3. Cold-start check ────────────────────────────────────────────
     if (meaningful.length < MIN_SIGNALS_FOR_RECOMPUTE) {
-      // Markaj: dirty=false (signal sayısı eşiğin altında, recompute yapmadık)
-      await sb.from('users').update({
-        preferences_vector_dirty: false,
-        preferences_vector_updated_at: new Date().toISOString(),
-      }).eq('id', user_id)
+      // Markaj: dirty=false (signal sayısı eşiğin altında, recompute yapmadık).
+      // Taban sentez ise tohum da yazilir — bkz. markClean.
+      await markClean(sb, user_id, base)
 
+      const priorSource: PriorSource = base.source
       return new Response(
         JSON.stringify({
           status: 'cold_start',
+          prior_source: priorSource,
+          base_fallback_reason: base.fallbackReason,
           meaningful_signals: meaningful.length,
           required: MIN_SIGNALS_FOR_RECOMPUTE
         }),
@@ -193,13 +247,13 @@ serve(async (req: Request): Promise<Response> => {
 
     if (totalAbsWeight < 1e-6 || usedSignals === 0) {
       // Tüm signal'lar fail oldu → cold-start gibi davran
-      await sb.from('users').update({
-        preferences_vector_dirty: false,
-        preferences_vector_updated_at: new Date().toISOString(),
-      }).eq('id', user_id)
+      await markClean(sb, user_id, base)
+      const priorSource: PriorSource = base.source
       return new Response(
         JSON.stringify({
           status: 'no_usable_signals',
+          prior_source: priorSource,
+          base_fallback_reason: base.fallbackReason,
           fetched: meaningful.length,
           skipped_no_vector: skippedNoVector,
         }),
@@ -212,14 +266,14 @@ serve(async (req: Request): Promise<Response> => {
 
     // ── 6. Magnitude check (negatif signal'lar vector'ü sıfırlamış olabilir)
     if (magnitude(signalAvg) < MIN_VECTOR_MAGNITUDE) {
-      // Vector çöktü → calibration'a fallback
-      await sb.from('users').update({
-        preferences_vector_dirty: false,
-        preferences_vector_updated_at: new Date().toISOString(),
-      }).eq('id', user_id)
+      // Vector çöktü → tabana fallback (kalibrasyon ya da population_mean)
+      await markClean(sb, user_id, base)
+      const priorSource: PriorSource = base.source
       return new Response(
         JSON.stringify({
-          status: 'collapsed_to_calibration',
+          status: 'collapsed_to_base',
+          prior_source: priorSource,
+          base_fallback_reason: base.fallbackReason,
           magnitude: magnitude(signalAvg),
         }),
         { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } }
@@ -259,6 +313,11 @@ serve(async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({
         status: 'success',
+        // Harmanda sinyal katkisi var → 'signals'. Tabanin ne oldugu
+        // base_source'ta ayrica raporlanir; ikisi birbirini gizlemez.
+        prior_source: 'signals' as PriorSource,
+        base_source: base.source,
+        base_fallback_reason: base.fallbackReason,
         used_signals: usedSignals,
         skipped_no_vector: skippedNoVector,
         null_vector_films: nullVectorCount,

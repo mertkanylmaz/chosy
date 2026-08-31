@@ -4,7 +4,9 @@
  *
  * Sıra:
  *  1. Onboarding tamamlanmadıysa → /onboarding
- *  2. Session sayısını artır → /(tabs)
+ *  2. Session sayısını artır
+ *  3. Relaunch öncesi hesap köprü ekranını görmediyse → /relaunch-intro (E-05)
+ *  4. Aksi hâlde → /(tabs)
  *
  * K-12 (R-A-1): auth gating KALDIRILDI. Anonim kullanıcı uygulamanın tam
  * akışını görür; giriş ilk şampiyon sonrasında önerilir (K-13, R-A-2).
@@ -22,6 +24,7 @@ import { Colors } from '@/constants/Colors';
 import { LoadingScreen } from '@/components/LoadingScreen';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
+import { readUserFlags } from '@/services/userFlags';
 import { incrementSessionCount } from '../services/entryService';
 
 /** Minimum splash display time (ms) */
@@ -109,8 +112,24 @@ export default function Gate() {
           return;
         }
 
-        // Entry ekranı kaldırıldı — doğrudan ana ekrana yönlendir
         await incrementSessionCount();
+
+        // ── E-05 köprü ekranı (R-A-2) ──────────────────────────────────────
+        // Yalnızca relaunch ÖNCESİ kohort (legacy_mood_access, migration 090)
+        // ve yalnızca bir kez (has_seen_relaunch_intro, migration 103).
+        // Home'dan ÖNCE gelir — kullanıcı değişen ekranı, açıklamayı okumadan
+        // görmez. Okuma başarısız olursa (null) köprü GÖSTERİLMEZ: fail-closed,
+        // hata `readUserFlags` içinde Sentry'ye yazılır. Yeni kullanıcı bu
+        // dala hiç girmez — legacy_mood_access onlarda false'tur.
+        const flags = await readUserFlags();
+        if (flags?.legacyMoodAccess && !flags.hasSeenRelaunchIntro) {
+          targetRoute.current = '/relaunch-intro';
+          decisionReady.current = true;
+          tryNavigate();
+          return;
+        }
+
+        // Entry ekranı kaldırıldı — doğrudan ana ekrana yönlendir
         targetRoute.current = '/(tabs)';
         decisionReady.current = true;
         tryNavigate();
