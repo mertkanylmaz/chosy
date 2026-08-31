@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.8
+**Sürüm:** 1.9
 **Tarih:** 17 Ağustos 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -427,6 +427,14 @@ Fiyat, R-01'i bozmadan test edilebilen tek değişkendir. **Faz 1 kalemi olarak 
 
 Ayrı bulgu: "Unlock the full experience" ekranında geri gezinme eksikliği tespit edildi (`TEKNIK_BORC.md`'ye eklendi), R-D öncesi çözülecek.
 
+### E-12 — RC Paywalls v2: hibrit korunuyor, tam geçiş yapılmadı
+
+31 Ağu 2026 fizibilite turu: RC native template'e tam geçiş, Wave 2'de kurulan hata sınıflandırmasını (`errorKind`, `entitlement_pending`, `dismiss_method`) ve offline görünür-hata+retry davranışını kaybettirir — RC offering'leri diske persist etmez (bilinçli tasarım: "bayat fiyat gösterme"), K-42'nin gauntlet cache'i bunu tamamlamıyor. Ayrıca R-C'nin çıkış kriteri (K-49, 6 state testi) sıfırdan başlardı.
+
+**Karar: hibrit mimari korunuyor** — offering yönetimi RC'de, sunum katmanı (`PaywallBase` + variant'lar) bizde kalıyor. `react-native-purchases-ui` kurulmadı. Yeniden değerlendirme tetikleyicisi: gerçek A/B trafiği (G-2 sonrası) RC'nin native targeting'inin bize değer katıp katmadığını ölçmemizi sağladığında.
+
+Ölçülen sürüm durumu (31 Ağu 2026): `react-native-purchases` 10.0.1 kurulu — temel Paywalls v2 için yeterli (8.11.3+), multipage için değil (10.6.0+). `react-native-purchases-ui` kurulu değil ve bu turda kurulmuyor.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -553,6 +561,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.6 | 19 Ağu 2026 | **C.9b-2.** Champion CTA'ları tamamlandı: "Sonraya bırak" (`submit-choice`'a `save_for_later` action'ı — yeni Edge Function YOK, şema/migration YOK, yüzey şampiyonla sınırlı) ve "Nerede izlenir" (`WatchProviders` bileşeni, `fetchMovieWatchProviders`). K-20 activation bridge'inin üç ayağı da bağlandı. **K-21 ERTELENDİ** — 6 eksen verisi hiçbir katmanda üretilmiyor; Post-C.9 radar chart sprint'ine taşındı. Bkz. §11 F-07. |
 | 1.7 | 27 Ağu 2026 | SOSA 2026 incelemesi. R-01 korundu (gerekçe E-10). E-09 paywall enstrümantasyonu R-C önkoşulu olarak eklendi. Paywall vendor kararı: RevenueCat Paywalls v2 ile devam, ikinci vendor (Superwall/Adapty) marketing gate sonrası değerlendirilecek. |
 | 1.8 | 31 Ağu 2026 | **E-11.** K-42'nin 8 senaryolu cihaz doğrulaması TestFlight build'ine ertelendi (yerel dev build/simülatör yok; Expo Go üzerinden uçak modu testi kod yolunu değerlendiremiyor). R-C açıldı; K-42 doğrulaması R-D önkoşulu olarak kaldı. Paywall ekranında geri gezinme eksikliği `TEKNIK_BORC.md`'ye alındı. |
+| 1.9 | 31 Ağu 2026 | **E-12.** RC Paywalls v2 fizibilitesi tamamlandı: hibrit mimari korunuyor, tam geçiş yapılmadı, `react-native-purchases-ui` kurulmadı. R-C ilerlemesi: K-46 (arşiv tetikleyicisi + `get-archive-status` deploy edildi), E-09 (paywall/purchase event dalları tamamlandı) ve G-6 çekirdek event listesi (`docs/analytics/G6_CEKIRDEK_EVENTLER.md`) kapandı. Kalan: K-49 sandbox durum matrisi. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
