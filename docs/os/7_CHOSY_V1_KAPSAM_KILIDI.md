@@ -487,7 +487,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | G-3 | Watch feedback **yanıtlanma** oranı (E-07) | ≥ 50% |
 | G-4 | Watched-it ilk sinyal | ≥ 25% *(kill eşiği %20 · hedef %35, 500 kullanıcıda)* |
 | G-5 | Neither rate | %15–30 bandında |
-| G-6 | PostHog çekirdek eventleri doğrulanmış | 20/20 |
+| G-6 | PostHog çekirdek eventleri doğrulanmış | 20/20 — liste: `docs/analytics/G6_CEKIRDEK_EVENTLER.md` |
 | G-7 | Açık P0/P1 | 0 |
 | G-8 | App Review | geçilmiş |
 | G-9 | **Relaunch sonrası 14 günde mevcut kullanıcı kaybı** | < %20 |
@@ -506,7 +506,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | Sprint | Amaç | Kapsam | Ön koşul | DUR NOKTASI | Model |
 |---|---|---|---|---|---|
 | **M0** Göç & Kurtarma | Kimseyi kaybetmeden zemini hazırla | Orphan fix'in sahada doğrulanması (d9b22e2) · E-08 sessiz kimlik sıfırlama düzeltmesi · `subscriptions.entitlement_id` veri düzeltmesi (`premium`→`chosy_plus`) · `legacy_mood_access` grandfathering kolonu | Faz 1 keşif (tamamlandı) | Orphan sayımı 0 kalıcı · `identity_reset_detected` eventi Sentry+PostHog'da görünür · 3 satır düzeltildi · grandfathering flag'i doğru kohortta true | Sonnet 4.6 |
-| **M1** Ölçüm Önce | Production'a çıkmadan ölçüm hazır | PostHog event dictionary (20 event) · `gauntlet_id`/`algorithm_version` alan bağlaması · Sentry release health + EAS source map (E-04) · `v_algorithm_daily` view onayı (D-04) | M0 | 20/20 event canlı doğrulanmış · test crash'i doğru release'e düşüyor | Sonnet 4.6 |
+| **M1** Ölçüm Önce | Production'a çıkmadan ölçüm hazır | PostHog event dictionary (20 event — `docs/analytics/G6_CEKIRDEK_EVENTLER.md`) · `gauntlet_id`/`algorithm_version` alan bağlaması · Sentry release health + EAS source map (E-04) · `v_algorithm_daily` view onayı (D-04) | M0 | 20/20 event canlı doğrulanmış · test crash'i doğru release'e düşüyor | Sonnet 4.6 |
 | **M2** Zaman Mimarisi | "18:00" sorusunu çöz (E-01) | Kullanıcı timezone kaydı · saat dilimi bazlı batch üretim · DST · gün sınırı ve streak etkileşimi | M1 | 3 farklı timezone'da üretim saati doğrulaması | Fable 5 |
 | **M3** Havuz Gerçeği | Ölçüm sonra kod (E-02, D-03) | Havuz derinliği ölçümü · `poster_url` w92 bug fix · `poster_quality_ok` batch kolonu + cron | M1 | Etkin havuz boyutu · tekrar oranı eğrisi · gate'in elediği film sayısı | Sonnet 4.6 |
 | **C.9a** Nav | 3 tab → 2 tab | Tab bar · Discover `app_config` flag · native tab bar (K-04) · `/mood` `/discover` redirect | M0 | Cihazda 2 tab · Discover erişilemez · deep link redirect çalışıyor | Sonnet 4.6 |
