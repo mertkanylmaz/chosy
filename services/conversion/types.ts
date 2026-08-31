@@ -78,3 +78,13 @@ export interface PaywallEventInsert {
   action: 'shown' | 'dismissed' | 'converted' | 'trial_started';
   ab_test_group: string | null;
 }
+
+/**
+ * Paywall'ın nasıl kapatıldığı (E-09 `dismiss_method`).
+ *
+ * Üçü de "dismissed" sayılır ama aynı şey DEĞİLDİR: `dismiss_button` bilinçli
+ * bir ret, `drag_handle` refleks kapatma, `system_back` çoğu zaman paywall'a
+ * hiç bakılmadığının işareti. Ayrım olmadan dönüşmeyen bir paywall'ın nedeni
+ * ölçülemez.
+ */
+export type PaywallDismissMethod = 'drag_handle' | 'dismiss_button' | 'system_back';

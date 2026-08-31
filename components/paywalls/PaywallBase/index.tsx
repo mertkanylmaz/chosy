@@ -46,6 +46,7 @@ import { supabase } from '@/services/supabase';
 import {
   recordPaywallShown,
   recordPaywallDismissed,
+  type PaywallDismissMethod,
   recordPaywallConverted,
 } from '@/services/conversion';
 import type { PaywallVariant } from '@/services/conversion';
@@ -279,9 +280,16 @@ export default function PaywallBase({
     }
   }, [t, refreshSubscription, refreshQuota, onDismiss]);
 
-  /** Dismiss + tracking */
-  const handleDismiss = useCallback(() => {
-    recordPaywallDismissed(variant).catch(() => {});
+  /**
+   * Dismiss + tracking.
+   *
+   * E-09: `dismiss_method` üç kapanış yolunu ayırır — sürükleme tutamacı,
+   * "şimdi değil" butonu ve sistem geri hareketi (`onRequestClose`). Üçü aynı
+   * olay sayılırsa "paywall reddedildi" verisi, reddin ne kadarının bilinçli
+   * olduğunu söyleyemez.
+   */
+  const handleDismiss = useCallback((method: PaywallDismissMethod) => {
+    recordPaywallDismissed(variant, method).catch(() => {});
     onDismiss();
   }, [variant, onDismiss]);
 
@@ -290,7 +298,7 @@ export default function PaywallBase({
       visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={handleDismiss}
+      onRequestClose={() => handleDismiss('system_back')}
       statusBarTranslucent
     >
       <View style={styles.overlay}>
@@ -298,7 +306,7 @@ export default function PaywallBase({
           {/* Drag Handle */}
           <TouchableOpacity
             style={styles.dragHandleArea}
-            onPress={handleDismiss}
+            onPress={() => handleDismiss('drag_handle')}
             activeOpacity={1}
           >
             <View style={styles.dragHandle} />
@@ -411,7 +419,7 @@ export default function PaywallBase({
                 {/* Dismiss */}
                 <TouchableOpacity
                   style={styles.dismissButton}
-                  onPress={handleDismiss}
+                  onPress={() => handleDismiss('dismiss_button')}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.dismissText}>

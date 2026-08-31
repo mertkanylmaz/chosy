@@ -31,4 +31,5 @@ export type {
   PaywallVariant,
   PaywallVariantName,
   PaywallEventInsert,
+  PaywallDismissMethod,
 } from './types';

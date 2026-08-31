@@ -445,6 +445,13 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
           },
         },
       );
+      // E-09/K-49: ödeme gitmiş olabilir ama entitlement yok. Durum matrisinin
+      // bugüne kadar HİÇ ölçülmemiş hücresi — Sentry'de hata olarak görünüyordu,
+      // funnel'da hiç görünmüyordu.
+      posthogAnalytics.track('entitlement_pending', {
+        package_id: pkg.identifier,
+        product_id: pkg.product.identifier,
+      });
     }
 
     return {
@@ -456,6 +463,13 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
   } catch (err: unknown) {
     // Kullanıcı iptal etti — hata değil, errorKind taşımaz
     if (err && typeof err === 'object' && 'userCancelled' in err && (err as { userCancelled: boolean }).userCancelled) {
+      // E-09: iptal, satın almanın BAŞLADIĞI ama tamamlanmadığı tek "sağlıklı"
+      // dal. Ölçülmezse `purchase_started` ile `purchase_completed` arasındaki
+      // fark hata mı vazgeçme mi ayırt edilemez.
+      posthogAnalytics.track('purchase_cancelled', {
+        package_id: pkg.identifier,
+        product_id: pkg.product.identifier,
+      });
       return { success: false, cancelled: true };
     }
 
@@ -509,6 +523,7 @@ export async function restorePurchases(): Promise<PurchaseResult> {
       new Error('RC not initialized'),
       { code: 'RC_NOT_INITIALIZED', extra: { fn: 'restorePurchases' } },
     );
+    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: 'not_initialized' });
     return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
   }
 
@@ -517,12 +532,16 @@ export async function restorePurchases(): Promise<PurchaseResult> {
     const isPremium = customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined;
 
     if (isPremium) {
+      // `restore_completed` KORUNUYOR (geriye dönük seri kırılmasın), yanına
+      // E-09'un üç sonuçlu `restore_attempted` olayı eklendi.
       posthogAnalytics.track('restore_completed');
+      posthogAnalytics.track('restore_attempted', { result: 'success' });
       return { success: true, customerInfo };
     }
 
     // Sorgu BAŞARILI, gerçekten geri yüklenecek bir şey yok.
     // Ağ hatasından ayrı tutulmalı — çağıran "aboneliğin yok" diyebilir.
+    posthogAnalytics.track('restore_attempted', { result: 'no_data' });
     return {
       success: false,
       customerInfo,
@@ -536,6 +555,9 @@ export async function restorePurchases(): Promise<PurchaseResult> {
       code: 'RC_RESTORE_FAILED',
       extra: { errorKind },
     });
+    // Hata dalı 'no_data'dan AYRI: App Store'un zorunlu akışında "aboneliğin
+    // yok" ile "sorgulayamadık" karıştırılamaz, funnel'da da karıştırılmaz.
+    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: errorKind });
     // errorKind 'no_data' DEĞİL — çağıran "aboneliğin yok" DEMEMELİ.
     return { success: false, error: message, errorKind };
   }

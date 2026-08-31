@@ -18,6 +18,7 @@ import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/auth-utils';
 import { getExperimentGroup } from './abTesting';
 import type {
+  PaywallDismissMethod,
   TriggerEvent,
   TriggerType,
   PaywallVariant,
@@ -295,14 +296,23 @@ export async function shouldShowPaywall(
  */
 export async function recordPaywallShown(variant: PaywallVariant): Promise<void> {
   await setCooldown(variant.trigger.type);
+  trackFunnel('paywall_shown', variant);
   await recordEvent(variant, 'shown');
 }
 
 /**
  * Paywall dismiss kaydeder + dismiss counter arttir.
+ *
+ * `method` E-09'un `dismiss_method` alanıdır (PaywallBase gecirir). Supabase
+ * `paywall_events` semasinda boyle bir kolon YOK ve eklenmiyor — ayrim
+ * PostHog tarafinda yasiyor, tablo yazimi degismeden kaliyor.
  */
-export async function recordPaywallDismissed(variant: PaywallVariant): Promise<void> {
+export async function recordPaywallDismissed(
+  variant: PaywallVariant,
+  method?: PaywallDismissMethod,
+): Promise<void> {
   await incrementDismissal(variant.trigger.type);
+  trackFunnel('paywall_dismissed', variant, { dismiss_method: method ?? null });
   await recordEvent(variant, 'dismissed');
 }
 
@@ -310,7 +320,32 @@ export async function recordPaywallDismissed(variant: PaywallVariant): Promise<v
  * Basarili conversion kaydeder.
  */
 export async function recordPaywallConverted(variant: PaywallVariant): Promise<void> {
+  trackFunnel('paywall_converted', variant);
   await recordEvent(variant, 'converted');
+}
+
+/**
+ * PostHog aynasi (E-09).
+ *
+ * `paywall_events` tablosuna yazma DEGISMEDI — bu fonksiyon onun yerine gecmez,
+ * yanina gecer. Tablo operasyonel amaca hizmet ediyor (cooldown/dismiss sayaci
+ * ayri AsyncStorage'da olsa da satirlar A/B analizinin kaynagi); PostHog ise
+ * G-6'nin "canli dogrulanmis event" kapisini karsiliyor. Ikisini tek yola
+ * indirmek, calisan bir yazimi riske atmak olurdu.
+ */
+function trackFunnel(
+  event: string,
+  variant: PaywallVariant,
+  extra: Record<string, string | number | boolean | null> = {},
+): void {
+  posthogAnalytics.track(event, {
+    variant: variant.name,
+    trigger_type: variant.trigger.type,
+    ab_test_group: variant.abTestGroup,
+    missed_day_count:
+      'missedDayCount' in variant.trigger ? variant.trigger.missedDayCount : null,
+    ...extra,
+  });
 }
 
 /**
