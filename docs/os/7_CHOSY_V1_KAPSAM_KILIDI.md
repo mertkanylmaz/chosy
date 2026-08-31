@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.7
+**Sürüm:** 1.8
 **Tarih:** 17 Ağustos 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -419,6 +419,14 @@ Aynı rapor sert paywall'ın freemium'a göre 35. günde 5 kat daha iyi dönüş
 
 Fiyat, R-01'i bozmadan test edilebilen tek değişkendir. **Faz 1 kalemi olarak kilitlendi**, tetikleyici: G-2 geçildikten sonra ilk A/B adayı. v1'de fiyat değişmez.
 
+### E-11 — K-42 cihaz doğrulaması TestFlight'a ertelendi
+
+27 Ağu 2026: yerel dev build (netinfo native modül derlemesi) ve simülatör mevcut değil. Expo Go/Metro dev server üzerinden test denendi, ancak JS bundle'ın kendisi ağ bağımlı olduğu için uçak modu testi K-42'nin kod yolunu hiç değerlendiremedi (bundle yüklenemedi) — sonuç yorumlanamaz, K-42'nin başarısızlığı değil.
+
+**Karar: R-C açılıyor.** K-42'nin 8 senaryolu cihaz doğrulaması ilk TestFlight build'inde yapılacak — R-D (App Store submission) açılmadan önce zorunlu ön koşul. R-C'nin kendi kapısı (K-49, RevenueCat durum matrisi) zaten gerçek cihaz/sandbox gerektirdiği için TestFlight'a çıkış doğal olarak bu sıraya oturuyor, ayrı adım eklenmedi.
+
+Ayrı bulgu: "Unlock the full experience" ekranında geri gezinme eksikliği tespit edildi (`TEKNIK_BORC.md`'ye eklendi), R-D öncesi çözülecek.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -544,6 +552,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.5 | 19 Ağu 2026 | **C.9b swap.** Home route'u gauntlet'e geçti (`dev-gauntlet` → production), mood search `components/Home/MoodSearchScreen/`'e taşındı (silinmedi, C.9c'ye devredildi). **D-12 eklendi** — K-03 state enum'u 5 durum + 2 gömülü semantik olarak gerçekleşti; §2.1'deki K-03 satırına D-12 referansı düşüldü. Champion CTA'ları ("Sonraya bırak" · "Nerede izlenir") ve K-21 tek cümlelik açıklama **C.9b-2'ye** ayrıldı — bu swap cihazda doğrulandıktan sonra. |
 | 1.6 | 19 Ağu 2026 | **C.9b-2.** Champion CTA'ları tamamlandı: "Sonraya bırak" (`submit-choice`'a `save_for_later` action'ı — yeni Edge Function YOK, şema/migration YOK, yüzey şampiyonla sınırlı) ve "Nerede izlenir" (`WatchProviders` bileşeni, `fetchMovieWatchProviders`). K-20 activation bridge'inin üç ayağı da bağlandı. **K-21 ERTELENDİ** — 6 eksen verisi hiçbir katmanda üretilmiyor; Post-C.9 radar chart sprint'ine taşındı. Bkz. §11 F-07. |
 | 1.7 | 27 Ağu 2026 | SOSA 2026 incelemesi. R-01 korundu (gerekçe E-10). E-09 paywall enstrümantasyonu R-C önkoşulu olarak eklendi. Paywall vendor kararı: RevenueCat Paywalls v2 ile devam, ikinci vendor (Superwall/Adapty) marketing gate sonrası değerlendirilecek. |
+| 1.8 | 31 Ağu 2026 | **E-11.** K-42'nin 8 senaryolu cihaz doğrulaması TestFlight build'ine ertelendi (yerel dev build/simülatör yok; Expo Go üzerinden uçak modu testi kod yolunu değerlendiremiyor). R-C açıldı; K-42 doğrulaması R-D önkoşulu olarak kaldı. Paywall ekranında geri gezinme eksikliği `TEKNIK_BORC.md`'ye alındı. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 

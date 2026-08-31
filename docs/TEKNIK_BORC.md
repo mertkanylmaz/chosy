@@ -2222,3 +2222,23 @@ olduğu için sonuç aynı.
 **Ne zaman:** Mertkan'ın WIP'i commit'lenince. K-42'yi bloklamıyor.
 
 İlgili: K-42 keşif turu (27 Ağu 2026).
+
+---
+
+## "Unlock the full experience" ekranında geri gezinme yok
+
+Paywall ekranına ("Unlock the full experience") girildiğinde geri dönmenin
+görünür bir yolu yok — geri butonu/kapatma yüzeyi eksik. Kullanıcı ekranda
+sıkışıyor.
+
+**Nerede bulundu:** K-42 cihaz doğrulama turu, 27 Ağu 2026 (bkz. bible E-11).
+Aranan hata bu değildi, yan bulgu olarak çıktı.
+
+**Neden şimdi düzeltilmedi:** paywall yüzeyi R-C sprintinin kapsamı
+(K-46 arşiv paywall'ı, K-49 RevenueCat durum matrisi, E-09 funnel
+enstrümantasyonu). Ekranı iki kez elden geçirmemek için düzeltme oraya
+bırakıldı.
+
+**Ne zaman:** R-D (App Store submission) açılmadan önce çözülecek.
+
+İlgili: `docs/os/7_CHOSY_V1_KAPSAM_KILIDI.md` E-11.
