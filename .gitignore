@@ -66,3 +66,5 @@ tests/founder-acceptance/output/
 # Sprint kapanis artefaktlari: uretilmeleri engellenmez, commit edilmez
 # (mevcut 3 baseline zaten takipte — gitignore onlari cikarmaz)
 tests/founder-acceptance/baselines/
+
+.claude/
