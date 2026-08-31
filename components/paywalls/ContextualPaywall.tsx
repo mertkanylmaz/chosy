@@ -21,6 +21,7 @@ import PaywallStreamingLink from './PaywallStreamingLink';
 import PaywallProfileUpgrade from './PaywallProfileUpgrade';
 import PaywallRouletteLimit from './PaywallRouletteLimit';
 import PaywallLifetimeSoldout from './PaywallLifetimeSoldout';
+import PaywallMissedDayArchive from './PaywallMissedDayArchive';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +69,8 @@ export default function ContextualPaywall({
       return <PaywallRouletteLimit {...commonProps} />;
     case 'lifetime_soldout':
       return <PaywallLifetimeSoldout {...commonProps} />;
+    case 'missed_day_archive':
+      return <PaywallMissedDayArchive {...commonProps} />;
     default:
       return null;
   }

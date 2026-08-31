@@ -1331,7 +1331,13 @@
     "lifetimeSoldoutTitle": "Lifetime Spots Sold Out",
     "lifetimeSoldoutSubtitle": "All founding member spots are taken. Choose a subscription plan to unlock premium features.",
     "lifetimeSoldoutCta": "Choose Your Plan",
-    "lifetimeSoldoutDismiss": "Maybe Later"
+    "lifetimeSoldoutDismiss": "Maybe Later",
+    "missedDayTitle": "You missed two evenings",
+    "missedDaySubtitle": "%{count} days are waiting in the archive.",
+    "missedDayValueFunctional": "Replay missed days",
+    "missedDayValueIdentity": "See how your taste evolves",
+    "missedDayCta": "Open the archive",
+    "missedDayDismiss": "Not now"
   },
   "notifications": {
     "settingsLabel": "Notifications",
@@ -1513,6 +1519,7 @@
     "tooOld": "Days before %{date} are no longer available.",
     "dayMissed": "Not finished",
     "close": "Close",
-    "filmMeta": "%{year} · %{runtime} min"
+    "filmMeta": "%{year} · %{runtime} min",
+    "entry": "Missed days (%{count})"
   }
 }

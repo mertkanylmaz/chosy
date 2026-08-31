@@ -72,6 +72,8 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
       return 'roulette_limit';
     case 'lifetime_soldout':
       return 'lifetime_soldout';
+    case 'missed_day_archive':
+      return 'missed_day_archive';
     default:
       return null;
   }
@@ -261,6 +263,24 @@ export async function shouldShowPaywall(
     }
   }
 
+  // ── E-09: paywall_triggered ────────────────────────────────────────────────
+  // Tetiklenme ile GÖRÜNTÜLENME ayrı olaylardır: buradan sonra modal açılır ama
+  // kullanıcı onu görmeden ekranı terk edebilir. `paywall_viewed` (Contextual-
+  // Paywall) tek başına dönüşmeyen bir paywall'ın nedenini söyleyemez; funnel'ın
+  // ilk basamağı burasıdır.
+  //
+  // Supabase `paywall_events` tarafına AYRICA yazılmaz: o tablonun `action`
+  // CHECK'i yalnız shown/dismissed/converted/trial_started kabul eder (023:14),
+  // 'triggered' eklemek migration ister. Aynı satır `recordPaywallShown` ile
+  // action='shown' olarak zaten düşüyor ve `trigger_context.missedDayCount`
+  // taşıyor — yani Supabase tarafında bilgi kaybı yok.
+  posthogAnalytics.track('paywall_triggered', {
+    trigger_type: triggerType,
+    variant: variantName,
+    missed_day_count:
+      'missedDayCount' in event ? event.missedDayCount : null,
+  });
+
   return {
     name: variantName,
     trigger: event,
@@ -315,6 +335,9 @@ async function recordEvent(
     if ('days' in variant.trigger) triggerContext.days = variant.trigger.days;
     if ('count' in variant.trigger) triggerContext.count = variant.trigger.count;
     if ('filmId' in variant.trigger) triggerContext.filmId = variant.trigger.filmId;
+    if ('missedDayCount' in variant.trigger) {
+      triggerContext.missedDayCount = variant.trigger.missedDayCount;
+    }
 
     const row: PaywallEventInsert = {
       user_id: userId,

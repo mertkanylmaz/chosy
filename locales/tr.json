@@ -1331,7 +1331,13 @@
     "lifetimeSoldoutTitle": "Omur Boyu Yerler Tukendi",
     "lifetimeSoldoutSubtitle": "Tum kurucu uye yerleri doldu. Premium ozellikleri acmak icin bir abonelik plani sec.",
     "lifetimeSoldoutCta": "Planini Sec",
-    "lifetimeSoldoutDismiss": "Belki Sonra"
+    "lifetimeSoldoutDismiss": "Belki Sonra",
+    "missedDayTitle": "İki akşamı kaçırdın",
+    "missedDaySubtitle": "%{count} gün arşivde seni bekliyor.",
+    "missedDayValueFunctional": "Kaçırdığın günleri yeniden oyna",
+    "missedDayValueIdentity": "Zevkinin nasıl değiştiğini gör",
+    "missedDayCta": "Arşivi aç",
+    "missedDayDismiss": "Şimdi değil"
   },
   "notifications": {
     "settingsLabel": "Bildirimler",
@@ -1513,6 +1519,7 @@
     "tooOld": "%{date} öncesindeki günler artık mevcut değil.",
     "dayMissed": "Tamamlanmadı",
     "close": "Kapat",
-    "filmMeta": "%{year} · %{runtime} dk"
+    "filmMeta": "%{year} · %{runtime} dk",
+    "entry": "Kaçırdığın günler (%{count})"
   }
 }

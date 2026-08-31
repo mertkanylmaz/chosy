@@ -19,7 +19,9 @@ export type TriggerType =
   | 'share_card_generated'
   | 'profile_upgrade'
   | 'roulette_limit'
-  | 'lifetime_soldout';
+  | 'lifetime_soldout'
+  /** K-46: 2. kaçırılan gün → arşiv. v1'in TEK gauntlet tetikleyicisi. */
+  | 'missed_day_archive';
 
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =
@@ -33,7 +35,13 @@ export type TriggerEvent =
   | { type: 'share_card_generated'; count: number }
   | { type: 'profile_upgrade' }
   | { type: 'roulette_limit' }
-  | { type: 'lifetime_soldout' };
+  | { type: 'lifetime_soldout' }
+  /**
+   * K-46. `missedDayCount` sunucudan gelir (`get-archive-status`), istemci
+   * saymaz. Uygunluk kararı da sunucuda: `archiveEligible` false ise bu olay
+   * hiç gönderilmez.
+   */
+  | { type: 'missed_day_archive'; missedDayCount: number };
 
 // ─── Paywall Variants ────────────────────────────────────────────────────────
 
@@ -46,7 +54,8 @@ export type PaywallVariantName =
   | 'streaming_link'
   | 'profile_upgrade'
   | 'roulette_limit'
-  | 'lifetime_soldout';
+  | 'lifetime_soldout'
+  | 'missed_day_archive';
 
 /** Paywall gosterim kararinin sonucu */
 export interface PaywallVariant {
