@@ -165,9 +165,10 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
 
   try {
     if (__DEV__) {
-      // WARN seviyesi: RC log spam'ini suppress et (Sprint 3 #19)
-      // DEBUG seviyesi gerekirse gecici olarak tekrar acilabilir.
-      Purchases.setLogLevel(LOG_LEVEL.WARN);
+      // K-49: sandbox test matrisi icin DEBUG logging acik — 6 state'in hangi
+      // event'i dusturdugunu dogrulayabilmek icin. Prod (preview/production
+      // profile) WARN'da kalir — API key prod tarafinda ayarlandigi icin.
+      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
     }
 
     Purchases.configure({
@@ -188,6 +189,10 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
 /**
  * Supabase kullanıcısı değiştiğinde RevenueCat customer ID'yi günceller.
  * Auth sonrası çağrılır (Apple/Google link).
+ *
+ * K-49: __DEV__'de EXPO_PUBLIC_RC_TEST_MODE açıksa, sandbox test matrix
+ * user'ı login'e geçir — 6 RC state'i (restore/expiration/grace/billing/
+ * refund/revoked) izole ortamda test etmek için.
  */
 export async function identifyUser(supabaseUserId: string): Promise<void> {
   if (!_initialized) {
@@ -201,8 +206,12 @@ export async function identifyUser(supabaseUserId: string): Promise<void> {
   }
 
   try {
-    await Purchases.logIn(supabaseUserId);
-    logger.log('[purchases] Kullanıcı eşleştirildi:', supabaseUserId);
+    // K-49: Test matrix user override (dev + flag guard'ı)
+    const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
+    const userId = useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+
+    await Purchases.logIn(userId);
+    logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
   } catch (err) {
     logger.error('[purchases] Kullanıcı eşleştirme hatası:', err);
   }
