@@ -565,3 +565,67 @@ export async function refreshRound(
     latencyMs,
   });
 }
+
+// ─── Arşiv (K-46) ────────────────────────────────────────────────────────────
+
+/** Bir arşiv gününün durumu. Sunucu türetir, istemci yalnızca okur. */
+export interface ArchiveDay {
+  /** YYYY-MM-DD (UTC gün anahtarı). */
+  date: string;
+  status: 'completed' | 'missed' | 'too_old';
+  /** Yalnız `missed` günlerde ve o günün global seçkisi bulunabildiyse dolu. */
+  globalFilms?: GauntletFilm[];
+  /** Global seçki bulunamadı — `globalFilms` ile birlikte GELMEZ. */
+  unavailable?: boolean;
+}
+
+export interface ArchiveStatus {
+  missedCount: number;
+  completedCount: number;
+  archiveEligible: boolean;
+  anchorDate: string | null;
+  days: ArchiveDay[];
+}
+
+/**
+ * Kaçırılan gün envanteri (K-46). Sunucu tarafında `get-archive-status`
+ * türetir — istemci tarih aritmetiği YAPMAZ, `missedCount`'u kendisi saymaz.
+ *
+ * Offline/ulaşılamaz durumda `GauntletFetchError` fırlatır; çağıran ekranı
+ * boş göstermek yerine hata dalını gösterir (K-43). Sessiz fallback yok.
+ */
+export async function getArchiveStatus(): Promise<ArchiveStatus> {
+  await ensureAuthSession();
+
+  const startedAt = performance.now();
+  const { data, error } = await supabase.functions.invoke('get-archive-status', {
+    body: {},
+  });
+
+  if (error) {
+    recordTiming('get-archive-status', startedAt, 'error');
+    const { status, detail } = await parseInvokeError(error);
+    if (status === 401) {
+      throw new GauntletAuthPendingError(detail);
+    }
+    if (status === null) {
+      // Sunucuya hiç ulaşılamadı — beklenen saha durumu, uyarı seviyesi.
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: { fn: 'get-archive-status', error_code: 'ARCHIVE_OFFLINE' },
+        extra: { detail },
+      });
+      logger.warn('[gauntletService] getArchiveStatus bağlantı hatası:', detail);
+      throw new GauntletFetchError(detail || 'get-archive-status unreachable');
+    }
+    Sentry.captureException(error, {
+      tags: { fn: 'get-archive-status' },
+      extra: { detail },
+    });
+    logger.error('[gauntletService] getArchiveStatus failed:', detail, { skipBridge: true });
+    throw new Error(detail || 'get-archive-status failed');
+  }
+
+  recordTiming('get-archive-status', startedAt, 'ok');
+  return data as ArchiveStatus;
+}

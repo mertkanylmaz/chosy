@@ -573,6 +573,40 @@
     "errorNotAvailable": "Sign-in is not available on this device.",
     "requiredNote": "Signing in keeps your history and champions safe across devices."
   },
+  "magicLink": {
+    "emailPlaceholder": "you@example.com",
+    "sendCode": "Email me a code",
+    "codePlaceholder": "000000",
+    "verify": "Verify",
+    "sentTo": "We sent a 6-digit code to %{email}",
+    "changeEmail": "Use another email",
+    "resend": "Send again",
+    "conflictTitle": "This email already has an account",
+    "conflictBody": "Signing in will switch you to that account. Tonight's champion and anything saved on this device stay with the guest profile.",
+    "conflictConfirm": "Sign in to that account",
+    "errorInvalidEmail": "That doesn't look like an email address.",
+    "errorRateLimited": "Too many attempts. Wait a minute and try again.",
+    "errorInvalidCode": "That code isn't right. Check it and try again.",
+    "errorExpired": "This code expired. Send a new one."
+  },
+  "authPrompt": {
+    "title": "Save your cinema journey",
+    "body": "Your champions, your taste profile, your streak — kept safe and carried to your next device.",
+    "or": "or",
+    "notNow": "Not now"
+  },
+  "notificationPrompt": {
+    "title": "Want your four ready every evening?",
+    "body": "One notification a day, when tonight's four are picked. Nothing else.",
+    "enable": "Yes, remind me",
+    "notNow": "Not now"
+  },
+  "relaunchIntro": {
+    "line1": "We rebuilt Chosy from scratch.",
+    "line2": "Now it does one thing: every evening, four films — you pick your champion in three rounds.",
+    "line3": "Same Chosy, much clearer purpose.",
+    "cta": "See tonight's gauntlet"
+  },
   "setup": {
     "usernameTitle": "What should we call you?",
     "usernameSubtitle": "We'll use this to personalize your experience.",
@@ -1465,5 +1499,20 @@
       "notWatched": "Haven't watched it",
       "skip": "Not now"
     }
+  },
+  "archive": {
+    "title": "Missed days",
+    "subtitle": "Days you didn't finish the ritual.",
+    "loading": "Loading your archive...",
+    "loadError": "Couldn't load your archive.",
+    "retry": "Try again",
+    "empty": "No missed days. You've kept the ritual.",
+    "selectionLabel": "The selection everyone saw that day",
+    "unavailable": "That day's selection isn't available.",
+    "tooOldTitle": "Older days",
+    "tooOld": "Days before %{date} are no longer available.",
+    "dayMissed": "Not finished",
+    "close": "Close",
+    "filmMeta": "%{year} · %{runtime} min"
   }
 }

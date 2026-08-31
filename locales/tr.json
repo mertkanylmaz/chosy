@@ -573,6 +573,40 @@
     "errorNotAvailable": "Bu cihazda giriş yapılamıyor.",
     "requiredNote": "Giriş yapmak geçmişini ve şampiyonlarını cihazlar arasında güvende tutar."
   },
+  "magicLink": {
+    "emailPlaceholder": "sen@ornek.com",
+    "sendCode": "Bana kod gönder",
+    "codePlaceholder": "000000",
+    "verify": "Doğrula",
+    "sentTo": "%{email} adresine 6 haneli bir kod gönderdik",
+    "changeEmail": "Başka e-posta kullan",
+    "resend": "Tekrar gönder",
+    "conflictTitle": "Bu e-postanın zaten bir hesabı var",
+    "conflictBody": "O hesaba girersen o hesaba geçersin. Bu geceki şampiyonun ve bu cihazda kayıtlı olanlar misafir profilinde kalır.",
+    "conflictConfirm": "O hesaba giriş yap",
+    "errorInvalidEmail": "Bu bir e-posta adresine benzemiyor.",
+    "errorRateLimited": "Çok fazla deneme. Bir dakika bekleyip tekrar dene.",
+    "errorInvalidCode": "Kod doğru değil. Kontrol edip tekrar dene.",
+    "errorExpired": "Bu kodun süresi doldu. Yenisini gönder."
+  },
+  "authPrompt": {
+    "title": "Sinema yolculuğunu kaydet",
+    "body": "Şampiyonların, zevk profilin, serin — güvende kalsın ve sonraki cihazına taşınsın.",
+    "or": "ya da",
+    "notNow": "Şimdi değil"
+  },
+  "notificationPrompt": {
+    "title": "Dördün her akşam hazır olsun mu?",
+    "body": "Günde tek bildirim, bu gecenin dördü seçildiğinde. Başka hiçbir şey.",
+    "enable": "Evet, hatırlat",
+    "notNow": "Şimdi değil"
+  },
+  "relaunchIntro": {
+    "line1": "Chosy'yi baştan kurduk.",
+    "line2": "Artık tek bir şey yapıyor: her akşam sana 4 film getiriyor, sen 3 turda şampiyonunu seçiyorsun.",
+    "line3": "Aynı Chosy, çok daha net bir amaçla.",
+    "cta": "Bu geceki gauntlet'i gör"
+  },
   "setup": {
     "usernameTitle": "Seni nasıl çağıralım?",
     "usernameSubtitle": "Deneyimini kişiselleştirmek için kullanacağız.",
@@ -1465,5 +1499,20 @@
       "notWatched": "İzlemedim",
       "skip": "Şimdi değil"
     }
+  },
+  "archive": {
+    "title": "Kaçırdığın günler",
+    "subtitle": "Ritüeli tamamlamadığın günler.",
+    "loading": "Arşivin yükleniyor...",
+    "loadError": "Arşiv yüklenemedi.",
+    "retry": "Tekrar dene",
+    "empty": "Kaçırdığın gün yok. Ritüeli sürdürdün.",
+    "selectionLabel": "O gün herkese gösterilen seçki",
+    "unavailable": "O günün seçkisi artık mevcut değil.",
+    "tooOldTitle": "Daha eski günler",
+    "tooOld": "%{date} öncesindeki günler artık mevcut değil.",
+    "dayMissed": "Tamamlanmadı",
+    "close": "Kapat",
+    "filmMeta": "%{year} · %{runtime} dk"
   }
 }
