@@ -80,6 +80,23 @@ const ARCHIVE_WINDOW_DAYS = 7
  */
 const PAYWALL_THRESHOLD = 2
 
+/**
+ * Katılım şartı (CTO kararı, 31 Ağu 2026 — Parça 2a düzeltmesi).
+ *
+ * K-46'nın niyeti "zaten meşgul olan ama arada iki gün kaçıran kullanıcıya
+ * telafi teklif etmek"tir; "haftalardır kaybolmuş kullanıcıyı geri döndüğü anda
+ * satışla karşılamak" DEĞİL. Yalnız `missedCount >= 2` koşulu ikincisini üretir:
+ * canlı veri simülasyonunda (31 Ağu 2026) personal satırı olan 6 kullanıcının
+ * 6'sı da 7/7 kaçırmış görünüp `archiveEligible: true` dönüyordu — yani ara
+ * veren HERKES, dönüş anında ritüel yerine paywall görecekti. G-9 ("14 günde
+ * kayıp <%20") ve E-10'un freemium gerekçesi doğrudan buna aykırı.
+ *
+ * Şart: pencerede EN AZ bu kadar tamamlanmış gün olmalı. Dolaylı bir "grace
+ * day" hilesi değil, niyetin kendisi — telafi ancak katılan kullanıcıya
+ * teklif edilir.
+ */
+const MIN_COMPLETED_FOR_ELIGIBILITY = 1
+
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
 type DayStatus = 'completed' | 'missed' | 'too_old'
@@ -100,6 +117,8 @@ interface ArchiveDay {
 
 interface ArchiveStatus {
   missedCount: number
+  /** Penceredeki tamamlanmış gün sayısı — katılım şartının ölçüsü. */
+  completedCount: number
   archiveEligible: boolean
   /** Anchor'dan önceki günler hiç sayılmaz; bu alan anchor'ın kendisidir. */
   anchorDate: string | null
@@ -215,7 +234,13 @@ async function buildArchiveStatus(
   const anchor = await findAnchorDate(service, appUserId)
   if (!anchor) {
     // Ritüele hiç girmemiş kullanıcı: kaçırılan gün kavramı tanımsız.
-    return { missedCount: 0, archiveEligible: false, anchorDate: null, days: [] }
+    return {
+      missedCount: 0,
+      completedCount: 0,
+      archiveEligible: false,
+      anchorDate: null,
+      days: [],
+    }
   }
 
   // Pencere dünde biter — bugün henüz kaçırılmış sayılamaz (18:00 kapısı da
@@ -228,7 +253,13 @@ async function buildArchiveStatus(
 
   if (from > yesterday) {
     // Kullanıcı bugün katıldı: değerlendirilecek geçmiş gün yok.
-    return { missedCount: 0, archiveEligible: false, anchorDate: anchor, days: [] }
+    return {
+      missedCount: 0,
+      completedCount: 0,
+      archiveEligible: false,
+      anchorDate: anchor,
+      days: [],
+    }
   }
 
   const dates = dateRange(from, yesterday)
@@ -259,9 +290,13 @@ async function buildArchiveStatus(
   }
 
   const missedCount = missedDates.length
+  const completedCount = days.filter((d) => d.status === 'completed').length
   return {
     missedCount,
-    archiveEligible: missedCount >= PAYWALL_THRESHOLD,
+    completedCount,
+    archiveEligible:
+      missedCount >= PAYWALL_THRESHOLD &&
+      completedCount >= MIN_COMPLETED_FOR_ELIGIBILITY,
     anchorDate: anchor,
     days,
   }
@@ -305,6 +340,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     logInfo('archive_status_built', {
       user_id: appUserId,
       missed_count: status.missedCount,
+      completed_count: status.completedCount,
       eligible: status.archiveEligible,
       day_count: status.days.length,
     })
