@@ -435,6 +435,14 @@ Ayrı bulgu: "Unlock the full experience" ekranında geri gezinme eksikliği tes
 
 Ölçülen sürüm durumu (31 Ağu 2026): `react-native-purchases` 10.0.1 kurulu — temel Paywalls v2 için yeterli (8.11.3+), multipage için değil (10.6.0+). `react-native-purchases-ui` kurulu değil ve bu turda kurulmuyor.
 
+### E-13 — K-56 TMDB lisans netleştirmesi ertelendi (Mertkan kararı)
+
+1 Eyl 2026: K-56'nın "App Store release'inden önce netleşir" şartı bilinçli olarak ertelendi. Gerekçe (Mertkan): mevcut sürüm zaten App Store'da TMDB API ile sorunsuz çalışıyor; ücretsiz API kullanım hakkının gelir elde edilene kadar geçerli olduğu değerlendirmesi.
+
+Risk notu: TMDB'nin ticari kullanım tanımı "gelir elde etme" değil "parayla ilişkili ürün" eşiğine dayanıyor olabilir — paywall'ın varlığı (henüz satış olmasa dahi) bu eşiği geçmiş olabilir. Bu hukuki bir değerlendirme değildir, CTO teknik gözlemidir.
+
+Yeniden değerlendirme tetikleyicisi: ilk gerçek satış (R-C'nin K-49 sandbox testi tamamlanıp canlı satış başladığında).
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
