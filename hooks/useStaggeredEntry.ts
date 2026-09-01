@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import {
   Easing,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
   withDelay,
   withSpring,
@@ -12,6 +13,8 @@ import {
  * Ekrana giren elemanları kademeli belirtme hook'u.
  * Her eleman biraz gecikmeyle aşağıdan kayarak belirir.
  * index > 10 ise animasyon uygulanmaz (anında görünür).
+ * Reduce Motion açıksa da (K-54) stagger atlanır, eleman final state'te render olur.
+ * `useReducedMotion()` reaktiftir — ayar uygulama açıkken değişirse yeniden hesaplanır.
  */
 export function useStaggeredEntry(
   index: number,
@@ -27,12 +30,18 @@ export function useStaggeredEntry(
   },
 ) {
   const { delay = 80, baseDelay = 100, translateY = 30, duration = 500 } = options ?? {};
+  const isReducedMotion = useReducedMotion();
+  const skip = index > 10 || isReducedMotion;
 
-  const opacity = useSharedValue(index > 10 ? 1 : 0);
-  const translate = useSharedValue(index > 10 ? 0 : translateY);
+  const opacity = useSharedValue(skip ? 1 : 0);
+  const translate = useSharedValue(skip ? 0 : translateY);
 
   useEffect(() => {
-    if (index > 10) return;
+    if (skip) {
+      opacity.value = 1;
+      translate.value = 0;
+      return;
+    }
     const totalDelay = baseDelay + index * delay;
     opacity.value = withDelay(
       totalDelay,
@@ -40,7 +49,7 @@ export function useStaggeredEntry(
     );
     translate.value = withDelay(totalDelay, withSpring(0, { damping: 14, stiffness: 100 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [skip]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
