@@ -47,6 +47,10 @@
         "APP_ENV": "preview"
       }
     },
+    "preview-store": {
+      "extends": "preview",
+      "distribution": "store"
+    },
     "production": {
       "autoIncrement": true,
       "channel": "production",
@@ -57,6 +61,20 @@
     }
   },
   "submit": {
+    "preview": {
+      "ios": {
+        "appleId": "mertkanylmaz@gmail.com",
+        "ascAppId": "6761782987",
+        "appleTeamId": "4CG256GKHM"
+      }
+    },
+    "preview-store": {
+      "ios": {
+        "appleId": "mertkanylmaz@gmail.com",
+        "ascAppId": "6761782987",
+        "appleTeamId": "4CG256GKHM"
+      }
+    },
     "production": {
       "ios": {
         "appleId": "mertkanylmaz@gmail.com",
