@@ -166,6 +166,8 @@ export default function OnboardingScreen() {
             onPress={() => void handleStart()}
             activeOpacity={0.85}
             style={styles.button}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.getStarted')}
           >
             <LinearGradient
               colors={[Colors.accentPrimary, Colors.accentHover]}

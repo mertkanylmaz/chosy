@@ -248,6 +248,8 @@ function TasteSwipeCard({ film, onSwipeComplete }: TasteSwipeCardProps) {
           style={styles.actionBtn}
           activeOpacity={0.7}
           onPress={triggerLeft}
+          accessibilityRole="button"
+          accessibilityLabel={t('onboarding.tasteSwipeSkip')}
         >
           <Ionicons name="close-circle" size={32} color={Colors.error} />
           <Text style={[styles.hintText, { color: Colors.error }]}>{t('onboarding.tasteSwipeSkip')}</Text>
@@ -256,6 +258,8 @@ function TasteSwipeCard({ film, onSwipeComplete }: TasteSwipeCardProps) {
           style={styles.actionBtn}
           activeOpacity={0.7}
           onPress={triggerRight}
+          accessibilityRole="button"
+          accessibilityLabel={t('onboarding.tasteSwipeLike')}
         >
           <Ionicons name="heart-circle" size={32} color={Colors.success} />
           <Text style={[styles.hintText, { color: Colors.success }]}>{t('onboarding.tasteSwipeLike')}</Text>

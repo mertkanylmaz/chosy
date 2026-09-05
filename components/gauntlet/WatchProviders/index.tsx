@@ -191,6 +191,7 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
               key={provider.provider_id}
               style={styles.item}
               onPress={() => void handlePress(provider)}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
               accessibilityRole="link"
               // ⚠️ "X'te aç" DEĞİL: `link` sağlayıcının kendi sayfası değil,
               // TMDB'nin toplu "nerede izlenir" sayfasıdır (aşağıdaki `handlePress`

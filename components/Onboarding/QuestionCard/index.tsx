@@ -93,6 +93,9 @@ function OptionButton({ phosphorIcon, label, isSelected, isDisabled, onPress }: 
           styles.optionBtn,
           isSelected && styles.optionBtnSelected,
         ]}
+        accessibilityRole="radio"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: isSelected, disabled: isDisabled }}
       >
         <Animated.View style={[styles.optionImage, iconAnimStyle]}>
           {IconComponent && (

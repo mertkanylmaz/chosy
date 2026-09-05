@@ -112,7 +112,14 @@ export function TasteCalibration({ onComplete, onSkip }: TasteCalibrationProps) 
       {/* Skip butonu */}
       <View style={styles.topRow}>
         <View style={styles.topSpacer} />
-        <TouchableOpacity onPress={onSkip} activeOpacity={0.7} style={styles.skipBtn}>
+        <TouchableOpacity
+          onPress={onSkip}
+          activeOpacity={0.7}
+          style={styles.skipBtn}
+          hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('onboarding.skipCalibration')}
+        >
           <Text style={styles.skipText}>{t('onboarding.skipCalibration')}</Text>
         </TouchableOpacity>
       </View>

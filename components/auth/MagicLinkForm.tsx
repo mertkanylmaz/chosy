@@ -152,7 +152,14 @@ export function MagicLinkForm({ onSuccess, surface }: MagicLinkFormProps) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.linkButton} onPress={backToEmail} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.linkButton}
+          onPress={backToEmail}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityRole="button"
+          accessibilityLabel={t('magicLink.changeEmail')}
+        >
           <Text style={styles.linkText}>{t('magicLink.changeEmail')}</Text>
         </TouchableOpacity>
       </View>
@@ -197,7 +204,14 @@ export function MagicLinkForm({ onSuccess, surface }: MagicLinkFormProps) {
         </TouchableOpacity>
 
         <View style={styles.secondaryRow}>
-          <TouchableOpacity style={styles.linkButton} onPress={backToEmail} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={backToEmail}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('magicLink.changeEmail')}
+          >
             <Text style={styles.linkText}>{t('magicLink.changeEmail')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -205,6 +219,10 @@ export function MagicLinkForm({ onSuccess, surface }: MagicLinkFormProps) {
             onPress={() => void handleSend(mode === 'signin')}
             disabled={busy}
             activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('magicLink.resend')}
+            accessibilityState={{ disabled: busy }}
           >
             <Text style={[styles.linkText, busy && styles.buttonDisabled]}>
               {t('magicLink.resend')}
