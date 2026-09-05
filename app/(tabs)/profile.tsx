@@ -212,7 +212,10 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
                   key={item.id}
                   style={[styles.avatarOption, isSelected && styles.avatarOptionSelected]}
                   onPress={() => setTemp(item.id)}
-                  activeOpacity={0.7}>
+                  activeOpacity={0.7}
+                  accessibilityRole="radio"
+                  accessibilityLabel={t(item.labelKey)}
+                  accessibilityState={{ selected: isSelected }}>
                   <Image
                     source={item.image}
                     style={styles.avatarOptionEmoji}
@@ -1254,7 +1257,9 @@ export default function ProfileScreen() {
                 style={styles.gearBtn}
                 onPress={() => { hapticLight(); setShowSettings(true); }}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                activeOpacity={0.7}>
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.settingsSection')}>
                 <Ionicons name="settings-outline" size={22} color={Colors.textGrey} />
               </TouchableOpacity>
             </View>
@@ -1263,7 +1268,9 @@ export default function ProfileScreen() {
             <TouchableOpacity
               style={styles.avatarCircle}
               onPress={() => { hapticLight(); setShowAvatarModal(true); }}
-              activeOpacity={0.8}>
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.avatarTitle')}>
               <LinearGradient
                 colors={[Colors.gold, Colors.goldDark, Colors.goldMid]}
                 style={styles.avatarBorderGradient}

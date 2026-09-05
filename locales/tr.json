@@ -229,7 +229,11 @@
     "filterWatched": "İzlendi",
     "groupedMigrationNote": "Oturum gruplaması hazırlanıyor...",
     "markAsWatched": "İzledim",
-    "markedWatched": "İzlendi"
+    "markedWatched": "İzlendi",
+    "openSearch": "Filmlerde ara",
+    "closeSearch": "Aramayı kapat",
+    "clearSearch": "Aramayı temizle",
+    "moreOptions": "Diğer seçenekler"
   },
   "common": {
     "cancel": "İptal",

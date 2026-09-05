@@ -229,7 +229,11 @@
     "filterWatched": "Watched",
     "groupedMigrationNote": "Session grouping is being set up...",
     "markAsWatched": "I Watched It",
-    "markedWatched": "Watched"
+    "markedWatched": "Watched",
+    "openSearch": "Search films",
+    "closeSearch": "Close search",
+    "clearSearch": "Clear search",
+    "moreOptions": "More options"
   },
   "common": {
     "cancel": "Cancel",

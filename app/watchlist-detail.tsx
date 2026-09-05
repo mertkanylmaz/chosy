@@ -344,6 +344,9 @@ export default function WatchlistDetailScreen() {
               style={styles.backBtn}
               onPress={() => router.back()}
               activeOpacity={0.7}
+              hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back')}
             >
               <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
             </TouchableOpacity>
@@ -355,6 +358,9 @@ export default function WatchlistDetailScreen() {
               <TouchableOpacity
                 style={styles.iconBtn}
                 activeOpacity={0.7}
+                hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+                accessibilityRole="button"
+                accessibilityLabel={t('roulette.ctaButton')}
                 onPress={() => {
                   hapticSelection();
                   router.push('/roulette' as import('expo-router').Href);
@@ -366,6 +372,9 @@ export default function WatchlistDetailScreen() {
             <TouchableOpacity
               style={styles.iconBtn}
               activeOpacity={0.7}
+              hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel={searchVisible ? t('watchlist.closeSearch') : t('watchlist.openSearch')}
               onPress={() => {
                 setSearchVisible((v) => !v);
                 if (searchVisible) setSearchQuery('');
@@ -380,6 +389,9 @@ export default function WatchlistDetailScreen() {
             <TouchableOpacity
               style={styles.iconBtn}
               activeOpacity={0.7}
+              hitSlop={{ top: 2, bottom: 2, left: 2, right: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.moreOptions')}
               onPress={() => setMenuVisible(true)}
             >
               <Ionicons name="reorder-three-outline" size={24} color={Colors.textWhite} />
@@ -401,7 +413,12 @@ export default function WatchlistDetailScreen() {
             autoFocus
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')}>
+            <Pressable
+              onPress={() => setSearchQuery('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.clearSearch')}
+            >
               <Text style={styles.clearSearch}>✕</Text>
             </Pressable>
           )}
@@ -425,6 +442,9 @@ export default function WatchlistDetailScreen() {
                 style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
                 onPress={() => handleViewModeChange(key)}
                 activeOpacity={0.8}
+                accessibilityRole="radio"
+                accessibilityLabel={label}
+                accessibilityState={{ selected: active }}
               >
                 <Text
                   style={[
@@ -454,6 +474,9 @@ export default function WatchlistDetailScreen() {
                     setSortKey(key);
                   }}
                   activeOpacity={0.8}
+                  accessibilityRole="radio"
+                  accessibilityLabel={label}
+                  accessibilityState={{ selected: active }}
                 >
                   <Text
                     style={[
@@ -479,6 +502,9 @@ export default function WatchlistDetailScreen() {
                     style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
                     onPress={() => { hapticSelection(); setWatchFilter(key); }}
                     activeOpacity={0.8}
+                    accessibilityRole="radio"
+                    accessibilityLabel={label}
+                    accessibilityState={{ selected: active }}
                   >
                     <Text
                       style={[
@@ -502,6 +528,8 @@ export default function WatchlistDetailScreen() {
           <TouchableOpacity
             style={styles.rouletteCta}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={t('roulette.ctaButton')}
             onPress={() => {
               hapticSelection();
               router.push('/roulette' as import('expo-router').Href);
@@ -616,15 +644,27 @@ export default function WatchlistDetailScreen() {
             <Text style={styles.modalFilmTitle} numberOfLines={1}>
               {menuTarget?.filmTitle}
             </Text>
-            <TouchableOpacity style={styles.modalOption} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.modalOption}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.watched')}
+            >
               <Text style={styles.modalOptionText}>{t('watchlist.watched')} ✓</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.modalOption} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.modalOption}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.addToList')}
+            >
               <Text style={styles.modalOptionText}>{t('watchlist.addToList')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.modalOption}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('share.shareFilm')}
               onPress={() => {
                 if (!menuTarget) return;
                 setMenuTarget(null);
@@ -636,6 +676,8 @@ export default function WatchlistDetailScreen() {
             <TouchableOpacity
               style={[styles.modalOption, styles.modalOptionLast]}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.remove')}
               onPress={() => menuTarget && handleRemove(menuTarget.filmId)}
             >
               <Text style={[styles.modalOptionText, styles.modalOptionTextRed]}>
@@ -657,6 +699,9 @@ export default function WatchlistDetailScreen() {
           <View style={styles.menuContainer}>
             <Pressable
               style={styles.menuItem}
+              accessibilityRole="radio"
+              accessibilityLabel={t('watchlist.sort_title')}
+              accessibilityState={{ selected: sortKey === 'title' && viewMode === 'list' }}
               onPress={() => {
                 setSortKey('title');
                 setViewMode('list');
@@ -671,6 +716,9 @@ export default function WatchlistDetailScreen() {
             </Pressable>
             <Pressable
               style={styles.menuItem}
+              accessibilityRole="radio"
+              accessibilityLabel={t('watchlist.sort_year')}
+              accessibilityState={{ selected: sortKey === 'year' && viewMode === 'list' }}
               onPress={() => {
                 setSortKey('year');
                 setViewMode('list');
@@ -683,11 +731,18 @@ export default function WatchlistDetailScreen() {
                 {t('watchlist.sort_year')}
               </Text>
             </Pressable>
-            <Pressable style={styles.menuItem} onPress={handleClearAll}>
+            <Pressable
+              style={styles.menuItem}
+              accessibilityRole="button"
+              accessibilityLabel={t('watchlist.clearAll')}
+              onPress={handleClearAll}
+            >
               <Text style={styles.menuItemTextRed}>{t('watchlist.clearAll')}</Text>
             </Pressable>
             <Pressable
               style={[styles.menuItem, styles.menuItemLast]}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.cancel')}
               onPress={() => setMenuVisible(false)}
             >
               <Text style={styles.menuItemTextGrey}>{t('common.cancel')}</Text>
