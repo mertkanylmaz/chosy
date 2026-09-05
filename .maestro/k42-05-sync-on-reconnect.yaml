@@ -1,0 +1,33 @@
+# K-42 Senaryo 5 — Bağlantı geri gelince kuyruk senkronizasyonu
+#
+# Beklenen: `setAirplaneMode: disabled` NetInfo'da offline→online geçişini
+# tetikler → `subscribeToReconnect` dinleyicisi (networkStatus.ts) ateşlenir
+# → `flushThenLoad()` çağrılır (GauntletShell/index.tsx:468-472) →
+# `flushPendingChoice()` bekleyen seçimi sunucuya gönderir → başarılıysa
+# kuyruk temizlenir, `choiceFrozen` false olur, "Your pick is waiting..."
+# metni kaybolur ve tur ilerler (backend'in döndüğü güncel progress'e göre).
+#
+# Bu flow Senaryo 4'ün ürettiği "dondurulmuş" durumu kendi içinde yeniden
+# üretir (bağımsız bir kuyruk/dondurma fixture'ı yok) — adımların ilk
+# yarısı k42-04 ile birebir aynıdır.
+#
+# ÖN KOŞUL — 18:00 sonrası (Senaryo 1 notu). SADECE ANDROID (Senaryo 1 notu).
+appId: com.chosy.ai
+---
+- setAirplaneMode: disabled
+- launchApp:
+    clearState: true
+- assertVisible: "Which one tonight?"
+- stopApp
+- setAirplaneMode: enabled
+- launchApp:
+    clearState: false
+- assertVisible: "Which one tonight?"
+- tapOn:
+    point: "25%, 55%"
+- assertVisible: "Your pick is waiting. It'll be sent when you're back online."
+- setAirplaneMode: disabled
+- extendedWaitUntil:
+    notVisible: "Your pick is waiting. It'll be sent when you're back online."
+    timeout: 15000
+- assertNotVisible: "Your pick is waiting. It'll be sent when you're back online."

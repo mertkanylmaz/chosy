@@ -1,0 +1,27 @@
+# K-42 Senaryo 2 — Online açılış cache_today'i doldurur, offline'da oynanabilir
+#
+# Beklenen: ilk açılış online olduğu için `generate-gauntlet` başarılı olur
+# ve `cacheGauntlet()` bugünün yanıtını AsyncStorage'a yazar
+# (gauntletCache.ts). Uygulama kapanıp uçak modunda yeniden açıldığında
+# `readCachedGauntlet` katman 1'i (bugünün tarihi) bulur → `source ===
+# 'cache_today'`. Bu kaynak kullanıcıya göstergeyle BELLİ EDİLMEZ (yorum:
+# "cache_today gösterge ÜRETMEZ... görsel gürültü eklemek yanlış olurdu",
+# GauntletShell/index.tsx:362-364) — yani ekran online açılıştan AYIRT
+# EDİLEMEZ olmalı: oyun sorusu görünür, "bu bugünün verisi değil" uyarısı
+# GÖRÜNMEZ.
+#
+# ÖN KOŞUL — 18:00 sonrası (Senaryo 1'deki UNLOCK_HOUR notu aynen geçerli).
+# SADECE ANDROID (bkz. Senaryo 1 notu, docs/testing/MAESTRO.md).
+appId: com.chosy.ai
+---
+- setAirplaneMode: disabled
+- launchApp:
+    clearState: true
+- assertVisible: "Which one tonight?"
+- stopApp
+- setAirplaneMode: enabled
+- launchApp:
+    clearState: false
+- assertVisible: "Which one tonight?"
+- assertNotVisible: "This isn't today's lineup. It'll refresh when you're back online."
+- setAirplaneMode: disabled
