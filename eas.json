@@ -51,6 +51,12 @@
       "extends": "preview",
       "distribution": "store"
     },
+    "e2e-test": {
+      "extends": "preview",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
       "autoIncrement": true,
       "channel": "production",

@@ -1,0 +1,33 @@
+# K-42 offline E2E — iskelet.
+#
+# BİLİNÇLİ OLARAK `on:` TETİKLEYİCİSİ YOK. Her push'ta otomatik koşmaz —
+# CTO ilk koşumu elle tetikleyecek:
+#   eas workflow:run .eas/workflows/e2e-test.yml
+# (npm script: `npm run e2e:workflow`)
+#
+# SADECE ANDROID: 4 flow da `setAirplaneMode` kullanıyor, bu komut yalnız
+# Android'de gerçek ağ etkisi yaratıyor (iOS simülatörde hiç yok, gerçek iOS
+# cihazda da etkisiz — Maestro'nun resmi kısıtı). iOS build'i bu workflow'a
+# EKLENMEDİ; iOS tarafı hâlâ manuel test gerektiriyor (docs/testing/MAESTRO.md).
+#
+# Build profili: eas.json → "e2e-test" (preview'dan extends, android
+# buildType apk — Maestro job emulator'e .apk kurar, .aab kuramaz).
+name: k42-offline-e2e
+
+jobs:
+  build_android_e2e:
+    type: build
+    params:
+      platform: android
+      profile: e2e-test
+
+  maestro_k42:
+    needs: [build_android_e2e]
+    type: maestro
+    params:
+      build_id: ${{ needs.build_android_e2e.outputs.build_id }}
+      flow_path:
+        - .maestro/k42-01-cold-start-offline.yaml
+        - .maestro/k42-02-cache-today-offline.yaml
+        - .maestro/k42-04-offline-selection.yaml
+        - .maestro/k42-05-sync-on-reconnect.yaml

@@ -47,7 +47,10 @@
     "lint:config": "tsx scripts/lint-remote-config.ts",
     "lint:ui": "tsx scripts/lint-optimistic-ui.ts",
     "lint:all": "tsx scripts/lint-remote-config.ts && tsx scripts/lint-optimistic-ui.ts",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "e2e:install": "curl -fsSL https://get.maestro.mobile.dev | bash",
+    "e2e:test": "maestro test .maestro/",
+    "e2e:workflow": "eas workflow:run .eas/workflows/e2e-test.yml"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
