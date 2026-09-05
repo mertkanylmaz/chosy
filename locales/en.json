@@ -506,6 +506,7 @@
     "gamesStreak": "%{count} day streak",
     "gamesLongest": "Best: %{count}",
     "settingsSection": "Settings",
+    "closeSettings": "Close Settings",
     "personaPlaceholder": "Discover your type",
     "editProfile": "Edit Profile",
     "memberSince": "Since %{date}",

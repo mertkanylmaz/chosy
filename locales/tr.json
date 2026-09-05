@@ -506,6 +506,7 @@
     "gamesStreak": "%{count} gun seri",
     "gamesLongest": "En iyi: %{count}",
     "settingsSection": "Ayarlar",
+    "closeSettings": "Ayarları Kapat",
     "personaPlaceholder": "Türünü keşfet",
     "editProfile": "Profili Düzenle",
     "memberSince": "Üye: %{date}",

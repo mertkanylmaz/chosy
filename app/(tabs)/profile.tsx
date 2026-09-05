@@ -426,7 +426,11 @@ function SettingsModal({
           <View style={settingsModalStyles.header}>
             <Ionicons name="settings-outline" size={18} color={Colors.gold} />
             <Text style={settingsModalStyles.title}>{t('profile.settingsSection')}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.closeSettings')}>
               <Ionicons name="close" size={22} color={Colors.textGrey} />
             </TouchableOpacity>
           </View>
@@ -445,7 +449,10 @@ function SettingsModal({
                     key={code}
                     style={[settingsModalStyles.langOption, isActive && settingsModalStyles.langOptionActive]}
                     onPress={() => { hapticSelection(); onLanguageChange(code); }}
-                    activeOpacity={0.75}>
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('profile.language')}: ${label}`}
+                    accessibilityState={{ selected: isActive }}>
                     <Text style={[settingsModalStyles.langText, isActive && settingsModalStyles.langTextActive]}>
                       {label}
                     </Text>
@@ -465,7 +472,10 @@ function SettingsModal({
               <TouchableOpacity
                 style={[settingsModalStyles.langOption, notificationsEnabled && settingsModalStyles.langOptionActive]}
                 onPress={() => { hapticSelection(); onToggleNotifications(true); }}
-                activeOpacity={0.75}>
+                activeOpacity={0.75}
+                accessibilityRole="switch"
+                accessibilityLabel={`${t('notifications.settingsLabel')}: ${t('notifications.enabled')}`}
+                accessibilityState={{ checked: notificationsEnabled }}>
                 <Text style={[settingsModalStyles.langText, notificationsEnabled && settingsModalStyles.langTextActive]}>
                   {t('notifications.enabled')}
                 </Text>
@@ -473,7 +483,10 @@ function SettingsModal({
               <TouchableOpacity
                 style={[settingsModalStyles.langOption, !notificationsEnabled && settingsModalStyles.langOptionActive]}
                 onPress={() => { hapticSelection(); onToggleNotifications(false); }}
-                activeOpacity={0.75}>
+                activeOpacity={0.75}
+                accessibilityRole="switch"
+                accessibilityLabel={`${t('notifications.settingsLabel')}: ${t('notifications.disabled')}`}
+                accessibilityState={{ checked: !notificationsEnabled }}>
                 <Text style={[settingsModalStyles.langText, !notificationsEnabled && settingsModalStyles.langTextActive]}>
                   {t('notifications.disabled')}
                 </Text>
@@ -492,7 +505,10 @@ function SettingsModal({
                 <TouchableOpacity
                   style={[settingsModalStyles.langOption, dailyPickEnabled && settingsModalStyles.langOptionActive]}
                   onPress={() => { hapticSelection(); onToggleDailyPick(true); }}
-                  activeOpacity={0.75}>
+                  activeOpacity={0.75}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`${t('notifications.dailyPickLabel')}: ${t('notifications.enabled')}`}
+                  accessibilityState={{ checked: dailyPickEnabled }}>
                   <Text style={[settingsModalStyles.langText, dailyPickEnabled && settingsModalStyles.langTextActive]}>
                     {t('notifications.enabled')}
                   </Text>
@@ -500,7 +516,10 @@ function SettingsModal({
                 <TouchableOpacity
                   style={[settingsModalStyles.langOption, !dailyPickEnabled && settingsModalStyles.langOptionActive]}
                   onPress={() => { hapticSelection(); onToggleDailyPick(false); }}
-                  activeOpacity={0.75}>
+                  activeOpacity={0.75}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`${t('notifications.dailyPickLabel')}: ${t('notifications.disabled')}`}
+                  accessibilityState={{ checked: !dailyPickEnabled }}>
                   <Text style={[settingsModalStyles.langText, !dailyPickEnabled && settingsModalStyles.langTextActive]}>
                     {t('notifications.disabled')}
                   </Text>
@@ -520,7 +539,10 @@ function SettingsModal({
                 <TouchableOpacity
                   style={[settingsModalStyles.langOption, watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
                   onPress={() => { hapticSelection(); onToggleWatchlistReminders(true); }}
-                  activeOpacity={0.75}>
+                  activeOpacity={0.75}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`${t('notifications.watchlistRemindersLabel')}: ${t('notifications.enabled')}`}
+                  accessibilityState={{ checked: watchlistRemindersEnabled }}>
                   <Text style={[settingsModalStyles.langText, watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
                     {t('notifications.enabled')}
                   </Text>
@@ -528,7 +550,10 @@ function SettingsModal({
                 <TouchableOpacity
                   style={[settingsModalStyles.langOption, !watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
                   onPress={() => { hapticSelection(); onToggleWatchlistReminders(false); }}
-                  activeOpacity={0.75}>
+                  activeOpacity={0.75}
+                  accessibilityRole="switch"
+                  accessibilityLabel={`${t('notifications.watchlistRemindersLabel')}: ${t('notifications.disabled')}`}
+                  accessibilityState={{ checked: !watchlistRemindersEnabled }}>
                   <Text style={[settingsModalStyles.langText, !watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
                     {t('notifications.disabled')}
                   </Text>
@@ -555,7 +580,10 @@ function SettingsModal({
                 style={settingsModalStyles.appleBtn}
                 onPress={onLinkApple}
                 disabled={linkingAccount}
-                activeOpacity={0.8}>
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={linkingAccount ? t('common.loading') : t('profile.linkWithApple')}
+                accessibilityState={{ disabled: linkingAccount }}>
                 <Ionicons name="logo-apple" size={16} color={Colors.textWhite} />
                 <Text style={settingsModalStyles.appleBtnText}>
                   {linkingAccount
@@ -570,7 +598,9 @@ function SettingsModal({
           <TouchableOpacity
             style={settingsModalStyles.row}
             onPress={() => { onClose(); onManageSubscription(); }}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={isPremiumUser ? t('profile.manageSubscription') : t('profile.upgradePlus')}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="diamond-outline" size={16} color={Colors.accentPrimary} />
               <Text style={settingsModalStyles.rowLabel}>
@@ -596,7 +626,9 @@ function SettingsModal({
           <TouchableOpacity
             style={settingsModalStyles.row}
             onPress={() => { onClose(); onShareArchetype(); }}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.shareArchetype')}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="share-social-outline" size={16} color={Colors.accentPrimary} />
               <Text style={settingsModalStyles.rowLabel}>{t('profile.shareArchetype')}</Text>
@@ -608,7 +640,10 @@ function SettingsModal({
           <TouchableOpacity
             style={settingsModalStyles.dangerRow}
             onPress={() => { onClose(); onClearWatchlist(); }}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.clearWatchlist')}
+            accessibilityHint={t('profile.clearWatchlistMessage')}>
             <Ionicons name="trash-outline" size={16} color={Colors.error} />
             <Text style={settingsModalStyles.dangerLabel}>{t('profile.clearWatchlist')}</Text>
           </TouchableOpacity>
@@ -618,7 +653,10 @@ function SettingsModal({
             <TouchableOpacity
               style={settingsModalStyles.signOutRow}
               onPress={onSignOut}
-              activeOpacity={0.7}>
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.signOut')}
+              accessibilityHint={t('profile.signOutConfirmMessage')}>
               <Ionicons name="log-out-outline" size={16} color={Colors.error} />
               <Text style={settingsModalStyles.dangerLabel}>{t('profile.signOut')}</Text>
             </TouchableOpacity>
@@ -628,7 +666,9 @@ function SettingsModal({
           <TouchableOpacity
             style={settingsModalStyles.row}
             onPress={() => Linking.openURL('https://abalone-dracopelta-382.notion.site/Chosy-ai-Privacy-Policy-34a00bffbfbe80af9f5fd996fa7ab55b')}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('paywall.privacy')}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textGrey} />
               <Text style={settingsModalStyles.rowLabel}>{t('paywall.privacy')}</Text>
@@ -639,7 +679,9 @@ function SettingsModal({
           <TouchableOpacity
             style={settingsModalStyles.row}
             onPress={() => Linking.openURL('https://www.notion.so/Chosy-ai-Terms-of-Service-34a00bffbfbe80899613c3ce2e5ed01b')}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('paywall.terms')}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="document-text-outline" size={16} color={Colors.textGrey} />
               <Text style={settingsModalStyles.rowLabel}>{t('paywall.terms')}</Text>
@@ -652,7 +694,10 @@ function SettingsModal({
             <TouchableOpacity
               style={settingsModalStyles.deleteAccountRow}
               onPress={() => { onClose(); onDeleteAccount(); }}
-              activeOpacity={0.7}>
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.deleteAccount')}
+              accessibilityHint={t('profile.deleteAccountConfirmMessage')}>
               <Ionicons name="person-remove-outline" size={16} color={Colors.error} />
               <View style={settingsModalStyles.deleteAccountTextBlock}>
                 <Text style={settingsModalStyles.deleteAccountLabel}>
