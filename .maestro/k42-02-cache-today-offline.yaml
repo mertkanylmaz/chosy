@@ -2,26 +2,26 @@
 #
 # Beklenen: ilk açılış online olduğu için `generate-gauntlet` başarılı olur
 # ve `cacheGauntlet()` bugünün yanıtını AsyncStorage'a yazar
-# (gauntletCache.ts). Uygulama kapanıp uçak modunda yeniden açıldığında
+# (gauntletCache.ts). Uygulama kapanıp offline'da yeniden açıldığında
 # `readCachedGauntlet` katman 1'i (bugünün tarihi) bulur → `source ===
 # 'cache_today'`. Bu kaynak kullanıcıya göstergeyle BELLİ EDİLMEZ (yorum:
-# "cache_today gösterge ÜRETMEZ... görsel gürültü eklemek yanlış olurdu",
-# GauntletShell/index.tsx:362-364) — yani ekran online açılıştan AYIRT
-# EDİLEMEZ olmalı: oyun sorusu görünür, "bu bugünün verisi değil" uyarısı
-# GÖRÜNMEZ.
+# "cache_today gösterge ÜRETMEZ", GauntletShell/index.tsx:362-364) — ekran
+# online açılıştan AYIRT EDİLEMEZ olmalı: oyun sorusu görünür, "bu bugünün
+# verisi değil" uyarısı GÖRÜNMEZ.
 #
-# ÖN KOŞUL — 18:00 sonrası (Senaryo 1'deki UNLOCK_HOUR notu aynen geçerli).
-# SADECE ANDROID (bkz. Senaryo 1 notu, docs/testing/MAESTRO.md).
+# iOS OVERRIDE (DUR NOKTASI onaylı) — `chosy://e2e/set-offline` deep
+# link'i, uygulama `stopApp` ile kapatıldıktan SONRA açılıyor: bu bir soğuk
+# başlangıç olur ve `Linking.getInitialURL()` üzerinden okunur —
+# `resolveIsOnline()` ilk isteği bu kontrolden önce göndermez. Detay/kırılganlık
+# notu: `.maestro/k42-01-cold-start-offline.yaml`.
+#
+# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
 appId: com.chosy.ai
 ---
-- setAirplaneMode: disabled
 - launchApp:
     clearState: true
 - assertVisible: "Which one tonight?"
 - stopApp
-- setAirplaneMode: enabled
-- launchApp:
-    clearState: false
+- openLink: "chosy://e2e/set-offline"
 - assertVisible: "Which one tonight?"
 - assertNotVisible: "This isn't today's lineup. It'll refresh when you're back online."
-- setAirplaneMode: disabled

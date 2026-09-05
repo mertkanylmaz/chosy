@@ -1,32 +1,38 @@
 # K-42 Senaryo 5 — Bağlantı geri gelince kuyruk senkronizasyonu
 #
-# Beklenen: `setAirplaneMode: disabled` NetInfo'da offline→online geçişini
-# tetikler → `subscribeToReconnect` dinleyicisi (networkStatus.ts) ateşlenir
-# → `flushThenLoad()` çağrılır (GauntletShell/index.tsx:468-472) →
-# `flushPendingChoice()` bekleyen seçimi sunucuya gönderir → başarılıysa
-# kuyruk temizlenir, `choiceFrozen` false olur, "Your pick is waiting..."
-# metni kaybolur ve tur ilerler (backend'in döndüğü güncel progress'e göre).
+# Beklenen: `chosy://e2e/set-online` linki (uygulama ÇALIŞIRKEN, kill
+# YOK) `Linking.addEventListener('url', ...)` üzerinden CANLI yakalanır
+# → `applyOnlineState(true)` → offline→online geçişi → `networkStatus.ts`
+# içindeki `subscribeToReconnect` dinleyicileri tetiklenir →
+# `GauntletShell`'in `flushThenLoad()`'ı (index.tsx:468-472) çağrılır →
+# `flushPendingChoice()` bekleyen seçimi sunucuya gönderir → kuyruk
+# temizlenir, "Your pick is waiting..." kaybolur, tur ilerler.
 #
-# Bu flow Senaryo 4'ün ürettiği "dondurulmuş" durumu kendi içinde yeniden
-# üretir (bağımsız bir kuyruk/dondurma fixture'ı yok) — adımların ilk
-# yarısı k42-04 ile birebir aynıdır.
+# ⚠️ KRİTİK SIRA FARKI (k42-04'ten): bu flow'da offline→online geçişi
+# ARASINDA `stopApp` YOKTUR — bilinçli. Amaç canlı `subscribeToReconnect`
+# dinleyicisini test etmek; uygulama kill+relaunch edilseydi bunun yerine
+# mount-time flush (index.tsx:436-438) tetiklenirdi ve bu senaryonun asıl
+# konusu (canlı reconnect event'i) hiç sınanmamış olurdu.
 #
-# ÖN KOŞUL — 18:00 sonrası (Senaryo 1 notu). SADECE ANDROID (Senaryo 1 notu).
+# Offline'a geçiş yine `stopApp` sonrası soğuk `openLink` ile yapılır (bkz.
+# k42-01 notu) — o kısımda kill YAPILMASI gerekiyor çünkü sahte-offline
+# bayrağı yalnız `Linking.getInitialURL()` ile soğuk başlangıçta güvenilir
+# okunuyor (canlı 'url' event'i ilk isteği yakalamak için YETERSİZ, bkz.
+# services/networkStatus.ts).
+#
+# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
 appId: com.chosy.ai
 ---
-- setAirplaneMode: disabled
 - launchApp:
     clearState: true
 - assertVisible: "Which one tonight?"
 - stopApp
-- setAirplaneMode: enabled
-- launchApp:
-    clearState: false
+- openLink: "chosy://e2e/set-offline"
 - assertVisible: "Which one tonight?"
 - tapOn:
     point: "25%, 55%"
 - assertVisible: "Your pick is waiting. It'll be sent when you're back online."
-- setAirplaneMode: disabled
+- openLink: "chosy://e2e/set-online"
 - extendedWaitUntil:
     notVisible: "Your pick is waiting. It'll be sent when you're back online."
     timeout: 15000

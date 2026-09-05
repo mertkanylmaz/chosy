@@ -1,34 +1,32 @@
 # K-42 Senaryo 4 — Offline'da seçim yapma, kuyruğa yazılma (dondurma)
 #
-# Beklenen: offline'da bir posterе dokunma `submit()` → `submitChoice()` →
+# Beklenen: offline'da bir postere dokunma `submit()` → `submitChoice()` →
 # `GauntletFetchError` fırlatır → `enqueuePendingChoice()` seçimi
 # AsyncStorage'a yazar (gauntletOfflineQueue.ts) ve `choiceFrozen = true`
 # olur. Eskiden (K-42 öncesi) bu seçim TAMAMEN KAYBOLUYORDU — bu flow'un
 # doğruladığı regresyon tam olarak budur. UI donuk kalır: "Your pick is
 # waiting..." metni görünür, tur İLERLEMEZ.
 #
+# iOS OVERRIDE (DUR NOKTASI onaylı) — offline'a geçiş `stopApp` sonrası
+# soğuk `openLink` ile yapılır (bkz. k42-01 notu, `resolveIsOnline()`
+# yarış durumu koruması). Sol postere dokunma EKRAN YÜZDESİYLE
+# hedeflenir — film başlıkları günlük değiştiği için sabit metinle
+# hedeflenemez, poster bileşeninde testID yok (yalnız film başlığını
+# içeren accessibilityLabel var, bkz. PosterTile/index.tsx).
+#
 # Bu flow BAĞIMSIZ ÇALIŞTIRILAMAZ: önce online bir açılışla cache_today
 # doldurulur (aksi halde oyun ekranına hiç ulaşılmadan Senaryo 1'in hata
 # durumuna düşülür), sonra offline'a geçilip seçim yapılır.
 #
-# Sol posterе dokunma EKRAN YÜZDESİYLE hedeflenir — film başlıkları günlük
-# değiştiği için sabit metinle hedeflenemez ve poster bileşeninde testID
-# yok (bkz. components/gauntlet/PosterTile/index.tsx, yalnız
-# accessibilityLabel var, o da film başlığını içeriyor).
-#
-# ÖN KOŞUL — 18:00 sonrası (Senaryo 1 notu). SADECE ANDROID (Senaryo 1 notu).
+# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
 appId: com.chosy.ai
 ---
-- setAirplaneMode: disabled
 - launchApp:
     clearState: true
 - assertVisible: "Which one tonight?"
 - stopApp
-- setAirplaneMode: enabled
-- launchApp:
-    clearState: false
+- openLink: "chosy://e2e/set-offline"
 - assertVisible: "Which one tonight?"
 - tapOn:
     point: "25%, 55%"
 - assertVisible: "Your pick is waiting. It'll be sent when you're back online."
-- setAirplaneMode: disabled

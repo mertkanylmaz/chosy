@@ -1,8 +1,7 @@
 # Maestro E2E — K-42 Offline Senaryoları
 
 Kaynak fizibilite: `docs/investigations/E2E_TEST_FIZIBILITE.md`. Bu doküman
-kurulan altyapının **nasıl çalıştırılacağını** anlatır; mimari kararların
-gerekçesi için fizibilite raporuna bakın.
+kurulan altyapının **nasıl çalıştırılacağını** anlatır.
 
 ## Kapsam
 
@@ -13,38 +12,106 @@ gerekçesi için fizibilite raporuna bakın.
 | `k42-01-cold-start-offline.yaml` | Soğuk başlangıç, tam offline, beyaz ekran kontrolü |
 | `k42-02-cache-today-offline.yaml` | Online açılış → offline → `cache_today`'den oynanabilirlik |
 | `k42-04-offline-selection.yaml` | Offline seçim yapma → kuyruğa yazılma (dondurma) |
-| `k42-05-sync-on-reconnect.yaml` | Bağlantı geri gelince kuyruk senkronizasyonu |
+| `k42-05-sync-on-reconnect.yaml` | Bağlantı geri gelince kuyruk senkronizasyonu (CANLI reconnect listener) |
 
-**Kapsam dışı (manuel kalacak):** Senaryo 3 (`cache_stale`, 12+ saat eski
-kayıt), Senaryo 6 (12 saatlik yaş sınırı aşımı), Senaryo 7 (4xx kalıcı ret),
-Senaryo 8 (`inFlight` guard, eşzamanlı flush çakışması). Bu 4'ü sistem saati
-manipülasyonu veya sunucu hatası enjeksiyonu gerektiriyor — Maestro'nun UI
-katmanından tek başına simüle edemeyeceği durumlar.
+**Kapsam dışı (manuel kalacak):** Senaryo 3 (`cache_stale`), 6 (12 saatlik
+yaş sınırı), 7 (4xx kalıcı ret), 8 (`inFlight` guard). Sistem saati
+manipülasyonu veya sunucu hatası enjeksiyonu gerektiriyor.
 
-## ⚠️ İki kritik ön koşul
+## Test-only override mekanizması (DUR NOKTASI onaylı)
 
-### 1. Cihaz saati 18:00 sonrası olmalı
+`setAirplaneMode` iOS'ta hiçbir zaman gerçek network etkisi yaratmıyor
+(Maestro'nun resmi kısıtı — simülatörde yok, gerçek cihazda etkisiz). Bunun
+yerine 3 parçalı bir test-only override kuruldu:
 
-`GauntletShell` release build'de (`__DEV__ === false`) gauntlet'i yalnız
-18:00'den (`UNLOCK_HOUR`, `components/gauntlet/GauntletShell/index.tsx:84`)
-sonra çağırır. Maestro build'leri (`e2e-test` profili, `preview`'dan extends)
-release-mode JS bundle çalıştırdığı için bu kapı gerçek saate bakar. 18:00
-öncesi çalıştırılan flow'lar "before_18" metnini görür, offline yolunu hiç
-test etmeden yeşil döner — **sonuç yorumlanamaz** (K-42'nin TestFlight cihaz
-doğrulamasında yaşanan aynı kör nokta, bkz. `TEKNIK_BORC.md` E-11).
+### 1. Tek doğruluk kaynağı: `utils/e2eTestMode.ts`
 
-Bu bilinçli olarak kod veya `app_config` ile bypass **edilmedi** — gate'e
-bir test-override eklemek yeni bir davranış dalı (mimari değişiklik) olur ve
-CLAUDE.md'nin "yeni pattern → DUR ve sor" sınırına girer. Flow'ları 18:00
-sonrası çalıştırın (yerel veya CI runner'ının saat dilimi neyse ona göre).
+```ts
+export function isE2ETestMode(): boolean {
+  return process.env.EXPO_PUBLIC_APP_ENV === 'e2e-test';
+}
+```
 
-### 2. Yalnızca Android
+Bu değişken **yalnızca `preview-e2e` build profilinde** set edilir
+(`eas.json`). Production/preview/preview-store/development build'lerinde
+hiç yoktur — `isE2ETestMode()` oralarda her zaman `false` döner, mevcut
+davranış birebir korunur. `process.env.EXPO_PUBLIC_APP_ENV` bu fonksiyonun
+DIŞINDA hiçbir yerde okunmaz.
 
-`setAirplaneMode` **Android dışında etkisizdir**: iOS simülatöründe uçak
-modu diye bir kavram yok, gerçek iOS cihazda da komut hatasız geçer ama ağı
-kapatmaz (Maestro'nun resmi kısıtı). Bu 4 flow'un tamamı ağ kapatmaya
-dayandığı için **iOS'ta bu senaryolar hâlâ manuel test gerektiriyor** — R-D
-öncesi TestFlight cihaz doğrulamasının parçası olarak kalmaya devam eder.
+**Güvenlik sınırı kanıtı** (her değişiklikte tekrar çalıştırılmalı):
+
+```powershell
+node -e "
+const eas = JSON.parse(require('fs').readFileSync('eas.json','utf8'));
+for (const name of ['production','preview','preview-store']) {
+  console.log(name, '->', JSON.stringify(eas.build[name]).includes('e2e-test'));
+}
+"
+# Üçü de false dönmeli. eas.json submit bloğunda 'preview-e2e' YOKTUR —
+# bu profil App Store'a asla gönderilemez.
+```
+
+### 2. Deep-link tabanlı sahte ağ durumu: `services/networkStatus.ts`
+
+`preview-e2e` build'inde gerçek NetInfo aboneliği yerine bir custom URL
+scheme dinlenir:
+
+- `chosy://e2e/set-offline` → `currentOnline = false`
+- `chosy://e2e/set-online` → `currentOnline = true`
+
+İki ayrı okuma yolu var:
+- **Canlı** (`Linking.addEventListener('url', ...)`): uygulama ZATEN
+  ÇALIŞIRKEN gelen link'leri yakalar (Senaryo 5'in reconnect testi bunu
+  kullanır).
+- **Soğuk başlangıç** (`Linking.getInitialURL()`): uygulama BİZZAT o
+  link'le başlatılmışsa (Senaryo 1/2/4'ün "stopApp → openLink" adımı) —
+  canlı event hiç ateşlenmez, bu yol olmadan ilk istek her zaman "online"
+  varsayımıyla giderdi (yarış durumu).
+
+`isE2ETestMode()` false olan her build'de bu modül **birebir eskisi gibi**
+gerçek NetInfo'ya abone olur — yeni dal yalnızca `preview-e2e`'de çalışır.
+
+### 3. Gerçek isteği kesme: `services/supabase.ts`
+
+Sahte offline durumu tek başına hiçbir şeyi engellemez — `gauntletService.ts`
+ağ durumunu HİÇ sormaz, yalnız gerçek `fetch`'in başarılı/başarısız
+olmasına bakar. Bu yüzden Supabase client'ının `global.fetch`'i override
+edildi: `isE2ETestMode()` VE sahte-offline iken TÜM supabase istekleri
+(auth dahil) `TypeError: Network request failed` ile reddedilir — gerçek
+bir RN network kopmasının attığı hatanın BİREBİR AYNISI, yeni bir hata tipi
+YOK. Bu sayede `gauntletService.ts`'in `parseInvokeError`'ı bunu gerçek bir
+kesintiden ayırt edemez, cache fallback zinciri (`cache_today` →
+`cache_stale` → hata) kendi kodunda hiç dokunulmadan tetiklenir.
+
+`isE2ETestMode()` false olan her build'de gerçek `fetch` olduğu gibi
+çağrılır — davranış farkı yok.
+
+### 4. 18:00 (`UNLOCK_HOUR`) bypass: `GauntletShell`
+
+```ts
+if (__DEV__) return true;
+if (isE2ETestMode()) return true;
+return new Date().getHours() >= UNLOCK_HOUR;
+```
+
+Yalnız `preview-e2e`'de saat kapısı atlanır — Maestro flow'ları günün her
+saatinde koşabilir. Diğer tüm build'lerde (production dahil) bu dal ölü
+koddur.
+
+## ⚠️ Bilinen kırılganlık — soğuk başlangıç penceresi
+
+`k42-01/02/04/05` flow'larının hepsi şu sırayı izliyor: `launchApp
+clearState:true` (bir an gerçek online varsayımıyla açılır) → `stopApp`
+(hemen kapat) → `openLink chosy://e2e/set-offline` (offline bilgisiyle
+soğuk yeniden başlatma). `stopApp`'a kadar geçen pencerede TEORİK olarak
+bir `generate-gauntlet` isteği tamamlanıp cache yazabilir —
+GauntletShell'in kendi 401 bootstrap penceresi (taze anonim oturumda
+`public.users` satırı henüz hazır olmayabilir) bunu pratikte olası
+kılmıyor ama DETERMİNİSTİK DEĞİL. Bu flow'lar flaky çıkarsa önce bunu
+düşünün; kalıcı çözüm GauntletShell'in mount-time fetch'ini de
+`resolveIsOnline()`'ın ilk-link kontrolüne bağlamak olurdu — bu, onaylanan
+kapsamın (networkStatus.ts + supabase.ts + GauntletShell'in yalnız
+UNLOCK_HOUR satırı) DIŞINA çıkar, ayrı bir DUR NOKTASI gerektirir.
 
 ## Yerel çalıştırma
 
@@ -52,22 +119,18 @@ dayandığı için **iOS'ta bu senaryolar hâlâ manuel test gerektiriyor** — 
 npm run e2e:install    # Maestro CLI kurar (curl | bash — Windows'ta Git
                         # Bash veya WSL2 gerekir, native PowerShell'de
                         # curl|bash çalışmaz; Java 17+ ön koşuldur)
-maestro --version       # kurulum doğrulama
+maestro --version
 
-npm run e2e:test        # .maestro/ altındaki TÜM flow'ları bağlı Android
-                        # emulator/cihaza koşar (18:00 sonrası!)
+npm run e2e:test        # .maestro/ altındaki TÜM flow'ları bağlı iOS
+                        # simülatör/cihaza koşar (preview-e2e build'i)
 
 maestro test .maestro/k42-01-cold-start-offline.yaml   # tek flow
 ```
 
-Yerel koşum, geliştirme makinesinde bağlı bir Android emulator/cihaz ve
-üzerinde kurulu bir build (`npm run build:preview` veya `e2e-test` profiliyle
-alınmış bir `.apk`) gerektirir.
-
 ## EAS Workflows ile çalıştırma
 
-`.eas/workflows/e2e-test.yml` **otomatik tetikleyicisi yok** (her push'ta
-koşmaz) — bilinçli olarak yalnız elle tetiklenir:
+`.eas/workflows/e2e-test.yml` **otomatik tetikleyicisi yok** — bilinçli
+olarak yalnız elle tetiklenir:
 
 ```powershell
 eas workflow:run .eas/workflows/e2e-test.yml
@@ -75,19 +138,15 @@ eas workflow:run .eas/workflows/e2e-test.yml
 npm run e2e:workflow
 ```
 
-Bu workflow `eas.json`'daki `e2e-test` build profiliyle (preview'dan extends,
-`android.buildType: apk`) bir Android build alır, sonra 4 flow'u o build
-üzerinde sırayla koşar. Otomatik push tetikleyicisi eklenmedi — CTO ilk
-koşumu manuel değerlendirdikten sonra `on:` bloğu (`pull_request` veya
-`workflow_dispatch`) ayrı bir onayla eklenebilir.
+Bu workflow `eas.json`'daki `preview-e2e` profiliyle (preview-store'dan
+extends, `EXPO_PUBLIC_APP_ENV=e2e-test`) bir iOS build alır, sonra 4
+flow'u sırayla koşar.
 
 ## Neden testID yok, ekran yüzdesi kullanılıyor
 
-Proje genelinde `testID` kullanılmıyor (taranan `components/gauntlet/`
-içinde sıfır). Poster dokunuşları bu yüzden `tapOn: point: "25%, 55%"` gibi
-ekran yüzdesiyle hedefleniyor — film başlıkları günlük değiştiği için sabit
-metinle hedeflenemez, `PosterTile`'ın tek erişilebilirlik bilgisi de
-(`accessibilityLabel`) film başlığını içeriyor. Metin tabanlı seçiciler
-(`assertVisible: "Which one tonight?"` vb.) `locales/en.json`'daki sabit
-`t()` string'lerine karşılık geliyor; dil değişikliği bu flow'ları kırar —
-şimdilik yalnız EN locale hedefleniyor.
+Proje genelinde `testID` kullanılmıyor. Poster dokunuşları bu yüzden
+`tapOn: point: "25%, 55%"` gibi ekran yüzdesiyle hedefleniyor — film
+başlıkları günlük değiştiği için sabit metinle hedeflenemez. Metin
+tabanlı seçiciler (`assertVisible: "Which one tonight?"` vb.)
+`locales/en.json`'daki sabit `t()` string'lerine karşılık geliyor; dil
+değişikliği bu flow'ları kırar — şimdilik yalnız EN locale hedefleniyor.

@@ -5,27 +5,31 @@
 #   eas workflow:run .eas/workflows/e2e-test.yml
 # (npm script: `npm run e2e:workflow`)
 #
-# SADECE ANDROID: 4 flow da `setAirplaneMode` kullanıyor, bu komut yalnız
-# Android'de gerçek ağ etkisi yaratıyor (iOS simülatörde hiç yok, gerçek iOS
-# cihazda da etkisiz — Maestro'nun resmi kısıtı). iOS build'i bu workflow'a
-# EKLENMEDİ; iOS tarafı hâlâ manuel test gerektiriyor (docs/testing/MAESTRO.md).
+# iOS (DUR NOKTASI onaylı, K-42 Maestro override): `setAirplaneMode`
+# iOS'ta hiçbir zaman gerçek network etkisi yaratmıyor (Maestro'nun resmi
+# kısıtı) — bu yüzden 4 flow artık OS-seviyesi airplane mode yerine
+# `chosy://e2e/set-offline` / `set-online` deep link'lerini kullanıyor
+# (`services/networkStatus.ts` + `services/supabase.ts` fetch override).
+# Bu mekanizma yalnız `EXPO_PUBLIC_APP_ENV=e2e-test` olduğunda aktif —
+# tek doğruluk kaynağı `utils/e2eTestMode.ts`.
 #
-# Build profili: eas.json → "e2e-test" (preview'dan extends, android
-# buildType apk — Maestro job emulator'e .apk kurar, .aab kuramaz).
+# Build profili: eas.json → "preview-e2e" (preview-store'dan extends,
+# EXPO_PUBLIC_APP_ENV=e2e-test env'i ekler). Bu profil submit bloğuna
+# EKLENMEDİ — App Store'a asla gitmez.
 name: k42-offline-e2e
 
 jobs:
-  build_android_e2e:
+  build_ios_e2e:
     type: build
     params:
-      platform: android
-      profile: e2e-test
+      platform: ios
+      profile: preview-e2e
 
   maestro_k42:
-    needs: [build_android_e2e]
+    needs: [build_ios_e2e]
     type: maestro
     params:
-      build_id: ${{ needs.build_android_e2e.outputs.build_id }}
+      build_id: ${{ needs.build_ios_e2e.outputs.build_id }}
       flow_path:
         - .maestro/k42-01-cold-start-offline.yaml
         - .maestro/k42-02-cache-today-offline.yaml

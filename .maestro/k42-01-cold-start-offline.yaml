@@ -1,29 +1,41 @@
 # K-42 Senaryo 1 — Soğuk başlangıç, tam offline (fresh install, cache yok)
 #
-# Beklenen: `generate-gauntlet` yanıtı hiç gelmez (ağ yok) VE yerel cache
-# de yok (clearState: true → AsyncStorage boş) → GauntletShell doğrudan
-# hata ekranına düşer (gauntletCache.readCachedGauntlet → null →
-# GauntletShell/index.tsx loadError dalı). Kontrol edilen şey "beyaz ekran
-# / boş state asla" (K-42) — kullanıcı MUTLAKA görünür bir hata + "Tekrar
-# Dene" görür, sessiz/boş bir yüzeyle karşılaşmaz.
+# Beklenen: `generate-gauntlet` yanıtı hiç gelmez (sahte offline) VE yerel
+# cache de yok (clearState: true → AsyncStorage boş) → GauntletShell
+# doğrudan hata ekranına düşer. Kontrol edilen şey "beyaz ekran / boş state
+# asla" (K-42) — kullanıcı MUTLAKA görünür bir hata + "Tekrar Dene" görür.
 #
-# ÖN KOŞUL — cihaz saati 18:00 sonrası olmalı: bu build release-mode JS
-# bundle çalıştırır (__DEV__ === false), UNLOCK_HOUR kapısı gerçek saate
-# bakar (GauntletShell/index.tsx:84,109-114). 18:00'den önce çalıştırılırsa
-# ekran "before_18" metnini gösterir ve bu flow'un asıl test ettiği offline
-# hata yolu hiç değerlendirilmez — sonuç yorumlanamaz hale gelir (bkz.
-# E-11, 31 Ağu 2026, aynı kör nokta).
+# iOS OVERRIDE (DUR NOKTASI onaylı, yalnız `preview-e2e` build'i):
+# `setAirplaneMode` iOS'ta gerçek network'ü kesmiyor (Maestro'nun resmi
+# kısıtı). Bunun yerine `chosy://e2e/set-offline` deep link'i açılıyor —
+# `services/networkStatus.ts` bunu yakalayıp `services/supabase.ts`'teki
+# fetch override'ını devreye sokuyor (yalnız `EXPO_PUBLIC_APP_ENV=e2e-test`
+# olduğunda aktif, bkz. `utils/e2eTestMode.ts`).
 #
-# SADECE ANDROID: setAirplaneMode iOS simülatöründe hiç etkisi yok, gerçek
-# iOS cihazda da komut geçer ama network durumunu değiştirmez (Maestro'nun
-# resmi kısıtı). iOS'ta bu senaryo hâlâ manuel test gerektirir — bkz.
-# docs/testing/MAESTRO.md.
+# SIRA NEDEN BÖYLE: `openLink` custom scheme'i uygulama ÇALIŞMIYORKEN
+# açarsa bu bir SOĞUK BAŞLANGIÇ olur ve `Linking.getInitialURL()` ile
+# okunur — `resolveIsOnline()` ilk isteği bu kontrol bitmeden GÖNDERMEZ
+# (yarış durumu yok). Bu yüzden önce `clearState: true` ile temiz kurulum,
+# sonra `stopApp` ile hemen kapatma, sonra `openLink` ile "offline bilgisiyle
+# soğuk başlatma" sırası izleniyor.
+#
+# ⚠️ BİLİNEN KIRILGANLIK: `clearState: true` sonrası uygulama BİR AN için
+# gerçek online varsayımıyla açılır (`stopApp`'a kadar). Bu pencerede bir
+# `generate-gauntlet` isteği TEORİK olarak tamamlanıp cache yazabilir —
+# GauntletShell'in kendi 401 bootstrap penceresi (taze anonim oturumda
+# `public.users` satırı henüz hazır olmayabilir, `MAX_AUTH_ATTEMPTS`
+# backoff'u) bunu pratikte olası kılmıyor, ama DETERMİNİSTİK DEĞİL. Bu
+# flow flaky çıkarsa önce bunu düşünün — GauntletShell/networkStatus'a ek
+# müdahale gerekir (kapsam dışı, bkz. docs/testing/MAESTRO.md).
+#
+# ÖN KOŞUL — cihaz saati 18:00 sonrası GEREKMEZ: `isE2ETestMode()` UNLOCK_HOUR
+# kapısını `preview-e2e` build'inde bypass eder (GauntletShell/index.tsx).
 appId: com.chosy.ai
 ---
-- setAirplaneMode: enabled
 - launchApp:
     clearState: true
+- stopApp
+- openLink: "chosy://e2e/set-offline"
 - assertVisible: "Today's films couldn't load. Try again."
 - assertVisible: "Try again"
 - assertNotVisible: "Which one tonight?"
-- setAirplaneMode: disabled
