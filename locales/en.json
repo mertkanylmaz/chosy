@@ -781,7 +781,8 @@
     "onboardingSubtitle": "You just discovered your first films — unlock unlimited discoveries",
     "redeemCode": "Redeem Offer Code",
     "preferOneTime": "Prefer a one-time payment?",
-    "aiDisclosure": "Chosy uses Anthropic's Claude AI for film recommendations. Mood searches are sent to Anthropic servers for processing. Personal information (name, email) is not shared."
+    "aiDisclosure": "Chosy uses Anthropic's Claude AI for film recommendations. Mood searches are sent to Anthropic servers for processing. Personal information (name, email) is not shared.",
+    "closeSheet": "Close"
   },
   "moodProfile": {
     "title": "Mood Profile Result",

@@ -308,6 +308,8 @@ export default function PaywallBase({
             style={styles.dragHandleArea}
             onPress={() => handleDismiss('drag_handle')}
             activeOpacity={1}
+            accessibilityRole="button"
+            accessibilityLabel={t('paywall.closeSheet')}
           >
             <View style={styles.dragHandle} />
           </TouchableOpacity>
@@ -337,6 +339,8 @@ export default function PaywallBase({
                   onPress={() => { hapticMedium(); setReloadToken((n) => n + 1); }}
                   activeOpacity={0.8}
                   style={styles.offeringsRetryBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('errors.retry')}
                 >
                   <Text style={styles.offeringsRetryText}>{t('errors.retry')}</Text>
                 </TouchableOpacity>
@@ -349,12 +353,18 @@ export default function PaywallBase({
                     const plan = PLANS[option.id];
                     const isSelected = selectedPlan === option.id;
 
+                    const unitKey = option.id === 'lifetime' ? 'oneTime' : option.id === 'annual' ? 'perYear' : 'perMonth';
+                    const planLabel = `${t(`paywall.${option.id}Title`)}, ${plan.displayPrice} ${t(`paywall.${unitKey}`)}`;
+
                     return (
                       <TouchableOpacity
                         key={option.id}
                         style={[styles.planCard, isSelected && styles.planCardSelected]}
                         onPress={() => { hapticMedium(); setSelectedPlan(option.id); }}
                         activeOpacity={0.8}
+                        accessibilityRole="radio"
+                        accessibilityLabel={planLabel}
+                        accessibilityState={{ selected: isSelected }}
                       >
                         <View style={styles.planInfo}>
                           <View style={styles.planTitleRow}>
@@ -396,6 +406,9 @@ export default function PaywallBase({
                   onPress={handlePurchase}
                   disabled={purchasing}
                   activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={ctaLabel ?? t('contextPaywall.ctaDefault')}
+                  accessibilityState={{ disabled: purchasing, busy: purchasing }}
                 >
                   <LinearGradient
                     colors={[Colors.accentPrimary, Colors.accentHover]}
@@ -421,6 +434,8 @@ export default function PaywallBase({
                   style={styles.dismissButton}
                   onPress={() => handleDismiss('dismiss_button')}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={dismissLabel ?? t('contextPaywall.dismissDefault')}
                 >
                   <Text style={styles.dismissText}>
                     {dismissLabel ?? t('contextPaywall.dismissDefault')}
@@ -432,6 +447,8 @@ export default function PaywallBase({
                   style={styles.restoreButton}
                   onPress={handleRestore}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('paywall.restorePurchases')}
                 >
                   <Text style={styles.restoreText}>
                     {t('paywall.restorePurchases')}
@@ -448,6 +465,8 @@ export default function PaywallBase({
                   <TouchableOpacity
                     onPress={() => Linking.openURL(TERMS_URL)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="link"
+                    accessibilityLabel={t('paywall.termsAction')}
                   >
                     <Text style={styles.legalLink}>{t('paywall.termsAction')}</Text>
                   </TouchableOpacity>
@@ -455,6 +474,8 @@ export default function PaywallBase({
                   <TouchableOpacity
                     onPress={() => Linking.openURL(PRIVACY_URL)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="link"
+                    accessibilityLabel={t('paywall.privacyAction')}
                   >
                     <Text style={styles.legalLink}>{t('paywall.privacyAction')}</Text>
                   </TouchableOpacity>
