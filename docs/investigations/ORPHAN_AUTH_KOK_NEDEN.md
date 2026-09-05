@@ -78,8 +78,17 @@ Kök nedenin A mı B mi olduğu **Sentry dashboard'unda `error_code:APP_USER_CRE
 
 Bu rapor **hiçbir düzeltme önermez veya uygulamaz.**
 
+### ÇÖZÜLDÜ (5 Eylül 2026)
+
+Sentry MCP ile doğrudan sorgulandı: react-native projesinde `APP_USER_CREATE_FAILED` / `ensureAppUser` / `bootstrapAppUser` ile eşleşen **sıfır event** bulundu (son 90 gün, tüm statüler). **Hipotez A doğrulandı, Hipotez B elendi.** Yani 8 orphan'ın hiçbirinde kod hatası yok — hepsi davranışsal bounce: kullanıcı ilk açılışta `ensureAppUser()`'ın network round-trip'i tamamlanmadan uygulamadan çıkıyor/uygulama öldürülüyor, JS process bu noktada sonlandığı için hiçbir catch bloğu çalışamıyor ve Sentry event'i hiç üretilmiyor. CLAUDE.md Kural 1 (sessiz fallback yasak) ihlal edilmiyor — yakalanabilen her hata zaten görünür durumda, burada yakalanacak bir hata hiç oluşmuyor.
+
+**Karar:** Şimdilik düzeltme yazılmıyor. Mevcut %20 (5/25) oranı büyük olasılıkla geliştirme/test trafiğinden kaynaklanıyor, gerçek kullanıcı örneklemi değil. G-3/G-9 marketing gate'lerinde gerçek trafikle yeniden ölçülecek; eşik aşarsa (örn. gerçek kullanıcılarda >%10) arka plan retry/foreground-resume mekanizması mimari karar olarak değerlendirilecek.
+
+Bu rapor **hâlâ hiçbir düzeltme önermez veya uygulamaz** — yalnızca kök neden ayrımı kapatılmıştır.
+
 ## 8. Kapsam dışı bırakılanlar
 
 - Hiçbir veri değişikliği yapılmadı (yalnızca `SELECT`).
 - Hiçbir migration yazılmadı.
-- Sentry, PostHog canlı event sorgusu yapılamadı (token yok) — CTO'ya devredilen tek açık madde.
+- PostHog canlı event sorgusu yapılamadı — bu maddenin sonucu değiştirmiyor (Sentry sorgusu kök nedeni zaten kapattı).
+- Sentry sorgusu bu turda MCP ile tamamlandı (§7 "ÇÖZÜLDÜ"), ilk yazımdaki "token yok" kısıtı artık geçerli değil.

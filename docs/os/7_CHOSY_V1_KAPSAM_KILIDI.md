@@ -553,6 +553,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | Cold-start identity reset — cihaz doğrulaması yapılmadı | CTO tarafından C.9a build'i dağıtılmadan önce elle doğrulanacak (Claude Code'un cihaz erişimi yok). Kaynak: M0 Faz 3 raporu. |
 | Tam depo silinmesi (reinstall) kimlik kaybını ölçmüyor | Bilinçli olarak ertelendi — `expo-secure-store` yeni bağımlılık gerektirir ve gerçek kurtarma sağlamaz, sadece ölçüm. v1 sonrası yeniden değerlendirilecek. Kaynak: M0 Faz 3 raporu. |
 | `.claude/skills/chosy-conventions/SKILL.md:57` bayat migration numarası (068 yazıyor, gerçek 090) | CLAUDE.md düzeltildi, bu dosya kapsam dışı bırakıldı — küçük iş, C.9a başlangıcında düzeltilecek. |
+| Orphan auth bounce oranı (~%20, muhtemelen test trafiği) | G-3/G-9 gate'lerinde gerçek kullanıcı verisiyle yeniden ölçülecek, v1 kapsamı dışı. Kaynak: `docs/investigations/ORPHAN_AUTH_KOK_NEDEN.md` (5 Eyl 2026, Sentry MCP ile Hipotez A doğrulandı — kod hatası yok). |
 
 ---
 
