@@ -51,10 +51,10 @@
       "extends": "preview",
       "distribution": "store"
     },
-    "e2e-test": {
-      "extends": "preview",
-      "android": {
-        "buildType": "apk"
+    "preview-e2e": {
+      "extends": "preview-store",
+      "env": {
+        "EXPO_PUBLIC_APP_ENV": "e2e-test"
       }
     },
     "production": {
