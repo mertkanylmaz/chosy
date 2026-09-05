@@ -23,8 +23,10 @@
 import { useEffect, useState } from 'react';
 
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
+import * as Linking from 'expo-linking';
 
 import { logger } from '@/utils/logger';
+import { isE2ETestMode } from '@/utils/e2eTestMode';
 
 /** Bağlantı durumu dinleyicisi. `online` o anki duruma eşittir. */
 type StatusListener = (online: boolean) => void;
@@ -42,6 +44,9 @@ let currentOnline = true;
 /** NetInfo aboneliği bir kez kurulur — her çağıran kendi dinleyicisini ekler. */
 let unsubscribeNetInfo: (() => void) | null = null;
 
+/** E2E deep-link aboneliği (yalnız `isE2ETestMode()` true iken kurulur). */
+let unsubscribeE2EDeepLink: (() => void) | null = null;
+
 const statusListeners = new Set<StatusListener>();
 const reconnectListeners = new Set<ReconnectListener>();
 
@@ -55,8 +60,12 @@ function isOnlineFromState(state: NetInfoState): boolean {
   return true;
 }
 
-function handleStateChange(state: NetInfoState): void {
-  const next = isOnlineFromState(state);
+/**
+ * `currentOnline`'ı günceller ve gerekirse dinleyicileri bildirir. Hem
+ * gerçek NetInfo yolunun hem de aşağıdaki E2E deep-link yolunun ortak
+ * çıkışıdır — ikisi de aynı bildirim/reconnect mantığından geçer.
+ */
+function applyOnlineState(next: boolean): void {
   const previous = currentOnline;
   currentOnline = next;
 
@@ -78,10 +87,81 @@ function handleStateChange(state: NetInfoState): void {
   }
 }
 
-/** NetInfo aboneliğini (henüz kurulmadıysa) kurar. */
+function handleStateChange(state: NetInfoState): void {
+  applyOnlineState(isOnlineFromState(state));
+}
+
+/**
+ * K-42 Maestro iOS override (DUR NOKTASI onaylı). `setAirplaneMode`
+ * iOS'ta etkisizdir (Maestro'nun resmi kısıtı, bkz. docs/testing/MAESTRO.md)
+ * — bu yüzden `preview-e2e` build'inde gerçek NetInfo yerine bir custom URL
+ * scheme dinlenir. Maestro `openLink` komutuyla `chosy://e2e/set-offline`
+ * veya `chosy://e2e/set-online` açar, bu handler `applyOnlineState`'i çağırır.
+ *
+ * Yalnızca `currentOnline`'ı değiştirir — asıl "isteği gerçekten düşürme"
+ * işi `services/supabase.ts`'teki fetch override'ındadır, o da bu modüldeki
+ * `getIsOnline()`'ı okur. Tek doğruluk kaynağı burasıdır.
+ */
+function handleE2EDeepLink(event: { url: string }): void {
+  if (event.url.includes('e2e/set-offline')) {
+    applyOnlineState(false);
+  } else if (event.url.includes('e2e/set-online')) {
+    applyOnlineState(true);
+  }
+}
+
+/**
+ * Aboneliği (henüz kurulmadıysa) kurar. `isE2ETestMode()` false olan HER
+ * build'de (production/preview/preview-store/development) bu fonksiyon
+ * BİREBİR eskisi gibi davranır — yalnızca gerçek NetInfo'ya abone olur.
+ * Dal yalnızca `preview-e2e` build'inde (tek doğruluk kaynağı:
+ * `utils/e2eTestMode.ts`) devreye girer.
+ */
 function ensureSubscription(): void {
+  if (isE2ETestMode()) {
+    if (unsubscribeE2EDeepLink) return;
+    const subscription = Linking.addEventListener('url', handleE2EDeepLink);
+    unsubscribeE2EDeepLink = () => subscription.remove();
+    return;
+  }
   if (unsubscribeNetInfo) return;
   unsubscribeNetInfo = NetInfo.addEventListener(handleStateChange);
+}
+
+/**
+ * Soğuk başlangıç güvencesi (Senaryo 1/2/4): uygulama BİZZAT
+ * `chosy://e2e/set-offline` link'iyle başlatılmış olabilir — bu durumda
+ * `Linking.addEventListener('url', ...)` HİÇ ateşlenmez, o yalnız ZATEN
+ * ÇALIŞAN bir uygulamaya gelen SONRAKİ link'leri yakalar. Başlatıcı link
+ * `Linking.getInitialURL()` ile AYRICA okunmalı. Bir kez çalışır, sonucu
+ * önbelleğe alınır (aynı process'te tekrar sorulmaz).
+ */
+let initialE2ELinkCheck: Promise<void> | null = null;
+
+function ensureInitialE2ELinkChecked(): Promise<void> {
+  if (!initialE2ELinkCheck) {
+    initialE2ELinkCheck = Linking.getInitialURL().then((url) => {
+      if (url) handleE2EDeepLink({ url });
+    });
+  }
+  return initialE2ELinkCheck;
+}
+
+/**
+ * `getIsOnline()`'ın E2E-güvenli async biçimi — YALNIZ
+ * `services/supabase.ts`'teki fetch override'ı kullanır. Kararın SOĞUK
+ * BAŞLANGIÇTA (uygulama daha yeni `chosy://e2e/set-offline` ile açılmış
+ * olabilir, bkz. `ensureInitialE2ELinkChecked`) bile doğru olması gereken
+ * TEK yer orasıdır. `isE2ETestMode()` false olan HER build'de
+ * `getIsOnline()` ile BİREBİR aynı değeri döner, yalnız bir Promise'e
+ * sarılı — davranış farkı yoktur.
+ */
+export async function resolveIsOnline(): Promise<boolean> {
+  ensureSubscription();
+  if (isE2ETestMode()) {
+    await ensureInitialE2ELinkChecked();
+  }
+  return currentOnline;
 }
 
 /**
@@ -101,6 +181,10 @@ export function getIsOnline(): boolean {
  * Önbelleğe güvenmenin yeterli olmadığı karar anlarında kullanılır.
  */
 export async function refreshIsOnline(): Promise<boolean> {
+  // E2E'de gerçek NetInfo sorgusu sahte durumun ÜSTÜNE yazardı (simülatör/
+  // cihazın gerçek interneti hep açık) — tek doğruluk kaynağı deep-link'in
+  // yazdığı `currentOnline` kalır, NetInfo hiç sorulmaz.
+  if (isE2ETestMode()) return currentOnline;
   try {
     const state = await NetInfo.fetch();
     handleStateChange(state);

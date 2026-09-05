@@ -51,6 +51,7 @@ import {
   type ChoiceResult,
 } from '@/services/gauntletService';
 import { subscribeToReconnect } from '@/services/networkStatus';
+import { isE2ETestMode } from '@/utils/e2eTestMode';
 import { posthogAnalytics } from '@/services/posthog';
 import { resolveChampionPrompt, type ChampionPrompt } from '@/services/championPrompts';
 import { supabase } from '@/services/supabase';
@@ -110,6 +111,11 @@ function isUnlockedNow(): boolean {
   // CTO kararı 14.08.2026: geliştirmede kapı açık — 14:00'te ekran
   // görülebilmeli. Production build'de bu dal ölü koddur.
   if (__DEV__) return true;
+  // K-42 Maestro iOS override (DUR NOKTASI onaylı): yalnız `preview-e2e`
+  // build'inde (tek doğruluk kaynağı: utils/e2eTestMode.ts) saat kapısı
+  // atlanır — release-mode Maestro flow'ları 18:00 öncesi de koşabilsin.
+  // Diğer TÜM build'lerde (production dahil) bu dal ölü koddur.
+  if (isE2ETestMode()) return true;
   return new Date().getHours() >= UNLOCK_HOUR;
 }
 
