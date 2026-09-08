@@ -67,4 +67,6 @@ tests/founder-acceptance/output/
 # (mevcut 3 baseline zaten takipte — gitignore onlari cikarmaz)
 tests/founder-acceptance/baselines/
 
-.claude/
+.claude/*
+!.claude/commands/
+
