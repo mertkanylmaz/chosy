@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.9
-**Tarih:** 17 Ağustos 2026
+**Sürüm:** 1.10
+**Tarih:** 11 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -443,6 +443,30 @@ Risk notu: TMDB'nin ticari kullanım tanımı "gelir elde etme" değil "parayla 
 
 Yeniden değerlendirme tetikleyicisi: ilk gerçek satış (R-C'nin K-49 sandbox testi tamamlanıp canlı satış başladığında).
 
+### E-14 — Güvenlik ve veri bütünlüğü turu (8–11 Eyl 2026)
+
+Plansız, R-D dışı bir güvenlik sprint'i. Supabase MCP bağlantısı rutin bir verimlilik adımı olarak kuruldu; tarama kendiliğinden genişledi ve **üç bağımsız üretim sorunu** bulunup kapatıldı.
+
+**1. RLS — sahte "service role" politikaları.** `referrals`, `winback_queue` ve `lifetime_sales`'te adı "Service role can/manages …" olan ama `TO` clause'u taşımayan 3 politika vardı. `TO` yokken politika PUBLIC role'e uygulanır; `USING (true)` / `WITH CHECK (true)` ile birleşince tablolar fiilen **anon'a açıktı**. Üçü de `TO service_role` + `auth.role()` kontrolüne çevrildi (migration 111). Aynı hata sınıfı 099'da `watchlist` için bir kez yaşanmıştı.
+
+**2. SECURITY DEFINER — kimlik doğrulama eksikliği.** 22 fonksiyon `p_user_id` parametresini çağıranın gerçek kimliğine karşı hiç doğrulamıyordu; SECURITY DEFINER RLS'i bypass ettiği için anon istemci rastgele bir id vererek başka kullanıcıların verisini okuyup değiştirebiliyordu. `claim_lifetime_spot`'ta bu doğrudan finansal istismardı (1000 kişilik lifetime kontenjanı bedava talep edilebiliyordu). Migration **109** (guard) + **110** (PUBLIC revoke) ile kapatıldı; 44 test (negatif + pozitif) geçti.
+
+**3. FK kimlik uzayı çatallanması.** `public.users.id` ile `auth.users.id` **tamamen ayrık** iki UUID uzayı (ölçüm: 260 / 272, kesişim **0**); tek köprü `public.users.auth_id`. `lifetime_sales.user_id`, `referral_rewards.user_id`, `referrals.referrer_id`, `referrals.referee_id` ve `users.referred_by` **`auth.users(id)`'yi** hedefliyordu — oysa bu tablolara yazan fonksiyonların gövdeleri (`apply_invite_code`, `activate_referral`, `claim_lifetime_spot`) ve 109'un guard'ı **public uzayı** dayatıyordu. Sonuç: referral akışı **koşulsuz kırıktı** (260 kullanıcıya karşılık 0 referral satırı), lifetime'ın tier UPDATE'leri ise sessizce 0 satır ediyordu.
+
+Migration **111** beş FK'yi `public.users(id)`'ye çevirdi. `winback_queue.user_id` ve `user_collection_progress.user_id` bilinçli olarak `auth.users`'ta bırakıldı (gerekçeleri 027/101'de yazılı) — bunlar hata değildir.
+
+> **Kök neden tekrar ediyor:** migration **014** tam bu hata sınıfını `mood_searches`/`subscriptions` için bir kez teşhis edip düzeltmişti ("kota hep 0 → ödeme bypass"). Hatanın kendisi 014'ten *sonra* yazılan 025/026'da tekrarlandı. Yeni bir tabloya `user_id` yazan her kodda FK hedefi `pg_get_constraintdef` ile doğrulanmalıdır.
+
+Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `services/referralService.ts` (→ `getAppUserId()`), `process-referral`, `revenuecat-webhook`, `process-lifetime-purchase`.
+
+**Uygulama durumu.** Migration 109, 110, 111 uzakta uygulandı. Edge Function deploy (11 Eyl 2026, hepsi ACTIVE): `revenuecat-webhook` v25, `process-lifetime-purchase` v22, `process-referral` v22. Deploy edilmiş artefakt canlı smoke test edildi — `process-referral` → `apply_invite_code` HTTP 200 ve dönen `referrer_id` doğru id uzayında. Regresyon testi ayrıca şunu kanıtladı: FK değişikliği tek başına yetmiyordu, auth id ile çağrı hâlâ 42501 veriyordu; çağıran düzeltmesi zorunluydu.
+
+**Açık kalanlar** (hiçbiri launch-blocking değil, §9'da ve `TEKNIK_BORC.md`'de kayıtlı):
+- `claim_lifetime_spot`'un canlı satın alma simülasyonu yapılmadı — `nextval('lifetime_sale_number')` geri alınamaz (ilk gerçek kurucu üye "#2" olurdu). İlk gerçek satışta 3 kontrolle doğrulanacak.
+- `activate_referral` → `claim_lifetime_spot` iç çağrısı: fonksiyon `service_role` dışı bir bağlamda doğrudan çağrılırsa guard baypası çalışmaz (latent; tek çağıran service_role olduğu için şu an güvenli).
+- `record_posterle_hint` anon'a açık ve `p_attempt_id` sahipliğini doğrulamıyor — ayrı güvenlik iş kalemi.
+- `.env`'deki `SUPABASE_SERVICE_ROLE_KEY` bu projeye kayıtlı değil (HTTP 401); 16 yerel script etkileniyor. **Üretim etkilenmiyor** — Edge runtime kendi secret'ını enjekte ediyor.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -554,6 +578,10 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | Tam depo silinmesi (reinstall) kimlik kaybını ölçmüyor | Bilinçli olarak ertelendi — `expo-secure-store` yeni bağımlılık gerektirir ve gerçek kurtarma sağlamaz, sadece ölçüm. v1 sonrası yeniden değerlendirilecek. Kaynak: M0 Faz 3 raporu. |
 | `.claude/skills/chosy-conventions/SKILL.md:57` bayat migration numarası (068 yazıyor, gerçek 090) | CLAUDE.md düzeltildi, bu dosya kapsam dışı bırakıldı — küçük iş, C.9a başlangıcında düzeltilecek. |
 | Orphan auth bounce oranı (~%20, muhtemelen test trafiği) | G-3/G-9 gate'lerinde gerçek kullanıcı verisiyle yeniden ölçülecek, v1 kapsamı dışı. Kaynak: `docs/investigations/ORPHAN_AUTH_KOK_NEDEN.md` (5 Eyl 2026, Sentry MCP ile Hipotez A doğrulandı — kod hatası yok). |
+| `claim_lifetime_spot` canlı satın alma simülasyonu yapılmadı | İlk gerçek satışta 3 kontrolle doğrulanacak (`lifetime_sales` satırı · `users.subscription_tier` · `subscriptions.plan`). `nextval` geri alınamaz olduğu için bilinçli ertelendi. Kaynak: E-14. |
+| `activate_referral` → `claim_lifetime_spot` iç çağrısı, service_role dışı bağlamda guard baypasını kaybeder | Latent; tek çağıran service_role olduğu için şu an güvenli. Dashboard SQL editor yasağı (CLAUDE.md kural 3) bu riski kapatıyor. Kaynak: E-14. |
+| `record_posterle_hint` anon'a açık, `p_attempt_id` sahipliğini doğrulamıyor | Ayrı güvenlik iş kalemi. 109'un kapsamı dışında bırakıldı. Kaynak: E-14. |
+| `.env` → `SUPABASE_SERVICE_ROLE_KEY` projeye kayıtlı değil (HTTP 401), 16 yerel script etkileniyor | Üretim etkilenmiyor (Edge runtime kendi secret'ını enjekte ediyor). Çalışan anahtar: `SUPABASE_SECRET_KEY`. Kaynak: E-14. |
 
 ---
 
@@ -570,6 +598,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.6 | 19 Ağu 2026 | **C.9b-2.** Champion CTA'ları tamamlandı: "Sonraya bırak" (`submit-choice`'a `save_for_later` action'ı — yeni Edge Function YOK, şema/migration YOK, yüzey şampiyonla sınırlı) ve "Nerede izlenir" (`WatchProviders` bileşeni, `fetchMovieWatchProviders`). K-20 activation bridge'inin üç ayağı da bağlandı. **K-21 ERTELENDİ** — 6 eksen verisi hiçbir katmanda üretilmiyor; Post-C.9 radar chart sprint'ine taşındı. Bkz. §11 F-07. |
 | 1.7 | 27 Ağu 2026 | SOSA 2026 incelemesi. R-01 korundu (gerekçe E-10). E-09 paywall enstrümantasyonu R-C önkoşulu olarak eklendi. Paywall vendor kararı: RevenueCat Paywalls v2 ile devam, ikinci vendor (Superwall/Adapty) marketing gate sonrası değerlendirilecek. |
 | 1.8 | 31 Ağu 2026 | **E-11.** K-42'nin 8 senaryolu cihaz doğrulaması TestFlight build'ine ertelendi (yerel dev build/simülatör yok; Expo Go üzerinden uçak modu testi kod yolunu değerlendiremiyor). R-C açıldı; K-42 doğrulaması R-D önkoşulu olarak kaldı. Paywall ekranında geri gezinme eksikliği `TEKNIK_BORC.md`'ye alındı. |
+| 1.10 | 11 Eyl 2026 | **E-14.** Plansız güvenlik ve veri bütünlüğü turu (8–11 Eyl), üç bağımsız üretim sorunu kapatıldı: (1) `referrals`/`winback_queue`/`lifetime_sales`'te `TO` clause'suz, fiilen anon'a açık 3 "service role" politikası; (2) 22 SECURITY DEFINER fonksiyonunda `p_user_id` kimlik doğrulaması eksikliği (`claim_lifetime_spot` dahil finansal istismar) — migration 109+110, 44 test geçti; (3) FK kimlik uzayı çatallanması — 5 FK `auth.users(id)`'den `public.users(id)`'ye çevrildi (migration 111), referral akışı koşulsuz kırıktı. 4 çağıran düzeltildi, 3 Edge Function deploy edildi (webhook v25, lifetime v22, referral v22) ve canlı smoke test edildi. Kök neden migration 014'te bir kez düzeltilmiş, 025/026'da tekrarlanmıştı. 4 açık madde §9'a alındı. |
 | 1.9 | 31 Ağu 2026 | **E-12.** RC Paywalls v2 fizibilitesi tamamlandı: hibrit mimari korunuyor, tam geçiş yapılmadı, `react-native-purchases-ui` kurulmadı. R-C ilerlemesi: K-46 (arşiv tetikleyicisi + `get-archive-status` deploy edildi), E-09 (paywall/purchase event dalları tamamlandı) ve G-6 çekirdek event listesi (`docs/analytics/G6_CEKIRDEK_EVENTLER.md`) kapandı. Kalan: K-49 sandbox durum matrisi. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
