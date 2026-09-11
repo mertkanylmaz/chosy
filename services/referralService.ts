@@ -9,6 +9,7 @@
 
 import { Share, Platform } from 'react-native';
 
+import { getAppUserId } from './auth-utils';
 import { supabase } from './supabase';
 import { logger } from '@/utils/logger';
 
@@ -125,13 +126,19 @@ export async function applyInviteCode(
   inviteCode: string,
 ): Promise<ApplyInviteResult> {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    // `p_referee_id` **public.users.id** olmalı — auth.users.id DEĞİL.
+    // İki kimlik uzayı ayrık (kesişim 0, bkz. migration 111). RPC'nin 109'daki
+    // guard'ı `auth_user_id()` ile karşılaştırıyor ve `referrals.referee_id`
+    // FK'si 111'den sonra `public.users(id)`'yi hedefliyor — ikisi de public
+    // uzayı dayatıyor. Burada `session.user.id` geçmek 42501 FORBIDDEN üretir.
+    const refereeId = await getAppUserId();
+    if (!refereeId) {
+      logger.error('[referral] Apply invite code: app user id çözülemedi');
       return { success: false, error: 'INVALID_CODE' };
     }
 
     const { data, error } = await supabase.rpc('apply_invite_code', {
-      p_referee_id: session.user.id,
+      p_referee_id: refereeId,
       p_invite_code: inviteCode.toUpperCase(),
     });
 

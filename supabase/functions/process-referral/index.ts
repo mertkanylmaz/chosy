@@ -59,8 +59,36 @@ serve(async (req: Request) => {
         )
       }
 
+      // ── Kimlik çözümleme (D1) ───────────────────────────────────────────
+      // `user.id` **auth.users.id**'dir. `apply_invite_code` gövdesi
+      // `referrals`e public.users.id yazıyor ve migration 111 sonrası
+      // `referrals.referee_id` FK'si `public.users(id)`'yi hedefliyor — auth id
+      // geçmek 23503 üretir. İki uzay ayrık, tek köprü `public.users.auth_id`.
+      const { data: appUserRow, error: appUserError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+
+      if (appUserError) {
+        console.error('[process-referral] app user lookup error:', appUserError.message)
+        return new Response(
+          JSON.stringify({ error: 'APP_USER_LOOKUP_FAILED', details: appUserError.message }),
+          { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        )
+      }
+
+      const refereeId = appUserRow?.id as string | undefined
+      if (!refereeId) {
+        console.error(`[process-referral] public.users satırı yok — auth_id=${user.id}`)
+        return new Response(
+          JSON.stringify({ error: 'APP_USER_NOT_FOUND' }),
+          { status: 404, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        )
+      }
+
       const { data, error } = await supabase.rpc('apply_invite_code', {
-        p_referee_id: user.id,
+        p_referee_id: refereeId,
         p_invite_code: body.invite_code.toUpperCase(),
       })
 

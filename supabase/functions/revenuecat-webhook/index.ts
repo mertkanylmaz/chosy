@@ -425,9 +425,17 @@ serve(async (req: Request) => {
       // ━━ Non-Renewing Purchase (Lifetime) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
       case 'NON_RENEWING_PURCHASE': {
         if (tier === 'lifetime') {
+          // D1: bu dal da Uzay A'ya yazar — kimlik çözümlenmeden devam edilmez.
+          // `claim_lifetime_spot` gövdesi baştan beri public uzayı bekliyordu
+          // (`UPDATE users WHERE id = p_user_id`, `UPDATE subscriptions WHERE
+          // user_id = p_user_id`); auth id geçildiği için o iki UPDATE sessizce
+          // 0 satır ediyordu. Migration 111 `lifetime_sales.user_id` FK'sini de
+          // `public.users(id)`'ye çevirdi — artık auth id geçmek 23503 üretir.
+          if (!appUserId) return await appUserMissing()
+
           // Claim lifetime spot via atomic RPC
           const { data, error } = await supabase.rpc('claim_lifetime_spot', {
-            p_user_id: authUserId,
+            p_user_id: appUserId,
             p_price: event.price_in_purchased_currency || 89.99,
             p_rc_transaction_id: event.transaction_id || null,
           })

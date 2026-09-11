@@ -105,8 +105,54 @@ serve(async (req: Request) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // ── 3a. Kimlik çözümleme (D1) ────────────────────────────────────────────
+    // `event.app_user_id` **auth.users.id**'dir (app/auth.tsx:93 RevenueCat'e
+    // `supabase.auth.getUser()` sonucunu veriyor). `claim_lifetime_spot` ise
+    // gövdesinde `UPDATE users WHERE id = p_user_id` yaptığı için baştan beri
+    // **public.users.id** bekliyordu; migration 111 `lifetime_sales.user_id`
+    // FK'sini de `public.users(id)`'ye çevirdi. İki uzay ayrık (kesişim 0),
+    // tek köprü `public.users.auth_id`. Desen `revenuecat-webhook:176-209`.
+    const { data: appUserRow, error: appUserError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('auth_id', event.app_user_id)
+      .maybeSingle()
+
+    if (appUserError) {
+      console.error('[process-lifetime] app user lookup error:', appUserError.message)
+      await sentryCapture({
+        message: `process-lifetime-purchase: public.users araması düştü — ${appUserError.message}`,
+        level: 'error',
+        tags: { error_code: 'APP_USER_LOOKUP_FAILED', function: 'process-lifetime-purchase' },
+        extra: { auth_user_id: event.app_user_id, transaction_id: event.transaction_id ?? null },
+      })
+      return new Response(
+        JSON.stringify({ error: 'APP_USER_LOOKUP_FAILED', retryable: true }),
+        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    const appUserId = appUserRow?.id as string | undefined
+
+    // Satır yoksa yarış koşulu olabilir (istemcinin ensureAppUser() upsert'i
+    // henüz ulaşmadı) — 500 döndürüp RevenueCat'in retry etmesini sağlıyoruz.
+    // Kalıcı orphan da aynı kanaldan Sentry'de görünür, sessiz kayıp yok.
+    if (!appUserId) {
+      console.error(`[process-lifetime] public.users satırı yok — auth_id=${event.app_user_id}`)
+      await sentryCapture({
+        message: 'process-lifetime-purchase: auth_id için public.users satırı bulunamadı — ödeme işlenemedi',
+        level: 'error',
+        tags: { error_code: 'APP_USER_NOT_FOUND', function: 'process-lifetime-purchase' },
+        extra: { auth_user_id: event.app_user_id, transaction_id: event.transaction_id ?? null },
+      })
+      return new Response(
+        JSON.stringify({ error: 'APP_USER_NOT_FOUND', retryable: true }),
+        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
     const { data, error } = await supabase.rpc('claim_lifetime_spot', {
-      p_user_id: event.app_user_id,
+      p_user_id: appUserId,
       p_price: event.price || 89.99,
       p_rc_transaction_id: event.transaction_id || null,
     })
