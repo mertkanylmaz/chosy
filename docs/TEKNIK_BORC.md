@@ -2242,3 +2242,48 @@ bırakıldı.
 **Ne zaman:** R-D (App Store submission) açılmadan önce çözülecek.
 
 İlgili: `docs/os/7_CHOSY_V1_KAPSAM_KILIDI.md` E-11.
+
+---
+
+## `activate_referral` → `claim_lifetime_spot` iç çağrısı postgres bağlamında kırılır
+
+`activate_referral` 5. davette `claim_lifetime_spot(v_referral.referrer_id, 0,
+'referral_reward')` çağırıyor — çağıranın değil, **davet edenin** id'siyle.
+`claim_lifetime_spot`'un guard'ını aşan tek şey `auth.role() = 'service_role'`
+baypası; iç blokta EXCEPTION handler yok. Fonksiyon postgres bağlamında
+doğrudan çağrılırsa (psql, Dashboard SQL editor, doğrudan SQL cron)
+`auth.role()` NULL döner, baypas çalışmaz, 42501 propagate eder ve tüm
+`activate_referral` abort olur — 5. davet ödülü hard fail olur.
+**`service_role` dışı çağrı yolu asla açılmamalı.**
+
+**Nerede bulundu:** 109/110 doğrulama turu, 11 Eyl 2026.
+
+**Neden şimdi düzeltilmedi:** şu an güvenli — tek çağıran
+`supabase/functions/process-referral/index.ts` ve o service_role bağlamında
+çalışıyor. Risk yalnızca CLAUDE.md'nin "Dashboard SQL editor yasak" kuralı
+ihlal edilirse doğuyor. Kod değişikliği yapılmadı.
+
+İlgili: `supabase/migrations/109_security_definer_user_id_guard.sql`,
+`supabase/migrations/026_referrals.sql`.
+
+---
+
+## `claim_lifetime_spot` service_role pozitif yolu ampirik doğrulanmadı
+
+109/110 doğrulama turunda guard'ın **blokaj** tarafı `claim_lifetime_spot` için
+doğrudan doğrulandı (anon → FORBIDDEN, authenticated + başka id → 403
+FORBIDDEN). **Baypas** tarafı (`auth.role() = 'service_role'` ile geçiş) ise
+yalnızca dolaylı kanıtlandı: predicate'i `apply_invite_code` ile satır satır
+özdeş ve o gerçek service_role anahtarıyla ampirik doğrulandı.
+
+**Neden şimdi doğrulanmadı:** `lifetime_sales` tablosu boş, dolayısıyla
+`ALREADY_LIFETIME` erken dönüşünü tetikleyecek sıfır maliyetli yol yok. Tek
+alternatif `nextval('lifetime_sale_number')` yakmak — satır silinse bile
+`sale_number` 1 kalıcı boşa düşer ve ilk gerçek kurucu üye "#2" olur.
+Doğrulanmayan tek şeyin (aynı predicate'in ikinci kopyası) kanıt değerine
+göre orantısız maliyet.
+
+**Ne zaman:** `lifetime_sales`'in ilk gerçek satırı geldiğinde (veya launch
+sonrası ilk claim'de) fırsatçı doğrulama yapılabilir. Düşük risk.
+
+İlgili: `supabase/migrations/109_security_definer_user_id_guard.sql`.
