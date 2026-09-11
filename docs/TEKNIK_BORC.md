@@ -2286,4 +2286,29 @@ göre orantısız maliyet.
 **Ne zaman:** `lifetime_sales`'in ilk gerçek satırı geldiğinde (veya launch
 sonrası ilk claim'de) fırsatçı doğrulama yapılabilir. Düşük risk.
 
-İlgili: `supabase/migrations/109_security_definer_user_id_guard.sql`.
+**Güncelleme — 11 Eyl 2026, migration 111 turu.** Kapsam daraldı ama kalem
+kapanmadı:
+
+- **Düzeltilen:** `lifetime_sales.user_id` FK'si `auth.users(id)` →
+  `public.users(id)`'ye çevrildi (111). `claim_lifetime_spot` gövdesi zaten
+  public uzayı bekliyordu (`UPDATE users WHERE id = p_user_id`,
+  `UPDATE subscriptions WHERE user_id = p_user_id`) — auth id geçildiği için
+  o iki UPDATE **sessizce 0 satır** ediyordu. Çağıranlar da düzeltildi:
+  `revenuecat-webhook` ve `process-lifetime-purchase` artık `public.users.id`
+  gönderiyor (ikisi de deploy edildi).
+- **Doğrulanan:** FK hedefi `pg_constraint` ile ölçüldü; `tsc` baseline'ları
+  korundu; owner-read ve service-role RLS politikaları gerçek oturum + anon
+  ile test edildi. Aynı guard predicate'ini paylaşan `apply_invite_code`
+  **uçtan uca** doğrulandı (auth id → 42501, public id → success) ve
+  `activate_referral`'ın service_role yolu gerçek anahtarla çalıştırıldı.
+- **Hâlâ doğrulanmayan:** `claim_lifetime_spot`'un kendi pozitif yazma yolu
+  canlıda çalıştırılmadı. Gerekçe değişmedi — `nextval('lifetime_sale_number')`
+  geri alınamaz, satır silinse bile ilk gerçek kurucu üye "#2" olur.
+- **İzleme:** launch sonrası **ilk gerçek satın almada** şu üçü kontrol edilir:
+  `lifetime_sales` satırı yazıldı mı, `users.subscription_tier = 'lifetime'`
+  oldu mu, `subscriptions.plan = 'lifetime'` oldu mu. Üçü birden geçerse bu
+  kalem kapanır; `sale_number`'ın 1'den başlaması ayrıca teyit edilir.
+
+İlgili: `supabase/migrations/109_security_definer_user_id_guard.sql`,
+`supabase/migrations/111_fk_identity_space_fix.sql`,
+`docs/investigations/LIFETIME_REFERRAL_FK_KESIF.md`.
