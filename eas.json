@@ -55,7 +55,8 @@
       "extends": "preview-store",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "e2e-test"
-      }
+      },
+      "autoIncrement": false
     },
     "production": {
       "autoIncrement": true,
@@ -75,6 +76,13 @@
       }
     },
     "preview-store": {
+      "ios": {
+        "appleId": "mertkanylmaz@gmail.com",
+        "ascAppId": "6761782987",
+        "appleTeamId": "4CG256GKHM"
+      }
+    },
+    "preview-e2e": {
       "ios": {
         "appleId": "mertkanylmaz@gmail.com",
         "ascAppId": "6761782987",

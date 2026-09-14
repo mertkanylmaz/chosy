@@ -14,8 +14,13 @@
 # tek doğruluk kaynağı `utils/e2eTestMode.ts`.
 #
 # Build profili: eas.json → "preview-e2e" (preview-store'dan extends,
-# EXPO_PUBLIC_APP_ENV=e2e-test env'i ekler). Bu profil submit bloğuna
-# EKLENMEDİ — App Store'a asla gitmez.
+# EXPO_PUBLIC_APP_ENV=e2e-test env'i ekler). Bu profilin artık bir submit
+# bloğu VAR (TestFlight internal-only, bkz. docs/testing/MAESTRO.md) —
+# güvenlik sınırı submit bloğunun yokluğu değil, e2e-test env'inin yalnız
+# bu profile hapsedilmiş olmasıdır.
+#
+# k42-07 (4xx kalıcı ret) aşağıdaki listede BİLEREK yok: Maestro Cloud
+# ücretli, o senaryo manuel referans olarak duruyor.
 name: k42-offline-e2e
 
 jobs:

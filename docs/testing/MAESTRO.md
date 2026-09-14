@@ -5,7 +5,8 @@ kurulan altyapının **nasıl çalıştırılacağını** anlatır.
 
 ## Kapsam
 
-8 senaryodan **4'ü** otomatize edildi (`.maestro/`):
+8 senaryodan **4'ü** otomatize koşuluyor, 1'i (Senaryo 7) referans
+flow olarak yazıldı ama koşulmuyor (`.maestro/`):
 
 | Dosya | Senaryo |
 |---|---|
@@ -13,16 +14,22 @@ kurulan altyapının **nasıl çalıştırılacağını** anlatır.
 | `k42-02-cache-today-offline.yaml` | Online açılış → offline → `cache_today`'den oynanabilirlik |
 | `k42-04-offline-selection.yaml` | Offline seçim yapma → kuyruğa yazılma (dondurma) |
 | `k42-05-sync-on-reconnect.yaml` | Bağlantı geri gelince kuyruk senkronizasyonu (CANLI reconnect listener) |
+| `k42-07-permanent-error.yaml` | 4xx kalıcı ret → kuyruk kaydı atılır (**koşulmuyor**, aşağıya bak) |
+
+`k42-07` `.eas/workflows/e2e-test.yml`'ın `flow_path` listesinde **bilerek
+yoktur**: Maestro Cloud ücretli ve bu senaryo CI bütçesine alınmadı. Dosya
+aşağıdaki **manuel test adımlarının** makine-okunur referansıdır — yerelde
+`maestro test .maestro/k42-07-permanent-error.yaml` ile elle koşulabilir.
 
 **Kapsam dışı (manuel kalacak):** Senaryo 3 (`cache_stale`), 6 (12 saatlik
-yaş sınırı), 7 (4xx kalıcı ret), 8 (`inFlight` guard). Sistem saati
-manipülasyonu veya sunucu hatası enjeksiyonu gerektiriyor.
+yaş sınırı), 8 (`inFlight` guard). Sistem saati manipülasyonu gerektiriyor
+— adımlar için aşağıdaki "Manuel test adımları" bölümüne bak.
 
 ## Test-only override mekanizması (DUR NOKTASI onaylı)
 
 `setAirplaneMode` iOS'ta hiçbir zaman gerçek network etkisi yaratmıyor
 (Maestro'nun resmi kısıtı — simülatörde yok, gerçek cihazda etkisiz). Bunun
-yerine 3 parçalı bir test-only override kuruldu:
+yerine aşağıdaki parçalardan oluşan bir test-only override kuruldu:
 
 ### 1. Tek doğruluk kaynağı: `utils/e2eTestMode.ts`
 
@@ -47,9 +54,14 @@ for (const name of ['production','preview','preview-store']) {
   console.log(name, '->', JSON.stringify(eas.build[name]).includes('e2e-test'));
 }
 "
-# Üçü de false dönmeli. eas.json submit bloğunda 'preview-e2e' YOKTUR —
-# bu profil App Store'a asla gönderilemez.
+# Üçü de false dönmeli.
 ```
+
+`eas.json` → `submit.preview-e2e` **artık vardır** (aşağıdaki TestFlight
+internal akışı). Güvenlik sınırı submit bloğunun yokluğuna DEĞİL, yalnızca
+`EXPO_PUBLIC_APP_ENV=e2e-test`'in tek profile hapsedilmiş olmasına dayanır:
+`isE2ETestMode()` tek doğruluk kaynağıdır ve her override onun altında
+guard'lıdır. Yukarıdaki üç `false` bu sınırın kanıtıdır.
 
 ### 2. Deep-link tabanlı sahte ağ durumu: `services/networkStatus.ts`
 
@@ -98,6 +110,38 @@ Yalnız `preview-e2e`'de saat kapısı atlanır — Maestro flow'ları günün h
 saatinde koşabilir. Diğer tüm build'lerde (production dahil) bu dal ölü
 koddur.
 
+### 5. Sahte kalıcı sunucu hatası: `force-4xx` (Senaryo 7)
+
+Sahte-offline bir **transport** hatası taklit eder (`status: null` →
+`GauntletFetchError` → kayıt kuyrukta KALIR). Senaryo 7 bunun tersini
+ister: sunucuya ULAŞILDI ve **kalıcı** bir hata döndü → kayıt ATILIR.
+İkinci mod bunun içindir.
+
+- `chosy://e2e/force-4xx` → sonraki Edge Function istekleri **400** döner
+- `chosy://e2e/clear-error` → kapatır, gerçek `fetch`'e dönülür
+
+**Neden 400** (tahmin değil, koddan okundu): `gauntletOfflineQueue.ts:224`
+yalnız `GauntletHttpError && status >= 500`'ü geçici sayar; bunun dışındaki
+her `GauntletHttpError` kalıcıdır → `{ status: 'dropped', reason:
+'rejected' }`. `401` KULLANILAMAZ — `gauntletService.ts:369` onu
+`GauntletAuthPendingError`'a saptırır (bootstrap penceresi, kayıt korunur).
+`400` kuyruk kodunun kendi yorumunda kalıcı örnek olarak sayılıyor
+("400 geçersiz gövde").
+
+**Neden yalnız `/functions/v1/`** (sahte-offline'dan farklı olarak TÜM
+istekler değil): auth token yenilemesine 400 dönmek supabase-js'in yerel
+oturumu düşürmesine yol açabilirdi; test o zaman ölçmek istediğinden
+(submit-choice'ın kalıcı reddi) başka bir yolu ölçerdi. Auth trafiği
+gerçek `fetch`'e gider.
+
+`gauntletService.ts`'e DOKUNULMADI — hata sınıflandırma mantığı aynı,
+yalnız girdisi değişiyor. Yanıt gerçek bir `Response` nesnesidir, yani
+supabase-js onu normal yoldan `FunctionsHttpError` (`context` dolu) olarak
+üretir; `parseInvokeError` gerçek bir sunucu 400'ünden ayırt edemez.
+
+`isE2ETestMode()` false olan her build'de bu dal hiç değerlendirilmez —
+deep-link aboneliği bile kurulmaz (`networkStatus.ts` → `ensureSubscription`).
+
 ## ⚠️ Bilinen kırılganlık — soğuk başlangıç penceresi
 
 `k42-01/02/04/05` flow'larının hepsi şu sırayı izliyor: `launchApp
@@ -139,8 +183,78 @@ npm run e2e:workflow
 ```
 
 Bu workflow `eas.json`'daki `preview-e2e` profiliyle (preview-store'dan
-extends, `EXPO_PUBLIC_APP_ENV=e2e-test`) bir iOS build alır, sonra 4
-flow'u sırayla koşar.
+extends, `EXPO_PUBLIC_APP_ENV=e2e-test`) bir iOS build alır, sonra
+`flow_path` listesindeki 4 flow'u sırayla koşar. `k42-07` bu listede
+değildir (Maestro Cloud ücretli).
+
+## TestFlight internal dağıtım (`submit.preview-e2e`)
+
+`preview-e2e` build'i artık TestFlight'a gönderilebilir:
+
+```powershell
+eas build --profile preview-e2e --platform ios
+eas submit --profile preview-e2e --platform ios
+```
+
+**Internal-only.** Build App Store Connect'teki ekip üyelerine düşer;
+Apple Beta App Review'dan muaftır ve external test grubuna **eklenmez**.
+Bu build App Store'a **release olarak asla gönderilmez** — güvenlik sınırı
+submit bloğunun yokluğu değil, `EXPO_PUBLIC_APP_ENV=e2e-test`'in yalnız bu
+profilde set edilmiş olmasıdır (yukarıdaki kanıt komutu).
+
+### ⚠️ Build numarası bandı: 900+
+
+`preview-e2e` profilinde `"autoIncrement": false`'tur ve build numarası
+**CTO tarafından elle, 900+ bandından** set edilir.
+
+- **Amaç:** App Store Connect'te e2e build'leri release build'lerden tek
+  bakışta ayırmak.
+- **Neden `app.json` değil:** `cli.appVersionSource` = `remote`, yani build
+  numarası uzak sunucudan yönetilir; `app.json`'daki `ios.buildNumber`
+  dikkate alınmaz. Bant ayrımı bu yüzden build anında elle verilir.
+- Release profilleri (`production`) kendi `autoIncrement: true` bandında
+  kalır; 900+ bandına hiç girmez.
+
+```powershell
+# e2e build'i alırken numara elle sorulur (autoIncrement kapalı) — 900+ ver:
+eas build --profile preview-e2e --platform ios
+```
+
+## Manuel test adımları
+
+Otomatize edilmeyen senaryolar. Hepsi `preview-e2e` build'i gerektirir.
+
+### Senaryo 7 — 4xx kalıcı ret (`k42-07-permanent-error.yaml` referansı)
+
+1. Uygulamayı temiz aç, gauntlet ekranını gör (cache dolsun).
+2. Uygulamayı kapat, `chosy://e2e/set-offline` ile soğuk aç.
+3. Bir postere dokun → "Your pick is waiting..." görünmeli (kuyrukta).
+4. `chosy://e2e/force-4xx` aç (uygulama ÇALIŞIRKEN — canlı link).
+5. `chosy://e2e/set-online` aç → reconnect flush tetiklenir.
+6. **Beklenen:** submitChoice 400 alır → `GauntletHttpError(400)` →
+   kuyruk kaydı ATILIR, "Your pick is waiting..." kaybolur ve tur
+   İLERLEMEZ (seçim sunucuya yazılmadı). Sentry'de
+   `GAUNTLET_QUEUE_REJECTED` görünmeli.
+7. `chosy://e2e/clear-error` ile modu kapat.
+
+### Senaryo 3 — `cache_stale` (cihaz saati)
+
+1. Online aç, gauntlet'i gör (cache_today yazılır).
+2. Uygulamayı kapat. Ayarlar → Genel → Tarih ve Saat → otomatiği kapat,
+   tarihi **1 gün ileri** al.
+3. `chosy://e2e/set-offline` ile soğuk aç.
+4. **Beklenen:** dünün kopyası `cache_stale` kaynağıyla gösterilir
+   (beyaz ekran veya hata YOK).
+5. Saati otomatiğe geri al.
+
+### Senaryo 6 — 12 saatlik kuyruk yaş sınırı (cihaz saati)
+
+1. Senaryo 4'ü uygula (offline seçim → kuyrukta bekliyor).
+2. Uygulamayı kapat, cihaz saatini **13 saat ileri** al.
+3. `chosy://e2e/set-online` ile aç → flush tetiklenir.
+4. **Beklenen:** `MAX_AGE_MS` (12 saat) aşıldığı için kayıt gönderilmeden
+   atılır (`dropped/expired`), Sentry'de `GAUNTLET_QUEUE_EXPIRED`.
+5. Saati otomatiğe geri al.
 
 ## Neden testID yok, ekran yüzdesi kullanılıyor
 
