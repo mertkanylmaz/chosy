@@ -41,6 +41,18 @@ type ReconnectListener = () => void;
  */
 let currentOnline = true;
 
+/**
+ * Sahte KALICI SUNUCU HATASI bayrağı (K-42 Senaryo 7, CTO onaylı).
+ * `currentOnline`'dan AYRI bir eksendir: offline "sunucuya ulaşılamadı"
+ * (transport hatası, kuyrukta kayıt KALIR), bu ise "sunucuya ulaşıldı ve
+ * kalıcı hata döndü" (kayıt ATILIR) demektir. İkisi birbirini kapatmaz.
+ *
+ * Bu modül yalnız BAYRAĞI tutar — gerçek 4xx yanıtını üreten yer
+ * `services/supabase.ts`'teki fetch override'ıdır (`set-offline`'ın
+ * `currentOnline`/fetch override iş bölümüyle birebir aynı desen).
+ */
+let forcedHttpError = false;
+
 /** NetInfo aboneliği bir kez kurulur — her çağıran kendi dinleyicisini ekler. */
 let unsubscribeNetInfo: (() => void) | null = null;
 
@@ -98,15 +110,27 @@ function handleStateChange(state: NetInfoState): void {
  * scheme dinlenir. Maestro `openLink` komutuyla `chosy://e2e/set-offline`
  * veya `chosy://e2e/set-online` açar, bu handler `applyOnlineState`'i çağırır.
  *
- * Yalnızca `currentOnline`'ı değiştirir — asıl "isteği gerçekten düşürme"
- * işi `services/supabase.ts`'teki fetch override'ındadır, o da bu modüldeki
- * `getIsOnline()`'ı okur. Tek doğruluk kaynağı burasıdır.
+ * Yalnızca `currentOnline`'ı (ve `forcedHttpError`'ı) değiştirir — asıl
+ * "isteği gerçekten düşürme" işi `services/supabase.ts`'teki fetch
+ * override'ındadır, o da bu modüldeki `getIsOnline()` /
+ * `resolveForcedHttpError()`'ı okur. Tek doğruluk kaynağı burasıdır.
+ *
+ * `force-4xx` / `clear-error` (K-42 Senaryo 7) sahte-offline'dan BAĞIMSIZ
+ * bir eksendir; `set-online` bayrağı temizlemez, `clear-error` de bağlantı
+ * durumuna dokunmaz — senaryo ikisini arka arkaya kullanır (offline'da
+ * seçim kuyruğa alınır, sonra online + force-4xx ile flush kalıcı ret alır).
  */
 function handleE2EDeepLink(event: { url: string }): void {
   if (event.url.includes('e2e/set-offline')) {
     applyOnlineState(false);
   } else if (event.url.includes('e2e/set-online')) {
     applyOnlineState(true);
+  } else if (event.url.includes('e2e/force-4xx')) {
+    forcedHttpError = true;
+    logger.log('[networkStatus] E2E sahte kalıcı sunucu hatası AÇIK');
+  } else if (event.url.includes('e2e/clear-error')) {
+    forcedHttpError = false;
+    logger.log('[networkStatus] E2E sahte kalıcı sunucu hatası KAPALI');
   }
 }
 
@@ -162,6 +186,26 @@ export async function resolveIsOnline(): Promise<boolean> {
     await ensureInitialE2ELinkChecked();
   }
   return currentOnline;
+}
+
+/**
+ * Sahte kalıcı sunucu hatası açık mı (K-42 Senaryo 7)? YALNIZ
+ * `services/supabase.ts`'teki fetch override'ı çağırır.
+ *
+ * `isE2ETestMode()` false olan HER build'de (production/preview/
+ * preview-store/development) YAN ETKİSİZ biçimde `false` döner — abonelik
+ * bile kurmaz. Bayrağı yalnız `chosy://e2e/force-4xx` deep link'i açabilir
+ * ve o handler da yalnız E2E aboneliğinde bağlanır.
+ *
+ * `resolveIsOnline` ile aynı sebepten async: uygulama BİZZAT
+ * `chosy://e2e/force-4xx` ile açılmış olabilir ve bu yalnız
+ * `Linking.getInitialURL()` ile — asenkron — okunur.
+ */
+export async function resolveForcedHttpError(): Promise<boolean> {
+  if (!isE2ETestMode()) return false;
+  ensureSubscription();
+  await ensureInitialE2ELinkChecked();
+  return forcedHttpError;
 }
 
 /**
