@@ -1,0 +1,51 @@
+# K-42 Senaryo 7 — 4xx kalıcı ret, kuyruk kaydı atılır
+#
+# ⚠️ BU FLOW CI'DA KOŞULMUYOR. `.eas/workflows/e2e-test.yml`'ın
+# `flow_path` listesinde BİLEREK yok — Maestro Cloud ücretli ve bu
+# senaryo CI bütçesine alınmadı. Dosya, docs/testing/MAESTRO.md'deki
+# MANUEL test adımlarının makine-okunur referansıdır ve yerelde elle
+# koşulabilir:
+#   maestro test .maestro/k42-07-permanent-error.yaml
+#
+# Beklenen: offline'da yapılan seçim kuyruğa yazılır (Senaryo 4). Sonra
+# `chosy://e2e/force-4xx` açılır ve bağlantı geri verilir → reconnect
+# flush'ı `submitChoice()`'ı çağırır → Edge Function isteği sahte bir
+# 400 alır → `parseInvokeError` status 400 döndürür →
+# `GauntletHttpError(400)` → `gauntletOfflineQueue.ts:224`'teki
+# `status >= 500` GEÇİCİ dalına DÜŞMEZ → kayıt ATILIR
+# (`dropped/rejected`), Sentry'ye `GAUNTLET_QUEUE_REJECTED` düşer.
+#
+# Doğrulanan regresyon: `tasteSignalService`'in 30 Tem 2026 kuyruk
+# zehirlenmesi — tek geçersiz satır kuyruğu KALICI kilitlemişti. Burada
+# 4xx'in sonsuz retry'a GİRMEDİĞİ sınanıyor.
+#
+# ⚠️ UI beklentisi: "Your pick is waiting..." KAYBOLUR (kayıt atıldı, UI
+# çözülür) ama tur İLERLEMEZ — seçim sunucuya hiç yazılmadı. Bu yüzden
+# aşağıda ilerleme DEĞİL, yalnız donukluğun çözülmesi assert edilir;
+# ekranda hâlâ gauntlet sorusu durur.
+#
+# ⚠️ force-4xx `set-online`'dan ÖNCE açılır: ters sırada reconnect flush'ı
+# mod açılmadan tetiklenip seçim gerçekten sunucuya yazılabilirdi.
+#
+# ⚠️ `clear-error` sonda ZORUNLU: bayrak process ömrü boyunca yaşar ve
+# aynı cihazda koşan sonraki flow'ları kırar.
+#
+# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
+appId: com.chosy.ai
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Which one tonight?"
+- stopApp
+- openLink: "chosy://e2e/set-offline"
+- assertVisible: "Which one tonight?"
+- tapOn:
+    point: "25%, 55%"
+- assertVisible: "Your pick is waiting. It'll be sent when you're back online."
+- openLink: "chosy://e2e/force-4xx"
+- openLink: "chosy://e2e/set-online"
+- extendedWaitUntil:
+    notVisible: "Your pick is waiting. It'll be sent when you're back online."
+    timeout: 15000
+- assertVisible: "Which one tonight?"
+- openLink: "chosy://e2e/clear-error"
