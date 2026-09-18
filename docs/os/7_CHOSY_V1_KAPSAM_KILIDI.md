@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.11
+**Sürüm:** 1.12
 **Tarih:** 18 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -473,7 +473,19 @@ Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `ser
 
 **1. İlk 100 gün editoryal.** Gauntlet'in 4 filmi **ve eşleşmeleri** (hangi film hangi turda kiminle karşılaşır) CTO tarafından elle kurgulanır: **400 benzersiz film, 300 head-to-head eşleşme kararı.** Kaynak algoritmik havuz (bugün 1.867 aktif film) değil, editoryal takvimdir.
 
-**2. Gün-teması.** Haftanın her günü sabit bir tür/mod taşır (örn. Pazar = ödüllü, Pazartesi = arthouse, Cuma = gişe). Tam liste ayrıca kararlaştırılacak.
+**2. Gün-teması tablosu** *(tamamlandı 18 Eyl 2026)*. Haftanın her günü sabit bir tür/mod taşır:
+
+| Gün | Tema | Tanım |
+|---|---|---|
+| **Pazartesi** | Arthouse / Bağımsız (Mubi tarzı) | Haftaya sakin, derinlikli, ödüllü bağımsız yapımlarla başlangıç |
+| **Salı** | Kültler | Sinema tarihinin mihenk taşları, garantili sinema zevki |
+| **Çarşamba** | Animasyon / Cozy | İzlemesi keyifli, yormayan filmler |
+| **Perşembe** | Modern Keşifler & Gizli Cevherler | Gişe yapmamış ama eleştirmen/izleyici puanı yüksek son dönem bağımsızlar; yabancı dilde (Fransız, Kore, İskandinav vb.) çarpıcı işler |
+| **Cuma** | Popcorn & Gişe / Blockbuster | Hafta sonu eşiğinde kafa yormayan, yüksek prodüksiyonlu, aksiyon/macera odaklı popüler filmler |
+| **Cumartesi** | Epik Anlatılar & Uzun Metrajlar | 2,5–3+ saatlik başyapıtlar, sinematik evrenler, biyografiler, geniş ölçekli dünyalar. ⚠️ Bu gün için bağlam-tabanlı runtime tavanı devre dışı bırakılır veya gevşetilir — **ayrı teknik karar**, aşağıdaki açık maddeye bakınız |
+| **Pazar** | Prestij & Akademi / Festival Seçkisi | Oscar/Cannes/Venedik tescilli, güçlü oyunculuk/yönetmenlik |
+
+**2b. Takvim başlangıç kuralı.** Gün 1, **gerçek yayın tarihinin hafta gününe** bağlanır: yayın Salı günüyse 1. gün Salı temasıyla başlar. Sabit "Gün 1 = Pazartesi" yapısı **DEĞİLDİR** — takvim hafta gününe göre hizalanır, sıra numarasına göre değil.
 
 **3. Gün-teması KALICI yapısal kuraldır.** 100 gün bitip algoritmik faza geçildiğinde de yürürlükte kalır; orada `generate-gauntlet`'in sert filtre katmanına (`1_PRODUCT_OS` §6.4) **gün bazlı tür/tier ağırlığı** olarak bağlanır (örn. Pazar çekimi ödüllü-tier havuzuna öncelik verir). Yani editoryal dönem geçici, gün-teması kalıcıdır.
 
@@ -487,7 +499,8 @@ Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `ser
 
 - **Ret merdiveni ile kesişim (K-23, 🔒).** K-23 "Ret 1 → sessiz yeni çift" diyor ve `submit-choice`'ın `neither` dalı iki filmi de eleyip **yedek film** istiyor. Günde tam 4 film taşıyan bir editoryal takvimde yedek YOKTUR. Ya editoryal gün 4'ten fazla film taşıyacak (yedek kulübesi) ya da ret algoritmik havuza düşecek — ikincisi günün editoryal kurgusunu kırar. **Karar verilmedi.**
 - **`slotTypes` dürüstlüğü.** `DailyGauntlet.slotTypes` bugün `['global','personal','personal','discovery']` dönebiliyor (`gauntletCore`/`slotTypesFor`). Editoryal günde dört slot da editoryaldir; mevcut değerleri dönmek veriyi yanlış etiketler. Kilitli sözleşme (`types/gauntlet.ts`) `slotTypes`'ı taşıdığı için bu bir sözleşme sorusudur. **Karar verilmedi.**
-- **E-02 ile etkileşim.** 400 filmin kalıcı yakılması, aktif havuzun **%21,4'ünü** (400/1.867) devre dışı bırakır. E-02'nin "tekrar oranının %10'u geçtiği gün" ölçümü bu karardan SONRA yeniden yapılmalıdır.
+- **Cumartesi teması ↔ bağlam runtime tavanı (§4).** `1_PRODUCT_OS` §4 bağlamı "kaç saatin var" diye sorar ve bu, kodda **sert bir filtreye** dönüşür: `gauntletCore.ts` `CONTEXT_MAX_RUNTIME = { short: 110, medium: 150, any: 999 }` ve havuz sorgusu `.lte('films.runtime', maxRuntime)`. Cumartesi'nin "2,5–3+ saat" tanımı `short` (110 dk) ve `medium` (150 dk) bağlamlarıyla **doğrudan çelişir** — kullanıcı "yorgunum, kısam var" derse Cumartesi havuzu boşalır. Ölçüldü (18 Eyl 2026): aktif havuzda `runtime >= 150` olan **202** film, `runtime >= 170` olan **96** film, `runtime <= 110` olan **792** film. Gün-teması mı bağlamı ezecek, bağlam mı temayı, yoksa Cumartesi için tavan mı gevşetilecek — **karar verilmedi.** İlk 100 günde sorun yok (editoryal seçki bağlam filtresinden geçmiyor); yalnızca 100 gün sonrası algoritmik faz için geçerli.
+- **E-02 ile etkileşim.** 400 filmin kalıcı yakılması, aktif havuzun **%21,4'ünü** (400/1.867) devre dışı bırakır. E-02'nin "tekrar oranının %10'u geçtiği gün" ölçümü bu karardan SONRA yeniden yapılmalıdır. Gün-teması ayrıca havuzu **yedi alt havuza böler** — E-02 derinlik matematiği artık tek havuz üzerinden değil, tema başına yapılmalıdır (Cumartesi'nin 202 filmlik tavanı burada en dar kısıttır).
 - **Şema/migration ihtiyacı** ayrı `/kesif` ile belirlenecek (E-18 genre-verisi keşfiyle birleştirilebilir).
 
 **Kaynak:** kullanıcı önerisi, 18 Eyl 2026 tasarım oturumu.
@@ -626,6 +639,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.10 | 11 Eyl 2026 | **E-14.** Plansız güvenlik ve veri bütünlüğü turu (8–11 Eyl), üç bağımsız üretim sorunu kapatıldı: (1) `referrals`/`winback_queue`/`lifetime_sales`'te `TO` clause'suz, fiilen anon'a açık 3 "service role" politikası; (2) 22 SECURITY DEFINER fonksiyonunda `p_user_id` kimlik doğrulaması eksikliği (`claim_lifetime_spot` dahil finansal istismar) — migration 109+110, 44 test geçti; (3) FK kimlik uzayı çatallanması — 5 FK `auth.users(id)`'den `public.users(id)`'ye çevrildi (migration 111), referral akışı koşulsuz kırıktı. 4 çağıran düzeltildi, 3 Edge Function deploy edildi (webhook v25, lifetime v22, referral v22) ve canlı smoke test edildi. Kök neden migration 014'te bir kez düzeltilmiş, 025/026'da tekrarlanmıştı. 4 açık madde §9'a alındı. |
 | 1.9 | 31 Ağu 2026 | **E-12.** RC Paywalls v2 fizibilitesi tamamlandı: hibrit mimari korunuyor, tam geçiş yapılmadı, `react-native-purchases-ui` kurulmadı. R-C ilerlemesi: K-46 (arşiv tetikleyicisi + `get-archive-status` deploy edildi), E-09 (paywall/purchase event dalları tamamlandı) ve G-6 çekirdek event listesi (`docs/analytics/G6_CEKIRDEK_EVENTLER.md`) kapandı. Kalan: K-49 sandbox durum matrisi. |
 | 1.11 | 18 Eyl 2026 | **E-19.** İlk 100 gün gauntlet'in 4 filmi ve 3 eşleşmesi editoryal takvimden gelecek (400 film, 300 eşleşme, elle kurgu); haftanın her günü sabit bir tür/mod taşıyacak ve bu gün-teması 100 gün sonrası algoritmik fazda da **kalıcı** kalıp §6.4 sert filtresine gün bazlı ağırlık olarak bağlanacak. Yetki dayanağı `1_PRODUCT_OS` §1.3'ün 🔓 "4 filmin seçim algoritması" satırı; hiçbir 🔒 madde değişmedi. Kullanılan 400 film 100. günde kalıcı "gösterildi" işareti alacak (21 günlük cooldown'dan ayrı). Üç uygulama önkoşulu açık bırakıldı: K-23 ret merdiveninin yedek film ihtiyacı, `slotTypes` etiket dürüstlüğü, E-02 havuz derinliği ölçümünün yenilenmesi. Şema/migration ihtiyacı ayrı `/kesif`'e bırakıldı. |
+| 1.12 | 18 Eyl 2026 | **E-19 güncellemesi.** Haftalık gün-tema tablosu tamamlandı (Pzt arthouse · Sal kült · Çar animasyon/cozy · Per modern keşif/gizli cevher · Cum popcorn/gişe · Cmt epik & uzun metraj · Paz prestij/akademi). Takvim başlangıç kuralı eklendi: Gün 1 gerçek yayın tarihinin **hafta gününe** hizalanır, sabit "Gün 1 = Pazartesi" değildir. Yeni açık teknik madde: Cumartesi'nin "2,5–3+ saat" tanımı §4 bağlam runtime tavanıyla (`CONTEXT_MAX_RUNTIME` short 110 / medium 150, sert `.lte` filtresi) çelişiyor — ilk 100 gün etkilenmiyor (editoryal seçki bağlam filtresinden geçmiyor), yalnız algoritmik faz için karar gerekiyor. E-02 notu genişletildi: gün-teması havuzu yedi alt havuza böldüğü için derinlik matematiği tema başına yapılmalı. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
