@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.10
-**Tarih:** 11 Eylül 2026
+**Sürüm:** 1.11
+**Tarih:** 18 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -467,6 +467,31 @@ Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `ser
 - `record_posterle_hint` anon'a açık ve `p_attempt_id` sahipliğini doğrulamıyor — ayrı güvenlik iş kalemi.
 - `.env`'deki `SUPABASE_SERVICE_ROLE_KEY` bu projeye kayıtlı değil (HTTP 401); 16 yerel script etkileniyor. **Üretim etkilenmiyor** — Edge runtime kendi secret'ını enjekte ediyor.
 
+### E-19 — 100 günlük editoryal takvim + kalıcı gün-teması yapısı (18 Eyl 2026)
+
+**Yetki dayanağı.** `1_PRODUCT_OS` §1.3 "4 filmin seçim algoritması" satırını **🔓 Sürekli iyileşecek** olarak işaretler. Bu karar o açık alanı kullanır; §1.3'ün 🔒 satırlarının hiçbirine dokunmaz (çekirdek eylem 4 film/3 tur/1 şampiyon · ritüel kuralı · bağlam girdisi · veri felsefesi). §6.10 v0'ı "kişiselleştirme yok: bağlam filtresi + çeşitlilik + rastgele" olarak tanımladığı için bu karar **çalışan bir kişiselleştirme sistemini değiştirmiyor** — henüz var olmayan bir sistemin (Faz F) yerini bootstrap döneminde dolduruyor.
+
+**1. İlk 100 gün editoryal.** Gauntlet'in 4 filmi **ve eşleşmeleri** (hangi film hangi turda kiminle karşılaşır) CTO tarafından elle kurgulanır: **400 benzersiz film, 300 head-to-head eşleşme kararı.** Kaynak algoritmik havuz (bugün 1.867 aktif film) değil, editoryal takvimdir.
+
+**2. Gün-teması.** Haftanın her günü sabit bir tür/mod taşır (örn. Pazar = ödüllü, Pazartesi = arthouse, Cuma = gişe). Tam liste ayrıca kararlaştırılacak.
+
+**3. Gün-teması KALICI yapısal kuraldır.** 100 gün bitip algoritmik faza geçildiğinde de yürürlükte kalır; orada `generate-gauntlet`'in sert filtre katmanına (`1_PRODUCT_OS` §6.4) **gün bazlı tür/tier ağırlığı** olarak bağlanır (örn. Pazar çekimi ödüllü-tier havuzuna öncelik verir). Yani editoryal dönem geçici, gün-teması kalıcıdır.
+
+**4. 100. gün geçişi.** Kullanılan 400 film algoritmik havuzda **kalıcı olarak "gösterildi"** işaretlenir — mevcut 21 günlük cooldown'dan ayrı bir işaret. Teknik detay ayrı `/kesif` ile netleşecek.
+
+**5. Veri felsefesi korunur** (§1.3 🔒). Bu dönemde üretilen seçim zincirleri normal gauntlet verisi gibi işlenir; `choice_events` append-only kalır, `algorithm_version` zorunluluğu sürer.
+
+**Uygulama biçimi.** Haftalık/günlük kurgu CTO ile konuşularak yapılır — otomatik üretim veya kendi kendine dolan bir sheet değildir.
+
+**Açık kalanlar** — bu maddenin kararı değil, uygulamasının önkoşuludur; hiçbiri bu turda çözülmemiştir:
+
+- **Ret merdiveni ile kesişim (K-23, 🔒).** K-23 "Ret 1 → sessiz yeni çift" diyor ve `submit-choice`'ın `neither` dalı iki filmi de eleyip **yedek film** istiyor. Günde tam 4 film taşıyan bir editoryal takvimde yedek YOKTUR. Ya editoryal gün 4'ten fazla film taşıyacak (yedek kulübesi) ya da ret algoritmik havuza düşecek — ikincisi günün editoryal kurgusunu kırar. **Karar verilmedi.**
+- **`slotTypes` dürüstlüğü.** `DailyGauntlet.slotTypes` bugün `['global','personal','personal','discovery']` dönebiliyor (`gauntletCore`/`slotTypesFor`). Editoryal günde dört slot da editoryaldir; mevcut değerleri dönmek veriyi yanlış etiketler. Kilitli sözleşme (`types/gauntlet.ts`) `slotTypes`'ı taşıdığı için bu bir sözleşme sorusudur. **Karar verilmedi.**
+- **E-02 ile etkileşim.** 400 filmin kalıcı yakılması, aktif havuzun **%21,4'ünü** (400/1.867) devre dışı bırakır. E-02'nin "tekrar oranının %10'u geçtiği gün" ölçümü bu karardan SONRA yeniden yapılmalıdır.
+- **Şema/migration ihtiyacı** ayrı `/kesif` ile belirlenecek (E-18 genre-verisi keşfiyle birleştirilebilir).
+
+**Kaynak:** kullanıcı önerisi, 18 Eyl 2026 tasarım oturumu.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -600,6 +625,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.8 | 31 Ağu 2026 | **E-11.** K-42'nin 8 senaryolu cihaz doğrulaması TestFlight build'ine ertelendi (yerel dev build/simülatör yok; Expo Go üzerinden uçak modu testi kod yolunu değerlendiremiyor). R-C açıldı; K-42 doğrulaması R-D önkoşulu olarak kaldı. Paywall ekranında geri gezinme eksikliği `TEKNIK_BORC.md`'ye alındı. |
 | 1.10 | 11 Eyl 2026 | **E-14.** Plansız güvenlik ve veri bütünlüğü turu (8–11 Eyl), üç bağımsız üretim sorunu kapatıldı: (1) `referrals`/`winback_queue`/`lifetime_sales`'te `TO` clause'suz, fiilen anon'a açık 3 "service role" politikası; (2) 22 SECURITY DEFINER fonksiyonunda `p_user_id` kimlik doğrulaması eksikliği (`claim_lifetime_spot` dahil finansal istismar) — migration 109+110, 44 test geçti; (3) FK kimlik uzayı çatallanması — 5 FK `auth.users(id)`'den `public.users(id)`'ye çevrildi (migration 111), referral akışı koşulsuz kırıktı. 4 çağıran düzeltildi, 3 Edge Function deploy edildi (webhook v25, lifetime v22, referral v22) ve canlı smoke test edildi. Kök neden migration 014'te bir kez düzeltilmiş, 025/026'da tekrarlanmıştı. 4 açık madde §9'a alındı. |
 | 1.9 | 31 Ağu 2026 | **E-12.** RC Paywalls v2 fizibilitesi tamamlandı: hibrit mimari korunuyor, tam geçiş yapılmadı, `react-native-purchases-ui` kurulmadı. R-C ilerlemesi: K-46 (arşiv tetikleyicisi + `get-archive-status` deploy edildi), E-09 (paywall/purchase event dalları tamamlandı) ve G-6 çekirdek event listesi (`docs/analytics/G6_CEKIRDEK_EVENTLER.md`) kapandı. Kalan: K-49 sandbox durum matrisi. |
+| 1.11 | 18 Eyl 2026 | **E-19.** İlk 100 gün gauntlet'in 4 filmi ve 3 eşleşmesi editoryal takvimden gelecek (400 film, 300 eşleşme, elle kurgu); haftanın her günü sabit bir tür/mod taşıyacak ve bu gün-teması 100 gün sonrası algoritmik fazda da **kalıcı** kalıp §6.4 sert filtresine gün bazlı ağırlık olarak bağlanacak. Yetki dayanağı `1_PRODUCT_OS` §1.3'ün 🔓 "4 filmin seçim algoritması" satırı; hiçbir 🔒 madde değişmedi. Kullanılan 400 film 100. günde kalıcı "gösterildi" işareti alacak (21 günlük cooldown'dan ayrı). Üç uygulama önkoşulu açık bırakıldı: K-23 ret merdiveninin yedek film ihtiyacı, `slotTypes` etiket dürüstlüğü, E-02 havuz derinliği ölçümünün yenilenmesi. Şema/migration ihtiyacı ayrı `/kesif`'e bırakıldı. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
