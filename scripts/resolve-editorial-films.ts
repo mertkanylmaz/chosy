@@ -11,11 +11,17 @@
  *
  * Girdi: data/editorial-films.json
  *   [{ "title": "The Killer", "year": 2023, "director": "David Fincher",
- *      "day_number": 12, "position": 1, "theme": "arthouse",
- *      "curation_tier": "core", "editor_note": "..." }]
+ *      "day_number": 12, "position": 1, "curation_tier": "core",
+ *      "editor_note": "..." }]
  *   position 1-4 = günün bracket sırası · 5-6 = K-23 yedek kulübesi
- *   theme       = gün başına SABİT olmalı; aynı günün satırları çelişirse fatal
  *   editor_note = opsiyonel
+ *
+ * `theme` bu fazın girdisi DEĞİLDİR (CTO kararı, 19 Eyl 2026). Tema
+ * `editorial_calendar_days` alanıdır ve bible §2b uyarınca `launch_date`'in
+ * hafta gününden türer; Faz 1 yalnız başlık → tmdb_id çözümlemesi yapar.
+ * Aynı kararla "her günün position 1-4'ü tam olmalı" invariant'ı da bu fazdan
+ * kaldırıldı — takvim bütünlüğü Faz 2 / DB katmanının işidir, böylece dosya
+ * boşluk-doldurma partisi olarak koşulabilir.
  *
  * Çıktı:
  *   data/editorial-resolved.json       → Faz 2'nin TEK girdisi
@@ -59,12 +65,6 @@ const INPUT_PATH = path.resolve(process.cwd(), 'data', 'editorial-films.json');
 const RESOLVED_PATH = path.resolve(process.cwd(), 'data', 'editorial-resolved.json');
 const REVIEW_PATH = path.resolve(process.cwd(), 'data', 'editorial-manual-review.json');
 
-/** Migration 112 `editorial_calendar_days.theme` CHECK kümesiyle birebir aynı. */
-const THEMES = [
-  'arthouse', 'cult', 'cozy', 'discovery', 'popcorn', 'epic', 'prestige',
-] as const;
-type Theme = (typeof THEMES)[number];
-
 /** `films.curation_tier` değerleri. */
 const TIERS = ['core', 'extended', 'trending', 'archive'] as const;
 type Tier = (typeof TIERS)[number];
@@ -97,7 +97,6 @@ interface EditorialInput {
   director?: string;
   day_number: number;
   position: number;
-  theme: Theme;
   curation_tier: Tier;
   editor_note?: string;
 }
@@ -120,7 +119,6 @@ interface ResolvedRow {
   director: string | null;
   day_number: number;
   position: number;
-  theme: Theme;
   curation_tier: Tier;
   editor_note?: string;
   /** Çözümleme anında TMDB'nin döndürdüğü başlık — girdiyle aynı olmayabilir. */
@@ -169,7 +167,6 @@ function validateInput(raw: unknown): EditorialInput[] {
   const problems: string[] = [];
   const rows: EditorialInput[] = [];
   const seenSlots = new Map<string, number>();
-  const themeByDay = new Map<number, Theme>();
 
   raw.forEach((item, idx) => {
     const where = `satır ${idx + 1}`;
@@ -181,7 +178,7 @@ function validateInput(raw: unknown): EditorialInput[] {
     }
     const r = item as Record<string, unknown>;
 
-    const { title, year, day_number, position, theme, curation_tier, director, editor_note } = r;
+    const { title, year, day_number, position, curation_tier, director, editor_note } = r;
 
     if (typeof title !== 'string' || title.trim() === '') {
       problems.push(`${where}: title eksik/boş`);
@@ -196,9 +193,6 @@ function validateInput(raw: unknown): EditorialInput[] {
     if (typeof position !== 'number' || !Number.isInteger(position) ||
         position < 1 || position > 6) {
       problems.push(`${where}: position 1-6 olmalı (1-4 ana sıra, 5-6 yedek)`);
-    }
-    if (typeof theme !== 'string' || !(THEMES as readonly string[]).includes(theme)) {
-      problems.push(`${where}: theme geçersiz — beklenen: ${THEMES.join('|')}`);
     }
     if (typeof curation_tier !== 'string' || !(TIERS as readonly string[]).includes(curation_tier)) {
       problems.push(`${where}: curation_tier geçersiz — beklenen: ${TIERS.join('|')}`);
@@ -218,7 +212,6 @@ function validateInput(raw: unknown): EditorialInput[] {
       director: typeof director === 'string' ? director.trim() : undefined,
       day_number: day_number as number,
       position: position as number,
-      theme: theme as Theme,
       curation_tier: curation_tier as Tier,
       editor_note: typeof editor_note === 'string' ? editor_note : undefined,
     };
@@ -233,32 +226,12 @@ function validateInput(raw: unknown): EditorialInput[] {
     }
     seenSlots.set(slotKey, idx + 1);
 
-    // Tema gün başına sabittir (migration 112: days tablosunda tek satır).
-    const dayTheme = themeByDay.get(row.day_number);
-    if (dayTheme !== undefined && dayTheme !== row.theme) {
-      problems.push(
-        `${where}: gün ${row.day_number} tema çelişkisi — '${dayTheme}' vs '${row.theme}'`,
-      );
-      return;
-    }
-    themeByDay.set(row.day_number, row.theme);
-
     rows.push(row);
   });
 
-  // Ana sıra eksikse o gün oynanamaz — 4 pozisyonun dördü de zorunlu.
-  const positionsByDay = new Map<number, Set<number>>();
-  for (const row of rows) {
-    const set = positionsByDay.get(row.day_number) ?? new Set<number>();
-    set.add(row.position);
-    positionsByDay.set(row.day_number, set);
-  }
-  for (const [day, set] of [...positionsByDay.entries()].sort((a, b) => a[0] - b[0])) {
-    const missing = [1, 2, 3, 4].filter((p) => !set.has(p));
-    if (missing.length > 0) {
-      problems.push(`gün ${day}: ana sıra eksik — position ${missing.join(', ')} yok`);
-    }
-  }
+  // NOT: "her günün position 1-4'ü tam" kontrolü bilinçli olarak YOK —
+  // CTO kararı (19 Eyl 2026). Takvim bütünlüğü Faz 2 / DB katmanında
+  // doğrulanır; Faz 1 kısmi (boşluk-doldurma) parti kabul eder.
 
   if (problems.length > 0) {
     throw new Error(
@@ -365,7 +338,6 @@ async function resolveOne(input: EditorialInput): Promise<ResolveOutcome> {
         director: hit.director,
         day_number: input.day_number,
         position: input.position,
-        theme: input.theme,
         curation_tier: input.curation_tier,
         ...(input.editor_note !== undefined ? { editor_note: input.editor_note } : {}),
         tmdb_title: hit.title,
