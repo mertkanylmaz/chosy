@@ -2440,3 +2440,56 @@ izlenebilirliğini kırıyor.
 hiç var olmadığı kanıtlanmadı, yalnızca iki bilinen konumda da yok. Bir
 kaynaktan çıkarsa buraya bağlanır; çıkmazsa numaralama boşluğunun bilinçli
 olduğu kapsam kilidine not düşülür.
+
+---
+
+## `exhausted` dalı çıkışsız — K-23 boşluğu mu? (19 Eyl 2026)
+
+C.9b-UI Faz 0 state-makinesi denetiminin gözlemi. **Bu turda değiştirilmedi**
+(CTO kararı: davranış ve IA'yı ilgilendiriyor, görsel uyum turuna girmez).
+
+### Gözlem
+
+`GauntletShell/index.tsx:1006-1016` — `completed_today` + champion yok dalı
+ekrana **yalnız bir cümle** basıyor (`gauntlet.exhausted`). Tek eylem
+`QuietAction` `{onDismiss && ...}` koşuluna bağlı ve `app/(tabs)/index.tsx`
+`onDismiss` **vermiyor** (bilinçli, K-03 gerekçesi dosyada yazılı). Sonuç:
+ritüelin bittiği bu yüzeyde hiçbir eylem yok. Kullanıcı sekme değiştirerek
+çıkabiliyor — kilitlenme değil, ama çıkış da sunulmuyor.
+
+### K-23 ile ilişki — **doğrulanmadı**
+
+K-23 (`7_CHOSY_V1_KAPSAM_KILIDI.md:85`): *"Ret merdiveni korunur (Ret 1
+sessiz yeni çift · Ret 2 üç yön · **Ret 3 liste/saved/yarın**). Her ret
+analytics sinyalidir."*
+
+`exhausted` ile "Ret 3" aynı şey **olmayabilir**: `exhausted`ın iki üretim
+yolu var (`submit-choice/index.ts:157`) — `no_candidates` (yedek film
+kalmadı) ve `timeout_no_winner`. K-23'ün merdiveni ret **sayısına** bağlı,
+`exhausted` ise havuz/zaman durumuna. Örtüşüyorlarsa boşluk gerçek.
+
+İlgili not: `GauntletShell` başlık yorumu zaten *"Ret akışı yalnızca Seviye 1
+… Seviye 2/3 dalları C.3 / Faz D"* diyor — yani merdivenin üst basamakları
+**bilinçli ertelenmiş**. Bu, boşluğun sahipsiz değil ertelenmiş olabileceğine
+işaret ediyor ama sprint tablosunda açık bir satır yok.
+
+### Cevaplanacak üç soru
+
+1. **K-23 boşluğu mu?** "Ret 3"ün `liste/saved/yarın` üçlüsü `exhausted`
+   dalında mı karşılanmalı, yoksa ret sayacına bağlı ayrı bir dal mı?
+2. **`exhausted`a ulaşma oranı — gerçek mi teorik mi?** Bugün ölçülmüyor:
+   istemci `GauntletProgress.exhaustedReason`'ı **okumuyor**
+   (`applyGauntlet` → `toExhausted()` reason'ı yok sayıyor) ve `exhausted`
+   için ayrı analytics event'i yok. Alan sunucuda üretiliyor
+   (`no_candidates` / `timeout_no_winner`) ama hiçbir yere yazılmıyor.
+   ⚠️ E-19 dönemi bu oranı ayrıca çarpıtıyor: editoryal günde yedek
+   çekilmediği için `no_candidates` yolu farklı davranıyor (bkz. F-A).
+3. **Sahibi hangi sprint?** Sprint tablosunda (§8) `exhausted` veya K-23
+   ret merdiveni için açık satır **yok**. `GauntletShell` yorumu C.3 / Faz D
+   diyor; C.3 tabloda geçmiyor, Faz D ise v1 kapsamı dışında.
+
+### Bağlantılı açık madde
+
+§9'daki **"E-19 yedek kulübesi boş"** (`editorial_calendar_films` position
+5-6, 0 satır) aynı ailenin parçası: *"eksik olan 'ret sonrası yerine ne
+gelecek' cevabı."*
