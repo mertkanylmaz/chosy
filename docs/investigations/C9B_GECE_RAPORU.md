@@ -95,12 +95,12 @@ revert çakışabilir. Zinciri geri almak gerekirse: `git revert da83d52 5419586
 | **loading** | Champion'a ilk geçiş (prefetch yetişmemişse) | Buton **yerinde**, sönük. Sonradan **belirmemeli** (pop-in yok) |
 | **ok** | Sağlayıcısı olan bir film | Butona dokun → sheet aşağıdan gelir. Logolar görünür. Bir logoya dokun → TMDB sayfası açılır |
 | **empty** | Bölge = Türkiye + yeni/niş film (Colony gibi) | "Bölgende akışta yok." satırı + **"Sonraya bırak" beam dolgulu birincil** olmalı |
+| **error** | Uçak modu aç, sonra Champion'a gel | "İzleme seçenekleri yüklenemedi." + **"Tekrar dene"** birincil. **"Sonraya bırak" YÜKSELMEMELİ** |
 
 > ⚠️ **`empty` Türkiye'de SIK çıkacak** — TMDB'nin TR katalog verisi ABD'ye
 > göre seyrek. Bu bir ürün hatası değil, veri gerçeği. Sonucu: `provider_clicked`
 > oranı TR'de düşük görünecek ve bu K-20 köprüsünün başarısızlığı olarak
 > okunmamalı. G-4 ve R-06 yorumlarında hesaba katılacak (borç kaydı açıldı).
-| **error** | Uçak modu aç, sonra Champion'a gel | "İzleme seçenekleri yüklenemedi." + **"Tekrar dene"** birincil. **"Sonraya bırak" YÜKSELMEMELİ** |
 
 **Sheet çakışması (ayrı test):**
 1. Taze bir gauntlet bitir (auth istemi gelecek bir hesapla).
