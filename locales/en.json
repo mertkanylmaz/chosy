@@ -1456,6 +1456,10 @@
     "choiceDropped": "Your pick didn't go through. Play the round again.",
     "retry": "Try again",
     "dismissTomorrow": "Never mind, tomorrow",
+    "bonus": {
+      "label": "Today's bonus",
+      "title": "Spotlight"
+    },
     "share": {
       "action": "Share",
       "copied": "Copied to clipboard",

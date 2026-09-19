@@ -1456,6 +1456,10 @@
     "choiceDropped": "Seçimin gönderilemedi. Turu yeniden oyna.",
     "retry": "Tekrar dene",
     "dismissTomorrow": "Boşver, yarın",
+    "bonus": {
+      "label": "Bugünün bonusu",
+      "title": "Spotlight"
+    },
     "share": {
       "action": "Paylaş",
       "copied": "Panoya kopyalandı",

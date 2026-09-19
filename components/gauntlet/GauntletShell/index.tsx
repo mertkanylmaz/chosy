@@ -34,6 +34,7 @@ import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
+import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import {
@@ -1115,6 +1116,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
               dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
           <ArchiveTrigger />
+
+          {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
+              noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
+              ChampionReveal flex:1 olduğu için bu kart onun ALTINDA, merkez
+              bloğun dışında kalır — birincil eylemi aşağı itmez. */}
+          <SpotlightBonusCard />
         </>
       );
     }
