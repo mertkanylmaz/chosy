@@ -59,7 +59,14 @@ export interface DailyGauntlet {
   context: GauntletContext;
   contextPredicted: boolean;
   films: GauntletFilm[]; // tam 4, sırası karışık
-  slotTypes: ('global' | 'personal' | 'discovery')[];
+  /**
+   * 'editorial' eklendi, E-19, 19 Eyl 2026 (CTO onayı).
+   * İlk 100 günde dört slot da editoryal takvimden gelir; mevcut üç değerden
+   * birini dönmek veriyi yanlış etiketlerdi.
+   * DB tarafında değer kısıtı yok — 069_gauntlet_events.sql:172 yalnızca
+   * array_length = 4 kontrol eder.
+   */
+  slotTypes: ('global' | 'personal' | 'discovery' | 'editorial')[];
   userConfidence: number; // 0-1
   refreshesRemaining: number;
   algorithmVersion: string;
