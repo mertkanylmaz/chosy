@@ -1,7 +1,7 @@
 # 🎞️ CHOSY DESIGN OS
 
-**Versiyon:** v4.0 — "Karanlık Salon"
-**Tarih:** 5 Ağustos 2026
+**Versiyon:** v4.1 — "Karanlık Salon"
+**Tarih:** 5 Ağustos 2026 · **v4.1 karar kaydı:** 19 Eylül 2026 (C.9b-UI Faz 0)
 **Kapsam:** iOS · React Native / Expo · Dark-only
 
 > ✅ doğrulandı (kod/envanter, 5 Ağu 2026) · ⚠️ öneri veya doğrulanmamış
@@ -273,7 +273,7 @@ Projeksiyonun fiziğinin birebir karşılığı — ve poster/arayüz çatışma
 const BLEED_CONSTRAINTS = {
   maxChroma:    0.08,   // OKLCH doygunluk tavanı
   maxLightness: 0.22,   // asla parlamaz
-  maxAlpha:     0.10,   // zeminde
+  maxAlpha:     0.30,   // zeminde — v4.1, ölçümle yükseltildi (eski: 0.10)
   transition:   600,    // ms
   fallback:     'ink',
 };
@@ -309,7 +309,9 @@ CHROME KATMANI      → cam     (navigasyon, bağlam çubuğu, alt eylem çubuğ
 
 Cam **hareket eden şeyin altında** anlam kazanır. Sabit içeriğin altında sadece bulanıklıktır.
 
-**Cam kullanılan:** Bağlam çubuğu · alt eylem çubuğu · şampiyon bilgi paneli · modal arka plan
+**Cam kullanılan:** ~~Bağlam çubuğu · alt eylem çubuğu · şampiyon bilgi paneli~~ · modal arka plan
+→ **v4.1: cam YALNIZCA navigasyondur** (native tab bar, sistem sheet'leri). Gauntlet
+ve Champion **içeriğinde** cam öğe yok. Bağlam çubuğu opak `charcoal` (elev-1).
 **Cam kullanılmayan:** Posterler · poster etiketleri · tur göstergesi · sessiz eylemler · oyun ızgaraları · paylaşım kartı · DNA grafikleri
 
 **Reduce Transparency:** cam → düz `charcoal` + `graphite` 1px kenar. Düzen değişmez, malzeme değişir. ✅ `Colors.chromeGlassFallback` bunun için zaten var.
@@ -329,7 +331,10 @@ Ani, kesin, geri dönüşsüz. Karar anları: seçim onayı · tur değişimi ·
 - Yeni rakip: opaklık 0→1 + aşağıdan 16px, **360ms**
 - Işık sızması: **600ms** lineer
 
-✅ `constants/animations.ts` mevcut ve genişletilmiş — yeni süreler oraya girer, bileşenlere hardcode edilmez.
+~~✅ `constants/animations.ts` mevcut ve genişletilmiş — yeni süreler oraya girer.~~
+→ **v4.1:** gauntlet süreleri `constants/design/motion.ts`'e **izole edildi**.
+`animations.ts` mevcut oyun ekranlarının (Spotlight + dondurulmuş 6 oyun)
+sözleşmesidir, ona dokunulmaz. Bileşenlere hardcode yine yasak.
 
 ### 7.3 Kara boşluk — imza an
 
@@ -392,10 +397,10 @@ Gauntlet fonksiyoneldir → Ionicons. Şampiyon marka anıdır → Phosphor duot
 
 ```
 ┌────────────────────────────────────────┐
-│ ░░░ cam ░░░                            │
+│ ─── opak charcoal (v4.1: cam değil) ── │
 │  Salı akşamı · Yalnız · ~2 saat    ⌄  │  smoke, caption
 │ ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ │
-│      ● ● ○ ○        Tur 1/3            │  beam aktif, graphite pasif
+│      ▬▬▬ ▬▬▬ ▭▭▭       1/3             │  v4.1: 3 SEGMENT (eski: 4 nokta)
 │                                        │
 │    ┌──────────┐    ┌──────────┐       │
 │    │ POSTER A │    │ POSTER B │       │  %70, radius 14, 2:3
@@ -403,19 +408,27 @@ Gauntlet fonksiyoneldir → Ionicons. Şampiyon marka anıdır → Phosphor duot
 │      HEAT            SICARIO           │  body-strong, bone
 │      1995 · 170dk    2015 · 121dk      │  meta, smoke
 │                                        │
-│         Bu akşam hangisi?              │  callout, smoke
+│   Bu akşam hangisini izlerdin?         │  callout, smoke (v4.1, K-17)
 │   İkisi de değil  ·  Bunu izledim      │  caption, smoke@70%
 └────────────────────────────────────────┘
         ↑ ink + ışık sızması
 ```
 
-**Kurallar:** Tab bar gizli · poster 2:3 sabit, kırpma yok · başlık >18 karakter tek satırda kısaltılır · ikincil eylemler buton değil metin bağlantısı · yükleme `graphite` iskelet, spinner yok · hata gerçek mesaj, sessiz boş ekran yasak.
+**Kurallar:** ~~Tab bar gizli~~ → **v4.1: tab bar KALIR** · poster 2:3 sabit, kırpma yok · başlık >18 karakter tek satırda kısaltılır · ikincil eylemler buton değil metin bağlantısı · yükleme `graphite` iskelet, spinner yok · hata gerçek mesaj, sessiz boş ekran yasak.
 
 ### 10.2 Şampiyon
 
-Tek poster ortalanmış · `display-xl` başlık · meta satırı · anlatı cümlesi (*"Heat iki tur dayandı ama sen fikrini değiştirdin."*) · cam panelde eylemler + `marquee` streak.
+Tek poster ortalanmış · `display-xl` başlık · meta satırı · ~~anlatı cümlesi
+(*"Heat iki tur dayandı ama sen fikrini değiştirdin."*)~~ · ~~cam panelde~~ eylemler
++ `marquee` streak.
 
-Işık sızması burada **en güçlü** — tek poster, rengi netleşiyor, alfa 0.14.
+→ **v4.1:** anlatı cümlesi **K-21'dir ve ERTELENMİŞTİR** (kapsam kilidi v1.6 → R-18).
+6 eksen hiçbir katmanda üretilmiyor; uydurulmuş bir cümle yazılmaz.
+→ **v4.1:** eylemler **cam değil**. Primary = `beam` dolgu (%12) + kenar (%40);
+secondary = şeffaf metin bağlantısı (`QuietAction`).
+
+~~Işık sızması burada **en güçlü** — alfa 0.14.~~
+→ **v4.1: baz = tavan 0.30, her yerde aynı.** Champion'a özel yükseltme yok.
 
 ### 10.3 Bağlam seçici
 
@@ -709,7 +722,7 @@ Sakin, kesin, kısa. Bir sinema programcısının tonu — bildiğini bilir, sat
 
 ```
 Bağlam:       Salı akşamı · Yalnız · ~2 saat
-Soru:         Bu akşam hangisi?
+Soru:         Bu akşam hangisini izlerdin?   (v4.1 · EN: "Which would you watch tonight?")
 Ret:          İkisi de değil
 İzlendi:      Bunu izledim
 Kararlılık:   Kararında netsin.
@@ -789,6 +802,50 @@ Bekleyiş:     Bugünün dörtlüsü 18:00'de hazır.
 > ayrımı yapılamayan bir mimari, gelir modelini test edilemez kılar.
 >
 > **Değişmeyen:** Ritüelin 40 saniyesi bölünmez — tez bu noktada korunuyor.
+
+---
+
+## 17. v4.1 KARAR KAYDI — C.9b-UI (19 Eylül 2026)
+
+Kaynak: C.9b-UI Faz 0 read-only ölçümü + DUR NOKTASI 1 CTO kararları.
+**Hiçbir K/D/R maddesi değişmedi** — `7_CHOSY_V1_KAPSAM_KILIDI` bu turda
+açılmadı. Aşağıdakiler yalnızca Design OS düzeltmeleridir.
+
+| # | Üstü çizilen | Yerine | Gerekçe |
+|---|---|---|---|
+| 1 | §6 — bağlam çubuğu, alt eylem çubuğu ve şampiyon bilgi paneli **cam** | Cam **yalnızca navigasyon** (native tab bar, sistem sheet'leri) | Ölçüm: `GlassSurface` zaten yalnız `games/` altında tüketiliyor; gauntlet'te hiç cam yok. Doküman koddan geriydi |
+| 2 | §5.2 `maxAlpha: 0.10` · §10.2 Champion alfa **0.14** | **Baz = tavan 0.30**, her yerde aynı, adaptasyon **yalnız aşağı** | 400 filmlik ölçüm (CTO 15.08.2026): 0.10'da kompozit zeminden **medyan Δ1/255** ayrışıyor — ölçülebilir ama **görülemez**. 0.30 → Δ14-16, sistemin kendi `elev-0→elev-1` adımı. `bone` kontrastı 15,7:1 (eşik 4,5:1). **§5.3'ün 4.5:1 otomatik iptali aynen yürürlükte.** *0.10 ölçülmeden yazılmıştı.* |
+| 3 | §10.1 — **"Tab bar gizli"** | **Tab bar kalır** | Gauntlet artık ayrı route değil, **Home sekmesi** (`app/(tabs)/index.tsx`). Gizlemek Profile'ı ve Saved/Settings'i erişilemez kılardı (K-06). §10.1'in "full-screen" şartı `dev-gauntlet.tsx` dönemine aitti. **Referans görselin tab bar'sız Gauntlet çizimi kopyalanmaz.** |
+| 4 | §10.1 ASCII — bağlam çubuğu `░░░ cam ░░░` | Opak **`charcoal`** (elev-1) | Cam yok (madde 1). Ama düz `ink` de olmaz: `ink` zemin üstünde `ink` çubuk **görünmez** olurdu. `charcoal` yükseklik adımını koruyan en sessiz opak yüzeydir |
+| 5 | §10.1 — tur göstergesi **4 nokta** (`● ● ○ ○` + "Tur 1/3") | **3 segment** + küçük "1/3" | Tur sayısı üçtür, dördüncü nokta yanlış vaat. Nokta **ve** metin çift bilgi kanalıydı |
+| 6 | §10.2 — anlatı cümlesi (*"Heat iki tur dayandı…"*) | **K-21 ERTELENDİ** | Kapsam kilidi v1.6 zaten ertelemişti (→ R-18). K-30'un 6 ekseni `GauntletFilm`, `Candidate` ve `gauntletCore` select listesinin hiçbirinde yok. Uydurulmuş cümle yazılmaz |
+| 7 | §10.2 — **cam panelde** eylemler | Primary `beam` dolgu (%12) + kenar (%40); secondary şeffaf | Madde 1'in sonucu. Primary = **"Nerede izlenir"** (K-20 activation bridge) |
+| 8 | §15.3 · §10.1 — Soru: **"Bu akşam hangisi?"** | **"Bu akşam hangisini izlerdin?"** (EN: *"Which would you watch tonight?"*) | K-17: *"Soru daima 'Which would you watch tonight?' — asla 'which is better'. Kullanıcı jüri üyesi değil."* Koşullu kip seyirci konumu kurar |
+| 9 | §7.2 — süreler `constants/animations.ts`'e | `constants/design/motion.ts` | `animations.ts` mevcut oyun ekranlarının sözleşmesi; gauntlet'in milisaniyeye kilitli süreleri izole edildi. Hardcode yasağı aynen |
+
+### 17.1 Materyal tablosu (yeni)
+
+| Katman | Malzeme |
+|---|---|
+| İçerik (poster, metin, kart, ızgara) | **Opak** — cam yok |
+| Primary eylem | `beam` dolgu **%12** + kenar **%40**, içerik katmanında |
+| Secondary eylem | Şeffaf metin bağlantısı (`QuietAction`) |
+| Navigasyon | **Liquid Glass** — yalnız native tab bar ve sistem sheet'leri |
+| Bağlam çubuğu | Opak `charcoal` (elev-1) |
+| Poster ışığı (sızma) | **0.30**, adaptasyon yalnız aşağı, 4.5:1 iptali korunur |
+
+### 17.2 Açık madde — Design OS'un yetkisi dışında
+
+**F-A · G-5 "Neither oranı %15-30" kapısı editoryal dönemde yorumlanamaz.**
+E-19 (bible v1.11–v1.13) ilk 100 günde yedek film çekmeyi kapatıyor
+(`refreshBlockedReason: 'editorial_day'`), bu yüzden ≈**27 Aralık 2026**'ya
+kadar ölçülen oran ürün davranışını değil editoryal kilidi yansıtıyor.
+K-28 candidate-quality teşhisi (R-02) de aynı event'e dayandığı için aynı
+gölgede.
+
+Bu bir **bible değişikliğidir ve sürüm artışı ister** — Design OS'un yetkisi
+dışındadır. **Ayrı DUR NOKTASI olarak açıldı**, taslağı
+`docs/investigations/` altında. Bu turda karara bağlanmadı.
 
 ---
 
