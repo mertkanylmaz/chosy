@@ -47,10 +47,41 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: space.sm,
   },
+  /**
+   * Baslik kademesi — C.9b-UI C8.
+   *
+   * Eskiden `numberOfLines={2} adjustsFontSizeToFit` vardi:
+   * `minimumFontScale` verilmedigi icin RN varsayilani 0.01'e kadar
+   * kuculebiliyordu. Yani 68 karakterlik bir baslik teorik olarak
+   * okunamayacak kadar kucuk cizilebilirdi ve hangi boyutta cizilecegi
+   * CIHAZA gore degisiyordu — ayni film iki telefonda farkli gorunur.
+   *
+   * Artik kademe DETERMINISTIK: uzunluk esigine gore 40 -> 32 -> 28.
+   * En fazla 3 satir. Runtime autoscale YOK.
+   *
+   * Esikler havuz olcumunden (19 Eyl, n=1907 core+extended):
+   *   >25 karakter: 242 film (%12,7)
+   *   >35 karakter:  64 film
+   *   en uzun:       68 karakter
+   *     ("Dr. Strangelove or: How I Learned to Stop Worrying...")
+   *
+   * 32 ve 28 `display-l`/`display-m` DEGIL (onlar 30/22) — C8 bu uc
+   * degeri acikca kilitliyor. Aile ve letterSpacing orani korunuyor.
+   */
   title: {
     ...type['display-xl'],
     color: color.text.primary,
     textAlign: 'center',
+  },
+  titleMedium: {
+    fontSize: 32,
+    lineHeight: 36,
+    letterSpacing: -1.6,
+  },
+  titleSmall: {
+    fontSize: 28,
+    lineHeight: 32,
+    letterSpacing: -1.4,
   },
   metaLine: {
     ...type.meta,

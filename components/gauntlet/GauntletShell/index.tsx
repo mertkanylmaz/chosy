@@ -1080,6 +1080,14 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     if (champion) {
       return (
         <>
+          {/* K-42 (C.9b-UI): bayat gosterge Champion dalinda da gorunur.
+              Onceden YALNIZ ana dalda vardi; cevrimdisiyken onbellekten
+              DUNUN champion'i geldiginde kullanici "bu bugunun listesi degil"
+              uyarisini hic gormuyordu ve dunun filmini bugunun filmi
+              saniyordu. Mevcut gosterge yeniden kullanildi, yeni string yok. */}
+          {isStale && (
+            <Text style={styles.championStaleNotice}>{t('gauntlet.offlineStale')}</Text>
+          )}
           <ChampionReveal
             champion={champion}
             animateReveal={animateReveal}

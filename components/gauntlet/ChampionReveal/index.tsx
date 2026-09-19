@@ -79,6 +79,19 @@ const COPIED_NOTICE_MS = 2400;
  */
 const POSTER_WAIT_CAP_MS = 1500;
 
+/**
+ * Baslik kademesi esikleri (karakter) — C8. Olcum gerekcesi styles.ts'te.
+ * Saf fonksiyon: ayni baslik her cihazda AYNI boyutta cizilir.
+ */
+const TITLE_TIER_MEDIUM = 25;
+const TITLE_TIER_SMALL = 35;
+
+function titleTierStyle(title: string): 'titleMedium' | 'titleSmall' | null {
+  if (title.length > TITLE_TIER_SMALL) return 'titleSmall';
+  if (title.length > TITLE_TIER_MEDIUM) return 'titleMedium';
+  return null;
+}
+
 interface ChampionRevealProps {
   champion: GauntletFilm;
   /** true: canlı final geçişi (kara boşluk sekansı); false: resume, doğrudan göster */
@@ -302,6 +315,8 @@ export function ChampionReveal({
     setPosterUri(champion.posterUrl);
   }, [posterUri, champion.posterUrl, champion.id]);
 
+  const tierStyle = titleTierStyle(champion.title);
+
   const posterOpacity = useSharedValue(animateReveal ? 0 : 1);
   const titleOpacity = useSharedValue(animateReveal ? 0 : 1);
   const metaOpacity = useSharedValue(animateReveal ? 0 : 1);
@@ -367,7 +382,13 @@ export function ChampionReveal({
 
       <Animated.View style={titleStyle}>
         <Text style={styles.kicker}>{t('gauntlet.championTitle')}</Text>
-        <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
+        {/* C8: deterministik kademe, runtime autoscale YOK. VoiceOver TAM
+            basligi duyar — gorsel kisaltma bilgi eksiltmez (K-54). */}
+        <Text
+          style={[styles.title, tierStyle !== null && styles[tierStyle]]}
+          numberOfLines={3}
+          accessibilityLabel={champion.title}
+        >
           {champion.title}
         </Text>
       </Animated.View>

@@ -110,6 +110,18 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: space.sm,
   },
+  /**
+   * K-42 bayat göstergesinin Champion dalındaki hâli. `offlineNotice` ile
+   * aynı dil ve renk; farkı yalnız kendi dolgusunu taşıması — Champion
+   * dalında `content` sarmalayıcısı yok.
+   */
+  championStaleNotice: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+    paddingHorizontal: space.base,
+    paddingTop: space.base,
+  },
   /** K-42: seçim kuyrukta bekliyor. Aynı gerekçe — bekleyiş, hata değil. */
   pendingNotice: {
     ...type.caption,
