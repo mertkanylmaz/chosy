@@ -77,7 +77,7 @@ interface TMDbTopRatedResponse {
   total_pages: number;
 }
 
-interface FilmInsertRow {
+export interface FilmInsertRow {
   tmdb_id: number;
   title: string;
   original_title: string;
@@ -123,8 +123,17 @@ function assignTier(voteCount: number, voteAverage: number): string {
   return 'archive';
 }
 
-/** Transform TMDb detail to our DB row */
-function detailToRow(detail: TmdbMovieDetail): FilmInsertRow {
+/**
+ * Transform TMDb detail to our DB row.
+ *
+ * EXPORT EDILDI (E-19, 19 Eyl 2026): scripts/ingest-editorial-films.ts ayni
+ * donusumu kullanir. Kopyalanmadi -- iki kopyanin iraksamasi `imdb_votes`
+ * kirliliginin dogus bicimiydi (kesif raporu S-11/S-13).
+ *
+ * NOT: `curation_tier` burada assignTier() ile atanir; editoryal yol bu
+ * degeri cagri sonrasi GIRDIDEN gelenle ezer (S-12).
+ */
+export function detailToRow(detail: TmdbMovieDetail): FilmInsertRow {
   const directors = detail.credits.crew
     .filter((cr) => cr.job === 'Director')
     .map((cr) => cr.name);
@@ -507,7 +516,16 @@ async function main(): Promise<void> {
   console.log(`\n  ${c.yellow}NEXT: Run ai-profile-films.ts --only-missing to generate vectors${c.reset}`);
 }
 
-main().catch((err: unknown) => {
-  console.error(`\n${c.red}Fatal error:${c.reset}`, err);
-  process.exit(1);
-});
+// Yalniz dogrudan calistirildiginda kos. Bu dosya artik `detailToRow` icin
+// import ediliyor (E-19); guard olmadan import etmek tum katalog genisletme
+// boru hattini sessizce tetiklerdi.
+const isDirectRun = (process.argv[1] ?? '')
+  .replace(/\\/g, '/')
+  .endsWith('/add-missing-films.ts');
+
+if (isDirectRun) {
+  main().catch((err: unknown) => {
+    console.error(`\n${c.red}Fatal error:${c.reset}`, err);
+    process.exit(1);
+  });
+}
