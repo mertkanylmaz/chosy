@@ -823,6 +823,23 @@ açılmadı. Aşağıdakiler yalnızca Design OS düzeltmeleridir.
 | 8 | §15.3 · §10.1 — Soru: **"Bu akşam hangisi?"** | **"Bu akşam hangisini izlerdin?"** (EN: *"Which would you watch tonight?"*) | K-17: *"Soru daima 'Which would you watch tonight?' — asla 'which is better'. Kullanıcı jüri üyesi değil."* Koşullu kip seyirci konumu kurar |
 | 9 | §7.2 — süreler `constants/animations.ts`'e | `constants/design/motion.ts` | `animations.ts` mevcut oyun ekranlarının sözleşmesi; gauntlet'in milisaniyeye kilitli süreleri izole edildi. Hardcode yasağı aynen |
 
+### 17.0 Ek kayıt — Champion başlık kademesi (20 Eylül 2026)
+
+Tipografi ölçeği (§3.3) `display-xl` 40 · `display-l` **30** · `display-m` **22**
+diyor. Champion başlık kademesi (C.9b-UI C8) ise **40 → 32 → 28** kullanıyor.
+
+Bu **bilinçli bir sapmadır**: C8 üç değeri açıkça kilitledi ve `display-l`/`-m`
+(30/22) o kademeleri karşılamıyor — 22pt bir şampiyon başlığı için fazla küçük,
+30 ile 40 arasındaki fark da bir kademe kurmaya yetmiyor. Aile
+(Archivo Expanded) ve letterSpacing oranı korundu.
+
+Kademe eşikleri canlı havuz ölçümünden (n=1907 core+extended):
+`>35 karakter → 28` · `>25 karakter → 32` · diğer `→ 40`. En fazla 3 satır,
+**runtime autoscale yok** (eski `adjustsFontSizeToFit` aynı başlığı cihazdan
+cihaza farklı boyutta çiziyordu).
+
+Gerekçenin tamamı `components/gauntlet/ChampionReveal/styles.ts` içinde.
+
 ### 17.1 Materyal tablosu (yeni)
 
 | Katman | Malzeme |
