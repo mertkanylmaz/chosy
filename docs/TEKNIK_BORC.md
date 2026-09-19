@@ -2312,3 +2312,40 @@ kapanmadı:
 İlgili: `supabase/migrations/109_security_definer_user_id_guard.sql`,
 `supabase/migrations/111_fk_identity_space_fix.sql`,
 `docs/investigations/LIFETIME_REFERRAL_FK_KESIF.md`.
+
+---
+
+## `ai-profile-films` — maliyet sabitleri güncel değil (19 Eyl 2026)
+
+`scripts/ai-profile-films.ts:94-95` fiyatları modül sabiti olarak taşıyor:
+
+```typescript
+const CLAUDE_INPUT_PRICE = 0.80;
+const CLAUDE_OUTPUT_PRICE = 4.00;
+```
+
+Claude Haiku 4.5'in güncel fiyatı **$1.00 / $5.00** (1M token, girdi/çıktı).
+Sabitler **%25 düşük** olduğu için hem `--dry-run` tahmini hem koşum sonu
+raporu gerçek harcamanın altını gösteriyor.
+
+Ölçüldü (19 Eyl, E-19 zinciri, 94 film): script `$0.187` raporladı; aynı
+token sayılarıyla (75.335 girdi / 31.759 çıktı) gerçek tutar **$0.234**.
+
+**Neden şimdi değil:** mutlak fark bu ölçekte sent mertebesinde ve koşum
+zaten ayrı onayla yapılıyor. Ayrı `/uygula` ile düzeltilecek. Düzeltirken
+fiyatın kod içinde sabitlenmesinin kendisi de gözden geçirilmeli — fiyat
+değiştiğinde iki dosya birden kayar.
+
+---
+
+## `ai-profile-films` — sistem promptu prompt caching kullanmıyor (19 Eyl 2026)
+
+`PROFILING_SYSTEM_PROMPT` (`services/filmProfilePrompt.ts:102`) **261 token**
+ve her film için yeniden tam ücretle gönderiliyor; `cache_control` yok.
+94 filmlik koşumda bu 24.534 token, toplam girdinin yaklaşık **üçte biri**.
+
+**Neden şimdi değil:** bu ölçekte tasarruf sent mertebesinde, üstelik 261
+token Haiku'nun minimum cacheable prefix eşiğinin altında kalabilir — yani
+`cache_control` eklemek ölçülebilir bir kazanç vermeyebilir. Havuz büyüdükçe
+(yüzlerce film / tekrarlayan koşum) yeniden değerlendirilmeli; o noktada
+önce `usage.cache_read_input_tokens` ile gerçekten cache'lendiği doğrulanmalı.
