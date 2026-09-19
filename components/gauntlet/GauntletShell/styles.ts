@@ -32,16 +32,39 @@ export const styles = StyleSheet.create({
     paddingBottom: space.xl,
     alignItems: 'center',
   },
+  /**
+   * C.9b-UI G4: bağlam çubuğu + tur göstergesi ÜSTTE sabit kalır.
+   * VoiceOver sırası da buradan gelir (K-54): bağlam → tur → poster A →
+   * poster B → eylemler.
+   */
   header: {
     alignItems: 'center',
     gap: space.md,
-    marginBottom: space.xl,
+    marginBottom: space.lg,
   },
+  /**
+   * C.9b-UI G4: film bloğu + soru + eylemler, header'dan artan alanın
+   * ORTASINDA. Eskiden `content` hiç `justifyContent` taşımıyordu; her şey
+   * üste yaslanıyor ve tüm boşluk ALTTA birikiyordu (Standard'da ~178pt,
+   * Pro Max'te ~231pt ölü bant — cihaz görüntüsünde ekranın ~%22'si).
+   * `flex: 1` + ortalama boşluğu bloğun altına ve üstüne böler.
+   */
+  middle: {
+    flex: 1,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /**
+   * C.9b-UI G4 geometri: yan boşluk 24 → **16** (`posterRow`'un kendi 8pt
+   * dolgusu kaldırıldı, `content`'inki yeterli), poster aralığı 16 → **12**.
+   * Spec aralığı yan boşluk 12-16 / aralık 8-12; 16 ve 12'den başlanıyor,
+   * cihazda 12/8'e kadar denenebilir.
+   */
   posterRow: {
     flexDirection: 'row',
-    gap: space.base,
+    gap: space.md,
     width: '100%',
-    paddingHorizontal: space.sm,
   },
   posterSlot: {
     flex: 1,

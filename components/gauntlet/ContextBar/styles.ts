@@ -1,6 +1,11 @@
 /**
- * ContextBar stilleri — DESIGN_OS §10.1 anatomisi: cam yüzey (elev-1,
+ * ContextBar stilleri — DESIGN_OS v4.1 §10.1: **opak** yüzey (elev-1,
  * `color.surface.raised`), tur göstergesinin ÜSTÜNDE, tam genişlik bar.
+ *
+ * ⚠️ Eski başlık burada "cam yüzey" diyordu ve YANILTICIYDI: bu bar hiçbir
+ * zaman cam olmadı, `BlurView` kullanmıyor. v4.1 kaydı camı yalnız
+ * navigasyona bıraktı; bar opak `charcoal` olarak KALIR — `ink` zemin
+ * üstünde `ink` bir bar görünmez olurdu (CTO onaylı sapma, C.9b-UI L-1).
  */
 import { StyleSheet } from 'react-native';
 
@@ -21,12 +26,18 @@ export const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: color.surface.raised,
   },
+  /**
+   * C.9b-UI G2: `type.meta` (Martian Mono) → `type.caption` (SF Pro).
+   * Mono yalnız yıl·süre ve tur sayacında kalır (§10.1). Bağlam cümlesi
+   * mono olduğu için cihazda İKİ SATIRA taşıyordu — mono'nun 2pt harf
+   * aralığı bu uzunlukta cümleyi taşırıyor.
+   */
   label: {
-    ...type.meta,
+    ...type.caption,
     color: color.text.secondary,
   },
   chevron: {
-    ...type.meta,
+    ...type.caption,
     color: color.text.secondary,
   },
   editor: {

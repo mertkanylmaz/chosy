@@ -181,8 +181,25 @@ export default function RootLayout() {
   useEffect(() => {
     // Production'da font hatası uygulamayı crash etmemeli — log + devam et.
     // Font yüklenemese bile uygulama sistem fontuyla çalışmaya devam eder.
+    //
+    // C.9b-UI G8: `logger.warn` production build'inde NO-OP — bu dal sahada
+    // hiç iz bırakmıyordu (sessiz fallback, K-44 ihlali). Archivo Expanded /
+    // Martian Mono düşerse Gauntlet ve Champion sistem fontuna iner ve bu
+    // GÖRSEL bir regresyondur; tip kontrolü yakalamaz, kullanıcı şikâyet
+    // etmez. Bu yüzden Sentry'ye açıkça yazılır.
     if (fontError) {
       logger.warn('[layout] Font yükleme hatası (graceful devam):', fontError);
+      Sentry.addBreadcrumb({
+        category: 'fonts',
+        message: 'useFonts hata verdi — sistem fontuna düşülüyor',
+        level: 'warning',
+        data: { error: String(fontError) },
+      });
+      Sentry.captureMessage('Font yüklenemedi — sistem fontu fallback', {
+        level: 'warning',
+        tags: { component: 'RootLayout', error_code: 'FONT_LOAD_FAILED' },
+        extra: { error: String(fontError) },
+      });
     }
   }, [fontError]);
 

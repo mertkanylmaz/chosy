@@ -27,7 +27,6 @@ import { AuthPromptSheet } from '@/components/auth/AuthPromptSheet';
 import { NotificationPromptSheet } from '@/components/notifications/NotificationPromptSheet';
 import { ArchiveTrigger } from '@/components/gauntlet/ArchiveTrigger';
 import { ChampionReveal } from '@/components/gauntlet/ChampionReveal';
-import { ConfidenceMeter } from '@/components/gauntlet/ConfidenceMeter';
 import { ContextBar } from '@/components/gauntlet/ContextBar';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
@@ -1044,7 +1043,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       <View style={styles.content}>
         <View style={styles.header}>
           <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
-          <ConfidenceMeter userConfidence={gauntlet.userConfidence} />
+          {/* C.9b-UI G1 (D-06 · L-7): güven yüzdesi Gauntlet'ten KALDIRILDI.
+              "%0 tanıyorum" ilk günlerde doğrulanabilir biçimde yanlış bir
+              iddiaydı ve ürünün tüm zekâ savını tek hamlede çürütüyordu.
+              `ConfidenceMeter` bileşeni ve `gauntlet.confidence` stringi
+              SİLİNMEDİ — D-06 eşiği (≥7 tamamlanmış gauntlet) uygulandıktan
+              sonra DNA/Profile yüzeyinde kullanılacak. */}
           <RoundIndicator current={round} />
         </View>
 
@@ -1052,6 +1056,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             durum bildirilir — §15.2. */}
         {isStale && <Text style={styles.offlineNotice}>{t('gauntlet.offlineStale')}</Text>}
 
+        {/* C.9b-UI G4: film bloğu + soru + eylemler tek grup halinde,
+            header'dan artan alanın ortasında. Ölü bant bu grubun altına ve
+            üstüne eşit bölünür. */}
+        <View style={styles.middle}>
         <View style={styles.posterRow}>
           <View style={styles.posterSlot}>
             <PosterTile
@@ -1109,6 +1117,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
               )}
             </>
           )}
+        </View>
         </View>
       </View>
     </View>

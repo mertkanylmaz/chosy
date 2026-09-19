@@ -1,8 +1,15 @@
 /**
- * RoundIndicator — tur göstergesi, ● ● ○ ○ deseni. DESIGN_OS §10.1, §13.
+ * RoundIndicator — tur göstergesi. DESIGN_OS v4.1 §10.1 (C.9b-UI, L-6).
  *
- * Tur değişimi Kesme'dir (§7.1) — 0ms, animasyon yok. Nokta durumları
- * anında değişir.
+ * v4.0'da ● ● ○ ○ deseni + "Tur 1/3" metni vardı. v4.1'de iki değişiklik:
+ *   - 4 nokta → **3 segment** (tur sayısı üçtür, dördüncü nokta yanlış vaat)
+ *   - "Tur 1/3" → küçük "1/3" (nokta + tam metin çift bilgi kanalıydı)
+ *
+ * Erişilebilirlikte TAM metin korunur: segmentler ekran okuyucudan gizlenir
+ * ve kapsayıcı "Tur 1/3" olarak seslendirilir — görsel sadeleşme VoiceOver
+ * kullanıcısından bilgi eksiltmez (K-54).
+ *
+ * Tur değişimi Kesme'dir (§7.1) — 0ms, animasyon yok.
  */
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -24,19 +31,22 @@ export function RoundIndicator({
   showLabel = true,
 }: RoundIndicatorProps): React.JSX.Element {
   const { t } = useLanguage();
-  const label = t('gauntlet.roundLabel', { current, total });
+  /** VoiceOver'ın duyduğu tam metin — görselde kısaltılsa da burada tam kalır. */
+  const fullLabel = t('gauntlet.roundLabel', { current, total });
+  /** Görsel sayaç: yalnız "1/3". Martian Mono (sayaç, §10.1 mono istisnası). */
+  const shortLabel = t('gauntlet.roundShort', { current, total });
 
   return (
-    <View style={styles.container} accessibilityRole="text" accessibilityLabel={label}>
-      <View style={styles.dots} importantForAccessibility="no-hide-descendants">
+    <View style={styles.container} accessibilityRole="text" accessibilityLabel={fullLabel}>
+      <View style={styles.segments} importantForAccessibility="no-hide-descendants">
         {Array.from({ length: total }, (_, index) => (
           <View
             key={index}
-            style={[styles.dot, index < current && styles.dotActive]}
+            style={[styles.segment, index < current && styles.segmentActive]}
           />
         ))}
       </View>
-      {showLabel && <Text style={styles.label}>{label}</Text>}
+      {showLabel && <Text style={styles.label}>{shortLabel}</Text>}
     </View>
   );
 }
