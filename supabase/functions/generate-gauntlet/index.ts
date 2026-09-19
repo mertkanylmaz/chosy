@@ -17,6 +17,17 @@
  *   [4] SLOT         → global / personal / discovery
  *   [5] SIRA KARIŞTIRMA                              → arrangeUnseen()
  *
+ * ── E-19'da ne değişti (19 Eyl 2026, CTO onaylı) ────────────────────────────
+ * İKİ üretim dalı var. Ayrımı `launch_date`'e göre hesaplanan `day_number`
+ * yapar; 1-100 aralığındaysa editoryal, değilse (yayın öncesi ya da takvim
+ * bitti) yukarıdaki algoritmik boru hattı.
+ *
+ *   DAL A — editoryal → generateEditorialQuartet()  · boru hattı HİÇ çalışmaz
+ *   DAL B — algoritmik → generateQuartet()          · yukarıdaki 5 adım
+ *
+ * Dallanmanın DEĞMEDİĞİ yerler: idempotency, cached serve, deriveProgress,
+ * INSERT şekli, response şekli. İkisi de `GeneratedQuartet` döndürür.
+ *
  * ── B.4'te ne değişti ────────────────────────────────────────────────────────
  * Boru hattı fonksiyonları `_shared/gauntletCore.ts`'e TAŞINDI (mantık aynen
  * korundu, davranış değişmedi). Sebep: submit-choice'un `neither`/`seen`
@@ -47,6 +58,12 @@ import {
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import {
+  editorialDayNumber,
+  editorialSlotTypes,
+  fetchEditorialQuartet,
+  fetchLaunchDate,
+} from '../_shared/editorialCalendar.ts'
+import {
   arrangeUnseen,
   buildScoredPool,
   type Candidate,
@@ -68,6 +85,18 @@ import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 // ─── Sabitler ────────────────────────────────────────────────────────────────
 
 const ALGORITHM_VERSION = 'v0-random-diverse'
+
+/**
+ * Editoryal dalın versiyon etiketi (E-19).
+ *
+ * AYRI bir sabit olması zorunlu: `algorithm_version` her `choice_events` ve
+ * `daily_gauntlets` satırına yazılır ve amacı "bu sinyal hangi üretim yolundan
+ * geldi" sorusunu sonradan cevaplayabilmektir (chosy-conventions §6). İki yol
+ * aynı etiketi taşısaydı, ilk 100 günün verisi algoritmik dönemden ayırt
+ * edilemezdi ve §6'nın "algoritma değiştiğinde geçmiş yeniden hesaplanabilmeli"
+ * garantisi çökerdi.
+ */
+const EDITORIAL_ALGORITHM_VERSION = 'v1-editorial-calendar'
 
 /**
  * Yenileme hakkı: Free 2/gün · Pro sınırsız (PRODUCT_OS §"Yenileme hakkı").
@@ -238,6 +267,10 @@ async function persistTimezone(
  * Ama bu dosya onu HENÜZ OKUMUYOR — dört film hâlâ aynı kişisel boru hattından
  * gelir, `global` burada yalnızca bir ETİKETTİR. Üretici hazır, tüketici değil;
  * slotların gerçek kaynaklara bağlanması C fazının işi.
+ *
+ * ⚠️ E-19: bu fonksiyon YALNIZCA algoritmik dalda çağrılır. Editoryal günde
+ * dört slot da `'editorial'`dir (`editorialSlotTypes()`) ve `signalCount`
+ * alakasızdır — seçim kullanıcı sinyalinden değil takvimden gelir.
  */
 function slotTypesFor(signalCount: number): DailyGauntlet['slotTypes'] {
   if (signalCount === 0) return ['global', 'global', 'global', 'global']
@@ -550,6 +583,57 @@ interface GeneratedQuartet {
   poolSize: number
 }
 
+/**
+ * ── DAL A: EDİTORYAL (E-19, ilk 100 gün) ────────────────────────────────────
+ *
+ * Boru hattının BEŞ adımının hiçbiri çalışmaz. Sebep adım adım:
+ *   [1] SERT FİLTRE   → film zaten seçilmiş; havuz kurmak yeniden seçmek olurdu
+ *   [2] PUANLAMA      → tanınırlık yüzdeliği seçimi etkilemiyor, anlamsız iş
+ *   [3] ÇEŞİTLİLİK    → çeşitlilik kararını CTO elle verdi
+ *   [4] SLOT          → dördü de 'editorial' (çağıran yazar)
+ *   [5] SIRA KARIŞTIR → sıra bracket'in KENDİSİ, karıştırmak kurguyu bozar
+ *
+ * Doğrudan sonucu: `buildScoredPool` hiç çağrılmaz, dolayısıyla
+ * `CONTEXT_MAX_RUNTIME` süre tavanı da uygulanmaz. Bu bir atlama değil,
+ * Bible §E-19'un kararıdır ("editoryal seçki bağlam filtresinden geçmiyor").
+ * Ölçülmüş örnek: Gün 2 (`epic`) dörtlüsünün runtime'ları 181/206/175/207 dk —
+ * `short` (110) ya da `medium` (150) bağlamında havuz yolundan HİÇBİRİ gelmezdi.
+ *
+ * `context` yine de `daily_gauntlets.context`'e yazılır: kullanıcının o akşamki
+ * beyanı gerçek bir sinyaldir ve `choice_events` üzerinden profile akar; yalnız
+ * SEÇİME etki etmez.
+ *
+ * `relaxed: false` ve `poolSize: films.length` — gevşetme merdiveni bu dalda
+ * yok, "havuz" da yok. Uydurma bir metrik yazmak yerine dörtlünün kendisi
+ * raporlanır.
+ *
+ * ── KİŞİSEL DIŞLAMALAR UYGULANMAZ — tasarım kararı, bug değil ───────────────
+ * `fetchExclusions` da çağrılmaz. Yani kullanıcı `watchlist.watched_at` ile
+ * ZATEN İZLEDİĞİ bir filmi editoryal günde görebilir; 21 günlük "gösterildi"
+ * ve 45 günlük "reddedildi" cooldown'ları da bu dalda geçerli değildir.
+ *
+ * Bu, takvimin tanımının doğrudan sonucudur: editoryal gün HERKES İÇİN AYNIDIR
+ * (Bible §E-19.1 — 400 film, 300 eşleşme, elle kurgu). Kullanıcıya göre film
+ * çıkarmak günün bracket'ini kişiselleştirirdi ve 4'ten az filmle kalan
+ * kullanıcılar için kaçınılmaz olarak algoritmik bir yedek gerektirirdi —
+ * yani tam olarak bu dalın engellemek için var olduğu şeyi.
+ *
+ * İzlenmiş film çıkmasının karşılığı kayıp değil, sinyaldir: kullanıcı `seen`
+ * der, `watchlist` güncellenir (`submit-choice` DAL 2), tur harcanmaz.
+ * Editoryal günde yenileme uygulanmadığı için (K-23, `isEditorialGauntlet`
+ * guard'ı) bu sinyal yeni film getirmez ama KAYDEDİLİR.
+ *
+ * Karar: CTO onayı 19 Eyl 2026 (keşif DUR-4).
+ */
+async function generateEditorialQuartet(
+  service: SupabaseClient,
+  dayNumber: number,
+): Promise<GeneratedQuartet> {
+  const films = await fetchEditorialQuartet(service, dayNumber)
+  return { films, relaxed: false, relaxations: [], poolSize: films.length }
+}
+
+/** ── DAL B: ALGORİTMİK (v0) — 100 gün bitince ve takvim öncesinde ─────────── */
 async function generateQuartet(
   service: SupabaseClient,
   appUserId: string,
@@ -739,8 +823,21 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(response)
     }
 
-    const generated = await generateQuartet(service, appUserId, context)
-    const slotTypes = slotTypesFor(signalCount)
+    // ── DALLANMA (E-19) ──────────────────────────────────────────────────────
+    // `launch_date` YALNIZCA yeni üretim yolunda okunur. Cached serve yukarıda
+    // zaten döndü ve o yol satırın KENDİ `algorithm_version`'ını kullanır —
+    // takvim penceresi sonradan kaysa bile dün üretilmiş bir gauntlet yeniden
+    // etiketlenmez.
+    const dayNumber = editorialDayNumber(date, await fetchLaunchDate(service))
+    const isEditorialDay = dayNumber !== null
+
+    const generated = isEditorialDay
+      ? await generateEditorialQuartet(service, dayNumber)
+      : await generateQuartet(service, appUserId, context)
+    const slotTypes = isEditorialDay ? editorialSlotTypes() : slotTypesFor(signalCount)
+    const algorithmVersion = isEditorialDay
+      ? EDITORIAL_ALGORITHM_VERSION
+      : ALGORITHM_VERSION
 
     const insert = await service
       .from('daily_gauntlets')
@@ -752,7 +849,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         slot_types: slotTypes,
         context,
         relaxed: generated.relaxed,
-        algorithm_version: ALGORITHM_VERSION,
+        algorithm_version: algorithmVersion,
       })
       .select('id')
       .single()
@@ -816,6 +913,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       relaxations: generated.relaxations,
       context,
       film_ids: generated.films.map((f) => f.id),
+      // Hangi dalın ürettiği teşhis için zorunlu: editoryal günde "havuz 4"
+      // normaldir, algoritmik günde alarm sebebidir.
+      algorithm_version: algorithmVersion,
+      editorial_day_number: dayNumber,
     })
 
     const films = generated.films.map(toGauntletFilm)
@@ -839,7 +940,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       slotTypes,
       userConfidence,
       refreshesRemaining: REFRESHES_PER_DAY_FREE,
-      algorithmVersion: ALGORITHM_VERSION,
+      algorithmVersion,
       progress,
       ...(pendingWatchFeedback ? { pendingWatchFeedback } : {}),
     }

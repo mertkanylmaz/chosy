@@ -197,6 +197,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const [defenderFilm, setDefenderFilm] = useState<GauntletFilm | null>(null);
   const [animateReveal, setAnimateReveal] = useState(false);
   const [refreshesRemaining, setRefreshesRemaining] = useState(0);
+  /**
+   * E-19: sunucu bu gauntlet'in editoryal takvimden geldiğini bildirdi ve
+   * yenileme uygulanmadı. `refreshesRemaining` ile KARIŞTIRILMAZ — hak hâlâ
+   * olabilir, sınır içeriktedir. İlk reddin ardından "İkisi de değil" kapanır
+   * ki kullanıcı sonuçsuz kalacak bir eylemi tekrarlamasın.
+   */
+  const [editorialRefreshBlocked, setEditorialRefreshBlocked] = useState(false);
   const [seenMode, setSeenMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   /**
@@ -279,6 +286,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setGauntlet(g);
       setRefreshesRemaining(g.refreshesRemaining);
       setActionError(null);
+      // E-19: yeni gauntlet = yeni gün olabilir. Editoryal kilit gauntlet'e
+      // aittir, ekrana değil — taşınırsa algoritmik bir günde "İkisi de değil"
+      // sebepsiz kapalı kalırdı.
+      setEditorialRefreshBlocked(false);
       // Sunucudan gelen durum tur GEÇMİŞİ taşımaz (kilitli sözleşme) —
       // ölçülmemiş bir zinciri elde tutmak yerine sıfırlanır (C.5).
       setShareRounds([]);
@@ -555,8 +566,17 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       }
       const replacement = result.replacement;
       if (!replacement) {
-        // refreshAllowed=false: hak bitti, çift değişmez. Sessiz değil —
-        // "İkisi de değil" devre dışı kalır, "Boşver, yarın" görünür.
+        // refreshAllowed=false: çift değişmez. İKİ sebebi olabilir ve ayrımı
+        // sunucu `refreshBlockedReason` ile bildirir (E-19):
+        //   - alan yok        → yenileme hakkı bitti. Mevcut davranış:
+        //                       "İkisi de değil" devre dışı, "Boşver, yarın" görünür.
+        //   - 'editorial_day' → o günün dörtlüsü editoryal takvimden geliyor,
+        //                       yedek çekilmiyor. Sessiz kalmak kullanıcıya
+        //                       "dokundum, bir şey olmadı" hissi verirdi.
+        if (result.refreshBlockedReason === 'editorial_day') {
+          setEditorialRefreshBlocked(true);
+          setActionError(t('gauntlet.editorialNoRefresh'));
+        }
         return;
       }
       const newIds = new Set([replacement.filmA.id, replacement.filmB.id]);
@@ -579,7 +599,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setTransitioning(false);
       }, delay);
     },
-    [isReducedMotion, toExhausted],
+    [isReducedMotion, toExhausted, t],
   );
 
   const handleChoice = useCallback(
@@ -1073,7 +1093,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
               <QuietAction
                 label={t('gauntlet.rejectNeither')}
                 onPress={() => void handleNeither()}
-                disabled={interactionsLocked || outOfRefreshes}
+                disabled={interactionsLocked || outOfRefreshes || editorialRefreshBlocked}
               />
               <Text style={styles.actionSeparator}>·</Text>
               <QuietAction

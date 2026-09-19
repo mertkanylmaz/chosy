@@ -18,6 +18,14 @@
  *
  * `neither`/`seen` bir "yenileme"dir ve hak tüketir: Free 2/gün, Pro sınırsız.
  *
+ * ── E-19 guard'ı (19 Eyl 2026, CTO onaylı) ───────────────────────────────────
+ * Gauntlet editoryal takvimden geldiyse (`slot_types` 'editorial' içeriyor)
+ * `neither`/`seen` yenilemesi UYGULANMAZ: algoritmik havuzdan yedek çekmek
+ * CTO'nun o gün için kurguladığı üç eşleşmeyi kırardı. Olay yine yazılır,
+ * `seen` yine `watchlist`e işlenir; yalnız yeni çift verilmez ve istemciye
+ * `refreshBlockedReason: 'editorial_day'` döner. Yedek kulübesi (position 5-6)
+ * K-23'ün ayrı iş kalemidir; bu guard o gelene kadar kurguyu korur.
+ *
  * ── Yazılan tablolar ─────────────────────────────────────────────────────────
  *   choice_events     — her seçim (append-only, cinema_dna'nın kaynağı)
  *   duel_impressions  — "bu çift gösterildi" durumu (B.3 bilinçli olarak
@@ -49,6 +57,7 @@ import {
   resolveAppUser,
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { isEditorialGauntlet } from '../_shared/editorialCalendar.ts'
 import {
   buildScoredPool,
   type Candidate,
@@ -128,8 +137,22 @@ interface ChoiceResult {
   }
   /** -1 = sınırsız (Pro). */
   refreshesRemaining: number
-  /** false → yenileme talebi kaydedildi ama UYGULANMADI (hak bitti). */
+  /** false → yenileme talebi kaydedildi ama UYGULANMADI (hak bitti ya da editoryal gün). */
   refreshAllowed: boolean
+  /**
+   * `refreshAllowed: false` NEDEN verildi — E-19.
+   *
+   * Alan YOKSA sebep yenileme hakkının bitmesidir (mevcut davranış, eski
+   * istemciler aynen çalışır). `'editorial_day'` ise hak değil İÇERİK
+   * sınırıdır: o günün dörtlüsü editoryal takvimden gelir, algoritmik havuzdan
+   * yedek çekmek günün kurgusunu kırardı (K-23 yedek kulübesi ayrı iş kalemi).
+   *
+   * İki durumun ayrılması zorunlu: ikisi de "çift değişmedi" ile sonuçlanır ama
+   * kullanıcıya söylenecek şey farklıdır ve tek bir sessiz davranışta
+   * birleştirmek, editoryal günü "hakkın bitti" gibi göstererek YANLIŞ bilgi
+   * verirdi.
+   */
+  refreshBlockedReason?: 'editorial_day'
   /** `next: 'exhausted'` neden verildi. */
   exhaustedReason?: 'no_candidates' | 'timeout_no_winner'
   /** Son N gauntlet'te reddetme oranı eşiği aştı. */
@@ -149,6 +172,8 @@ interface GauntletRow {
   champion_film_id: string | null
   context: GauntletContext | null
   algorithm_version: string
+  /** E-19 guard'ı: editoryal günde algoritmik yenileme uygulanmaz. */
+  slot_types: string[]
 }
 
 /**
@@ -708,7 +733,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const [gauntletRes, settled] = await Promise.all([
       service
         .from('daily_gauntlets')
-        .select('id,user_id,film_ids,champion_film_id,context,algorithm_version')
+        .select('id,user_id,film_ids,champion_film_id,context,algorithm_version,slot_types')
         .eq('id', submission.gauntletId)
         .maybeSingle(),
       service
@@ -940,6 +965,41 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     if (submission.outcome === 'seen' && submission.winner) {
       await markWatched(service, appUserId, submission.winner)
+    }
+
+    // ── E-19 GUARD: editoryal günde algoritmik yenileme YOK ───────────────────
+    // Kaynak `daily_gauntlets.slot_types` — üretim anındaki gerçek. `launch_date`
+    // sonradan kaysa bile dün üretilmiş bir gauntlet yeniden sınıflanmaz.
+    //
+    // Buraya kadar gelinmiş olması bilinçli: ham olay ZATEN yazıldı (yukarıda,
+    // `record_choice_event`). "İkisi de olmaz" editoryal günde de gerçek bir
+    // sinyaldir ve `cinema_dna`'nın kaynağıdır (chosy-conventions §6) —
+    // guard olayın KAYDINI değil, UYGULANMASINI engeller. `seen` dalının
+    // `markWatched` çağrısı da yukarıda tamamlandı: kullanıcı o filmi gerçekten
+    // izlemiştir, editoryal gün bu gerçeği değiştirmez.
+    //
+    // Yenileme hakkı sayımı (`usedAfter`) `choice_events`ten TÜRETİLİR, bu
+    // yüzden olay yazıldığı an zaten artmıştır; burada ayrıca düşülmez.
+    //
+    // Sıra: bu kontrol yenileme HAKKI kontrolünden ÖNCE. İkisi de aynı anda
+    // doğru olabilir, ama editoryal gün daha spesifik ve daha doğru cevaptır —
+    // hak satın alınabilir, editoryal günün yedeği yoktur (K-23).
+    if (isEditorialGauntlet(gauntlet.slot_types)) {
+      const result = baseResult('refresh', usedAfter)
+      result.refreshAllowed = false
+      result.refreshBlockedReason = 'editorial_day'
+
+      // Hata DEĞİL — beklenen ve tasarlanmış bir durum, bu yüzden Sentry'ye
+      // değil log'a. Sessiz de değil: istemci `refreshBlockedReason`'ı okuyup
+      // kullanıcıya açık metin gösterir (GauntletShell → gauntlet.editorialNoRefresh).
+      logInfo('choice_refresh_editorial_blocked', {
+        user_id: appUserId,
+        gauntlet_id: gauntlet.id,
+        round: submission.round,
+        outcome: submission.outcome,
+        slot_types: gauntlet.slot_types,
+      })
+      return jsonResponse(result)
     }
 
     if (refreshLimit !== UNLIMITED && usedAfter > refreshLimit) {

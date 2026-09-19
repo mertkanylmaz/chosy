@@ -1449,6 +1449,7 @@
     "confidence": "Seni %%{percent} tanıyorum",
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
     "submitError": "Seçim kaydedilemedi. Tekrar dene.",
+    "editorialNoRefresh": "Bu geceki dörtlü elle seçildi. Filmler değişmiyor — seçimini bunlar arasından yap.",
     "offlineStale": "Bu bugünün listesi değil. Bağlantı gelince yenilenecek.",
     "choicePending": "Seçimin bekliyor. Bağlantı gelince gönderilecek.",
     "choiceDropped": "Seçimin gönderilemedi. Turu yeniden oyna.",

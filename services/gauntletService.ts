@@ -51,8 +51,14 @@ export interface ChoiceResult {
   };
   /** -1 = sınırsız (Pro). */
   refreshesRemaining: number;
-  /** false → yenileme talebi kaydedildi ama UYGULANMADI (hak bitti). */
+  /** false → yenileme talebi kaydedildi ama UYGULANMADI (hak bitti ya da editoryal gün). */
   refreshAllowed: boolean;
+  /**
+   * E-19: `refreshAllowed: false` neden verildi. Alan YOKSA sebep hakkın
+   * bitmesidir (mevcut davranış). `'editorial_day'` → o günün dörtlüsü
+   * editoryal takvimden geliyor, algoritmik yedek çekilmiyor.
+   */
+  refreshBlockedReason?: 'editorial_day';
   exhaustedReason?: 'no_candidates' | 'timeout_no_winner';
   suggestSingleFilm?: boolean;
   lowIntentSession?: boolean;
