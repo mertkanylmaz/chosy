@@ -20,6 +20,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
+import { Image as ExpoImage } from 'expo-image';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -67,6 +68,7 @@ import type {
   WatchFeedbackResponse,
 } from '@/types/gauntlet';
 import type { ShareRound } from '@/utils/gauntletShareText';
+import { upgradePosterUrl } from '@/utils/posterUrl';
 import {
   hapticHeavy,
   hapticLight,
@@ -690,6 +692,14 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           if (newRound === 3) {
             void prefetchWatchProviders(winner.id, region);
             void prefetchWatchProviders(incoming.id, region);
+            // C5: sampiyon SECIMDEN SONRA belli oluyor; o an prefetch gec
+            // kalir. Son tur baslarken IKI finalistin de w780'i isitilir,
+            // hangisi kazanirsa kazansin kara bosluk icinde hazir olur.
+            void ExpoImage.prefetch(
+              [winner, incoming]
+                .map((f) => upgradePosterUrl(f.posterUrl).url)
+                .filter((u) => u !== ''),
+            );
           }
           setRound(newRound);
           setPair({ left, right });

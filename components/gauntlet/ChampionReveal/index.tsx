@@ -61,12 +61,23 @@ import { posthogAnalytics } from '@/services/posthog';
 import { saveChampionForLater } from '@/services/gauntletService';
 import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
+import { upgradePosterUrl } from '@/utils/posterUrl';
 import { hapticLight } from '@/utils/haptics';
 
 import { styles } from './styles';
 
 /** "Kopyalandı" onayının ekranda kalma süresi. */
 const COPIED_NOTICE_MS = 2400;
+
+/**
+ * C5: sampiyon posteri hazir degilse KARA BOSLUK ne kadar uzatilabilir.
+ *
+ * §7.3'un 520ms'i (blackout + pause) normal durumda yeterli. Yavas agda
+ * poster o ana yetismezse dizi yine de baslarsa poster ORTADA ani belirir
+ * ve imza an bozulur. Bu yuzden siyah beklenir - ama sinirsiz degil:
+ * 1.5s'te dizi zorla baslar ve poster w500'e duser.
+ */
+const POSTER_WAIT_CAP_MS = 1500;
 
 interface ChampionRevealProps {
   champion: GauntletFilm;
@@ -226,12 +237,79 @@ export function ChampionReveal({
     router.push(`/film/${champion.id}`);
   }, [router, champion.id]);
 
+  /**
+   * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
+   * ekranin %58'ini kapliyor ve 3x'te >=720px gerekiyor. Yukseltme saf bir
+   * yardimciyla yapiliyor; desen eslesmezse URL OLDUGU GIBI kalir.
+   */
+  const upgrade = upgradePosterUrl(champion.posterUrl);
+  const [posterUri, setPosterUri] = useState(upgrade.url);
+  const [posterLoaded, setPosterLoaded] = useState(false);
+  const [waitCapReached, setWaitCapReached] = useState(false);
+  const revealStartedAtRef = useRef(Date.now());
+  const capTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /**
+   * Yukseltme yapilamadiysa sessiz gecilmez: desen tanindiysa zaten
+   * yukseltilmistir, taninmadiysa sunucudaki URL bicimi degismis demektir
+   * ve bunun izi kalmali (K-44). Kullaniciya yansimaz - poster yine gosterilir.
+   */
+  useEffect(() => {
+    if (upgrade.upgraded) return;
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.poster',
+      message: 'champion posteri w780e yukseltilemedi',
+      level: 'info',
+      data: { film_id: champion.id, reason: upgrade.reason },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [champion.id, upgrade.upgraded, upgrade.reason]);
+
+  /** C5: 1.5s tavani. Poster yetismezse diziyi baslat ve w500'e dus. */
+  useEffect(() => {
+    if (!animateReveal) return;
+    capTimerRef.current = setTimeout(() => {
+      if (!mountedRef.current) return;
+      setWaitCapReached(true);
+      setPosterLoaded((loaded) => {
+        if (!loaded) {
+          setPosterUri(champion.posterUrl);
+          Sentry.addBreadcrumb({
+            category: 'gauntlet.poster',
+            message: 'w780 1.5s icinde yuklenmedi - w500e dusuldu',
+            level: 'warning',
+            data: { film_id: champion.id },
+          });
+        }
+        return loaded;
+      });
+    }, POSTER_WAIT_CAP_MS);
+    return () => {
+      if (capTimerRef.current) clearTimeout(capTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [animateReveal, champion.id]);
+
+  /** Yukseltilmis URL yuklenemezse orijinaline dus - bos poster gosterme. */
+  const handlePosterError = useCallback(() => {
+    if (posterUri === champion.posterUrl) return;
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.poster',
+      message: 'w780 yuklenemedi - orijinal URLe dusuldu',
+      level: 'warning',
+      data: { film_id: champion.id },
+    });
+    setPosterUri(champion.posterUrl);
+  }, [posterUri, champion.posterUrl, champion.id]);
+
   const posterOpacity = useSharedValue(animateReveal ? 0 : 1);
   const titleOpacity = useSharedValue(animateReveal ? 0 : 1);
   const metaOpacity = useSharedValue(animateReveal ? 0 : 1);
 
   useEffect(() => {
     if (!animateReveal) return;
+    // C5: poster hazir degilse SIYAH BEKLE. Tavan asilirsa yine baslar.
+    if (!posterLoaded && !waitCapReached) return;
 
     // Kara boşluk zamanlaması Reduce Motion'da DEĞİŞMEZ (§7.5) — yalnızca
     // belirme süreleri cross-fade'e iner.
@@ -240,7 +318,13 @@ export function ChampionReveal({
       : DISSOLVE_DURATION.newContender;
     const fade = { duration: fadeDuration, easing: EASE_OUT_QUART };
 
-    const posterAt = BLACKOUT_SEQUENCE.blackout + BLACKOUT_SEQUENCE.pause;
+    // §7.3'un 520ms'i mount anindan sayilir. Poster gec geldiyse gecen sure
+    // dusulur ki dizi TOPLAMDA uzamasin - kara bosluk zaten siyah gecti.
+    const elapsed = Date.now() - revealStartedAtRef.current;
+    const posterAt = Math.max(
+      0,
+      BLACKOUT_SEQUENCE.blackout + BLACKOUT_SEQUENCE.pause - elapsed,
+    );
     const titleAt = posterAt + BLACKOUT_SEQUENCE.titleDelay;
     const metaAt = titleAt + BLACKOUT_SEQUENCE.metaDelay;
 
@@ -248,7 +332,7 @@ export function ChampionReveal({
     titleOpacity.value = withDelay(titleAt, withTiming(1, fade));
     metaOpacity.value = withDelay(metaAt, withTiming(1, fade));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animateReveal, isReducedMotion]);
+  }, [animateReveal, isReducedMotion, posterLoaded, waitCapReached]);
 
   const posterStyle = useAnimatedStyle(() => ({ opacity: posterOpacity.value }));
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
@@ -272,9 +356,11 @@ export function ChampionReveal({
           accessibilityLabel={t('gauntlet.championOpenFilm', { title: champion.title })}
         >
           <Image
-            source={{ uri: champion.posterUrl }}
+            source={{ uri: posterUri }}
             style={styles.poster}
             contentFit="cover"
+            onLoad={() => setPosterLoaded(true)}
+            onError={handlePosterError}
           />
         </TouchableOpacity>
       </Animated.View>
