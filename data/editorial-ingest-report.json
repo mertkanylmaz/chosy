@@ -1,0 +1,10 @@
+{
+  "generated_at": "2026-09-19T14:08:28.366Z",
+  "mode": "dry-run",
+  "input_rows": 96,
+  "existing_rows": 304,
+  "calendar_films_total": 400,
+  "days": 100,
+  "valid": 96,
+  "eliminations": []
+}

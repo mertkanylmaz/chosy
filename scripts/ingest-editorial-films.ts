@@ -62,6 +62,13 @@ function log(msg: string): void {
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const RESOLVED_PATH = path.resolve(process.cwd(), 'data', 'editorial-resolved.json');
+/**
+ * Takvimin `films`'te ZATEN olan yarısı: 304 satır, her biri gerçek UUID.
+ * Gün/pozisyon bilgisi DB'de hiçbir yerde yoktu (editorial_calendar_films
+ * boştu) — bu dosya o eksik kaynağın kendisidir. Faz 1'e girmez: bu filmler
+ * TMDB'den çözümlenmeyecek, doğrudan yazılacak.
+ */
+const EXISTING_PATH = path.resolve(process.cwd(), 'data', 'editorial-existing-films.json');
 const REPORT_PATH = path.resolve(process.cwd(), 'data', 'editorial-ingest-report.json');
 
 const SUPABASE_URL =
@@ -181,6 +188,13 @@ interface ResolvedRow {
   resolved_at: string;
 }
 
+/** `editorial-existing-films.json` satırı — film zaten `films`'te, UUID hazır. */
+interface ExistingRow {
+  film_id: string;
+  day_number: number;
+  position: number;
+}
+
 interface Elimination {
   tmdb_id: number;
   title: string;
@@ -191,6 +205,117 @@ interface Elimination {
 }
 
 // ─── Girdi doğrulama ─────────────────────────────────────────────────────────
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Mevcut filmlerin gün/pozisyon eşlemesini doğrular. Bozuk satır sessizce
+ * atlanmaz; tamamı toplanıp fatal olarak bildirilir.
+ */
+function validateExisting(raw: unknown): ExistingRow[] {
+  if (!Array.isArray(raw)) {
+    throw new Error(`${EXISTING_PATH} bir dizi değil.`);
+  }
+
+  const problems: string[] = [];
+  const rows: ExistingRow[] = [];
+  const seenSlots = new Set<string>();
+  const seenFilm = new Map<string, string>();
+
+  raw.forEach((item, idx) => {
+    const where = `satır ${idx + 1}`;
+    const before = problems.length;
+
+    if (typeof item !== 'object' || item === null) {
+      problems.push(`${where}: nesne değil`);
+      return;
+    }
+    const r = item as Record<string, unknown>;
+
+    if (typeof r.film_id !== 'string' || !UUID_RE.test(r.film_id)) {
+      problems.push(`${where}: film_id geçerli bir UUID değil`);
+    }
+    if (typeof r.day_number !== 'number' || !Number.isInteger(r.day_number) ||
+        r.day_number < 1 || r.day_number > CALENDAR_DAYS) {
+      problems.push(`${where}: day_number 1-${CALENDAR_DAYS} olmalı`);
+    }
+    if (typeof r.position !== 'number' || !Number.isInteger(r.position) ||
+        r.position < 1 || r.position > 6) {
+      problems.push(`${where}: position 1-6 olmalı`);
+    }
+    if (problems.length > before) return;
+
+    const row = item as ExistingRow;
+
+    const slotKey = `${row.day_number}/${row.position}`;
+    if (seenSlots.has(slotKey)) {
+      problems.push(`${where}: (gün ${row.day_number}, position ${row.position}) tekrar ediyor`);
+      return;
+    }
+    seenSlots.add(slotKey);
+
+    // Migration 112 UNIQUE(film_id): bir film ikinci bir slota konulamaz.
+    const prevSlot = seenFilm.get(row.film_id);
+    if (prevSlot !== undefined) {
+      problems.push(
+        `${where}: film_id ${row.film_id} iki slotta — ${prevSlot} ve ${slotKey}.`,
+      );
+      return;
+    }
+    seenFilm.set(row.film_id, slotKey);
+
+    rows.push(row);
+  });
+
+  if (problems.length > 0) {
+    throw new Error(
+      `editorial-existing-films.json doğrulaması başarısız (${problems.length} sorun):\n  - ` +
+      problems.join('\n  - '),
+    );
+  }
+
+  return rows;
+}
+
+/**
+ * İki kaynağın BİRLEŞİMİNİ doğrular: çakışma yok mu, 100 günün 1-4 ana sırası
+ * tam mı. Tamlık kontrolü tek kaynağa bakamaz — takvimin 304 satırı
+ * `editorial-existing-films.json`'da, 96 satırı Faz 1 çıktısında.
+ */
+function validateUnion(resolved: ResolvedRow[], existing: ExistingRow[]): void {
+  const problems: string[] = [];
+  const slotOwner = new Map<string, string>();
+
+  for (const row of existing) {
+    slotOwner.set(`${row.day_number}/${row.position}`, 'mevcut');
+  }
+  for (const row of resolved) {
+    const slotKey = `${row.day_number}/${row.position}`;
+    if (slotOwner.has(slotKey)) {
+      problems.push(
+        `gün ${row.day_number}/pos ${row.position}: hem editorial-existing-films.json'da ` +
+        `hem Faz 1 çıktısında var — hangi film yazılacağı belirsiz.`,
+      );
+      continue;
+    }
+    slotOwner.set(slotKey, 'yeni');
+  }
+
+  for (let day = 1; day <= CALENDAR_DAYS; day++) {
+    const missing = [1, 2, 3, 4].filter((p) => !slotOwner.has(`${day}/${p}`));
+    if (missing.length > 0) {
+      problems.push(`gün ${day}: ana sıra eksik — position ${missing.join(', ')} yok`);
+    }
+  }
+
+  if (problems.length > 0) {
+    throw new Error(
+      `Takvim birleşimi doğrulaması başarısız (${problems.length} sorun):\n  - ` +
+      problems.join('\n  - '),
+    );
+  }
+}
 
 function validateResolved(raw: unknown): ResolvedRow[] {
   if (!Array.isArray(raw)) {
@@ -255,18 +380,9 @@ function validateResolved(raw: unknown): ResolvedRow[] {
     rows.push(row);
   });
 
-  const positionsByDay = new Map<number, Set<number>>();
-  for (const row of rows) {
-    const set = positionsByDay.get(row.day_number) ?? new Set<number>();
-    set.add(row.position);
-    positionsByDay.set(row.day_number, set);
-  }
-  for (const [day, set] of [...positionsByDay.entries()].sort((a, b) => a[0] - b[0])) {
-    const missing = [1, 2, 3, 4].filter((p) => !set.has(p));
-    if (missing.length > 0) {
-      problems.push(`gün ${day}: ana sıra eksik — position ${missing.join(', ')} yok`);
-    }
-  }
+  // NOT: "1-4 ana sıra tam mı" kontrolü burada DEĞİL — `validateUnion`'da.
+  // Bu dosya takvimin yalnız 96 satırını taşır; tamlık iki kaynağın
+  // birleşiminde aranır (CTO kararı, 19 Eyl 2026).
 
   if (problems.length > 0) {
     throw new Error(
@@ -439,14 +555,24 @@ async function upsertCalendarDays(
   rows: ResolvedRow[],
   launchDate: Date,
 ): Promise<number> {
-  const byDay = new Map<number, { day_number: number; theme: Theme; editor_note: string | null }>();
+  // editorial_calendar_films FK'si editorial_calendar_days(day_number)'a
+  // bakıyor. Takvimin 304 satırı Faz 1 çıktısında OLMADIĞI için günleri
+  // yalnız `rows`'tan türetmek 100 günün 49'unu eksik bırakır ve film
+  // yazımı FK'den patlar — bu yüzden 1..100 tamamı yazılır.
+  const noteByDay = new Map<number, string>();
   for (const row of rows) {
-    if (byDay.has(row.day_number)) continue;
-    byDay.set(row.day_number, {
-      day_number: row.day_number,
+    if (row.editor_note !== undefined && !noteByDay.has(row.day_number)) {
+      noteByDay.set(row.day_number, row.editor_note);
+    }
+  }
+
+  const byDay = new Map<number, { day_number: number; theme: Theme; editor_note: string | null }>();
+  for (let day = 1; day <= CALENDAR_DAYS; day++) {
+    byDay.set(day, {
+      day_number: day,
       // Tema girdiden DEĞİL, day_number + launch_date'ten hesaplanır.
-      theme: dayNumberToTheme(row.day_number, launchDate),
-      editor_note: row.editor_note ?? null,
+      theme: dayNumberToTheme(day, launchDate),
+      editor_note: noteByDay.get(day) ?? null,
     });
   }
 
@@ -463,14 +589,25 @@ async function upsertCalendarFilms(
   sb: SupabaseClient,
   rows: ResolvedRow[],
   uuidByTmdb: Map<number, string>,
+  existing: ExistingRow[],
 ): Promise<number> {
-  const filmRows = rows.map((row) => {
+  // Mevcut 304: UUID hazır, ne TMDB ne films sorgusu gerekir.
+  const existingRows = existing.map((row) => ({
+    day_number: row.day_number,
+    position: row.position,
+    film_id: row.film_id,
+  }));
+
+  // Yeni 96: UUID ancak films upsert'ünden SONRA bilinir.
+  const newRows = rows.map((row) => {
     const filmId = uuidByTmdb.get(row.tmdb_id);
     if (filmId === undefined) {
       throw new Error(`tmdb_id ${row.tmdb_id} için UUID yok — upsert sırası bozuk.`);
     }
     return { day_number: row.day_number, position: row.position, film_id: filmId };
   });
+
+  const filmRows = [...existingRows, ...newRows];
 
   const { error } = await sb
     .from('editorial_calendar_films')
@@ -559,9 +696,27 @@ async function main(): Promise<void> {
 
   if (isDryRun) printThemeTable(launchDate);
 
+  if (!fs.existsSync(EXISTING_PATH)) {
+    throw new Error(
+      `${EXISTING_PATH} yok. Takvimin 304 satırı (films'te zaten olan filmlerin ` +
+      `gün/pozisyon eşlemesi) bu dosyadan gelir; onsuz 100 günün ana sırası ` +
+      `tamamlanamaz.`,
+    );
+  }
+
   const rows = validateResolved(JSON.parse(fs.readFileSync(RESOLVED_PATH, 'utf-8')));
-  const dayCount = new Set(rows.map((r) => r.day_number)).size;
-  log(`Girdi doğrulandı: ${rows.length} film · ${dayCount} gün`);
+  const existing = validateExisting(JSON.parse(fs.readFileSync(EXISTING_PATH, 'utf-8')));
+  validateUnion(rows, existing);
+
+  const totalSlots = rows.length + existing.length;
+  const dayCount = new Set([
+    ...rows.map((r) => r.day_number),
+    ...existing.map((r) => r.day_number),
+  ]).size;
+  log(
+    `Girdi doğrulandı: ${existing.length} mevcut + ${rows.length} yeni = ` +
+    `${totalSlots} slot · ${dayCount} gün`,
+  );
 
   log(`TMDB detayları çekiliyor (${rows.length} film)...`);
   const { filmRows, eliminations } = await buildFilmRows(rows);
@@ -570,6 +725,8 @@ async function main(): Promise<void> {
     generated_at: new Date().toISOString(),
     mode: isDryRun ? 'dry-run' : 'apply',
     input_rows: rows.length,
+    existing_rows: existing.length,
+    calendar_films_total: totalSlots,
     days: dayCount,
     valid: filmRows.size,
     eliminations,
@@ -577,7 +734,9 @@ async function main(): Promise<void> {
   fs.writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2), 'utf-8');
 
   console.log(`\n${c.bold}═══ Ingest raporu ═══${c.reset}`);
-  console.log(`  Girdi:     ${rows.length} film · ${dayCount} gün`);
+  console.log(
+    `  Girdi:     ${rows.length} yeni film · ${existing.length} mevcut · ${dayCount} gün`,
+  );
   console.log(`  ${c.green}Geçerli:   ${filmRows.size}${c.reset}`);
   console.log(`  ${c.yellow}Elenen:    ${eliminations.length}${c.reset}`);
   console.log(`  TMDB çağrısı: ${getCallCount()}`);
@@ -601,7 +760,12 @@ async function main(): Promise<void> {
 
   if (isDryRun) {
     console.log(`\n${c.yellow}DRY RUN — hiçbir yazma yapılmadı.${c.reset}`);
-    console.log(`  Yazılacaktı: ${filmRows.size} films · ${dayCount} calendar_days · ${rows.length} calendar_films`);
+    console.log(
+      `  Yazılacaktı: ${filmRows.size} films (yeni) · ` +
+      `${CALENDAR_DAYS} editorial_calendar_days · ` +
+      `${totalSlots} editorial_calendar_films ` +
+      `(${existing.length} mevcut + ${rows.length} yeni)`,
+    );
     const tierCounts = new Map<string, number>();
     for (const r of filmRows.values()) {
       tierCounts.set(r.curation_tier, (tierCounts.get(r.curation_tier) ?? 0) + 1);
@@ -624,7 +788,7 @@ async function main(): Promise<void> {
   const days = await upsertCalendarDays(sb, rows, launchDate);
   log(`${c.green}✓ ${days} editorial_calendar_days satırı${c.reset}`);
 
-  const calendarFilms = await upsertCalendarFilms(sb, rows, uuidByTmdb);
+  const calendarFilms = await upsertCalendarFilms(sb, rows, uuidByTmdb, existing);
   log(`${c.green}✓ ${calendarFilms} editorial_calendar_films satırı${c.reset}`);
 
   console.log(
