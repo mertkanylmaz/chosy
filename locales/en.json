@@ -1462,7 +1462,7 @@
       "copyError": "Couldn't copy. Try again.",
       "header": "CHOSY · %{date}",
       "roundLine": "Round %{round}: %{winner} over %{loser}",
-      "championLine": "Tonight's film: %{title} (%{year})"
+      "championLine": "Today's film: %{title} (%{year})"
     },
     "saveForLater": {
       "action": "Save for later",
