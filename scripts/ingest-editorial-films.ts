@@ -40,7 +40,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 import { initCredentials, tmdbGet, getCallCount } from './lib/tmdb-client';
 import type { TmdbMovieDetail } from './lib/tmdb-client';
-import { detailToRow, type FilmInsertRow } from './add-missing-films';
+import {
+  detailToRow,
+  upsertFilmsPreservingEnrichment,
+  type FilmInsertRow,
+} from './add-missing-films';
 
 // ─── ANSI helpers ────────────────────────────────────────────────────────────
 
@@ -474,16 +478,27 @@ async function buildFilmRows(rows: ResolvedRow[]): Promise<{
 
 // ─── DB yazma ────────────────────────────────────────────────────────────────
 
+/**
+ * `films` yazımı — `add-missing-films.ts`'ten IMPORT edilir, kopyalanmaz
+ * (S-11). Mevcut satırların imdb_rating / metascore / content_rating /
+ * oscar_* kolonları korunur; editoryal seçkide zaten var olan bir filme
+ * denk gelmek zenginleştirmeyi silmemeli.
+ */
 async function upsertFilms(sb: SupabaseClient, rows: FilmInsertRow[]): Promise<number> {
-  let total = 0;
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await sb.from('films').upsert(batch, { onConflict: 'tmdb_id' });
-    if (error) throw new Error(`films upsert hatası: ${error.message}`);
-    total += batch.length;
-    log(`  films upsert: ${total}/${rows.length}`);
+  const { inserted, updated } = await upsertFilmsPreservingEnrichment(
+    sb,
+    rows,
+    (done, total) => log(`  films upsert: ${done}/${total}`),
+  );
+
+  if (updated > 0) {
+    log(
+      `  ${updated} film films'te zaten vardı — imdb_rating/metascore/` +
+      `content_rating/oscar_* korundu.`,
+    );
   }
-  return total;
+
+  return inserted + updated;
 }
 
 /** tmdb_id → films.id (UUID) eşlemesi. Eksik kalan varsa fatal. */

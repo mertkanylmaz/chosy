@@ -299,24 +299,119 @@ async function fetchFilmDetails(tmdbIds: number[]): Promise<{
 
 // ─── Upsert to DB ────────────────────────────────────────────────────────────
 
+/**
+ * `detailToRow`'un YENİ film için bilerek NULL/0 yazdığı kolonlar.
+ *
+ * Yeni satırda doğru: TMDB bu verileri taşımaz, OMDb zincirine kadar boştur.
+ * MEVCUT satırda yıkıcı: `onConflict: 'tmdb_id'` upsert'ü aynı alanları
+ * üzerine yazıp zenginleştirmeyi siler. 19 Eyl 2026'da E-19 ingest'inde
+ * tam olarak bu oldu — The Revenant ve Burning Days'in imdb_rating /
+ * metascore / content_rating / oscar_* değerleri sıfırlandı.
+ *
+ * Bu yüzden mevcut satırların payload'ından DÜŞÜRÜLÜR.
+ */
+const PRESERVED_ON_UPDATE = [
+  'imdb_rating',
+  'metascore',
+  'content_rating',
+  'oscar_wins',
+  'oscar_nominations',
+] as const;
+
+/** `films`'te hangi tmdb_id'ler zaten var? */
+async function fetchExistingTmdbIds(
+  sb: SupabaseClient,
+  tmdbIds: number[],
+): Promise<Set<number>> {
+  const existing = new Set<number>();
+
+  for (let i = 0; i < tmdbIds.length; i += BATCH_SIZE) {
+    const batch = tmdbIds.slice(i, i + BATCH_SIZE);
+    const { data, error } = await sb
+      .from('films')
+      .select('tmdb_id')
+      .in('tmdb_id', batch);
+
+    if (error) throw new Error(`films tmdb_id sorgusu hatası: ${error.message}`);
+    for (const r of data ?? []) existing.add((r as { tmdb_id: number }).tmdb_id);
+  }
+
+  return existing;
+}
+
+/**
+ * `films` upsert'ü — mevcut satırların zenginleştirme kolonlarını KORUR.
+ *
+ * PostgREST'te `ON CONFLICT DO UPDATE SET` listesi daraltılamaz: güncellenen
+ * kolon kümesi payload'ın anahtarlarından çıkar. Bu yüzden satırlar önce
+ * yeni/mevcut diye ayrılır ve iki ayrı upsert yapılır — mevcut olanların
+ * payload'ında `PRESERVED_ON_UPDATE` kolonları hiç bulunmaz, dolayısıyla
+ * DO UPDATE onlara dokunmaz.
+ *
+ * Tek payload'da karıştırmak İŞE YARAMAZ: PostgREST çok satırlı insert'te
+ * anahtar kümesini birleştirir ve eksik anahtarları NULL'a çeker.
+ *
+ * E-19 (19 Eyl 2026) sonrası eklendi; `scripts/ingest-editorial-films.ts`
+ * aynı fonksiyonu import eder (S-11: kopyalanmaz).
+ */
+export async function upsertFilmsPreservingEnrichment(
+  sb: SupabaseClient,
+  rows: FilmInsertRow[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ inserted: number; updated: number }> {
+  if (rows.length === 0) return { inserted: 0, updated: 0 };
+
+  const existingIds = await fetchExistingTmdbIds(sb, rows.map((r) => r.tmdb_id));
+
+  const newRows = rows.filter((r) => !existingIds.has(r.tmdb_id));
+  const updateRows = rows
+    .filter((r) => existingIds.has(r.tmdb_id))
+    .map((r) => {
+      const reduced: Record<string, unknown> = { ...r };
+      for (const col of PRESERVED_ON_UPDATE) delete reduced[col];
+      return reduced;
+    });
+
+  let done = 0;
+  const report = (): void => onProgress?.(done, rows.length);
+
+  for (let i = 0; i < newRows.length; i += BATCH_SIZE) {
+    const batch = newRows.slice(i, i + BATCH_SIZE);
+    const { error } = await sb.from('films').upsert(batch, { onConflict: 'tmdb_id' });
+    if (error) throw new Error(`films upsert (yeni) hatası: ${error.message}`);
+    done += batch.length;
+    report();
+  }
+
+  for (let i = 0; i < updateRows.length; i += BATCH_SIZE) {
+    const batch = updateRows.slice(i, i + BATCH_SIZE);
+    const { error } = await sb.from('films').upsert(batch, { onConflict: 'tmdb_id' });
+    if (error) throw new Error(`films upsert (mevcut) hatası: ${error.message}`);
+    done += batch.length;
+    report();
+  }
+
+  return { inserted: newRows.length, updated: updateRows.length };
+}
+
 async function upsertFilms(
   sb: SupabaseClient,
   rows: FilmInsertRow[],
 ): Promise<{ inserted: number }> {
-  let total = 0;
+  const { inserted, updated } = await upsertFilmsPreservingEnrichment(
+    sb,
+    rows,
+    (done, total) => log(`  Upserted batch: ${done}/${total}`),
+  );
 
-  for (let i = 0; i < rows.length; i += BATCH_SIZE) {
-    const batch = rows.slice(i, i + BATCH_SIZE);
-    const { error } = await sb
-      .from('films')
-      .upsert(batch, { onConflict: 'tmdb_id' });
-
-    if (error) throw new Error(`Films upsert error: ${error.message}`);
-    total += batch.length;
-    log(`  Upserted batch: ${total}/${rows.length}`);
+  if (updated > 0) {
+    log(
+      `  ${updated} film zaten vardı — imdb_rating/metascore/content_rating/` +
+      `oscar_* korundu, üzerine yazılmadı.`,
+    );
   }
 
-  return { inserted: total };
+  return { inserted: inserted + updated };
 }
 
 /** Create placeholder film_profiles for newly added films */
