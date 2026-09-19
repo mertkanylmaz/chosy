@@ -1,12 +1,12 @@
 {
-  "total_films": 84,
-  "profiled": 84,
+  "total_films": 94,
+  "profiled": 94,
   "failed": 0,
   "skipped": 0,
-  "total_api_calls": 84,
-  "total_input_tokens": 66105,
-  "total_output_tokens": 27482,
-  "estimated_cost_usd": 0.163,
+  "total_api_calls": 94,
+  "total_input_tokens": 75335,
+  "total_output_tokens": 31759,
+  "estimated_cost_usd": 0.187,
   "total_duration_seconds": 81,
-  "avg_latency_ms": 3399
+  "avg_latency_ms": 3053
 }
