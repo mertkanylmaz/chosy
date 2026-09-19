@@ -1,0 +1,770 @@
+[
+ {
+  "title": "Minority Report",
+  "year": 2002,
+  "director": "Steven Spielberg",
+  "day_number": 15,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Speed",
+  "year": 1994,
+  "director": "Jan de Bont",
+  "day_number": 22,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Dawn of the Planet of the Apes",
+  "year": 2014,
+  "director": "Matt Reeves",
+  "day_number": 29,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "National Treasure",
+  "year": 2004,
+  "director": "Jon Turteltaub",
+  "day_number": 43,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Italian Job",
+  "year": 2003,
+  "director": "F. Gary Gray",
+  "day_number": 57,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Gravity",
+  "year": 2013,
+  "director": "Alfonso Cuarón",
+  "day_number": 64,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Spider-Man 2",
+  "year": 2004,
+  "director": "Sam Raimi",
+  "day_number": 71,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Rock",
+  "year": 1996,
+  "director": "Michael Bay",
+  "day_number": 85,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Face/Off",
+  "year": 1997,
+  "director": "John Woo",
+  "day_number": 85,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Sherlock Holmes",
+  "year": 2009,
+  "director": "Guy Ritchie",
+  "day_number": 92,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Nice Guys",
+  "year": 2016,
+  "director": "Shane Black",
+  "day_number": 92,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Last of the Mohicans",
+  "year": 1992,
+  "director": "Michael Mann",
+  "day_number": 79,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Patriot",
+  "year": 2000,
+  "director": "Roland Emmerich",
+  "day_number": 79,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Revenant",
+  "year": 2015,
+  "director": "Alejandro G. Iñárritu",
+  "day_number": 79,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Short Cuts",
+  "year": 1993,
+  "director": "Robert Altman",
+  "day_number": 86,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Nashville",
+  "year": 1975,
+  "director": "Robert Altman",
+  "day_number": 86,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Babel",
+  "year": 2006,
+  "director": "Alejandro G. Iñárritu",
+  "day_number": 86,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "A Bridge Too Far",
+  "year": 1977,
+  "director": "Richard Attenborough",
+  "day_number": 93,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "War and Peace",
+  "year": 1966,
+  "director": "Sergei Bondarchuk",
+  "day_number": 100,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Tár",
+  "year": 2022,
+  "director": "Todd Field",
+  "day_number": 24,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Zone of Interest",
+  "year": 2023,
+  "director": "Jonathan Glazer",
+  "day_number": 38,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Son of Saul",
+  "year": 2015,
+  "director": "László Nemes",
+  "day_number": 38,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Hurt Locker",
+  "year": 2008,
+  "director": "Kathryn Bigelow",
+  "day_number": 38,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Moonlight",
+  "year": 2016,
+  "director": "Barry Jenkins",
+  "day_number": 59,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Shape of Water",
+  "year": 2017,
+  "director": "Guillermo del Toro",
+  "day_number": 80,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Queen",
+  "year": 2006,
+  "director": "Stephen Frears",
+  "day_number": 94,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Darkest Hour",
+  "year": 2017,
+  "director": "Joe Wright",
+  "day_number": 94,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Lincoln",
+  "year": 2012,
+  "director": "Steven Spielberg",
+  "day_number": 94,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Paterson",
+  "year": 2016,
+  "director": "Jim Jarmusch",
+  "day_number": 11,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Columbus",
+  "year": 2017,
+  "director": "Kogonada",
+  "day_number": 11,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "First Reformed",
+  "year": 2018,
+  "director": "Paul Schrader",
+  "day_number": 18,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "All of Us Strangers",
+  "year": 2023,
+  "director": "Andrew Haigh",
+  "day_number": 25,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Blue Is the Warmest Color",
+  "year": 2013,
+  "director": "Abdellatif Kechiche",
+  "day_number": 25,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Lobster",
+  "year": 2015,
+  "director": "Yorgos Lanthimos",
+  "day_number": 25,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Tree of Life",
+  "year": 2011,
+  "director": "Terrence Malick",
+  "day_number": 32,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Melancholia",
+  "year": 2011,
+  "director": "Lars von Trier",
+  "day_number": 32,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Dogtooth",
+  "year": 2009,
+  "director": "Yorgos Lanthimos",
+  "day_number": 39,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Killing of a Sacred Deer",
+  "year": 2017,
+  "director": "Yorgos Lanthimos",
+  "day_number": 39,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Caché",
+  "year": 2005,
+  "director": "Michael Haneke",
+  "day_number": 39,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Frances Ha",
+  "year": 2013,
+  "director": "Noah Baumbach",
+  "day_number": 88,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Beau Travail",
+  "year": 2000,
+  "director": "Claire Denis",
+  "day_number": 95,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "La Chimera",
+  "year": 2023,
+  "director": "Alice Rohrwacher",
+  "day_number": 95,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Wonders",
+  "year": 2014,
+  "director": "Alice Rohrwacher",
+  "day_number": 95,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Dark City",
+  "year": 1998,
+  "director": "Alex Proyas",
+  "day_number": 33,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Nikita",
+  "year": 1990,
+  "director": "Luc Besson",
+  "day_number": 40,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Ghost Dog: The Way of the Samurai",
+  "year": 1999,
+  "director": "Jim Jarmusch",
+  "day_number": 40,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Collateral",
+  "year": 2004,
+  "director": "Michael Mann",
+  "day_number": 40,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Clerks",
+  "year": 1994,
+  "director": "Kevin Smith",
+  "day_number": 54,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Blow",
+  "year": 2001,
+  "director": "Ted Demme",
+  "day_number": 61,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Wall Street",
+  "year": 1987,
+  "director": "Oliver Stone",
+  "day_number": 75,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Glengarry Glen Ross",
+  "year": 1992,
+  "director": "James Foley",
+  "day_number": 75,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Goonies",
+  "year": 1985,
+  "director": "Richard Donner",
+  "day_number": 89,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Chocolat",
+  "year": 2000,
+  "director": "Lasse Hallström",
+  "day_number": 27,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Stardust",
+  "year": 2007,
+  "director": "Matthew Vaughn",
+  "day_number": 55,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Secret Life of Walter Mitty",
+  "year": 2013,
+  "director": "Ben Stiller",
+  "day_number": 55,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Paddington",
+  "year": 2014,
+  "director": "Paul King",
+  "day_number": 69,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Christopher Robin",
+  "year": 2018,
+  "director": "Marc Forster",
+  "day_number": 69,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Babe",
+  "year": 1995,
+  "director": "Chris Noonan",
+  "day_number": 69,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Peanuts Movie",
+  "year": 2015,
+  "director": "Steve Martino",
+  "day_number": 76,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Winnie the Pooh",
+  "year": 2011,
+  "director": "Stephen J. Anderson",
+  "day_number": 76,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Chef",
+  "year": 2014,
+  "director": "Jon Favreau",
+  "day_number": 83,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Julie & Julia",
+  "year": 2009,
+  "director": "Nora Ephron",
+  "day_number": 83,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Only Yesterday",
+  "year": 1991,
+  "director": "Isao Takahata",
+  "day_number": 90,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Finding Dory",
+  "year": 2016,
+  "director": "Andrew Stanton",
+  "day_number": 97,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Oslo, August 31st",
+  "year": 2011,
+  "director": "Joachim Trier",
+  "day_number": 7,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Compartment No. 6",
+  "year": 2021,
+  "director": "Juho Kuosmanen",
+  "day_number": 14,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "A Hero",
+  "year": 2021,
+  "director": "Asghar Farhadi",
+  "day_number": 14,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Broker",
+  "year": 2022,
+  "director": "Hirokazu Kore-eda",
+  "day_number": 14,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Holy Spider",
+  "year": 2022,
+  "director": "Ali Abbasi",
+  "day_number": 21,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Leave No Trace",
+  "year": 2018,
+  "director": "Debra Granik",
+  "day_number": 28,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Square",
+  "year": 2017,
+  "director": "Ruben Östlund",
+  "day_number": 35,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Triangle of Sadness",
+  "year": 2022,
+  "director": "Ruben Östlund",
+  "day_number": 35,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Toni Erdmann",
+  "year": 2016,
+  "director": "Maren Ade",
+  "day_number": 35,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Minari",
+  "year": 2021,
+  "director": "Lee Isaac Chung",
+  "day_number": 42,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "C'mon C'mon",
+  "year": 2021,
+  "director": "Mike Mills",
+  "day_number": 42,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Nomadland",
+  "year": 2021,
+  "director": "Chloé Zhao",
+  "day_number": 42,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Begin Again",
+  "year": 2013,
+  "director": "John Carney",
+  "day_number": 49,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Petite Maman",
+  "year": 2021,
+  "director": "Céline Sciamma",
+  "day_number": 56,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Tomboy",
+  "year": 2011,
+  "director": "Céline Sciamma",
+  "day_number": 56,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Lunchbox",
+  "year": 2013,
+  "director": "Ritesh Batra",
+  "day_number": 56,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Locke",
+  "year": 2014,
+  "director": "Steven Knight",
+  "day_number": 63,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Good Time",
+  "year": 2017,
+  "director": "Benny Safdie",
+  "day_number": 63,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Uncut Gems",
+  "year": 2019,
+  "director": "Josh Safdie",
+  "day_number": 63,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Kız Kardeşler",
+  "year": 2019,
+  "director": "Emin Alper",
+  "day_number": 77,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Kurak Günler",
+  "year": 2022,
+  "director": "Emin Alper",
+  "day_number": 77,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Tepenin Ardı",
+  "year": 2012,
+  "director": "Emin Alper",
+  "day_number": 77,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "The Rider",
+  "year": 2018,
+  "director": "Chloé Zhao",
+  "day_number": 84,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "First Cow",
+  "year": 2020,
+  "director": "Kelly Reichardt",
+  "day_number": 84,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Certain Women",
+  "year": 2016,
+  "director": "Kelly Reichardt",
+  "day_number": 84,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Wild",
+  "year": 2014,
+  "director": "Jean-Marc Vallée",
+  "day_number": 84,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Wheel of Fortune and Fantasy",
+  "year": 2021,
+  "director": "Ryusuke Hamaguchi",
+  "day_number": 91,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Asako I & II",
+  "year": 2018,
+  "director": "Ryusuke Hamaguchi",
+  "day_number": 91,
+  "position": 2,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Evil Does Not Exist",
+  "year": 2023,
+  "director": "Ryusuke Hamaguchi",
+  "day_number": 91,
+  "position": 3,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "After the Storm",
+  "year": 2016,
+  "director": "Hirokazu Kore-eda",
+  "day_number": 91,
+  "position": 4,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "BARDO, False Chronicle of a Handful of Truths",
+  "year": 2022,
+  "director": "Alejandro G. Iñárritu",
+  "day_number": 98,
+  "position": 1,
+  "curation_tier": "extended"
+ },
+ {
+  "title": "Youth",
+  "year": 2015,
+  "director": "Paolo Sorrentino",
+  "day_number": 98,
+  "position": 3,
+  "curation_tier": "extended"
+ }
+]
