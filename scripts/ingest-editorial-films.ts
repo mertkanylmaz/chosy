@@ -79,6 +79,90 @@ type Theme = (typeof THEMES)[number];
 const TIERS = ['core', 'extended', 'trending', 'archive'] as const;
 type Tier = (typeof TIERS)[number];
 
+/** `app_config` anahtarı — takvimin gün 1'ini taşıyan yayın tarihi. */
+const LAUNCH_DATE_KEY = 'launch_date';
+
+/** Takvim uzunluğu (migration 112 CHECK: day_number BETWEEN 1 AND 100). */
+const CALENDAR_DAYS = 100;
+
+/**
+ * Hafta günü → tema. Dizin `Date.getUTCDay()` ile birebir: 0 = Pazar.
+ * Kaynak: 7_CHOSY_V1_KAPSAM_KILIDI.md §E-19.2 haftalık gün-tema tablosu.
+ * Değerler migration 112 `editorial_calendar_days.theme` CHECK kümesinden.
+ */
+const THEME_BY_WEEKDAY: readonly Theme[] = [
+  'prestige',   // 0 Pazar     — Prestij & Akademi / Festival
+  'arthouse',   // 1 Pazartesi — Arthouse / Bağımsız
+  'cult',       // 2 Salı      — Kültler
+  'cozy',       // 3 Çarşamba  — Animasyon / Cozy
+  'discovery',  // 4 Perşembe  — Modern Keşifler & Gizli Cevherler
+  'popcorn',    // 5 Cuma      — Popcorn & Gişe
+  'epic',       // 6 Cumartesi — Epik Anlatılar & Uzun Metrajlar
+];
+
+const WEEKDAY_TR = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+
+/**
+ * Takvim gününün tarihini verir: `launchDate + (dayNumber - 1)` gün, UTC.
+ *
+ * UTC bilinçli (CTO kararı, 19 Eyl 2026): `generate-gauntlet` gün anahtarını
+ * bugün `utcDateString()` ile üretiyor (S-08). Yerel saat kullanmak takvimi
+ * o anahtardan ayırır ve üç saatlik bir pencerede iki sistem farklı gün görür.
+ */
+function dayNumberToDate(dayNumber: number, launchDate: Date): Date {
+  return new Date(launchDate.getTime() + (dayNumber - 1) * 86_400_000);
+}
+
+/**
+ * Takvim gününün temasını HESAPLAR. Tema hiçbir dosyada, hiçbir satırda
+ * taşınmaz — `day_number` + `launch_date` tek kaynaktır (CTO kararı,
+ * 19 Eyl 2026). Faz 1 çıktısında `theme` alanı yoktur.
+ */
+function dayNumberToTheme(dayNumber: number, launchDate: Date): Theme {
+  if (!Number.isInteger(dayNumber) || dayNumber < 1 || dayNumber > CALENDAR_DAYS) {
+    throw new Error(`day_number 1-${CALENDAR_DAYS} aralığında olmalı, gelen: ${dayNumber}`);
+  }
+  return THEME_BY_WEEKDAY[dayNumberToDate(dayNumber, launchDate).getUTCDay()];
+}
+
+/**
+ * `app_config.launch_date` — istek başına lazy okunur, modül seviyesinde
+ * cache YOK (CLAUDE.md #6). Anahtar yoksa veya değer bozuksa `throw` eder;
+ * sessiz fallback yasak (CLAUDE.md #1) — varsayılan bir tarihe düşmek
+ * 100 günün tamamını yanlış temayla yazardı.
+ */
+async function fetchLaunchDate(sb: SupabaseClient): Promise<Date> {
+  const { data, error } = await sb
+    .from('app_config')
+    .select('value')
+    .eq('key', LAUNCH_DATE_KEY)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`app_config.${LAUNCH_DATE_KEY} okunamadı: ${error.message}`);
+  }
+  if (data === null) {
+    throw new Error(
+      `app_config'te '${LAUNCH_DATE_KEY}' anahtarı yok. Takvim temaları bu ` +
+      `tarihten türetiliyor; değeri CTO yazar (örn. "2026-09-18"). ` +
+      `Anahtar gelmeden ingest koşulamaz.`,
+    );
+  }
+
+  const raw = (data as { value: unknown }).value;
+  if (typeof raw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    throw new Error(
+      `app_config.${LAUNCH_DATE_KEY} 'YYYY-MM-DD' metni olmalı, gelen: ${JSON.stringify(raw)}`,
+    );
+  }
+
+  const parsed = new Date(`${raw}T00:00:00.000Z`);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`app_config.${LAUNCH_DATE_KEY} geçerli bir tarih değil: ${raw}`);
+  }
+  return parsed;
+}
+
 /** Gauntlet'in zorunlu üçlüsü (S-02) dışında, add-missing-films'in eşiği. */
 const MIN_RUNTIME = 60;
 
@@ -91,7 +175,6 @@ interface ResolvedRow {
   director: string | null;
   day_number: number;
   position: number;
-  theme: Theme;
   curation_tier: Tier;
   editor_note?: string;
   tmdb_title: string;
@@ -121,7 +204,6 @@ function validateResolved(raw: unknown): ResolvedRow[] {
   const rows: ResolvedRow[] = [];
   const seenSlots = new Set<string>();
   const seenTmdb = new Map<number, string>();
-  const themeByDay = new Map<number, Theme>();
 
   raw.forEach((item, idx) => {
     const where = `satır ${idx + 1}`;
@@ -141,9 +223,6 @@ function validateResolved(raw: unknown): ResolvedRow[] {
     }
     if (typeof r.position !== 'number' || r.position < 1 || r.position > 6) {
       problems.push(`${where}: position 1-6 olmalı`);
-    }
-    if (typeof r.theme !== 'string' || !(THEMES as readonly string[]).includes(r.theme)) {
-      problems.push(`${where}: theme geçersiz`);
     }
     if (typeof r.curation_tier !== 'string' ||
         !(TIERS as readonly string[]).includes(r.curation_tier)) {
@@ -172,13 +251,6 @@ function validateResolved(raw: unknown): ResolvedRow[] {
       return;
     }
     seenTmdb.set(row.tmdb_id, slotKey);
-
-    const dayTheme = themeByDay.get(row.day_number);
-    if (dayTheme !== undefined && dayTheme !== row.theme) {
-      problems.push(`${where}: gün ${row.day_number} tema çelişkisi`);
-      return;
-    }
-    themeByDay.set(row.day_number, row.theme);
 
     rows.push(row);
   });
@@ -365,13 +437,15 @@ async function createPlaceholderProfiles(
 async function upsertCalendarDays(
   sb: SupabaseClient,
   rows: ResolvedRow[],
+  launchDate: Date,
 ): Promise<number> {
   const byDay = new Map<number, { day_number: number; theme: Theme; editor_note: string | null }>();
   for (const row of rows) {
     if (byDay.has(row.day_number)) continue;
     byDay.set(row.day_number, {
       day_number: row.day_number,
-      theme: row.theme,
+      // Tema girdiden DEĞİL, day_number + launch_date'ten hesaplanır.
+      theme: dayNumberToTheme(row.day_number, launchDate),
       editor_note: row.editor_note ?? null,
     });
   }
@@ -414,6 +488,30 @@ async function upsertCalendarFilms(
   return filmRows.length;
 }
 
+/**
+ * Dry-run çıktısı: 100 günün tarihi, hafta günü ve hesaplanan teması.
+ * Yazmadan önce tema eşlemesinin gözle doğrulanabilmesi için.
+ */
+function printThemeTable(launchDate: Date): void {
+  console.log(`
+${c.bold}═══ Hesaplanan gün-tema tablosu (${CALENDAR_DAYS} gün) ═══${c.reset}`);
+  const counts = new Map<Theme, number>();
+  for (let day = 1; day <= CALENDAR_DAYS; day++) {
+    const date = dayNumberToDate(day, launchDate);
+    const theme = dayNumberToTheme(day, launchDate);
+    counts.set(theme, (counts.get(theme) ?? 0) + 1);
+    console.log(
+      `  gün ${String(day).padStart(3)} · ${date.toISOString().slice(0, 10)} · ` +
+      `${WEEKDAY_TR[date.getUTCDay()].padEnd(9)} → ${c.cyan}${theme}${c.reset}`,
+    );
+  }
+  console.log(`
+${c.bold}Tema dağılımı:${c.reset}`);
+  for (const [theme, n] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${theme}: ${n}`);
+  }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main(): Promise<void> {
@@ -442,16 +540,28 @@ async function main(): Promise<void> {
       `${RESOLVED_PATH} yok. Önce: npx tsx scripts/resolve-editorial-films.ts`,
     );
   }
-  const rows = validateResolved(JSON.parse(fs.readFileSync(RESOLVED_PATH, 'utf-8')));
-  const dayCount = new Set(rows.map((r) => r.day_number)).size;
-  log(`Girdi doğrulandı: ${rows.length} film · ${dayCount} gün`);
-
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error('SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY gerekli.');
   }
   const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
+
+  // Tema hesabı girdiden bağımsızdır (yalnız launch_date'e bakar), bu yüzden
+  // girdi doğrulamasından ÖNCE okunur: dry-run, takvim eksik olsa bile
+  // 100 günün temasını gösterebilmeli.
+  const launchDate = await fetchLaunchDate(sb);
+  log(
+    `${LAUNCH_DATE_KEY} = ${launchDate.toISOString().slice(0, 10)} ` +
+    `(${WEEKDAY_TR[launchDate.getUTCDay()]}) → gün 1 teması: ` +
+    `${dayNumberToTheme(1, launchDate)}`,
+  );
+
+  if (isDryRun) printThemeTable(launchDate);
+
+  const rows = validateResolved(JSON.parse(fs.readFileSync(RESOLVED_PATH, 'utf-8')));
+  const dayCount = new Set(rows.map((r) => r.day_number)).size;
+  log(`Girdi doğrulandı: ${rows.length} film · ${dayCount} gün`);
 
   log(`TMDB detayları çekiliyor (${rows.length} film)...`);
   const { filmRows, eliminations } = await buildFilmRows(rows);
@@ -511,7 +621,7 @@ async function main(): Promise<void> {
   const placeholders = await createPlaceholderProfiles(sb, [...uuidByTmdb.values()]);
   log(`${c.green}✓ ${placeholders} placeholder film_profiles satırı${c.reset}`);
 
-  const days = await upsertCalendarDays(sb, rows);
+  const days = await upsertCalendarDays(sb, rows, launchDate);
   log(`${c.green}✓ ${days} editorial_calendar_days satırı${c.reset}`);
 
   const calendarFilms = await upsertCalendarFilms(sb, rows, uuidByTmdb);
