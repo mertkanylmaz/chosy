@@ -8,9 +8,28 @@ import { StyleSheet } from 'react-native';
 import { color, space, type } from '@/constants/design/semantic';
 
 export const styles = StyleSheet.create({
+  /**
+   * Dış kabuk — TAM EKRAN, dolgusuz. Işık sızması burada yaşar ve ekranın
+   * kenarına kadar ulaşır (§5.1). Güvenli alan dolgusu `insetLayer`'da;
+   * buraya konsaydı çentik ve home indicator şeritleri boyasız kalır,
+   * tintli alanın bittiği yerde görünür bir kenar oluşurdu.
+   */
   root: {
     flex: 1,
     backgroundColor: color.surface.base,
+  },
+  /**
+   * İç katman — güvenli alan dolgusunu taşıyan TEK yer (C.9b-UI G4b).
+   * Sekiz dal bunu miras alır.
+   *
+   * TODO(measure): native tab bar payı burada YOK. `expo-router`'ın
+   * `unstable-native-tabs`'ı `BottomTabBarHeightContext` sağlamıyor
+   * (`useBottomTabBarHeight()` throw eder), yani bar yüksekliği için JS
+   * API'si yok. Ek dolgu ölçüm cihazda yapılana kadar EKLENMEZ — sabit
+   * yazmak iOS sürümleri arasında sessizce yanlış olurdu.
+   */
+  insetLayer: {
+    flex: 1,
   },
   centerContent: {
     flex: 1,

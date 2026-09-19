@@ -21,6 +21,7 @@ import { Text, View } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { useReducedMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { AuthPromptSheet } from '@/components/auth/AuthPromptSheet';
@@ -34,6 +35,7 @@ import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import {
+  BLACKOUT_SEQUENCE,
   CHAMPION_HAPTIC_DELAY,
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
@@ -60,6 +62,7 @@ import type {
   DailyGauntlet,
   GauntletContext,
   GauntletFilm,
+  OklchColor,
   WatchFeedbackResponse,
 } from '@/types/gauntlet';
 import type { ShareRound } from '@/utils/gauntletShareText';
@@ -171,6 +174,7 @@ interface GauntletShellProps {
 export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
 
   const [shellState, setShellState] = useState<ShellState>(
     isUnlockedNow() ? 'bootstrapping' : 'before_18',
@@ -239,6 +243,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [isStale, setIsStale] = useState(false);
   const [choiceFrozen, setChoiceFrozen] = useState(false);
+  /**
+   * G11: şampiyonun sızması AÇIK mı. Kara boşluk (§7.3) sırasında sızma
+   * KAPALI kalır — 120ms tam karanlık bir KESME'dir ve içinde renk olamaz.
+   * Poster belirmeye başladığı anda (blackout + pause) açılır, `LightBleed`
+   * kendi 600ms lineer eğrisiyle yükselir. Resume yolunda beklemeden açılır.
+   */
+  const [championBleedArmed, setChampionBleedArmed] = useState(false);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -250,6 +261,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bleedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
@@ -459,6 +471,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (hapticTimerRef.current) clearTimeout(hapticTimerRef.current);
       if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
+      if (bleedTimerRef.current) clearTimeout(bleedTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -912,8 +925,83 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     setChampionPrompt('none');
   }, []);
 
+  // ── Işık sızması (G11) ─────────────────────────────────────────────────────
+
+  /**
+   * Şampiyon sızmasının zamanlaması. Canlı finalde kara boşluk boyunca
+   * KAPALI, poster belirmeye başladığında açılır; resume'da hemen açık.
+   */
+  useEffect(() => {
+    if (shellState !== 'completed_today' || !champion) {
+      setChampionBleedArmed(false);
+      return;
+    }
+    if (!animateReveal) {
+      setChampionBleedArmed(true); // resume: dizi oynamaz, sızma hemen var
+      return;
+    }
+    setChampionBleedArmed(false); // kara boşluk: KESME, renk yok
+    const at = BLACKOUT_SEQUENCE.blackout + BLACKOUT_SEQUENCE.pause;
+    bleedTimerRef.current = setTimeout(() => {
+      if (mountedRef.current) setChampionBleedArmed(true);
+    }, at);
+    return () => {
+      if (bleedTimerRef.current) clearTimeout(bleedTimerRef.current);
+    };
+  }, [shellState, champion, animateReveal]);
+
+  /**
+   * Sızmayı süren renk — DURUMA göre tek karar noktası.
+   *   ready / in_progress → defender (çiftin rengi, §5 CTO kararı 15.08.2026)
+   *   champion            → şampiyon filminin rengi (G11)
+   *   diğer tüm dallar    → renksiz (film yok, §5.2 fallback: 'ink')
+   *
+   * Geçişte önceki turun rengi TAŞINMAZ: champion dalına girildiği anda
+   * `championBleedArmed` false'tur ve `undefined` dönülür — `LightBleed`
+   * opaklığı animasyonsuz sıfırlar, yani kesme temiz olur.
+   */
+  let bleedColor: OklchColor | undefined;
+  if (shellState === 'completed_today' && champion) {
+    bleedColor = championBleedArmed ? champion.dominantColor : undefined;
+  } else if (shellState === 'ready' || shellState === 'in_progress') {
+    bleedColor = defenderFilm?.dominantColor;
+  }
+
+  /**
+   * Şampiyonun rengi yoksa zemin nötr kalır — bu sessiz bir boşluk DEĞİL,
+   * `films.dominant_color` hesaplanmamış demektir ve iz bırakması gerekir
+   * (§5.2 `fallback: 'ink'` + K-44).
+   */
+  useEffect(() => {
+    if (!championBleedArmed || !champion || champion.dominantColor) return;
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.bleed',
+      message: 'champion dominant_color yok — zemin nötr',
+      level: 'info',
+      data: { film_id: champion.id },
+    });
+  }, [championBleedArmed, champion]);
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
+  /**
+   * C.9b-UI G4b + G11 — TEK MERKEZİ KATMAN.
+   *
+   * Eskiden sekiz dalın her biri kendi `<View style={styles.root}>` + kendi
+   * `<LightBleed/>`'ini kuruyordu. Beşi renksizdi, yani `ink` üstüne `ink`
+   * boyayan NO-OP çağrılardı; altıncısı (champion) hiç yoktu ve Champion
+   * ekranı §10.2'nin "sızma burada en güçlü" şartına rağmen düz siyahtı.
+   *
+   * Artık kabuk TEK yerde kuruluyor: dış root tam ekran (`ink` + sızma,
+   * dolgusuz — ışık ekranın kenarına ULAŞIR), iç katman güvenli alan
+   * dolgusunu taşır. `renderBody` yalnız İÇERİĞİ döndürür.
+   *
+   * Sekiz dala ayrı ayrı inset vermek sekiz ayrı hata yüzeyi olurdu; sızmayı
+   * dolgulu bir katmanın içinde bırakmak da çentik ve home indicator
+   * şeritlerini boyasız bırakır, tintli alanın bittiği yerde görünür bir
+   * kenar üretirdi. İkisi aynı yapısal düzeltmeyle çözülüyor.
+   */
+  const renderBody = (): React.JSX.Element => {
   // C.4: normal akışın ÜSTÜNE biner, ShellState'e dahil DEĞİL (bkz. state
   // tanımı yorumu). Yanıtlanana/atlanana kadar altındaki ready/in_progress/
   // completed_today ekranı render edilmez — ama state olarak zaten hazırdır.
@@ -928,11 +1016,8 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   if (shellState === 'before_18') {
     return (
-      <View style={styles.root}>
-        <LightBleed />
-        <View style={styles.centerContent}>
-          <Text style={styles.stateText}>{t('gauntlet.before18')}</Text>
-        </View>
+      <View style={styles.centerContent}>
+        <Text style={styles.stateText}>{t('gauntlet.before18')}</Text>
       </View>
     );
   }
@@ -942,20 +1027,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       // §15.2: hata özür dilemez, gerçek mesaj + tekrar dene. Sessiz boş
       // ekran ve kalıcı iskelet YASAK.
       return (
-        <View style={styles.root}>
-          <LightBleed />
-          <View style={styles.centerContent}>
-            <Text style={styles.stateText}>{loadError}</Text>
-            <QuietAction label={t('gauntlet.retry')} onPress={retryLoad} />
-          </View>
+        <View style={styles.centerContent}>
+          <Text style={styles.stateText}>{loadError}</Text>
+          <QuietAction label={t('gauntlet.retry')} onPress={retryLoad} />
         </View>
       );
     }
     // Graphite iskelet (§10.1: spinner yok) — 401 penceresinde hata metni
     // GÖSTERİLMEZ, kullanıcıya normal yükleniyor hissi verilir.
     return (
-      <View style={styles.root}>
-        <LightBleed />
         <View style={styles.skeletonContent}>
           <SkeletonLoader width="40%" height={16} />
           <View style={styles.posterRow}>
@@ -968,14 +1048,13 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           </View>
           <SkeletonLoader width="55%" height={14} />
         </View>
-      </View>
     );
   }
 
   if (shellState === 'completed_today') {
     if (champion) {
       return (
-        <View style={styles.root}>
+        <>
           <ChampionReveal
             champion={champion}
             animateReveal={animateReveal}
@@ -999,19 +1078,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
               dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
           <ArchiveTrigger />
-        </View>
+        </>
       );
     }
     return (
-      <View style={styles.root}>
-        <LightBleed />
         <View style={styles.centerContent}>
           <Text style={styles.stateText}>{t('gauntlet.exhausted')}</Text>
           {onDismiss && (
             <QuietAction label={t('gauntlet.dismissTomorrow')} onPress={onDismiss} />
           )}
         </View>
-      </View>
     );
   }
 
@@ -1023,13 +1099,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       { tags: { component: 'GauntletShell' } },
     );
     return (
-      <View style={styles.root}>
-        <LightBleed />
         <View style={styles.centerContent}>
           <Text style={styles.stateText}>{t('gauntlet.loadError')}</Text>
           <QuietAction label={t('gauntlet.retry')} onPress={retryLoad} />
         </View>
-      </View>
     );
   }
 
@@ -1038,8 +1111,6 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const interactionsLocked = submitting || transitioning || choiceFrozen;
 
   return (
-    <View style={styles.root}>
-      <LightBleed dominantColor={defenderFilm?.dominantColor} />
       <View style={styles.content}>
         <View style={styles.header}>
           <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
@@ -1119,6 +1190,21 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           )}
         </View>
         </View>
+      </View>
+  );
+  };
+
+  return (
+    <View style={styles.root}>
+      {/* Sızma dolgusuz katmanda — ışık ekranın kenarına ulaşır (§5.1). */}
+      <LightBleed dominantColor={bleedColor} />
+      <View
+        style={[
+          styles.insetLayer,
+          { paddingTop: insets.top, paddingBottom: insets.bottom },
+        ]}
+      >
+        {renderBody()}
       </View>
     </View>
   );

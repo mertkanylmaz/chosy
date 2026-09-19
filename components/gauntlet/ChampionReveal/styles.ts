@@ -8,11 +8,20 @@ import { StyleSheet } from 'react-native';
 import { color, radius, space, type } from '@/constants/design/semantic';
 
 export const styles = StyleSheet.create({
+  /**
+   * C.9b-UI G11: zemin ŞEFFAF. Eskiden opak `ink` boyuyordu ve arkasındaki
+   * ışık sızmasını tamamen örtüyordu — §10.2 "sızma burada en güçlü" derken
+   * Champion ekranı pratikte düz siyahtı (cihaz görüntüsüyle doğrulandı:
+   * baştan aşağı turkuaz bir poster, zemin nötr siyah).
+   *
+   * Zemini artık `GauntletShell`'in dış root'u boyuyor (`ink`), sızma da
+   * orada. Buraya renk koymak o katmanı yeniden örter.
+   */
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: color.surface.base,
+    backgroundColor: 'transparent',
     paddingHorizontal: space.lg,
     gap: space.lg,
   },
