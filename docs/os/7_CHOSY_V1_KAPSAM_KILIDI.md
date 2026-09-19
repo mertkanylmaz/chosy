@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.12
-**Tarih:** 18 Eylül 2026
+**Sürüm:** 1.13
+**Tarih:** 19 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -495,7 +495,7 @@ Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `ser
 
 **Uygulama biçimi.** Haftalık/günlük kurgu CTO ile konuşularak yapılır — otomatik üretim veya kendi kendine dolan bir sheet değildir.
 
-**Açık kalanlar** — bu maddenin kararı değil, uygulamasının önkoşuludur; hiçbiri bu turda çözülmemiştir:
+**Açık kalanlar** *(18 Eyl 2026 itibarıyla — güncel statüler için bkz. **E-19.1 Uygulama kapanışı**, 19 Eyl 2026)* — bu maddenin kararı değil, uygulamasının önkoşuludur:
 
 - **Ret merdiveni ile kesişim (K-23, 🔒).** K-23 "Ret 1 → sessiz yeni çift" diyor ve `submit-choice`'ın `neither` dalı iki filmi de eleyip **yedek film** istiyor. Günde tam 4 film taşıyan bir editoryal takvimde yedek YOKTUR. Ya editoryal gün 4'ten fazla film taşıyacak (yedek kulübesi) ya da ret algoritmik havuza düşecek — ikincisi günün editoryal kurgusunu kırar. **Karar verilmedi.**
 - **`slotTypes` dürüstlüğü.** `DailyGauntlet.slotTypes` bugün `['global','personal','personal','discovery']` dönebiliyor (`gauntletCore`/`slotTypesFor`). Editoryal günde dört slot da editoryaldir; mevcut değerleri dönmek veriyi yanlış etiketler. Kilitli sözleşme (`types/gauntlet.ts`) `slotTypes`'ı taşıdığı için bu bir sözleşme sorusudur. **Karar verilmedi.**
@@ -504,6 +504,78 @@ Dört çağıran auth id yerine public id gönderecek şekilde düzeltildi: `ser
 - **Şema/migration ihtiyacı** ayrı `/kesif` ile belirlenecek (E-18 genre-verisi keşfiyle birleştirilebilir).
 
 **Kaynak:** kullanıcı önerisi, 18 Eyl 2026 tasarım oturumu.
+
+---
+
+### E-19.1 — Uygulama kapanışı: editoryal takvim canlıya alındı (19 Eyl 2026)
+
+E-19'un **uygulaması** tamamlandı ve prod'a alındı. Karar değişmedi; bu madde neyin
+gerçekleştiğini ve hangi önkoşulun nasıl kapandığını kayda geçirir.
+
+**Zincir — Excel kürasyonundan `generate-gauntlet`'e:**
+
+| Katman | Ne yapıldı |
+|---|---|
+| Migration 111 | FK kimlik uzayı çatallanması kapatıldı (E-14 kapsamında, E-19'un önkoşuluydu) |
+| Migration 112 | `editorial_calendar_days` (100 satır) + `editorial_calendar_films` (400 satır). Takvimde DATE kolonu YOK — `date = launch_date + (day_number - 1)` okuma anında hesaplanır |
+| Migration 113 | `app_config.launch_date` koda bağlandı. Satır prod'a elle yazılmıştı, şemada izi yoktu; `ON CONFLICT DO NOTHING` ile belgelendi, mevcut değer bozulmadı (doğrulandı: `value`/`description`/`updated_at` değişmedi) |
+| Ingest | 96 eksik film `films` tablosuna eklendi. **İki fazlı tasarım** (`resolve-editorial-films` → `ingest-editorial-films`): TMDB başlık belirsizliği ampirik olarak ölçülmüş bir riskti (`/search/movie?query=The Killer&primary_release_year=2023` → 45 sonuç, 2'si tam eşleşme), `results[0]` yasağıyla kapatıldı |
+| `generate-gauntlet` | **DAL A / DAL B ayrımı.** `launch_date`'e göre hesaplanan `day_number` 1-100 aralığındaysa editoryal, değilse mevcut v0 algoritmik akış **değişmeden** devam eder |
+| `submit-choice` | Editoryal gün guard'ı (aşağıda) |
+
+**DAL A'nın tanımı.** Editoryal dalda `buildScoredPool` **hiç çağrılmaz** — boru
+hattının beş adımının hiçbiri çalışmaz. Çözümleme `fetchCandidatesByIds` +
+`rowToCandidate` + `toGauntletFilm` üzerinden yapılır; yeni dönüştürücü
+yazılmadı. `arrangeUnseen` çağrılmaz: editoryal günde **sıra bracket'in
+kendisidir** (position 1 = defender, 2/3/4 = tur 1/2/3 challenger).
+`slot_types = ['editorial'×4]`, `algorithm_version = 'v1-editorial-calendar'`
+(algoritmik dönemden ayırt edilebilsin diye ayrı etiket — §6 veri felsefesinin
+gereği). Mevcut hata yolu korunuyor: eksik ya da çözümlenemeyen film sessizce
+atlanmaz, `throw` → Sentry fatal → 503.
+
+**Kapanan önkoşullar:**
+
+- ✅ **`slotTypes` dürüstlüğü.** `types/gauntlet.ts` union'ına `'editorial'` eklendi
+  (CTO onayı, 19 Eyl 2026). DB tarafı ek migration istemedi —
+  `069_gauntlet_events.sql:172` yalnız `array_length = 4` kontrol ediyor.
+- ✅ **K-23'ün launch-blocking yarısı.** `submit-choice` guard'ı: gauntlet
+  editoryalse (`slot_types` 'editorial' içeriyor) `neither`/`seen` dalı
+  `buildScoredPool` + `pickReplacements`'ı **çağırmaz**, yani algoritmik havuzdan
+  yedek çekilmez ve günün kurgusu korunur. Ham olay yine yazılır (§6 append-only),
+  `seen` yine `watchlist`e işlenir; yalnız yeni çift verilmez. Kullanıcıya açık
+  metin gösterilir (`gauntlet.editorialNoRefresh`, EN/TR parite) ve "İkisi de
+  değil" kapanır — sessiz davranış yok (K-43 tonunda).
+- ✅ **Cumartesi teması ↔ runtime tavanı (ilk 100 gün).** v1.12'nin "editoryal
+  seçki bağlam filtresinden geçmiyor" varsayımı **kodda kanıtlandı**: DAL A
+  `fetchPool`'u hiç çağırmadığı için `CONTEXT_MAX_RUNTIME` devreye girmiyor
+  (birim testi: editoryal üretimde okunan tablolar yalnız
+  `editorial_calendar_films` + `films`; `film_profiles` hiç okunmuyor).
+  ⚠️ **Algoritmik faz için karar HÂLÂ VERİLMEDİ** — v1.12'deki açık madde
+  100. gün sonrası için aynen yürürlükte.
+
+**Bilinçli tasarım kararı — watched-dışlaması editoryal günde uygulanmaz.**
+DAL A `fetchExclusions`'ı da çağırmaz: kullanıcı `watchlist.watched_at` ile zaten
+izlediği bir filmi editoryal günde görebilir; 21 günlük "gösterildi" ve 45 günlük
+"reddedildi" cooldown'ları da bu dalda geçerli değildir. **Bu bir bug değil,
+ritüelin gereğidir:** editoryal gün herkes için aynıdır (E-19 madde 1 — 400 film,
+300 eşleşme, elle kurgu). Kullanıcıya göre film çıkarmak günün bracket'ini
+kişiselleştirir ve 4'ten az filmle kalan kullanıcılar için kaçınılmaz olarak
+algoritmik bir yedek gerektirirdi — yani guard'ın engellemek için var olduğu şeyi.
+İzlenmiş film çıkması kayıp değil sinyaldir: kullanıcı `seen` der, `watchlist`
+güncellenir, tur harcanmaz. Gerekçe kodda da yorum olarak duruyor
+(`generate-gauntlet/index.ts`, `generateEditorialQuartet` docblock'u).
+
+**Ölçülmüş durum (19 Eyl 2026).** `launch_date = 2026-09-18` (Cuma) · bugünün
+`day_number = 2` · tema `epic` · Gün 2 dörtlüsü Oppenheimer (181 dk) ·
+Killers of the Flower Moon (206) · The Godfather (175) · Seven Samurai (207).
+Gün 1 `popcorn` (Cuma) — §E-19.2b'nin hafta günü hizalaması veride doğrulandı.
+
+**Açık kalan (launch-blocking DEĞİL, §9'a alındı):** yedek kulübesi (position 5-6)
+hâlâ 0 satır · gün 100 sonrası kalıcı "gösterildi" işareti · yönetmen tekrarı
+ihlalleri · canlı tetikleme doğrulaması.
+
+**Kaynak:** `docs/investigations/E19_GENERATE_GAUNTLET_KESIF.md` · uygulama turu
+19 Eyl 2026.
 
 ---
 
@@ -620,6 +692,11 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | `activate_referral` → `claim_lifetime_spot` iç çağrısı, service_role dışı bağlamda guard baypasını kaybeder | Latent; tek çağıran service_role olduğu için şu an güvenli. Dashboard SQL editor yasağı (CLAUDE.md kural 3) bu riski kapatıyor. Kaynak: E-14. |
 | `record_posterle_hint` anon'a açık, `p_attempt_id` sahipliğini doğrulamıyor | Ayrı güvenlik iş kalemi. 109'un kapsamı dışında bırakıldı. Kaynak: E-14. |
 | `.env` → `SUPABASE_SERVICE_ROLE_KEY` projeye kayıtlı değil (HTTP 401), 16 yerel script etkileniyor | Üretim etkilenmiyor (Edge runtime kendi secret'ını enjekte ediyor). Çalışan anahtar: `SUPABASE_SECRET_KEY`. Kaynak: E-14. |
+| **E-19 yedek kulübesi boş** — `editorial_calendar_films` position 5-6 bandı şemada var, **0 satır** | K-23'ün ikinci yarısı. Launch-blocking DEĞİL: `submit-choice` guard'ı editoryal günde algoritmik yedeği zaten kapatıyor, yani kurgu korunuyor — eksik olan "ret sonrası yerine ne gelecek" cevabı. Kaynak: E-19.1. |
+| **E-19 gün 100 geçişi** — kullanılan 400 filmin kalıcı "gösterildi" işareti yok | §E-19.4 kalıcı işaret istiyor; `daily_gauntlets` tabanlı `recentlyShown` yalnız 21 gün tutuyor, yani 100. günde 400 film havuza geri döner. Editoryal dal bunsuz da çalışır. Kaynak: E-19.1 (keşif DUR-6). |
+| **E-19 yönetmen tekrarı** — takvimde 17 küçük "aynı yönetmen ≤1" ihlali | Düşük öncelik, elle kürasyon kaynaklı. Kural `1_PRODUCT_OS` §6 çeşitlilik tablosunda ("Aynı yönetmen ≤1") — editoryal dal çeşitlilik kurallarını zaten çalıştırmadığı için kod seviyesinde bir ihlal değil, kürasyon seviyesinde. ⚠️ CTO bu kalemi "K-04 istisnası" diye adlandırdı; bu dokümandaki K-04 tab bar maddesidir, referans doğrulanamadı. |
+| **E-19 canlı tetikleme doğrulanmadı** — gerçek deploy + gerçek kullanıcı akışı | Editoryal dal ve guard birim testi + statik kanıt düzeyinde doğrulandı (17/17 Deno testi); gerçek cihazda tetiklenmedi. K-42/K-49/K-55 cihaz testi turunda yapılacak. Kaynak: E-19.1. |
+| **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 
 ---
 
@@ -640,6 +717,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.9 | 31 Ağu 2026 | **E-12.** RC Paywalls v2 fizibilitesi tamamlandı: hibrit mimari korunuyor, tam geçiş yapılmadı, `react-native-purchases-ui` kurulmadı. R-C ilerlemesi: K-46 (arşiv tetikleyicisi + `get-archive-status` deploy edildi), E-09 (paywall/purchase event dalları tamamlandı) ve G-6 çekirdek event listesi (`docs/analytics/G6_CEKIRDEK_EVENTLER.md`) kapandı. Kalan: K-49 sandbox durum matrisi. |
 | 1.11 | 18 Eyl 2026 | **E-19.** İlk 100 gün gauntlet'in 4 filmi ve 3 eşleşmesi editoryal takvimden gelecek (400 film, 300 eşleşme, elle kurgu); haftanın her günü sabit bir tür/mod taşıyacak ve bu gün-teması 100 gün sonrası algoritmik fazda da **kalıcı** kalıp §6.4 sert filtresine gün bazlı ağırlık olarak bağlanacak. Yetki dayanağı `1_PRODUCT_OS` §1.3'ün 🔓 "4 filmin seçim algoritması" satırı; hiçbir 🔒 madde değişmedi. Kullanılan 400 film 100. günde kalıcı "gösterildi" işareti alacak (21 günlük cooldown'dan ayrı). Üç uygulama önkoşulu açık bırakıldı: K-23 ret merdiveninin yedek film ihtiyacı, `slotTypes` etiket dürüstlüğü, E-02 havuz derinliği ölçümünün yenilenmesi. Şema/migration ihtiyacı ayrı `/kesif`'e bırakıldı. |
 | 1.12 | 18 Eyl 2026 | **E-19 güncellemesi.** Haftalık gün-tema tablosu tamamlandı (Pzt arthouse · Sal kült · Çar animasyon/cozy · Per modern keşif/gizli cevher · Cum popcorn/gişe · Cmt epik & uzun metraj · Paz prestij/akademi). Takvim başlangıç kuralı eklendi: Gün 1 gerçek yayın tarihinin **hafta gününe** hizalanır, sabit "Gün 1 = Pazartesi" değildir. Yeni açık teknik madde: Cumartesi'nin "2,5–3+ saat" tanımı §4 bağlam runtime tavanıyla (`CONTEXT_MAX_RUNTIME` short 110 / medium 150, sert `.lte` filtresi) çelişiyor — ilk 100 gün etkilenmiyor (editoryal seçki bağlam filtresinden geçmiyor), yalnız algoritmik faz için karar gerekiyor. E-02 notu genişletildi: gün-teması havuzu yedi alt havuza böldüğü için derinlik matematiği tema başına yapılmalı. |
+| 1.13 | 19 Eyl 2026 | **E-19 uygulama kapanışı — editoryal takvim canlıya alındı.** Bkz. yeni §5 E-19.1. Zincir tamamlandı: migration 111 (FK kimlik uzayı) → 112 (`editorial_calendar_days`/`films`, 100 gün / 400 slot) → 113 (`app_config.launch_date` koda bağlandı, mevcut satır bozulmadan), 96 eksik film iki fazlı resolve+ingest ile eklendi (`results[0]` yasağı ampirik TMDB belirsizlik ölçümüne dayanıyor). `generate-gauntlet` **DAL A / DAL B** ayrımına geçti: `day_number` 1-100 ise editoryal takvim (boru hattı hiç çalışmaz, `arrangeUnseen` çağrılmaz, `slot_types=['editorial'×4]`, `algorithm_version='v1-editorial-calendar'`), değilse mevcut v0 akış **değişmeden** sürüyor. `submit-choice` guard'ı editoryal günde algoritmik yedek çekmeyi kapattı ve kullanıcıya açık metin gösteriyor (`gauntlet.editorialNoRefresh`) — **K-23'ün launch-blocking yarısı kapandı**, yedek kulübesi §9'a alındı. `slotTypes` dürüstlüğü kapandı (`'editorial'` kilitli sözleşmeye CTO onayıyla eklendi). Cumartesi ↔ runtime tavanı çelişkisi ilk 100 gün için **kodda kanıtlandı** (DAL A `fetchPool`'a hiç girmiyor), **algoritmik faz kararı hâlâ açık**. Watched-dışlamasının editoryal günde uygulanmaması bilinçli tasarım kararı olarak kayda geçti. Ölçüldü: `launch_date=2026-09-18`, bugünün `day_number=2`, tema `epic`. Beş yeni madde §9'a eklendi. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
