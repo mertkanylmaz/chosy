@@ -1,19 +1,19 @@
 {
-  "timestamp": "2026-08-06T09:38:43.732Z",
+  "timestamp": "2026-09-19T14:24:00.718Z",
   "tiers": [
     "core",
     "extended",
     "trending"
   ],
-  "pool_size": 1866,
+  "pool_size": 1962,
   "omdb_key_present": false,
-  "films_processed": 2,
-  "rows_updated": 2,
+  "films_processed": 48,
+  "rows_updated": 1,
   "fields": {
     "director": {
-      "before": 2,
+      "before": 1,
       "after": 0,
-      "filled": 2
+      "filled": 1
     },
     "original_language": {
       "before": 1,
@@ -21,18 +21,441 @@
       "filled": 1
     },
     "imdb_votes": {
-      "before": 1,
-      "after": 1,
+      "before": 48,
+      "after": 48,
       "filled": 0
     }
   },
   "unfilled": [
+    {
+      "film_id": "027c712c-53e5-456b-b4a8-a5b18e5b96fd",
+      "tmdb_id": 1101412,
+      "imdb_id": "tt31192372",
+      "title": "Fall 2: Deadpoint",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
     {
       "film_id": "043911e2-307b-4092-b4df-8f062b5df800",
       "tmdb_id": 2503,
       "imdb_id": null,
       "title": "The Bourne Ultimatum",
       "curation_tier": "core",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "06d23d8e-ee5f-4f1b-9f85-4d68dbf1466e",
+      "tmdb_id": 1671548,
+      "imdb_id": "tt41791573",
+      "title": "Dear You",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "09e10751-22ba-4619-94eb-5a724d5718b0",
+      "tmdb_id": 1423191,
+      "imdb_id": "tt35538033",
+      "title": "Resident Evil",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "16ba7758-7fa7-455c-be81-d39203bbdaa9",
+      "tmdb_id": 1698863,
+      "imdb_id": "tt41605854",
+      "title": "The Odyssey",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "1b39a5c6-454e-48de-bcad-794aa53890c8",
+      "tmdb_id": 1280015,
+      "imdb_id": "tt32212403",
+      "title": "Sunny Dancer",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "1d9e9483-9c73-44b1-951f-edcc983a2c61",
+      "tmdb_id": 1305672,
+      "imdb_id": "tt32634330",
+      "title": "I Know Who You Are",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "1fc21eb0-5ad9-4484-bd29-1587e6b4d363",
+      "tmdb_id": 1516698,
+      "imdb_id": "tt37654096",
+      "title": "The Last Sunrise",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "2ff01dbc-22ef-4d83-a250-31e010ccc0be",
+      "tmdb_id": 1377237,
+      "imdb_id": "tt31349844",
+      "title": "Runner",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "3433262f-d0e8-42cb-8d30-74313dd73949",
+      "tmdb_id": 860508,
+      "imdb_id": "tt11561116",
+      "title": "The Whisper Man",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "360ebec4-e484-4a7b-90f5-650c9ae97ea0",
+      "tmdb_id": 615,
+      "imdb_id": null,
+      "title": "The Passion of the Christ",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "45ef5c1e-bdd1-4d5b-8cc1-131247893268",
+      "tmdb_id": 1631807,
+      "imdb_id": "tt37275992",
+      "title": "The Secret Woman",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "47cdeced-fd81-4185-a693-a0be789cf506",
+      "tmdb_id": 1083381,
+      "imdb_id": "tt26657236",
+      "title": "Backrooms",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "49a2d105-c8b4-4571-818e-e9ad641d1a12",
+      "tmdb_id": 1339713,
+      "imdb_id": "tt37287335",
+      "title": "Obsession",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "50e8d235-1484-4a7a-8c88-4296cda1975f",
+      "tmdb_id": 1380417,
+      "imdb_id": "tt34379051",
+      "title": "By Any Means",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "534e8a17-ac0f-4284-9cdf-e79479c452a3",
+      "tmdb_id": 1058424,
+      "imdb_id": "tt27369017",
+      "title": "Hope",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "5af200a3-4b80-4033-ac93-b8e91da8aad5",
+      "tmdb_id": 1439808,
+      "imdb_id": "tt36307021",
+      "title": "Hadestown: The Musical",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "5cb3cc6f-4b50-4105-8f4d-4eed83117b7a",
+      "tmdb_id": 1101383,
+      "imdb_id": "tt27165187",
+      "title": "The End of Oak Street",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "6193f839-9f72-4442-b79c-03e92e536b9e",
+      "tmdb_id": 910850,
+      "imdb_id": "tt32915652",
+      "title": "MOBILE SUIT GUNDAM HATHAWAY The Sorcery of Nymph Circe",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "6892a6cb-b3a7-4ec8-a8ef-6386c7dd62a5",
+      "tmdb_id": 1081003,
+      "imdb_id": "tt8814476",
+      "title": "Supergirl",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "6a1030eb-be74-4f94-85b1-4be991c7ffa6",
+      "tmdb_id": 1212763,
+      "imdb_id": "tt31170389",
+      "title": "Evil Dead Burn",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "6a38c190-2c3a-4b76-b937-43e91d19d695",
+      "tmdb_id": 969681,
+      "imdb_id": "tt22084616",
+      "title": "Spider-Man: Brand New Day",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "6dcd3901-ff58-49b8-aad4-1198f00cc003",
+      "tmdb_id": 1084244,
+      "imdb_id": "tt29355505",
+      "title": "Toy Story 5",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "76968536-b9b0-41a5-8fac-ace61541c12f",
+      "tmdb_id": 1228710,
+      "imdb_id": "tt30825738",
+      "title": "The Mandalorian and Grogu",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "7c48567b-dd01-43d0-8db2-d189f18f9c10",
+      "tmdb_id": 1368337,
+      "imdb_id": "tt33764258",
+      "title": "The Odyssey",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "7e55837b-2219-49d1-8ce1-dda70dedb9fa",
+      "tmdb_id": 1284046,
+      "imdb_id": "tt32268691",
+      "title": "Onslaught",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "7e7d0c51-5894-451a-aaef-790f7a055a08",
+      "tmdb_id": 1291595,
+      "imdb_id": "tt32393988",
+      "title": "Insidious: Out of the Further",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "80457701-b3ac-4457-812b-1285c030ca00",
+      "tmdb_id": 1514026,
+      "imdb_id": "tt37281055",
+      "title": "Buddy",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "8241de8f-5157-4a2e-b155-6c9566ce2cff",
+      "tmdb_id": 1275779,
+      "imdb_id": "tt15047880",
+      "title": "Disclosure Day",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "87f5d122-208a-496b-b904-87eaaa809619",
+      "tmdb_id": 950028,
+      "imdb_id": "tt14173636",
+      "title": "The Invite",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "897cb487-6157-488b-adff-ccc8301411b5",
+      "tmdb_id": 1302904,
+      "imdb_id": "tt32588798",
+      "title": "Practical Magic 2",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "8aa76c9d-2df4-4132-a614-3e77e1aa7b35",
+      "tmdb_id": 1560520,
+      "imdb_id": "tt32333324",
+      "title": "Batman: Knightfall Part 1: Knightfall",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "8bd65ffe-e7eb-4e3f-9ed6-17bb5edea653",
+      "tmdb_id": 1857,
+      "imdb_id": "tt0092106",
+      "title": "The Transformers: The Movie",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "9d54b8a2-a576-4be2-9b1e-fcab994e3a73",
+      "tmdb_id": 1288445,
+      "imdb_id": "tt32338669",
+      "title": "Mutiny",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "ad7a326d-8363-41a2-a3bc-0ac981593ae4",
+      "tmdb_id": 1497970,
+      "imdb_id": "tt37185884",
+      "title": "Tom ve Jerry: Kayıp Pusula",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "b0b069f6-c3de-45ae-91f1-1503b2f46fa0",
+      "tmdb_id": 977942,
+      "imdb_id": "tt36983905",
+      "title": "The Uprising",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "b0f9508e-263f-4640-8b35-dda040a2e666",
+      "tmdb_id": 1477104,
+      "imdb_id": "tt36841161",
+      "title": "Shaun the Sheep: The Beast of Mossy Bottom",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "b7ec9352-9925-4ed0-9211-31b557adb309",
+      "tmdb_id": 1204680,
+      "imdb_id": "tt1756855",
+      "title": "Coyote vs. Acme",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "b8b84cc5-9cd6-4571-b9ce-600607493e65",
+      "tmdb_id": 9327,
+      "imdb_id": "tt0117218",
+      "title": "The Nutty Professor",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "ba6f74a1-8b45-4add-8eac-297cd709f39d",
+      "tmdb_id": 1294189,
+      "imdb_id": "tt13611778",
+      "title": "The Mongoose",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "bd993b34-72bc-4606-a404-13df728229ef",
+      "tmdb_id": 1384216,
+      "imdb_id": "tt21285562",
+      "title": "The Dog Stars",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "bf6e14b6-1139-433e-b065-2e6238b88357",
+      "tmdb_id": 1375646,
+      "imdb_id": "tt34385135",
+      "title": "Colony",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "d03ed8d5-21d3-4a8d-96d4-52fc476738e8",
+      "tmdb_id": 586353,
+      "imdb_id": "tt14536120",
+      "title": "The Master and Margarita",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "d1225731-07dd-448e-96ec-e0b1689080f3",
+      "tmdb_id": 1433367,
+      "imdb_id": "tt37853455",
+      "title": "One Night Only",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "d9ac9935-1517-4d48-acdf-fc1f365798ef",
+      "tmdb_id": 1003596,
+      "imdb_id": "tt21357150",
+      "title": "Avengers: Doomsday",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "db921c1d-aa8e-4fd2-aa9e-c23cbf20bcc8",
+      "tmdb_id": 1284041,
+      "imdb_id": "tt32268156",
+      "title": "The Last House",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "dbf3ebd0-f34b-4643-a7a8-e04aa99e1ed9",
+      "tmdb_id": 1550338,
+      "imdb_id": "tt44147164",
+      "title": "The Last Scene",
+      "curation_tier": "trending",
+      "field": "imdb_votes",
+      "reason": "OMDB_API_KEY yok — alan atlandı"
+    },
+    {
+      "film_id": "f209fb28-7ec7-4fa1-8d07-14a4a755334a",
+      "tmdb_id": 1621552,
+      "imdb_id": "tt39390497",
+      "title": "Facing El Chapo",
+      "curation_tier": "trending",
       "field": "imdb_votes",
       "reason": "OMDB_API_KEY yok — alan atlandı"
     }
