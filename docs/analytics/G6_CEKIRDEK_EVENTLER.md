@@ -160,6 +160,71 @@ düşmüyor — ayrımı yapılmadan "geçti" denmez.
 
 ---
 
+## 3.1 `gauntlet_viewed` — semantik netleştirmesi ve funnel baseline kayması
+
+**Tarih:** 19 Eylül 2026 · **Kaynak:** C.9b-UI Faz 0 bulgusu **F-C** ·
+**Statü:** yön kilitli, uygulama **G10 ölçümüne bağlı**
+
+### Sorun
+
+Bu listede `gauntlet_viewed` (§1.1 sıra 1) **alan taşımıyor** ("—") ve
+sözlük onun *mount başına* mı *gün başına* mı ateşleneceğini **söylemiyor**.
+Kodda `useEffect` dep listesi `[]` ile **her mount'ta** ateşleniyor.
+
+`GauntletShell` bugün `app/(tabs)/index.tsx`'in altında yaşıyor. Sekme
+değişimi ekranı unmount ediyorsa, Profile'a gidip dönmek event'i yeniden
+ateşler ve North Star funnel'ının (`viewed → started → completed`)
+**paydasını şişirir** — yani Daily Gauntlet Completion olduğundan **düşük**
+görünür.
+
+Aynı yerde ikinci risk: `gauntlet_started`'ın tekrar koruması
+`startedTrackedGauntletIdsRef` bir **ref**'tir; ref bileşen örneğine bağlı,
+unmount'ta sıfırlanır.
+
+### Kilitlenen yön (CTO, 19 Eyl 2026)
+
+> **`gauntlet_id` başına bir kez, kalıcı set.** Bu turda **yalnız dedupe**,
+> **yeni alan yok** (alan eklemek M1'in işi).
+
+Dedupe `gauntlet_id`'yi **yalnızca içeride** anahtar olarak kullanır; event'e
+alan olarak **eklenmez** — 20/20 event sözleşmesi bozulmaz.
+
+### ⚠️ Funnel baseline kayması
+
+Dedupe'un `gauntlet_id` başına çalışması, event'in **ateşlenme noktasını
+değiştirmeyi gerektirir**: bugün mount'ta, yani gauntlet **yüklenmeden önce**
+ateşleniyor; o anda `gauntlet_id` henüz **yok**. Anahtar ancak yüklemeden
+sonra bilinebilir.
+
+Bu, event'in **ne saydığını** değiştirir:
+
+| | Bugün | Dedupe sonrası |
+|---|---|---|
+| Sayılan | Ekran açıldı | Gauntlet yüklendi |
+| `before_18` (18:00 öncesi) | **Sayılıyor** | **Sayılmıyor** |
+| `bootstrapping` hata durumu | **Sayılıyor** | **Sayılmıyor** |
+| Sekme dönüşü | Tekrar sayılıyor | Sayılmıyor |
+
+**Sonuç:** `gauntlet_viewed` sayısı **düşer**, `started/viewed` ve
+`completed/viewed` oranları **yükselir**. Bu bir düzelme değil, **tanım
+değişikliğidir** — kesim tarihinden önceki ve sonraki funnel değerleri
+**doğrudan karşılaştırılamaz**.
+
+**Yapılacak:** uygulandığı gün bu bölüme kesim tarihi ve ilk/son 7 günlük
+oran yazılır; panolarda o tarihe dikey bir işaret konur.
+
+**Kaybedilen sinyal telafisi:** `before_18` ve yükleme hatası artık funnel'da
+görünmeyecek. İkisi de ayrı ölçülmek isteniyorsa bu **yeni event** demektir
+ve **M1'in kapsamıdır** — C.9b-UI'da yapılmaz.
+
+### Önce ölçülecek (C.9b-UI G10)
+
+`NativeTabs` `GauntletShell`'i gerçekten unmount ediyor mu?
+**Unmount etmiyorsa hiçbir değişiklik yapılmaz** — sorun yoktur, bu bölüm
+yalnız sözlük netleştirmesi olarak kalır.
+
+---
+
 ## 4. İlgili
 
 - `docs/os/7_CHOSY_V1_KAPSAM_KILIDI.md` — G-6 (§7.2), E-07, E-09, E-11

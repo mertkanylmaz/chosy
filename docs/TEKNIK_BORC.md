@@ -2431,8 +2431,12 @@ var. Eksik:
 | # | Dosya | Durum |
 |---|---|---|
 | 6 | `6_IA_REVIZE_KARAR_GUNLUGU` | Kapsam kilidi buna **referans veriyor** ama dosya repoda yok. CTO'nun Project'inde mevcut, repoya kopyalanacak |
-| 5 | (adı bilinmiyor) | Ne repoda ne CTO'nun Project'inde. Numaralama boşluğu olabilir — hiç var olmamış olabilir |
+| 5 | (adı bilinmiyor) | **BULUNAMADI** — ne repoda, ne CTO'nun Project'inde (CTO teyidi, 19 Eyl 2026). Var olduğuna dair tek kanıt numaralama sırası |
 
 Bible referans verdiği bir dosyanın repoda bulunmaması, kararların
-izlenebilirliğini kırıyor. 5 numaralı dosya gerçekten yoksa, numaralama
-boşluğunun **bilinçli olduğu** kapsam kilidine not düşülmeli.
+izlenebilirliğini kırıyor.
+
+**5 numara:** "yok" değil, **"bulunamadı"** olarak kayda geçiyor — dosyanın
+hiç var olmadığı kanıtlanmadı, yalnızca iki bilinen konumda da yok. Bir
+kaynaktan çıkarsa buraya bağlanır; çıkmazsa numaralama boşluğunun bilinçli
+olduğu kapsam kilidine not düşülür.
