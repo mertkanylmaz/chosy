@@ -51,8 +51,10 @@ google-service-account.json
 
 # Design assets (not needed for builds)
 figurler/
-design-reference/
 supabase/.temp/
+# NOT: `design/` IZLENIYOR — before/after/reference gorsel kaniti (Design OS §16).
+# Eski `design-reference/` (tireli) kurali kaldirildi: iki klasor karisiyordu ve
+# tireli olana birakilan dosya sessizce hicbir commit'e girmiyordu.
 
 # Agent calisma hafizasi — yerel kalir, repoya girmez
 .claude/agent-memory/
