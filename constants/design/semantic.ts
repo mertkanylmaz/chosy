@@ -20,6 +20,16 @@ export const color = {
   },
   accent: {
     edge: withAlpha(palette.beam, 0.24),
+    /**
+     * Birincil eylemin kenarı — C.9b-UI L-2: `beam@12%` dolgu + **`@40%`
+     * kenar**. `edge` (0.24) ikincil yüzeylerin sessiz kenarıdır ve bu
+     * vurguyu taşımaz; ikisi KARIŞTIRILMAZ.
+     *
+     * Bugün tek tüketicisi Champion'ın "Nerede izlenir" birincil eylemi
+     * (K-20 activation bridge). Cam DEĞİL — içerik katmanında opak dolgu
+     * + kenar (v4.1: cam yalnız navigasyonda).
+     */
+    edgeStrong: withAlpha(palette.beam, 0.4),
     fill: withAlpha(palette.beam, 0.12),
     focus: withAlpha(palette.beam, 0.6),
     active: palette.beam,
