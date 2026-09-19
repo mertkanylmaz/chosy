@@ -107,7 +107,15 @@ interface CandidateSummary {
   original_title: string;
   release_date: string;
   original_language: string;
+  /** Rapor okunabilirliği için ilk yönetmen. Karşılaştırmada KULLANILMAZ. */
   director: string | null;
+  /**
+   * `job === 'Director'` olan TÜM crew üyeleri. Eş-yönetmenli filmlerde
+   * (Winnie the Pooh 2011: Don Hall + Stephen J. Anderson) girdideki isim
+   * ikinci sırada olabilir; yalnız ilkine bakmak yanlış `no_director_match`
+   * üretiyordu.
+   */
+  directors: string[];
   poster_path: string | null;
   popularity: number;
 }
@@ -255,14 +263,15 @@ async function fetchDirectors(tmdbId: number): Promise<string[]> {
     .map((cr) => cr.name);
 }
 
-function toSummary(r: TmdbSearchResult, director: string | null): CandidateSummary {
+function toSummary(r: TmdbSearchResult, directors: string[]): CandidateSummary {
   return {
     tmdb_id: r.id,
     title: r.title,
     original_title: r.original_title,
     release_date: r.release_date,
     original_language: r.original_language,
-    director,
+    director: directors[0] ?? null,
+    directors,
     poster_path: r.poster_path,
     popularity: r.popularity,
   };
@@ -296,7 +305,7 @@ async function resolveOne(input: EditorialInput): Promise<ResolveOutcome> {
           `TMDB ${search.total_results} sonuç döndürdü.`,
         candidates: search.results
           .slice(0, MAX_CANDIDATES_IN_REPORT)
-          .map((r) => toSummary(r, null)),
+          .map((r) => toSummary(r, [])),
       },
     };
   }
@@ -306,7 +315,7 @@ async function resolveOne(input: EditorialInput): Promise<ResolveOutcome> {
   const candidates: CandidateSummary[] = [];
   for (const r of titleMatches.slice(0, MAX_CANDIDATES_IN_REPORT)) {
     const directors = await fetchDirectors(r.id);
-    candidates.push(toSummary(r, directors[0] ?? null));
+    candidates.push(toSummary(r, directors));
   }
 
   if (input.director === undefined) {
@@ -323,19 +332,25 @@ async function resolveOne(input: EditorialInput): Promise<ResolveOutcome> {
   }
 
   const wantedDirector = norm(input.director);
+  // Eş-yönetmenli filmlerde girdideki isim herhangi bir sırada olabilir —
+  // `directors[0]` değil, dizinin TAMAMI taranır (normalize tam eşleşme).
   const verified = candidates.filter(
-    (cand) => cand.director !== null && norm(cand.director) === wantedDirector,
+    (cand) => cand.directors.some((d) => norm(d) === wantedDirector),
   );
 
   // 3) Karar kuralı — üç yol, dördüncüsü yok.
   if (verified.length === 1) {
     const hit = verified[0];
+    // Girdiyle eşleşen ismin TMDB yazımı — `directors[0]` değil. Eş-yönetmenli
+    // filmde ilk sıradaki isim girdiden farklı bir kişi olabilir.
+    const matchedDirector =
+      hit.directors.find((d) => norm(d) === wantedDirector) ?? hit.director;
     return {
       resolved: {
         tmdb_id: hit.tmdb_id,
         title: input.title,
         year: input.year,
-        director: hit.director,
+        director: matchedDirector,
         day_number: input.day_number,
         position: input.position,
         curation_tier: input.curation_tier,
@@ -352,8 +367,9 @@ async function resolveOne(input: EditorialInput): Promise<ResolveOutcome> {
         input,
         reason: 'no_director_match',
         detail:
-          `${candidates.length} başlık eşleşmesinin hiçbirinin yönetmeni ` +
-          `'${input.director}' değil.`,
+          `${candidates.length} başlık eşleşmesinin yönetmen kadrosunda ` +
+          `'${input.director}' yok. Bulunanlar: ` +
+          candidates.map((cd) => `#${cd.tmdb_id}: ${cd.directors.join(' / ') || '—'}`).join(' · '),
         candidates,
       },
     };
