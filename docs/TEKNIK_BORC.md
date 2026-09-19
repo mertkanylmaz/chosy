@@ -2349,3 +2349,90 @@ token Haiku'nun minimum cacheable prefix eşiğinin altında kalabilir — yani
 `cache_control` eklemek ölçülebilir bir kazanç vermeyebilir. Havuz büyüdükçe
 (yüzlerce film / tekrarlayan koşum) yeniden değerlendirilmeli; o noktada
 önce `usage.cache_read_input_tokens` ile gerçekten cache'lendiği doğrulanmalı.
+
+---
+
+## logger.warn / logger.error production'da no-op — kritik yol denetimi (19 Eyl 2026)
+
+C.9b-UI G8 maddesi `app/_layout.tsx:181-187`'deki **font yükleme fallback**'ini
+`Sentry.captureMessage`'a bağlıyor. Bu **tek bir noktayı** kurtarır; sınıfın
+kendisi açık kalıyor.
+
+`logger.warn`/`logger.error` production build'inde iz bırakmıyor. Bir `catch`
+bloğu yalnız `logger.error` çağırıyorsa, hata sahada **hiç görünmüyor** —
+CLAUDE.md kural 1'in ("sessiz fallback yasak") sessizce ihlali, çünkü kod
+okunduğunda hata ele alınmış görünüyor.
+
+**Yapılacak:** kritik yolların `logger` kullanımını tarayan bir denetim —
+öncelik sırası:
+
+1. `supabase/functions/submit-choice` — oyun sonucu yazma yolu
+2. auth akışı (`app/_layout.tsx` session/`signInAnonymously` dalları, E-08)
+3. billing (RevenueCat webhook, entitlement senkronu)
+
+Her `catch` için karar: Sentry'ye mi gidecek, kullanıcıya mı yansıyacak, yoksa
+gerçekten yutulabilir mi (ve neden). İlgili: hafıza kaydı
+`logger.error prod'da no-op`, K-44.
+
+---
+
+## D-05 "Battle" paylaşım formatının sprint sahibi yok (19 Eyl 2026)
+
+D-05 (`7_CHOSY_V1_KAPSAM_KILIDI.md:199-207`) paylaşımı 3 formattan **1 formata**
+indiriyor ve o formatı **"Battle"** olarak kilitliyor
+(*"Ben Heat seçtim. Sen ne seçerdin?"* — viral asimetrisi olan tek format).
+
+**Ölçülen (C.9b-UI Faz 0, M-C4):** `utils/gauntletShareText.ts:64` tek format
+üretiyor ✅ ama o format **braket metni** (başlık + tur satırları + şampiyon),
+"Battle" değil. Yani "tek format" şartı sağlanmış, **format seçimi sağlanmamış**.
+
+C.9b-UI'da yalnız L-10 düzeltmesi yapıldı (EN `share.championLine`
+"Tonight's film" → "Today's film"); format değişimi **kapsam dışı bırakıldı**.
+
+**Açık soru:** D-05'i hangi sprint taşıyacak? Sprint tablosunda (§8) sahibi yok.
+Dikkat: "Battle" formatına geçiş, C.5'te kurulan `shareRounds` braket
+altyapısını (`GauntletShell` `setShareRounds`) **ölü kod** hâline getirir —
+karar birlikte alınmalı.
+
+---
+
+## D-07 session replay hiç uygulanmadı ve sprint sahibi yok (19 Eyl 2026)
+
+D-07 (`7_CHOSY_V1_KAPSAM_KILIDI.md:219`) session replay'i iki segmente
+daraltıyor: **first session** ve **aborted gauntlet**, privacy masking zorunlu.
+
+**Ölçüldü (C.9b-UI Faz 0, bulgu F-B):**
+
+- Kod tabanında `aborted` geçen **hiçbir yer yok**
+- `Sentry.init` içinde **replay entegrasyonu yok** (`app/_layout.tsx:78`
+  yalnız `tracesSampleRate`)
+- **Sprint tablosunda (§8) sahibi yok.** M1 "Ölçüm Önce" kapsamı dört kalem
+  sayıyor (event dictionary · alan bağlaması · Sentry release health + source
+  map · `v_algorithm_daily`) — replay bunlardan biri **değil**. M1'in DUR
+  NOKTASI'ı da "20/20 event canlı doğrulanmış"; replay bir event olmadığı için
+  o kapıdan **geçmez bile**
+- Tek dolaylı atıf: E-03 altyapı maliyet modeli (`:384`) "Supabase depolama
+  (session replay dahil)" diyor — replay'in **var olduğunu varsayıyor**
+
+**Neden önemli:** D-01 ("ölçüm en başa") gereği bu boşluk marketing kapısından
+önce kapanmalı. Doğal sahibi M1; kapsamına açıkça eklenmesi gerekiyor.
+
+**Uygulanırken:** "aborted gauntlet" tespiti **unmount'a bağlanmamalı**.
+`GauntletShell` sekme değişiminde unmount olabiliyor (bkz. C.9b-UI G10);
+unmount'u "terk etme" saymak her sekme dönüşünü yanlış pozitif yapar.
+
+---
+
+## docs/os — 5 ve 6 numaralı dosyalar repoda yok (19 Eyl 2026)
+
+`docs/os/` altında bugün **1 · 2 · 3 · 4 · 7 · 8** + `K37_GAUNTLET_STATE_MACHINE.md`
+var. Eksik:
+
+| # | Dosya | Durum |
+|---|---|---|
+| 6 | `6_IA_REVIZE_KARAR_GUNLUGU` | Kapsam kilidi buna **referans veriyor** ama dosya repoda yok. CTO'nun Project'inde mevcut, repoya kopyalanacak |
+| 5 | (adı bilinmiyor) | Ne repoda ne CTO'nun Project'inde. Numaralama boşluğu olabilir — hiç var olmamış olabilir |
+
+Bible referans verdiği bir dosyanın repoda bulunmaması, kararların
+izlenebilirliğini kırıyor. 5 numaralı dosya gerçekten yoksa, numaralama
+boşluğunun **bilinçli olduğu** kapsam kilidine not düşülmeli.
