@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-09-19T14:08:28.366Z",
-  "mode": "dry-run",
+  "generated_at": "2026-09-19T14:12:57.628Z",
+  "mode": "apply",
   "input_rows": 96,
   "existing_rows": 304,
   "calendar_films_total": 400,
