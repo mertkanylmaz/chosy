@@ -1472,6 +1472,9 @@
     },
     "watchProviders": {
       "label": "WHERE TO WATCH",
+      "action": "Where to watch",
+      "empty": "Not streaming in your region.",
+      "error": "Couldn't load watch options.",
       "viewProviders": "%{provider} — view watch options",
       "attribution": "Availability from TMDB"
     },

@@ -33,6 +33,7 @@ import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
+import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import {
   BLACKOUT_SEQUENCE,
@@ -172,7 +173,7 @@ interface GauntletShellProps {
 // ─── Bileşen ─────────────────────────────────────────────────────────────────
 
 export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Element {
-  const { t } = useLanguage();
+  const { t, region } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
 
@@ -250,6 +251,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * kendi 600ms lineer eğrisiyle yükselir. Resume yolunda beklemeden açılır.
    */
   const [championBleedArmed, setChampionBleedArmed] = useState(false);
+  /**
+   * C2: Where to Watch sheet acik mi. Acikken auth/bildirim istemi
+   * TETIKLENMEZ; sheet kapaninca kuyruktan acilir. Iki sheet ust uste
+   * binerse kullanici hangisini kapattigini bilemez.
+   */
+  const [watchSheetOpen, setWatchSheetOpen] = useState(false);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -676,6 +683,14 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         transitionTimerRef.current = setTimeout(() => {
           if (!mountedRef.current) return;
           const [left, right] = orderPair(winner, incoming);
+          // C2e + C5: SON TUR basliyor. Sampiyon bu ikisinden biri olacak;
+          // saglayici verisi simdi cekilirse Champion ekraninda birincil
+          // eylem `loading`'de takilmaz. En iyi caba - basarisiz olursa
+          // Champion kendi yolundan tekrar dener.
+          if (newRound === 3) {
+            void prefetchWatchProviders(winner.id, region);
+            void prefetchWatchProviders(incoming.id, region);
+          }
           setRound(newRound);
           setPair({ left, right });
           setDefenderFilm(winner); // kazanan yeni defender — sızma rengi (§5)
@@ -762,7 +777,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       );
       setActionError(t('gauntlet.submitError'));
     },
-    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted],
+    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted, region],
   );
 
   /** Seviye 1 ret — TEK buton, her rette AYNI davranış (§3.3, C.3'e kadar). */
@@ -1062,16 +1077,20 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             date={gauntlet?.date}
             rounds={shareRounds}
             gauntletId={gauntlet?.gauntletId}
+            onSheetVisibilityChange={setWatchSheetOpen}
           />
 
           {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
               en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
+          {/* C2: Where to Watch acikken istem BASTIRILIR. `championPrompt`
+              state'i KORUNUR, yalniz gorunurluk ertelenir - sheet kapaninca
+              istem kuyruktan acilir, kaybolmaz. */}
           <AuthPromptSheet
-            visible={championPrompt === 'auth'}
+            visible={championPrompt === 'auth' && !watchSheetOpen}
             onClose={handleAuthPromptClose}
           />
           <NotificationPromptSheet
-            visible={championPrompt === 'notification'}
+            visible={championPrompt === 'notification' && !watchSheetOpen}
             onClose={handleNotificationPromptClose}
           />
 

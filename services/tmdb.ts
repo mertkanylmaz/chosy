@@ -244,16 +244,47 @@ export async function fetchMovieWatchProviders(
   tmdbId: number,
   region = 'US',
 ): Promise<TmdbWatchProviders | null> {
-  if (!tmdbId) return null;
+  const result = await fetchWatchProvidersResult(tmdbId, region);
+  return result.status === 'ok' ? result.providers : null;
+}
+
+/**
+ * `fetchMovieWatchProviders`'ın AYRIMLI hâli — C.9b-UI C2e.
+ *
+ * Eski imza "bu bölgede sağlayıcı yok" ile "istek başarısız" durumlarının
+ * İKİSİNE de `null` dönüyordu. Champion ekranında "Nerede izlenir" BİRİNCİL
+ * eylem olunca bu ayrım zorunlu hâle geldi: boşta kullanıcıya dürüst bir
+ * bilgi ("bölgende akışta yok") verilir, hatada ise "yeniden dene" sunulur.
+ * İkisini karıştırmak ya var olmayan bir arızayı bildirmek ya da gerçek bir
+ * arızayı sessizce yutmaktır — K-44'ün iki yönü.
+ *
+ * Eski fonksiyon SİLİNMEDİ, bunun üzerine ince bir sarmalayıcı oldu:
+ * `app/film/[id].tsx` onu kullanmaya devam ediyor, davranışı değişmedi.
+ */
+export type WatchProvidersResult =
+  /** İstek başarılı ve bölgede en az bir sağlayıcı var. */
+  | { status: 'ok'; providers: TmdbWatchProviders }
+  /** İstek BAŞARILI ama bu bölgede sağlayıcı yok. Hata değil, veri durumu. */
+  | { status: 'empty' }
+  /** İstek başarısız (ağ, 4xx/5xx, bozuk gövde). Tekrar denenebilir. */
+  | { status: 'error' };
+
+export async function fetchWatchProvidersResult(
+  tmdbId: number,
+  region = 'US',
+): Promise<WatchProvidersResult> {
+  // Geçersiz kimlik bir ağ hatası değil — sorulacak bir şey yok.
+  if (!tmdbId) return { status: 'empty' };
   try {
     const url =
       `${TMDB_BASE_URL}/movie/${tmdbId}/watch/providers` +
       `?api_key=${TMDB_API_KEY}`;
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) return { status: 'error' };
     const data = (await res.json()) as { results: Record<string, TmdbWatchProviders> };
-    return data.results?.[region] ?? null;
+    const providers = data.results?.[region];
+    return providers ? { status: 'ok', providers } : { status: 'empty' };
   } catch {
-    return null;
+    return { status: 'error' };
   }
 }

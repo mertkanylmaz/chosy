@@ -46,8 +46,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
-import { WatchProviders } from '@/components/gauntlet/WatchProviders';
+import { WatchProvidersSheet } from '@/components/gauntlet/WatchProviders';
+import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   BLACKOUT_SEQUENCE,
@@ -88,6 +90,12 @@ interface ChampionRevealProps {
    * ile paylaşım eylemindeki davranışın aynısı.
    */
   gauntletId?: string;
+  /**
+   * Where to Watch sheet'i acilip kapandiginda haber verir. GauntletShell
+   * auth/bildirim istemini bu sirada TETIKLEMEZ, kapaninca kuyruktan acar
+   * (C2 kabul kriteri) - iki sheet ust uste binmez.
+   */
+  onSheetVisibilityChange?: (open: boolean) => void;
 }
 
 /** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
@@ -100,12 +108,19 @@ export function ChampionReveal({
   date,
   rounds,
   gauntletId,
+  onSheetVisibilityChange,
 }: ChampionRevealProps): React.JSX.Element {
-  const { t, language } = useLanguage();
+  const { t, language, region } = useLanguage();
   const router = useRouter();
   const isReducedMotion = useReducedMotion();
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  /** C2e: dort durum - loading / ok / empty / error. */
+  const { state: providersState, providers, link, retry } = useWatchProviders(
+    champion.id,
+    region,
+  );
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
@@ -195,6 +210,17 @@ export function ChampionReveal({
    * NAVİGASYON: §3.7 korunur, hiçbir şey yazılmaz. `champion.id` zaten
    * `films.id` (UUID) ve o ekran da `.eq('id', id)` ile aynı kolonu okur.
    */
+  const openSheet = useCallback(() => {
+    void hapticLight();
+    setSheetOpen(true);
+    onSheetVisibilityChange?.(true);
+  }, [onSheetVisibilityChange]);
+
+  const closeSheet = useCallback(() => {
+    setSheetOpen(false);
+    onSheetVisibilityChange?.(false);
+  }, [onSheetVisibilityChange]);
+
   const handleOpenFilm = useCallback(() => {
     void hapticLight();
     router.push(`/film/${champion.id}`);
@@ -264,15 +290,55 @@ export function ChampionReveal({
         {t('gauntlet.posterMeta', { year: champion.year, runtime: champion.runtime })}
       </Animated.Text>
 
-      {/* "Nerede izlenir" — meta ile aynı zamanlamada belirir (§10.2 sırası bozulmaz). */}
-      <Animated.View style={metaStyle}>
-        <WatchProviders filmId={champion.id} />
-      </Animated.View>
-
+      {/* Eylemler — meta ile aynı vuruşta belirir (§10.2 sırası bozulmaz). */}
       <Animated.View style={[styles.actionsWrapper, metaStyle]}>
         {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
+
+        {/*
+          BİRİNCİL EYLEM — L-3: "Nerede izlenir". C2e'nin dört durumu:
+
+          loading → buton yerinde, sönük. Pop-in YOK; birincil eylemi sonradan
+                    belirtmek düzeni en pahalı yerde zıplatır.
+          ok      → sheet açar.
+          empty   → istek BAŞARILI ama bölgede sağlayıcı yok. Dürüst tek satır
+                    + "Sonraya bırak" birincil eyleme YÜKSELİR: kullanıcıya
+                    yapacak bir şey kalmalı.
+          error   → boştan AYRI. Gerçek mesaj + yeniden dene. "Sonraya bırak"
+                    YÜKSELMEZ — geçici bir arıza kalıcı bir hiyerarşi
+                    değişikliğine yol açmamalı.
+        */}
+        {providersState === 'empty' && (
+          <Text style={styles.stateLine}>{t('gauntlet.watchProviders.empty')}</Text>
+        )}
+        {providersState === 'error' && (
+          <Text style={styles.stateLine}>{t('gauntlet.watchProviders.error')}</Text>
+        )}
+
+        {providersState === 'empty' && gauntletId !== undefined ? (
+          <PrimaryAction
+            label={
+              saveState === 'saved'
+                ? t('gauntlet.saveForLater.saved')
+                : t('gauntlet.saveForLater.action')
+            }
+            onPress={() => void handleSaveForLater()}
+            disabled={saveState !== 'idle'}
+            busy={saveState === 'saving'}
+          />
+        ) : providersState === 'error' ? (
+          <PrimaryAction label={t('gauntlet.retry')} onPress={retry} />
+        ) : (
+          <PrimaryAction
+            label={t('gauntlet.watchProviders.action')}
+            onPress={openSheet}
+            disabled={providersState === 'loading'}
+            busy={providersState === 'loading'}
+          />
+        )}
+
+        {/* İKİNCİL EYLEMLER — sessiz metin bağlantıları (L-2). */}
         <View style={styles.actionsRow}>
-          {gauntletId !== undefined && (
+          {gauntletId !== undefined && providersState !== 'empty' && (
             <>
               <QuietAction
                 label={
@@ -302,6 +368,14 @@ export function ChampionReveal({
           {onDismiss && <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />}
         </View>
       </Animated.View>
+
+      <WatchProvidersSheet
+        visible={sheetOpen}
+        onClose={closeSheet}
+        filmId={champion.id}
+        providers={providers}
+        link={link}
+      />
     </View>
   );
 }

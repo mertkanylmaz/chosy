@@ -73,6 +73,15 @@ export const styles = StyleSheet.create({
     color: color.text.secondary,
     opacity: 0.7,
   },
+  /**
+   * C2e durum satırı — "bölgende akışta yok" / "yüklenemedi". smoke, tek
+   * satır, birincil eylemin ÜSTÜNDE. Özür dilemez, durumu söyler (§15.2).
+   */
+  stateLine: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+  },
   /** Pano onayı — kısa ömürlü, eylemin ÜSTÜNDE (düzen zıplamasın diye sabit sıra) */
   shareNotice: {
     ...type.caption,
