@@ -42,6 +42,12 @@ korundu. Paket zaten kuruluydu (`~17.0.8`) ama hiçbir yerde kullanılmıyordu.
 3. **Bak:** sağlayıcılar TR kataloğu mu (BluTV/MUBI/Netflix TR…), yoksa ABD listesi mi?
 4. Bölgeyi **ABD**'ye çevir, tam kapat-aç, aynı filmde tekrar bak. Liste **değişmeli**.
 
+> ⚠️ **Bölge ≠ dil.** `region` cihazdan okunuyor ama `language` okunmuyor:
+> `LanguageContext` kayıtlı tercih yoksa **koşulsuz `'en'`** seçiyor (borç
+> kaydı açıldı). Yani **cihaz dilini Türkçe yapmak uygulamanın dilini
+> değiştirmez.** Türkçe string testleri (G9, C2e `empty` metni) için dili
+> **uygulama içi Ayarlar'dan** çevir.
+
 ### 2 · `3abf2d2` — C2b: token
 
 **Kodla doğrulanan:** `rgba(255, 243, 214, 0.4)` · typecheck 14.
@@ -89,6 +95,11 @@ revert çakışabilir. Zinciri geri almak gerekirse: `git revert da83d52 5419586
 | **loading** | Champion'a ilk geçiş (prefetch yetişmemişse) | Buton **yerinde**, sönük. Sonradan **belirmemeli** (pop-in yok) |
 | **ok** | Sağlayıcısı olan bir film | Butona dokun → sheet aşağıdan gelir. Logolar görünür. Bir logoya dokun → TMDB sayfası açılır |
 | **empty** | Bölge = Türkiye + yeni/niş film (Colony gibi) | "Bölgende akışta yok." satırı + **"Sonraya bırak" beam dolgulu birincil** olmalı |
+
+> ⚠️ **`empty` Türkiye'de SIK çıkacak** — TMDB'nin TR katalog verisi ABD'ye
+> göre seyrek. Bu bir ürün hatası değil, veri gerçeği. Sonucu: `provider_clicked`
+> oranı TR'de düşük görünecek ve bu K-20 köprüsünün başarısızlığı olarak
+> okunmamalı. G-4 ve R-06 yorumlarında hesaba katılacak (borç kaydı açıldı).
 | **error** | Uçak modu aç, sonra Champion'a gel | "İzleme seçenekleri yüklenemedi." + **"Tekrar dene"** birincil. **"Sonraya bırak" YÜKSELMEMELİ** |
 
 **Sheet çakışması (ayrı test):**
@@ -108,13 +119,18 @@ revert çakışabilir. Zinciri geri almak gerekirse: `git revert da83d52 5419586
 **Cihazda:**
 1. **Normal ağ.** Son turu oyna. **Bak:** kara boşluk 120+400ms, poster yumuşak
    belirsin. Poster **ani belirmemeli**, önce siyah olmalı.
-2. **Yavaş ağ.** Ayarlar → Geliştirici → Network Link Conditioner (veya çok zayıf sinyal).
-   Son turu oyna. **Bak:** siyah **uzuyor** ama **1,5 saniyeyi geçmiyor**; sonra poster geliyor.
+2. **Yavaş ağ (opsiyonel).** Ayarlar → Geliştirici → Network Link Conditioner
+   *(Xcode olmadan görünmeyebilir)*. Görünmüyorsa: zayıf hücresel sinyal veya
+   **Düşük Veri Modu**. Hiçbiri yoksa **bu testi atla** — kod 1,5s üst sınırını
+   zaten garantiliyor, yavaş ağ yalnız onu gözle doğrulamak için.
+   **Bak:** siyah **uzuyor** ama **1,5 saniyeyi geçmiyor**; sonra poster geliyor.
 3. **Keskinlik.** Champion posterini before görüntüsüyle karşılaştır — daha net olmalı (w500 → w780).
 
 ⚠️ **C5'in zamanlama kanıtı ekran kaydıyla alınacak** — kod analizi imza anın
 korunduğunu kanıtlayamaz (K-57).
-⚠️ K-42 offline fallback dalı **Expo Go'da doğrulanamaz** (bible E-11).
+⚠️ K-42 offline fallback dalı: development build'de Expo Go kısıtı **geçerli
+değil**. Yine de E-11'in asıl bulgusu durabilir — uçak modunda JS bundle
+Metro'dan yüklenemezse senaryo yine ölçülemez. **Bu turda zorlanmayacak.**
 
 ### 6 · `5419586` — C8 + isStale
 
@@ -210,7 +226,11 @@ git revert da83d52 5419586 d508cec 81f6b34 4c895b3 3abf2d2 b28e96e
 
 Probe hâlâ ağaçta; **önce onu kullan**, sonra kaldır.
 
-1. **(2 dk) Probe ölçümü.** `npx expo start` → Home → kartın ekran görüntüsü.
+**Adım 0 — ön koşul:** development build telefonda mı? Değilse önce
+`eas build --profile development:device --platform ios` başlat; Developer Mode
+açık ve hesaba giriş yapılmış olmalı. (Ben build başlatmıyorum.)
+
+1. **(2 dk) Probe ölçümü.** `npx expo start --dev-client` → Home → kartın ekran görüntüsü.
    `ALT BOSLUK` değeri G4b'nin tab bar kararını çözer. Champion'da ikinci bir
    görüntü daha al (değer değişiyor mu).
 
