@@ -11,11 +11,20 @@
  * Burada `getAppUserId()` YOK, INSERT YOK. `films` tablosundan yalnızca
  * `tmdb_id` OKUNUR — gauntlet ekranlarının kimlik kuralı korunur.
  *
- * ── Bölge ───────────────────────────────────────────────────────────────────
- * `fetchMovieWatchProviders` varsayılanı ('US') KULLANILIR — `app/film/[id].tsx`
- * bugün de böyle çağırıyor. Bölgeyi cihaz diline bağlamak bir ÜRÜN kararıdır
- * (hangi ülkenin kataloğu gösterilecek) ve bu turda onaylanmadı; iki ekranın
- * aynı filmde farklı sağlayıcı göstermesi ondan daha kötü olurdu.
+ * ── Bölge (C.9b-UI C2c) ─────────────────────────────────────────────────────
+ * Bölge artık CİHAZDAN geliyor (`useLanguage().region`), sabit 'US' değil.
+ *
+ * Gerekçe: "Nerede izlenir" K-20 activation bridge'inin BİRİNCİL eylemi.
+ * Sabit 'US' ile Türkiye'deki kullanıcı ABD katalogunu görüyordu — tıkladığı
+ * sağlayıcıda film olmuyordu. Bu yalnız kötü bir deneyim değil, `provider_clicked`
+ * ve watched-it ölçümünü de (G-3 ≥%50, G-4 ≥%25) bozuyordu.
+ *
+ * `region` ≠ `language`: dil arayüzün, bölge katalogun. Türkiye'de İngilizce
+ * kullanan biri TR katalogunu görmeli.
+ *
+ * ⚠️ `app/film/[id].tsx` hâlâ varsayılan 'US' ile çağırıyor — iki ekran aynı
+ * filmde farklı sağlayıcı gösterebilir. O ekran bu turun kapsamı dışında;
+ * raporlandı.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, Text, TouchableOpacity, View } from 'react-native';
@@ -61,7 +70,7 @@ function flatten(providers: TmdbWatchProviders): TmdbProvider[] {
 }
 
 export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Element | null {
-  const { t } = useLanguage();
+  const { t, region } = useLanguage();
   const [providers, setProviders] = useState<TmdbWatchProviders | null>(null);
 
   useEffect(() => {
@@ -98,7 +107,7 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
         return;
       }
 
-      const result = await fetchMovieWatchProviders(tmdbId);
+      const result = await fetchMovieWatchProviders(tmdbId, region);
       if (cancelled) return;
 
       if (!result) {
@@ -111,7 +120,9 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
           category: 'gauntlet.providers',
           message: 'watch providers boş döndü',
           level: 'info',
-          data: { film_id: filmId, tmdb_id: tmdbId },
+          // C.9b-UI C2c: bölge de yazılıyor — "hangi ülkede boş dönüyor"
+          // sorusu ancak böyle cevaplanabilir.
+          data: { film_id: filmId, tmdb_id: tmdbId, region },
         });
         return;
       }
@@ -123,7 +134,7 @@ export function WatchProviders({ filmId }: WatchProvidersProps): React.JSX.Eleme
     return () => {
       cancelled = true;
     };
-  }, [filmId]);
+  }, [filmId, region]);
 
   const link = providers?.link;
 

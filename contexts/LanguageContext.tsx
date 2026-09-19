@@ -1,6 +1,10 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+// ⚠️ `expo-localization`'ın TEK import noktası burasıdır (CLAUDE.md kritik
+// import kuralı). Başka hiçbir dosya doğrudan import etmez; cihaz yerelini
+// isteyen her yer bu context'ten okur.
+import { getLocales } from 'expo-localization';
 
 import { i18n, Locale } from '@/constants/i18n';
 
@@ -10,11 +14,40 @@ interface LanguageContextValue {
   language: Locale;
   setLanguage: (locale: Locale) => Promise<void>;
   t: (key: string, options?: Record<string, unknown>) => string;
+  /**
+   * Cihazın ülke kodu (ISO 3166-1 alpha-2, BÜYÜK harf) — "nerede izlenir"
+   * katalogu bununla sorgulanır (C.9b-UI C2c).
+   *
+   * `language` ile KARIŞTIRILMAZ: dil arayüzün dilidir, bölge içeriğin
+   * satıldığı ülkedir. Türkiye'de İngilizce kullanan biri TR katalogunu
+   * görmeli — ikisi bağımsız.
+   *
+   * Cihaz bölge vermezse `DEFAULT_REGION` ('US') döner: bu bir tahmin
+   * değil, TMDB'nin en dolu katalogu ve `fetchMovieWatchProviders`'ın
+   * eski varsayılanı — davranış geriye dönük aynı kalır.
+   */
+  region: string;
 }
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
 const LANGUAGE_KEY = 'moodflix_language';
+
+/** Cihaz bölge vermezse kullanılacak katalog. Eski davranışla aynı. */
+const DEFAULT_REGION = 'US';
+
+/**
+ * Cihazın ülke kodunu okur. Senkron ve saf — `getLocales()` cihaz ayarını
+ * doğrudan verir, ağ/depo gerektirmez.
+ *
+ * Hata yutulmaz ama kullanıcıya da yansıtılmaz: bölge okunamazsa katalog
+ * varsayılana düşer ve kullanıcı yine bir şey görür. Sessiz DEĞİL — neden
+ * varsayılana düşüldüğü açıkça yazılı bir daldır.
+ */
+function readDeviceRegion(): string {
+  const code = getLocales()[0]?.regionCode;
+  return code ? code.toUpperCase() : DEFAULT_REGION;
+}
 
 // ─── Context ──────────────────────────────────────────────────────────────────
 
@@ -22,16 +55,23 @@ const LanguageContext = createContext<LanguageContextValue>({
   language: 'en',
   setLanguage: async () => {},
   t: (key) => key,
+  region: DEFAULT_REGION,
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 /**
- * Dil tercihini AsyncStorage'da tutar.
- * Kayıtlı tercih yoksa cihaz diline göre 'en' veya 'tr' seçer.
+ * Dil tercihini AsyncStorage'da tutar; cihazın bölge kodunu yayınlar.
+ *
+ * ⚠️ Bu başlık daha önce "Kayıtlı tercih yoksa cihaz diline göre 'en' veya
+ * 'tr' seçer" diyordu ama KOD BUNU YAPMIYOR — kayıtlı tercih yoksa koşulsuz
+ * 'en' seçiliyor. Başlık gerçeğe uyduruldu; davranışı değiştirmek bir ÜRÜN
+ * kararıdır ve C.9b-UI C2c'nin kapsamı değildir (raporlandı).
  */
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Locale>('en');
+  // Cihaz bölgesi oturum boyunca değişmez — bir kez okunur.
+  const [region] = useState<string>(readDeviceRegion);
 
   useEffect(() => {
     AsyncStorage.getItem(LANGUAGE_KEY)
@@ -67,7 +107,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, region }}>
       {children}
     </LanguageContext.Provider>
   );
@@ -77,7 +117,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Dil context'ine erişim hook'u.
- * language, setLanguage ve t() fonksiyonuna erişim sağlar.
+ * language, setLanguage, t() ve cihaz `region` bilgisine erişim sağlar.
  */
 export function useLanguage(): LanguageContextValue {
   return useContext(LanguageContext);
