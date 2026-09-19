@@ -2493,3 +2493,58 @@ işaret ediyor ama sprint tablosunda açık bir satır yok.
 §9'daki **"E-19 yedek kulübesi boş"** (`editorial_calendar_films` position
 5-6, 0 satır) aynı ailenin parçası: *"eksik olan 'ret sonrası yerine ne
 gelecek' cevabı."*
+
+---
+
+## LanguageContext varsayılan dili cihazdan seçmiyor (20 Eyl 2026)
+
+`contexts/LanguageContext.tsx` başlığı *"Kayıtlı tercih yoksa cihaz diline
+göre 'en' veya 'tr' seçer"* diyordu ama kod **koşulsuz `'en'`** seçiyor.
+C.9b-UI C2c'de başlık gerçeğe uyduruldu; **davranış değiştirilmedi** — bu bir
+ürün kararı ve o maddenin kapsamı değildi.
+
+**Yön (CTO, 20 Eyl 2026):** kayıtlı tercih yoksa cihaz dilinden seç (tr/en).
+**Kayıtlı tercihi asla ezme.** Ayrı, küçük bir sprintte yapılacak.
+
+Altyapı hazır: `expo-localization` artık bu dosyada import ediliyor
+(`getLocales()`), `region` için zaten kullanılıyor. Dil için aynı çağrının
+`languageCode`'u okunacak.
+
+**Yan etki (test notu):** bugün cihaz dilini değiştirmek uygulamanın dilini
+değiştirmiyor. Türkçe string testleri **uygulama içi Ayarlar'dan** yapılmalı.
+
+---
+
+## `app/film/[id].tsx` sağlayıcı bölgesi hâlâ sabit 'US' (20 Eyl 2026)
+
+C.9b-UI C2c gauntlet tarafında bölgeyi cihaza bağladı
+(`useLanguage().region`), ama film detay ekranı hâlâ
+`fetchMovieWatchProviders(tmdb_id)` varsayılanıyla ('US') çağırıyor
+(`app/film/[id].tsx:373`).
+
+**Sonuç:** aynı film iki ekranda **farklı sağlayıcı** gösteriyor. Champion'da
+TR kataloğu, film detayında ABD kataloğu. Bu bir tutarsızlık değil, güven
+sorunu — kullanıcı hangisine inanacağını bilemez.
+
+**Öncelik (CTO): C.9b'den HEMEN sonra.** Tek satırlık bölge okuması;
+`useLanguage()` zaten o ekranda mevcut.
+
+---
+
+## TR sağlayıcı kapsamı seyrek — C2e "empty" sık görünecek (20 Eyl 2026)
+
+C.9b-UI C2e "Nerede izlenir"e dört durum verdi; bunlardan **empty** (istek
+başarılı, bölgede sağlayıcı yok) Türkiye'de **sık** çıkacak: TMDB'nin TR
+katalog verisi ABD'ye göre belirgin biçimde seyrek.
+
+**Bu bir ürün hatası DEĞİL, veri gerçeği.** Davranış doğru: "Bölgende akışta
+yok." denir ve "Sonraya bırak" birincil eyleme yükselir.
+
+**Ölçüm sonucu:** `provider_clicked` oranı TR kullanıcılarda düşük çıkacak.
+Bu, K-20 activation bridge'inin başarısızlığı olarak okunmamalı.
+
+**Nerede hesaba katılacak:**
+- **G-4** (Watched-it ilk sinyal ≥%25) — köprünün bir ayağı zayıfsa pay düşer
+- **R-06** köprü kalitesi yorumları
+- İleride: "sağlayıcı yok oranı"nı bölge kırılımıyla ölçmek (M1 borcu; bugün
+  yalnız Sentry breadcrumb'ında `region` var, event yok)
