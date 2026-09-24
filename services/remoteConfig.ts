@@ -14,6 +14,9 @@ const SAFE_DEFAULTS = {
   paywall_profile_upgrade: false,
   paywall_roulette_limit: false,
   paywall_lifetime_soldout: false,
+  // D-08 korunuyor: Lifetime kartı paywall'da GÖSTERİLMEZ. Flag yalnız
+  // geri dönüş yolunu açık tutar (R-E'de değerlendirilecek).
+  paywall_lifetime_enabled: false,
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;

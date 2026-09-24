@@ -40,6 +40,7 @@ import {
 } from '@/services/purchaseService';
 import { upsertSubscription } from '@/services/subscriptionService';
 import { clearQuotaCache } from '@/services/quotaEngine';
+import { remoteConfig } from '@/services/remoteConfig';
 import { getAppUserId } from '@/services/watchlist';
 import type { PurchaseErrorKind } from '@/services/purchaseService';
 import { supabase } from '@/services/supabase';
@@ -123,6 +124,24 @@ export default function PaywallBase({
   /** Dolu ise paketler guvenilir degil — plan kartlari yerine hata gosterilir */
   const [offeringsError, setOfferingsError] = useState<PurchaseErrorKind | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+
+  /**
+   * D-08: v1'de yeni lifetime SATILMAZ (§7.3 "Lifetime satışı" donmuş).
+   * Kart tasarımı ve satın alma yolu silinmedi, `paywall_lifetime_enabled`
+   * flag'inin arkasına alındı — geri açmak tek satırlık `app_config`
+   * güncellemesi (R-E'de değerlendirilecek).
+   *
+   * Flag her render'da lazy okunur (kural 5/6): modül seviyesinde sabit yok.
+   * Okuma başarısızsa `remoteConfig` SAFE_DEFAULTS'a düşer → false → kart
+   * gizli kalır (fail-closed, D-08 yönünde).
+   */
+  // SAFE_DEFAULTS literal `false` tipi verdigi icin dogrudan karsilastirma
+  // TS2367 uretir — triggerOrchestrator'daki ayni cast deseni kullaniliyor.
+  const lifetimeEnabled =
+    (remoteConfig as { get(k: string): unknown }).get('paywall_lifetime_enabled') === true;
+  const planOptions = lifetimeEnabled
+    ? PLAN_OPTIONS
+    : PLAN_OPTIONS.filter((o) => o.id !== 'lifetime');
 
   // Paketleri yukle
   useEffect(() => {
@@ -362,7 +381,7 @@ export default function PaywallBase({
               <>
                 {/* Plan Cards */}
                 <View style={styles.planContainer}>
-                  {PLAN_OPTIONS.map((option) => {
+                  {planOptions.map((option) => {
                     const plan = PLANS[option.id];
                     const isSelected = selectedPlan === option.id;
 
