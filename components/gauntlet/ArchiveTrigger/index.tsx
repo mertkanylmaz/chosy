@@ -8,6 +8,11 @@
  *   missedCount === 1            → ÜCRETSİZ telafi. Arşive doğrudan giriş.
  *   archiveEligible === true     → K-46 paywall'ı (2. kaçırılan gün).
  *
+ * Paywall'ı AÇAN tek şey kullanıcının arşiv bağlantısına dokunmasıdır
+ * (CTO kararı, 24 Eyl 2026). Durum sorgusu mount'ta yapılır ama kendiliğinden
+ * hiçbir şey açmaz — bu bileşen şampiyon ekranının içinde yaşıyor ve dayatılan
+ * bir paywall K-45'in "champion paywall'ı yok" yasağına komşu olurdu.
+ *
  * ── "İlk kaçırma ücretsiz" nerede saklanıyor ────────────────────────────────
  * Hiçbir yerde. Kalıcı durum tutulmuyor (CTO kararı 31 Ağu 2026, Seçenek A):
  * kural `missedCount`'tan türetiliyor. Şemaya bir "hak tüketildi" kolonu
@@ -44,7 +49,7 @@ export function ArchiveTrigger(): React.JSX.Element | null {
   const { isPremium } = useSubscription();
   const [missedCount, setMissedCount] = useState(0);
   const [eligible, setEligible] = useState(false);
-  /** Aynı mount'ta iki kez sormayı ve iki kez tetiklemeyi önler. */
+  /** Aynı mount'ta durumu iki kez sormayı önler. */
   const askedRef = useRef(false);
 
   const openArchive = useCallback(() => {
@@ -67,28 +72,28 @@ export function ArchiveTrigger(): React.JSX.Element | null {
         setMissedCount(status.missedCount);
         setEligible(status.archiveEligible);
 
-        // Paywall kararı orchestrator'ın: cooldown, dismiss sayacı ve premium
-        // durumu orada değerlendirilir. Burada yalnız olay gönderilir.
-        if (status.archiveEligible && !isPremium) {
-          await triggerPaywall({
-            type: 'missed_day_archive',
-            missedDayCount: status.missedCount,
-          });
-        }
+        // Mount'ta paywall AÇILMAZ (CTO karari, 24 Eyl 2026). Bu bilesen
+        // sampiyon ekraninin icinde yasiyor; kullanici hicbir seye basmadan
+        // acilan bir paywall, K-45'in "champion paywall'i yok" yasagiyla ayni
+        // pikselleri paylasirdi. Tek giris noktasi asagidaki `handlePress`:
+        // kullanici arsiv baglantisina bilincli olarak dokunur.
       } catch {
         // Servis katmanı Sentry'ye yazdı. Arşiv ikincil yüzey — ritüelin
         // üstüne hata basılmaz, giriş bağlantısı hiç görünmez.
       }
     })();
-  }, [isPremium, triggerPaywall]);
+    // Yalnız durum sorgusu — paywall tetiklemediği için abonelik/trigger
+    // bağımlılığı yok, mount başına tek çalışır.
+  }, []);
 
   if (missedCount === 0) return null;
 
   /**
-   * Giriş bağlantısı. Ücretsiz dal (tek kaçırma) ve premium kullanıcı doğrudan
-   * arşive gider; uygun ama ücretli dalda bağlantı paywall'ı yeniden açar —
-   * kullanıcının bilinçli dokunuşu, `IMMEDIATE_TRIGGERS` dışı olduğu için
-   * cooldown'a tabidir ve gün içinde tekrar tekrar açılmaz.
+   * Giriş bağlantısı — paywall'ın TEK giriş noktası. Ücretsiz dal (tek
+   * kaçırma) ve premium kullanıcı doğrudan arşive gider; uygun ama ücretli
+   * dalda bağlantı paywall'ı açar. Kullanıcının bilinçli dokunuşu,
+   * `IMMEDIATE_TRIGGERS` dışı olduğu için cooldown'a tabidir ve gün içinde
+   * tekrar tekrar açılmaz.
    */
   const handlePress = () => {
     if (isPremium || !eligible) {

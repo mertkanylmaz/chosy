@@ -63,6 +63,7 @@ import MoodProfileResult from '@/components/MoodProfileResult';
 import QuotaExhausted from '@/components/QuotaExhausted';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import MoodCardGrid from '@/components/Home/MoodCardGrid';
 import FilterBottomSheet from '@/components/Home/FilterBottomSheet';
@@ -121,6 +122,8 @@ export default function MoodSearchScreen() {
   const isOnboarding = onboarding === '1';
   const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
   const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
+  /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
+  const { quotaExempt } = useProModeAccess();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [phase, setPhase] = useState<Phase>('input');
@@ -221,8 +224,10 @@ export default function MoodSearchScreen() {
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
     // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
-    // Onboarding'de kota tuketme (ilk arama bedava)
-    if (!isOnboarding) {
+    // Onboarding'de kota tuketme (ilk arama bedava).
+    // `quotaExempt`: grandfathered kohort (legacy_mood_access) istemci
+    // duvarina tabi degil — CTO karari 24 Eyl 2026.
+    if (!isOnboarding && !quotaExempt) {
       const quotaResult = await consumeQuota('search');
       setLastQuotaResult(quotaResult);
       if (!quotaResult.allowed) {
@@ -321,7 +326,7 @@ export default function MoodSearchScreen() {
         }
       }
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, triggerPaywall]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, triggerPaywall]);
 
   /**
    * "Browse Movies" → MoodContext'e kaydet → film destesine gec

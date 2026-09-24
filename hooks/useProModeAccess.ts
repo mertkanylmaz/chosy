@@ -25,6 +25,18 @@ import { logger } from '@/utils/logger';
 export interface ProModeAccess {
   /** Ekran acilabilir mi — `isPremium || legacy_mood_access` */
   allowed: boolean;
+  /**
+   * Grandfathered kohort kota duvarina tabi DEGILDIR (CTO karari, 24 Eyl 2026).
+   *
+   * Relaunch oncesi hesaplardan mood search geri alinmiyor; erisimi verip
+   * kotayla kesmek ayni sozu iki kez bozmak olurdu. Premium bu bayraga
+   * ihtiyac duymaz (kendi limiti var), bu yuzden yalnizca legacy true doner.
+   *
+   * ⚠️ Yalnizca ISTEMCI kapisini acar. `check_and_consume_quota` RPC'si ve
+   * `parse-mood` sunucu tarafinda saymaya devam eder — arama kotasi icin
+   * gercek muafiyet sunucu degisikligi ister (bkz. K-46 notu).
+   */
+  quotaExempt: boolean;
   /** Erisim aboneliktenmi grandfathering'den mi geliyor (analitik/kopya icin) */
   reason: 'premium' | 'legacy' | 'none';
   /** Kolon okumasi surerken true — bu sirada `allowed` her zaman false */
@@ -96,6 +108,8 @@ export function useProModeAccess(): ProModeAccess {
 
   return {
     allowed: !stillLoading && (isPremium || legacyAccess),
+    // Fail-closed: okuma bitene kadar muafiyet yok, duvar durur.
+    quotaExempt: !stillLoading && legacyAccess,
     reason: stillLoading ? 'none' : isPremium ? 'premium' : legacyAccess ? 'legacy' : 'none',
     loading: stillLoading,
     error,

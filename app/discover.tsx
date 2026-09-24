@@ -36,6 +36,7 @@ import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -74,6 +75,8 @@ export default function DiscoverScreen() {
   const { t } = useLanguage();
   const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId } = useMood();
   const { isPremium } = useSubscription();
+  /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
+  const { quotaExempt } = useProModeAccess();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
 
@@ -159,7 +162,10 @@ export default function DiscoverScreen() {
   const handleSwipeRight = useCallback(
     async (film: Film) => {
       // ── Slot quota kontrolü (free users) — gate BEFORE advancing ──────
-      if (!isPremium) {
+      // `quotaExempt`: grandfathered kohort (legacy_mood_access) duvara tabi
+      // degil. Slot kotasi YALNIZ istemcide zorlaniyor, bu yuzden burada
+      // atlamak gercekten sinirsiz slot demektir (CTO karari 24 Eyl 2026).
+      if (!isPremium && !quotaExempt) {
         try {
           const uid = await getAppUserId();
           if (uid) {
@@ -199,7 +205,7 @@ export default function DiscoverScreen() {
         logger.warn('[discover] watchlist yazma basarisiz:', err);
       });
     },
-    [isPremium, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
+    [isPremium, quotaExempt, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
   );
 
   const handleSwipeLeft = useCallback(
