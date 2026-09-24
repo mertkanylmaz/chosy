@@ -178,7 +178,64 @@ serve(async (req: Request) => {
     const authHeader = req.headers.get('authorization') || ''
 
     if (authHeader !== `Bearer ${webhookSecret}`) {
-      console.warn('[rc-webhook] Invalid auth header')
+      // 24 Eyl 2026 (K-49): bu dal eskiden YALNIZ `console.warn` atiyordu, yani
+      // 401 hicbir yerde gorunmuyordu. Sentetik test, saklanan secret degerinin
+      // basinda fazladan bir `Bearer ` oneki oldugunu ortaya cikardi — gercek RC
+      // teslimatlari o sirada 401 aliyor olabilirdi ve bunu gosteren tek sinyal
+      // yoktu. Ayni sinifin tekrari (isim uyusmazligi 12 Agu, bicim uyusmazligi
+      // 24 Eyl) artik olculebilir olmali.
+      //
+      // Seviye bilerek `warning`, `error` DEGIL: tek bir 401 saglikli davranistir
+      // (webhook URL'i tahmin eden bir tarayici da bu dala duser) ve `error`
+      // kanalini kirletirdi. Sinyal TEKRARDA: Sentry'de bu mesajin hacmi
+      // yukseliyorsa yanlis yapilandirma vardir.
+      const authHeaderPrefix = authHeader.slice(0, 10)
+
+      // Event tipi kimlik dogrulamasindan ONCE okunuyor — bu govde DOGRULANMAMIS
+      // veridir ve YALNIZ teshis alanina yazilir, hicbir kararda kullanilmaz.
+      // Ayrisitirma basarisiz olursa bos catch birakilmaz (kural 2): alan
+      // ayirt edici bir sentinel deger alir, cunku "govde okunamadi" ile
+      // "govdede tip yok" farkli tanilardir.
+      let unverifiedEventType: string
+      try {
+        const rawBody = await req.clone().json()
+        unverifiedEventType = typeof rawBody?.event?.type === 'string'
+          ? rawBody.event.type
+          : 'GOVDEDE_TIP_YOK'
+      } catch (parseError) {
+        console.warn('[rc-webhook] 401 govdesi ayrisitirilamadi:', parseError)
+        unverifiedEventType = 'GOVDE_AYRISTIRILAMADI'
+      }
+
+      const rejectedAt = new Date().toISOString()
+
+      console.warn(
+        `[rc-webhook] Invalid auth header — prefix="${authHeaderPrefix}" ` +
+          `event_type=${unverifiedEventType} at=${rejectedAt}`,
+      )
+
+      await sentryCapture({
+        // Header'in YALNIZ ilk 10 karakteri. `Bearer ` 7 karakter, yani token'dan
+        // en fazla 3 karakter sizar — bicimi ("Bearer " var mi, bos mu, baska bir
+        // sema mi) ayirt etmeye yeter, secret'i ele vermez. Tamamini yazmak
+        // Sentry'yi secret deposu haline getirirdi.
+        message:
+          `revenuecat-webhook: yetkisiz istek reddedildi — auth_prefix="${authHeaderPrefix}", ` +
+          `event_type=${unverifiedEventType}, at=${rejectedAt}`,
+        level: 'warning',
+        tags: {
+          error_code: 'WEBHOOK_AUTH_REJECTED',
+          function: 'revenuecat-webhook',
+          event_type: unverifiedEventType,
+        },
+        extra: {
+          auth_header_prefix: authHeaderPrefix,
+          auth_header_length: authHeader.length,
+          unverified_event_type: unverifiedEventType,
+          rejected_at: rejectedAt,
+        },
+      })
+
       return new Response(
         JSON.stringify({ error: 'UNAUTHORIZED' }),
         { status: 401, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
