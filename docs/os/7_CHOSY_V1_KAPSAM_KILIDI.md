@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.14
+**Sürüm:** 1.15
 **Tarih:** 24 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -132,6 +132,40 @@ Product Truth     Watched-it Rate
 | **K-50** | **Gauntlet reklamsız.** Interstitial yok, sponsored film yok, banner yok, "watch ad before champion" yok. | V2 §15-16 |
 | **K-51** | Veri satışı / data monetization yok. | EXIT §43 |
 | **K-59** | **Paywall v1 gerçek durumu ölçüldü (24 Eyl 2026).** Trial **gerçektir ve canlıdır**: Monthly 3 gün · Annual 7 gün (ASC, 18 May 2026'dan beri). Fiyat ASC ↔ kod senkron: `$6.99` / `$39.99` / `$89.99`. Faz 0'da fiyat değişmez. | ASC + RevenueCat ölçümü |
+
+> **Not (24.09.2026, K-46 eki — paywall giriş noktaları denetimi).**
+>
+> 9 paywall varyantının tamamı kod düzeyinde tarandı; K-46'nın "tek tetikleyici"
+> hükmünün kapsamı aşağıdaki gibi netleştirildi.
+>
+> **Yetkilendirilen (CTA-tabanlı, kullanıcı-başlatmalı).** `profile_upgrade`
+> (Profile › "Chosy Pro" CTA'sı ve Pro Mode kilitli ekranı) ile `mood_history`
+> (Profile › Taste DNA dokunuşu) **yükseltme girişi** olarak kalır. Gerekçe:
+> K-45'in yasakladığı şey kullanıcıya **dayatılan** anlardır (onboarding · ilk
+> oturum · şampiyon · günlük gauntlet); bu ikisi kullanıcının kendi bastığı
+> düğmelerdir ve ritüeli hiçbir noktada kesmez. İçerik kuralı değişmez: her
+> ikisi de **K-47**'nin iki değerine ve **R-16**'nın "var olmayan özelliği
+> satmak yasak" hükmüne tabidir.
+>
+> **Kaldırılan duvar.** `quota_exhausted`, grandfathered kohort
+> (`legacy_mood_access`, migration 090) için kaldırıldı: erişimi bırakıp kotayla
+> kesmek aynı sözü iki kez bozardı. Frustration'ı paraya çevirmeden önce nedenini
+> öğrenme ilkesiyle (**R-02**) uyumludur. Slot kotası yalnız istemcide zorlandığı
+> için bu dal fiilen sınırsızdır; **arama kotası `check_and_consume_quota` ve
+> `parse-mood` ile sunucuda da sayılır** — o taraf için ayrı karar gerekir,
+> §9'a alındı.
+>
+> **Düzeltilen sınır.** `missed_day_archive` artık **yalnız kullanıcı eylemiyle**
+> açılır. Bileşen şampiyon ekranının içinde yaşadığı için mount anında
+> kendiliğinden açılan paywall K-45'in "champion paywall'ı yok" yasağına
+> komşuydu; durum sorgusu kalır, dayatma kalkar.
+>
+> **Ölü kod (dokunulmadı).** `streak_milestone` · `watchlist_full` ·
+> `streaming_link` · `lifetime_soldout` kullanıcıya ulaşamıyor (tetikleyici hiç
+> gönderilmiyor, giriş yolu yok veya `app_config` kapalı). `roulette_limit`
+> 24 Eyl 2026'da ölçüldü: `discover_tab_enabled=false`,
+> `games_enabled.roulette=false`, `paywall_roulette_limit=false` — üç kat kapalı.
+> Temizlikleri **R-D kalemi** olarak ayrıldı, bu turda kod silinmedi.
 
 > **Not (24.09.2026, K-59 ölçüm detayı) — bible gerçeğe uydurulmuştur (D-12/D-13 emsali).**
 >
@@ -721,6 +755,8 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | **E-19 gün 100 geçişi** — kullanılan 400 filmin kalıcı "gösterildi" işareti yok | §E-19.4 kalıcı işaret istiyor; `daily_gauntlets` tabanlı `recentlyShown` yalnız 21 gün tutuyor, yani 100. günde 400 film havuza geri döner. Editoryal dal bunsuz da çalışır. Kaynak: E-19.1 (keşif DUR-6). |
 | **E-19 yönetmen tekrarı** — takvimde 17 küçük "aynı yönetmen ≤1" ihlali | Düşük öncelik, elle kürasyon kaynaklı. Kural `1_PRODUCT_OS` §6 çeşitlilik tablosunda ("Aynı yönetmen ≤1") — editoryal dal çeşitlilik kurallarını zaten çalıştırmadığı için kod seviyesinde bir ihlal değil, kürasyon seviyesinde. ⚠️ CTO bu kalemi "K-04 istisnası" diye adlandırdı; bu dokümandaki K-04 tab bar maddesidir, referans doğrulanamadı. |
 | **E-19 canlı tetikleme doğrulanmadı** — gerçek deploy + gerçek kullanıcı akışı | Editoryal dal ve guard birim testi + statik kanıt düzeyinde doğrulandı (17/17 Deno testi); gerçek cihazda tetiklenmedi. K-42/K-49/K-55 cihaz testi turunda yapılacak. Kaynak: E-19.1. |
+| **Arama kotası legacy kohortta sunucuda hâlâ sayılıyor** — istemci duvarı kalktı, `check_and_consume_quota` + `parse-mood` saymaya devam ediyor | Gerçek muafiyet RPC/Edge değişikliği ister (migration). Karar alınmadı — `legacy_mood_access` kohortu bugün arama kotasına takılmaya devam eder. Kaynak: K-46 eki, 24 Eyl 2026. |
+| **Ölü paywall varyantlarının temizliği** — `streak_milestone` · `watchlist_full` · `streaming_link` · `lifetime_soldout` · `roulette_limit` | R-D kalemi. Tetikleyicisi hiç gönderilmeyen veya üç kat flag'le kapalı varyantlar; kod silinmedi, ölçüldü ve kayda geçti. Kaynak: K-46 eki, 24 Eyl 2026. |
 | **Lifetime IAP ASC'de tamamlanamıyor** — "Chosy Plus Lifetime" (Non-Consumable) kartında Save / Add for Review pasif | Muhtemelen zorunlu bir alan eksik. App Store submit'inden (R-D) **önce** tamamlanmalı. Kaynak: K-59. |
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 
@@ -745,6 +781,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.12 | 18 Eyl 2026 | **E-19 güncellemesi.** Haftalık gün-tema tablosu tamamlandı (Pzt arthouse · Sal kült · Çar animasyon/cozy · Per modern keşif/gizli cevher · Cum popcorn/gişe · Cmt epik & uzun metraj · Paz prestij/akademi). Takvim başlangıç kuralı eklendi: Gün 1 gerçek yayın tarihinin **hafta gününe** hizalanır, sabit "Gün 1 = Pazartesi" değildir. Yeni açık teknik madde: Cumartesi'nin "2,5–3+ saat" tanımı §4 bağlam runtime tavanıyla (`CONTEXT_MAX_RUNTIME` short 110 / medium 150, sert `.lte` filtresi) çelişiyor — ilk 100 gün etkilenmiyor (editoryal seçki bağlam filtresinden geçmiyor), yalnız algoritmik faz için karar gerekiyor. E-02 notu genişletildi: gün-teması havuzu yedi alt havuza böldüğü için derinlik matematiği tema başına yapılmalı. |
 | 1.13 | 19 Eyl 2026 | **E-19 uygulama kapanışı — editoryal takvim canlıya alındı.** Bkz. yeni §5 E-19.1. Zincir tamamlandı: migration 111 (FK kimlik uzayı) → 112 (`editorial_calendar_days`/`films`, 100 gün / 400 slot) → 113 (`app_config.launch_date` koda bağlandı, mevcut satır bozulmadan), 96 eksik film iki fazlı resolve+ingest ile eklendi (`results[0]` yasağı ampirik TMDB belirsizlik ölçümüne dayanıyor). `generate-gauntlet` **DAL A / DAL B** ayrımına geçti: `day_number` 1-100 ise editoryal takvim (boru hattı hiç çalışmaz, `arrangeUnseen` çağrılmaz, `slot_types=['editorial'×4]`, `algorithm_version='v1-editorial-calendar'`), değilse mevcut v0 akış **değişmeden** sürüyor. `submit-choice` guard'ı editoryal günde algoritmik yedek çekmeyi kapattı ve kullanıcıya açık metin gösteriyor (`gauntlet.editorialNoRefresh`) — **K-23'ün launch-blocking yarısı kapandı**, yedek kulübesi §9'a alındı. `slotTypes` dürüstlüğü kapandı (`'editorial'` kilitli sözleşmeye CTO onayıyla eklendi). Cumartesi ↔ runtime tavanı çelişkisi ilk 100 gün için **kodda kanıtlandı** (DAL A `fetchPool`'a hiç girmiyor), **algoritmik faz kararı hâlâ açık**. Watched-dışlamasının editoryal günde uygulanmaması bilinçli tasarım kararı olarak kayda geçti. Ölçüldü: `launch_date=2026-09-18`, bugünün `day_number=2`, tema `epic`. Beş yeni madde §9'a eklendi. |
 | 1.14 | 24 Eyl 2026 | **K-59 — Paywall v1 gerçek durumu ölçüldü (ASC + RevenueCat).** Trial'ın gerçek ve canlı olduğu ölçüldü (Monthly 3 gün · Annual 7 gün, 18 May 2026'dan beri); **R-01'in trial reddi geçersiz ilan edildi**, madde silinmeden not düşüldü (D-12/D-13 emsali). Freemium omurgası ve E-10 fiyat kilidi değişmedi. Fiyatın ASC ↔ kod senkron olduğu doğrulandı ($6.99 / $39.99 / $89.99); E-03 ve E-10'daki yanlış `$29.99` Annual referansları `$39.99`'a düzeltildi (`2_BUSINESS_MODEL` §5'teki $4.99/$29.99/$79.99 **Faz 1 hedefi** olduğu için korundu). Kod tarafında `contextPaywall.trialInfo`'nun statik "3 days free" metni tüm varyantlarda yanlış bilgi veriyordu — seçili plana göre dinamikleştirildi. Lifetime IAP'ın ASC'de tamamlanamaması §9'a açık madde olarak alındı (R-D önkoşulu). |
+| 1.15 | 24 Eyl 2026 | **K-46 eki — paywall giriş noktaları denetimi.** 9 varyant tarandı. `profile_upgrade` ve `mood_history` CTA-tabanlı, kullanıcı-başlatmalı yükseltme girişleri olarak **yetkilendirildi** (K-45 dayatılan anları yasaklar, bunlar kullanıcının bastığı düğmelerdir; K-47 ve R-16 içerik kuralına tabi). `quota_exhausted` duvarı grandfathered kohort için **kaldırıldı** (R-02 uyumu) — slot dalı fiilen sınırsız, arama dalı sunucuda saymaya devam ettiği için §9'a açık madde olarak alındı. `missed_day_archive` artık yalnız kullanıcı dokunuşuyla açılıyor; şampiyon ekranında mount anında açılan dayatma kaldırıldı (K-45 ile net ayrım). Ölü doğrulanan 5 varyant (`streak_milestone` · `watchlist_full` · `streaming_link` · `lifetime_soldout` · `roulette_limit`) **silinmedi**, temizlik R-D kalemi olarak §9'a yazıldı. `app_config` ölçümü: `discover_tab_enabled` false · `games_enabled={games:[spotlight], roulette:false}` · dört `paywall_*` flag'i false. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
