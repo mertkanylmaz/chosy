@@ -29,6 +29,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { PurchasesPackage } from 'react-native-purchases';
+import * as Sentry from '@sentry/react-native';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
@@ -186,40 +187,89 @@ export default function LifetimeOfferScreen() {
       if (result.success) {
         hapticSuccess();
 
-        // Claim the spot
+        // ── Claim the spot ────────────────────────────────────────────
+        // ÖDEME ALINDI. Buradan sonrası kayıt işidir; hiçbir dalda sessizce
+        // BAŞKA bir plana yazılmaz (eski davranış: her hata SOLD_OUT sayılıp
+        // kullanıcı annual'a yazılıyordu — $89.99 tek seferlik ödeyen biri
+        // abonelik kaydı alıyordu, iz de bırakmıyordu).
         const userId = await getAppUserId();
-        if (userId) {
-          const claimResult = await claimLifetimeSpot(
-            userId,
-            89.99,
-            result.customerInfo?.originalAppUserId,
-          );
+        const rcCustomerId = result.customerInfo?.originalAppUserId ?? null;
+        let claimFailed = false;
 
-          if (!claimResult.success && claimResult.error === 'SOLD_OUT') {
-            // Fallback: still save as annual
-            await upsertSubscription({
-              userId,
-              plan: 'annual',
-              status: 'active',
-              rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
-            });
-          } else {
+        if (userId) {
+          const claimResult = await claimLifetimeSpot(userId, 89.99, rcCustomerId ?? undefined);
+
+          if (claimResult.success || claimResult.error === 'ALREADY_LIFETIME') {
+            // ALREADY_LIFETIME kasıtlı olarak başarı sayılır: RPC idempotent,
+            // kullanıcıda zaten kayıt var. Yine de beklenmedik bir durumdur
+            // (ödeme akışına giren birinin kaydı olmamalıydı) — profile.tsx
+            // desenindeki gibi sessizce yutulmaz, Sentry'ye yansır.
+            if (claimResult.error === 'ALREADY_LIFETIME') {
+              Sentry.captureMessage('[Lifetime] claim ALREADY_LIFETIME dondu', {
+                level: 'warning',
+                tags: { screen: 'lifetime', flow: 'claim' },
+                extra: { userId, rcCustomerId },
+              });
+            }
             await upsertSubscription({
               userId,
               plan: 'lifetime',
               status: 'active',
-              rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
+              rcCustomerId,
               expiresAt: null,
             });
+          } else if (claimResult.error === 'SOLD_OUT') {
+            // GERÇEK sold out — RPC'nin kendi iş kuralı reddi (genellenmiş
+            // hata DEĞİL). Kullanıcı ödedi ama kontenjan doldu: başka plana
+            // yazmak yerine durumu açıkça söylüyoruz.
+            claimFailed = true;
+            Sentry.captureMessage('[Lifetime] kontenjan doldu, odeme alindi', {
+              level: 'error',
+              tags: { screen: 'lifetime', flow: 'claim', claim_error: 'SOLD_OUT' },
+              extra: { userId, rcCustomerId, totalSold: claimResult.totalSold ?? null },
+            });
+            Alert.alert(t('lifetime.claimSoldOutTitle'), t('lifetime.claimSoldOutMessage'));
+          } else {
+            // FORBIDDEN / RPC_FAILED / bilinmeyen: kontenjan hakkında HİÇBİR
+            // çıkarım yok. Ödeme başarılı, kayıt oluşmadı — para ilişkili
+            // sessiz kayıp riski, fatal seviyesinde raporlanır.
+            claimFailed = true;
+            Sentry.captureMessage('[Lifetime] odeme alindi, claim yazilamadi', {
+              level: 'fatal',
+              tags: {
+                screen: 'lifetime',
+                flow: 'claim',
+                claim_error: claimResult.error ?? 'UNKNOWN',
+              },
+              extra: {
+                userId,
+                rcCustomerId,
+                transportFailure: claimResult.transportFailure ?? null,
+              },
+            });
+            Alert.alert(t('lifetime.claimFailedTitle'), t('lifetime.claimFailedMessage'));
           }
+        } else {
+          // Kullanici kimligi cozulemedi — ayni sinif: odeme var, kayit yok.
+          claimFailed = true;
+          Sentry.captureMessage('[Lifetime] odeme alindi, app user id yok', {
+            level: 'fatal',
+            tags: { screen: 'lifetime', flow: 'claim', claim_error: 'APP_USER_MISSING' },
+            extra: { rcCustomerId },
+          });
+          Alert.alert(t('lifetime.claimFailedTitle'), t('lifetime.claimFailedMessage'));
         }
 
         await refreshSubscription();
         // Client-side quota cache'ini temizle — lifetime tier ile fresh quota
         const uid = await getAppUserId();
         if (uid) await clearQuotaCache(uid);
-        Alert.alert(t('lifetime.purchaseSuccess'));
-        if (router.canGoBack()) router.back();
+
+        // Basari mesaji ve ekrandan cikis YALNIZ kayit tuttuysa.
+        if (!claimFailed) {
+          Alert.alert(t('lifetime.purchaseSuccess'));
+          if (router.canGoBack()) router.back();
+        }
       } else if (result.errorKind === 'entitlement_pending') {
         // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
         // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.

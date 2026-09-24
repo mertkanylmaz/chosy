@@ -28,10 +28,33 @@ export interface FoundingMemberInfo {
   purchasedAt?: string;
 }
 
+/**
+ * `claim_lifetime_spot` sonucunun ayırt edilen kodları.
+ *
+ * ⚠️ `SOLD_OUT` ve `ALREADY_LIFETIME` yalnızca RPC'nin KENDİ döndürdüğü iş
+ * kuralı reddleridir. Ağ/DB/izin hataları bunlara GENELLENMEZ — eskiden her
+ * hata `SOLD_OUT` dönüyordu ve çağıran, ödeme alınmış kullanıcıyı sessizce
+ * annual plana yazıyordu.
+ */
+export type ClaimErrorCode =
+  /** RPC: 1.000 kontenjan dolu */
+  | 'SOLD_OUT'
+  /** RPC: kullanıcının zaten lifetime kaydı var (idempotent tekrar) */
+  | 'ALREADY_LIFETIME'
+  /** Migration 109 guard'ı: kimlik eşleşmedi (42501) */
+  | 'FORBIDDEN'
+  /** Taşıma/DB/bilinmeyen — İŞ KURALI DEĞİL, kontenjan hakkında bilgi vermez */
+  | 'RPC_FAILED';
+
 /** Claim result */
 export interface ClaimResult {
   success: boolean;
-  error?: 'SOLD_OUT' | 'ALREADY_LIFETIME';
+  error?: ClaimErrorCode;
+  /**
+   * true → hata RPC'nin iş kuralından değil, taşıma/izin katmanından geldi.
+   * Çağıran bu durumda kontenjan hakkında HİÇBİR çıkarım yapmamalıdır.
+   */
+  transportFailure?: boolean;
   saleNumber?: number;
   totalSold?: number;
 }
@@ -109,19 +132,49 @@ export async function claimLifetimeSpot(
     });
 
     if (error) {
-      logger.error('[lifetime] Claim error:', error.message);
-      return { success: false, error: 'SOLD_OUT' };
+      // 109 guard'i 42501 ile RAISE ediyor; digerleri tasima/DB hatasi.
+      const forbidden =
+        error.code === '42501' || /FORBIDDEN/i.test(error.message ?? '');
+      logger.error(
+        '[lifetime] claim_lifetime_spot RPC hatasi', error,
+        {
+          code: forbidden ? 'LIFETIME_CLAIM_FORBIDDEN' : 'LIFETIME_CLAIM_RPC_FAILED',
+          extra: { userId, pgCode: error.code ?? null },
+        },
+      );
+      return {
+        success: false,
+        error: forbidden ? 'FORBIDDEN' : 'RPC_FAILED',
+        transportFailure: true,
+      };
     }
 
-    const result = data as Record<string, unknown>;
-    return {
-      success: (result.success as boolean) ?? false,
-      error: result.error as ClaimResult['error'],
-      saleNumber: result.sale_number as number | undefined,
-      totalSold: result.total_sold as number | undefined,
-    };
+    const result = (data ?? {}) as Record<string, unknown>;
+    if (result.success === true) {
+      return {
+        success: true,
+        saleNumber: result.sale_number as number | undefined,
+        totalSold: result.total_sold as number | undefined,
+      };
+    }
+
+    // RPC'nin kendi is kurali reddi — yalnizca tanidigimiz iki kod gecerli.
+    const rpcError = result.error as string | undefined;
+    if (rpcError === 'SOLD_OUT' || rpcError === 'ALREADY_LIFETIME') {
+      return { success: false, error: rpcError, totalSold: result.sold as number | undefined };
+    }
+
+    // Tanimadigimiz bir sekil geldi: SOLD_OUT diye yorumlamak yasak.
+    logger.error(
+      '[lifetime] claim_lifetime_spot beklenmeyen yanit', new Error('unexpected claim shape'),
+      { code: 'LIFETIME_CLAIM_UNEXPECTED_SHAPE', extra: { userId, rpcError: rpcError ?? null } },
+    );
+    return { success: false, error: 'RPC_FAILED', transportFailure: true };
   } catch (err) {
-    logger.error('[lifetime] Claim error:', err);
-    return { success: false, error: 'SOLD_OUT' };
+    logger.error(
+      '[lifetime] claim_lifetime_spot istisnasi', err,
+      { code: 'LIFETIME_CLAIM_EXCEPTION', extra: { userId } },
+    );
+    return { success: false, error: 'RPC_FAILED', transportFailure: true };
   }
 }
