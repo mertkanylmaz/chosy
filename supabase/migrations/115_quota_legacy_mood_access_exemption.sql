@@ -35,6 +35,12 @@
 --   CREATE OR REPLACE onu geri alır (CLAUDE.md kural 3 zaten SQL editor
 --   migration'larını yasaklıyor).
 --
+-- GÜVENLİK EKİ: Fonksiyona `SET search_path = public, pg_temp` eklendi
+--   (CTO onayı, 24 Eyl 2026). 021'de yoktu; SECURITY DEFINER bir fonksiyonda
+--   search_path'i sabitlemek Supabase linter'ının da (`function_search_path_
+--   mutable`) istediği sertleştirmedir. Davranış değişmiyor: tüm tablo
+--   referansları zaten `public` şemasında.
+--
 -- GERİ ALMA: 021'deki gövdeyi CREATE OR REPLACE ile geri yazmak yeterlidir.
 --   Şema değişikliği yok, veri değişikliği yok, kolon eklenmiyor.
 -- ============================================================================
@@ -45,6 +51,15 @@ CREATE OR REPLACE FUNCTION check_and_consume_quota(
 ) RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
+-- 115: `CREATE OR REPLACE` fonksiyonun `proconfig`'ini sıfırlar. 021 hiç
+-- search_path set etmemişti; canlıda elle eklenmiş olma ihtimalini ölçecek
+-- kanal (psql / db dump) bu ortamda yok. Bu yüzden sertleştirme migration'ın
+-- kendisine yazıldı: sonuç, önceki durum ne olursa olsun en az onun kadar
+-- güvenli. Gövde `users`, `user_daily_quotas`, `subscription_limits`
+-- tablolarını şema nitelemesiz kullanıyor — `public` yolda olduğu için
+-- çözümleme değişmiyor; `pg_temp` sona konuyor ki geçici tablolarla
+-- gölgeleme yapılamasın (SECURITY DEFINER standardı).
+SET search_path = public, pg_temp
 AS $$
 DECLARE
   v_tier TEXT;
