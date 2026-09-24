@@ -74,8 +74,12 @@ interface PaywallBaseProps {
   onDismiss: () => void;
   /** Custom header render (variant-specific) */
   renderHeader: () => React.ReactNode;
-  /** CTA butonu metni (variant-aware) */
-  ctaLabel?: string;
+  /**
+   * CTA butonu metni (variant-aware).
+   * Metin secili planin trial suresine bagliysa fonksiyon gecilir —
+   * plan secimi bu component'te yasadigi icin variant disaridan bilemez (K-59).
+   */
+  ctaLabel?: string | ((trialDays: number) => string);
   /** Dismiss butonu metni */
   dismissLabel?: string;
 }
@@ -223,6 +227,15 @@ export default function PaywallBase({
       setPurchasing(false);
     }
   }, [selectedPlan, packages, purchasing, t, refreshSubscription, refreshQuota, onConvert, variant]);
+
+  /** Secili planin ASC'deki trial suresi (K-59): monthly 3 · annual 7 · lifetime 0 */
+  const trialDays = PLANS[selectedPlan].trialDays;
+
+  /** CTA metni — trial suresine bagli variant'lar fonksiyon gecer */
+  const resolvedCtaLabel =
+    typeof ctaLabel === 'function'
+      ? ctaLabel(trialDays)
+      : ctaLabel ?? t('contextPaywall.ctaDefault');
 
   /** Restore */
   const handleRestore = useCallback(async () => {
@@ -395,9 +408,12 @@ export default function PaywallBase({
                   })}
                 </View>
 
-                {/* Trial Info */}
+                {/* Trial Info — secili plana gore (K-59: ASC'de monthly 3 gun,
+                    annual 7 gun; lifetime non-consumable, trial yok) */}
                 <Text style={styles.trialInfo}>
-                  {t('contextPaywall.trialInfo')}
+                  {trialDays > 0
+                    ? t('contextPaywall.trialInfo', { days: trialDays })
+                    : t('contextPaywall.trialInfoNoTrial')}
                 </Text>
 
                 {/* CTA */}
@@ -407,7 +423,7 @@ export default function PaywallBase({
                   disabled={purchasing}
                   activeOpacity={0.8}
                   accessibilityRole="button"
-                  accessibilityLabel={ctaLabel ?? t('contextPaywall.ctaDefault')}
+                  accessibilityLabel={resolvedCtaLabel}
                   accessibilityState={{ disabled: purchasing, busy: purchasing }}
                 >
                   <LinearGradient
@@ -422,7 +438,7 @@ export default function PaywallBase({
                       <>
                         <Ionicons name="sparkles" size={18} color={Colors.textOnAccent} />
                         <Text style={styles.ctaText}>
-                          {ctaLabel ?? t('contextPaywall.ctaDefault')}
+                          {resolvedCtaLabel}
                         </Text>
                       </>
                     )}

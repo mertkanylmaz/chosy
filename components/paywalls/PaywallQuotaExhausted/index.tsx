@@ -75,7 +75,11 @@ export default function PaywallQuotaExhausted({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      ctaLabel={t('contextPaywall.quotaCta')}
+      ctaLabel={(trialDays) =>
+        trialDays > 0
+          ? t('contextPaywall.quotaCta', { days: trialDays })
+          : t('contextPaywall.quotaCtaNoTrial')
+      }
       dismissLabel={t('contextPaywall.quotaDismiss')}
     />
   );
