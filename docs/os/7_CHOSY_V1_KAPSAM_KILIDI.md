@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.16
+**Sürüm:** 1.17
 **Tarih:** 24 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -172,6 +172,12 @@ Product Truth     Watched-it Rate
 > **Tetikleyici/içerik.** K-46/K-47 doğru uygulanmış. Paywall'da toggle yok, 3 radio
 > kartı var, annual ön seçili. `app/paywall.tsx` deprecated stub'tır.
 >
+> ⚠️ **Güncelleme (24.09.2026, aynı gün):** "3 radio kartı" tescili artık **flag'e
+> bağlıdır.** Lifetime kartı D-08 ile çeliştiği için `paywall_lifetime_enabled`
+> arkasına alındı (varsayılan `false`) — v1'de kullanıcı **iki kart** görür,
+> Monthly ve Annual. Üç kartlı hâl yalnız flag açıkken geçerlidir.
+> Bkz. §3 D-08 notu.
+>
 > **Trial — gerçek, kod hatalıydı.** App Store Connect'te Monthly 3 gün, Annual 7 gün
 > ücretsiz deneme 18 Mayıs 2026'dan beri canlıdır. **R-01'in trial reddi geçersizdir**
 > (bkz. §4 R-01 notu). Kod tarafındaki hata: `contextPaywall.trialInfo` statik
@@ -292,6 +298,19 @@ Product Truth     Watched-it Rate
 **Kilitlenen:** v1'de **yeni lifetime satılmaz**. Mevcut lifetime benzeri satın alma yapan olursa `chosy_plus`'a migrate edilir. 1K'da yeniden değerlendirilir. *(v1.1: `chosy_pro` → `chosy_plus`, bkz. §11 F-02)*
 
 **Gerekçe:** Pivot ihtimali kapanmamış bir üründe kalıcı yükümlülük satmak, gelecekteki her ürün kararını ipotek altına alır. Ayrıca mevcut `legacy_lifetime`/`legacy_quota` teknik borcu zaten temizlenmeyi bekliyor — üstüne yenisini eklemeyiz.
+
+> **Not (24.09.2026):** D-08 **korunuyor**, ancak 24 Eyl 2026'da bir ihlal ölçüldü:
+> `PaywallBase` üç plan kartından birini Lifetime (`$89.99`, "BEST VALUE") olarak
+> satıyordu ve bu, bugün canlı olan `profile_upgrade` / `mood_history` girişlerinin
+> altındaki yüzeydi. Profile'dan `/lifetime` linkinin kaldırılmış olması yetmiyordu —
+> asıl satış yüzeyi paywall'ın kendisiydi.
+>
+> **Düzeltme: kart silinmedi, `paywall_lifetime_enabled` flag'inin arkasına alındı**
+> (migration 116, varsayılan `false`; `remoteConfig` SAFE_DEFAULTS'ta da `false`,
+> yani okuma hatası D-08 yönünde fail-closed). Flag false iken yalnız Monthly/Annual
+> görünür, annual ön seçili davranış değişmez. Geri açmak tek satırlık `app_config`
+> güncellemesidir — **R-E'de değerlendirilecek**. Kart tasarımına ve satın alma
+> yoluna dokunulmadı.
 
 ---
 
@@ -758,6 +777,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | ~~**Arama kotası legacy kohortta sunucuda hâlâ sayılıyor**~~ | ✅ **KAPANDI — migration 115, 24 Eyl 2026.** `check_and_consume_quota` artık `legacy_mood_access = true` kohortunu sınırsız sayıyor (muafiyet mevcut `-1` yoluna bağlandı, sayaçlar artmaya devam ediyor). Canlı doğrulandı: legacy kullanıcıda 5 ardışık `search` çağrısının beşi de `allowed:true` / `limit:999999`, `searches_used` 5'e çıktı (limit 3); legacy olmayan kullanıcıda 4. çağrı `QUOTA_EXCEEDED` verdi ve sayaç 3'te kaldı. `INVALID_QUOTA_TYPE` ve `USER_NOT_FOUND` dalları bozulmadı. |
 | **Docker Desktop çalışmıyor** — `supabase db dump` ve yerel `pg_dump` alınamıyor | 115 bu yüzden yedeksiz push edildi (kabul edildi: şema/veri değişmiyor, geri alma tek `CREATE OR REPLACE`, pre-image 021'de). **Gerçek şema değiştiren ilk migration'da yedek ZORUNLU olacak** — R-D kapsamına alındı. Kaynak: migration 115 turu, 24 Eyl 2026. |
 | **Legacy kohortta bonus aramalar artık tüketilmiyor** — `grant_bonus_searches` ile verilen bonuslar `bonus_searches_used` sayacında donuk kalıyor | Amaçlanan davranış (muaf kullanıcı bonusu boşuna yakmasın, migration 115 üçüncü delta). Streak ödül raporlarında "verildi / kullanılmadı" olarak görünecek — raporu okuyanın bilmesi gereken bir gözlem, hata değil. Kaynak: migration 115, 24 Eyl 2026. |
+| **Lifetime ürünü iki ayrı offering'te aranıyor** — `getLifetimeOffering()` önce `lifetime_founding`'e bakıyor, `PaywallBase` ise yalnız default (`offerings.current`) paketlerini görüyor | **R-E'de `paywall_lifetime_enabled` açılmadan ÖNCE** RC dashboard'da `com.chosy.lifetime`'ın **default offering'de paketli** olduğu teyit edilmeli; aksi halde kart görünür ama satın alma `paywall.purchaseError` ile hata verir (`PaywallBase` paketi bulamaz). Flag `false` olduğu sürece tetiklenmez. Kaynak: Lifetime IAP kod denetimi, 24 Eyl 2026. |
 | **Ölü paywall varyantlarının temizliği** — `streak_milestone` · `watchlist_full` · `streaming_link` · `lifetime_soldout` · `roulette_limit` | R-D kalemi. Tetikleyicisi hiç gönderilmeyen veya üç kat flag'le kapalı varyantlar; kod silinmedi, ölçüldü ve kayda geçti. Kaynak: K-46 eki, 24 Eyl 2026. |
 | **Lifetime IAP ASC'de tamamlanamıyor** — "Chosy Plus Lifetime" (Non-Consumable) kartında Save / Add for Review pasif | Muhtemelen zorunlu bir alan eksik. App Store submit'inden (R-D) **önce** tamamlanmalı. Kaynak: K-59. |
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
@@ -785,6 +805,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.14 | 24 Eyl 2026 | **K-59 — Paywall v1 gerçek durumu ölçüldü (ASC + RevenueCat).** Trial'ın gerçek ve canlı olduğu ölçüldü (Monthly 3 gün · Annual 7 gün, 18 May 2026'dan beri); **R-01'in trial reddi geçersiz ilan edildi**, madde silinmeden not düşüldü (D-12/D-13 emsali). Freemium omurgası ve E-10 fiyat kilidi değişmedi. Fiyatın ASC ↔ kod senkron olduğu doğrulandı ($6.99 / $39.99 / $89.99); E-03 ve E-10'daki yanlış `$29.99` Annual referansları `$39.99`'a düzeltildi (`2_BUSINESS_MODEL` §5'teki $4.99/$29.99/$79.99 **Faz 1 hedefi** olduğu için korundu). Kod tarafında `contextPaywall.trialInfo`'nun statik "3 days free" metni tüm varyantlarda yanlış bilgi veriyordu — seçili plana göre dinamikleştirildi. Lifetime IAP'ın ASC'de tamamlanamaması §9'a açık madde olarak alındı (R-D önkoşulu). |
 | 1.15 | 24 Eyl 2026 | **K-46 eki — paywall giriş noktaları denetimi.** 9 varyant tarandı. `profile_upgrade` ve `mood_history` CTA-tabanlı, kullanıcı-başlatmalı yükseltme girişleri olarak **yetkilendirildi** (K-45 dayatılan anları yasaklar, bunlar kullanıcının bastığı düğmelerdir; K-47 ve R-16 içerik kuralına tabi). `quota_exhausted` duvarı grandfathered kohort için **kaldırıldı** (R-02 uyumu) — slot dalı fiilen sınırsız, arama dalı sunucuda saymaya devam ettiği için §9'a açık madde olarak alındı. `missed_day_archive` artık yalnız kullanıcı dokunuşuyla açılıyor; şampiyon ekranında mount anında açılan dayatma kaldırıldı (K-45 ile net ayrım). Ölü doğrulanan 5 varyant (`streak_milestone` · `watchlist_full` · `streaming_link` · `lifetime_soldout` · `roulette_limit`) **silinmedi**, temizlik R-D kalemi olarak §9'a yazıldı. `app_config` ölçümü: `discover_tab_enabled` false · `games_enabled={games:[spotlight], roulette:false}` · dört `paywall_*` flag'i false. |
 | 1.16 | 24 Eyl 2026 | **Migration 115 — K-46 borç kapanışı.** `check_and_consume_quota` `legacy_mood_access` muafiyeti canlıya alındı; K-46 ekinin açık bıraktığı sunucu yarısı kapandı ve §9'daki ilgili borç satırı ✅ işaretlendi. Gövde 021'den birebir, toplam **dört işaretli delta**: `v_legacy` okuması · muafiyet bloğu (`v_limit := -1`, `INVALID_QUOTA_TYPE` sonrası / `TIER_NOT_CONFIGURED` öncesi) · search bonus dalına `v_limit != -1` koruması · `SET search_path = public, pg_temp` sertleştirmesi. Sertleştirme `CREATE OR REPLACE`'in `proconfig`'i sıfırlamasına karşı **ölçüm yerine garanti** olarak eklendi (ölçüm kanalı yoktu: psql kurulu değil, `db dump` Docker istiyor). migration-guard iki turda da denetledi: bloke edici bulgu yok, ACL (109/110) ve JSONB sözleşmesi etkilenmiyor. Canlı doğrulama 4/4 geçti. Yedeksiz push bilinçli kabul edildi; Docker Desktop R-D'ye alındı. R-D kapsamına ayrıca Lifetime IAP (K-59) ve ölü paywall varyantlarının temizliği yazıldı. |
+| 1.17 | 24 Eyl 2026 | **D-08 ihlali kapatıldı + lifetime claim akışı sessiz kayıptan arındırıldı.** (1) `PaywallBase`'in Lifetime kartı D-08/§7.3 ile çelişiyordu (canlı paywall v1'de lifetime satıyordu); kart **silinmedi**, `paywall_lifetime_enabled` flag'inin arkasına alındı — migration 116, varsayılan `false`, SAFE_DEFAULTS'ta da `false` (fail-closed, D-08 yönünde). R-E'de geri açılabilir. (2) `claimLifetimeSpot` artık her hatayı `SOLD_OUT`'a genellemiyor: `SOLD_OUT` / `ALREADY_LIFETIME` (RPC'nin kendi iş kuralı) ile `FORBIDDEN` (109 guard'ı, 42501) / `RPC_FAILED` (taşıma) ayrıldı. (3) `app/lifetime.tsx` ödeme sonrası **hiçbir dalda sessizce annual'a yazmıyor** — eski davranış $89.99 tek seferlik ödeyen kullanıcıyı izsiz şekilde abonelik kaydına çeviriyordu (kural 1 ihlali). Gerçek SOLD_OUT'ta açık mesaj + `error` Sentry; taşıma/izin hatalarında **fatal** Sentry + "ödemen alındı, destek ile iletişime geç"; başarı mesajı yalnız kayıt tuttuysa. (4) `ALREADY_LIFETIME` dalı kasıtlı hâle getirildi (idempotent başarı + warning Sentry). i18n 4 yeni anahtar, parite 1365/1365. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
