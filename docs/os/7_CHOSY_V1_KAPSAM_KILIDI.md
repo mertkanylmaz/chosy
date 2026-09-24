@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.13
-**Tarih:** 19 Eylül 2026
+**Sürüm:** 1.14
+**Tarih:** 24 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -131,6 +131,31 @@ Product Truth     Watched-it Rate
 | **K-49** | RevenueCat state matrisi test edilmeden release yok: restore · expiration · grace period · billing issue · refund · revoked. | SONHALİ §34 |
 | **K-50** | **Gauntlet reklamsız.** Interstitial yok, sponsored film yok, banner yok, "watch ad before champion" yok. | V2 §15-16 |
 | **K-51** | Veri satışı / data monetization yok. | EXIT §43 |
+| **K-59** | **Paywall v1 gerçek durumu ölçüldü (24 Eyl 2026).** Trial **gerçektir ve canlıdır**: Monthly 3 gün · Annual 7 gün (ASC, 18 May 2026'dan beri). Fiyat ASC ↔ kod senkron: `$6.99` / `$39.99` / `$89.99`. Faz 0'da fiyat değişmez. | ASC + RevenueCat ölçümü |
+
+> **Not (24.09.2026, K-59 ölçüm detayı) — bible gerçeğe uydurulmuştur (D-12/D-13 emsali).**
+>
+> **Tetikleyici/içerik.** K-46/K-47 doğru uygulanmış. Paywall'da toggle yok, 3 radio
+> kartı var, annual ön seçili. `app/paywall.tsx` deprecated stub'tır.
+>
+> **Trial — gerçek, kod hatalıydı.** App Store Connect'te Monthly 3 gün, Annual 7 gün
+> ücretsiz deneme 18 Mayıs 2026'dan beri canlıdır. **R-01'in trial reddi geçersizdir**
+> (bkz. §4 R-01 notu). Kod tarafındaki hata: `contextPaywall.trialInfo` statik
+> "3 days free" yazıyordu ve tüm paywall varyantlarında ortaktı — Annual varsayılan
+> seçiliyken yanlış bilgi (gerçek 7 gün). Metin seçili plana göre dinamikleşir;
+> `ctaDefault` korunur.
+>
+> **Fiyat — kod ASC ile zaten senkron, yalnız metin tutarsızlığı vardı.**
+> Monthly `$6.99` ve Annual `$39.99` ASC ↔ kod eşleşiyor, değişiklik yok; Lifetime
+> ASC'de `$89.99`, kodda teyit edildi. Bazı doküman metinleri Annual'ı yanlışlıkla
+> `$29.99` diye anıyordu — bu referanslar `$39.99`'a düzeltildi. `2_BUSINESS_MODEL`
+> §5'teki **$4.99 / $29.99 / $79.99 hedefleri Faz 1'e aittir** ve hedef olarak kalır;
+> Faz 0'da fiyat değiştirilmez (Faz 0 ilkesi: optimizasyona değil sinyale ihtiyaç var,
+> bkz. E-10).
+>
+> **Açık madde.** "Chosy Plus Lifetime" (Non-Consumable IAP) ASC'de Save / Add for
+> Review butonları pasif — muhtemelen zorunlu bir alan eksik. App Store submit'inden
+> önce tamamlanmalıdır; R-D'ye besleniyor, §9'a alındı.
 
 ### 2.8 Kalite ve çıkış
 
@@ -338,7 +363,7 @@ Buna karşılık bible'da **adı olmayan** gerçek bir durum vardır: `exhausted
 
 | # | Reddedilen | Kaynak | Yerine konan çözüm |
 |---|---|---|---|
-| **R-01** | 7 günlük trial | SONHALİ §31 | **Ürünün kendisi trial'dır.** Daily gauntlet sonsuza kadar ücretsiz; deneme süresi satmaya gerek yok. Paywall CTA'sı doğrudan `$29.99/yıl` ("$2.50/ay karşılığı"). Trial state'leri, churn muhasebesi ve review yükü ortadan kalkar. Faz 1'de A/B ile bakılır. |
+| **R-01** | 7 günlük trial | SONHALİ §31 | ⚠️ **Trial reddi geçersiz — bkz. K-59 notu, 24 Eyl 2026.** ASC'de Monthly 3 gün / Annual 7 gün trial 18 May 2026'dan beri canlıdır; ret maddesi gerçekle çelişiyordu, bible gerçeğe uyduruldu. Freemium omurgası (daily gauntlet sonsuza kadar ücretsiz) **değişmez** ve E-10 ile korunur. Orijinal metin: "Ürünün kendisi trial'dır… Paywall CTA'sı doğrudan `$39.99/yıl`. Trial state'leri, churn muhasebesi ve review yükü ortadan kalkar. Faz 1'de A/B ile bakılır." |
 | **R-02** | Reroll paywall'ı (Free 2 / Pro sınırsız) | EXIT §38, V2 §11 | **Ret merdiveni ücretsiz kalır ve monetizasyon değil ölçüm aracına dönüşür.** `choice_rejected` eventi candidate quality teşhisini besler (K-28). Frustration'ı paraya çevirmeden önce nedenini öğreniriz. |
 | **R-03** | Streaming / servis filtresi (Pro) | V2 §8-9 | **Önce talep ölçülür, sonra inşa edilir.** v1'de `provider_clicked` eventi hangi sağlayıcıların gerçekten tıklandığını kaydeder. Filtre, availability'yi champion-sonrası sorgudan candidate pool kolonuna taşıyan ayrı bir pipeline gerektirir — Faz 1+, ve ancak tıklama verisi bunu haklı çıkarırsa. |
 | **R-04** | Rewarded ads | V2 §17-18 | **Kapatıldı — ikame yok.** İhtiyacı karşılayan mekanizma zaten var: ilk kaçırılan gün ücretsiz telafi (K-46). 3K DAU'da ~$450–1.350/ay karşılığında yeni SDK + ATT akışı + privacy manifest + nutrition label + pozisyon hasarı kabul edilemez. Reklam v1 gelir modelinde **yoktur**. |
@@ -381,7 +406,7 @@ Günlük kullanıcı yılda **4 × 365 = 1.460 film gösterimi** tüketir. 6 eks
 
 Hiçbir dokümanda tek bir dolar rakamı yok. 10K MAU hedefi koyup birim maliyeti bilmemek, gelir tarafındaki her hesabı anlamsız kılar.
 
-Modellenecek: günlük generation batch maliyeti · Edge invocation sayısı · pgvector sorgu maliyeti · TMDB/OMDb rate limit tavanları · Haiku çağrı maliyeti · Supabase depolama (session replay dahil). Çıktı: **kullanıcı başına aylık maliyet** ve `$29.99/yıl`'ın hangi conversion oranında başabaş verdiği.
+Modellenecek: günlük generation batch maliyeti · Edge invocation sayısı · pgvector sorgu maliyeti · TMDB/OMDb rate limit tavanları · Haiku çağrı maliyeti · Supabase depolama (session replay dahil). Çıktı: **kullanıcı başına aylık maliyet** ve `$39.99/yıl`'ın hangi conversion oranında başabaş verdiği.
 
 ### E-04 — Sentry release health + EAS source map pipeline
 
@@ -411,7 +436,7 @@ Kaynak: RevenueCat State of Subscription Apps 2026 incelemesi, 27 Ağustos 2026 
 
 ### E-10 — Fiyat testi Faz 1'e kilitlendi (R-01 korunuyor)
 
-SOSA 2026 verisi: yüksek fiyatlı uygulamalar indirmeleri düşük fiyatlılara göre 2 kat daha iyi dönüştürüyor (yüksek fiyat medyanı %2,8 · düşük fiyat medyanı %1,4). Mevcut $29.99/yıl düşük-orta bantta.
+SOSA 2026 verisi: yüksek fiyatlı uygulamalar indirmeleri düşük fiyatlılara göre 2 kat daha iyi dönüştürüyor (yüksek fiyat medyanı %2,8 · düşük fiyat medyanı %1,4). Mevcut $39.99/yıl düşük-orta bantta *(24 Eyl 2026'da ASC ile doğrulandı — daha önce bu satırda yanlışlıkla $29.99 yazıyordu; bkz. K-59)*.
 
 Aynı rapor sert paywall'ın freemium'a göre 35. günde 5 kat daha iyi dönüştüğünü söylüyor (%10,7 vs %2,1), ancak bir yıl sonra elde tutma oranları eşitleniyor.
 
@@ -696,6 +721,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | **E-19 gün 100 geçişi** — kullanılan 400 filmin kalıcı "gösterildi" işareti yok | §E-19.4 kalıcı işaret istiyor; `daily_gauntlets` tabanlı `recentlyShown` yalnız 21 gün tutuyor, yani 100. günde 400 film havuza geri döner. Editoryal dal bunsuz da çalışır. Kaynak: E-19.1 (keşif DUR-6). |
 | **E-19 yönetmen tekrarı** — takvimde 17 küçük "aynı yönetmen ≤1" ihlali | Düşük öncelik, elle kürasyon kaynaklı. Kural `1_PRODUCT_OS` §6 çeşitlilik tablosunda ("Aynı yönetmen ≤1") — editoryal dal çeşitlilik kurallarını zaten çalıştırmadığı için kod seviyesinde bir ihlal değil, kürasyon seviyesinde. ⚠️ CTO bu kalemi "K-04 istisnası" diye adlandırdı; bu dokümandaki K-04 tab bar maddesidir, referans doğrulanamadı. |
 | **E-19 canlı tetikleme doğrulanmadı** — gerçek deploy + gerçek kullanıcı akışı | Editoryal dal ve guard birim testi + statik kanıt düzeyinde doğrulandı (17/17 Deno testi); gerçek cihazda tetiklenmedi. K-42/K-49/K-55 cihaz testi turunda yapılacak. Kaynak: E-19.1. |
+| **Lifetime IAP ASC'de tamamlanamıyor** — "Chosy Plus Lifetime" (Non-Consumable) kartında Save / Add for Review pasif | Muhtemelen zorunlu bir alan eksik. App Store submit'inden (R-D) **önce** tamamlanmalı. Kaynak: K-59. |
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 
 ---
@@ -718,6 +744,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.11 | 18 Eyl 2026 | **E-19.** İlk 100 gün gauntlet'in 4 filmi ve 3 eşleşmesi editoryal takvimden gelecek (400 film, 300 eşleşme, elle kurgu); haftanın her günü sabit bir tür/mod taşıyacak ve bu gün-teması 100 gün sonrası algoritmik fazda da **kalıcı** kalıp §6.4 sert filtresine gün bazlı ağırlık olarak bağlanacak. Yetki dayanağı `1_PRODUCT_OS` §1.3'ün 🔓 "4 filmin seçim algoritması" satırı; hiçbir 🔒 madde değişmedi. Kullanılan 400 film 100. günde kalıcı "gösterildi" işareti alacak (21 günlük cooldown'dan ayrı). Üç uygulama önkoşulu açık bırakıldı: K-23 ret merdiveninin yedek film ihtiyacı, `slotTypes` etiket dürüstlüğü, E-02 havuz derinliği ölçümünün yenilenmesi. Şema/migration ihtiyacı ayrı `/kesif`'e bırakıldı. |
 | 1.12 | 18 Eyl 2026 | **E-19 güncellemesi.** Haftalık gün-tema tablosu tamamlandı (Pzt arthouse · Sal kült · Çar animasyon/cozy · Per modern keşif/gizli cevher · Cum popcorn/gişe · Cmt epik & uzun metraj · Paz prestij/akademi). Takvim başlangıç kuralı eklendi: Gün 1 gerçek yayın tarihinin **hafta gününe** hizalanır, sabit "Gün 1 = Pazartesi" değildir. Yeni açık teknik madde: Cumartesi'nin "2,5–3+ saat" tanımı §4 bağlam runtime tavanıyla (`CONTEXT_MAX_RUNTIME` short 110 / medium 150, sert `.lte` filtresi) çelişiyor — ilk 100 gün etkilenmiyor (editoryal seçki bağlam filtresinden geçmiyor), yalnız algoritmik faz için karar gerekiyor. E-02 notu genişletildi: gün-teması havuzu yedi alt havuza böldüğü için derinlik matematiği tema başına yapılmalı. |
 | 1.13 | 19 Eyl 2026 | **E-19 uygulama kapanışı — editoryal takvim canlıya alındı.** Bkz. yeni §5 E-19.1. Zincir tamamlandı: migration 111 (FK kimlik uzayı) → 112 (`editorial_calendar_days`/`films`, 100 gün / 400 slot) → 113 (`app_config.launch_date` koda bağlandı, mevcut satır bozulmadan), 96 eksik film iki fazlı resolve+ingest ile eklendi (`results[0]` yasağı ampirik TMDB belirsizlik ölçümüne dayanıyor). `generate-gauntlet` **DAL A / DAL B** ayrımına geçti: `day_number` 1-100 ise editoryal takvim (boru hattı hiç çalışmaz, `arrangeUnseen` çağrılmaz, `slot_types=['editorial'×4]`, `algorithm_version='v1-editorial-calendar'`), değilse mevcut v0 akış **değişmeden** sürüyor. `submit-choice` guard'ı editoryal günde algoritmik yedek çekmeyi kapattı ve kullanıcıya açık metin gösteriyor (`gauntlet.editorialNoRefresh`) — **K-23'ün launch-blocking yarısı kapandı**, yedek kulübesi §9'a alındı. `slotTypes` dürüstlüğü kapandı (`'editorial'` kilitli sözleşmeye CTO onayıyla eklendi). Cumartesi ↔ runtime tavanı çelişkisi ilk 100 gün için **kodda kanıtlandı** (DAL A `fetchPool`'a hiç girmiyor), **algoritmik faz kararı hâlâ açık**. Watched-dışlamasının editoryal günde uygulanmaması bilinçli tasarım kararı olarak kayda geçti. Ölçüldü: `launch_date=2026-09-18`, bugünün `day_number=2`, tema `epic`. Beş yeni madde §9'a eklendi. |
+| 1.14 | 24 Eyl 2026 | **K-59 — Paywall v1 gerçek durumu ölçüldü (ASC + RevenueCat).** Trial'ın gerçek ve canlı olduğu ölçüldü (Monthly 3 gün · Annual 7 gün, 18 May 2026'dan beri); **R-01'in trial reddi geçersiz ilan edildi**, madde silinmeden not düşüldü (D-12/D-13 emsali). Freemium omurgası ve E-10 fiyat kilidi değişmedi. Fiyatın ASC ↔ kod senkron olduğu doğrulandı ($6.99 / $39.99 / $89.99); E-03 ve E-10'daki yanlış `$29.99` Annual referansları `$39.99`'a düzeltildi (`2_BUSINESS_MODEL` §5'teki $4.99/$29.99/$79.99 **Faz 1 hedefi** olduğu için korundu). Kod tarafında `contextPaywall.trialInfo`'nun statik "3 days free" metni tüm varyantlarda yanlış bilgi veriyordu — seçili plana göre dinamikleştirildi. Lifetime IAP'ın ASC'de tamamlanamaması §9'a açık madde olarak alındı (R-D önkoşulu). |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
