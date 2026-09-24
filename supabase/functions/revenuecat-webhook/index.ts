@@ -91,8 +91,56 @@ interface RevenueCatEvent {
   price_in_purchased_currency?: number
   currency?: string
   expiration_at_ms?: number
+  /**
+   * YALNIZ `CANCELLATION` olaylarında gelir (R-C2). RevenueCat'in belgelediği
+   * değer kümesi — bu altısı dışında bir değer gelirse gönüllü iptal sayılır
+   * (aşağıdaki `IMMEDIATE_REVOKE_CANCEL_REASONS`'ın güvenli yönü):
+   *
+   *   UNSUBSCRIBE         kullanıcı yenilemeyi kapattı
+   *   BILLING_ERROR       ödeme alınamadı (grace period akışı — EXPIRATION'a bırakılır)
+   *   DEVELOPER_INITIATED bizim tarafımızdan iptal
+   *   PRICE_INCREASE      kullanıcı zammı onaylamadı
+   *   CUSTOMER_SUPPORT    mağaza/destek para iadesi verdi  ← refund, TEK anında iptal
+   *   UNKNOWN             mağaza sebebi bildirmedi
+   *
+   * `?` opsiyonel ve `string` (union DEĞİL) olması bilinçli: `id` alanındaki
+   * gerekçenin aynısı — sağlayıcı bu listeye yeni bir değer eklerse kod
+   * çökmemeli, bilinmeyen değer gönüllü iptal gibi ele alınmalıdır.
+   */
+  cancel_reason?: string
   [key: string]: unknown
 }
+
+/**
+ * Erişimin DÖNEM SONUNU BEKLEMEDEN kapatıldığı iptal sebepleri (R-C2).
+ *
+ * Ayrım şu: `UNSUBSCRIBE` / `PRICE_INCREASE` / `DEVELOPER_INITIATED` gönüllü
+ * ya da planlı iptaldir — kullanıcı parasını ödediği dönemi hak eder ve
+ * erişim `expiration_at_ms`'e kadar sürer; oraya geldiğinde RevenueCat ayrıca
+ * `EXPIRATION` gönderir ve tier'ı orası düşürür.
+ *
+ * `CUSTOMER_SUPPORT` ise para iadesidir: kullanıcının parası geri verilmiştir,
+ * karşılığında erişimin sürmesi bedava Plus demektir.
+ *
+ * ── `BILLING_ERROR` neden bu listede DEĞİL (CTO kararı, 24 Eyl 2026) ────────
+ * İlk taslakta buradaydı ve çıkarıldı. `BILLING_ERROR` bir para iadesi değil,
+ * "ödeme alınamadı" halidir ve RevenueCat onu zaten kendi akışıyla yönetir:
+ *   BILLING_ISSUE (uyarı, grace period başladı, abonelik AYAKTA)
+ *     → kullanıcı kartını düzeltirse RENEWAL
+ *     → düzeltmezse EXPIRATION (tier'ı o dal düşürür)
+ * Bu sebebi anında iptale bağlamak grace period'u fiilen kısaltır: kartını
+ * düzeltmek üzere olan kullanıcı, kendisine tanınan süreyi kullanamadan
+ * erişimini kaybeder. Ödenmemiş dönem riski EXPIRATION ile zaten kapanıyor.
+ *
+ * ⚠️ `BILLING_ERROR` (cancel_reason) ile `BILLING_ISSUE` (event type) AYRI
+ * şeylerdir; ikisini karıştırmak yukarıdaki akışı yanlış okutur.
+ *
+ * Bu küme `readonly` ve modül seviyesinde: feature flag değil, sözleşme
+ * sabitidir (CLAUDE.md #5 lazy-getter kuralı `app_config` okumaları içindir).
+ */
+const IMMEDIATE_REVOKE_CANCEL_REASONS: readonly string[] = [
+  'CUSTOMER_SUPPORT',
+]
 
 interface RevenueCatWebhook {
   api_version: string
@@ -242,6 +290,43 @@ serve(async (req: Request) => {
         JSON.stringify({ error: 'APP_USER_NOT_FOUND', retryable: true }),
         { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
+    }
+
+    /**
+     * `event.id` yoksa, o olay için yazılan satır partial indeksin DIŞINDA
+     * kalır (`WHERE rc_event_id IS NOT NULL`) — yani idempotency garantisi
+     * yoktur ve bir retry mükerrer satır üretir.
+     *
+     * Seviye bilerek `warning`: sistem durmuyor, satır yazılıyor, kullanıcı
+     * etkilenmiyor. İşaretlenen şey korumasız pencerenin KENDİSİ. `error`
+     * yapmak gerçek arızalarla aynı kanalı kirletirdi; hiç loglamamak ise RC
+     * şeması sessizce kayarsa bunu görünmez kılardı — entitlement_id / plan
+     * CHECK derslerinin tekrarı olurdu.
+     *
+     * R-C1'de EXPIRATION dalındaki gövdeden buraya ÇIKARILDI (davranış ve
+     * Sentry yükü birebir korunarak): BILLING_ISSUE de aynı `event.id`
+     * anahtarına bağlanınca iki dalın aynı uyarıyı vermesi gerekti ve iki
+     * kopya, ileride yalnız birinin güncellenmesi demekti.
+     */
+    const warnMissingRcEventId = async (): Promise<void> => {
+      if (event.id) return
+      console.warn(
+        `[rc-webhook] RC event.id eksik — idempotency korumasız (${event.type})`,
+      )
+      await sentryCapture({
+        message: 'revenuecat-webhook: RC event.id eksik — idempotency korumasız',
+        level: 'warning',
+        tags: {
+          error_code: 'RC_EVENT_ID_MISSING',
+          function: 'revenuecat-webhook',
+          event_type: event.type,
+        },
+        extra: {
+          event_type: event.type,
+          app_user_id: event.app_user_id,
+          auth_user_id: authUserId,
+        },
+      })
     }
 
     // ── 4. Handle by event type ───────────────────────────────────────────────
@@ -566,14 +651,40 @@ serve(async (req: Request) => {
         // D1: Uzay A yazması — kimlik çözümlenmeden devam edilmez.
         if (!appUserId) return await appUserMissing()
 
-        // Erişim expire date'e kadar devam — sadece flag güncelle.
+        // ── R-C2: iki ayrı iptal anlamı ──────────────────────────────────
+        // refund/chargeback → ANINDA iptal, gönüllü iptal → DÖNEM SONU.
+        //
+        // Eskiden bu dal `cancel_reason`'a hiç bakmıyordu ve HER iptali
+        // gönüllü sayıyordu: para iadesi alan kullanıcı `expiration_at_ms`'e
+        // kadar — yıllık planda 12 aya kadar — Plus erişimini bedava
+        // sürdürüyordu. Ölçülmemişti çünkü hiçbir yerde hata üretmiyordu.
+        //
+        // Gönüllü tarafta DAVRANIŞ DEĞİŞMEDİ: yalnız `will_renew=false`
+        // yazılır, tier'ı dönem sonunda RevenueCat'in ayrıca gönderdiği
+        // `EXPIRATION` olayı düşürür (aşağıdaki case).
+        const cancelReason = event.cancel_reason ?? null
+        const revokeNow = cancelReason !== null &&
+          IMMEDIATE_REVOKE_CANCEL_REASONS.includes(cancelReason)
+
+        // Anında iptalde tier de düşer. `subscription_active_until`'a
+        // DOKUNULMAZ: o alan "ödenen dönem ne zaman bitiyordu" bilgisidir ve
+        // destek/muhasebe tarafında iade penceresini okumak için gerekir;
+        // yetkilendirmenin taşıyıcısı `subscription_tier`'dır.
+        const cancelUsersPatch = revokeNow
+          ? {
+            subscription_tier: 'free',
+            subscription_will_renew: false,
+            updated_at: new Date().toISOString(),
+          }
+          : {
+            subscription_will_renew: false,
+            updated_at: new Date().toISOString(),
+          }
+
         // Yazma idempotent (aynı değeri yazar), retry güvenli.
         const { error: cancelError } = await supabase
           .from('users')
-          .update({
-            subscription_will_renew: false,
-            updated_at: new Date().toISOString(),
-          })
+          .update(cancelUsersPatch)
           .eq('id', appUserId)
 
         if (cancelError) {
@@ -589,6 +700,8 @@ serve(async (req: Request) => {
             extra: {
               auth_user_id: authUserId,
               app_user_id: appUserId,
+              cancel_reason: cancelReason,
+              revoke_now: revokeNow,
               pg_code: cancelError.code ?? null,
               pg_details: cancelError.details ?? null,
             },
@@ -599,7 +712,86 @@ serve(async (req: Request) => {
           )
         }
 
-        console.log(`[rc-webhook] Cancellation flagged for ${appUserId}`)
+        // Anında iptalde `subscriptions` da kapatılır. Gönüllü iptalde bu
+        // tabloya HİÇ DOKUNULMAZ — mevcut davranış korunur.
+        //
+        // `.in('status', [...])`: EXPIRATION dalının `.eq('status','active')`
+        // kalıbından bilerek AYRILIYOR. Para iadesi deneme (trial) sırasında
+        // da verilebilir ve o satır 'trial' durumundadır; `eq('active')` onu
+        // sessizce atlar ve `subscriptions` ile `users` ıraksardı.
+        // Zaten 'cancelled' olan satırı yeniden yazmak da zararsızdır ama
+        // listeye alınmadı: 0 satır burada meşru (aşağıda warning).
+        if (revokeNow) {
+          const { error: cancelSubsError, count: cancelSubsCount } = await supabase
+            .from('subscriptions')
+            .update({ status: 'cancelled' }, { count: 'exact' })
+            .eq('user_id', appUserId)
+            .in('status', ['active', 'trial'])
+
+          if (cancelSubsError) {
+            console.error(
+              '[rc-webhook] cancellation subscriptions update failed:',
+              cancelSubsError.message,
+            )
+            await sentryCapture({
+              message:
+                `revenuecat-webhook: refund iptalinde subscriptions kapatılamadı — ${cancelSubsError.message}`,
+              level: 'error',
+              tags: {
+                error_code: 'CANCELLATION_SUBSCRIPTION_UPDATE_FAILED',
+                function: 'revenuecat-webhook',
+                event_type: event.type,
+              },
+              extra: {
+                auth_user_id: authUserId,
+                app_user_id: appUserId,
+                cancel_reason: cancelReason,
+                pg_code: cancelSubsError.code ?? null,
+                pg_details: cancelSubsError.details ?? null,
+              },
+            })
+            // 500: retry güvenli, iki UPDATE de aynı değerleri yazar.
+            // users.subscription_tier zaten 'free' — erişim KAPALI, yani
+            // retry beklerken kullanıcı bedava Plus kullanmıyor.
+            return new Response(
+              JSON.stringify({
+                error: 'CANCELLATION_SUBSCRIPTION_UPDATE_FAILED',
+                retryable: true,
+              }),
+              { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+            )
+          }
+
+          if (cancelSubsCount === 0) {
+            // Meşru durum: kullanıcının hiç `subscriptions` satırı olmayabilir
+            // (satırı istemci `upsertSubscription` yaratır) ya da satır zaten
+            // kapalı olabilir. Genel hatayla karıştırılmıyor — PURCHASE
+            // dalındaki `SUBSCRIPTION_ROW_NOT_FOUND` ile aynı kalıp.
+            console.warn(
+              `[rc-webhook] refund iptali: eşleşen subscriptions satırı yok — app_user_id=${appUserId}`,
+            )
+            await sentryCapture({
+              message:
+                'revenuecat-webhook: refund iptalinde eşleşen subscriptions satırı yok (users.subscription_tier free yazıldı)',
+              level: 'warning',
+              tags: {
+                error_code: 'CANCELLATION_SUBSCRIPTION_ROW_NOT_FOUND',
+                function: 'revenuecat-webhook',
+                event_type: event.type,
+              },
+              extra: {
+                auth_user_id: authUserId,
+                app_user_id: appUserId,
+                cancel_reason: cancelReason,
+              },
+            })
+          }
+        }
+
+        console.log(
+          `[rc-webhook] Cancellation flagged for ${appUserId} ` +
+            `(reason=${cancelReason ?? 'yok'}, revoke_now=${revokeNow})`,
+        )
         break
       }
 
@@ -693,34 +885,9 @@ serve(async (req: Request) => {
         // users + subscriptions'a işlendi, eksik olan yalnız pazarlama
         // kuyruğu. Sessiz değil — Sentry'ye düşer.
 
-        // `event.id` yoksa bu satır partial indeksin DIŞINDA kalır
-        // (WHERE rc_event_id IS NOT NULL) — yani bu olay için idempotency
-        // garantisi yoktur ve bir retry mükerrer churn satırı üretir.
-        //
-        // Seviye bilerek `warning`: sistem durmuyor, churn kaydı yazılıyor,
-        // kullanıcı etkilenmiyor. İşaretlenen şey korumasız pencerenin
-        // KENDİSİ. `error` yapmak gerçek arızalarla aynı kanalı kirletirdi;
-        // hiç loglamamak ise RC şeması sessizce kayarsa bunu görünmez
-        // kılardı — entitlement_id / plan CHECK derslerinin tekrarı olurdu.
-        if (!event.id) {
-          console.warn(
-            `[rc-webhook] RC event.id eksik — idempotency korumasız (${event.type})`,
-          )
-          await sentryCapture({
-            message: 'revenuecat-webhook: RC event.id eksik — idempotency korumasız',
-            level: 'warning',
-            tags: {
-              error_code: 'RC_EVENT_ID_MISSING',
-              function: 'revenuecat-webhook',
-              event_type: event.type,
-            },
-            extra: {
-              event_type: event.type,
-              app_user_id: event.app_user_id,
-              auth_user_id: authUserId,
-            },
-          })
-        }
+        // Korumasız pencere uyarısı — gövdesi `warnMissingRcEventId`'de
+        // (R-C1'de çıkarıldı, davranış birebir aynı).
+        await warnMissingRcEventId()
 
         const { error: winbackError } = await supabase.from('winback_queue').insert({
           user_id: authUserId,
@@ -769,6 +936,24 @@ serve(async (req: Request) => {
         // dönüş kontrol edilmediği için sessizce kayboluyordu.
         if (!appUserId) return await appUserMissing()
 
+        // ── R-C1: mükerrer bildirim koruması ─────────────────────────────
+        // Migration 114 (`notification_log_rc_event_id_idx`, partial unique
+        // WHERE rc_event_id IS NOT NULL) mükerrer event'i reddeder — desen
+        // 107'nin (winback_queue) birebir aynısı.
+        //
+        // Bu dal insert hatasında 500 dönüyor, yani RC 5 kez retry ediyor.
+        // Koruma olmadan, ilk insert BAŞARILI olup yanıt yolu düşerse
+        // kullanıcı aynı "Payment issue" push'unu 5 kez alırdı — zaten ödeme
+        // sorunu yaşayan kullanıcı için en kötü an.
+        //
+        // Neden `upsert` DEĞİL, düz `insert`: PostgREST'in `on_conflict`
+        // parametresi indeks predicate'ini ifade edemiyor, partial indeks ise
+        // arbiter çıkarımı için predicate'in ifadede tekrarlanmasını şart
+        // koşuyor — `.upsert({ onConflict: 'rc_event_id' })` HER çağrıda
+        // 42P10 verirdi (107'de canlıda doğrulandı). Çakışma dönüş kodundan
+        // (23505) ayırt ediliyor.
+        await warnMissingRcEventId()
+
         const { error: notifError } = await supabase.from('notification_log').insert({
           user_id: appUserId,
           type: 'billing_issue',
@@ -776,9 +961,21 @@ serve(async (req: Request) => {
           body: 'Your subscription renewal failed. Please update your payment method in Apple ID settings.',
           data: { screen: 'profile' },
           status: 'queued',
+          rc_event_id: event.id ?? null,
         })
 
-        if (notifError) {
+        if (notifError && notifError.code === '23505') {
+          // Beklenen yol: idempotency ÇALIŞTI. Aynı `rc_event_id` zaten
+          // kayıtlı, yani bu mükerrer bir teslim (RevenueCat retry'ı veya
+          // çift gönderim). Hata değil, korumanın kanıtı — Sentry'ye
+          // düşürmüyoruz, yoksa çalışan mekanizma gürültü üretirdi.
+          //
+          // 200 dönülür (aşağıdaki ortak çıkış): bildirim ZATEN kuyrukta,
+          // yapılacak iş yok. 500 dönmek RC'yi sonsuz retry'a sokardı.
+          console.log(
+            `[rc-webhook] billing_issue bildirimi zaten kayıtlı (rc_event_id çakışması) — ${event.id ?? 'id yok'}`,
+          )
+        } else if (notifError) {
           console.error('[rc-webhook] billing issue notification insert failed:', notifError.message)
           await sentryCapture({
             message: `revenuecat-webhook: billing_issue bildirimi kuyruğa yazılamadı — ${notifError.message}`,
@@ -813,7 +1010,41 @@ serve(async (req: Request) => {
       }
 
       default: {
+        // ── R-C3: bilinmeyen event tipi artık görünür ────────────────────
+        // Eskiden yalnız `console.log`'a gidiyordu. Edge Function logları
+        // retention'a tabi ve kimse onları taramıyor; sonuç, RevenueCat yeni
+        // bir event tipi eklediğinde (ya da mevcut birini yeniden
+        // adlandırdığında) bunun hiç fark edilmemesiydi — `entitlement_id` ve
+        // `plan` CHECK derslerinin tam olarak nasıl doğduğu.
+        //
+        // Seviye bilerek `info`, `error`/`fatal` DEĞİL: bu bir arıza değil.
+        // Bu dala düşen olayların çoğu bizi ilgilendirmiyor (`TEST`,
+        // `INVOICE_ISSUANCE`) ve `error` yapmak gerçek ödeme arızalarıyla
+        // aynı kanalı kirletirdi. İşaretlenen şey KAPSAM BOŞLUĞU: "bu tip
+        // geldi ve hiçbir şey yapmadık" cümlesinin aranabilir bir iz
+        // bırakması.
+        //
+        // Yanıt 200 kalır (aşağıdaki ortak çıkış): işlemediğimiz bir olay
+        // için RevenueCat'i retry kuyruğuna sokmak, kapsam boşluğunu bir
+        // teslim arızasına çevirirdi.
         console.log(`[rc-webhook] Unhandled event type: ${event.type}`)
+        await sentryCapture({
+          message: `revenuecat-webhook: işlenmeyen event tipi (${event.type}) — kapsam dışı, işlem yapılmadı`,
+          level: 'info',
+          tags: {
+            error_code: 'RC_EVENT_TYPE_UNHANDLED',
+            function: 'revenuecat-webhook',
+            event_type: event.type,
+          },
+          extra: {
+            event_type: event.type,
+            rc_event_id: event.id ?? null,
+            auth_user_id: authUserId,
+            app_user_id: appUserId,
+            product_id: event.product_id,
+            transaction_id: event.transaction_id ?? null,
+          },
+        })
       }
     }
 
