@@ -636,7 +636,7 @@ export type DeleteAccountResult =
  * Akış:
  *   1. Supabase JWT al
  *   2. Edge Function `delete-account` çağır (servis rol yetkisi gerekli)
- *   3. Edge function: subscriptions + mood_searches + users (cascade) + auth.users siler
+ *   3. Edge function: users (cascade) + auth.users + PostHog kisisi siler
  *   4. Client: RC logout + PostHog/Sentry reset + signOut + yerel session temizle
  *
  * @returns Başarı durumu ve opsiyonel hata detayı
@@ -675,6 +675,11 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       return { success: false, error: 'partial_failure', message: warning };
     }
 
+    // ── Diger 4xx/5xx: hicbir sey silinmemis olabilir ────────────────────
+    // Edge function'in `profile_lookup_failed` (users aramasi basarisiz —
+    // hicbir sey silinmedi) ve `auth_delete_failed` dallari buraya duser.
+    // Ortak davranis dogru: RC logout / PostHog reset / signOut CALISTIRILMAZ,
+    // oturum acik kalir, kullaniciya hata gosterilir.
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
       logger.error('[authService] deleteAccount edge function hatası:', body, {
@@ -706,8 +711,9 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     // ── Analitik kimliklerini sifirla ────────────────────────────────────
     // Silinen kullanicinin distinct_id'si cihazda kalirsa sonraki (anonim)
     // oturumun event'leri silinmis kullaniciya baglanir. reset() yeni bir
-    // anonim distinct_id uretir. Sunucu tarafi PostHog silme islemi bu turun
-    // kapsami disinda (backlog).
+    // anonim distinct_id uretir. Sunucu tarafindaki PostHog kisi + event
+    // silme islemini delete-account Edge Function yapar (K-16 analytics
+    // identity ayagi); basarisizligi orada Sentry'ye fatal yazilir.
     posthogAnalytics.reset();
     Sentry.setUser(null);
 
