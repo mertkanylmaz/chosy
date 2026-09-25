@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.18
+**Sürüm:** 1.19
 **Tarih:** 25 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -193,9 +193,11 @@ Product Truth     Watched-it Rate
 > Faz 0'da fiyat değiştirilmez (Faz 0 ilkesi: optimizasyona değil sinyale ihtiyaç var,
 > bkz. E-10).
 >
-> **Açık madde.** "Chosy Plus Lifetime" (Non-Consumable IAP) ASC'de Save / Add for
-> Review butonları pasif — muhtemelen zorunlu bir alan eksik. App Store submit'inden
-> önce tamamlanmalıdır; R-D'ye besleniyor, §9'a alındı.
+> **Lifetime IAP — ek işlem gerekmiyor** *(25 Eyl 2026'da düzeltildi).* "Chosy Plus
+> Lifetime" (Non-Consumable IAP) ASC'de **zaten Approved ve canlıdır**; Save / Add for
+> Review butonlarının pasif olması normal davranıştır — submit edilecek yeni bir şey
+> yok. 24 Eyl'de bu satır "zorunlu bir alan eksik olabilir, submit'ten önce
+> tamamlanmalı" diyordu; o teşhis **yanlıştı**, R-D kapsamından ve §9'dan düşürüldü.
 
 ### 2.8 Kalite ve çıkış
 
@@ -744,7 +746,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | **R-A** İlk Deneyim | Yeni ve mevcut kullanıcı ayrı ayrı karşılanır | Onboarding 3 kart · auth-after-champion · bildirim izni (K-15) · **"Chosy değişti" köprü ekranı** · hesap silme cascade (K-16) | C.9d | Yeni kullanıcı ilk oturumu + mevcut kullanıcı köprü akışı cihazda | Fable 5 |
 | **R-B** Güvenilirlik | "Çalışıyor" → "güvenilir" | Backend state machine (K-37) · idempotency · offline fallback (K-42) · error copy (K-43) | R-A | Uçak modu senaryosu · generation failure senaryosu · beyaz ekran yok *(K-42 cihaz doğrulaması E-11 ile TestFlight'a taşındı, 31 Ağu 2026)* | Fable 5 |
 | **R-C** Para | Tek tetikleyici, tek entitlement | Arşiv paywall'ı (K-46) · RevenueCat state matrisi (K-49) · restore · paywall funnel enstrümantasyonu (E-09) · RC Paywalls v2 fizibilitesi + offline davranış ölçümü | R-B | 6 state test edilmiş · sandbox satın alma + restore · E-09 eventleri PostHog'da doğrulanmış | Sonnet 4.6 |
-| **R-D** Çıkış | Store'a hazır | A11y (K-54) · QA matrisi (K-55) · App Store paketi · **TMDB lisansı (K-56)** · kademeli dağıtım (E-06) · 63 kişiye kurucu mesajı · **Lifetime IAP'ın ASC'de tamamlanması (K-59)** · **Docker Desktop'ın çalışır hâle getirilmesi** · **ölü paywall varyantlarının temizliği (K-46 eki)** | R-C | 6 release gate (K-52) yeşil | Sonnet 4.6 |
+| **R-D** Çıkış | Store'a hazır | A11y (K-54) · QA matrisi (K-55) · App Store paketi · **TMDB lisansı (K-56)** · kademeli dağıtım (E-06) · 63 kişiye kurucu mesajı · **Docker Desktop'ın çalışır hâle getirilmesi** · **ölü paywall varyantlarının temizliği (K-46 eki)** | R-C | 6 release gate (K-52) yeşil | Sonnet 4.6 |
 
 **Paralel iş yok.** Her sprint bir öncekinin DUR NOKTASI'ndan onay almadan başlamaz.
 
@@ -807,6 +809,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.16 | 24 Eyl 2026 | **Migration 115 — K-46 borç kapanışı.** `check_and_consume_quota` `legacy_mood_access` muafiyeti canlıya alındı; K-46 ekinin açık bıraktığı sunucu yarısı kapandı ve §9'daki ilgili borç satırı ✅ işaretlendi. Gövde 021'den birebir, toplam **dört işaretli delta**: `v_legacy` okuması · muafiyet bloğu (`v_limit := -1`, `INVALID_QUOTA_TYPE` sonrası / `TIER_NOT_CONFIGURED` öncesi) · search bonus dalına `v_limit != -1` koruması · `SET search_path = public, pg_temp` sertleştirmesi. Sertleştirme `CREATE OR REPLACE`'in `proconfig`'i sıfırlamasına karşı **ölçüm yerine garanti** olarak eklendi (ölçüm kanalı yoktu: psql kurulu değil, `db dump` Docker istiyor). migration-guard iki turda da denetledi: bloke edici bulgu yok, ACL (109/110) ve JSONB sözleşmesi etkilenmiyor. Canlı doğrulama 4/4 geçti. Yedeksiz push bilinçli kabul edildi; Docker Desktop R-D'ye alındı. R-D kapsamına ayrıca Lifetime IAP (K-59) ve ölü paywall varyantlarının temizliği yazıldı. |
 | 1.17 | 24 Eyl 2026 | **D-08 ihlali kapatıldı + lifetime claim akışı sessiz kayıptan arındırıldı.** (1) `PaywallBase`'in Lifetime kartı D-08/§7.3 ile çelişiyordu (canlı paywall v1'de lifetime satıyordu); kart **silinmedi**, `paywall_lifetime_enabled` flag'inin arkasına alındı — migration 116, varsayılan `false`, SAFE_DEFAULTS'ta da `false` (fail-closed, D-08 yönünde). R-E'de geri açılabilir. (2) `claimLifetimeSpot` artık her hatayı `SOLD_OUT`'a genellemiyor: `SOLD_OUT` / `ALREADY_LIFETIME` (RPC'nin kendi iş kuralı) ile `FORBIDDEN` (109 guard'ı, 42501) / `RPC_FAILED` (taşıma) ayrıldı. (3) `app/lifetime.tsx` ödeme sonrası **hiçbir dalda sessizce annual'a yazmıyor** — eski davranış $89.99 tek seferlik ödeyen kullanıcıyı izsiz şekilde abonelik kaydına çeviriyordu (kural 1 ihlali). Gerçek SOLD_OUT'ta açık mesaj + `error` Sentry; taşıma/izin hatalarında **fatal** Sentry + "ödemen alındı, destek ile iletişime geç"; başarı mesajı yalnız kayıt tuttuysa. (4) `ALREADY_LIFETIME` dalı kasıtlı hâle getirildi (idempotent başarı + warning Sentry). i18n 4 yeni anahtar, parite 1365/1365. |
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
+| 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
