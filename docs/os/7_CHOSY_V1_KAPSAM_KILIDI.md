@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.19
+**Sürüm:** 1.20
 **Tarih:** 25 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -70,7 +70,7 @@ Product Truth     Watched-it Rate
 | **K-13** | Auth **champion sonrası**, değer karşılığı: "Save your cinema journey" + "Not now". | SONHALİ §5 |
 | **K-14** | Auth sağlayıcı: **Sign in with Apple (primary) + email magic link (secondary)**. Üçüncüsü yok. | SONHALİ §6 |
 | **K-15** | Bildirim izni **ilk açılışta istenmez** — ilk champion'dan sonra, bağlam içinde: "Want your four ready every evening?" | SONHALİ §28 |
-| **K-16** | Hesap silme **gerçek cascade**: auth user → profile → choice events → watch history → DNA → analytics identity. App Review blocker'ı, "polish" değil. | SONHALİ §7 |
+| **K-16** | Hesap silme **gerçek cascade**: auth user → profile → choice events → watch history → DNA → analytics identity. App Review blocker'ı, "polish" değil. ⚠️ Denetlendi ve analytics identity ayağı uygulandı — bkz. **E-20**, 25 Eyl 2026. | SONHALİ §7 |
 
 ### 2.3 Gauntlet ve champion
 
@@ -657,6 +657,54 @@ ihlalleri · canlı tetikleme doğrulaması.
 **Kaynak:** `docs/investigations/E19_GENERATE_GAUNTLET_KESIF.md` · uygulama turu
 19 Eyl 2026.
 
+### E-20 — K-16 hesap silme denetimi + analytics identity ayağı (25 Eyl 2026)
+
+**Ölçülmüş gerçek.** Hesap silme akışı **zaten vardı ve uygulamanın içindeydi**:
+Profil → Ayarlar → "Delete Account" (`app/(tabs)/profile.tsx:696`), iki aşamalı
+onay, `services/authService.ts:644`, Edge Function `delete-account` (canlıda
+ACTIVE v23, 24 Nis 2026). App Store Guideline 5.1.1(v) şartı karşılanıyor.
+Deploy edilen kodun repo ile aynı olduğu dolaylı kanıtlandı (dosya mtime deploy'dan
+29 dk önce, o tarihten sonra tek commit ve o da salt ekleme).
+
+**~~Ön teşhis: "auth.users silinince subscriptions / notification_log / public.users
+ayakta kalıyor — ters orphan"~~** — **geçersiz, 25 Eyl 2026.** Bu tespit yalnızca
+`auth.users`'ın **doğrudan** (Dashboard / Admin API tek başına) silindiği senaryoda
+doğrudur. Uygulamanın akışı **önce `public.users`'ı** siler, cascade oradan tetiklenir;
+canlı FK envanteri ölçüldü: `public.users`'a bağlı **26 FK'nin biri hariç hepsi
+ON DELETE CASCADE** (`users.referred_by` = SET NULL, 102'nin gerekçesi), `subscriptions`
+ve `notification_log` bu listede. Auth tarafındaki iki FK (`user_collection_progress`,
+`winback_queue`) da CASCADE, yani son adım FK ihlaliyle bloke olmuyor. Tespit
+silinmedi, üstü çizildi (D-12/D-13 emsali).
+
+**Gerçek açık üç noktaydı, üçü de bu turda kapatıldı:**
+
+1. **`auth_only` dalı sessiz başarı üretiyordu.** `.single()`'ın her hatası
+   "kullanıcı yok" sayılıyordu — geçici bir arama hatası (RLS, timeout, PostgREST
+   5xx) public tarafı duran kullanıcının auth kaydını kazara silebilirdi; ayrıca
+   `deleteUser` dönüşü hiç kontrol edilmiyordu ve dal `console.warn` ile geçiliyordu
+   (Sentry'ye iz yok). Artık: **PGRST116** (gerçek "satır yok") diğer hatalardan
+   ayrıldı — diğer hatalarda **hiçbir şey silinmez**, `profile_lookup_failed` döner.
+   Gerçek "satır yok" dalında auth silme **tam silmedir** (bu kullanıcılarda public
+   tarafta veri yoktur), bu yüzden `success:true` + `note:'auth_only'` döner ve anomali
+   **fatal Sentry** olarak kayda geçer. **CTO kararı:** dalın `success:false` dönmesi
+   reddedildi — token silindikten sonra "tekrar dene" imkânsızdır ve ölçülen **15
+   auth-only kullanıcı** (auth 281 / public 266) hesabını hiç silemez hâle gelirdi.
+2. **Analytics identity ayağı hiç uygulanmamıştı.** K-16 "…→ analytics identity"
+   diyordu, kod ise "backlog" yorumu taşıyordu. Bu bir çelişki değil, **kararın
+   uygulanmamış hâliydi.** `delete-account` artık PostHog kişisini **ve tüm event
+   geçmişini** siliyor (`delete_events=true`, distinct_id = `auth.users.id`).
+   Başarısızlık **fatal Sentry** yazar ama hesap silmeyi başarısız saymaz — asıl veri
+   (Postgres + auth) o noktada zaten silinmiştir.
+3. **Sessiz fallback temizliği.** Fonksiyondaki tüm `console.warn` / `console.error`
+   çağrıları `sentryCapture`'a çevrildi (kural 1).
+
+**Ön koşul (deploy öncesi):** `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID`
+secret'ları kurulmadan PostHog silme çalışmaz — secret yoksa fonksiyon **fatal Sentry**
+yazıp devam eder, sessizce atlamaz. Mevcut `POSTHOG_API_KEY` secret'ı proje yazma
+anahtarıdır (`phc_…`), bu iş için **yetersizdir**.
+
+**Kaynak:** `docs/investigations/K16_HESAP_SILME_KESIF.md` (25 Eyl 2026) + uygulama turu.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -782,6 +830,9 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | **Lifetime ürünü iki ayrı offering'te aranıyor** — `getLifetimeOffering()` önce `lifetime_founding`'e bakıyor, `PaywallBase` ise yalnız default (`offerings.current`) paketlerini görüyor | **R-E'de `paywall_lifetime_enabled` açılmadan ÖNCE** RC dashboard'da `com.chosy.lifetime`'ın **default offering'de paketli** olduğu teyit edilmeli; aksi halde kart görünür ama satın alma `paywall.purchaseError` ile hata verir (`PaywallBase` paketi bulamaz). Flag `false` olduğu sürece tetiklenmez. Kaynak: Lifetime IAP kod denetimi, 24 Eyl 2026. |
 | **Ölü paywall varyantlarının temizliği** — `streak_milestone` · `watchlist_full` · `streaming_link` · `lifetime_soldout` · `roulette_limit` | R-D kalemi. Tetikleyicisi hiç gönderilmeyen veya üç kat flag'le kapalı varyantlar; kod silinmedi, ölçüldü ve kayda geçti. Kaynak: K-46 eki, 24 Eyl 2026. |
 | ~~**Lifetime IAP ASC'de tamamlanamıyor**~~ | ✅ **Zaten Approved, canlı (CTO teyidi, 25 Eyl 2026).** Save / Add for Review pasifliği **normal davranış** — submit edilecek yeni bir şey yok. "Tamamlanamıyor" tespiti yanlıştı. Kaynak: K-59. |
+| **`game_scores` FK'siz + 12 orphan satır** | Tablonun `user_id` kolonunda FK yok; hesap silme akışı da cascade de bu satırlara dokunmuyor. Ölçüm (25 Eyl 2026): 12 satır, **hepsi zaten orphan** — ne `public.users` ne `auth.users` uzayında karşılığı var, yani aktif bir kullanıcıya ait değil. Gizlilik riski değil, temizlik/bütünlük kalemi. FK eklemek şema değişikliğidir → **R-D kalemi, ayrı karar.** Kaynak: E-20. |
+| **`auth.tsx:96-105` — PostHog identify öncesi kimlik uzayı uyuşmazlığı** | Sorgu `auth uid` ile `public.users.id`'yi karşılaştırıyor (migration 111'in ayırdığı iki uzay), kesişim **0**. Sonuç: `archetype` her zaman `null`, `subscription_tier` her zaman `'free'` olarak PostHog'a gidiyor — analytics verisi baştan yanlış. Ayrıca boş `catch {}` (kural 2 ihlali). **R-D'ye kod değişikliği olarak eklendi, bu turda dokunulmadı.** App Review blocker'ı değil, analytics veri kalitesi sorunu. Kaynak: E-20. |
+| **`delete-account` PostHog secret'ları kurulmadı** | `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` yok. Kurulup fonksiyon **redeploy** edilene kadar analytics identity silme çalışmaz (fatal Sentry yazar, sessizce atlamaz). Secret rotasyonu sonrası redeploy kuralı burada da geçerli. Kaynak: E-20. |
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 
 ---
@@ -810,6 +861,8 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.17 | 24 Eyl 2026 | **D-08 ihlali kapatıldı + lifetime claim akışı sessiz kayıptan arındırıldı.** (1) `PaywallBase`'in Lifetime kartı D-08/§7.3 ile çelişiyordu (canlı paywall v1'de lifetime satıyordu); kart **silinmedi**, `paywall_lifetime_enabled` flag'inin arkasına alındı — migration 116, varsayılan `false`, SAFE_DEFAULTS'ta da `false` (fail-closed, D-08 yönünde). R-E'de geri açılabilir. (2) `claimLifetimeSpot` artık her hatayı `SOLD_OUT`'a genellemiyor: `SOLD_OUT` / `ALREADY_LIFETIME` (RPC'nin kendi iş kuralı) ile `FORBIDDEN` (109 guard'ı, 42501) / `RPC_FAILED` (taşıma) ayrıldı. (3) `app/lifetime.tsx` ödeme sonrası **hiçbir dalda sessizce annual'a yazmıyor** — eski davranış $89.99 tek seferlik ödeyen kullanıcıyı izsiz şekilde abonelik kaydına çeviriyordu (kural 1 ihlali). Gerçek SOLD_OUT'ta açık mesaj + `error` Sentry; taşıma/izin hatalarında **fatal** Sentry + "ödemen alındı, destek ile iletişime geç"; başarı mesajı yalnız kayıt tuttuysa. (4) `ALREADY_LIFETIME` dalı kasıtlı hâle getirildi (idempotent başarı + warning Sentry). i18n 4 yeni anahtar, parite 1365/1365. |
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
+
+| 1.20 | 25 Eyl 2026 | **E-20 — K-16 hesap silme denetimi + analytics identity ayağı uygulandı.** Keşif: akış zaten vardı ve App Store 5.1.1(v) şartını karşılıyordu; ön teşhis "subscriptions/notification_log ayakta kalıyor" **geçersiz ilan edildi** (üstü çizildi, silinmedi — D-12/D-13 emsali): canlı FK envanteri ölçüldü, `public.users`'a bağlı 26 FK'nin biri hariç hepsi CASCADE ve akış public'i önce siliyor. Gerçek açık üç noktaydı: (1) `auth_only` dalı `.single()`'ın **her** hatasını "kullanıcı yok" sayıp sessizce başarı dönüyordu → PGRST116 ayrıştırıldı, diğer hatalarda hiçbir şey silinmiyor, gerçek "satır yok" dalında auth silinip fatal Sentry yazılıyor; dalın `success:false` dönmesi **CTO kararıyla reddedildi** (token ölünce retry imkânsız, 15 auth-only kullanıcı hesabını silemez hâle gelirdi). (2) K-16'nın **analytics identity** ayağı hiç uygulanmamıştı — `delete-account` artık PostHog kişisini + event geçmişini siliyor (`delete_events=true`), başarısızlık fatal Sentry ama hesap silme yine başarılı (asıl veri gitmiştir). (3) Tüm `console.warn`/`console.error` → `sentryCapture` (kural 1). Doğrulama: `deno check` temiz, `typecheck` 14/14 baseline, `typecheck:functions` 32/32 baseline. §9'a üç madde: `game_scores` FK'siz + 12 orphan satır (R-D) · PostHog secret'larının (`POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`) kurulup redeploy edilmesi — ölçüldü, **ikisi de yok**, mevcut `POSTHOG_API_KEY` proje yazma anahtarıyla aynı digest'te · `auth.tsx:96-105` kimlik uzayı uyuşmazlığı (R-D, bu turda dokunulmadı). |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
 
