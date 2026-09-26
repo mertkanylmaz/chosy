@@ -1,8 +1,10 @@
 /**
  * MagicLinkForm — e-posta ile giriş (K-14 secondary sağlayıcı).
  *
- * TEK bileşen, İKİ yüzey: `app/auth.tsx` ve `components/auth/AuthPromptSheet`.
- * Kopyalanmaz — kopya iki yüzeyin zamanla ayrışması demektir.
+ * ŞU AN ÇAĞIRAN YOK: e-posta girişi UI'dan sökülü (Eyl 2026). Bileşen geri
+ * açılabilir altyapı olarak duruyor; açılırsa eski iki yüzeyi (`app/auth.tsx`
+ * ve `components/auth/AuthPromptSheet`) TEK bileşenden besler — kopyalanmaz,
+ * kopya iki yüzeyin zamanla ayrışması demektir.
  *
  * İki adım:
  *   1. 'email' → adres girilir, `sendMagicLink()` 6 haneli kod yollar

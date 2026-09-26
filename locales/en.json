@@ -595,9 +595,8 @@
     "errorExpired": "This code expired. Send a new one."
   },
   "authPrompt": {
-    "title": "Save your cinema journey",
-    "body": "Your champions, your taste profile, your streak — kept safe and carried to your next device.",
-    "or": "or",
+    "title": "Don't lose tonight's pick",
+    "body": "Your streak and taste profile are saved here — free, no subscription needed.",
     "notNow": "Not now"
   },
   "notificationPrompt": {

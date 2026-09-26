@@ -595,9 +595,8 @@
     "errorExpired": "Bu kodun süresi doldu. Yenisini gönder."
   },
   "authPrompt": {
-    "title": "Sinema yolculuğunu kaydet",
-    "body": "Şampiyonların, zevk profilin, serin — güvende kalsın ve sonraki cihazına taşınsın.",
-    "or": "ya da",
+    "title": "Bu geceki seçimini kaybetme",
+    "body": "Streak'in ve tat profilin burada kayıtlı — ücretsiz, abonelik gerekmez.",
     "notNow": "Şimdi değil"
   },
   "notificationPrompt": {

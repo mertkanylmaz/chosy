@@ -12,12 +12,13 @@
  * atlanabilirliği geri alırdı. Sheet ömür boyu EN FAZLA bir kez görünür.
  * Giriş yolu kapanmaz — profile → Sign In her zaman açıktır.
  *
- * İki sağlayıcı, üçüncüsü yok (K-14): Apple (yalnız iOS) + e-posta magic link.
+ * Tek sağlayıcı UI'da: Apple (yalnız iOS). E-posta magic link (K-14) UI'dan
+ * sökülü — MagicLinkForm + authService fonksiyonları geri açılabilir altyapı
+ * olarak duruyor.
  */
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -29,7 +30,6 @@ import {
 
 import * as AppleAuthentication from 'expo-apple-authentication';
 
-import { MagicLinkForm } from '@/components/auth/MagicLinkForm';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -97,14 +97,6 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
     }
   }, [appleBusy, onClose, t]);
 
-  const handleMagicLinkSuccess = useCallback(() => {
-    posthogAnalytics.track('auth_prompt_completed', {
-      provider: 'email',
-      surface: 'champion_sheet',
-    });
-    onClose(true);
-  }, [onClose]);
-
   const handleDismiss = useCallback(() => {
     void hapticLight();
     posthogAnalytics.track('auth_prompt_dismissed', { surface: 'champion_sheet' });
@@ -113,10 +105,7 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleDismiss}>
-      <KeyboardAvoidingView
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleDismiss} />
 
         <View style={styles.sheet}>
@@ -124,7 +113,6 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
 
           <ScrollView
             contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
             <Text style={styles.title}>{t('authPrompt.title')}</Text>
@@ -142,16 +130,6 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
 
             {errorMsg !== null && <Text style={styles.errorText}>{errorMsg}</Text>}
 
-            {Platform.OS === 'ios' && (
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>{t('authPrompt.or')}</Text>
-                <View style={styles.dividerLine} />
-              </View>
-            )}
-
-            <MagicLinkForm onSuccess={handleMagicLinkSuccess} surface="auth_prompt" />
-
             <TouchableOpacity
               style={styles.laterButton}
               onPress={handleDismiss}
@@ -161,7 +139,7 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
             </TouchableOpacity>
           </ScrollView>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -213,21 +191,6 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Theme.spacing.sm,
-    marginVertical: Theme.spacing.xs,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: Colors.white10,
-  },
-  dividerText: {
-    ...Theme.typography.caption,
-    color: Colors.textTertiary,
   },
   laterButton: {
     alignSelf: 'center',
