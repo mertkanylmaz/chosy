@@ -10,12 +10,17 @@
 /** Paywall gosterimini tetikleyen olay tipleri */
 export type TriggerType =
   | 'quota_exhausted'
-  | 'watchlist_full'
+  /**
+   * ⚠️ Olu varyant temizligi (26 Eyl 2026): `streak_milestone` ve
+   * `game_perfect_streak` **tip olarak korunur** ama varyant uretmez
+   * (`triggerToVariant` → null). Cagiranlari dondurulmus 4 oyun oldugu icin
+   * oyun kodu degistirilmedi. `watchlist_full` + `custom_list_attempt`
+   * hicbir yerden gonderilmedigi icin tamamen kaldirildi.
+   */
   | 'streak_milestone'
   | 'game_perfect_streak'
   | 'mood_history_tap'
   | 'streaming_link_tap'
-  | 'custom_list_attempt'
   | 'share_card_generated'
   | 'profile_upgrade'
   | 'roulette_limit'
@@ -26,12 +31,10 @@ export type TriggerType =
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =
   | { type: 'quota_exhausted'; quota: 'search' | 'slot' | 'refine' }
-  | { type: 'watchlist_full' }
   | { type: 'streak_milestone'; days: number }
   | { type: 'game_perfect_streak'; count: number }
   | { type: 'mood_history_tap' }
   | { type: 'streaming_link_tap'; filmId: number }
-  | { type: 'custom_list_attempt' }
   | { type: 'share_card_generated'; count: number }
   | { type: 'profile_upgrade' }
   | { type: 'roulette_limit' }
@@ -48,12 +51,9 @@ export type TriggerEvent =
 /** Paywall variant isimleri */
 export type PaywallVariantName =
   | 'quota_exhausted'
-  | 'streak_milestone'
-  | 'watchlist_full'
   | 'mood_history'
   | 'streaming_link'
   | 'profile_upgrade'
-  | 'roulette_limit'
   | 'lifetime_soldout'
   | 'missed_day_archive';
 

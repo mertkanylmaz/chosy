@@ -28,10 +28,6 @@ const EXPERIMENTS: Record<string, ExperimentDef> = {
     variants: ['control', 'value_framing', 'social_proof'],
     allocation: [50, 25, 25],
   },
-  paywall_streak_v1: {
-    variants: ['control', 'lifetime_offer'],
-    allocation: [50, 50],
-  },
 };
 
 // ─── Override Storage ────────────────────────────────────────────────────────

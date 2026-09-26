@@ -1,13 +1,12 @@
 /**
- * PaywallStreakMilestone — streak milestone'larinda gosterilen contextual paywall.
+ * PaywallWatchlistFull — watchlist 30 film limitine ulastiginda gosterilir.
  *
- * Trigger: streak_milestone (3, 7, 14, 30 gun) | game_perfect_streak
- * Context: "X gunluk streak! Plus ile devam et"
- * A/B test: paywall_streak_v1 (control / lifetime_offer)
- * Special: 14+ gun streak'te Lifetime offer on plana cikar
+ * Trigger: watchlist_full
+ * Context: "Listende harika secimler var. Hepsini sakla?"
+ * CTA: "Sinirsiz Watchlist" + "Eski Filmleri Sil"
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +15,7 @@ import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { PaywallVariant } from '@/services/conversion';
-import PaywallBase from '../PaywallBase';
+import PaywallBase from '@/components/paywalls/PaywallBase';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -29,8 +28,8 @@ interface Props {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
-/** Streak milestone'larinda gosterilen paywall */
-export default function PaywallStreakMilestone({
+/** Watchlist doldugunda gosterilen paywall */
+export default function PaywallWatchlistFull({
   visible,
   variant,
   onConvert,
@@ -38,30 +37,19 @@ export default function PaywallStreakMilestone({
 }: Props) {
   const { t } = useLanguage();
 
-  const streakDays = useMemo(() => {
-    if ('days' in variant.trigger) return variant.trigger.days;
-    if ('count' in variant.trigger) return variant.trigger.count;
-    return 0;
-  }, [variant.trigger]);
-
-  const isLifetimeOffer = variant.abTestGroup === 'lifetime_offer' && streakDays >= 14;
-
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="flame" size={28} color={Colors.gold} />
+        <Ionicons name="bookmark" size={28} color={Colors.accentPrimary} />
       </View>
       <Text style={localStyles.title}>
-        {t('contextPaywall.streakTitle', { days: streakDays })}
+        {t('contextPaywall.watchlistTitle')}
       </Text>
       <Text style={localStyles.subtitle}>
-        {isLifetimeOffer
-          ? t('contextPaywall.streakLifetimeSubtitle')
-          : t('contextPaywall.streakSubtitle')
-        }
+        {t('contextPaywall.watchlistSubtitle')}
       </Text>
     </View>
-  ), [streakDays, isLifetimeOffer, t]);
+  ), [t]);
 
   return (
     <PaywallBase
@@ -70,12 +58,8 @@ export default function PaywallStreakMilestone({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      ctaLabel={
-        isLifetimeOffer
-          ? t('contextPaywall.streakLifetimeCta')
-          : t('contextPaywall.streakCta')
-      }
-      dismissLabel={t('contextPaywall.streakDismiss')}
+      ctaLabel={t('contextPaywall.watchlistCta')}
+      dismissLabel={t('contextPaywall.watchlistDismiss')}
     />
   );
 }
@@ -92,7 +76,7 @@ const localStyles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.goldDim,
+    backgroundColor: Colors.accentDim,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,

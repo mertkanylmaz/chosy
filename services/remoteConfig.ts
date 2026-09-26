@@ -5,14 +5,15 @@ import { logger } from '@/utils/logger';
 
 const CACHE_KEY = 'remote_config_cache';
 const CACHE_TTL_MS = 5 * 60 * 1000;
+// ⚠️ `paywall_streak_milestone` + `paywall_roulette_limit` buradan cikarildi
+// (olu varyant temizligi, 26 Eyl 2026). `app_config` satirlari DB'de DURUR ama
+// artik okunmaz — `profile_upgrade` emsali (bkz. triggerOrchestrator yorumu).
 const SAFE_DEFAULTS = {
   use_match_films_v2: true,
   use_hybrid_recommendation: false,
   use_llm_reranker: false,
-  paywall_streak_milestone: false,
   paywall_streaming_link: false,
   paywall_profile_upgrade: false,
-  paywall_roulette_limit: false,
   paywall_lifetime_soldout: false,
   // D-08 korunuyor: Lifetime kartı paywall'da GÖSTERİLMEZ. Flag yalnız
   // geri dönüş yolunu açık tutar (R-E'de değerlendirilecek).

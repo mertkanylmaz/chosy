@@ -1,9 +1,8 @@
 /**
- * PaywallWatchlistFull — watchlist 30 film limitine ulastiginda gosterilir.
+ * PaywallRouletteLimit — roulette premium/kota limiti paywall.
  *
- * Trigger: watchlist_full
- * Context: "Listende harika secimler var. Hepsini sakla?"
- * CTA: "Sinirsiz Watchlist" + "Eski Filmleri Sil"
+ * Trigger: roulette_limit
+ * Context: Premium ozelliklere erisim veya slot kotasi bitti
  */
 
 import React, { useCallback } from 'react';
@@ -15,7 +14,7 @@ import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { PaywallVariant } from '@/services/conversion';
-import PaywallBase from '../PaywallBase';
+import PaywallBase from '@/components/paywalls/PaywallBase';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -26,10 +25,18 @@ interface Props {
   onDismiss: () => void;
 }
 
+// ─── Benefit Items ──────────────────────────────────────────────────────────
+
+const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
+  { icon: 'shuffle-outline', key: 'contextPaywall.rouletteBenefit1' },
+  { icon: 'color-wand-outline', key: 'contextPaywall.rouletteBenefit2' },
+  { icon: 'layers-outline', key: 'contextPaywall.rouletteBenefit3' },
+];
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
-/** Watchlist doldugunda gosterilen paywall */
-export default function PaywallWatchlistFull({
+/** Roulette limit'inde gosterilen paywall */
+export default function PaywallRouletteLimit({
   visible,
   variant,
   onConvert,
@@ -40,14 +47,19 @@ export default function PaywallWatchlistFull({
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="bookmark" size={28} color={Colors.accentPrimary} />
+        <Ionicons name="dice-outline" size={28} color={Colors.accentPrimary} />
       </View>
-      <Text style={localStyles.title}>
-        {t('contextPaywall.watchlistTitle')}
-      </Text>
-      <Text style={localStyles.subtitle}>
-        {t('contextPaywall.watchlistSubtitle')}
-      </Text>
+      <Text style={localStyles.title}>{t('contextPaywall.rouletteTitle')}</Text>
+      <Text style={localStyles.subtitle}>{t('contextPaywall.rouletteSubtitle')}</Text>
+
+      <View style={localStyles.benefitList}>
+        {BENEFITS.map((b) => (
+          <View key={b.key} style={localStyles.benefitRow}>
+            <Ionicons name={b.icon} size={18} color={Colors.accentPrimary} />
+            <Text style={localStyles.benefitText}>{t(b.key)}</Text>
+          </View>
+        ))}
+      </View>
     </View>
   ), [t]);
 
@@ -58,8 +70,8 @@ export default function PaywallWatchlistFull({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      ctaLabel={t('contextPaywall.watchlistCta')}
-      dismissLabel={t('contextPaywall.watchlistDismiss')}
+      ctaLabel={t('contextPaywall.rouletteCta')}
+      dismissLabel={t('contextPaywall.rouletteDismiss')}
     />
   );
 }
@@ -94,5 +106,22 @@ const localStyles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  benefitList: {
+    alignSelf: 'stretch',
+    gap: 10,
+    paddingHorizontal: 4,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  benefitText: {
+    fontSize: 14,
+    color: Colors.textWhite,
+    fontWeight: '500',
+    flex: 1,
   },
 });

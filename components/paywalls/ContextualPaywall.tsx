@@ -14,14 +14,15 @@ import { posthogAnalytics } from '@/services/posthog';
 import type { PaywallVariant } from '@/services/conversion';
 
 import PaywallQuotaExhausted from './PaywallQuotaExhausted';
-import PaywallStreakMilestone from './PaywallStreakMilestone';
-import PaywallWatchlistFull from './PaywallWatchlistFull';
 import PaywallMoodHistory from './PaywallMoodHistory';
 import PaywallStreamingLink from './PaywallStreamingLink';
 import PaywallProfileUpgrade from './PaywallProfileUpgrade';
-import PaywallRouletteLimit from './PaywallRouletteLimit';
 import PaywallLifetimeSoldout from './PaywallLifetimeSoldout';
 import PaywallMissedDayArchive from './PaywallMissedDayArchive';
+
+// ⚠️ `streak_milestone` · `watchlist_full` · `roulette_limit` bilesenleri
+// `_archive/` altina tasindi (olu varyant temizligi, 26 Eyl 2026). Bu isimlerle
+// bir variant artik uretilemez — `triggerToVariant` null donuyor.
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -55,18 +56,12 @@ export default function ContextualPaywall({
   switch (variant.name) {
     case 'quota_exhausted':
       return <PaywallQuotaExhausted {...commonProps} />;
-    case 'streak_milestone':
-      return <PaywallStreakMilestone {...commonProps} />;
-    case 'watchlist_full':
-      return <PaywallWatchlistFull {...commonProps} />;
     case 'mood_history':
       return <PaywallMoodHistory {...commonProps} />;
     case 'streaming_link':
       return <PaywallStreamingLink {...commonProps} />;
     case 'profile_upgrade':
       return <PaywallProfileUpgrade {...commonProps} />;
-    case 'roulette_limit':
-      return <PaywallRouletteLimit {...commonProps} />;
     case 'lifetime_soldout':
       return <PaywallLifetimeSoldout {...commonProps} />;
     case 'missed_day_archive':

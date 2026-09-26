@@ -1,11 +1,13 @@
 /**
- * PaywallRouletteLimit — roulette premium/kota limiti paywall.
+ * PaywallStreakMilestone — streak milestone'larinda gosterilen contextual paywall.
  *
- * Trigger: roulette_limit
- * Context: Premium ozelliklere erisim veya slot kotasi bitti
+ * Trigger: streak_milestone (3, 7, 14, 30 gun) | game_perfect_streak
+ * Context: "X gunluk streak! Plus ile devam et"
+ * A/B test: paywall_streak_v1 (control / lifetime_offer)
+ * Special: 14+ gun streak'te Lifetime offer on plana cikar
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +16,7 @@ import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { PaywallVariant } from '@/services/conversion';
-import PaywallBase from '../PaywallBase';
+import PaywallBase from '@/components/paywalls/PaywallBase';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -25,18 +27,10 @@ interface Props {
   onDismiss: () => void;
 }
 
-// ─── Benefit Items ──────────────────────────────────────────────────────────
-
-const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
-  { icon: 'shuffle-outline', key: 'contextPaywall.rouletteBenefit1' },
-  { icon: 'color-wand-outline', key: 'contextPaywall.rouletteBenefit2' },
-  { icon: 'layers-outline', key: 'contextPaywall.rouletteBenefit3' },
-];
-
 // ─── Component ──────────────────────────────────────────────────────────────
 
-/** Roulette limit'inde gosterilen paywall */
-export default function PaywallRouletteLimit({
+/** Streak milestone'larinda gosterilen paywall */
+export default function PaywallStreakMilestone({
   visible,
   variant,
   onConvert,
@@ -44,24 +38,30 @@ export default function PaywallRouletteLimit({
 }: Props) {
   const { t } = useLanguage();
 
+  const streakDays = useMemo(() => {
+    if ('days' in variant.trigger) return variant.trigger.days;
+    if ('count' in variant.trigger) return variant.trigger.count;
+    return 0;
+  }, [variant.trigger]);
+
+  const isLifetimeOffer = variant.abTestGroup === 'lifetime_offer' && streakDays >= 14;
+
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="dice-outline" size={28} color={Colors.accentPrimary} />
+        <Ionicons name="flame" size={28} color={Colors.gold} />
       </View>
-      <Text style={localStyles.title}>{t('contextPaywall.rouletteTitle')}</Text>
-      <Text style={localStyles.subtitle}>{t('contextPaywall.rouletteSubtitle')}</Text>
-
-      <View style={localStyles.benefitList}>
-        {BENEFITS.map((b) => (
-          <View key={b.key} style={localStyles.benefitRow}>
-            <Ionicons name={b.icon} size={18} color={Colors.accentPrimary} />
-            <Text style={localStyles.benefitText}>{t(b.key)}</Text>
-          </View>
-        ))}
-      </View>
+      <Text style={localStyles.title}>
+        {t('contextPaywall.streakTitle', { days: streakDays })}
+      </Text>
+      <Text style={localStyles.subtitle}>
+        {isLifetimeOffer
+          ? t('contextPaywall.streakLifetimeSubtitle')
+          : t('contextPaywall.streakSubtitle')
+        }
+      </Text>
     </View>
-  ), [t]);
+  ), [streakDays, isLifetimeOffer, t]);
 
   return (
     <PaywallBase
@@ -70,8 +70,12 @@ export default function PaywallRouletteLimit({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      ctaLabel={t('contextPaywall.rouletteCta')}
-      dismissLabel={t('contextPaywall.rouletteDismiss')}
+      ctaLabel={
+        isLifetimeOffer
+          ? t('contextPaywall.streakLifetimeCta')
+          : t('contextPaywall.streakCta')
+      }
+      dismissLabel={t('contextPaywall.streakDismiss')}
     />
   );
 }
@@ -88,7 +92,7 @@ const localStyles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.accentDim,
+    backgroundColor: Colors.goldDim,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -106,22 +110,5 @@ const localStyles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  benefitList: {
-    alignSelf: 'stretch',
-    gap: 10,
-    paddingHorizontal: 4,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  benefitText: {
-    fontSize: 14,
-    color: Colors.textWhite,
-    fontWeight: '500',
-    flex: 1,
   },
 });

@@ -19,6 +19,7 @@
     "supabase/functions",
     "tests/game-system",
     "tests/identity",
-    "tests/gauntlet"
+    "tests/gauntlet",
+    "components/paywalls/_archive"
   ]
 }

@@ -19,11 +19,7 @@ export {
   getActiveExperiments,
 } from './abTesting';
 
-export {
-  isWatchlistFull,
-  isStreakMilestone,
-  isPerfectGameMilestone,
-} from './integrations';
+export { isPerfectGameMilestone } from './integrations';
 
 export type {
   TriggerEvent,

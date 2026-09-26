@@ -53,24 +53,27 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
   switch (event.type) {
     case 'quota_exhausted':
       return 'quota_exhausted';
-    case 'streak_milestone':
-      return 'streak_milestone';
-    case 'watchlist_full':
-      return 'watchlist_full';
     case 'mood_history_tap':
       return 'mood_history';
     case 'streaming_link_tap':
       return 'streaming_link';
+    /**
+     * Olu varyant temizligi, 26 Eyl 2026. Bilesenleri `_archive/` altinda.
+     * `streak_milestone` tetikleyicisi hic gonderilmiyordu; tek dolayli yol
+     * `game_perfect_streak` ve onun cagiranlari **dondurulmus 4 oyun**
+     * (`fadein` · `imposter` · `logline` · `quoted`). Dondurulmus oyun kodu
+     * degistirilmedi — tip korundu, varyant null'a dusuruldu.
+     * `roulette_limit`: Roulette Product OS §436'ya gore kaldirilacak.
+     * Ikisi de `share_card_generated` ile ayni desen.
+     */
+    case 'streak_milestone':
     case 'game_perfect_streak':
-      return 'streak_milestone';
-    case 'custom_list_attempt':
-      return 'watchlist_full';
+    case 'roulette_limit':
+      return null;
     case 'share_card_generated':
       return null; // V1.1'de eklenecek
     case 'profile_upgrade':
       return 'profile_upgrade';
-    case 'roulette_limit':
-      return 'roulette_limit';
     case 'lifetime_soldout':
       return 'lifetime_soldout';
     case 'missed_day_archive':
@@ -86,7 +89,6 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
  */
 const IMMEDIATE_TRIGGERS: ReadonlySet<TriggerType> = new Set([
   'profile_upgrade',
-  'roulette_limit',
   'lifetime_soldout',
 ]);
 
@@ -95,9 +97,6 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
   switch (triggerType) {
     case 'quota_exhausted':
       return 'paywall_quota_v1';
-    case 'streak_milestone':
-    case 'game_perfect_streak':
-      return 'paywall_streak_v1';
     default:
       return null;
   }
@@ -118,9 +117,7 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
  * ama artik okunmaz. Gate'i geri koymak = CTA'yi yeniden oldurmek.
  */
 const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
-  streak_milestone: 'paywall_streak_milestone',
   streaming_link: 'paywall_streaming_link',
-  roulette_limit: 'paywall_roulette_limit',
   lifetime_soldout: 'paywall_lifetime_soldout',
 };
 
