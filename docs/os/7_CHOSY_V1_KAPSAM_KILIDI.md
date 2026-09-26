@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.20
-**Tarih:** 25 Eylül 2026
+**Sürüm:** 1.21
+**Tarih:** 26 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -70,7 +70,7 @@ Product Truth     Watched-it Rate
 | **K-13** | Auth **champion sonrası**, değer karşılığı: "Save your cinema journey" + "Not now". | SONHALİ §5 |
 | **K-14** | Auth sağlayıcı: **Sign in with Apple (primary) + email magic link (secondary)**. Üçüncüsü yok. | SONHALİ §6 |
 | **K-15** | Bildirim izni **ilk açılışta istenmez** — ilk champion'dan sonra, bağlam içinde: "Want your four ready every evening?" | SONHALİ §28 |
-| **K-16** | Hesap silme **gerçek cascade**: auth user → profile → choice events → watch history → DNA → analytics identity. App Review blocker'ı, "polish" değil. ⚠️ Denetlendi ve analytics identity ayağı uygulandı — bkz. **E-20**, 25 Eyl 2026. | SONHALİ §7 |
+| **K-16** | Hesap silme **gerçek cascade**: auth user → profile → choice events → watch history → DNA → analytics identity. App Review blocker'ı, "polish" değil. ✅ **KAPALI** — denetlendi, analytics identity ayağı uygulandı ve canlıda uçtan uca doğrulandı (deploy v26, iki test senaryosu, PostHog + Sentry kanıtı); bkz. **E-20**, 26 Eyl 2026. | SONHALİ §7 |
 
 ### 2.3 Gauntlet ve champion
 
@@ -701,7 +701,32 @@ silinmedi, üstü çizildi (D-12/D-13 emsali).
 **Ön koşul (deploy öncesi):** `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID`
 secret'ları kurulmadan PostHog silme çalışmaz — secret yoksa fonksiyon **fatal Sentry**
 yazıp devam eder, sessizce atlamaz. Mevcut `POSTHOG_API_KEY` secret'ı proje yazma
-anahtarıdır (`phc_…`), bu iş için **yetersizdir**.
+anahtarıdır (`phc_…`), bu iş için **yetersizdir**. ✅ **Karşılandı, 26 Eyl 2026** —
+iki secret kuruldu ve fonksiyon **v26** olarak redeploy edildi (secret → redeploy
+sırası kuralı uygulandı).
+
+### E-20.1 — K-16 canlı doğrulama kanıtı (26 Eyl 2026) — ZİNCİR KAPALI
+
+Kod doğrulaması yeterli sayılmadı; `delete-account` **v26** deploy'u üzerinde iki
+gerçek silme senaryosu koşturuldu ve dört bağımsız kanıt toplandı. K-53 DONE tanımı
+(BUILD → MEASURE → RECOVER → VALIDATE) bu maddede tamamlandı.
+
+| Kanıt | Senaryo | Sonuç |
+|---|---|---|
+| **DB cascade** | Test 1 — `public.users` satırı olan normal kullanıcı | `auth.users`, `public.users`, `subscriptions`, `watchlist` → **hepsi 0 satır**. Cascade public'ten tetikleniyor, E-20'nin FK envanteri ölçümü canlıda doğrulandı. |
+| **PostHog silme** | Test 1 | Silme sonrası PostHog persons API sorgusu (curl, `distinct_id` = auth uid) → **`{"results":[]}`**. Kişi ve event geçmişi gerçekten silinmiş — `posthog_deleted:true` response alanı değil, **dış sistemden okunan** doğrudan kanıt (bkz. §9 "PostHog silme doğrulama kısıtı" gerekçesi böylece aşıldı). |
+| **`auth_only` dalı** | Test 2 — `public.users` satırı olmayan (15 auth-only kohortundan) kullanıcı | Sentry'de **`level: fatal`, `tags.step = auth_only`** event'i, saat 12:21. Dal beklendiği gibi tetiklendi, auth kaydı silindi, kullanıcıya `success:true` + `note:'auth_only'` döndü — anomali sessiz kalmadı. |
+| **`posthog_lookup` davranış ayrımı** | Test 1 ↔ Test 2 | Test 2'de **`level: info`, `step = posthog_lookup`** event'i (aynı istek, 12:21). Bu seviye+step kombinasyonunu üreten tek kod yolu `index.ts:113` = *"PostHog kişisi bulunamadı, silme gereksiz"* — yani kişi hiç yoktu. Test 1'de bu event **yok**, çünkü başarılı silme yolu event yazmaz. İki dal birbirinden ayırt edilebiliyor. |
+
+**Doğrudan ↔ dolaylı ayrımı:** PostHog tarafının kanıtı **curl'ün boş listesi**dir
+(doğrudan). "Test 1'de info event'i yok" tek başına kanıt değil, yalnızca curl ile
+tutarlı ikinci bir gözlemdir; bu ayrım kayda geçirilmiştir ki sonraki oturum yokluğu
+kanıt sanmasın (`sentry.ts:23` — DSN yoksa capture sessizce atlanır, event yokluğu
+her zaman "hata olmadı" demez).
+
+**Kalan:** Bu tur K-16 zincirini kapatır. §9'daki üç E-20 kalemi (`game_scores`
+FK'siz · `auth.tsx:96-105` kimlik uzayı uyuşmazlığı) **R-D'de açık kalır** — K-16'nın
+kendisine bağlı değiller.
 
 **Kaynak:** `docs/investigations/K16_HESAP_SILME_KESIF.md` (25 Eyl 2026) + uygulama turu.
 
@@ -832,7 +857,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | ~~**Lifetime IAP ASC'de tamamlanamıyor**~~ | ✅ **Zaten Approved, canlı (CTO teyidi, 25 Eyl 2026).** Save / Add for Review pasifliği **normal davranış** — submit edilecek yeni bir şey yok. "Tamamlanamıyor" tespiti yanlıştı. Kaynak: K-59. |
 | **`game_scores` FK'siz + 12 orphan satır** | Tablonun `user_id` kolonunda FK yok; hesap silme akışı da cascade de bu satırlara dokunmuyor. Ölçüm (25 Eyl 2026): 12 satır, **hepsi zaten orphan** — ne `public.users` ne `auth.users` uzayında karşılığı var, yani aktif bir kullanıcıya ait değil. Gizlilik riski değil, temizlik/bütünlük kalemi. FK eklemek şema değişikliğidir → **R-D kalemi, ayrı karar.** Kaynak: E-20. |
 | **`auth.tsx:96-105` — PostHog identify öncesi kimlik uzayı uyuşmazlığı** | Sorgu `auth uid` ile `public.users.id`'yi karşılaştırıyor (migration 111'in ayırdığı iki uzay), kesişim **0**. Sonuç: `archetype` her zaman `null`, `subscription_tier` her zaman `'free'` olarak PostHog'a gidiyor — analytics verisi baştan yanlış. Ayrıca boş `catch {}` (kural 2 ihlali). **R-D'ye kod değişikliği olarak eklendi, bu turda dokunulmadı.** App Review blocker'ı değil, analytics veri kalitesi sorunu. Kaynak: E-20. |
-| **`delete-account` PostHog secret'ları kurulmadı** | `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` yok. Kurulup fonksiyon **redeploy** edilene kadar analytics identity silme çalışmaz (fatal Sentry yazar, sessizce atlamaz). Secret rotasyonu sonrası redeploy kuralı burada da geçerli. Kaynak: E-20. |
+| ~~**`delete-account` PostHog secret'ları kurulmadı**~~ | ✅ **KAPANDI — 26 Eyl 2026.** `POSTHOG_PERSONAL_API_KEY` + `POSTHOG_PROJECT_ID` kuruldu, fonksiyon **v26** olarak redeploy edildi. Canlı doğrulandı: silme sonrası PostHog persons sorgusu `{"results":[]}` döndü. Kaynak: E-20.1. |
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 
 ---
@@ -862,6 +887,7 @@ G-9 kritiktir: relaunch mevcut kullanıcıyı kaybettiriyorsa, marketing sadece 
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.21 | 26 Eyl 2026 | **E-20.1 — K-16 canlı doğrulama kanıtı, zincir KAPALI.** `delete-account` **v26** deploy'u üzerinde iki senaryo koşuldu ve dört kanıt toplandı: (1) **DB cascade** (test 1, normal kullanıcı) — `auth.users` / `public.users` / `subscriptions` / `watchlist` hepsi **0 satır**, E-20'nin FK envanteri canlıda teyit edildi; (2) **PostHog silme** — silme sonrası persons API curl'ü **`{"results":[]}`**, yani kişi + event geçmişi gerçekten silinmiş (dış sistemden okunan doğrudan kanıt, response alanı değil); (3) **`auth_only` dalı** (test 2, public satırı olmayan kullanıcı) — Sentry `fatal` / `step=auth_only` event'i 12:21'de, dal doğru tetiklendi ve anomali sessiz kalmadı; (4) **`posthog_lookup` davranış ayrımı** — test 2'de `info` / `step=posthog_lookup` (tek üretici kod yolu `index.ts:113` = "kişi bulunamadı"), test 1'de bu event yok çünkü başarılı silme yolu event yazmaz. "Test 1'de event yok" ifadesi **dolaylı** gözlem olarak işaretlendi, doğrudan kanıt curl'dür (`sentry.ts:23`: DSN yoksa capture sessizce atlanır → event yokluğu hata yokluğu değildir). §9'daki **PostHog secret'ları kurulmadı** kalemi KAPANDI olarak işaretlendi (üstü çizildi, silinmedi). §2 K-16 satırı ✅ KAPALI. §9'da R-D'ye bağlı iki E-20 kalemi (`game_scores` FK'siz, `auth.tsx:96-105` kimlik uzayı uyuşmazlığı) **açık kalır** — K-16'ya bağlı değiller. Kod değişikliği yok, bu tur yalnız karar kaydıdır. |
 | 1.20 | 25 Eyl 2026 | **E-20 — K-16 hesap silme denetimi + analytics identity ayağı uygulandı.** Keşif: akış zaten vardı ve App Store 5.1.1(v) şartını karşılıyordu; ön teşhis "subscriptions/notification_log ayakta kalıyor" **geçersiz ilan edildi** (üstü çizildi, silinmedi — D-12/D-13 emsali): canlı FK envanteri ölçüldü, `public.users`'a bağlı 26 FK'nin biri hariç hepsi CASCADE ve akış public'i önce siliyor. Gerçek açık üç noktaydı: (1) `auth_only` dalı `.single()`'ın **her** hatasını "kullanıcı yok" sayıp sessizce başarı dönüyordu → PGRST116 ayrıştırıldı, diğer hatalarda hiçbir şey silinmiyor, gerçek "satır yok" dalında auth silinip fatal Sentry yazılıyor; dalın `success:false` dönmesi **CTO kararıyla reddedildi** (token ölünce retry imkânsız, 15 auth-only kullanıcı hesabını silemez hâle gelirdi). (2) K-16'nın **analytics identity** ayağı hiç uygulanmamıştı — `delete-account` artık PostHog kişisini + event geçmişini siliyor (`delete_events=true`), başarısızlık fatal Sentry ama hesap silme yine başarılı (asıl veri gitmiştir). (3) Tüm `console.warn`/`console.error` → `sentryCapture` (kural 1). Doğrulama: `deno check` temiz, `typecheck` 14/14 baseline, `typecheck:functions` 32/32 baseline. §9'a üç madde: `game_scores` FK'siz + 12 orphan satır (R-D) · PostHog secret'larının (`POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID`) kurulup redeploy edilmesi — ölçüldü, **ikisi de yok**, mevcut `POSTHOG_API_KEY` proje yazma anahtarıyla aynı digest'te · `auth.tsx:96-105` kimlik uzayı uyuşmazlığı (R-D, bu turda dokunulmadı). |
 
 ## 11. M0 KEŞİF DÜZELTMELERİ (v1.1)
