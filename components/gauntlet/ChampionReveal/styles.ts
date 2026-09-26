@@ -90,7 +90,6 @@ export const styles = StyleSheet.create({
   },
   /** "Paylaş · Kapat" — sessiz eylemler, cam yok (§4.4 muafiyet listesi). */
   actionsWrapper: {
-    marginTop: space.lg,
     alignItems: 'center',
     gap: space.sm,
   },
