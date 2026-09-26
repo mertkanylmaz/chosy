@@ -35,6 +35,7 @@ import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeed
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
+import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import {
@@ -1116,6 +1117,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
               ChampionReveal flex:1 olduğu için bu kart onun ALTINDA, merkez
               bloğun dışında kalır — birincil eylemi aşağı itmez. */}
           <SpotlightBonusCard />
+
+          {/* G4b: native tab bar payının saha ölçümü — görsel çıktısı yok,
+              düzeni değiştirmez. Karar verisi gelince kaldırılır. */}
+          <TabBarInsetTelemetry />
         </>
       );
     }
