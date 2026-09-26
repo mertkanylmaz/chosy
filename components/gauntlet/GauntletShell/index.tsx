@@ -500,6 +500,10 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   // DEĞİL — açılış flush'ı yukarıdaki mount effect'inin işi.
   useEffect(() => {
     return subscribeToReconnect(() => {
+      // P0-1: 18:00 kapısı. before_18'de AĞ ÇAĞRISI YOK (§3.6) — kapıyı
+      // yalnız dakikalık nabız açar. `=== 'bootstrapping'` değil: in_progress
+      // sırasında bekleyen seçimin flush'ı (K-42) korunmalı.
+      if (shellStateRef.current === 'before_18') return;
       void flushThenLoad();
     });
   }, [flushThenLoad]);
