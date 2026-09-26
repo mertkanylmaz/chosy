@@ -1,17 +1,14 @@
 /**
  * "Nerede izlenir" veri katmanı — C.9b-UI C2e.
  *
- * Champion'da bu eylem BİRİNCİL (K-20 activation bridge). Birincil bir eylemin
- * dört ayrı durumu vardır ve üçü birbirine karıştırılamaz:
+ * Champion'da satır içi bilgi bloğu (TestFlight 2.1.0'dan beri birincil eylem
+ * DEĞİL — birincil eylem "Sonraya bırak"). Dört ayrı durum vardır ve üçü
+ * birbirine karıştırılamaz:
  *
- *   loading → buton YERİNDE durur (pop-in yok; düzen zıplaması birincil
- *             eylemde en pahalı hatadır)
- *   ok      → butona basınca sheet açılır
+ *   loading → satır YERİNİ tutar (pop-in yok; düzen zıplamaz)
+ *   ok      → dokunulmaz logo satırı + atıf
  *   empty   → istek BAŞARILI, bölgede sağlayıcı yok. Dürüst tek satır
- *             gösterilir; "Sonraya bırak" birincil eyleme yükselir
- *   error   → istek başarısız. Boştan AYRI mesaj + yeniden dene.
- *             "Sonraya bırak" YÜKSELMEZ — geçici bir arıza kalıcı bir
- *             hiyerarşi değişikliğine yol açmamalı
+ *   error   → istek başarısız. Boştan AYRI mesaj + yeniden dene
  *
  * ── Kimlik ──────────────────────────────────────────────────────────────────
  * `getAppUserId()` YOK, INSERT YOK. `films` tablosundan yalnız `tmdb_id`
@@ -35,7 +32,7 @@ export type WatchProvidersState = 'loading' | 'ok' | 'empty' | 'error';
  * Oturum içi bellek — `filmId|region` → sonuç.
  *
  * Amacı önbellek değil **prefetch**: son tur başlarken iki finalistin verisi
- * çekilir, şampiyon belli olduğunda sonuç zaten hazırdır ve birincil eylem
+ * çekilir, şampiyon belli olduğunda sonuç zaten hazırdır ve logo satırı
  * `loading`'de takılmaz. Kalıcı depo DEĞİL (AsyncStorage yok) — uygulama
  * kapanınca gider; bu bilinçli, sağlayıcı katalogu değişken bir veri.
  *
@@ -102,8 +99,6 @@ export async function prefetchWatchProviders(
 export interface UseWatchProvidersValue {
   state: WatchProvidersState;
   providers: TmdbWatchProviders | null;
-  /** TMDB'nin toplu "nerede izlenir" sayfası. Yoksa dokunma hedefi kurulmaz. */
-  link: string | null;
   retry: () => void;
 }
 
@@ -150,15 +145,10 @@ export function useWatchProviders(
   }, [k]);
 
   if (result === null) {
-    return { state: 'loading', providers: null, link: null, retry };
+    return { state: 'loading', providers: null, retry };
   }
   if (result.status === 'ok') {
-    return {
-      state: 'ok',
-      providers: result.providers,
-      link: result.providers.link ?? null,
-      retry,
-    };
+    return { state: 'ok', providers: result.providers, retry };
   }
-  return { state: result.status, providers: null, link: null, retry };
+  return { state: result.status, providers: null, retry };
 }

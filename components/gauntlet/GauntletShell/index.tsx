@@ -254,12 +254,6 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * kendi 600ms lineer eğrisiyle yükselir. Resume yolunda beklemeden açılır.
    */
   const [championBleedArmed, setChampionBleedArmed] = useState(false);
-  /**
-   * C2: Where to Watch sheet acik mi. Acikken auth/bildirim istemi
-   * TETIKLENMEZ; sheet kapaninca kuyruktan acilir. Iki sheet ust uste
-   * binerse kullanici hangisini kapattigini bilemez.
-   */
-  const [watchSheetOpen, setWatchSheetOpen] = useState(false);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -1096,20 +1090,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             date={gauntlet?.date}
             rounds={shareRounds}
             gauntletId={gauntlet?.gauntletId}
-            onSheetVisibilityChange={setWatchSheetOpen}
           />
 
           {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
               en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
-          {/* C2: Where to Watch acikken istem BASTIRILIR. `championPrompt`
-              state'i KORUNUR, yalniz gorunurluk ertelenir - sheet kapaninca
-              istem kuyruktan acilir, kaybolmaz. */}
           <AuthPromptSheet
-            visible={championPrompt === 'auth' && !watchSheetOpen}
+            visible={championPrompt === 'auth'}
             onClose={handleAuthPromptClose}
           />
           <NotificationPromptSheet
-            visible={championPrompt === 'notification' && !watchSheetOpen}
+            visible={championPrompt === 'notification'}
             onClose={handleNotificationPromptClose}
           />
 

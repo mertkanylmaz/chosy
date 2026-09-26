@@ -1,74 +1,53 @@
 /**
- * WatchProvidersSheet stilleri — DESIGN_OS v4.1 §4.3 (drop shadow YOK), K-09
- * (sheet). Logolar sağlayıcının kendi markası olduğu için renk taşır;
- * çevresi tokenlarla nötr kalır.
+ * WatchProvidersRow stilleri — DESIGN_OS v4.1 §4.3 (drop shadow YOK).
+ * Logolar sağlayıcının kendi markası olduğu için renk taşır; çevresi
+ * tokenlarla nötr kalır.
  *
- * Cam YOK: v4.1'de cam yalnız navigasyon ve SİSTEM sheet'lerinde. Bu bizim
- * çizdiğimiz bir yüzey, o yüzden opak `charcoal` (elev-1).
+ * Satır içi blok, sheet değil: cam YOK, kendi zemini YOK — şampiyon
+ * ekranının zemininde durur.
  */
 import { StyleSheet } from 'react-native';
 
 import { color, radius, space, type } from '@/constants/design/semantic';
 
 /**
- * TMDB w92 logoları kare. Görsel boyut 36pt ama DOKUNMA HEDEFİ 44pt
- * (K-54, C.9b-UI C2): `item` 44×44 merkezleyici, logo içinde 36×36.
- * Eskiden hedef 36pt'ydi ve `hitSlop` yoktu — K-54 keşif raporunun bulgusu.
+ * TMDB w92 logoları kare, 36pt. Logolar DOKUNULMAZ (TestFlight 2.1.0 kararı),
+ * bu yüzden K-54'ün 44pt dokunma hedefi burada uygulanmaz.
  */
 const LOGO_SIZE = 36;
-const TOUCH_SIZE = 44;
 
 export const styles = StyleSheet.create({
-  sheetRoot: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(8, 9, 11, 0.6)',
-  },
-  sheet: {
-    backgroundColor: color.surface.raised,
-    borderTopLeftRadius: radius.surface,
-    borderTopRightRadius: radius.surface,
-    paddingHorizontal: space.lg,
-    paddingTop: space.md,
-    // Home indicator payı — sheet ekranın dibine yapışır.
-    paddingBottom: space.xxl,
+  root: {
     alignItems: 'center',
-    gap: space.md,
-  },
-  /** Kapatılabilirliğin sessiz işareti (sistem sheet'lerinin dili). */
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: color.surface.border,
-    marginBottom: space.xs,
+    gap: space.sm,
   },
   label: {
     ...type.meta,
     color: color.text.secondary,
     textAlign: 'center',
   },
+  /**
+   * `minHeight` = logo boyu: `loading`'de boş satır aynı yeri tutar, veri
+   * gelince düzen zıplamaz (C2e).
+   */
   row: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: space.sm,
-  },
-  /** 44×44 dokunma hedefi; logo içinde ortalanır (K-54). */
-  item: {
-    width: TOUCH_SIZE,
-    height: TOUCH_SIZE,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: LOGO_SIZE,
   },
   logo: {
     width: LOGO_SIZE,
     height: LOGO_SIZE,
     borderRadius: radius.poster,
-    backgroundColor: color.surface.base,
+    backgroundColor: color.surface.raised,
+  },
+  /** C2e durum satırı — "bölgende akışta yok" / "yüklenemedi" (§15.2). */
+  stateLine: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
   },
   /** TMDB attribution — kaynağın adı gösterilmeden veri kullanılmaz. */
   attribution: {
@@ -86,8 +65,5 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     fontWeight: '500',
-  },
-  closeRow: {
-    marginTop: space.xs,
   },
 });

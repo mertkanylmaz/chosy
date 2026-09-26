@@ -1482,10 +1482,8 @@
     },
     "watchProviders": {
       "label": "NEREDE İZLENİR",
-      "action": "Nerede izlenir",
       "empty": "Bölgende akışta yok.",
       "error": "İzleme seçenekleri yüklenemedi.",
-      "viewProviders": "%{provider} — izleme seçeneklerini gör",
       "attribution": "Yayın bilgisi TMDB'den"
     },
     "context": {
