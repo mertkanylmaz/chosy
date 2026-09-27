@@ -9,9 +9,10 @@
  * Aktif section'lar:
  *  1. Profile Header (avatar + isim + auth rozeti)
  *  2. Taste DNA (son profil ozeti)
- *  3. Daily Streak
- *  4. Watchlist Preview
- *  5. Settings (dil, watchlist temizle)
+ *  3. Watched (watch_feedback sayisi)
+ *  4. Saved (watchlist ozeti)
+ *  5. Membership
+ *  Settings modal (dil, bildirim, watchlist temizle, hesap)
  *
  * Tasarim referansi: design-reference/05-profile.png
  */
@@ -730,6 +731,8 @@ export default function ProfileScreen() {
   const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
+  /** Izlenen film sayisi — `null`: yuklenmedi ya da hata (satir cizilmez). */
+  const [watchedCount, setWatchedCount] = useState<number | null>(null);
 
   // C.9c: moodHistory · streakInfo · nextMilestone · referralStats state'leri
   // kaldirildi. Dordu de fetch ediliyordu ama HICBIRI render edilmiyordu —
@@ -802,6 +805,28 @@ export default function ProfileScreen() {
       // Faz 2: İkincil veriler (aşağıda, lazy)
       const insightsData = await getSwipeInsights(userId);
       setSwipeInsights(insightsData);
+
+      // Watched sayisi (non-blocking, CTO D6: kaynak `watch_feedback`).
+      // Izlendi sayilan yanitlar: loved · ok · abandoned (filme baslanmis).
+      // not_watched ve skipped izlenmis sayilmaz (V-1 Tur 2 onayi).
+      // Kimlik `public.users.id` — `auth.uid()` DEGIL; RLS de
+      // `app_user_id()` ile ayni alani esler (069).
+      // Hata: satir gizlenir + Sentry. Sessiz 0 gosterilmez (kural 1).
+      void (async () => {
+        const { count, error } = await supabase
+          .from('watch_feedback')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .in('response', ['loved', 'ok', 'abandoned']);
+        if (error || count === null) {
+          setWatchedCount(null);
+          Sentry.captureException(error ?? new Error('watch_feedback count null'), {
+            tags: { screen: 'profile', fn: 'watchedCount' },
+          });
+          return;
+        }
+        setWatchedCount(count);
+      })();
 
       // Watchlist count + poster previews (non-blocking)
       getWatchlist().then((wl) => {
@@ -1369,6 +1394,28 @@ export default function ProfileScreen() {
                 edilmiyor. Karta yazan hicbir servis yoktu; 5 koleksiyon da
                 kalici olarak 0/threshold gosteriyordu. */}
 
+            {/* c) Watched — izlenen film sayisi (CTO D6). Sayim yuklenemezse
+                (`null`) bolum hic cizilmez; 0 ise davet kopyasi (§15.2). */}
+            {watchedCount !== null && (
+              <>
+                <SectionHeading title={t('profile.watchedSection')} />
+                <View style={styles.watchlistSummaryRow}>
+                  <View style={styles.watchlistSummaryLeft}>
+                    <View style={styles.watchlistEmptyPoster}>
+                      <Ionicons name="eye-outline" size={18} color={Colors.textGrey} />
+                    </View>
+                    {watchedCount > 0 ? (
+                      <Text style={styles.watchlistSummaryText}>
+                        {t('profile.watchedCount', { count: watchedCount })}
+                      </Text>
+                    ) : (
+                      <Text style={styles.watchedEmptyText}>{t('profile.watchedEmpty')}</Text>
+                    )}
+                  </View>
+                </View>
+              </>
+            )}
+
             {/* d) Saved — watchlist ozeti (K-06: Watchlist ayri tab degil,
                 Profile alt sayfasi) */}
             <SectionHeading title={t('profile.savedSection')} />
@@ -1896,6 +1943,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     letterSpacing: 0.2,
+  },
+  /** Watched sifir durumu — davet kopyasi, iki satira sarabilir */
+  watchedEmptyText: {
+    flexShrink: 1,
+    color: Colors.textGrey,
+    fontSize: Theme.typography.body.fontSize,
+    lineHeight: Theme.typography.body.lineHeight,
   },
 
   // ── Section heading ──
