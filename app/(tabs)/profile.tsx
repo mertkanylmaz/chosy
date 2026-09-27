@@ -8,7 +8,7 @@
  *
  * Aktif section'lar:
  *  1. Profile Header (avatar + isim + auth rozeti)
- *  2. Taste DNA (son profil ozeti)
+ *  2. Cinema DNA (son profil ozeti)
  *  3. Watched (watch_feedback sayisi)
  *  4. Saved (watchlist ozeti)
  *  5. Membership
@@ -1360,7 +1360,7 @@ export default function ProfileScreen() {
               </View>
             ) : null}
 
-            {/* b) Taste DNA — K-08'in "Cinema DNA" bolumu.
+            {/* b) Cinema DNA — K-08 bolumu (bilesen adi `TasteDNA` kaldi).
                 CinemaIdentity (rank + 6-eksen radar) buradan kaldirildi:
                 bible §7.3 Rank ve Radar'i donduruyor, profilde tek DNA bolumu
                 kalir. Bilesen dosyasi silinmedi.

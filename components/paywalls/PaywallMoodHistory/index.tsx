@@ -1,8 +1,8 @@
 /**
- * PaywallMoodHistory — mood gecmisi/Taste DNA'ya erisim icin paywall.
+ * PaywallMoodHistory — mood gecmisi/Cinema DNA'ya erisim icin paywall.
  *
  * Trigger: mood_history_tap
- * Context: "Son 30 gunde nasil hissettin? Taste DNA gor"
+ * Context: "Son 30 gunde nasil hissettin? Cinema DNA gor"
  */
 
 import React, { useCallback } from 'react';

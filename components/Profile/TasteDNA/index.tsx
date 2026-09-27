@@ -11,7 +11,7 @@
  * - Duygu barlari: react-native-reanimated ile 0→hedef genislik animasyonu (staggered)
  * - Genre chip'leri: fade-in animasyonlu
  * - Enerji bari: ayni animasyonla acilir
- * - Baslik: "Taste DNA" — Playfair Display, altin, emoji
+ * - Baslik: "Cinema DNA" — kartin disinda, Profile'daki `SectionHeading` ciziyor
  */
 import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
@@ -242,7 +242,7 @@ function FilledContent({
 // ─── Ana Bilesen ──────────────────────────────────────────────────────────────
 
 /**
- * Kullanicinin Taste DNA karti.
+ * Kullanicinin Cinema DNA karti.
  * P5.2: arketip banner + i18n tum metinler.
  */
 export default function TasteDNA({ profile, insights, loading, archetypeId }: Props) {
