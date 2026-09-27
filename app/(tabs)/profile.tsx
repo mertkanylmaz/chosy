@@ -10,9 +10,8 @@
  *  1. Profile Header (avatar + isim + auth rozeti)
  *  2. Taste DNA (son profil ozeti)
  *  3. Daily Streak
- *  4. Discovery Stats
- *  5. Watchlist Preview
- *  6. Settings (dil, watchlist temizle)
+ *  4. Watchlist Preview
+ *  5. Settings (dil, watchlist temizle)
  *
  * Tasarim referansi: design-reference/05-profile.png
  */
@@ -55,7 +54,6 @@ import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
-import DiscoveryStats from '@/components/Profile/DiscoveryStats';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
@@ -65,7 +63,6 @@ import ErrorState from '@/components/ErrorState';
 import {
   getLastParsedProfile,
   getSwipeInsights,
-  getUserStats,
 } from '@/services/profileService';
 import Purchases from 'react-native-purchases';
 
@@ -84,7 +81,7 @@ import {
   toggleWatchlistReminders,
 } from '@/services/pushNotifications';
 
-import type { SwipeInsight, UserStats } from '@/types/profile';
+import type { SwipeInsight } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -128,31 +125,6 @@ function SectionHeading({ title }: { title: string }) {
     <View style={styles.sectionHeadingRow}>
       <View style={styles.sectionHeadingAccent} />
       <Text style={styles.sectionHeadingText}>{title}</Text>
-    </View>
-  );
-}
-
-// ─── Section Card Wrapper ─────────────────────────────────────────────────────
-
-/**
- * Bolum basligi + icerik kart sarmalayici — Settings icin kullanilir.
- */
-function SectionCard({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-        <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={16} color={Colors.gold} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {children}
     </View>
   );
 }
@@ -737,7 +709,6 @@ export default function ProfileScreen() {
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
 
-  const [stats, setStats] = useState<UserStats | null>(null);
   const [swipeInsights, setSwipeInsights] = useState<SwipeInsight | null>(null);
   const [lastProfile, setLastProfile] = useState<TasteProfile | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
@@ -829,12 +800,7 @@ export default function ProfileScreen() {
       setLastProfile(profileData);
 
       // Faz 2: İkincil veriler (aşağıda, lazy)
-      const [statsData, insightsData] = await Promise.all([
-        getUserStats(userId),
-        getSwipeInsights(userId),
-      ]);
-
-      setStats(statsData);
+      const insightsData = await getSwipeInsights(userId);
       setSwipeInsights(insightsData);
 
       // Watchlist count + poster previews (non-blocking)
@@ -1397,14 +1363,6 @@ export default function ProfileScreen() {
               />
             )}
 
-            {/* c) Discovery Stats */}
-            <SectionHeading title={t('profile.discoveryStats')} />
-            <DiscoveryStats
-              stats={stats}
-              insights={swipeInsights}
-              loading={loading}
-            />
-
             {/* K-07: Badge / Collections UI kaldirildi. `CollectionsCard`
                 bilesen dosyasi, `milestone_collections` seed'i ve
                 `user_collection_progress` tablosu SILINMEDI — yalnizca render
@@ -1960,28 +1918,6 @@ const styles = StyleSheet.create({
     lineHeight: Theme.typography.h2.lineHeight,
     fontFamily: Typography.displayFont,
     letterSpacing: 0.3,
-  },
-
-  // ── Section card (Settings icin) ──
-  sectionCard: {
-    backgroundColor: Colors.cardSolid,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: Spacing.md,
-    ...Shadows.light,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    color: Colors.textWhite,
-    fontSize: Theme.typography.body.fontSize,
-    fontFamily: Typography.displayFont,
-    letterSpacing: 0.2,
   },
 
   // ── Settings ──
