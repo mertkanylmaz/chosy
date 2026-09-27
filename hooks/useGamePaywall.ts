@@ -36,19 +36,21 @@ interface UseGamePaywallReturn {
 
 /** Game completion sonrasi paywall trigger hook */
 export function useGamePaywall(): UseGamePaywallReturn {
-  const { isPremium } = useSubscription();
+  const { premiumStatus } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const checkGamePaywall = useCallback(
     (streakCount: number, solved: boolean) => {
       // Sadece free user + cozmus + milestone esiginde
-      if (isPremium || !solved) return;
+      // `loading`'de paywall acilmaz — abonelik cozulmeden odeyen kullanici
+      // paywall gormesin (V-1 Tur 1).
+      if (premiumStatus !== 'free' || !solved) return;
 
       if (isPerfectGameMilestone(streakCount)) {
         triggerPaywall({ type: 'game_perfect_streak', count: streakCount });
       }
     },
-    [isPremium, triggerPaywall],
+    [premiumStatus, triggerPaywall],
   );
 
   return {
