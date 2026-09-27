@@ -729,7 +729,7 @@ function SettingsModal({
 export default function ProfileScreen() {
   const router = useRouter();
   const { t, language, setLanguage } = useLanguage();
-  const { isPremium, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
+  const { isPremium, premiumStatus, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Pro Mode satirindaki kilit ikonu — yetki kontrolu ekranin kendisinde */
   const proAccess = useProModeAccess();
@@ -936,7 +936,7 @@ export default function ProfileScreen() {
    * oldugunda dokunus sessizce yutuluyordu (C.9d bug'i — kok neden
    * `paywall_profile_upgrade` flag'iydi, `triggerOrchestrator`'da kaldirildi).
    * Flag gittikten sonra `false` yalnizca beklenmedik durumda (or. trial)
-   * gelebilir; CTA zaten `!isPremium` ile korundugu icin bu bir anomalidir ve
+   * gelebilir; CTA zaten `premiumStatus === 'free'` ile korundugu icin bu bir anomalidir ve
    * sessizce yutulmaz — Sentry'ye yansir (kural 1).
    *
    * `/paywall` route'una DUSULMEZ: o dosya deprecated bir stub'dir, acilir
@@ -1372,9 +1372,11 @@ export default function ProfileScreen() {
             {/* b) Taste DNA — K-08'in "Cinema DNA" bolumu.
                 CinemaIdentity (rank + 6-eksen radar) buradan kaldirildi:
                 bible §7.3 Rank ve Radar'i donduruyor, profilde tek DNA bolumu
-                kalir. Bilesen dosyasi silinmedi. */}
+                kalir. Bilesen dosyasi silinmedi.
+                Paywall sarmalayicisi yalnizca `free`'de: `loading`'de dokunus
+                paywall acmaz (V-1 Tur 2). */}
             <SectionHeading title={t('profile.tasteDNA')} />
-            {!isPremium ? (
+            {premiumStatus === 'free' ? (
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={() => triggerPaywall({ type: 'mood_history_tap' })}
@@ -1454,7 +1456,8 @@ export default function ProfileScreen() {
                 link verilmez. */}
             <SectionHeading title={t('profile.proSection')} />
 
-            {!isPremium && (
+            {/* `loading`'de CTA cizilmez — abonelik cozulmeden upsell yok. */}
+            {premiumStatus === 'free' && (
               <TouchableOpacity
                 style={styles.proCta}
                 onPress={() => { hapticLight(); void handleUpgradePress(); }}

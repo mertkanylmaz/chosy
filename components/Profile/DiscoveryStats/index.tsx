@@ -19,6 +19,7 @@ import type { IconProps } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { localizeGenre } from '@/utils/filmFilters';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import type { SwipeInsight, UserStats } from '@/types/profile';
@@ -98,7 +99,10 @@ function StatCard({
  */
 export default function DiscoveryStats({ stats, insights, loading }: Props) {
   const { t, language } = useLanguage();
+  const { premiumStatus } = useSubscription();
   const router = useRouter();
+  /** Pro Mode ipucu yalnizca `free`'de — `loading` ve `premium`'da gizli. */
+  const proHint = premiumStatus === 'free' ? t('profile.statsExploreInPro') : undefined;
 
   /**
    * "Mood Sessions" ve "Movies Watched" sayaclarinin hedefi (C.9d, CTO karari).
@@ -146,14 +150,14 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
             <StatCard
               value={stats?.total_sessions ?? 0}
               label={t('profile.statsMoodSessions')}
-              hint={t('profile.statsExploreInPro')}
+              hint={proHint}
               IconComp={Lightbulb}
               onPress={goProMode}
             />
             <StatCard
               value={stats?.total_discovered ?? discovered}
               label={t('profile.statsMoviesWatched')}
-              hint={t('profile.statsExploreInPro')}
+              hint={proHint}
               IconComp={Eye}
               onPress={goProMode}
             />
