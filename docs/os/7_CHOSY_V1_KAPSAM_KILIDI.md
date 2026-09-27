@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.29
+**Sürüm:** 1.30
 **Tarih:** 27 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -382,7 +382,7 @@ Bible'ın altı adının uygulamadaki karşılığı:
 
 | Bible (K-03) | Uygulama | Not |
 |---|---|---|
-| `waiting` | `before_18` **+** `bootstrapping` | **İkiye ayrıldı.** Bekleyiş (18:00 kapısı, gauntlet ÇAĞRILMAZ — PRODUCT_OS §3.6) ile yükleme (401 bootstrap penceresi, graphite iskelet) farklı ekranlar ve farklı hata yollarıdır; tek ad ikisini gizlerdi. ⚠️ **İstisna — E-21 (27 Eyl 2026):** "gauntlet ÇAĞRILMAZ" kuralı, sıfır kişisel `daily_gauntlets` satırı olan kullanıcı için kalkar (önceki döngü). Beş durum sözleşmesi değişmez. |
+| `waiting` | `before_18` **+** `bootstrapping` | **İkiye ayrıldı.** Bekleyiş (18:00 kapısı, gauntlet ÇAĞRILMAZ — PRODUCT_OS §3.6) ile yükleme (401 bootstrap penceresi, graphite iskelet) farklı ekranlar ve farklı hata yollarıdır; tek ad ikisini gizlerdi. ⚠️ **İstisna — E-21 (27 Eyl 2026):** "gauntlet ÇAĞRILMAZ" kuralı, sıfır kişisel `daily_gauntlets` satırı olan kullanıcı için kalkar (önceki döngü). Beş durum sözleşmesi değişmez. **Uygulandı — v1.30, bkz. E-21.1.** |
 | `ready` | `ready` | Birebir. |
 | `in_progress` | `in_progress` | Birebir. |
 | `completed` | `completed_today` | Ad netleşti; iki dallı — champion (`ChampionReveal`) ya da exhausted (§15.3). |
@@ -762,7 +762,7 @@ kendisine bağlı değiller.
 
 ---
 
-### E-21 — Yeni kullanıcıya önceki döngü: 18:00 öncesi ilk açılış (27 Eyl 2026) — KARAR VERİLDİ, UYGULANMADI
+### E-21 — Yeni kullanıcıya önceki döngü: 18:00 öncesi ilk açılış (27 Eyl 2026) — ~~KARAR VERİLDİ, UYGULANMADI~~ **UYGULANDI (27 Eyl 2026, v1.30 — bkz. E-21.1)**
 
 **Sorun.** P0-1 (`3fd787f`) sonrası 18:00 öncesi açan yeni kullanıcı yalnız
 "Bugünün dörtlüsü 18:00'de hazır" metnini görüyor. İlk açılışta ritüelle hiç
@@ -776,10 +776,10 @@ kohort için** istisna alır. Diğer herkes için ikisi de yürürlükte kalır.
 
 | Alt karar | İçerik |
 |---|---|
-| **Sözleşme** | `generate-gauntlet` isteğine `cycle: 'previous'` niyet bayrağı. İstemci **tarih göndermez**; tarih sunucuda hesaplanır. Açık ret kodları: `PREVIOUS_CYCLE_NOT_ELIGIBLE` (kişisel satır > 0) · `PREVIOUS_CYCLE_OUT_OF_WINDOW` (`editorialDayNumber < 1`). Sessiz algoritmik geri dönüş yok; istemci ret kodunda bekleyiş metnini gösterir. Gauntlet-contract prosedürüne tabi. |
-| **Anahtar hesabı** | "Son yerel 18:00 anının UTC tarihi". Kaynak **isteğin kendi `timezone` alanı**; `users.timezone` kolonu değil (kolon write-through için kalır). Gerekçe ölçüldü: kolonda gerçek değer **12/270 (%4,4)**, 258 satır `DEFAULT 'UTC'` (27 Eyl 2026). İstemci alanı her çağrıda gönderiyor (`services/gauntletService.ts:244`), ama `deviceTimeZone()` `Intl` yoksa `undefined` dönebiliyor (`:146-155`). ⚠️ Bu durumda `cycle:'previous'` için davranış **uygulama turunda netleşmeli** (öneri: açık ret). "Önceki UTC günü" tanımı **yanlış**: saat dilimine bağlı (İstanbul 00:00–03:00 iki gün geri düşer, UTC− bölgelerde anahtar yerel tarihin önündedir). Bu yüzden M2 Faz 2b öne çekilmiyor. |
+| **Sözleşme** | `generate-gauntlet` isteğine `cycle: 'previous'` niyet bayrağı. İstemci **tarih göndermez**; tarih sunucuda hesaplanır. Açık ret kodları: `PREVIOUS_CYCLE_NOT_ELIGIBLE` (kişisel satır > 0) · `PREVIOUS_CYCLE_OUT_OF_WINDOW` (`editorialDayNumber < 1`). ⚠️ **v1.30 — OUT_OF_WINDOW anlamı genişletildi (CTO onaylı):** "önceki döngü şu an sunulamaz" = anahtar `launch_date` öncesi **veya** 18:00 kapısı açıkken satırı olmayan kullanıcı **veya** yaz saati gününde anahtarın o akşamın anahtarıyla çakışması. Yeni kod açılmadı, tip şekli aynı. Sessiz algoritmik geri dönüş yok; istemci ret kodunda bekleyiş metnini gösterir. Gauntlet-contract prosedürüne tabi. |
+| **Anahtar hesabı** | "Son yerel 18:00 anının UTC tarihi". Kaynak **isteğin kendi `timezone` alanı**; `users.timezone` kolonu değil (kolon write-through için kalır). Gerekçe ölçüldü: kolonda gerçek değer **12/270 (%4,4)**, 258 satır `DEFAULT 'UTC'` (27 Eyl 2026). İstemci alanı her çağrıda gönderiyor (`services/gauntletService.ts:244`), ama `deviceTimeZone()` `Intl` yoksa `undefined` dönebiliyor (`:146-155`). ⚠️ Bu durumda `cycle:'previous'` için davranış **uygulama turunda netleşmeli** (öneri: açık ret). **v1.30: açık ret uygulandı** — sunucu 400 `INVALID_INPUT`; istemci timezone yoksa hiç sormaz ve Sentry'ye `PREVIOUS_CYCLE_NO_TZ` uyarısı yazar. "Önceki UTC günü" tanımı **yanlış**: saat dilimine bağlı (İstanbul 00:00–03:00 iki gün geri düşer, UTC− bölgelerde anahtar yerel tarihin önündedir). Bu yüzden M2 Faz 2b öne çekilmiyor. |
 | **Satır tarihi** | `daily_gauntlets.date` = **önceki döngünün anahtarı**, bugün değil. Bugünün tarihiyle yazılırsa 18:00'de idempotency aynı (tamamlanmış) satırı döner ve kullanıcı o akşamın gauntlet'ini alamaz. Gauntlet'e bağlı bir `user_streaks` yazımı yok (yalnız eski swipe akışı); "tamamlama" = `champion_film_id`, arşiv anchor'ı = ilk kişisel satır (`get-archive-status`). Önceki döngünün anahtarıyla ikisi de tutarlı kalır. |
-| **18:00 geçişi** | Oyun bitmesine izin verilir (`submit-choice` tarih bakmaz, `gauntletId` ile çalışır). Kabuk yüklü gauntlet'in `date`'ini döngü anahtarı olarak taşır. Dakikalık nabız, önceki döngü `completed_today`'deyken 18:00 geçince `bootstrapping`'e geçer. Bu yapılmazsa ekran gece yarısına kadar eski şampiyonda kalır, sonra `before_18`'e düşer ve o akşamın gauntlet'i kaçırılır. |
+| **18:00 geçişi** | Oyun bitmesine izin verilir (`submit-choice` tarih bakmaz, `gauntletId` ile çalışır). Kabuk yüklü gauntlet'in `date`'ini döngü anahtarı olarak taşır. Dakikalık nabız, önceki döngü `completed_today`'deyken 18:00 geçince `bootstrapping`'e geçer. Bu yapılmazsa ekran gece yarısına kadar eski şampiyonda kalır, sonra `before_18`'e düşer ve o akşamın gauntlet'i kaçırılır. **v1.30 inceltmesi (onaylı):** şampiyon reveal'ı yalnız **o oturumda** görünür; uygulama yeniden açılırsa bitmiş önceki döngü gösterilmez, `before_18` gelir. Nabız kuralı aynen uygulandı. |
 | **"Dün izledin mi?"** | Sabah seçilen şampiyon 18:00'de "dün" diye sorulur. **Kabul edilen istisna**: tek seferlik, zararsız, ek karmaşıklığa değmez. |
 
 **Uygulama zamanlaması.** Build 903'e **girmez**. Ayrı, taze bir oturumda kendi
@@ -791,6 +791,39 @@ mantığına aynı anda dokunuyor.
 ve Sentry erişimi yok. **Yeni build sonrası bakılacak.**
 
 **Kaynak:** keşif turu (27 Eyl 2026, sohbet içi) · `BUILD_ONCESI_GAUNTLET_KESIF.md`.
+
+### E-21.1 — E-21 uygulama kaydı (27 Eyl 2026)
+
+Commit'ler: `0d59234` (migration 118) · `531686a` (kod + testler). Canlı:
+`generate-gauntlet` **v34**, `get-archive-status` **v12** (canlıdan indirilen kod
+repo ile birebir). İstemci **henüz sahada değil** — TestFlight build'i bekliyor.
+
+**Karardan sapmalar ve netleştirmeler** (hepsi uygulama turunda onaylandı):
+
+| Konu | E-21 metni | Uygulanan | Gerekçe |
+|---|---|---|---|
+| Önceki döngü satırının izi | Belirtilmemiş | **Yeni kolon** `daily_gauntlets.cycle` (`current` \| `previous`, migration **118**, metadata-only) | DUR noktası, onaylı. Tarihten türetme UTC+ bölgelerde yerel 00:00–03:00 kurulumunu ayırt edemiyor; ayırt edilemezse K-46 bedava kaçırma hakkı tüketiliyor ve tek satırlı mevcut kullanıcı dünkü yarım oyununu sabah sürdürebiliyordu. |
+| Sözleşme | `cycle:'previous'` | `types/gauntlet.ts`'e **salt ekleme**: `GauntletCycle`, `PreviousCycleRejectCode`, `isPreviousCycleRejectCode`. HTTP **409**, gövde mevcut `{error, message}`. `DailyGauntlet` değişmedi. | Gauntlet-contract prosedürü, onaylı. |
+| Anahtar | "Son yerel 18:00 anının UTC tarihi" | **Dün yerel 18:00'in UTC tarihi.** Kapı kapalıyken bu etkin döngüdür (tanımla aynı); kapı açıkken yalnız sabah başlamış önceki döngü oyununun **sürdürülmesine** hizmet eder, yeni üretim yok. | "Oyun bitmesine izin verilir" alt kararı. |
+| Previous isteğine current yanıt | — | **Hiçbir zaman.** Kapı açıkken satırı olmayan kullanıcı → `OUT_OF_WINDOW` (satır üretilmez). | Yanıt şekli aynı olduğu için istemci döngüyü ayırt edemez; ilk sürümde bugünün gauntlet'i "önceki" diye etiketleniyordu (CTO incelemesi SARI-3). |
+| **Yaz saati çakışması** (yeni bulgu) | — | İki yerel 18:00 arası 23 saate indiğinde önceki döngü anahtarı o akşamın UTC anahtarıyla **aynı güne** düşebiliyor — ölçüldü: `America/Chicago` / `America/Winnipeg` yaz saatine geçiş günü (ör. 2027-03-14). Açık ret (`OUT_OF_WINDOW`). | Satır açılsaydı 18:00'de mükerrer istek kontrolü o satırı döner, kullanıcı o akşamı kaçırırdı — E-21 "satır tarihi" kuralının tam kendisi (SARI-1). |
+| `choice_events` "önceki döngü tarihiyle" | Görev metni | Tabloda **`date` kolonu yok**; tarih `gauntlet_id → daily_gauntlets.date` join'iyle. Yeni kolon açılmadı. `algorithm_version` satırdan kopyalanıyor, `submit-choice` değişmedi (K-40 append-only korunur). | Şema gerçeği. |
+| Arşiv (K-46) | "Anchor önceki döngü anahtarıyla tutarlı kalır" | Önceki döngü satırı **ne kaçırma ne tamamlama** sayılır; anchor = o satırın tarihi **+1** (ilk gerçek döngü). | Yarım kalan önceki döngü bedava kaçırma hakkını tüketiyordu. |
+| İstemci tetik | "Sıfır kişisel satır" | **Cache + marker:** cihazda gauntlet cache'i olan kullanıcı 18:00 öncesi **hiç ağ çağrısı yapmaz**; yoksa sorar, retde `closed` iz'i yazılır. Önceki döngü cache'lenmez. | Mevcut kullanıcı akışı değişmez. |
+| Hata yolu | `error_recovery` | Böyle bir state yok (D-12); karşılığı `bootstrapping` + `loadError`. Yalnız 409 + bilinen kod bekleyiş ekranına düşürür; 5xx/400 hata ekranına. Açılışta ağ yoksa bekleyiş ekranı + Sentry uyarısı (iz yazılmaz). | Sessiz `before_18` yasak. |
+| Analytics | `cycle:'previous'` | 5 event (`gauntlet_started`, `choice_submitted`, `choice_rejected`, `gauntlet_completed`, `champion_revealed`) `cycle: 'previous' \| 'current'` taşır; gauntlet kimliğiyle eşlenir. | — |
+
+**Kanıt:**
+
+| Doğrulama | Sonuç |
+|---|---|
+| Birim testleri | `npm run test:previous-cycle` — istemci **27/27**, sunucu **25/25** (2026–27 boyunca 12 dilimde anahtar/akşam çakışma taraması dahil); `test:editorial` 17/17 |
+| Tip kontrolü | `typecheck` 14 (baseline, hepsi `scripts/`) · `typecheck:functions` 32 (baseline) |
+| Canlı (4 test anon kullanıcısı) | **21/21.** Önceki döngü satırı `count=exact` = 1, `date` = önceki anahtar, `cycle='previous'`; ardışık ve **paralel** çift çağrı → hâlâ 1; 3 tur → şampiyon, `choice_events` 3 satır; `get-archive-status` kaçırma 0 / eligible false / anchor = anahtar+1; mevcut kullanıcı → 409 `NOT_ELIGIBLE`; kapı açıkken → 409 `OUT_OF_WINDOW` ve 0 satır; timezone yok/geçersiz → 400. Test kullanıcıları `delete-account` ile silindi, kalan satır 0. |
+| Paywall event'i | **Doğrudan ölçülmedi** — `paywall_triggered` istemci event'idir; sunucu tarafında yalnız `archiveEligible:false` dolaylı kanıttır. |
+
+**Açık kalanlar:** §9'a işlendi (istemci cihaz doğrulaması). `v_algorithm_daily`
+metrik kirliliği `docs/TEKNIK_BORC.md`'de.
 
 ---
 
@@ -937,6 +970,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **UTC gün anahtarı ↔ yerel ritüel ayrışması (önceden var olan, E-21'den bağımsız)** | **R-D / M2 Faz 2b kalemi, bugün dokunulmuyor.** ⚠️ **Tanım düzeltmesi:** CTO notu "İstanbul 00:00–03:00'da kullanıcılar yanlışlıkla `before_18`'e düşüyor olabilir" diyordu. Bu **spec gereği doğru davranış**: PRODUCT_OS §3.6 "Gün dönümü yerel gece yarısı", yerel saat 0–2 < 18 → `before_18` (`GauntletShell/index.tsx:117-127`). O pencerede kapı hatası yok. Gece yarısı sonrası cihaz testinde görülecek bekleme ekranı beklenen sonuçtur. **Ayrışmanın ölçülen gerçek etkileri:** **(a)** UTC− bölgelerinde anahtar akşamın ortasında döner. `generate-gauntlet/index.ts:771` `utcDateString()`; New York (EDT, UTC−4) 20:00 = 00:00 UTC. 18:00–20:00 arası D, 20:00 sonrası D+1 üretilir. 20:00 sonrası bir yeniden yükleme (remount/reconnect) aynı akşam ikinci bir gauntlet verir; ertesi akşam 18:00–20:00'de de zaten oynanmış D+1 döner. Canlıda `America/New_York` 4 kullanıcı (`users.timezone`, 27 Eyl 2026; ancak kolonun %95,6'sı `DEFAULT 'UTC'`, gerçek dağılım bilinmiyor). **(b)** K-42 önbelleği UTC anahtarla yazıyor (`services/gauntletCache.ts:112-117`), yerel tarihle okuyor (`:162`). UTC− bölgelerinde akşam çevrimdışı açılışta bugünün kopyası `cache_stale` sayılır ve yanlış "Bu bugünün listesi değil" uyarısı çıkar. İstanbul'da uyumsuzluk 00:00–03:00'a düşer, kapı kapalı olduğu için görünmez. Cihaz testi: saat dilimi `America/New_York`, 20:00 EDT öncesi ve sonrası. Kaynak: v1.28, E-21 keşfi. |
 | **`weekly_legacy` tier'ı — ücretli, 117'de ele alınmadı** | **R-D kalemi, ayrı karar gerekiyor.** Migration 117 (27 Eyl 2026) monthly/annual/lifetime arama limitini sınırsız (-1) yaptı; `weekly_legacy` **14/gün**'de kaldı (canlıda 2 kullanıcı, `users.subscription_tier`). Ücretli bir tier olarak Plus'ın sınırsız aramasından yararlanıp yararlanmayacağı açık. Kaynak: v1.29. |
 | **Free slot limiti istemci ↔ sunucu tutarsız (önceden var olan)** | **R-D kalemi.** `constants/subscriptionPlans.ts` `TIER_LIMITS.free.dailySlotLimit = 8`, canlı `subscription_limits.free.daily_slot_limit = 100` (27 Eyl 2026). Aynı dosya kendini "DB ile tam sync" diye tanımlıyor. Kod değişikliği yapılmadı. Kaynak: v1.29, 117 turu. |
+| **E-21 istemci cihaz doğrulaması** | **TestFlight turu kalemi.** Sunucu canlıda doğrulandı (E-21.1), istemci sahada değil. `before_18` akışı yalnız TestFlight'ta test edilebilir (`__DEV__`'de 18:00 kapısı açık). Senaryolar: (i) uçak modunda temiz kurulum 18:00 öncesi → bekleyiş, hata ekranı değil; (ii) önceki döngüde 3. tur çevrimdışı seçilip bağlantı açılır → şampiyon görünür; (iii) önceki döngü bitince uygulama kapatılıp açılır → bekleyiş; (iv) önceki döngü ortasında çevrimdışı kapatılıp açılır → sunucuya sorulur. **Bilinen boşluklar:** son seçim çevrimdışı yapılıp uygulama kapatılırsa açılışta şampiyon gösterilmez; cihazında gauntlet cache'i olmayan mevcut kullanıcı (kimlik sıfırlanmış / K-42'den beri açmamış) bir kez iskelet + 409 görür. `none -> before_18` kohort büyüklüğü (E-21 "Ölçülemeyen") yeni build sonrası `gauntlet.cycle` breadcrumb'ıyla bakılacak. Kaynak: v1.30. |
 
 ---
 
@@ -965,6 +999,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.30 | 27 Eyl 2026 | **E-21 uygulandı** (bkz. yeni §5 **E-21.1**). Migration **118** (`daily_gauntlets.cycle`, DUR onaylı) · sözleşmeye salt ekleme (`GauntletCycle`, `PreviousCycleRejectCode`, 409) · `generate-gauntlet` v34 + `get-archive-status` v12 canlı, indirilen kod repo ile birebir. **`PREVIOUS_CYCLE_OUT_OF_WINDOW` anlamı genişletildi (CTO onaylı):** launch öncesi + 18:00 kapısı açık + yaz saati çakışması (yeni bulgu: Chicago/Winnipeg). Previous isteğine hiçbir zaman current gauntlet dönmez. Anahtar = dün yerel 18:00'in UTC tarihi. "18:00'e kadar şampiyon" inceltildi: reveal yalnız o oturumda, yeniden açılışta `before_18`. Arşiv önceki döngü satırını saymaz (anchor +1). `choice_events`'te `date` kolonu olmadığı kayda geçti (tarih join ile). Kanıt: birim 27+25, canlı 21/21. İstemci TestFlight bekliyor → §9. `v_algorithm_daily` kirliliği `TEKNIK_BORC.md`'ye. |
 | 1.29 | 27 Eyl 2026 | **Ücretli tierlarda Pro Mode araması sınırsız (CTO kararı) + Plus adlandırması + Profile çift başlık.** Migration **117** canlıda: `subscription_limits.daily_search_limit` monthly/annual/lifetime **-1** (önceki 15/25/50 — BM v2'nin emekli ettiği kota modelinin kalıntısı; ücretli abone 429 alıyordu). free 3 ve weekly_legacy 14 değişmedi. İstemci: `TIER_LIMITS` senkron, `quotaEngine` -1 eşlemesi, "N left today" sınırsızda gizli (`b24e77c`). migration-guard: bloke edici yok; canlı CHECK yok, 115 canlıda doğrulandı. `schedule-notifications` `limit !== -1` korumasıyla deploy edildi — ⚠️ **fonksiyonun ilk deploy'u (v1)**, daha önce canlıda yoktu; cron'u yok, çağıranı yok, çağıran doğrulaması yok (ayrı karar bekliyor). i18n: Chosy Pro → Chosy Plus (3 metin), `profile.proSection` → Membership/Üyelik (`904e157`). Profile: DiscoveryStats + TasteDNA çift başlık kaldırıldı (`49c9d36`). §9'a iki R-D kalemi: weekly_legacy kararı · free slot limiti 8↔100. Doğrulama: typecheck 14/14, functions 32/32, i18n 1367/1367. |
 | 1.28 | 27 Eyl 2026 | **E-21 — yeni kullanıcıya önceki döngü: karar verildi, uygulanmadı.** Sıfır kişisel satırı olan kullanıcı 18:00 öncesi etkin döngünün gauntlet'ini görür. PRODUCT_OS §3.6 ve D-12 (`waiting` satırına not düşüldü) yalnız bu kohort için istisna alır. Alt kararlar: `cycle:'previous'` + iki açık ret kodu · anahtar isteğin `timezone` alanından hesaplanır, `users.timezone` kullanılmaz (ölçüm: gerçek değer 12/270, %4,4) · satır önceki döngünün tarihiyle yazılır · 18:00 geçişinde nabız `bootstrapping`'e geçer · "Dün izledin mi?" tuhaflığı kabul edilen istisna. Build 903'e girmez, ayrı oturumda uygulanacak. §9'a R-D kalemi: UTC anahtar ↔ yerel ritüel ayrışması. ⚠️ CTO'nun "İstanbul 00:00–03:00 bug'ı" tespiti **düzeltildi**: o pencerede `before_18` §3.6 gereği doğru. Ölçülen gerçek etki UTC− bölgelerinde: anahtar New York'ta 20:00'de dönüyor, K-42 önbelleği yanlış stale uyarısı veriyor. `none -> before_18` sayımı ölçülemedi (Sentry erişimi yok, telemetri yeni build'le gelir). Kod değişikliği yok. |
 | 1.27 | 27 Eyl 2026 | **Build öncesi keşif bulguları** (`docs/investigations/BUILD_ONCESI_GAUNTLET_KESIF.md`). **P0-1 sahada yaşandı — kesinleşti:** "gauntlet yok dedi → geldi" TestFlight production build 902'de (P0-1 içermiyor) bağlantı-geri-geldi (T3) yoluydu; cihazın gauntlet'i 15:58 yerel saatte üretilmiş. "Çıktı, tekrar girdi" muhtemelen kullanıcının kendi çıkışı — **doğrulanmadı**. Gün 9 canlıda yeniden teyit edildi (`v1-editorial-calendar`, id + sıra birebir), test kimliği K-16 sırasıyla silindi. B5 saha telemetrisi `85ffafd` (yalnız breadcrumb: `gauntlet.state` + `network.status`). Takvim bütünlüğü ölçüldü: 100 gün × 4, 400 benzersiz film, tema/hafta günü 100/100. §9 P0-1 satırına not; §9'a iki R-D kalemi: resume'de finalist prefetch yok (B9) · soğuk açılış 3,5 sn sabit splash + `generate-gauntlet` tek ölçüm 5096 ms, toplam ~8,5 sn olabilir (B10). Doğrulama: `typecheck` 14/14, `typecheck:functions` 32/32 baseline. |
