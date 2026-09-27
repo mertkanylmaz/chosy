@@ -7,7 +7,7 @@
  *   var olmayan RPCs (tonight_pick, get_user_stats, get_mood_timeline).
  *
  * Aktif section'lar:
- *  1. Profile Header (avatar + isim + #id + son mood)
+ *  1. Profile Header (avatar + isim + auth rozeti)
  *  2. Taste DNA (son profil ozeti)
  *  3. Daily Streak
  *  4. Discovery Stats
@@ -741,7 +741,6 @@ export default function ProfileScreen() {
   const [swipeInsights, setSwipeInsights] = useState<SwipeInsight | null>(null);
   const [lastProfile, setLastProfile] = useState<TasteProfile | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
-  const [userIdHash, setUserIdHash] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -811,7 +810,6 @@ export default function ProfileScreen() {
         ?? (authUser.user_metadata?.name as string | undefined)
         ?? null;
       setDisplayName(row.username ?? row.display_name ?? metaName);
-      setUserIdHash(authUser.id.slice(0, 8).toUpperCase());
 
       // Kalibrasyon sonucu arketip (onboarding'den kaydedilen)
       const calibrationArchetypeId = row.archetype_id;
@@ -1307,10 +1305,6 @@ export default function ProfileScreen() {
               </View>
             </TouchableOpacity>
 
-            {userIdHash.length > 0 && (
-              <Text style={styles.userIdHash}>#{userIdHash}</Text>
-            )}
-
             {/* Auth provider rozeti — Apple/Google icin ozel gosterim */}
             {!isAnonymous && authProvider && (
               <View style={styles.authProviderBadge}>
@@ -1661,13 +1655,6 @@ const styles = StyleSheet.create({
     fontFamily: Typography.displayFont,
     fontWeight: '700',
     letterSpacing: 0.3,
-  },
-  userIdHash: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.caption.fontSize,
-    marginTop: 2,
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
   /** Profil adi + kalem ikonu yan yana */
   profileNameRow: {
