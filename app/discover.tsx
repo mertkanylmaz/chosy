@@ -74,7 +74,7 @@ export default function DiscoverScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId } = useMood();
-  const { isPremium } = useSubscription();
+  const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt } = useProModeAccess();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
@@ -165,7 +165,9 @@ export default function DiscoverScreen() {
       // `quotaExempt`: grandfathered kohort (legacy_mood_access) duvara tabi
       // degil. Slot kotasi YALNIZ istemcide zorlaniyor, bu yuzden burada
       // atlamak gercekten sinirsiz slot demektir (CTO karari 24 Eyl 2026).
-      if (!isPremium && !quotaExempt) {
+      // `loading` premium SAYILMAZ: slot kotasi yalniz istemcide zorlaniyor,
+      // abonelik cozulmeden atlamak bedava slot demek (fail-closed, V-1 Tur 1).
+      if (premiumStatus !== 'premium' && !quotaExempt) {
         try {
           const uid = await getAppUserId();
           if (uid) {
@@ -205,7 +207,7 @@ export default function DiscoverScreen() {
         logger.warn('[discover] watchlist yazma basarisiz:', err);
       });
     },
-    [isPremium, quotaExempt, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
+    [premiumStatus, quotaExempt, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
   );
 
   const handleSwipeLeft = useCallback(
