@@ -2576,3 +2576,6 @@ premium (DB satırı olmasa da; Sentry warning `RC_ACTIVE_DB_MISSING`). Bu turda
 5. **`RC_ACTIVE_DB_MISSING` hacmi** — kimlik uzayı çatallanması olan kullanıcıda
    webhook satırı hiç gelmeyebilir; warning her refresh'te tekrar eder. Hacim
    G-3'te ölçülüp gerekirse örneklenecek.
+   `not_initialized` durumunda `purchaseService` ve `SUBSCRIPTION_RC_UNREADABLE`
+   aynı anda düşüyor — dedupe/tag birleştirme G-3 ölçümüyle birlikte
+   değerlendirilecek.
