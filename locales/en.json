@@ -1437,7 +1437,16 @@
     "roundShort": "%{current}/%{total}",
     "rejectNeither": "Neither",
     "markWatched": "I've watched this",
-    "before18": "Today's four will be ready at 6 PM.",
+    "before18": "Today's four will be ready at %{time}.",
+    "countdownHours": {
+      "one": "%{count} hour",
+      "other": "%{count} hours"
+    },
+    "countdownMinutes": {
+      "one": "%{count} minute",
+      "other": "%{count} minutes"
+    },
+    "countdownA11y": "%{hours} %{minutes}",
     "exhausted": "Not convinced today, it seems. A fresh four will be ready tomorrow.",
     "question": "Which would you watch tonight?",
     "seenPrompt": "Which one have you watched?",

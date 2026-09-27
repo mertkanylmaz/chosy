@@ -1437,7 +1437,16 @@
     "roundShort": "%{current}/%{total}",
     "rejectNeither": "İkisi de değil",
     "markWatched": "Bunu izledim",
-    "before18": "Bugünün dörtlüsü 18:00'de hazır.",
+    "before18": "Bugünün dörtlüsü %{time}'de hazır.",
+    "countdownHours": {
+      "one": "%{count} saat",
+      "other": "%{count} saat"
+    },
+    "countdownMinutes": {
+      "one": "%{count} dakika",
+      "other": "%{count} dakika"
+    },
+    "countdownA11y": "%{hours} %{minutes}",
     "exhausted": "Bugün ikna olmadın galiba. Yarın yeni bir dörtlü hazır olacak.",
     "question": "Bu akşam hangisini izlerdin?",
     "seenPrompt": "Hangisini izledin?",

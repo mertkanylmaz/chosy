@@ -16,7 +16,7 @@
  * Ret akışı yalnızca Seviye 1 ("İkisi de değil", tek buton, her rette aynı)
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
@@ -38,6 +38,7 @@ import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
+import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import {
   BLACKOUT_SEQUENCE,
   CHAMPION_HAPTIC_DELAY,
@@ -90,16 +91,12 @@ import {
   type CycleMode,
 } from './cycleRules';
 import { styles } from './styles';
+import { UNLOCK_HOUR, nextUnlockAfter } from './unlockClock';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
-
-/**
- * 18:00 kapısı — PRODUCT_OS §3.6: "Gauntlet 18:00'den önce açılmaz."
- * app_config anahtarı YOK (migration bu işte yasak) — TEKNIK_BORC:
- * "gauntlet_unlock_hour app_config'e taşınmalı". Tasarım token'ı değil,
- * ürün kuralı — bu yüzden constants/design/ altında DEĞİL, burada.
- */
-const UNLOCK_HOUR = 18;
+//
+// 18:00 kapısı (`UNLOCK_HOUR`) ve saf saat kuralı `./unlockClock.ts`'te —
+// Deno testli, istemcide TEK tanım (V-1 D9).
 
 /**
  * Şampiyon reveal'ı ile tek-seferlik istem sheet'i arasındaki bekleme (ms).
@@ -108,7 +105,7 @@ const UNLOCK_HOUR = 18;
  * bitmeden açılırsa imza anın üstüne biner. Bir tasarım token'ı DEĞİL —
  * `constants/design/motion.ts` §7'nin birebir karşılığıdır ve oraya ürün
  * kararı yazılmaz; bu değer bir istem orkestrasyonu sabitidir, o yüzden
- * UNLOCK_HOUR'un yanında durur.
+ * ürün sabitlerinin arasında durur.
  */
 const CHAMPION_PROMPT_DELAY = 1800;
 
@@ -134,6 +131,26 @@ function isUnlockedNow(): boolean {
   // Diğer TÜM build'lerde (production dahil) bu dal ölü koddur.
   if (isE2ETestMode()) return true;
   return new Date().getHours() >= UNLOCK_HOUR;
+}
+
+/**
+ * Bekleyiş ekranı geri sayımının hedefi: bir sonraki kapı anı, yerel saat
+ * (V-1 Tur 6). `isUnlockedNow()` ile AYNI bypass — geliştirmede ve
+ * preview-e2e'de kapı hep açık, hedef `now`: sayaç anında biter ve nabız
+ * yolu yüklemeyi açar.
+ */
+function getNextUnlockAt(now: Date = new Date()): Date {
+  if (__DEV__) return now;
+  if (isE2ETestMode()) return now;
+  return nextUnlockAfter(now);
+}
+
+/** Bekleyiş metnindeki saat — UNLOCK_HOUR'dan, arayüz diline göre biçimlenir. */
+function formatUnlockTime(language: string): string {
+  return new Date(2000, 0, 1, UNLOCK_HOUR, 0).toLocaleTimeString(
+    language === 'tr' ? 'tr-TR' : 'en-US',
+    { hour: 'numeric', minute: '2-digit' },
+  );
 }
 
 /** Gün dönümü YEREL gece yarısı (PRODUCT_OS §3.6) — UTC değil. */
@@ -207,7 +224,7 @@ interface GauntletShellProps {
 // ─── Bileşen ─────────────────────────────────────────────────────────────────
 
 export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Element {
-  const { t, region } = useLanguage();
+  const { t, region, language } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
 
@@ -690,44 +707,69 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     });
   }, [flushThenLoad]);
 
+  /**
+   * Nabız gövdesi. Dakikalık zamanlayıcı VE bekleyiş sayacının sıfırı
+   * (V-1 Tur 6) aynı yolu çağırır — ayrı bir kapı mekanizması yok. Sayaç
+   * sıfırda bunu hemen çağırır, kullanıcı bir sonraki dakika tikini beklemez.
+   */
+  const runClockPulse = useCallback(() => {
+    // Karar saf kuralda (cycleRules.pulseAction): 18:00 kapısı, yerel gece
+    // yarısı (§3.6 — dünün şampiyonu gösterilmez) ve E-21 "18:00 geçişi"
+    // (önceki döngü şampiyonu → bugünün gauntlet'i).
+    const action = pulseAction({
+      state: shellStateRef.current,
+      mode: cycleModeRef.current,
+      unlocked: isUnlockedNow(),
+      dateKeyChanged:
+        completedDateKeyRef.current !== null &&
+        completedDateKeyRef.current !== localDateKey(),
+    });
+    if (action === 'none') return;
+    // Nabzın açtığı her yükleme bugünün döngüsüdür.
+    cycleModeRef.current = 'current';
+    if (action === 'open_gate') {
+      transitionTo('bootstrapping', 'pulse');
+      authAttemptsRef.current = 0;
+      void load('pulse');
+      return;
+    }
+    completedDateKeyRef.current = null;
+    setGauntlet(null);
+    setChampion(null);
+    setPair(null);
+    setAnimateReveal(false);
+    if (action === 'reset_and_load') {
+      transitionTo('bootstrapping', 'pulse');
+      authAttemptsRef.current = 0;
+      void load('pulse');
+    } else {
+      transitionTo('before_18', 'pulse');
+    }
+  }, [load, transitionTo]);
+
   // Dakikalık nabız: 18:00 kapısı + gün dönümü (CTO 🟠3 — ayrı mekanizma yok).
   useEffect(() => {
-    const id = setInterval(() => {
-      // Karar saf kuralda (cycleRules.pulseAction): 18:00 kapısı, yerel gece
-      // yarısı (§3.6 — dünün şampiyonu gösterilmez) ve E-21 "18:00 geçişi"
-      // (önceki döngü şampiyonu → bugünün gauntlet'i).
-      const action = pulseAction({
-        state: shellStateRef.current,
-        mode: cycleModeRef.current,
-        unlocked: isUnlockedNow(),
-        dateKeyChanged:
-          completedDateKeyRef.current !== null &&
-          completedDateKeyRef.current !== localDateKey(),
-      });
-      if (action === 'none') return;
-      // Nabzın açtığı her yükleme bugünün döngüsüdür.
-      cycleModeRef.current = 'current';
-      if (action === 'open_gate') {
-        transitionTo('bootstrapping', 'pulse');
-        authAttemptsRef.current = 0;
-        void load('pulse');
-        return;
-      }
-      completedDateKeyRef.current = null;
-      setGauntlet(null);
-      setChampion(null);
-      setPair(null);
-      setAnimateReveal(false);
-      if (action === 'reset_and_load') {
-        transitionTo('bootstrapping', 'pulse');
-        authAttemptsRef.current = 0;
-        void load('pulse');
-      } else {
-        transitionTo('before_18', 'pulse');
-      }
-    }, CLOCK_TICK_MS);
+    const id = setInterval(runClockPulse, CLOCK_TICK_MS);
     return () => clearInterval(id);
-  }, [load, transitionTo]);
+  }, [runClockPulse]);
+
+  /**
+   * Bekleyiş sayacının hedefi — yalnız `before_18`'e HER girişte yeniden
+   * hesaplanır (gece yarısı sıfırlaması, E-21 kapanışı dahil). Referans
+   * sabit kalır: sayaç her render'da yeniden kurulmaz.
+   */
+  const unlockAt = useMemo(
+    () => (shellState === 'before_18' ? getNextUnlockAt() : null),
+    [shellState],
+  );
+
+  // PostHog: waiting_viewed — bekleyiş ekranına her giriş bir kez.
+  useEffect(() => {
+    if (!unlockAt) return;
+    posthogAnalytics.track('waiting_viewed', {
+      minutes_to_unlock: Math.max(0, Math.round((unlockAt.getTime() - Date.now()) / 60_000)),
+    });
+  }, [unlockAt]);
 
   // E-21: önceki döngü canlı oynanıp bitti (şampiyon ya da tükeniş) — reveal
   // bu oturumda görünür, yeniden açılışta bekleyiş ekranı gelir.
@@ -1240,9 +1282,14 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }
 
   if (shellState === 'before_18') {
+    // V-1 Tur 6: metin + geri sayım. Dünkü şampiyon, arşiv, Pro Mode ve
+    // keşif rotası YOK (D7, K-46). Bildirim CTA'sı Tur 5 sonrasına ertelendi.
     return (
       <View style={styles.centerContent}>
-        <Text style={styles.stateText}>{t('gauntlet.before18')}</Text>
+        <Text style={styles.stateText}>
+          {t('gauntlet.before18', { time: formatUnlockTime(language) })}
+        </Text>
+        {unlockAt && <UnlockCountdown target={unlockAt} onElapsed={runClockPulse} />}
       </View>
     );
   }
