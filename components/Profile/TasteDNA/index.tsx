@@ -22,7 +22,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import {
-  Dna,
   Smiley,
   SmileyMeh,
   SmileyAngry,
@@ -258,11 +257,8 @@ export default function TasteDNA({ profile, insights, loading, archetypeId }: Pr
 
   return (
     <View style={styles.card}>
-      {/* Baslik */}
-      <View style={styles.header}>
-        <Dna size={24} color="#E8A838" weight="duotone" />
-        <Text style={styles.headerTitle}>{t('profile.tasteDNA')}</Text>
-      </View>
+      {/* Baslik kartin DISINDA — Profile'daki `SectionHeading` ciziyor.
+          Iceride ikinci kez cizmek basligi tekrarliyordu. */}
 
       {loading ? (
         <SkeletonContent />

@@ -13,7 +13,6 @@ import {
   Eye,
   BookmarkSimple,
   Lightbulb,
-  ChartBar,
   CaretRight,
 } from 'phosphor-react-native';
 import type { IconProps } from 'phosphor-react-native';
@@ -122,11 +121,8 @@ export default function DiscoveryStats({ stats, insights, loading }: Props) {
 
   return (
     <View style={styles.card}>
-      {/* Başlık */}
-      <View style={styles.header}>
-        <ChartBar size={16} color={Colors.gold} weight="duotone" />
-        <Text style={styles.headerTitle}>{t('profile.discoveryStats')}</Text>
-      </View>
+      {/* Başlık kartın DIŞINDA — Profile'daki `SectionHeading` çiziyor.
+          İçeride ikinci kez çizmek başlığı tekrarlıyordu. */}
 
       {loading ? (
         <SkeletonContent />

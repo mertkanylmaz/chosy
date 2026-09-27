@@ -15,19 +15,6 @@ export const styles = StyleSheet.create({
     minHeight: 140,
   },
 
-  // ── Başlık ──
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: {
-    color: Colors.textWhite,
-    fontSize: 15,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    letterSpacing: 0.2,
-  },
-
   // ── 2×2 stat grid ──
   grid: {
     flexDirection: 'row',

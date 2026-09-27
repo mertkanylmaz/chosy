@@ -21,23 +21,6 @@ export const styles = StyleSheet.create({
     minHeight: 100,
   },
 
-  // ── Header ──
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerDna: {
-    width: 24,
-    height: 24,
-  },
-  headerTitle: {
-    color: Colors.gold,
-    fontSize: 15,
-    fontFamily: 'PlayfairDisplay_700Bold',
-    letterSpacing: 0.2,
-  },
-
   // ── Archetype Banner ──
   archetypeBanner: {
     borderRadius: Theme.borderRadius.md,
