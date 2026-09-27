@@ -133,7 +133,7 @@ const ERA_OPTIONS: { key: EraFilter; labelKey: string }[] = [
 export default function RouletteScreen() {
   const { t, language } = useLanguage();
   const router = useRouter();
-  const { isPremium } = useSubscription();
+  const { premiumStatus } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   // -- Data state --
@@ -358,21 +358,24 @@ export default function RouletteScreen() {
     if (variant === 'pure_random') {
       handlePureRandomSpin();
     } else if (variant === 'mood_filtered') {
-      if (!isPremium) {
+      // Abonelik cozulmeden (loading) no-op: ne premium varyant ne paywall.
+      if (premiumStatus === 'loading') return;
+      if (premiumStatus === 'free') {
         trackSlotPremiumPaywallShown('mood_filtered');
         triggerPaywall({ type: 'roulette_limit' });
         return;
       }
       setPhase('mood_input');
     } else if (variant === 'triple') {
-      if (!isPremium) {
+      if (premiumStatus === 'loading') return;
+      if (premiumStatus === 'free') {
         trackSlotPremiumPaywallShown('triple');
         triggerPaywall({ type: 'roulette_limit' });
         return;
       }
       setPhase('triple_filter');
     }
-  }, [isPremium, triggerPaywall]);
+  }, [premiumStatus, triggerPaywall]);
 
   // -- Pure Random Spin --
   const handlePureRandomSpin = useCallback(async () => {
@@ -649,7 +652,7 @@ export default function RouletteScreen() {
           </Animated.View>
 
           {/* Token balance bar (free user, balance > 0) */}
-          {!isPremium && tokenBalance > 0 && (
+          {premiumStatus === 'free' && tokenBalance > 0 && (
             <Animated.View entering={FadeInDown.delay(150).duration(400)} style={styles.tokenBar}>
               <Ionicons name="diamond-outline" size={16} color={Colors.gold} />
               <Text style={styles.tokenText}>
@@ -695,7 +698,7 @@ export default function RouletteScreen() {
               <View style={styles.variantInfo}>
                 <View style={styles.variantTitleRow}>
                   <Text style={styles.variantTitle}>{t('roulette.variantHub.moodFiltered')}</Text>
-                  {!isPremium && (
+                  {premiumStatus === 'free' && (
                     <View style={styles.premiumBadge}>
                       <Ionicons name="star" size={10} color={Colors.gold} />
                       <Text style={styles.premiumBadgeText}>{t('roulette.variantHub.premiumBadge')}</Text>
@@ -722,7 +725,7 @@ export default function RouletteScreen() {
               <View style={styles.variantInfo}>
                 <View style={styles.variantTitleRow}>
                   <Text style={styles.variantTitle}>{t('roulette.variantHub.triple')}</Text>
-                  {!isPremium && (
+                  {premiumStatus === 'free' && (
                     <View style={styles.premiumBadge}>
                       <Ionicons name="star" size={10} color={Colors.gold} />
                       <Text style={styles.premiumBadgeText}>{t('roulette.variantHub.premiumBadge')}</Text>
@@ -744,7 +747,7 @@ export default function RouletteScreen() {
           )}
 
           {/* Token hint (free user) */}
-          {!isPremium && (
+          {premiumStatus === 'free' && (
             <Animated.View entering={FadeInDown.delay(500).duration(400)} style={styles.tokenHint}>
               <Ionicons name="information-circle-outline" size={16} color={Colors.textLightGrey} />
               <Text style={styles.tokenHintText}>{t('roulette.variantHub.tokenHint')}</Text>
