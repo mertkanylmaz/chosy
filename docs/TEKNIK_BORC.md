@@ -2599,3 +2599,55 @@ ediyor; algoritma kalite metrikleri E-21 sonrası hafif şişmiş olabilir.
 **Düzeltme:** görünüme `cycle = 'current'` filtresi (yeni migration, `CREATE OR
 REPLACE VIEW`). Önceki döngü davranışı ayrıca ölçülmek istenirse `cycle`
 kolonuna göre ayrı bir kırılım eklenebilir.
+
+---
+
+## Playfair kalıntıları ve Tur 7 sonrası artık kod (28 Eyl 2026, V-1 Tur 7)
+
+**Öncelik: düşük. Donmuş oyunların kaderi kararlaştırıldığında kapanır.**
+
+V-1 Tur 7 (D10) canlı ekranları ve token'ları Design OS §3.3 rollerine taşıdı
+(`dab1e53`), ulaşılamayan taşıyıcıları sildi (`054f4ba`). `git grep -i
+playfair` kod tarafında yalnız şunları gösteriyor, **hepsi D10 gereği bilinçli**:
+
+| Yer | Neden kaldı |
+|---|---|
+| `app/_layout.tsx:8-14, :165-170` — 6 ağırlık `useFonts()` | D10: "font bundle'da kalır". Tek canlı tüketici aşağıdaki Detective. |
+| `components/games/Detective/styles.ts:613, :957, :1030` — `PlayfairDisplay_900Black` | Donmuş oyun, dosyasına dokunulmaz (D10). |
+| `package.json:61`, `package-lock.json`, `deno.lock:57` | Paket bağımlılığı — font yüklemesiyle birlikte gider. |
+| `DESIGN_SYSTEM.md` + `docs/` (5 dosya, 20 satır) | Tarihsel doküman; Design OS §3.2 emekliliği kayıt altında. |
+
+**Kapanış yolu:** Detective silinir ya da token'a bağlanırsa 6 ağırlığın
+yüklemesi ve `@expo-google-fonts/playfair-display` bağımlılığı kaldırılabilir
+(açılışta 6 TTF — başlangıç maliyeti). Bu bir bağımlılık değişikliğidir, CTO
+onayı ister.
+
+**Görsel yan etki (onaylı, izlenmeli):** `serif*`/`fonts.display*` token'ları
+SF Pro'ya geçtiği için donmuş oyunlar ve games hub (CineMetrics, Logline
+`serifQuote`, Detective `serifHero`, DailyChest/DailyRoute/DailyThemeCard/
+HubHero) dosyaları değişmeden SF Pro 600 render ediyor; `serifHero` 900 →
+600. Bir donmuş oyun yeniden açılırsa başlık hiyerarşisi cihazda gözden
+geçirilmeli.
+
+### Tur 7 sonrası artık kod (silinmedi — kapsam dışı)
+
+Silme yalnız onaylı listeyle sınırlı tutuldu. Aynı import grafiği ile
+**hiçbir route'tan erişilemeyen** kalanlar:
+
+- `hooks/useFeedState.ts` — tek kullanıcısı silinen `SwipeCardStack` idi;
+  yalnız `hooks/index.ts` barrel'ı export ediyor.
+- `components/Profile/CollectionsCard`, `components/Profile/CinemaIdentity` —
+  importer yok (Tur 7'den önce de).
+- `services/entryService.ts` — `hasEntryShownToday` / `markEntryShownToday` /
+  `wasEntryShownToday` / `markEntryShown`: çağıran yok (Entry'den önce de).
+- Silinen Entry/TasteSwipe/ArchetypeReveal/ArchetypeShareCard/SwipeCard
+  bileşenlerinin i18n anahtarları `en.json`/`tr.json`'da duruyor (parite
+  eşit, yalnız ölü anahtar).
+
+### Tur 7'de görülen, düzeltilmeyen
+
+- **§3.5 Dynamic Type sınırı uygulanmıyor:** Archivo Expanded 1.4x ile
+  sınırlanmalı; hiçbir `display-*` tüketicisinde (`ChampionReveal`, yeni
+  `profile.tsx` `archetypeHeroName`) `maxFontSizeMultiplier` yok.
+- **Pro Mode üst arama çubuğu gönder butonu** (`compactSubmitBtn`) hâlâ
+  `accentPrimary` dolgu + `textOnAccent`; Tur 7 yalnız alt CTA'yı kapsadı.
