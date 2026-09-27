@@ -2579,3 +2579,23 @@ premium (DB satırı olmasa da; Sentry warning `RC_ACTIVE_DB_MISSING`). Bu turda
    `not_initialized` durumunda `purchaseService` ve `SUBSCRIPTION_RC_UNREADABLE`
    aynı anda düşüyor — dedupe/tag birleştirme G-3 ölçümüyle birlikte
    değerlendirilecek.
+
+---
+
+## `v_algorithm_daily` önceki döngü satırlarını sayıyor (27 Eyl 2026, E-21)
+
+**Öncelik: düşük (hacim küçük). R-C öncesi gözden geçirilecek.**
+
+`v_algorithm_daily` görünümü `cycle='previous'` satırlarını günlük sayıma dahil
+ediyor; algoritma kalite metrikleri E-21 sonrası hafif şişmiş olabilir.
+
+- Önceki döngü satırı, önceki döngünün **anahtarıyla** (dün) yazılıyor
+  (migration 118, E-21 "satır tarihi" kuralı). Görünüm `dg.date` ile grupladığı
+  için bu satırlar o günün `gauntlets_generated` sayısını artırıyor ve —
+  sabah oynanıp bitirildiğinde — tamamlanma oranını o güne yazıyor.
+- Görünüm kolonları açıkça seçiyor (`SELECT *` yok); şema kırılmadı, yalnız
+  metrik anlamı etkileniyor (migration-guard turuncu notu, 27 Eyl 2026).
+
+**Düzeltme:** görünüme `cycle = 'current'` filtresi (yeni migration, `CREATE OR
+REPLACE VIEW`). Önceki döngü davranışı ayrıca ölçülmek istenirse `cycle`
+kolonuna göre ayrı bir kırılım eklenebilir.
