@@ -1,6 +1,6 @@
 /**
- * Entry Service — kullanıcı türünü ve oturum sayısını yönetir.
- * Dynamic Entry System için altyapı sağlar.
+ * Entry Service — oturum sayısını ve onboarding durumunu yönetir.
+ * Dynamic Entry ekranı (app/entry.tsx + getUserType) V-1 Tur 7'de silindi.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -14,27 +14,6 @@ const ONBOARDING_KEY_LEGACY_V1 = 'moodflix_onboarding_done';
 
 /** Son entry gösterim tarihi anahtarı (YYYY-MM-DD) */
 const LAST_ENTRY_DATE_KEY = 'chosy_last_entry_date';
-
-/** Kullanıcı türü — session sayısına göre belirlenir */
-export type UserType = 'new' | 'returning' | 'power';
-
-/**
- * AsyncStorage'daki session sayısına göre kullanıcı türünü döner.
- * - 0 veya null → 'new'
- * - 1-9 → 'returning'
- * - 10+ → 'power'
- */
-export async function getUserType(): Promise<UserType> {
-  try {
-    const val = await AsyncStorage.getItem(SESSIONS_KEY);
-    const count = val !== null ? parseInt(val, 10) : 0;
-    if (count === 0) return 'new';
-    if (count < 10) return 'returning';
-    return 'power';
-  } catch {
-    return 'new';
-  }
-}
 
 /**
  * Her uygulama açılışında session sayısını bir artırır.

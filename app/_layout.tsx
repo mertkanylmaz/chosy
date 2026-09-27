@@ -617,7 +617,6 @@ function RootLayoutNav() {
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="gate" />
-              <Stack.Screen name="entry" />
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
               <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />

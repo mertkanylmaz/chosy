@@ -15,8 +15,5 @@ export type { MoodShareCardProps } from './MoodShareCard';
 export { default as GameShareCard } from './GameShareCard';
 export type { GameShareCardProps } from './GameShareCard';
 
-export { default as ArchetypeShareCard } from './ArchetypeShareCard';
-export type { ArchetypeShareCardProps } from './ArchetypeShareCard';
-
 export { useShareCapture } from './useShareCapture';
 export type { UseShareCaptureReturn } from './useShareCapture';
