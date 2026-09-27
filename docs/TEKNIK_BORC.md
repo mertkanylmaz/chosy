@@ -2548,3 +2548,31 @@ Bu, K-20 activation bridge'inin başarısızlığı olarak okunmamalı.
 - **R-06** köprü kalitesi yorumları
 - İleride: "sağlayıcı yok oranı"nı bölge kırılımıyla ölçmek (M1 borcu; bugün
   yalnız Sentry breadcrumb'ında `region` var, event yok)
+
+---
+
+## `isPremium` üç yoldan hesaplanıyordu — kalan istemci borçları (27 Eyl 2026, V-1 Tur 1)
+
+`useSubscription().premiumStatus` (`loading` / `premium` / `free`) tek UI
+kaynağı oldu (CTO D3). Karar mantığı `utils/premiumStatus.ts`'te saf fonksiyon,
+testi `tests/subscription/premiumStatus.test.ts`. RC `chosy_plus` aktif ⇒
+premium (DB satırı olmasa da; Sentry warning `RC_ACTIVE_DB_MISSING`). Bu turda
+**bilinçli olarak dokunulmayanlar**:
+
+1. **`quotaEngine.getTierFromRevenueCat`** (`services/quotaEngine.ts:102`) —
+   hâlâ ayrı bir RC okuması yapıyor ve hata durumunda `free` dönüyor;
+   `premiumStatus` ile ayrışabilir (UI premium, kota free). K-48 sunucu
+   kapılarıyla birlikte ele alınacak.
+2. **`getUserSubscription` hatayı `null`'a indiriyor**
+   (`services/subscriptionService.ts:61`) — "satır yok" ile "sorgu hatası"
+   ayırt edilemiyor; RC okunamadığında DB hatası sessizce free'ye katkı veriyor.
+3. **`checkQuota` fresh-fetch** (`contexts/SubscriptionContext.tsx`) RC aktif +
+   DB yok durumunu hâlâ premium saymıyor — kota yolu D3 kuralına hizalanmadı.
+4. **`isPremium` tüketicileri** — paywall/özellik kapıları (`useContextualPaywall`,
+   `useGamePaywall`, `ArchiveTrigger`, `roulette`, `discover`) bu turda
+   `premiumStatus`'a geçirildi; `loading`'de özellik açan kapılar no-op /
+   fail-closed. **Kalan:** `app/(tabs)/profile.tsx` (Tur 2),
+   `hooks/useProModeAccess.ts` (zaten `isLoading` ile fail-closed, geçiş opsiyonel).
+5. **`RC_ACTIVE_DB_MISSING` hacmi** — kimlik uzayı çatallanması olan kullanıcıda
+   webhook satırı hiç gelmeyebilir; warning her refresh'te tekrar eder. Hacim
+   G-3'te ölçülüp gerekirse örneklenecek.

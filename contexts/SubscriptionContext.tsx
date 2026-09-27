@@ -51,13 +51,22 @@ import {
 } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import { logger } from '@/utils/logger';
+import { resolvePremiumStatus, type PremiumStatus } from '@/utils/premiumStatus';
+import * as Sentry from '@sentry/react-native';
 
 // ─── Context State ───────────────────────────────────────────────────────────
 
 interface SubscriptionState {
   /** Yukleniyor mu? (ilk acilista true) */
   isLoading: boolean;
-  /** Premium erisim var mi? */
+  /**
+   * UI icin tek premium kaynagi (CTO D3).
+   * - `loading`: RC ve DB henuz cozulmedi — ne paywall ne premium ozellik
+   * - `premium`: RC `chosy_plus` aktif (DB satiri olmasa da) veya DB `active`
+   * - `free`: ikisi de degil (ya da ilk yuklemede RC okunamadi — Sentry'de)
+   */
+  premiumStatus: PremiumStatus;
+  /** Geriye uyumluluk: `premiumStatus === 'premium'`. `loading`'de false. */
   isPremium: boolean;
   /** Aktif plan ID (null = free, eski kayitlarda 'weekly'/'yearly' olabilir) */
   planId: LegacyPlanId | null;
@@ -120,7 +129,8 @@ const SubscriptionContext = createContext<SubscriptionState | null>(null);
  */
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [isPremium, setIsPremium] = useState(false);
+  const [premiumStatus, setPremiumStatusState] = useState<PremiumStatus>('loading');
+  const isPremium = premiumStatus === 'premium';
   const [planId, setPlanId] = useState<LegacyPlanId | null>(null);
   const [status, setStatus] = useState<SubscriptionStatus>('free');
   const [tier, setTier] = useState<SubscriptionTier>('free');
@@ -141,31 +151,44 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   useEffect(() => { trialStartRef.current = trialStartDate; }, [trialStartDate]);
   useEffect(() => { tierRef.current = tier; }, [tier]);
 
+  // premiumStatus ref'i effect ile degil setter icinde senkron guncellenir —
+  // ayni tick'te art arda gelen refresh'ler "previous"u dogru okusun diye.
+  const premiumStatusRef = useRef<PremiumStatus>('loading');
+  const setPremiumStatus = useCallback((next: PremiumStatus) => {
+    premiumStatusRef.current = next;
+    setPremiumStatusState(next);
+  }, []);
+
   /**
    * RevenueCat + Supabase'den abonelik bilgisini ceker.
    */
   const refreshSubscription = useCallback(async () => {
+    // try disinda: catch'te "RC okundu mu" bilgisi gerekiyor
+    let rcStatus: SubscriptionInfo | null = null;
     try {
       const userId = await getAppUserId();
       if (!userId) {
         setStatus('free');
-        setIsPremium(false);
+        setPremiumStatus('free');
         setPlanId(null);
         setTier('free');
         setIsLoading(false);
         return;
       }
 
-      const rcStatus: SubscriptionInfo = await getSubscriptionStatus();
+      rcStatus = await getSubscriptionStatus();
       const dbSub: SubscriptionRow | null = await getUserSubscription(userId);
 
+      const previous = premiumStatusRef.current;
+      const resolution = resolvePremiumStatus(rcStatus, dbSub, previous);
+
       // rcStatus.errorKind doluysa isPremium:false gercek bir cevap DEGIL,
-      // fallback'tir. RC'ye dayanan dal atlanir; DB dali calismaya devam
+      // fallback'tir. RC'ye dayanan dallar atlanir; DB dali calismaya devam
       // eder (offline'da bile dogru premium sonucu verebilir).
       if (!rcStatus.errorKind && rcStatus.isPremium && dbSub) {
         const newStatus: SubscriptionStatus = rcStatus.isInTrial ? 'trial' : 'active';
         const newTier = planIdToTier(dbSub.plan);
-        setIsPremium(true);
+        setPremiumStatus('premium');
         setPlanId(dbSub.plan);
         setStatus(newStatus);
         setTier(newTier);
@@ -176,10 +199,32 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         planIdRef.current = dbSub.plan;
         trialStartRef.current = dbSub.started_at;
         tierRef.current = newTier;
+      } else if (resolution.status === 'premium' && resolution.rcActiveDbMissing) {
+        // RC aktif, subscriptions satiri henuz yok (webhook gecikmesi).
+        // D3: RC aktif ⇒ premium. Plan/baslangic DB'den gelir, burada bilinmez.
+        const newStatus: SubscriptionStatus = rcStatus.isInTrial ? 'trial' : 'active';
+        const newTier = productIdToTier(rcStatus.activePlanId);
+        setPremiumStatus('premium');
+        setPlanId(null);
+        setStatus(newStatus);
+        setTier(newTier);
+        setIsInTrial(rcStatus.isInTrial);
+        setTrialStartDate(null);
+        setExpiresAt(rcStatus.expiresAt);
+        statusRef.current = newStatus;
+        planIdRef.current = null;
+        trialStartRef.current = null;
+        tierRef.current = newTier;
+        // Webhook gecikmesi olcumu — kullaniciya hicbir sey gosterilmez
+        Sentry.captureMessage('subscription: RC aktif, DB satiri yok', {
+          level: 'warning',
+          tags: { function: 'refreshSubscription', error_code: 'RC_ACTIVE_DB_MISSING' },
+          extra: { activePlanId: rcStatus.activePlanId, isInTrial: rcStatus.isInTrial },
+        });
       } else if (dbSub && dbSub.status === 'active') {
         const newStatus = dbSub.status as SubscriptionStatus;
         const newTier = planIdToTier(dbSub.plan);
-        setIsPremium(true);
+        setPremiumStatus('premium');
         setPlanId(dbSub.plan);
         setStatus(newStatus);
         setTier(newTier);
@@ -190,16 +235,30 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         planIdRef.current = dbSub.plan;
         trialStartRef.current = dbSub.started_at;
         tierRef.current = newTier;
-      } else if (rcStatus.errorKind) {
+      } else if (resolution.rcUnreadable) {
         // RC sorgulanamadi ve DB de aktif abonelik gostermiyor.
         // Bu "kullanici free" demek DEGIL — gecici bir ag hatasi odeme
-        // yapmis kullaniciyi dusurmesin. Mevcut state korunur.
-        logger.warn(
-          '[subscription-ctx] RC durumu okunamadi, mevcut state korunuyor:',
-          rcStatus.errorKind,
-        );
+        // yapmis kullaniciyi dusurmesin. Daha once cozulmus state korunur;
+        // ilk yuklemedeyse (loading) free'ye cozulur — sonsuz loading olmasin.
+        logger.error('[subscription-ctx] RC durumu okunamadi', undefined, {
+          code: 'SUBSCRIPTION_RC_UNREADABLE',
+          extra: {
+            errorKind: resolution.rcUnreadable,
+            previous,
+            resolvedStatus: resolution.status,
+          },
+        });
+        if (previous === 'loading') {
+          setPremiumStatus('free');
+          setPlanId(null);
+          setStatus('free');
+          setTier('free');
+          statusRef.current = 'free';
+          planIdRef.current = null;
+          tierRef.current = 'free';
+        }
       } else {
-        setIsPremium(false);
+        setPremiumStatus('free');
         setPlanId(null);
         setStatus('free');
         setTier('free');
@@ -212,13 +271,26 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         tierRef.current = 'free';
       }
     } catch (err) {
-      logger.error('[subscription-ctx] Refresh hatasi:', err);
-      setStatus('free');
-      setIsPremium(false);
+      // RC okunduysa sonuc ona gore; okunamadiysa once cozulmus state
+      // korunur, ilk yuklemedeyse free. Hata yutulmaz — Sentry'de errorKind ile.
+      const resolution = resolvePremiumStatus(rcStatus, null, premiumStatusRef.current);
+      logger.error('[subscription-ctx] Refresh hatasi', err, {
+        code: 'SUBSCRIPTION_REFRESH_FAILED',
+        extra: {
+          errorKind: rcStatus?.errorKind ?? null,
+          rcRead: rcStatus !== null && !rcStatus.errorKind,
+          resolvedStatus: resolution.status,
+        },
+      });
+      setPremiumStatus(resolution.status);
+      if (resolution.status === 'free') {
+        setStatus('free');
+        statusRef.current = 'free';
+      }
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [setPremiumStatus]);
 
   /**
    * Full quota status'u yeniler.
@@ -279,7 +351,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             trialStartRef.current = currentTrialStart;
             setStatus(currentStatus);
             setPlanId(currentPlanId);
-            setIsPremium(true);
+            setPremiumStatus('premium');
             setIsInTrial(rcStatus.isInTrial);
             setTrialStartDate(currentTrialStart);
           } else if (dbSub && dbSub.status === 'active') {
@@ -291,7 +363,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             trialStartRef.current = currentTrialStart;
             setStatus(currentStatus);
             setPlanId(currentPlanId);
-            setIsPremium(true);
+            setPremiumStatus('premium');
             setTrialStartDate(currentTrialStart);
           }
           logger.log('[subscription-ctx] Fresh-fetch sonucu:', currentStatus, currentPlanId);
@@ -315,7 +387,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       setQuota(fallback);
       return fallback;
     }
-  }, []);
+  }, [setPremiumStatus]);
 
   /**
    * RPC-based atomic quota consume.
@@ -429,11 +501,11 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   // RevenueCat listener — premium state degisince hemen sync et
   useEffect(() => {
     const cleanup = addSubscriptionListener((rcInfo: SubscriptionInfo) => {
-      setIsPremium(rcInfo.isPremium);
       setIsInTrial(rcInfo.isInTrial);
       setExpiresAt(rcInfo.expiresAt);
 
       if (rcInfo.isPremium) {
+        setPremiumStatus('premium');
         // Hemen premium ref'lerini guncelle — stale quota engelini kaldir
         statusRef.current = rcInfo.isInTrial ? 'trial' : 'active';
         setStatus(rcInfo.isInTrial ? 'trial' : 'active');
@@ -461,6 +533,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
           }
         }
       } else {
+        // premiumStatus'a burada dokunulmaz: DB hala aktif olabilir. Asagidaki
+        // refreshSubscription() RC+DB ile karar verir — anlik free titremesi yok.
         setStatus('expired');
         setPlanId(null);
         setTier('free');
@@ -478,11 +552,12 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     });
 
     return cleanup;
-  }, [refreshSubscription, refreshQuota]);
+  }, [refreshSubscription, refreshQuota, setPremiumStatus]);
 
   const value = useMemo<SubscriptionState>(
     () => ({
       isLoading,
+      premiumStatus,
       isPremium,
       planId,
       status,
@@ -501,6 +576,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }),
     [
       isLoading,
+      premiumStatus,
       isPremium,
       planId,
       status,

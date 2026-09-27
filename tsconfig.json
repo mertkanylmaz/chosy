@@ -20,6 +20,7 @@
     "tests/game-system",
     "tests/identity",
     "tests/gauntlet",
+    "tests/subscription",
     "components/paywalls/_archive"
   ]
 }
