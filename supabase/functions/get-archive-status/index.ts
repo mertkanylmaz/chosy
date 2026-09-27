@@ -66,6 +66,7 @@ import {
   toGauntletFilm,
   utcDateString,
 } from '../_shared/gauntletCore.ts'
+import { effectiveArchiveAnchor } from '../_shared/previousCycle.ts'
 import type { GauntletFilm } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
@@ -128,8 +129,14 @@ interface ArchiveStatus {
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
 
 /**
- * Kullanıcının İLK personal gauntlet tarihi. Satır hiç yoksa null döner —
+ * Kullanıcının İLK GERÇEK döngüsünün tarihi. Satır hiç yoksa null döner —
  * kullanıcı ritüele hiç girmemiştir, hiçbir günü "kaçırmış" sayılmaz.
+ *
+ * E-21: önceki döngü satırı (`cycle='previous'`) anchor OLMAZ; kullanıcının
+ * ilk gerçek döngüsü o satırın ertesi günüdür (`effectiveArchiveAnchor`).
+ * Aksi halde yarım kalan önceki döngü "ilk kaçırma bedava" hakkını tüketirdi.
+ * Önceki döngü satırı kullanıcı başına en fazla bir tanedir ve her zaman en
+ * erken satırdır — ilk iki satır kararı vermeye yeter.
  */
 async function findAnchorDate(
   service: SupabaseClient,
@@ -137,15 +144,14 @@ async function findAnchorDate(
 ): Promise<string | null> {
   const { data, error } = await service
     .from('daily_gauntlets')
-    .select('date')
+    .select('date,cycle')
     .eq('user_id', appUserId)
     .eq('scope', 'personal')
     .order('date', { ascending: true })
-    .limit(1)
+    .limit(2)
 
   if (error) throw new Error(`anchor sorgusu başarısız: ${error.message}`)
-  const rows = (data ?? []) as { date: string }[]
-  return rows[0]?.date ?? null
+  return effectiveArchiveAnchor((data ?? []) as { date: string; cycle: string }[])
 }
 
 /** [from, to] arası kapalı aralıktaki UTC gün anahtarları, artan sırada. */
@@ -175,6 +181,8 @@ async function fetchPersonalDays(
     .select('date,champion_film_id')
     .eq('user_id', appUserId)
     .eq('scope', 'personal')
+    // E-21: önceki döngü ne tamamlama ne kaçırma sayılır.
+    .eq('cycle', 'current')
     .gte('date', from)
     .lte('date', to)
 

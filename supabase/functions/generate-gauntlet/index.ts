@@ -28,6 +28,13 @@
  * Dallanmanın DEĞMEDİĞİ yerler: idempotency, cached serve, deriveProgress,
  * INSERT şekli, response şekli. İkisi de `GeneratedQuartet` döndürür.
  *
+ * ── E-21'de ne değişti (27 Eyl 2026, CTO onaylı) ────────────────────────────
+ * İstek `cycle: 'previous'` taşırsa ve kullanıcının sıfır kişisel satırı varsa
+ * gauntlet ÖNCEKİ döngünün anahtarıyla (`_shared/previousCycle.ts`) üretilir,
+ * satır `cycle='previous'` (migration 118) işaretlenir. Uygun değilse 409
+ * `PREVIOUS_CYCLE_NOT_ELIGIBLE` / `PREVIOUS_CYCLE_OUT_OF_WINDOW`. Alan yoksa
+ * akış birebir eskisi. Idempotency / üretim / 23505 yolu iki durumda ORTAK.
+ *
  * ── B.4'te ne değişti ────────────────────────────────────────────────────────
  * Boru hattı fonksiyonları `_shared/gauntletCore.ts`'e TAŞINDI (mantık aynen
  * korundu, davranış değişmedi). Sebep: submit-choice'un `neither`/`seen`
@@ -73,6 +80,7 @@ import {
   toGauntletFilm,
   utcDateString,
 } from '../_shared/gauntletCore.ts'
+import { decidePreviousCycle, resolvePreviousCycle } from '../_shared/previousCycle.ts'
 import type {
   DailyGauntlet,
   GauntletContext,
@@ -129,6 +137,13 @@ interface GenerateRequest {
    * 'UTC' değerine düşmesi ve ritüelin saatinin kayması demek olurdu.
    */
   timezone?: unknown
+  /**
+   * E-21 — önceki döngü niyet bayrağı (`GauntletCycle`). Yalnız `'previous'`
+   * kabul edilir; alan yoksa davranış E-21 öncesiyle birebir aynıdır. İstemci
+   * TARİH göndermez — anahtar `timezone`'dan sunucuda hesaplanır, bu yüzden
+   * bu dalda `timezone` ZORUNLUDUR.
+   */
+  cycle?: unknown
 }
 
 // ─── Girdi doğrulama ─────────────────────────────────────────────────────────
@@ -735,6 +750,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   const context: GauntletContext = body.context
 
+  if (body.cycle !== undefined && body.cycle !== 'previous') {
+    return errorResponse('INVALID_INPUT', "cycle yalnız 'previous' olabilir", 400)
+  }
+  const wantsPrevious = body.cycle === 'previous'
+
   // ── M2 Faz 2a: write-through saat dilimi ───────────────────────────────────
   // Alan YOKSA hiçbir şey yapılmaz — eski istemciler için tam geriye uyumluluk
   // ve `users.timezone` olduğu gibi kalır.
@@ -763,12 +783,77 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
   }
 
+  // E-21: önceki döngünün anahtarı isteğin timezone'undan hesaplanır —
+  // `users.timezone` kolonu DEĞİL. Alan yoksa/geçersizse AÇIK RET: tahmini
+  // bir dilimle yanlış günün satırını yazmak, 18:00 idempotency'sini
+  // bozabilirdi. Yalnız `cycle` gönderen (yeni) istemci bu yola girer (K-44).
+  if (wantsPrevious && !isValidTimeZone(body.timezone)) {
+    return errorResponse(
+      'INVALID_INPUT',
+      "cycle:'previous' için geçerli bir IANA timezone zorunlu",
+      400,
+    )
+  }
+
+  let cycle: 'current' | 'previous' = 'current'
+
   try {
     // ⚠️ HÂLÂ UTC. Kullanıcı-yerel gün anahtarına geçiş M2 Faz 2b'dir; bu
     // sprint yalnızca güvenilir timezone verisini TOPLAR. Yukarıdaki
     // write-through'u buraya bağlamak, kolonu henüz dolmamış kullanıcıları
     // 18:00 UTC'ye (İstanbul'da 21:00) kaydırırdı.
-    const date = utcDateString()
+    let date = utcDateString()
+
+    // ── E-21: önceki döngü ────────────────────────────────────────────────────
+    // Karar verildikten sonra aşağıdaki idempotency / üretim / 23505 yolu
+    // AYNEN kullanılır; tek fark `date` = önceki döngü anahtarı ve INSERT'te
+    // `cycle: 'previous'`. İkinci bir kod yolu açılmaz.
+    // Previous isteğine ASLA current gauntlet dönmez (istemci yanıt şeklinden
+    // döngüyü ayıramaz): ya kendi önceki döngü satırı ya açık ret.
+    if (wantsPrevious) {
+      const tz = body.timezone as string
+      const resolved = resolvePreviousCycle(new Date(), tz)
+      const personal = await service
+        .from('daily_gauntlets')
+        .select('id,date,cycle')
+        .eq('user_id', appUserId)
+        .eq('scope', 'personal')
+        .order('date', { ascending: true })
+        .limit(2)
+      if (personal.error) {
+        throw new Error(`kişisel satır sorgusu başarısız: ${personal.error.message}`)
+      }
+      const rows = (personal.data ?? []) as { id: string; date: string; cycle: string }[]
+      const launchDate = await fetchLaunchDate(service)
+      const decision = decidePreviousCycle(rows, resolved, launchDate)
+      if (decision.kind === 'reject') {
+        logInfo('previous_cycle_rejected', {
+          user_id: appUserId,
+          code: decision.code,
+          reason: decision.reason,
+          key: resolved.key,
+          next_key: resolved.nextKey,
+          personal_rows: rows.length,
+          timezone: tz,
+        })
+        return errorResponse(
+          decision.code,
+          decision.code === 'PREVIOUS_CYCLE_NOT_ELIGIBLE'
+            ? 'Önceki döngü yalnız ilk açılışta verilir'
+            : 'Önceki döngü şu an sunulamaz',
+          409,
+        )
+      }
+      date = resolved.key
+      cycle = 'previous'
+      logInfo('previous_cycle_accepted', {
+        user_id: appUserId,
+        decision: decision.kind,
+        key: resolved.key,
+        timezone: tz,
+      })
+    }
+
     const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, date)
 
     // ── Idempotency: aynı kullanıcı + gün ikinci çağrıda YENİ üretim yapmaz ──
@@ -850,6 +935,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         context,
         relaxed: generated.relaxed,
         algorithm_version: algorithmVersion,
+        // Current yolda kolon YAZILMAZ — DB default'u 'current' (118).
+        ...(cycle === 'previous' ? { cycle } : {}),
       })
       .select('id')
       .single()
@@ -917,6 +1004,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       // normaldir, algoritmik günde alarm sebebidir.
       algorithm_version: algorithmVersion,
       editorial_day_number: dayNumber,
+      cycle,
+      date,
     })
 
     const films = generated.films.map(toGauntletFilm)
@@ -946,11 +1035,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
     return jsonResponse(response)
   } catch (err) {
-    logError('gauntlet_generation_failed', err, { user_id: appUserId, context })
+    logError('gauntlet_generation_failed', err, { user_id: appUserId, context, cycle: wantsPrevious ? 'previous' : 'current' })
     await sentryCapture({
       message: 'generate-gauntlet: günün gauntlet üretimi başarısız',
       level: 'fatal',
-      tags: { function: 'generate-gauntlet', algorithm_version: ALGORITHM_VERSION },
+      tags: {
+        function: 'generate-gauntlet',
+        algorithm_version: ALGORITHM_VERSION,
+        // E-21: önceki döngü üretim hatası ayrı süzülebilsin (3g).
+        cycle: wantsPrevious ? 'previous' : 'current',
+      },
       extra: {
         user_id: appUserId,
         context,

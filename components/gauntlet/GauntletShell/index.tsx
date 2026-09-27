@@ -49,6 +49,7 @@ import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOff
 import {
   GauntletAuthPendingError,
   GauntletFetchError,
+  PreviousCycleRejectedError,
   getTodayGauntletWithFallback,
   submitChoice,
   submitContextCorrection,
@@ -56,6 +57,7 @@ import {
   type ChoiceResult,
 } from '@/services/gauntletService';
 import { subscribeToReconnect } from '@/services/networkStatus';
+import { decidePreviousCycleProbeNow, markPreviousCycle } from '@/services/previousCycle';
 import { isE2ETestMode } from '@/utils/e2eTestMode';
 import { posthogAnalytics } from '@/services/posthog';
 import { resolveChampionPrompt, type ChampionPrompt } from '@/services/championPrompts';
@@ -79,6 +81,14 @@ import {
   hapticSuccess,
 } from '@/utils/haptics';
 
+import {
+  gauntletCycleProps,
+  previousLoadOutcome,
+  previousOfflineOutcome,
+  pulseAction,
+  requestOptionsFor,
+  type CycleMode,
+} from './cycleRules';
 import { styles } from './styles';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
@@ -298,6 +308,15 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * erken güncellemek guard davranışını değiştirirdi.
    */
   const recordedStateRef = useRef<ShellState | null>(null);
+  /**
+   * E-21: istenen döngü. `previous` yalnız mount'taki önceki döngü sorgusuyla
+   * girilir; yalnız nabız (18:00 / gece yarısı) ve ret onu `current`'a
+   * döndürür. `load` modu TETİKLEYİCİDEN DEĞİL buradan okur — önceki döngü
+   * oyunu sırasındaki reconnect / 401 / retry sabah bugünün satırını üretmesin.
+   */
+  const cycleModeRef = useRef<CycleMode>('current');
+  /** Analytics `cycle` etiketi için önceki döngü gauntlet'inin kimliği (3i). */
+  const previousGauntletIdRef = useRef<string | null>(null);
 
   /**
    * B5 saha teşhisi: her ShellState geçişi bir `gauntlet.state` breadcrumb'ı
@@ -443,6 +462,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           context_companion: g.context.companion,
           context_duration: g.context.duration,
           context_energy: g.context.energy,
+          ...gauntletCycleProps(g.gauntletId, previousGauntletIdRef.current),
         });
       }
     },
@@ -450,6 +470,21 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   );
 
   // ── Yükleme + 401 retry (CTO 🔴2) ──────────────────────────────────────────
+
+  /**
+   * E-21: önceki döngü bu kullanıcı için kapandı (sunucu reddetti ya da
+   * yeniden açılışta oyun zaten bitmiş) → bekleyiş ekranı. Hata DEĞİL; sunucu
+   * hatası (5xx/400) bu yoldan geçmez, `loadError`'a düşer (3g).
+   */
+  const closePreviousCycle = useCallback((trigger: StateTrigger) => {
+    cycleModeRef.current = 'current';
+    void markPreviousCycle('closed');
+    setLoadError(null);
+    setGauntlet(null);
+    setChampion(null);
+    setPair(null);
+    transitionTo('before_18', trigger);
+  }, [transitionTo]);
 
   const load = useCallback(async (trigger: StateTrigger): Promise<void> => {
     if (loadingRef.current) {
@@ -469,15 +504,49 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       // K-42: ağ → bugünün yerel kopyası → en son yerel kopya. Kaynak
       // `source` ile gelir; `progress` HER DURUMDA sunucunun türettiği
       // değerdir — istemci turu hâlâ SAYMAZ, yalnız kopyayı gösterir.
-      const { gauntlet: g, source } = await getTodayGauntletWithFallback();
+      const mode = cycleModeRef.current;
+      const { gauntlet: g, source } = await getTodayGauntletWithFallback(
+        undefined,
+        requestOptionsFor(mode),
+      );
       if (!mountedRef.current) return;
       authAttemptsRef.current = 0;
+      if (mode === 'previous') {
+        if (previousLoadOutcome(g.progress?.status, shellStateRef.current) === 'close') {
+          closePreviousCycle(trigger);
+          return;
+        }
+        previousGauntletIdRef.current = g.gauntletId;
+        void markPreviousCycle('previous');
+      }
       // `cache_today` gösterge ÜRETMEZ: yerel kopya ama bugünün verisi,
       // kullanıcı için fark yok — görsel gürültü eklemek yanlış olurdu.
       setIsStale(source === 'cache_stale');
       applyGauntlet(g, trigger);
     } catch (err) {
       if (!mountedRef.current) return;
+      if (err instanceof PreviousCycleRejectedError) {
+        closePreviousCycle(trigger);
+        return;
+      }
+      if (
+        err instanceof GauntletFetchError &&
+        cycleModeRef.current === 'previous' &&
+        previousOfflineOutcome(shellStateRef.current) === 'before_18'
+      ) {
+        // CTO SARI-4: açılışta ağ yok → bekleyiş ekranı, hata ekranı değil.
+        // İz YAZILMAZ (bir sonraki açılış yeniden sorar); GAUNTLET_OFFLINE
+        // uyarısı servis katmanında Sentry'ye yazıldı.
+        Sentry.addBreadcrumb({
+          category: 'gauntlet.cycle',
+          message: 'previous probe offline -> before_18',
+          level: 'warning',
+          data: { trigger },
+        });
+        cycleModeRef.current = 'current';
+        transitionTo('before_18', trigger);
+        return;
+      }
       if (err instanceof GauntletAuthPendingError) {
         const attempt = authAttemptsRef.current + 1;
         authAttemptsRef.current = attempt;
@@ -500,7 +569,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     } finally {
       loadingRef.current = false;
     }
-  }, [applyGauntlet, showLoadError]);
+  }, [applyGauntlet, showLoadError, closePreviousCycle, transitionTo]);
 
   /**
    * K-42: bekleyen seçim varsa ÖNCE onu gönder, sonra yükle.
@@ -543,6 +612,23 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     void flushThenLoad('retry_button');
   }, [flushThenLoad]);
 
+  /**
+   * E-21: 18:00 öncesi açılışta önceki döngü sorulmalı mı? Mevcut kullanıcı
+   * (cache ya da `closed` iz'i var) için AĞ ÇAĞRISI YOK — akış eskisi.
+   * Sorulacaksa mevcut bootstrapping makinesi kullanılır: 401 penceresi,
+   * `loadError` + "Tekrar dene" ve K-42 kuyruk flush'ı aynen geçerli.
+   */
+  const probePreviousCycle = useCallback(async (): Promise<void> => {
+    const decision = await decidePreviousCycleProbeNow(isUnlockedNow());
+    if (!mountedRef.current || !decision.probe) return;
+    // Karar beklenirken nabız kapıyı açmış olabilir — yalnız hâlâ before_18 ise.
+    if (shellStateRef.current !== 'before_18') return;
+    cycleModeRef.current = 'previous';
+    authAttemptsRef.current = 0;
+    transitionTo('bootstrapping', 'mount');
+    await flushThenLoad('mount');
+  }, [flushThenLoad, transitionTo]);
+
   // Mount: yalnız kapı açıksa çağır — before_18'de AĞ ÇAĞRISI YOK (§3.6).
   useEffect(() => {
     mountedRef.current = true;
@@ -558,6 +644,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     if (shellStateRef.current === 'bootstrapping') {
       // K-42 tetikleyici (a): açılışta bekleyen seçim varsa önce o gider.
       void flushThenLoad('mount');
+    } else if (shellStateRef.current === 'before_18') {
+      probePreviousCycle().catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'GauntletShell', flow: 'previousCycleProbe' },
+        });
+      });
     }
     return () => {
       mountedRef.current = false;
@@ -601,34 +693,49 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   // Dakikalık nabız: 18:00 kapısı + gün dönümü (CTO 🟠3 — ayrı mekanizma yok).
   useEffect(() => {
     const id = setInterval(() => {
-      if (shellStateRef.current === 'before_18' && isUnlockedNow()) {
+      // Karar saf kuralda (cycleRules.pulseAction): 18:00 kapısı, yerel gece
+      // yarısı (§3.6 — dünün şampiyonu gösterilmez) ve E-21 "18:00 geçişi"
+      // (önceki döngü şampiyonu → bugünün gauntlet'i).
+      const action = pulseAction({
+        state: shellStateRef.current,
+        mode: cycleModeRef.current,
+        unlocked: isUnlockedNow(),
+        dateKeyChanged:
+          completedDateKeyRef.current !== null &&
+          completedDateKeyRef.current !== localDateKey(),
+      });
+      if (action === 'none') return;
+      // Nabzın açtığı her yükleme bugünün döngüsüdür.
+      cycleModeRef.current = 'current';
+      if (action === 'open_gate') {
         transitionTo('bootstrapping', 'pulse');
         authAttemptsRef.current = 0;
         void load('pulse');
         return;
       }
-      if (
-        shellStateRef.current === 'completed_today' &&
-        completedDateKeyRef.current !== null &&
-        completedDateKeyRef.current !== localDateKey()
-      ) {
-        // Yerel gece yarısı geçti (§3.6) — dünün şampiyonu gösterilmez.
-        completedDateKeyRef.current = null;
-        setGauntlet(null);
-        setChampion(null);
-        setPair(null);
-        setAnimateReveal(false);
-        if (isUnlockedNow()) {
-          transitionTo('bootstrapping', 'pulse');
-          authAttemptsRef.current = 0;
-          void load('pulse');
-        } else {
-          transitionTo('before_18', 'pulse');
-        }
+      completedDateKeyRef.current = null;
+      setGauntlet(null);
+      setChampion(null);
+      setPair(null);
+      setAnimateReveal(false);
+      if (action === 'reset_and_load') {
+        transitionTo('bootstrapping', 'pulse');
+        authAttemptsRef.current = 0;
+        void load('pulse');
+      } else {
+        transitionTo('before_18', 'pulse');
       }
     }, CLOCK_TICK_MS);
     return () => clearInterval(id);
   }, [load, transitionTo]);
+
+  // E-21: önceki döngü canlı oynanıp bitti (şampiyon ya da tükeniş) — reveal
+  // bu oturumda görünür, yeniden açılışta bekleyiş ekranı gelir.
+  useEffect(() => {
+    if (shellState === 'completed_today' && cycleModeRef.current === 'previous') {
+      void markPreviousCycle('closed');
+    }
+  }, [shellState]);
 
   // ── Oyun eylemleri ─────────────────────────────────────────────────────────
 
@@ -743,6 +850,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         context_companion: gauntlet.context.companion,
         context_duration: gauntlet.context.duration,
         context_energy: gauntlet.context.energy,
+        ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
       });
 
       // Braket zinciri (C.5): tur GERÇEKLEŞTİ — kazanan ve elenen belli.
@@ -835,10 +943,12 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           gauntlet_id: result.gauntletId,
           algorithm_version: result.algorithmVersion,
           champion_film_id: result.champion.id,
+          ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
         });
         posthogAnalytics.track('champion_revealed', {
           gauntlet_id: result.gauntletId,
           champion_film_id: result.champion.id,
+          ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
         });
 
         void hapticSuccess();
@@ -905,6 +1015,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       context_companion: gauntlet.context.companion,
       context_duration: gauntlet.context.duration,
       context_energy: gauntlet.context.energy,
+      ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
     });
     applyRefreshResult(result, pair);
   }, [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, applyRefreshResult]);

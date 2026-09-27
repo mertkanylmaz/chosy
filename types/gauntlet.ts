@@ -85,6 +85,34 @@ export interface PendingWatchFeedback {
 }
 
 /**
+ * E-21 (27 Eyl 2026, sözleşme değişikliği onaylı — salt ekleme).
+ *
+ * `generate-gauntlet` isteğine niyet bayrağı: sıfır kişisel satırı olan
+ * kullanıcı 18:00 öncesi etkin (önceki) döngünün gauntlet'ini ister. İstemci
+ * TARİH GÖNDERMEZ; anahtar sunucuda isteğin `timezone` alanından hesaplanır.
+ * Alan yoksa davranış E-21 öncesiyle birebir aynıdır. Response şekli
+ * (`DailyGauntlet`) DEĞİŞMEZ.
+ */
+export type GauntletCycle = 'previous';
+
+/**
+ * `cycle: 'previous'` isteğinin açık ret kodları — HTTP 409, gövde
+ * `{ error: <kod>, message }`. Sessiz algoritmik geri dönüş yok; istemci
+ * bekleyiş ekranını gösterir.
+ * - `PREVIOUS_CYCLE_NOT_ELIGIBLE`: kullanıcının kişisel satırı var.
+ * - `PREVIOUS_CYCLE_OUT_OF_WINDOW`: önceki döngü şu an sunulamaz — anahtar
+ *   `launch_date`'ten önce, 18:00 kapısı açık (etkin döngü bugünkü) ya da
+ *   yaz saati gününde anahtar bu akşamın anahtarıyla çakışıyor.
+ */
+export type PreviousCycleRejectCode =
+  | 'PREVIOUS_CYCLE_NOT_ELIGIBLE'
+  | 'PREVIOUS_CYCLE_OUT_OF_WINDOW';
+
+export function isPreviousCycleRejectCode(v: unknown): v is PreviousCycleRejectCode {
+  return v === 'PREVIOUS_CYCLE_NOT_ELIGIBLE' || v === 'PREVIOUS_CYCLE_OUT_OF_WINDOW';
+}
+
+/**
  * Migration 069'daki `choice_events.outcome` CHECK kısıtıyla birebir aynı küme.
  * Sapma olursa doğrulama katmanı DB'nin kabul etmediği bir değeri geçirir.
  */

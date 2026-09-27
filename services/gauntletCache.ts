@@ -192,6 +192,20 @@ export async function readCachedGauntlet(
 }
 
 /**
+ * E-21: bu kullanıcı için bu cihazda HİÇ gauntlet kaydı var mı. Varsa
+ * kullanıcı ritüele daha önce girmiştir (mevcut kullanıcı) → istemci 18:00
+ * öncesi önceki döngü sorgusu ATMAZ, akışı birebir eskisi kalır.
+ *
+ * Hata YUTULMAZ, yukarı fırlatılır: çağıran (`services/previousCycle.ts`)
+ * Sentry'ye yazar ve kararı sunucuya bırakır (sunucu yetkili kaynaktır).
+ */
+export async function hasCachedGauntletForUser(userId: string): Promise<boolean> {
+  const keys = await AsyncStorage.getAllKeys();
+  const prefix = `${CACHE_PREFIX}${userId}_`;
+  return keys.some((k) => k.startsWith(prefix));
+}
+
+/**
  * Kullanıcının tüm gauntlet cache kayıtlarını ve işaretçisini siler.
  * Kimlik sıfırlaması gibi "bu cihaz artık başka biri" durumları içindir.
  */

@@ -18,13 +18,17 @@ import * as Sentry from '@sentry/react-native';
 import { supabase } from './supabase';
 import { cacheGauntlet, readCachedGauntlet, type GauntletSource } from './gauntletCache';
 import { logger } from '@/utils/logger';
+import { classifyGenerateError } from './previousCycleRules';
 
-import type {
-  ChoiceSubmission,
-  DailyGauntlet,
-  GauntletContext,
-  GauntletFilm,
-  WatchFeedbackResponse,
+import {
+  isPreviousCycleRejectCode,
+  type ChoiceSubmission,
+  type DailyGauntlet,
+  type GauntletContext,
+  type GauntletCycle,
+  type GauntletFilm,
+  type PreviousCycleRejectCode,
+  type WatchFeedbackResponse,
 } from '@/types/gauntlet';
 
 // ─── Yanıt tipleri ───────────────────────────────────────────────────────────
@@ -115,6 +119,22 @@ export class GauntletHttpError extends Error {
 }
 
 /**
+ * E-21: `cycle: 'previous'` isteği sunucuda açıkça reddedildi (409). Hata
+ * DEĞİL, uygunluk cevabıdır — kullanıcı bekleyiş ekranını görür. Bu yüzden
+ * Sentry'ye exception olarak YAZILMAZ; iz breadcrumb ile kalır. Diğer her
+ * hata (5xx, 400, ağ) mevcut yollardan geçer ve görünür kalır (3g).
+ */
+export class PreviousCycleRejectedError extends Error {
+  readonly code: PreviousCycleRejectCode;
+
+  constructor(code: PreviousCycleRejectCode, message: string) {
+    super(message);
+    this.name = 'PreviousCycleRejectedError';
+    this.code = code;
+  }
+}
+
+/**
  * Nötr varsayılan bağlam — PRODUCT_OS §4.3: "tahmin güveni <%70 → tahmin
  * etme, nötr varsayılan" ve "ilk oturumda asla tahmin etme". Bağlam seçici
  * C.3'te bağlanınca çağıran taraf gerçek bağlamı geçer (CTO onayı 14.08.2026).
@@ -143,7 +163,7 @@ export const NEUTRAL_CONTEXT: GauntletContext = {
  * `undefined` dönmek güvenlidir — alan gövdeden düşer ve sunucu kolonu
  * DEĞİŞTİRMEDEN bırakır.
  */
-function deviceTimeZone(): string | undefined {
+export function deviceTimeZone(): string | undefined {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
   } catch (err) {
@@ -203,21 +223,32 @@ function recordTiming(fn: string, startedAt: number, outcome: 'ok' | 'error'): v
 
 async function parseInvokeError(
   error: unknown,
-): Promise<{ status: number | null; detail: string }> {
+): Promise<{ status: number | null; detail: string; code: string | null }> {
   const response = (error as { context?: Response }).context;
   if (!response || typeof response.text !== 'function') {
-    return { status: null, detail: error instanceof Error ? error.message : String(error) };
+    return {
+      status: null,
+      detail: error instanceof Error ? error.message : String(error),
+      code: null,
+    };
   }
 
   const body = await response.text().catch(() => '');
   let detail = body;
+  let code: string | null = null;
   try {
     const parsed = JSON.parse(body) as { error?: string; message?: string };
     detail = parsed.message ?? parsed.error ?? body;
+    code = parsed.error ?? null;
   } catch {
     // Gövde JSON değil — ham metin detay olarak kalır, hata yutulmuyor.
   }
-  return { status: response.status, detail: `[${response.status}] ${detail}` };
+  return { status: response.status, detail: `[${response.status}] ${detail}`, code };
+}
+
+export interface GauntletRequestOptions {
+  /** E-21: yalnız sıfır satırlı kullanıcı için, 18:00 öncesi. */
+  cycle?: GauntletCycle;
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -236,17 +267,32 @@ async function parseInvokeError(
  */
 export async function getTodayGauntlet(
   context: GauntletContext = NEUTRAL_CONTEXT,
+  options: GauntletRequestOptions = {},
 ): Promise<DailyGauntlet> {
   await ensureAuthSession();
 
   const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('generate-gauntlet', {
-    body: { context, timezone: deviceTimeZone() },
+    // `cycle` yalnız verildiğinde gövdeye girer — current istek birebir eskisi.
+    body: {
+      context,
+      timezone: deviceTimeZone(),
+      ...(options.cycle ? { cycle: options.cycle } : {}),
+    },
   });
 
   if (error) {
     recordTiming('generate-gauntlet', startedAt, 'error');
-    const { status, detail } = await parseInvokeError(error);
+    const { status, detail, code } = await parseInvokeError(error);
+    const kind = classifyGenerateError(status, code);
+    if (kind === 'previous_rejected' && isPreviousCycleRejectCode(code)) {
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.cycle',
+        message: `previous rejected: ${code}`,
+        level: 'info',
+      });
+      throw new PreviousCycleRejectedError(code, detail);
+    }
     if (status === 401) {
       // Sentry kararı çağıranda: ilk denemeler beklenen pencere, 5. deneme
       // gerçek kimlik arızası (GauntletShell retry politikası).
@@ -278,9 +324,14 @@ export async function getTodayGauntlet(
   // K-42: başarılı yanıt diske yazılır. `await` EDİLMEZ — cache yazımı
   // kullanıcının ekranını bekletmez; hata durumu modülün kendi içinde
   // loglanır (sessiz değil).
-  void cacheOwnerId().then((ownerId) => {
-    if (ownerId) return cacheGauntlet(ownerId, gauntlet);
-  });
+  // E-21: önceki döngü YAZILMAZ. Anahtarı yerel "bugün"le çakışabilir (batı
+  // dilimleri) ve akşam çevrimdışı yolda bugünün sonucu gibi `cache_today`
+  // görünürdü (CTO SARI-5). Cache varlığı ayrıca "mevcut kullanıcı" sinyalidir.
+  if (!options.cycle) {
+    void cacheOwnerId().then((ownerId) => {
+      if (ownerId) return cacheGauntlet(ownerId, gauntlet);
+    });
+  }
 
   return gauntlet;
 }
@@ -326,13 +377,17 @@ async function cacheOwnerId(): Promise<string | null> {
  */
 export async function getTodayGauntletWithFallback(
   context: GauntletContext = NEUTRAL_CONTEXT,
+  options: GauntletRequestOptions = {},
 ): Promise<{ gauntlet: DailyGauntlet; source: GauntletSource; cachedDate?: string }> {
   try {
-    const gauntlet = await getTodayGauntlet(context);
+    const gauntlet = await getTodayGauntlet(context, options);
     return { gauntlet, source: 'network' };
   } catch (err) {
     if (err instanceof GauntletAuthPendingError) throw err;
     if (!(err instanceof GauntletFetchError)) throw err;
+    // E-21: önceki döngü cache'lenmez; buradaki kopya başka bir döngüye ait
+    // olurdu. Çağıran (GauntletShell) bağlantı hatasını kendisi karşılar.
+    if (options.cycle) throw err;
 
     const ownerId = await cacheOwnerId();
     const cached = await readCachedGauntlet(ownerId);
