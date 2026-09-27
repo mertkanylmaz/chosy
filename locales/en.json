@@ -525,6 +525,7 @@
     "upgradePlus": "Upgrade to Plus",
     "subscriptionTrial": "Free Trial Active",
     "subscriptionActive": "Chosy Plus Active",
+    "foundingMember": "Founding Member",
     "manageSubscription": "Manage Subscription",
     "manageNote": "You'll be redirected to Apple's subscription page. Your active plan: %{plan}",
     "freePlan": "Free",

@@ -1356,7 +1356,7 @@ export default function ProfileScreen() {
             {tier === 'lifetime' ? (
               <View style={styles.subBadgeLifetime}>
                 <Ionicons name="diamond" size={14} color={Colors.gold} />
-                <Text style={styles.subBadgeLifetimeText}>Founding Member</Text>
+                <Text style={styles.subBadgeLifetimeText}>{t('profile.foundingMember')}</Text>
               </View>
             ) : isPremium ? (
               <View style={styles.subBadgePremium}>
