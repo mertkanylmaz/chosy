@@ -131,7 +131,9 @@ async function getTierFromRevenueCat(): Promise<SubscriptionTier> {
 function getLimitForType(tier: SubscriptionTier, quotaType: string): number {
   const limits = TIER_LIMITS[tier];
   switch (quotaType) {
-    case 'search': return limits.dailySearchLimit;
+    // 117: ucretli tierlarda -1. Eslenmeden donerse `used >= -1` HER ZAMAN
+    // dogru olur ve sinirsiz kullanici ilk aramada kilitlenirdi.
+    case 'search': return limits.dailySearchLimit === -1 ? 9999 : limits.dailySearchLimit;
     case 'refine': return limits.dailyRefineLimit === -1 ? 9999 : limits.dailyRefineLimit;
     case 'slot': return limits.dailySlotLimit === -1 ? 9999 : limits.dailySlotLimit;
     default: return FREE_DAILY_LIMIT;
@@ -415,6 +417,19 @@ export async function canSearchMood(
 
   const limits = TIER_LIMITS[tier];
   const dailyLimit = limits.dailySearchLimit;
+
+  // 117: -1 = sinirsiz. Asagidaki `dailyCount < dailyLimit` karsilastirmasi
+  // -1'de her zaman false olurdu — sinirsiz dal sayim yapmadan erken doner.
+  if (dailyLimit === -1) {
+    return {
+      allowed: true,
+      remaining: 9999,
+      resetAt: startOfTomorrow(),
+      dailyLimit: -1,
+      weeklyLimit: -1,
+    };
+  }
+
   // Weekly limit: dailyLimit * 7 (basit hesaplama)
   const weeklyLimit = dailyLimit * 7;
 

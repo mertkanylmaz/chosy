@@ -276,7 +276,9 @@ serve(async (req) => {
             .single()
 
           const limit = limits?.daily_search_limit ?? 3
-          if (quotaRow.searches_used >= limit) {
+          // 117: -1 = sinirsiz (ucretli tierlar). Korumasiz `>= -1` her zaman
+          // dogru olur ve sinirsiz kullaniciya her gun "kota doldu" push'u giderdi.
+          if (limit !== -1 && quotaRow.searches_used >= limit) {
             const { data: existing } = await db
               .from('notification_log')
               .select('id')

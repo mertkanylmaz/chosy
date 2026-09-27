@@ -76,7 +76,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
 
 /** Yeni tier bazli limitler (DB'deki subscription_limits tablosuyla tam sync) */
 export const TIER_LIMITS: Record<SubscriptionTier, {
-  dailySearchLimit: number;
+  dailySearchLimit: number;  // -1 = sinirsiz (117: ucretli tierlar)
   dailyRefineLimit: number;  // -1 = sinirsiz
   dailySlotLimit: number;
   dailyGameLimitPerGame: number;
@@ -97,21 +97,21 @@ export const TIER_LIMITS: Record<SubscriptionTier, {
     watchlistMaxFilms: -1,
   },
   monthly: {
-    dailySearchLimit: 15,
+    dailySearchLimit: -1,
     dailyRefineLimit: -1,
     dailySlotLimit: -1,
     dailyGameLimitPerGame: -1,
     watchlistMaxFilms: -1,
   },
   annual: {
-    dailySearchLimit: 25,
+    dailySearchLimit: -1,
     dailyRefineLimit: -1,
     dailySlotLimit: -1,
     dailyGameLimitPerGame: -1,
     watchlistMaxFilms: -1,
   },
   lifetime: {
-    dailySearchLimit: 50,
+    dailySearchLimit: -1,
     dailyRefineLimit: -1,
     dailySlotLimit: -1,
     dailyGameLimitPerGame: -1,

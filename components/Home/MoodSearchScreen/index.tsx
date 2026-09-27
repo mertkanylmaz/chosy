@@ -568,7 +568,8 @@ export default function MoodSearchScreen() {
                 />
                 <View style={styles.findButtonContent}>
                   <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
-                  {fullQuota && !subLoading && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
+                  {/* 117: limit -1 = sinirsiz (ucretli tierlar) — kalan hak metni hic gosterilmez. */}
+                  {fullQuota && !subLoading && fullQuota.searches.limit !== -1 && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
                     <Text style={styles.findButtonQuota}>
                       {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
                     </Text>
