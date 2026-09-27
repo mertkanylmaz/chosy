@@ -46,7 +46,7 @@ import { hapticLight } from '@/utils/haptics';
 
 export function ArchiveTrigger(): React.JSX.Element | null {
   const { t } = useLanguage();
-  const { isPremium } = useSubscription();
+  const { premiumStatus } = useSubscription();
   const [missedCount, setMissedCount] = useState(0);
   const [eligible, setEligible] = useState(false);
   /** Aynı mount'ta durumu iki kez sormayı önler. */
@@ -96,7 +96,10 @@ export function ArchiveTrigger(): React.JSX.Element | null {
    * tekrar tekrar açılmaz.
    */
   const handlePress = () => {
-    if (isPremium || !eligible) {
+    // Abonelik cozulmeden (loading) no-op: ne arsiv (free'ye bedava erisim)
+    // ne paywall (odeyene paywall). V-1 Tur 1.
+    if (premiumStatus === 'loading') return;
+    if (premiumStatus === 'premium' || !eligible) {
       openArchive();
       return;
     }
