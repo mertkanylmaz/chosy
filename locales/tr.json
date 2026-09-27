@@ -471,6 +471,7 @@
     "avatarStudioLight": "Stüdyo Işığı",
     "avatarEditMonitor": "Kurgu Monitörü",
     "avatarTripod": "Tripod",
+    "avatarSaveError": "İkonun kaydedilemedi. Lütfen tekrar dene.",
     "select": "Seç",
     "dailyStreak": "Seri Takip",
     "cinemaIdentity": "Sinema Kimliğin",

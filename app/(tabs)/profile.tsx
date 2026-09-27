@@ -20,7 +20,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Image,
-  type ImageSourcePropType,
   Linking,
   Modal,
   Platform,
@@ -36,6 +35,7 @@ import {
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { AppleLogo, Camera, GearSix, GoogleLogo, PencilSimple, User } from 'phosphor-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,6 +50,9 @@ import { posthogAnalytics } from '@/services/posthog';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
+import { AVATAR_GLYPHS, AVATAR_IDS, isAvatarId, type AvatarId } from '@/constants/avatarGlyphs';
+import { color } from '@/constants/design/semantic';
+import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
@@ -94,27 +97,8 @@ const LANGUAGES: { code: Locale; label: string }[] = [
   { code: 'tr', label: 'TR' },
 ];
 
-/** AsyncStorage anahtari */
-const AVATAR_STORAGE_KEY = 'chosy_user_avatar';
-
-/** Sinema ekipmanı avatar seçenekleri — 9 özel ikon */
-interface AvatarItem {
-  id: string;
-  image: ImageSourcePropType;
-  labelKey: string;
-}
-
-const AVATAR_OPTIONS: AvatarItem[] = [
-  { id: 'clapperboard',   image: AvatarIcons.clapperboard,   labelKey: 'profile.avatarClapperboard' },
-  { id: 'pro_camera',     image: AvatarIcons.pro_camera,     labelKey: 'profile.avatarProCamera' },
-  { id: 'director_chair', image: AvatarIcons.director_chair, labelKey: 'profile.avatarDirectorChair' },
-  { id: 'film_reel',      image: AvatarIcons.film_reel,      labelKey: 'profile.avatarFilmReel' },
-  { id: 'megaphone',      image: AvatarIcons.megaphone,      labelKey: 'profile.avatarMegaphone' },
-  { id: 'boom_mic',       image: AvatarIcons.boom_mic,       labelKey: 'profile.avatarBoomMic' },
-  { id: 'studio_light',   image: AvatarIcons.studio_light,   labelKey: 'profile.avatarStudioLight' },
-  { id: 'edit_monitor',   image: AvatarIcons.edit_monitor,   labelKey: 'profile.avatarEditMonitor' },
-  { id: 'tripod',         image: AvatarIcons.tripod,         labelKey: 'profile.avatarTripod' },
-];
+// Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
+// Anahtar + tek seferlik tasima: utils/avatarStorage.ts
 
 // ─── Section Heading ──────────────────────────────────────────────────────────
 
@@ -136,19 +120,21 @@ interface AvatarModalProps {
   /** Modal gorunur mu */
   visible: boolean;
   /** Mevcut secili avatar ID'si */
-  current: string | null;
+  current: AvatarId | null;
   /** Kapatma callback */
   onClose: () => void;
   /** Secim callback — avatar ID döner */
-  onSelect: (avatarId: string) => void;
+  onSelect: (avatarId: AvatarId) => void;
 }
 
 /**
- * Avatar secim modali — 12 emoji preset, 3x4 grid, altin border secim gostergesi.
+ * Avatar secim modali — 9 sinema ekipmani glifi (Phosphor duotone), 3x3 grid,
+ * `beam` kenar secim gostergesi. "Select" secim mevcut avatardan farkli
+ * olana kadar devre disi.
  */
 function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) {
   const { t } = useLanguage();
-  const [temp, setTemp] = useState<string | null>(current);
+  const [temp, setTemp] = useState<AvatarId | null>(current);
 
   useEffect(() => {
     if (visible) {
@@ -156,10 +142,11 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
     }
   }, [visible, current]);
 
+  const canSelect = temp !== null && temp !== current;
+
   function handleSelect() {
-    if (temp) {
-      onSelect(temp);
-    }
+    if (!canSelect) return;
+    onSelect(temp);
     onClose();
   }
 
@@ -178,29 +165,26 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
 
           {/* 3x3 avatar grid */}
           <View style={styles.avatarGrid}>
-            {AVATAR_OPTIONS.map((item) => {
-              const isSelected = temp === item.id;
+            {AVATAR_IDS.map((id) => {
+              const { Icon, labelKey } = AVATAR_GLYPHS[id];
+              const isSelected = temp === id;
               return (
                 <TouchableOpacity
-                  key={item.id}
+                  key={id}
                   style={[styles.avatarOption, isSelected && styles.avatarOptionSelected]}
-                  onPress={() => setTemp(item.id)}
+                  onPress={() => setTemp(id)}
                   activeOpacity={0.7}
                   accessibilityRole="radio"
-                  accessibilityLabel={t(item.labelKey)}
+                  accessibilityLabel={t(labelKey)}
                   accessibilityState={{ selected: isSelected }}>
-                  <Image
-                    source={item.image}
-                    style={styles.avatarOptionEmoji}
-                    resizeMode="contain"
-                  />
+                  <Icon size={36} weight="duotone" color={color.reward.primary} />
+                  {/* Kesilme yok: numberOfLines verilmez, 2 satira kadar sarar. */}
                   <Text
                     style={[
                       styles.avatarOptionLabel,
                       isSelected && styles.avatarOptionLabelSelected,
-                    ]}
-                    numberOfLines={1}>
-                    {t(item.labelKey)}
+                    ]}>
+                    {t(labelKey)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -216,9 +200,12 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
               <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={styles.selectBtn}
+              style={[styles.selectBtn, !canSelect && styles.selectBtnDisabled]}
               onPress={handleSelect}
-              activeOpacity={0.8}>
+              disabled={!canSelect}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !canSelect }}>
               <LinearGradient
                 colors={[Colors.gold, Colors.goldDark]}
                 style={styles.selectBtnGradient}>
@@ -716,7 +703,12 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [avatarEmoji, setAvatarEmoji] = useState<string | null>(null);
+  const [avatarId, setAvatarId] = useState<AvatarId | null>(null);
+  /**
+   * `public.users.id` — avatar anahtari buna baglidir. `loadAll` cozer;
+   * cozulene kadar `null` (bootstrap bitmemis / cevrimdisi).
+   */
+  const publicUserIdRef = useRef<string | null>(null);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [archetypeId, setArchetypeId] = useState<number | null>(null);
   const [authProvider, setAuthProvider] = useState<string | null>(null);
@@ -742,13 +734,33 @@ export default function ProfileScreen() {
 
   // ─── Avatar yukleme ───────────────────────────────────────────────────────
 
-  const loadAvatar = useCallback(async () => {
+  /**
+   * Anahtar `chosy_user_avatar_{publicUserId}`; ilk okumada eski cihaz bazli
+   * anahtar tasinir (utils/avatarStorage.ts). `loadAll` icinden, public id
+   * cozulduktan SONRA cagrilir — oncesinde anahtar kurulamaz.
+   *
+   * Taninmayan deger sessizce varsayilana dusmez: Sentry'ye yazilir, baslik
+   * avatarsiz (User glifi) cizilir.
+   */
+  const loadAvatar = useCallback(async (publicUserId: string) => {
     try {
-      const saved = await AsyncStorage.getItem(AVATAR_STORAGE_KEY);
-      if (saved) {
-        setAvatarEmoji(saved);
+      const saved = await readStoredAvatar(AsyncStorage, publicUserId);
+      if (saved === null) {
+        setAvatarId(null);
+        return;
       }
+      if (!isAvatarId(saved)) {
+        setAvatarId(null);
+        Sentry.captureMessage('[Profile] taninmayan avatar degeri', {
+          level: 'warning',
+          tags: { screen: 'profile', fn: 'loadAvatar' },
+          extra: { saved },
+        });
+        return;
+      }
+      setAvatarId(saved);
     } catch (err) {
+      Sentry.captureException(err, { tags: { screen: 'profile', fn: 'loadAvatar' } });
       logger.error('[ProfileScreen] avatar yukleme hatasi:', err);
     }
   }, []);
@@ -774,8 +786,19 @@ export default function ProfileScreen() {
         .eq('auth_id', authUser.id)
         .single();
 
-      if (!userRow) return;
+      if (!userRow) {
+        // Bootstrap penceresi: ensureAppUser (app/_layout.tsx) henuz satir
+        // acmamis. Avatar anahtari kurulamaz; sonraki focus yeniden dener.
+        Sentry.addBreadcrumb({
+          category: 'profile',
+          level: 'warning',
+          message: 'loadAll: public.users satiri yok — avatar okunmadi',
+        });
+        return;
+      }
       const userId: string = userRow.id;
+      publicUserIdRef.current = userId;
+      void loadAvatar(userId);
 
       // İsim önceliği: username → display_name → auth metadata adı → null (fallback i18n'den gelir)
       type UserRow = { id: string; display_name: string | null; username: string | null; archetype_id: number | null };
@@ -845,20 +868,20 @@ export default function ProfileScreen() {
       logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);
     }
-  }, []);
+  }, [loadAvatar]);
 
   // ── İlk yükleme (loading spinner gösterir) ───────────────────────────────
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
-      await Promise.all([loadAll(), loadAvatar()]);
+      await loadAll();
       if (!cancelled) setLoading(false);
     }
 
     init();
     return () => { cancelled = true; };
-  }, [loadAll, loadAvatar]);
+  }, [loadAll]);
 
   // ── Sekmeye dönüldüğünde sessiz yenileme (sign-in sonrası veri güncellenir) ──
   useFocusEffect(
@@ -880,12 +903,16 @@ export default function ProfileScreen() {
 
   // ─── Avatar kaydet ────────────────────────────────────────────────────────
 
-  async function handleAvatarSelect(emoji: string) {
+  async function handleAvatarSelect(id: AvatarId) {
+    const publicUserId = publicUserIdRef.current;
     try {
-      await AsyncStorage.setItem(AVATAR_STORAGE_KEY, emoji);
-      setAvatarEmoji(emoji);
+      if (!publicUserId) throw new Error('avatar kaydi: publicUserId cozulmedi');
+      await writeStoredAvatar(AsyncStorage, publicUserId, id);
+      setAvatarId(id);
     } catch (err) {
+      Sentry.captureException(err, { tags: { screen: 'profile', fn: 'handleAvatarSelect' } });
       logger.error('[ProfileScreen] avatar kayit hatasi:', err);
+      Alert.alert(t('profile.avatarSaveError'));
     }
   }
 
@@ -1191,6 +1218,9 @@ export default function ProfileScreen() {
     }
   }
 
+  /** Secili avatarin glifi; secim yoksa notr `User` glifi. */
+  const HeaderAvatarIcon = avatarId ? AVATAR_GLYPHS[avatarId].Icon : User;
+
   // C.9c: handleShareReferral kaldirildi — referral v1 kapsaminda donmus
   // (bible §7.3) ve fonksiyon zaten hicbir yerden cagrilmiyordu.
 
@@ -1206,7 +1236,7 @@ export default function ProfileScreen() {
           onRetry={async () => {
             setLoading(true);
             setLoadError(false);
-            await Promise.all([loadAll(), loadAvatar()]);
+            await loadAll();
             setLoading(false);
           }}
         />
@@ -1249,7 +1279,7 @@ export default function ProfileScreen() {
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.settingsSection')}>
-                <Ionicons name="settings-outline" size={22} color={Colors.textGrey} />
+                <GearSix size={22} color={Colors.textGrey} />
               </TouchableOpacity>
             </View>
 
@@ -1265,20 +1295,16 @@ export default function ProfileScreen() {
                 style={styles.avatarBorderGradient}
               >
                 <View style={styles.avatarInner}>
-                  {avatarEmoji ? (
-                    <Image
-                      source={AVATAR_OPTIONS.find((a) => a.id === avatarEmoji)?.image ?? AvatarIcons.clapperboard}
-                      style={styles.avatarEmoji}
-                      resizeMode="contain"
-                    />
-                  ) : (
-                    <Ionicons name="person-outline" size={32} color={Colors.gold} />
-                  )}
+                  <HeaderAvatarIcon
+                    size={avatarId ? 48 : 32}
+                    weight="duotone"
+                    color={color.reward.primary}
+                  />
                 </View>
               </LinearGradient>
-              {/* Degistir hintt */}
+              {/* Degistir ipucu */}
               <View style={styles.avatarEditBadge}>
-                <Ionicons name="camera" size={12} color={Colors.background} />
+                <Camera size={12} weight="fill" color={Colors.background} />
               </View>
             </TouchableOpacity>
 
@@ -1292,18 +1318,18 @@ export default function ProfileScreen() {
                 {displayName ?? t('profile.anonymousCinephile')}
               </Text>
               <View style={styles.editNameBadge}>
-                <Ionicons name="pencil" size={11} color={Colors.gold} />
+                <PencilSimple size={11} weight="bold" color={Colors.gold} />
               </View>
             </TouchableOpacity>
 
             {/* Auth provider rozeti — Apple/Google icin ozel gosterim */}
             {!isAnonymous && authProvider && (
               <View style={styles.authProviderBadge}>
-                <Ionicons
-                  name={authProvider === 'apple' ? 'logo-apple' : 'logo-google'}
-                  size={13}
-                  color={Colors.textGrey}
-                />
+                {authProvider === 'apple' ? (
+                  <AppleLogo size={13} weight="fill" color={Colors.textGrey} />
+                ) : (
+                  <GoogleLogo size={13} weight="bold" color={Colors.textGrey} />
+                )}
                 <Text style={styles.authProviderText}>
                   {t(
                     authProvider === 'apple'
@@ -1533,7 +1559,7 @@ export default function ProfileScreen() {
       {/* ── Avatar Modal ──────────────────────────────────────────────── */}
       <AvatarModal
         visible={showAvatarModal}
-        current={avatarEmoji}
+        current={avatarId}
         onClose={() => setShowAvatarModal(false)}
         onSelect={handleAvatarSelect}
       />
@@ -1648,13 +1674,9 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 40,
-    backgroundColor: Colors.cardSolid,
+    backgroundColor: color.surface.raised,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  avatarEmoji: {
-    width: 56,
-    height: 56,
   },
   profileName: {
     color: Colors.textWhite,
@@ -2069,36 +2091,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: Spacing.lg,
   },
+  /** 3 sutun: 3x88 + 2x8 = 280 ≤ kart ic genisligi (360 - 2xlg); 4. kart sigmaz. */
   avatarOption: {
-    width: 68,
-    height: 76,
+    width: 88,
+    minHeight: 88,
     borderRadius: 16,
-    backgroundColor: Colors.white05,
+    backgroundColor: color.surface.raised,
     borderWidth: 2,
-    borderColor: Colors.white10,
+    borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    gap: 2,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    gap: 4,
   },
   avatarOptionSelected: {
-    borderColor: Colors.gold,
-    backgroundColor: Colors.goldDim,
+    borderColor: color.accent.active,
   },
-  avatarOptionEmoji: {
-    width: 44,
-    height: 44,
-  },
+  /** Iki satira kadar sarar; `minHeight` iki satirlik yer ayirir ki grid hizasi bozulmasin. */
   avatarOptionLabel: {
-    fontSize: 8,
+    fontSize: 10,
+    lineHeight: 13,
+    minHeight: 26,
     color: Colors.textGrey,
     textAlign: 'center',
     letterSpacing: 0.2,
-    opacity: 0.8,
   },
   avatarOptionLabelSelected: {
-    color: Colors.gold,
-    opacity: 1,
+    color: color.accent.active,
   },
   modalActions: {
     flexDirection: 'row',
@@ -2122,6 +2142,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: Radius.button,
     overflow: 'hidden',
+  },
+  selectBtnDisabled: {
+    opacity: 0.4,
   },
   selectBtnGradient: {
     paddingVertical: 12,

@@ -471,6 +471,7 @@
     "avatarStudioLight": "Studio Light",
     "avatarEditMonitor": "Edit Monitor",
     "avatarTripod": "Tripod",
+    "avatarSaveError": "Couldn't save your icon. Please try again.",
     "select": "Select",
     "dailyStreak": "Daily Streak",
     "cinemaIdentity": "Cinema Identity",

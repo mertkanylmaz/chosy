@@ -23,13 +23,15 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 
 import * as Sentry from '@sentry/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
 import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearQuotaCache } from './quotaEngine';
-import { getAppUserId } from './auth-utils';
+import { getAppUserId, readAppUserId } from './auth-utils';
 import { logger } from '../utils/logger';
+import { clearStoredAvatar } from '../utils/avatarStorage';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
 //
@@ -637,7 +639,7 @@ export type DeleteAccountResult =
  *   1. Supabase JWT al
  *   2. Edge Function `delete-account` çağır (servis rol yetkisi gerekli)
  *   3. Edge function: users (cascade) + auth.users + PostHog kisisi siler
- *   4. Client: RC logout + PostHog/Sentry reset + signOut + yerel session temizle
+ *   4. Client: RC logout + avatar anahtarı + PostHog/Sentry reset + signOut + yerel session temizle
  *
  * @returns Başarı durumu ve opsiyonel hata detayı
  */
@@ -649,6 +651,10 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     if (!session) {
       return { success: false, error: 'not_authenticated' };
     }
+
+    // Avatar anahtarı `public.users.id`'ye bağlı. Edge Function `users`
+    // satırını sildikten SONRA bu id artık okunamaz — silmeden ÖNCE alınır.
+    const publicUserId = await readAppUserId();
 
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
     const functionUrl = `${supabaseUrl}/functions/v1/delete-account`;
@@ -700,6 +706,23 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     // ── RevenueCat müşteri kimliğini sıfırla ─────────────────────────────
     // Çağrılmazsa on-device entitlement cache kalır → yeni hesap premium görünür (BUG-002)
     await logOutPurchases();
+
+    // ── Avatar anahtarını temizle (K-16 istemci tarafı) ─────────────────
+    // `chosy_user_avatar_{publicUserId}` + taşınmamış eski cihaz anahtarı.
+    // Başarısızlık akışı durdurmaz (sunucu verisi zaten silindi) ama
+    // sessiz de geçmez.
+    if (publicUserId) {
+      try {
+        await clearStoredAvatar(AsyncStorage, publicUserId);
+      } catch (err) {
+        logger.error('[authService] deleteAccount avatar temizleme hatası:', err, { skipBridge: true });
+        Sentry.captureException(err, {
+          tags: { function: 'deleteAccount', step: 'clear_avatar' },
+        });
+      }
+    } else {
+      Sentry.captureMessage('deleteAccount: publicUserId çözülemedi — avatar anahtarı temizlenmedi', 'warning');
+    }
 
     // ── AsyncStorage quota cache'ini temizle ────────────────────────────
     // Eski kullanıcının kota sayaçları cihazda kalmasın
