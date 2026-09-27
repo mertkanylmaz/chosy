@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.27
+**Sürüm:** 1.28
 **Tarih:** 27 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -382,7 +382,7 @@ Bible'ın altı adının uygulamadaki karşılığı:
 
 | Bible (K-03) | Uygulama | Not |
 |---|---|---|
-| `waiting` | `before_18` **+** `bootstrapping` | **İkiye ayrıldı.** Bekleyiş (18:00 kapısı, gauntlet ÇAĞRILMAZ — PRODUCT_OS §3.6) ile yükleme (401 bootstrap penceresi, graphite iskelet) farklı ekranlar ve farklı hata yollarıdır; tek ad ikisini gizlerdi. |
+| `waiting` | `before_18` **+** `bootstrapping` | **İkiye ayrıldı.** Bekleyiş (18:00 kapısı, gauntlet ÇAĞRILMAZ — PRODUCT_OS §3.6) ile yükleme (401 bootstrap penceresi, graphite iskelet) farklı ekranlar ve farklı hata yollarıdır; tek ad ikisini gizlerdi. ⚠️ **İstisna — E-21 (27 Eyl 2026):** "gauntlet ÇAĞRILMAZ" kuralı, sıfır kişisel `daily_gauntlets` satırı olan kullanıcı için kalkar (önceki döngü). Beş durum sözleşmesi değişmez. |
 | `ready` | `ready` | Birebir. |
 | `in_progress` | `in_progress` | Birebir. |
 | `completed` | `completed_today` | Ad netleşti; iki dallı — champion (`ChampionReveal`) ya da exhausted (§15.3). |
@@ -762,6 +762,38 @@ kendisine bağlı değiller.
 
 ---
 
+### E-21 — Yeni kullanıcıya önceki döngü: 18:00 öncesi ilk açılış (27 Eyl 2026) — KARAR VERİLDİ, UYGULANMADI
+
+**Sorun.** P0-1 (`3fd787f`) sonrası 18:00 öncesi açan yeni kullanıcı yalnız
+"Bugünün dörtlüsü 18:00'de hazır" metnini görüyor. İlk açılışta ritüelle hiç
+karşılaşmadan çıkıyor.
+
+**Karar (CTO, 27 Eyl 2026).** Sıfır kişisel `daily_gauntlets` satırı olan
+kullanıcı 18:00 öncesi açarsa **etkin ritüel döngüsünün** (son yerel 18:00'de
+açılmış olanın) gauntlet'ini görür. PRODUCT_OS §3.6 ("Gauntlet 18:00'den önce
+açılmaz") ve D-12'nin "`before_18`'de gauntlet ÇAĞRILMAZ" kuralı **yalnız bu
+kohort için** istisna alır. Diğer herkes için ikisi de yürürlükte kalır.
+
+| Alt karar | İçerik |
+|---|---|
+| **Sözleşme** | `generate-gauntlet` isteğine `cycle: 'previous'` niyet bayrağı. İstemci **tarih göndermez**; tarih sunucuda hesaplanır. Açık ret kodları: `PREVIOUS_CYCLE_NOT_ELIGIBLE` (kişisel satır > 0) · `PREVIOUS_CYCLE_OUT_OF_WINDOW` (`editorialDayNumber < 1`). Sessiz algoritmik geri dönüş yok; istemci ret kodunda bekleyiş metnini gösterir. Gauntlet-contract prosedürüne tabi. |
+| **Anahtar hesabı** | "Son yerel 18:00 anının UTC tarihi". Kaynak **isteğin kendi `timezone` alanı**; `users.timezone` kolonu değil (kolon write-through için kalır). Gerekçe ölçüldü: kolonda gerçek değer **12/270 (%4,4)**, 258 satır `DEFAULT 'UTC'` (27 Eyl 2026). İstemci alanı her çağrıda gönderiyor (`services/gauntletService.ts:244`), ama `deviceTimeZone()` `Intl` yoksa `undefined` dönebiliyor (`:146-155`). ⚠️ Bu durumda `cycle:'previous'` için davranış **uygulama turunda netleşmeli** (öneri: açık ret). "Önceki UTC günü" tanımı **yanlış**: saat dilimine bağlı (İstanbul 00:00–03:00 iki gün geri düşer, UTC− bölgelerde anahtar yerel tarihin önündedir). Bu yüzden M2 Faz 2b öne çekilmiyor. |
+| **Satır tarihi** | `daily_gauntlets.date` = **önceki döngünün anahtarı**, bugün değil. Bugünün tarihiyle yazılırsa 18:00'de idempotency aynı (tamamlanmış) satırı döner ve kullanıcı o akşamın gauntlet'ini alamaz. Gauntlet'e bağlı bir `user_streaks` yazımı yok (yalnız eski swipe akışı); "tamamlama" = `champion_film_id`, arşiv anchor'ı = ilk kişisel satır (`get-archive-status`). Önceki döngünün anahtarıyla ikisi de tutarlı kalır. |
+| **18:00 geçişi** | Oyun bitmesine izin verilir (`submit-choice` tarih bakmaz, `gauntletId` ile çalışır). Kabuk yüklü gauntlet'in `date`'ini döngü anahtarı olarak taşır. Dakikalık nabız, önceki döngü `completed_today`'deyken 18:00 geçince `bootstrapping`'e geçer. Bu yapılmazsa ekran gece yarısına kadar eski şampiyonda kalır, sonra `before_18`'e düşer ve o akşamın gauntlet'i kaçırılır. |
+| **"Dün izledin mi?"** | Sabah seçilen şampiyon 18:00'de "dün" diye sorulur. **Kabul edilen istisna**: tek seferlik, zararsız, ek karmaşıklığa değmez. |
+
+**Uygulama zamanlaması.** Build 903'e **girmez**. Ayrı, taze bir oturumda kendi
+salt okunur keşfiyle ele alınacak. Gerekçe: state machine, sözleşme ve gün sınırı
+mantığına aynı anda dokunuyor.
+
+**Ölçülemeyen.** Son 24 saatte `none -> before_18` geçiş sayısı (kohort büyüklüğü).
+`gauntlet.state` breadcrumb'ı `85ffafd` ile geldi ama sahaya yeni build'le ulaşır
+ve Sentry erişimi yok. **Yeni build sonrası bakılacak.**
+
+**Kaynak:** keşif turu (27 Eyl 2026, sohbet içi) · `BUILD_ONCESI_GAUNTLET_KESIF.md`.
+
+---
+
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
 
 **Mevcut durum:** 63 gerçek hesap · 87 yetim anonim kimlik (`public.users` satırı yok, 23 Nisan'dan beri) · kullanıcıların bildiği Home = mood search + quota · quiz arketipleri · iki ayrı watchlist ekranı · iki paywall CTA'sı / iki RevenueCat offering'i · 0/0 gösteren badge'ler.
@@ -902,6 +934,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **E-19 → E-02 yeniden ölçümü** | 400 filmin yakılması aktif havuzun %21,4'ünü devre dışı bırakıyor ve gün-teması havuzu yedi alt havuza bölüyor. E-02 derinlik matematiği tema başına yeniden yapılmalı — E-19 kapanışıyla birlikte hâlâ açık. Kaynak: E-19 "Açık kalanlar". |
 | **Resume ile doğrudan tur 3'e girişte finalist w780 prefetch'i yok** | **R-D kalemi.** Son tur finalist ısıtması yalnız canlı tur 2→3 geçişinde çalışıyor (`GauntletShell` `handleChoice`); resume yolu (`applyGauntlet`, `completedRounds > 0`) yapmıyor → Champion w780 soğuk yüklenir, 1,5 sn siyah bekleme tavanına takılma olasılığı artar. Oran ölçülmedi. Kaynak: v1.27, keşif B9. |
 | **Soğuk açılış süresi — sabit splash + `generate-gauntlet`** | **R-D kalemi.** `app/gate.tsx` `MIN_SPLASH_MS = 3000` + `LoadingScreen` `FADE_OUT_MS = 500` gauntlet'ten önce **sabit 3,5 sn**. `generate-gauntlet` **tek ölçüm: 5096 ms** (26 Eyl 2026, yeni üretim yolu, istemci tarafı round-trip; ortalama değil). Toplam soğuk açılış **~8,5 sn olabilir** (tek ölçüme dayalı tahmin). Sahada `gauntlet.perf` breadcrumb'ı var ama Sentry'den okunmadı. Kaynak: v1.27, keşif B10. |
+| **UTC gün anahtarı ↔ yerel ritüel ayrışması (önceden var olan, E-21'den bağımsız)** | **R-D / M2 Faz 2b kalemi, bugün dokunulmuyor.** ⚠️ **Tanım düzeltmesi:** CTO notu "İstanbul 00:00–03:00'da kullanıcılar yanlışlıkla `before_18`'e düşüyor olabilir" diyordu. Bu **spec gereği doğru davranış**: PRODUCT_OS §3.6 "Gün dönümü yerel gece yarısı", yerel saat 0–2 < 18 → `before_18` (`GauntletShell/index.tsx:117-127`). O pencerede kapı hatası yok. Gece yarısı sonrası cihaz testinde görülecek bekleme ekranı beklenen sonuçtur. **Ayrışmanın ölçülen gerçek etkileri:** **(a)** UTC− bölgelerinde anahtar akşamın ortasında döner. `generate-gauntlet/index.ts:771` `utcDateString()`; New York (EDT, UTC−4) 20:00 = 00:00 UTC. 18:00–20:00 arası D, 20:00 sonrası D+1 üretilir. 20:00 sonrası bir yeniden yükleme (remount/reconnect) aynı akşam ikinci bir gauntlet verir; ertesi akşam 18:00–20:00'de de zaten oynanmış D+1 döner. Canlıda `America/New_York` 4 kullanıcı (`users.timezone`, 27 Eyl 2026; ancak kolonun %95,6'sı `DEFAULT 'UTC'`, gerçek dağılım bilinmiyor). **(b)** K-42 önbelleği UTC anahtarla yazıyor (`services/gauntletCache.ts:112-117`), yerel tarihle okuyor (`:162`). UTC− bölgelerinde akşam çevrimdışı açılışta bugünün kopyası `cache_stale` sayılır ve yanlış "Bu bugünün listesi değil" uyarısı çıkar. İstanbul'da uyumsuzluk 00:00–03:00'a düşer, kapı kapalı olduğu için görünmez. Cihaz testi: saat dilimi `America/New_York`, 20:00 EDT öncesi ve sonrası. Kaynak: v1.28, E-21 keşfi. |
 
 ---
 
@@ -930,6 +963,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.28 | 27 Eyl 2026 | **E-21 — yeni kullanıcıya önceki döngü: karar verildi, uygulanmadı.** Sıfır kişisel satırı olan kullanıcı 18:00 öncesi etkin döngünün gauntlet'ini görür. PRODUCT_OS §3.6 ve D-12 (`waiting` satırına not düşüldü) yalnız bu kohort için istisna alır. Alt kararlar: `cycle:'previous'` + iki açık ret kodu · anahtar isteğin `timezone` alanından hesaplanır, `users.timezone` kullanılmaz (ölçüm: gerçek değer 12/270, %4,4) · satır önceki döngünün tarihiyle yazılır · 18:00 geçişinde nabız `bootstrapping`'e geçer · "Dün izledin mi?" tuhaflığı kabul edilen istisna. Build 903'e girmez, ayrı oturumda uygulanacak. §9'a R-D kalemi: UTC anahtar ↔ yerel ritüel ayrışması. ⚠️ CTO'nun "İstanbul 00:00–03:00 bug'ı" tespiti **düzeltildi**: o pencerede `before_18` §3.6 gereği doğru. Ölçülen gerçek etki UTC− bölgelerinde: anahtar New York'ta 20:00'de dönüyor, K-42 önbelleği yanlış stale uyarısı veriyor. `none -> before_18` sayımı ölçülemedi (Sentry erişimi yok, telemetri yeni build'le gelir). Kod değişikliği yok. |
 | 1.27 | 27 Eyl 2026 | **Build öncesi keşif bulguları** (`docs/investigations/BUILD_ONCESI_GAUNTLET_KESIF.md`). **P0-1 sahada yaşandı — kesinleşti:** "gauntlet yok dedi → geldi" TestFlight production build 902'de (P0-1 içermiyor) bağlantı-geri-geldi (T3) yoluydu; cihazın gauntlet'i 15:58 yerel saatte üretilmiş. "Çıktı, tekrar girdi" muhtemelen kullanıcının kendi çıkışı — **doğrulanmadı**. Gün 9 canlıda yeniden teyit edildi (`v1-editorial-calendar`, id + sıra birebir), test kimliği K-16 sırasıyla silindi. B5 saha telemetrisi `85ffafd` (yalnız breadcrumb: `gauntlet.state` + `network.status`). Takvim bütünlüğü ölçüldü: 100 gün × 4, 400 benzersiz film, tema/hafta günü 100/100. §9 P0-1 satırına not; §9'a iki R-D kalemi: resume'de finalist prefetch yok (B9) · soğuk açılış 3,5 sn sabit splash + `generate-gauntlet` tek ölçüm 5096 ms, toplam ~8,5 sn olabilir (B10). Doğrulama: `typecheck` 14/14, `typecheck:functions` 32/32 baseline. |
 | 1.26 | 26 Eyl 2026 | **v1.1.0 risk değerlendirmesi kapandı + mevcut kullanıcı köprü aksiyonları v1 dışı (R-19).** CTO kararı: "Chosy değişti" köprü ekranı, 63 kişiye kurucu mesajı ve **G-9 kapısı** kapatıldı, ikame yok. Gerekçe ölçüldü: 1 Eyl öncesi 253 hesabın 192'sinde sıfır etkileşim, ≥7 aktif gün yalnız 2. CTO gerekçesindeki "22 kayıttan 12'si" yalnız Eylül kohortuydu, tam taban ölçümüyle değiştirildi. §7.4 dokuz eşikten **sekize** indi; **K-52'nin 6 release gate'i etkilenmedi**. E-05, §6 (iki satır), §7.4, §8 R-A/R-D ve §9 orphan satırı işaretlendi (üstü çizildi, silinmedi). Köprü ekranı kodda zaten uygulanmıştı (`1d2a66f`) → yönlendirmenin kapatılması §9'a ayrı kod işi. §9 ekleri: rulet slot ek-spin kırığı (dokunulmayacak, C.6 ile gider) · v1.1.0 kırık mı → **KAPANDI, kırık değil** · 1–25 Eyl `daily_gauntlets` kişisel taraf **AÇIKLANDI** (tüm gerçek kullanıcılar gauntlet'siz v1.1.0 build 31'de), global cron kök nedeni kaydedildi (Vault anahtarı kayıtsız). Kod değişikliği yok. |
 | 1.25 | 26 Eyl 2026 | **E-19 nihayet deploy edildi + P0-1 düzeltmesi.** Deploy öncesi canlı kaynak kodla repo karşılaştırıldı: paylaşılan dosyalar aynı, farklar E-19 + tek bir dış commit `8705931` (poster normalizasyonu, CTO onayıyla dahil). Canlı ölçümde takvim 100 gün / 400 film, `launch_date = 2026-09-18`. Deploy: generate-gauntlet v33, submit-choice v32. Canlı doğrulama geçti: 9. gün `epic`, `v1-editorial-calendar`, film sırası birebir aynı; test kimliği K-16 cascade sırasıyla silindi. **E-19.1'e düzeltme notu:** "prod'a alındı" yalnız DB katmanı için doğruydu, fonksiyonlar 19–26 Eyl arası deploy edilmemişti (silinmedi, not düşüldü). §9'daki "E-19 canlı tetikleme" satırı **kısmen kapandı** (guard + cihaz akışı açık). **P0-1** (`3fd787f`): bağlantı-geri-geldi tetikleyicisi 18:00 kapısına uyuyor. Cihaz testi kısıtı §9'a yazıldı (e2e deep link build'lerinde kapı yok → TestFlight + 18:00 öncesi + elle uçak modu). §9'a R-D kalemi: `daily_gauntlets` 1–25 Eyl arası 0 satır, global cron 31 Ağu'dan beri sessiz. Doğrulama: `typecheck` 14/14, `typecheck:functions` 32/32 baseline. |
