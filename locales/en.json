@@ -553,15 +553,15 @@
     "watchlistSummaryCount": "Watchlist (%{count} films)",
     "watchlistSummaryEmpty": "Watchlist",
     "savedSection": "Saved",
-    "proSection": "Pro",
-    "chosyPro": "Chosy Pro",
+    "proSection": "Membership",
+    "chosyPro": "Chosy Plus",
     "chosyProSubtitle": "Replay missed days · see how your taste evolves",
     "proMode": "Pro Mode",
     "proModeSubtitle": "Describe a mood, get a matching film"
   },
   "proMode": {
     "title": "Pro Mode",
-    "lockedTitle": "Pro Mode is part of Chosy Pro",
+    "lockedTitle": "Pro Mode is part of Chosy Plus",
     "lockedBody": "Describe how you feel and get a film matched to your mood — beyond tonight's four.",
     "errorTitle": "We couldn't check your access",
     "errorBody": "The connection dropped before we could confirm your plan. Try again in a moment."
@@ -846,7 +846,7 @@
     "emptyTitle": "No results found",
     "emptySubtitle": "Try adjusting your filters or describing a different mood",
     "quotaTitle": "Daily limit reached",
-    "quotaSubtitle": "Upgrade to Pro for more searches",
+    "quotaSubtitle": "Upgrade to Chosy Plus for more searches",
     "unknownTitle": "This couldn't load",
     "unknownSubtitle": "Try again.",
     "boundaryTitle": "The app stopped unexpectedly",

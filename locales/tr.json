@@ -553,15 +553,15 @@
     "watchlistSummaryCount": "Izleme Listesi (%{count} film)",
     "watchlistSummaryEmpty": "Izleme Listesi",
     "savedSection": "Kaydedilenler",
-    "proSection": "Pro",
-    "chosyPro": "Chosy Pro",
+    "proSection": "Üyelik",
+    "chosyPro": "Chosy Plus",
     "chosyProSubtitle": "Kaçırdığın günleri oyna · zevkinin değişimini gör",
     "proMode": "Pro Mode",
     "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul"
   },
   "proMode": {
     "title": "Pro Mode",
-    "lockedTitle": "Pro Mode, Chosy Pro'nun parçası",
+    "lockedTitle": "Pro Mode, Chosy Plus'ın parçası",
     "lockedBody": "Nasıl hissettiğini anlat, mood'una uyan filmi bul — bu akşamın dört filminin ötesinde.",
     "errorTitle": "Erişimini kontrol edemedik",
     "errorBody": "Planını doğrulayamadan bağlantı koptu. Birazdan tekrar dene."
@@ -846,7 +846,7 @@
     "emptyTitle": "Sonuç bulunamadı",
     "emptySubtitle": "Filtrelerini ayarla veya farklı bir ruh hali dene",
     "quotaTitle": "Günlük limit doldu",
-    "quotaSubtitle": "Daha fazla arama için Pro'ya geç",
+    "quotaSubtitle": "Daha fazla arama için Chosy Plus'a geç",
     "unknownTitle": "Bu yüklenemedi",
     "unknownSubtitle": "Tekrar dene.",
     "boundaryTitle": "Uygulama beklenmedik şekilde durdu",
