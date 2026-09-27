@@ -128,6 +128,7 @@ E-09 bu altısını adıyla şart koşuyor; altısı da çekirdektedir.
 | `*_debug`, `llm_rerank_*`, `keyword_boost_active`, `reranker_condition_check`, `quality_gate_applied`, `insufficient_results` | ~10 | Teşhis event'i — ürün metriği değil, algoritma iç gözlemi. |
 | `feed_*` | 3 | Emekli swipe feed'i. |
 | `referral_*`, `app_share_*`, `archetype_share_*` | 6 | R-11: growth motorları v1 sonrası. |
+| `waiting_viewed` — 31 Ağu sayımından sonra eklendi (V-1 Tur 6, `GauntletShell` `before_18` girişi; alan: `minutes_to_unlock`) | 1 | §3.1'deki kaybedilen `before_18` sinyalini ayrı event olarak taşır; kapı şartı değil, 20/20 sözleşmesi değişmez. |
 | Diğer (`ota_update_*`, `context_opened`, `dna_viewed`, `pro_mode_*`, `quota_exhausted`, `champion_revealed`, `restore_completed`, `purchase_cancelled`, `entitlement_pending`, `identity_reset_detected`, `paywall_variant_skipped`, `save/watchlist` yardımcıları …) | ~22 | Faydalı ama kapı şartı değil. |
 
 **Kapı şartı olmamak, ölçülmemek demek değildir.** Özellikle
