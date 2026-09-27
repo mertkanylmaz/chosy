@@ -23,7 +23,7 @@ import {
 } from 'phosphor-react-native';
 import type { IconProps } from 'phosphor-react-native';
 
-import { MoodCardGradients } from '@/constants/Colors';
+import { Colors, MoodCardGradients } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 
@@ -169,7 +169,8 @@ export default function MoodCardGrid({ activeMoodText, onSelect }: MoodCardGridP
               {/* Phosphor icon with glow */}
               <View style={styles.emojiContainer}>
                 <View style={[styles.emojiGlow, { backgroundColor: grad.glow }]} />
-                <card.Icon size={24} color="#E8A838" weight="duotone" />
+                {/* D11: renk değeri korunur — yalnız hardcoded hex semantik ada bağlandı. */}
+                <card.Icon size={24} color={Colors.accentPrimary} weight="duotone" />
               </View>
 
               {/* Title + Subtitle — bottom-left, never overlaps emoji top-right */}

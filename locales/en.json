@@ -61,6 +61,7 @@
     "eraLabel": "ERA",
     "qualityLabel": "IMDb RATING",
     "findMovies": "Find My Movie",
+    "findMoviesHint": "Pick a mood",
     "quickMoodsTitle": "Quick moods",
     "quickMoodsSubtitle": "Tap to fill, then hit Find Movies",
     "emptyHistoryTitle": "Your mood journey starts here",

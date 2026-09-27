@@ -61,6 +61,7 @@
     "eraLabel": "DÖNEM",
     "qualityLabel": "IMDb PUANI",
     "findMovies": "Filmimi Bul",
+    "findMoviesHint": "Bir ruh hali seç",
     "quickMoodsTitle": "Hızlı mood seçenekleri",
     "quickMoodsSubtitle": "Dokun ve dolsun, sonra Film Bul'a bas",
     "emptyHistoryTitle": "Mood yolculuğun burada başlıyor",

@@ -50,8 +50,6 @@ import Animated, {
   withSequence,
   withTiming,
   withSpring,
-  withRepeat,
-  Easing,
 } from 'react-native-reanimated';
 
 import { StatusBar } from 'expo-status-bar';
@@ -68,10 +66,12 @@ import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import MoodCardGrid from '@/components/Home/MoodCardGrid';
 import FilterBottomSheet from '@/components/Home/FilterBottomSheet';
 import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 // DISCOVER_GAMES import removed — games section only in Discover tab
 import { useScalePress } from '@/hooks/useScalePress';
-import { hapticLight, hapticMedium, hapticSelection } from '@/utils/haptics';
+import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -104,6 +104,12 @@ type RatingChipId = '7' | '8' | 'top250' | '';
 
 /** Minimum AI processing gosterme suresi (ms) */
 const MIN_PROCESSING_MS = 1500;
+
+/**
+ * CTA'daki "N left today" yalnız kalan hak bu sayı ve altındayken görünür
+ * (V-1 Tur 7). Görünürlük eşiği — kota değeri/tüketimi DEĞİL.
+ */
+const QUOTA_HINT_MAX = 10;
 
 // ─── Filter chip type aliases (used by FilterBottomSheet + handleFindMovies) ─
 
@@ -190,23 +196,8 @@ export default function MoodSearchScreen() {
     transform: [{ scale: findBtnScale.value }],
   }));
 
-  /**
-   * Surekli donen shimmer efekti — butonun uzerinde yavasca kayip gider.
-   * canSubmit false iken durdurulur (opacity 0).
-   */
-  const shimmerPos = useSharedValue(-200);
-  useEffect(() => {
-    shimmerPos.value = withRepeat(
-      withTiming(400, { duration: 2000, easing: Easing.linear }),
-      -1,
-      false,
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const shimmerStyle = useAnimatedStyle(() => ({
-    // skewX + translateX birlikte — static transform override problemini onler
-    transform: [{ skewX: '-20deg' }, { translateX: shimmerPos.value }],
-  }));
+  // CTA shimmer'ı V-1 Tur 7'de kaldırıldı — DESIGN_OS §7.4 "parıltı/shimmer
+  // yasak" (CTO onaylı).
 
   /**
    * "Find Movies" → kota kontrolu → AI processing → profile result
@@ -219,7 +210,8 @@ export default function MoodSearchScreen() {
     const trimmed = moodText.trim();
     if (!trimmed || phase === 'processing') return;
 
-    hapticMedium();
+    // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
+    hapticLight();
     Keyboard.dismiss();
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
@@ -564,20 +556,25 @@ export default function MoodSearchScreen() {
                 <Ionicons
                   name="sparkles"
                   size={18}
-                  color={canSubmit ? Colors.textOnAccent : 'rgba(255,255,255,0.4)'}
+                  color={canSubmit ? color.surface.base : withAlpha(color.text.primary, 0.7)}
                 />
                 <View style={styles.findButtonContent}>
-                  <Text style={styles.findButtonText}>{t('mood.findMovies')}</Text>
-                  {/* 117: limit -1 = sinirsiz (ucretli tierlar) — kalan hak metni hic gosterilmez. */}
-                  {fullQuota && !subLoading && fullQuota.searches.limit !== -1 && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (
+                  <Text style={[styles.findButtonText, !canSubmit && styles.findButtonTextDisabled]}>
+                    {t('mood.findMovies')}
+                  </Text>
+                  {/* İkinci satır tek yuva (V-1 Tur 7): disabled → yardımcı metin,
+                      enabled → kalan hak. */}
+                  {!canSubmit && (
+                    <Text style={styles.findButtonHint}>{t('mood.findMoviesHint')}</Text>
+                  )}
+                  {/* 117: limit -1 = sinirsiz (ucretli tierlar) — kalan hak metni hic gosterilmez.
+                      V-1 Tur 7: yalnız kalan ≤ QUOTA_HINT_MAX iken; kota mantığı aynı. */}
+                  {canSubmit && fullQuota && !subLoading && fullQuota.searches.limit !== -1 && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (fullQuota.searches.limit - fullQuota.searches.used) <= QUOTA_HINT_MAX && (
                     <Text style={styles.findButtonQuota}>
                       {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
                     </Text>
                   )}
                 </View>
-                {canSubmit && (
-                  <Animated.View style={[styles.findButtonShimmer, shimmerStyle]} pointerEvents="none" />
-                )}
               </TouchableOpacity>
             </Animated.View>
           </View>
@@ -766,48 +763,48 @@ const styles = StyleSheet.create({
 
   // ─── Find Movies butonu ─────────────────────────────────────────────────────
 
+  // V-1 Tur 7: enabled `bone` dolgu + `ink` metin, disabled `graphite` zemin.
+  // Gradient, `marquee`, accentPrimary glow ve shimmer YOK (DESIGN_OS §7.4).
   findButton: {
-    backgroundColor: Colors.accentPrimary,
+    backgroundColor: color.text.primary,
     height: 56,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 8,
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.55,
-    shadowRadius: 12,
-    elevation: 8,
     overflow: 'hidden',
   },
   findButtonDisabled: {
-    backgroundColor: 'rgba(234,219,198,0.3)',
-    shadowOpacity: 0,
-    elevation: 0,
+    backgroundColor: color.surface.border,
   },
   findButtonText: {
-    color: Colors.textOnAccent,
+    color: color.surface.base,
     fontSize: Theme.typography.h3.fontSize,
     fontWeight: '800',
     letterSpacing: 0.3,
+  },
+  /** graphite üzerinde bone@70% — 7.0:1 */
+  findButtonTextDisabled: {
+    color: withAlpha(color.text.primary, 0.7),
   },
   findButtonContent: {
     alignItems: 'center',
     gap: 1,
   },
+  /** bone üzerinde ink@70% — 7.1:1 (önce beyaz@55% / accentPrimary 1.5:1) */
   findButtonQuota: {
-    color: 'rgba(255,255,255,0.55)',
+    color: withAlpha(color.surface.base, 0.7),
     fontSize: Theme.typography.micro.fontSize,
     fontWeight: '500',
     letterSpacing: 0.2,
   },
-  findButtonShimmer: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    width: 60,
-    backgroundColor: 'rgba(255,255,255,0.12)',
+  /** 11pt — §2.7: smoke değil bone@70% (graphite üzerinde 7.0:1) */
+  findButtonHint: {
+    color: withAlpha(color.text.primary, 0.7),
+    fontSize: Theme.typography.micro.fontSize,
+    fontWeight: '500',
+    letterSpacing: 0.2,
   },
 
   // (Quick Moods grid moved to MoodCardGrid component)
