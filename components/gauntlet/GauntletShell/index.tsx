@@ -159,6 +159,26 @@ function orderPair(a: GauntletFilm, b: GauntletFilm): [GauntletFilm, GauntletFil
 
 type ShellState = 'before_18' | 'bootstrapping' | 'ready' | 'in_progress' | 'completed_today';
 
+/**
+ * Durum geçişini tetikleyen kaynak — YALNIZ saha teşhisi için
+ * (`gauntlet.state` breadcrumb'ı). Hiçbir dal bu değere göre karar vermez.
+ *   mount / auth / connectivity / pulse → açılış ve yeniden yükleme kaynakları
+ *   retry        → 401 backoff'unun otomatik denemesi
+ *   retry_button → kullanıcının "Tekrar dene"si
+ *   submit401    → oyun ortasında 401, bootstrap'a dönüş
+ *   choice / refresh → oyun eylemi sonucu (tur, şampiyon, tükeniş)
+ */
+type StateTrigger =
+  | 'mount'
+  | 'auth'
+  | 'connectivity'
+  | 'pulse'
+  | 'retry'
+  | 'retry_button'
+  | 'submit401'
+  | 'choice'
+  | 'refresh';
+
 interface Pair {
   left: GauntletFilm;
   right: GauntletFilm;
@@ -272,6 +292,56 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
    *  çağrılabilir, olay burada yinelenmemeli. */
   const startedTrackedGauntletIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * B5: breadcrumb'ın "önceki durum"u. `shellStateRef`'ten AYRI tutulur —
+   * o ref render'da güncellenir ve tetikleyici guard'ları ona bakar; burada
+   * erken güncellemek guard davranışını değiştirirdi.
+   */
+  const recordedStateRef = useRef<ShellState | null>(null);
+
+  /**
+   * B5 saha teşhisi: her ShellState geçişi bir `gauntlet.state` breadcrumb'ı
+   * bırakır (yalnız breadcrumb — captureMessage yok, kota maliyeti sıfır).
+   * Aynı duruma "geçiş" de yazılır: yeniden yüklemenin görünmez tekrarı
+   * (ör. ready → ready) çırpınma teşhisinde tam aranan izdir.
+   */
+  const transitionTo = useCallback((next: ShellState, trigger: StateTrigger) => {
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.state',
+      message: `${recordedStateRef.current ?? 'none'} -> ${next}`,
+      level: 'info',
+      data: { from: recordedStateRef.current, to: next, trigger },
+    });
+    recordedStateRef.current = next;
+    setShellState(next);
+  }, []);
+
+  /**
+   * B5: `loadError` ShellState değil, üstüne binen bir gösterge — geçiş
+   * breadcrumb'ı onu görmez. "Gauntlet yok dedi" teşhisi için hata metni ve
+   * tipiyle ayrıca yazılır. `state` alanı önemli: metin YALNIZ `bootstrapping`
+   * dalında render edilir, başka durumda set edilmesi ekranda görünmez.
+   */
+  const showLoadError = useCallback(
+    (trigger: StateTrigger, reason: string, err?: unknown) => {
+      const text = t('gauntlet.loadError');
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.state',
+        message: `loadError (${reason})`,
+        level: 'warning',
+        data: {
+          state: recordedStateRef.current,
+          trigger,
+          reason,
+          text,
+          error_type: err instanceof Error ? err.name : null,
+          error_message: err instanceof Error ? err.message.slice(0, 200) : null,
+        },
+      });
+      setLoadError(text);
+    },
+    [t],
+  );
 
   // ── PostHog: gauntlet_viewed — ekran her mount olduğunda bir kez ──────────
   useEffect(() => {
@@ -289,16 +359,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   // ── Yanıt yorumlama ────────────────────────────────────────────────────────
 
-  const toExhausted = useCallback(() => {
+  const toExhausted = useCallback((trigger: StateTrigger) => {
     setChampion(null);
     setPair(null);
     setSeenMode(false);
     completedDateKeyRef.current = localDateKey();
-    setShellState('completed_today');
-  }, []);
+    transitionTo('completed_today', trigger);
+  }, [transitionTo]);
 
   const applyGauntlet = useCallback(
-    (g: DailyGauntlet) => {
+    (g: DailyGauntlet, trigger: StateTrigger) => {
       setGauntlet(g);
       setRefreshesRemaining(g.refreshesRemaining);
       setActionError(null);
@@ -319,18 +389,18 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             new Error('GauntletShell: progress.status=champion ama champion boş'),
             { tags: { component: 'GauntletShell' } },
           );
-          setLoadError(t('gauntlet.loadError'));
+          showLoadError(trigger, 'invariant_champion_missing');
           return;
         }
         setChampion(p.champion);
         setAnimateReveal(false); // resume: kara boşluk yalnız canlı finalde
         completedDateKeyRef.current = localDateKey();
-        setShellState('completed_today');
+        transitionTo('completed_today', trigger);
         return;
       }
 
       if (p && p.status === 'exhausted') {
-        toExhausted();
+        toExhausted(trigger);
         return;
       }
 
@@ -339,7 +409,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           new Error('GauntletShell: in_progress ama defender/challenger boş'),
           { tags: { component: 'GauntletShell' } },
         );
-        setLoadError(t('gauntlet.loadError'));
+        showLoadError(trigger, 'invariant_pair_missing');
         return;
       }
 
@@ -349,7 +419,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setPair({ left: p.defender as GauntletFilm, right: p.challenger as GauntletFilm });
         setDefenderFilm(p.defender as GauntletFilm); // sızma rengi (§5)
         setTileStates({ left: 'idle', right: 'idle' });
-        setShellState('in_progress');
+        transitionTo('in_progress', trigger);
         return;
       }
 
@@ -363,7 +433,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       // Tur 1'de defender backend'in dIdx=0 konvansiyonudur (§5 sızma rengi).
       setDefenderFilm(p?.defender ?? g.films[0]);
       setTileStates({ left: 'idle', right: 'idle' });
-      setShellState('ready');
+      transitionTo('ready', trigger);
 
       if (!startedTrackedGauntletIdsRef.current.has(g.gauntletId)) {
         startedTrackedGauntletIdsRef.current.add(g.gauntletId);
@@ -376,13 +446,23 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         });
       }
     },
-    [t, toExhausted],
+    [toExhausted, transitionTo, showLoadError],
   );
 
   // ── Yükleme + 401 retry (CTO 🔴2) ──────────────────────────────────────────
 
-  const load = useCallback(async (): Promise<void> => {
-    if (loadingRef.current) return;
+  const load = useCallback(async (trigger: StateTrigger): Promise<void> => {
+    if (loadingRef.current) {
+      // B5: çift tetikleme teorisinin saha doğrulaması — uçuştaki bir
+      // yükleme varken gelen ikinci çağrı burada düşer, iz bırakır.
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.state',
+        message: 'load dropped (in flight)',
+        level: 'info',
+        data: { state: recordedStateRef.current, trigger },
+      });
+      return;
+    }
     loadingRef.current = true;
     setLoadError(null);
     try {
@@ -395,7 +475,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       // `cache_today` gösterge ÜRETMEZ: yerel kopya ama bugünün verisi,
       // kullanıcı için fark yok — görsel gürültü eklemek yanlış olurdu.
       setIsStale(source === 'cache_stale');
-      applyGauntlet(g);
+      applyGauntlet(g, trigger);
     } catch (err) {
       if (!mountedRef.current) return;
       if (err instanceof GauntletAuthPendingError) {
@@ -407,20 +487,20 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
           Sentry.captureException(err, {
             tags: { component: 'GauntletShell', error_code: 'GAUNTLET_AUTH_EXHAUSTED' },
           });
-          setLoadError(t('gauntlet.loadError'));
+          showLoadError(trigger, 'auth_exhausted', err);
         } else {
           retryTimerRef.current = setTimeout(() => {
-            void load();
+            void load('retry');
           }, AUTH_RETRY_BACKOFF_MS[attempt - 1]);
         }
       } else {
         // Sentry servis katmanında yazıldı — burada görünür hata (§15.2).
-        setLoadError(t('gauntlet.loadError'));
+        showLoadError(trigger, 'fetch_failed', err);
       }
     } finally {
       loadingRef.current = false;
     }
-  }, [applyGauntlet, t]);
+  }, [applyGauntlet, showLoadError]);
 
   /**
    * K-42: bekleyen seçim varsa ÖNCE onu gönder, sonra yükle.
@@ -433,7 +513,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * `still_offline`'da da yükleme denenir: bağlantı yoksa cache geri düşüşü
    * devreye girer ve kullanıcı boş ekran yerine donmuş turu görür.
    */
-  const flushThenLoad = useCallback(async (): Promise<void> => {
+  const flushThenLoad = useCallback(async (trigger: StateTrigger): Promise<void> => {
     const outcome = await flushPendingChoice();
     if (!mountedRef.current) return;
 
@@ -455,20 +535,29 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         break;
     }
 
-    await load();
+    await load(trigger);
   }, [load, t]);
 
   const retryLoad = useCallback(() => {
     authAttemptsRef.current = 0;
-    void flushThenLoad();
+    void flushThenLoad('retry_button');
   }, [flushThenLoad]);
 
   // Mount: yalnız kapı açıksa çağır — before_18'de AĞ ÇAĞRISI YOK (§3.6).
   useEffect(() => {
     mountedRef.current = true;
+    // B5: başlangıç durumu useState'ten gelir, setter'dan geçmez — ilk
+    // breadcrumb burada elle yazılır ki zincir "none -> …" ile başlasın.
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.state',
+      message: `none -> ${shellStateRef.current}`,
+      level: 'info',
+      data: { from: null, to: shellStateRef.current, trigger: 'mount' },
+    });
+    recordedStateRef.current = shellStateRef.current;
     if (shellStateRef.current === 'bootstrapping') {
       // K-42 tetikleyici (a): açılışta bekleyen seçim varsa önce o gider.
-      void flushThenLoad();
+      void flushThenLoad('mount');
     }
     return () => {
       mountedRef.current = false;
@@ -489,7 +578,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         authAttemptsRef.current = 0;
         if (shellStateRef.current === 'bootstrapping') {
           if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
-          void flushThenLoad();
+          void flushThenLoad('auth');
         }
       }
     });
@@ -505,7 +594,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       // yalnız dakikalık nabız açar. `=== 'bootstrapping'` değil: in_progress
       // sırasında bekleyen seçimin flush'ı (K-42) korunmalı.
       if (shellStateRef.current === 'before_18') return;
-      void flushThenLoad();
+      void flushThenLoad('connectivity');
     });
   }, [flushThenLoad]);
 
@@ -513,9 +602,9 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
   useEffect(() => {
     const id = setInterval(() => {
       if (shellStateRef.current === 'before_18' && isUnlockedNow()) {
-        setShellState('bootstrapping');
+        transitionTo('bootstrapping', 'pulse');
         authAttemptsRef.current = 0;
-        void load();
+        void load('pulse');
         return;
       }
       if (
@@ -530,16 +619,16 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setPair(null);
         setAnimateReveal(false);
         if (isUnlockedNow()) {
-          setShellState('bootstrapping');
+          transitionTo('bootstrapping', 'pulse');
           authAttemptsRef.current = 0;
-          void load();
+          void load('pulse');
         } else {
-          setShellState('before_18');
+          transitionTo('before_18', 'pulse');
         }
       }
     }, CLOCK_TICK_MS);
     return () => clearInterval(id);
-  }, [load]);
+  }, [load, transitionTo]);
 
   // ── Oyun eylemleri ─────────────────────────────────────────────────────────
 
@@ -554,8 +643,8 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         if (err instanceof GauntletAuthPendingError) {
           // Oyun ortasında 401: oturum düştü — bootstrap penceresine dön.
           authAttemptsRef.current = 0;
-          setShellState('bootstrapping');
-          void load();
+          transitionTo('bootstrapping', 'submit401');
+          void load('submit401');
         } else if (err instanceof GauntletFetchError) {
           // K-42: sunucuya ulaşılamadı. Seçim ARTIK KAYBOLMUYOR — kuyruğa
           // alınır ve ekran donar. Tur İLERLEMEZ: çağıran `null` görüp erken
@@ -573,7 +662,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         if (mountedRef.current) setSubmitting(false);
       }
     },
-    [load, t],
+    [load, t, transitionTo],
   );
 
   /** `neither`/`seen` yanıtı: replacement varsa çift güncellenir —
@@ -582,7 +671,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
     (result: ChoiceResult, oldPair: Pair) => {
       setRefreshesRemaining(result.refreshesRemaining);
       if (result.next === 'exhausted') {
-        toExhausted();
+        toExhausted('refresh');
         return;
       }
       const replacement = result.replacement;
@@ -709,7 +798,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             right: right.id === incoming.id ? 'entering' : 'idle',
           });
           setSeenMode(false);
-          setShellState('in_progress');
+          transitionTo('in_progress', 'choice');
           setTransitioning(false);
           void hapticMedium(); // tur geçişi (§8) — geçişin kendisi Kesme (§7.1)
         }, delay);
@@ -741,7 +830,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setChampion(result.champion);
         setAnimateReveal(true); // canlı final: 720ms kara boşluk (§7.3)
         completedDateKeyRef.current = localDateKey();
-        setShellState('completed_today');
+        transitionTo('completed_today', 'choice');
         posthogAnalytics.track('gauntlet_completed', {
           gauntlet_id: result.gauntletId,
           algorithm_version: result.algorithmVersion,
@@ -776,7 +865,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       }
 
       if (result.next === 'exhausted') {
-        toExhausted();
+        toExhausted('choice');
         return;
       }
 
@@ -787,7 +876,7 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       );
       setActionError(t('gauntlet.submitError'));
     },
-    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted, region],
+    [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted, region, transitionTo],
   );
 
   /** Seviye 1 ret — TEK buton, her rette AYNI davranış (§3.3, C.3'e kadar). */

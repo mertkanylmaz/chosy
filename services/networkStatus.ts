@@ -46,6 +46,7 @@
 import { useEffect, useState } from 'react';
 
 import NetInfo, { type NetInfoState } from '@react-native-community/netinfo';
+import * as Sentry from '@sentry/react-native';
 import * as Linking from 'expo-linking';
 
 import { logger } from '@/utils/logger';
@@ -127,6 +128,16 @@ function applyOnlineState(next: boolean): void {
   if (next === previous) return;
 
   logger.log('[networkStatus] Bağlantı durumu değişti:', next ? 'online' : 'offline');
+  // B5 saha teşhisi: `logger.log` prod'da iz bırakmıyor. Yalnız breadcrumb —
+  // captureMessage yok, kota maliyeti sıfır. `reconnect` alanı, bu geçişin
+  // `subscribeToReconnect` dinleyicilerini (GauntletShell flush'ı) ateşleyip
+  // ateşlemediğini söyler.
+  Sentry.addBreadcrumb({
+    category: 'network.status',
+    message: `${previous ? 'online' : 'offline'} -> ${next ? 'online' : 'offline'}`,
+    level: 'info',
+    data: { online: next, reconnect: next && !previous, forced_offline: forcedOffline },
+  });
 
   for (const listener of statusListeners) {
     listener(next);
