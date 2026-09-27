@@ -20,7 +20,8 @@ export const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     color: Colors.textWhite,
     textAlign: 'center',
     marginTop: 20,

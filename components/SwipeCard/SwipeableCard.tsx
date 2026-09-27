@@ -43,6 +43,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 import { Film } from '@/types/film';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { localizeGenre } from '@/utils/filmFilters';
 
@@ -602,7 +603,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 28,
     color: Colors.textWhite,
     lineHeight: 34,
@@ -626,7 +628,9 @@ const styles = StyleSheet.create({
   matchPercent: {
     color: Colors.textWhite,
     fontSize: 16,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.typography.rating.fontFamily,
+    fontWeight: Theme.typography.rating.fontWeight,
+    fontVariant: Theme.typography.rating.fontVariant,
     letterSpacing: -0.3,
   },
   matchLabel: {

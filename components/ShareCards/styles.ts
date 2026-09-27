@@ -63,6 +63,7 @@ export const styles = StyleSheet.create({
   },
   filmTitle: {
     fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 20,
     color: Colors.textPrimary,
     textAlign: 'center',
@@ -87,6 +88,7 @@ export const styles = StyleSheet.create({
   },
   quoteOpen: {
     fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 24,
     color: Colors.gold,
   },
@@ -101,6 +103,7 @@ export const styles = StyleSheet.create({
   },
   quoteClose: {
     fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 24,
     color: Colors.gold,
     alignSelf: 'flex-end',
@@ -178,12 +181,14 @@ export const styles = StyleSheet.create({
   /** MoodShareCard tirnak isaretleri — spec: 32px (FilmShareCard'dan buyuk) */
   moodQuoteOpen: {
     fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 32,
     color: Colors.gold,
   },
   /** MoodShareCard kapanıs tirnagi */
   moodQuoteClose: {
     fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 32,
     color: Colors.gold,
     alignSelf: 'flex-end',

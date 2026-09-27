@@ -51,7 +51,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { AVATAR_GLYPHS, AVATAR_IDS, isAvatarId, type AvatarId } from '@/constants/avatarGlyphs';
-import { color } from '@/constants/design/semantic';
+import { color, type } from '@/constants/design/semantic';
 import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
@@ -1683,7 +1683,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.h2.fontSize,
     lineHeight: Theme.typography.h2.lineHeight,
     fontFamily: Typography.displayFont,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.3,
   },
   /** Profil adi + kalem ikonu yan yana */
@@ -1835,13 +1835,14 @@ const styles = StyleSheet.create({
     height: 72,
     marginBottom: 4,
   },
+  /**
+   * DNA arketip adı — §3.4'ün üç marka anından biri: Archivo Expanded
+   * `display-l` (V-1 Tur 7 CTO kararı). Ağırlık aile adında; `fontWeight`
+   * verilmez (statik kesitte iOS sistem fontuna düşürür).
+   */
   archetypeHeroName: {
+    ...type['display-l'],
     color: Colors.textWhite,
-    fontSize: 28,
-    lineHeight: 34,
-    fontFamily: Typography.displayFont,
-    fontWeight: '700',
-    letterSpacing: 0.3,
     textAlign: 'center',
   },
   archetypeHeroTagline: {
@@ -1993,6 +1994,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.h2.fontSize,
     lineHeight: Theme.typography.h2.lineHeight,
     fontFamily: Typography.displayFont,
+    fontWeight: '600',
     letterSpacing: 0.3,
   },
 
@@ -2073,6 +2075,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.h3.fontSize,
     lineHeight: Theme.typography.h3.lineHeight,
     fontFamily: Typography.displayFont,
+    fontWeight: '600',
     textAlign: 'center',
     marginBottom: Spacing.md,
   },
@@ -2397,6 +2400,7 @@ const settingsModalStyles = StyleSheet.create({
     color: Colors.textWhite,
     fontSize: 16,
     fontFamily: Typography.displayFont,
+    fontWeight: '600',
     letterSpacing: 0.2,
   },
   row: {

@@ -8,7 +8,7 @@
  *   - Action row: WATCH NOW + WATCHED pill butonlari
  *   - Info card (bottom sheet, karanlik, top-radius 30):
  *       Meta row (runtime • year • country) + rating pill
- *       Buyuk uppercase baslik (PlayfairDisplay_900Black)
+ *       Buyuk uppercase baslik (Theme.fonts.display — SF Pro Display 600)
  *       Genre chip'leri (yatay scroll)
  *       "Why this film?" AI karti (varsa)
  *       WATCH ON section (provider ikonlari + JustWatch atfi)
@@ -61,6 +61,7 @@ import {
 } from '@/services/tmdb';
 import { localizeGenre } from '@/utils/filmFilters';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { FilmShareCard, useShareCapture } from '@/components/ShareCards';
 import { hapticMedium } from '@/utils/haptics';
@@ -1316,14 +1317,17 @@ const styles = StyleSheet.create({
   },
   ratingValue: {
     fontSize: 13,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.typography.rating.fontFamily,
+    fontWeight: Theme.typography.rating.fontWeight,
+    fontVariant: Theme.typography.rating.fontVariant,
     color: Colors.gold,
   },
 
   // ── Film baslik ───────────────────────────────────────────────────────────────
   filmTitle: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_900Black',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     color: Colors.textWhite,
     letterSpacing: -0.3,
     lineHeight: 36,

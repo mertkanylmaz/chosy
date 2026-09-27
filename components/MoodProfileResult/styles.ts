@@ -57,7 +57,8 @@ export default StyleSheet.create({
   // ─── Title ──────────────────────────────────────────────────────────────────
   title: {
     fontSize: Theme.typography.display.fontSize - 6,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     color: Colors.textWhite,
     marginTop: 4,
     lineHeight: 32,
@@ -142,7 +143,8 @@ export default StyleSheet.create({
   cardValue: {
     fontSize: Theme.typography.h2.fontSize - 2,
     color: Colors.textWhite,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     lineHeight: 26,
     marginBottom: 4,
   },
@@ -206,7 +208,7 @@ export default StyleSheet.create({
   browseBtnText: {
     color: Colors.background,
     fontSize: Theme.typography.h3.fontSize,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.inter,
     fontWeight: '700',
     letterSpacing: 0.3,
   },

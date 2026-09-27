@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 export default StyleSheet.create({
   /** Tam ekran overlay — position absolute, koyu lacivert */
@@ -100,7 +101,8 @@ export default StyleSheet.create({
 
   /** "AI Processing" başlığı */
   title: {
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 22,
     color: Colors.textWhite,
     marginBottom: 12,

@@ -98,9 +98,9 @@ export default StyleSheet.create({
   heroTitle: {
     color: Colors.textWhite,
     fontSize: 18,
-    fontWeight: '700',
     marginBottom: 4,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
   },
   heroYear: {
     color: Colors.textSecondary,

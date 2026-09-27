@@ -7,7 +7,8 @@ import { Colors } from './Colors';
  *
  * Migration v3 — 2026-06-23
  * - Spacing: aligned with DESIGN_SYSTEM.md (md:16, lg:24, xl:32)
- * - Typography: Inter is workhorse, PlayfairDisplay ONLY for display + rating
+ * - Typography: Inter (= SF Pro) is workhorse
+ *   (V-1 Tur 7: serif emekli, DESIGN_OS §3.2 — display, serif* ve rating artık SF Pro)
  * - Shadows: amber glow replaces cream glow
  * - All deprecated exports preserved for backward compat
  */
@@ -25,9 +26,19 @@ const FONT_INTER = Platform.select({
   android: 'sans-serif', // Roboto
   default: undefined,
 });
-const FONT_DISPLAY = 'PlayfairDisplay_700Bold';
-const FONT_DISPLAY_BLACK = 'PlayfairDisplay_900Black';
-const FONT_DISPLAY_ITALIC = 'PlayfairDisplay_400Regular_Italic';
+/**
+ * Başlık ailesi — DESIGN_OS §3.3 `title` rolü: SF Pro Display 600.
+ *
+ * V-1 Tur 7 (D10): eski serif display ailesi emekli (§3.2). Bu token'ların
+ * her tüketicisi bir ekran/kart/oyun başlığıdır, hiçbiri §3.4'ün üç "marka anı"ndan biri
+ * değildir — o yüzden Archivo Expanded DEĞİL, SF Pro. Marka anları
+ * `constants/design/semantic.ts` `type['display-*']`'a doğrudan bağlanır.
+ *
+ * iOS'ta `System` aile adı ≥20pt'de Display optik kesitini kendisi seçer;
+ * ağırlık aile adında değil `fontWeight`'te taşınır — bu token'ı kullanan
+ * her stil `fontWeight` vermelidir, yoksa 400'e düşer.
+ */
+const FONT_DISPLAY = FONT_INTER;
 
 export const Theme = {
   // ─── Spacing (synced with DESIGN_SYSTEM.md) ─────────────────────────────
@@ -72,14 +83,14 @@ export const Theme = {
     Math.max(0, outer - padding),
 
   // ─── Typography ─────────────────────────────────────────────────────────
-  // Rule (v3 — Festival Layer, 2026-07-29):
-  //   System font (SF Pro) is still the workhorse for anything the user ACTS on:
-  //   buttons, labels, inputs, counters, meta. PlayfairDisplay is the voice of
-  //   AUTHORITY — the "published" elements of a screen: film titles, case titles,
-  //   game names, theme names, logline/quote body, result moment.
-  //   Serif in a button, chip or form label is still forbidden.
+  // Rule (V-1 Tur 7, D10 — DESIGN_OS §3.2/§3.3):
+  //   Serif emekli (§3.2). Eski "serif = otorite" katmanının token'ları (display,
+  //   serifTitle, serifHero, serifQuote, rating) adlarını korur — donmuş oyunlar
+  //   bu adlarla okuyor — ama değerleri SF Pro'dur: başlıklar `title` rolü
+  //   (600), alıntı gövdesi 400 italik, puan 600 tabular. `serif*` adları
+  //   tarihseldir, yeni kodda kullanılmaz; yeni ekran semantic.ts `type`'ı okur.
   //
-  //   Ekran anatomisi: eyebrow → serif başlık → kahraman görsel → aksiyon → meta
+  //   Ekran anatomisi: eyebrow → başlık → kahraman görsel → aksiyon → meta
   //   Ayrıntı: DESIGN_SYSTEM.md › "Festival Layer — Games"
   //
   // Type Scale (v2 — 2026-06-23):
@@ -90,12 +101,12 @@ export const Theme = {
   //   caption  13/18  — meta info, year, director
   //   micro    11/14  — badges, chips, tags
   typography: {
-    /** Hero text, archetype reveal — PlayfairDisplay Bold 32 */
+    /** Hero text — SF Pro Display 600, 32 (§3.3 title rolü) */
     display: {
       fontSize: 32,
       lineHeight: 38,
       fontFamily: FONT_DISPLAY,
-      fontWeight: '700' as const,
+      fontWeight: '600' as const,
       letterSpacing: -0.5,
       color: Colors.textPrimary,
     },
@@ -177,30 +188,31 @@ export const Theme = {
       textTransform: 'uppercase' as const,
       color: Colors.textTertiary,
     },
-    /** Oyun adı, dava başlığı — PlayfairDisplay Bold 26 */
+    /** Oyun adı, dava başlığı — SF Pro Display 600, 26 (ad tarihsel, serif DEĞİL) */
     serifTitle: {
       fontSize: 26,
       lineHeight: 32,
       fontFamily: FONT_DISPLAY,
-      fontWeight: '700' as const,
+      fontWeight: '600' as const,
       letterSpacing: -0.2,
       color: Colors.textPrimary,
     },
-    /** Tema adı, sonuç anı, film adı — PlayfairDisplay Black 34 */
+    /** Tema adı, sonuç anı, film adı — SF Pro Display 600, 34 (ad tarihsel) */
     serifHero: {
       fontSize: 34,
       lineHeight: 40,
-      fontFamily: FONT_DISPLAY_BLACK,
-      fontWeight: '900' as const,
+      fontFamily: FONT_DISPLAY,
+      fontWeight: '600' as const,
       letterSpacing: -0.4,
       color: Colors.textPrimary,
     },
-    /** Logline ve alıntı gövdesi — PlayfairDisplay Italic 22 */
+    /** Logline ve alıntı gövdesi — SF Pro 400 italik, 22 (ad tarihsel) */
     serifQuote: {
       fontSize: 22,
       lineHeight: 32,
-      fontFamily: FONT_DISPLAY_ITALIC,
+      fontFamily: FONT_DISPLAY,
       fontWeight: '400' as const,
+      fontStyle: 'italic' as const,
       color: Colors.textPrimary,
     },
     /** Skor, DNA, level sayıları — sistem fontu, tabular hizalama */
@@ -216,11 +228,12 @@ export const Theme = {
       color: Colors.textPrimary,
     },
 
-    /** Rating numbers — PlayfairDisplay Bold 16, gold */
+    /** Rating numbers — SF Pro 600 tabular, 16, gold (V-1 Tur 7 CTO kararı) */
     rating: {
       fontSize: 16,
-      fontFamily: FONT_DISPLAY,
-      fontWeight: '700' as const,
+      fontFamily: FONT_INTER,
+      fontWeight: '600' as const,
+      fontVariant: ['tabular-nums'] as NonNullable<TextStyle['fontVariant']>,
       color: Colors.gold,
     },
 
@@ -271,11 +284,15 @@ export const Theme = {
   },
 
   // ─── Font Family Exports ────────────────────────────────────────────────
+  // `displayBlack`/`displayItalic` eski serifin kesitleriydi; aile artık tek
+  // (SF Pro) — ağırlık `fontWeight`, italik `fontStyle` ile verilir.
   fonts: {
     inter: FONT_INTER,
     display: FONT_DISPLAY,
-    displayBlack: FONT_DISPLAY_BLACK,
-    displayItalic: FONT_DISPLAY_ITALIC,
+    /** @deprecated Eski serif Black kesitiydi — `display` + `fontWeight` kullanın */
+    displayBlack: FONT_DISPLAY,
+    /** @deprecated Eski serif Italic kesitiydi — `display` + `fontStyle: 'italic'` kullanın */
+    displayItalic: FONT_DISPLAY,
   },
 } as const;
 
@@ -330,6 +347,6 @@ export const Spacing = {
 /** @deprecated Use Theme.fonts */
 export const Typography = {
   displayFont: FONT_DISPLAY,
-  displayBoldFont: FONT_DISPLAY_BLACK,
+  displayBoldFont: FONT_DISPLAY,
   bodyFont: FONT_INTER,
 } as const;

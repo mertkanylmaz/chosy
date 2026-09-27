@@ -1400,7 +1400,8 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: 24,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     color: Colors.textWhite,
     textAlign: 'center',
   },
@@ -1421,7 +1422,9 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.typography.rating.fontFamily,
+    fontWeight: Theme.typography.rating.fontWeight,
+    fontVariant: Theme.typography.rating.fontVariant,
     color: Colors.gold,
   },
 

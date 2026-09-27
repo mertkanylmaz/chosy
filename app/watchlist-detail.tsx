@@ -43,6 +43,7 @@ import {
   WatchlistItem,
 } from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 import { isRouletteEnabled } from '@/services/gameApi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
@@ -799,7 +800,8 @@ const styles = StyleSheet.create({
   /* Baslik */
   title: {
     fontSize: 28,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     color: Colors.textWhite,
     letterSpacing: 0.3,
   },

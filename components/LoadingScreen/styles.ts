@@ -5,6 +5,7 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { Theme } from '@/constants/theme';
 
 /** Matte background — matches app background */
 const BG_MATTE = Colors.background;
@@ -51,9 +52,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  /** "chosy.ai" — premium serif */
+  /**
+   * "chosy.ai" kelime markası — SF Pro Display 600. §3.4'ün üç Archivo
+   * yerinden biri DEĞİL (V-1 Tur 7 CTO kararı).
+   */
   brandName: {
-    fontFamily: 'PlayfairDisplay_400Regular',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     fontSize: 36,
     color: Colors.textPrimary,
     letterSpacing: 1.5,

@@ -254,7 +254,8 @@ const styles = StyleSheet.create({
   filmTitle: {
     color: Colors.textWhite,
     fontSize: Theme.typography.h2.fontSize,
-    fontFamily: 'PlayfairDisplay_700Bold',
+    fontFamily: Theme.fonts.display,
+    fontWeight: '600',
     lineHeight: Theme.typography.h2.lineHeight,
     marginBottom: Theme.spacing.xs,
   },
