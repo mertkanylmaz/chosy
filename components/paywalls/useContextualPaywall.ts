@@ -54,7 +54,7 @@ interface UseContextualPaywallReturn {
 export function useContextualPaywall(
   onConvertCallback?: (plan: PlanId) => void,
 ): UseContextualPaywallReturn {
-  const { isInTrial, isPremium } = useSubscription();
+  const { isInTrial, premiumStatus } = useSubscription();
   const [state, setState] = useState<ContextualPaywallState>({
     visible: false,
     variant: null,
@@ -63,7 +63,9 @@ export function useContextualPaywall(
   /** Trigger event gonder */
   const triggerPaywall = useCallback(async (event: TriggerEvent): Promise<boolean> => {
     try {
-      const variant = await shouldShowPaywall(event, isInTrial, isPremium);
+      // `loading` premium sayilir: abonelik cozulmeden odeyen kullaniciya
+      // paywall acilmasin (V-1 Tur 1). Paywall bastirmak ozellik acmaz.
+      const variant = await shouldShowPaywall(event, isInTrial, premiumStatus !== 'free');
       if (variant) {
         setState({ visible: true, variant });
         return true;
@@ -73,7 +75,7 @@ export function useContextualPaywall(
       logger.warn('[contextual-paywall] Trigger hatasi:', err);
       return false;
     }
-  }, [isInTrial, isPremium]);
+  }, [isInTrial, premiumStatus]);
 
   /** Dismiss handler */
   const handleDismiss = useCallback(() => {
