@@ -1,13 +1,11 @@
 /**
- * Watch History servisi — Swipe geçmişi, istatistikler ve mood timeline.
+ * Watch History servisi — Swipe geçmişi ve mood timeline.
  *
  * Supabase RPC fonksiyonları üzerinden çalışır:
- *   - get_user_stats(p_user_id)       → genel istatistikler
  *   - get_swipe_history(...)          → sayfalanmış swipe geçmişi
  *   - get_mood_timeline(...)          → mood session geçmişi
  *
  * Kullanım:
- *   - Profile ekranında: getUserStats()
  *   - Watch History listesinde: getSwipeHistory({ page, direction })
  *   - Mood Timeline'da: getMoodTimeline()
  */
@@ -16,24 +14,6 @@ import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
-
-/** Kullanıcı genel istatistikleri */
-export interface UserStats {
-  totalSwipes: number;
-  rightSwipes: number;
-  leftSwipes: number;
-  /** Sağa kaydırma oranı, 0-100 arası */
-  saveRate: number;
-  totalWatchlist: number;
-  totalSessions: number;
-  firstSwipeAt: string | null;
-  /** Top 10 tür dağılımı: { "Drama": 15, "Thriller": 8 } */
-  topGenres: Record<string, number>;
-  currentStreak: number;
-  longestStreak: number;
-  totalActiveDays: number;
-  lastActiveDate: string | null;
-}
 
 /** Swipe geçmişindeki bir kayıt */
 export interface SwipeHistoryItem {
@@ -84,65 +64,6 @@ function toTmdbPosterUrl(path: string | null): string {
 }
 
 // ─── Ana Fonksiyonlar ────────────────────────────────────────────────────────
-
-/**
- * Kullanıcının genel istatistiklerini döner.
- * Profile ekranında ve DiscoveryStats componentinde kullanılır.
- */
-export async function getUserStats(): Promise<UserStats | null> {
-  try {
-    const userId = await getAppUserId();
-    if (!userId) return null;
-
-    const { data, error } = await supabase.rpc('get_user_stats', {
-      p_user_id: userId,
-    });
-
-    if (error) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('[history] getUserStats hatası:', error.message);
-      }
-      return null;
-    }
-
-    const raw = data as {
-      total_swipes: number;
-      right_swipes: number;
-      left_swipes: number;
-      save_rate: number;
-      total_watchlist: number;
-      total_sessions: number;
-      first_swipe_at: string | null;
-      top_genres: Record<string, number>;
-      current_streak: number;
-      longest_streak: number;
-      total_active_days: number;
-      last_active_date: string | null;
-    };
-
-    return {
-      totalSwipes: raw.total_swipes ?? 0,
-      rightSwipes: raw.right_swipes ?? 0,
-      leftSwipes: raw.left_swipes ?? 0,
-      saveRate: raw.save_rate ?? 0,
-      totalWatchlist: raw.total_watchlist ?? 0,
-      totalSessions: raw.total_sessions ?? 0,
-      firstSwipeAt: raw.first_swipe_at,
-      topGenres: raw.top_genres ?? {},
-      currentStreak: raw.current_streak ?? 0,
-      longestStreak: raw.longest_streak ?? 0,
-      totalActiveDays: raw.total_active_days ?? 0,
-      lastActiveDate: raw.last_active_date,
-    };
-  } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[history] getUserStats beklenmedik hata:', err);
-    }
-    return null;
-  }
-}
 
 /**
  * Sayfalanmış swipe geçmişini döner.

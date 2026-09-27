@@ -1,37 +1,9 @@
 /**
  * Profil ekranı tip tanımları.
- * user_stats view, mood_history view ve tonight_pick RPC için tipler.
+ * mood_history view ve tonight_pick RPC için tipler.
  */
 
 import { PacePreference } from './index';
-
-// ─── Kullanıcı İstatistikleri ─────────────────────────────────────────────────
-
-/** user_stats view'dan dönen kullanıcı istatistikleri */
-export interface UserStats {
-  /** Watchlist'teki toplam film sayısı */
-  saved_films: number;
-  /** Keşfedilen (görülen) toplam film sayısı */
-  total_discovered: number;
-  /** Toplam sağa swipe sayısı */
-  total_saved: number;
-  /** Toplam sola swipe sayısı */
-  total_skipped: number;
-  /** Toplam oturum (mood girişi) sayısı */
-  total_sessions: number;
-  /** En çok kaydedilen genre */
-  favorite_genre: string | null;
-  /** Top genre listesi */
-  top_genres: string[] | null;
-  /** Son mood metni */
-  last_mood: string | null;
-  /** Son profil JSON */
-  last_profile_json: unknown | null;
-  /** En uzun streak gün sayısı (gamification backend'den) */
-  longest_streak?: number;
-  /** Mevcut streak gün sayısı */
-  current_streak?: number;
-}
 
 // ─── Mood Geçmişi ─────────────────────────────────────────────────────────────
 

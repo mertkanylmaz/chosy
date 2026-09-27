@@ -1,5 +1,5 @@
 /**
- * Profil servisi — user_stats, mood_history, tonight_pick ve swipe içgörüleri.
+ * Profil servisi — mood_history, tonight_pick ve swipe içgörüleri.
  * Supabase view'ları ve RPC çağrılarını sarar.
  */
 
@@ -14,39 +14,8 @@ import type {
   SwipeInsight,
   TonightPick,
   TopDirector,
-  UserStats,
 } from '../types/profile';
 import { normalizeGenre } from '../utils/filmFilters';
-
-// ─── getUserStats ─────────────────────────────────────────────────────────────
-
-/**
- * user_stats view'dan kullanıcı istatistiklerini çeker.
- *
- * @param userId - users tablosundaki dahili UUID
- * @returns UserStats veya null (veri yoksa / hata durumunda)
- */
-export async function getUserStats(userId: string): Promise<UserStats | null> {
-  try {
-    const { data, error } = await supabase
-      .from('user_stats')
-      .select(
-        'saved_films, total_discovered, total_saved, total_skipped, total_sessions, favorite_genre, top_genres, last_mood, last_profile_json',
-      )
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (error) throw error;
-    if (!data) return null;
-
-    return data as UserStats;
-  } catch (err) {
-    if (__DEV__) {
-      console.error('[profileService] getUserStats hatası:', err);
-    }
-    return null;
-  }
-}
 
 // ─── getMoodHistory ────────────────────────────────────────────────────────────
 
