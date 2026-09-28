@@ -33,11 +33,13 @@ import { ContextBar } from '@/components/gauntlet/ContextBar';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
+import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
+import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
 import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import {
   BLACKOUT_SEQUENCE,
@@ -45,7 +47,7 @@ import {
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
-import { space } from '@/constants/design/semantic';
+import { radius, size, space, type } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
@@ -98,7 +100,7 @@ import {
   requestOptionsFor,
   type CycleMode,
 } from './cycleRules';
-import { headerGapFor, styles } from './styles';
+import { contentTopFor, headerGapFor, styles } from './styles';
 import { UNLOCK_HOUR, formatUnlockTime, nextUnlockAfter } from './unlockClock';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
@@ -1406,18 +1408,45 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     }
     // Graphite iskelet (§10.1: spinner yok) — 401 penceresinde hata metni
     // GÖSTERİLMEZ, kullanıcıya normal yükleniyor hissi verilir.
+    // V-3 Tur G1: iskelet ana dalın düzenini birebir izler — aynı `content`/
+    // `header`/`middle` kapları, aynı yükseklikler (pill, tur göstergesi,
+    // poster metin bloğu, soru, buton satırı). Veri gelince düzen kaymaz.
     return (
-        <View style={styles.skeletonContent}>
-          <SkeletonLoader width="40%" height={16} />
-          <View style={styles.posterRow}>
-            <View style={styles.skeletonPosterSlot}>
-              <SkeletonLoader width="100%" height={1} style={styles.skeletonPoster} />
+        <View style={[styles.content, { paddingTop: contentTopFor(windowHeight) }]}>
+          <View style={styles.header}>
+            <SkeletonLoader width="100%" height={size.touchTarget} borderRadius={radius.pill} />
+            <SkeletonLoader width={space.xxl} height={ROUND_INDICATOR_HEIGHT} />
+          </View>
+          <View style={[styles.middle, { marginTop: headerGapFor(windowHeight) }]}>
+            <View style={styles.posterRow}>
+              {(['left', 'right'] as const).map((side) => (
+                <View key={side} style={styles.posterSlot}>
+                  <View style={styles.skeletonPosterFrame}>
+                    <SkeletonLoader
+                      width="100%"
+                      height={1}
+                      borderRadius={radius.poster}
+                      style={styles.skeletonPoster}
+                    />
+                  </View>
+                  <View style={styles.skeletonMetaBlock}>
+                    <SkeletonLoader width="70%" height={type.filmTitle.lineHeight} />
+                  </View>
+                </View>
+              ))}
             </View>
-            <View style={styles.skeletonPosterSlot}>
-              <SkeletonLoader width="100%" height={1} style={styles.skeletonPoster} />
+            <View style={styles.skeletonQuestion}>
+              <SkeletonLoader width="60%" height={type.body.lineHeight} />
+            </View>
+            <View style={styles.actions}>
+              <View style={styles.skeletonAction}>
+                <SkeletonLoader width="100%" height={size.touchTarget} borderRadius={radius.pill} />
+              </View>
+              <View style={styles.skeletonAction}>
+                <SkeletonLoader width="100%" height={size.touchTarget} borderRadius={radius.pill} />
+              </View>
             </View>
           </View>
-          <SkeletonLoader width="55%" height={14} />
         </View>
     );
   }
@@ -1522,7 +1551,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const interactionsLocked = submitting || transitioning || choiceFrozen;
 
   return (
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingTop: contentTopFor(windowHeight) }]}>
         <View style={styles.header}>
           <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
           {/* C.9b-UI G1 (D-06 · L-7): güven yüzdesi Gauntlet'ten KALDIRILDI.
@@ -1575,31 +1604,35 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
         {actionError !== null && <Text style={styles.actionError}>{actionError}</Text>}
 
+        {/* V-3 Tur G1 (G6): metin bağlantıları → iki eşit genişlikte
+            kenarlıklı buton. Koşullar, disabled kuralları ve işleyiciler
+            AYNEN korunur; yalnız görünüm değişti. İpucu satırı (V-2 Tur A,
+            `actionError`) yukarıda, butonların üstünde kalır. */}
         <View style={styles.actions}>
           {seenMode ? (
-            <QuietAction label={t('gauntlet.cancel')} onPress={handleSeenToggle} />
+            <OutlineAction label={t('gauntlet.cancel')} onPress={handleSeenToggle} />
           ) : (
             <>
-              <QuietAction
+              <OutlineAction
                 label={t('gauntlet.rejectNeither')}
                 onPress={() => void handleNeither()}
                 disabled={interactionsLocked || outOfRefreshes || editorialRefreshBlocked}
               />
-              <Text style={styles.actionSeparator}>·</Text>
-              <QuietAction
+              <OutlineAction
                 label={t('gauntlet.markWatched')}
                 onPress={handleSeenToggle}
                 disabled={interactionsLocked}
               />
-              {outOfRefreshes && onDismiss && (
-                <>
-                  <Text style={styles.actionSeparator}>·</Text>
-                  <QuietAction label={t('gauntlet.dismissTomorrow')} onPress={onDismiss} />
-                </>
-              )}
             </>
           )}
         </View>
+        {/* Hak bitince "Boşver, yarın" — eskiden satırın üçüncü bağlantısıydı;
+            iki eşit buton düzeninde altta metin bağlantısı olarak kalır. */}
+        {!seenMode && outOfRefreshes && onDismiss && (
+          <View style={styles.dismissRow}>
+            <QuietAction label={t('gauntlet.dismissTomorrow')} onPress={onDismiss} />
+          </View>
+        )}
         </View>
       </View>
   );

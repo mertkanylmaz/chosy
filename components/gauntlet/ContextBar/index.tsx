@@ -28,9 +28,10 @@
 import React, { useMemo, useState } from 'react';
 import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
+import { CaretDown, CaretUp, SlidersHorizontal } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { space } from '@/constants/design/semantic';
+import { color, size, space } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import type { GauntletContext } from '@/types/gauntlet';
@@ -110,12 +111,31 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
   const companionLabel = t(`gauntlet.context.companion.${context.companion}`);
   const durationLabel = t(`gauntlet.context.duration.${context.duration}`);
 
+  /** VoiceOver metni — kısaltılmaz, uzun etiketlerle tam cümle. */
   const collapsedLabel = t('gauntlet.context.label', {
     day,
     dayPart,
     companion: companionLabel,
     duration: durationLabel,
   });
+
+  /**
+   * V-3 Tur G1 (G1): pill'in görsel özeti. Süre pill'de KISA karşılığıyla
+   * gösterilir ("Doesn't matter" → "Any length"). Büyük harf JS'te dile
+   * göre yapılır — `textTransform` TR'de i → İ dönüşümünü yapmaz.
+   *
+   * Kısaltma kuralı: özet iki parça — `head` (gün · kiminle) ve `tail`
+   * (· süre). Satır taşarsa yalnız `head` sondan kısalır ("…"), `tail`
+   * asla kesilmez. Veri modeli değişmez.
+   */
+  const pillHead = t('gauntlet.context.pillHead', {
+    day,
+    dayPart,
+    companion: companionLabel,
+  }).toLocaleUpperCase(language);
+  const pillTail = t('gauntlet.context.pillTail', {
+    duration: t(`gauntlet.context.pillDuration.${context.duration}`),
+  }).toLocaleUpperCase(language);
 
   const toggle = (): void => {
     if (expanded) {
@@ -149,8 +169,20 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
         accessibilityState={{ expanded }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.label}>{collapsedLabel}</Text>
-        <Text style={styles.chevron}>{expanded ? '⌃' : '⌄'}</Text>
+        <SlidersHorizontal size={size.iconInline} color={color.text.secondary} />
+        <View style={styles.summary}>
+          <Text style={styles.summaryHead} numberOfLines={1} ellipsizeMode="tail">
+            {pillHead}
+          </Text>
+          <Text style={styles.summaryTail} numberOfLines={1}>
+            {pillTail}
+          </Text>
+        </View>
+        {expanded ? (
+          <CaretUp size={size.iconInline} color={color.text.secondary} />
+        ) : (
+          <CaretDown size={size.iconInline} color={color.text.secondary} />
+        )}
       </TouchableOpacity>
 
       <Modal visible={expanded} transparent animationType="slide" onRequestClose={close}>

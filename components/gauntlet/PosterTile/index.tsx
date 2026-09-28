@@ -12,7 +12,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { FilmSlate } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -156,7 +156,9 @@ export function PosterTile({
         <View style={[styles.posterWrapper, selected && styles.posterWrapperSelected]}>
           {posterFailed ? (
             <View style={styles.placeholder}>
-              <Ionicons name="film-outline" size={28} color={color.text.secondary} />
+              {/* V-3 Tur G1: Ionicons → Phosphor. Bağlam pill'i artık Phosphor
+                  taşıyor; iki aile aynı ekranda yan yana görünmez (V-1 ortak kural). */}
+              <FilmSlate size={28} color={color.text.secondary} />
               <Text style={styles.placeholderText}>{t('gauntlet.posterUnavailable')}</Text>
             </View>
           ) : (
@@ -186,7 +188,7 @@ export function PosterTile({
             {film.title}
           </Text>
           <Text style={styles.metaLine} numberOfLines={1}>
-            {t('gauntlet.posterMeta', { year: film.year, runtime: film.runtime })}
+            {t('gauntlet.tileMeta', { year: film.year, runtime: film.runtime })}
           </Text>
         </View>
       </TouchableOpacity>

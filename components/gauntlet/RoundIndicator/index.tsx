@@ -10,6 +10,9 @@
  * kullanıcısından bilgi eksiltmez (K-54).
  *
  * Tur değişimi Kesme'dir (§7.1) — 0ms, animasyon yok.
+ *
+ * V-3 Tur G1 (G2): segment → **3 nokta**, sayaç noktaların ALTINDA
+ * "1 / 3". VoiceOver metni "Round 1 of 3" / "Tur 1, toplam 3".
  */
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -33,17 +36,14 @@ export function RoundIndicator({
   const { t } = useLanguage();
   /** VoiceOver'ın duyduğu tam metin — görselde kısaltılsa da burada tam kalır. */
   const fullLabel = t('gauntlet.roundLabel', { current, total });
-  /** Görsel sayaç: yalnız "1/3". Martian Mono (sayaç, §10.1 mono istisnası). */
+  /** Görsel sayaç: yalnız "1 / 3". Martian Mono (sayaç, §10.1 mono istisnası). */
   const shortLabel = t('gauntlet.roundShort', { current, total });
 
   return (
     <View style={styles.container} accessibilityRole="text" accessibilityLabel={fullLabel}>
-      <View style={styles.segments} importantForAccessibility="no-hide-descendants">
+      <View style={styles.dots} importantForAccessibility="no-hide-descendants">
         {Array.from({ length: total }, (_, index) => (
-          <View
-            key={index}
-            style={[styles.segment, index < current && styles.segmentActive]}
-          />
+          <View key={index} style={[styles.dot, index < current && styles.dotActive]} />
         ))}
       </View>
       {showLabel && <Text style={styles.label}>{shortLabel}</Text>}

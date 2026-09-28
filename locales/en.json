@@ -1435,9 +1435,10 @@
   "gauntlet": {
     "posterAccessibilityLabel": "%{title}, %{year}, %{runtime} minutes, double tap to select",
     "posterMeta": "%{year} · %{runtime}min",
+    "tileMeta": "%{year} · %{runtime} MIN",
     "posterUnavailable": "No poster",
-    "roundLabel": "Round %{current}/%{total}",
-    "roundShort": "%{current}/%{total}",
+    "roundLabel": "Round %{current} of %{total}",
+    "roundShort": "%{current} / %{total}",
     "rejectNeither": "Neither",
     "markWatched": "I've watched this",
     "before18": "Today's four will be ready at %{time}.",
@@ -1501,6 +1502,13 @@
       "save": "Save",
       "saved": "Saved",
       "saveError": "Couldn't save. Try again.",
+      "pillHead": "%{day} %{dayPart} · %{companion}",
+      "pillTail": " · %{duration}",
+      "pillDuration": {
+        "short": "~90 min",
+        "medium": "~2 hr",
+        "any": "Any length"
+      },
       "dayPart": {
         "morning": "morning",
         "afternoon": "afternoon",

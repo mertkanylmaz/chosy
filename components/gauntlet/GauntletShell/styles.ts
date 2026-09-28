@@ -5,6 +5,7 @@
  */
 import { StyleSheet } from 'react-native';
 
+import { POSTER_META_BLOCK_HEIGHT } from '@/components/gauntlet/PosterTile/styles';
 import { color, space, type } from '@/constants/design/semantic';
 
 export const styles = StyleSheet.create({
@@ -113,9 +114,13 @@ export const styles = StyleSheet.create({
   posterSlot: {
     flex: 1,
   },
+  /**
+   * V-3 Tur G1 (G5): `callout`/smoke → `body` regular, `bone@80%`
+   * (`text.primarySoft`). Serif DEĞİL — serif yalnız film adlarında (V3-D1).
+   */
   question: {
-    ...type.callout,
-    color: color.text.secondary,
+    ...type.body,
+    color: color.text.primarySoft,
     textAlign: 'center',
     // V-2 Tur C: xl → lg — soru posterlerin hemen altında.
     marginTop: space.lg,
@@ -155,34 +160,50 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: space.sm,
   },
+  /**
+   * V-3 Tur G1 (G6): tam genişlik satır — iki `OutlineAction` `flex: 1` ile
+   * eşit paylaşır. `·` ayırıcısı (`actionSeparator`) kaldırıldı.
+   */
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
+    width: '100%',
     // V-2 Tur C: lg → base — eylem satırı soruya bağlı tek grup.
     marginTop: space.base,
   },
-  actionSeparator: {
-    ...type.caption,
-    color: color.text.secondary,
-    opacity: 0.7,
+  /** Hak bitince "Boşver, yarın" metin bağlantısı — buton satırının altında. */
+  dismissRow: {
+    marginTop: space.md,
   },
-  /** Bootstrapping — graphite iskelet (§10.1: spinner yok, §7.4 iskelet istisnası) */
-  skeletonContent: {
-    flex: 1,
-    paddingHorizontal: space.base,
-    paddingTop: space.xxl,
-    alignItems: 'center',
-    gap: space.xl,
-  },
-  skeletonPosterSlot: {
-    flex: 1,
+  /**
+   * Bootstrapping — graphite iskelet (§10.1: spinner yok, §7.4 iskelet
+   * istisnası). V-3 Tur G1: iskelet `content`/`header`/`middle`/`posterRow`/
+   * `actions` stillerini ana dalla PAYLAŞIR; aşağıdakiler yalnız iskelete
+   * özgü parçalar.
+   */
+  skeletonPosterFrame: {
+    width: '100%',
     aspectRatio: 2 / 3,
   },
-  /** SkeletonLoader'ın inline height'ını ezer — slot aspectRatio belirler. */
+  /** SkeletonLoader'ın inline height'ını ezer — çerçeve aspectRatio belirler. */
   skeletonPoster: {
     width: '100%',
     height: '100%',
+  },
+  /** PosterTile'ın başlık (2 satır) + meta bloğu kadar yer. */
+  skeletonMetaBlock: {
+    height: POSTER_META_BLOCK_HEIGHT,
+    paddingTop: space.sm,
+    alignItems: 'center',
+  },
+  skeletonQuestion: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: space.lg,
+  },
+  skeletonAction: {
+    flex: 1,
   },
 });
 
@@ -195,4 +216,16 @@ export function headerGapFor(windowHeight: number): number {
   if (windowHeight < 700) return space.base;
   if (windowHeight < 850) return space.lg;
   return space.xl;
+}
+
+/**
+ * V-3 Tur G1: oyun dalının (ve iskeletinin) üst dolgusu. Yeni düzen (44pt
+ * pill, 2 satır başlık payı, 44pt buton satırı) SE'de (667pt) `xxl` üst
+ * dolguyla editoryal ipucu satırı göründüğünde butonları tab bar'ın altına
+ * itiyordu. Aynı eşik: SE/mini (<700pt) `base`, diğerleri `content`'teki
+ * `xxl` (değişmez).
+ */
+export function contentTopFor(windowHeight: number): number {
+  if (windowHeight < 700) return space.base;
+  return space.xxl;
 }

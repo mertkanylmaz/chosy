@@ -9,7 +9,7 @@
  */
 import { StyleSheet } from 'react-native';
 
-import { color, radius, space, type } from '@/constants/design/semantic';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 
 export const styles = StyleSheet.create({
@@ -17,29 +17,45 @@ export const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'stretch',
   },
+  /**
+   * V-3 Tur G1 (G1), karar V3-D2: kenar `graphite` — altın DEĞİL (altın
+   * yalnız ödül katmanında). Yükseklik `size.touchTarget`: pill tek satır ve
+   * dokunma hedefi 44pt; yükleme iskeleti aynı yüksekliği ayırır.
+   */
   collapsedRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: space.xs,
-    paddingVertical: space.sm,
+    gap: space.sm,
+    minHeight: size.touchTarget,
     paddingHorizontal: space.base,
     borderRadius: radius.pill,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     backgroundColor: color.surface.raised,
   },
   /**
-   * C.9b-UI G2: `type.meta` (Martian Mono) → `type.caption` (SF Pro).
-   * Mono yalnız yıl·süre ve tur sayacında kalır (§10.1). Bağlam cümlesi
-   * mono olduğu için cihazda İKİ SATIRA taşıyordu — mono'nun 2pt harf
-   * aralığı bu uzunlukta cümleyi taşırıyor.
+   * Özet iki parça: `summaryHead` kısalabilir, `summaryTail` (süre) asla.
+   * `flexShrink: 1` sarmalayıcıda — ikon ve chevron sabit kalır.
    */
-  label: {
-    ...type.caption,
-    color: color.text.secondary,
+  summary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexShrink: 1,
   },
-  chevron: {
-    ...type.caption,
+  /**
+   * C.9b-UI G2 notu geçerli: mono DEĞİL — bağlam cümlesi mono'da taşıyordu.
+   * V-3: `caption` → `label-caps` (büyük harf, harf aralıklı SF Pro).
+   */
+  summaryHead: {
+    ...type['label-caps'],
     color: color.text.secondary,
+    flexShrink: 1,
+  },
+  summaryTail: {
+    ...type['label-caps'],
+    color: color.text.secondary,
+    flexShrink: 0,
   },
   /**
    * V-2 Tur B: düzenleyici bottom sheet — repo sheet deseni

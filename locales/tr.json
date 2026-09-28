@@ -1435,9 +1435,10 @@
   "gauntlet": {
     "posterAccessibilityLabel": "%{title}, %{year}, %{runtime} dakika, seçmek için çift dokun",
     "posterMeta": "%{year} · %{runtime}dk",
+    "tileMeta": "%{year} · %{runtime} DK",
     "posterUnavailable": "Poster yok",
-    "roundLabel": "Tur %{current}/%{total}",
-    "roundShort": "%{current}/%{total}",
+    "roundLabel": "Tur %{current}, toplam %{total}",
+    "roundShort": "%{current} / %{total}",
     "rejectNeither": "İkisi de değil",
     "markWatched": "Bunu izledim",
     "before18": "Bugünün dörtlüsü %{time}'de hazır.",
@@ -1501,6 +1502,13 @@
       "save": "Kaydet",
       "saved": "Kaydedildi",
       "saveError": "Kaydedilemedi. Tekrar dene.",
+      "pillHead": "%{day} %{dayPart} · %{companion}",
+      "pillTail": " · %{duration}",
+      "pillDuration": {
+        "short": "~90 dk",
+        "medium": "~2 sa",
+        "any": "Süre serbest"
+      },
       "dayPart": {
         "morning": "sabahı",
         "afternoon": "öğleden sonrası",
