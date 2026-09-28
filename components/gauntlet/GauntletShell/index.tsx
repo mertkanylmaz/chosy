@@ -53,6 +53,7 @@ import {
   GauntletAuthPendingError,
   GauntletFetchError,
   PreviousCycleRejectedError,
+  getArchiveStatus,
   getTodayGauntletWithFallback,
   submitChoice,
   submitContextCorrection,
@@ -64,6 +65,11 @@ import { decidePreviousCycleProbeNow, markPreviousCycle } from '@/services/previ
 import { isE2ETestMode } from '@/utils/e2eTestMode';
 import { posthogAnalytics } from '@/services/posthog';
 import { resolveChampionPrompt, type ChampionPrompt } from '@/services/championPrompts';
+import {
+  getPermissionState,
+  markNotificationPermissionAsked,
+  registerForPushNotifications,
+} from '@/services/pushNotifications';
 import { supabase } from '@/services/supabase';
 import { markUserFlag } from '@/services/userFlags';
 import type {
@@ -93,7 +99,7 @@ import {
   type CycleMode,
 } from './cycleRules';
 import { headerGapFor, styles } from './styles';
-import { UNLOCK_HOUR, nextUnlockAfter } from './unlockClock';
+import { UNLOCK_HOUR, formatUnlockTime, nextUnlockAfter } from './unlockClock';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
 //
@@ -145,14 +151,6 @@ function getNextUnlockAt(now: Date = new Date()): Date {
   if (__DEV__) return now;
   if (isE2ETestMode()) return now;
   return nextUnlockAfter(now);
-}
-
-/** Bekleyiş metnindeki saat — UNLOCK_HOUR'dan, arayüz diline göre biçimlenir. */
-function formatUnlockTime(language: string): string {
-  return new Date(2000, 0, 1, UNLOCK_HOUR, 0).toLocaleTimeString(
-    language === 'tr' ? 'tr-TR' : 'en-US',
-    { hour: 'numeric', minute: '2-digit' },
-  );
 }
 
 /** Gün dönümü YEREL gece yarısı (PRODUCT_OS §3.6) — UTC değil. */
@@ -799,6 +797,72 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     });
   }, [unlockAt]);
 
+  /**
+   * V-2 Tur E1 — bekleyiş ekranı bildirim CTA'sı (K-15 yerel 18:00).
+   * Koşul: OS izni `undetermined` VE kullanıcının ≥1 şampiyonu var.
+   * "≥1 şampiyon" kaynağı `get-archive-status` `completedCount` (CTO onayı:
+   * son 7 UTC gün — daha uzun ara vermiş kullanıcı CTA'yı görmez).
+   * Okuma hatasında CTA gizli kalır; `getArchiveStatus` hatayı kendisi
+   * Sentry'ye yazar, 401 penceresi burada breadcrumb bırakır.
+   */
+  const [waitingNotifyEligible, setWaitingNotifyEligible] = useState(false);
+  const [waitingNotifyBusy, setWaitingNotifyBusy] = useState(false);
+
+  useEffect(() => {
+    if (!unlockAt) {
+      setWaitingNotifyEligible(false);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const permission = await getPermissionState();
+      if (permission !== 'undetermined') {
+        if (!cancelled) setWaitingNotifyEligible(false);
+        return;
+      }
+      try {
+        const status = await getArchiveStatus();
+        if (!cancelled) setWaitingNotifyEligible(status.completedCount >= 1);
+      } catch (err) {
+        Sentry.addBreadcrumb({
+          category: 'gauntlet',
+          level: 'warning',
+          message: 'waiting notify CTA: archive status okunamadı — CTA gizli',
+          data: { error: err instanceof Error ? err.message : String(err) },
+        });
+        if (!cancelled) setWaitingNotifyEligible(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [unlockAt]);
+
+  const handleWaitingNotify = useCallback(async () => {
+    if (waitingNotifyBusy) return;
+    void hapticLight();
+    setWaitingNotifyBusy(true);
+    posthogAnalytics.track('waiting_notify_tapped', {
+      minutes_to_unlock: unlockAt
+        ? Math.max(0, Math.round((unlockAt.getTime() - Date.now()) / 60_000))
+        : null,
+    });
+
+    // OS diyaloğunu açar; kabulde yerel 18:00 hatırlatıcısını planlar
+    // (ensureDailyReminderScheduled) ve token'ı sunucuya yazar.
+    const granted = await registerForPushNotifications();
+    // Kabul de ret de "sorduk" sayılır — şampiyon sheet'i tekrar sormaz.
+    await markNotificationPermissionAsked();
+    posthogAnalytics.track('notification_prompt_answered', {
+      surface: 'waiting_cta',
+      granted,
+    });
+
+    if (!mountedRef.current) return;
+    setWaitingNotifyBusy(false);
+    setWaitingNotifyEligible(false);
+  }, [waitingNotifyBusy, unlockAt]);
+
   // E-21: önceki döngü canlı oynanıp bitti (şampiyon ya da tükeniş) — reveal
   // bu oturumda görünür, yeniden açılışta bekleyiş ekranı gelir.
   useEffect(() => {
@@ -1311,13 +1375,20 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   if (shellState === 'before_18') {
     // V-1 Tur 6: metin + geri sayım. Dünkü şampiyon, arşiv, Pro Mode ve
-    // keşif rotası YOK (D7, K-46). Bildirim CTA'sı Tur 5 sonrasına ertelendi.
+    // keşif rotası YOK (D7, K-46). V-2 Tur E1: koşullu bildirim CTA'sı.
     return (
       <View style={styles.centerContent}>
         <Text style={styles.stateText}>
           {t('gauntlet.before18', { time: formatUnlockTime(language) })}
         </Text>
         {unlockAt && <UnlockCountdown target={unlockAt} onElapsed={runClockPulse} />}
+        {waitingNotifyEligible && (
+          <QuietAction
+            label={t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) })}
+            onPress={() => void handleWaitingNotify()}
+            disabled={waitingNotifyBusy}
+          />
+        )}
       </View>
     );
   }
