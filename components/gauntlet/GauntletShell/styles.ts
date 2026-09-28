@@ -79,7 +79,6 @@ export const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     gap: space.md,
-    marginBottom: space.lg,
   },
   /**
    * C.9b-UI G4: film bloğu + soru + eylemler, header'dan artan alanın
@@ -87,12 +86,18 @@ export const styles = StyleSheet.create({
    * üste yaslanıyor ve tüm boşluk ALTTA birikiyordu (Standard'da ~178pt,
    * Pro Max'te ~231pt ölü bant — cihaz görüntüsünde ekranın ~%22'si).
    * `flex: 1` + ortalama boşluğu bloğun altına ve üstüne böler.
+   *
+   * V-2 Tur C: ortalama KALDIRILDI — cihaz testinde ilerleme göstergesi ile
+   * posterler arasında büyük ölü bant bırakıyordu. Blok artık üste yaslanır;
+   * header ile arasındaki boşluk `headerGapFor()` ile ekran yüksekliğine
+   * göre token merdiveninden seçilir (inline `marginTop`). Artan alan
+   * eylemlerin ALTINDA kalır.
    */
   middle: {
     flex: 1,
     width: '100%',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
   },
   /**
    * C.9b-UI G4 geometri: yan boşluk 24 → **16** (`posterRow`'un kendi 8pt
@@ -112,7 +117,8 @@ export const styles = StyleSheet.create({
     ...type.callout,
     color: color.text.secondary,
     textAlign: 'center',
-    marginTop: space.xl,
+    // V-2 Tur C: xl → lg — soru posterlerin hemen altında.
+    marginTop: space.lg,
   },
   actionError: {
     ...type.caption,
@@ -153,7 +159,8 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.md,
-    marginTop: space.lg,
+    // V-2 Tur C: lg → base — eylem satırı soruya bağlı tek grup.
+    marginTop: space.base,
   },
   actionSeparator: {
     ...type.caption,
@@ -178,3 +185,14 @@ export const styles = StyleSheet.create({
     height: '100%',
   },
 });
+
+/**
+ * V-2 Tur C: tur göstergesi → poster bloğu arası boşluk. Ekran yüksekliğine
+ * göre token merdiveninden seçilir, ara değer üretilmez. Eşikler: SE/mini
+ * (<700pt) · Standard (<850pt) · Plus/Pro Max.
+ */
+export function headerGapFor(windowHeight: number): number {
+  if (windowHeight < 700) return space.base;
+  if (windowHeight < 850) return space.lg;
+  return space.xl;
+}

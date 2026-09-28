@@ -64,6 +64,7 @@ import {
 } from '@/constants/design/motion';
 import { posthogAnalytics } from '@/services/posthog';
 import { saveChampionForLater } from '@/services/gauntletService';
+import type { CycleMode } from '@/components/gauntlet/GauntletShell/cycleRules';
 import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
 import { upgradePosterUrl } from '@/utils/posterUrl';
@@ -119,6 +120,11 @@ interface ChampionRevealProps {
    * ile paylaşım eylemindeki davranışın aynısı.
    */
   gauntletId?: string;
+  /**
+   * V-2 Tur C: E-21 önceki döngü şampiyonu "Bugünün filmi" DEĞİL — kullanıcının
+   * ilk filmi. Yalnız etiketi değiştirir; davranış aynı.
+   */
+  cycle?: CycleMode;
 }
 
 /** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
@@ -131,6 +137,7 @@ export function ChampionReveal({
   date,
   rounds,
   gauntletId,
+  cycle = 'current',
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language, region } = useLanguage();
   const router = useRouter();
@@ -367,7 +374,7 @@ export function ChampionReveal({
       </Animated.View>
 
       <Animated.View style={titleStyle}>
-        <Text style={styles.kicker}>{t('gauntlet.championTitle')}</Text>
+        <Text style={styles.kicker}>{cycle === 'previous' ? t('gauntlet.championTitleFirst') : t('gauntlet.championTitle')}</Text>
         {/* C8: deterministik kademe, runtime autoscale YOK. VoiceOver TAM
             basligi duyar — gorsel kisaltma bilgi eksiltmez (K-54). */}
         <Text

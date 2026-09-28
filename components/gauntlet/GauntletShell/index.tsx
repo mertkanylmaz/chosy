@@ -17,7 +17,7 @@
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -92,7 +92,7 @@ import {
   requestOptionsFor,
   type CycleMode,
 } from './cycleRules';
-import { styles } from './styles';
+import { headerGapFor, styles } from './styles';
 import { UNLOCK_HOUR, nextUnlockAfter } from './unlockClock';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
@@ -241,6 +241,8 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const { t, region, language } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+  // V-2 Tur C: tur göstergesi → poster arası boşluk ekran yüksekliğine bağlı.
+  const { height: windowHeight } = useWindowDimensions();
   /** V-2 Tur B: tab bar + home indicator — TÜM dalların alt payı buradan. */
   const tabBarInset = useTabBarInset();
   /**
@@ -1381,6 +1383,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               date={gauntlet?.date}
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
+              cycle={cycleModeRef.current}
             />
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
@@ -1464,10 +1467,10 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             durum bildirilir — §15.2. */}
         {isStale && <Text style={styles.offlineNotice}>{t('gauntlet.offlineStale')}</Text>}
 
-        {/* C.9b-UI G4: film bloğu + soru + eylemler tek grup halinde,
-            header'dan artan alanın ortasında. Ölü bant bu grubun altına ve
-            üstüne eşit bölünür. */}
-        <View style={styles.middle}>
+        {/* C.9b-UI G4: film bloğu + soru + eylemler tek grup halinde.
+            V-2 Tur C: grup header'ın hemen altına yaslanır (boşluk
+            headerGapFor); artan alan eylemlerin altında kalır. */}
+        <View style={[styles.middle, { marginTop: headerGapFor(windowHeight) }]}>
         <View style={styles.posterRow}>
           <View style={styles.posterSlot}>
             <PosterTile

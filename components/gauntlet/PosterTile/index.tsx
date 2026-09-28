@@ -182,7 +182,7 @@ export function PosterTile({
         </View>
 
         <View style={styles.meta}>
-          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
             {film.title}
           </Text>
           <Text style={styles.metaLine} numberOfLines={1}>

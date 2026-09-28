@@ -1453,6 +1453,7 @@
     "seenPrompt": "Which one have you watched?",
     "cancel": "Cancel",
     "championTitle": "Today's film",
+    "championTitleFirst": "Your first film",
     "championAccessibilityLabel": "Today's film: %{title}, %{year}, %{runtime} minutes",
     "championOpenFilm": "Open details for %{title}",
     "close": "Close",

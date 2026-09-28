@@ -1453,6 +1453,7 @@
     "seenPrompt": "Hangisini izledin?",
     "cancel": "Vazgeç",
     "championTitle": "Bugünün filmi",
+    "championTitleFirst": "İlk filmin",
     "championAccessibilityLabel": "Bugünün filmi: %{title}, %{year}, %{runtime} dakika",
     "championOpenFilm": "%{title} detaylarını aç",
     "close": "Kapat",
