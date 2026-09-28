@@ -2651,3 +2651,109 @@ Silme yalnız onaylı listeyle sınırlı tutuldu. Aynı import grafiği ile
   `profile.tsx` `archetypeHeroName`) `maxFontSizeMultiplier` yok.
 - **Pro Mode üst arama çubuğu gönder butonu** (`compactSubmitBtn`) hâlâ
   `accentPrimary` dolgu + `textOnAccent`; Tur 7 yalnız alt CTA'yı kapsadı.
+
+---
+
+## V-1 kapanışı — kalan istemci/altyapı borçları (28 Eyl 2026, V-1 Tur 8)
+
+**Kaynak:** V-1 Tur 8 entegrasyon turu. Bible karşılığı: `7_CHOSY_V1_KAPSAM_KILIDI.md`
+v1.31, §5 E-22. Kod değişikliği yok; hepsi ölçülmüş durum kaydıdır.
+
+### 1. `quotaEngine` ayrı RevenueCat okuması
+
+Zaten kayıtlı — bkz. yukarıda *"`isPremium` üç yoldan hesaplanıyordu"* madde 1.
+Değişiklik yok: `services/quotaEngine.ts:102-121` hâlâ kendi
+`Purchases.getCustomerInfo()` çağrısını yapıyor, hatada `free` dönüyor;
+`premiumStatus` (V1-D3) ile ayrışabilir.
+
+### 2. İstemci taraflı kota sayacı (AsyncStorage) — yeniden kurulumla sıfırlanıyor
+
+**Öncelik: orta. R-C öncesi karar.**
+
+`checkAndConsumeQuota()` sayacı AsyncStorage'da tutuyor
+(`services/quotaEngine.ts:61` anahtar `quota_{userId}_{type}_{YYYY-MM-DD}`,
+`:147` "RPC bypass"); yeniden kurulumda / depo silinmesinde sıfırlanır.
+Hata dalı fail-open (`:149`, `:200`).
+
+⚠️ **Tanım düzeltmesi (ölçüm, 28 Eyl 2026):** görev notu bunu "Haiku maliyet
+riski" olarak tanımlıyordu. İstemci sayacı Haiku'ya giden yolun **tek kapısı
+değil**: `parse-mood` (`:209`) ve `parse-taste` (`:318`) `check_and_consume_quota`
+RPC'sini Haiku çağrısından (`parse-mood:356`) **önce** sunucuda çalıştırıyor;
+`parse-mood` ayrıca fail-closed rate limiter taşıyor. Slot fonksiyonları
+(`slot-pure-random` / `slot-triple` / `slot-mood-filtered`) da sunucuda sayıyor.
+Yani AsyncStorage'ı silmek **aynı kimlik için** sunucu kotasını aşmaz.
+
+**Gerçek açıklar:**
+
+- **Yeniden kurulum = yeni anonim kimlik = yeni sunucu kotası.** Tam depo
+  silinmesinde kimlik kaybı ölçülmüyor (bible §9, M0 Faz 3; `expo-secure-store`
+  kurulu değil). Her yeniden kurulum free 3 aramayı (Haiku) tazeler. Maliyet
+  vektörü sayaç değil, **kimlik**. Hacim bilinmiyor.
+- **Sunucu kota RPC hatasında fail-open** (`parse-mood:214-226`, Sentry
+  `QUOTA_CHECK_FAILED`) — maliyet tavanı o an yalnız rate limiter.
+- **İki sayaç bağımsız:** istemci "N left today" AsyncStorage'dan, sunucu
+  `check_and_consume_quota`'dan sayıyor; çoklu cihazda veya sayaç silindiğinde
+  UI kalan hakkı yanlış gösterir, sunucu 429 döner.
+
+**Karar gerekenler (R-C):** istemci sayacını sunucu sonucundan türetmek
+(`check-quota` fonksiyonu mevcut) · yeniden kurulum hacmini ölçmek (G-3).
+
+### 3. Bildirim kolonları — planlanan bırakma (K-15 yerel planlama, UYGULANMADI)
+
+**Öncelik: K-15 uygulama turuyla birlikte.**
+
+K-15 eki (v1.31): akşam 18:00 bildirimi cihazda yerel planlanacak, Settings
+tek switch'e inecek. **Henüz uygulanmadı** — bugün hiçbir kolon bırakılmadı.
+Uygulandığında istemcinin okumayı/yazmayı bırakacağı yerler:
+
+| Kolon | İstemci | Sunucu okuyucusu |
+|---|---|---|
+| `users.daily_pick_enabled` | `services/pushNotifications.ts:269-305` (get/toggle) | `send-daily-pick/index.ts:155-159` |
+| `users.watchlist_notifications_enabled` | `services/pushNotifications.ts:317-350` (get/toggle) | `watchlist-activation/index.ts:164` |
+
+⚠️ **Ön koşul (sprint v1 Tur 5 DUR noktası):** iki kolonun da **sunucu
+okuyucusu var**. Bırakmadan önce `send-daily-pick` ve `watchlist-activation`
+cron'larının canlıda çalışıp çalışmadığı ölçülmeli (Vault
+`cron_service_role_key` 31 Ağu'dan beri kayıtsız, 3 cron ölü — bible §9).
+Çalışıyorsa toggle'ı kaldırmak kullanıcıdan kapatma yolunu alır. Kolonlar
+silinmez (K-44 append-only ruhu); yalnız kullanım bırakılır.
+
+### 4. Playfair font yüklemesi + donmuş oyun referansları
+
+Zaten kayıtlı — bkz. yukarıda *"Playfair kalıntıları ve Tur 7 sonrası artık
+kod"*. Durum değişmedi: `app/_layout.tsx` 6 ağırlık yüklüyor, tek canlı
+tüketici donmuş Detective; kapanış bağımlılık kararı ister (V1-D10).
+
+### 5. Avatar DB senkronu yok
+
+**Öncelik: düşük.**
+
+V1-D8 (`61f9993`) avatar seçimini yalnız AsyncStorage'a, kullanıcı bazlı
+anahtarla yazıyor (`utils/avatarStorage.ts:22` `chosy_user_avatar_{publicUserId}`).
+Sonuç: aynı hesap başka cihazda / yeniden kurulumda varsayılan avatarla açılır.
+Öte yandan `app/setup-profile.tsx` avatarı `users.avatar_url`'e yazıyor
+(`:10`, `:56`) — **iki kaynak senkron değil**: Profile modalında yapılan
+seçim DB'ye gitmiyor, setup-profile'da yapılan seçim Profile'ın okuduğu
+anahtara gitmiyor. Pratikte DB yazımı da yok: `setup-profile`'a kodda
+navigasyon yok (`app/auth.tsx:12` TODO), yalnız route kayıtlı
+(`app/_layout.tsx:624`). Ayrıca
+`avatar_url` UPDATE'i 0 satır etkileyip `{success:true}` dönebiliyor (bkz.
+yukarıda `.update()` 0-satır körlüğü). Düzeltme: tek kaynak seçimi (DB +
+yerel önbellek) — sözleşme kararı.
+
+### 6. 18:00 yerel kilit ↔ UTC döngü anahtarı (M2 Faz 2b)
+
+**Öncelik: R-D / M2 Faz 2b. Bugün dokunulmuyor.**
+
+İstemci kapısı **yerel** 18:00: `UNLOCK_HOUR = 18`, V1-D9 ile tek tanım
+`components/gauntlet/GauntletShell/unlockClock.ts:19` (geri sayım da buradan).
+Sunucu gauntlet anahtarı **UTC** tarih: `generate-gauntlet/index.ts:805`
+`utcDateString()`. Ölçülen etkiler (UTC− bölgelerinde akşam ortasında anahtar
+dönmesi, K-42 önbelleğinin yanlış `cache_stale` uyarısı) bible §9 *"UTC gün
+anahtarı ↔ yerel ritüel ayrışması"* satırında. Anahtarı kullanıcı-yerel güne
+bağlamadan önce M2 notu geçerli: `users.timezone` 'UTC' sayımı yeniden alınmalı.
+
+**Bayat yol düzeltmesi:** yukarıdaki *"`gauntlet_unlock_hour` app_config'e
+taşınmalı"* kaydı sabiti `GauntletShell/index.tsx`'te gösteriyor; V1-D9'dan
+beri yeri `unlockClock.ts:19`. Borcun kendisi (release'siz değiştirilemez)
+aynen açık.
