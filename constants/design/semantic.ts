@@ -79,7 +79,14 @@ export const type = {
   callout: { fontFamily: Theme.fonts.inter, fontWeight: '400', fontSize: 15, lineHeight: 20, letterSpacing: 0 },
   caption: { fontFamily: Theme.fonts.inter, fontWeight: '400', fontSize: 13, lineHeight: 18, letterSpacing: -0.1 },
 
-  meta: { fontFamily: 'MartianMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
+  /**
+   * V-2 Tur C: letterSpacing 2 → 0.24. §3.3 "+2%" bir em oranıdır
+   * (12 × 0.02 = 0.24pt); RN `letterSpacing` ise mutlak pt alır. 2pt, zaten
+   * geniş olan monospace'te "1994 · 142min"i harf harf dağıtıyordu (cihaz
+   * testi). `meta-strong` aynı birim hatasını taşır — bugün tüketicisi yok,
+   * bu turun kapsamı dışında bırakıldı.
+   */
+  meta: { fontFamily: 'MartianMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 0.24 },
   'meta-strong': { fontFamily: 'MartianMono_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
 } as const;
 
