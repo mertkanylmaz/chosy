@@ -59,6 +59,7 @@ import { withAlpha } from '@/constants/gameThemes';
 import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
+import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
@@ -113,6 +114,9 @@ const SAVED_STRIP_SLOTS = 4;
 const HEADER_CURTAIN_BLUR = 28;
 const HEADER_CURTAIN_DIM = withAlpha(color.surface.base, 0.6);
 const HEADER_CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
+
+/** Avatar mercegi dis capi (pt) — Faz 2 ritual halkasi da bu olcuyu kullanir. */
+const AVATAR_LENS_SIZE = 96;
 
 // Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
 // Anahtar + tek seferlik tasima: utils/avatarStorage.ts
@@ -671,6 +675,7 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
+  const reduceTransparency = useReduceTransparency();
   /** Son sampiyonun posteri — header "perde" arka plani. null → perde yok. */
   const [championPosterUrl, setChampionPosterUrl] = useState<string | null>(null);
   /** Izlenen film sayisi — `null`: yuklenmedi ya da hata (satir cizilmez). */
@@ -1219,19 +1224,24 @@ export default function ProfileScreen() {
 
             {/* Perde — son sampiyonun bulanik, karartilmis posteri. Sampiyon
                 yoksa cizilmez; header eski gradyanla kalir. Dekoratif:
-                erisilebilirlik agacina girmez, dokunusu yutmaz. */}
+                erisilebilirlik agacina girmez, dokunusu yutmaz.
+                Reduce Transparency (§6): bulaniklik yerine duz `charcoal`. */}
             {championPosterUrl && (
               <View
                 style={styles.headerCurtain}
                 pointerEvents="none"
                 accessibilityElementsHidden
                 importantForAccessibility="no-hide-descendants">
-                <Image
-                  source={{ uri: championPosterUrl }}
-                  style={styles.headerCurtainImage}
-                  blurRadius={HEADER_CURTAIN_BLUR}
-                  resizeMode="cover"
-                />
+                {reduceTransparency ? (
+                  <View style={styles.headerCurtainFlat} />
+                ) : (
+                  <Image
+                    source={{ uri: championPosterUrl }}
+                    style={styles.headerCurtainImage}
+                    blurRadius={HEADER_CURTAIN_BLUR}
+                    resizeMode="cover"
+                  />
+                )}
                 <View style={styles.headerCurtainDim} />
                 <LinearGradient
                   colors={[HEADER_CURTAIN_FADE_TOP, Colors.background]}
@@ -1254,28 +1264,25 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Avatar daire — altin gradient border simulasyonu */}
+            {/* Avatar — projektor mercegi: dis `graphite` + ic `beam`@24%
+                halka, aralarinda bosluk. Altin yok, golge yok (§4, E-23):
+                altin yalniz odul katmaninda. */}
             <TouchableOpacity
-              style={styles.avatarCircle}
+              style={styles.avatarLensOuter}
               onPress={() => { hapticLight(); setShowAvatarModal(true); }}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={t('profile.avatarTitle')}>
-              <LinearGradient
-                colors={[Colors.gold, Colors.goldDark, Colors.goldMid]}
-                style={styles.avatarBorderGradient}
-              >
-                <View style={styles.avatarInner}>
-                  <HeaderAvatarIcon
-                    size={avatarId ? 48 : 32}
-                    weight="duotone"
-                    color={color.reward.primary}
-                  />
-                </View>
-              </LinearGradient>
+              <View style={styles.avatarInner}>
+                <HeaderAvatarIcon
+                  size={avatarId ? 48 : 32}
+                  weight="duotone"
+                  color={color.text.primary}
+                />
+              </View>
               {/* Degistir ipucu */}
               <View style={styles.avatarEditBadge}>
-                <Camera size={12} weight="fill" color={Colors.background} />
+                <Camera size={12} weight="fill" color={color.text.primary} />
               </View>
             </TouchableOpacity>
 
@@ -1632,6 +1639,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     transform: [{ scale: 1.15 }],
   },
+  /** Reduce Transparency — bulanik poster yerine duz `charcoal` (§6) */
+  headerCurtainFlat: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: color.surface.raised,
+  },
   headerCurtainDim: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: HEADER_CURTAIN_DIM,
@@ -1659,26 +1671,25 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     opacity: 0.85,
   },
-  avatarCircle: {
-    marginBottom: 16,
-    shadowColor: Colors.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  avatarBorderGradient: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    padding: 2.5,
+  /** Mercek dis halkasi — 96pt, `graphite` hairline, ic halkaya 4pt bosluk */
+  avatarLensOuter: {
+    width: AVATAR_LENS_SIZE,
+    height: AVATAR_LENS_SIZE,
+    borderRadius: AVATAR_LENS_SIZE / 2,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    padding: space.xs,
+    marginBottom: space.base,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /** Mercek ic halkasi — `beam`@24% kenar, `charcoal` zemin */
   avatarInner: {
     width: '100%',
     height: '100%',
-    borderRadius: 40,
+    borderRadius: AVATAR_LENS_SIZE / 2,
+    borderWidth: size.hairline,
+    borderColor: color.accent.edge,
     backgroundColor: color.surface.raised,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1717,11 +1728,11 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.gold,
+    backgroundColor: color.surface.raised,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: Colors.background,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
   /** Apple/Google baglanti rozeti */
   authProviderBadge: {
