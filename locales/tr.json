@@ -1456,9 +1456,14 @@
     "question": "Bu akşam hangisini izlerdin?",
     "seenPrompt": "Hangisini izledin?",
     "cancel": "Vazgeç",
-    "championTitle": "Bugünün filmi",
+    "championTitle": "Bu akşamın filmi",
     "championTitleFirst": "İlk filmin",
-    "championAccessibilityLabel": "Bugünün filmi: %{title}, %{year}, %{runtime} dakika",
+    "championAccessibilityLabel": "Bu akşamın filmi: %{title}, %{year}, %{runtime} dakika",
+    "championAccessibilityLabelFirst": "İlk filmin: %{title}, %{year}, %{runtime} dakika",
+    "watchNow": {
+      "action": "Şimdi izle",
+      "error": "Sayfa açılamadı. Tekrar dene."
+    },
     "championOpenFilm": "%{title} detaylarını aç",
     "close": "Kapat",
     "confidence": "Seni %%{percent} tanıyorum",
@@ -1493,7 +1498,15 @@
       "empty": "Bölgende yayında görünmüyor.",
       "noRegion": "Bölgen belirlenemediği için yayın bilgisi gösterilemiyor.",
       "error": "İzleme seçenekleri yüklenemedi.",
-      "attribution": "Yayın bilgisi TMDB'den"
+      "attribution": "Yayın bilgisi TMDB'den",
+      "seeAll": "Tümü",
+      "seeAllA11y": "%{count} izleme seçeneğinin tümünü gör",
+      "sheetTitle": "Nerede izlenir",
+      "group": {
+        "stream": "Akış",
+        "rent": "Kirala",
+        "buy": "Satın al"
+      }
     },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",

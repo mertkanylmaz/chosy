@@ -6,7 +6,8 @@
 import { StyleSheet } from 'react-native';
 
 import { POSTER_META_BLOCK_HEIGHT } from '@/components/gauntlet/PosterTile/styles';
-import { color, space, type } from '@/constants/design/semantic';
+import { color, radius, space, type } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 
 export const styles = StyleSheet.create({
   /**
@@ -43,14 +44,24 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
   },
   /**
-   * Spotlight kartının yuvası — mutlak, tam genişlik. `bottom` inline
-   * (`useTabBarInset`). Yatay boşluk kartın kendi `marginHorizontal`'ında.
+   * V-3 Tur G2 (C7): Spotlight kartı kaydırma içeriğinin SONUNDA, satır içi.
+   * Yatay boşluk kartın kendi `marginHorizontal`'ında.
    */
-  bonusCardDock: {
+  bonusCardInline: {
+    marginTop: space.lg,
+  },
+  /**
+   * V-3 Tur G2: bayat gösterge hero'nun üstünde sabit — `top` inline
+   * (güvenli alan). Poster üstünde okunsun diye `ink@80%` zemin.
+   */
+  championStaleOverlay: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    paddingBottom: space.sm,
+    left: space.base,
+    right: space.base,
+    marginTop: space.sm,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: withAlpha(color.surface.base, 0.8),
   },
   centerContent: {
     flex: 1,
@@ -148,10 +159,9 @@ export const styles = StyleSheet.create({
    */
   championStaleNotice: {
     ...type.caption,
-    color: color.text.secondary,
+    color: color.text.primary,
     textAlign: 'center',
     paddingHorizontal: space.base,
-    paddingTop: space.base,
   },
   /** K-42: seçim kuyrukta bekliyor. Aynı gerekçe — bekleyiş, hata değil. */
   pendingNotice: {

@@ -35,14 +35,24 @@
  * kaldırıldı — logolar TMDB'nin toplu sayfasını açıyordu, sağlayıcıya
  * gitmiyordu. Yerine dokunulmaz logo satırı (`WatchProvidersRow`). Birincil
  * eylem artık HER durumda "Sonraya bırak".
+ *
+ * V-3 Tur G2 (C1–C8, kurucu referansı): tam genişlik poster hero (~%60,
+ * `ink`'e geçiş — heroScrim.ts), serif başlık (`filmTitle`, V3-D1 — Archivo
+ * display-xl bu ekrandan çıktı), en fazla 3 logo + "See all" (V3-D5) ve alt
+ * alta üç eylem: Watch Now (düz `marquee`, V3-D2; TMDB `link` uygulama içi
+ * tarayıcıda, V3-D3 — sağlayıcı/link yoksa render edilmez), Sonraya bırak,
+ * Paylaş. Reveal sekansı, kaydetme ve paylaşım mantığı DEĞİŞMEDİ.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import * as Clipboard from 'expo-clipboard';
 import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
+import { BookmarkSimple, FilmSlate, Play, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -51,7 +61,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
+import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
@@ -62,6 +72,9 @@ import {
   EASE_OUT_QUART,
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
+import { color, size, space } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
+import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { posthogAnalytics } from '@/services/posthog';
 import { saveChampionForLater } from '@/services/gauntletService';
 import type { CycleMode } from '@/components/gauntlet/GauntletShell/cycleRules';
@@ -69,8 +82,21 @@ import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
 import { upgradePosterUrl } from '@/utils/posterUrl';
 import { hapticLight } from '@/utils/haptics';
+import { orderProviders } from '@/utils/watchProviderList';
 
+import { HERO_HEIGHT_RATIO, SCRIM_STOPS, TITLE_OVERLAP } from './heroScrim';
 import { styles } from './styles';
+
+/**
+ * C1 geçişi: renk SABİT `ink`, yalnız alfa değişir (heroScrim.ts). Tuple
+ * tipi `expo-linear-gradient`'in "en az iki renk" imzası için.
+ */
+const SCRIM_COLORS = SCRIM_STOPS.map((s) => withAlpha(color.surface.base, s.alpha)) as [
+  string,
+  string,
+  ...string[],
+];
+const SCRIM_LOCATIONS = SCRIM_STOPS.map((s) => s.at) as [number, number, ...number[]];
 
 /** "Kopyalandı" onayının ekranda kalma süresi. */
 const COPIED_NOTICE_MS = 2400;
@@ -142,6 +168,10 @@ export function ChampionReveal({
   const { t, language, region } = useLanguage();
   const router = useRouter();
   const isReducedMotion = useReducedMotion();
+  /** C1: açıkken geçiş çizilmez — poster sert kenarla biter, altı düz `ink`. */
+  const reduceTransparency = useReduceTransparency();
+  const { height: windowHeight } = useWindowDimensions();
+  const heroHeight = Math.round(windowHeight * HERO_HEIGHT_RATIO);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   /** C2e: dort durum - loading / ok / empty / error. */
@@ -244,6 +274,40 @@ export function ChampionReveal({
   }, [router, champion.id]);
 
   /**
+   * V-3 Tur G2 (C6, V3-D3): Watch Now — TMDB'nin bölgeye özel `link`'i
+   * uygulama içi tarayıcıda. Sağlayıcı yoksa ya da `link` yoksa buton HİÇ
+   * render edilmez (devre dışı değil). Sayı `orderProviders` uzunluğudur —
+   * logo satırındaki "See all" ile aynı tekilleştirilmiş kaynak.
+   */
+  const providerCount = useMemo(
+    () => (providersState === 'ok' && providers ? orderProviders(providers).length : 0),
+    [providersState, providers],
+  );
+  const watchLink = providersState === 'ok' ? providers?.link : undefined;
+  const showWatchNow = watchLink !== undefined && watchLink !== '' && providerCount > 0;
+
+  /** Tarayıcı açılamazsa sessiz geçilmez: Sentry + görünür mesaj (§15.2). */
+  const handleWatchNow = useCallback(async () => {
+    if (!watchLink) return;
+    void hapticLight();
+    posthogAnalytics.track('watch_now_tapped', {
+      film_id: champion.id,
+      cycle,
+      region,
+      provider_count: providerCount,
+    });
+    try {
+      await WebBrowser.openBrowserAsync(watchLink);
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { component: 'ChampionReveal', flow: 'watch_now' },
+        extra: { film_id: champion.id, region },
+      });
+      showNotice(t('gauntlet.watchNow.error'));
+    }
+  }, [watchLink, champion.id, cycle, region, providerCount, showNotice, t]);
+
+  /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
    * ekranin %58'ini kapliyor ve 3x'te >=720px gerekiyor. Yukseltme saf bir
    * yardimciyla yapiliyor; desen eslesmezse URL OLDUGU GIBI kalir.
@@ -296,9 +360,35 @@ export function ChampionReveal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateReveal, champion.id]);
 
+  /**
+   * V-3 Tur G2 (C1): orijinal URL de yuklenemezse (ya da URL hic yoksa)
+   * duz `charcoal` + sessiz yer tutucu. Sessiz fallback DEGIL — iz birakir.
+   * Reveal zamanlamasi degismez: kara bosluk 1.5s tavaniyla yine baslar.
+   */
+  const [posterFailed, setPosterFailed] = useState(champion.posterUrl === '');
+
+  useEffect(() => {
+    if (champion.posterUrl !== '') return;
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.poster',
+      message: 'champion posterUrl bos - yer tutucu gosterildi',
+      level: 'warning',
+      data: { film_id: champion.id },
+    });
+  }, [champion.id, champion.posterUrl]);
+
   /** Yukseltilmis URL yuklenemezse orijinaline dus - bos poster gosterme. */
   const handlePosterError = useCallback(() => {
-    if (posterUri === champion.posterUrl) return;
+    if (posterUri === champion.posterUrl) {
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.poster',
+        message: 'champion posteri yuklenemedi - yer tutucu gosterildi',
+        level: 'warning',
+        data: { film_id: champion.id },
+      });
+      setPosterFailed(true);
+      return;
+    }
     Sentry.addBreadcrumb({
       category: 'gauntlet.poster',
       message: 'w780 yuklenemedi - orijinal URLe dusuldu',
@@ -346,91 +436,144 @@ export function ChampionReveal({
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
   const metaStyle = useAnimatedStyle(() => ({ opacity: metaOpacity.value }));
 
+  /** C2: önceki döngü şampiyonu "Bu akşamın filmi" DEĞİL, kullanıcının ilk filmi. */
+  const isFirst = cycle === 'previous';
+  const kickerText = t(isFirst ? 'gauntlet.championTitleFirst' : 'gauntlet.championTitle');
+
   return (
     <View
       style={styles.container}
-      accessibilityLabel={t('gauntlet.championAccessibilityLabel', {
-        title: champion.title,
-        year: champion.year,
-        runtime: champion.runtime,
-      })}
+      accessibilityLabel={t(
+        isFirst ? 'gauntlet.championAccessibilityLabelFirst' : 'gauntlet.championAccessibilityLabel',
+        { title: champion.title, year: champion.year, runtime: champion.runtime },
+      )}
     >
-      <Animated.View style={[styles.posterWrapper, posterStyle]}>
+      {/*
+        C1 hero — ekranın ~%60'ı, `cover`. VoiceOver'dan GİZLİ: çerçevenin en
+        üstünde olduğu için ilk okunurdu; sıra etiket → başlık → meta →
+        platformlar → eylemler. Detaya geçiş VO'da başlığın `activate`'i.
+      */}
+      <Animated.View
+        style={[styles.hero, { height: heroHeight }, posterStyle]}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
         <TouchableOpacity
           style={styles.posterTouchable}
           onPress={handleOpenFilm}
           activeOpacity={0.85}
-          accessibilityRole="button"
-          accessibilityLabel={t('gauntlet.championOpenFilm', { title: champion.title })}
+          accessible={false}
         >
-          <Image
-            source={{ uri: posterUri }}
-            style={styles.poster}
-            contentFit="cover"
-            onLoad={() => setPosterLoaded(true)}
-            onError={handlePosterError}
-          />
+          {posterFailed ? (
+            <View style={styles.posterPlaceholder}>
+              <FilmSlate size={size.touchTarget} color={color.text.secondary} weight="thin" />
+            </View>
+          ) : (
+            <Image
+              source={{ uri: posterUri }}
+              style={styles.poster}
+              contentFit="cover"
+              onLoad={() => setPosterLoaded(true)}
+              onError={handlePosterError}
+            />
+          )}
         </TouchableOpacity>
-      </Animated.View>
-
-      <Animated.View style={titleStyle}>
-        <Text style={styles.kicker}>{cycle === 'previous' ? t('gauntlet.championTitleFirst') : t('gauntlet.championTitle')}</Text>
-        {/* C8: deterministik kademe, runtime autoscale YOK. VoiceOver TAM
-            basligi duyar — gorsel kisaltma bilgi eksiltmez (K-54). */}
-        <Text
-          style={[styles.title, tierStyle !== null && styles[tierStyle]]}
-          numberOfLines={3}
-          accessibilityLabel={champion.title}
-        >
-          {champion.title}
-        </Text>
-      </Animated.View>
-
-      <Animated.Text style={[styles.metaLine, metaStyle]} numberOfLines={1}>
-        {t('gauntlet.posterMeta', { year: champion.year, runtime: champion.runtime })}
-      </Animated.Text>
-
-      {/* Eylemler — meta ile aynı vuruşta belirir (§10.2 sırası bozulmaz). */}
-      <Animated.View style={[styles.actionsWrapper, metaStyle]}>
-        {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
-
-        {/*
-          "Nerede izlenir" — bilgi bloğu, EYLEM DEĞİL (TestFlight 2.1.0).
-          Dokunulmaz logo satırı + atıf; dört durumu `WatchProvidersRow` çizer.
-          Hata durumundaki "Tekrar dene" bloğun içinde, sessiz eylem olarak.
-        */}
-        <WatchProvidersRow state={providersState} providers={providers} onRetry={retry} />
-
-        {/* BİRİNCİL EYLEM — "Sonraya bırak", sağlayıcı durumundan BAĞIMSIZ. */}
-        {gauntletId !== undefined && (
-          <PrimaryAction
-            label={
-              saveState === 'saved'
-                ? t('gauntlet.saveForLater.saved')
-                : t('gauntlet.saveForLater.action')
-            }
-            onPress={() => void handleSaveForLater()}
-            // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
-            // tamamlandı, tekrar basılacak bir şey yok.
-            disabled={saveState !== 'idle'}
-            busy={saveState === 'saving'}
+        {!reduceTransparency && (
+          <LinearGradient
+            pointerEvents="none"
+            style={styles.scrim}
+            colors={SCRIM_COLORS}
+            locations={SCRIM_LOCATIONS}
           />
         )}
+      </Animated.View>
 
-        {/* İKİNCİL EYLEMLER — sessiz metin bağlantıları (L-2). */}
-        <View style={styles.actionsRow}>
-          {date !== undefined && (
-            <>
-              <QuietAction
+      {/* C3: blok geçişin üstüne biner (kontrast ölçümü heroScrim.ts). Reduce
+          Transparency'de geçiş yok — blok posterin ALTINDA, düz ink üstünde. */}
+      <View style={[styles.body, { marginTop: reduceTransparency ? space.lg : -TITLE_OVERLAP }]}>
+        <Animated.View style={titleStyle}>
+          <Text style={styles.kicker} accessibilityLabel={kickerText}>
+            {kickerText.toLocaleUpperCase(language)}
+          </Text>
+          {/* C8: deterministik kademe, runtime autoscale YOK. VoiceOver TAM
+              basligi duyar — gorsel kisaltma bilgi eksiltmez (K-54). */}
+          <Text
+            style={[styles.title, tierStyle !== null && styles[tierStyle]]}
+            numberOfLines={3}
+            accessibilityRole="header"
+            accessibilityLabel={champion.title}
+            accessibilityHint={t('gauntlet.championOpenFilm', { title: champion.title })}
+            accessibilityActions={[{ name: 'activate' }]}
+            onAccessibilityAction={(e) => {
+              if (e.nativeEvent.actionName === 'activate') handleOpenFilm();
+            }}
+          >
+            {champion.title}
+          </Text>
+        </Animated.View>
+
+        <Animated.Text style={[styles.metaLine, metaStyle]} numberOfLines={1}>
+          {t('gauntlet.tileMeta', { year: champion.year, runtime: champion.runtime })}
+        </Animated.Text>
+
+        {/* Eylemler — meta ile aynı vuruşta belirir (§10.2 sırası bozulmaz). */}
+        <Animated.View style={[styles.actionsWrapper, metaStyle]}>
+          {/*
+            "Nerede izlenir" — en fazla 3 logo + "See all" sheet'i (C5).
+            Dört durumu `WatchProvidersRow` çizer; hata durumundaki
+            "Tekrar dene" bloğun içinde, sessiz eylem olarak.
+          */}
+          <WatchProvidersRow
+            state={providersState}
+            providers={providers}
+            onRetry={retry}
+            filmId={champion.id}
+          />
+
+          {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
+
+          {/* C6 — tam genişlik, alt alta, ≥ 48pt. */}
+          <View style={styles.actionsStack}>
+            {showWatchNow && (
+              <ChampionActionButton
+                label={t('gauntlet.watchNow.action')}
+                icon={Play}
+                variant="marquee"
+                onPress={() => void handleWatchNow()}
+              />
+            )}
+
+            {/* "Sonraya bırak" — mantık aynı; Watch Now yokken dolgulu. */}
+            {gauntletId !== undefined && (
+              <ChampionActionButton
+                label={
+                  saveState === 'saved'
+                    ? t('gauntlet.saveForLater.saved')
+                    : t('gauntlet.saveForLater.action')
+                }
+                icon={BookmarkSimple}
+                variant={showWatchNow ? 'outline' : 'filled'}
+                onPress={() => void handleSaveForLater()}
+                // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
+                // tamamlandı, tekrar basılacak bir şey yok.
+                disabled={saveState !== 'idle'}
+                busy={saveState === 'saving'}
+              />
+            )}
+
+            {date !== undefined && (
+              <ChampionActionButton
                 label={t('gauntlet.share.action')}
+                icon={ShareNetwork}
+                variant="outline"
                 onPress={() => void handleShare()}
               />
-              {onDismiss && <Text style={styles.actionSeparator}>·</Text>}
-            </>
-          )}
+            )}
+          </View>
+
           {onDismiss && <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />}
-        </View>
-      </Animated.View>
+        </Animated.View>
+      </View>
     </View>
   );
 }

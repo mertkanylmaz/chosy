@@ -17,7 +17,7 @@
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View, useWindowDimensions, type LayoutChangeEvent } from 'react-native';
+import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -245,16 +245,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const { height: windowHeight } = useWindowDimensions();
   /** V-2 Tur B: tab bar + home indicator — TÜM dalların alt payı buradan. */
   const tabBarInset = useTabBarInset();
-  /**
-   * Spotlight kartının ölçülen yüksekliği. Kart mutlak konumlu; şampiyon
-   * kaydırma içeriği bu kadar alt dolgu alır ki "Paylaş" kartın altında
-   * kalmasın. Sabit yazılmaz — Dynamic Type kartı büyütür.
-   */
-  const [bonusCardHeight, setBonusCardHeight] = useState(0);
-  const handleBonusCardLayout = useCallback((e: LayoutChangeEvent) => {
-    const h = Math.round(e.nativeEvent.layout.height);
-    setBonusCardHeight((prev) => (prev === h ? prev : h));
-  }, []);
 
   const [shellState, setShellState] = useState<ShellState>(
     isUnlockedNow() ? 'bootstrapping' : 'before_18',
@@ -1460,22 +1450,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               DUNUN champion'i geldiginde kullanici "bu bugunun listesi degil"
               uyarisini hic gormuyordu ve dunun filmini bugunun filmi
               saniyordu. Mevcut gosterge yeniden kullanildi, yeni string yok. */}
-          {/* V-2 Tur B: şampiyon bloğu KAYDIRILABİLİR. Küçük ekranda (SE)
-              poster + başlık + eylemler yüksekliği aşıyor; eskiden taşan kısım
-              Spotlight kartının ve tab bar'ın altına düşüyordu. `flexGrow: 1`
-              büyük ekranda ortalamayı korur. Alt dolgu = kart yüksekliği +
-              boşluk; tab bar payı zaten `insetLayer`'da. */}
+          {/* V-2 Tur B: şampiyon bloğu KAYDIRILABİLİR.
+              V-3 Tur G2 (C8): alt dolgu = `tabBarInset` + boşluk — içerik
+              tab bar'ın arkasından geçer, en alttaki öğe (Spotlight) bar'ın
+              ÜSTÜNDE durur. `insetLayer` bu dalda dolgusuz. */}
           <ScrollView
             style={styles.championScroll}
             contentContainerStyle={[
               styles.championScrollContent,
-              { paddingBottom: bonusCardHeight + space.base },
+              { paddingBottom: tabBarInset + space.lg },
             ]}
             showsVerticalScrollIndicator={false}
           >
-            {isStale && (
-              <Text style={styles.championStaleNotice}>{t('gauntlet.offlineStale')}</Text>
-            )}
             <ChampionReveal
               champion={champion}
               animateReveal={animateReveal}
@@ -1489,7 +1475,25 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
                 dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
             <ArchiveTrigger />
+
+            {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
+                noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
+                V-3 Tur G2 (C7, V3-D6): yüzen/mutlak konum kaldırıldı —
+                kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu
+                aynı: şampiyon varsa. */}
+            <View style={styles.bonusCardInline}>
+              <SpotlightBonusCard />
+            </View>
           </ScrollView>
+
+          {/* K-42 (C.9b-UI): bayat gösterge — V-3 Tur G2'den beri hero'nun
+              ÜSTÜNDE sabit, güvenli alanın hemen altında (hero durum
+              çubuğunun altına uzandığı için kaydırma içinde kaybolurdu). */}
+          {isStale && (
+            <View style={[styles.championStaleOverlay, { top: insets.top }]} pointerEvents="none">
+              <Text style={styles.championStaleNotice}>{t('gauntlet.offlineStale')}</Text>
+            </View>
+          )}
 
           {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
               en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
@@ -1501,19 +1505,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             visible={championPrompt === 'notification'}
             onClose={handleNotificationPromptClose}
           />
-
-          {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
-              noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
-              V-2 Tur B: MUTLAK konum, `bottom = tabBarInset` — tab bar'ın
-              hemen üstünde sabit, kaydırılan içerikle çakışmaz. Yoga'da mutlak
-              ofset ebeveyn dolgusunu saymaz; `insetLayer`'ın alt dolgusu
-              burada tekrar verilir, iki kez eklenmez. */}
-          <View
-            style={[styles.bonusCardDock, { bottom: tabBarInset }]}
-            onLayout={handleBonusCardLayout}
-          >
-            <SpotlightBonusCard />
-          </View>
 
           {/* G4b: native tab bar payının saha ölçümü — görsel çıktısı yok,
               düzeni değiştirmez. Karar verisi gelince kaldırılır. */}
@@ -1638,6 +1629,14 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   );
   };
 
+  /**
+   * V-3 Tur G2: şampiyon görünümü dolgusuz — hero durum çubuğunun altına
+   * kadar uzanır (C1, kurucu kararı) ve kaydırma içeriği tab bar'ın
+   * arkasından geçer; alt pay kaydırma içeriğinin kendi dolgusunda (C8).
+   * SALT DÜZEN — hangi dalın çizildiği yine `renderBody`'nin kararı.
+   */
+  const isChampionView = shellState === 'completed_today' && champion !== null;
+
   return (
     <View style={styles.root}>
       {/* Sızma dolgusuz katmanda — ışık ekranın kenarına ulaşır (§5.1). */}
@@ -1645,9 +1644,11 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       <View
         style={[
           styles.insetLayer,
-          // V-2 Tur B: alt pay tab bar DAHİL (`useTabBarInset`) — beş durumun
-          // hepsi bu tek dolguyu miras alır. Üst pay pencere güvenli alanı.
-          { paddingTop: insets.top, paddingBottom: tabBarInset },
+          // V-2 Tur B: alt pay tab bar DAHİL (`useTabBarInset`) — şampiyon
+          // dışındaki dallar bu tek dolguyu miras alır. Üst pay pencere güvenli alanı.
+          isChampionView
+            ? null
+            : { paddingTop: insets.top, paddingBottom: tabBarInset },
         ]}
       >
         {renderBody()}

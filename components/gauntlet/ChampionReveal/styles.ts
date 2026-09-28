@@ -1,38 +1,30 @@
 /**
- * ChampionReveal stilleri — DESIGN_OS §10.2: tek poster ortalanmış,
- * display-xl başlık (Archivo Expanded — bu ekrandaki TEK kullanım),
- * meta satırı Martian Mono. Drop shadow YOK (§4.3).
+ * ChampionReveal stilleri — V-3 Tur G2 (C1–C8). Drop shadow YOK (§4.3).
+ *
+ * Hero tam genişlik ve yüksekliği inline (pencere × HERO_HEIGHT_RATIO);
+ * blok hero'nun altına `-TITLE_OVERLAP` ile biner (heroScrim.ts, kontrast
+ * ölçümü orada). Yatay boşluk yalnız blokta — hero kenardan kenara.
  */
 import { StyleSheet } from 'react-native';
 
-import { color, radius, space, type } from '@/constants/design/semantic';
+import { color, space, type } from '@/constants/design/semantic';
 
 export const styles = StyleSheet.create({
   /**
-   * C.9b-UI G11: zemin ŞEFFAF. Eskiden opak `ink` boyuyordu ve arkasındaki
-   * ışık sızmasını tamamen örtüyordu — §10.2 "sızma burada en güçlü" derken
-   * Champion ekranı pratikte düz siyahtı (cihaz görüntüsüyle doğrulandı:
-   * baştan aşağı turkuaz bir poster, zemin nötr siyah).
-   *
-   * Zemini artık `GauntletShell`'in dış root'u boyuyor (`ink`), sızma da
-   * orada. Buraya renk koymak o katmanı yeniden örter.
+   * C.9b-UI G11: zemin ŞEFFAF — `GauntletShell` root'u `ink` boyuyor, ışık
+   * sızması da orada. Buraya renk koymak o katmanı yeniden örter.
    */
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: 'transparent',
-    paddingHorizontal: space.lg,
-    gap: space.lg,
   },
-  posterWrapper: {
-    width: '58%',
-    aspectRatio: 2 / 3,
-    borderRadius: radius.poster,
+  /** C1: kenardan kenara, köşesiz. Yükseklik inline. */
+  hero: {
+    width: '100%',
     overflow: 'hidden',
     backgroundColor: color.surface.raised,
   },
-  /** Dokunma alanı afişin TAMAMI — ayrı bir buton çizilmez (§10.2 sessizlik). */
+  /** Dokunma alanı hero'nun TAMAMI — ayrı bir buton çizilmez (§10.2 sessizlik). */
   posterTouchable: {
     width: '100%',
     height: '100%',
@@ -41,69 +33,76 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  /** C1: poster yüklenemedi — düz `charcoal`, ortada sönük ikon, metin yok. */
+  posterPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: color.surface.raised,
+  },
+  /** C1: geçiş hero'nun alt yarısında (SCRIM_HEIGHT_RATIO = 0.5). */
+  scrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '50%',
+  },
+  body: {
+    alignItems: 'center',
+    paddingHorizontal: space.lg,
+    gap: space.base,
+  },
+  /**
+   * C2: büyük harf JS'te (`toLocaleUpperCase`) — TR i → İ. Renk `bone@80%`:
+   * geçiş üstünde en kötü durumda 5.61:1 (heroScrim testi); `smoke` 4.5'i
+   * tutturmazdı.
+   */
   kicker: {
-    ...type.meta,
-    color: color.text.secondary,
+    ...type['label-caps'],
+    color: color.text.primarySoft,
     textAlign: 'center',
     marginBottom: space.sm,
   },
   /**
-   * Baslik kademesi — C.9b-UI C8.
-   *
-   * Eskiden `numberOfLines={2} adjustsFontSizeToFit` vardi:
-   * `minimumFontScale` verilmedigi icin RN varsayilani 0.01'e kadar
-   * kuculebiliyordu. Yani 68 karakterlik bir baslik teorik olarak
-   * okunamayacak kadar kucuk cizilebilirdi ve hangi boyutta cizilecegi
-   * CIHAZA gore degisiyordu — ayni film iki telefonda farkli gorunur.
-   *
-   * Artik kademe DETERMINISTIK: uzunluk esigine gore 40 -> 32 -> 28.
-   * En fazla 3 satir. Runtime autoscale YOK.
-   *
-   * Esikler havuz olcumunden (19 Eyl, n=1907 core+extended):
-   *   >25 karakter: 242 film (%12,7)
-   *   >35 karakter:  64 film
-   *   en uzun:       68 karakter
-   *     ("Dr. Strangelove or: How I Learned to Stop Worrying...")
-   *
-   * 32 ve 28 `display-l`/`display-m` DEGIL (onlar 30/22) — C8 bu uc
-   * degeri acikca kilitliyor. Aile ve letterSpacing orani korunuyor.
+   * C3 başlık — `filmTitle` ailesi (V3-D1), C.9b-UI C8 kademesi korunur:
+   * uzunluk eşiğine göre 40 → 32 → 28, en fazla 3 satır, runtime autoscale
+   * YOK. Eşik ölçümü (19 Eyl, n=1907): >25 karakter 242 film, >35 64 film,
+   * en uzun 68 ("Dr. Strangelove or: …"). Serif'te harf aralığı 0.
    */
   title: {
-    ...type['display-xl'],
+    ...type.filmTitle,
+    fontSize: 40,
+    lineHeight: 44,
     color: color.text.primary,
     textAlign: 'center',
   },
   titleMedium: {
     fontSize: 32,
     lineHeight: 36,
-    letterSpacing: -1.6,
   },
   titleSmall: {
     fontSize: 28,
     lineHeight: 32,
-    letterSpacing: -1.4,
   },
+  /** C4: "1994 · 142 MIN" — Martian Mono. */
   metaLine: {
     ...type.meta,
     color: color.text.secondary,
     textAlign: 'center',
   },
-  /** "Paylaş · Kapat" — sessiz eylemler, cam yok (§4.4 muafiyet listesi). */
   actionsWrapper: {
+    alignSelf: 'stretch',
     alignItems: 'center',
-    gap: space.sm,
+    gap: space.base,
+    marginTop: space.sm,
   },
-  actionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  /** C6: tam genişlik, alt alta. */
+  actionsStack: {
+    alignSelf: 'stretch',
     gap: space.md,
   },
-  actionSeparator: {
-    ...type.caption,
-    color: color.text.secondary,
-    opacity: 0.7,
-  },
-  /** Pano onayı — kısa ömürlü, eylemin ÜSTÜNDE (düzen zıplamasın diye sabit sıra) */
+  /** Pano / kaydetme onayı — kısa ömürlü, butonların ÜSTÜNDE (sabit sıra). */
   shareNotice: {
     ...type.caption,
     color: color.text.secondary,

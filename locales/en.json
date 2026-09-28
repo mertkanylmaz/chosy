@@ -1456,9 +1456,14 @@
     "question": "Which would you watch tonight?",
     "seenPrompt": "Which one have you watched?",
     "cancel": "Cancel",
-    "championTitle": "Today's film",
+    "championTitle": "Tonight's film",
     "championTitleFirst": "Your first film",
-    "championAccessibilityLabel": "Today's film: %{title}, %{year}, %{runtime} minutes",
+    "championAccessibilityLabel": "Tonight's film: %{title}, %{year}, %{runtime} minutes",
+    "championAccessibilityLabelFirst": "Your first film: %{title}, %{year}, %{runtime} minutes",
+    "watchNow": {
+      "action": "Watch now",
+      "error": "Couldn't open the page. Try again."
+    },
     "championOpenFilm": "Open details for %{title}",
     "close": "Close",
     "confidence": "I know %{percent}% of you",
@@ -1493,7 +1498,15 @@
       "empty": "Not available to watch in your region.",
       "noRegion": "Couldn't determine your region, so availability can't be shown.",
       "error": "Couldn't load watch options.",
-      "attribution": "Availability from TMDB"
+      "attribution": "Availability from TMDB",
+      "seeAll": "See all",
+      "seeAllA11y": "See all %{count} watch options",
+      "sheetTitle": "Where to watch",
+      "group": {
+        "stream": "Stream",
+        "rent": "Rent",
+        "buy": "Buy"
+      }
     },
     "context": {
       "label": "%{day} %{dayPart} · %{companion} · %{duration}",

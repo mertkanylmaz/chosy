@@ -133,7 +133,16 @@ export interface TmdbProvider {
 
 /** Bölgeye özel watch provider sonucu */
 export interface TmdbWatchProviders {
+  /**
+   * V-3 Tur G2 (V3-D3): TMDB'nin bölgeye özel "nerede izlenir" sayfası.
+   * Alan yanıtta HEP vardı; yalnız tipe eklendi — kalıcı önbellek yok
+   * (`useWatchProviders` memo'su oturum içi ham yanıtı tutar).
+   */
+  link?: string;
   flatrate?: TmdbProvider[];
+  /** V-3 Tur G2: ücretsiz / reklamlı kovalar — şampiyon sıralamasında kullanılır. */
+  free?: TmdbProvider[];
+  ads?: TmdbProvider[];
   rent?: TmdbProvider[];
   buy?: TmdbProvider[];
 }

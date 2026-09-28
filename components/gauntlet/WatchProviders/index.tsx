@@ -26,21 +26,29 @@
  * Kanal varyantları ("MGM+ Amazon Channel") `utils/watchProviderList`'te
  * elenir (V-2 Tur D) — film detay ekranıyla ortak saf kural.
  */
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Text, TouchableOpacity, View } from 'react-native';
 
 import { Image } from 'expo-image';
+import { ArrowRight } from 'phosphor-react-native';
 
 import { QuietAction } from '@/components/gauntlet/QuietAction';
+import { color, size } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { posthogAnalytics } from '@/services/posthog';
 import type { TmdbWatchProviders } from '@/services/tmdb';
-import { flattenProviders } from '@/utils/watchProviderList';
+import { hapticLight } from '@/utils/haptics';
+import { groupProviders, orderProviders } from '@/utils/watchProviderList';
 
+import { ProvidersSheet } from './ProvidersSheet';
 import type { WatchProvidersState } from './useWatchProviders';
 import { styles } from './styles';
 
-/** Şampiyon ekranı bir liste ekranı değil — ilk N sağlayıcı yeter. */
-const MAX_PROVIDERS = 6;
+/**
+ * V-3 Tur G2 (V3-D5): satırda en fazla 3 logo; fazlası "See all" sheet'inde.
+ * Sıralama `selectTopProviders` kuralı (flatrate > free > ads > rent > buy).
+ */
+const MAX_PROVIDERS = 3;
 
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
 
@@ -48,16 +56,40 @@ interface WatchProvidersRowProps {
   state: WatchProvidersState;
   providers: TmdbWatchProviders | null;
   onRetry: () => void;
+  /** `providers_see_all_opened` event'i için. */
+  filmId: string;
 }
 
 export function WatchProvidersRow({
   state,
   providers,
   onRetry,
+  filmId,
 }: WatchProvidersRowProps): React.JSX.Element {
-  const { t } = useLanguage();
+  const { t, region } = useLanguage();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
-  const list = state === 'ok' && providers ? flattenProviders(providers, MAX_PROVIDERS) : [];
+  // V-3 Tur G2: free/ads artık sayılır — yalnız free/ads olan film logo
+  // gösterir (kurucu kararı), boş durum yalnız HİÇ sağlayıcı yokken.
+  const ordered = useMemo(
+    () => (state === 'ok' && providers ? orderProviders(providers) : []),
+    [state, providers],
+  );
+  const list = ordered.slice(0, MAX_PROVIDERS);
+  const groups = useMemo(
+    () => (providers ? groupProviders(providers) : { stream: [], rent: [], buy: [] }),
+    [providers],
+  );
+
+  const openSheet = useCallback(() => {
+    void hapticLight();
+    setSheetOpen(true);
+    posthogAnalytics.track('providers_see_all_opened', {
+      film_id: filmId,
+      region,
+      provider_count: ordered.length,
+    });
+  }, [filmId, region, ordered.length]);
 
   /*
     Atıf: sağlayıcı verisi TMDB'ye JustWatch'tan gelir ve TMDB kullanım
@@ -91,8 +123,9 @@ export function WatchProvidersRow({
       );
     }
 
-    // `ok` ama flatrate/rent/buy boş (ör. yalnız `ads`/`free`) → boşla aynı:
-    // çizilecek logo yok, dürüst tek satır.
+    // `ok` ama hiçbir kovada sağlayıcı yok → boşla aynı: çizilecek logo
+    // yok, dürüst tek satır. (V-3 Tur G2'ye kadar yalnız free/ads olan
+    // film de buraya düşüyordu; artık logo gösterir.)
     if (list.length === 0) {
       return (
         <>
@@ -104,19 +137,42 @@ export function WatchProvidersRow({
 
     return (
       <>
-        <View style={styles.row}>
-          {list.map((provider) => (
-            <Image
-              key={provider.provider_id}
-              source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
-              style={styles.logo}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              accessibilityLabel={provider.provider_name}
-            />
-          ))}
+        <View style={styles.logoLine}>
+          <View style={styles.row}>
+            {list.map((provider) => (
+              <Image
+                key={provider.provider_id}
+                source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
+                style={styles.logo}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                accessibilityLabel={provider.provider_name}
+              />
+            ))}
+          </View>
+          {ordered.length > MAX_PROVIDERS && (
+            <TouchableOpacity
+              style={styles.seeAllPill}
+              onPress={openSheet}
+              activeOpacity={0.7}
+              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('gauntlet.watchProviders.seeAllA11y', {
+                count: ordered.length,
+              })}
+            >
+              <Text style={styles.seeAllText}>{t('gauntlet.watchProviders.seeAll')}</Text>
+              <ArrowRight size={size.iconInline} color={color.text.primary} />
+            </TouchableOpacity>
+          )}
         </View>
         {attribution}
+        <ProvidersSheet
+          visible={sheetOpen}
+          groups={groups}
+          onClose={() => setSheetOpen(false)}
+          attribution={attribution}
+        />
       </>
     );
   };
