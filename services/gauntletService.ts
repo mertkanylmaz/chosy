@@ -724,3 +724,25 @@ export async function getLastChampionPosterUrl(userId: string): Promise<string |
   if (!path.startsWith('http')) return `https://image.tmdb.org/t/p/w342${path}`;
   return path.replace(/(image\.tmdb\.org\/t\/p\/)[^/]+\//, '$1w342/');
 }
+
+/**
+ * `since` (UTC gün anahtarı, dahil) ve sonrasında şampiyon seçilen günler —
+ * Profil ritüel halkası. Aynı RLS yolu (`daily_gauntlets_personal_read`).
+ * Satır yoksa boş dizi (boş durum). Sorgu hatası Sentry'ye yazılır ve fırlatılır.
+ */
+export async function getChampionDatesSince(userId: string, since: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('daily_gauntlets')
+    .select('date')
+    .eq('user_id', userId)
+    .eq('scope', 'personal')
+    .not('champion_film_id', 'is', null)
+    .gte('date', since);
+
+  if (error) {
+    Sentry.captureException(error, { tags: { fn: 'getChampionDatesSince' } });
+    throw error;
+  }
+
+  return ((data ?? []) as { date: string }[]).map((row) => row.date);
+}

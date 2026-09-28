@@ -548,6 +548,7 @@
     "watchedCount": "Films watched: %{count}",
     "watchedEmpty": "No films logged yet. I’ll ask about your pick the day after.",
     "savedSection": "Saved",
+    "ritualRingA11y": "Picked a film on %{count} of the last %{total} days",
     "proSection": "Membership",
     "chosyPro": "Chosy Plus",
     "chosyProSubtitle": "Replay missed days · see how your taste evolves",

@@ -86,7 +86,9 @@ import {
   toggleNotifications,
 } from '@/services/pushNotifications';
 import { formatUnlockTime } from '@/components/gauntlet/GauntletShell/unlockClock';
-import { getLastChampionPosterUrl } from '@/services/gauntletService';
+import { getChampionDatesSince, getLastChampionPosterUrl } from '@/services/gauntletService';
+import { RitualRing } from '@/components/Profile/RitualRing';
+import { buildRitualWeek, ritualWeekStart } from '@/components/Profile/RitualRing/ritualWeek';
 import type { PremiumStatus } from '@/utils/premiumStatus';
 
 import type { SwipeInsight } from '@/types/profile';
@@ -117,6 +119,10 @@ const HEADER_CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
 /** Avatar mercegi dis capi (pt) — Faz 2 ritual halkasi da bu olcuyu kullanir. */
 const AVATAR_LENS_SIZE = 96;
+/** Ritual halkasi cizgi kalinligi (pt). */
+const RITUAL_RING_STROKE = 3;
+/** Dis kenardan ic mercege uzaklik: halka + 4pt bosluk. */
+const AVATAR_LENS_INSET = RITUAL_RING_STROKE + space.xs;
 
 // Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
 // Anahtar + tek seferlik tasima: utils/avatarStorage.ts
@@ -678,6 +684,12 @@ export default function ProfileScreen() {
   const reduceTransparency = useReduceTransparency();
   /** Son sampiyonun posteri — header "perde" arka plani. null → perde yok. */
   const [championPosterUrl, setChampionPosterUrl] = useState<string | null>(null);
+  /**
+   * Ritual halkasi — son 7 gunun sampiyon dolulugu. null → yuklenmedi veya
+   * hata: halka cizilmez, mercek duz `graphite` hairline'a doner (sahte
+   * "0/7" gosterilmez).
+   */
+  const [ritualWeek, setRitualWeek] = useState<boolean[] | null>(null);
   /** Izlenen film sayisi — `null`: yuklenmedi ya da hata (satir cizilmez). */
   const [watchedCount, setWatchedCount] = useState<number | null>(null);
 
@@ -762,6 +774,16 @@ export default function ProfileScreen() {
         .catch((err: unknown) => {
           setChampionPosterUrl(null);
           logger.warn('[ProfileScreen] sampiyon posteri yuklenemedi:', err);
+        });
+
+      // Ritual halkasi — son 7 UTC gunu (non-blocking). Hata servis
+      // katmaninda Sentry'ye yazildi; halka cizilmez.
+      const ritualNow = new Date();
+      getChampionDatesSince(userId, ritualWeekStart(ritualNow))
+        .then((dates) => setRitualWeek(buildRitualWeek(dates, ritualNow)))
+        .catch((err: unknown) => {
+          setRitualWeek(null);
+          logger.warn('[ProfileScreen] ritual haftasi yuklenemedi:', err);
         });
 
       // İsim önceliği: username → display_name → auth metadata adı → null (fallback i18n'den gelir)
@@ -1264,11 +1286,24 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Avatar — projektor mercegi: dis `graphite` + ic `beam`@24%
-                halka, aralarinda bosluk. Altin yok, golge yok (§4, E-23):
-                altin yalniz odul katmaninda. */}
+            {/* Avatar — projektor mercegi: dis halka + ic `beam`@24% halka,
+                aralarinda bosluk. Golge yok (§4). Dis halka = ritual halkasi:
+                son 7 gunun sampiyonlu gunleri `marquee` ile dolar — altin
+                yalniz kazanilinca (E-23). Veri yoksa duz `graphite` hairline. */}
+            <View style={styles.avatarLensWrap}>
+            {ritualWeek && (
+              <RitualRing
+                filled={ritualWeek}
+                diameter={AVATAR_LENS_SIZE}
+                strokeWidth={RITUAL_RING_STROKE}
+                accessibilityLabel={t('profile.ritualRingA11y', {
+                  count: ritualWeek.filter(Boolean).length,
+                  total: ritualWeek.length,
+                })}
+              />
+            )}
             <TouchableOpacity
-              style={styles.avatarLensOuter}
+              style={[styles.avatarLensOuter, ritualWeek && styles.avatarLensOuterRing]}
               onPress={() => { hapticLight(); setShowAvatarModal(true); }}
               activeOpacity={0.8}
               accessibilityRole="button"
@@ -1285,6 +1320,7 @@ export default function ProfileScreen() {
                 <Camera size={12} weight="fill" color={color.text.primary} />
               </View>
             </TouchableOpacity>
+            </View>
 
             {/* Profil adi + duzenle butonu */}
             <TouchableOpacity
@@ -1671,17 +1707,30 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     opacity: 0.85,
   },
-  /** Mercek dis halkasi — 96pt, `graphite` hairline, ic halkaya 4pt bosluk */
+  /** Mercek + ritual halkasi ortak kutusu — halka absoluteFill ile bunu doldurur */
+  avatarLensWrap: {
+    width: AVATAR_LENS_SIZE,
+    height: AVATAR_LENS_SIZE,
+    marginBottom: space.base,
+  },
+  /**
+   * Mercek dis halkasi — veri yokken `graphite` hairline. Ic halkaya uzaklik
+   * her iki durumda AVATAR_LENS_INSET: hairline + padding = halka + bosluk.
+   */
   avatarLensOuter: {
     width: AVATAR_LENS_SIZE,
     height: AVATAR_LENS_SIZE,
     borderRadius: AVATAR_LENS_SIZE / 2,
     borderWidth: size.hairline,
     borderColor: color.surface.border,
-    padding: space.xs,
-    marginBottom: space.base,
+    padding: AVATAR_LENS_INSET - size.hairline,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /** Ritual halkasi cizilirken — kenari halka tasir */
+  avatarLensOuterRing: {
+    borderWidth: 0,
+    padding: AVATAR_LENS_INSET,
   },
   /** Mercek ic halkasi — `beam`@24% kenar, `charcoal` zemin */
   avatarInner: {

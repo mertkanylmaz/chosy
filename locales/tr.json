@@ -548,6 +548,7 @@
     "watchedCount": "İzlenen film: %{count}",
     "watchedEmpty": "Henüz izlediğin film yok. Seçtiğin filmi ertesi gün soracağım.",
     "savedSection": "Kaydedilenler",
+    "ritualRingA11y": "Son %{total} günün %{count} gününde film seçildi",
     "proSection": "Üyelik",
     "chosyPro": "Chosy Plus",
     "chosyProSubtitle": "Kaçırdığın günleri oyna · zevkinin değişimini gör",
