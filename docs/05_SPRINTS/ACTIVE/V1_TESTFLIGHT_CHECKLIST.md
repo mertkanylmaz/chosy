@@ -2,6 +2,8 @@
 
 > Oluşturma: 28 Eyl 2026 (V-1 Tur 8). Sahip: Kurucu (cihaz). Karar kaydı:
 > `docs/os/7_CHOSY_V1_KAPSAM_KILIDI.md` v1.31 §5 E-22.
+> **28 Eyl 2026 (V-3 Tur G3) eki:** K ve L bölümleri — V-3 gauntlet + şampiyon
+> görsel retrofiti, karar kaydı bible **v1.32 §5 E-23** (V3-D1…V3-D7).
 > Kaynak: V-1 turlarının commit'leri + bible §9'daki cihaz bekleyen kalemler.
 > Senaryolar **gerçekte uygulanan** davranışa göre yazıldı; sprint v1'de planlanıp
 > uygulanmayanlar (bildirim CTA'sı, Settings tek switch, dünkü şampiyon kartı,
@@ -13,6 +15,7 @@
       preview-store**. `__DEV__` ve `preview-e2e` build'lerinde 18:00 kapısı hep açık,
       `before_18` **oluşmaz** (bible §9, E-19/P0-1 satırı).
 - [ ] Build `f8f2e6d` ve sonrasını içeriyor (geri sayım, E-21, P0-1 `3fd787f`).
+- [ ] K/L için build `9dd6b34` ve sonrasını içeriyor (V-3 G1 + G2).
 - [ ] Auth: Supabase Email provider açık + `{{.Token}}` şablonları eklenmiş (yoksa
       K-14 testi kırmızı çıkar).
 - [ ] Test için iki cihaz saati penceresi: yerel **18:00 öncesi** ve **sonrası**.
@@ -129,6 +132,10 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 
 ## I. Tipografi — Playfair tasfiyesi (V-1 Tur 7, V1-D10)
 
+> V-3 notu: V1-D10 **kısmen geri alındı** (V3-D1) — serif gauntlet'teki film
+> adlarında geri döndü (K3, L3). Bu bölüm film adı **dışındaki** metinler için
+> geçerli.
+
 - [ ] I1. Film detay: başlık ve puan SF Pro (serif yok), puan rakamları hizalı.
 - [ ] I2. Watchlist detay, rulet (başlık + puan), boş/hata durumları, yükleme
       ekranı kelime markası: serif yok, ağırlık ince düşmemiş.
@@ -146,6 +153,65 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 - [ ] J5. **E-19** — `submit-choice` editoryal guard'ı (`editorial_day`) gerçek
       cihazda: editoryal günde ret → açık metin, algoritmik yedek yok.
 
+## K. Tur ekranı retrofiti (V-3 Tur G1, `682b793` `6389234` `2b89338`, V3-D1/D2/D7)
+
+- [ ] K1. Bağlam pill'i: solda ikon + büyük harfli, harf aralıklı özet + chevron;
+      kenar **graphite** (altın değil); yükseklik ≥44pt. Dokununca bağlam sheet'i
+      eskisi gibi açılıyor.
+- [ ] K2. Uzun bağlam (TR, en uzun gün + kiminle) → baştaki kısım kısalıyor, sondaki
+      "· süre" **asla kesilmiyor**; süre pill'de kısa karşılıkla.
+- [ ] K3. Poster başlıkları **Playfair (serif)**, ortalı, 2 satıra kadar; tek satırlık
+      başlıkta iki poster aynı hizada (2 satırlık yer ayrılıyor). Meta
+      "1994 · 142 MIN" ortalı, Martian Mono.
+- [ ] K4. Tur göstergesi: 3 nokta + altında "1 / 3"; tur ilerledikçe güncelleniyor.
+      VoiceOver "Round 1 of 3" / TR karşılığı okuyor.
+- [ ] K5. Soru metni SF Pro (serif **değil**), bone@80%.
+- [ ] K6. "İkisi de değil" / "İzledim" iki eşit genişlikte outline buton (≥44pt,
+      graphite kenar, dolgu yok); "Boşver, yarın" altta metin bağlantısı.
+      Disabled kuralları ve haptikler önceki davranışla aynı.
+- [ ] K7. Yükleme iskeleti: gerçek ekranla aynı yerleşim — iskelet → içerik
+      geçişinde zıplama yok.
+- [ ] K8. iPhone SE (<700pt yükseklik): üst boşluk küçülüyor, eylemler tab bar'ın
+      üstünde, kaydırma gerekmeden görünüyor.
+- [ ] K9. Home tab ikonu **film** (seçiliyken dolu), aktif rengi **marquee**;
+      Profile ikonunun aktif rengi değişmemiş. Discover gizli.
+- [ ] K10. Mantık regresyonu yok: 3 tur seçim, "ikisi de değil" yedek çekme
+      (editoryal günde açık metin), çevrimdışı seçim kuyruğu (K-42) önceki gibi.
+
+## L. Şampiyon ekranı retrofiti (V-3 Tur G2, `0b4de00` `e40cbaf` `9dd6b34`, V3-D1…D6)
+
+- [ ] L1. Poster tam genişlik hero (~ekranın %60'ı), alt yarısı siyaha eriyor;
+      etiket + başlık geçişin üstünde okunaklı — **en açık posterli** filmde de
+      (ör. beyaz afiş).
+- [ ] L2. Etiket "TONIGHT'S FILM"; önceki döngüde (Day-0, B bölümü) "YOUR FIRST
+      FILM". VoiceOver aynı ayrımı okuyor.
+- [ ] L3. Başlık **Playfair (serif)**; uzun adda 40 → 32 → 28 kademesi, en fazla 3
+      satır, taşma yok.
+- [ ] L4. **Reduce Transparency** açık → geçiş yok, sert kenar + düz siyah zemin.
+- [ ] L5. Poster yüklenemezse (uçak modu + önbelleksiz) → charcoal zemin + yer
+      tutucu, boş/çökük ekran yok.
+- [ ] L6. Sağlayıcı satırı en fazla **3 logo**; sıralama abonelik (stream) önce,
+      sonra ücretsiz/reklamlı, kiralık, satın al. Logolar **dokunulmaz**.
+- [ ] L7. >3 sağlayıcıda "See all" / "Tümü" → sheet: Stream / Rent / Buy grupları,
+      satırlar dokunulmaz, TMDB atfı görünür; kapatma çalışıyor.
+      PostHog: `providers_see_all_opened` (`film_id`, `region`, `provider_count`).
+- [ ] L8. **Watch now / Şimdi izle** düz marquee dolgu, siyah metin, gradient yok →
+      uygulama içi tarayıcıda TMDB'nin bölge sayfası açılıyor, kapatınca şampiyon
+      ekranına dönülüyor. PostHog: `watch_now_tapped` (`film_id`, `cycle`,
+      `region`, `provider_count`).
+- [ ] L9. Sağlayıcısı olmayan film / bölge belirlenemedi → Watch now **hiç yok**
+      (gri buton da yok); "Sonraya bırak" bone dolgulu birincil.
+- [ ] L10. Sonraya bırak ve Paylaş önceki gibi çalışıyor (kaydet → Saved'da görünür;
+      paylaş → metin/pano). Kapat altta sessiz bağlantı.
+- [ ] L11. Marquee ekranda **yalnız** Watch now'da (logo satırı, etiketler, diğer
+      butonlar altın değil).
+- [ ] L12. "Bugünün bonusu" Spotlight kartı kaydırmanın **sonunda**, satır içi —
+      yüzmüyor, içeriğin üstüne binmiyor; kart yalnız şampiyon varken var.
+- [ ] L13. Son içerik tab bar'ın altında kalmıyor (alt dolgu); bayat gösterge
+      (K-42, çevrimdışı açılış) hero'nun üstünde, durum çubuğunun altında görünüyor.
+- [ ] L14. Dil TR ↔ EN: tüm yeni metinler (Watch now, See all, sheet başlığı,
+      gruplar, hata mesajı) çevrilmiş.
+
 ---
 
 ## Test edilmeyecekler (uygulanmadı — E-22)
@@ -159,5 +225,5 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 
 ## Çıkış kriteri
 
-A–J'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
+A–L'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
 yeni build.
