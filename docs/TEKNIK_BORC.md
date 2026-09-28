@@ -2771,3 +2771,58 @@ bağlamadan önce M2 notu geçerli: `users.timezone` 'UTC' sayımı yeniden alı
 taşınmalı"* kaydı sabiti `GauntletShell/index.tsx`'te gösteriyor; V1-D9'dan
 beri yeri `unlockClock.ts:19`. Borcun kendisi (release'siz değiştirilemez)
 aynen açık.
+
+---
+
+## V-2 build öncesi — expo-doctor yama listesi ve bundle'daki emekli route'lar (28 Eyl 2026)
+
+**Kaynak:** build öncesi salt okunur kontrol (`npx expo-doctor` 1.20.4,
+`npx expo export --platform ios`). Kod değişikliği yok; ölçülmüş durum kaydıdır.
+
+### 1. SDK 54 paket sürümleri — bu build'de bilinçli olarak güncellenmedi
+
+**Öncelik: orta. Sonraki native build'den önce kapanmalı.**
+
+`expo-doctor` 18 kontrolden 17'sini geçti. Başarısız olan tek kontrol paket
+sürümlerinin SDK ile uyumu. Bu build'de güncellenmedi: build öncesinde
+bağımlılık değişikliği yapılmadı.
+
+| Paket | Beklenen | Kurulu | Tür |
+|---|---|---|---|
+| `@react-navigation/bottom-tabs` | ^7.4.0 | ^7.10.1 | minor (önde) |
+| `expo` | ~54.0.37 | 54.0.34 | patch |
+| `expo-constants` | ~18.0.14 | 18.0.13 | patch |
+| `expo-font` | ~14.0.12 | 14.0.11 | patch |
+| `expo-localization` | ~17.0.9 | 17.0.8 | patch |
+| `expo-router` | ~6.0.24 | 6.0.23 | patch |
+| `expo-updates` | ~29.0.20 | 29.0.17 | patch |
+| `@react-navigation/native` | ^7.1.8 | ^7.1.28 | patch (önde) |
+
+**Dikkat:** `expo-updates` ve `expo-localization` native kod taşır. Bunları
+güncellemek yeni bir build gerektirir. `runtimeVersion` politikası
+`appVersion` olduğu için güncellemeyle birlikte `app.json` `version` de
+artırılmalı. Artırılmazsa yeni JS aynı runtime'daki eski binary'ye OTA ile
+iner. **Kapanış yolu:** `npx expo install --check` → typecheck, gate'ler,
+cihaz testi → yeni build.
+
+### 2. Emekli ve donmuş route'lar hâlâ JS bundle'ına giriyor
+
+**Öncelik: düşük. Donmuş oyunların kaderi kararlaştırıldığında kapanır.**
+
+Expo Router, `app/` altındaki her dosyayı erişilebilir olup olmadığına
+bakmadan bundle'a alır (`require.context`). Export edilen iOS bundle'ında
+(`entry-53acc398….hbc`, 16.7 MB) aşağıdaki route yolları string olarak
+bulundu:
+
+- Donmuş oyunlar: `./games/detective.tsx`, `./games/cinemetrics.tsx`,
+  `./games/fadein.tsx`, `./games/imposter.tsx`, `./games/logline.tsx`,
+  `./games/quoted.tsx`
+- Mood-search / eski akış: `./(tabs)/mood.tsx`, `./discover.tsx`,
+  `./roulette.tsx`
+- Font: `PlayfairDisplay_900Black`. Bkz. yukarıda *"Playfair kalıntıları"*,
+  6 TTF de asset listesinde.
+
+Donmuş oyun kodu CLAUDE.md gereği silinmiyor. Bu yüzden bu kayıt bir
+düzeltme talebi değil, bundle boyutu ve başlangıç maliyetini takip etmek
+için. Hangi route'un gerçekten erişilemez olduğu (import grafiği ile) bu
+kayıtta **ölçülmedi**.
