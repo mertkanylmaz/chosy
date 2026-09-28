@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.30
-**Tarih:** 27 Eylül 2026
+**Sürüm:** 1.31
+**Tarih:** 28 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -57,7 +57,7 @@ Product Truth     Watched-it Rate
 | **K-05** | Spotlight'ın ayrı hub'ı yok. Sadece champion ekranının altında "Bugünün bonusu" kartı. | IA §2.6 |
 | **K-06** | Watchlist ayrı tab değil, Profile alt sayfası. Otomatik giriş yok — tek yol champion'daki manuel "Sonraya bırak". | IA §2.4 |
 | **K-07** | Badge / Collections UI kaldırılır. Tablo ve seed'e dokunulmaz. | IA §2.7 |
-| **K-08** | Profile sırası: **Cinema DNA → Streak → Watched → Saved → Pro → Settings**. | SONHALİ §57 |
+| **K-08** | Profile sırası: **Cinema DNA → Streak → Watched → Saved → Pro → Settings**. *(v1.31, 28 Eyl 2026 — **sapma:** Streak bölümü **ertelendi**; build'deki sıra Cinema DNA → Watched → Saved → Üyelik (Pro) + Settings başlıktaki dişli. Sıra hedefi geçerli, Streak geri geldiğinde yerine girer. Gerekçe ve kanıt: bkz. E-22.)* | SONHALİ §57 |
 | **K-09** | Sheet/full-screen ayrımı: Context edit = sheet · Film detay = sheet · Paywall = sheet · Gauntlet = full-screen. | SONHALİ §63 |
 | **K-10** | Seçim anında onay alert'i yok. `choice → instantaneous`. | SONHALİ §64 |
 
@@ -69,7 +69,7 @@ Product Truth     Watched-it Rate
 | **K-12** | İlk açılış **anonim session**. "Sign in with Apple" ilk ekranda **yok**. | SONHALİ §4-5 |
 | **K-13** | Auth **champion sonrası**, değer karşılığı: ~~"Save your cinema journey"~~ **"Don't lose tonight's pick"** + "Not now". *(v1.24, 26 Eyl 2026: başlık ve açıklama değişti — "Your streak and taste profile are saved here — free, no subscription needed." Eski metin geçersiz; akış ve konum değişmedi.)* | SONHALİ §5 |
 | **K-14** | Auth sağlayıcı: **Sign in with Apple (primary) + email magic link (secondary)**. Üçüncüsü yok. ⚠️ **v1.24, 26 Eyl 2026: email magic link UI'dan kaldırıldı** — `AuthPromptSheet` ve `app/auth.tsx`'te yalnız Apple + "Not now" kaldı. Altyapı **uyuyan hâlde duruyor** (`MagicLinkForm`, `sendMagicLink`, `verifyMagicLinkCode` silinmedi, çağıranı yok); geri açmak yalnız UI işidir. **Android:** Apple butonu yalnız iOS'ta render edildiği için Android'de giriş yolu **yok**. v1 iOS-only olduğu için (R-15, §7.3) bugün canlı bir risk değil; R-15 açılırsa ön koşul. Commit: `f3610ad`. | SONHALİ §6 |
-| **K-15** | Bildirim izni **ilk açılışta istenmez** — ilk champion'dan sonra, bağlam içinde: "Want your four ready every evening?" | SONHALİ §28 |
+| **K-15** | Bildirim izni **ilk açılışta istenmez** — ilk champion'dan sonra, bağlam içinde: "Want your four ready every evening?" *(v1.31, 28 Eyl 2026 — **ek:** akşam 18:00 bildirimi **cihazda yerel planlanır** (sunucu push'u değil). **KARAR VERİLDİ, UYGULANMADI** — bkz. E-22.)* | SONHALİ §28 |
 | **K-16** | Hesap silme **gerçek cascade**: auth user → profile → choice events → watch history → DNA → analytics identity. App Review blocker'ı, "polish" değil. ✅ **KAPALI** — denetlendi, analytics identity ayağı uygulandı ve canlıda uçtan uca doğrulandı (deploy v26, iki test senaryosu, PostHog + Sentry kanıtı); bkz. **E-20**, 26 Eyl 2026. | SONHALİ §7 |
 
 ### 2.3 Gauntlet ve champion
@@ -100,7 +100,7 @@ Product Truth     Watched-it Rate
 | # | Karar | Kaynak |
 |---|---|---|
 | **K-30** | **6 eksen**: Tempo · Intensity · Darkness · Realism · Era · Language. 8 eksen yok, alt kırılım yok. | IA §4, SONHALİ §58 |
-| **K-31** | Tek renk ailesi (`marquee`/`beam`). Tür-kodlu çoklu palet **kalıcı olarak ölü**. | Design OS §17 |
+| **K-31** | Tek renk ailesi (`marquee`/`beam`). Tür-kodlu çoklu palet **kalıcı olarak ölü**. *(v1.31, 28 Eyl 2026 — **istisna, kurucu kararı:** Pro Mode mood grid'inin kart zemin renkleri/gradient'leri (`MoodCardGradients`) korunur. İstisna yalnız bu yüzeyle sınırlı; başka ekrana tür-kodlu palet girmez. Bkz. E-22 (V1-D11).)* | Design OS §17 |
 | **K-32** | DNA **dashboard değil narrative**. Üç yerde görünür: Champion ("Tonight you leaned…") · Profile ("You're becoming…") · Milestone ("Your taste has changed"). | SONHALİ §22 |
 | **K-33** | Tek progression omurgası: **STREAK → DNA**. XP sayısı kullanıcıya gösterilmez. | SONHALİ §23-24 |
 | **K-34** | Streak kaybı **cezalandırmaz**: "Tomorrow is another screening." | SONHALİ §26 |
@@ -139,7 +139,7 @@ Product Truth     Watched-it Rate
 > hükmünün kapsamı aşağıdaki gibi netleştirildi.
 >
 > **Yetkilendirilen (CTA-tabanlı, kullanıcı-başlatmalı).** `profile_upgrade`
-> (Profile › "Chosy Pro" CTA'sı ve Pro Mode kilitli ekranı) ile `mood_history`
+> (Profile › ~~"Chosy Pro"~~ **"Chosy Plus"** *(v1.29 metni, v1.31'de kayda geçti — bkz. E-22)* CTA'sı ve Pro Mode kilitli ekranı) ile `mood_history`
 > (Profile › Taste DNA dokunuşu) **yükseltme girişi** olarak kalır. Gerekçe:
 > K-45'in yasakladığı şey kullanıcıya **dayatılan** anlardır (onboarding · ilk
 > oturum · şampiyon · günlük gauntlet); bu ikisi kullanıcının kendi bastığı
@@ -825,6 +825,52 @@ repo ile birebir). İstemci **henüz sahada değil** — TestFlight build'i bekl
 **Açık kalanlar:** §9'a işlendi (istemci cihaz doğrulaması). `v_algorithm_daily`
 metrik kirliliği `docs/TEKNIK_BORC.md`'de.
 
+### E-22 — V-1 Design OS uyum sprinti: CTO kararları ve sapmalar (27–28 Eyl 2026)
+
+Kaynak plan: `docs/05_SPRINTS/V1_DESIGN_OS_UYUM_SPRINT.md` (sprint v1). Uygulama
+turları plan numaralarından saptı (ör. geri sayım "Tur 6", Playfair "Tur 7" olarak
+koştu); aşağıdaki tur adları **commit mesajlarındaki** adlardır.
+
+> ⚠️ **Adlandırma:** Sprint oturumunun karar numaraları burada **V1-D1…V1-D11**
+> olarak yazılır. Bunlar §3'teki **D-xx** ("değiştirilerek kabul") maddeleri
+> **değildir**; kodda ve commit'lerde "CTO D3", "D10" gibi geçen atıflar bu
+> tabloya işaret eder.
+
+**Kararlar.** Yalnız repoda izi (commit mesajı / kod yorumu) olanlar işlendi.
+
+| Kod | Karar | Uygulama | İz |
+|---|---|---|---|
+| V1-D1 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
+| V1-D2 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
+| V1-D3 | Premium durumu üç hâlli tek kaynak: `premiumStatus` = `loading` / `premium` / `free`. RC `chosy_plus` aktif ⇒ premium (DB satırı olmasa da). `loading`'de paywall/upsell açılmaz, özellik kapıları fail-closed. | ✅ `84cd018` + 5 tüketici commit'i (Tur 1), Profile `6a6e96e`. Karar mantığı `utils/premiumStatus.ts`, test 9 senaryo. Kalan istemci borçları `TEKNIK_BORC.md`. | `contexts/SubscriptionContext.tsx:63` |
+| V1-D4 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
+| V1-D5 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
+| V1-D6 | Watched sayısının kaynağı `watch_feedback` (`loved`/`ok`/`abandoned`; `not_watched`/`skipped` sayılmaz). Hata/null → bölüm çizilmez + Sentry, sessiz 0 yok. | ✅ `468242f` | `app/(tabs)/profile.tsx:832` |
+| V1-D7 | Bekleme ekranında dünkü şampiyon, arşiv, Pro Mode ve keşif rotası **yok** (K-46, IA "tek görev"). | ✅ `f8f2e6d` — ekran = metin + geri sayım. Sprint v1'in "dünkü şampiyon kartı" maddesi bu kararla düştü. | `components/gauntlet/GauntletShell/index.tsx:1284-1285` |
+| V1-D8 | Avatar: 9 PNG → Phosphor duotone glif; saklama anahtarı cihaz bazlı → kullanıcı bazlı (`chosy_user_avatar_{publicUserId}`), eski anahtar tek seferlik taşınır. | ✅ `61f9993`. PNG'ler bundle'da (`setup-profile.tsx`, `PersonaBadge`). Avatar yalnız AsyncStorage'da — DB senkronu yok (`TEKNIK_BORC.md`). | `constants/avatarGlyphs.ts:4` |
+| V1-D9 | 18:00 kapısı istemcide **tek tanım** (`UNLOCK_HOUR`, `unlockClock.ts`); geri sayım hedefi buradan türetilir. Sprint v1'in "istemcide 18:00 hardcode yasak, hedef sunucudan" kısıtının yerine geçer. | ✅ `f8f2e6d`. Sunucu anahtarı hâlâ UTC (§9 "UTC gün anahtarı ↔ yerel ritüel"). | `components/gauntlet/GauntletShell/unlockClock.ts:19` |
+| V1-D10 | Playfair canlı ekranlarda Design OS §3.3 rollerine taşınır (token katmanı SF Pro 600; DNA arketip adı Archivo `display-l`); **font yüklemesi bundle'da kalır**, donmuş oyun dosyalarına dokunulmaz. | ✅ `054f4ba`, `dab1e53`. Kalıntılar `TEKNIK_BORC.md` (28 Eyl). | `constants/theme.ts:32` |
+| V1-D11 | Pro Mode mood kartı zemin renkleri/gradient'leri **değişmez** → K-31 istisnası (kurucu kararı). | ✅ `d873f37` — yalnız hardcoded hex semantik ada bağlandı, değer aynı. | `components/Home/MoodCardGrid/index.tsx:172` |
+
+**Kilitli maddelerden sapmalar.**
+
+| Madde | Sapma | Gerekçe |
+|---|---|---|
+| **K-08** | Streak bölümü **ertelendi**. Watched (V1-D6) eklendi, Discovery Stats kaldırıldı (`df38f0b`, K-35), Taste DNA → Cinema DNA (`b8e23f9`). | Streak verisi gauntlet ritüelinden **beslenmiyor**: `user_streaks`'i yazan yollar `/discover` swipe'ı (`hooks/useFeedManager.ts:631` `recordActivity`, `discover_tab_enabled=false`) ve Spotlight'ın `submit-guess`'i; `generate-gauntlet` / `submit-choice` streak'e dokunmuyor. Bugün gösterilecek sayı K-33'ün "STREAK → DNA" omurgasını değil, emekli swipe davranışını ölçerdi. Bağlanması streak yazımının gauntlet tamamlanmasına taşınmasını ister (sunucu değişikliği → ayrı karar). `StreakCard` bileşeni silinmedi. |
+| **K-31** | Pro Mode mood grid'i tür-kodlu paleti korur (V1-D11). | Kurucu kararı; istisna tek yüzeyle sınırlı. |
+| **K-15** | Akşam 18:00 bildirimi **cihazda yerel planlanacak**. **UYGULANMADI:** sprint v1'in Settings turu (tek native switch) koşmadı; `ensureDailyReminderScheduled()` yok; Profile ayar modalı hâlâ üç toggle ile `users` kolonlarına yazıyor (push durumu · `daily_pick_enabled` · `watchlist_notifications_enabled`); bekleme ekranı bildirim CTA'sı ve `waiting_notify_tapped` bu yüzden ertelendi (`f8f2e6d`). | Karar kaydı; uygulama ayrı tur. Bırakılacak kolonlar `TEKNIK_BORC.md`'de "planlanan bırakma" olarak. |
+| **Görünen ad** | Sprint v1 Tur 1 madde 4 ("Chosy Plus" → "Chosy Pro") **iptal**. Uygulanan ters yön: abonelik görünen adı **"Chosy Plus"** (`904e157`, v1.29). "Pro Mode" özellik adıdır, abonelik adı değildir. Entitlement id `chosy_plus`, RC identifier'ları ve analytics adları değişmedi. | Entitlement (K-48) ve ASC ürün adı ("Chosy Plus Lifetime", K-59 notu) ile tek ad. |
+| **Day-0** | Sprint v1 Tur 2 Seçenek A ("on-demand ilk gauntlet") yerine **E-21** (önceki döngü) uygulandı. | Bkz. E-21 / E-21.1 — **UYGULANDI** (v1.30); istemci TestFlight'ta doğrulanacak (§9). |
+
+**Doğrulama (V-1 Tur 8, 28 Eyl 2026):** `typecheck` 14 (hepsi `scripts/`) ·
+`typecheck:functions` 32 · i18n 1367/1367 · `test:previous-cycle` 27+25 ·
+`test:waiting` 15 · `test:editorial` 17 · subscription + avatarStorage + posterUrl 31.
+V-1 diff'i sıfır hardcoded renk ve sıfır boş catch **ekledi** (6 hardcoded renk
+kaldırdı). Dokunulan dosyalarda önceden var olan hardcoded renk / boş catch ve
+Phosphor+Ionicons birlikteliği düzeltilmedi, Tur 8 raporunda listelendi.
+`test:founder` (ücretli, parse-mood) koşulmadı. Cihaz senaryoları:
+`docs/05_SPRINTS/ACTIVE/V1_TESTFLIGHT_CHECKLIST.md`.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -971,6 +1017,8 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **`weekly_legacy` tier'ı — ücretli, 117'de ele alınmadı** | **R-D kalemi, ayrı karar gerekiyor.** Migration 117 (27 Eyl 2026) monthly/annual/lifetime arama limitini sınırsız (-1) yaptı; `weekly_legacy` **14/gün**'de kaldı (canlıda 2 kullanıcı, `users.subscription_tier`). Ücretli bir tier olarak Plus'ın sınırsız aramasından yararlanıp yararlanmayacağı açık. Kaynak: v1.29. |
 | **Free slot limiti istemci ↔ sunucu tutarsız (önceden var olan)** | **R-D kalemi.** `constants/subscriptionPlans.ts` `TIER_LIMITS.free.dailySlotLimit = 8`, canlı `subscription_limits.free.daily_slot_limit = 100` (27 Eyl 2026). Aynı dosya kendini "DB ile tam sync" diye tanımlıyor. Kod değişikliği yapılmadı. Kaynak: v1.29, 117 turu. |
 | **E-21 istemci cihaz doğrulaması** | **TestFlight turu kalemi.** Sunucu canlıda doğrulandı (E-21.1), istemci sahada değil. `before_18` akışı yalnız TestFlight'ta test edilebilir (`__DEV__`'de 18:00 kapısı açık). Senaryolar: (i) uçak modunda temiz kurulum 18:00 öncesi → bekleyiş, hata ekranı değil; (ii) önceki döngüde 3. tur çevrimdışı seçilip bağlantı açılır → şampiyon görünür; (iii) önceki döngü bitince uygulama kapatılıp açılır → bekleyiş; (iv) önceki döngü ortasında çevrimdışı kapatılıp açılır → sunucuya sorulur. **Bilinen boşluklar:** son seçim çevrimdışı yapılıp uygulama kapatılırsa açılışta şampiyon gösterilmez; cihazında gauntlet cache'i olmayan mevcut kullanıcı (kimlik sıfırlanmış / K-42'den beri açmamış) bir kez iskelet + 409 görür. `none -> before_18` kohort büyüklüğü (E-21 "Ölçülemeyen") yeni build sonrası `gauntlet.cycle` breadcrumb'ıyla bakılacak. Kaynak: v1.30. |
+| **K-15 yerel 18:00 bildirimi — karar verildi, uygulanmadı** | **Ayrı kod turu.** Tek native switch + cihazda yerel planlama + bekleme ekranı CTA'sı (`waiting_notify_tapped`). Uygulanınca `users.daily_pick_enabled` / `watchlist_notifications_enabled` okuması/yazması bırakılır (kolonlar silinmez). Kaynak: v1.31, E-22. |
+| **K-08 Streak bölümü ertelendi** | Streak yazımı gauntlet tamamlanmasına bağlanmadan Profile'a girmez (sunucu değişikliği → ayrı karar). Kaynak: v1.31, E-22. |
 
 ---
 
@@ -999,6 +1047,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.31 | 28 Eyl 2026 | **V-1 Design OS uyum sprinti kaydı** (bkz. yeni §5 **E-22**). Sprint karar numaraları **V1-Dn** olarak ayrı ad uzayına alındı (§3 D-xx ile karışmasın). Repoda izi olan **V1-D3, D6, D7, D8, D9, D10, D11** işlendi; **V1-D1, D2, D4, D5** metni CTO oturumunda, bible'a işlenmedi (uydurulmadı). Sapmalar: **K-08** Streak ertelendi (streak verisi gauntlet'ten beslenmiyor) · **K-31** Pro Mode mood grid istisnası (kurucu kararı) · **K-15** bildirim cihazda yerel planlanır — **karar verildi, uygulanmadı** · sprint v1'deki "Chosy Pro" görünen ad maddesi **iptal**, ad "Chosy Plus" (K-46 notundaki metin düzeltildi) · Day-0 Seçenek A yerine **E-21 — UYGULANDI** (v1.30, durum teyit edildi). §9'a iki satır. Doğrulama: typecheck 14, functions 32, i18n 1367/1367, deno testleri yeşil. Kod değişikliği yok. |
 | 1.30 | 27 Eyl 2026 | **E-21 uygulandı** (bkz. yeni §5 **E-21.1**). Migration **118** (`daily_gauntlets.cycle`, DUR onaylı) · sözleşmeye salt ekleme (`GauntletCycle`, `PreviousCycleRejectCode`, 409) · `generate-gauntlet` v34 + `get-archive-status` v12 canlı, indirilen kod repo ile birebir. **`PREVIOUS_CYCLE_OUT_OF_WINDOW` anlamı genişletildi (CTO onaylı):** launch öncesi + 18:00 kapısı açık + yaz saati çakışması (yeni bulgu: Chicago/Winnipeg). Previous isteğine hiçbir zaman current gauntlet dönmez. Anahtar = dün yerel 18:00'in UTC tarihi. "18:00'e kadar şampiyon" inceltildi: reveal yalnız o oturumda, yeniden açılışta `before_18`. Arşiv önceki döngü satırını saymaz (anchor +1). `choice_events`'te `date` kolonu olmadığı kayda geçti (tarih join ile). Kanıt: birim 27+25, canlı 21/21. İstemci TestFlight bekliyor → §9. `v_algorithm_daily` kirliliği `TEKNIK_BORC.md`'ye. |
 | 1.29 | 27 Eyl 2026 | **Ücretli tierlarda Pro Mode araması sınırsız (CTO kararı) + Plus adlandırması + Profile çift başlık.** Migration **117** canlıda: `subscription_limits.daily_search_limit` monthly/annual/lifetime **-1** (önceki 15/25/50 — BM v2'nin emekli ettiği kota modelinin kalıntısı; ücretli abone 429 alıyordu). free 3 ve weekly_legacy 14 değişmedi. İstemci: `TIER_LIMITS` senkron, `quotaEngine` -1 eşlemesi, "N left today" sınırsızda gizli (`b24e77c`). migration-guard: bloke edici yok; canlı CHECK yok, 115 canlıda doğrulandı. `schedule-notifications` `limit !== -1` korumasıyla deploy edildi — ⚠️ **fonksiyonun ilk deploy'u (v1)**, daha önce canlıda yoktu; cron'u yok, çağıranı yok, çağıran doğrulaması yok (ayrı karar bekliyor). i18n: Chosy Pro → Chosy Plus (3 metin), `profile.proSection` → Membership/Üyelik (`904e157`). Profile: DiscoveryStats + TasteDNA çift başlık kaldırıldı (`49c9d36`). §9'a iki R-D kalemi: weekly_legacy kararı · free slot limiti 8↔100. Doğrulama: typecheck 14/14, functions 32/32, i18n 1367/1367. |
 | 1.28 | 27 Eyl 2026 | **E-21 — yeni kullanıcıya önceki döngü: karar verildi, uygulanmadı.** Sıfır kişisel satırı olan kullanıcı 18:00 öncesi etkin döngünün gauntlet'ini görür. PRODUCT_OS §3.6 ve D-12 (`waiting` satırına not düşüldü) yalnız bu kohort için istisna alır. Alt kararlar: `cycle:'previous'` + iki açık ret kodu · anahtar isteğin `timezone` alanından hesaplanır, `users.timezone` kullanılmaz (ölçüm: gerçek değer 12/270, %4,4) · satır önceki döngünün tarihiyle yazılır · 18:00 geçişinde nabız `bootstrapping`'e geçer · "Dün izledin mi?" tuhaflığı kabul edilen istisna. Build 903'e girmez, ayrı oturumda uygulanacak. §9'a R-D kalemi: UTC anahtar ↔ yerel ritüel ayrışması. ⚠️ CTO'nun "İstanbul 00:00–03:00 bug'ı" tespiti **düzeltildi**: o pencerede `before_18` §3.6 gereği doğru. Ölçülen gerçek etki UTC− bölgelerinde: anahtar New York'ta 20:00'de dönüyor, K-42 önbelleği yanlış stale uyarısı veriyor. `none -> before_18` sayımı ölçülemedi (Sentry erişimi yok, telemetri yeni build'le gelir). Kod değişikliği yok. |
