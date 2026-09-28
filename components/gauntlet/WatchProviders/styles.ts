@@ -12,10 +12,15 @@ import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 
 /**
- * TMDB w92 logoları kare, 36pt. Logolar DOKUNULMAZ (TestFlight 2.1.0 kararı),
- * bu yüzden K-54'ün 44pt dokunma hedefi burada uygulanmaz.
+ * Şampiyon satırındaki logo — V-3 referans uyumu: 36 → 60pt (en fazla 3
+ * logo, platform ekranın odak öğesi). TMDB w92 kaynağı 3x'te 60pt'yi
+ * karşılamaz (180px gerekir) → `index.tsx` w185 ister. Logolar DOKUNULMAZ
+ * (TestFlight 2.1.0 kararı), bu yüzden K-54'ün 44pt hedefi uygulanmaz.
  */
-const LOGO_SIZE = 36;
+const ROW_LOGO_SIZE = 60;
+
+/** "See all" sheet'inin liste satırındaki logo — isimle yan yana, 36pt kalır. */
+const SHEET_LOGO_SIZE = 36;
 
 export const styles = StyleSheet.create({
   root: {
@@ -35,12 +40,12 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: space.sm,
-    minHeight: LOGO_SIZE,
+    gap: space.lg,
+    minHeight: ROW_LOGO_SIZE,
   },
   logo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
+    width: ROW_LOGO_SIZE,
+    height: ROW_LOGO_SIZE,
     borderRadius: radius.poster,
     backgroundColor: color.surface.raised,
   },
@@ -68,22 +73,20 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   /**
-   * V-3 Tur G2 (C5): logo satırının yanında "See all →" pill'i. Dokunulur,
-   * bu yüzden K-54'ün 44pt hedefi `hitSlop` ile tamamlanır (görsel 36pt —
-   * logolarla aynı hizada).
+   * V-3 referans uyumu: "See all →" pill'i logoların ALTINDA, ortalı (G2'de
+   * yanındaydı). Dokunulur — görsel yükseklik caption + 2×`space.sm` (34pt),
+   * K-54'ün 44pt hedefi `hitSlop` ile tamamlanır.
    */
   logoLine: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: space.sm,
+    gap: space.md,
   },
   seeAllPill: {
-    height: LOGO_SIZE,
     flexDirection: 'row',
     alignItems: 'center',
     gap: space.xs,
     paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: radius.pill,
     borderWidth: size.hairline,
     borderColor: color.surface.border,
@@ -144,8 +147,8 @@ export const sheetStyles = StyleSheet.create({
     gap: space.md,
   },
   providerLogo: {
-    width: LOGO_SIZE,
-    height: LOGO_SIZE,
+    width: SHEET_LOGO_SIZE,
+    height: SHEET_LOGO_SIZE,
     borderRadius: radius.poster,
     backgroundColor: color.surface.base,
   },

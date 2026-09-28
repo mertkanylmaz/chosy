@@ -46,11 +46,13 @@ import { styles } from './styles';
 
 /**
  * V-3 Tur G2 (V3-D5): satırda en fazla 3 logo; fazlası "See all" sheet'inde.
+ * V-3 referans uyumu: logolar 60pt, "See all" satırın altında.
  * Sıralama `selectTopProviders` kuralı (flatrate > free > ads > rent > buy).
  */
 const MAX_PROVIDERS = 3;
 
-const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
+/** 60pt logo 3x'te 180px ister — w92 bulanık kalır (TMDB logo boyutları: w45…w500). */
+const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w185';
 
 interface WatchProvidersRowProps {
   state: WatchProvidersState;
@@ -155,7 +157,7 @@ export function WatchProvidersRow({
               style={styles.seeAllPill}
               onPress={openSheet}
               activeOpacity={0.7}
-              hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+              hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
               accessibilityRole="button"
               accessibilityLabel={t('gauntlet.watchProviders.seeAllA11y', {
                 count: ordered.length,
