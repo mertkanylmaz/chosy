@@ -180,13 +180,22 @@ Ek uyum: Spotlight `ambientVariant: 'beam'` kullanan tek oyun ✅ — mor bir sa
 
 ⚠️ → ✅ **14 Ağustos 2026, C.1a:** `@expo-google-fonts/archivo` paketinde "Expanded" adında ayrı bir statik kesit **yok** — yalnızca Roman genişlik ağırlıkları var. Resmi variable font (`google/fonts` reposu, `ofl/archivo/Archivo[wdth,wght].ttf`) STAT tablosunda `wdth=125` değeri "Expanded" olarak etiketli (fvar max da 125) — bu doğrulanmış gerçek değer, tahmin değil. `fonttools.varLib.instancer` ile `wght=600/wdth=125` ve `wght=700/wdth=125` iki statik kesit üretildi (`ArchivoExpanded-SemiBold.ttf`, `ArchivoExpanded-Bold.ttf`), `assets/fonts/`'a commit'lendi. `@expo-google-fonts/martian-mono` paketi sorunsuz, `400Regular` + `600SemiBold` doğrudan kuruldu.
 
-### 3.2 Playfair Display emekli
+### 3.2 ~~Playfair Display emekli~~ → Playfair yalnız film adında
 
-Mevcut arketip ekranlarında kullanılıyor ⚠️. Emekli:
+~~Mevcut arketip ekranlarında kullanılıyor ⚠️. Emekli:~~
 
 - Yüksek kontrastlı didone serif, 2024-26 arası **AI üretimi tasarımın en tanınır imzası** oldu
 - Karanlık zeminde hairline'ları OLED'de kayboluyor
 - "Editoryal lüks" çağrışımı oyun/ritüel kimliğiyle çelişiyor
+
+→ **V-3 (28 Eyl 2026, bible E-23 V3-D1):** emeklilik **kısmen geri alındı**.
+Gerekçe: kurucu referans tasarımı. Playfair Display 700 **tek bir rolle** döner:
+`type.filmTitle` — **yalnız film adları** (tur ekranı poster başlığı, şampiyon
+başlığı). Başka hiçbir metin serif değildir: soru, etiket, buton, arketip adı,
+paylaşım kartı SF Pro / Archivo / Martian Mono'da kalır. Yukarıdaki üç itiraz
+arayüz geneli için geçerli; tek rolle sınırlama ve 700 ağırlık (OLED hairline
+kaybına karşı) bunun karşılığıdır. V1-D10'un film adı dışındaki taşımaları
+geçerli.
 
 ### 3.3 Ölçek ⚠️
 
@@ -205,11 +214,25 @@ meta          Martian Mono      400   12/16   +2%     Yıl · süre · sayaç
 meta-strong   Martian Mono      600   12/16   +2%     Streak
 ```
 
+→ **V-3 (28 Eyl 2026) ekleri** (`constants/design/semantic.ts`):
+
+```
+filmTitle     Playfair Display  700   17/22    0      Film adı — YALNIZ (V3-D1)
+label-caps    SF Pro Text       600   12/16   +8%     Büyük harf etiket (bağlam pill'i)
+```
+
+`display-xl` artık şampiyon adında **kullanılmıyor** — şampiyon başlığı
+`filmTitle` ailesiyle çizilir, §17.0'daki 40/32/28 kademesi korunur. Gauntlet
+sorusu `body` + `bone@80%` (`text.primarySoft`), serif değil.
+
 ✅ `theme.ts`'te title −0.4, body −0.2, meta −0.1 letterSpacing zaten tanımlı — yukarıdaki ölçek bunlarla uyumlu.
 
 ### 3.4 Disiplin
 
-Archivo Expanded **üç yerde** kullanılır: şampiyon açıklaması · DNA arketip adı · paylaşım kartı kelime markası. Başka hiçbir yerde.
+Archivo Expanded **üç yerde** kullanılır: ~~şampiyon açıklaması~~ · DNA arketip adı · paylaşım kartı kelime markası. Başka hiçbir yerde.
+
+→ **V-3 (V3-D1):** şampiyon ekranı Archivo'dan çıktı (başlık `filmTitle`). Aynı
+disiplin serif için de geçerli: **Playfair yalnız film adında.**
 
 > Marka fontu her yerdeyse marka anı diye bir şey kalmaz.
 
@@ -238,6 +261,24 @@ radius-pill    999    Etiket, sayaç
 
 Ayrıca `Theme.concentric(outer, padding)` ✅ mevcut — iç içe yarıçap hesabı için, yeni sistemde de kullanılacak.
 
+### 4.2a Sabit ölçüler — `size` tokenları (V-3, 28 Eyl 2026)
+
+Boşluk merdiveninde olmayan sabit ölçüler bileşene hardcode edilmez,
+`constants/design/semantic.ts` → `size`:
+
+```
+touchTarget    44    Asgari dokunma hedefi (bağlam pill'i, OutlineAction)
+actionHeight   48    Şampiyon tam genişlik eylem butonu
+iconInline     16    Metin içi ikon
+iconAction     20    Eylem butonu ikonu
+progressDot     6    Tur göstergesi noktası
+hairline        1    Kenar çizgisi
+```
+
+Kenar rengi kuralı (bible E-23 V3-D2): gauntlet kenarları `graphite`; altın
+(`marquee`) yalnız ödül katmanında — şampiyon ekranında **yalnız Watch Now**
+(düz dolgu, gradient yok) ve Home tab aktif ikonu (V3-D7).
+
 ### 4.3 Yükseklik — gölge değil, ışık
 
 Karanlık arayüzde gölge işe yaramaz. Derinlik zemin açıklığı + ışık sızması ile kurulur.
@@ -250,6 +291,13 @@ elev-3   glass + beam@8% kenar        ← yalnızca chrome
 ```
 
 Drop shadow **yasak**. Tek istisna: poster altında `ink` gölge (y:8 blur:24 alpha:0.5) — posterin zeminden ayrılması için.
+
+→ **V-3 (V3-D4):** şampiyon posteri artık tam genişlik hero (~%60) ve zeminden
+gölgeyle değil **alfa geçişiyle** ayrılır: hero'nun alt yarısı `ink`'e erir
+(renk sabit `ink`, yalnız alfa değişir — ara renk yok). Üstündeki metin için
+≥ 4.5:1 en kötü durumda (saf beyaz poster) ölçülür: `tests/gauntlet/heroScrim.test.ts`.
+Reduce Transparency'de geçiş yok: sert kenar + düz `ink`. Şampiyon eylem
+butonlarında gölge yok.
 
 ---
 
