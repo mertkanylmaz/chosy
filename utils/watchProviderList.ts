@@ -17,6 +17,10 @@
  *
  * Ağ/React/cihaz bağımlılığı YOK — deno ile doğrudan test edilir
  * (`tests/gauntlet/watchProviderList.test.ts`).
+ *
+ * V-3 Tur G2: `orderProviders` / `selectTopProviders` / `groupProviders` —
+ * free/ads kovaları ve `display_priority` sırası (şampiyon ekranı, C5).
+ * `flattenProviders` film detay ekranı için DEĞİŞMEDEN kalır.
  */
 
 export interface ProviderLike {
@@ -26,8 +30,16 @@ export interface ProviderLike {
 
 export interface ProviderBuckets<T extends ProviderLike> {
   flatrate?: T[];
+  /** V-3 Tur G2: TMDB `free` / `ads` kovaları — sıralamada flatrate'ten sonra. */
+  free?: T[];
+  ads?: T[];
   rent?: T[];
   buy?: T[];
+}
+
+/** TMDB'nin kova içi sıralama alanını taşıyan sağlayıcı (V-3 Tur G2). */
+export interface RankedProviderLike extends ProviderLike {
+  display_priority: number;
 }
 
 /** Küçük harfle karşılaştırılır; uzun olan önce (Roku Premium > Roku). */
@@ -102,4 +114,68 @@ export function flattenProviders<T extends ProviderLike>(
   }
   const deduped = dedupeChannelVariants(out);
   return limit === undefined ? deduped : deduped.slice(0, limit);
+}
+
+// ─── V-3 Tur G2 (C5): şampiyon ekranının ilk-N seçimi ────────────────────────
+
+/** Kova sırası: akış → ücretsiz → reklamlı → kiralık → satın alma. */
+const RANKED_BUCKET_ORDER = ['flatrate', 'free', 'ads', 'rent', 'buy'] as const;
+
+/** Kova içi TMDB `display_priority` sırası; kopya döner, girdi değişmez. */
+function byPriority<T extends RankedProviderLike>(bucket: readonly T[] | undefined): T[] {
+  return [...(bucket ?? [])].sort((a, b) => a.display_priority - b.display_priority);
+}
+
+/** `provider_id` tekrarsız (ilk görülen kalır) + kanal varyantı tekilleştirmesi. */
+function uniqueProviders<T extends RankedProviderLike>(list: readonly T[]): T[] {
+  const seen = new Set<number>();
+  const out: T[] = [];
+  for (const p of list) {
+    if (seen.has(p.provider_id)) continue;
+    seen.add(p.provider_id);
+    out.push(p);
+  }
+  return dedupeChannelVariants(out);
+}
+
+/**
+ * Tam sıralı liste: flatrate → free → ads → rent → buy, kova içinde
+ * `display_priority`. Tekilleştirme (id + kanal varyantı) kesmeden ÖNCE
+ * uygulanır — "See all" sayacı ve Watch Now görünürlüğü bu uzunluğu okur.
+ */
+export function orderProviders<T extends RankedProviderLike>(providers: ProviderBuckets<T>): T[] {
+  return uniqueProviders(RANKED_BUCKET_ORDER.flatMap((k) => byPriority(providers[k])));
+}
+
+/** Şampiyon ekranındaki logo satırı — en fazla `max` sağlayıcı (V3-D5). */
+export function selectTopProviders<T extends RankedProviderLike>(
+  providers: ProviderBuckets<T>,
+  max = 3,
+): T[] {
+  return orderProviders(providers).slice(0, max);
+}
+
+export interface ProviderGroups<T extends RankedProviderLike> {
+  /** flatrate + free + ads */
+  stream: T[];
+  rent: T[];
+  buy: T[];
+}
+
+/**
+ * "See all" sheet'inin grupları. Her grup KENDİ içinde tekilleştirilir: aynı
+ * mağaza hem kiralık hem satın almada görünebilir, bu iki ayrı bilgidir.
+ */
+export function groupProviders<T extends RankedProviderLike>(
+  providers: ProviderBuckets<T>,
+): ProviderGroups<T> {
+  return {
+    stream: uniqueProviders([
+      ...byPriority(providers.flatrate),
+      ...byPriority(providers.free),
+      ...byPriority(providers.ads),
+    ]),
+    rent: uniqueProviders(byPriority(providers.rent)),
+    buy: uniqueProviders(byPriority(providers.buy)),
+  };
 }
