@@ -17,7 +17,6 @@ import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import * as Sentry from '@sentry/react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Colors } from '@/constants/Colors';
 import { color } from '@/constants/design/semantic';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
 import { syncDailyReminderOnLaunch } from '@/services/pushNotifications';
@@ -69,17 +68,19 @@ export default function TabLayout() {
   }, []);
 
   return (
-    <NativeTabs tintColor={Colors.accentPrimary}>
+    /*
+      V-3 referans uyumu: TEK altın. `tintColor` eskiden `Colors.accentPrimary`
+      (#E8A838) idi, Home ikonu ise `selectedColor` ile `marquee` (#D4A72C)
+      alıyordu — aynı sekmede ikon ve etiket iki ayrı altındı. Artık aktif
+      ikon + etiket her sekmede `marquee`; ayrı `selectedColor` gereksiz.
+    */
+    <NativeTabs tintColor={color.reward.primary}>
       {/* 1 — Home: günlük gauntlet.
           V-3 Tur G1 (G7, V3-D7): film temalı ikon — SF Symbol `film`.
           Phosphor değil: native tab `Icon`'u SVG bileşeni kabul etmiyor
-          (onaylı sapma). Yalnız ikon ve Home'un aktif ikon rengi değişti;
-          tab yapısı (K-01/K-04) aynı. Aktif renk `marquee` yalnız bu ikonda. */}
+          (onaylı sapma). Tab yapısı (K-01/K-04) aynı. */}
       <NativeTabs.Trigger name="index">
-        <Icon
-          sf={{ default: 'film', selected: 'film.fill' }}
-          selectedColor={color.reward.primary}
-        />
+        <Icon sf={{ default: 'film', selected: 'film.fill' }} />
         <Label>{t('tabs.home')}</Label>
       </NativeTabs.Trigger>
       {/* 2 — Discover: C.9a (bible K-02) — nav'dan kaldırıldı, flag ile donduruldu.
