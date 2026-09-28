@@ -121,6 +121,10 @@ export const size = {
   progressDot: 6,
   /** Kenarlıklı yüzeylerin çizgi kalınlığı. */
   hairline: 1,
+  /** V-3 Tur G2 (C6): şampiyon ekranının tam genişlik eylem butonu, asgari yükseklik. */
+  actionHeight: 48,
+  /** V-3 Tur G2 (C6): eylem butonu içindeki ikon. */
+  iconAction: 20,
 } as const;
 
 /**

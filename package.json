@@ -14,6 +14,7 @@
     "test:editorial": "cd supabase/functions && deno test --allow-read --allow-net _shared/editorialCalendar.test.ts",
     "test:previous-cycle": "deno test tests/gauntlet/previousCycleProbe.test.ts tests/gauntlet/cycleRules.test.ts && cd supabase/functions && deno test --allow-read _shared/previousCycle.test.ts",
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
+    "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",
     "enrich:imdb": "tsx scripts/enrich-imdb-ratings.ts",
     "enrich:metadata": "tsx scripts/enrich-films-metadata.ts",
