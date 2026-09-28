@@ -38,7 +38,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { AppleLogo, Camera, GearSix, GoogleLogo, PencilSimple, User } from 'phosphor-react-native';
+import { AppleLogo, Camera, CaretRight, GearSix, GoogleLogo, PencilSimple, User } from 'phosphor-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,7 +54,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { AVATAR_GLYPHS, AVATAR_IDS, isAvatarId, type AvatarId } from '@/constants/avatarGlyphs';
-import { color, type } from '@/constants/design/semantic';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
@@ -98,6 +98,9 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
   { code: 'en', labelKey: 'profile.english' },
   { code: 'tr', labelKey: 'profile.turkish' },
 ];
+
+/** Saved poster seridindeki yuva sayisi — yukleme dilimi ile ayni kaynak. */
+const SAVED_STRIP_SLOTS = 4;
 
 // Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
 // Anahtar + tek seferlik tasima: utils/avatarStorage.ts
@@ -786,7 +789,7 @@ export default function ProfileScreen() {
       getWatchlist().then((wl) => {
         setWatchlistCount(wl.length);
         const posters = wl
-          .slice(0, 4)
+          .slice(0, SAVED_STRIP_SLOTS)
           .map((item) => item.film.posterUrl)
           .filter((url): url is string => !!url);
         setWatchlistPosters(posters);
@@ -1366,39 +1369,61 @@ export default function ProfileScreen() {
             {/* d) Saved — watchlist ozeti (K-06: Watchlist ayri tab degil,
                 Profile alt sayfasi) */}
             <SectionHeading title={t('profile.savedSection')} />
-            <TouchableOpacity
-              style={styles.watchlistSummaryRow}
-              onPress={() => router.push('/watchlist-detail' as never)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.watchlistSummaryLeft}>
-                {/* Mini poster stack */}
-                {watchlistPosters.length > 0 ? (
-                  <View style={[styles.watchlistPosterStack, { width: 24 + (watchlistPosters.length - 1) * 18 }]}>
-                    {watchlistPosters.map((url, idx) => (
+            {watchlistPosters.length > 0 ? (
+              /* Poster seridi — 4 esit yuva, 2:3. Eksik yuvalar bos
+                 spacer: poster boyutu kayit sayisina gore degismez.
+                 Kartin tamami watchlist-detail'e gider; pill gorsel ipucu. */
+              <TouchableOpacity
+                style={styles.savedStripCard}
+                onPress={() => { hapticLight(); router.push('/watchlist-detail' as never); }}
+                activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.watchlistSummaryCount', { count: watchlistCount })}
+                accessibilityHint={t('profile.seeAll')}
+              >
+                <View style={styles.savedStripRow}>
+                  {Array.from({ length: SAVED_STRIP_SLOTS }, (_, idx) => {
+                    const url = watchlistPosters[idx];
+                    return url ? (
                       <Image
                         key={`wl-poster-${idx}`}
                         source={{ uri: url }}
-                        style={[
-                          styles.watchlistMiniPoster,
-                          { left: idx * 18, zIndex: watchlistPosters.length - idx },
-                        ]}
+                        style={styles.savedStripPoster}
                       />
-                    ))}
+                    ) : (
+                      <View key={`wl-slot-${idx}`} style={styles.savedStripSlot} />
+                    );
+                  })}
+                </View>
+                <View style={styles.savedStripFooter}>
+                  <Text style={styles.savedStripCount}>
+                    {t('profile.watchlistSummaryCount', { count: watchlistCount })}
+                  </Text>
+                  <View style={styles.savedStripSeeAll}>
+                    <Text style={styles.savedStripSeeAllText}>{t('profile.seeAll')}</Text>
+                    <CaretRight size={size.iconInline} weight="bold" color={color.text.primary} />
                   </View>
-                ) : (
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.watchlistSummaryRow}
+                onPress={() => router.push('/watchlist-detail' as never)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.watchlistSummaryLeft}>
                   <View style={styles.watchlistEmptyPoster}>
                     <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
                   </View>
-                )}
-                <Text style={styles.watchlistSummaryText}>
-                  {watchlistCount > 0
-                    ? t('profile.watchlistSummaryCount', { count: watchlistCount })
-                    : t('profile.watchlistSummaryEmpty')}
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.textGrey} />
-            </TouchableOpacity>
+                  <Text style={styles.watchlistSummaryText}>
+                    {watchlistCount > 0
+                      ? t('profile.watchlistSummaryCount', { count: watchlistCount })
+                      : t('profile.watchlistSummaryEmpty')}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.textGrey} />
+              </TouchableOpacity>
+            )}
 
             {/* e) Pro — K-08 sirasindaki "Pro" bolumu.
                 Tek CTA (K-48: tek entitlement `chosy_plus`). Onceki iki CTA'dan
@@ -1851,21 +1876,54 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
   },
-  /** Overlapping poster stack container — width set dynamically */
-  watchlistPosterStack: {
-    height: 54,
-    position: 'relative',
+  // ── Saved poster seridi — Design OS semantic token'lari ──
+  savedStripCard: {
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    padding: space.md,
+    gap: space.md,
   },
-  /** Individual mini poster thumbnail */
-  watchlistMiniPoster: {
-    position: 'absolute',
-    top: 0,
-    width: 36,
-    height: 54,
-    borderRadius: 6,
-    backgroundColor: Colors.white05,
-    borderWidth: 1.5,
-    borderColor: Colors.cardSolid,
+  savedStripRow: {
+    flexDirection: 'row',
+    gap: space.sm,
+  },
+  savedStripPoster: {
+    flex: 1,
+    aspectRatio: 2 / 3,
+    borderRadius: space.sm,
+    backgroundColor: color.surface.border,
+  },
+  /** Eksik yuva — yer tutar, cizilmez */
+  savedStripSlot: {
+    flex: 1,
+    aspectRatio: 2 / 3,
+  },
+  savedStripFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.sm,
+  },
+  savedStripCount: {
+    ...type.callout,
+    flexShrink: 1,
+    color: color.text.secondary,
+  },
+  savedStripSeeAll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space.xs,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
+    borderRadius: radius.pill,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+  },
+  savedStripSeeAllText: {
+    ...type.caption,
+    color: color.text.primary,
   },
   /** Empty state placeholder when no posters */
   watchlistEmptyPoster: {
