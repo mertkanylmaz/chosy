@@ -2698,25 +2698,39 @@ Yani AsyncStorage'ı silmek **aynı kimlik için** sunucu kotasını aşmaz.
 **Karar gerekenler (R-C):** istemci sayacını sunucu sonucundan türetmek
 (`check-quota` fonksiyonu mevcut) · yeniden kurulum hacmini ölçmek (G-3).
 
-### 3. Bildirim kolonları — planlanan bırakma (K-15 yerel planlama, UYGULANMADI)
+### 3. Bildirim kolonları — istemci kullanımı bırakıldı (K-15 yerel planlama, V-2 Tur E1)
 
-**Öncelik: K-15 uygulama turuyla birlikte.**
+**Öncelik: düşük — sunucu okuyucuları ölü cron'larda.**
 
-K-15 eki (v1.31): akşam 18:00 bildirimi cihazda yerel planlanacak, Settings
-tek switch'e inecek. **Henüz uygulanmadı** — bugün hiçbir kolon bırakılmadı.
-Uygulandığında istemcinin okumayı/yazmayı bırakacağı yerler:
+**Güncelleme (28 Eyl 2026, V-2 Tur E1):** K-15 yerel planlama uygulandı —
+Settings tek native switch (`users.push_enabled`, `toggle_push_notifications`
+RPC) + cihazda `ensureDailyReminderScheduled()` (`services/pushNotifications.ts`).
+Aşağıdaki iki kolonu istemci artık **okumuyor ve yazmıyor**; get/toggle
+fonksiyonları silindi. Kolonlar **silinmedi**.
+
+**DUR ön koşulu ölçüldü (28 Eyl 2026, `cron.job` + `cron.job_run_details`):**
+`send-daily-pick-hourly` (jobid 3), `watchlist-activation-weekend` (4) ve
+`watchlist-activation-mood-recall` (5) üçü de `active=false`; son koşumlar
+5–9 Ağu 2026, hepsi `failed` (`unrecognized configuration parameter
+"app.supabase_functions_url"`). `notification_log` son 60 günde 0 satır.
+Yani toggle'ı kaldırmak bugün kullanıcıdan canlı bir kapatma yolunu almadı.
+⚠️ Bu cron'lar yeniden açılırsa kolonların istemcide yazıcısı yok —
+varsayılan `true` ile herkese gider; açmadan önce karar gerekir.
+
+Kullanımı bırakılan yerler (eski satır numaraları, E1 öncesi):
 
 | Kolon | İstemci | Sunucu okuyucusu |
 |---|---|---|
 | `users.daily_pick_enabled` | `services/pushNotifications.ts:269-305` (get/toggle) | `send-daily-pick/index.ts:155-159` |
 | `users.watchlist_notifications_enabled` | `services/pushNotifications.ts:317-350` (get/toggle) | `watchlist-activation/index.ts:164` |
 
-⚠️ **Ön koşul (sprint v1 Tur 5 DUR noktası):** iki kolonun da **sunucu
-okuyucusu var**. Bırakmadan önce `send-daily-pick` ve `watchlist-activation`
-cron'larının canlıda çalışıp çalışmadığı ölçülmeli (Vault
-`cron_service_role_key` 31 Ağu'dan beri kayıtsız, 3 cron ölü — bible §9).
-Çalışıyorsa toggle'ı kaldırmak kullanıcıdan kapatma yolunu alır. Kolonlar
-silinmez (K-44 append-only ruhu); yalnız kullanım bırakılır.
+Ön koşul (sprint v1 Tur 5 DUR noktası) yukarıda ölçüldü: sunucu
+okuyucularının cron'ları ölü. Kolonlar silinmez (K-44 append-only ruhu);
+yalnız kullanım bırakıldı.
+
+Aynı turda kullanımı bırakılan locale anahtarları (silindi, parite korundu):
+`notifications.settingsLabel`, `.enabled`, `.disabled`, `.dailyPickLabel`,
+`.watchlistRemindersLabel`. Bırakılan AsyncStorage anahtarı **yok**.
 
 ### 4. Playfair font yüklemesi + donmuş oyun referansları
 
