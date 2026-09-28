@@ -1426,7 +1426,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               ))}
             </View>
             <View style={styles.skeletonQuestion}>
-              <SkeletonLoader width="60%" height={type.body.lineHeight} />
+              <SkeletonLoader width="60%" height={type.callout.lineHeight} />
             </View>
             <View style={styles.actions}>
               <View style={styles.skeletonAction}>

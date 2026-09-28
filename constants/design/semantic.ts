@@ -17,8 +17,8 @@ export const color = {
   text: {
     primary: palette.bone,
     /**
-     * V-3 Tur G1 (G5): gauntlet sorusunun metni — `bone@80%`. `secondary`
-     * (smoke) değil: soru ekranın ana cümlesi, meta kadar geri çekilmez.
+     * `bone@80%` — şampiyon etiketi ("TONIGHT'S FILM"). V-3 G1'de gauntlet
+     * sorusu için eklendi; referans uyumunda soru `secondary`'ye döndü.
      */
     primarySoft: withAlpha(palette.bone, 0.8),
     secondary: palette.smoke,

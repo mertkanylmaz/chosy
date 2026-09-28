@@ -126,12 +126,13 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   /**
-   * V-3 Tur G1 (G5): `callout`/smoke → `body` regular, `bone@80%`
-   * (`text.primarySoft`). Serif DEĞİL — serif yalnız film adlarında (V3-D1).
+   * V-3 referans uyumu: soru ince ve geri çekilmiş — `callout` (15/20),
+   * `smoke` (ink üstünde 6.1:1). G5'in `body`/`bone@80%` hâli referansın
+   * tersine büyümüştü. Serif DEĞİL — serif yalnız film adlarında (V3-D1).
    */
   question: {
-    ...type.body,
-    color: color.text.primarySoft,
+    ...type.callout,
+    color: color.text.secondary,
     textAlign: 'center',
     // V-2 Tur C: xl → lg — soru posterlerin hemen altında.
     marginTop: space.lg,
