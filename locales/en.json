@@ -420,7 +420,7 @@
     "anonymousUser": "Anonymous Viewer",
     "language": "Language",
     "english": "English",
-    "turkish": "Turkce",
+    "turkish": "Türkçe",
     "stats": {
       "savedFilms": "Saved films",
       "totalSeen": "Total movies discovered",
@@ -1342,9 +1342,6 @@
     "missedDayDismiss": "Not now"
   },
   "notifications": {
-    "settingsLabel": "Notifications",
-    "enabled": "On",
-    "disabled": "Off",
     "permissionTitle": "Stay in the Loop",
     "permissionMessage": "Get daily film picks, streak reminders, and special offers. You can turn this off anytime.",
     "permissionAllow": "Allow Notifications",
@@ -1353,8 +1350,13 @@
     "streakRewardBody": "%{streak}-day streak! You earned +%{bonus} bonus searches!",
     "enabledSuccess": "Notifications enabled",
     "disabledSuccess": "Notifications disabled",
-    "dailyPickLabel": "Daily Cinema Pick",
-    "watchlistRemindersLabel": "Watchlist Reminders"
+    "dailyReminderLabel": "Evening reminder at %{time}",
+    "dailyReminderTitle": "Tonight's four are ready",
+    "dailyReminderBody": "Three rounds, one film. Pick tonight's champion.",
+    "permissionDeniedTitle": "Notifications are off",
+    "permissionDeniedMessage": "Allow notifications for Chosy in Settings to get your evening reminder.",
+    "openSettings": "Open Settings",
+    "toggleError": "Couldn't update notifications. Try again."
   },
   "lifetime": {
     "heroTitle": "Become a Founding Member",
@@ -1439,6 +1441,7 @@
     "rejectNeither": "Neither",
     "markWatched": "I've watched this",
     "before18": "Today's four will be ready at %{time}.",
+    "waitingNotifyCta": "Remind me at %{time}",
     "countdownHours": {
       "one": "%{count} hour",
       "other": "%{count} hours"

@@ -19,6 +19,17 @@
 export const UNLOCK_HOUR = 18;
 
 /**
+ * Kapı saati, arayüz diline göre biçimli ("6:00 PM" / "18:00"). Bekleme
+ * metni, Settings bildirim satırı ve bekleme CTA'sı aynı biçimi kullanır.
+ */
+export function formatUnlockTime(language: string): string {
+  return new Date(2000, 0, 1, UNLOCK_HOUR, 0).toLocaleTimeString(
+    language === 'tr' ? 'tr-TR' : 'en-US',
+    { hour: 'numeric', minute: '2-digit' },
+  );
+}
+
+/**
  * `now`'dan sonraki ilk kapı anı, YEREL saat. Kapı bugün henüz açılmadıysa
  * bugün UNLOCK_HOUR:00, açıldıysa (tam UNLOCK_HOUR:00 dahil) yarın.
  *

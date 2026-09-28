@@ -1342,9 +1342,6 @@
     "missedDayDismiss": "Şimdi değil"
   },
   "notifications": {
-    "settingsLabel": "Bildirimler",
-    "enabled": "Acik",
-    "disabled": "Kapali",
     "permissionTitle": "Haberdar Ol",
     "permissionMessage": "Gunluk film onerileri, streak hatirlatmalari ve ozel teklifler al. Istedigin zaman kapatabilirsin.",
     "permissionAllow": "Bildirimlere Izin Ver",
@@ -1353,8 +1350,13 @@
     "streakRewardBody": "%{streak} gunluk streak! +%{bonus} bonus arama hakki kazandin!",
     "enabledSuccess": "Bildirimler acildi",
     "disabledSuccess": "Bildirimler kapatildi",
-    "dailyPickLabel": "Gunluk Film Onerisi",
-    "watchlistRemindersLabel": "Izleme Listesi Hatirlatmalari"
+    "dailyReminderLabel": "Akşam %{time} bildirimi",
+    "dailyReminderTitle": "Bu akşamın dörtlüsü hazır",
+    "dailyReminderBody": "Üç tur, tek film. Bu akşamın şampiyonunu seç.",
+    "permissionDeniedTitle": "Bildirimler kapalı",
+    "permissionDeniedMessage": "Akşam bildirimini almak için Ayarlar'dan Chosy bildirimlerine izin ver.",
+    "openSettings": "Ayarlar'ı Aç",
+    "toggleError": "Bildirim ayarı güncellenemedi. Tekrar dene."
   },
   "lifetime": {
     "heroTitle": "Kurucu Uye Ol",
@@ -1439,6 +1441,7 @@
     "rejectNeither": "İkisi de değil",
     "markWatched": "Bunu izledim",
     "before18": "Bugünün dörtlüsü %{time}'de hazır.",
+    "waitingNotifyCta": "%{time}'de hatırlat",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"

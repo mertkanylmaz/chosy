@@ -14,17 +14,43 @@
  */
 import React, { useEffect, useState } from 'react';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
+import * as Sentry from '@sentry/react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
+import { syncDailyReminderOnLaunch } from '@/services/pushNotifications';
+
+/**
+ * Dil hidrasyonu (AsyncStorage) bitmeden hatırlatıcı yanlış dilde
+ * planlanmasın diye eşitleme kısa bir gecikmeyle çalışır; dil bu sürede
+ * değişirse zamanlayıcı yeniden kurulur.
+ */
+const REMINDER_SYNC_DELAY_MS = 1500;
 
 /**
  * Tab navigasyon layout'u.
  * Sıra: Home (Mood Search) → Discover (placeholder, gizli) → Profile
  */
 export default function TabLayout() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // ── K-15: yerel 18:00 hatırlatıcısı — açılış eşitlemesi (V-2 Tur E1) ─────
+  // Ana uygulama kabuğu açıldığında ve dil değiştiğinde çalışır: izin varsa
+  // ve kullanıcı Settings'ten kapatmadıysa hatırlatıcıyı güncel dilde
+  // planlar. Hatalar servis içinde Sentry'ye yazılır; burada yalnız
+  // beklenmeyen reddi yakalıyoruz.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      syncDailyReminderOnLaunch().catch((err) => {
+        Sentry.captureException(err, {
+          level: 'warning',
+          tags: { flow: 'daily_reminder', fn: 'syncDailyReminderOnLaunch' },
+        });
+      });
+    }, REMINDER_SYNC_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [language]);
 
   // ── C.9a (bible K-02): Discover tab flag ile kontrol ediliyor ───────────
   // Fail-closed: okuma bitene kadar VE hata durumunda tab gizli kalır.

@@ -19,10 +19,13 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
 import { logger } from '@/utils/logger';
+import { i18n } from '@/constants/i18n';
+import { UNLOCK_HOUR } from '@/components/gauntlet/GauntletShell/unlockClock';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -31,6 +34,13 @@ const PERMISSION_ASKED_KEY = 'chosy_push_permission_asked';
 
 /** AsyncStorage key: cached push token */
 const PUSH_TOKEN_KEY = 'chosy_push_token';
+
+/**
+ * K-15 yerel akşam hatırlatıcısının sabit kimliği. Sabit kimlik sayesinde
+ * yeniden planlama mevcut kaydın ÜSTÜNE yazar — cihazda asla iki hatırlatıcı
+ * birikmez (kilitli karar: günde tek bildirim).
+ */
+const DAILY_REMINDER_ID = 'chosy_daily_reminder';
 
 // ─── Notification Handler Config ──────────────────────────────────────────────
 
@@ -58,7 +68,14 @@ export interface NotificationData {
   action?: string;       // custom action identifier
   offerId?: string;      // promotional offer ID
   source?: string;       // notification source (e.g. 'daily_pick')
+  locale?: string;       // yerel hatırlatıcının planlandığı dil (K-15)
 }
+
+/** OS bildirim izninin üç hâli — `undetermined`: henüz hiç sorulmadı. */
+export type NotificationPermissionState = 'granted' | 'denied' | 'undetermined';
+
+/** Settings switch'inin sonucu — başarısızlığın nedeni kullanıcıya yansır. */
+export type ToggleNotificationsResult = 'ok' | 'permission_denied' | 'error';
 
 // ─── Core Functions ───────────────────────────────────────────────────────────
 
@@ -119,8 +136,32 @@ export async function isPermissionGranted(): Promise<boolean> {
   try {
     const { status } = await Notifications.getPermissionsAsync();
     return status === 'granted';
-  } catch {
+  } catch (err) {
+    // İzin okunamıyorsa "verilmedi" sayılır (fail-closed) — ama iz bırakır.
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { flow: 'push_permission_read', fn: 'isPermissionGranted' },
+    });
     return false;
+  }
+}
+
+/**
+ * OS izninin üç hâlli durumu. Okunamazsa `null` + Sentry — çağıran "bilinmiyor"u
+ * açıkça ele alır (ör. bekleme CTA'sı gizlenir), `denied`'a sessizce düşülmez.
+ */
+export async function getPermissionState(): Promise<NotificationPermissionState | null> {
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status === 'granted') return 'granted';
+    if (status === 'denied') return 'denied';
+    return 'undetermined';
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { flow: 'push_permission_read', fn: 'getPermissionState' },
+    });
+    return null;
   }
 }
 
@@ -139,6 +180,11 @@ export async function registerForPushNotifications(
       logger.log('[push] Permission not granted');
       return false;
     }
+
+    // K-15: yerel 18:00 hatırlatıcısı token'a bağlı DEĞİL — token alınamasa
+    // da (simülatör, EAS id yok) izin verildiği anda planlanır. Hata
+    // fonksiyonun içinde Sentry'ye yazılır.
+    await ensureDailyReminderScheduled();
 
     const token = await getExpoPushToken();
     if (!token) return false;
@@ -204,18 +250,31 @@ export async function savePushTokenToServer(
 }
 
 /**
- * Toggle push notifications on/off.
- * Used in Settings screen.
+ * Settings'teki TEK bildirim switch'i (K-15, "günde tek bildirim").
+ *
+ * Yazdığı yer değişmedi: `toggle_push_notifications` RPC → `users.push_enabled`.
+ * Ek olarak cihazdaki yerel 18:00 hatırlatıcısını planlar / iptal eder.
+ *
+ * `users.daily_pick_enabled` ve `users.watchlist_notifications_enabled` artık
+ * okunmuyor/yazılmıyor (V-2 Tur E1) — kolonlar silinmedi, sunucu okuyucuları
+ * (`send-daily-pick`, `watchlist-activation`) cron'ları Ağu 2026'dan beri
+ * `active=false`. Bkz. docs/TEKNIK_BORC.md "Bildirim kolonları".
  */
-export async function toggleNotifications(enabled: boolean): Promise<boolean> {
+export async function toggleNotifications(enabled: boolean): Promise<ToggleNotificationsResult> {
   try {
     const userId = await getAppUserId();
-    if (!userId) return false;
+    if (!userId) {
+      Sentry.captureMessage('[push] toggleNotifications: app user id çözülemedi', {
+        level: 'warning',
+        tags: { flow: 'push_toggle' },
+      });
+      return 'error';
+    }
 
     if (enabled) {
       // Re-request permissions if enabling
       const granted = await requestPermissions();
-      if (!granted) return false;
+      if (!granted) return 'permission_denied';
 
       // Refresh token
       const token = await getExpoPushToken();
@@ -223,6 +282,10 @@ export async function toggleNotifications(enabled: boolean): Promise<boolean> {
         await AsyncStorage.setItem(PUSH_TOKEN_KEY, token);
         await savePushTokenToServer(token);
       }
+    } else {
+      // Kapatırken önce yerel hatırlatıcı: iptal edilemezse sunucu da
+      // değişmez, switch geri döner — "kapalı görünüp çalan" durum oluşmaz.
+      await cancelDailyReminder();
     }
 
     const { error } = await supabase.rpc('toggle_push_notifications', {
@@ -231,24 +294,39 @@ export async function toggleNotifications(enabled: boolean): Promise<boolean> {
     });
 
     if (error) {
+      Sentry.captureException(error, { tags: { flow: 'push_toggle', fn: 'toggle_push_notifications' } });
       logger.error('[push] Toggle failed:', error.message);
-      return false;
+      return 'error';
     }
 
-    return true;
+    if (enabled) {
+      const scheduled = await ensureDailyReminderScheduled();
+      if (!scheduled) return 'error';
+    }
+
+    return 'ok';
   } catch (err) {
+    Sentry.captureException(err, { tags: { flow: 'push_toggle' } });
     logger.error('[push] toggleNotifications error:', err);
-    return false;
+    return 'error';
   }
 }
 
 /**
- * Get push notification enabled status from server.
+ * Sunucudaki `users.push_enabled`. Okunamazsa `null` + Sentry — çağıran
+ * "bilinmiyor"u açıkça ele alır; `false`'a sessizce düşülmez (kural 1).
  */
-export async function getNotificationStatus(): Promise<boolean> {
+export async function getNotificationStatus(): Promise<boolean | null> {
   try {
     const userId = await getAppUserId();
-    if (!userId) return false;
+    if (!userId) {
+      Sentry.addBreadcrumb({
+        category: 'push',
+        level: 'warning',
+        message: 'getNotificationStatus: app user id henüz yok',
+      });
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('users')
@@ -256,104 +334,89 @@ export async function getNotificationStatus(): Promise<boolean> {
       .eq('id', userId)
       .single();
 
-    if (error || !data) return false;
+    if (error || !data) {
+      Sentry.captureException(error ?? new Error('users.push_enabled satırı yok'), {
+        level: 'warning',
+        tags: { flow: 'push_status_read', fn: 'getNotificationStatus' },
+      });
+      return null;
+    }
     return (data as { push_enabled: boolean }).push_enabled;
-  } catch {
-    return false;
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { flow: 'push_status_read', fn: 'getNotificationStatus' },
+    });
+    return null;
   }
 }
 
-/**
- * Get daily pick notification enabled status.
- */
-export async function getDailyPickStatus(): Promise<boolean> {
-  try {
-    const userId = await getAppUserId();
-    if (!userId) return false;
-
-    const { data, error } = await supabase
-      .from('users')
-      .select('daily_pick_enabled')
-      .eq('id', userId)
-      .single();
-
-    if (error || !data) return false;
-    return (data as { daily_pick_enabled: boolean }).daily_pick_enabled ?? true;
-  } catch {
-    return true;
-  }
-}
+// ─── K-15: Yerel akşam hatırlatıcısı ─────────────────────────────────────────
+//
+// Akşam bildirimi SUNUCU push'u değil, cihazda yerel planlanan günlük bir
+// bildirimdir (bible v1.31, K-15 eki). Saat `UNLOCK_HOUR` — istemcideki tek
+// tanım (V1-D9); tetikleyici cihaz yerel saatini kullanır, yani saat dilimi
+// değişince de 18:00'de çalar.
+//
+// Bildirim metni planlama anındaki dilde dondurulur. Bu yüzden kayıt kendi
+// dilini `data.locale`'de taşır; `ensureDailyReminderScheduled()` dil
+// değişmişse yeniden planlar, aynıysa dokunmaz (idempotent).
 
 /**
- * Toggle daily pick notifications on/off.
+ * Yerel 18:00 hatırlatıcısının planlı olduğunu garanti eder.
+ *
+ * İzin İSTEMEZ — yalnızca izin zaten verilmişse planlar. İzin yoksa `false`
+ * döner (hata değil, Sentry'ye yazılmaz). Planlama hatası Sentry'ye yazılır
+ * ve `false` döner.
+ *
+ * @returns Hatırlatıcı şu an planlıysa true
  */
-export async function toggleDailyPick(enabled: boolean): Promise<boolean> {
+export async function ensureDailyReminderScheduled(): Promise<boolean> {
   try {
-    const userId = await getAppUserId();
-    if (!userId) return false;
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') return false;
 
-    const { error } = await supabase
-      .from('users')
-      .update({ daily_pick_enabled: enabled })
-      .eq('id', userId);
+    const locale = i18n.locale;
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const existing = scheduled.find((n) => n.identifier === DAILY_REMINDER_ID);
+    const existingLocale = (existing?.content.data as NotificationData | undefined)?.locale;
+    if (existing && existingLocale === locale) return true;
 
-    if (error) {
-      logger.error('[push] toggleDailyPick failed:', error.message);
-      return false;
+    // Aynı kimlikle planlamak üstüne yazar; yine de dil değişiminde eskiyi
+    // açıkça iptal ediyoruz — platform davranışına yaslanmıyoruz.
+    if (existing) {
+      await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
     }
 
+    const data: NotificationData = { screen: 'mood', source: 'daily_reminder', locale };
+    await Notifications.scheduleNotificationAsync({
+      identifier: DAILY_REMINDER_ID,
+      content: {
+        title: i18n.t('notifications.dailyReminderTitle'),
+        body: i18n.t('notifications.dailyReminderBody'),
+        data: { ...data },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: UNLOCK_HOUR,
+        minute: 0,
+      },
+    });
     return true;
   } catch (err) {
-    logger.error('[push] toggleDailyPick error:', err);
+    Sentry.captureException(err, { tags: { flow: 'daily_reminder', fn: 'ensureDailyReminderScheduled' } });
+    logger.error('[push] ensureDailyReminderScheduled error:', err);
     return false;
   }
 }
 
-// ─── Watchlist Reminders Toggle ──────────────────────────────────────────────
-
-/**
- * Get watchlist reminders notification enabled status.
- */
-export async function getWatchlistRemindersStatus(): Promise<boolean> {
+/** Yerel 18:00 hatırlatıcısını iptal eder (Settings switch'i kapatıldı). */
+export async function cancelDailyReminder(): Promise<void> {
   try {
-    const userId = await getAppUserId();
-    if (!userId) return false;
-
-    const { data, error } = await supabase
-      .from('users')
-      .select('watchlist_notifications_enabled')
-      .eq('id', userId)
-      .single();
-
-    if (error || !data) return false;
-    return (data as { watchlist_notifications_enabled: boolean }).watchlist_notifications_enabled ?? true;
-  } catch {
-    return true;
-  }
-}
-
-/**
- * Toggle watchlist reminder notifications on/off.
- */
-export async function toggleWatchlistReminders(enabled: boolean): Promise<boolean> {
-  try {
-    const userId = await getAppUserId();
-    if (!userId) return false;
-
-    const { error } = await supabase
-      .from('users')
-      .update({ watchlist_notifications_enabled: enabled })
-      .eq('id', userId);
-
-    if (error) {
-      logger.error('[push] toggleWatchlistReminders failed:', error.message);
-      return false;
-    }
-
-    return true;
+    await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
   } catch (err) {
-    logger.error('[push] toggleWatchlistReminders error:', err);
-    return false;
+    Sentry.captureException(err, { tags: { flow: 'daily_reminder', fn: 'cancelDailyReminder' } });
+    throw err;
   }
 }
 
@@ -514,5 +577,28 @@ export async function clearBadge(): Promise<void> {
     await Notifications.setBadgeCountAsync(0);
   } catch {
     // Non-critical
+  }
+}
+
+/**
+ * Açılışta yerel hatırlatıcı eşitlemesi (V-2 Tur E1, CTO onayı: backfill).
+ *
+ * Bu build'den önce izin vermiş kullanıcılar için hatırlatıcı hiç planlanmamış
+ * olabilir. Koşul: OS izni `granted` VE `users.push_enabled` açıkça `false`
+ * değil. `push_enabled` okunamazsa (`null`) hiçbir şey yapılmaz — okuma hatası
+ * `getNotificationStatus` içinde zaten Sentry'ye yazıldı. Kullanıcının
+ * kapattığı hatırlatıcı bu yolla geri AÇILMAZ.
+ */
+export async function syncDailyReminderOnLaunch(): Promise<void> {
+  const permission = await getPermissionState();
+  if (permission !== 'granted') return;
+
+  const pushEnabled = await getNotificationStatus();
+  if (pushEnabled === null) return;
+
+  if (pushEnabled) {
+    await ensureDailyReminderScheduled();
+  } else {
+    await cancelDailyReminder();
   }
 }

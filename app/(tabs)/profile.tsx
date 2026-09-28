@@ -18,6 +18,7 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActionSheetIOS,
   Alert,
   Image,
   Linking,
@@ -27,11 +28,13 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,12 +81,10 @@ import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import {
   getNotificationStatus,
-  getDailyPickStatus,
-  getWatchlistRemindersStatus,
   toggleNotifications,
-  toggleDailyPick,
-  toggleWatchlistReminders,
 } from '@/services/pushNotifications';
+import { formatUnlockTime } from '@/components/gauntlet/GauntletShell/unlockClock';
+import type { PremiumStatus } from '@/utils/premiumStatus';
 
 import type { SwipeInsight } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
@@ -92,9 +93,10 @@ import type { TasteProfile } from '@/types/index';
 
 type Locale = 'en' | 'tr';
 
-const LANGUAGES: { code: Locale; label: string }[] = [
-  { code: 'en', label: 'EN' },
-  { code: 'tr', label: 'TR' },
+/** Dil adları kendi dilinde (endonim) — `profile.english` / `profile.turkish`. */
+const LANGUAGES: { code: Locale; labelKey: string }[] = [
+  { code: 'en', labelKey: 'profile.english' },
+  { code: 'tr', labelKey: 'profile.turkish' },
 ];
 
 // Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
@@ -320,16 +322,14 @@ interface SettingsModalProps {
   language: string;
   onLanguageChange: (code: 'en' | 'tr') => void;
   isAnonymous: boolean;
-  isPremium: boolean;
+  /** V1-D3 üç hâlli durum — `loading`'de abonelik satırı çizilmez. */
+  premiumStatus: PremiumStatus;
   /** Aktif plan etiketi — Apple yonetim sayfasi oncesi gosterilir */
   currentPlanLabel: string;
   linkingAccount: boolean;
-  notificationsEnabled: boolean;
-  dailyPickEnabled: boolean;
-  watchlistRemindersEnabled: boolean;
+  /** `users.push_enabled` — `null`: okunamadı (switch devre dışı). */
+  notificationsEnabled: boolean | null;
   onToggleNotifications: (enabled: boolean) => void;
-  onToggleDailyPick: (enabled: boolean) => void;
-  onToggleWatchlistReminders: (enabled: boolean) => void;
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
@@ -340,7 +340,10 @@ interface SettingsModalProps {
 }
 
 /**
- * Ayarlar bottom-sheet modal — Language, Link Account, Clear Watchlist, Delete Account.
+ * Ayarlar bottom-sheet modal (V-1 Tur 5 / V-2 Tur E1).
+ *
+ * Sıra: Dil · Akşam bildirimi · Hesap bağlama · Abonelik · Paylaş · Çıkış ·
+ * Yasal · en altta destructive grup (izleme listesini temizle + hesabı sil).
  * Gear icon'a tıklayınca açılır; profil sayfası temiz kalır.
  */
 function SettingsModal({
@@ -349,15 +352,11 @@ function SettingsModal({
   language,
   onLanguageChange,
   isAnonymous,
-  isPremium: isPremiumUser,
+  premiumStatus,
   currentPlanLabel,
   linkingAccount,
   notificationsEnabled,
-  dailyPickEnabled,
-  watchlistRemindersEnabled,
   onToggleNotifications,
-  onToggleDailyPick,
-  onToggleWatchlistReminders,
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
@@ -366,6 +365,40 @@ function SettingsModal({
   onDeleteAccount,
 }: SettingsModalProps) {
   const { t } = useLanguage();
+  const currentLanguageKey = LANGUAGES.find((l) => l.code === language)?.labelKey;
+  const currentLanguageLabel = currentLanguageKey ? t(currentLanguageKey) : language;
+
+  /**
+   * Dil seçimi — iOS'ta native action sheet, diğer platformlarda Alert
+   * düğmeleri. Seçim mevcut `onLanguageChange` yolundan geçer.
+   */
+  function openLanguagePicker(): void {
+    hapticSelection();
+    const labels = LANGUAGES.map(({ labelKey }) => t(labelKey));
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title: t('profile.language'),
+          options: [...labels, t('common.cancel')],
+          cancelButtonIndex: labels.length,
+        },
+        (index) => {
+          const picked = LANGUAGES[index];
+          if (picked) onLanguageChange(picked.code);
+        },
+      );
+      return;
+    }
+    Alert.alert(t('profile.language'), undefined, [
+      ...LANGUAGES.map(({ code, labelKey }) => ({
+        text: t(labelKey),
+        onPress: () => onLanguageChange(code),
+      })),
+      { text: t('common.cancel'), style: 'cancel' as const },
+    ]);
+  }
+
+  const reminderLabel = t('notifications.dailyReminderLabel', { time: formatUnlockTime(language) });
 
   return (
     <Modal
@@ -398,135 +431,46 @@ function SettingsModal({
             </TouchableOpacity>
           </View>
 
-          {/* Dil seçimi */}
-          <View style={settingsModalStyles.row}>
+          {/* Dil — tek satır, action sheet */}
+          <TouchableOpacity
+            style={settingsModalStyles.row}
+            onPress={openLanguagePicker}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('profile.language')}: ${currentLanguageLabel}`}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="language-outline" size={16} color={Colors.textGrey} />
               <Text style={settingsModalStyles.rowLabel}>{t('profile.language')}</Text>
             </View>
-            <View style={settingsModalStyles.langToggle}>
-              {LANGUAGES.map(({ code, label }) => {
-                const isActive = language === code;
-                return (
-                  <TouchableOpacity
-                    key={code}
-                    style={[settingsModalStyles.langOption, isActive && settingsModalStyles.langOptionActive]}
-                    onPress={() => { hapticSelection(); onLanguageChange(code); }}
-                    activeOpacity={0.75}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t('profile.language')}: ${label}`}
-                    accessibilityState={{ selected: isActive }}>
-                    <Text style={[settingsModalStyles.langText, isActive && settingsModalStyles.langTextActive]}>
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
+            <View style={settingsModalStyles.rowRight}>
+              <Text style={settingsModalStyles.rowValue}>{currentLanguageLabel}</Text>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
             </View>
-          </View>
+          </TouchableOpacity>
 
-          {/* Bildirim toggle */}
+          {/* Akşam bildirimi — TEK native switch (K-15, günde tek bildirim) */}
           <View style={settingsModalStyles.row}>
             <View style={settingsModalStyles.rowLeft}>
               <Ionicons name="notifications-outline" size={16} color={Colors.textGrey} />
-              <Text style={settingsModalStyles.rowLabel}>{t('notifications.settingsLabel')}</Text>
+              <Text style={settingsModalStyles.rowLabel}>{reminderLabel}</Text>
             </View>
-            <View style={settingsModalStyles.langToggle}>
-              <TouchableOpacity
-                style={[settingsModalStyles.langOption, notificationsEnabled && settingsModalStyles.langOptionActive]}
-                onPress={() => { hapticSelection(); onToggleNotifications(true); }}
-                activeOpacity={0.75}
-                accessibilityRole="switch"
-                accessibilityLabel={`${t('notifications.settingsLabel')}: ${t('notifications.enabled')}`}
-                accessibilityState={{ checked: notificationsEnabled }}>
-                <Text style={[settingsModalStyles.langText, notificationsEnabled && settingsModalStyles.langTextActive]}>
-                  {t('notifications.enabled')}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[settingsModalStyles.langOption, !notificationsEnabled && settingsModalStyles.langOptionActive]}
-                onPress={() => { hapticSelection(); onToggleNotifications(false); }}
-                activeOpacity={0.75}
-                accessibilityRole="switch"
-                accessibilityLabel={`${t('notifications.settingsLabel')}: ${t('notifications.disabled')}`}
-                accessibilityState={{ checked: !notificationsEnabled }}>
-                <Text style={[settingsModalStyles.langText, !notificationsEnabled && settingsModalStyles.langTextActive]}>
-                  {t('notifications.disabled')}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <Switch
+              value={notificationsEnabled === true}
+              onValueChange={(next) => { hapticSelection(); onToggleNotifications(next); }}
+              disabled={notificationsEnabled === null}
+              trackColor={{ false: color.surface.border, true: color.accent.active }}
+              ios_backgroundColor={color.surface.border}
+              accessibilityRole="switch"
+              accessibilityLabel={reminderLabel}
+              accessibilityState={{
+                checked: notificationsEnabled === true,
+                disabled: notificationsEnabled === null,
+              }}
+            />
           </View>
 
-          {/* Daily Pick toggle — sadece notifications acikken goster */}
-          {notificationsEnabled && (
-            <View style={settingsModalStyles.row}>
-              <View style={settingsModalStyles.rowLeft}>
-                <Ionicons name="film-outline" size={16} color={Colors.textGrey} />
-                <Text style={settingsModalStyles.rowLabel}>{t('notifications.dailyPickLabel')}</Text>
-              </View>
-              <View style={settingsModalStyles.langToggle}>
-                <TouchableOpacity
-                  style={[settingsModalStyles.langOption, dailyPickEnabled && settingsModalStyles.langOptionActive]}
-                  onPress={() => { hapticSelection(); onToggleDailyPick(true); }}
-                  activeOpacity={0.75}
-                  accessibilityRole="switch"
-                  accessibilityLabel={`${t('notifications.dailyPickLabel')}: ${t('notifications.enabled')}`}
-                  accessibilityState={{ checked: dailyPickEnabled }}>
-                  <Text style={[settingsModalStyles.langText, dailyPickEnabled && settingsModalStyles.langTextActive]}>
-                    {t('notifications.enabled')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[settingsModalStyles.langOption, !dailyPickEnabled && settingsModalStyles.langOptionActive]}
-                  onPress={() => { hapticSelection(); onToggleDailyPick(false); }}
-                  activeOpacity={0.75}
-                  accessibilityRole="switch"
-                  accessibilityLabel={`${t('notifications.dailyPickLabel')}: ${t('notifications.disabled')}`}
-                  accessibilityState={{ checked: !dailyPickEnabled }}>
-                  <Text style={[settingsModalStyles.langText, !dailyPickEnabled && settingsModalStyles.langTextActive]}>
-                    {t('notifications.disabled')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Watchlist Reminders toggle — sadece notifications acikken goster */}
-          {notificationsEnabled && (
-            <View style={settingsModalStyles.row}>
-              <View style={settingsModalStyles.rowLeft}>
-                <Ionicons name="bookmark-outline" size={16} color={Colors.textGrey} />
-                <Text style={settingsModalStyles.rowLabel}>{t('notifications.watchlistRemindersLabel')}</Text>
-              </View>
-              <View style={settingsModalStyles.langToggle}>
-                <TouchableOpacity
-                  style={[settingsModalStyles.langOption, watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
-                  onPress={() => { hapticSelection(); onToggleWatchlistReminders(true); }}
-                  activeOpacity={0.75}
-                  accessibilityRole="switch"
-                  accessibilityLabel={`${t('notifications.watchlistRemindersLabel')}: ${t('notifications.enabled')}`}
-                  accessibilityState={{ checked: watchlistRemindersEnabled }}>
-                  <Text style={[settingsModalStyles.langText, watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
-                    {t('notifications.enabled')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[settingsModalStyles.langOption, !watchlistRemindersEnabled && settingsModalStyles.langOptionActive]}
-                  onPress={() => { hapticSelection(); onToggleWatchlistReminders(false); }}
-                  activeOpacity={0.75}
-                  accessibilityRole="switch"
-                  accessibilityLabel={`${t('notifications.watchlistRemindersLabel')}: ${t('notifications.disabled')}`}
-                  accessibilityState={{ checked: !watchlistRemindersEnabled }}>
-                  <Text style={[settingsModalStyles.langText, !watchlistRemindersEnabled && settingsModalStyles.langTextActive]}>
-                    {t('notifications.disabled')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
-
-          {/* Hesap bağlama — sadece anonim */}
-          {isAnonymous && (
+          {/* Hesap bağlama — sadece anonim, native Apple butonu (HIG) */}
+          {isAnonymous && Platform.OS === 'ios' && (
             <View style={settingsModalStyles.linkSection}>
               <View style={settingsModalStyles.linkInfo}>
                 <Ionicons name="person-add-outline" size={16} color={Colors.gold} />
@@ -539,42 +483,36 @@ function SettingsModal({
                   </Text>
                 </View>
               </View>
-              <TouchableOpacity
-                style={settingsModalStyles.appleBtn}
-                onPress={onLinkApple}
-                disabled={linkingAccount}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={linkingAccount ? t('common.loading') : t('profile.linkWithApple')}
-                accessibilityState={{ disabled: linkingAccount }}>
-                <Ionicons name="logo-apple" size={16} color={Colors.textWhite} />
-                <Text style={settingsModalStyles.appleBtnText}>
-                  {linkingAccount
-                    ? t('common.loading')
-                    : t('profile.linkWithApple')}
-                </Text>
-              </TouchableOpacity>
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
+                cornerRadius={Radius.button}
+                style={[settingsModalStyles.appleBtn, linkingAccount && settingsModalStyles.appleBtnBusy]}
+                onPress={() => { if (!linkingAccount) onLinkApple(); }}
+              />
             </View>
           )}
 
-          {/* Subscription yönetimi */}
-          <TouchableOpacity
-            style={settingsModalStyles.row}
-            onPress={() => { onClose(); onManageSubscription(); }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={isPremiumUser ? t('profile.manageSubscription') : t('profile.upgradePlus')}>
-            <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="diamond-outline" size={16} color={Colors.accentPrimary} />
-              <Text style={settingsModalStyles.rowLabel}>
-                {isPremiumUser ? t('profile.manageSubscription') : t('profile.upgradePlus')}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
-          </TouchableOpacity>
+          {/* Abonelik — `loading`'de çizilmez (V1-D3: upsell yanlış kişiye görünmez) */}
+          {premiumStatus !== 'loading' && (
+            <TouchableOpacity
+              style={settingsModalStyles.row}
+              onPress={() => { onClose(); onManageSubscription(); }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={premiumStatus === 'premium' ? t('profile.manageSubscription') : t('profile.upgradePlus')}>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="diamond-outline" size={16} color={Colors.accentPrimary} />
+                <Text style={settingsModalStyles.rowLabel}>
+                  {premiumStatus === 'premium' ? t('profile.manageSubscription') : t('profile.upgradePlus')}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+            </TouchableOpacity>
+          )}
 
           {/* Apple yonetim sayfasi hakkinda bilgi notu */}
-          {isPremiumUser && (
+          {premiumStatus === 'premium' && (
             <Text style={settingsModalStyles.manageNote}>
               {t('profile.manageNote', { plan: currentPlanLabel })}
             </Text>
@@ -599,29 +537,19 @@ function SettingsModal({
             <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
           </TouchableOpacity>
 
-          {/* Watchlist temizle */}
-          <TouchableOpacity
-            style={settingsModalStyles.dangerRow}
-            onPress={() => { onClose(); onClearWatchlist(); }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.clearWatchlist')}
-            accessibilityHint={t('profile.clearWatchlistMessage')}>
-            <Ionicons name="trash-outline" size={16} color={Colors.error} />
-            <Text style={settingsModalStyles.dangerLabel}>{t('profile.clearWatchlist')}</Text>
-          </TouchableOpacity>
-
           {/* Çıkış yap — yalnızca oturum açmış kullanıcılar */}
           {!isAnonymous && (
             <TouchableOpacity
-              style={settingsModalStyles.signOutRow}
+              style={settingsModalStyles.row}
               onPress={onSignOut}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={t('profile.signOut')}
               accessibilityHint={t('profile.signOutConfirmMessage')}>
-              <Ionicons name="log-out-outline" size={16} color={Colors.error} />
-              <Text style={settingsModalStyles.dangerLabel}>{t('profile.signOut')}</Text>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="log-out-outline" size={16} color={Colors.textGrey} />
+                <Text style={settingsModalStyles.rowLabel}>{t('profile.signOut')}</Text>
+              </View>
             </TouchableOpacity>
           )}
 
@@ -652,24 +580,30 @@ function SettingsModal({
             <Ionicons name="open-outline" size={14} color={Colors.textGrey} />
           </TouchableOpacity>
 
-          {/* Hesap Sil — en altta, ince separator ile ayrılmış */}
-          <View style={settingsModalStyles.deleteAccountSection}>
+          {/* Destructive grup — en altta, tek stil (kırmızı metin, kutu yok).
+              İkisi de onay diyaloğu açar (handleClearWatchlist /
+              handleDeleteAccount). */}
+          <View style={settingsModalStyles.dangerGroup}>
             <TouchableOpacity
-              style={settingsModalStyles.deleteAccountRow}
+              style={settingsModalStyles.dangerRow}
+              onPress={() => { onClose(); onClearWatchlist(); }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.clearWatchlist')}
+              accessibilityHint={t('profile.clearWatchlistMessage')}>
+              <Ionicons name="trash-outline" size={16} color={Colors.error} />
+              <Text style={settingsModalStyles.dangerLabel}>{t('profile.clearWatchlist')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={settingsModalStyles.dangerRow}
               onPress={() => { onClose(); onDeleteAccount(); }}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={t('profile.deleteAccount')}
               accessibilityHint={t('profile.deleteAccountConfirmMessage')}>
               <Ionicons name="person-remove-outline" size={16} color={Colors.error} />
-              <View style={settingsModalStyles.deleteAccountTextBlock}>
-                <Text style={settingsModalStyles.deleteAccountLabel}>
-                  {t('profile.deleteAccount')}
-                </Text>
-                <Text style={settingsModalStyles.deleteAccountHint}>
-                  {t('profile.deleteAccountConfirmMessage')}
-                </Text>
-              </View>
+              <Text style={settingsModalStyles.dangerLabel}>{t('profile.deleteAccount')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -718,9 +652,8 @@ export default function ProfileScreen() {
   const [showSettings, setShowSettings] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [dailyPickEnabled, setDailyPickEnabled] = useState(true);
-  const [watchlistRemindersEnabled, setWatchlistRemindersEnabled] = useState(true);
+  /** `users.push_enabled` — `null`: henüz okunmadı ya da okunamadı. */
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
   /** Izlenen film sayisi — `null`: yuklenmedi ya da hata (satir cizilmez). */
@@ -813,15 +746,13 @@ export default function ProfileScreen() {
       setArchetypeId(calibrationArchetypeId ?? null);
 
       // Faz 1: Kritik veriler (üst kısımda görünen)
-      const [profileData, pushStatus, dailyPickStatus, watchlistRemindersStatus] = await Promise.all([
+      // V-2 Tur E1: `daily_pick_enabled` / `watchlist_notifications_enabled`
+      // artik okunmuyor (K-15 tek switch). Kolonlar silinmedi — TEKNIK_BORC.
+      const [profileData, pushStatus] = await Promise.all([
         getLastParsedProfile(userId),
         getNotificationStatus(),
-        getDailyPickStatus(),
-        getWatchlistRemindersStatus(),
       ]);
       setNotificationsEnabled(pushStatus);
-      setDailyPickEnabled(dailyPickStatus);
-      setWatchlistRemindersEnabled(watchlistRemindersStatus);
 
       setLastProfile(profileData);
 
@@ -977,11 +908,18 @@ export default function ProfileScreen() {
    * free kullanicilar paywall'a yonlendirilir.
    */
   async function handleManageSubscription(): Promise<void> {
-    if (isPremium) {
+    // V1-D3: satir `loading`'de cizilmez; yine de ulasilirsa hicbir sey yapma.
+    if (premiumStatus === 'loading') return;
+    if (premiumStatus === 'premium') {
       try {
         await Purchases.showManageSubscriptions();
-      } catch {
-        // Fallback: native URL ile ac
+      } catch (err) {
+        // Native URL ile acilir — kullanici yine yonetim sayfasina ulasir,
+        // ama RC sheet'inin acilmamasi iz birakir (kural 1/2).
+        Sentry.captureException(err, {
+          level: 'warning',
+          tags: { screen: 'profile', flow: 'manage_subscription' },
+        });
         const url = Platform.OS === 'ios'
           ? 'itms-apps://apps.apple.com/account/subscriptions'
           : 'https://play.google.com/store/account/subscriptions';
@@ -1141,49 +1079,32 @@ export default function ProfileScreen() {
     );
   }
 
-  // ─── Notification toggle ─────────────────────────────────────────────────
+  // ─── Notification toggle (K-15 tek switch) ─────────────────────────────
 
+  /**
+   * Optimistic switch + geri alma. Basarisizlik sessiz kalmaz: izin reddi
+   * kullaniciya Ayarlar yolunu gosterir, diger hatalar genel mesaj verir
+   * (servis tarafi Sentry'ye yazdi).
+   */
   async function handleToggleNotifications(enabled: boolean): Promise<void> {
     const prev = notificationsEnabled;
     setNotificationsEnabled(enabled); // Optimistic
-    try {
-      const success = await toggleNotifications(enabled);
-      if (!success) {
-        setNotificationsEnabled(prev); // Rollback
-      }
-    } catch {
-      setNotificationsEnabled(prev);
+    const result = await toggleNotifications(enabled);
+    if (result === 'ok') return;
+
+    setNotificationsEnabled(prev); // Rollback
+    if (result === 'permission_denied') {
+      Alert.alert(
+        t('notifications.permissionDeniedTitle'),
+        t('notifications.permissionDeniedMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('notifications.openSettings'), onPress: () => void Linking.openSettings() },
+        ],
+      );
+      return;
     }
-  }
-
-  // ─── Daily Pick toggle ─────────────────────────────────────────────────
-
-  async function handleToggleDailyPick(enabled: boolean): Promise<void> {
-    const prev = dailyPickEnabled;
-    setDailyPickEnabled(enabled); // Optimistic
-    try {
-      const success = await toggleDailyPick(enabled);
-      if (!success) {
-        setDailyPickEnabled(prev); // Rollback
-      }
-    } catch {
-      setDailyPickEnabled(prev);
-    }
-  }
-
-  // ─── Watchlist Reminders toggle ───────────────────────────────────────
-
-  async function handleToggleWatchlistReminders(enabled: boolean): Promise<void> {
-    const prev = watchlistRemindersEnabled;
-    setWatchlistRemindersEnabled(enabled); // Optimistic
-    try {
-      const success = await toggleWatchlistReminders(enabled);
-      if (!success) {
-        setWatchlistRemindersEnabled(prev); // Rollback
-      }
-    } catch {
-      setWatchlistRemindersEnabled(prev);
-    }
+    Alert.alert(t('notifications.toggleError'));
   }
 
   // ─── Share Archetype ─────────────────────────────────────────────────
@@ -1579,7 +1500,7 @@ export default function ProfileScreen() {
         language={language}
         onLanguageChange={(code) => setLanguage(code)}
         isAnonymous={isAnonymous}
-        isPremium={isPremium}
+        premiumStatus={premiumStatus}
         currentPlanLabel={
           tier === 'lifetime' ? t('paywall.lifetimeTitle')
             : tier === 'annual' ? t('paywall.annualTitle')
@@ -1588,11 +1509,7 @@ export default function ProfileScreen() {
         }
         linkingAccount={linkingAccount}
         notificationsEnabled={notificationsEnabled}
-        dailyPickEnabled={dailyPickEnabled}
-        watchlistRemindersEnabled={watchlistRemindersEnabled}
         onToggleNotifications={(enabled) => void handleToggleNotifications(enabled)}
-        onToggleDailyPick={(enabled) => void handleToggleDailyPick(enabled)}
-        onToggleWatchlistReminders={(enabled) => void handleToggleWatchlistReminders(enabled)}
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}
@@ -2017,30 +1934,6 @@ const styles = StyleSheet.create({
     color: Colors.textWhite,
     fontSize: Theme.typography.body.fontSize,
   },
-  langToggle: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  langOption: {
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    backgroundColor: Colors.white05,
-  },
-  langOptionActive: {
-    backgroundColor: Colors.goldDim,
-    borderColor: Colors.gold,
-  },
-  langOptionText: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '600',
-  },
-  langOptionTextActive: {
-    color: Colors.gold,
-  },
   dangerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2418,36 +2311,21 @@ const settingsModalStyles = StyleSheet.create({
     color: Colors.textWhite,
     fontSize: 14,
   },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  rowValue: {
+    color: Colors.textGrey,
+    fontSize: 14,
+  },
   manageNote: {
     color: Colors.textGrey,
     fontSize: 12,
     lineHeight: 16,
     paddingHorizontal: 24,
     marginTop: -8,
-  },
-  langToggle: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  langOption: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: Radius.chip,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    backgroundColor: Colors.white05,
-  },
-  langOptionActive: {
-    backgroundColor: Colors.goldDim,
-    borderColor: Colors.gold,
-  },
-  langText: {
-    color: Colors.textGrey,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  langTextActive: {
-    color: Colors.gold,
   },
   linkSection: {
     borderTopWidth: 1,
@@ -2474,73 +2352,29 @@ const settingsModalStyles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 16,
   },
+  /** Native Apple butonu — tam genişlik, HIG minimum 44pt yükseklik. */
   appleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radius.button,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
+    width: '100%',
+    height: 44,
   },
-  appleBtnText: {
-    color: Colors.textWhite,
-    fontSize: 14,
-    fontWeight: '600',
+  appleBtnBusy: {
+    opacity: 0.5,
+  },
+  /** En alttaki destructive grup — ince ayraçla ayrılır, kutu yok. */
+  dangerGroup: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: Colors.white10,
   },
   dangerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.white10,
   },
   dangerLabel: {
     color: Colors.error,
     fontSize: Theme.typography.body.fontSize,
-  },
-  signOutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.white10,
-  },
-
-  // ── Delete Account ──────────────────────────────────────────────────────────
-  /** Üstteki içeriklerden net şekilde ayrılan tehlikeli eylem bölümü */
-  deleteAccountSection: {
-    marginTop: 8,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: `${Colors.error}30`,
-    borderRadius: 12,
-    backgroundColor: `${Colors.error}08`,
-    padding: 12,
-  },
-  deleteAccountRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-  },
-  deleteAccountTextBlock: {
-    flex: 1,
-    gap: 4,
-  },
-  deleteAccountLabel: {
-    color: Colors.error,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  deleteAccountHint: {
-    color: Colors.textGrey,
-    fontSize: 11,
-    lineHeight: 15,
-    opacity: 0.8,
   },
 });
