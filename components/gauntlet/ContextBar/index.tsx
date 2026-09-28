@@ -16,10 +16,21 @@
  * bu bileşen yalnızca `onCorrect` ile düzeltilmiş context'i bildirir —
  * PendingWatchFeedbackCard/`onRespond` ile aynı desen, network sonucu
  * beklenmez (bugünün ekranını bloklayacak bir şey zaten yok).
+ *
+ * V-2 Tur B: düzenleyici artık satır içinde AÇILMAZ — bottom sheet (repo
+ * sheet deseni: `AuthPromptSheet` / `NotificationPromptSheet` ile aynı RN
+ * `Modal` + backdrop). Satır içi panel oyun bloğunu aşağı itiyor, soru ve
+ * "İkisi de değil · İzledim" satırı tab bar'ın altına düşüyordu. Davranış
+ * aynı: Kaydet → `onCorrect(draft)` + kapan + "kaydedildi"; kaydetmeden
+ * kapatmak (backdrop / geri hareketi) taslağı atar — eskiden satıra tekrar
+ * dokunmak neyse o.
  */
 import React, { useMemo, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Modal, Text, TouchableOpacity, View } from 'react-native';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { space } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import type { GauntletContext } from '@/types/gauntlet';
@@ -86,6 +97,8 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState<GauntletContext>(context);
   const [justSaved, setJustSaved] = useState(false);
+  /** Sheet pencere seviyesinde çizilir — alt pay yalnız home indicator. */
+  const insets = useSafeAreaInsets();
 
   // "Şu an" — tahmin değil, gözlemlenen gerçek gün/saat (§4.2 "Salı akşamı").
   const now = useMemo(() => new Date(), []);
@@ -115,6 +128,11 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
     posthogAnalytics.track('context_opened');
   };
 
+  /** Kaydetmeden kapatma — taslak atılır (eski satır-içi kapatmayla aynı). */
+  const close = (): void => {
+    setExpanded(false);
+  };
+
   const handleSave = (): void => {
     onCorrect(draft);
     setExpanded(false);
@@ -135,42 +153,53 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
         <Text style={styles.chevron}>{expanded ? '⌃' : '⌄'}</Text>
       </TouchableOpacity>
 
-      {expanded && (
-        <View style={styles.editor}>
-          <Text style={styles.editorTitle}>{t('gauntlet.context.editorTitle')}</Text>
-
-          <SegmentRow
-            options={COMPANIONS}
-            selected={draft.companion}
-            labelFor={(v) => t(`gauntlet.context.companion.${v}`)}
-            onSelect={(v) => setDraft((prev) => ({ ...prev, companion: v }))}
-          />
-          <SegmentRow
-            options={DURATIONS}
-            selected={draft.duration}
-            labelFor={(v) => t(`gauntlet.context.duration.${v}`)}
-            onSelect={(v) => setDraft((prev) => ({ ...prev, duration: v }))}
-          />
-          <SegmentRow
-            options={ENERGIES}
-            selected={draft.energy}
-            labelFor={(v) => t(`gauntlet.context.energy.${v}`)}
-            onSelect={(v) => setDraft((prev) => ({ ...prev, energy: v }))}
-          />
-
-          {/* §4.3 "gizli tahmin yasak" — bu her zaman görünür, gizlenmez. */}
-          <Text style={styles.honestNote}>{t('gauntlet.context.honestNote')}</Text>
-
+      <Modal visible={expanded} transparent animationType="slide" onRequestClose={close}>
+        <View style={styles.overlay}>
           <TouchableOpacity
-            onPress={handleSave}
-            style={styles.saveButton}
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={close}
             accessibilityRole="button"
-            accessibilityLabel={t('gauntlet.context.save')}
-          >
-            <Text style={styles.saveButtonText}>{t('gauntlet.context.save')}</Text>
-          </TouchableOpacity>
+            accessibilityLabel={t('gauntlet.close')}
+          />
+
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + space.lg }]}>
+            <View style={styles.handle} />
+            <Text style={styles.editorTitle}>{t('gauntlet.context.editorTitle')}</Text>
+
+            <SegmentRow
+              options={COMPANIONS}
+              selected={draft.companion}
+              labelFor={(v) => t(`gauntlet.context.companion.${v}`)}
+              onSelect={(v) => setDraft((prev) => ({ ...prev, companion: v }))}
+            />
+            <SegmentRow
+              options={DURATIONS}
+              selected={draft.duration}
+              labelFor={(v) => t(`gauntlet.context.duration.${v}`)}
+              onSelect={(v) => setDraft((prev) => ({ ...prev, duration: v }))}
+            />
+            <SegmentRow
+              options={ENERGIES}
+              selected={draft.energy}
+              labelFor={(v) => t(`gauntlet.context.energy.${v}`)}
+              onSelect={(v) => setDraft((prev) => ({ ...prev, energy: v }))}
+            />
+
+            {/* §4.3 "gizli tahmin yasak" — bu her zaman görünür, gizlenmez. */}
+            <Text style={styles.honestNote}>{t('gauntlet.context.honestNote')}</Text>
+
+            <TouchableOpacity
+              onPress={handleSave}
+              style={styles.saveButton}
+              accessibilityRole="button"
+              accessibilityLabel={t('gauntlet.context.save')}
+            >
+              <Text style={styles.saveButtonText}>{t('gauntlet.context.save')}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
 
       {justSaved && !expanded && (
         <Text style={styles.savedNote}>{t('gauntlet.context.saved')}</Text>

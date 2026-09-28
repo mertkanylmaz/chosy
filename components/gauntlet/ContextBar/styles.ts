@@ -10,6 +10,7 @@
 import { StyleSheet } from 'react-native';
 
 import { color, radius, space, type } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 
 export const styles = StyleSheet.create({
   container: {
@@ -40,12 +41,36 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
   },
-  editor: {
-    marginTop: space.sm,
-    padding: space.base,
-    borderRadius: radius.surface,
+  /**
+   * V-2 Tur B: düzenleyici bottom sheet — repo sheet deseni
+   * (`AuthPromptSheet`/`NotificationPromptSheet`): alta yaslı overlay,
+   * dokunulabilir backdrop, üst köşeleri yuvarlak yüzey + tutamaç.
+   * Renkler Karanlık Salon token'larından (eski sheet'lerin `Colors.*`'ı değil).
+   */
+  overlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: withAlpha(color.surface.base, 0.6),
+  },
+  /** Alt dolgu inline: home indicator + `space.lg`. */
+  sheet: {
+    paddingHorizontal: space.lg,
+    paddingTop: space.md,
+    borderTopLeftRadius: radius.surface,
+    borderTopRightRadius: radius.surface,
     backgroundColor: color.surface.raised,
     gap: space.md,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: color.surface.border,
+    marginBottom: space.xs,
   },
   editorTitle: {
     ...type.callout,
