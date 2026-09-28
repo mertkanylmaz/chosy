@@ -22,14 +22,34 @@ export const styles = StyleSheet.create({
    * İç katman — güvenli alan dolgusunu taşıyan TEK yer (C.9b-UI G4b).
    * Sekiz dal bunu miras alır.
    *
-   * TODO(measure): native tab bar payı burada YOK. `expo-router`'ın
-   * `unstable-native-tabs`'ı `BottomTabBarHeightContext` sağlamıyor
-   * (`useBottomTabBarHeight()` throw eder), yani bar yüksekliği için JS
-   * API'si yok. Ek dolgu ölçüm cihazda yapılana kadar EKLENMEZ — sabit
-   * yazmak iOS sürümleri arasında sessizce yanlış olurdu.
+   * V-2 Tur B: alt dolgu artık native tab bar payını İÇERİR — değer
+   * `useTabBarInset()`'ten gelir (native ölçüm, sabit değil) ve inline
+   * verilir; burada yalnız yerleşim.
    */
   insetLayer: {
     flex: 1,
+  },
+  /** V-2 Tur B: şampiyon bloğunun kaydırma alanı — `insetLayer`'ı doldurur. */
+  championScroll: {
+    flex: 1,
+  },
+  /**
+   * `flexGrow: 1` — içerik kısa olduğunda `ChampionReveal`'ın flex:1 +
+   * ortalaması eskisi gibi çalışır; uzun olduğunda (SE) kaydırılır.
+   * Alt dolgu inline: ölçülen Spotlight kartı yüksekliğine bağlı.
+   */
+  championScrollContent: {
+    flexGrow: 1,
+  },
+  /**
+   * Spotlight kartının yuvası — mutlak, tam genişlik. `bottom` inline
+   * (`useTabBarInset`). Yatay boşluk kartın kendi `marginHorizontal`'ında.
+   */
+  bonusCardDock: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    paddingBottom: space.sm,
   },
   centerContent: {
     flex: 1,

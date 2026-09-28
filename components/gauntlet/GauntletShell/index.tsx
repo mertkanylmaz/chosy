@@ -17,7 +17,7 @@
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Text, View } from 'react-native';
+import { ScrollView, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -45,7 +45,9 @@ import {
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
 } from '@/constants/design/motion';
+import { space } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
   GauntletAuthPendingError,
@@ -223,10 +225,34 @@ interface GauntletShellProps {
 
 // ─── Bileşen ─────────────────────────────────────────────────────────────────
 
-export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Element {
+/**
+ * V-2 Tur B: alt pay ölçümü kabuğun DIŞINDA kurulur — `useTabBarInset()`
+ * yalnız provider altında okunabilir ve ölçüm view'ı tam ekranı kaplamalı.
+ */
+export function GauntletShell(props: GauntletShellProps): React.JSX.Element {
+  return (
+    <TabBarInsetProvider>
+      <GauntletShellContent {...props} />
+    </TabBarInsetProvider>
+  );
+}
+
+function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Element {
   const { t, region, language } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
+  /** V-2 Tur B: tab bar + home indicator — TÜM dalların alt payı buradan. */
+  const tabBarInset = useTabBarInset();
+  /**
+   * Spotlight kartının ölçülen yüksekliği. Kart mutlak konumlu; şampiyon
+   * kaydırma içeriği bu kadar alt dolgu alır ki "Paylaş" kartın altında
+   * kalmasın. Sabit yazılmaz — Dynamic Type kartı büyütür.
+   */
+  const [bonusCardHeight, setBonusCardHeight] = useState(0);
+  const handleBonusCardLayout = useCallback((e: LayoutChangeEvent) => {
+    const h = Math.round(e.nativeEvent.layout.height);
+    setBonusCardHeight((prev) => (prev === h ? prev : h));
+  }, []);
 
   const [shellState, setShellState] = useState<ShellState>(
     isUnlockedNow() ? 'bootstrapping' : 'before_18',
@@ -1332,17 +1358,35 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
               DUNUN champion'i geldiginde kullanici "bu bugunun listesi degil"
               uyarisini hic gormuyordu ve dunun filmini bugunun filmi
               saniyordu. Mevcut gosterge yeniden kullanildi, yeni string yok. */}
-          {isStale && (
-            <Text style={styles.championStaleNotice}>{t('gauntlet.offlineStale')}</Text>
-          )}
-          <ChampionReveal
-            champion={champion}
-            animateReveal={animateReveal}
-            onDismiss={onDismiss}
-            date={gauntlet?.date}
-            rounds={shareRounds}
-            gauntletId={gauntlet?.gauntletId}
-          />
+          {/* V-2 Tur B: şampiyon bloğu KAYDIRILABİLİR. Küçük ekranda (SE)
+              poster + başlık + eylemler yüksekliği aşıyor; eskiden taşan kısım
+              Spotlight kartının ve tab bar'ın altına düşüyordu. `flexGrow: 1`
+              büyük ekranda ortalamayı korur. Alt dolgu = kart yüksekliği +
+              boşluk; tab bar payı zaten `insetLayer`'da. */}
+          <ScrollView
+            style={styles.championScroll}
+            contentContainerStyle={[
+              styles.championScrollContent,
+              { paddingBottom: bonusCardHeight + space.base },
+            ]}
+            showsVerticalScrollIndicator={false}
+          >
+            {isStale && (
+              <Text style={styles.championStaleNotice}>{t('gauntlet.offlineStale')}</Text>
+            )}
+            <ChampionReveal
+              champion={champion}
+              animateReveal={animateReveal}
+              onDismiss={onDismiss}
+              date={gauntlet?.date}
+              rounds={shareRounds}
+              gauntletId={gauntlet?.gauntletId}
+            />
+
+            {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
+                dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
+            <ArchiveTrigger />
+          </ScrollView>
 
           {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
               en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
@@ -1355,15 +1399,18 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
             onClose={handleNotificationPromptClose}
           />
 
-          {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
-              dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
-          <ArchiveTrigger />
-
           {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
               noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
-              ChampionReveal flex:1 olduğu için bu kart onun ALTINDA, merkez
-              bloğun dışında kalır — birincil eylemi aşağı itmez. */}
-          <SpotlightBonusCard />
+              V-2 Tur B: MUTLAK konum, `bottom = tabBarInset` — tab bar'ın
+              hemen üstünde sabit, kaydırılan içerikle çakışmaz. Yoga'da mutlak
+              ofset ebeveyn dolgusunu saymaz; `insetLayer`'ın alt dolgusu
+              burada tekrar verilir, iki kez eklenmez. */}
+          <View
+            style={[styles.bonusCardDock, { bottom: tabBarInset }]}
+            onLayout={handleBonusCardLayout}
+          >
+            <SpotlightBonusCard />
+          </View>
 
           {/* G4b: native tab bar payının saha ölçümü — görsel çıktısı yok,
               düzeni değiştirmez. Karar verisi gelince kaldırılır. */}
@@ -1491,7 +1538,9 @@ export function GauntletShell({ onDismiss }: GauntletShellProps): React.JSX.Elem
       <View
         style={[
           styles.insetLayer,
-          { paddingTop: insets.top, paddingBottom: insets.bottom },
+          // V-2 Tur B: alt pay tab bar DAHİL (`useTabBarInset`) — beş durumun
+          // hepsi bu tek dolguyu miras alır. Üst pay pencere güvenli alanı.
+          { paddingTop: insets.top, paddingBottom: tabBarInset },
         ]}
       >
         {renderBody()}
