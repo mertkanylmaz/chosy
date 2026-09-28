@@ -1486,7 +1486,8 @@
     },
     "watchProviders": {
       "label": "NEREDE İZLENİR",
-      "empty": "Bölgende akışta yok.",
+      "empty": "Bölgende yayında görünmüyor.",
+      "noRegion": "Bölgen belirlenemediği için yayın bilgisi gösterilemiyor.",
       "error": "İzleme seçenekleri yüklenemedi.",
       "attribution": "Yayın bilgisi TMDB'den"
     },

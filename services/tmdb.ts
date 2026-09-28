@@ -228,12 +228,14 @@ export async function fetchMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
  * Belirtilen ülke bölgesine göre filtreler.
  *
  * @param tmdbId  - TMDb film ID'si
- * @param region  - ISO 3166-1 alpha-2 ülke kodu (varsayılan: 'US')
+ * @param region  - ISO 3166-1 alpha-2 ülke kodu (cihazdan, `useLanguage().region`).
+ *                  V-2 Tur D: varsayılan 'US' KALDIRILDI — bölgesiz çağrı
+ *                  TR kullanıcısına ABD katalogunu sessizce gösteriyordu.
  * @returns Flatrate / rent / buy provider'ları, veya null
  */
 export async function fetchMovieWatchProviders(
   tmdbId: number,
-  region = 'US',
+  region: string,
 ): Promise<TmdbWatchProviders | null> {
   const result = await fetchWatchProvidersResult(tmdbId, region);
   return result.status === 'ok' ? result.providers : null;
@@ -262,7 +264,7 @@ export type WatchProvidersResult =
 
 export async function fetchWatchProvidersResult(
   tmdbId: number,
-  region = 'US',
+  region: string,
 ): Promise<WatchProvidersResult> {
   // Geçersiz kimlik bir ağ hatası değil — sorulacak bir şey yok.
   if (!tmdbId) return { status: 'empty' };

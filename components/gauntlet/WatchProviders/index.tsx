@@ -20,6 +20,11 @@
  *
  * ── Bölge ───────────────────────────────────────────────────────────────────
  * Cihazdan gelir (`useLanguage().region`, C2c) — sabit 'US' değil.
+ * Okunamazsa `noRegion` durumu çizilir; başka bölgeye düşülmez (V-2 Tur D).
+ *
+ * ── Tekilleştirme ───────────────────────────────────────────────────────────
+ * Kanal varyantları ("MGM+ Amazon Channel") `utils/watchProviderList`'te
+ * elenir (V-2 Tur D) — film detay ekranıyla ortak saf kural.
  */
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -28,7 +33,8 @@ import { Image } from 'expo-image';
 
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { TmdbProvider, TmdbWatchProviders } from '@/services/tmdb';
+import type { TmdbWatchProviders } from '@/services/tmdb';
+import { flattenProviders } from '@/utils/watchProviderList';
 
 import type { WatchProvidersState } from './useWatchProviders';
 import { styles } from './styles';
@@ -44,20 +50,6 @@ interface WatchProvidersRowProps {
   onRetry: () => void;
 }
 
-/** flatrate > rent > buy sırasıyla tekrarsız liste (film detay ekranıyla aynı öncelik). */
-function flatten(providers: TmdbWatchProviders): TmdbProvider[] {
-  const out: TmdbProvider[] = [];
-  const seen = new Set<number>();
-  for (const list of [providers.flatrate, providers.rent, providers.buy]) {
-    for (const p of list ?? []) {
-      if (seen.has(p.provider_id)) continue;
-      seen.add(p.provider_id);
-      out.push(p);
-    }
-  }
-  return out.slice(0, MAX_PROVIDERS);
-}
-
 export function WatchProvidersRow({
   state,
   providers,
@@ -65,11 +57,30 @@ export function WatchProvidersRow({
 }: WatchProvidersRowProps): React.JSX.Element {
   const { t } = useLanguage();
 
-  const list = state === 'ok' && providers ? flatten(providers) : [];
+  const list = state === 'ok' && providers ? flattenProviders(providers, MAX_PROVIDERS) : [];
+
+  /*
+    Atıf: sağlayıcı verisi TMDB'ye JustWatch'tan gelir ve TMDB kullanım
+    şartları kaynağın adının gösterilmesini ister. Marka adı ÇEVRİLMEZ —
+    `app/film/[id].tsx`'teki desenin aynısı (düz, sönük "JustWatch").
+    "Bölgende yok" da JustWatch verisine dayanan bir iddia — boşta da durur.
+  */
+  const attribution = (
+    <Text style={styles.attribution}>
+      {t('gauntlet.watchProviders.attribution')}
+      {' · '}
+      <Text style={styles.justWatchText}>JustWatch</Text>
+    </Text>
+  );
 
   const renderBody = (): React.JSX.Element => {
     // Satırın yeri tutulur — pop-in yok (C2e).
     if (state === 'loading') return <View style={styles.row} />;
+
+    // Bölge okunamadı — istek atılmadı, JustWatch'tan veri yok, atıf yok.
+    if (state === 'noRegion') {
+      return <Text style={styles.stateLine}>{t('gauntlet.watchProviders.noRegion')}</Text>;
+    }
 
     if (state === 'error') {
       return (
@@ -83,7 +94,12 @@ export function WatchProvidersRow({
     // `ok` ama flatrate/rent/buy boş (ör. yalnız `ads`/`free`) → boşla aynı:
     // çizilecek logo yok, dürüst tek satır.
     if (list.length === 0) {
-      return <Text style={styles.stateLine}>{t('gauntlet.watchProviders.empty')}</Text>;
+      return (
+        <>
+          <Text style={styles.stateLine}>{t('gauntlet.watchProviders.empty')}</Text>
+          {attribution}
+        </>
+      );
     }
 
     return (
@@ -100,16 +116,7 @@ export function WatchProvidersRow({
             />
           ))}
         </View>
-        {/*
-          Atıf: sağlayıcı verisi TMDB'ye JustWatch'tan gelir ve TMDB kullanım
-          şartları kaynağın adının gösterilmesini ister. Marka adı ÇEVRİLMEZ —
-          `app/film/[id].tsx`'teki desenin aynısı (düz, sönük "JustWatch").
-        */}
-        <Text style={styles.attribution}>
-          {t('gauntlet.watchProviders.attribution')}
-          {' · '}
-          <Text style={styles.justWatchText}>JustWatch</Text>
-        </Text>
+        {attribution}
       </>
     );
   };

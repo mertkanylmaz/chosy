@@ -9,6 +9,8 @@
  *   ok      → dokunulmaz logo satırı + atıf
  *   empty   → istek BAŞARILI, bölgede sağlayıcı yok. Dürüst tek satır
  *   error   → istek başarısız. Boştan AYRI mesaj + yeniden dene
+ *   noRegion→ cihaz bölgesi okunamadı (V-2 Tur D). İstek ATILMAZ; başka
+ *             bir bölgeye (eskiden 'US') düşülmez, bu açıkça söylenir
  *
  * ── Kimlik ──────────────────────────────────────────────────────────────────
  * `getAppUserId()` YOK, INSERT YOK. `films` tablosundan yalnız `tmdb_id`
@@ -26,7 +28,7 @@ import {
 } from '@/services/tmdb';
 import { logger } from '@/utils/logger';
 
-export type WatchProvidersState = 'loading' | 'ok' | 'empty' | 'error';
+export type WatchProvidersState = 'loading' | 'ok' | 'empty' | 'error' | 'noRegion';
 
 /**
  * Oturum içi bellek — `filmId|region` → sonuç.
@@ -82,8 +84,9 @@ async function load(filmId: string, region: string): Promise<WatchProvidersResul
  */
 export async function prefetchWatchProviders(
   filmId: string,
-  region: string,
+  region: string | null,
 ): Promise<void> {
+  if (region === null) return;
   const k = key(filmId, region);
   if (memo.has(k)) return;
   try {
@@ -104,14 +107,17 @@ export interface UseWatchProvidersValue {
 
 export function useWatchProviders(
   filmId: string,
-  region: string,
+  region: string | null,
 ): UseWatchProvidersValue {
-  const k = key(filmId, region);
-  const cached = memo.get(k);
+  // Bölgesiz anahtar üretilmez — memo her zaman bölgeyle anahtarlanır.
+  const k = region === null ? null : key(filmId, region);
+  const cached = k === null ? undefined : memo.get(k);
   const [result, setResult] = useState<WatchProvidersResult | null>(cached ?? null);
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    // Bölge yok → sorulacak katalog yok. Sentry kaydı LanguageContext'te.
+    if (region === null || k === null) return;
     let cancelled = false;
     const hit = memo.get(k);
     if (hit && attempt === 0) {
@@ -140,10 +146,13 @@ export function useWatchProviders(
   }, [filmId, region, k, attempt]);
 
   const retry = useCallback(() => {
-    memo.delete(k);
+    if (k !== null) memo.delete(k);
     setAttempt((n) => n + 1);
   }, [k]);
 
+  if (region === null) {
+    return { state: 'noRegion', providers: null, retry };
+  }
   if (result === null) {
     return { state: 'loading', providers: null, retry };
   }

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 // ⚠️ `expo-localization`'ın TEK import noktası burasıdır (CLAUDE.md kritik
 // import kuralı). Başka hiçbir dosya doğrudan import etmez; cihaz yerelini
 // isteyen her yer bu context'ten okur.
@@ -22,31 +23,35 @@ interface LanguageContextValue {
    * satıldığı ülkedir. Türkiye'de İngilizce kullanan biri TR katalogunu
    * görmeli — ikisi bağımsız.
    *
-   * Cihaz bölge vermezse `DEFAULT_REGION` ('US') döner: bu bir tahmin
-   * değil, TMDB'nin en dolu katalogu ve `fetchMovieWatchProviders`'ın
-   * eski varsayılanı — davranış geriye dönük aynı kalır.
+   * Cihaz geçerli bir bölge vermezse `null` — V-2 Tur D. Önceki sürüm
+   * burada 'US'e düşüyordu; Türkiye'deki kullanıcıya ABD katalogu
+   * (Fubo, Philo…) göstermek sessiz fallback'tir. Tüketici `null`'u
+   * "bölge belirlenemedi" olarak AÇIKÇA çizer, başka bölgeyi sormaz.
    */
-  region: string;
+  region: string | null;
 }
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
 const LANGUAGE_KEY = 'moodflix_language';
 
-/** Cihaz bölge vermezse kullanılacak katalog. Eski davranışla aynı. */
-const DEFAULT_REGION = 'US';
-
 /**
- * Cihazın ülke kodunu okur. Senkron ve saf — `getLocales()` cihaz ayarını
- * doğrudan verir, ağ/depo gerektirmez.
+ * Cihazın ülke kodunu okur (iOS: Ayarlar › Dil ve Bölge › Bölge; dil
+ * seçiminden BAĞIMSIZ). Senkron — `getLocales()` ağ/depo gerektirmez.
  *
- * Hata yutulmaz ama kullanıcıya da yansıtılmaz: bölge okunamazsa katalog
- * varsayılana düşer ve kullanıcı yine bir şey görür. Sessiz DEĞİL — neden
- * varsayılana düşüldüğü açıkça yazılı bir daldır.
+ * Geçerli ISO 3166-1 alpha-2 değilse (null, "419" gibi UN M.49 kodları)
+ * `null` döner ve Sentry'ye yazılır — varsayılan bölgeye DÜŞÜLMEZ.
  */
-function readDeviceRegion(): string {
-  const code = getLocales()[0]?.regionCode;
-  return code ? code.toUpperCase() : DEFAULT_REGION;
+function readDeviceRegion(): string | null {
+  const raw = getLocales()[0]?.regionCode ?? null;
+  const code = raw ? raw.toUpperCase() : null;
+  if (code && /^[A-Z]{2}$/.test(code)) return code;
+  Sentry.captureMessage('device region unavailable', {
+    level: 'warning',
+    tags: { component: 'LanguageContext', flow: 'device_region' },
+    extra: { raw_region_code: raw },
+  });
+  return null;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -55,7 +60,7 @@ const LanguageContext = createContext<LanguageContextValue>({
   language: 'en',
   setLanguage: async () => {},
   t: (key) => key,
-  region: DEFAULT_REGION,
+  region: null,
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -71,7 +76,7 @@ const LanguageContext = createContext<LanguageContextValue>({
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Locale>('en');
   // Cihaz bölgesi oturum boyunca değişmez — bir kez okunur.
-  const [region] = useState<string>(readDeviceRegion);
+  const [region] = useState<string | null>(readDeviceRegion);
 
   useEffect(() => {
     AsyncStorage.getItem(LANGUAGE_KEY)

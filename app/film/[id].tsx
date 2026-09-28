@@ -59,6 +59,7 @@ import {
   type TmdbWatchProviders,
   type TmdbProvider,
 } from '@/services/tmdb';
+import { flattenProviders } from '@/utils/watchProviderList';
 import { localizeGenre } from '@/utils/filmFilters';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
@@ -290,7 +291,7 @@ function TmdbFooter({ text }: { text: string }) {
  */
 export default function FilmDetailScreen() {
   const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
-  const { t, language } = useLanguage();
+  const { t, language, region } = useLanguage();
   const { currentProfile, presetMoodText, currentSessionId } = useMood();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -369,9 +370,14 @@ export default function FilmDetailScreen() {
         }));
 
         if (row.tmdb_id) {
+          // V-2 Tur D: bölge cihazdan — eskiden bölgesiz çağrı 'US' demekti.
+          // Bölge okunamadıysa (Sentry'ye LanguageContext yazar) başka bir
+          // bölgenin katalogu SORULMAZ; WATCH ON bölümü boştaki gibi gizli kalır.
           const [tmdbDetails, providers] = await Promise.all([
             fetchMovieDetails(row.tmdb_id),
-            fetchMovieWatchProviders(row.tmdb_id),
+            region === null
+              ? Promise.resolve(null)
+              : fetchMovieWatchProviders(row.tmdb_id, region),
           ]);
 
           if (tmdbDetails) {
@@ -412,7 +418,7 @@ export default function FilmDetailScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, region]);
 
   useEffect(() => {
     loadFilm();
@@ -744,20 +750,12 @@ export default function FilmDetailScreen() {
     crewDisplay.push({ label: t('filmDetail.director'), name: film.director });
   }
 
-  /** Flatrate > rent > buy siralamasiyla tekrarsiz provider listesi */
-  const allProviders: TmdbProvider[] = [];
-  const seenIds = new Set<number>();
-  const addProviders = (list?: TmdbProvider[]) => {
-    list?.forEach((p) => {
-      if (!seenIds.has(p.provider_id)) {
-        seenIds.add(p.provider_id);
-        allProviders.push(p);
-      }
-    });
-  };
-  addProviders(watchProviders?.flatrate);
-  addProviders(watchProviders?.rent);
-  addProviders(watchProviders?.buy);
+  /**
+   * Flatrate > rent > buy siralamasiyla tekrarsiz provider listesi; kanal
+   * varyantlari ("MGM+ Amazon Channel") ana saglayici varken elenir
+   * (V-2 Tur D, sampiyon satiriyla ortak kural).
+   */
+  const allProviders: TmdbProvider[] = watchProviders ? flattenProviders(watchProviders) : [];
 
   // ── Render ────────────────────────────────────────────────────────────────────
 
