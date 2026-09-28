@@ -690,3 +690,37 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
   recordTiming('get-archive-status', startedAt, 'ok');
   return data as ArchiveStatus;
 }
+
+/**
+ * Kullanıcının son şampiyon filminin poster URL'si — Profil header'ının
+ * bulanık arka planı ("perde"). Edge Function değil, doğrudan tablo okuması:
+ * `daily_gauntlets_personal_read` RLS'i yalnız kendi `personal` satırlarını
+ * döndürür; `userId` filtresi yine de açıkça verilir.
+ *
+ * Henüz şampiyon yoksa (veya filmin posteri yoksa) `null` — bu boş durumdur,
+ * hata değil. Sorgu hatası Sentry'ye yazılır ve fırlatılır.
+ */
+export async function getLastChampionPosterUrl(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('daily_gauntlets')
+    .select('date, champion:films!champion_film_id(poster_url)')
+    .eq('user_id', userId)
+    .eq('scope', 'personal')
+    .not('champion_film_id', 'is', null)
+    .order('date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    Sentry.captureException(error, { tags: { fn: 'getLastChampionPosterUrl' } });
+    throw error;
+  }
+
+  const row = data as { champion: { poster_url: string | null } | null } | null;
+  const path = row?.champion?.poster_url ?? null;
+  if (!path) return null;
+  // Bulanik arka plan icin w342 yeter; `films.poster_url` bazen `original`
+  // boyutlu tam URL (birkac MB) tasiyor.
+  if (!path.startsWith('http')) return `https://image.tmdb.org/t/p/w342${path}`;
+  return path.replace(/(image\.tmdb\.org\/t\/p\/)[^/]+\//, '$1w342/');
+}

@@ -55,6 +55,7 @@ import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { AVATAR_GLYPHS, AVATAR_IDS, isAvatarId, type AvatarId } from '@/constants/avatarGlyphs';
 import { color, radius, size, space, type } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
@@ -84,6 +85,7 @@ import {
   toggleNotifications,
 } from '@/services/pushNotifications';
 import { formatUnlockTime } from '@/components/gauntlet/GauntletShell/unlockClock';
+import { getLastChampionPosterUrl } from '@/services/gauntletService';
 import type { PremiumStatus } from '@/utils/premiumStatus';
 
 import type { SwipeInsight } from '@/types/profile';
@@ -101,6 +103,16 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
 
 /** Saved poster seridindeki yuva sayisi — yukleme dilimi ile ayni kaynak. */
 const SAVED_STRIP_SLOTS = 4;
+
+/**
+ * Header perdesi — son sampiyon posteri. Bulaniklik posteri tanınmaz
+ * kilar (renk dokusu kalir); `ink` ortusu metin kontrastini korur, alt
+ * gecis header'i zemine eritir. Design OS §6 bilincli istisnasi (kurucu
+ * talebi, 29 Eyl 2026) — bkz. commit mesaji.
+ */
+const HEADER_CURTAIN_BLUR = 28;
+const HEADER_CURTAIN_DIM = withAlpha(color.surface.base, 0.6);
+const HEADER_CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
 // Avatar secenekleri ve saklanan deger → glif eslemesi: constants/avatarGlyphs.ts
 // Anahtar + tek seferlik tasima: utils/avatarStorage.ts
@@ -659,6 +671,8 @@ export default function ProfileScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
+  /** Son sampiyonun posteri — header "perde" arka plani. null → perde yok. */
+  const [championPosterUrl, setChampionPosterUrl] = useState<string | null>(null);
   /** Izlenen film sayisi — `null`: yuklenmedi ya da hata (satir cizilmez). */
   const [watchedCount, setWatchedCount] = useState<number | null>(null);
 
@@ -735,6 +749,15 @@ export default function ProfileScreen() {
       const userId: string = userRow.id;
       publicUserIdRef.current = userId;
       void loadAvatar(userId);
+
+      // Header perdesi — son sampiyon posteri (non-blocking). Hata servis
+      // katmaninda Sentry'ye yazildi; perde cizilmez, header eski gorunumde.
+      getLastChampionPosterUrl(userId)
+        .then(setChampionPosterUrl)
+        .catch((err: unknown) => {
+          setChampionPosterUrl(null);
+          logger.warn('[ProfileScreen] sampiyon posteri yuklenemedi:', err);
+        });
 
       // İsim önceliği: username → display_name → auth metadata adı → null (fallback i18n'den gelir)
       type UserRow = { id: string; display_name: string | null; username: string | null; archetype_id: number | null };
@@ -1194,6 +1217,30 @@ export default function ProfileScreen() {
             locations={[0, 1]}
             style={styles.headerSection}>
 
+            {/* Perde — son sampiyonun bulanik, karartilmis posteri. Sampiyon
+                yoksa cizilmez; header eski gradyanla kalir. Dekoratif:
+                erisilebilirlik agacina girmez, dokunusu yutmaz. */}
+            {championPosterUrl && (
+              <View
+                style={styles.headerCurtain}
+                pointerEvents="none"
+                accessibilityElementsHidden
+                importantForAccessibility="no-hide-descendants">
+                <Image
+                  source={{ uri: championPosterUrl }}
+                  style={styles.headerCurtainImage}
+                  blurRadius={HEADER_CURTAIN_BLUR}
+                  resizeMode="cover"
+                />
+                <View style={styles.headerCurtainDim} />
+                <LinearGradient
+                  colors={[HEADER_CURTAIN_FADE_TOP, Colors.background]}
+                  locations={[0.35, 1]}
+                  style={styles.headerCurtainFade}
+                />
+              </View>
+            )}
+
             {/* Üst satır: Gear sağa hizalanmış, absolute yok */}
             <View style={styles.headerTopRow}>
               <TouchableOpacity
@@ -1575,6 +1622,22 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 28,
     borderBottomRightRadius: 28,
     overflow: 'hidden',
+  },
+  /** Perde katmani — header'in tamamini kaplar, icerigin altinda kalir */
+  headerCurtain: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  /** Blur kenarlarda seffaf halka birakir — hafif buyutme onu tasar */
+  headerCurtainImage: {
+    ...StyleSheet.absoluteFillObject,
+    transform: [{ scale: 1.15 }],
+  },
+  headerCurtainDim: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: HEADER_CURTAIN_DIM,
+  },
+  headerCurtainFade: {
+    ...StyleSheet.absoluteFillObject,
   },
   /** Gear butonunu sağ üste hizalayan tam genişlik satır — absolute positioning yok */
   headerTopRow: {
