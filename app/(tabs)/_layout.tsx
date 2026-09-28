@@ -1,7 +1,7 @@
 /**
  * Tab navigasyon layout'u — Native tab bar (C.9a-2 Faz 2, Senaryo A).
  *
- * Sıra: Home (sparkle) → Discover (safari, gizli) → Profile (person)
+ * Sıra: Home (film) → Discover (safari, gizli) → Profile (person)
  *
  * K-04: "Tab bar native-feeling. Custom glass taklidi yok; sistemin Liquid
  * Glass davranışı kullanılır." Bu yüzden `expo-router/unstable-native-tabs`
@@ -18,6 +18,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/design/semantic';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
 import { syncDailyReminderOnLaunch } from '@/services/pushNotifications';
 
@@ -69,9 +70,16 @@ export default function TabLayout() {
 
   return (
     <NativeTabs tintColor={Colors.accentPrimary}>
-      {/* 1 — Home: Mood search + AI processing */}
+      {/* 1 — Home: günlük gauntlet.
+          V-3 Tur G1 (G7, V3-D7): film temalı ikon — SF Symbol `film`.
+          Phosphor değil: native tab `Icon`'u SVG bileşeni kabul etmiyor
+          (onaylı sapma). Yalnız ikon ve Home'un aktif ikon rengi değişti;
+          tab yapısı (K-01/K-04) aynı. Aktif renk `marquee` yalnız bu ikonda. */}
       <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: 'sparkle', selected: 'sparkles' }} />
+        <Icon
+          sf={{ default: 'film', selected: 'film.fill' }}
+          selectedColor={color.reward.primary}
+        />
         <Label>{t('tabs.home')}</Label>
       </NativeTabs.Trigger>
       {/* 2 — Discover: C.9a (bible K-02) — nav'dan kaldırıldı, flag ile donduruldu.
