@@ -16,6 +16,11 @@ export const color = {
   },
   text: {
     primary: palette.bone,
+    /**
+     * V-3 Tur G1 (G5): gauntlet sorusunun metni — `bone@80%`. `secondary`
+     * (smoke) değil: soru ekranın ana cümlesi, meta kadar geri çekilmez.
+     */
+    primarySoft: withAlpha(palette.bone, 0.8),
     secondary: palette.smoke,
   },
   accent: {
@@ -88,6 +93,34 @@ export const type = {
    */
   meta: { fontFamily: 'MartianMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 0.24 },
   'meta-strong': { fontFamily: 'MartianMono_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
+
+  /**
+   * V-3 Tur G1 (G1): bağlam pill'inin büyük harfli, harf aralıklı özeti.
+   * SF Pro — mono DEĞİL (C.9b-UI G2: mono bu uzunlukta cümleyi taşırıyordu).
+   * letterSpacing em oranıyla hesaplandı (V-2 Tur C notu): 12 × 0.08 = 0.96pt.
+   */
+  'label-caps': { fontFamily: Theme.fonts.inter, fontWeight: '600', fontSize: 12, lineHeight: 16, letterSpacing: 0.96 },
+
+  /**
+   * V-3 Tur G1, karar V3-D1: serif YALNIZCA film adlarında. Bu rol film adı
+   * gösteren yerler dışında KULLANILMAZ — soru, buton, meta, pill dahil.
+   * Aile adı `app/_layout.tsx` `useFonts()` anahtarıyla birebir.
+   */
+  filmTitle: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 17, lineHeight: 22, letterSpacing: 0 },
+} as const;
+
+/**
+ * Boyut tokenları — boşluk merdiveninde olmayan sabit ölçüler (V-3 Tur G1).
+ */
+export const size = {
+  /** HIG asgari dokunma hedefi — eylem butonları ve bağlam pill'i. */
+  touchTarget: 44,
+  /** Satır içi ikon (bağlam pill'i: sol ikon + chevron). */
+  iconInline: 16,
+  /** Tur göstergesi noktası (G2). */
+  progressDot: 6,
+  /** Kenarlıklı yüzeylerin çizgi kalınlığı. */
+  hairline: 1,
 } as const;
 
 /**
