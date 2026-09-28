@@ -129,6 +129,8 @@ E-09 bu altısını adıyla şart koşuyor; altısı da çekirdektedir.
 | `feed_*` | 3 | Emekli swipe feed'i. |
 | `referral_*`, `app_share_*`, `archetype_share_*` | 6 | R-11: growth motorları v1 sonrası. |
 | `waiting_viewed` — 31 Ağu sayımından sonra eklendi (V-1 Tur 6, `GauntletShell` `before_18` girişi; alan: `minutes_to_unlock`) | 1 | §3.1'deki kaybedilen `before_18` sinyalini ayrı event olarak taşır; kapı şartı değil, 20/20 sözleşmesi değişmez. |
+| `watch_now_tapped` — V-3 Tur G2 (28 Eyl 2026), `ChampionReveal` Watch Now butonu (TMDB `link`, uygulama içi tarayıcı); alanlar: `film_id`, `cycle` (`current`/`previous`), `region` (null olabilir), `provider_count` (tekilleştirilmiş toplam) | 1 | K-20 aktivasyon köprüsünün yeni yüzeyi. ⚠️ Çekirdek #9 `provider_clicked` TestFlight 2.1.0'dan (26 Eyl) beri ateşlenmiyor — logolar dokunulmaz oldu; bu event'in onun yerine geçip geçmeyeceği CTO kararı, 20/20 sözleşmesi bu turda değişmez. |
+| `providers_see_all_opened` — V-3 Tur G2, `WatchProvidersRow` "See all" sheet'i (yalnız >3 sağlayıcıda görünür); alanlar: `film_id`, `region`, `provider_count` | 1 | V3-D5 (3 logo sınırı) doğrulaması — kullanıcı tam listeye ne sıklıkla ihtiyaç duyuyor. Kapı şartı değil. |
 | Diğer (`ota_update_*`, `context_opened`, `dna_viewed`, `pro_mode_*`, `quota_exhausted`, `champion_revealed`, `restore_completed`, `purchase_cancelled`, `entitlement_pending`, `identity_reset_detected`, `paywall_variant_skipped`, `save/watchlist` yardımcıları …) | ~22 | Faydalı ama kapı şartı değil. |
 
 **Kapı şartı olmamak, ölçülmemek demek değildir.** Özellikle
