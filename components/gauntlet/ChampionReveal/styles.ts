@@ -48,6 +48,22 @@ export const styles = StyleSheet.create({
     bottom: 0,
     height: '50%',
   },
+  /**
+   * V-3 referans uyumu: etiketin arkasındaki üst geçiş (heroScrim.ts
+   * TOP_SCRIM_*). Yükseklik inline.
+   */
+  topScrim: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+  },
+  /** Etiket hero'nun tepesinde — `top` inline (güvenli alan + KICKER_TOP_GAP). */
+  kickerOnHero: {
+    position: 'absolute',
+    left: space.lg,
+    right: space.lg,
+  },
   body: {
     alignItems: 'center',
     paddingHorizontal: space.lg,
@@ -55,13 +71,16 @@ export const styles = StyleSheet.create({
   },
   /**
    * C2: büyük harf JS'te (`toLocaleUpperCase`) — TR i → İ. Renk `bone@80%`:
-   * geçiş üstünde en kötü durumda 5.61:1 (heroScrim testi); `smoke` 4.5'i
-   * tutturmazdı.
+   * iki konumda da en kötü durum (saf beyaz poster) ≥ 4.5:1 heroScrim
+   * testinde ölçülür; `smoke` 4.5'i tutturmazdı.
    */
   kicker: {
     ...type['label-caps'],
     color: color.text.primarySoft,
     textAlign: 'center',
+  },
+  /** Reduce Transparency / bayat gösterge: etiket başlığın üstünde (G2 yerleşimi). */
+  kickerInBody: {
     marginBottom: space.sm,
   },
   /**

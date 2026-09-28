@@ -1470,6 +1470,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
               cycle={cycleModeRef.current}
+              topNoticeVisible={isStale}
             />
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına

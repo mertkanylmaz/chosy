@@ -42,17 +42,61 @@ export const TITLE_OVERLAP = 72;
  */
 export const MIN_WINDOW_HEIGHT = 568;
 
-/** Geçiş içindeki konumda (`t` ∈ [0, 1]) `ink` opaklığı — doğrusal ara değer. */
-export function scrimAlphaAt(t: number): number {
+type ScrimStop = { readonly at: number; readonly alpha: number };
+
+/** Durak listesinde `t` ∈ [0, 1] konumundaki `ink` opaklığı — doğrusal ara değer. */
+function alphaInStops(stops: readonly ScrimStop[], t: number): number {
   const x = Math.min(1, Math.max(0, t));
-  for (let i = 1; i < SCRIM_STOPS.length; i++) {
-    const a = SCRIM_STOPS[i - 1];
-    const b = SCRIM_STOPS[i];
+  for (let i = 1; i < stops.length; i++) {
+    const a = stops[i - 1];
+    const b = stops[i];
     if (x <= b.at) {
       return a.alpha + ((x - a.at) / (b.at - a.at)) * (b.alpha - a.alpha);
     }
   }
-  return SCRIM_STOPS[SCRIM_STOPS.length - 1].alpha;
+  return stops[stops.length - 1].alpha;
+}
+
+/** Alt geçiş içindeki konumda (`t` ∈ [0, 1]) `ink` opaklığı. */
+export function scrimAlphaAt(t: number): number {
+  return alphaInStops(SCRIM_STOPS, t);
+}
+
+// ─── V-3 referans uyumu: etiket hero'nun TEPESİNDE ───────────────────────────
+//
+// "TONIGHT'S FILM" posterin üst kenarına, güvenli alanın altına taşındı.
+// Posterin tepesi herhangi bir renkte olabilir → üstten `ink`'e ikinci bir
+// alfa geçişi (alttakiyle aynı ilke: renk sabit, yalnız alfa). Durum çubuğu
+// ikonları da aynı geçişten okunurluk kazanır.
+
+/** Üst geçişin yüksekliği (pt), hero'nun tepesinden aşağı. */
+export const TOP_SCRIM_HEIGHT = 160;
+
+/** Üst geçiş durakları — tepeden (0) aşağı (1). Etiket satırı ~0.4–0.6'da. */
+export const TOP_SCRIM_STOPS = [
+  { at: 0, alpha: 0.85 },
+  { at: 0.6, alpha: 0.8 },
+  { at: 1, alpha: 0 },
+] as const;
+
+/** Etiketin güvenli alanın ne kadar altından başladığı (pt) — `space.base`. */
+export const KICKER_TOP_GAP = 16;
+
+/** Etiket satır yüksekliği (pt) — `type['label-caps'].lineHeight`. */
+export const KICKER_LINE_HEIGHT = 16;
+
+/** Üst geçiş içindeki konumda (`t` ∈ [0, 1]) `ink` opaklığı. */
+export function topScrimAlphaAt(t: number): number {
+  return alphaInStops(TOP_SCRIM_STOPS, t);
+}
+
+/**
+ * Etiket satırının ALT kenarındaki `ink` opaklığı — satırın en şeffaf noktası
+ * (geçiş aşağı doğru açılıyor), yani kontrastın en kötü olduğu yer.
+ */
+export function alphaAtKickerBottom(topInset: number): number {
+  const kickerBottom = topInset + KICKER_TOP_GAP + KICKER_LINE_HEIGHT;
+  return topScrimAlphaAt(kickerBottom / TOP_SCRIM_HEIGHT);
 }
 
 /** Verilen pencere yüksekliğinde etiket bloğunun başladığı satırdaki `ink` opaklığı. */

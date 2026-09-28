@@ -13,8 +13,10 @@ import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.t
 
 import {
   MIN_WINDOW_HEIGHT,
+  alphaAtKickerBottom,
   alphaAtOverlapStart,
   scrimAlphaAt,
+  topScrimAlphaAt,
 } from '../../components/gauntlet/ChampionReveal/heroScrim.ts'
 import { palette } from '../../constants/design/primitives.ts'
 import { compositeOver, contrastRatio } from '../../utils/oklch.ts'
@@ -43,12 +45,35 @@ for (const h of [MIN_WINDOW_HEIGHT, 667, 932]) {
   Deno.test(`kontrast ≥ 4.5 — pencere ${h}pt, saf beyaz poster`, () => {
     const alpha = alphaAtOverlapStart(h)
     const title = worstCaseContrast(h, palette.bone, 1)
-    // Etiket `bone@80%` (color.text.primarySoft) — bloğun EN ÜST satırı.
+    // Reduce Transparency / bayat göstergede etiket yine bloğun EN ÜST
+    // satırında durabilir — `bone@80%` (color.text.primarySoft).
     const kicker = worstCaseContrast(h, palette.bone, 0.8)
     console.log(
       `  ${h}pt: ink alfa ${alpha.toFixed(3)} · başlık ${title.toFixed(2)}:1 · etiket ${kicker.toFixed(2)}:1`,
     )
     assert(title >= WCAG_AA, `başlık ${title.toFixed(2)}:1 < 4.5`)
     assert(kicker >= WCAG_AA, `etiket ${kicker.toFixed(2)}:1 < 4.5`)
+  })
+}
+
+Deno.test('topScrimAlphaAt: duraklarda ve dışında doğru', () => {
+  assertEquals(topScrimAlphaAt(0), 0.85)
+  assertEquals(topScrimAlphaAt(0.6), 0.8)
+  assertEquals(topScrimAlphaAt(1), 0)
+  assertEquals(topScrimAlphaAt(-1), 0.85)
+  assertEquals(topScrimAlphaAt(2), 0)
+})
+
+// V-3 referans uyumu: etiket hero'nun tepesinde. En kötü durum etiket
+// satırının ALT kenarı (geçiş aşağı açılıyor) + saf beyaz poster.
+// Güvenli alan üstü: SE 20 · çentik 47 · Dynamic Island 59 · 16 Pro 62.
+for (const inset of [20, 47, 59, 62]) {
+  Deno.test(`üst etiket kontrastı ≥ 4.5 — güvenli alan ${inset}pt, saf beyaz poster`, () => {
+    const alpha = alphaAtKickerBottom(inset)
+    const bg = compositeOver(WHITE, palette.ink, alpha)
+    const fg = compositeOver(bg, palette.bone, 0.8)
+    const ratio = contrastRatio(fg, bg)
+    console.log(`  inset ${inset}pt: ink alfa ${alpha.toFixed(3)} · etiket ${ratio.toFixed(2)}:1`)
+    assert(ratio >= WCAG_AA, `üst etiket ${ratio.toFixed(2)}:1 < 4.5`)
   })
 }
