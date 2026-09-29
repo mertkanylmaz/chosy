@@ -35,6 +35,7 @@ import {
   View,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -340,6 +341,27 @@ function NicknameModal({ visible, current, onClose, onSave }: NicknameModalProps
   );
 }
 
+// ─── Sürüm satırı ────────────────────────────────────────────────────────────
+
+/**
+ * V-4 Tur B: Settings'in en altındaki "Chosy 2.1.0 (906)". Build numarası
+ * gömülü Info.plist'ten (`Constants.platform.ios.buildNumber`) — app.json'daki
+ * `ios.buildNumber` DEĞİL: `appVersionSource: remote` olduğu için o değer
+ * bayat kalır. `expo-application` doğrudan bağımlılık değil, eklenmedi.
+ * Güncelleme kimliği (update_id) burada GÖSTERİLMEZ — yalnız Sentry/PostHog.
+ * Build numarası okunamazsa (Expo Go / dev) yalnız sürüm gösterilir.
+ */
+function appVersionLine(t: (key: string, options?: Record<string, unknown>) => string): string {
+  const version = Constants.expoConfig?.version ?? '';
+  const build =
+    Platform.OS === 'ios'
+      ? Constants.platform?.ios?.buildNumber
+      : Constants.platform?.android?.versionCode?.toString();
+  return build
+    ? t('profile.versionLine', { version, build })
+    : t('profile.versionLineNoBuild', { version });
+}
+
 // ─── Settings Modal ───────────────────────────────────────────────────────────
 
 interface SettingsModalProps {
@@ -632,6 +654,8 @@ function SettingsModal({
               <Text style={settingsModalStyles.dangerLabel}>{t('profile.deleteAccount')}</Text>
             </TouchableOpacity>
           </View>
+
+          <Text style={settingsModalStyles.versionLine}>{appVersionLine(t)}</Text>
 
         </TouchableOpacity>
       </TouchableOpacity>
@@ -2568,5 +2592,11 @@ const settingsModalStyles = StyleSheet.create({
   dangerLabel: {
     color: Colors.error,
     fontSize: Theme.typography.body.fontSize,
+  },
+  /** Sürüm satırı — sönük, ortalı, dokunulmaz. */
+  versionLine: {
+    ...type.caption,
+    color: Colors.textGrey,
+    textAlign: 'center',
   },
 });

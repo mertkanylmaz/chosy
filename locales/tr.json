@@ -528,6 +528,8 @@
     "deleteAccountConfirmTitle": "Hesabı Sil",
     "deleteAccountConfirmMessage": "Hesabın, izleme listen, ruh hali geçmişin ve tüm verilerin kalıcı olarak silinecek. Bu işlem geri alınamaz.",
     "deleteAccountConfirm": "Kalıcı Olarak Sil",
+    "versionLine": "Chosy %{version} (%{build})",
+    "versionLineNoBuild": "Chosy %{version}",
     "deleteAccountDeleting": "Hesap siliniyor...",
     "deleteAccountSuccess": "Hesabın silindi.",
     "deleteAccountError": "Hesap silinemedi. Tekrar dene.",

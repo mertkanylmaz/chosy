@@ -528,6 +528,8 @@
     "deleteAccountConfirmTitle": "Delete Account",
     "deleteAccountConfirmMessage": "This will permanently delete your account, watchlist, mood history, and all data. This action cannot be undone.",
     "deleteAccountConfirm": "Delete Permanently",
+    "versionLine": "Chosy %{version} (%{build})",
+    "versionLineNoBuild": "Chosy %{version}",
     "deleteAccountDeleting": "Deleting account...",
     "deleteAccountSuccess": "Your account has been deleted.",
     "deleteAccountError": "Your account couldn't be deleted. Try again.",
