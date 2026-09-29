@@ -4,6 +4,8 @@
 > `docs/os/7_CHOSY_V1_KAPSAM_KILIDI.md` v1.31 §5 E-22.
 > **28 Eyl 2026 (V-3 Tur G3) eki:** K ve L bölümleri — V-3 gauntlet + şampiyon
 > görsel retrofiti, karar kaydı bible **v1.32 §5 E-23** (V3-D1…V3-D7).
+> **30 Eyl 2026 eki:** M bölümü — Cinema DNA v1'de gizli (`isCinemaDnaEnabled`,
+> bible v1.33 K-47). E1, F2, F4 bu karar ile geçersizleşti (üstü çizili).
 > Kaynak: V-1 turlarının commit'leri + bible §9'daki cihaz bekleyen kalemler.
 > Senaryolar **gerçekte uygulanan** davranışa göre yazıldı; sprint v1'de planlanıp
 > uygulanmayanlar (bildirim CTA'sı, Settings tek switch, dünkü şampiyon kartı,
@@ -77,8 +79,8 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 
 ## E. Abonelik durumu — `premiumStatus` (V-1 Tur 1, V1-D3)
 
-- [ ] E1. Free kullanıcı: Profile'da Chosy Plus CTA'sı ve Cinema DNA paywall
-      sarmalayıcısı görünür.
+- [ ] E1. Free kullanıcı: Profile'da Chosy Plus CTA'sı ~~ve Cinema DNA paywall
+      sarmalayıcısı~~ görünür. _(30 Eyl: DNA bölümü v1'de gizli — bkz. M1.)_
 - [ ] E2. Sandbox abonelik al → Profile'da upsell/CTA **yok**, "Chosy Plus"
       rozeti var.
 - [ ] E3. Soğuk açılışta (abonelik çözülürken) Profile'a hızlı gir → upsell
@@ -93,11 +95,12 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 ## F. Profile (V-1 Tur 2, K-08 sapması)
 
 - [ ] F1. Kullanıcı adı altında `#XXXXXXXX` ID satırı **yok**.
-- [ ] F2. Bölüm sırası: **Cinema DNA → Watched → Saved → Üyelik**; Settings
-      başlıktaki dişli. Streak **yok** (bilinçli, E-22). Discovery Stats **yok**.
+- [ ] F2. Bölüm sırası: ~~**Cinema DNA →**~~ **Watched → Saved → Üyelik**; Settings
+      başlıktaki dişli. _(30 Eyl: DNA bölümü v1'de gizli — bkz. M1.)_ Streak **yok** (bilinçli, E-22). Discovery Stats **yok**.
 - [ ] F3. Her bölüm başlığı **bir kez** (çift başlık yok).
-- [ ] F4. Cinema DNA: başlık "Sinema DNA"/"Cinema DNA"; yetersiz veride
-      "Birkaç akşam daha, zevkini tanıyacağım." — "swipe" kelimesi yok.
+- ~~F4. Cinema DNA: başlık "Sinema DNA"/"Cinema DNA"; yetersiz veride
+      "Birkaç akşam daha, zevkini tanıyacağım." — "swipe" kelimesi yok.~~
+      _(30 Eyl: geçersiz — DNA bölümü v1'de gizli, bkz. M1. Test edilmez.)_
 - [ ] F5. Watched: 0 izlenen → davet kopyası; ≥1 → sayı (`loved`/`ok`/`abandoned`
       sayılır, `not_watched`/`skipped` sayılmaz). Uçak modunda açılış → bölüm
       **hiç çizilmiyor** (sahte 0 yok).
@@ -212,6 +215,33 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 - [ ] L14. Dil TR ↔ EN: tüm yeni metinler (Watch now, See all, sheet başlığı,
       gruplar, hata mesajı) çevrilmiş.
 
+## M. Cinema DNA v1'de gizli (30 Eyl 2026, `6786031` `e73b1a5` `2ca8365` `aaaaac8` `74208e8`, bible v1.33 K-47)
+
+Build `74208e8` ve sonrasını içermeli.
+
+- [ ] M1. Profile: "Cinema DNA"/"Sinema DNA" başlığı ve kartı **yok**; free
+      kullanıcıda o alana dokunuş paywall açmıyor (sarmalayıcı da yok). Sıra:
+      arketip kartı (varsa) → Watched → Saved → Üyelik.
+- [ ] M2. Profile → Saved: poster şeridi ve "N film" sayısı **hâlâ doluyor**
+      (kaynak `getWatchlist()`, DNA getter'ından bağımsız). Boş watchlist'te boş
+      durum kopyası. Watched sayısı da hâlâ geliyor.
+- [ ] M3. Gauntlet sonrası hesap bağlama sheet'i (anonim kullanıcı): gövde metni
+      EN "Your streak and watchlist are saved here — free, no subscription
+      needed." / TR "Streak'in ve izleme listen burada kayıtlı — ücretsiz,
+      abonelik gerekmez." — "taste profile"/"tat profili" **yok**.
+- [ ] M4. Settings, **arketipi olmayan** kullanıcı (temiz kurulum): "Share My
+      Archetype" / "Arketipimi Paylaş" satırı **yok**; üst/alt satırlar arasında
+      boşluk/çift ayraç kalmıyor.
+- [ ] M5. Settings, **arketipi olan** (eski quiz'li) hesap: satır var, dokununca
+      paylaşım sayfası açılıyor, "I'm a <arketip adı>" gidiyor (Mystery Cinephile
+      **değil**). Gözlem: mesaj dile bakmadan İngilizce — bilinen, ayrı kalem.
+- [ ] M6. Spotlight'ı bitir (çözülmüş ve çözülememiş iki durum) → sonuç ekranında
+      "+N XP" rozeti var, "Cinema DNA Updated" / "Sinema DNA Güncellendi" ve
+      "+ Consistency" çipi **yok**.
+- [ ] M7. Paywall (bağlamsal + Profile "Chosy Pro" CTA'sı): "taste evolves" /
+      DNA vaadi yok; kaçırılan akşamı arşivden oynama anlatılıyor (`e73b1a5`).
+- [ ] M8. Dil TR ↔ EN: M3–M7 metinleri her iki dilde doğru.
+
 ---
 
 ## Test edilmeyecekler (uygulanmadı — E-22)
@@ -225,5 +255,5 @@ Mevcut kullanıcı, yerel 18:00 öncesi.
 
 ## Çıkış kriteri
 
-A–L'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
+A–M'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
 yeni build.
