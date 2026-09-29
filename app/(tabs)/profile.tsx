@@ -39,7 +39,20 @@ import Constants from 'expo-constants';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { AppleLogo, Camera, CaretRight, GearSix, GoogleLogo, PencilSimple, User } from 'phosphor-react-native';
+// V-4 Tur C: ikon aileleri — marka anlari Phosphor, fonksiyonel simgeler
+// (ayar, geri, chevron, kapat, kilit) Ionicons.
+import {
+  AppleLogo,
+  Camera,
+  Diamond,
+  Eye,
+  FilmStrip,
+  GoogleLogo,
+  MagicWand,
+  PencilSimple,
+  Sparkle,
+  User,
+} from 'phosphor-react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -52,6 +65,8 @@ import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { useLanguage } from '@/contexts/LanguageContext';
+// V-4 Tur C: yalniz `Colors.error` — Design OS'ta tehlike token'i yok; yikici
+// eylemlerin (listeyi temizle, hesabi sil) bilinen istisnasi (kurucu karari).
 import { Colors } from '@/constants/Colors';
 import { AvatarIcons } from '@/constants/icons';
 import { AVATAR_GLYPHS, AVATAR_IDS, isAvatarId, type AvatarId } from '@/constants/avatarGlyphs';
@@ -63,7 +78,6 @@ import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
-import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
@@ -88,7 +102,7 @@ import {
   toggleNotifications,
 } from '@/services/pushNotifications';
 import { formatUnlockTime } from '@/components/gauntlet/GauntletShell/unlockClock';
-import { getChampionDatesSince, getLastChampionPosterUrl } from '@/services/gauntletService';
+import { getChampionDatesSince, getLastChampion, type LastChampion } from '@/services/gauntletService';
 import { RitualRing } from '@/components/Profile/RitualRing';
 import { buildRitualWeek, ritualWeekStart } from '@/components/Profile/RitualRing/ritualWeek';
 import type { PremiumStatus } from '@/utils/premiumStatus';
@@ -132,14 +146,14 @@ const AVATAR_LENS_INSET = RITUAL_RING_STROKE + space.xs;
 // ─── Section Heading ──────────────────────────────────────────────────────────
 
 /**
- * Sol altin accent cizgili bolum basligi.
+ * Bolum basligi — Design OS `title` stili. V-4 Tur C: eski altin accent
+ * cubugu + kalin display basligi kalkti.
  */
 function SectionHeading({ title }: { title: string }) {
   return (
-    <View style={styles.sectionHeadingRow}>
-      <View style={styles.sectionHeadingAccent} />
-      <Text style={styles.sectionHeadingText}>{title}</Text>
-    </View>
+    <Text style={styles.sectionHeadingText} accessibilityRole="header">
+      {title}
+    </Text>
   );
 }
 
@@ -235,11 +249,7 @@ function AvatarModal({ visible, current, onClose, onSelect }: AvatarModalProps) 
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityState={{ disabled: !canSelect }}>
-              <LinearGradient
-                colors={[Colors.gold, Colors.goldDark]}
-                style={styles.selectBtnGradient}>
-                <Text style={styles.selectBtnText}>{t('profile.select')}</Text>
-              </LinearGradient>
+              <Text style={styles.selectBtnText}>{t('profile.select')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -304,7 +314,7 @@ function NicknameModal({ visible, current, onClose, onSave }: NicknameModalProps
             value={value}
             onChangeText={setValue}
             placeholder={t('profile.nicknamePlaceholder')}
-            placeholderTextColor={Colors.textGrey}
+            placeholderTextColor={color.text.secondary}
             maxLength={24}
             autoCapitalize="words"
             autoCorrect={false}
@@ -324,15 +334,11 @@ function NicknameModal({ visible, current, onClose, onSave }: NicknameModalProps
               <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.selectBtn, !canSave && { opacity: 0.4 }]}
+              style={[styles.selectBtn, !canSave && styles.selectBtnDisabled]}
               onPress={handleSave}
               disabled={!canSave}
               activeOpacity={0.8}>
-              <LinearGradient
-                colors={[Colors.gold, Colors.goldDark]}
-                style={styles.selectBtnGradient}>
-                <Text style={styles.selectBtnText}>{t('common.save')}</Text>
-              </LinearGradient>
+              <Text style={styles.selectBtnText}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -448,6 +454,21 @@ function SettingsModal({
 
   const reminderLabel = t('notifications.dailyReminderLabel', { time: formatUnlockTime(language) });
 
+  /**
+   * V-4 Tur C (Kural 2): yasal linkin acilamamasi eskiden islenmemis bir
+   * Promise reddiydi — kullanici hicbir sey gormuyordu.
+   */
+  function openLegalLink(url: string): void {
+    Linking.openURL(url).catch((err: unknown) => {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { screen: 'profile', flow: 'legal_link' },
+        extra: { url },
+      });
+      Alert.alert(t('errors.openLink'));
+    });
+  }
+
   return (
     <Modal
       visible={visible}
@@ -468,14 +489,14 @@ function SettingsModal({
 
           {/* Başlık */}
           <View style={settingsModalStyles.header}>
-            <Ionicons name="settings-outline" size={18} color={Colors.gold} />
+            <Ionicons name="settings-outline" size={18} color={color.text.secondary} />
             <Text style={settingsModalStyles.title}>{t('profile.settingsSection')}</Text>
             <TouchableOpacity
               onPress={onClose}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={t('profile.closeSettings')}>
-              <Ionicons name="close" size={22} color={Colors.textGrey} />
+              <Ionicons name="close" size={22} color={color.text.secondary} />
             </TouchableOpacity>
           </View>
 
@@ -487,19 +508,19 @@ function SettingsModal({
             accessibilityRole="button"
             accessibilityLabel={`${t('profile.language')}: ${currentLanguageLabel}`}>
             <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="language-outline" size={16} color={Colors.textGrey} />
+              <Ionicons name="language-outline" size={16} color={color.text.secondary} />
               <Text style={settingsModalStyles.rowLabel}>{t('profile.language')}</Text>
             </View>
             <View style={settingsModalStyles.rowRight}>
               <Text style={settingsModalStyles.rowValue}>{currentLanguageLabel}</Text>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+              <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
             </View>
           </TouchableOpacity>
 
           {/* Akşam bildirimi — TEK native switch (K-15, günde tek bildirim) */}
           <View style={settingsModalStyles.row}>
             <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="notifications-outline" size={16} color={Colors.textGrey} />
+              <Ionicons name="notifications-outline" size={16} color={color.text.secondary} />
               <Text style={settingsModalStyles.rowLabel}>{reminderLabel}</Text>
             </View>
             <Switch
@@ -521,7 +542,7 @@ function SettingsModal({
           {isAnonymous && Platform.OS === 'ios' && (
             <View style={settingsModalStyles.linkSection}>
               <View style={settingsModalStyles.linkInfo}>
-                <Ionicons name="person-add-outline" size={16} color={Colors.gold} />
+                <Ionicons name="person-add-outline" size={16} color={color.text.secondary} />
                 <View style={settingsModalStyles.linkTextBlock}>
                   <Text style={settingsModalStyles.linkTitle}>
                     {t('profile.linkAccountTitle')}
@@ -534,7 +555,7 @@ function SettingsModal({
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE_OUTLINE}
-                cornerRadius={Radius.button}
+                cornerRadius={space.md}
                 style={[settingsModalStyles.appleBtn, linkingAccount && settingsModalStyles.appleBtnBusy]}
                 onPress={() => { if (!linkingAccount) onLinkApple(); }}
               />
@@ -550,12 +571,12 @@ function SettingsModal({
               accessibilityRole="button"
               accessibilityLabel={premiumStatus === 'premium' ? t('profile.manageSubscription') : t('profile.upgradePlus')}>
               <View style={settingsModalStyles.rowLeft}>
-                <Ionicons name="diamond-outline" size={16} color={Colors.accentPrimary} />
+                <Ionicons name="diamond-outline" size={16} color={color.text.secondary} />
                 <Text style={settingsModalStyles.rowLabel}>
                   {premiumStatus === 'premium' ? t('profile.manageSubscription') : t('profile.upgradePlus')}
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+              <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
             </TouchableOpacity>
           )}
 
@@ -579,10 +600,10 @@ function SettingsModal({
             accessibilityRole="button"
             accessibilityLabel={t('profile.shareArchetype')}>
             <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="share-social-outline" size={16} color={Colors.accentPrimary} />
+              <Ionicons name="share-social-outline" size={16} color={color.text.secondary} />
               <Text style={settingsModalStyles.rowLabel}>{t('profile.shareArchetype')}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textGrey} />
+            <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
           </TouchableOpacity>
 
           {/* Çıkış yap — yalnızca oturum açmış kullanıcılar */}
@@ -595,7 +616,7 @@ function SettingsModal({
               accessibilityLabel={t('profile.signOut')}
               accessibilityHint={t('profile.signOutConfirmMessage')}>
               <View style={settingsModalStyles.rowLeft}>
-                <Ionicons name="log-out-outline" size={16} color={Colors.textGrey} />
+                <Ionicons name="log-out-outline" size={16} color={color.text.secondary} />
                 <Text style={settingsModalStyles.rowLabel}>{t('profile.signOut')}</Text>
               </View>
             </TouchableOpacity>
@@ -604,28 +625,28 @@ function SettingsModal({
           {/* Yasal linkler */}
           <TouchableOpacity
             style={settingsModalStyles.row}
-            onPress={() => Linking.openURL('https://abalone-dracopelta-382.notion.site/Chosy-ai-Privacy-Policy-34a00bffbfbe80af9f5fd996fa7ab55b')}
+            onPress={() => openLegalLink('https://abalone-dracopelta-382.notion.site/Chosy-ai-Privacy-Policy-34a00bffbfbe80af9f5fd996fa7ab55b')}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={t('paywall.privacy')}>
             <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.textGrey} />
+              <Ionicons name="shield-checkmark-outline" size={16} color={color.text.secondary} />
               <Text style={settingsModalStyles.rowLabel}>{t('paywall.privacy')}</Text>
             </View>
-            <Ionicons name="open-outline" size={14} color={Colors.textGrey} />
+            <Ionicons name="open-outline" size={14} color={color.text.secondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={settingsModalStyles.row}
-            onPress={() => Linking.openURL('https://www.notion.so/Chosy-ai-Terms-of-Service-34a00bffbfbe80899613c3ce2e5ed01b')}
+            onPress={() => openLegalLink('https://www.notion.so/Chosy-ai-Terms-of-Service-34a00bffbfbe80899613c3ce2e5ed01b')}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={t('paywall.terms')}>
             <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="document-text-outline" size={16} color={Colors.textGrey} />
+              <Ionicons name="document-text-outline" size={16} color={color.text.secondary} />
               <Text style={settingsModalStyles.rowLabel}>{t('paywall.terms')}</Text>
             </View>
-            <Ionicons name="open-outline" size={14} color={Colors.textGrey} />
+            <Ionicons name="open-outline" size={14} color={color.text.secondary} />
           </TouchableOpacity>
 
           {/* Destructive grup — en altta, tek stil (kırmızı metin, kutu yok).
@@ -721,8 +742,18 @@ function ProfileScreenContent() {
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
   const reduceTransparency = useReduceTransparency();
-  /** Son sampiyonun posteri — header "perde" arka plani. null → perde yok. */
-  const [championPosterUrl, setChampionPosterUrl] = useState<string | null>(null);
+  /**
+   * Son sampiyon — header "perde"si ve Watched'in "son secimin" karti
+   * (V-4 Tur C, V4-D5). `pending`: henuz okunmadi; `error`: okunamadi (servis
+   * Sentry'ye yazdi) — kart da bos kopya da cizilmez, sessiz "yok" gosterilmez.
+   */
+  const [lastChampion, setLastChampion] = useState<
+    | { status: 'pending' }
+    | { status: 'ok'; champion: LastChampion | null }
+    | { status: 'error' }
+  >({ status: 'pending' });
+  const championPosterUrl =
+    lastChampion.status === 'ok' ? lastChampion.champion?.posterUrl ?? null : null;
   /**
    * Ritual halkasi — son 7 gunun sampiyon dolulugu. null → yuklenmedi veya
    * hata: halka cizilmez, mercek duz `graphite` hairline'a doner (sahte
@@ -767,7 +798,8 @@ function ProfileScreenContent() {
       setAvatarId(saved);
     } catch (err) {
       Sentry.captureException(err, { tags: { screen: 'profile', fn: 'loadAvatar' } });
-      logger.error('[ProfileScreen] avatar yukleme hatasi:', err);
+      // V-4 Tur C: capture elle yapildi — logger koprusu ikinci event uretmesin.
+      logger.error('[ProfileScreen] avatar yukleme hatasi:', err, { skipBridge: true });
     }
   }, []);
 
@@ -806,13 +838,13 @@ function ProfileScreenContent() {
       publicUserIdRef.current = userId;
       void loadAvatar(userId);
 
-      // Header perdesi — son sampiyon posteri (non-blocking). Hata servis
-      // katmaninda Sentry'ye yazildi; perde cizilmez, header eski gorunumde.
-      getLastChampionPosterUrl(userId)
-        .then(setChampionPosterUrl)
+      // Son sampiyon — header perdesi + "son secimin" karti (non-blocking).
+      // Hata servis katmaninda Sentry'ye yazildi; perde ve kart cizilmez.
+      getLastChampion(userId)
+        .then((champion) => setLastChampion({ status: 'ok', champion }))
         .catch((err: unknown) => {
-          setChampionPosterUrl(null);
-          logger.warn('[ProfileScreen] sampiyon posteri yuklenemedi:', err);
+          setLastChampion({ status: 'error' });
+          logger.warn('[ProfileScreen] son sampiyon yuklenemedi:', err);
         });
 
       // Ritual halkasi — son 7 UTC gunu (non-blocking). Hata servis
@@ -934,7 +966,7 @@ function ProfileScreenContent() {
       setAvatarId(id);
     } catch (err) {
       Sentry.captureException(err, { tags: { screen: 'profile', fn: 'handleAvatarSelect' } });
-      logger.error('[ProfileScreen] avatar kayit hatasi:', err);
+      logger.error('[ProfileScreen] avatar kayit hatasi:', err, { skipBridge: true });
       Alert.alert(t('profile.avatarSaveError'));
     }
   }
@@ -1039,8 +1071,9 @@ function ProfileScreenContent() {
               await clearWatchlist();
               logger.log('[Profile] Watchlist cleared');
               Alert.alert(t('profile.clearWatchlistSuccess'));
-            } catch (err) {
-              logger.error('[Profile] clearWatchlist hatasi:', err);
+            } catch {
+              // V-4 Tur C: servis katmani (`logger.error`) hatayi Sentry'ye
+              // yazdi — ekranda ikinci event uretilmez; kullaniciya soylenir.
               Alert.alert(t('errors.watchlistClear'));
             }
           },
@@ -1069,6 +1102,8 @@ function ProfileScreenContent() {
       }
     } catch (err) {
       logger.error('[Profile] Apple link hatasi:', err);
+      // V-4 Tur C (Kural 1): beklenmedik hata artik kullaniciya da soylenir.
+      Alert.alert(t('profile.linkError'), t('profile.linkErrorMessage'));
     } finally {
       setLinkingAccount(false);
     }
@@ -1285,17 +1320,16 @@ function ProfileScreenContent() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor={Colors.gold}
-              colors={[Colors.gold]}
+              tintColor={color.text.secondary}
+              colors={[color.text.secondary]}
             />
           }>
 
           {/* ── Profile Header ────────────────────────────────────────── */}
           <Animated.View style={headerAnimStyle}>
-          <LinearGradient
-            colors={[Colors.profileHeaderStart, Colors.profileHeaderEnd]}
-            locations={[0, 1]}
-            style={styles.headerSection}>
+          {/* V-4 Tur C: eski iki durakli header gradyani kalkti — zemin `ink`,
+              perde varsa perde. */}
+          <View style={styles.headerSection}>
 
             {/* Perde — son sampiyonun bulanik, karartilmis posteri. Sampiyon
                 yoksa cizilmez; header eski gradyanla kalir. Dekoratif:
@@ -1335,7 +1369,7 @@ function ProfileScreenContent() {
                 activeOpacity={0.7}
                 accessibilityRole="button"
                 accessibilityLabel={t('profile.settingsSection')}>
-                <GearSix size={22} color={Colors.textGrey} />
+                <Ionicons name="settings-outline" size={22} color={color.text.secondary} />
               </TouchableOpacity>
             </View>
 
@@ -1385,7 +1419,7 @@ function ProfileScreenContent() {
                 {displayName ?? t('profile.anonymousCinephile')}
               </Text>
               <View style={styles.editNameBadge}>
-                <PencilSimple size={11} weight="bold" color={Colors.gold} />
+                <PencilSimple size={11} weight="bold" color={color.text.secondary} />
               </View>
             </TouchableOpacity>
 
@@ -1393,9 +1427,9 @@ function ProfileScreenContent() {
             {!isAnonymous && authProvider && (
               <View style={styles.authProviderBadge}>
                 {authProvider === 'apple' ? (
-                  <AppleLogo size={13} weight="fill" color={Colors.textGrey} />
+                  <AppleLogo size={13} weight="fill" color={color.text.secondary} />
                 ) : (
-                  <GoogleLogo size={13} weight="bold" color={Colors.textGrey} />
+                  <GoogleLogo size={13} weight="bold" color={color.text.secondary} />
                 )}
                 <Text style={styles.authProviderText}>
                   {t(
@@ -1406,7 +1440,7 @@ function ProfileScreenContent() {
                 </Text>
               </View>
             )}
-          </LinearGradient>
+          </View>
           </Animated.View>
 
           {/* ── Bolumler ─────────────────────────────────────────────── */}
@@ -1436,16 +1470,18 @@ function ProfileScreenContent() {
               </View>
             )}
 
-            {/* Subscription badge — lifetime veya premium ise goster */}
+            {/* Subscription badge — lifetime veya premium ise goster.
+                V-4 Tur C: `isPremium` → `premiumStatus` (V1-D3 uc halli durum);
+                `loading`'de rozet cizilmez. */}
             {tier === 'lifetime' ? (
-              <View style={styles.subBadgeLifetime}>
-                <Ionicons name="diamond" size={14} color={Colors.gold} />
-                <Text style={styles.subBadgeLifetimeText}>{t('profile.foundingMember')}</Text>
+              <View style={styles.subBadge}>
+                <Diamond size={14} weight="fill" color={color.reward.primary} />
+                <Text style={styles.subBadgeText}>{t('profile.foundingMember')}</Text>
               </View>
-            ) : isPremium ? (
-              <View style={styles.subBadgePremium}>
-                <Ionicons name="diamond" size={14} color={Colors.accentPrimary} />
-                <Text style={styles.subBadgePremiumText}>
+            ) : premiumStatus === 'premium' ? (
+              <View style={styles.subBadge}>
+                <Diamond size={14} weight="fill" color={color.reward.primary} />
+                <Text style={styles.subBadgeText}>
                   {isInTrial
                     ? t('profile.subscriptionTrial')
                     : t('profile.subscriptionActive')}
@@ -1488,24 +1524,56 @@ function ProfileScreenContent() {
                 kalici olarak 0/threshold gosteriyordu. */}
 
             {/* c) Watched — izlenen film sayisi (CTO D6). Sayim yuklenemezse
-                (`null`) bolum hic cizilmez; 0 ise davet kopyasi (§15.2). */}
-            {watchedCount !== null && (
+                (`null`) bolum hic cizilmez.
+                V-4 Tur C (V4-D5): sayi 0 ise son sampiyon varsa "son secimin"
+                karti; sampiyon yoksa davet kopyasi (§15.2). Sampiyon okumasi
+                bekliyorsa ya da hata verdiyse ikisi de cizilmez — okunamayan
+                veri "yok" gibi gosterilmez (kural 1). */}
+            {watchedCount !== null && (watchedCount > 0 || lastChampion.status === 'ok') && (
               <>
                 <SectionHeading title={t('profile.watchedSection')} />
-                <View style={styles.watchlistSummaryRow}>
-                  <View style={styles.watchlistSummaryLeft}>
-                    <View style={styles.watchlistEmptyPoster}>
-                      <Ionicons name="eye-outline" size={18} color={Colors.textGrey} />
-                    </View>
-                    {watchedCount > 0 ? (
+                {watchedCount > 0 ? (
+                  <View style={styles.watchlistSummaryRow}>
+                    <View style={styles.watchlistSummaryLeft}>
+                      <View style={styles.watchlistEmptyPoster}>
+                        <Eye size={18} color={color.text.secondary} />
+                      </View>
                       <Text style={styles.watchlistSummaryText}>
                         {t('profile.watchedCount', { count: watchedCount })}
                       </Text>
-                    ) : (
-                      <Text style={styles.watchedEmptyText}>{t('profile.watchedEmpty')}</Text>
-                    )}
+                    </View>
                   </View>
-                </View>
+                ) : lastChampion.status === 'ok' && lastChampion.champion ? (
+                  <View style={styles.lastPickCard}>
+                    {lastChampion.champion.posterUrl ? (
+                      <Image
+                        source={{ uri: lastChampion.champion.posterUrl }}
+                        style={styles.lastPickPoster}
+                        accessibilityIgnoresInvertColors
+                      />
+                    ) : (
+                      <View style={[styles.lastPickPoster, styles.watchlistEmptyPoster]}>
+                        <FilmStrip size={18} color={color.text.secondary} />
+                      </View>
+                    )}
+                    <View style={styles.lastPickText}>
+                      <Text style={styles.lastPickLabel}>{t('profile.lastPickLabel')}</Text>
+                      <Text style={styles.lastPickTitle} numberOfLines={2}>
+                        {lastChampion.champion.title}
+                      </Text>
+                      <Text style={styles.lastPickHint}>{t('profile.lastPickHint')}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.watchlistSummaryRow}>
+                    <View style={styles.watchlistSummaryLeft}>
+                      <View style={styles.watchlistEmptyPoster}>
+                        <Eye size={18} color={color.text.secondary} />
+                      </View>
+                      <Text style={styles.watchedEmptyText}>{t('profile.watchedEmpty')}</Text>
+                    </View>
+                  </View>
+                )}
               </>
             )}
 
@@ -1544,7 +1612,7 @@ function ProfileScreenContent() {
                   </Text>
                   <View style={styles.savedStripSeeAll}>
                     <Text style={styles.savedStripSeeAllText}>{t('profile.seeAll')}</Text>
-                    <CaretRight size={size.iconInline} weight="bold" color={color.text.primary} />
+                    <Ionicons name="chevron-forward" size={size.iconInline} color={color.text.primary} />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -1556,7 +1624,7 @@ function ProfileScreenContent() {
               >
                 <View style={styles.watchlistSummaryLeft}>
                   <View style={styles.watchlistEmptyPoster}>
-                    <Ionicons name="film-outline" size={18} color={Colors.textGrey} />
+                    <FilmStrip size={18} color={color.text.secondary} />
                   </View>
                   <Text style={styles.watchlistSummaryText}>
                     {watchlistCount > 0
@@ -1564,7 +1632,7 @@ function ProfileScreenContent() {
                       : t('profile.watchlistSummaryEmpty')}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Colors.textGrey} />
+                <Ionicons name="chevron-forward" size={18} color={color.text.secondary} />
               </TouchableOpacity>
             )}
 
@@ -1583,12 +1651,12 @@ function ProfileScreenContent() {
                 onPress={() => { hapticLight(); void handleUpgradePress(); }}
                 activeOpacity={0.85}
               >
-                <Ionicons name="sparkles" size={18} color={Colors.gold} />
+                <Sparkle size={18} weight="fill" color={color.accent.active} />
                 <View style={styles.proCtaTextBlock}>
                   <Text style={styles.proCtaTitle}>{t('profile.chosyPro')}</Text>
                   <Text style={styles.proCtaSubtitle}>{t('profile.chosyProSubtitle')}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.gold} />
+                <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
               </TouchableOpacity>
             )}
 
@@ -1601,7 +1669,7 @@ function ProfileScreenContent() {
               onPress={() => { hapticLight(); router.push('/pro-mode' as never); }}
               activeOpacity={0.7}
             >
-              <Ionicons name="color-wand-outline" size={18} color={Colors.accentPrimary} />
+              <MagicWand size={18} color={color.text.secondary} />
               <View style={styles.proModeTextBlock}>
                 <Text style={styles.proModeTitle}>{t('profile.proMode')}</Text>
                 <Text style={styles.proModeSubtitle}>{t('profile.proModeSubtitle')}</Text>
@@ -1609,7 +1677,7 @@ function ProfileScreenContent() {
               <Ionicons
                 name={proAccess.allowed ? 'chevron-forward' : 'lock-closed'}
                 size={16}
-                color={Colors.textGrey}
+                color={color.text.secondary}
               />
             </TouchableOpacity>
 
@@ -1628,7 +1696,7 @@ function ProfileScreenContent() {
                     Alert.alert('Sentry Test', 'Test error sent. Check Sentry dashboard.');
                   }}
                   activeOpacity={0.7}>
-                  <Ionicons name="bug-outline" size={16} color={Colors.gold} />
+                  <Ionicons name="bug-outline" size={16} color={color.text.secondary} />
                   <Text style={styles.devSentryBtnText}>Test Sentry</Text>
                 </TouchableOpacity>
               </View>
@@ -1692,6 +1760,12 @@ function ProfileScreenContent() {
 }
 
 // ─── Stiller ──────────────────────────────────────────────────────────────────
+//
+// V-4 Tur C: tum renk/tipografi/bosluk Design OS semantic token'larindan
+// (`constants/design/semantic.ts`). Eski `Colors` / `Theme` / deprecated
+// `Typography·Shadows·Radius·Spacing` kalktı; golge yok (§4). Tek istisna
+// `Colors.error` (yikici eylemler). Kullanilmayan 30 stil (referral, eski
+// link-account, founding banner…) silindi — JSX'te karsiligi yoktu.
 
 const styles = StyleSheet.create({
   safe: {
@@ -1708,11 +1782,11 @@ const styles = StyleSheet.create({
   // ── Header ──
   headerSection: {
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 28,
-    paddingHorizontal: Spacing.lg,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    paddingTop: space.sm,
+    paddingBottom: space.lg,
+    paddingHorizontal: space.lg,
+    borderBottomLeftRadius: radius.chrome,
+    borderBottomRightRadius: radius.chrome,
     overflow: 'hidden',
   },
   /** Perde katmani — header'in tamamini kaplar, icerigin altinda kalir */
@@ -1741,20 +1815,10 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginBottom: 12,
+    marginBottom: space.md,
   },
   gearBtn: {
-    padding: 6,
-  },
-  archetypeDesc: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.caption.fontSize,
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: Theme.typography.caption.lineHeight,
-    maxWidth: 260,
-    fontStyle: 'italic',
-    opacity: 0.85,
+    padding: space.xs,
   },
   /** Mercek + ritual halkasi ortak kutusu — halka absoluteFill ile bunu doldurur */
   avatarLensWrap: {
@@ -1793,28 +1857,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   profileName: {
-    color: Colors.textWhite,
-    fontSize: Theme.typography.h2.fontSize,
-    lineHeight: Theme.typography.h2.lineHeight,
-    fontFamily: Typography.displayFont,
-    fontWeight: '600',
-    letterSpacing: 0.3,
+    ...type['display-m'],
+    color: color.text.primary,
   },
   /** Profil adi + kalem ikonu yan yana */
   profileNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: space.sm,
+    marginBottom: space.xs,
   },
   /** Kucuk duzenle rozeti — ismin yaninda */
   editNameBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.gold + '50',
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1836,118 +1896,62 @@ const styles = StyleSheet.create({
   authProviderBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 999,
-    backgroundColor: Colors.white05,
-    borderWidth: 1,
-    borderColor: Colors.white10,
+    gap: space.xs,
+    marginTop: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
   authProviderText: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.micro.fontSize,
-    letterSpacing: 0.2,
-    opacity: 0.85,
+    ...type.caption,
+    color: color.text.secondary,
   },
 
   // ── Subscription Badge ──
-  subBadgePremium: {
+  /**
+   * Premium ve lifetime ayni rozet — `marquee` yalniz ikonda (odul ani,
+   * E-23). Eski iki ayri altin (`gold` / `accentPrimary`) birlesti.
+   */
+  subBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: Colors.accentPrimary + '15',
-    borderWidth: 1,
-    borderColor: Colors.accentPrimary + '30',
+    alignSelf: 'center',
+    gap: space.sm,
+    paddingHorizontal: space.base,
+    paddingVertical: space.xs,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
-  subBadgePremiumText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '600',
-    color: Colors.accentPrimary,
-    letterSpacing: 0.2,
-  },
-  subBadgeFree: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.gold + '40',
-  },
-  subBadgeFreeText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '700',
-    color: Colors.gold,
-    letterSpacing: 0.2,
-  },
-  subBadgeLifetime: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: Colors.goldDim,
-    borderWidth: 1,
-    borderColor: Colors.gold + '40',
-  },
-  subBadgeLifetimeText: {
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '700',
-    color: Colors.gold,
-    letterSpacing: 0.3,
-  },
-  foundingBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: Colors.gold + '12',
-    borderWidth: 1,
-    borderColor: Colors.gold + '25',
-  },
-  foundingBannerText: {
-    flex: 1,
-    fontSize: Theme.typography.caption.fontSize,
-    fontWeight: '600',
-    color: Colors.gold,
-    letterSpacing: 0.1,
+  subBadgeText: {
+    ...type.caption,
+    color: color.text.primary,
   },
 
   // ── Sections container ──
   sections: {
-    paddingHorizontal: Spacing.md,
-    gap: 10,
+    paddingHorizontal: space.base,
+    gap: space.md,
   },
 
   // ── Archetype Hero Card ──
   archetypeHeroCard: {
-    backgroundColor: Colors.cardSolid,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: Spacing.lg,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    padding: space.lg,
     alignItems: 'center',
-    gap: 8,
-    ...Shadows.light,
+    gap: space.sm,
   },
   archetypeHeroIcon: {
     width: 72,
     height: 72,
-    marginBottom: 4,
+    marginBottom: space.xs,
   },
   /**
    * DNA arketip adı — §3.4'ün üç marka anından biri: Archivo Expanded
@@ -1956,76 +1960,69 @@ const styles = StyleSheet.create({
    */
   archetypeHeroName: {
     ...type['display-l'],
-    color: Colors.textWhite,
+    color: color.text.primary,
     textAlign: 'center',
   },
   archetypeHeroTagline: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.body.fontSize,
+    ...type.callout,
+    color: color.text.secondary,
     textAlign: 'center',
-    lineHeight: 22,
     maxWidth: 280,
-    fontStyle: 'italic',
-    opacity: 0.85,
   },
   // C.9c: retakeQuizBtn/retakeQuizText (R-12) ve upgradeCtaRow/upgradeCta
   // (cift CTA) stilleri kaldirildi — kullanan JSX kalmadi.
 
   // ── Pro bolumu ──
-  /** Tek "Chosy Pro" CTA'si — `offerings.current` (default) offering'ine gider */
+  /**
+   * Tek "Chosy Pro" CTA'si — `offerings.current` (default) offering'ine gider.
+   * Birincil eylem dili (C.9b-UI L-2): `beam`@12% dolgu + `@40%` kenar.
+   */
   proCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.md,
-    borderRadius: Radius.card,
-    backgroundColor: Colors.gold + '12',
-    borderWidth: 1,
-    borderColor: Colors.gold + '30',
+    gap: space.md,
+    paddingVertical: space.base,
+    paddingHorizontal: space.base,
+    borderRadius: radius.surface,
+    backgroundColor: color.accent.fill,
+    borderWidth: size.hairline,
+    borderColor: color.accent.edgeStrong,
   },
   proCtaTextBlock: {
     flex: 1,
     gap: 2,
   },
   proCtaTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.gold,
-    letterSpacing: 0.2,
+    ...type['body-strong'],
+    color: color.text.primary,
   },
   proCtaSubtitle: {
-    fontSize: Theme.typography.caption.fontSize,
-    lineHeight: Theme.typography.caption.lineHeight,
-    color: Colors.textGrey,
+    ...type.caption,
+    color: color.text.secondary,
   },
   /** Pro Mode (mood search) giris satiri */
   proModeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    backgroundColor: Colors.cardSolid,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    paddingVertical: 14,
-    paddingHorizontal: Spacing.md,
-    ...Shadows.light,
+    gap: space.md,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    paddingVertical: space.base,
+    paddingHorizontal: space.base,
   },
   proModeTextBlock: {
     flex: 1,
     gap: 2,
   },
   proModeTitle: {
-    color: Colors.textWhite,
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    ...type['body-strong'],
+    color: color.text.primary,
   },
   proModeSubtitle: {
-    color: Colors.textGrey,
-    fontSize: Theme.typography.caption.fontSize,
-    lineHeight: Theme.typography.caption.lineHeight,
+    ...type.caption,
+    color: color.text.secondary,
   },
 
   // ── Watchlist Summary Row ──
@@ -2033,19 +2030,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.cardSolid,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    paddingVertical: 12,
-    paddingHorizontal: Spacing.md,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    paddingVertical: space.md,
+    paddingHorizontal: space.base,
     minHeight: 80,
-    ...Shadows.light,
   },
   watchlistSummaryLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: space.md,
     flex: 1,
   },
   // ── Saved poster seridi — Design OS semantic token'lari ──
@@ -2097,125 +2093,108 @@ const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.primary,
   },
-  /** Empty state placeholder when no posters */
+  /** Poster yokken yer tutucu — ikonlu kucuk 2:3 kutu */
   watchlistEmptyPoster: {
     width: 36,
     height: 54,
-    borderRadius: 6,
-    backgroundColor: Colors.white05,
-    borderWidth: 1,
-    borderColor: Colors.white10,
+    borderRadius: space.xs,
+    backgroundColor: color.surface.base,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   watchlistSummaryText: {
-    color: Colors.textWhite,
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    ...type['body-strong'],
+    flexShrink: 1,
+    color: color.text.primary,
   },
   /** Watched sifir durumu — davet kopyasi, iki satira sarabilir */
   watchedEmptyText: {
+    ...type.callout,
     flexShrink: 1,
-    color: Colors.textGrey,
-    fontSize: Theme.typography.body.fontSize,
-    lineHeight: Theme.typography.body.lineHeight,
+    color: color.text.secondary,
   },
 
-  // ── Section heading ──
-  sectionHeadingRow: {
+  // ── Son secimin karti (V-4 Tur C, V4-D5) ──
+  lastPickCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginTop: 6,
-    marginBottom: 2,
+    gap: space.base,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    padding: space.md,
   },
-  sectionHeadingAccent: {
-    width: 3,
-    height: 20,
-    borderRadius: 2,
-    backgroundColor: Colors.gold,
+  /** Afis — Saved seridiyle ayni kose dili (kucuk afis, `radius.poster` degil) */
+  lastPickPoster: {
+    width: 56,
+    height: 84,
+    borderRadius: space.sm,
+    backgroundColor: color.surface.border,
   },
+  lastPickText: {
+    flex: 1,
+    gap: space.xs,
+  },
+  lastPickLabel: {
+    ...type['label-caps'],
+    color: color.text.secondary,
+    textTransform: 'uppercase',
+  },
+  /** Serif yalniz film adinda (V3-D1) */
+  lastPickTitle: {
+    ...type.filmTitle,
+    color: color.text.primary,
+  },
+  lastPickHint: {
+    ...type.caption,
+    color: color.text.secondary,
+  },
+
+  // ── Section heading — Design OS `title` ──
   sectionHeadingText: {
-    color: Colors.textWhite,
-    fontSize: Theme.typography.h2.fontSize,
-    lineHeight: Theme.typography.h2.lineHeight,
-    fontFamily: Typography.displayFont,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-  },
-
-  // ── Settings ──
-  settingsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white10,
-    marginBottom: 8,
-  },
-  settingsRowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  settingsLabel: {
-    color: Colors.textWhite,
-    fontSize: Theme.typography.body.fontSize,
-  },
-  dangerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
-  },
-  dangerLabel: {
-    color: Colors.error,
-    fontSize: Theme.typography.body.fontSize,
+    ...type.title,
+    color: color.text.primary,
+    marginTop: space.md,
   },
 
   // ── Avatar Modal ──
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(10,14,39,0.92)',
+    backgroundColor: withAlpha(color.surface.base, 0.92),
     alignItems: 'center',
     justifyContent: 'center',
-    padding: Spacing.lg,
+    padding: space.lg,
   },
   modalCard: {
-    backgroundColor: Colors.cardSolid,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: Spacing.lg,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    padding: space.lg,
     width: '100%',
     maxWidth: 360,
-    ...Shadows.light,
   },
   modalTitle: {
-    color: Colors.textWhite,
-    fontSize: Theme.typography.h3.fontSize,
-    lineHeight: Theme.typography.h3.lineHeight,
-    fontFamily: Typography.displayFont,
-    fontWeight: '600',
+    ...type.title,
+    color: color.text.primary,
     textAlign: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: space.md,
   },
   avatarSubtitle: {
-    color: Colors.textGrey,
-    fontSize: 12,
+    ...type.caption,
+    color: color.text.secondary,
     textAlign: 'center',
-    marginBottom: Spacing.md,
-    opacity: 0.7,
-    fontStyle: 'italic',
+    marginBottom: space.md,
   },
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: space.sm,
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: space.lg,
   },
   /** 3 sutun: 3x88 + 2x8 = 280 ≤ kart ic genisligi (360 - 2xlg); 4. kart sigmaz. */
   avatarOption: {
@@ -2227,9 +2206,9 @@ const styles = StyleSheet.create({
     borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    gap: 4,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.xs,
+    gap: space.xs,
   },
   avatarOptionSelected: {
     borderColor: color.accent.active,
@@ -2239,7 +2218,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 13,
     minHeight: 26,
-    color: Colors.textGrey,
+    color: color.text.secondary,
     textAlign: 'center',
     letterSpacing: 0.2,
   },
@@ -2248,212 +2227,79 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: space.md,
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: Radius.button,
-    borderWidth: 1,
-    borderColor: Colors.white10,
+    minHeight: size.touchTarget,
+    borderRadius: space.md,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   cancelBtnText: {
-    color: Colors.textGrey,
-    fontSize: 15,
-    fontWeight: '600',
+    ...type['body-strong'],
+    color: color.text.secondary,
   },
+  /**
+   * Birincil modal eylemi — eski altin gradyan yerine Champion'in birincil
+   * eylem dili: `beam`@12% dolgu + `@40%` kenar, `bone` metin.
+   */
   selectBtn: {
     flex: 1,
-    borderRadius: Radius.button,
-    overflow: 'hidden',
+    minHeight: size.touchTarget,
+    borderRadius: space.md,
+    backgroundColor: color.accent.fill,
+    borderWidth: size.hairline,
+    borderColor: color.accent.edgeStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   selectBtnDisabled: {
     opacity: 0.4,
   },
-  selectBtnGradient: {
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   selectBtnText: {
-    color: color.surface.base,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-
-  // ── Link Account ──
-  linkAccountSection: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.white10,
-    paddingTop: 12,
-    marginBottom: 8,
-    gap: 10,
-  },
-  linkAccountInfo: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  linkAccountText: {
-    flex: 1,
-  },
-  linkAccountTitle: {
-    color: Colors.textWhite,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  linkAccountSubtitle: {
-    color: Colors.textGrey,
-    fontSize: 12,
-    marginTop: 2,
-    lineHeight: 16,
-  },
-  linkBtnsRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  linkAppleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.bgCard,
-    borderRadius: Radius.button,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  linkGoogleBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Radius.button,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-  },
-  linkAppleBtnText: {
-    color: Colors.textWhite,
-    fontSize: 13,
-    fontWeight: '600',
+    ...type['body-strong'],
+    color: color.text.primary,
   },
 
   // ── Dev-only Sentry test ──
   devSection: {
-    paddingHorizontal: Spacing.md,
-    paddingTop: 16,
+    paddingHorizontal: space.base,
+    paddingTop: space.base,
   },
   devSentryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.white05,
-    borderWidth: 1,
-    borderColor: Colors.gold + '30',
-    borderRadius: Radius.button,
-    paddingVertical: 10,
+    gap: space.sm,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    borderRadius: space.md,
+    paddingVertical: space.md,
     borderStyle: 'dashed',
   },
   devSentryBtnText: {
-    color: Colors.gold,
-    fontSize: 13,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    ...type.caption,
+    color: color.text.secondary,
   },
 
   // ── Genel ──
   // V-4 Tur A: sabit 100pt `bottomSpacer` kalkti — alt pay `useTabBarInset()`.
 
-  // ── Referral Card ──
-  referralCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-  },
-  referralHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 12,
-  },
-  referralTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  referralCodeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: color.surface.base,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginBottom: 8,
-  },
-  referralCode: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: Colors.accentPrimary,
-    letterSpacing: 2,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-  },
-  referralCopyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  referralCopyText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: Colors.accentPrimary,
-  },
-  referralCopyTextDone: {
-    color: Colors.gold,
-  },
-  referralCount: {
-    fontSize: 13,
-    color: Colors.textGrey,
-    marginBottom: 12,
-  },
-  referralShareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.accentPrimary,
-    borderRadius: 12,
-    height: 40,
-  },
-  referralShareText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
-  },
-
   // ── Hesap silme overlay ──
   deletingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(10,10,10,0.88)',
+    backgroundColor: withAlpha(color.surface.base, 0.88),
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 999,
   },
   deletingOverlayText: {
-    color: Colors.textWhite,
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    ...type['body-strong'],
+    color: color.text.primary,
   },
 });
 
@@ -2461,22 +2307,21 @@ const styles = StyleSheet.create({
 
 const nicknameModalStyles = StyleSheet.create({
   input: {
-    backgroundColor: Colors.inputBg,
-    borderWidth: 1,
-    borderColor: Colors.inputBorder,
-    borderRadius: Radius.button,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 12,
-    color: Colors.textWhite,
-    fontSize: 16,
-    marginBottom: 6,
+    ...type.body,
+    backgroundColor: color.surface.base,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    borderRadius: space.md,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+    color: color.text.primary,
+    marginBottom: space.xs,
   },
   charCount: {
-    color: Colors.textGrey,
-    fontSize: 11,
+    ...type.meta,
+    color: color.text.secondary,
     textAlign: 'right',
-    marginBottom: Spacing.md,
-    opacity: 0.7,
+    marginBottom: space.md,
   },
 });
 
@@ -2485,130 +2330,126 @@ const nicknameModalStyles = StyleSheet.create({
 const settingsModalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withAlpha(color.surface.base, 0.6),
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.cardSolid,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderWidth: 1,
+    backgroundColor: color.surface.raised,
+    borderTopLeftRadius: radius.surface,
+    borderTopRightRadius: radius.surface,
+    borderWidth: size.hairline,
     borderBottomWidth: 0,
-    borderColor: Colors.cardBorder,
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: 40,
-    paddingTop: 12,
-    gap: 16,
+    borderColor: color.surface.border,
+    paddingHorizontal: space.lg,
+    paddingBottom: space.xxl,
+    paddingTop: space.md,
+    gap: space.base,
   },
   handle: {
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.white10,
+    backgroundColor: color.surface.border,
     alignSelf: 'center',
-    marginBottom: 8,
+    marginBottom: space.sm,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white10,
+    gap: space.sm,
+    paddingBottom: space.sm,
+    borderBottomWidth: size.hairline,
+    borderBottomColor: color.surface.border,
   },
   title: {
+    ...type.title,
     flex: 1,
-    color: Colors.textWhite,
-    fontSize: 16,
-    fontFamily: Typography.displayFont,
-    fontWeight: '600',
-    letterSpacing: 0.2,
+    color: color.text.primary,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 4,
+    paddingVertical: space.xs,
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: space.sm,
   },
   rowLabel: {
-    color: Colors.textWhite,
-    fontSize: 14,
+    ...type.callout,
+    color: color.text.primary,
   },
   rowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: space.xs,
   },
   rowValue: {
-    color: Colors.textGrey,
-    fontSize: 14,
+    ...type.callout,
+    color: color.text.secondary,
   },
   manageNote: {
-    color: Colors.textGrey,
-    fontSize: 12,
-    lineHeight: 16,
-    paddingHorizontal: 24,
-    marginTop: -8,
+    ...type.caption,
+    color: color.text.secondary,
+    paddingHorizontal: space.lg,
+    marginTop: -space.sm,
   },
   linkSection: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.white10,
-    paddingTop: 12,
-    gap: 10,
+    borderTopWidth: size.hairline,
+    borderTopColor: color.surface.border,
+    paddingTop: space.md,
+    gap: space.md,
   },
   linkInfo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: space.md,
   },
   linkTextBlock: {
     flex: 1,
   },
   linkTitle: {
-    color: Colors.textWhite,
-    fontSize: 14,
+    ...type.callout,
     fontWeight: '600',
+    color: color.text.primary,
   },
   linkSubtitle: {
-    color: Colors.textGrey,
-    fontSize: 12,
+    ...type.caption,
+    color: color.text.secondary,
     marginTop: 2,
-    lineHeight: 16,
   },
   /** Native Apple butonu — tam genişlik, HIG minimum 44pt yükseklik. */
   appleBtn: {
     width: '100%',
-    height: 44,
+    height: size.touchTarget,
   },
   appleBtnBusy: {
     opacity: 0.5,
   },
   /** En alttaki destructive grup — ince ayraçla ayrılır, kutu yok. */
   dangerGroup: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: Colors.white10,
+    marginTop: space.sm,
+    paddingTop: space.sm,
+    borderTopWidth: size.hairline,
+    borderTopColor: color.surface.border,
   },
   dangerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 8,
+    gap: space.sm,
+    paddingVertical: space.sm,
   },
+  /** `Colors.error` — bilinen istisna (V-4 Tur C, bkz. import notu). */
   dangerLabel: {
+    ...type.body,
     color: Colors.error,
-    fontSize: Theme.typography.body.fontSize,
   },
   /** Sürüm satırı — sönük, ortalı, dokunulmaz. */
   versionLine: {
     ...type.caption,
-    color: Colors.textGrey,
+    color: color.text.secondary,
     textAlign: 'center',
   },
 });

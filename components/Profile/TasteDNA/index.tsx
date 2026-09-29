@@ -33,6 +33,7 @@ import {
 } from 'phosphor-react-native';
 import type { IconProps as PhosphorIconProps } from 'phosphor-react-native';
 
+import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { localizeGenre } from '@/utils/filmFilters';
@@ -207,7 +208,7 @@ function FilledContent({
         const TopIcon = EMOTION_PHOSPHOR[topEmotion.key] ?? Smiley;
         return (
           <View style={styles.dominantEmotionRow}>
-            <TopIcon size={20} color="#E8A838" weight="duotone" />
+            <TopIcon size={20} color={color.text.secondary} weight="duotone" />
             <Text style={styles.dominantEmotionText}>
               {t(`tasteDNA.emotion_${topEmotion.key}`)}
               {secondEmotion ? ` + ${t(`tasteDNA.emotion_${secondEmotion.key}`)}` : ''}

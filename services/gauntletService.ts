@@ -739,19 +739,28 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
   return data as ArchiveStatus;
 }
 
+/** Profil'in son şampiyon okuması — header perdesi + "son seçimin" kartı. */
+export interface LastChampion {
+  /** w342 boyutuna indirilmiş tam URL; filmin posteri yoksa `null`. */
+  posterUrl: string | null;
+  title: string;
+}
+
 /**
- * Kullanıcının son şampiyon filminin poster URL'si — Profil header'ının
- * bulanık arka planı ("perde"). Edge Function değil, doğrudan tablo okuması:
+ * Kullanıcının son şampiyon filmi — Profil header'ının bulanık arka planı
+ * ("perde") ve Watched bölümünün "son seçimin" kartı (V-4 Tur C, V4-D5).
+ * Edge Function değil, doğrudan tablo okuması:
  * `daily_gauntlets_personal_read` RLS'i yalnız kendi `personal` satırlarını
- * döndürür; `userId` filtresi yine de açıkça verilir.
+ * döndürür; `userId` filtresi yine de açıkça verilir. Tarih filtresi yok —
+ * önceki döngünün şampiyonu da döner.
  *
- * Henüz şampiyon yoksa (veya filmin posteri yoksa) `null` — bu boş durumdur,
- * hata değil. Sorgu hatası Sentry'ye yazılır ve fırlatılır.
+ * Henüz şampiyon yoksa `null` — bu boş durumdur, hata değil. Sorgu hatası
+ * Sentry'ye yazılır ve fırlatılır.
  */
-export async function getLastChampionPosterUrl(userId: string): Promise<string | null> {
+export async function getLastChampion(userId: string): Promise<LastChampion | null> {
   const { data, error } = await supabase
     .from('daily_gauntlets')
-    .select('date, champion:films!champion_film_id(poster_url)')
+    .select('date, champion:films!champion_film_id(poster_url, title)')
     .eq('user_id', userId)
     .eq('scope', 'personal')
     .not('champion_film_id', 'is', null)
@@ -760,17 +769,23 @@ export async function getLastChampionPosterUrl(userId: string): Promise<string |
     .maybeSingle();
 
   if (error) {
-    Sentry.captureException(error, { tags: { fn: 'getLastChampionPosterUrl' } });
+    Sentry.captureException(error, { tags: { fn: 'getLastChampion' } });
     throw error;
   }
 
-  const row = data as { champion: { poster_url: string | null } | null } | null;
-  const path = row?.champion?.poster_url ?? null;
-  if (!path) return null;
-  // Bulanik arka plan icin w342 yeter; `films.poster_url` bazen `original`
-  // boyutlu tam URL (birkac MB) tasiyor.
-  if (!path.startsWith('http')) return `https://image.tmdb.org/t/p/w342${path}`;
-  return path.replace(/(image\.tmdb\.org\/t\/p\/)[^/]+\//, '$1w342/');
+  const row = data as { champion: { poster_url: string | null; title: string } | null } | null;
+  if (!row?.champion) return null;
+
+  const path = row.champion.poster_url;
+  // Bulanik arka plan ve kart icin w342 yeter; `films.poster_url` bazen
+  // `original` boyutlu tam URL (birkac MB) tasiyor.
+  const posterUrl = !path
+    ? null
+    : !path.startsWith('http')
+      ? `https://image.tmdb.org/t/p/w342${path}`
+      : path.replace(/(image\.tmdb\.org\/t\/p\/)[^/]+\//, '$1w342/');
+
+  return { posterUrl, title: row.champion.title };
 }
 
 /**
