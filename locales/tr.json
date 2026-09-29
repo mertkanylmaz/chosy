@@ -1516,12 +1516,11 @@
       "save": "Kaydet",
       "saved": "Kaydedildi",
       "saveError": "Kaydedilemedi. Tekrar dene.",
-      "pillHead": "%{day} %{dayPart} · %{companion}",
-      "pillTail": " · %{duration}",
+      "pillDay": "%{day} %{dayPart}",
+      "pillSeparator": " · ",
       "pillDuration": {
         "short": "~90 dk",
-        "medium": "~2 sa",
-        "any": "Süre serbest"
+        "medium": "~2 sa"
       },
       "dayPart": {
         "morning": "sabahı",

@@ -24,9 +24,13 @@
  * aynı: Kaydet → `onCorrect(draft)` + kapan + "kaydedildi"; kaydetmeden
  * kapatmak (backdrop / geri hareketi) taslağı atar — eskiden satıra tekrar
  * dokunmak neyse o.
+ *
+ * V-4 Tur B (TestFlight 906: tam genişlik pill "ALO…" diye kesiliyordu):
+ * pill içerik genişliğinde ve ortalı; sığmayan segment ellipsis yerine
+ * DÜŞER. Bottom sheet ve düzeltme akışı aynen.
  */
-import React, { useMemo, useState } from 'react';
-import { Modal, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { Modal, Text, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
 
 import { CaretDown, CaretUp, SlidersHorizontal } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +40,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import type { GauntletContext } from '@/types/gauntlet';
 
-import { styles } from './styles';
+import { PILL_CHROME_WIDTH, styles } from './styles';
 
 const COMPANIONS: readonly GauntletContext['companion'][] = ['alone', 'partner', 'friends', 'family'];
 const DURATIONS: readonly GauntletContext['duration'][] = ['short', 'medium', 'any'];
@@ -49,6 +53,26 @@ function dayPartFor(hour: number): DayPart {
   if (hour >= 12 && hour < 18) return 'afternoon';
   if (hour >= 18 && hour < 23) return 'evening';
   return 'night';
+}
+
+/**
+ * V-4 Tur B: pill'e sığan en uzun önek. `prefixWidths[i]` = ilk `i + 1`
+ * segmentin birleşik metninin ölçülen genişliği (artan). Kiminle (ilk
+ * segment) HER ZAMAN gösterilir — tek başına sığmasa bile düşmez, çünkü
+ * düşerse pill boş kalırdı. Ölçüm eksikse `null`: henüz karar verilemez.
+ */
+function fittingSegmentCount(
+  prefixWidths: readonly (number | undefined)[],
+  available: number,
+): number | null {
+  if (prefixWidths.some((w) => w === undefined)) return null;
+  let count = 1;
+  for (let i = 1; i < prefixWidths.length; i++) {
+    const width = prefixWidths[i];
+    if (width === undefined || width > available) break;
+    count = i + 1;
+  }
+  return count;
 }
 
 interface SegmentRowProps<T extends string> {
@@ -120,22 +144,54 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
   });
 
   /**
-   * V-3 Tur G1 (G1): pill'in görsel özeti. Süre pill'de KISA karşılığıyla
-   * gösterilir ("Doesn't matter" → "Any length"). Büyük harf JS'te dile
-   * göre yapılır — `textTransform` TR'de i → İ dönüşümünü yapmaz.
+   * V-4 Tur B: pill'in görsel özeti — segmentler ÖNCELİK sırasıyla, görsel
+   * sıra da aynı (kurucu onayı): kiminle · enerji · süre · gün. Süre
+   * yalnız "Doesn't matter" DIŞINDAYSA gösterilir, kısa karşılığıyla
+   * ("~2 HR"). Büyük harf JS'te dile göre — `textTransform` TR'de i → İ
+   * dönüşümünü yapmaz.
    *
-   * Kısaltma kuralı: özet iki parça — `head` (gün · kiminle) ve `tail`
-   * (· süre). Satır taşarsa yalnız `head` sondan kısalır ("…"), `tail`
-   * asla kesilmez. Veri modeli değişmez.
+   * Kısaltma kuralı: kesik metin YOK (ellipsis yok). Satıra sığmayan
+   * segment sondan DÜŞER — önce gün, sonra süre, sonra enerji. Veri modeli
+   * değişmez; yalnız mevcut `GauntletContext` alanları okunur. Tam cümle
+   * VoiceOver'da (`collapsedLabel`) her zaman eksiksiz.
    */
-  const pillHead = t('gauntlet.context.pillHead', {
-    day,
-    dayPart,
-    companion: companionLabel,
-  }).toLocaleUpperCase(language);
-  const pillTail = t('gauntlet.context.pillTail', {
-    duration: t(`gauntlet.context.pillDuration.${context.duration}`),
-  }).toLocaleUpperCase(language);
+  const segments = useMemo(() => {
+    const list = [companionLabel, t(`gauntlet.context.energy.${context.energy}`)];
+    if (context.duration !== 'any') {
+      list.push(t(`gauntlet.context.pillDuration.${context.duration}`));
+    }
+    list.push(t('gauntlet.context.pillDay', { day, dayPart }));
+    return list.map((segment) => segment.toLocaleUpperCase(language));
+  }, [companionLabel, context.energy, context.duration, day, dayPart, language, t]);
+
+  const separator = t('gauntlet.context.pillSeparator');
+  /** Aday metinler: ilk 1, ilk 2, … segment. Her biri gizli katmanda ölçülür. */
+  const prefixes = useMemo(
+    () => segments.map((_, i) => segments.slice(0, i + 1).join(separator)),
+    [segments, separator],
+  );
+
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  const [prefixWidths, setPrefixWidths] = useState<Record<string, number>>({});
+
+  const handleContainerLayout = useCallback((e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    setContainerWidth((prev) => (prev === width ? prev : width));
+  }, []);
+
+  const handlePrefixLayout = useCallback((text: string, e: LayoutChangeEvent) => {
+    const { width } = e.nativeEvent.layout;
+    setPrefixWidths((prev) => (prev[text] === width ? prev : { ...prev, [text]: width }));
+  }, []);
+
+  const visibleCount =
+    containerWidth === null
+      ? null
+      : fittingSegmentCount(
+          prefixes.map((p) => prefixWidths[p]),
+          containerWidth - PILL_CHROME_WIDTH,
+        );
+  const pillText = prefixes[(visibleCount ?? prefixes.length) - 1];
 
   const toggle = (): void => {
     if (expanded) {
@@ -160,24 +216,40 @@ export function ContextBar({ context, onCorrect }: ContextBarProps): React.JSX.E
   };
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={handleContainerLayout}>
+      {/* V-4 Tur B: ölçüm katmanı — görünmez, dokunulmaz, VoiceOver'dan
+          gizli. Aday metinler sınırsız genişlikte tek satır ölçülür. */}
+      <View
+        style={styles.measureLayer}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {prefixes.map((prefix) => (
+          <Text
+            key={prefix}
+            style={[styles.summaryText, styles.measureText]}
+            numberOfLines={1}
+            onLayout={(e) => handlePrefixLayout(prefix, e)}
+          >
+            {prefix}
+          </Text>
+        ))}
+      </View>
+
       <TouchableOpacity
         onPress={toggle}
-        style={styles.collapsedRow}
+        // Ölçüm gelene dek görünmez (tek kare) — taşan metin hiç çizilmez.
+        style={[styles.collapsedRow, visibleCount === null && styles.pendingMeasure]}
         accessibilityRole="button"
         accessibilityLabel={collapsedLabel}
         accessibilityState={{ expanded }}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
         <SlidersHorizontal size={size.iconInline} color={color.text.secondary} />
-        <View style={styles.summary}>
-          <Text style={styles.summaryHead} numberOfLines={1} ellipsizeMode="tail">
-            {pillHead}
-          </Text>
-          <Text style={styles.summaryTail} numberOfLines={1}>
-            {pillTail}
-          </Text>
-        </View>
+        <Text style={styles.summaryText} numberOfLines={1} ellipsizeMode="clip">
+          {pillText}
+        </Text>
         {expanded ? (
           <CaretUp size={size.iconInline} color={color.text.secondary} />
         ) : (
