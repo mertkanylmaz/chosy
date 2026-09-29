@@ -29,6 +29,7 @@ import Animated, {
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { PRESS_SPRING } from '@/constants/animations';
+import { isCinemaDnaEnabled } from '@/constants/config';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -457,7 +458,10 @@ export function SpotlightGame() {
             gameType={GAME_TYPE}
             puzzleNo={puzzleNo}
             xpAwarded={xpAwarded}
-            dnaUpdated={dnaUpdated}
+            // Cinema DNA v1'de gizli (`isCinemaDnaEnabled`): "Cinema DNA
+            // Updated" cipi gorunmeyen bir ozelligi vaat ederdi. Sunucu yaniti
+            // ve oyun mantigi degismez; yalnizca cip cizilmez.
+            dnaUpdated={isCinemaDnaEnabled() && dnaUpdated}
             whyThisMovie={whyThisMovie ?? undefined}
             resultMessage={
               won
