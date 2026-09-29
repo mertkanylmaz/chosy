@@ -13,6 +13,12 @@
  *
  * V-3 Tur G1 (G2): segment → **3 nokta**, sayaç noktaların ALTINDA
  * "1 / 3". VoiceOver metni "Round 1 of 3" / "Tur 1, toplam 3".
+ *
+ * V-4 Tur B (V4-D4): bağlı stepper — 3 düğüm + aralarında bağlantı
+ * çizgisi. Tamamlanan `bone`, aktif `marquee`, bekleyen `graphite`;
+ * bağlantı, varılmış düğüme (tamamlanan/aktif) giden yolda `bone`, kalanı
+ * `graphite`. Düğüm geçişi animasyonsuz (Kesme, §7.1) — durum doğrudan
+ * stilden okunur, geçiş yok.
  */
 import React from 'react';
 import { Text, View } from 'react-native';
@@ -41,10 +47,33 @@ export function RoundIndicator({
 
   return (
     <View style={styles.container} accessibilityRole="text" accessibilityLabel={fullLabel}>
-      <View style={styles.dots} importantForAccessibility="no-hide-descendants">
-        {Array.from({ length: total }, (_, index) => (
-          <View key={index} style={[styles.dot, index < current && styles.dotActive]} />
-        ))}
+      <View
+        style={styles.track}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        {Array.from({ length: total }, (_, index) => {
+          const round = index + 1;
+          const nodeStyle =
+            round < current
+              ? styles.nodeDone
+              : round === current
+                ? styles.nodeActive
+                : styles.nodePending;
+          return (
+            <React.Fragment key={round}>
+              {index > 0 && (
+                <View
+                  style={[
+                    styles.connector,
+                    round <= current ? styles.connectorReached : styles.connectorPending,
+                  ]}
+                />
+              )}
+              <View style={[styles.node, nodeStyle]} />
+            </React.Fragment>
+          );
+        })}
       </View>
       {showLabel && <Text style={styles.label}>{shortLabel}</Text>}
     </View>
