@@ -32,6 +32,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -413,7 +414,12 @@ export default function FilmDetailScreen() {
           cast: dbCast.length > 0 ? dbCast : undefined,
         });
       }
-    } catch {
+    } catch (err) {
+      // Kullanıcıya hata görünümü gider; neden de Sentry'de kalır.
+      Sentry.captureException(err, {
+        tags: { component: 'FilmDetail', flow: 'loadFilm' },
+        extra: { film_id: id },
+      });
       setLoadError(true);
     } finally {
       setLoading(false);
@@ -442,7 +448,12 @@ export default function FilmDetailScreen() {
     if (!id || !UUID_REGEX.test(id)) return;
     getWatchedFilmIds()
       .then((set) => setIsWatched(set.has(id)))
-      .catch(() => {});
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'FilmDetail', flow: 'watchedCheck' },
+          extra: { film_id: id },
+        });
+      });
   }, [id]);
 
   /** Watchlist kontrolu */
@@ -454,7 +465,12 @@ export default function FilmDetailScreen() {
         setIsInWatchlist(found);
         if (found) setWatchlistAdded(true);
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'FilmDetail', flow: 'watchlistCheck' },
+          extra: { film_id: id },
+        });
+      });
   }, [id]);
 
   /** AI aciklama yukle */
@@ -473,7 +489,12 @@ export default function FilmDetailScreen() {
       .then((map) => {
         if (active && map[film.id]) setExplanation(map[film.id]);
       })
-      .catch(() => {})
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'FilmDetail', flow: 'explainBatch' },
+          extra: { film_id: film.id },
+        });
+      })
       .finally(() => {
         if (active) setExplanationLoading(false);
       });

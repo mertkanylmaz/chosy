@@ -1,11 +1,46 @@
 /** TMDb API istek fonksiyonları */
 
+import * as Sentry from '@sentry/react-native';
+
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY ?? '';
+
+/** Tek bir TMDb isteğinin üst süresi (ms). Aşılırsa istek iptal edilir. */
+const TMDB_FETCH_TIMEOUT_MS = 10_000;
 
 /** TMDB language parametresi — her zaman İngilizce (posterler + açıklamalar EN olmalı) */
 function tmdbLanguage(): string {
   return 'en-US';
+}
+
+/**
+ * `fetch` + zaman aşımı (AbortController). Yanıt vermeyen bir TMDb isteği
+ * film detay ekranını süresiz iskelette tutuyordu.
+ *
+ * RN'nin fetch'i (whatwg-fetch) Response'u gövde TAMAMEN indikten sonra
+ * çözer; bu yüzden süre gövde okumayı da kapsar.
+ *
+ * Zaman aşımı SESSİZ geçmez: çağıranların `catch`'i `null` döndürüyor, o
+ * yüzden iz burada, iptalin yaşandığı yerde bırakılır. `url` Sentry'ye
+ * YAZILMAZ — API anahtarını taşır; yalnız uç nokta etiketi gider.
+ */
+async function fetchWithTimeout(url: string, endpoint: string): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TMDB_FETCH_TIMEOUT_MS);
+  try {
+    return await fetch(url, { signal: controller.signal });
+  } catch (err) {
+    if (controller.signal.aborted) {
+      Sentry.captureMessage(`TMDb isteği zaman aşımına uğradı: ${endpoint}`, {
+        level: 'warning',
+        tags: { error_code: 'TMDB_TIMEOUT', endpoint },
+        extra: { timeout_ms: TMDB_FETCH_TIMEOUT_MS },
+      });
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export { TMDB_BASE_URL, TMDB_API_KEY };
@@ -58,7 +93,7 @@ export async function searchMovies(query: string): Promise<TmdbSearchResult[]> {
     `&query=${encodeURIComponent(query.trim())}` +
     `&page=1`;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, 'search/movie');
   if (!res.ok) throw new Error(`TMDb arama başarısız (${res.status})`);
 
   const data = (await res.json()) as { results: TmdbSearchResult[] };
@@ -165,7 +200,7 @@ export async function fetchMovieDetails(tmdbId: number): Promise<TmdbMovieDetail
       `&include_image_language=en,null` +
       `&append_to_response=videos,credits`;
 
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 'movie');
     if (!res.ok) return null;
 
     const data = (await res.json()) as TmdbMovieDetails;
@@ -199,7 +234,7 @@ export async function fetchMovieCredits(tmdbId: number): Promise<TmdbCredits | n
       `${TMDB_BASE_URL}/movie/${tmdbId}/credits` +
       `?api_key=${TMDB_API_KEY}` +
       `&language=${tmdbLanguage()}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 'movie/credits');
     if (!res.ok) return null;
     const data = (await res.json()) as TmdbCredits;
     return { cast: data.cast ?? [], crew: data.crew ?? [] };
@@ -223,7 +258,7 @@ export async function fetchMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
       `?api_key=${TMDB_API_KEY}` +
       `&language=${tmdbLanguage()}` +
       `&include_video_language=en,null`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 'movie/videos');
     if (!res.ok) return [];
     const data = (await res.json()) as { results: TmdbVideo[] };
     return data.results ?? [];
@@ -281,7 +316,7 @@ export async function fetchWatchProvidersResult(
     const url =
       `${TMDB_BASE_URL}/movie/${tmdbId}/watch/providers` +
       `?api_key=${TMDB_API_KEY}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, 'movie/watch/providers');
     if (!res.ok) return { status: 'error' };
     const data = (await res.json()) as { results: Record<string, TmdbWatchProviders> };
     const providers = data.results?.[region];
