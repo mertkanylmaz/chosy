@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.32
-**Tarih:** 28 Eylül 2026
+**Sürüm:** 1.33
+**Tarih:** 30 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -57,7 +57,7 @@ Product Truth     Watched-it Rate
 | **K-05** | Spotlight'ın ayrı hub'ı yok. Sadece champion ekranının altında "Bugünün bonusu" kartı. | IA §2.6 |
 | **K-06** | Watchlist ayrı tab değil, Profile alt sayfası. Otomatik giriş yok — tek yol champion'daki manuel "Sonraya bırak". | IA §2.4 |
 | **K-07** | Badge / Collections UI kaldırılır. Tablo ve seed'e dokunulmaz. | IA §2.7 |
-| **K-08** | Profile sırası: **Cinema DNA → Streak → Watched → Saved → Pro → Settings**. *(v1.31, 28 Eyl 2026 — **sapma:** Streak bölümü **ertelendi**; build'deki sıra Cinema DNA → Watched → Saved → Üyelik (Pro) + Settings başlıktaki dişli. Sıra hedefi geçerli, Streak geri geldiğinde yerine girer. Gerekçe ve kanıt: bkz. E-22.)* | SONHALİ §57 |
+| **K-08** | Profile sırası: **Cinema DNA → Streak → Watched → Saved → Pro → Settings**. *(v1.31, 28 Eyl 2026 — **sapma:** Streak bölümü **ertelendi**; build'deki sıra Cinema DNA → Watched → Saved → Üyelik (Pro) + Settings başlıktaki dişli. Sıra hedefi geçerli, Streak geri geldiğinde yerine girer. Gerekçe ve kanıt: bkz. E-22.)* *(v1.33, 30 Eyl 2026 — **sapma:** Cinema DNA bölümü v1'de **gizli** (CTO kararı; bkz. K-32 notu). Build'deki sıra Watched → Saved → Üyelik.)* | SONHALİ §57 |
 | **K-09** | Sheet/full-screen ayrımı: Context edit = sheet · Film detay = sheet · Paywall = sheet · Gauntlet = full-screen. | SONHALİ §63 |
 | **K-10** | Seçim anında onay alert'i yok. `choice → instantaneous`. | SONHALİ §64 |
 
@@ -101,7 +101,7 @@ Product Truth     Watched-it Rate
 |---|---|---|
 | **K-30** | **6 eksen**: Tempo · Intensity · Darkness · Realism · Era · Language. 8 eksen yok, alt kırılım yok. | IA §4, SONHALİ §58 |
 | **K-31** | Tek renk ailesi (`marquee`/`beam`). Tür-kodlu çoklu palet **kalıcı olarak ölü**. *(v1.31, 28 Eyl 2026 — **istisna, kurucu kararı:** Pro Mode mood grid'inin kart zemin renkleri/gradient'leri (`MoodCardGradients`) korunur. İstisna yalnız bu yüzeyle sınırlı; başka ekrana tür-kodlu palet girmez. Bkz. E-22 (V1-D11).)* | Design OS §17 |
-| **K-32** | DNA **dashboard değil narrative**. Üç yerde görünür: Champion ("Tonight you leaned…") · Profile ("You're becoming…") · Milestone ("Your taste has changed"). | SONHALİ §22 |
+| **K-32** | DNA **dashboard değil narrative**. Üç yerde görünür: Champion ("Tonight you leaned…") · Profile ("You're becoming…") · Milestone ("Your taste has changed"). *(v1.33, 30 Eyl 2026 — **v1'de yok, v1.1'e ertelendi (CTO kararı).** Keşif `cf97732`: Profile kartı `cinema_dna` değil `sessions` okuyor, `recompute-taste-vector` tetiklenmiyor, D-06 eşiğini karşılayan kullanıcı 0. v1'de DNA vaadi yok, kart gizli. Boru hattı ön koşulları `docs/TEKNIK_BORC.md` ve §9.)* | SONHALİ §22 |
 | **K-33** | Tek progression omurgası: **STREAK → DNA**. XP sayısı kullanıcıya gösterilmez. | SONHALİ §23-24 |
 | **K-34** | Streak kaybı **cezalandırmaz**: "Tomorrow is another screening." | SONHALİ §26 |
 | **K-35** | Gamification audit kuralı: Reward/Progress/Habit/Identity sorularının dördüne cevap vermeyen öğe **ürüne giremez**. | SONHALİ §54 |
@@ -126,7 +126,7 @@ Product Truth     Watched-it Rate
 |---|---|---|
 | **K-45** | Onboarding paywall'ı yok · first-session paywall'ı yok · champion paywall'ı yok · daily gauntlet paywall'ı yok. | SONHALİ §29 |
 | **K-46** | **Tek paywall tetikleyicisi: 2. kaçırılan gün → arşiv.** İlk kaçırma ücretsiz telafi. Diğer 4 tetikleyici Faz 1. | IA §3 |
-| **K-47** | Paywall'da **11 benefit değil 2 değer**: Functional ("Replay missed days") + Identity ("See how your taste evolves"). | SONHALİ §33 |
+| **K-47** | Paywall'da **11 benefit değil 2 değer**: Functional ("Replay missed days") + Identity (~~"See how your taste evolves"~~ **"Pick your champion on your own time"**). *(v1.33, 30 Eyl 2026 — **Identity değeri geçersiz, gerekçe: özellik v1'de yok.** Zevk değişimini gösteren bir yüzey yok ve `recompute-taste-vector` hiçbir yerden tetiklenmiyor (keşif `cf97732`); R-16 gereği yerine gerçekte sunulan konuldu. TR: "Şampiyonunu kendi saatinde seç". "İki değer" kuralı değişmedi.)* | SONHALİ §33 |
 | **K-48** | Tek entitlement **`chosy_plus`** *(v1.1'de düzeltildi — bkz. §11 F-02/DUR NOKTASI B)*. Tüm gate'ler entitlement üzerinden, server-side. Webhook idempotent, retry'lı, reconciliation'lı, **silent downgrade yok**. | SONHALİ §34 |
 | **K-49** | RevenueCat state matrisi test edilmeden release yok: restore · expiration · grace period · billing issue · refund · revoked. | SONHALİ §34 |
 | **K-50** | **Gauntlet reklamsız.** Interstitial yok, sponsored film yok, banner yok, "watch ad before champion" yok. | V2 §15-16 |
@@ -146,6 +146,12 @@ Product Truth     Watched-it Rate
 > düğmelerdir ve ritüeli hiçbir noktada kesmez. İçerik kuralı değişmez: her
 > ikisi de **K-47**'nin iki değerine ve **R-16**'nın "var olmayan özelliği
 > satmak yasak" hükmüne tabidir.
+>
+> **Durum notu (30 Eyl 2026, v1.33).** `mood_history` girişi **v1'de fiilen
+> kapalı**: Profile'daki Cinema DNA kartı gizlendi (`isCinemaDnaEnabled()` →
+> `false`, `constants/config.ts`), dokunulacak yüzey kalmadı. Tetikleme kodu
+> (`triggerOrchestrator`, `PaywallMoodHistory`) değişmedi, silinmedi; yetki
+> hükmü geçerli, kart v1.1'de dönerse giriş de döner.
 >
 > **Kaldırılan duvar.** `quota_exhausted`, grandfathered kohort
 > (`legacy_mood_access`, migration 090) için kaldırıldı: erişimi bırakıp kotayla
@@ -1065,6 +1071,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **E-21 istemci cihaz doğrulaması** | **TestFlight turu kalemi.** Sunucu canlıda doğrulandı (E-21.1), istemci sahada değil. `before_18` akışı yalnız TestFlight'ta test edilebilir (`__DEV__`'de 18:00 kapısı açık). Senaryolar: (i) uçak modunda temiz kurulum 18:00 öncesi → bekleyiş, hata ekranı değil; (ii) önceki döngüde 3. tur çevrimdışı seçilip bağlantı açılır → şampiyon görünür; (iii) önceki döngü bitince uygulama kapatılıp açılır → bekleyiş; (iv) önceki döngü ortasında çevrimdışı kapatılıp açılır → sunucuya sorulur. **Bilinen boşluklar:** son seçim çevrimdışı yapılıp uygulama kapatılırsa açılışta şampiyon gösterilmez; cihazında gauntlet cache'i olmayan mevcut kullanıcı (kimlik sıfırlanmış / K-42'den beri açmamış) bir kez iskelet + 409 görür. `none -> before_18` kohort büyüklüğü (E-21 "Ölçülemeyen") yeni build sonrası `gauntlet.cycle` breadcrumb'ıyla bakılacak. Kaynak: v1.30. |
 | **K-15 yerel 18:00 bildirimi — karar verildi, uygulanmadı** | **Ayrı kod turu.** Tek native switch + cihazda yerel planlama + bekleme ekranı CTA'sı (`waiting_notify_tapped`). Uygulanınca `users.daily_pick_enabled` / `watchlist_notifications_enabled` okuması/yazması bırakılır (kolonlar silinmez). Kaynak: v1.31, E-22. |
 | **K-08 Streak bölümü ertelendi** | Streak yazımı gauntlet tamamlanmasına bağlanmadan Profile'a girmez (sunucu değişikliği → ayrı karar). Kaynak: v1.31, E-22. |
+| **K-32 Cinema DNA boru hattı — v1.1** | Kart gizli, vaat metinleri çıkarıldı (v1.33). Ön koşullar ve son tarih `docs/TEKNIK_BORC.md` "Cinema DNA boru hattı" kaydında. Kaynak: v1.33. |
 
 ---
 
@@ -1093,6 +1100,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.33 | 30 Eyl 2026 | **Cinema DNA v1'de gizli, DNA vaadi çıkarıldı (CTO kararı).** Keşif `cf97732`: kart `cinema_dna` okumuyor, `recompute-taste-vector` tetiklenmiyor, D-06 eşiğini karşılayan kullanıcı yok. **K-47** Identity değeri ~~"See how your taste evolves"~~ → **"Pick your champion on your own time"** (gerekçe: özellik v1'de yok; üstü çizildi, silinmedi). Aynı gerekçeyle `profile.chosyProSubtitle` → "Replay the evenings you missed · last 7 days" ve `contextPaywall.moodHistorySubtitle` → "Replay any evening you missed in the last 7 days." (arşiv penceresi 7 gün, `get-archive-status`). Metinler AskUserQuestion ile onaylı. **K-46 ekine** durum notu: `mood_history` girişi kart gizli olduğu için fiilen kapalı, tetikleme kodu değişmedi. **K-08** ve **K-32** satırlarına sapma notu; §9'a K-32 boru hattı satırı. |
 | 1.32 | 28 Eyl 2026 | **V-3 gauntlet + şampiyon görsel retrofiti kaydı** (bkz. yeni §5 **E-23**). Sprint kararları **V3-D1…V3-D7** ayrı ad uzayında: serif yalnız film adında (`filmTitle`) · altın yalnız ödül katmanında, Watch Now düz `marquee` · Watch Now = TMDB bölge `link`'i, uygulama içi tarayıcı · %60 poster hero + `ink` geçişi · en fazla 3 logo + "See all" · Spotlight kaydırma sonunda · Home tab ikonu film. **V3-D1, V1-D10'u kısmen geri aldı** (gerekçe: kurucu referans tasarımı, serif yalnızca film adı) — V1-D10 satırında üstü çizildi. **v1.23 kısmen geçersiz** (link, logo sayısı, birincil eylem) — v1.23 satırı ve §7.1 Champion/Where to Watch satırlarına not (CTO onayı, AskUserQuestion). §9 sağlayıcı talebi satırına not, madde açık. Design OS §3/§4 notları. Doğrulama: typecheck 14, functions 32, i18n 1387/1387, tüm Deno testleri yeşil (e2e-api hariç, prod'a yazar). Kod değişikliği yok. |
 | 1.31 | 28 Eyl 2026 | **V-1 Design OS uyum sprinti kaydı** (bkz. yeni §5 **E-22**). Sprint karar numaraları **V1-Dn** olarak ayrı ad uzayına alındı (§3 D-xx ile karışmasın). Repoda izi olan **V1-D3, D6, D7, D8, D9, D10, D11** işlendi; **V1-D1, D2, D4, D5** metni CTO oturumunda, bible'a işlenmedi (uydurulmadı). Sapmalar: **K-08** Streak ertelendi (streak verisi gauntlet'ten beslenmiyor) · **K-31** Pro Mode mood grid istisnası (kurucu kararı) · **K-15** bildirim cihazda yerel planlanır — **karar verildi, uygulanmadı** · sprint v1'deki "Chosy Pro" görünen ad maddesi **iptal**, ad "Chosy Plus" (K-46 notundaki metin düzeltildi) · Day-0 Seçenek A yerine **E-21 — UYGULANDI** (v1.30, durum teyit edildi). §9'a iki satır. Doğrulama: typecheck 14, functions 32, i18n 1367/1367, deno testleri yeşil. Kod değişikliği yok. |
 | 1.30 | 27 Eyl 2026 | **E-21 uygulandı** (bkz. yeni §5 **E-21.1**). Migration **118** (`daily_gauntlets.cycle`, DUR onaylı) · sözleşmeye salt ekleme (`GauntletCycle`, `PreviousCycleRejectCode`, 409) · `generate-gauntlet` v34 + `get-archive-status` v12 canlı, indirilen kod repo ile birebir. **`PREVIOUS_CYCLE_OUT_OF_WINDOW` anlamı genişletildi (CTO onaylı):** launch öncesi + 18:00 kapısı açık + yaz saati çakışması (yeni bulgu: Chicago/Winnipeg). Previous isteğine hiçbir zaman current gauntlet dönmez. Anahtar = dün yerel 18:00'in UTC tarihi. "18:00'e kadar şampiyon" inceltildi: reveal yalnız o oturumda, yeniden açılışta `before_18`. Arşiv önceki döngü satırını saymaz (anchor +1). `choice_events`'te `date` kolonu olmadığı kayda geçti (tarih join ile). Kanıt: birim 27+25, canlı 21/21. İstemci TestFlight bekliyor → §9. `v_algorithm_daily` kirliliği `TEKNIK_BORC.md`'ye. |
