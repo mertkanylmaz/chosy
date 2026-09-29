@@ -19,6 +19,23 @@ import { logger } from '@/utils/logger';
 
 let posthog: PostHog | null = null;
 
+/**
+ * Her event'e eklenen sabit özellikler (super property) — ör. `update_id`.
+ * `reset()` PostHog'un kayıtlı özelliklerini de siler; logout sonrası
+ * event'ler bu bağlamı kaybetmesin diye burada tutulur ve yeniden kaydedilir.
+ * Değerler süreç ömrü boyunca sabittir (sürüm/güncelleme kimliği) —
+ * `app_config` değeri DEĞİL, kural 6 kapsamı dışında.
+ */
+let superProperties: Record<string, string> = {};
+
+/** `register` bir Promise döner — hata yutulmaz, Sentry'ye gider (kural 1). */
+function applySuperProperties(): void {
+  if (!posthog || Object.keys(superProperties).length === 0) return;
+  posthog.register(superProperties).catch((err: unknown) => {
+    Sentry.captureException(err, { tags: { component: 'posthog', flow: 'register' } });
+  });
+}
+
 // ─── Public API ─────────────────────────────────────────────────────────────
 
 export const posthogAnalytics = {
@@ -69,9 +86,20 @@ export const posthogAnalytics = {
     posthog?.screen(name, props);
   },
 
-  /** Kullanici kimligini sifirla — logout'ta cagir. */
+  /**
+   * Her event'e eklenecek sabit özellikleri kaydeder (super property).
+   * `init()`'ten sonra çağrılır; PostHog kapalıysa değerler yine saklanır
+   * ama gönderilecek yer yoktur (init zaten Sentry'ye uyarı yazdı).
+   */
+  registerSuperProperties(props: Record<string, string>): void {
+    superProperties = { ...superProperties, ...props };
+    applySuperProperties();
+  },
+
+  /** Kullanici kimligini sifirla — logout'ta cagir. Super property'ler korunur. */
   reset(): void {
     posthog?.reset();
+    applySuperProperties();
   },
 
   /** Bekleyen event'leri hemen gonder. */

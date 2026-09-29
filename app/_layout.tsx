@@ -91,8 +91,26 @@ Sentry.init({
   },
 });
 
+// ── Güncelleme kimliği (V-4 Tur B) ──────────────────────────────────────────
+// Hangi OTA paketinin çalıştığı Sentry ve PostHog'da görünsün — aynı native
+// build (dist) üstünde farklı JS paketleri ancak böyle ayrılır. `updateId`
+// geliştirmede null; release'te gömülü paketin de bir kimliği vardır, bu
+// yüzden kaynak (`embedded` / `ota`) ayrı etiketlenir. Kimlik kullanıcıya
+// GÖSTERİLMEZ (Settings'te yalnız sürüm satırı var).
+const updateId = Updates.updateId ?? 'embedded';
+const updateSource = Updates.isEmbeddedLaunch ? 'embedded' : 'ota';
+const runtimeVersion = Updates.runtimeVersion ?? 'unknown';
+Sentry.setTag('update_id', updateId);
+Sentry.setTag('update_source', updateSource);
+Sentry.setTag('runtime_version', runtimeVersion);
+
 // ── PostHog initialization ───────────────────────────────────────────────────
 posthogAnalytics.init();
+posthogAnalytics.registerSuperProperties({
+  update_id: updateId,
+  update_source: updateSource,
+  runtime_version: runtimeVersion,
+});
 
 // Geliştirme ortamında reduced motion strict uyarısını kapat
 if (__DEV__) {
