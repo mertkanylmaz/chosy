@@ -10,7 +10,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { FilmStrip } from 'phosphor-react-native';
 import Animated, {
   FadeOut,
   useAnimatedStyle,
@@ -22,7 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { WatchlistItem } from '@/services/watchlist';
-import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/design/semantic';
 import { hapticMedium } from '@/utils/haptics';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -117,7 +117,7 @@ const WatchlistCard = React.memo(function WatchlistCard({
             />
           ) : (
             <View style={[styles.poster, styles.posterPlaceholder]}>
-              <Ionicons name="film-outline" size={32} color={Colors.textGrey} />
+              <FilmStrip size={32} color={color.text.secondary} />
             </View>
           )}
 

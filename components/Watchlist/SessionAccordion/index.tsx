@@ -11,6 +11,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { FilmStrip, Sparkle } from 'phosphor-react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -19,7 +20,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/design/semantic';
 import { WatchlistGroup, WatchlistItem } from '@/services/watchlist';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticSelection } from '@/utils/haptics';
@@ -78,7 +79,7 @@ function StackedPosters({ films }: StackedPostersProps) {
               />
             ) : (
               <View style={[styles.stackPosterImage, styles.stackPosterPlaceholder]}>
-                <Ionicons name="film-outline" size={10} color={Colors.textTertiary} />
+                <FilmStrip size={10} color={color.text.secondary} />
               </View>
             )}
           </View>
@@ -156,7 +157,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
         {/* Sol — stacked poster önizleme (kapalıyken) veya sparkles ikonu (açıkken) */}
         {expanded ? (
           <View style={styles.headerIconWrap}>
-            <Ionicons name="sparkles-outline" size={15} color={Colors.accentPrimary} />
+            <Sparkle size={15} color={color.text.secondary} />
           </View>
         ) : (
           <StackedPosters films={group.films} />
@@ -172,7 +173,7 @@ const SessionAccordion = React.memo(function SessionAccordion({
 
         {/* Sağ — chevron (dönen) */}
         <Animated.View style={[styles.headerChevron, chevronStyle]}>
-          <Ionicons name="chevron-down-outline" size={20} color={Colors.textSecondary} />
+          <Ionicons name="chevron-down-outline" size={20} color={color.text.secondary} />
         </Animated.View>
       </TouchableOpacity>
 

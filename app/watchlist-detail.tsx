@@ -29,6 +29,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { DiceFive } from 'phosphor-react-native';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import Animated from 'react-native-reanimated';
 
@@ -41,13 +42,16 @@ import {
   WatchlistGroup,
   WatchlistItem,
 } from '@/services/watchlist';
+// V-4 Tur C: yalniz `Colors.error` — yikici eylemlerin (kaldir, tumunu
+// temizle) bilinen istisnasi; Design OS'ta tehlike token'i yok.
 import { Colors } from '@/constants/Colors';
-import { color } from '@/constants/design/semantic';
-import { Theme } from '@/constants/theme';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 import { isRouletteEnabled } from '@/services/gameApi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { hapticSelection, hapticWarning } from '@/utils/haptics';
+import { logger } from '@/utils/logger';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
@@ -143,7 +147,12 @@ export default function WatchlistDetailScreen() {
       const data = await getWatchlistGroupedBySessions();
       setGroups(data);
       setGroupsLoaded(true);
-    } catch {
+    } catch (err) {
+      // V-4 Tur C (Kural 2): servis bugun firlatmiyor (hatayi kendisi
+      // yazip [] donuyor); beklenmedik bir firlatma yine de iz birakir.
+      logger.error('[WatchlistDetail] loadGroups beklenmedik hata', err, {
+        code: 'WATCHLIST_GROUPS_LOAD_FAILED',
+      });
       setGroups([]);
       setGroupsLoaded(true);
     } finally {
@@ -272,6 +281,8 @@ export default function WatchlistDetailScreen() {
             try {
               await clearWatchlist();
             } catch {
+              // Servis katmani (`logger.error`) hatayi Sentry'ye yazdi —
+              // ikinci event uretilmez; liste geri yuklenir, kullaniciya soylenir.
               setItems(snapshot);
               Alert.alert(t('errors.watchlistClear'));
             }
@@ -346,7 +357,7 @@ export default function WatchlistDetailScreen() {
               accessibilityRole="button"
               accessibilityLabel={t('common.back')}
             >
-              <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
+              <Ionicons name="chevron-back" size={24} color={color.text.primary} />
             </TouchableOpacity>
             <Text style={styles.title}>{t('tabs.watchlist')}</Text>
           </View>
@@ -364,7 +375,7 @@ export default function WatchlistDetailScreen() {
                   router.push('/roulette' as import('expo-router').Href);
                 }}
               >
-                <Ionicons name="dice-outline" size={22} color={Colors.gold} />
+                <DiceFive size={22} color={color.text.primary} />
               </TouchableOpacity>
             )}
             <TouchableOpacity
@@ -381,7 +392,7 @@ export default function WatchlistDetailScreen() {
               <Ionicons
                 name={searchVisible ? 'close-outline' : 'search-outline'}
                 size={22}
-                color={Colors.textWhite}
+                color={color.text.primary}
               />
             </TouchableOpacity>
             <TouchableOpacity
@@ -392,7 +403,7 @@ export default function WatchlistDetailScreen() {
               accessibilityLabel={t('watchlist.moreOptions')}
               onPress={() => setMenuVisible(true)}
             >
-              <Ionicons name="reorder-three-outline" size={24} color={Colors.textWhite} />
+              <Ionicons name="reorder-three-outline" size={24} color={color.text.primary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -401,11 +412,11 @@ export default function WatchlistDetailScreen() {
       {/* Arama Cubugu */}
       {searchVisible && (
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={18} color={Colors.textSecondary} />
+          <Ionicons name="search-outline" size={18} color={color.text.secondary} />
           <TextInput
             style={styles.searchInput}
             placeholder={t('watchlist.searchPlaceholder')}
-            placeholderTextColor={Colors.textSecondary}
+            placeholderTextColor={color.text.secondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoFocus
@@ -423,7 +434,10 @@ export default function WatchlistDetailScreen() {
         </View>
       )}
 
-      {/* Chip Satiri: Gorunum toggle + (list modunda) siralama */}
+      {/* Chip Satiri: Gorunum toggle + (list modunda) siralama.
+          V-4 Tur C: iki grup gorsel olarak ayrisir — gorunum tek kapsul icinde
+          bitisik segmentler, siralama/filtre ayrik pill'ler. Secili = `bone`
+          (isik), `marquee` degil. Secim mantigi degismedi. */}
       <Animated.View style={chipsAnimStyle}>
         <ScrollView
           horizontal
@@ -431,30 +445,32 @@ export default function WatchlistDetailScreen() {
           style={styles.chipsScroll}
           contentContainerStyle={styles.chipsContent}
         >
-          {/* Gorunum toggle */}
-          {viewChips.map(({ key, label }) => {
-            const active = viewMode === key;
-            return (
-              <TouchableOpacity
-                key={key}
-                style={[styles.chip, active ? styles.chipActive : styles.chipInactive]}
-                onPress={() => handleViewModeChange(key)}
-                activeOpacity={0.8}
-                accessibilityRole="radio"
-                accessibilityLabel={label}
-                accessibilityState={{ selected: active }}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    active ? styles.chipTextActive : styles.chipTextInactive,
-                  ]}
+          {/* Gorunum toggle — segmentli kontrol */}
+          <View style={styles.segmented} accessibilityRole="radiogroup">
+            {viewChips.map(({ key, label }) => {
+              const active = viewMode === key;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={[styles.segment, active && styles.segmentActive]}
+                  onPress={() => handleViewModeChange(key)}
+                  activeOpacity={0.8}
+                  accessibilityRole="radio"
+                  accessibilityLabel={label}
+                  accessibilityState={{ selected: active }}
                 >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={[
+                      styles.chipText,
+                      active ? styles.chipTextActive : styles.chipTextInactive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
 
           {/* Ayirici */}
           <View style={styles.chipDivider} />
@@ -533,9 +549,9 @@ export default function WatchlistDetailScreen() {
               router.push('/roulette' as import('expo-router').Href);
             }}
           >
-            <Ionicons name="dice-outline" size={20} color={Colors.textOnAccent} />
+            <DiceFive size={20} color={color.text.primary} />
             <Text style={styles.rouletteCtaText}>{t('roulette.ctaButton')}</Text>
-            <Ionicons name="chevron-forward" size={16} color={Colors.textOnAccent} style={{ marginLeft: 'auto' }} />
+            <Ionicons name="chevron-forward" size={16} color={color.text.secondary} style={styles.rouletteCtaChevron} />
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -571,8 +587,8 @@ export default function WatchlistDetailScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={Colors.gold}
-              colors={[Colors.gold]}
+              tintColor={color.text.secondary}
+              colors={[color.text.secondary]}
             />
           }
         >
@@ -619,8 +635,8 @@ export default function WatchlistDetailScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={Colors.gold}
-              colors={[Colors.gold]}
+              tintColor={color.text.secondary}
+              colors={[color.text.secondary]}
             />
           }
         />
@@ -753,6 +769,9 @@ export default function WatchlistDetailScreen() {
 }
 
 // ─── Stiller ──────────────────────────────────────────────────────────────────
+//
+// V-4 Tur C: Design OS semantic token'lari. Tek istisna `Colors.error`
+// (yikici eylemler — kaldir, tumunu temizle).
 
 const styles = StyleSheet.create({
   safe: {
@@ -765,19 +784,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 4,
-    paddingHorizontal: 12,
+    paddingTop: space.md,
+    paddingBottom: space.xs,
+    paddingHorizontal: space.md,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: space.xs,
   },
   backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: size.touchTarget,
+    height: size.touchTarget,
+    borderRadius: size.touchTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -786,119 +805,138 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.white05,
+    width: size.touchTarget,
+    height: size.touchTarget,
+    borderRadius: size.touchTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   /* Baslik */
   title: {
-    fontSize: 28,
-    fontFamily: Theme.fonts.display,
-    fontWeight: '600',
-    color: Colors.textWhite,
-    letterSpacing: 0.3,
+    ...type['display-m'],
+    color: color.text.primary,
   },
 
   /* Arama */
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
-    height: 48,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    borderRadius: 12,
-    backgroundColor: Colors.white05,
-    gap: 10,
+    marginTop: space.md,
+    marginHorizontal: space.base,
+    paddingHorizontal: space.base,
+    height: size.actionHeight,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    borderRadius: space.md,
+    backgroundColor: color.surface.raised,
+    gap: space.sm,
   },
   searchInput: {
+    ...type.body,
     flex: 1,
-    color: Colors.textWhite,
-    fontSize: 16,
+    color: color.text.primary,
   },
   clearSearch: {
-    color: Colors.textGrey,
-    fontSize: 18,
-    paddingLeft: 4,
+    ...type.body,
+    color: color.text.secondary,
+    paddingLeft: space.xs,
   },
 
   /* Chip'ler */
   chipsScroll: {
     flexGrow: 0,
-    marginTop: 16,
+    marginTop: space.base,
   },
   chipsContent: {
-    paddingLeft: 20,
-    paddingRight: 20,
-    gap: 8,
+    paddingHorizontal: space.base,
+    gap: space.sm,
     alignItems: 'center',
   },
+  /** Gorunum grubu — tek `charcoal` kapsul, segmentler bitisik. */
+  segmented: {
+    flexDirection: 'row',
+    padding: 2,
+    borderRadius: radius.pill,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+  },
+  segment: {
+    borderRadius: radius.pill,
+    paddingHorizontal: space.base,
+    paddingVertical: space.sm - 2,
+  },
+  segmentActive: {
+    backgroundColor: color.text.primary,
+  },
+  /** Siralama / izlendi filtresi — ayrik pill'ler. */
   chip: {
-    borderRadius: 100,
-    paddingHorizontal: 18,
-    paddingVertical: 9,
+    borderRadius: radius.pill,
+    paddingHorizontal: space.base,
+    paddingVertical: space.sm,
+    borderWidth: size.hairline,
   },
   chipActive: {
-    backgroundColor: Colors.accentPrimary,
+    backgroundColor: color.text.primary,
+    borderColor: color.text.primary,
   },
   chipInactive: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: Colors.tabInactive,
+    borderColor: color.surface.border,
   },
   chipText: {
-    fontSize: 13,
+    ...type.caption,
     fontWeight: '600',
   },
+  /** `bone` zemin uzerinde `ink` metin. */
   chipTextActive: {
-    color: Colors.textOnAccent,
+    color: color.surface.base,
   },
   chipTextInactive: {
-    color: Colors.textGrey,
+    color: color.text.secondary,
   },
   chipDivider: {
-    width: 1,
-    height: 18,
-    backgroundColor: Colors.white10,
-    marginHorizontal: 4,
+    width: size.hairline,
+    height: 20,
+    backgroundColor: color.surface.border,
+    marginHorizontal: space.xs,
   },
 
-  /* Roulette CTA */
+  /* Roulette CTA — birincil eylem dili (`beam`@12% + @40% kenar) */
   rouletteCta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 20,
-    marginTop: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 14,
-    backgroundColor: Colors.accentPrimary,
-    gap: 10,
+    marginHorizontal: space.base,
+    marginTop: space.base,
+    paddingVertical: space.md,
+    paddingHorizontal: space.base,
+    borderRadius: space.md,
+    backgroundColor: color.accent.fill,
+    borderWidth: size.hairline,
+    borderColor: color.accent.edgeStrong,
+    gap: space.sm,
   },
   rouletteCtaText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.textOnAccent,
+    ...type['body-strong'],
+    color: color.text.primary,
+  },
+  rouletteCtaChevron: {
+    marginLeft: 'auto',
   },
 
   /* FlatList (list mode) */
   list: {
     flex: 1,
-    marginTop: 20,
+    marginTop: space.base,
   },
   listContent: {
     paddingHorizontal: GRID_H_PAD,
-    paddingBottom: 20,
+    paddingBottom: space.base,
   },
   columnWrapper: {
     gap: GRID_COL_GAP,
-    marginBottom: 20,
+    marginBottom: space.base,
   },
 
   /* Skeleton grid */
@@ -907,7 +945,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: GRID_COL_GAP,
     paddingHorizontal: GRID_H_PAD,
-    paddingTop: 16,
+    paddingTop: space.base,
   },
   skeletonCard: {
     width: CARD_WIDTH,
@@ -916,68 +954,68 @@ const styles = StyleSheet.create({
   /* Grouped view */
   groupedScroll: {
     flex: 1,
-    marginTop: 20,
+    marginTop: space.base,
   },
   groupedContent: {
-    paddingBottom: 20,
+    paddingBottom: space.base,
   },
   groupSkeleton: {
-    marginHorizontal: 20,
-    marginBottom: 12,
+    marginHorizontal: space.base,
+    marginBottom: space.md,
   },
   groupedEmpty: {
     alignItems: 'center',
-    paddingTop: 48,
-    paddingHorizontal: 32,
-    gap: 10,
+    paddingTop: space.xxl,
+    paddingHorizontal: space.xl,
+    gap: space.sm,
   },
   groupedEmptyTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: Colors.textWhite,
+    ...type['body-strong'],
+    color: color.text.primary,
     textAlign: 'center',
   },
   groupedEmptySubtitle: {
-    fontSize: 14,
-    color: Colors.textGrey,
+    ...type.callout,
+    color: color.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
   },
 
   /* Uzun basma modal */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
+    backgroundColor: withAlpha(color.surface.base, 0.65),
     justifyContent: 'flex-end',
-    paddingBottom: 40,
-    paddingHorizontal: 20,
+    paddingBottom: space.xxl,
+    paddingHorizontal: space.base,
   },
   modalCard: {
-    backgroundColor: Colors.cardSolid,
-    borderRadius: 16,
+    backgroundColor: color.surface.raised,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     overflow: 'hidden',
   },
   modalFilmTitle: {
-    fontSize: 13,
-    color: Colors.textGrey,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    ...type.caption,
+    color: color.text.secondary,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.white10,
+    borderBottomColor: color.surface.border,
   },
   modalOption: {
-    height: 48,
+    height: size.actionHeight,
     justifyContent: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: space.base,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: Colors.white10,
+    borderBottomColor: color.surface.border,
   },
   modalOptionLast: {
     borderBottomWidth: 0,
   },
   modalOptionText: {
-    fontSize: 16,
-    color: Colors.textWhite,
+    ...type.body,
+    color: color.text.primary,
   },
   modalOptionTextRed: {
     color: Colors.error,
@@ -986,40 +1024,44 @@ const styles = StyleSheet.create({
   /* Menu modal */
   menuOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: withAlpha(color.surface.base, 0.6),
     justifyContent: 'flex-end',
   },
   menuContainer: {
-    backgroundColor: Colors.cardSolid,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 12,
-    paddingBottom: 40,
+    backgroundColor: color.surface.raised,
+    borderTopLeftRadius: radius.surface,
+    borderTopRightRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderBottomWidth: 0,
+    borderColor: color.surface.border,
+    paddingTop: space.md,
+    paddingBottom: space.xxl,
   },
   menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.white05,
+    paddingVertical: space.base,
+    paddingHorizontal: space.lg,
+    borderBottomWidth: size.hairline,
+    borderBottomColor: color.surface.border,
   },
   menuItemLast: {
     borderBottomWidth: 0,
   },
   menuItemText: {
-    color: Colors.textWhite,
-    fontSize: 16,
+    ...type.body,
+    color: color.text.primary,
   },
+  /** Secili siralama — `bone` agirlik, `marquee` degil. */
   menuItemTextActive: {
-    color: Colors.gold,
-    fontWeight: '700',
+    ...type['body-strong'],
+    color: color.text.primary,
   },
   menuItemTextRed: {
+    ...type.body,
     color: Colors.error,
-    fontSize: 16,
   },
   menuItemTextGrey: {
-    color: Colors.textGrey,
-    fontSize: 16,
+    ...type.body,
+    color: color.text.secondary,
     textAlign: 'center',
   },
 });

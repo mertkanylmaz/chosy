@@ -4,8 +4,7 @@
  */
 import { Dimensions, StyleSheet } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -29,10 +28,10 @@ export default StyleSheet.create({
   poster: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderRadius: radius.poster,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
   posterPlaceholder: {
     alignItems: 'center',
@@ -40,32 +39,29 @@ export default StyleSheet.create({
   },
 
   /**
-   * Match Score Rozeti — glassmorphism tarzı, posterin sağ alt köşesi.
-   * Yarı şeffaf arka plan + blur benzeri kenarlık.
+   * Match Score Rozeti — posterin sağ alt köşesi. V-4 Tur C: opak `charcoal`
+   * + `graphite` kenar (içerik katmanında cam yok, v4.1).
    */
   matchBadge: {
     position: 'absolute',
     right: 6,
     bottom: 6,
-    paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 8,
-    backgroundColor: Colors.bgElevated,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    paddingHorizontal: space.sm,
+    paddingVertical: 2,
+    borderRadius: space.sm,
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
   matchBadgeText: {
-    fontSize: Theme.typography.micro.fontSize,
-    fontWeight: '700',
-    color: Colors.textWhite,
-    letterSpacing: 0.2,
+    ...type.meta,
+    color: color.text.primary,
   },
 
   /** Film adı kaldırıldı — sadece yıl·tür */
   cardMeta: {
-    fontSize: Theme.typography.caption.fontSize,
-    color: Colors.textGrey,
-    marginTop: 6,
-    lineHeight: Theme.typography.caption.lineHeight,
+    ...type.caption,
+    color: color.text.secondary,
+    marginTop: space.sm - 2,
   },
 });

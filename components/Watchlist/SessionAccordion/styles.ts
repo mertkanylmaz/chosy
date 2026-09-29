@@ -4,34 +4,36 @@
  */
 import { StyleSheet } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { GRID_COL_GAP } from '../WatchlistCard/styles';
 
 export default StyleSheet.create({
   /* ── Kapsayıcı ───────────────────────────────────────────────── */
   container: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    borderRadius: 16,
-    backgroundColor: Colors.cardSolid,
+    marginHorizontal: space.base,
+    marginBottom: space.md,
+    borderRadius: radius.surface,
+    backgroundColor: color.surface.raised,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
 
   /* ── Header ──────────────────────────────────────────────────── */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
+    paddingHorizontal: space.base,
+    paddingVertical: space.md,
+    gap: space.md,
   },
   headerIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.accentDim,
+    backgroundColor: color.surface.base,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -40,14 +42,13 @@ export default StyleSheet.create({
     flex: 1,
   },
   headerLabel: {
-    fontSize: 14,
+    ...type.callout,
     fontWeight: '600',
-    color: Colors.textWhite,
-    lineHeight: 19,
+    color: color.text.primary,
   },
   headerMeta: {
-    fontSize: 12,
-    color: Colors.textGrey,
+    ...type.caption,
+    color: color.text.secondary,
     marginTop: 2,
   },
   headerChevron: {
@@ -71,10 +72,10 @@ export default StyleSheet.create({
     width: 24,
     height: 32,
     borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     overflow: 'hidden',
-    backgroundColor: Colors.bgElevated,
+    backgroundColor: color.surface.raised,
   },
   stackPosterPlaceholder: {
     alignItems: 'center',
@@ -84,15 +85,15 @@ export default StyleSheet.create({
   /* ── Separator ───────────────────────────────────────────────── */
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: Colors.white10,
-    marginHorizontal: 16,
+    backgroundColor: color.surface.border,
+    marginHorizontal: space.base,
   },
 
   /* ── Body ────────────────────────────────────────────────────── */
   body: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingHorizontal: space.base,
+    paddingTop: space.md,
+    paddingBottom: space.base,
     gap: GRID_COL_GAP,
   },
 
