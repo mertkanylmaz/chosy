@@ -11,6 +11,8 @@
  * _layout.tsx'te her şeyden ÖNCE import edilmeli.
  */
 
+import { expoDigestAlgorithmFor } from './webCryptoAlgorithm';
+
 // expo-crypto'yu güvenli şekilde yükle — native module yoksa null
 // Top-level import kullanılmaz çünkü native module eksikse crash olur.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -54,8 +56,15 @@ if (!globalThis.crypto.subtle && ExpoCrypto) {
   // @ts-expect-error — polyfill — sadece digest implementasyonu yeterli
   globalThis.crypto.subtle = {
     /**
-     * SHA-256 / SHA-1 digest hesaplar.
-     * Supabase PKCE code challenge için kullanılır.
+     * SHA-1 / SHA-256 / SHA-384 / SHA-512 digest hesaplar.
+     * Supabase PKCE code challenge için kullanılır (`flowType: 'pkce'`).
+     *
+     * REACT-NATIVE-8 düzeltmesi (29 Eyl 2026): algoritma adı expo-crypto'nun
+     * tireli enum DEĞERİNE açık listeyle eşlenir (`webCryptoAlgorithm.ts`);
+     * tanınmayan ad fırlatır. Baytlar `ExpoCrypto.digest` ile DOĞRUDAN
+     * hash'lenir: eski yol baytları string'e çevirip `digestStringAsync`'e
+     * veriyordu, o da UTF-8 kodluyordu (ASCII dışı baytta yanlış hash), ve
+     * view'ın `byteOffset`/`byteLength`'ini yok sayıyordu.
      */
     digest: async (
       algorithm: AlgorithmIdentifier,
@@ -64,32 +73,18 @@ if (!globalThis.crypto.subtle && ExpoCrypto) {
       const algoName =
         typeof algorithm === 'string' ? algorithm : (algorithm as Algorithm).name;
 
-      // expo-crypto algoritma adı: "SHA-256", "SHA-1" vb.
-      const expoAlgo = algoName.replace('-', '') as import('expo-crypto').CryptoDigestAlgorithm;
-
-      // BufferSource → Uint8Array → base64
-      let bytes: Uint8Array;
-      if (data instanceof ArrayBuffer) {
-        bytes = new Uint8Array(data);
-      } else {
-        bytes = new Uint8Array((data as ArrayBufferView).buffer);
+      const expoAlgo = expoDigestAlgorithmFor(algoName);
+      if (expoAlgo === null) {
+        // WebCrypto'nun kendi davranışı: desteklenmeyen algoritma reddedilir.
+        throw new Error(`crypto.subtle.digest: desteklenmeyen algoritma "${algoName}"`);
       }
 
-      // expo-crypto digest (base64 encoding ile)
-      const base64 = await ExpoCrypto!.digestStringAsync(
-        expoAlgo,
-        String.fromCharCode(...bytes),
-        { encoding: ExpoCrypto!.CryptoEncoding.BASE64 },
-      );
+      const bytes =
+        data instanceof ArrayBuffer
+          ? new Uint8Array(data)
+          : new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 
-      // base64 → ArrayBuffer
-      const binary = atob(base64);
-      const buffer = new ArrayBuffer(binary.length);
-      const view = new Uint8Array(buffer);
-      for (let i = 0; i < binary.length; i++) {
-        view[i] = binary.charCodeAt(i);
-      }
-      return buffer;
+      return ExpoCrypto!.digest(expoAlgo as import('expo-crypto').CryptoDigestAlgorithm, bytes);
     },
   };
 }
