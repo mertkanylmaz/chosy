@@ -28,7 +28,6 @@ import {
 
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import Animated from 'react-native-reanimated';
@@ -43,6 +42,7 @@ import {
   WatchlistItem,
 } from '@/services/watchlist';
 import { Colors } from '@/constants/Colors';
+import { color } from '@/constants/design/semantic';
 import { Theme } from '@/constants/theme';
 import { isRouletteEnabled } from '@/services/gameApi';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -330,12 +330,9 @@ export default function WatchlistDetailScreen() {
           animation: 'slide_from_right',
         }}
       />
+      {/* V-4 Tur A (V4-D3): eski tam ekran gradyan ayni rengin iki kopyasiydi
+          (#0A0A0F → #0A0A0F); zemin artik `safe`'in duz `ink`'i. */}
       <StatusBar style="light" />
-      <LinearGradient
-        colors={[Colors.background, Colors.backgroundGradient]}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
 
       {/* Header — back button + baslik + ikonlar */}
       <Animated.View style={headerAnimStyle}>
@@ -760,7 +757,7 @@ export default function WatchlistDetailScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: color.surface.base,
   },
 
   /* Header */

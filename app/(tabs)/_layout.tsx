@@ -74,7 +74,24 @@ export default function TabLayout() {
       alıyordu — aynı sekmede ikon ve etiket iki ayrı altındı. Artık aktif
       ikon + etiket her sekmede `marquee`; ayrı `selectedColor` gereksiz.
     */
-    <NativeTabs tintColor={color.reward.primary}>
+    /*
+      V-4 Tur A (V4-D1, revize — "opak" değil "tutarlı"): cam KALIR (K-04,
+      DESIGN_OS §6 v4.1). TestFlight 906'da bar Home'da şeffaf, Profile'da
+      gri bloktu: UIKit'in scroll-edge görünümü içerik bar'ın kenarına
+      değmediğinde zemini ve blur'ü kaldırıyordu. `disableTransparentOnScrollEdge`
+      ile her sekmede aynı malzeme; üstte 1px `graphite` çizgi (`shadowColor`);
+      blur sistemin koyu malzemesi. İçerik bar'ın altından geçer — hiçbir
+      buton/metin orada kalmasın diye ekranlar `useTabBarInset()` okur.
+      ⚠️ iOS 26 Liquid Glass bu görünüm değerlerini yok sayabilir; cihazda
+      doğrulanır. Tutmazsa yol native bayrak (`UIDesignRequiresCompatibility`,
+      yeni build) — OTA ile çözülmez.
+    */
+    <NativeTabs
+      tintColor={color.reward.primary}
+      blurEffect="systemChromeMaterialDark"
+      shadowColor={color.surface.border}
+      disableTransparentOnScrollEdge
+    >
       {/* 1 — Home: günlük gauntlet.
           V-3 Tur G1 (G7, V3-D7): film temalı ikon — SF Symbol `film`.
           Phosphor değil: native tab `Icon`'u SVG bileşeni kabul etmiyor

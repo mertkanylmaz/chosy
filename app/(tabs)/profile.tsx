@@ -60,6 +60,7 @@ import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
+import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { Theme, Radius, Shadows, Spacing, Typography } from '@/constants/theme';
 import TasteDNA from '@/components/Profile/TasteDNA';
@@ -644,9 +645,23 @@ function SettingsModal({
  * Profil ekrani — P3.4 stable revision.
  * Kaldirilan: TonightPick, SwipeIntelligence, MoodTimeline, WatchHistory,
  *             GenreDonutChart, MoodPatternChart (crash-prone + P5'te kaldirilacak).
+ *
+ * V-4 Tur A: alt pay olcumu ekranin DISINDA kurulur — `useTabBarInset()`
+ * yalniz provider altinda okunabilir ve olcum view'i tam ekrani kaplamali
+ * (GauntletShell ile ayni desen).
  */
 export default function ProfileScreen() {
+  return (
+    <TabBarInsetProvider>
+      <ProfileScreenContent />
+    </TabBarInsetProvider>
+  );
+}
+
+function ProfileScreenContent() {
   const router = useRouter();
+  /** V-4 Tur A: tab bar + home indicator — kaydirma iceriginin alt payi. */
+  const tabBarInset = useTabBarInset();
   const { t, language, setLanguage } = useLanguage();
   const { isPremium, premiumStatus, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
@@ -1203,7 +1218,7 @@ export default function ProfileScreen() {
   if (loadError && !loading) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
-        <StatusBar style="light" backgroundColor={Colors.background} />
+        <StatusBar style="light" backgroundColor={color.surface.base} />
         <ErrorState
           errorType="server"
           message={t('errors.profileLoad')}
@@ -1220,13 +1235,15 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar style="light" backgroundColor={Colors.background} />
-      <LinearGradient
-        colors={[Colors.background, Colors.backgroundGradient]}
-        style={styles.gradient}>
+      <StatusBar style="light" backgroundColor={color.surface.base} />
+      {/* V-4 Tur A (V4-D3): eski iki durakli gradyan ayni rengin iki kopyasiydi
+          (#0A0A0F → #0A0A0F); zemin artik `safe`'in duz `ink`'i. */}
+      <View style={styles.gradient}>
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          // V-4 Tur A: alt pay native olcumden (tab bar + home indicator) —
+          // en alttaki oge bar'in USTUNDE tam gorunur. Sabit deger yazilmaz.
+          contentContainerStyle={{ paddingBottom: tabBarInset + space.lg }}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
@@ -1266,7 +1283,7 @@ export default function ProfileScreen() {
                 )}
                 <View style={styles.headerCurtainDim} />
                 <LinearGradient
-                  colors={[HEADER_CURTAIN_FADE_TOP, Colors.background]}
+                  colors={[HEADER_CURTAIN_FADE_TOP, color.surface.base]}
                   locations={[0.35, 1]}
                   style={styles.headerCurtainFade}
                 />
@@ -1581,9 +1598,8 @@ export default function ProfileScreen() {
               </View>
             )}
 
-          <View style={styles.bottomSpacer} />
         </ScrollView>
-      </LinearGradient>
+      </View>
 
       {/* ── Hesap silme overlay — tam ekran blok ─────────────────────── */}
       {deletingAccount && (
@@ -1644,16 +1660,13 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: color.surface.base,
   },
   gradient: {
     flex: 1,
   },
   scroll: {
     flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 0,
   },
 
   // ── Header ──
@@ -2229,7 +2242,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectBtnText: {
-    color: Colors.background,
+    color: color.surface.base,
     fontSize: 15,
     fontWeight: '700',
   },
@@ -2322,9 +2335,7 @@ const styles = StyleSheet.create({
   },
 
   // ── Genel ──
-  bottomSpacer: {
-    height: 100,
-  },
+  // V-4 Tur A: sabit 100pt `bottomSpacer` kalkti — alt pay `useTabBarInset()`.
 
   // ── Referral Card ──
   referralCard: {
@@ -2348,7 +2359,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.background,
+    backgroundColor: color.surface.base,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 10,
