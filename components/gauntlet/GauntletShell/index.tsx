@@ -32,7 +32,11 @@ import { ChampionReveal } from '@/components/gauntlet/ChampionReveal';
 import { ContextBar } from '@/components/gauntlet/ContextBar';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
-import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
+import {
+  PosterTile,
+  type PosterTileAnimationState,
+  type PosterTitleLines,
+} from '@/components/gauntlet/PosterTile';
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
@@ -345,6 +349,17 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [isStale, setIsStale] = useState(false);
   const [choiceFrozen, setChoiceFrozen] = useState(false);
+
+  /**
+   * V-4 Tur B: poster başlıklarının doğal satır sayısı, film kimliğine göre.
+   * SALT GÖRSEL — tur, çift ve kuyruk bu değerden türetilmez (K-37/K-42).
+   * Kimlikle anahtarlandığı için yeni rakip geldiğinde kalan filmin ölçümü
+   * korunur, gelenin ölçümü kendi ilk düzeninde yazılır.
+   */
+  const [titleLinesById, setTitleLinesById] = useState<Record<string, PosterTitleLines>>({});
+  const reportTitleLines = useCallback((filmId: string, lines: PosterTitleLines) => {
+    setTitleLinesById((prev) => (prev[filmId] === lines ? prev : { ...prev, [filmId]: lines }));
+  }, []);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -1556,6 +1571,15 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }
 
   const outOfRefreshes = refreshesRemaining === 0; // -1 = sınırsız (Pro)
+  /** V-4 Tur B: iki başlık da ölçüldüyse büyüğü; yoksa doğal yükseklik. */
+  const leftTitleLines = titleLinesById[pair.left.id];
+  const rightTitleLines = titleLinesById[pair.right.id];
+  const rowTitleLines: PosterTitleLines | undefined =
+    leftTitleLines !== undefined && rightTitleLines !== undefined
+      ? leftTitleLines === 2 || rightTitleLines === 2
+        ? 2
+        : 1
+      : undefined;
   /** K-42: kuyrukta bekleyen seçim varken tüm oyun etkileşimleri kilitli. */
   const interactionsLocked = submitting || transitioning || choiceFrozen;
 
@@ -1588,6 +1612,8 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               disabled={interactionsLocked}
               animationState={tileStates.left}
               onPress={() => handlePosterPress('left')}
+              titleLines={rowTitleLines}
+              onTitleLines={(lines) => reportTitleLines(pair.left.id, lines)}
             />
           </View>
           <View style={styles.posterSlot}>
@@ -1597,6 +1623,8 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               disabled={interactionsLocked}
               animationState={tileStates.right}
               onPress={() => handlePosterPress('right')}
+              titleLines={rowTitleLines}
+              onTitleLines={(lines) => reportTitleLines(pair.right.id, lines)}
             />
           </View>
         </View>

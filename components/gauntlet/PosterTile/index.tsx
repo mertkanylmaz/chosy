@@ -13,9 +13,20 @@
  *  - 'pending': seçilen poster, seçili kenar (§2.3 `beam`@24%)
  *  - 'dimmed':  diğer poster, opaklık PENDING_DIM_OPACITY
  * SALT GÖRSEL — tur/ilerleme bu durumlardan türetilmez (K-37).
+ *
+ * V-4 Tur B: başlık yüksekliği SATIR seviyesinde eşitlenir. Kart kendi
+ * doğal satır sayısını (`onTitleLines`, en fazla 2) bildirir; üst bileşen
+ * iki kartın büyüğünü `titleLines` olarak geri verir. Sabit 2 satırlık
+ * `minHeight` kalktı — ikisi de tek satırsa tek satır yer ayrılır.
  */
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import {
+  Text,
+  TouchableOpacity,
+  View,
+  type NativeSyntheticEvent,
+  type TextLayoutEventData,
+} from 'react-native';
 
 import { Image } from 'expo-image';
 import { FilmSlate } from 'phosphor-react-native';
@@ -41,6 +52,9 @@ import type { GauntletFilm } from '@/types/gauntlet';
 
 import { styles } from './styles';
 
+/** Başlığın ayırdığı satır sayısı — `numberOfLines` ile aynı tavan. */
+export type PosterTitleLines = 1 | 2;
+
 export type PosterTileAnimationState =
   | 'idle'
   | 'pending'
@@ -58,6 +72,13 @@ interface PosterTileProps {
   disabled?: boolean;
   animationState?: PosterTileAnimationState;
   onPress?: () => void;
+  /**
+   * V-4 Tur B: satırın başlık yüksekliği (iki kartın büyüğü). Yoksa başlık
+   * doğal yüksekliğinde çizilir (ilk ölçüm karesi).
+   */
+  titleLines?: PosterTitleLines;
+  /** Başlığın doğal satır sayısı — her metin düzeninde bildirilir. */
+  onTitleLines?: (lines: PosterTitleLines) => void;
 }
 
 export function PosterTile({
@@ -66,6 +87,8 @@ export function PosterTile({
   disabled = false,
   animationState = 'idle',
   onPress,
+  titleLines,
+  onTitleLines,
 }: PosterTileProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
@@ -156,6 +179,13 @@ export function PosterTile({
     transform: [{ translateY: translateY.value }, { scale: scale.value }],
   }));
 
+  const handleTitleLayout = useCallback(
+    (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+      onTitleLines?.(e.nativeEvent.lines.length >= 2 ? 2 : 1);
+    },
+    [onTitleLines],
+  );
+
   const handlePress = useCallback(() => {
     if (disabled) return;
     onPress?.();
@@ -211,7 +241,16 @@ export function PosterTile({
         </View>
 
         <View style={styles.meta}>
-          <Text style={styles.title} numberOfLines={2} ellipsizeMode="tail">
+          <Text
+            style={[
+              styles.title,
+              titleLines === 1 && styles.titleOneLine,
+              titleLines === 2 && styles.titleTwoLines,
+            ]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+            onTextLayout={handleTitleLayout}
+          >
             {film.title}
           </Text>
           <Text style={styles.metaLine} numberOfLines={1}>

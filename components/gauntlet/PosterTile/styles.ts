@@ -7,18 +7,19 @@ import { StyleSheet } from 'react-native';
 import { color, radius, space, type } from '@/constants/design/semantic';
 
 /**
- * V-3 Tur G1 (G3): başlık her zaman 2 satırlık yer kaplar — tek satırlık
- * başlıklı poster ile iki satırlık komşusu arasında meta ve soru hizası
- * kaymaz.
+ * V-3 Tur G1 (G3) başlığa sabit 2 satır ayırıyordu; tek satırlık iki
+ * başlıkta büyük boşluk kalıyordu (TestFlight 906). V-4 Tur B: yükseklik
+ * SATIR seviyesinde — iki kartın büyüğü (`titleOneLine` / `titleTwoLines`).
  */
-const TITLE_MIN_HEIGHT = type.filmTitle.lineHeight * 2;
+const TITLE_LINE_HEIGHT = type.filmTitle.lineHeight;
 
 /**
- * Poster altındaki metin bloğunun toplam yüksekliği (başlık 2 satır + meta).
- * Yükleme iskeleti bu payı ayırır — veri gelince düzen kaymaz.
+ * Poster altındaki metin bloğunun EN BÜYÜK yüksekliği (başlık 2 satır +
+ * meta). Yükleme iskeleti bu payı ayırır; iki başlık da tek satırsa veri
+ * gelince blok bir satır kısalır.
  */
 export const POSTER_META_BLOCK_HEIGHT =
-  space.sm + TITLE_MIN_HEIGHT + space.xs + type.meta.lineHeight;
+  space.sm + TITLE_LINE_HEIGHT * 2 + space.xs + type.meta.lineHeight;
 
 export const styles = StyleSheet.create({
   container: {
@@ -70,7 +71,12 @@ export const styles = StyleSheet.create({
     ...type.filmTitle,
     color: color.text.primary,
     textAlign: 'center',
-    minHeight: TITLE_MIN_HEIGHT,
+  },
+  titleOneLine: {
+    height: TITLE_LINE_HEIGHT,
+  },
+  titleTwoLines: {
+    height: TITLE_LINE_HEIGHT * 2,
   },
   metaLine: {
     ...type.meta,
