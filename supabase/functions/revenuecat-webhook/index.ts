@@ -17,6 +17,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { missingUserSeverity } from '../_shared/rcMissingUserSeverity.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -326,16 +327,24 @@ serve(async (req: Request) => {
      * Kalıcı orphan (auth satırı var, public satırı hiç oluşmayacak) da aynı
      * kanaldan görünür: retry'lar tükendiğinde Sentry'de `APP_USER_NOT_FOUND`
      * yığılması kalır. Sessiz kayıp yok.
+     *
+     * 29 Eyl 2026: seviye olay tipine göre (`rcMissingUserSeverity.ts`).
+     * İlk satın alma → `error`; silinmiş hesabın abonelik yaşam döngüsü
+     * (RENEWAL, CANCELLATION, …) → `warning` + `expected_deleted_user`.
+     * Yanıt kodu DEĞİŞMEDİ: her tipte 500 + `retryable: true`.
      */
     const appUserMissing = async (): Promise<Response> => {
-      console.error(`[rc-webhook] public.users satırı yok — auth_id=${authUserId}`)
+      const severity = missingUserSeverity(event.type)
+      const log = severity.level === 'error' ? console.error : console.warn
+      log(`[rc-webhook] public.users satırı yok — auth_id=${authUserId} (${event.type})`)
       await sentryCapture({
         message: 'revenuecat-webhook: auth_id için public.users satırı bulunamadı — ödeme işlenemedi',
-        level: 'error',
+        level: severity.level,
         tags: {
           error_code: 'APP_USER_NOT_FOUND',
           function: 'revenuecat-webhook',
           event_type: event.type,
+          ...(severity.expectedDeletedUser ? { expected_deleted_user: 'true' } : {}),
         },
         extra: {
           auth_user_id: authUserId,
