@@ -2826,3 +2826,53 @@ Donmuş oyun kodu CLAUDE.md gereği silinmiyor. Bu yüzden bu kayıt bir
 düzeltme talebi değil, bundle boyutu ve başlangıç maliyetini takip etmek
 için. Hangi route'un gerçekten erişilemez olduğu (import grafiği ile) bu
 kayıtta **ölçülmedi**.
+
+---
+
+## 🟡 `recompute-taste-vector` hiçbir yerden tetiklenmiyor — K-32 güven göstergesi bekliyor (29 Eyl 2026, V-4 Tur C)
+
+V-4 Tur C, Profile'daki Cinema DNA kartına K-32 güven göstergesini
+(`Seni %N tanıyorum` + 9 segment, PRODUCT_OS §5.4 / DESIGN_OS §10.4)
+eklemeyi hedefliyordu. Kaynak kolon hazır: `cinema_dna.user_confidence`
+(074, `0..1`, yorumu "istemcideki gösterge bu kolonu okur"), RLS
+`cinema_dna: owner read` (070) açık. **Ama kolonu yazan fonksiyon
+çalışmıyor:**
+
+- `recompute-taste-vector` için cron yok, istemci çağrısı yok, başka bir
+  Edge Function'dan çağrı yok (repo taraması, 29 Eyl 2026).
+- Canlı ölçüm (29 Eyl 2026): `cinema_dna` **1 satır**, `taste_computed_at`
+  son değer **2026-08-07**, `user_confidence > 0` olan satır **0**. Aynı
+  anda `choice_events` 11 kullanıcıdan 42 `choice` olayı taşıyor.
+
+Gösterge eklenseydi herkes ya hiçbir şey ya da "%0" görecekti — ikisi de
+ürün yalanı. **Kurucu kararı (AskUserQuestion): göstergeyi ertele.** Bu
+turda yalnız kartın boş alanı (`minHeight: 100` + altın üst kenar) kaldırıldı.
+
+**Kapanış koşulu:** `recompute-taste-vector` bir tetikleyiciye bağlanır
+(cron ya da `submit-choice` sonrası), `user_confidence` gerçek kullanıcılarda
+`> 0` ölçülür; ardından gösterge `cinema_dna` okumasıyla eklenir (yeni
+hesaplama yok, yalnız okuma). Cron eklenirse bkz. yukarıda *pg_cron GUC* ve
+hafıza kaydı "iki anahtar kuşağı" (Vault `cron_service_role_key`).
+
+**Aynı turun yan notları:**
+
+1. `isPremium` kaydının (27 Eyl) 4. maddesindeki **"Kalan:
+   `app/(tabs)/profile.tsx`"** kapandı — abonelik rozeti `premiumStatus`
+   okuyor. `isPremium` Profile'da yalnız bir Sentry `extra` alanında kaldı.
+2. *"logger.warn / logger.error production'da no-op"* kaydı (19 Eyl) **eskidi**:
+   `utils/logger.ts` bugün `error`'ı prod'da Sentry'ye köprülüyor (`skipBridge`
+   ile devre dışı bırakılabilir). Bu turda Kural 2 taraması buna göre yapıldı —
+   servis katmanında `logger.error` olan yollara ekranda ikinci
+   `Sentry.capture*` eklenmedi (çift event). Profile'daki mevcut üç çift-event
+   noktası da kapatıldı (avatar oku/kaydet → `skipBridge`, `clearWatchlist`
+   ekran log'u kaldırıldı). `logger.warn` hâlâ prod'da sessiz.
+3. `profileService.getLastParsedProfile` hatayı `null`'a indiriyor (yalnız
+   `__DEV__` console) — Cinema DNA kartının "henüz profil yok" durumu ile
+   "okunamadı" durumu ayırt edilemiyor. Mood-search döneminin kaynağı; K-32
+   göstergesi `cinema_dna`'ya geçince kart bu fonksiyondan kopabilir.
+4. Yıkıcı eylem rengi: Design OS'ta tehlike token'ı yok. `Colors.error`
+   Profile Settings (listeyi temizle, hesabı sil) ve Watchlist (kaldır,
+   tümünü temizle) satırlarında **bilinen istisna** olarak kaldı (kurucu
+   kararı). Bir `color.feedback.danger` token'ı Design OS kararı ister.
+5. TR `profile.watchlistSummaryCount` / `watchlistSummaryEmpty`: "Izleme
+   Listesi" — noktasız büyük I (İ olmalı). Metin turu, bu turda değişmedi.
