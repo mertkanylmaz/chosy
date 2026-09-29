@@ -396,6 +396,7 @@
     }
   },
   "errors": {
+    "openLink": "Bağlantı açılamadı. Tekrar dene.",
     "loadRecommendations": "Film önerileri yüklenemedi. Tekrar dene.",
     "feedbackSave": "Geri bildirim kaydedilemedi. Tekrar dene.",
     "noConnection": "İnternet bağlantısı yok. Lütfen tekrar dene.",
@@ -545,11 +546,16 @@
     "retakeQuiz": "Testi Tekrarla",
     "retakeQuizConfirmTitle": "Testi Tekrarla?",
     "retakeQuizConfirmMessage": "Bu, mevcut sinefil arketipini ve zevk profilini yeniden hesaplayacak. Devam etmek istiyor musun?",
-    "watchlistSummaryCount": "Izleme Listesi (%{count} film)",
+    "watchlistSummaryCount": {
+      "one": "Izleme Listesi (%{count} film)",
+      "other": "Izleme Listesi (%{count} film)"
+    },
     "watchlistSummaryEmpty": "Izleme Listesi",
     "watchedSection": "İzlediklerin",
     "watchedCount": "İzlenen film: %{count}",
     "watchedEmpty": "Henüz izlediğin film yok. Seçtiğin filmi ertesi gün soracağım.",
+    "lastPickLabel": "Son seçimin",
+    "lastPickHint": "Ertesi gün izleyip izlemediğini soracağım.",
     "savedSection": "Kaydedilenler",
     "ritualRingA11y": "Son %{total} günün %{count} gününde film seçildi",
     "proSection": "Üyelik",

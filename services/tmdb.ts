@@ -14,6 +14,55 @@ function tmdbLanguage(): string {
 }
 
 /**
+ * Bu oturumda Sentry uyarısı zaten gönderilmiş uç noktalar. Telemetri
+ * tekilleştirmesidir (config değil): film detayı her açılışta dört uç nokta
+ * çağırır; TMDb çökerse her ekran dört uyarı üretip hata fırtınası yaratırdı.
+ * İlk başarısızlık `warning`, sonrakiler yalnız breadcrumb.
+ */
+const reportedTmdbEndpoints = new Set<string>();
+
+/**
+ * V-4 Tur C (Kural 2): çağıranların `null` / `[]` / `{status:'error'}`
+ * dönüşleri korunur, ama başarısızlık iz bırakır.
+ *
+ * - 404 hata değil, veri durumudur (film TMDb'den kalkmış) — raporlanmaz.
+ * - Zaman aşımı `fetchWithTimeout`'ta zaten uyarı olarak yazıldı — burada
+ *   yalnız breadcrumb (çift sayım yok).
+ * - `url` YAZILMAZ — API anahtarını taşır.
+ */
+function reportTmdbFailure(endpoint: string, failure: { status: number } | { error: unknown }): void {
+  if ('status' in failure && failure.status === 404) return;
+
+  // `instanceof Error` KULLANILMAZ: RN fetch polyfill'inin AbortError'u
+  // (DOMException) Error'dan türemeyebilir.
+  const isTimeout =
+    'error' in failure && (failure.error as { name?: unknown } | null)?.name === 'AbortError';
+  const detail = 'status' in failure
+    ? `HTTP ${failure.status}`
+    : failure.error instanceof Error ? failure.error.message : String(failure.error);
+
+  if (isTimeout || reportedTmdbEndpoints.has(endpoint)) {
+    Sentry.addBreadcrumb({
+      category: 'tmdb',
+      level: 'warning',
+      message: `TMDb isteği başarısız: ${endpoint} (${detail})`,
+    });
+    return;
+  }
+
+  reportedTmdbEndpoints.add(endpoint);
+  Sentry.captureMessage(`TMDb isteği başarısız: ${endpoint}`, {
+    level: 'warning',
+    tags: {
+      error_code: 'TMDB_REQUEST_FAILED',
+      endpoint,
+      ...('status' in failure ? { http_status: String(failure.status) } : {}),
+    },
+    extra: { detail },
+  });
+}
+
+/**
  * `fetch` + zaman aşımı (AbortController). Yanıt vermeyen bir TMDb isteği
  * film detay ekranını süresiz iskelette tutuyordu.
  *
@@ -201,7 +250,10 @@ export async function fetchMovieDetails(tmdbId: number): Promise<TmdbMovieDetail
       `&append_to_response=videos,credits`;
 
     const res = await fetchWithTimeout(url, 'movie');
-    if (!res.ok) return null;
+    if (!res.ok) {
+      reportTmdbFailure('movie', { status: res.status });
+      return null;
+    }
 
     const data = (await res.json()) as TmdbMovieDetails;
     return {
@@ -216,7 +268,8 @@ export async function fetchMovieDetails(tmdbId: number): Promise<TmdbMovieDetail
       videos: data.videos,
       credits: data.credits,
     };
-  } catch {
+  } catch (err) {
+    reportTmdbFailure('movie', { error: err });
     return null;
   }
 }
@@ -235,10 +288,14 @@ export async function fetchMovieCredits(tmdbId: number): Promise<TmdbCredits | n
       `?api_key=${TMDB_API_KEY}` +
       `&language=${tmdbLanguage()}`;
     const res = await fetchWithTimeout(url, 'movie/credits');
-    if (!res.ok) return null;
+    if (!res.ok) {
+      reportTmdbFailure('movie/credits', { status: res.status });
+      return null;
+    }
     const data = (await res.json()) as TmdbCredits;
     return { cast: data.cast ?? [], crew: data.crew ?? [] };
-  } catch {
+  } catch (err) {
+    reportTmdbFailure('movie/credits', { error: err });
     return null;
   }
 }
@@ -259,10 +316,14 @@ export async function fetchMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
       `&language=${tmdbLanguage()}` +
       `&include_video_language=en,null`;
     const res = await fetchWithTimeout(url, 'movie/videos');
-    if (!res.ok) return [];
+    if (!res.ok) {
+      reportTmdbFailure('movie/videos', { status: res.status });
+      return [];
+    }
     const data = (await res.json()) as { results: TmdbVideo[] };
     return data.results ?? [];
-  } catch {
+  } catch (err) {
+    reportTmdbFailure('movie/videos', { error: err });
     return [];
   }
 }
@@ -317,11 +378,15 @@ export async function fetchWatchProvidersResult(
       `${TMDB_BASE_URL}/movie/${tmdbId}/watch/providers` +
       `?api_key=${TMDB_API_KEY}`;
     const res = await fetchWithTimeout(url, 'movie/watch/providers');
-    if (!res.ok) return { status: 'error' };
+    if (!res.ok) {
+      reportTmdbFailure('movie/watch/providers', { status: res.status });
+      return { status: 'error' };
+    }
     const data = (await res.json()) as { results: Record<string, TmdbWatchProviders> };
     const providers = data.results?.[region];
     return providers ? { status: 'ok', providers } : { status: 'empty' };
-  } catch {
+  } catch (err) {
+    reportTmdbFailure('movie/watch/providers', { error: err });
     return { status: 'error' };
   }
 }

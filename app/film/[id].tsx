@@ -535,7 +535,14 @@ export default function FilmDetailScreen() {
       sub.remove();
 
       if (accumulatedMs >= 1000) {
-        tasteSignals.recordDetailView(id, accumulatedMs).catch(() => {});
+        // V-4 Tur C (Kural 2): fire-and-forget kalir, ama kayip sinyal iz birakir.
+        tasteSignals.recordDetailView(id, accumulatedMs).catch((err: unknown) => {
+          Sentry.captureException(err, {
+            level: 'warning',
+            tags: { component: 'FilmDetail', flow: 'recordDetailView' },
+            extra: { film_id: id, duration_ms: accumulatedMs },
+          });
+        });
       }
     };
   }, [id]);
@@ -547,7 +554,17 @@ export default function FilmDetailScreen() {
     const url = youtubeKey
       ? `https://www.youtube.com/watch?v=${youtubeKey}`
       : film?.trailerUrl ?? null;
-    if (url) Linking.openURL(url).catch(() => {});
+    if (!url) return;
+    // V-4 Tur C (Kural 2): acilamayan link kullaniciya soylenir. `url`
+    // Sentry'ye gider — YouTube/fragman adresi, anahtar tasimaz.
+    Linking.openURL(url).catch((err: unknown) => {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { component: 'FilmDetail', flow: 'openTrailer' },
+        extra: { film_id: id, url },
+      });
+      Alert.alert(t('errors.openLink'));
+    });
   };
 
   const handleAddToWatchlist = async () => {
@@ -558,6 +575,8 @@ export default function FilmDetailScreen() {
       setWatchlistAdded(true);
       setIsInWatchlist(true);
     } catch {
+      // Servis katmani (`logger.error`) hatayi Sentry'ye yazdi — burada
+      // ikinci event uretilmez; kullaniciya bildirilir.
       Alert.alert(t('errors.watchlistSave'));
     }
   };
