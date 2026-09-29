@@ -74,9 +74,15 @@ export const BLEED_ALPHA = 0.3;
  * birebir eşleşmeli — biri değişirse diğeri kırılır.
  */
 export const type = {
-  'display-xl': { fontFamily: 'ArchivoExpanded_700Bold', fontSize: 40, lineHeight: 44, letterSpacing: -2 },
-  'display-l': { fontFamily: 'ArchivoExpanded_700Bold', fontSize: 30, lineHeight: 34, letterSpacing: -1.5 },
-  'display-m': { fontFamily: 'ArchivoExpanded_600SemiBold', fontSize: 22, lineHeight: 26, letterSpacing: -1 },
+  /**
+   * V-4 Tur B: letterSpacing em oranından pt'ye çevrildi (V-2 Tur C'deki
+   * `meta` birim hatasının aynısı). §3.3 −2% / −1.5% / −1%:
+   * 40 × −0.02 = −0.8 · 30 × −0.015 = −0.45 · 22 × −0.01 = −0.22.
+   * Eski değerler (−2 / −1.5 / −1) oranı mutlak pt sanıp harfleri eziyordu.
+   */
+  'display-xl': { fontFamily: 'ArchivoExpanded_700Bold', fontSize: 40, lineHeight: 44, letterSpacing: -0.8 },
+  'display-l': { fontFamily: 'ArchivoExpanded_700Bold', fontSize: 30, lineHeight: 34, letterSpacing: -0.45 },
+  'display-m': { fontFamily: 'ArchivoExpanded_600SemiBold', fontSize: 22, lineHeight: 26, letterSpacing: -0.22 },
 
   title: { fontFamily: Theme.fonts.inter, fontWeight: '600', fontSize: 20, lineHeight: 24, letterSpacing: -0.4 },
   body: { fontFamily: Theme.fonts.inter, fontWeight: '400', fontSize: 17, lineHeight: 24, letterSpacing: -0.2 },
@@ -88,11 +94,11 @@ export const type = {
    * V-2 Tur C: letterSpacing 2 → 0.24. §3.3 "+2%" bir em oranıdır
    * (12 × 0.02 = 0.24pt); RN `letterSpacing` ise mutlak pt alır. 2pt, zaten
    * geniş olan monospace'te "1994 · 142min"i harf harf dağıtıyordu (cihaz
-   * testi). `meta-strong` aynı birim hatasını taşır — bugün tüketicisi yok,
-   * bu turun kapsamı dışında bırakıldı.
+   * testi). `meta-strong` aynı birim hatasını taşıyordu — V-4 Tur B'de
+   * düzeltildi (2 → 0.24).
    */
   meta: { fontFamily: 'MartianMono_400Regular', fontSize: 12, lineHeight: 16, letterSpacing: 0.24 },
-  'meta-strong': { fontFamily: 'MartianMono_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 2 },
+  'meta-strong': { fontFamily: 'MartianMono_600SemiBold', fontSize: 12, lineHeight: 16, letterSpacing: 0.24 },
 
   /**
    * V-3 Tur G1 (G1): bağlam pill'inin büyük harfli, harf aralıklı özeti.
