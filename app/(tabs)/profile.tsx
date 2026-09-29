@@ -388,6 +388,8 @@ interface SettingsModalProps {
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
+  /** `users.archetype_id` dolu mu — değilse "Share My Archetype" satırı çizilmez. */
+  canShareArchetype: boolean;
   onShareArchetype: () => void;
   onSignOut: () => void;
   /** Hesap silme akışını başlatır — iki aşamalı onay */
@@ -415,6 +417,7 @@ function SettingsModal({
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
+  canShareArchetype,
   onShareArchetype,
   onSignOut,
   onDeleteAccount,
@@ -593,19 +596,24 @@ function SettingsModal({
               tek giris kaldi: yukaridaki abonelik satiri + Profile'daki
               "Chosy Pro" CTA'si (ikisi de `offerings.current`). */}
 
-          {/* Share My Archetype */}
-          <TouchableOpacity
-            style={settingsModalStyles.row}
-            onPress={() => { onClose(); onShareArchetype(); }}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.shareArchetype')}>
-            <View style={settingsModalStyles.rowLeft}>
-              <Ionicons name="share-social-outline" size={16} color={color.text.secondary} />
-              <Text style={settingsModalStyles.rowLabel}>{t('profile.shareArchetype')}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
-          </TouchableOpacity>
+          {/* Share My Archetype — kaynak `users.archetype_id` (emekli quiz,
+              R-12), Cinema DNA degil. Arketipi olmayan kullanicida satir
+              cizilmez: aksi halde varsayilan "Mystery Cinephile" paylasilirdi
+              (30 Eyl 2026, arketip hero kartiyla ayni kural). */}
+          {canShareArchetype && (
+            <TouchableOpacity
+              style={settingsModalStyles.row}
+              onPress={() => { onClose(); onShareArchetype(); }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('profile.shareArchetype')}>
+              <View style={settingsModalStyles.rowLeft}>
+                <Ionicons name="share-social-outline" size={16} color={color.text.secondary} />
+                <Text style={settingsModalStyles.rowLabel}>{t('profile.shareArchetype')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={color.text.secondary} />
+            </TouchableOpacity>
+          )}
 
           {/* Çıkış yap — yalnızca oturum açmış kullanıcılar */}
           {!isAnonymous && (
@@ -1761,6 +1769,7 @@ function ProfileScreenContent() {
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}
+        canShareArchetype={archetypeId != null}
         onShareArchetype={() => void handleShareArchetype()}
         onSignOut={handleSignOut}
         onDeleteAccount={handleDeleteAccount}
