@@ -2876,3 +2876,65 @@ hafıza kaydı "iki anahtar kuşağı" (Vault `cron_service_role_key`).
    kararı). Bir `color.feedback.danger` token'ı Design OS kararı ister.
 5. TR `profile.watchlistSummaryCount` / `watchlistSummaryEmpty`: "Izleme
    Listesi" — noktasız büyük I (İ olmalı). Metin turu, bu turda değişmedi.
+
+> **Güncelleme (30 Eyl 2026):** CTO kararı — v1'de DNA vaadi yok, kart gizli,
+> boru hattı v1.1. Ön koşullar ve son tarih aşağıdaki kayıtta.
+
+---
+
+## 🟡 Cinema DNA boru hattı — v1.1 ön koşulları (30 Eyl 2026)
+
+**Durum:** Profile'daki Cinema DNA bölümü ve okuması `isCinemaDnaEnabled()`
+(`constants/config.ts`, şu an `false`) arkasında; kapalıyken `sessions` ve
+`watchlist` sorguları atılmıyor. Bileşen (`components/Profile/TasteDNA/`) ve
+servis (`services/profileService.ts`) silinmedi. Plus/paywall metinlerinden
+DNA / "taste evolves" vaadi çıkarıldı (bible v1.33, K-47). Kanıt: keşif raporu
+`docs/investigations/K32_TASTE_VECTOR_KESIF.md` (`cf97732`).
+
+**Son tarih: ilk kohortun 7. akşamı** — v1 mağaza yayın günü + 6. akşam. D-06
+yüzdeyi ≥7 tamamlanmış gauntlet'e bağlıyor; en erken o akşam bir kullanıcı
+eşiği geçebilir, o ana kadar hat canlı ve geçmiş doldurulmuş olmalı.
+⚠️ Mağaza yayın tarihi repoda kayıtlı değil. `app_config.launch_date =
+2026-09-18` **editoryal takvim başlangıcıdır**, mağaza yayını değil (ölçüm
+30 Eyl: tüm zamanlarda 15 kişisel gauntlet satırı, tamamlanmış gauntlet'i olan
+11 kullanıcı, kullanıcı başına en fazla 3). Yayın günü belli olunca tarih buraya
+yazılır.
+
+**Ön koşullar (sıra önemli):**
+
+1. **Vault anahtarı.** `cron_service_role_key` "Unregistered API key" (401)
+   dönüyor. Ölçüm (29 Eyl 21:xx UTC): 4 aktif cron'un 3'ü bu anahtarı
+   kullanıyor (`global-slot-daily`, `weekly-trending-sync`,
+   `profile-missing-films`); `cron.job_run_details` bunları `succeeded`
+   gösteriyor çünkü yalnız `net.http_post`'un kuyruğa alınmasını ölçüyor.
+   `net._http_response` yalnız 1 yanıt tutuyordu: 2026-09-29 00:05,
+   `global-slot-daily` saatiyle eşleşen **401**. Diğer iki job'un HTTP sonucu
+   saklama süresi dışında — aynı anahtarı kullandıkları için muhtemelen 401,
+   **doğrulanmadı**. Son 10 günde `scope='global'` `daily_gauntlets` satırı 0.
+   Tetikleyici cron olacaksa bu önce çözülür.
+2. **Tetikleyici kararı (CTO).** A cron / B `submit-choice` sonrası / ikisi.
+   B, `watch_feedback`'i kapsamaz (`submit-watch-feedback` ayrı). Edge→Edge
+   çağrı deseni repoda yok — yeni pattern.
+3. **Tek güven tanımı (CTO, kilitli sözleşme).** `generate-gauntlet` tüm
+   `choice_events` / 18; `recompute-taste-vector` yalnız `choice` + feedback /
+   50. `DailyGauntlet.userConfidence` (`types/gauntlet.ts:70`) birini seçmeli.
+4. **Canlı bundle ↔ repo farkı.** Fonksiyon 07.08'de deploy edildi,
+   `_shared/gameUtils.ts` 12.08'de değişti; indirip diff alınmadan
+   çağrılmamalı (bkz. "deploy durumu bible'dan okunmaz").
+5. **Geçmiş doldurma.** Bir kez `full` mod. Yan etki: satırı olmayan her
+   kullanıcıya `cinema_dna` satırı açar (~278; dondurulmuş hub `useCinemaDna`
+   okur). Atomik değil, tekrar çalıştırılabilir.
+6. **Kart veri kaynağı.** `sessions.parsed_profile_json` → `cinema_dna`.
+   `getLastParsedProfile` hatayı sessizce `null`'a indiriyor (kural 1) —
+   kart ondan koparken düzelir.
+7. **D-06 eşiği + metin.** ≥7 tamamlanmış gauntlet sayımı ve *"Your Cinema DNA
+   is forming"* için locale key yok (EN/TR).
+8. **K-32 anlatı katmanı.** 384 boyutlu `taste_vector` → K-30'un 6 ekseni →
+   cümle. Repoda yok; yeni pattern (CTO).
+9. **Açılış.** `isCinemaDnaEnabled` `app_config`'e lazy getter olarak taşınır
+   (kural 5); K-47 Identity değeri ancak özellik görünür olduğunda geri döner
+   (R-16). `contextPaywall.moodHistoryTitle` hâlâ "Unlock Your Mood History"
+   (mood-search dili) — kart dönmeden önce metin turu.
+
+**Kapanış koşulu:** 1–8 yapılmış, bayrak açık, D-06 eşiğini geçen gerçek bir
+kullanıcıda `cinema_dna.user_confidence > 0` ölçülmüş.
