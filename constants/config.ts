@@ -23,3 +23,15 @@ export const RC_IOS_API_KEY = process.env.EXPO_PUBLIC_RC_IOS_KEY ?? '';
 
 /** RevenueCat Android API anahtarı */
 export const RC_ANDROID_API_KEY = process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '';
+
+/**
+ * Cinema DNA (Profile kartı + okuması) v1'de KAPALI — CTO kararı, 30 Eyl 2026.
+ * Kart `cinema_dna` değil mood-search dönemi `sessions` tablosunu okuyor ve
+ * `recompute-taste-vector` hiçbir yerden tetiklenmiyor; açık bırakmak var
+ * olmayan bir özelliği vaat etmek olurdu. Boru hattı v1.1 — ön koşullar
+ * `docs/TEKNIK_BORC.md`. Bileşen ve servis SİLİNMEDİ.
+ *
+ * Getter biçimi CLAUDE.md kural 5 gereği: v1.1'de `app_config`'e
+ * taşındığında çağıran taraf değişmez.
+ */
+export const isCinemaDnaEnabled = (): boolean => false;

@@ -8,7 +8,7 @@
  *
  * Aktif section'lar:
  *  1. Profile Header (avatar + isim + auth rozeti)
- *  2. Cinema DNA (son profil ozeti)
+ *  2. Cinema DNA (son profil ozeti) — v1'de gizli, `isCinemaDnaEnabled`
  *  3. Watched (watch_feedback sayisi)
  *  4. Saved (watchlist ozeti)
  *  5. Membership
@@ -78,6 +78,7 @@ import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { hapticLight, hapticSelection } from '@/utils/haptics';
+import { isCinemaDnaEnabled } from '@/constants/config';
 import TasteDNA from '@/components/Profile/TasteDNA';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
@@ -872,8 +873,11 @@ function ProfileScreenContent() {
       // Faz 1: Kritik veriler (üst kısımda görünen)
       // V-2 Tur E1: `daily_pick_enabled` / `watchlist_notifications_enabled`
       // artik okunmuyor (K-15 tek switch). Kolonlar silinmedi — TEKNIK_BORC.
+      // Cinema DNA v1'de kapali (`isCinemaDnaEnabled`, CTO 30 Eyl 2026):
+      // kapaliyken `sessions` ve `watchlist` okumalari hic atilmaz.
+      const dnaEnabled = isCinemaDnaEnabled();
       const [profileData, pushStatus] = await Promise.all([
-        getLastParsedProfile(userId),
+        dnaEnabled ? getLastParsedProfile(userId) : Promise.resolve(null),
         getNotificationStatus(),
       ]);
       setNotificationsEnabled(pushStatus);
@@ -881,8 +885,10 @@ function ProfileScreenContent() {
       setLastProfile(profileData);
 
       // Faz 2: İkincil veriler (aşağıda, lazy)
-      const insightsData = await getSwipeInsights(userId);
-      setSwipeInsights(insightsData);
+      if (dnaEnabled) {
+        const insightsData = await getSwipeInsights(userId);
+        setSwipeInsights(insightsData);
+      }
 
       // Watched sayisi (non-blocking, CTO D6: kaynak `watch_feedback`).
       // Izlendi sayilan yanitlar: loved · ok · abandoned (filme baslanmis).
@@ -1494,27 +1500,34 @@ function ProfileScreenContent() {
                 bible §7.3 Rank ve Radar'i donduruyor, profilde tek DNA bolumu
                 kalir. Bilesen dosyasi silinmedi.
                 Paywall sarmalayicisi yalnizca `free`'de: `loading`'de dokunus
-                paywall acmaz (V-1 Tur 2). */}
-            <SectionHeading title={t('profile.tasteDNA')} />
-            {premiumStatus === 'free' ? (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                onPress={() => triggerPaywall({ type: 'mood_history_tap' })}
-              >
-                <TasteDNA
-                  profile={lastProfile}
-                  insights={swipeInsights}
-                  loading={loading}
-                  archetypeId={archetypeId}
-                />
-              </TouchableOpacity>
-            ) : (
-              <TasteDNA
-                profile={lastProfile}
-                insights={swipeInsights}
-                loading={loading}
-                archetypeId={archetypeId}
-              />
+                paywall acmaz (V-1 Tur 2).
+                v1'de GIZLI (`isCinemaDnaEnabled`, CTO 30 Eyl 2026): kart
+                `cinema_dna` okumuyor ve DNA boru hatti tetiklenmiyor. Gizliyken
+                K-46 ekindeki `mood_history` girisi de fiilen kapali. */}
+            {isCinemaDnaEnabled() && (
+              <>
+                <SectionHeading title={t('profile.tasteDNA')} />
+                {premiumStatus === 'free' ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => triggerPaywall({ type: 'mood_history_tap' })}
+                  >
+                    <TasteDNA
+                      profile={lastProfile}
+                      insights={swipeInsights}
+                      loading={loading}
+                      archetypeId={archetypeId}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <TasteDNA
+                    profile={lastProfile}
+                    insights={swipeInsights}
+                    loading={loading}
+                    archetypeId={archetypeId}
+                  />
+                )}
+              </>
             )}
 
             {/* K-07: Badge / Collections UI kaldirildi. `CollectionsCard`
