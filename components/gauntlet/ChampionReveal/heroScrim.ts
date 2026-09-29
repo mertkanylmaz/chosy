@@ -5,6 +5,11 @@
  * erir (gradient YALNIZ alfa değiştirir, renk sabit `ink` — sRGB karışımında
  * ara renk üretmez). Etiket + başlık bloğu geçişin üstüne biner.
  *
+ * V-4 Tur A (V4-D2, V4-D3): geçişin BİTTİĞİ renk sayfa zemininin kendisi —
+ * `ink`, alfa 1. TestFlight 906'daki sert kenar, sayfanın `ink` + şampiyon
+ * ışık sızması olmasından çıkıyordu; şampiyonda sızma kapatıldı
+ * (`GauntletShell`), zemin saf `ink`.
+ *
  * Kontrast (≥ 4.5:1) en kötü durum için ölçülür: bloğun başladığı satırın
  * arkasında SAF BEYAZ poster pikseli. Gerçek afişlerin hepsi (açık posterler
  * dahil, ör. Forrest Gump) bu sınırın altında kalır. Ölçüm Deno testinde:
@@ -17,8 +22,8 @@
 /** Hero yüksekliği / pencere yüksekliği. */
 export const HERO_HEIGHT_RATIO = 0.6;
 
-/** Geçişin kapladığı pay — hero'nun alt yarısı. */
-export const SCRIM_HEIGHT_RATIO = 0.5;
+/** Geçişin kapladığı pay — V-4 Tur A: hero'nun alt ~%35'i (eski 0.5). */
+export const SCRIM_HEIGHT_RATIO = 0.35;
 
 /**
  * Geçiş durakları: konum (geçiş içinde 0 → 1) ve `ink` opaklığı.
@@ -26,7 +31,7 @@ export const SCRIM_HEIGHT_RATIO = 0.5;
  */
 export const SCRIM_STOPS = [
   { at: 0, alpha: 0 },
-  { at: 0.5, alpha: 0.7 },
+  { at: 0.4, alpha: 0.8 },
   { at: 1, alpha: 1 },
 ] as const;
 
@@ -62,41 +67,25 @@ export function scrimAlphaAt(t: number): number {
   return alphaInStops(SCRIM_STOPS, t);
 }
 
-// ─── V-3 referans uyumu: etiket hero'nun TEPESİNDE ───────────────────────────
+// ─── Üst geçiş — V-4 Tur A (V4-D2) ───────────────────────────────────────────
 //
-// "TONIGHT'S FILM" posterin üst kenarına, güvenli alanın altına taşındı.
-// Posterin tepesi herhangi bir renkte olabilir → üstten `ink`'e ikinci bir
-// alfa geçişi (alttakiyle aynı ilke: renk sabit, yalnız alfa). Durum çubuğu
-// ikonları da aynı geçişten okunurluk kazanır.
+// Etiket hero'dan ÇIKTI (TestFlight 906: "YOUR FIRST FILM" posterin basılı
+// başlığının üstüne biniyordu); artık alt blokta, başlığın hemen üstünde.
+// Üst geçiş yalnız durum çubuğunu ve posterin tepesini yumuşatır — posterin
+// basılı başlığı ne olursa olsun. Aynı ilke: renk sabit `ink`, yalnız alfa.
 
-/** Üst geçişin yüksekliği (pt), hero'nun tepesinden aşağı. */
-export const TOP_SCRIM_HEIGHT = 160;
+/** Üst geçişin kapladığı pay — hero'nun üst %25'i. */
+export const TOP_SCRIM_HEIGHT_RATIO = 0.25;
 
-/** Üst geçiş durakları — tepeden (0) aşağı (1). Etiket satırı ~0.4–0.6'da. */
+/** Üst geçiş durakları — tepeden (0) aşağı (1): `ink`@55% → şeffaf. */
 export const TOP_SCRIM_STOPS = [
-  { at: 0, alpha: 0.85 },
-  { at: 0.6, alpha: 0.8 },
+  { at: 0, alpha: 0.55 },
   { at: 1, alpha: 0 },
 ] as const;
-
-/** Etiketin güvenli alanın ne kadar altından başladığı (pt) — `space.base`. */
-export const KICKER_TOP_GAP = 16;
-
-/** Etiket satır yüksekliği (pt) — `type['label-caps'].lineHeight`. */
-export const KICKER_LINE_HEIGHT = 16;
 
 /** Üst geçiş içindeki konumda (`t` ∈ [0, 1]) `ink` opaklığı. */
 export function topScrimAlphaAt(t: number): number {
   return alphaInStops(TOP_SCRIM_STOPS, t);
-}
-
-/**
- * Etiket satırının ALT kenarındaki `ink` opaklığı — satırın en şeffaf noktası
- * (geçiş aşağı doğru açılıyor), yani kontrastın en kötü olduğu yer.
- */
-export function alphaAtKickerBottom(topInset: number): number {
-  const kickerBottom = topInset + KICKER_TOP_GAP + KICKER_LINE_HEIGHT;
-  return topScrimAlphaAt(kickerBottom / TOP_SCRIM_HEIGHT);
 }
 
 /** Verilen pencere yüksekliğinde etiket bloğunun başladığı satırdaki `ink` opaklığı. */

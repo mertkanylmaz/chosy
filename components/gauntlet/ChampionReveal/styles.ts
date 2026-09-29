@@ -40,29 +40,19 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: color.surface.raised,
   },
-  /** C1: geçiş hero'nun alt yarısında (SCRIM_HEIGHT_RATIO = 0.5). */
+  /** C1: alt geçiş — yükseklik inline (hero × SCRIM_HEIGHT_RATIO, V-4: 0.35). */
   scrim: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    height: '50%',
   },
-  /**
-   * V-3 referans uyumu: etiketin arkasındaki üst geçiş (heroScrim.ts
-   * TOP_SCRIM_*). Yükseklik inline.
-   */
+  /** V-4 Tur A: posterin üst geçişi (heroScrim.ts TOP_SCRIM_*). Yükseklik inline. */
   topScrim: {
     position: 'absolute',
     left: 0,
     right: 0,
     top: 0,
-  },
-  /** Etiket hero'nun tepesinde — `top` inline (güvenli alan + KICKER_TOP_GAP). */
-  kickerOnHero: {
-    position: 'absolute',
-    left: space.lg,
-    right: space.lg,
   },
   body: {
     alignItems: 'center',
@@ -79,7 +69,7 @@ export const styles = StyleSheet.create({
     color: color.text.primarySoft,
     textAlign: 'center',
   },
-  /** Reduce Transparency / bayat gösterge: etiket başlığın üstünde (G2 yerleşimi). */
+  /** V-4 Tur A (V4-D2): etiket her durumda başlığın hemen üstünde. */
   kickerInBody: {
     marginBottom: space.sm,
   },

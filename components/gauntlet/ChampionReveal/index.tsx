@@ -52,7 +52,6 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BookmarkSimple, FilmSlate, Play, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
@@ -87,10 +86,10 @@ import { orderProviders } from '@/utils/watchProviderList';
 
 import {
   HERO_HEIGHT_RATIO,
-  KICKER_TOP_GAP,
+  SCRIM_HEIGHT_RATIO,
   SCRIM_STOPS,
   TITLE_OVERLAP,
-  TOP_SCRIM_HEIGHT,
+  TOP_SCRIM_HEIGHT_RATIO,
   TOP_SCRIM_STOPS,
 } from './heroScrim';
 import { styles } from './styles';
@@ -106,7 +105,10 @@ const SCRIM_COLORS = SCRIM_STOPS.map((s) => withAlpha(color.surface.base, s.alph
 ];
 const SCRIM_LOCATIONS = SCRIM_STOPS.map((s) => s.at) as [number, number, ...number[]];
 
-/** V-3 referans uyumu: etiketin arkasındaki üst geçiş — aynı ilke, ters yön. */
+/**
+ * V-4 Tur A (V4-D2): posterin tepesindeki üst geçiş — aynı ilke, ters yön.
+ * Metin taşımaz; durum çubuğunu ve posterin basılı başlığını yumuşatır.
+ */
 const TOP_SCRIM_COLORS = TOP_SCRIM_STOPS.map((s) =>
   withAlpha(color.surface.base, s.alpha),
 ) as [string, string, ...string[]];
@@ -169,12 +171,6 @@ interface ChampionRevealProps {
    * ilk filmi. Yalnız etiketi değiştirir; davranış aynı.
    */
   cycle?: CycleMode;
-  /**
-   * V-3 referans uyumu: hero'nun tepesinde başka bir bildirim (K-42 bayat
-   * göstergesi) varsa etiket oraya ÇIKMAZ, başlığın üstünde kalır — iki
-   * metin aynı satıra binmesin. Yalnız yerleşimi değiştirir.
-   */
-  topNoticeVisible?: boolean;
 }
 
 /** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
@@ -188,7 +184,6 @@ export function ChampionReveal({
   rounds,
   gauntletId,
   cycle = 'current',
-  topNoticeVisible = false,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language, region } = useLanguage();
   const router = useRouter();
@@ -197,13 +192,9 @@ export function ChampionReveal({
   const reduceTransparency = useReduceTransparency();
   const { height: windowHeight } = useWindowDimensions();
   const heroHeight = Math.round(windowHeight * HERO_HEIGHT_RATIO);
-  const insets = useSafeAreaInsets();
-  /**
-   * V-3 referans uyumu: etiket hero'nun tepesinde. Reduce Transparency'de
-   * geçiş çizilmez → poster üstünde kontrast garanti edilemez, etiket
-   * başlığın üstünde (düz `ink`) kalır. Bayat göstergeyle de aynı kural.
-   */
-  const kickerOnHero = !reduceTransparency && !topNoticeVisible;
+  /** V-4 Tur A: geçişler hero'ya oranlı — alt ~%35, üst %25 (heroScrim.ts). */
+  const scrimHeight = Math.round(heroHeight * SCRIM_HEIGHT_RATIO);
+  const topScrimHeight = Math.round(heroHeight * TOP_SCRIM_HEIGHT_RATIO);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   /** C2e: dort durum - loading / ok / empty / error. */
@@ -510,10 +501,12 @@ export function ChampionReveal({
             />
           )}
         </TouchableOpacity>
-        {kickerOnHero && (
+        {/* Reduce Transparency: iki geçiş de çizilmez — poster sert kenarla
+            biter, altı düz `ink` (C1 davranışı korunur). */}
+        {!reduceTransparency && (
           <LinearGradient
             pointerEvents="none"
-            style={[styles.topScrim, { height: TOP_SCRIM_HEIGHT }]}
+            style={[styles.topScrim, { height: topScrimHeight }]}
             colors={TOP_SCRIM_COLORS}
             locations={TOP_SCRIM_LOCATIONS}
           />
@@ -521,36 +514,22 @@ export function ChampionReveal({
         {!reduceTransparency && (
           <LinearGradient
             pointerEvents="none"
-            style={styles.scrim}
+            style={[styles.scrim, { height: scrimHeight }]}
             colors={SCRIM_COLORS}
             locations={SCRIM_LOCATIONS}
           />
         )}
       </Animated.View>
 
-      {/* V-3 referans uyumu: etiket hero'nun tepesinde, güvenli alanın altında.
-          Hero'nun kardeşi (içinde değil) — hero VoiceOver'dan gizli, etiket
-          okunur ve sıra etiket → başlık olarak kalır. */}
-      {kickerOnHero && (
-        <Animated.View
-          style={[styles.kickerOnHero, { top: insets.top + KICKER_TOP_GAP }, titleStyle]}
-          pointerEvents="none"
-        >
-          <Text style={styles.kicker} accessibilityLabel={kickerText}>
-            {kickerText.toLocaleUpperCase(language)}
-          </Text>
-        </Animated.View>
-      )}
-
       {/* C3: blok geçişin üstüne biner (kontrast ölçümü heroScrim.ts). Reduce
           Transparency'de geçiş yok — blok posterin ALTINDA, düz ink üstünde. */}
       <View style={[styles.body, { marginTop: reduceTransparency ? space.lg : -TITLE_OVERLAP }]}>
         <Animated.View style={titleStyle}>
-          {!kickerOnHero && (
-            <Text style={[styles.kicker, styles.kickerInBody]} accessibilityLabel={kickerText}>
-              {kickerText.toLocaleUpperCase(language)}
-            </Text>
-          )}
+          {/* V-4 Tur A (V4-D2): etiket HER ZAMAN burada, serif başlığın hemen
+              üstünde — posterin basılı başlığına binmez (TestFlight 906). */}
+          <Text style={[styles.kicker, styles.kickerInBody]} accessibilityLabel={kickerText}>
+            {kickerText.toLocaleUpperCase(language)}
+          </Text>
           {/* C8: deterministik kademe, runtime autoscale YOK. VoiceOver TAM
               basligi duyar — gorsel kisaltma bilgi eksiltmez (K-54). */}
           <Text

@@ -42,7 +42,6 @@ import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
 import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import {
-  BLACKOUT_SEQUENCE,
   CHAMPION_HAPTIC_DELAY,
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
@@ -346,13 +345,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [isStale, setIsStale] = useState(false);
   const [choiceFrozen, setChoiceFrozen] = useState(false);
-  /**
-   * G11: şampiyonun sızması AÇIK mı. Kara boşluk (§7.3) sırasında sızma
-   * KAPALI kalır — 120ms tam karanlık bir KESME'dir ve içinde renk olamaz.
-   * Poster belirmeye başladığı anda (blackout + pause) açılır, `LightBleed`
-   * kendi 600ms lineer eğrisiyle yükselir. Resume yolunda beklemeden açılır.
-   */
-  const [championBleedArmed, setChampionBleedArmed] = useState(false);
 
   const shellStateRef = useRef(shellState);
   shellStateRef.current = shellState;
@@ -364,7 +356,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const bleedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
@@ -735,7 +726,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (hapticTimerRef.current) clearTimeout(hapticTimerRef.current);
       if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
-      if (bleedTimerRef.current) clearTimeout(bleedTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1342,62 +1332,24 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     setChampionPrompt('none');
   }, []);
 
-  // ── Işık sızması (G11) ─────────────────────────────────────────────────────
-
-  /**
-   * Şampiyon sızmasının zamanlaması. Canlı finalde kara boşluk boyunca
-   * KAPALI, poster belirmeye başladığında açılır; resume'da hemen açık.
-   */
-  useEffect(() => {
-    if (shellState !== 'completed_today' || !champion) {
-      setChampionBleedArmed(false);
-      return;
-    }
-    if (!animateReveal) {
-      setChampionBleedArmed(true); // resume: dizi oynamaz, sızma hemen var
-      return;
-    }
-    setChampionBleedArmed(false); // kara boşluk: KESME, renk yok
-    const at = BLACKOUT_SEQUENCE.blackout + BLACKOUT_SEQUENCE.pause;
-    bleedTimerRef.current = setTimeout(() => {
-      if (mountedRef.current) setChampionBleedArmed(true);
-    }, at);
-    return () => {
-      if (bleedTimerRef.current) clearTimeout(bleedTimerRef.current);
-    };
-  }, [shellState, champion, animateReveal]);
+  // ── Işık sızması ───────────────────────────────────────────────────────────
 
   /**
    * Sızmayı süren renk — DURUMA göre tek karar noktası.
    *   ready / in_progress → defender (çiftin rengi, §5 CTO kararı 15.08.2026)
-   *   champion            → şampiyon filminin rengi (G11)
-   *   diğer tüm dallar    → renksiz (film yok, §5.2 fallback: 'ink')
+   *   diğer tüm dallar    → renksiz (§5.2 fallback: 'ink')
    *
-   * Geçişte önceki turun rengi TAŞINMAZ: champion dalına girildiği anda
-   * `championBleedArmed` false'tur ve `undefined` dönülür — `LightBleed`
-   * opaklığı animasyonsuz sıfırlar, yani kesme temiz olur.
+   * V-4 Tur A (V4-D3, kurucu onayı 29.09.2026): şampiyonda sızma KAPALI.
+   * TestFlight 906'da şampiyon zemini film rengiyle belirgin lacivertleşiyor,
+   * hero'nun `ink`'e biten geçişi bu tintli zeminde sert kenar bırakıyordu.
+   * Şampiyon zemini artık saf `ink` — hero geçişiyle birebir. G11'in
+   * zamanlama durumu (kara boşluk sonrası açılış) bununla birlikte kalktı;
+   * renksiz dala geçişte `LightBleed` opaklığı animasyonsuz sıfırlar.
    */
   let bleedColor: OklchColor | undefined;
-  if (shellState === 'completed_today' && champion) {
-    bleedColor = championBleedArmed ? champion.dominantColor : undefined;
-  } else if (shellState === 'ready' || shellState === 'in_progress') {
+  if (shellState === 'ready' || shellState === 'in_progress') {
     bleedColor = defenderFilm?.dominantColor;
   }
-
-  /**
-   * Şampiyonun rengi yoksa zemin nötr kalır — bu sessiz bir boşluk DEĞİL,
-   * `films.dominant_color` hesaplanmamış demektir ve iz bırakması gerekir
-   * (§5.2 `fallback: 'ink'` + K-44).
-   */
-  useEffect(() => {
-    if (!championBleedArmed || !champion || champion.dominantColor) return;
-    Sentry.addBreadcrumb({
-      category: 'gauntlet.bleed',
-      message: 'champion dominant_color yok — zemin nötr',
-      level: 'info',
-      data: { film_id: champion.id },
-    });
-  }, [championBleedArmed, champion]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -1536,7 +1488,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
               cycle={cycleModeRef.current}
-              topNoticeVisible={isStale}
             />
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına

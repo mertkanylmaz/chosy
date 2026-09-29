@@ -13,7 +13,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.t
 
 import {
   MIN_WINDOW_HEIGHT,
-  alphaAtKickerBottom,
+  SCRIM_STOPS,
   alphaAtOverlapStart,
   scrimAlphaAt,
   topScrimAlphaAt,
@@ -33,11 +33,19 @@ function worstCaseContrast(windowHeight: number, text: string, textAlpha: number
 
 Deno.test('scrimAlphaAt: duraklarda ve ara değerde doğru', () => {
   assertEquals(scrimAlphaAt(0), 0)
-  assertEquals(scrimAlphaAt(0.5), 0.7)
+  assertEquals(scrimAlphaAt(0.4), 0.8)
   assertEquals(scrimAlphaAt(1), 1)
-  assertEquals(scrimAlphaAt(0.75), 0.85)
+  assertEquals(scrimAlphaAt(0.2), 0.4)
   assertEquals(scrimAlphaAt(-1), 0)
   assertEquals(scrimAlphaAt(2), 1)
+})
+
+// V-4 Tur A (V4-D2): geçiş sayfa zemininde (`ink`, alfa 1) BİTER — aksi
+// halde poster alt kenarında sert çizgi kalır (TestFlight 906).
+Deno.test('alt geçiş tam opak ink ile biter', () => {
+  const last = SCRIM_STOPS[SCRIM_STOPS.length - 1]
+  assertEquals(last.at, 1)
+  assertEquals(last.alpha, 1)
 })
 
 // Ölçülen cihaz yükseklikleri: SE1 568, SE2/3 667, Pro Max 932.
@@ -45,8 +53,8 @@ for (const h of [MIN_WINDOW_HEIGHT, 667, 932]) {
   Deno.test(`kontrast ≥ 4.5 — pencere ${h}pt, saf beyaz poster`, () => {
     const alpha = alphaAtOverlapStart(h)
     const title = worstCaseContrast(h, palette.bone, 1)
-    // Reduce Transparency / bayat göstergede etiket yine bloğun EN ÜST
-    // satırında durabilir — `bone@80%` (color.text.primarySoft).
+    // V-4 Tur A: etiket her zaman bloğun EN ÜST satırında — `bone@80%`
+    // (color.text.primarySoft).
     const kicker = worstCaseContrast(h, palette.bone, 0.8)
     console.log(
       `  ${h}pt: ink alfa ${alpha.toFixed(3)} · başlık ${title.toFixed(2)}:1 · etiket ${kicker.toFixed(2)}:1`,
@@ -57,23 +65,10 @@ for (const h of [MIN_WINDOW_HEIGHT, 667, 932]) {
 }
 
 Deno.test('topScrimAlphaAt: duraklarda ve dışında doğru', () => {
-  assertEquals(topScrimAlphaAt(0), 0.85)
-  assertEquals(topScrimAlphaAt(0.6), 0.8)
+  // V-4 Tur A: posterin üst %25'i, `ink`@55% → şeffaf. Etiket artık hero'da
+  // değil; üst geçiş metin taşımadığı için kontrast testi yok.
+  assertEquals(topScrimAlphaAt(0), 0.55)
   assertEquals(topScrimAlphaAt(1), 0)
-  assertEquals(topScrimAlphaAt(-1), 0.85)
+  assertEquals(topScrimAlphaAt(-1), 0.55)
   assertEquals(topScrimAlphaAt(2), 0)
 })
-
-// V-3 referans uyumu: etiket hero'nun tepesinde. En kötü durum etiket
-// satırının ALT kenarı (geçiş aşağı açılıyor) + saf beyaz poster.
-// Güvenli alan üstü: SE 20 · çentik 47 · Dynamic Island 59 · 16 Pro 62.
-for (const inset of [20, 47, 59, 62]) {
-  Deno.test(`üst etiket kontrastı ≥ 4.5 — güvenli alan ${inset}pt, saf beyaz poster`, () => {
-    const alpha = alphaAtKickerBottom(inset)
-    const bg = compositeOver(WHITE, palette.ink, alpha)
-    const fg = compositeOver(bg, palette.bone, 0.8)
-    const ratio = contrastRatio(fg, bg)
-    console.log(`  inset ${inset}pt: ink alfa ${alpha.toFixed(3)} · etiket ${ratio.toFixed(2)}:1`)
-    assert(ratio >= WCAG_AA, `üst etiket ${ratio.toFixed(2)}:1 < 4.5`)
-  })
-}
