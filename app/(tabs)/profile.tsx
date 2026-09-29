@@ -1112,13 +1112,25 @@ function ProfileScreenContent() {
    *
    * Aşama 1: "Bu işlem geri alınamaz" uyarı Alert'i
    * Aşama 2: Kullanıcı "Kalıcı Olarak Sil" seçerse Edge Function çağrılır
+   *
+   * 29 Eyl 2026: premium kullanıcıya iki aşamada da Apple aboneliğinin
+   * hesap silinince DURMADIĞI söylenir — mağaza aboneliğini uygulama iptal
+   * edemez, yenilemeler sürer (Sentry: silinen hesapların RENEWAL'ları).
+   * Onay akışı ve silme mantığı aynı; yalnız metin.
    */
   function handleDeleteAccount(): void {
     void hapticLight();
 
+    const confirmMessage =
+      premiumStatus === 'premium'
+        ? t('profile.deleteAccountConfirmMessage') +
+          '\n\n' +
+          t('profile.deleteAccountAppleSubscriptionNote')
+        : t('profile.deleteAccountConfirmMessage');
+
     Alert.alert(
       t('profile.deleteAccountConfirmTitle'),
-      t('profile.deleteAccountConfirmMessage'),
+      confirmMessage,
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
@@ -1128,7 +1140,7 @@ function ProfileScreenContent() {
             // İkinci onay — çift güvence
             Alert.alert(
               t('profile.deleteAccountConfirmTitle'),
-              t('profile.deleteAccountDeleting') + '\n\n' + t('profile.deleteAccountConfirmMessage'),
+              t('profile.deleteAccountDeleting') + '\n\n' + confirmMessage,
               [
                 { text: t('common.cancel'), style: 'cancel' },
                 {

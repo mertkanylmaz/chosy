@@ -528,6 +528,7 @@
     "deleteAccountConfirmTitle": "Delete Account",
     "deleteAccountConfirmMessage": "This will permanently delete your account, watchlist, mood history, and all data. This action cannot be undone.",
     "deleteAccountConfirm": "Delete Permanently",
+    "deleteAccountAppleSubscriptionNote": "Your Apple subscription stays active. Cancel it in Settings first.",
     "versionLine": "Chosy %{version} (%{build})",
     "versionLineNoBuild": "Chosy %{version}",
     "deleteAccountDeleting": "Deleting account...",
