@@ -179,6 +179,39 @@ function nextChallengerForRound(round: 2 | 3, films: GauntletFilm[]): GauntletFi
   return film;
 }
 
+/**
+ * Tur 2 ve 3'ün gelecek rakiplerinin posterlerini ısıtır — mevcut boyutla
+ * (sunucunun verdiği w500), `nextChallengerForRound`'un okuyacağı aynı
+ * `films[2]`/`films[3]`. Rakip belirdiğinde iskelet yerine poster hazır olur.
+ *
+ * En iyi çaba: başarısız olursa PosterTile kendi yükleme/yeniden deneme
+ * yolunu izler. Sessiz değil — başarısızlık breadcrumb bırakır.
+ */
+function prefetchUpcomingChallengers(films: GauntletFilm[]): void {
+  const urls = [films[2], films[3]]
+    .map((f) => f?.posterUrl ?? '')
+    .filter((u) => u !== '');
+  if (urls.length === 0) return;
+  ExpoImage.prefetch(urls)
+    .then((ok) => {
+      if (ok) return;
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.poster',
+        message: 'gelecek rakip posterleri ön yüklenemedi',
+        level: 'warning',
+        data: { count: urls.length },
+      });
+    })
+    .catch((err: unknown) => {
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.poster',
+        message: 'gelecek rakip posterleri ön yükleme hatası',
+        level: 'warning',
+        data: { error: err instanceof Error ? err.message : String(err) },
+      });
+    });
+}
+
 /** Konum bias'ı (PRODUCT_OS §3.2): sol-sağ rastgele. */
 function orderPair(a: GauntletFilm, b: GauntletFilm): [GauntletFilm, GauntletFilm] {
   return Math.random() < 0.5 ? [a, b] : [b, a];
@@ -350,6 +383,13 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * oyunu sırasındaki reconnect / 401 / retry sabah bugünün satırını üretmesin.
    */
   const cycleModeRef = useRef<CycleMode>('current');
+  /**
+   * Son `submit` çağrısı seçimi K-42 kuyruğuna mı aldı? YALNIZ dokunma
+   * onayının geri alınıp alınmayacağını belirler (CTO kararı 29.09.2026:
+   * donukken vurgu kalır — kullanıcı hangi seçimin beklediğini görür).
+   * Kuyruk davranışı bu değere bakmaz.
+   */
+  const choiceQueuedRef = useRef(false);
   /** Analytics `cycle` etiketi için önceki döngü gauntlet'inin kimliği (3i). */
   const previousGauntletIdRef = useRef<string | null>(null);
 
@@ -466,6 +506,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         showLoadError(trigger, 'invariant_pair_missing');
         return;
       }
+
+      // Oynanacak tur var (ready ya da resume) — gelecek rakipleri ısıt.
+      prefetchUpcomingChallengers(g.films);
 
       if (p && p.status === 'in_progress' && p.completedRounds > 0) {
         // KESİN koşul: status==='in_progress' && completedRounds>0 → resume
@@ -869,6 +912,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     async (submission: ChoiceSubmission): Promise<ChoiceResult | null> => {
       setSubmitting(true);
       setActionError(null);
+      choiceQueuedRef.current = false;
       try {
         return await submitChoice(submission);
       } catch (err) {
@@ -883,6 +927,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
           // alınır ve ekran donar. Tur İLERLEMEZ: çağıran `null` görüp erken
           // döner, `progress` hâlâ yalnız sunucudan gelir (K-37 invariant'ı).
           void enqueuePendingChoice(submission);
+          choiceQueuedRef.current = true;
           setChoiceFrozen(true);
           setActionError(null);
         } else {
@@ -951,6 +996,17 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       const winner = side === 'left' ? pair.left : pair.right;
       void hapticLight();
       const latencyMs = measuredLatencyMs();
+      // Dokunma onayı (§7.1 Kesme, CTO kararı 29.09.2026): sunucu yanıtı
+      // yüzlerce ms ile birkaç saniye arası sürebilir (TestFlight 906: ~3 s);
+      // bu arada seçilen poster vurgulanır, diğeri kısılır. SALT
+      // GÖRSEL — `round`, `pair` ve ilerleme sunucu yanıtına kadar DEĞİŞMEZ (K-37).
+      setTileStates(
+        side === 'left'
+          ? { left: 'pending', right: 'dimmed' }
+          : { left: 'dimmed', right: 'pending' },
+      );
+      /** Seçim ilerlemediyse dokunma onayı geri alınır — bekleyen seçim yok. */
+      const revertTapConfirmation = () => setTileStates({ left: 'idle', right: 'idle' });
       const result = await submit({
         gauntletId: gauntlet.gauntletId,
         round,
@@ -961,7 +1017,14 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         positionOfWinner: side,
         latencyMs,
       });
-      if (!result || !mountedRef.current) return;
+      if (!mountedRef.current) return;
+      if (!result) {
+        // K-42: seçim kuyrukta bekliyorsa vurgu KALIR (hangi seçimin beklediği
+        // görünsün); sonraki load() → applyGauntlet onu sıfırlar. Sunucu reddi,
+        // 401 ya da diğer hatalarda geri alınır.
+        if (!choiceQueuedRef.current) revertTapConfirmation();
+        return;
+      }
       setRefreshesRemaining(result.refreshesRemaining);
 
       posthogAnalytics.track('choice_submitted', {
@@ -994,6 +1057,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         } catch (err) {
           Sentry.captureException(err, { tags: { component: 'GauntletShell' } });
           setActionError(t('gauntlet.submitError'));
+          revertTapConfirmation();
           return;
         }
         setTileStates(
@@ -1046,6 +1110,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             { tags: { component: 'GauntletShell' } },
           );
           setActionError(t('gauntlet.submitError'));
+          revertTapConfirmation();
           return;
         }
         if (result.champion.id !== winner.id) {
@@ -1111,6 +1176,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         { tags: { component: 'GauntletShell' } },
       );
       setActionError(t('gauntlet.submitError'));
+      revertTapConfirmation();
     },
     [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, isReducedMotion, t, toExhausted, region, transitionTo],
   );

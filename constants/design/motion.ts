@@ -46,6 +46,15 @@ export const BLACKOUT_SEQUENCE = {
   metaDelay: 200,
 } as const;
 
+/**
+ * Dokunma onayı — seçim sunucuya giderken SEÇİLMEYEN posterin opaklığı.
+ * §7.1 "seçim onayı" bir Kesme'dir: 0ms, animasyonsuz uygulanır (Reduce
+ * Motion'da da aynı). Elenme opaklığından (0.25) bilinçli olarak AYRI —
+ * sunucu yanıtı gelmeden poster "elendi" gibi görünmemeli.
+ * CTO kararı 29.09.2026 (TestFlight 906 "yavaş tepki" bulgusu).
+ */
+export const PENDING_DIM_OPACITY = 0.5;
+
 /** Reduce Motion — §7.5. Tüm Geçiş'ler cross-fade'e döner, Kesme aynı kalır. */
 export const REDUCED_MOTION_DURATION = {
   crossFade: 100,

@@ -7,6 +7,12 @@
  *  - 'remaining':  ölçek 1→1.06, spring(0.8, 0.9) (§7.2)
  *  - 'entering':   opaklık 0→1 + aşağıdan 16px (§7.2)
  * Reduce Motion açıkken tümü REDUCED_MOTION_DURATION.crossFade'e döner (§7.5).
+ *
+ * İki dokunma onayı durumu — seçim sunucuya giderken, §7.1 Kesme (0ms,
+ * Reduce Motion'da da aynı):
+ *  - 'pending': seçilen poster, seçili kenar (§2.3 `beam`@24%)
+ *  - 'dimmed':  diğer poster, opaklık PENDING_DIM_OPACITY
+ * SALT GÖRSEL — tur/ilerleme bu durumlardan türetilmez (K-37).
  */
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
@@ -27,6 +33,7 @@ import { color, radius } from '@/constants/design/semantic';
 import {
   DISSOLVE_DURATION,
   EASE_OUT_QUART,
+  PENDING_DIM_OPACITY,
   REDUCED_MOTION_DURATION,
   REMAINING_POSTER_SPRING_SPEC,
 } from '@/constants/design/motion';
@@ -34,7 +41,13 @@ import type { GauntletFilm } from '@/types/gauntlet';
 
 import { styles } from './styles';
 
-export type PosterTileAnimationState = 'idle' | 'eliminated' | 'remaining' | 'entering';
+export type PosterTileAnimationState =
+  | 'idle'
+  | 'pending'
+  | 'dimmed'
+  | 'eliminated'
+  | 'remaining'
+  | 'entering';
 
 /** Poster yüklenemezse denenecek gecikmeler (ms) — sonrasında placeholder kalıcı olur. */
 const POSTER_RETRY_DELAYS_MS = [500, 1500];
@@ -83,6 +96,15 @@ export function PosterTile({
   }, [retryAttempt]);
 
   useEffect(() => {
+    // Dokunma onayı — Kesme (§7.1): doğrudan atama, süren animasyonu da keser.
+    // Reduce Motion dalından ÖNCE, çünkü Kesme orada da değişmez (§7.5).
+    if (animationState === 'pending' || animationState === 'dimmed') {
+      translateY.value = 0;
+      scale.value = 1;
+      opacity.value = animationState === 'dimmed' ? PENDING_DIM_OPACITY : 1;
+      return;
+    }
+
     if (isReducedMotion) {
       const duration = REDUCED_MOTION_DURATION.crossFade;
       if (animationState === 'eliminated') {
@@ -153,7 +175,12 @@ export function PosterTile({
           runtime: film.runtime,
         })}
       >
-        <View style={[styles.posterWrapper, selected && styles.posterWrapperSelected]}>
+        <View
+          style={[
+            styles.posterWrapper,
+            (selected || animationState === 'pending') && styles.posterWrapperSelected,
+          ]}
+        >
           {posterFailed ? (
             <View style={styles.placeholder}>
               {/* V-3 Tur G1: Ionicons → Phosphor. Bağlam pill'i artık Phosphor
