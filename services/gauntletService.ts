@@ -17,6 +17,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import { cacheGauntlet, readCachedGauntlet, type GauntletSource } from './gauntletCache';
+import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { logger } from '@/utils/logger';
 import { classifyGenerateError } from './previousCycleRules';
 
@@ -207,18 +208,55 @@ async function ensureAuthSession(): Promise<void> {
  * Ölçüm sonrası __DEV__ console.log kaldırılacak; Sentry breadcrumb kalıcı
  * debug aracı olarak kalabilir (kalıcı koda konsol logu GİRMEZ kısıtı).
  */
-function recordTiming(fn: string, startedAt: number, outcome: 'ok' | 'error'): void {
+function recordTiming(
+  fn: string,
+  startedAt: number,
+  outcome: 'ok' | 'error',
+  /**
+   * Yalnız `GAUNTLET_EDGE_REGION`'a sabitlenmiş çağrılar verir (bölge kontrolü
+   * yalnız onlarda anlamlı). `response: undefined` → sunucuya hiç ulaşılamadı:
+   * bölge bilinmez, `null` yazılır, uyumsuzluk kontrolü yapılmaz — o durum
+   * zaten GAUNTLET_OFFLINE ile görünür.
+   */
+  pinned?: { response: Response | undefined },
+): void {
   const durationMs = Math.round(performance.now() - startedAt);
+  const response = pinned?.response;
+  const edgeRegion = response ? response.headers.get('x-sb-edge-region') : null;
   Sentry.addBreadcrumb({
     category: 'gauntlet.perf',
     message: `${fn} ${outcome}`,
     level: 'info',
-    data: { duration_ms: durationMs },
+    data: pinned
+      ? { duration_ms: durationMs, edge_region: edgeRegion }
+      : { duration_ms: durationMs },
   });
+  if (response && edgeRegion !== GAUNTLET_EDGE_REGION) {
+    // Bölge sabitlemesi tutmadı (ya da header gelmedi): istek DB'den uzak
+    // bir edge'de koştu. Otomatik yedek yok — sessiz de geçilmez.
+    Sentry.captureMessage(`gauntlet edge region mismatch: ${fn}`, {
+      level: 'warning',
+      tags: {
+        fn,
+        error_code: 'GAUNTLET_EDGE_REGION_MISMATCH',
+        expected_region: GAUNTLET_EDGE_REGION,
+        edge_region: edgeRegion ?? 'missing',
+      },
+      extra: { duration_ms: durationMs, outcome },
+    });
+  }
   if (__DEV__) {
     // eslint-disable-next-line no-console
-    console.log(`[gauntlet.perf] ${fn} ${outcome} — ${durationMs}ms`);
+    console.log(`[gauntlet.perf] ${fn} ${outcome} — ${durationMs}ms (edge: ${edgeRegion ?? '-'})`);
   }
+}
+
+/** `FunctionsHttpError`/`FunctionsRelayError` yanıtı `context`'te taşır; ağ hatası taşımaz. */
+function invokeErrorResponse(error: unknown): Response | undefined {
+  const context = (error as { context?: Response }).context;
+  // `parseInvokeError` ile aynı yapısal kontrol — `instanceof Response` RN
+  // fetch polyfill'inde güvenilir değil.
+  return context && typeof context.headers?.get === 'function' ? context : undefined;
 }
 
 async function parseInvokeError(
@@ -272,17 +310,18 @@ export async function getTodayGauntlet(
   await ensureAuthSession();
 
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('generate-gauntlet', {
+  const { data, error, response } = await supabase.functions.invoke('generate-gauntlet', {
     // `cycle` yalnız verildiğinde gövdeye girer — current istek birebir eskisi.
     body: {
       context,
       timezone: deviceTimeZone(),
       ...(options.cycle ? { cycle: options.cycle } : {}),
     },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
-    recordTiming('generate-gauntlet', startedAt, 'error');
+    recordTiming('generate-gauntlet', startedAt, 'error', { response: invokeErrorResponse(error) });
     const { status, detail, code } = await parseInvokeError(error);
     const kind = classifyGenerateError(status, code);
     if (kind === 'previous_rejected' && isPreviousCycleRejectCode(code)) {
@@ -318,7 +357,7 @@ export async function getTodayGauntlet(
     throw new Error(detail || 'generate-gauntlet failed');
   }
 
-  recordTiming('generate-gauntlet', startedAt, 'ok');
+  recordTiming('generate-gauntlet', startedAt, 'ok', { response });
   const gauntlet = data as DailyGauntlet;
 
   // K-42: başarılı yanıt diske yazılır. `await` EDİLMEZ — cache yazımı
@@ -420,12 +459,15 @@ export async function submitChoice(
   await ensureAuthSession();
 
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('submit-choice', {
+  const { data, error, response } = await supabase.functions.invoke('submit-choice', {
     body: submission,
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
-    recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'error');
+    recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'error', {
+      response: invokeErrorResponse(error),
+    });
     const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
@@ -457,7 +499,7 @@ export async function submitChoice(
     throw new GauntletHttpError(detail || 'submit-choice failed', status);
   }
 
-  recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok');
+  recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok', { response });
   return data as ChoiceResult;
 }
 
@@ -491,12 +533,15 @@ export async function saveChampionForLater(
   await ensureAuthSession();
 
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('submit-choice', {
+  const { data, error, response } = await supabase.functions.invoke('submit-choice', {
     body: { action: 'save_for_later', gauntletId, filmId },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
-    recordTiming('submit-choice(save_for_later)', startedAt, 'error');
+    recordTiming('submit-choice(save_for_later)', startedAt, 'error', {
+      response: invokeErrorResponse(error),
+    });
     const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
@@ -509,7 +554,7 @@ export async function saveChampionForLater(
     throw new Error(detail || 'save_for_later failed');
   }
 
-  recordTiming('submit-choice(save_for_later)', startedAt, 'ok');
+  recordTiming('submit-choice(save_for_later)', startedAt, 'ok', { response });
   return data as SaveForLaterResult;
 }
 
@@ -659,12 +704,15 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
   await ensureAuthSession();
 
   const startedAt = performance.now();
-  const { data, error } = await supabase.functions.invoke('get-archive-status', {
+  const { data, error, response } = await supabase.functions.invoke('get-archive-status', {
     body: {},
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
-    recordTiming('get-archive-status', startedAt, 'error');
+    recordTiming('get-archive-status', startedAt, 'error', {
+      response: invokeErrorResponse(error),
+    });
     const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
@@ -687,7 +735,7 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
     throw new Error(detail || 'get-archive-status failed');
   }
 
-  recordTiming('get-archive-status', startedAt, 'ok');
+  recordTiming('get-archive-status', startedAt, 'ok', { response });
   return data as ArchiveStatus;
 }
 
