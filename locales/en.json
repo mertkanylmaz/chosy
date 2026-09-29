@@ -560,7 +560,7 @@
     "ritualRingA11y": "Picked a film on %{count} of the last %{total} days",
     "proSection": "Membership",
     "chosyPro": "Chosy Plus",
-    "chosyProSubtitle": "Replay missed days · see how your taste evolves",
+    "chosyProSubtitle": "Replay the evenings you missed · last 7 days",
     "proMode": "Pro Mode",
     "proModeSubtitle": "Describe a mood, get a matching film"
   },
@@ -1311,7 +1311,7 @@
     "watchlistCta": "Unlimited Watchlist",
     "watchlistDismiss": "Remove old films",
     "moodHistoryTitle": "Unlock Your Mood History",
-    "moodHistorySubtitle": "See how your taste has evolved over the last 30 days. Discover your Cinema DNA.",
+    "moodHistorySubtitle": "Replay any evening you missed in the last 7 days.",
     "moodHistoryCta": "Unlock History",
     "moodHistoryDismiss": "Go Back",
     "streamingTitle": "Watch directly on your platform",
@@ -1347,7 +1347,7 @@
     "missedDayTitle": "You missed two evenings",
     "missedDaySubtitle": "%{count} days are waiting in the archive.",
     "missedDayValueFunctional": "Replay missed days",
-    "missedDayValueIdentity": "See how your taste evolves",
+    "missedDayValueIdentity": "Pick your champion on your own time",
     "missedDayCta": "Open the archive",
     "missedDayDismiss": "Not now"
   },

@@ -560,7 +560,7 @@
     "ritualRingA11y": "Son %{total} günün %{count} gününde film seçildi",
     "proSection": "Üyelik",
     "chosyPro": "Chosy Plus",
-    "chosyProSubtitle": "Kaçırdığın günleri oyna · zevkinin değişimini gör",
+    "chosyProSubtitle": "Kaçırdığın akşamları yeniden oyna · son 7 gün",
     "proMode": "Pro Mode",
     "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul"
   },
@@ -1311,7 +1311,7 @@
     "watchlistCta": "Sinirsiz Watchlist",
     "watchlistDismiss": "Eski filmleri sil",
     "moodHistoryTitle": "Ruh Hali Gecmisini Ac",
-    "moodHistorySubtitle": "Son 30 gunde zevkinin nasil degistigini gor. Sinema DNA'ni kesfet.",
+    "moodHistorySubtitle": "Son 7 günde kaçırdığın her akşamı yeniden oyna.",
     "moodHistoryCta": "Gecmisi Ac",
     "moodHistoryDismiss": "Geri Don",
     "streamingTitle": "Platformunda direkt izle",
@@ -1347,7 +1347,7 @@
     "missedDayTitle": "İki akşamı kaçırdın",
     "missedDaySubtitle": "%{count} gün arşivde seni bekliyor.",
     "missedDayValueFunctional": "Kaçırdığın günleri yeniden oyna",
-    "missedDayValueIdentity": "Zevkinin nasıl değiştiğini gör",
+    "missedDayValueIdentity": "Şampiyonunu kendi saatinde seç",
     "missedDayCta": "Arşivi aç",
     "missedDayDismiss": "Şimdi değil"
   },
