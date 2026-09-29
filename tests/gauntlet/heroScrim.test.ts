@@ -48,8 +48,8 @@ Deno.test('alt geçiş tam opak ink ile biter', () => {
   assertEquals(last.alpha, 1)
 })
 
-// Ölçülen cihaz yükseklikleri: SE1 568, SE2/3 667, Pro Max 932.
-for (const h of [MIN_WINDOW_HEIGHT, 667, 932]) {
+// Ölçülen cihaz yükseklikleri: SE1 568, SE2/3 667, 13–15 844, Pro Max 932.
+for (const h of [MIN_WINDOW_HEIGHT, 667, 844, 932]) {
   Deno.test(`kontrast ≥ 4.5 — pencere ${h}pt, saf beyaz poster`, () => {
     const alpha = alphaAtOverlapStart(h)
     const title = worstCaseContrast(h, palette.bone, 1)

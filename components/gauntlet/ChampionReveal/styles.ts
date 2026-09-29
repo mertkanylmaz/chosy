@@ -54,10 +54,16 @@ export const styles = StyleSheet.create({
     right: 0,
     top: 0,
   },
+  /**
+   * V-4 Tur B: `gap` 16 → 12, eylem yığını 12 → 8, `actionsWrapper`
+   * `marginTop` 8 → 0 (toplam −24pt, kurucu onayı). Hero %46 ile birlikte
+   * 844pt'de 1 satır başlık + "See all" ya da 2 satır başlık durumunda da
+   * Paylaş tab bar'ın üstünde kalır; 2 satır + "See all" hâlâ kaydırma ister.
+   */
   body: {
     alignItems: 'center',
     paddingHorizontal: space.lg,
-    gap: space.base,
+    gap: space.md,
   },
   /**
    * C2: büyük harf JS'te (`toLocaleUpperCase`) — TR i → İ. Renk `bone@80%`:
@@ -104,12 +110,11 @@ export const styles = StyleSheet.create({
     alignSelf: 'stretch',
     alignItems: 'center',
     gap: space.base,
-    marginTop: space.sm,
   },
-  /** C6: tam genişlik, alt alta. */
+  /** C6: tam genişlik, alt alta. V-4 Tur B: aralık `space.sm`. */
   actionsStack: {
     alignSelf: 'stretch',
-    gap: space.md,
+    gap: space.sm,
   },
   /** Pano / kaydetme onayı — kısa ömürlü, butonların ÜSTÜNDE (sabit sıra). */
   shareNotice: {

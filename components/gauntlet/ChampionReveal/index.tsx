@@ -42,6 +42,9 @@
  * alta üç eylem: Watch Now (düz `marquee`, V3-D2; TMDB `link` uygulama içi
  * tarayıcıda, V3-D3 — sağlayıcı/link yoksa render edilmez), Sonraya bırak,
  * Paylaş. Reveal sekansı, kaydetme ve paylaşım mantığı DEĞİŞMEDİ.
+ *
+ * V-4 Tur B: hero ~%60 → ~%46 ve blok boşlukları sıkılaştı — ≥ 844pt'de üç
+ * eylem kaydırmadan görünür (bütçe styles.ts `body` notunda). Mantık aynı.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
@@ -472,7 +475,7 @@ export function ChampionReveal({
       )}
     >
       {/*
-        C1 hero — ekranın ~%60'ı, `cover`. VoiceOver'dan GİZLİ: çerçevenin en
+        C1 hero — ekranın ~%46'sı (V-4 Tur B; önce ~%60), `cover`. VoiceOver'dan GİZLİ: çerçevenin en
         üstünde olduğu için ilk okunurdu; sıra etiket → başlık → meta →
         platformlar → eylemler. Detaya geçiş VO'da başlığın `activate`'i.
       */}

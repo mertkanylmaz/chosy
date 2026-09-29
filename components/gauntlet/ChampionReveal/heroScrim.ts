@@ -1,8 +1,8 @@
 /**
  * Şampiyon hero'sunun geçiş (scrim) geometrisi — V-3 Tur G2, C1 / V3-D4.
  *
- * Poster ekranın ~%60'ını kaplar; alt kısmı `ink`'e düz alfa geçişiyle
- * erir (gradient YALNIZ alfa değiştirir, renk sabit `ink` — sRGB karışımında
+ * Poster ekranın ~%46'sını kaplar (V-4 Tur B; önce ~%60); alt kısmı `ink`'e
+ * düz alfa geçişiyle erir (gradient YALNIZ alfa değiştirir, renk sabit `ink` — sRGB karışımında
  * ara renk üretmez). Etiket + başlık bloğu geçişin üstüne biner.
  *
  * V-4 Tur A (V4-D2, V4-D3): geçişin BİTTİĞİ renk sayfa zemininin kendisi —
@@ -19,11 +19,26 @@
  * Saf modül: React/RN/import YOK — Deno doğrudan okur.
  */
 
-/** Hero yüksekliği / pencere yüksekliği. */
-export const HERO_HEIGHT_RATIO = 0.6;
+/**
+ * Hero yüksekliği / pencere yüksekliği.
+ *
+ * V-4 Tur B: 0.6 → 0.46 (TestFlight 906: ilk ekranda yalnız Watch now
+ * görünüyordu). Hedef: ≥ 844pt pencerede Watch now + Sonraya bırak + Paylaş
+ * kaydırmadan görünür; SE'de en az Watch now.
+ */
+export const HERO_HEIGHT_RATIO = 0.46;
 
-/** Geçişin kapladığı pay — V-4 Tur A: hero'nun alt ~%35'i (eski 0.5). */
-export const SCRIM_HEIGHT_RATIO = 0.35;
+/**
+ * Geçişin pencere yüksekliğindeki MUTLAK payı — V-4 Tur A'nın geometrisi
+ * (0.6 hero × 0.35 = pencerenin %21'i). Hero kısalınca oran hero'ya göre
+ * sabit tutulsaydı geçiş de kısalır, blok geçişin açık kısmına düşer ve
+ * SE'de kontrast 4.5'in altına inerdi. Mutlak pay korununca etiket/başlık
+ * satırının arkasındaki `ink` opaklığı Tur A ile birebir aynı kalır.
+ */
+const SCRIM_WINDOW_RATIO = 0.21;
+
+/** Geçişin kapladığı pay — hero'ya oranla (V-4 Tur B: 0.35 → ~0.457). */
+export const SCRIM_HEIGHT_RATIO = SCRIM_WINDOW_RATIO / HERO_HEIGHT_RATIO;
 
 /**
  * Geçiş durakları: konum (geçiş içinde 0 → 1) ve `ink` opaklığı.
