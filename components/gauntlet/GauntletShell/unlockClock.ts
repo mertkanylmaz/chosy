@@ -21,9 +21,14 @@ export const UNLOCK_HOUR = 18;
 /**
  * Kapı saati, arayüz diline göre biçimli ("6:00 PM" / "18:00"). Bekleme
  * metni, Settings bildirim satırı ve bekleme CTA'sı aynı biçimi kullanır.
+ *
+ * BUGÜNÜN tarihiyle kurulur. 30 Eyl 2026 TestFlight hatası: eski sabit
+ * tarih (1 Oca 2000) İstanbul'da "5:00 PM" gösteriyordu, sayaç ise 18:00'e
+ * sayıyordu. Hermes `new Date(y,m,d,h)`'yi BUGÜNKÜ ofsetle (UTC+3) kurar,
+ * ICU biçimleyicisi 2000'in tarihsel ofsetiyle (UTC+2) okur — bir saat kayar.
  */
-export function formatUnlockTime(language: string): string {
-  return new Date(2000, 0, 1, UNLOCK_HOUR, 0).toLocaleTimeString(
+export function formatUnlockTime(language: string, now: Date = new Date()): string {
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), UNLOCK_HOUR, 0).toLocaleTimeString(
     language === 'tr' ? 'tr-TR' : 'en-US',
     { hour: 'numeric', minute: '2-digit' },
   );
