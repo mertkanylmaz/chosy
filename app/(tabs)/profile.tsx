@@ -129,7 +129,7 @@ const SAVED_STRIP_SLOTS = 4;
  * hafif, afis TANINIR; perde durum cubugunun arkasina uzanir. `ink` ortusu
  * metin kontrastini korur, alt gecis header'i zemine eritir.
  */
-const HEADER_CURTAIN_BLUR = 8;
+const HEADER_CURTAIN_BLUR = 4;
 const HEADER_CURTAIN_DIM = withAlpha(color.surface.base, 0.45);
 const HEADER_CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
