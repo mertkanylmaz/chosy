@@ -3,9 +3,13 @@
 14 gün ilerisine kadar günlük bulmacaları üretir.
 Acil havuzu (oyun başına 15) her koşumda tamamlar.
 
-**Elle tetiklenir — cron'u YOKTUR.** Bu README eskiden "haftalık cron ile
-çalışır" diyordu; 8 Ağu 2026'da `cron.job` listesi doğrulandı, böyle bir job
-kurulmamış. `daily_puzzles`'ın dolu olması elle çalıştırmalardan geliyor.
+**Spotlight: haftalık cron (migration 120, 30 Eyl 2026)** —
+`generate-puzzles-spotlight`, Pazartesi 02:00 UTC, `?game=spotlight`.
+Diğer oyunlar donuk; onlar için cron yok, elle tetiklenir. (8 Ağu 2026'ya
+kadar hiçbir cron yoktu; Spotlight 11 Ağu – 30 Eyl arası bulmacasız kaldı.)
+
+**Spotlight çözüm havuzu** genel `films` değil, 100 günlük editoryal takvim:
+her günden bir film, 100. günden geriye (`fetchSpotlightEditorialPool`).
 
 ## Auth — service-role zorunlu
 
