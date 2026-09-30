@@ -565,6 +565,68 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
   return pool
 }
 
+// ─── Spotlight çözüm havuzu — editoryal takvim ─────────────────────────────
+
+/**
+ * Spotlight çözümleri 100 günlük editoryal takvimden gelir, SON günden
+ * geriye (day_number azalan, position artan). Kurucu kararı, 30 Eyl 2026:
+ * o gün gauntlet'te dönen filmler Spotlight'ta çıkmasın, "sürekli aynı
+ * içerik" hissi olmasın. Genel `films` havuzu Spotlight için KULLANILMAZ.
+ *
+ * SIRA KORUNUR — `genOne` Spotlight'ta hash karıştırması yapmaz.
+ *
+ * Oynanamayacak başlıklar (A-Z dışı harf, slot 3..30 dışı) ve backdrop'suz
+ * filmler burada elenir: `tryCandidates` listenin yalnız ilk 3'ünü dener,
+ * başa yığılan retler her tarihi acil havuza düşürürdü.
+ *
+ * Hariç tutulanlar: son 365 günün tarihli çözümleri (`usedIds`) + Spotlight
+ * acil havuzundaki çözümler (tarihsiz satırlar `recentFilmIds`'e girmez;
+ * aksi halde bir sonraki koşum aynı filmi tarihli olarak yeniden seçerdi).
+ *
+ * Havuz tükenirse genel havuza SESSİZ DÜŞÜŞ YOK — çağıranın "Havuz çok
+ * küçük" dalı Sentry'ye error yazar.
+ */
+async function fetchSpotlightEditorialPool(usedIds: Set<string>, rpt: Report): Promise<FilmRow[]> {
+  const cols = 'id,tmdb_id,title,year,poster_url,backdrop_url,overview,genres,runtime,vote_average,director,country,imdb_rating,cast_json'
+
+  const { data, error } = await db()
+    .from('editorial_calendar_films')
+    .select(`day_number, position, film:films(${cols})`)
+    .order('day_number', { ascending: false })
+    .order('position', { ascending: true })
+  if (error) throw new Error(`Spotlight editoryal havuz sorgusu: ${error.message}`)
+
+  const { data: emergencyRows, error: emergencyError } = await db()
+    .from('daily_puzzles')
+    .select('solution_ref')
+    .eq('game_type', 'spotlight')
+    .eq('is_emergency_pool', true)
+    .not('solution_ref', 'is', null)
+  if (emergencyError) throw new Error(`Spotlight acil havuz sorgusu: ${emergencyError.message}`)
+  // `as unknown as`: db() tiplenmemiş client, satırlar `never`e çöküyor
+  // (dosyadaki mevcut baseline ile aynı sebep).
+  const emergencyIds = new Set(
+    ((emergencyRows ?? []) as unknown as { solution_ref: string }[]).map((r) => r.solution_ref),
+  )
+
+  const rows = (data ?? []) as unknown as { film: FilmRow | null }[]
+  const pool: FilmRow[] = []
+  for (const row of rows) {
+    const f = row.film
+    if (!f) continue
+    if (usedIds.has(f.id) || emergencyIds.has(f.id)) continue
+    if (!f.backdrop_url || !f.poster_url) continue
+    const { slotCount, hasUnreachable } = buildTitleMask(f.title)
+    if (hasUnreachable || slotCount < 3 || slotCount > 30) continue
+    pool.push(f)
+  }
+
+  if (!rpt.pool_sizes) rpt.pool_sizes = {}
+  rpt.pool_sizes.spotlight = pool.length
+  console.log(`[gen] spotlight editoryal havuz: ${pool.length} film (${rows.length} takvim satırı)`)
+  return pool
+}
+
 // ─── CineMetrics puzzle_data ────────────────────────────────────────────────
 
 function cmData(f: FilmRow): Record<string, unknown> {
@@ -1356,7 +1418,10 @@ async function genOne(
 
   // Run içinde kullanılmamış filmleri filtrele
   const available = pool.filter(f => !usedInRun.has(f.id))
-  const sorted = [...available].sort((a, b) => hashFilm(a.id, s) - hashFilm(b.id, s))
+  // Spotlight: editoryal takvim sırası (fetchSpotlightEditorialPool) korunur.
+  const sorted = game === 'spotlight'
+    ? available
+    : [...available].sort((a, b) => hashFilm(a.id, s) - hashFilm(b.id, s))
 
   // Yumuşak tema baskısı: önce temaya uyanlar denenir, tükenirse normal havuz.
   // Tema hiçbir zaman bulmacayı üretilemez hale getirmez.
@@ -1503,7 +1568,7 @@ async function genOne(
 
 // ─── Acil havuz ─────────────────────────────────────────────────────────────
 
-async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
+async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report, usedInRun: Set<string>) {
   const { count } = await db()
     .from('daily_puzzles')
     .select('*', { count: 'exact', head: true })
@@ -1514,7 +1579,12 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
   const need = EMERGENCY_PER_GAME - (count ?? 0)
   if (need <= 0) return
 
-  const shuffled = [...pool].sort(() => Math.random() - 0.5)
+  // Spotlight: tarihli bulmacalardan SONRAKİ editoryal filmler, takvim
+  // sırasıyla — rastgele karıştırma 1..100 aralığının tamamından, bugünün
+  // gauntlet filmleri dahil, seçebilirdi.
+  const shuffled = game === 'spotlight'
+    ? pool.filter(f => !usedInRun.has(f.id))
+    : [...pool].sort(() => Math.random() - 0.5)
   let made = 0
 
   for (const f of shuffled) {
@@ -1567,7 +1637,10 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report) {
       clues: pd,
     })
 
-    if (!error) made++
+    if (!error) {
+      made++
+      usedInRun.add(f.id)
+    }
   }
   console.log(`[gen] Acil havuz ${game}: +${made}`)
 }
@@ -1808,7 +1881,9 @@ serve(async (req: Request) => {
         continue
       }
 
-      const pool = await fetchFilms(game, usedInRun, dirs, rpt)
+      const pool = game === 'spotlight'
+        ? await fetchSpotlightEditorialPool(usedInRun, rpt)
+        : await fetchFilms(game, usedInRun, dirs, rpt)
       console.log(`[gen] Havuz: ${pool.length} film`)
 
       if (pool.length < 5) {
@@ -1837,7 +1912,7 @@ serve(async (req: Request) => {
 
       // Acil havuzu tamamla (logline AI çağrısı ağır — skip, quoted replik havuzundan — skip)
       if (game !== 'logline') {
-        await fillEmergency(game, pool, rpt)
+        await fillEmergency(game, pool, rpt, usedInRun)
       }
     }
 
