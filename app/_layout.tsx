@@ -144,6 +144,26 @@ async function bootstrapAppUser(): Promise<void> {
   const first = await ensureAppUser();
   if (first.ok) return;
 
+  // Ölü JWT (kullanıcı sunucuda silinmiş): yeniden denemek anlamsız. Yerel
+  // oturum kapatılır → SIGNED_OUT → aşağıdaki listener'ın mevcut anonim
+  // kurtarma dalı yeni kimlik açar (E-08 identity_reset_detected dahil).
+  // 30 Eyl 2026: hesap silme sonrası cihaz bu durumda kalmış, her istek
+  // 403 almış ve uygulama kendini hiç toparlamamıştı.
+  if (first.reason === 'USER_NOT_FOUND') {
+    Sentry.captureMessage('bootstrapAppUser: JWT kullanıcısı sunucuda yok — yerel oturum kapatılıyor', {
+      level: 'warning',
+      tags: { function: 'bootstrapAppUser', error_code: 'AUTH_USER_NOT_FOUND' },
+    });
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) {
+      Sentry.captureException(error, {
+        level: 'fatal',
+        tags: { function: 'bootstrapAppUser', error_code: 'AUTH_USER_NOT_FOUND' },
+      });
+    }
+    return;
+  }
+
   // NO_SESSION yeniden denemeye değmez — oturum yoksa `SIGNED_IN` zaten
   // tutarsızdır ve ikinci deneme aynı sonucu verir.
   if (first.reason === 'NO_SESSION') {

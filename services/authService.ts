@@ -29,7 +29,7 @@ import { supabase } from './supabase';
 import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearQuotaCache } from './quotaEngine';
-import { getAppUserId, readAppUserId } from './auth-utils';
+import { readAppUserId } from './auth-utils';
 import { logger } from '../utils/logger';
 import { clearStoredAvatar } from '../utils/avatarStorage';
 
@@ -703,8 +703,38 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
       };
     }
 
+    // ── Sunucu silmeyi onayladı: ÖNCE analitik + yerel oturum ────────────
+    // 30 Eyl 2026 TestFlight olayı: silmeden sonra `/logout` hiç gelmedi,
+    // cihaz silinmiş kullanıcının JWT'siyle kaldı (her istek 403
+    // user_not_found), anonim kurtarma hiç tetiklenmedi. Eskiden oturum
+    // kapatma, RC / avatar / kota adımlarının ARKASINDAYDI — biri takılır ya
+    // da fırlatırsa hiç çalışmıyordu. Artık ağ ya da SDK beklemeyen ilk iş.
+    //
+    // Analitik reset oturumdan ÖNCE: signOut → SIGNED_OUT → yeni anonim
+    // oturum (app/_layout.tsx); reset sonra çalışsaydı yeni kimliği silerdi.
+    // Silinen kullanicinin distinct_id'si cihazda kalirsa sonraki (anonim)
+    // oturumun event'leri silinmis kullaniciya baglanir. Sunucu tarafindaki
+    // PostHog kisi + event silme islemini delete-account Edge Function yapar
+    // (K-16 analytics identity ayagi).
+    posthogAnalytics.reset();
+    Sentry.setUser(null);
+
+    // `local`: sunucudaki kullanıcı zaten yok, `/logout` 403 dönerdi.
+    // Hata sessiz geçmez — oturum temizlenemediyse cihaz ölü JWT'yle kalır
+    // (bootstrap'taki USER_NOT_FOUND dalı bir sonraki açılışta toparlar).
+    const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
+    if (signOutError) {
+      logger.error('[authService] deleteAccount yerel oturum kapatılamadı:', signOutError, { skipBridge: true });
+      Sentry.captureException(signOutError, {
+        level: 'fatal',
+        tags: { function: 'deleteAccount', step: 'sign_out_local' },
+      });
+    }
+
     // ── RevenueCat müşteri kimliğini sıfırla ─────────────────────────────
     // Çağrılmazsa on-device entitlement cache kalır → yeni hesap premium görünür (BUG-002)
+    // Yeni anonim oturum RC'ye logIn YAPMAZ (identifyUser yalnız Apple
+    // girişinde), bu yüzden oturumdan sonra çalışması yarış üretmez.
     await logOutPurchases();
 
     // ── Avatar anahtarını temizle (K-16 istemci tarafı) ─────────────────
@@ -725,24 +755,15 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
     }
 
     // ── AsyncStorage quota cache'ini temizle ────────────────────────────
-    // Eski kullanıcının kota sayaçları cihazda kalmasın
-    const appUserId = await getAppUserId();
-    if (appUserId) {
-      await clearQuotaCache(appUserId);
+    // Eski kullanıcının kota sayaçları cihazda kalmasın. Silmeden ÖNCE
+    // alınan id kullanılır: eskiden burada `getAppUserId()` çağrılıyordu,
+    // ama `users` satırı ve auth kaydı artık yok — hep null dönüyor, kota
+    // önbelleği hiç temizlenmiyordu.
+    if (publicUserId) {
+      await clearQuotaCache(publicUserId);
     }
 
-    // ── Analitik kimliklerini sifirla ────────────────────────────────────
-    // Silinen kullanicinin distinct_id'si cihazda kalirsa sonraki (anonim)
-    // oturumun event'leri silinmis kullaniciya baglanir. reset() yeni bir
-    // anonim distinct_id uretir. Sunucu tarafindaki PostHog kisi + event
-    // silme islemini delete-account Edge Function yapar (K-16 analytics
-    // identity ayagi); basarisizligi orada Sentry'ye fatal yazilir.
-    posthogAnalytics.reset();
-    Sentry.setUser(null);
-
-    // Tüm veri silindi — yerel oturumu kapat
-    await supabase.auth.signOut();
-    logger.log('[authService] Hesap silindi, RC + analitik sıfırlandı, oturum kapatıldı.');
+    logger.log('[authService] Hesap silindi, oturum kapatıldı, RC + analitik sıfırlandı.');
 
     return { success: true };
   } catch (err) {

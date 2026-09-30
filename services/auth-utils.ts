@@ -12,7 +12,12 @@ import { logger } from '../utils/logger';
 /** `ensureAppUser` sonucu */
 export type EnsureAppUserResult =
   | { ok: true; appUserId: string }
-  | { ok: false; reason: 'NO_SESSION' | 'CREATE_FAILED' };
+  /**
+   * `USER_NOT_FOUND`: cihazdaki JWT'nin kullanıcısı sunucuda yok (hesap
+   * silindi — 30 Eyl 2026 olayı). Oturum ölü; çağıran yerel oturumu
+   * kapatır ki anonim kurtarma devreye girsin.
+   */
+  | { ok: false; reason: 'NO_SESSION' | 'CREATE_FAILED' | 'USER_NOT_FOUND' };
 
 /**
  * `public.users` satırının var olduğunu GARANTİ eder — oturum bootstrap'ının
@@ -45,8 +50,14 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
   try {
     const {
       data: { user },
+      error: userError,
     } = await supabase.auth.getUser();
 
+    // Ölü JWT: auth sunucusu kullanıcıyı tanımıyor. NO_SESSION'dan ayrı —
+    // oturum cihazda VAR ama hiçbir istek çalışmaz.
+    if (userError?.code === 'user_not_found') {
+      return { ok: false, reason: 'USER_NOT_FOUND' };
+    }
     if (!user) return { ok: false, reason: 'NO_SESSION' };
     authUserId = user.id;
   } catch (err) {
