@@ -46,6 +46,11 @@ import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
 import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import {
+  WaitingChampionCard,
+  WaitingCurtain,
+  useLastChampion,
+} from '@/components/gauntlet/WaitingChampion';
+import {
   CHAMPION_HAPTIC_DELAY,
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
@@ -829,6 +834,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     [shellState],
   );
 
+  /** V1-D7 revizyonu (30 Eyl 2026): bekleyişte son şampiyon — perde + kart. */
+  const waitingChampion = useLastChampion(shellState === 'before_18');
+
   // PostHog: waiting_viewed — bekleyiş ekranına her giriş bir kez.
   useEffect(() => {
     if (!unlockAt) return;
@@ -1399,8 +1407,10 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }
 
   if (shellState === 'before_18') {
-    // V-1 Tur 6: metin + geri sayım. Dünkü şampiyon, arşiv, Pro Mode ve
-    // keşif rotası YOK (D7, K-46). V-2 Tur E1: koşullu bildirim CTA'sı.
+    // V-1 Tur 6: metin + geri sayım. Arşiv, Pro Mode ve keşif rotası YOK
+    // (K-46). V-2 Tur E1: koşullu bildirim CTA'sı. V1-D7 revizyonu
+    // (30 Eyl 2026): sayacın altında son şampiyon — dokunulamaz, rota yok;
+    // perdesi kökte (aşağıda), güvenli alanın dışına taşsın diye.
     return (
       <View style={styles.centerContent}>
         <Text style={styles.stateText}>
@@ -1414,6 +1424,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             disabled={waitingNotifyBusy}
           />
         )}
+        {waitingChampion && <WaitingChampionCard champion={waitingChampion} />}
       </View>
     );
   }
@@ -1687,6 +1698,10 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     <View style={styles.root}>
       {/* Sızma dolgusuz katmanda — ışık ekranın kenarına ulaşır (§5.1). */}
       <LightBleed dominantColor={bleedColor} />
+      {/* V1-D7 revizyonu: bekleyiş perdesi dolgusuz katmanda — ekran kenarına ulaşır. */}
+      {shellState === 'before_18' && waitingChampion?.posterUrl && (
+        <WaitingCurtain posterUrl={waitingChampion.posterUrl} />
+      )}
       <View
         style={[
           styles.insetLayer,
