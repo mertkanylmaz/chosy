@@ -1642,10 +1642,23 @@ async function fillEmergency(game: GameType, pool: FilmRow[], rpt: Report, usedI
       clues: pd,
     })
 
-    if (!error) {
-      made++
-      usedInRun.add(f.id)
+    if (error) {
+      // Sessiz yutma YOK: 30 Eyl 2026'ya kadar her acil ekleme 23502
+      // (date NOT NULL) ile reddedildi ve kimse görmedi — hiçbir oyunda tek
+      // acil satır oluşmadı (119 düzeltti). İlk hata raporlanır ve döngü
+      // durur: aynı sebep kalan her denemede tekrar eder.
+      const msg = `acil_havuz/${game}: ${error.code ?? ''} ${error.message}`
+      console.error(`[gen] ${msg}`)
+      rpt.errors.push(msg)
+      await sentryCapture({
+        message: `[gen] ${msg}`,
+        level: 'error',
+        tags: { function: 'generate-puzzles', game, step: 'fill_emergency' },
+      })
+      break
     }
+    made++
+    usedInRun.add(f.id)
   }
   console.log(`[gen] Acil havuz ${game}: +${made}`)
 }
