@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.33
+**Sürüm:** 1.34
 **Tarih:** 30 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -815,7 +815,7 @@ repo ile birebir). İstemci **henüz sahada değil** — TestFlight build'i bekl
 | **Yaz saati çakışması** (yeni bulgu) | — | İki yerel 18:00 arası 23 saate indiğinde önceki döngü anahtarı o akşamın UTC anahtarıyla **aynı güne** düşebiliyor — ölçüldü: `America/Chicago` / `America/Winnipeg` yaz saatine geçiş günü (ör. 2027-03-14). Açık ret (`OUT_OF_WINDOW`). | Satır açılsaydı 18:00'de mükerrer istek kontrolü o satırı döner, kullanıcı o akşamı kaçırırdı — E-21 "satır tarihi" kuralının tam kendisi (SARI-1). |
 | `choice_events` "önceki döngü tarihiyle" | Görev metni | Tabloda **`date` kolonu yok**; tarih `gauntlet_id → daily_gauntlets.date` join'iyle. Yeni kolon açılmadı. `algorithm_version` satırdan kopyalanıyor, `submit-choice` değişmedi (K-40 append-only korunur). | Şema gerçeği. |
 | Arşiv (K-46) | "Anchor önceki döngü anahtarıyla tutarlı kalır" | Önceki döngü satırı **ne kaçırma ne tamamlama** sayılır; anchor = o satırın tarihi **+1** (ilk gerçek döngü). | Yarım kalan önceki döngü bedava kaçırma hakkını tüketiyordu. |
-| İstemci tetik | "Sıfır kişisel satır" | **Cache + marker:** cihazda gauntlet cache'i olan kullanıcı 18:00 öncesi **hiç ağ çağrısı yapmaz**; yoksa sorar, retde `closed` iz'i yazılır. Önceki döngü cache'lenmez. | Mevcut kullanıcı akışı değişmez. |
+| İstemci tetik | "Sıfır kişisel satır" | **Cache + marker:** cihazda gauntlet cache'i olan kullanıcı 18:00 öncesi ~~**hiç ağ çağrısı yapmaz**~~ **`generate-gauntlet` çağırmaz** *(v1.34 — bekleyiş ekranı son şampiyon için tek bir RLS tablo okuması yapar, bkz. E-24)*; yoksa sorar, retde `closed` iz'i yazılır. Önceki döngü cache'lenmez. | Mevcut kullanıcı akışı değişmez. |
 | Hata yolu | `error_recovery` | Böyle bir state yok (D-12); karşılığı `bootstrapping` + `loadError`. Yalnız 409 + bilinen kod bekleyiş ekranına düşürür; 5xx/400 hata ekranına. Açılışta ağ yoksa bekleyiş ekranı + Sentry uyarısı (iz yazılmaz). | Sessiz `before_18` yasak. |
 | Analytics | `cycle:'previous'` | 5 event (`gauntlet_started`, `choice_submitted`, `choice_rejected`, `gauntlet_completed`, `champion_revealed`) `cycle: 'previous' \| 'current'` taşır; gauntlet kimliğiyle eşlenir. | — |
 
@@ -852,7 +852,7 @@ koştu); aşağıdaki tur adları **commit mesajlarındaki** adlardır.
 | V1-D4 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
 | V1-D5 | — | **Metin bible'a işlenmedi** — CTO oturumunda, repoda izi yok. | — |
 | V1-D6 | Watched sayısının kaynağı `watch_feedback` (`loved`/`ok`/`abandoned`; `not_watched`/`skipped` sayılmaz). Hata/null → bölüm çizilmez + Sentry, sessiz 0 yok. | ✅ `468242f` | `app/(tabs)/profile.tsx:832` |
-| V1-D7 | Bekleme ekranında dünkü şampiyon, arşiv, Pro Mode ve keşif rotası **yok** (K-46, IA "tek görev"). | ✅ `f8f2e6d` — ekran = metin + geri sayım. Sprint v1'in "dünkü şampiyon kartı" maddesi bu kararla düştü. | `components/gauntlet/GauntletShell/index.tsx:1284-1285` |
+| V1-D7 | Bekleme ekranında ~~dünkü şampiyon,~~ arşiv, Pro Mode ve keşif rotası **yok** (K-46, IA "tek görev"). *(v1.34, 30 Eyl 2026 — **"dünkü şampiyon yok" kısmı geçersiz — bkz. E-24.** Arşiv / Pro Mode / keşif rotası yasağı aynen geçerli.)* | ✅ `f8f2e6d` — ekran = metin + geri sayım. Sprint v1'in "dünkü şampiyon kartı" maddesi bu kararla düştü. | `components/gauntlet/GauntletShell/index.tsx:1284-1285` |
 | V1-D8 | Avatar: 9 PNG → Phosphor duotone glif; saklama anahtarı cihaz bazlı → kullanıcı bazlı (`chosy_user_avatar_{publicUserId}`), eski anahtar tek seferlik taşınır. | ✅ `61f9993`. PNG'ler bundle'da (`setup-profile.tsx`, `PersonaBadge`). Avatar yalnız AsyncStorage'da — DB senkronu yok (`TEKNIK_BORC.md`). | `constants/avatarGlyphs.ts:4` |
 | V1-D9 | 18:00 kapısı istemcide **tek tanım** (`UNLOCK_HOUR`, `unlockClock.ts`); geri sayım hedefi buradan türetilir. Sprint v1'in "istemcide 18:00 hardcode yasak, hedef sunucudan" kısıtının yerine geçer. | ✅ `f8f2e6d`. Sunucu anahtarı hâlâ UTC (§9 "UTC gün anahtarı ↔ yerel ritüel"). | `components/gauntlet/GauntletShell/unlockClock.ts:19` |
 | V1-D10 | ~~Playfair canlı ekranlarda Design OS §3.3 rollerine taşınır~~ **Kısmen geri alındı (28 Eyl 2026, v1.32 — bkz. E-23 V3-D1):** Playfair **yalnız film adlarında** (`type.filmTitle`) geri döndü — kurucu referans tasarımı. Film adı dışındaki taşımalar geçerli (token katmanı SF Pro 600; DNA arketip adı Archivo `display-l`); **font yüklemesi bundle'da kalır**, donmuş oyun dosyalarına dokunulmaz. | ✅ `054f4ba`, `dab1e53`. Kalıntılar `TEKNIK_BORC.md` (28 Eyl). | `constants/theme.ts:32` |
@@ -917,6 +917,42 @@ G1/G2 dosya taraması: sıfır hardcoded renk, sıfır boş catch, `marquee` yal
 Watch Now + Home tab aktif ikonu, serif yalnız `filmTitle` (film adları).
 `test:founder` (ücretli) koşulmadı. Cihaz senaryoları:
 `docs/05_SPRINTS/ACTIVE/V1_TESTFLIGHT_CHECKLIST.md` (K ve L bölümleri).
+
+### E-24 — Bekleyiş ekranında son şampiyon: V1-D7 kısmen geri alındı (30 Eyl 2026)
+
+Kaynak: kurucu cihaz testi. 18:00 öncesi ekran (metin + sayaç) "çok boş".
+Kararlar kurucu tarafından AskUserQuestion ile verildi (üç soru, üç seçim):
+
+| Soru | Karar |
+|---|---|
+| Veri kaynağı | **`getLastChampion`**: Profil'in kullandığı `daily_gauntlets` personal RLS okuması (`daily_gauntlets_personal_read`). Yerel önbellek reddedildi: yalnız `generate-gauntlet` anında yazılıyor, final sonrası güncellenmiyor, kart çoğu kullanıcıda boş kalırdı. |
+| İçerik | **Hafif perde.** Tam ekran bulanık şampiyon afişi (Profil header perdesiyle aynı dil) + sayacın altında afiş · "Your last pick" · film adı (`filmTitle` serif). Tam `ChampionReveal` reddedildi (tam `GauntletFilm` gerekir → yeni sorgu/servis). |
+| Hangi şampiyon | **Son şampiyon, tarih filtresi yok.** Kullanıcı dün oynamadıysa daha eski son şampiyon görünür; etiket bu yüzden "dünkü" değil "son seçimin" (`profile.lastPickLabel`, yeni string yok). |
+
+**Değişen kurallar.** (1) **V1-D7**'nin "dünkü şampiyon yok" kısmı geçersiz
+(satırında üstü çizildi). Arşiv / Pro Mode / keşif rotası yasağı **aynen
+geçerli**: kart dokunulamaz, hiçbir rotaya gitmez (K-46 korunur).
+(2) "before_18'de ağ çağrısı yok" → **"before_18'de `generate-gauntlet`
+çağrılmaz"** olarak daraldı (E-21.1 "İstemci tetik" satırına not düşüldü).
+D-12'nin `waiting` satırındaki "gauntlet ÇAĞRILMAZ" ifadesi zaten bu dar
+anlamdadır, değişmedi.
+
+**Değişmeyen.** Beş durumlu kabuk, dakikalık nabız, gece yarısı
+sıfırlaması (PRODUCT_OS §3.6 "dünün şampiyonu gösterilmez", şampiyon
+**ekranının** gece yarısında kapanmasını anlatır; o geçiş aynen duruyor),
+E-21 önceki döngü akışı.
+
+**Hata yolu.** Sorgu hatası servis katmanında Sentry'ye yazılır. Kimlik
+okunamazsa breadcrumb düşer. İki durumda da perde ve kart çizilmez, sayaç
+her koşulda görünür. Reduce Transparency açıkken bulanık afiş yerine düz
+`charcoal` çizilir.
+
+**Uygulama.** `3b197ee`: `components/gauntlet/WaitingChampion/` (yeni),
+`components/gauntlet/GauntletShell/index.tsx` (perde kökte, kart sayacın
+altında). **Doğrulama:** `typecheck` 14 (hepsi `scripts/`) ·
+`typecheck:functions` 32 · `test:waiting` 15 · `test:previous-cycle` 25,
+hepsi yeşil. Cihaz doğrulaması yapılmadı: `before_18` yalnız TestFlight'ta
+test edilebilir.
 
 ---
 
@@ -1100,6 +1136,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.34 | 30 Eyl 2026 | **Bekleyiş ekranında son şampiyon — V1-D7 kısmen geri alındı** (bkz. yeni §5 **E-24**, kurucu kararı, AskUserQuestion). Tam ekran bulanık perde + sayacın altında afiş · "Your last pick" · film adı; veri `getLastChampion` (RLS tablo okuması), tarih filtresi yok. Kart dokunulamaz, rota yok; K-46 ve V1-D7'nin arşiv/Pro Mode/keşif yasağı aynen geçerli. "before_18'de ağ çağrısı yok" → "`generate-gauntlet` çağrılmaz" olarak daraldı (E-21.1 satırına not). Uygulama `3b197ee`. |
 | 1.33 | 30 Eyl 2026 | **Cinema DNA v1'de gizli, DNA vaadi çıkarıldı (CTO kararı).** Keşif `cf97732`: kart `cinema_dna` okumuyor, `recompute-taste-vector` tetiklenmiyor, D-06 eşiğini karşılayan kullanıcı yok. **K-47** Identity değeri ~~"See how your taste evolves"~~ → **"Pick your champion on your own time"** (gerekçe: özellik v1'de yok; üstü çizildi, silinmedi). Aynı gerekçeyle `profile.chosyProSubtitle` → "Replay the evenings you missed · last 7 days" ve `contextPaywall.moodHistorySubtitle` → "Replay any evening you missed in the last 7 days." (arşiv penceresi 7 gün, `get-archive-status`). Metinler AskUserQuestion ile onaylı. **K-46 ekine** durum notu: `mood_history` girişi kart gizli olduğu için fiilen kapalı, tetikleme kodu değişmedi. **K-08** ve **K-32** satırlarına sapma notu; §9'a K-32 boru hattı satırı. |
 | 1.32 | 28 Eyl 2026 | **V-3 gauntlet + şampiyon görsel retrofiti kaydı** (bkz. yeni §5 **E-23**). Sprint kararları **V3-D1…V3-D7** ayrı ad uzayında: serif yalnız film adında (`filmTitle`) · altın yalnız ödül katmanında, Watch Now düz `marquee` · Watch Now = TMDB bölge `link`'i, uygulama içi tarayıcı · %60 poster hero + `ink` geçişi · en fazla 3 logo + "See all" · Spotlight kaydırma sonunda · Home tab ikonu film. **V3-D1, V1-D10'u kısmen geri aldı** (gerekçe: kurucu referans tasarımı, serif yalnızca film adı) — V1-D10 satırında üstü çizildi. **v1.23 kısmen geçersiz** (link, logo sayısı, birincil eylem) — v1.23 satırı ve §7.1 Champion/Where to Watch satırlarına not (CTO onayı, AskUserQuestion). §9 sağlayıcı talebi satırına not, madde açık. Design OS §3/§4 notları. Doğrulama: typecheck 14, functions 32, i18n 1387/1387, tüm Deno testleri yeşil (e2e-api hariç, prod'a yazar). Kod değişikliği yok. |
 | 1.31 | 28 Eyl 2026 | **V-1 Design OS uyum sprinti kaydı** (bkz. yeni §5 **E-22**). Sprint karar numaraları **V1-Dn** olarak ayrı ad uzayına alındı (§3 D-xx ile karışmasın). Repoda izi olan **V1-D3, D6, D7, D8, D9, D10, D11** işlendi; **V1-D1, D2, D4, D5** metni CTO oturumunda, bible'a işlenmedi (uydurulmadı). Sapmalar: **K-08** Streak ertelendi (streak verisi gauntlet'ten beslenmiyor) · **K-31** Pro Mode mood grid istisnası (kurucu kararı) · **K-15** bildirim cihazda yerel planlanır — **karar verildi, uygulanmadı** · sprint v1'deki "Chosy Pro" görünen ad maddesi **iptal**, ad "Chosy Plus" (K-46 notundaki metin düzeltildi) · Day-0 Seçenek A yerine **E-21 — UYGULANDI** (v1.30, durum teyit edildi). §9'a iki satır. Doğrulama: typecheck 14, functions 32, i18n 1367/1367, deno testleri yeşil. Kod değişikliği yok. |
