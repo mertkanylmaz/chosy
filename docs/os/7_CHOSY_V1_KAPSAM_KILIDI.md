@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.34
+**Sürüm:** 1.35
 **Tarih:** 30 Eylül 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -954,6 +954,30 @@ altında). **Doğrulama:** `typecheck` 14 (hepsi `scripts/`) ·
 hepsi yeşil. Cihaz doğrulaması yapılmadı: `before_18` yalnız TestFlight'ta
 test edilebilir.
 
+### E-25 — Spotlight içerik sürekliliği: editoryal çözüm havuzu, acil havuz, haftalık cron (30 Eyl 2026)
+
+**Olay.** Spotlight 11 Ağu – 30 Eyl 2026 arası bulmacasızdı. `generate-puzzles`
+elle tetikleniyordu, cron'u hiç yoktu (son elle koşum 29 Tem). Şampiyon
+ekranındaki bonus kartı (C.9b-UI C4) 50 gün boyunca `NO_PUZZLE` (404) açtı.
+Kurucu TestFlight'ta fark etti. Kararlar kurucu tarafından AskUserQuestion
+ile verildi.
+
+| Konu | Karar |
+|---|---|
+| Çözüm havuzu | **100 günlük editoryal takvim** (`editorial_calendar_films`), genel `films` DEĞİL. Gerekçe: o gün gauntlet'te dönen filmler Spotlight'ta çıkmasın, "sürekli aynı içerik" hissi olmasın. Havuz tükenirse genel havuza sessiz düşüş yok → Sentry error. |
+| Sıra | **Her günden bir film, 100. günden geriye**: önce tüm günlerin 1. filmi (100 → 1), sonra 2. filmler (position artan, day_number azalan). Gün gün gitmek gün içi aynı temayı (ör. 97. gün dört Pixar) art arda döndürürdü. Oynanamaz başlıklar (A-Z dışı, slot 3..30 dışı) baştan elenir. |
+| Kart | Gizlenmez; hedef "her gün bulmaca olsun". |
+| Acil havuz | **Onarıldı** (migration 119): `daily_puzzles.date` NOT NULL'dı, acil satırlar `date: null` ile eklendiği için hepsi 23502 ile reddedilmiş ve üretici hatayı yutmuştu — 10 oyun türünün hiçbirinde tek acil satır yoktu. `date` NULL kabul eder + `CHECK (date IS NOT NULL OR is_emergency_pool)`. İstemci görünümü `public_daily_puzzles` tarihsizleri zaten filtreliyor. Ekleme hatası artık Sentry'ye yazılır. |
+| Süreklilik | **Haftalık cron** (migration 120): `generate-puzzles-spotlight`, Pazartesi 02:00 UTC, `?game=spotlight`, timeout 150 sn. 14 günlük ufukla her zaman 7–14 günlük tampon. **Ön koşul:** Vault `cron_service_role_key` 31 Ağu'dan beri ölü (CRON_ANAHTAR_KESIF.md, seçenek A) — kurucu canlı anahtarla günceller; bu aynı zamanda üç ölü cron'u da canlandırır. |
+
+**Uygulama.** `1adc164`, `7a281bd` (havuz ve sıra), `320e2c5` (119 +
+görünür hata), `6bfaea7` (120). İlk üretim 30 Eyl: 14 bulmaca (30 Eyl –
+13 Eki), çözümler 100 → 86. günlerin 1. filmleri; kullanılabilir havuz 340.
+Görünüm yalnız `v`, `title_mask`, `backdrop_url`, `letter_count` döndürüyor
+(maske harf taşımıyor). **Açık:** cron'un canlı olduğu yalnız ilk Pazartesi
+koşumundan sonra `net._http_response` ile kanıtlanır; `job_run_details`
+kanıt değildir.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -1136,6 +1160,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.35 | 30 Eyl 2026 | **Spotlight içerik sürekliliği** (bkz. yeni §5 **E-25**, kurucu kararları, AskUserQuestion). Spotlight 11 Ağu'dan beri bulmacasızdı (cron yoktu). Çözüm havuzu 100 günlük editoryal takvim, her günden bir film, 100. günden geriye; genel havuza sessiz düşüş yok. Migration **119** (`daily_puzzles.date` NULL — acil havuz hiçbir oyunda hiç çalışmamıştı) ve **120** (haftalık `generate-puzzles-spotlight` cron'u; ön koşul Vault anahtarının canlandırılması). Uygulama `1adc164` `7a281bd` `320e2c5` `6bfaea7`. |
 | 1.34 | 30 Eyl 2026 | **Bekleyiş ekranında son şampiyon — V1-D7 kısmen geri alındı** (bkz. yeni §5 **E-24**, kurucu kararı, AskUserQuestion). Tam ekran bulanık perde + sayacın altında afiş · "Your last pick" · film adı; veri `getLastChampion` (RLS tablo okuması), tarih filtresi yok. Kart dokunulamaz, rota yok; K-46 ve V1-D7'nin arşiv/Pro Mode/keşif yasağı aynen geçerli. "before_18'de ağ çağrısı yok" → "`generate-gauntlet` çağrılmaz" olarak daraldı (E-21.1 satırına not). Uygulama `3b197ee`. |
 | 1.33 | 30 Eyl 2026 | **Cinema DNA v1'de gizli, DNA vaadi çıkarıldı (CTO kararı).** Keşif `cf97732`: kart `cinema_dna` okumuyor, `recompute-taste-vector` tetiklenmiyor, D-06 eşiğini karşılayan kullanıcı yok. **K-47** Identity değeri ~~"See how your taste evolves"~~ → **"Pick your champion on your own time"** (gerekçe: özellik v1'de yok; üstü çizildi, silinmedi). Aynı gerekçeyle `profile.chosyProSubtitle` → "Replay the evenings you missed · last 7 days" ve `contextPaywall.moodHistorySubtitle` → "Replay any evening you missed in the last 7 days." (arşiv penceresi 7 gün, `get-archive-status`). Metinler AskUserQuestion ile onaylı. **K-46 ekine** durum notu: `mood_history` girişi kart gizli olduğu için fiilen kapalı, tetikleme kodu değişmedi. **K-08** ve **K-32** satırlarına sapma notu; §9'a K-32 boru hattı satırı. |
 | 1.32 | 28 Eyl 2026 | **V-3 gauntlet + şampiyon görsel retrofiti kaydı** (bkz. yeni §5 **E-23**). Sprint kararları **V3-D1…V3-D7** ayrı ad uzayında: serif yalnız film adında (`filmTitle`) · altın yalnız ödül katmanında, Watch Now düz `marquee` · Watch Now = TMDB bölge `link`'i, uygulama içi tarayıcı · %60 poster hero + `ink` geçişi · en fazla 3 logo + "See all" · Spotlight kaydırma sonunda · Home tab ikonu film. **V3-D1, V1-D10'u kısmen geri aldı** (gerekçe: kurucu referans tasarımı, serif yalnızca film adı) — V1-D10 satırında üstü çizildi. **v1.23 kısmen geçersiz** (link, logo sayısı, birincil eylem) — v1.23 satırı ve §7.1 Champion/Where to Watch satırlarına not (CTO onayı, AskUserQuestion). §9 sağlayıcı talebi satırına not, madde açık. Design OS §3/§4 notları. Doğrulama: typecheck 14, functions 32, i18n 1387/1387, tüm Deno testleri yeşil (e2e-api hariç, prod'a yazar). Kod değişikliği yok. |
