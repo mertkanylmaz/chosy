@@ -105,12 +105,6 @@ type RatingChipId = '7' | '8' | 'top250' | '';
 /** Minimum AI processing gosterme suresi (ms) */
 const MIN_PROCESSING_MS = 1500;
 
-/**
- * CTA'daki "N left today" yalnız kalan hak bu sayı ve altındayken görünür
- * (V-1 Tur 7). Görünürlük eşiği — kota değeri/tüketimi DEĞİL.
- */
-const QUOTA_HINT_MAX = 10;
-
 // ─── Filter chip type aliases (used by FilterBottomSheet + handleFindMovies) ─
 
 
@@ -127,7 +121,7 @@ export default function MoodSearchScreen() {
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
   const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
-  const { fullQuota, checkQuota, consumeQuota, isLoading: subLoading } = useSubscription();
+  const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt } = useProModeAccess();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
@@ -567,13 +561,9 @@ export default function MoodSearchScreen() {
                   {!canSubmit && (
                     <Text style={styles.findButtonHint}>{t('mood.findMoviesHint')}</Text>
                   )}
-                  {/* 117: limit -1 = sinirsiz (ucretli tierlar) — kalan hak metni hic gosterilmez.
-                      V-1 Tur 7: yalnız kalan ≤ QUOTA_HINT_MAX iken; kota mantığı aynı. */}
-                  {canSubmit && fullQuota && !subLoading && fullQuota.searches.limit !== -1 && (fullQuota.searches.limit - fullQuota.searches.used) > 0 && (fullQuota.searches.limit - fullQuota.searches.used) <= QUOTA_HINT_MAX && (
-                    <Text style={styles.findButtonQuota}>
-                      {t('mood.quotaLeft', { count: fullQuota.searches.limit - fullQuota.searches.used })}
-                    </Text>
-                  )}
+                  {/* 30 Eyl 2026 kurucu kararı: "N left today" kalan hak satırı
+                      KALDIRILDI (butona basınca yanıp sönüyordu). Kota mantığı
+                      aynı — yalnız gösterge yok; tükenişte QuotaExhausted açılır. */}
                 </View>
               </TouchableOpacity>
             </Animated.View>
@@ -791,13 +781,6 @@ const styles = StyleSheet.create({
   findButtonContent: {
     alignItems: 'center',
     gap: 1,
-  },
-  /** bone üzerinde ink@70% — 7.1:1 (önce beyaz@55% / accentPrimary 1.5:1) */
-  findButtonQuota: {
-    color: withAlpha(color.surface.base, 0.7),
-    fontSize: Theme.typography.micro.fontSize,
-    fontWeight: '500',
-    letterSpacing: 0.2,
   },
   /** 11pt — §2.7: smoke değil bone@70% (graphite üzerinde 7.0:1) */
   findButtonHint: {
