@@ -569,9 +569,14 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
 
 /**
  * Spotlight çözümleri 100 günlük editoryal takvimden gelir, SON günden
- * geriye (day_number azalan, position artan). Kurucu kararı, 30 Eyl 2026:
- * o gün gauntlet'te dönen filmler Spotlight'ta çıkmasın, "sürekli aynı
- * içerik" hissi olmasın. Genel `films` havuzu Spotlight için KULLANILMAZ.
+ * geriye. Kurucu kararı, 30 Eyl 2026: o gün gauntlet'te dönen filmler
+ * Spotlight'ta çıkmasın, "sürekli aynı içerik" hissi olmasın. Genel `films`
+ * havuzu Spotlight için KULLANILMAZ.
+ *
+ * Sıra: HER GÜNDEN BİR FİLM — önce tüm günlerin 1. filmi (100 → 1), sonra
+ * 2. filmleri... (position artan, day_number azalan). Gün içi dört film aynı
+ * temayı taşır (ör. 97. gün dört Pixar); gün gün gitmek aynı temayı art
+ * arda dört gün döndürürdü (kurucu kararı, aynı gün).
  *
  * SIRA KORUNUR — `genOne` Spotlight'ta hash karıştırması yapmaz.
  *
@@ -592,8 +597,8 @@ async function fetchSpotlightEditorialPool(usedIds: Set<string>, rpt: Report): P
   const { data, error } = await db()
     .from('editorial_calendar_films')
     .select(`day_number, position, film:films(${cols})`)
-    .order('day_number', { ascending: false })
     .order('position', { ascending: true })
+    .order('day_number', { ascending: false })
   if (error) throw new Error(`Spotlight editoryal havuz sorgusu: ${error.message}`)
 
   const { data: emergencyRows, error: emergencyError } = await db()
