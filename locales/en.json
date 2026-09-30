@@ -506,6 +506,7 @@
     "personaPlaceholder": "Discover your type",
     "editProfile": "Edit Profile",
     "memberSince": "Since %{date}",
+    "cinephileSince": "Cinephile since %{date}",
     "linkAccountTitle": "Link Your Account",
     "linkAccountSubtitle": "Save your watchlist permanently — never lose your data",
     "linkWithApple": "Apple",

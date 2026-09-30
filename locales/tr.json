@@ -506,6 +506,7 @@
     "personaPlaceholder": "Türünü keşfet",
     "editProfile": "Profili Düzenle",
     "memberSince": "Üye: %{date}",
+    "cinephileSince": "%{date} tarihinden beri sinefil",
     "linkAccountTitle": "Hesabını Bağla",
     "linkAccountSubtitle": "İzleme listeni kalıcı olarak kaydet — verilerini asla kaybetme",
     "linkWithApple": "Apple",

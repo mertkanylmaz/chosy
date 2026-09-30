@@ -49,12 +49,11 @@ import {
   FilmStrip,
   GoogleLogo,
   MagicWand,
-  PencilSimple,
   Sparkle,
   User,
 } from 'phosphor-react-native';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 // import * as Clipboard from 'expo-clipboard'; // Referral card UI'dan kaldirildi
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -125,13 +124,13 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
 const SAVED_STRIP_SLOTS = 4;
 
 /**
- * Header perdesi — son sampiyon posteri. Bulaniklik posteri tanınmaz
- * kilar (renk dokusu kalir); `ink` ortusu metin kontrastini korur, alt
- * gecis header'i zemine eritir. Design OS §6 bilincli istisnasi (kurucu
- * talebi, 29 Eyl 2026) — bkz. commit mesaji.
+ * Header perdesi — son sampiyon posteri. Design OS §6 bilincli istisnasi
+ * (kurucu talebi, 29 Eyl 2026). 30 Eyl 2026 kurucu referansi: bulaniklik
+ * hafif, afis TANINIR; perde durum cubugunun arkasina uzanir. `ink` ortusu
+ * metin kontrastini korur, alt gecis header'i zemine eritir.
  */
-const HEADER_CURTAIN_BLUR = 28;
-const HEADER_CURTAIN_DIM = withAlpha(color.surface.base, 0.6);
+const HEADER_CURTAIN_BLUR = 8;
+const HEADER_CURTAIN_DIM = withAlpha(color.surface.base, 0.45);
 const HEADER_CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
 /** Avatar mercegi dis capi (pt) — Faz 2 ritual halkasi da bu olcuyu kullanir. */
@@ -716,6 +715,8 @@ function ProfileScreenContent() {
   const router = useRouter();
   /** V-4 Tur A: tab bar + home indicator — kaydirma iceriginin alt payi. */
   const tabBarInset = useTabBarInset();
+  /** Header perdesi durum cubugunun arkasina uzanir — ust pay header'da. */
+  const insets = useSafeAreaInsets();
   const { t, language, setLanguage } = useLanguage();
   const { isPremium, premiumStatus, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
@@ -728,6 +729,8 @@ function ProfileScreenContent() {
   const [swipeInsights, setSwipeInsights] = useState<SwipeInsight | null>(null);
   const [lastProfile, setLastProfile] = useState<TasteProfile | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
+  /** `users.created_at` — "Cinephile since" satiri; okunamazsa satir cizilmez. */
+  const [joinedAt, setJoinedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -829,7 +832,7 @@ function ProfileScreenContent() {
 
       const { data: userRow } = await supabase
         .from('users')
-        .select('id, display_name, username, archetype_id')
+        .select('id, display_name, username, archetype_id, created_at')
         .eq('auth_id', authUser.id)
         .single();
 
@@ -867,12 +870,32 @@ function ProfileScreenContent() {
         });
 
       // İsim önceliği: username → display_name → auth metadata adı → null (fallback i18n'den gelir)
-      type UserRow = { id: string; display_name: string | null; username: string | null; archetype_id: number | null };
+      type UserRow = {
+        id: string;
+        display_name: string | null;
+        username: string | null;
+        archetype_id: number | null;
+        created_at: string;
+      };
       const row = userRow as UserRow;
       const metaName = (authUser.user_metadata?.full_name as string | undefined)
         ?? (authUser.user_metadata?.name as string | undefined)
         ?? null;
       setDisplayName(row.username ?? row.display_name ?? metaName);
+
+      // "Cinephile since" — created_at NOT NULL; ayrıştırılamazsa satır
+      // çizilmez ve Sentry'ye yazılır (sessiz yanlış tarih yok).
+      const joined = new Date(row.created_at);
+      if (Number.isNaN(joined.getTime())) {
+        Sentry.captureMessage('profile: users.created_at ayrıştırılamadı', {
+          level: 'warning',
+          tags: { component: 'ProfileScreen' },
+          extra: { created_at: row.created_at },
+        });
+        setJoinedAt(null);
+      } else {
+        setJoinedAt(joined);
+      }
 
       // Kalibrasyon sonucu arketip (onboarding'den kaydedilen)
       const calibrationArchetypeId = row.archetype_id;
@@ -1319,7 +1342,9 @@ function ProfileScreenContent() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    // 30 Eyl 2026: ust kenar dolgusu yok — header perdesi durum cubugunun
+    // arkasina uzanir; ust pay `headerSection`'da (`insets.top`).
+    <SafeAreaView style={styles.safe} edges={[]}>
       <StatusBar style="light" backgroundColor={color.surface.base} />
       {/* V-4 Tur A (V4-D3): eski iki durakli gradyan ayni rengin iki kopyasiydi
           (#0A0A0F → #0A0A0F); zemin artik `safe`'in duz `ink`'i. */}
@@ -1343,7 +1368,7 @@ function ProfileScreenContent() {
           <Animated.View style={headerAnimStyle}>
           {/* V-4 Tur C: eski iki durakli header gradyani kalkti — zemin `ink`,
               perde varsa perde. */}
-          <View style={styles.headerSection}>
+          <View style={[styles.headerSection, { paddingTop: insets.top + space.sm }]}>
 
             {/* Perde — son sampiyonun bulanik, karartilmis posteri. Sampiyon
                 yoksa cizilmez; header eski gradyanla kalir. Dekoratif:
@@ -1423,18 +1448,28 @@ function ProfileScreenContent() {
             </TouchableOpacity>
             </View>
 
-            {/* Profil adi + duzenle butonu */}
+            {/* Profil adi — 30 Eyl 2026 kurucu referansi: kalem rozeti yerine
+                altta "Cinephile since" satiri + "Edit profile" pill'i. */}
+            <Text style={styles.profileName}>
+              {displayName ?? t('profile.anonymousCinephile')}
+            </Text>
+            {joinedAt && (
+              <Text style={styles.cinephileSince}>
+                {/* Buyuk harf JS'te, dile gore — `textTransform` TR'de i → I yapar (İ degil). */}
+                {t('profile.cinephileSince', {
+                  date: joinedAt.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
+                    month: 'short',
+                    year: 'numeric',
+                  }),
+                }).toLocaleUpperCase(language === 'tr' ? 'tr-TR' : 'en-US')}
+              </Text>
+            )}
             <TouchableOpacity
-              style={styles.profileNameRow}
+              style={styles.editProfilePill}
               onPress={() => { hapticLight(); setShowNicknameModal(true); }}
               activeOpacity={0.8}
-              hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}>
-              <Text style={styles.profileName}>
-                {displayName ?? t('profile.anonymousCinephile')}
-              </Text>
-              <View style={styles.editNameBadge}>
-                <PencilSimple size={11} weight="bold" color={color.text.secondary} />
-              </View>
+              accessibilityRole="button">
+              <Text style={styles.editProfilePillText}>{t('profile.editProfile')}</Text>
             </TouchableOpacity>
 
             {/* Auth provider rozeti — Apple/Google icin ozel gosterim */}
@@ -1881,24 +1916,27 @@ const styles = StyleSheet.create({
   profileName: {
     ...type['display-m'],
     color: color.text.primary,
+    textAlign: 'center',
   },
-  /** Profil adi + kalem ikonu yan yana */
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.sm,
-    marginBottom: space.xs,
+  /** "CINEPHILE SINCE AUG 2026" — sayilar/meta Martian Mono (§3.3) */
+  cinephileSince: {
+    ...type.meta,
+    color: color.text.secondary,
+    marginTop: space.xs,
   },
-  /** Kucuk duzenle rozeti — ismin yaninda */
-  editNameBadge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: color.surface.raised,
+  /** "Edit profile" — perde uzerinde yari saydam `ink` pill, hairline kenar */
+  editProfilePill: {
+    marginTop: space.md,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.pill,
     borderWidth: size.hairline,
     borderColor: color.surface.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: withAlpha(color.surface.base, 0.4),
+  },
+  editProfilePillText: {
+    ...type.callout,
+    color: color.text.primary,
   },
   /** Kamera ikonu — avatar uzerinde */
   avatarEditBadge: {
