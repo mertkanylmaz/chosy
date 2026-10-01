@@ -32,12 +32,16 @@ import { CURTAIN_BLUR, CURTAIN_FADE_TOP, styles } from './styles';
 /**
  * `active` true olduğunda son şampiyonu okur. Her before_18 girişinde
  * yeniden okunur — gece yarısı sıfırlamasından sonra yeni bitmiş final de
- * görünür. Okuma bitene kadar / hata / şampiyon yok → `null`.
+ * görünür. `identityEpoch` değişince de (kabuk açıkken kimlik değişti)
+ * önceki kullanıcının kartı hemen temizlenir ve yeniden okunur.
+ * Okuma bitene kadar / hata / şampiyon yok → `null`.
  */
-export function useLastChampion(active: boolean): LastChampion | null {
+export function useLastChampion(active: boolean, identityEpoch: number): LastChampion | null {
   const [champion, setChampion] = useState<LastChampion | null>(null);
 
   useEffect(() => {
+    // Başka kullanıcının şampiyonu yeni kimliğin ekranında bir an bile kalmasın.
+    setChampion(null);
     if (!active) return;
     let alive = true;
     (async () => {
@@ -62,7 +66,7 @@ export function useLastChampion(active: boolean): LastChampion | null {
     return () => {
       alive = false;
     };
-  }, [active]);
+  }, [active, identityEpoch]);
 
   return champion;
 }

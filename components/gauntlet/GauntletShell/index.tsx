@@ -752,8 +752,66 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
 
   // Bootstrap sinyali: app/_layout.tsx'in ensureAppUser akışı auth event'i
   // yayınlar — sayaç sıfırlanır, bekleyen backoff iptal edilip hemen denenir.
+  //
+  // Kimlik değişimi (kurucu kararı, 1 Eki 2026): kabuk açıkken BAŞKA bir
+  // auth kimliği oturum açarsa (hesap silme → anonim kurtarma, ölü JWT
+  // kurtarması, başka hesaba giriş) ekran eski kullanıcının durumunda
+  // KALMAZ — yeni kullanıcıya açılışta ne gösterilecekse o gösterilir:
+  // 18:00 öncesi E-21 önceki döngü sorgusu, sonrası bugünün gauntlet'i.
+  // 30 Eyl TestFlight: hesap silindikten sonra açılış kararı ölü kimlikle
+  // verilmiş ("mevcut kullanıcı"), yeni anonim kullanıcı 18:00'i beklemişti.
+  //
+  // `lastAuthIdRef` SIGNED_OUT'ta SIFIRLANMAZ — çıkış + yeni giriş tam da
+  // yakalanması gereken değişimdir. İlk kimlik (null → id) değişim sayılmaz:
+  // temiz kurulumu mount akışı zaten karşılar. Apple bağlama (linkIdentity)
+  // kimliği korur, tetiklemez.
+  const lastAuthIdRef = useRef<string | null>(null);
+
+  const restartForNewIdentity = useCallback(() => {
+    cycleModeRef.current = 'current';
+    completedDateKeyRef.current = null;
+    authAttemptsRef.current = 0;
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    setGauntlet(null);
+    setChampion(null);
+    setPair(null);
+    setSeenMode(false);
+    setAnimateReveal(false);
+    setIdentityEpoch((n) => n + 1);
+
+    if (isUnlockedNow()) {
+      transitionTo('bootstrapping', 'auth');
+      void flushThenLoad('auth');
+      return;
+    }
+    transitionTo('before_18', 'auth');
+    // probePreviousCycle `shellStateRef`'e bakar; ref render'da güncellenir,
+    // burada aynı değer elle yazılır ki karar bayat durumla verilmesin.
+    shellStateRef.current = 'before_18';
+    probePreviousCycle().catch((err: unknown) => {
+      Sentry.captureException(err, {
+        tags: { component: 'GauntletShell', flow: 'previousCycleProbe', trigger: 'identity_change' },
+      });
+    });
+  }, [flushThenLoad, probePreviousCycle, transitionTo]);
+
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const authId = session?.user?.id ?? null;
+      if (authId) {
+        const previous = lastAuthIdRef.current;
+        lastAuthIdRef.current = authId;
+        if (event === 'SIGNED_IN' && previous !== null && previous !== authId) {
+          Sentry.addBreadcrumb({
+            category: 'gauntlet.state',
+            message: 'identity changed — shell restarted for new user',
+            level: 'info',
+          });
+          restartForNewIdentity();
+          return;
+        }
+      }
+
       if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
         authAttemptsRef.current = 0;
         if (shellStateRef.current === 'bootstrapping') {
@@ -763,7 +821,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       }
     });
     return () => subscription.unsubscribe();
-  }, [flushThenLoad]);
+  }, [flushThenLoad, restartForNewIdentity]);
 
   // K-42 tetikleyici (b): bağlantı geri geldi. Yalnız offline→online
   // geçişinde ateşlenir (networkStatus), açılıştaki ilk online event'inde
@@ -835,7 +893,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   );
 
   /** V1-D7 revizyonu (30 Eyl 2026): bekleyişte son şampiyon — perde + kart. */
-  const waitingChampion = useLastChampion(shellState === 'before_18');
+  /** Kabuk açıkken kimlik değişimi sayacı — `restartForNewIdentity` artırır. */
+  const [identityEpoch, setIdentityEpoch] = useState(0);
+  const waitingChampion = useLastChampion(shellState === 'before_18', identityEpoch);
 
   // PostHog: waiting_viewed — bekleyiş ekranına her giriş bir kez.
   useEffect(() => {
