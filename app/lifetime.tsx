@@ -54,6 +54,7 @@ import {
 } from '@/services/lifetimeService';
 import { getAppUserId } from '@/services/watchlist';
 import { clearQuotaCache } from '@/services/quotaEngine';
+import { remoteConfig } from '@/services/remoteConfig';
 import { supabase } from '@/services/supabase';
 import { hapticSuccess, hapticMedium } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -82,6 +83,16 @@ export default function LifetimeOfferScreen() {
   const { t } = useLanguage();
   const { tier, refreshSubscription } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
+
+  // D-09: Lifetime satışı kapalı — paywall_lifetime_enabled false ise ekran render edilmez
+  const lifetimeEnabled =
+    (remoteConfig as { get(k: string): unknown }).get('paywall_lifetime_enabled') === true;
+
+  useEffect(() => {
+    if (!lifetimeEnabled) {
+      router.replace('/(tabs)' as never);
+    }
+  }, [lifetimeEnabled, router]);
 
   const [counter, setCounter] = useState<LifetimeCounter | null>(null);
   const [memberInfo, setMemberInfo] = useState<FoundingMemberInfo | null>(null);

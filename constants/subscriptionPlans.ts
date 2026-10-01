@@ -54,14 +54,14 @@ export interface QuotaStatus {
 export const PLANS: Record<PlanId, PlanDefinition> = {
   monthly: {
     rcProductId: 'com.chosy.monthly',
-    displayPrice: '$6.99',
+    displayPrice: '$4.99',
     periodDays: 30,
     // App Store Connect'te 18 May 2026'dan beri canli (K-59 olcumu)
     trialDays: 3,
   },
   annual: {
     rcProductId: 'com.chosy.annual',
-    displayPrice: '$39.99',
+    displayPrice: '$29.99',
     periodDays: 365,
     // App Store Connect'te 18 May 2026'dan beri canli (K-59 olcumu)
     trialDays: 7,
