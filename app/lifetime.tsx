@@ -360,6 +360,11 @@ export default function LifetimeOfferScreen() {
     );
   }
 
+  // D-09: lifetimeEnabled false ise hiçbir şey render etme (useEffect yönlendirme complement)
+  if (!lifetimeEnabled) {
+    return null;
+  }
+
   const isSoldOut = counter?.soldOut ?? false;
 
   // Animated display value
