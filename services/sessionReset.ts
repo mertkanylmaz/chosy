@@ -29,6 +29,7 @@ import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearGauntletCache } from './gauntletCache';
 import { logger } from '../utils/logger';
+import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
 
 /**
  * Silmeden sağ çıkan cihaz düzeyi anahtarlar. Listede olmayan her anahtar
@@ -51,6 +52,29 @@ const RC_LOGOUT_TIMEOUT_MS = 5_000;
 
 /** Dinleyicinin yeni anonim oturumu açması için üst sınır. */
 const NEW_SESSION_TIMEOUT_MS = 10_000;
+
+// ─── Kasıtlı sıfırlama bayrağı (identity_reset) ──────────────────────────────
+//
+// `_layout.tsx` SIGNED_OUT kurtarma dalı yeni anonim kimlik açınca
+// `identity_reset_detected` (signed_out_recovery) üretir — kimlik KAYBININ
+// ölçümü. Kullanıcının kendi çıkışı / hesap silmesi kayıp değildir; bu
+// bayrak o olayı bastırır. Tek kullanımlık, 30 sn süre sonlu — mantık ve
+// gerekçe `utils/intentionalResetFlag.ts`'te.
+
+const intentionalResetFlag = createIntentionalResetFlag();
+
+/** Kasıtlı sıfırlama başlıyor — sonraki SIGNED_OUT kimlik kaybı sayılmaz. */
+export function markIntentionalReset(): void {
+  intentionalResetFlag.mark();
+}
+
+/**
+ * Bayrağı TÜKETİR (tek kullanımlık) ve süresi içinde set edilmiş miydi
+ * döner. Süresi geçmiş bayrak `false` döner — olay normal ölçülür.
+ */
+export function consumeIntentionalReset(): boolean {
+  return intentionalResetFlag.consume();
+}
 
 export interface ResetToFreshSessionDeps {
   /** `SubscriptionContext.resetSubscriptionState` */
@@ -176,9 +200,16 @@ export async function resetToFreshSession(deps: ResetToFreshSessionDeps): Promis
     });
 
     try {
+      // SIGNED_OUT signOut beklenirken yayılır — bayrak ÖNCE kurulur.
+      markIntentionalReset();
       // `local`: sunucudaki kullanıcı zaten yok, `/logout` 403 dönerdi.
       const { error: signOutError } = await supabase.auth.signOut({ scope: 'local' });
-      if (signOutError) throw signOutError;
+      if (signOutError) {
+        // SIGNED_OUT yayılmadı; bayrak takılı kalıp sonraki gerçek kaybı
+        // bastırmasın (süre sonu da korur, bu erken temizlik).
+        consumeIntentionalReset();
+        throw signOutError;
+      }
       await newIdentity;
     } catch (err) {
       // signOut başarısızsa cihaz ölü JWT'yle kalır (bootstrap'taki

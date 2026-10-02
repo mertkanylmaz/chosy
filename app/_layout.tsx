@@ -44,6 +44,7 @@ import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
 import { ensureAppUser } from '@/services/auth-utils';
 import { syncWatchedFilms } from '@/services/watchSync';
+import { consumeIntentionalReset } from '@/services/sessionReset';
 import {
   savePushTokenToServer,
   clearBadge,
@@ -585,6 +586,9 @@ export default function RootLayout() {
           // Recovery'ye girerken bilinen ESKİ kimlik. Aşağıdaki başarı dalı
           // yeni kimliği yazmadan önce burada dondurulur.
           const previousAuthId = lastKnownAuthId;
+          // Çıkış / hesap silme (resetToFreshSession) kimlik KAYBI değildir:
+          // olay üretilmez. Bayrak burada, senkron ve tek seferlik tüketilir.
+          const intentionalReset = consumeIntentionalReset();
 
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
@@ -597,6 +601,15 @@ export default function RootLayout() {
                 // buradaki iş olayın ölçülebilir olması.
                 const newAuthId = data.session?.user?.id ?? null;
                 lastKnownAuthId = newAuthId ?? lastKnownAuthId;
+
+                if (intentionalReset) {
+                  Sentry.addBreadcrumb({
+                    category: 'auth',
+                    level: 'info',
+                    message: 'signed_out_recovery: kasıtlı sıfırlama — identity_reset_detected üretilmedi',
+                  });
+                  return;
+                }
 
                 posthogAnalytics.track('identity_reset_detected', {
                   had_previous_session: previousAuthId !== null,
