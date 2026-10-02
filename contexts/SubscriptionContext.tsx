@@ -117,6 +117,14 @@ interface SubscriptionState {
    * Full quota status'u yeniler.
    */
   refreshQuota: () => Promise<void>;
+
+  /**
+   * Bellekteki abonelik durumunu free'ye sıfırlar — ağ/RC beklemez.
+   * Hesap silme sonrası (`resetToFreshSession`) çağrılır: provider auth
+   * değişimini dinlemez, RC listener'ına bırakılırsa eski premium durum
+   * yeni anonim kimlikte kalabilir.
+   */
+  resetSubscriptionState: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionState | null>(null);
@@ -554,6 +562,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     return cleanup;
   }, [refreshSubscription, refreshQuota, setPremiumStatus]);
 
+  const resetSubscriptionState = useCallback(() => {
+    setPremiumStatus('free');
+    setPlanId(null);
+    setStatus('free');
+    setTier('free');
+    setIsInTrial(false);
+    setTrialStartDate(null);
+    setExpiresAt(null);
+    setQuota(null);
+    setFullQuota(null);
+    statusRef.current = 'free';
+    planIdRef.current = null;
+    trialStartRef.current = null;
+    tierRef.current = 'free';
+  }, [setPremiumStatus]);
+
   const value = useMemo<SubscriptionState>(
     () => ({
       isLoading,
@@ -573,6 +597,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       recordSearch,
       refreshSubscription,
       refreshQuota,
+      resetSubscriptionState,
     }),
     [
       isLoading,
@@ -592,6 +617,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
       recordSearch,
       refreshSubscription,
       refreshQuota,
+      resetSubscriptionState,
     ],
   );
 

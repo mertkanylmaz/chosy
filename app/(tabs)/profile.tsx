@@ -93,6 +93,7 @@ import Purchases from 'react-native-purchases';
 
 import { clearWatchlist, getWatchlist } from '@/services/watchlist';
 import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
+import { resetToFreshSession } from '@/services/sessionReset';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { getArchetype } from '@/constants/archetypes';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -718,7 +719,7 @@ function ProfileScreenContent() {
   /** Header perdesi durum cubugunun arkasina uzanir — ust pay header'da. */
   const insets = useSafeAreaInsets();
   const { t, language, setLanguage } = useLanguage();
-  const { isPremium, premiumStatus, planId, tier, status: subStatus, isInTrial, expiresAt, quota } = useSubscription();
+  const { isPremium, premiumStatus, planId, tier, status: subStatus, isInTrial, expiresAt, quota, resetSubscriptionState } = useSubscription();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Pro Mode satirindaki kilit ikonu — yetki kontrolu ekranin kendisinde */
   const proAccess = useProModeAccess();
@@ -1227,8 +1228,15 @@ function ProfileScreenContent() {
                     try {
                       const result = await deleteAccount();
                       if (result.success) {
-                        // Başarılı — auth screen'e yönlendir
-                        router.replace('/auth');
+                        // Sunucu sildi — cihazı yeni anonim kimlikle temiz
+                        // başlat; yığın sıfırlanır, geri hareketi yok.
+                        await resetToFreshSession({
+                          resetSubscriptionState,
+                          navigateToOnboarding: () => {
+                            if (router.canDismiss()) router.dismissAll();
+                            router.replace('/onboarding');
+                          },
+                        });
                       } else {
                         // partial_failure: veri silindi, auth kaydi kaldi.
                         // Oturum acik birakilir — tekrar dokunmak islemi bitirir.

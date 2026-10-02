@@ -499,6 +499,12 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
  * RevenueCat müşteri kimliğini sıfırlar (anonim kullanıcıya döner).
  * Hesap silme akışında çağrılır — on-device entitlement cache'ini temizler.
  * Çağrılmazsa eski abonelik bilgisi cihazda kalır ve yeni hesap premium görünür.
+ *
+ * RC müşterisi zaten anonimse (Apple ile hiç giriş yapılmamış — `logIn`
+ * yalnız orada) `logOut` RC tarafından hatayla reddedilir; o durumda
+ * sıfırlanacak kimlik yoktur, çağrı atlanır.
+ *
+ * Hata YUTULMAZ, çağırana fırlatılır (Sentry'ye çağıran yazar).
  */
 export async function logOutPurchases(): Promise<void> {
   if (!_initialized) {
@@ -511,12 +517,13 @@ export async function logOutPurchases(): Promise<void> {
     return;
   }
 
-  try {
-    await Purchases.logOut();
-    logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
-  } catch (err) {
-    logger.warn('[purchases] RevenueCat logOut hatası:', err);
+  if (await Purchases.isAnonymous()) {
+    logger.log('[purchases] RevenueCat müşterisi zaten anonim — logOut atlandı');
+    return;
   }
+
+  await Purchases.logOut();
+  logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
 }
 
 // ─── Geri Yükleme ────────────────────────────────────────────────────────────
