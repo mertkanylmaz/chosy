@@ -4,11 +4,16 @@
  * Akış:
  *   1. Kullanıcı Apple/Google butonuna basar (auth.tsx)
  *   2. Native provider'dan idToken alınır
- *   3. supabase.auth.signInWithIdToken ile oturum açılır
- *   4. Anonim kullanıcılar için Supabase "automatic anon linking" ile
- *      mevcut user_id korunur (Dashboard → Auth → Enable anonymous sign-ins
- *      + Link existing identity when email already exists etkinleştirilmeli)
- *   5. users tablosuna auth_provider güncellenir
+ *   3. Oturum anonimse kimlik `supabase.auth.linkIdentity` ile MEVCUT
+ *      anonim kullanıcıya bağlanır — auth.uid değişmez, veri yerinde kalır.
+ *      Supabase'de otomatik anonim bağlama YOKTUR: `signInWithIdToken`
+ *      anonim oturumu terk edip ayrı bir kullanıcı açar.
+ *      (Dashboard → Auth → "Allow manual linking" açık olmalı; kapalıysa
+ *      `manual_linking_disabled` döner.)
+ *      Anonim değilse (Profil'den mevcut hesaba giriş) `signInWithIdToken`.
+ *   4. users tablosuna auth_provider güncellenir
+ *
+ *   Google akışı (signInWithOAuth) henüz bağlama yapmıyor — yeni oturum açar.
  *
  * Konfigürasyon gereksinimleri:
  *   - EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID  : Google Cloud Console → OAuth 2.0 client (Web)
@@ -62,7 +67,13 @@ export function configureGoogleSignIn(): void {
 /** Auth işlemi sonuç tipi */
 export type AuthResult =
   | { success: true; isNewUser: boolean }
-  | { success: false; error: 'canceled' | 'not_available' | 'network' | 'failed'; message?: string };
+  | { success: false; error: 'canceled' | 'not_available' | 'network' | 'failed'; message?: string }
+  /**
+   * Anonim kimliğe bağlanmak istenen Apple kimliği başka bir kullanıcıya ait
+   * (GoTrue `identity_already_exists`). Anonim oturum OLDUĞU GİBİ kalır;
+   * o hesaba sessizce geçilmez. Çakışma UX'i B-1 / Fix 1b'de.
+   */
+  | { success: false; error: 'identity_already_exists'; message?: string };
 
 /**
  * Hata mesajından network hatası olup olmadığını tespit eder.
@@ -195,8 +206,9 @@ async function generateAppleNonce(): Promise<{ rawNonce: string; hashedNonce: st
 /**
  * Apple ile oturum açar (yalnızca iOS).
  *
- * Anonim kullanıcılar için Supabase'in automatic linking özelliği mevcut
- * user_id'yi korur; watchlist/swipe/session verileri kaybolmaz.
+ * Oturum anonimse Apple kimliği `linkIdentity` ile anonim kullanıcıya
+ * bağlanır: auth.uid ve public.users satırı aynı kalır, gauntlet/watchlist
+ * verisi yerinde durur. Anonim değilse `signInWithIdToken` ile giriş yapılır.
  *
  * @returns AuthResult — başarı veya hata detayı
  */
@@ -223,14 +235,44 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { success: false, error: 'failed', message: 'identityToken alinamadi' };
     }
 
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'apple',
-      token: credential.identityToken,
-      nonce: rawNonce, // Supabase hash'i token'daki ile karsilastirir
-    });
+    // Yerel oturumdan okunur (ağ yok). Oturum yoksa ya da kalıcı hesapsa
+    // klasik giriş; yalnızca anonim oturum bağlanır.
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const linkToAnonymous = session?.user.is_anonymous === true;
+
+    // Literal'ler inline kalmalı: değişkene alınırsa fazla-özellik kontrolü
+    // düşer ve `linkIdentity` OAuth overload'una (OAuthResponse) çözülür.
+    const { data, error } = linkToAnonymous
+      ? await supabase.auth.linkIdentity({
+          provider: 'apple',
+          token: credential.identityToken,
+          nonce: rawNonce, // Supabase hash'i token'daki ile karsilastirir
+        })
+      : await supabase.auth.signInWithIdToken({
+          provider: 'apple',
+          token: credential.identityToken,
+          nonce: rawNonce,
+        });
 
     if (error) {
-      logger.error('[authService] Apple signInWithIdToken hatası:', error.message);
+      if (linkToAnonymous && error.code === 'identity_already_exists') {
+        // Beklenen kullanıcı durumu, kod hatası değil — event yerine
+        // breadcrumb. Sonraki bir hata event'i bu bağlamı taşır.
+        logger.warn('[authService] Apple kimliği başka hesaba bağlı:', error.message);
+        Sentry.addBreadcrumb({
+          category: 'auth',
+          level: 'warning',
+          message: 'apple linkIdentity: identity_already_exists',
+          data: { status: error.status },
+        });
+        return { success: false, error: 'identity_already_exists', message: error.message };
+      }
+      logger.error(
+        `[authService] Apple ${linkToAnonymous ? 'linkIdentity' : 'signInWithIdToken'} hatası:`,
+        error.message,
+      );
       if (isNetworkError(error)) {
         return { success: false, error: 'network', message: error.message };
       }

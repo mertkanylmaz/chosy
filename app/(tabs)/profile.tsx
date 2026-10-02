@@ -1131,6 +1131,10 @@ function ProfileScreenContent() {
           t('profile.linkSuccess'),
           t('profile.linkSuccessMessage'),
         );
+      } else if (result.error === 'identity_already_exists') {
+        // Apple kimliği başka hesapta — anonim oturum korundu. Çakışma
+        // UX'i B-1 / Fix 1b'de; geçici olarak genel bağlama hatası.
+        Alert.alert(t('profile.linkError'), t('profile.linkErrorMessage'));
       } else if (result.error !== 'canceled') {
         Alert.alert(
           t('profile.linkError'),

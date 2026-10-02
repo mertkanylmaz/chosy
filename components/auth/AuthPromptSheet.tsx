@@ -88,6 +88,12 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
         setErrorMsg(t('auth.errorNetwork'));
         return;
       }
+      if (result.error === 'identity_already_exists') {
+        // Apple kimliği başka hesapta — anonim oturum korundu. Çakışma
+        // UX'i B-1 / Fix 1b'de; geçici olarak genel hata copy'si.
+        setErrorMsg(t('auth.errorGeneral'));
+        return;
+      }
       setErrorMsg(t('auth.errorGeneral'));
     } catch (err) {
       logger.error('[AuthPromptSheet] Apple handler hatası:', err);
