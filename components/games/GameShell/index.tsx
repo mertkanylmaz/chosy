@@ -15,7 +15,7 @@
  * vardı (tab bar payı), ama oyun ekranları root Stack'te — tab bar yok.
  * O sabit 83px ölü alan yaratıp içeriği dikeyde sıkıştırıyordu.
  */
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -104,6 +104,20 @@ export function useGameTheme(): GameTheme {
   }
 
   return theme;
+}
+
+/**
+ * İçerik alanının pencere koordinatındaki üst kenarı — yani header'ın
+ * (yüzen chrome'da camın) alt kenarı. `null` = henüz ölçülmedi veya provider yok.
+ *
+ * Yukarı açılan katmanlar (FilmSearchInput dropdown'ı) bu sınırı aşmaz;
+ * aşarsa geri butonunu örter (B-1 / Fix 8).
+ */
+const GameShellContentTopContext = createContext<number | null>(null);
+
+/** Bkz. `GameShellContentTopContext`. GameShell'in İÇİNDEKİ bileşenler için. */
+export function useGameShellContentTop(): number | null {
+  return useContext(GameShellContentTopContext);
 }
 
 /**
@@ -217,6 +231,18 @@ export function GameShell({
 
   /** Ölçülen chrome yüksekliği — içeriğin üst boşluğu buradan gelir */
   const [chromeHeight, setChromeHeight] = useState(HEADER_HEIGHT_ESTIMATE);
+
+  /**
+   * Yığılmış yerleşimde içerik alanının pencere Y'si. `onLayout` klavye
+   * açılıp KeyboardAvoidingView içeriği daralttığında da tetiklenir.
+   */
+  const contentRef = useRef<View>(null);
+  const [stackedContentTop, setStackedContentTop] = useState<number | null>(null);
+  const measureContentTop = useCallback(() => {
+    contentRef.current?.measureInWindow((_x, y) => setStackedContentTop(y));
+  }, []);
+  // Yüzen chrome içeriğin üstünde durur; sınır camın alt kenarıdır.
+  const contentTop = floatingHeader ? chromeHeight : stackedContentTop;
 
   /**
    * `scrollY` opsiyonel ama hook koşullu çağrılamaz — verilmediğinde sabit 0
@@ -366,10 +392,16 @@ export function GameShell({
         kalmalı ki camın altından akabilsin. Üst boşluğu oyun kendi
         contentContainerStyle'ında `useGameChromeInset()` ile verir.
       */}
-      <View style={contentPadding ? styles.content : styles.contentFlush}>
-        {typeof children === 'function'
-          ? children({ topInset: floatingHeader ? chromeHeight : 0 })
-          : children}
+      <View
+        ref={contentRef}
+        style={contentPadding ? styles.content : styles.contentFlush}
+        onLayout={measureContentTop}
+      >
+        <GameShellContentTopContext.Provider value={contentTop}>
+          {typeof children === 'function'
+            ? children({ topInset: floatingHeader ? chromeHeight : 0 })
+            : children}
+        </GameShellContentTopContext.Provider>
       </View>
 
       {/*

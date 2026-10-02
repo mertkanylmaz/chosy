@@ -6,7 +6,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 
+import { getIsOnline } from './networkStatus';
 import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
 import { earnSlotToken } from './slotService';
@@ -733,9 +735,60 @@ export async function searchFilms(query: string): Promise<FilmSearchResult[]> {
       year: r.release_date?.split('-')[0] ?? '',
       posterPath: r.poster_path,
     }));
-  } catch {
+  } catch (err) {
+    // Davranış aynı (boş sonuç, kullanıcıya hata metni yok — K-43), ama
+    // başarısızlık artık iz bırakır (Kural 1). Eskiden `catch {}` yutuyordu.
+    reportFilmSearchFailure(err, query.trim().length);
     return [];
   }
+}
+
+/** Aynı hata türü için iki `captureException` arasındaki en kısa süre */
+const FILM_SEARCH_REPORT_WINDOW_MS = 60_000;
+
+/** Hata türü → son `captureException` zamanı (ms) */
+const lastFilmSearchReportAt = new Map<string, number>();
+
+/**
+ * `searchFilms` hatasını raporlar — arama her tuş vuruşunda (300 ms
+ * debounce) çalıştığı için kısılır:
+ *   - Çevrimdışı: `captureException` YOK, yalnız breadcrumb. Bağlantı yokken
+ *     her arama aynı ağ hatasını üretir; bu bir kod hatası değil.
+ *   - Aynı tür 60 sn içinde ikinci kez: breadcrumb.
+ *   - Aksi halde `logger.error` (→ Sentry köprüsü).
+ *
+ * Arama metni yazılmaz (kullanıcı girdisi) — yalnız uzunluğu.
+ */
+function reportFilmSearchFailure(err: unknown, queryLength: number): void {
+  const kind =
+    err instanceof Error ? `${err.name}:${err.message.slice(0, 80)}` : typeof err;
+
+  const breadcrumb = (reason: 'offline' | 'throttled') => {
+    Sentry.addBreadcrumb({
+      category: 'film_search',
+      level: 'warning',
+      message: `Film araması başarısız (${reason}): ${kind}`,
+      data: { query_length: queryLength },
+    });
+  };
+
+  if (!getIsOnline()) {
+    breadcrumb('offline');
+    return;
+  }
+
+  const now = Date.now();
+  const last = lastFilmSearchReportAt.get(kind);
+  if (last !== undefined && now - last < FILM_SEARCH_REPORT_WINDOW_MS) {
+    breadcrumb('throttled');
+    return;
+  }
+
+  lastFilmSearchReportAt.set(kind, now);
+  logger.error('[gameService] searchFilms başarısız', err, {
+    code: 'FILM_SEARCH_FAILED',
+    extra: { query_length: queryLength },
+  });
 }
 
 // ─── Film Answer ─────────────────────────────────────────────────────────────

@@ -82,6 +82,19 @@ export const Theme = {
   concentric: (outer: number, padding: number): number =>
     Math.max(0, outer - padding),
 
+  // ─── Dynamic Type ───────────────────────────────────────────────────────
+  fontScale: {
+    /**
+     * Sabit boyutlu kutudaki metnin `maxFontSizeMultiplier` tavanı — oyun
+     * klavyesi tuşu, başlık maskesi slotu, arama input'u. Kutu büyümediği için
+     * tavansız metin AX boyutlarında kırpılıyor/taşıyordu (B-1 / Fix 8).
+     *
+     * YALNIZ sabit kutulara verilir. Etiket ve gövde metni tam ölçeklenir
+     * (K-54). Karar: KAPSAM_KILIDI v1.36.
+     */
+    fixedBoxMax: 1.3,
+  },
+
   // ─── Typography ─────────────────────────────────────────────────────────
   // Rule (V-1 Tur 7, D10 — DESIGN_OS §3.2/§3.3):
   //   Serif emekli (§3.2). Eski "serif = otorite" katmanının token'ları (display,

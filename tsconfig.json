@@ -18,6 +18,7 @@
     "node_modules",
     "supabase/functions",
     "tests/game-system",
+    "tests/games",
     "tests/identity",
     "tests/gauntlet",
     "tests/profile",

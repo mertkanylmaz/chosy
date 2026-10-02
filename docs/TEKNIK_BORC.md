@@ -3066,3 +3066,55 @@ explain-match prompt'u dil parametresi almıyor; TR kullanıcı model
 açıklamasını İngilizce görüyor (template fallback ise i18n'li). Ayrıca
 `matchExplanation` in-memory cache'i dil bağımsız — oturum içinde dil
 değişirse önbellekteki template metni eski dilde kalır.
+
+---
+
+## 🟡 Spotlight arama alanı yerleşimi (B-1 / Fix 8) — kalan borçlar (2 Eki 2026)
+
+Fix 8 ile Spotlight'ın üst bölgesi kayıyor, aksiyon barı klavyenin üstünde
+sabit; `FilmSearchInput` dropdown'ı input üstünde kalan alana göre
+kısılıyor; `searchFilms` hataları Sentry'ye gidiyor. Bible: KAPSAM_KILIDI
+v1.36. Aşağıdakiler bilinçli olarak kapsam dışı bırakıldı.
+
+### 1. TMDb fallback sonucu `uuid`'siz — Spotlight seçimi hata kutusuna düşüyor (Fix 9)
+
+`gameService.searchFilms` DB'de eşleşme yoksa TMDb'ye düşüyor; bu sonuçlarda
+`uuid` yok. Spotlight `handleGuess` `uuid`'siz seçimde `logger.warn` +
+genel hata kutusu gösteriyor (`components/games/Spotlight/index.tsx`,
+"Film UUID yok"). Kullanıcı listede gördüğü filmi seçip hata alıyor.
+**Neden şimdi değil:** sonuç listesinin kaynağı/filtrelenmesi davranış
+değişikliği — ayrı iş (Fix 9).
+
+### 2. `FilmSearchInput` debounce yarışı ve unmount temizliği
+
+Yanıtlar sıra dışı gelirse eski sorgunun sonucu yenisinin üstüne yazılıyor
+(istek kimliği/iptal yok). Debounce zamanlayıcısı unmount'ta temizlenmiyor;
+ekrandan çıktıktan sonra arama çalışıp state yazabiliyor. **Neden şimdi
+değil:** arama davranışı, Fix 8 yalnız yerleşim + hata raporlaması.
+
+### 3. Android'de dropdown dokunuşu doğrulanmadı
+
+Dropdown `position:absolute; bottom: input + 4` ile ebeveyninin sınırları
+DIŞINA çiziliyor. Android, ebeveyn sınırı dışındaki çocuklara dokunuş
+iletmeyebilir. v1 iOS-only (R-15) olduğu için canlı risk değil; Android
+açılmadan önce cihazda doğrulanmalı.
+
+### 4. Donmuş 6 oyunun yerleşimi aynı risk sınıfında
+
+FadeIn, CineMetrics, Logline, Quoted, Detective "tek sayfa, ScrollView
+yok, sabit medya + altta FilmSearchInput" düzeninde (Imposter arama
+kullanmıyor). Uzun başlık
+onları etkilemiyor (maske yok), ama küçük ekran + açık klavye + büyük
+Dynamic Type'ta arama alanı aynı şekilde itilebilir. Kural 7 istisnası
+yalnız Spotlight'a verildi. Fix 8'in ortak bileşen değişikliği (dropdown
+yüksekliği) bu oyunlara da uygulanıyor; bol alanda eski 280 sınırı aynen
+geçerli. **Neden şimdi değil:** oyunlar `app_config` ile kapalı; açılırlarsa
+her biri ayrı yerleşim turu ister.
+
+### 5. `searchFilmsDb` RPC hatası kısılmadan raporlanıyor
+
+`services/searchFilms.ts` RPC hatasında her çağrıda `logger.error`
+(→ Sentry) yazıyor; arama her 300 ms debounce'ta çalıştığı için DB kesintisinde
+event seli üretebilir. Fix 8'in 60 sn / tür kısması yalnız
+`gameService.searchFilms`'in kendi catch'ine uygulandı. **Neden şimdi değil:**
+`searchFilmsDb` başka çağıranlarca da kullanılıyor; kısma kararı ortak.

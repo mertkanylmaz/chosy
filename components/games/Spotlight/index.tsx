@@ -50,7 +50,8 @@ import type {
   WhyThisMovieText,
 } from '@/types/game';
 
-import { createStyles } from './styles';
+import { fitMaskScale, groupMaskWords } from './maskLayout';
+import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
 type ScreenState = 'loading' | 'playing' | 'completed';
 
@@ -68,10 +69,13 @@ const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
 const MAX_BLUR = 40;
 
 /**
- * Gorsel disinda kalan sabit dikey yuk: maske etiketi + harf satiri +
- * klavye (3x42 + aralik) + tahmin alani + bosluklar.
+ * Ust bolgede gorselin disindaki sabit dikey yuk: gorselin ust marji
+ * (`stillWrap.marginTop`) + gorsel ile maske blogu arasi bosluk
+ * (`topContent.gap`). Maske blogunun kendisi OLCULUR — satir sayisi baslik
+ * uzunluguna ve Dynamic Type'a gore degisiyor (B-1 / Fix 8: eski sabit
+ * `BOARD_RESERVED_H = 340` maskeyi hep tek satir sayiyordu).
  */
-const BOARD_RESERVED_H = 340;
+const TOP_REGION_FIXED_H = Theme.spacing.sm + Theme.spacing.md;
 
 /** Gorselin okunurluk tabani — altinda film karesi tanınmaz oluyor */
 const STILL_MIN = 150;
@@ -134,7 +138,13 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles }: KeyButtonP
         accessibilityLabel={letter}
         accessibilityState={{ disabled }}
       >
-        <Text style={[styles.keyText, hit && styles.keyTextHit]}>{letter}</Text>
+        <Text
+          style={[styles.keyText, hit && styles.keyTextHit]}
+          // Sabit 42px tus — tavansiz AX boyutunda harf kirpiliyordu
+          maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
+        >
+          {letter}
+        </Text>
       </Pressable>
     </Animated.View>
   );
@@ -181,21 +191,24 @@ export function SpotlightGame() {
   const theme = useGameThemeFor(GAME_TYPE);
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  /** Tek sayfa olcumu — Kural 7 */
+  /** Ust bolgenin (kaydirilabilir alan) gorunur yuksekligi */
   const fit = useGameFit();
+  /** Maske blogunun (etiket + satirlar) olculen yuksekligi */
+  const maskFit = useGameFit();
 
   /**
-   * Gorselin yuksekligi olculen alandan pay biciliyor.
+   * Gorselin yuksekligi ust bolgede maskeden ARTAN alandan pay biciliyor.
    *
    * Sabit oran kullanilamaz: Kural 4 gorselin ekran yuksekliginin >=%45'i
-   * olmasini istiyor ama maske satiri + klavye + tahmin alani ~340px sabit yer
-   * kapliyor. iPhone SE'de (667pt) %45 klavyeyi ekran disina iterdi.
+   * olmasini istiyor ama iPhone SE'de (667pt) %45 klavyeyi ekran disina iterdi.
+   * Aksiyon bari bu hesaba girmez — o ust bolgenin disinda, sabit.
    *
    * STILL_MIN okunurluk tabani: bu degerin altinda film karesi tanınmaz hale
-   * geliyor ve oyunun tek gorsel ipucu kayboluyor.
+   * geliyor ve oyunun tek gorsel ipucu kayboluyor. Taban alana sigmiyorsa
+   * (uzun baslik, acik klavye) ust bolge kayar; aksiyon bari itilmez.
    */
   const stillHeight = fit.measured
-    ? clamp(fit.height - BOARD_RESERVED_H, STILL_MIN, STILL_MAX)
+    ? clamp(fit.height - maskFit.height - TOP_REGION_FIXED_H, STILL_MIN, STILL_MAX)
     : STILL_MIN;
 
   const [screenState, setScreenState] = useState<ScreenState>('loading');
@@ -396,6 +409,15 @@ export function SpotlightGame() {
     [revealed],
   );
 
+  /** Maske kelimelere bolunur — kelime ici satir kirilmaz (B-1 / Fix 8) */
+  const maskWords = useMemo(
+    () => groupMaskWords(puzzleData?.title_mask ?? []),
+    [puzzleData],
+  );
+  /** Maskenin 2 satira sigdigi en buyuk olcek, taban 0.8 */
+  const maskScale = useMemo(() => fitMaskScale(maskWords, MASK_ROW_W), [maskWords]);
+  const maskStyles = useMemo(() => createMaskStyles(theme, maskScale), [theme, maskScale]);
+
   const attemptsLeft = Math.max(0, SPOTLIGHT_MAX_ATTEMPTS - attempts);
   const blurAmount = blurForProgress(revealedMap.size, puzzleData?.letter_count ?? 0);
 
@@ -489,11 +511,22 @@ export function SpotlightGame() {
       currentAttempt={attempts}
       maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
     >
-      <View style={styles.screen} onLayout={fit.onLayout}>
+      <View style={styles.screen}>
+        {/*
+          Ust bolge — gorsel + baslik maskesi. Kendi icinde kayar (Kural 7'nin
+          Spotlight istisnasi, KAPSAM_KILIDI v1.36); aksiyon bari bunun
+          DISINDA oldugu icin uzun baslik veya acik klavye onu itemez.
+        */}
+        <ScrollView
+          style={styles.topRegion}
+          contentContainerStyle={styles.topContent}
+          onLayout={fit.onLayout}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         {/*
           Gorsel — acilan her harf netlestirir. Ekranin kahramani (Kural 4).
-          Yukseklik OLCULEN alandan pay biciliyor (Kural 7: tek sayfa):
-          sabit bir oran kucuk cihazda klavyeyi ekran disina itiyordu.
+          Yukseklik ust bolgede maskeden artan alandan pay biciliyor.
         */}
         <Animated.View
           entering={FadeIn.duration(400)}
@@ -524,48 +557,73 @@ export function SpotlightGame() {
               </GlassSurface>
             </Animated.View>
 
-            {/* Baslik maskesi */}
+            {/* Baslik maskesi — yuksekligi olculur, gorsel artandan pay alir */}
+            <View style={styles.maskBlock} onLayout={maskFit.onLayout}>
             <Text style={styles.maskLabel}>{t('games.spotlight.title_label')}</Text>
-            <View style={styles.maskRow}>
-              {puzzleData?.title_mask.map((token, index) => {
-                if (token.t === 'sep') {
-                  return (
-                    <View key={index} style={styles.separator}>
-                      {/* Bosluk gorunmez kalir; tire/iki nokta gosterilir */}
-                      <Text style={styles.separatorText}>
-                        {token.c === ' ' ? '' : (token.c ?? '')}
-                      </Text>
-                    </View>
-                  );
-                }
-                const ch = revealedMap.get(index);
-                return (
-                  <View key={index} style={[styles.slot, ch != null && styles.slotRevealed]}>
-                    {ch != null ? (
-                      <Animated.Text entering={FadeInUp.duration(250)} style={styles.slotText}>
-                        {/* Locale'siz — sunucu ile ayni buyutme, bkz. hitLetters */}
-                        {ch.toUpperCase()}
-                      </Animated.Text>
-                    ) : null}
-                  </View>
-                );
-              })}
+            {/*
+              Kelime gruplari: satir kelimeler ARASINDA kirilir. Slot olcegi
+              maske 2 satira sigsin diye 0.8'e kadar kuculur; daha uzun baslik
+              3+ satira kirilir ve bu bolgeyle birlikte kayar.
+            */}
+            <View style={maskStyles.maskRow}>
+              {maskWords.map((word) => (
+                <View key={word[0].index} style={maskStyles.maskWord}>
+                  {word.map(({ token, index }) => {
+                    if (token.t === 'sep') {
+                      return (
+                        <View key={index} style={maskStyles.separator}>
+                          {/* Kelime ici ayrac (tire, iki nokta) gorunur */}
+                          <Text
+                            style={maskStyles.separatorText}
+                            maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
+                          >
+                            {token.c ?? ''}
+                          </Text>
+                        </View>
+                      );
+                    }
+                    const ch = revealedMap.get(index);
+                    return (
+                      <View
+                        key={index}
+                        style={[maskStyles.slot, ch != null && maskStyles.slotRevealed]}
+                      >
+                        {ch != null ? (
+                          <Animated.Text
+                            entering={FadeInUp.duration(250)}
+                            style={maskStyles.slotText}
+                            maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
+                          >
+                            {/* Locale'siz — sunucu ile ayni buyutme, bkz. hitLetters */}
+                            {ch.toUpperCase()}
+                          </Animated.Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ))}
             </View>
-
-            {/* Hata — sessiz fallback YASAK */}
-            {actionError && (
-              <Animated.View entering={FadeIn.duration(200)} style={styles.errorBox}>
-                <CloudSlash size={18} weight="duotone" color={Colors.textTertiary} />
-                <Text style={styles.errorText}>{t('games.result.error_subtitle')}</Text>
-              </Animated.View>
-            )}
-        {/* Esnek bosluk — aksiyon barini dibe iter */}
-        <View style={styles.spacer} />
+            </View>
+        </ScrollView>
 
         {/*
-          Aksiyon bari — klavye + film tahmini. Artik YUZMUYOR: ekran kaymadigi
-          icin altindan gececek icerik yok, cam orada Kural 5'in derinlik
-          testini gecmezdi.
+          Hata — sessiz fallback YASAK. Kayan bolgenin DISINDA: kucuk ekranda
+          acik klavyeyle ust bolge kayarken de gorunur kalmali. Yer acmak icin
+          kuculen ust bolgedir, aksiyon bari degil.
+        */}
+        {actionError && (
+          <Animated.View entering={FadeIn.duration(200)} style={styles.errorBox}>
+            <CloudSlash size={18} weight="duotone" color={Colors.textTertiary} />
+            <Text style={styles.errorText}>{t('games.result.error_subtitle')}</Text>
+          </Animated.View>
+        )}
+
+        {/*
+          Aksiyon bari — klavye + film tahmini. Ekranin dibinde SABIT; sistem
+          klavyesi acilinca GameShell'in KeyboardAvoidingView'i onu klavyenin
+          hemen ustune tasir. Yuzmuyor: ust bolge kaysa da altindan icerik
+          gecmiyor, cam Kural 5'in derinlik testini gecmezdi.
         */}
         <View style={styles.actionBar}>
             {/* Klavye — denenmis harfler isaretli */}

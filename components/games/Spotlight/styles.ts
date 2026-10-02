@@ -10,9 +10,25 @@ import { Colors } from '@/constants/Colors';
 import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
+import {
+  MASK_FONT_SIZE,
+  MASK_GAP,
+  MASK_LINE_HEIGHT,
+  MASK_SEP_W,
+  MASK_SLOT_H,
+  MASK_SLOT_W,
+  scaled,
+  wordSpacing,
+} from './maskLayout';
+
 const { width: SCREEN_W } = Dimensions.get('window');
 
 export const STILL_W = SCREEN_W - Theme.spacing.md * 2;
+
+/** Maske satirinin yatay ic boslugu */
+const MASK_ROW_PADDING = Theme.spacing.sm;
+/** Maske satirinin kelime dizebilecegi genislik — olcek hesabinin girdisi */
+export const MASK_ROW_W = STILL_W - MASK_ROW_PADDING * 2;
 
 // STILL_H KALDIRILDI (Kural 7): yukseklik artik modul sabiti degil,
 // index.tsx'te olculen alandan pay biciliyor.
@@ -35,16 +51,33 @@ export const createStyles = (theme: GameTheme) => {
   const accentHairline = withAlpha(theme.accent, 0.22);
 
   return StyleSheet.create({
-  /** Tek sayfa kabi — ScrollView YOK (Festival Layer Kural 7) */
+  /**
+   * Oynanis kabi: ust bolge (kayar) + aksiyon bari (sabit).
+   *
+   * Festival Layer Kural 7 "tek sayfa, ScrollView YOK" icin Spotlight'a OZEL
+   * istisna (KAPSAM_KILIDI v1.36): uzun baslik + acik klavyede icerik ekrana
+   * sigmiyor ve tasma aksiyon barini ekran disina itiyordu (B-1 / Fix 8).
+   */
   screen: {
     flex: 1,
     gap: Theme.spacing.md,
     paddingBottom: Theme.spacing.sm,
   },
-  /** Esnek bosluk — aksiyon barini dibe iter */
-  spacer: {
+  /**
+   * Ust bolge — gorsel + baslik maskesi. Kalan alani alir ve gerektiginde
+   * KENDI ICINDE kayar. `minHeight: 0` bilincli: tasan icerik bu bolgeyi
+   * buyutup aksiyon barini itemez; kuculen bu bolgedir.
+   */
+  topRegion: {
     flex: 1,
     minHeight: 0,
+  },
+  topContent: {
+    gap: Theme.spacing.md,
+  },
+  /** Maske etiketi + satirlari — yuksekligi olculur, gorsel kalan alandan pay alir */
+  maskBlock: {
+    gap: Theme.spacing.md,
   },
 
   // ─── Gorsel ───────────────────────────────────────────────────────────────
@@ -90,45 +123,7 @@ export const createStyles = (theme: GameTheme) => {
     ...Theme.typography.eyebrow,
     textAlign: 'center',
   },
-  maskRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: Theme.spacing.sm,
-  },
-  /** Tahmin edilecek karakter kutusu */
-  slot: {
-    minWidth: 22,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    borderBottomWidth: 2,
-    borderBottomColor: accentHairline,
-  },
-  slotRevealed: {
-    borderBottomColor: theme.accent,
-  },
-  slotText: {
-    ...Theme.typography.serifTitle,
-    fontSize: 20,
-    lineHeight: 24,
-    color: theme.accent,
-  },
-  /** Bosluk / noktalama — gorunur ayrac */
-  separator: {
-    minWidth: 10,
-    height: 32,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-  },
-  separatorText: {
-    ...Theme.typography.serifTitle,
-    fontSize: 20,
-    lineHeight: 24,
-    color: Colors.textTertiary,
-  },
+  // Slot / ayrac / satir stilleri olcege bagli → `createMaskStyles`
 
   // ─── Aksiyon bari (chrome — cam) ──────────────────────────────────────────
   /**
@@ -210,5 +205,71 @@ export const createStyles = (theme: GameTheme) => {
   completedContainer: {
     paddingBottom: Theme.spacing.xl,
   },
+  });
+};
+
+/**
+ * Baslik maskesi stilleri — slot boyutu ve yazisi `scale` ile kuculur
+ * (maskLayout.ts › fitMaskScale; 1.0 → 0.8, bes kademe). Olculer tam olcekte
+ * eski sabitlerle ayni; `scale === 1` gorunumu degistirmez.
+ */
+export const createMaskStyles = (theme: GameTheme, scale: number) => {
+  const accentHairline = withAlpha(theme.accent, 0.22);
+  const slotH = scaled(MASK_SLOT_H, scale);
+  const glyph = {
+    ...Theme.typography.serifTitle,
+    fontSize: scaled(MASK_FONT_SIZE, scale),
+    lineHeight: scaled(MASK_LINE_HEIGHT, scale),
+  };
+
+  return StyleSheet.create({
+    /** Kelimeler satira sarilir; kelime ici kirilmaz */
+    maskRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center',
+      columnGap: wordSpacing(scale),
+      rowGap: MASK_GAP,
+      paddingHorizontal: MASK_ROW_PADDING,
+    },
+    /**
+     * Tek kelime. `flexWrap` yalnizca satirdan genis tek kelime icin son care
+     * (maskLayout.ts › countMaskRows ayni kurali sayar).
+     */
+    maskWord: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: MASK_GAP,
+      maxWidth: '100%',
+    },
+    /** Tahmin edilecek karakter kutusu */
+    slot: {
+      minWidth: scaled(MASK_SLOT_W, scale),
+      height: slotH,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      borderBottomWidth: 2,
+      borderBottomColor: accentHairline,
+    },
+    slotRevealed: {
+      borderBottomColor: theme.accent,
+    },
+    slotText: {
+      ...glyph,
+      color: theme.accent,
+    },
+    /** Kelime ici gorunur ayrac (tire, iki nokta...) */
+    separator: {
+      minWidth: scaled(MASK_SEP_W, scale),
+      height: slotH,
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+    },
+    separatorText: {
+      ...glyph,
+      color: Colors.textTertiary,
+    },
   });
 };

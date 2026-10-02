@@ -16,6 +16,7 @@
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
     "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
+    "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",

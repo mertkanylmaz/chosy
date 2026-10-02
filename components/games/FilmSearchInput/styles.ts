@@ -10,6 +10,8 @@ import { Colors } from '@/constants/Colors';
 import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
+import { DROPDOWN_GAP, SEARCH_INPUT_H } from './dropdownHeight';
+
 export const createStyles = (theme: GameTheme) => {
   /** Accent'in hairline hali — %22 alfa */
   const accentHairline = withAlpha(theme.accent, 0.22);
@@ -26,7 +28,7 @@ export const createStyles = (theme: GameTheme) => {
     borderColor: accentHairline,
     borderRadius: Theme.borderRadius.md,
     paddingHorizontal: Theme.spacing.md,
-    height: 52,
+    height: SEARCH_INPUT_H,
     gap: Theme.spacing.sm,
   },
   input: {
@@ -36,12 +38,12 @@ export const createStyles = (theme: GameTheme) => {
   },
   dropdown: {
     position: 'absolute',
-    bottom: 56,
+    bottom: SEARCH_INPUT_H + DROPDOWN_GAP,
     left: 0,
     right: 0,
     backgroundColor: Colors.bgElevated,
     borderRadius: Theme.borderRadius.md,
-    maxHeight: 280,
+    // maxHeight runtime'da: input üstünde kalan alana göre (dropdownHeight.ts)
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: accentHairline,
