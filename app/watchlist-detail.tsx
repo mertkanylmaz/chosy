@@ -34,11 +34,12 @@ import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import Animated from 'react-native-reanimated';
 
 import {
+  canUnwatch,
   clearWatchlist,
   getWatchlist,
   getWatchlistGroupedBySessions,
-  getWatchedFilmIds,
   removeFromWatchlist,
+  toggleWatched,
   WatchlistGroup,
   WatchlistItem,
 } from '@/services/watchlist';
@@ -99,7 +100,7 @@ export default function WatchlistDetailScreen() {
   const [groupsLoaded, setGroupsLoaded] = useState(false);
 
   // ── Watched state ──────────────────────────────────────────────────────────
-  const [watchedIds, setWatchedIds] = useState<Set<string>>(new Set());
+  // Izlendi bilgisi satirin kendisinde (`item.watchedAt`, sunucu) — Fix 6.
   const [watchFilter, setWatchFilter] = useState<WatchFilter>('unwatched');
 
   // ── Shared state ───────────────────────────────────────────────────────────
@@ -120,16 +121,12 @@ export default function WatchlistDetailScreen() {
 
   // ── Veri yukleme ──────────────────────────────────────────────────────────
 
-  /** Duz liste + watched durumlari yukler */
+  /** Duz liste yukler — izlendi durumu satirla birlikte gelir (watched_at) */
   const loadWatchlist = useCallback(async () => {
     setLoadError(false);
     try {
-      const [data, watched] = await Promise.all([
-        getWatchlist(),
-        getWatchedFilmIds(),
-      ]);
+      const data = await getWatchlist();
       setItems(data);
-      setWatchedIds(watched);
     } catch (err) {
       const { toUserError } = await import('@/utils/errorHelpers');
       const userError = toUserError(err, 'watchlist');
@@ -216,9 +213,9 @@ export default function WatchlistDetailScreen() {
 
     // Watch status filter
     if (watchFilter === 'unwatched') {
-      filtered = filtered.filter((item) => !watchedIds.has(item.film.id));
+      filtered = filtered.filter((item) => item.watchedAt === null);
     } else {
-      filtered = filtered.filter((item) => watchedIds.has(item.film.id));
+      filtered = filtered.filter((item) => item.watchedAt !== null);
     }
 
     const sorted = [...filtered];
@@ -234,7 +231,7 @@ export default function WatchlistDetailScreen() {
       default:
         return sorted;
     }
-  }, [items, sortKey, searchQuery, watchFilter, watchedIds]);
+  }, [items, sortKey, searchQuery, watchFilter]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -276,7 +273,8 @@ export default function WatchlistDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             const snapshot = items;
-            setItems([]);
+            // Yalnizca Saved (izlenmemis) silinir; izlenenler kalir (Fix 6).
+            setItems((prev) => prev.filter((i) => i.watchedAt !== null));
             setGroups([]);
             try {
               await clearWatchlist();
@@ -291,6 +289,62 @@ export default function WatchlistDetailScreen() {
       ],
     );
   }, [items, t]);
+
+  /**
+   * Uzun basma menusundeki izlendi/izlenmedi eylemi (Fix 6). Satir silinmez:
+   * izlendi → Saved'den cikar, izlenmedi → Saved'e doner. Gauntlet kaynakli
+   * isaretin menude geri alma secenegi hic cizilmez.
+   */
+  const handleToggleWatched = useCallback(
+    async (filmId: string) => {
+      setMenuTarget(null);
+      const item = items.find((i) => i.film.id === filmId);
+      if (!item) return;
+      const currentlyWatched = item.watchedAt !== null;
+      if (currentlyWatched && !canUnwatch(item.watchedSource)) return;
+      hapticSelection();
+      try {
+        const result = await toggleWatched(filmId, currentlyWatched);
+        const nowIso = new Date().toISOString();
+        setItems((prev) =>
+          prev.map((i) =>
+            i.film.id === filmId
+              ? {
+                  ...i,
+                  watchedAt: result.watched ? (i.watchedAt ?? nowIso) : null,
+                  watchedSource: result.watched ? (i.watchedSource ?? 'manual') : null,
+                }
+              : i,
+          ),
+        );
+        if (result.watched) {
+          setGroups((prev) =>
+            prev
+              .map((g) => {
+                const films = g.films.filter((f) => f.film.id !== filmId);
+                return { ...g, films, filmCount: films.length };
+              })
+              .filter((g) => g.filmCount > 0),
+          );
+        } else if (groupsLoaded) {
+          // Saved'e donen film hangi gruba ait — RPC'den yeniden okunur.
+          await loadGroups();
+        }
+      } catch {
+        // Servis katmani hatayi Sentry'ye yazdi; durum degismedi.
+        Alert.alert(t('errors.watchedToggle'));
+      }
+    },
+    [items, groupsLoaded, loadGroups, t],
+  );
+
+  /** Menu hedefinin izlendi durumu — duz liste tum satirlari tasir. */
+  const menuItem = useMemo(
+    () => (menuTarget ? items.find((i) => i.film.id === menuTarget.filmId) ?? null : null),
+    [items, menuTarget],
+  );
+  const menuWatched = menuItem?.watchedAt != null;
+  const menuCanToggleWatched = menuItem !== null && (!menuWatched || canUnwatch(menuItem.watchedSource));
 
   const handleCardLongPress = useCallback(
     (filmId: string, filmTitle: string) => {
@@ -658,14 +712,19 @@ export default function WatchlistDetailScreen() {
             <Text style={styles.modalFilmTitle} numberOfLines={1}>
               {menuTarget?.filmTitle}
             </Text>
-            <TouchableOpacity
-              style={styles.modalOption}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('watchlist.watched')}
-            >
-              <Text style={styles.modalOptionText}>{t('watchlist.watched')} ✓</Text>
-            </TouchableOpacity>
+            {menuCanToggleWatched && (
+              <TouchableOpacity
+                style={styles.modalOption}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={menuWatched ? t('watchlist.markUnwatched') : t('watchlist.watched')}
+                onPress={() => menuTarget && handleToggleWatched(menuTarget.filmId)}
+              >
+                <Text style={styles.modalOptionText}>
+                  {menuWatched ? t('watchlist.markUnwatched') : `${t('watchlist.watched')} ✓`}
+                </Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.modalOption}
               activeOpacity={0.7}
@@ -687,17 +746,20 @@ export default function WatchlistDetailScreen() {
             >
               <Text style={styles.modalOptionText}>{t('share.shareFilm')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.modalOption, styles.modalOptionLast]}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('watchlist.remove')}
-              onPress={() => menuTarget && handleRemove(menuTarget.filmId)}
-            >
-              <Text style={[styles.modalOptionText, styles.modalOptionTextRed]}>
-                {t('watchlist.remove')}
-              </Text>
-            </TouchableOpacity>
+            {/* Izlenmis satir silinmez (izleme gecmisi) — kaldir yalnizca Saved'de. */}
+            {!menuWatched && (
+              <TouchableOpacity
+                style={[styles.modalOption, styles.modalOptionLast]}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t('watchlist.remove')}
+                onPress={() => menuTarget && handleRemove(menuTarget.filmId)}
+              >
+                <Text style={[styles.modalOptionText, styles.modalOptionTextRed]}>
+                  {t('watchlist.remove')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </TouchableOpacity>
       </Modal>

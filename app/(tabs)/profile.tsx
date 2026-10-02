@@ -9,7 +9,7 @@
  * Aktif section'lar:
  *  1. Profile Header (avatar + isim + auth rozeti)
  *  2. Cinema DNA (son profil ozeti) — v1'de gizli, `isCinemaDnaEnabled`
- *  3. Watched (watch_feedback sayisi)
+ *  3. Watched (watchlist.watched_at sayisi — Fix 6)
  *  4. Saved (watchlist ozeti)
  *  5. Membership
  *  Settings modal (dil, bildirim, watchlist temizle, hesap)
@@ -922,21 +922,23 @@ function ProfileScreenContent() {
         setSwipeInsights(insightsData);
       }
 
-      // Watched sayisi (non-blocking, CTO D6: kaynak `watch_feedback`).
-      // Izlendi sayilan yanitlar: loved · ok · abandoned (filme baslanmis).
-      // not_watched ve skipped izlenmis sayilmaz (V-1 Tur 2 onayi).
-      // Kimlik `public.users.id` — `auth.uid()` DEGIL; RLS de
-      // `app_user_id()` ile ayni alani esler (069).
+      // Watched sayisi (non-blocking). B-1 / Fix 6: tek kaynak
+      // `watchlist.watched_at` — kaynagi ne olursa olsun izlenen her film
+      // (gauntlet "seen", "dun izledin mi?" loved/ok/abandoned, listeden
+      // elle isaret). `watch_feedback` satisfaction metrigi olarak kalir
+      // (K-27), sayacin kaynagi degildir.
+      // Kimlik `public.users.id` — `auth.uid()` DEGIL; watchlist RLS'i
+      // ayni eslemeyi yapar (083).
       // Hata: satir gizlenir + Sentry. Sessiz 0 gosterilmez (kural 1).
       void (async () => {
         const { count, error } = await supabase
-          .from('watch_feedback')
+          .from('watchlist')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', userId)
-          .in('response', ['loved', 'ok', 'abandoned']);
+          .not('watched_at', 'is', null);
         if (error || count === null) {
           setWatchedCount(null);
-          Sentry.captureException(error ?? new Error('watch_feedback count null'), {
+          Sentry.captureException(error ?? new Error('watchlist watched count null'), {
             tags: { screen: 'profile', fn: 'watchedCount' },
           });
           return;
@@ -944,10 +946,12 @@ function ProfileScreenContent() {
         setWatchedCount(count);
       })();
 
-      // Watchlist count + poster previews (non-blocking)
+      // Saved count + poster previews (non-blocking). Saved = kaydedilmis
+      // ve henuz izlenmemis (`watched_at IS NULL`); izlenenler Watched'ta.
       getWatchlist().then((wl) => {
-        setWatchlistCount(wl.length);
-        const posters = wl
+        const saved = wl.filter((item) => item.watchedAt === null);
+        setWatchlistCount(saved.length);
+        const posters = saved
           .slice(0, SAVED_STRIP_SLOTS)
           .map((item) => item.film.posterUrl)
           .filter((url): url is string => !!url);
@@ -1600,6 +1604,7 @@ function ProfileScreenContent() {
             {watchedCount !== null && (watchedCount > 0 || lastChampion.status === 'ok') && (
               <>
                 <SectionHeading title={t('profile.watchedSection')} />
+                <Text style={styles.watchedSubtitle}>{t('profile.watchedSubtitle')}</Text>
                 {watchedCount > 0 ? (
                   <View style={styles.watchlistSummaryRow}>
                     <View style={styles.watchlistSummaryLeft}>
@@ -2180,6 +2185,11 @@ const styles = StyleSheet.create({
     ...type['body-strong'],
     flexShrink: 1,
     color: color.text.primary,
+  },
+  /** Watched alt basligi — sayacin kapsami (Fix 6) */
+  watchedSubtitle: {
+    ...type.caption,
+    color: color.text.secondary,
   },
   /** Watched sifir durumu — davet kopyasi, iki satira sarabilir */
   watchedEmptyText: {

@@ -2938,3 +2938,53 @@ yazılır.
 
 **Kapanış koşulu:** 1–8 yapılmış, bayrak açık, D-06 eşiğini geçen gerçek bir
 kullanıcıda `cinema_dna.user_confidence > 0` ölçülmüş.
+
+## 🟡 İzlendi tek kaynak (B-1 / Fix 6) — kalan istemci borçları (2 Eki 2026)
+
+Fix 6 ile "izlendi"nin tek kaynağı `watchlist.watched_at` oldu. Aşağıdakiler
+bilinçli olarak bu turun dışında bırakıldı.
+
+### 1. Bekleyen izlendi kuyruğu yalnızca soğuk açılışta boşaltılıyor
+
+`toggleWatched` sunucuya yazamazsa işlem `chosy_watched_pending_{authId}`
+kuyruğuna girer (`services/watchlist.ts`). Kuyruğu yalnızca `syncWatchedFilms`
+boşaltır ve o da yalnızca `INITIAL_SESSION`'da, süreç başına bir kez çalışır
+(`app/_layout.tsx`). Uygulama arka planda açık kaldıkça işaret sunucuya geçmez:
+Profil "Watched" sayacı (sunucu `count=exact`) bu sürede eksik sayar, gauntlet
+aday filtresi (`fetchExclusions`) filmi izlenmiş saymaz. Ekranlar kuyruğu
+sunucu durumunun üstüne bindirdiği için liste ve detay doğru görünür.
+**Neden şimdi değil:** foreground (AppState `active`) ya da `TOKEN_REFRESHED`
+tetiği yeni bir tetik noktası; `processOfflineQueue` ile birlikte ele alınmalı
+(K-42 doğrulanmadan `QueuedOperation`'a dokunulmuyor).
+
+### 2. Detaydan izlendi → geri alma, listeye hiç eklenmemiş filmi Saved'e düşürüyor
+
+Watchlist'te olmayan bir film film detayından "izlendi" işaretlenince
+`watchlist`'e yeni satır açılır (`watched_source = 'manual'`). Geri alma satırı
+silmez, `watched_at` + `watched_source`'u NULL'lar (Fix 6 karar 4) → film,
+kullanıcı hiç kaydetmediği hâlde Saved'de belirir. Satırın "izlendi" ile mi
+"kaydet" ile mi açıldığı veriden ayırt edilemiyor (`added_from_session` NULL
+her iki yolda da). **Neden şimdi değil:** ayırt etmek yeni kolon ya da yeni
+`watched_source` anlamı ister — şema kararı (CTO).
+
+### 3. `useFeedManager` izlenen film okumasında boş küme fallback'i
+
+`hooks/useFeedManager.ts` `getWatchedFilmIds().catch(() => new Set<string>())`
+ile okuma hatasında boş kümeyle devam ediyor. Servis hatayı Sentry'ye yazdığı
+için iz kalıyor, ama feed o oturumda izlenmiş filmleri de önerebilir. Fix 6'dan
+sonra `getWatchedFilmIds` sunucudan okuduğu için bu dal artık ağ hatasında da
+tetikleniyor (eskiden yalnızca AsyncStorage hatasında). **Neden şimdi değil:**
+Fix 6 kapsamı `useFeedManager`'ı içermiyordu; hata dalının ne yapması gerektiği
+(feed'i durdurmak mı, uyarı mı) ayrı bir karar.
+
+### 4. Rulet: izlenen kümesi okunamazsa tüm ekran hata kutusuna düşüyor
+
+`app/roulette.tsx:188-191` `getWatchlist()` ile `getWatchedFilmIds()`'i aynı
+`Promise.all`'da bekliyor. `getWatchedFilmIds` hata verirse catch (`:221`)
+`setLoadFailed(true)` ile hata kutusunu gösteriyor — liste okunmuş olsa bile
+rulet kullanılamıyor. Fix 6'dan sonra `getWatchedFilmIds` sunucudan okuduğu
+için bu yol artık ağ hatasında da tetikleniyor. **Hedef:** izlenen kümesi
+okunamazsa boş küme ile devam et + Sentry (hata servis katmanında zaten
+yazılıyor; ekran tarafında ayrı `error_code` ile işaretlenmeli ki boş küme
+sessiz fallback olmasın — kural 1). **Neden şimdi değil:** Fix 6 kapsamı
+rulet ekranını içermiyordu; kod değişikliği ayrı iş.
