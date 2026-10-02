@@ -3118,3 +3118,82 @@ her biri ayrı yerleşim turu ister.
 event seli üretebilir. Fix 8'in 60 sn / tür kısması yalnız
 `gameService.searchFilms`'in kendi catch'ine uygulandı. **Neden şimdi değil:**
 `searchFilmsDb` başka çağıranlarca da kullanılıyor; kısma kararı ortak.
+
+---
+
+## 🟡 Anonim → mevcut hesap birleştirme (Sprint 1 / 1b) — kalan borçlar (2 Eki 2026)
+
+`merge_anonymous_user` (migration 122) yalnız aktif günün gauntlet'ini +
+o gauntlet'in `choice_events` / `context_corrections`'ını taşır, sonra anonim
+`public.users` satırını siler. Aşağıdakiler bu silmeyle **kaybolur** ya da
+**öksüz** kalır. Envanter canlı ölçüm (2 Eki 2026, `pg_constraint`):
+`public.users`'a 28 FK, hepsi `ON DELETE CASCADE` (`users.referred_by` =
+SET NULL), RESTRICT yok — silme FK ile bloke olmaz.
+
+### 1. Watchlist v1 dışı — anonim liste kaybolur
+`watchlist` CASCADE. Anonim kullanıcının listesi ve `watched_at` işaretleri
+hedefe taşınmaz. **Aday filtresi etkisi:** `fetchExclusions`
+(`_shared/gauntletCore.ts:395`) izlenmiş filmleri `watchlist.watched_at IS NOT
+NULL` ile dışlar; anonimken "izledim" denen filmler hedef hesabın havuzuna
+geri döner ve tekrar gösterilebilir. Cihazdaki bekleyen kuyruk
+(`chosy_watched_pending_{authId}`) auth id'ye anahtarlı olduğu için hedefe de
+akmaz. **Neden şimdi değil:** v1 kapsam kararı (1b).
+
+### 2. Gösterim hafızası kaybolur — tekrar gösterim riski
+`duel_impressions` (görülen çiftler), anonimin geçmiş `daily_gauntlets`
+satırları (21 gün gösterim soğuması) ve `choice_events` neither/seen (45 gün
+red soğuması) CASCADE ile gider. Hedef aynı çifti/filmi yeniden görebilir.
+`watch_feedback` (taşınan gauntlet'inki dahil) taşınmaz.
+
+### 3. Hedefin `cinema_dna`'sı taşınan olayları görmez
+`cinema_dna` cache'tir; taşınan `choice_events` sonraki recompute'a kadar
+hedefin DNA'sına yansımaz. Birleştirme recompute tetiklemez.
+
+### 4. CASCADE ile giden diğer anonim veriler
+`arcade_runs`, `context_patterns`, `daily_chest_log`, `feedback`,
+`lifetime_sales`, `mood_searches`, `notification_log`, `paywall_events`,
+`posterle_attempts`, `posterle_streaks`, `referral_rewards`, `referrals`
+(referrer/referee), `roulette_picks`, `sessions`, `subscriptions`,
+`user_daily_quotas`, `user_milestones`, `user_streaks`, `user_taste_signals`.
+Anonim kullanıcıda çoğu boş beklenir; ölçülmedi.
+
+### 5. FK'siz tablolar — öksüz kalır
+`game_scores.user_id` (uuid, FK yok — anonim Spotlight ilerlemesi öksüz
+kalır), `custom_lists.user_id` (text), `api_rate_limits.user_id` (text, saat
+başı temizlenir). Auth tarafında `winback_queue` ve `user_collection_progress`
+`auth.users`'a CASCADE — `admin.deleteUser` ile gider.
+
+### 6. Birleştirme başarısızsa anonim kullanıcı öksüz kalır
+JWT-A yakalanamazsa (`refreshSession` hatası, Sentry `step=anon_capture`) ya
+da EF hata dönerse (`step=anon_auth` / `merge`) hesap girişi geçerli sayılır
+ve anonim auth + public satırı **silinmez**. İstemci tek deneme yapar;
+yeniden deneme ya da temizlik işi yok. Orphan sayımına eklenir.
+
+### 7. Gün anahtarı UTC — M2 Faz 2b bağımlılığı
+`merge_anonymous_user` "bugün"ü `(now() AT TIME ZONE 'UTC')::date` ile alır
+(generate-gauntlet `utcDateString()` ile aynı). Gün anahtarı kullanıcı tz'sine
+bağlandığında bu fonksiyon da güncellenmeli. Önceki döngü penceresi
+`bugün-2`'dir (UTC-batısı dilimler, migration-guard KIRMIZI 1).
+
+### 8. Eşzamanlı submit-choice olayı kaybolabilir
+`record_choice_event` (108) gauntlet satırını kilitlemiyor. Anonimin bir
+olayı, taşıma UPDATE'inden sonra ve users DELETE'inden önce commit olursa
+taşınmaz, CASCADE ile gider. Pencere milisaniye; istemci o an birleştirme
+akışında. (migration-guard SARI 3)
+
+### 9. `context_corrections` için index yok
+Taşıma UPDATE'i (`gauntlet_id`, `user_id`) tam tarama yapar. Tablo küçük.
+
+### 10. Anonimin çevrimdışı kuyruğu B oturumuyla boşaltılır
+`setSession(B)` sonrası GauntletShell `restartForNewIdentity` →
+`flushThenLoad` bekleyen seçimleri B'nin JWT'siyle gönderir. `merged`'de
+gauntlet artık B'nindir, doğru. `target_won`'da gauntlet silinmiştir →
+submit-choice kalıcı ret → kullanıcı `gauntlet.choiceDropped` görür.
+Kuyruk auth id'ye anahtarlı değil; v1'de kabul.
+
+### 11. `setSession(B)` başarısızsa cihaz ölü anonim JWT'de kalır
+Taşıma başarılıysa anonim auth kullanıcısı silinmiştir; ana istemci onun
+JWT'sini tutar. Sentry fatal (`step=set_session`), kullanıcıya genel bağlama
+hatası; `_layout` USER_NOT_FOUND kurtarması sonraki açılışta yeni anonim
+kimlik açar; kullanıcı Profil'den Apple ile yeniden girer (yeni anonim
+kimlikte taşınacak ilerleme yoktur).
