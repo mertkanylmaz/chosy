@@ -129,16 +129,27 @@ export default function AuthScreen() {
     try {
       const result = await signInWithApple();
 
-      if (result.success) {
-        void handleSuccess('apple');
-      } else if (result.error === 'canceled') {
-        // Kullanıcı iptal etti — sessizce geç
-      } else if (result.error === 'not_available') {
-        setErrorMsg(t('auth.errorNotAvailable'));
-      } else if (result.error === 'network') {
-        setErrorMsg(t('auth.errorNetwork'));
-      } else {
-        setErrorMsg(t('auth.errorGeneral'));
+      switch (result.outcome) {
+        case 'signed_in':
+        case 'identity_already_exists':
+          void handleSuccess('apple');
+          break;
+        case 'canceled':
+          // Kullanıcı iptal etti — sessizce geç
+          break;
+        case 'not_available':
+          setErrorMsg(t('auth.errorNotAvailable'));
+          break;
+        case 'network':
+          setErrorMsg(t('auth.errorNetwork'));
+          break;
+        case 'failed':
+          setErrorMsg(t('auth.errorGeneral'));
+          break;
+        default: {
+          const unreachable: never = result;
+          throw new Error(`[auth] Beklenmeyen AuthResult: ${JSON.stringify(unreachable)}`);
+        }
       }
     } catch (err) {
       logger.error('[auth] Apple handler hatası:', err);

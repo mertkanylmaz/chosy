@@ -605,6 +605,7 @@
     "errorGeneral": "Couldn't sign you in. Try again.",
     "errorNetwork": "No internet connection. Check your network and try again.",
     "errorNotAvailable": "Sign-in is not available on this device.",
+    "existingAccountSignedIn": "This Apple ID already has a Chosy account. Signed you in.",
     "requiredNote": "Signing in keeps your history and champions safe across devices."
   },
   "magicLink": {

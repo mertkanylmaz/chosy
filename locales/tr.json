@@ -605,6 +605,7 @@
     "errorGeneral": "Giriş yapılamadı. Tekrar dene.",
     "errorNetwork": "İnternet bağlantısı yok. Ağını kontrol edip tekrar dene.",
     "errorNotAvailable": "Bu cihazda giriş yapılamıyor.",
+    "existingAccountSignedIn": "Bu Apple Kimliğine bağlı bir Chosy hesabı zaten var. Giriş yaptın.",
     "requiredNote": "Giriş yapmak geçmişini ve şampiyonlarını cihazlar arasında güvende tutar."
   },
   "magicLink": {

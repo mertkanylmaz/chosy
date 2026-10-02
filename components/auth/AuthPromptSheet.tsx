@@ -19,6 +19,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Modal,
   Platform,
   ScrollView,
@@ -67,34 +68,41 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
     try {
       const result = await signInWithApple();
 
-      if (result.success) {
-        posthogAnalytics.track('auth_prompt_completed', {
-          provider: 'apple',
-          surface: 'champion_sheet',
-        });
-        onClose(true);
-        return;
+      switch (result.outcome) {
+        case 'signed_in':
+          posthogAnalytics.track('auth_prompt_completed', {
+            provider: 'apple',
+            surface: 'champion_sheet',
+          });
+          onClose(true);
+          return;
+        case 'identity_already_exists':
+          // Apple kimliği başka hesapta — o hesaba girildi. Taşıma sonucu
+          // kullanıcıya yansımaz; `failed` authService'te Sentry'ye yazıldı.
+          posthogAnalytics.track('auth_prompt_completed', {
+            provider: 'apple',
+            surface: 'champion_sheet',
+          });
+          onClose(true);
+          Alert.alert(t('auth.existingAccountSignedIn'));
+          return;
+        case 'canceled':
+          // Kullanıcı Apple dialog'unu kapattı — sheet açık kalır, hata yok.
+          return;
+        case 'not_available':
+          setErrorMsg(t('auth.errorNotAvailable'));
+          return;
+        case 'network':
+          setErrorMsg(t('auth.errorNetwork'));
+          return;
+        case 'failed':
+          setErrorMsg(t('auth.errorGeneral'));
+          return;
+        default: {
+          const unreachable: never = result;
+          throw new Error(`[AuthPromptSheet] Beklenmeyen AuthResult: ${JSON.stringify(unreachable)}`);
+        }
       }
-
-      if (result.error === 'canceled') {
-        // Kullanıcı Apple dialog'unu kapattı — sheet açık kalır, hata yok.
-        return;
-      }
-      if (result.error === 'not_available') {
-        setErrorMsg(t('auth.errorNotAvailable'));
-        return;
-      }
-      if (result.error === 'network') {
-        setErrorMsg(t('auth.errorNetwork'));
-        return;
-      }
-      if (result.error === 'identity_already_exists') {
-        // Apple kimliği başka hesapta — anonim oturum korundu. Çakışma
-        // UX'i B-1 / Fix 1b'de; geçici olarak genel hata copy'si.
-        setErrorMsg(t('auth.errorGeneral'));
-        return;
-      }
-      setErrorMsg(t('auth.errorGeneral'));
     } catch (err) {
       logger.error('[AuthPromptSheet] Apple handler hatası:', err);
       setErrorMsg(t('auth.errorGeneral'));

@@ -104,3 +104,29 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     fetch: supabaseFetch,
   },
 });
+
+/**
+ * Kalıcı olmayan, kendini yenilemeyen GEÇİCİ auth istemcisi (Sprint 1 / 1b).
+ *
+ * Ana istemcide `signInWithIdToken` hemen `SIGNED_IN` yayar (auth-js
+ * `GoTrueClient._notifyAllSubscribers`); `_layout` bootstrap'ı ve
+ * GauntletShell `restartForNewIdentity` bu olayla yeni kimliğin bugünkü
+ * gauntlet'ini ÜRETİR. Anonim ilerleme taşınmadan önce bu olmamalı. Bu
+ * istemcideki giriş ana istemcinin dinleyicilerine ulaşmaz; token buradan
+ * alınır, iş bitince oturum `supabase.auth.setSession` ile ana istemciye
+ * verilir. Bu istemcide `signOut` ÇAĞRILMAZ — sunucudaki oturumu (ana
+ * istemciye devredilen) iptal ederdi.
+ */
+export function createEphemeralAuthClient() {
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      storageKey: 'chosy-ephemeral-auth',
+    },
+    global: {
+      fetch: supabaseFetch,
+    },
+  });
+}

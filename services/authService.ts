@@ -11,6 +11,9 @@
  *      (Dashboard → Auth → "Allow manual linking" açık olmalı; kapalıysa
  *      `manual_linking_disabled` döner.)
  *      Anonim değilse (Profil'den mevcut hesaba giriş) `signInWithIdToken`.
+ *      Bağlama `identity_already_exists` ile reddedilirse (Apple kimliği
+ *      başka hesapta) o hesaba `signInWithIdToken` ile girilir ve anonim
+ *      ilerleme `merge-anonymous-user` ile taşınır (`signInToExistingAccount`).
  *   4. users tablosuna auth_provider güncellenir
  *
  *   Google akışı (signInWithOAuth) henüz bağlama yapmıyor — yeni oturum açar.
@@ -29,7 +32,7 @@ import * as Linking from 'expo-linking';
 
 import * as Sentry from '@sentry/react-native';
 
-import { supabase } from './supabase';
+import { createEphemeralAuthClient, supabase } from './supabase';
 import { logger } from '../utils/logger';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
@@ -58,16 +61,30 @@ export function configureGoogleSignIn(): void {
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
-/** Auth işlemi sonuç tipi */
+/**
+ * Anonim ilerlemenin mevcut hesaba taşınma sonucu (Sprint 1 / 1b).
+ * Kullanıcıya hiçbiri hata olarak gösterilmez — hesap girişi her durumda
+ * geçerlidir. `failed` Sentry'ye yazılmıştır; anonim kullanıcı silinmemiştir.
+ */
+export type AnonymousMergeOutcome = 'merged' | 'already_merged' | 'failed';
+
+/**
+ * Auth işlemi sonuç tipi. Çağıranlar `outcome` üzerinde exhaustive switch
+ * yazar (`default` dalında `never`) — yeni bir dal eklendiğinde her çağıran
+ * derleme hatası verir.
+ */
 export type AuthResult =
-  | { success: true; isNewUser: boolean }
-  | { success: false; error: 'canceled' | 'not_available' | 'network' | 'failed'; message?: string }
+  | { outcome: 'signed_in'; isNewUser: boolean }
   /**
    * Anonim kimliğe bağlanmak istenen Apple kimliği başka bir kullanıcıya ait
-   * (GoTrue `identity_already_exists`). Anonim oturum OLDUĞU GİBİ kalır;
-   * o hesaba sessizce geçilmez. Çakışma UX'i B-1 / Fix 1b'de.
+   * (GoTrue `identity_already_exists`). Kullanıcı O HESABA giriş yapmıştır;
+   * anonim ilerleme `merge-anonymous-user` ile taşınmaya çalışılmıştır.
    */
-  | { success: false; error: 'identity_already_exists'; message?: string };
+  | { outcome: 'identity_already_exists'; merge: AnonymousMergeOutcome }
+  | { outcome: 'canceled' }
+  | { outcome: 'not_available' }
+  | { outcome: 'network'; message?: string }
+  | { outcome: 'failed'; message?: string };
 
 /**
  * Hata mesajından network hatası olup olmadığını tespit eder.
@@ -165,6 +182,167 @@ async function syncAuthProvider(provider: 'apple' | 'google' | 'email'): Promise
   }
 }
 
+// ─── Anonim ilerlemeyi mevcut hesaba taşıma (Sprint 1 / 1b) ──────────────────
+
+/** `merge-anonymous-user` 200 gövdesi — yalnız bu iki biçim başarıdır. */
+type MergeSuccessBody =
+  | { merged: true }
+  | { merged: false; reason: 'anon_missing' };
+
+function parseMergeBody(body: unknown): MergeSuccessBody | null {
+  if (typeof body !== 'object' || body === null) return null;
+  const merged = (body as { merged?: unknown }).merged;
+  if (merged === true) return { merged: true };
+  if (merged === false && (body as { reason?: unknown }).reason === 'anon_missing') {
+    return { merged: false, reason: 'anon_missing' };
+  }
+  return null;
+}
+
+function captureMergeFailure(step: string, err: unknown, extra?: Record<string, unknown>): void {
+  Sentry.captureException(err instanceof Error ? err : new Error(String(err)), {
+    level: 'error',
+    tags: { function: 'mergeAnonymousProgress', step },
+    extra,
+  });
+}
+
+/**
+ * `merge-anonymous-user` EF'ini çağırır. Asla fırlatmaz.
+ *
+ * İki JWT ayrı kanaldan gider: hedef (B) `Authorization` başlığında, kaynak
+ * (A) gövdede. Yalnız `anon_missing` "zaten birleşti" sayılır; 401 dahil
+ * diğer her yanıt `failed` + Sentry'dir (süresi dolmuş JWT-A taşıma
+ * YAPILMADI demektir, birleşti değil).
+ */
+async function mergeAnonymousProgress(
+  targetAccessToken: string,
+  anonAccessToken: string,
+): Promise<AnonymousMergeOutcome> {
+  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+
+  let response: Response;
+  try {
+    response = await fetch(`${supabaseUrl}/functions/v1/merge-anonymous-user`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${targetAccessToken}`,
+        'Content-Type': 'application/json',
+        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+      },
+      body: JSON.stringify({ anonymous_access_token: anonAccessToken }),
+    });
+  } catch (err) {
+    captureMergeFailure('merge_request', err);
+    return 'failed';
+  }
+
+  let body: unknown = null;
+  try {
+    body = await response.json();
+  } catch (err) {
+    captureMergeFailure('merge_response_parse', err, { status: response.status });
+    return 'failed';
+  }
+
+  if (response.status === 200) {
+    const parsed = parseMergeBody(body);
+    if (parsed === null) {
+      captureMergeFailure('merge_unexpected_body', new Error('merge-anonymous-user: beklenmeyen 200 gövdesi'), { body });
+      return 'failed';
+    }
+    return parsed.merged ? 'merged' : 'already_merged';
+  }
+
+  const code = typeof body === 'object' && body !== null
+    ? (body as { error?: unknown; code?: unknown }).code ?? (body as { error?: unknown }).error
+    : undefined;
+  captureMergeFailure(
+    response.status === 401 ? 'anon_auth' : 'merge',
+    new Error(`merge-anonymous-user HTTP ${response.status}`),
+    { status: response.status, code },
+  );
+  return 'failed';
+}
+
+/**
+ * `identity_already_exists` dalı: anonim oturumdan mevcut hesaba geçer ve
+ * anonim ilerlemeyi taşır.
+ *
+ *   1. JWT-A: `refreshSession` HER ZAMAN (eşik yok) → taze anonim token
+ *   2. JWT-B: `signInWithIdToken` GEÇİCİ istemcide — aynı Apple token +
+ *      nonce (bağlama reddedildiği için token tüketilmedi). Ana istemci bu
+ *      sırada hâlâ anonimdir; `SIGNED_IN` YAYILMAZ.
+ *   3. EF: B başlıkta, A gövdede
+ *   4. `supabase.auth.setSession(B)` — `SIGNED_IN` ANCAK BURADA yayılır.
+ *      `_layout` bootstrap'ı ve GauntletShell `restartForNewIdentity` B'nin
+ *      gauntlet'ini taşıma BİTTİKTEN sonra ağdan çeker.
+ *
+ * Neden 4 en sonda: B oturumu 3'ten önce ana istemciye geçerse GauntletShell
+ * B için bugünün gauntlet'ini EF ile yarışarak üretebilir; merge o zaman
+ * `target_won` döner ve anonim ilerleme sessizce kaybolur (DUR2 P0).
+ *
+ * 1 başarısızsa giriş YİNE yapılır (taşıma `failed`, Sentry); 2 başarısızsa
+ * anonim oturum olduğu gibi kalır ve hata döner. 4 başarısızsa Sentry fatal
+ * + hata: taşıma başarılıysa anonim kullanıcı silinmiştir, ana istemci ölü
+ * anonim JWT'de kalır ve `_layout` USER_NOT_FOUND kurtarması devralır.
+ */
+async function signInToExistingAccount(
+  identityToken: string,
+  rawNonce: string,
+): Promise<AuthResult> {
+  let anonAccessToken: string | null = null;
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) throw error;
+    if (!data.session || data.session.user.is_anonymous !== true) {
+      throw new Error('refreshSession anonim oturum döndürmedi');
+    }
+    anonAccessToken = data.session.access_token;
+  } catch (err) {
+    captureMergeFailure('anon_capture', err);
+  }
+
+  const ephemeral = createEphemeralAuthClient();
+  const { data, error } = await ephemeral.auth.signInWithIdToken({
+    provider: 'apple',
+    token: identityToken,
+    nonce: rawNonce,
+  });
+
+  if (error || !data.session) {
+    const message = error?.message ?? 'signInWithIdToken oturum döndürmedi';
+    logger.error('[authService] Apple mevcut hesaba giriş hatası:', message);
+    if (error && isNetworkError(error)) {
+      return { outcome: 'network', message };
+    }
+    return { outcome: 'failed', message };
+  }
+  const targetSession = data.session;
+
+  const merge: AnonymousMergeOutcome = anonAccessToken === null
+    ? 'failed'
+    : await mergeAnonymousProgress(targetSession.access_token, anonAccessToken);
+
+  const { error: setSessionError } = await supabase.auth.setSession({
+    access_token: targetSession.access_token,
+    refresh_token: targetSession.refresh_token,
+  });
+  if (setSessionError) {
+    Sentry.captureException(setSessionError, {
+      level: 'fatal',
+      tags: { function: 'signInToExistingAccount', step: 'set_session' },
+      extra: { merge },
+    });
+    return { outcome: 'failed', message: setSessionError.message };
+  }
+
+  // Ana istemci artık B — `users` güncellemesi B'nin satırına gider.
+  void syncAuthProvider('apple');
+
+  return { outcome: 'identity_already_exists', merge };
+}
+
 // ─── Apple Sign-In ────────────────────────────────────────────────────────────
 
 // ⚠️ SUPABASE DASHBOARD GEREKSİNİMİ (tek seferlik kurulum):
@@ -211,7 +389,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     // iOS cihazda Apple Sign-In kullanılabilir mi?
     const isAvailable = await AppleAuthentication.isAvailableAsync();
     if (!isAvailable) {
-      return { success: false, error: 'not_available' };
+      return { outcome: 'not_available' };
     }
 
     // Nonce üret — Apple token'ına gömülür, Supabase doğrular
@@ -226,7 +404,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     });
 
     if (!credential.identityToken) {
-      return { success: false, error: 'failed', message: 'identityToken alinamadi' };
+      return { outcome: 'failed', message: 'identityToken alinamadi' };
     }
 
     // Yerel oturumdan okunur (ağ yok). Oturum yoksa ya da kalıcı hesapsa
@@ -261,16 +439,18 @@ export async function signInWithApple(): Promise<AuthResult> {
           message: 'apple linkIdentity: identity_already_exists',
           data: { status: error.status },
         });
-        return { success: false, error: 'identity_already_exists', message: error.message };
+        // Kullanıcı Apple ile kendini doğruladı — hesap onun. O hesaba
+        // girilir ve anonim ilerleme taşınır (Sprint 1 / 1b).
+        return await signInToExistingAccount(credential.identityToken, rawNonce);
       }
       logger.error(
         `[authService] Apple ${linkToAnonymous ? 'linkIdentity' : 'signInWithIdToken'} hatası:`,
         error.message,
       );
       if (isNetworkError(error)) {
-        return { success: false, error: 'network', message: error.message };
+        return { outcome: 'network', message: error.message };
       }
-      return { success: false, error: 'failed', message: error.message };
+      return { outcome: 'failed', message: error.message };
     }
 
     // users tablosundaki auth_provider guncelle (non-blocking)
@@ -291,21 +471,20 @@ export async function signInWithApple(): Promise<AuthResult> {
       data.user.created_at !== undefined &&
       Math.abs(new Date(data.user.created_at).getTime() - Date.now()) < 10_000;
 
-    return { success: true, isNewUser };
+    return { outcome: 'signed_in', isNewUser };
   } catch (err: unknown) {
     // Kullanıcı dialog'u kapattı
     if ((err as { code?: string }).code === 'ERR_REQUEST_CANCELED') {
-      return { success: false, error: 'canceled' };
+      return { outcome: 'canceled' };
     }
     // Network hatası — offline veya DNS çözülemedi
     if (isNetworkError(err)) {
       logger.warn('[authService] Apple sign-in network hatası:', err);
-      return { success: false, error: 'network' };
+      return { outcome: 'network' };
     }
     logger.error('[authService] Apple sign-in beklenmedik hata:', err);
     return {
-      success: false,
-      error: 'failed',
+      outcome: 'failed',
       message: err instanceof Error ? err.message : 'Bilinmeyen hata',
     };
   }
@@ -348,7 +527,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
 
     if (error || !data.url) {
       logger.error('[authService] Google OAuth URL alınamadı:', error?.message);
-      return { success: false, error: 'failed', message: error?.message };
+      return { outcome: 'failed', message: error?.message };
     }
 
     // Supabase'in ürettiği Google login URL'ini tarayıcıda aç
@@ -360,7 +539,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
 
       if (sessionError) {
         logger.error('[authService] Google session exchange hatası:', sessionError.message);
-        return { success: false, error: 'failed', message: sessionError.message };
+        return { outcome: 'failed', message: sessionError.message };
       }
 
       // users tablosundaki auth_provider güncelle (non-blocking)
@@ -374,20 +553,19 @@ export async function signInWithGoogle(): Promise<AuthResult> {
         ? Math.abs(new Date(user.created_at).getTime() - Date.now()) < 10_000
         : false;
 
-      return { success: true, isNewUser };
+      return { outcome: 'signed_in', isNewUser };
     }
 
     // Kullanıcı tarayıcıyı kapattı
     if (result.type === 'cancel' || result.type === 'dismiss') {
-      return { success: false, error: 'canceled' };
+      return { outcome: 'canceled' };
     }
 
-    return { success: false, error: 'failed' };
+    return { outcome: 'failed' };
   } catch (err) {
     logger.error('[authService] Google OAuth beklenmedik hata:', err);
     return {
-      success: false,
-      error: 'failed',
+      outcome: 'failed',
       message: err instanceof Error ? err.message : 'Bilinmeyen hata',
     };
   }

@@ -1174,21 +1174,35 @@ function ProfileScreenContent() {
     setLinkingAccount(true);
     try {
       const result = await signInWithApple();
-      if (result.success) {
-        await loadAll();
-        Alert.alert(
-          t('profile.linkSuccess'),
-          t('profile.linkSuccessMessage'),
-        );
-      } else if (result.error === 'identity_already_exists') {
-        // Apple kimliği başka hesapta — anonim oturum korundu. Çakışma
-        // UX'i B-1 / Fix 1b'de; geçici olarak genel bağlama hatası.
-        Alert.alert(t('profile.linkError'), t('profile.linkErrorMessage'));
-      } else if (result.error !== 'canceled') {
-        Alert.alert(
-          t('profile.linkError'),
-          t('profile.linkErrorMessage'),
-        );
+      switch (result.outcome) {
+        case 'signed_in':
+          await loadAll();
+          Alert.alert(
+            t('profile.linkSuccess'),
+            t('profile.linkSuccessMessage'),
+          );
+          break;
+        case 'identity_already_exists':
+          // Apple kimliği başka hesapta — o hesaba girildi. Taşıma sonucu
+          // (`result.merge`) kullanıcıya yansımaz: `failed` authService'te
+          // Sentry'ye yazıldı, hesap girişi yine geçerli (1b kararı).
+          await loadAll();
+          Alert.alert(t('auth.existingAccountSignedIn'));
+          break;
+        case 'canceled':
+          break;
+        case 'not_available':
+        case 'network':
+        case 'failed':
+          Alert.alert(
+            t('profile.linkError'),
+            t('profile.linkErrorMessage'),
+          );
+          break;
+        default: {
+          const unreachable: never = result;
+          throw new Error(`[Profile] Beklenmeyen AuthResult: ${JSON.stringify(unreachable)}`);
+        }
       }
     } catch (err) {
       logger.error('[Profile] Apple link hatasi:', err);
