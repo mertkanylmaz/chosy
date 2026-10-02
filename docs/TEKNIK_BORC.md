@@ -2988,3 +2988,43 @@ okunamazsa boş küme ile devam et + Sentry (hata servis katmanında zaten
 yazılıyor; ekran tarafında ayrı `error_code` ile işaretlenmeli ki boş küme
 sessiz fallback olmasın — kural 1). **Neden şimdi değil:** Fix 6 kapsamı
 rulet ekranını içermiyordu; kod değişikliği ayrı iş.
+
+---
+
+## 🟡 Profil abonelik rozeti (B-1 / Fix 7) — kalan borçlar (2 Eki 2026)
+
+Fix 7 ile profil rozeti entitlement'tan türetiliyor ("Chosy Pro"), plan
+bilgisi alt satırda; "Founding Member" etiketi kaldırıldı.
+
+### 1. Lifetime akışı ölü kod: `app/lifetime.tsx` + `services/lifetimeService.ts`
+
+`/lifetime` route'una C.9c'den beri hiçbir yerden link yok (bible §7.3
+lifetime satışını donduruyor). Ekran ve servisi yalnızca birbirini kullanıyor;
+`lifetime.tsx:405`'te sabit "FOUNDING MEMBER" metni ve `lifetime.*` locale
+anahtarları da bu yolla birlikte ölü. **Neden şimdi değil:** silme kararı
+RevenueCat'teki lifetime sahipliği kontrolüne bağlı; Fix 7 bu dosyalara
+dokunmadı.
+
+### 2. `getLifetimeOffering` ölü kod
+
+`services/purchaseService.ts` `getLifetimeOffering()` (`lifetime_founding`
+offering'i + default'taki `com.chosy.lifetime` fallback'i) yalnızca
+`app/lifetime.tsx`'ten çağrılıyor. Madde 1 ile birlikte kaldırılmalı.
+Profildeki `tier === 'lifetime'` → "Lifetime" plan satırı dalı **kalır**
+(silme kararı RC kontrolüne bağlı).
+
+### 3. `willRenew` context'e taşınmıyor
+
+Profil plan satırı bu yüzden "renews {date}" değil "active until {date}"
+diyor: iptal edilmiş ama süresi dolmamış abonelikte "renews" yanlış olurdu.
+RC `EntitlementInfo.willRenew` / `unsubscribeDetectedAt` `SubscriptionInfo`'ya
+ve `SubscriptionContext`'e taşınırsa satır "renews" / "ends" ayrımı yapabilir.
+**Neden şimdi değil:** context sözleşmesine yeni alan — mimari karar (CTO).
+
+### 4. App Store Connect görünen adı kontrolü
+
+Uygulama içi marka "Chosy Pro"ya geçiyor (rozet Fix 7'de; kalan "Chosy Plus"
+metinleri ayrı copy-only commit). App Store Connect'teki abonelik grubu /
+ürün görünen adları ve RevenueCat paywall metinleri "Chosy Plus" olarak
+kalmış olabilir — Apple satın alma sheet'i ve abonelik yönetim sayfası bu
+adı gösterir. Kontrol edilmeli (kod dışı).

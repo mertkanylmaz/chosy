@@ -379,8 +379,11 @@ interface SettingsModalProps {
   isAnonymous: boolean;
   /** V1-D3 üç hâlli durum — `loading`'de abonelik satırı çizilmez. */
   premiumStatus: PremiumStatus;
-  /** Aktif plan etiketi — Apple yonetim sayfasi oncesi gosterilir */
-  currentPlanLabel: string;
+  /**
+   * Aktif plan etiketi — Apple yonetim sayfasi oncesi gosterilir.
+   * `null`: premium ama plan bilinmiyor → not cizilmez (Fix 7).
+   */
+  currentPlanLabel: string | null;
   linkingAccount: boolean;
   /** `users.push_enabled` — `null`: okunamadı (switch devre dışı). */
   notificationsEnabled: boolean | null;
@@ -585,7 +588,8 @@ function SettingsModal({
           )}
 
           {/* Apple yonetim sayfasi hakkinda bilgi notu */}
-          {premiumStatus === 'premium' && (
+          {/* Fix 7: plan bilinmiyorsa (null) not cizilmez — "Free" yazilmaz. */}
+          {premiumStatus === 'premium' && currentPlanLabel !== null && (
             <Text style={settingsModalStyles.manageNote}>
               {t('profile.manageNote', { plan: currentPlanLabel })}
             </Text>
@@ -723,6 +727,46 @@ function ProfileScreenContent() {
   const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Pro Mode satirindaki kilit ikonu — yetki kontrolu ekranin kendisinde */
   const proAccess = useProModeAccess();
+
+  // ── Plan bilgisi (B-1 / Fix 7) ──
+  // Rozet entitlement'tan (`premiumStatus`), plan adi `tier`'dan gelir.
+  // Eslenemeyen urun ID'si `tier`'i 'free' birakir: premium + 'free' =
+  // bilinmeyen plan → plan satiri CIZILMEZ (ne 'lifetime' ne "Free") + Sentry.
+  // `weekly_legacy` bilinen eski plan: satir yok, Sentry yok.
+  const knownPlanTitle: string | null =
+    tier === 'annual' ? t('paywall.annualTitle')
+      : tier === 'monthly' ? t('paywall.monthlyTitle')
+      : tier === 'lifetime' ? t('paywall.lifetimeTitle')
+      : null;
+  const isUnknownPremiumPlan =
+    premiumStatus === 'premium' && tier !== 'weekly_legacy' && knownPlanTitle === null;
+
+  /**
+   * Rozet alt satiri. "renews" DEGIL: `willRenew` context'e tasinmiyor,
+   * iptal edilmis abonelikte yaniltici olurdu (TEKNIK_BORC). Bitis tarihi
+   * yoksa yalnizca plan adi.
+   */
+  const planLine: string | null = (() => {
+    if (premiumStatus !== 'premium' || knownPlanTitle === null) return null;
+    if (tier === 'lifetime' || !expiresAt) return knownPlanTitle;
+    const date = expiresAt.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    return t(isInTrial ? 'profile.planTrialEnds' : 'profile.planActiveUntil', {
+      plan: knownPlanTitle,
+      date,
+    });
+  })();
+
+  useEffect(() => {
+    if (!isUnknownPremiumPlan) return;
+    Sentry.captureException(new Error('profile: premium entitlement, plan eslenemedi'), {
+      tags: { screen: 'profile', fn: 'planInfo', error_code: 'PROFILE_UNKNOWN_PLAN' },
+      extra: { tier, planId, subStatus },
+    });
+  }, [isUnknownPremiumPlan, tier, planId, subStatus]);
 
   const headerAnimStyle = useStaggeredEntry(0);
   const sectionsAnimStyle = useStaggeredEntry(1, { baseDelay: 150 });
@@ -1535,24 +1579,21 @@ function ProfileScreenContent() {
               </View>
             )}
 
-            {/* Subscription badge — lifetime veya premium ise goster.
-                V-4 Tur C: `isPremium` → `premiumStatus` (V1-D3 uc halli durum);
-                `loading`'de rozet cizilmez. */}
-            {tier === 'lifetime' ? (
-              <View style={styles.subBadge}>
-                <Diamond size={14} weight="fill" color={color.reward.primary} />
-                <Text style={styles.subBadgeText}>{t('profile.foundingMember')}</Text>
-              </View>
-            ) : premiumStatus === 'premium' ? (
-              <View style={styles.subBadge}>
-                <Diamond size={14} weight="fill" color={color.reward.primary} />
-                <Text style={styles.subBadgeText}>
-                  {isInTrial
-                    ? t('profile.subscriptionTrial')
-                    : t('profile.subscriptionActive')}
-                </Text>
-              </View>
-            ) : null}
+            {/* Subscription badge — B-1 / Fix 7: aktif `chosy_plus`
+                entitlement'i (`premiumStatus`) varsa HER ZAMAN "Chosy Pro";
+                `tier` rozeti belirlemez ("Founding Member" kaldirildi).
+                Plan bilgisi alt satirda (`planLine`). `loading`'de cizilmez. */}
+            {premiumStatus === 'premium' && (
+              <>
+                <View style={styles.subBadge}>
+                  <Diamond size={14} weight="fill" color={color.reward.primary} />
+                  <Text style={styles.subBadgeText}>{t('profile.proBadge')}</Text>
+                </View>
+                {planLine !== null && (
+                  <Text style={styles.subPlanLine}>{planLine}</Text>
+                )}
+              </>
+            )}
 
             {/* b) Cinema DNA — K-08 bolumu (bilesen adi `TasteDNA` kaldi).
                 CinemaIdentity (rank + 6-eksen radar) buradan kaldirildi:
@@ -1810,10 +1851,7 @@ function ProfileScreenContent() {
         isAnonymous={isAnonymous}
         premiumStatus={premiumStatus}
         currentPlanLabel={
-          tier === 'lifetime' ? t('paywall.lifetimeTitle')
-            : tier === 'annual' ? t('paywall.annualTitle')
-            : tier === 'monthly' ? t('paywall.monthlyTitle')
-            : t('profile.freePlan')
+          premiumStatus === 'premium' ? knownPlanTitle : t('profile.freePlan')
         }
         linkingAccount={linkingAccount}
         notificationsEnabled={notificationsEnabled}
@@ -2007,6 +2045,12 @@ const styles = StyleSheet.create({
   subBadgeText: {
     ...type.caption,
     color: color.text.primary,
+  },
+  /** Rozet alti plan satiri — "Annual · active until …" (Fix 7) */
+  subPlanLine: {
+    ...type.caption,
+    alignSelf: 'center',
+    color: color.text.secondary,
   },
 
   // ── Sections container ──
