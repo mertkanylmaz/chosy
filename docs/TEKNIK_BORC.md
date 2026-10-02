@@ -3067,6 +3067,24 @@ açıklamasını İngilizce görüyor (template fallback ise i18n'li). Ayrıca
 `matchExplanation` in-memory cache'i dil bağımsız — oturum içinde dil
 değişirse önbellekteki template metni eski dilde kalır.
 
+### Fix 5b (3 Eki 2026) — 2 ve 3 kodda kapandı, deploy bekliyor
+
+İstemci `locale` gönderiyor (opsiyonel, yoksa `en`), prompt o dilde yanıt
+istiyor; sunucu `_shared/explanationOutput.ts` ile boş / <20 karakter /
+reddetme-sistem dili açıklamayı `null`'a çeviriyor (Sentry `warning`),
+istemci `null`'da template'e düşmeden bölümü gizliyor. Cache anahtarında dil
+var. Deploy sırası: önce `explain-match`, sonra istemci. Kalanlar:
+
+- **Kalıp kapsamı:** tek kelime değil cümle kalıbı (`unable to generate`,
+  `profil verisi eksik` …); listede olmayan bir reddetme ifadesi kaçabilir.
+  Sentry `warning` sayısı ve örnek metinler izlenecek, gerekirse kalıp
+  eklenir.
+- **`null` önbelleklenmiyor:** reddedilen film için her detay açılışında
+  ücretli istek tekrar gider (rate limit sınırlar). Negatif cache ayrı karar.
+- **Film detayı dil değişiminde yeniden istemiyor:** `app/film/[id].tsx`
+  efekti `locale`'e bağlı değil; ekran açıkken dil değişirse metin eski dilde
+  kalır (yeniden açılışta düzelir).
+
 ---
 
 ## 🟡 Spotlight arama alanı yerleşimi (B-1 / Fix 8) — kalan borçlar (2 Eki 2026)

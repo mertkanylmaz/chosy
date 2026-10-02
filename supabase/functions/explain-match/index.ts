@@ -10,6 +10,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
+import {
+  type ExplanationLocale,
+  LOCALE_INSTRUCTION,
+  resolveLocale,
+  sanitizeExplanations,
+} from '../_shared/explanationOutput.ts'
+import { sentryCapture } from '../_shared/sentry.ts'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -21,7 +28,7 @@ const CORS_HEADERS = {
 
 // ─── System Prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are MoodFlix Match Explainer. Given a user's mood profile and a list of film profiles, write a brief explanation for why each film matches this user's current mood.
+const BASE_PROMPT = `You are MoodFlix Match Explainer. Given a user's mood profile and a list of film profiles, write a brief explanation for why each film matches this user's current mood.
 
 For each film, write 1-2 sentences under 30 words total. Be specific about emotions and themes. Never mention the film title. Never include spoilers. Be conversational, not clinical.
 
@@ -33,6 +40,12 @@ Return ONLY valid JSON with no explanation or markdown:
 { "explanations": { "<filmId>": "<explanation>", ... } }
 
 Generate an explanation for every filmId provided.`
+
+function systemPrompt(locale: ExplanationLocale): string {
+  return `${BASE_PROMPT}
+
+${LOCALE_INSTRUCTION[locale]} Keep the JSON keys exactly as given.`
+}
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
@@ -66,11 +79,14 @@ serve(async (req: Request): Promise<Response> => {
 
   let userProfile: unknown
   let films: Array<{ filmId: string; dimensions: unknown }>
+  let locale: ExplanationLocale
 
   try {
     const body = await req.json()
     userProfile = body?.userProfile
     films = body?.films
+    // Opsiyonel — Fix 5b öncesi istemciler göndermez.
+    locale = resolveLocale(body?.locale)
 
     if (!userProfile || !Array.isArray(films) || films.length === 0) {
       throw new Error('missing fields')
@@ -102,7 +118,7 @@ serve(async (req: Request): Promise<Response> => {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt(locale),
       messages: [{ role: 'user', content: userMessage }],
     })
 
@@ -112,10 +128,25 @@ serve(async (req: Request): Promise<Response> => {
     const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
     const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
 
-    const parsed = JSON.parse(jsonString)
+    const parsed: unknown = JSON.parse(jsonString)
+
+    // Boş / kısa / reddetme-sistem dili → o film için null; istemci bölümü gizler.
+    const { explanations, rejected } = sanitizeExplanations(
+      parsed,
+      films.map((f) => f.filmId),
+    )
+    if (rejected > 0) {
+      console.warn(`[explain-match] ${rejected}/${films.length} açıklama doğrulamadan geçmedi (locale=${locale})`)
+      await sentryCapture({
+        message: 'explain-match: açıklama doğrulamadan geçmedi',
+        level: 'warning',
+        tags: { function: 'explain-match', locale },
+        extra: { rejected, film_count: films.length },
+      })
+    }
 
     return new Response(
-      JSON.stringify(parsed),
+      JSON.stringify({ explanations }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   } catch (err) {

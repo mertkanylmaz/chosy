@@ -7,7 +7,7 @@
  *   2. Template fallback — dimensions_json'dan dominant boyutları çekip doldurur
  *      (i18n). Boyut eşleşmezse film sonuç haritasına HİÇ girmez.
  *
- * Cache: in-memory Map, aynı mood+film kombinasyonunu tekrar fetch etmez.
+ * Cache: in-memory Map, aynı dil+mood+film kombinasyonunu tekrar fetch etmez.
  */
 import * as Sentry from '@sentry/react-native';
 
@@ -37,11 +37,12 @@ function _cacheKey(profileKey: string, filmId: string): string {
 
 /**
  * Mood profil için deterministik önbellek anahtarı üretir.
- * Dominant duygu + enerji seviyesi + tempo kombinasyonu kullanılır.
+ * Dil + dominant duygu + enerji seviyesi + tempo kombinasyonu kullanılır;
+ * dil anahtarda olmazsa oturum içi dil değişiminde eski dildeki metin döner.
  */
-function _profileCacheKey(profile: TasteProfile): string {
+function _profileCacheKey(profile: TasteProfile, locale: string): string {
   const dominant = _dominantEmotion(profile);
-  return `${dominant}_${Math.round(profile.energy_level * 10)}_${profile.pace_preference}`;
+  return `${locale}_${dominant}_${Math.round(profile.energy_level * 10)}_${profile.pace_preference}`;
 }
 
 // ─── Yardımcılar ──────────────────────────────────────────────────────────────
@@ -123,7 +124,8 @@ export async function explainBatch(
   userProfile: TasteProfile,
   films: FilmForExplanation[],
 ): Promise<ExplanationMap> {
-  const profileKey = _profileCacheKey(userProfile);
+  const locale = i18n.locale;
+  const profileKey = _profileCacheKey(userProfile, locale);
   const result: ExplanationMap = {};
   const toFetch: FilmForExplanation[] = [];
 
@@ -144,6 +146,7 @@ export async function explainBatch(
     const { data, error } = await supabase.functions.invoke('explain-match', {
       body: {
         userProfile,
+        locale,
         films: toFetch.map((f) => ({ filmId: f.filmId, dimensions: f.dimensions })),
       },
     });
@@ -159,7 +162,7 @@ export async function explainBatch(
         },
       });
     } else if (data?.explanations && typeof data.explanations === 'object') {
-      const explanations = data.explanations as Record<string, string>;
+      const explanations = data.explanations as Record<string, string | null>;
 
       for (const [filmId, explanation] of Object.entries(explanations)) {
         if (typeof explanation === 'string') {
@@ -169,9 +172,12 @@ export async function explainBatch(
         }
       }
 
-      // Edge Function'ın döndürmediği filmler için fallback
+      // `null` = sunucu açıklamayı doğrulamadan geçirmedi (reddetme/sistem dili);
+      // template'e düşülmez, film sonuçta yer almaz, çağıran bölümü gizler.
+      // Anahtarı hiç olmayan filmler (eski sunucu sürümü) için fallback sürer.
       for (const film of toFetch) {
-        if (!result[film.filmId]) _applyFallback(film, userProfile, profileKey, result);
+        if (result[film.filmId] || explanations[film.filmId] === null) continue;
+        _applyFallback(film, userProfile, profileKey, result);
       }
 
       return result;
