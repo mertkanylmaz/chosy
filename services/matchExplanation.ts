@@ -5,9 +5,13 @@
  * İki katmanlı:
  *   1. Claude API (explain-match Edge Function) — batch, 10 film tek request
  *   2. Template fallback — dimensions_json'dan dominant boyutları çekip doldurur
+ *      (i18n). Boyut eşleşmezse film sonuç haritasına HİÇ girmez.
  *
  * Cache: in-memory Map, aynı mood+film kombinasyonunu tekrar fetch etmez.
  */
+import * as Sentry from '@sentry/react-native';
+
+import { i18n } from '@/constants/i18n';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
 
@@ -49,51 +53,59 @@ function _dominantEmotion(profile: TasteProfile): string {
 
 // ─── Template fallback ────────────────────────────────────────────────────────
 
-const EMOTION_WORDS: Record<string, string> = {
-  joy: 'joyful',
-  sadness: 'melancholic',
-  fear: 'tense',
-  anger: 'intense',
-  surprise: 'curious',
-  disgust: 'critical',
-  anticipation: 'expectant',
-  trust: 'warm',
-};
+/** filmDetail.matchEmotion.* altında karşılığı olan duygular */
+const EMOTION_KEYS = new Set([
+  'joy', 'sadness', 'fear', 'anger', 'surprise', 'disgust', 'anticipation', 'trust',
+]);
 
-const VISUAL_THEMES: Record<string, string> = {
-  cinematic: 'sweeping cinematic',
-  minimalist: 'quiet, intimate',
-  experimental: 'bold, unconventional',
-  lush: 'rich visual',
-  raw: 'gritty, authentic',
-};
+/** filmDetail.matchVisual.* altında karşılığı olan görsel stiller */
+const VISUAL_KEYS = new Set(['cinematic', 'minimalist', 'experimental', 'lush', 'raw']);
 
-const PACE_WORDS: Record<string, string> = {
-  slow: 'contemplative',
-  medium: 'balanced',
-  fast: 'propulsive',
-};
+function _stringDim(dims: Record<string, unknown>, key: string): string | undefined {
+  const value = dims[key];
+  return typeof value === 'string' ? value : undefined;
+}
 
 /**
  * dimensions_json'dan dominant boyutları çekip template'e yerleştirir.
+ * Boyut verisi yoksa ya da değer template sözlüğünde karşılık bulmuyorsa
+ * null döner — varsayılan değer uydurulmaz, çağıran bölümü gizler.
  */
-function _templateFallback(film: FilmForExplanation, userProfile: TasteProfile): string {
+function _templateFallback(film: FilmForExplanation, userProfile: TasteProfile): string | null {
   const dims = film.dimensions;
-  const userEmotion = _dominantEmotion(userProfile);
-  const filmPace = (dims?.pace_preference as string) ?? 'medium';
-  const filmVisual = (dims?.visual_style as string) ?? 'cinematic';
+  if (!dims) return null;
 
-  const emotion = EMOTION_WORDS[userEmotion] ?? 'reflective';
-  const theme = VISUAL_THEMES[filmVisual] ?? 'captivating';
-  const pace = PACE_WORDS[filmPace] ?? 'balanced';
-
+  // İki anahtar seti: 972 profil `pace`, kalanı `pace_preference` taşıyor (TEKNIK_BORC).
+  const filmPace = _stringDim(dims, 'pace_preference') ?? _stringDim(dims, 'pace');
   if (userProfile.energy_level > 0.6 && filmPace === 'fast') {
-    return `The ${pace} pacing matches your current energy perfectly.`;
+    return i18n.t('filmDetail.matchTemplate.energyPace');
   }
-  if (userProfile.thematic_depth > 0.6) {
-    return `This film resonates with your ${emotion} mood through its ${theme} themes.`;
+
+  const userEmotion = _dominantEmotion(userProfile);
+  const filmVisual = _stringDim(dims, 'visual_style');
+  if (!EMOTION_KEYS.has(userEmotion) || filmVisual === undefined || !VISUAL_KEYS.has(filmVisual)) {
+    return null;
   }
-  return `A great pick for when you're feeling ${emotion} — ${theme} at its finest.`;
+
+  const words = {
+    emotion: i18n.t(`filmDetail.matchEmotion.${userEmotion}`),
+    theme: i18n.t(`filmDetail.matchVisual.${filmVisual}`),
+  };
+  return userProfile.thematic_depth > 0.6
+    ? i18n.t('filmDetail.matchTemplate.emotionTheme', words)
+    : i18n.t('filmDetail.matchTemplate.emotionPick', words);
+}
+
+function _applyFallback(
+  film: FilmForExplanation,
+  userProfile: TasteProfile,
+  profileKey: string,
+  result: ExplanationMap,
+): void {
+  const fallback = _templateFallback(film, userProfile);
+  if (fallback === null) return;
+  _cache.set(_cacheKey(profileKey, film.filmId), fallback);
+  result[film.filmId] = fallback;
 }
 
 // ─── Ana fonksiyon ────────────────────────────────────────────────────────────
@@ -136,7 +148,17 @@ export async function explainBatch(
       },
     });
 
-    if (!error && data?.explanations && typeof data.explanations === 'object') {
+    if (error) {
+      // invoke HTTP hatasında fırlatmaz, `error` döndürür — catch'e düşmez.
+      const context: unknown = (error as { context?: unknown }).context;
+      Sentry.captureException(error, {
+        tags: { component: 'matchExplanation', flow: 'explain-match' },
+        extra: {
+          http_status: context instanceof Response ? context.status : null,
+          film_count: toFetch.length,
+        },
+      });
+    } else if (data?.explanations && typeof data.explanations === 'object') {
       const explanations = data.explanations as Record<string, string>;
 
       for (const [filmId, explanation] of Object.entries(explanations)) {
@@ -149,27 +171,27 @@ export async function explainBatch(
 
       // Edge Function'ın döndürmediği filmler için fallback
       for (const film of toFetch) {
-        if (!result[film.filmId]) {
-          const fallback = _templateFallback(film, userProfile);
-          _cache.set(_cacheKey(profileKey, film.filmId), fallback);
-          result[film.filmId] = fallback;
-        }
+        if (!result[film.filmId]) _applyFallback(film, userProfile, profileKey, result);
       }
 
       return result;
+    } else {
+      Sentry.captureMessage('explain-match yanıtında explanations alanı yok', {
+        level: 'warning',
+        tags: { component: 'matchExplanation', flow: 'explain-match' },
+        extra: { film_count: toFetch.length },
+      });
     }
   } catch (err) {
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log('[matchExplanation] Edge function failed, using template fallback:', err);
-    }
+    Sentry.captureException(err, {
+      tags: { component: 'matchExplanation', flow: 'explain-match' },
+      extra: { film_count: toFetch.length },
+    });
   }
 
   // ── Katman 2: Template fallback ─────────────────────────────────────────────
   for (const film of toFetch) {
-    const fallback = _templateFallback(film, userProfile);
-    _cache.set(_cacheKey(profileKey, film.filmId), fallback);
-    result[film.filmId] = fallback;
+    _applyFallback(film, userProfile, profileKey, result);
   }
 
   return result;

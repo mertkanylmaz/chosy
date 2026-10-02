@@ -105,6 +105,11 @@ interface FilmDbRow {
   cast_json: Array<{ name: string; profile_path?: string | null }> | null;
 }
 
+/** film_profiles satırından okunan alan */
+interface FilmProfileRow {
+  dimensions_json: Record<string, unknown> | null;
+}
+
 /** Ekranda gosterilen crew satiri */
 interface CrewDisplayItem {
   label: string;
@@ -345,13 +350,26 @@ export default function FilmDetailScreen() {
     setThumbnailFallbackLevel(0);
 
     try {
-      const { data, error } = await supabase
-        .from('films')
-        .select(
-          'id, tmdb_id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, director, trailer_url, genres, cast_json',
-        )
-        .eq('id', id)
-        .single();
+      const [{ data, error }, profileRes] = await Promise.all([
+        supabase
+          .from('films')
+          .select(
+            'id, tmdb_id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, director, trailer_url, genres, cast_json',
+          )
+          .eq('id', id)
+          .single(),
+        // "Neden bu film?" yalnızca film profilinden beslenir; yoksa bölüm gizli kalır.
+        supabase.from('film_profiles').select('dimensions_json').eq('film_id', id).maybeSingle(),
+      ]);
+
+      if (profileRes.error) {
+        Sentry.captureException(profileRes.error, {
+          tags: { component: 'FilmDetail', flow: 'loadFilmProfile' },
+          extra: { film_id: id },
+        });
+      }
+      const profileRow = profileRes.data as FilmProfileRow | null;
+      const dimensions = profileRow?.dimensions_json ?? undefined;
 
       if (error) {
         if (error.code !== 'PGRST116') setLoadError(true);
@@ -416,6 +434,7 @@ export default function FilmDetailScreen() {
           moodTags: row.genres?.slice(0, 4) ?? [],
           whyThisFilm: '',
           cast: dbCast.length > 0 ? dbCast : undefined,
+          dimensions,
         });
       }
     } catch (err) {
@@ -484,14 +503,15 @@ export default function FilmDetailScreen() {
 
   /** AI aciklama yukle */
   useEffect(() => {
-    if (!film || !currentProfile || explanation != null) return;
+    // Boyut verisi yoksa açıklama istenmez; bölüm render edilmez.
+    if (!film || !film.dimensions || !currentProfile || explanation != null) return;
 
     let active = true;
     setExplanationLoading(true);
 
     const filmForExplanation: FilmForExplanation = {
       filmId: film.id,
-      dimensions: film.dimensions ?? null,
+      dimensions: film.dimensions,
     };
 
     explainBatch(currentProfile, [filmForExplanation])

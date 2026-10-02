@@ -3028,3 +3028,41 @@ metinleri ayrı copy-only commit). App Store Connect'teki abonelik grubu /
 ürün görünen adları ve RevenueCat paywall metinleri "Chosy Plus" olarak
 kalmış olabilir — Apple satın alma sheet'i ve abonelik yönetim sayfası bu
 adı gösterir. Kontrol edilmeli (kod dışı).
+
+## 🟡 Film detayı "Neden bu film?" (B-1 / Fix 5) — kalan borçlar (2 Eki 2026)
+
+Fix 5 ile film detayı `film_profiles.dimensions_json`'u okuyup
+`explainBatch`'e veriyor; boyut yoksa ya da template eşleşmezse bölüm hiç
+render edilmiyor. Hata metni artık kullanıcıya gitmiyor.
+
+### 1. `dimensions_json` şema kayması: `pace` ↔ `pace_preference`
+
+Canlıda 3532 profilin 2560'ı `pace_preference` (+ `social_context`,
+`era_preference`, `avoid_signals`, `rewatch_tolerance`, `ending_preference`),
+972'si farklı bir anahtar setiyle geliyor (eşleşme adlardan tahmin, doğrulanmadı): `pace`, `social_fit`,
+`era_feel`, `rewatch_value`, `ending_tone`, `content_warnings`. İki kümede de
+`visual_style`, `emotional_state`, `energy_level`, `thematic_depth`,
+`narrative_style`, `cultural_context` ortak. `services/matchExplanation.ts`
+template'i geçici olarak `pace_preference ?? pace` okuyor. **Neden şimdi
+değil:** normalleştirme veri migration'ı ve tüm `dimensions_json`
+okuyucularının (`recommendations.whyFromDimensions`, `dailyMatch`,
+explain-match prompt'u) gözden geçirilmesini ister — ayrı karar.
+
+### 2. explain-match çıktısı doğrulanmıyor
+
+`supabase/functions/explain-match` modelin JSON'unu olduğu gibi döndürüyor.
+Fix 5 öncesi istemci `filmProfile: null` gönderdiğinde model
+"Unable to generate explanation — film profile data is missing" yazıyor,
+bu metin başarılı açıklama sayılıp kullanıcıya gösteriliyordu. İstemci artık
+null boyut göndermiyor, ama model başka bir nedenle boş / reddetme /
+sistem dili içeren bir açıklama üretirse yine gösterilir. Edge Function
+tarafında açıklama doğrulaması gerekli: boş, reddetme kalıbı veya sistem
+dili → o film için `null` (istemci bölümü gizler). **Neden şimdi değil:**
+Fix 5 kapsamı yalnızca istemci; Edge Function deploy'u ayrı tur.
+
+### 3. Model açıklamaları her zaman İngilizce
+
+explain-match prompt'u dil parametresi almıyor; TR kullanıcı model
+açıklamasını İngilizce görüyor (template fallback ise i18n'li). Ayrıca
+`matchExplanation` in-memory cache'i dil bağımsız — oturum içinde dil
+değişirse önbellekteki template metni eski dilde kalır.

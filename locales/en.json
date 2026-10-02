@@ -279,6 +279,28 @@
     "overview": "Overview",
     "whyForYou": "Why is this right for you?",
     "whyThisFilm": "Why this film?",
+    "matchTemplate": {
+      "energyPace": "The propulsive pacing matches your current energy perfectly.",
+      "emotionTheme": "This film resonates with your %{emotion} mood through its %{theme} themes.",
+      "emotionPick": "A great pick for when you're feeling %{emotion} — %{theme} at its finest."
+    },
+    "matchEmotion": {
+      "joy": "joyful",
+      "sadness": "melancholic",
+      "fear": "tense",
+      "anger": "intense",
+      "surprise": "curious",
+      "disgust": "critical",
+      "anticipation": "expectant",
+      "trust": "warm"
+    },
+    "matchVisual": {
+      "cinematic": "sweeping cinematic",
+      "minimalist": "quiet, intimate",
+      "experimental": "bold, unconventional",
+      "lush": "rich visual",
+      "raw": "gritty, authentic"
+    },
     "addToWatchlist": "Add to Watchlist",
     "addedToWatchlist": "Added to List",
     "watchTrailer": "Watch Trailer",

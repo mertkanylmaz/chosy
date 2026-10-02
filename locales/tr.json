@@ -279,6 +279,28 @@
     "overview": "Özet",
     "whyForYou": "Neden sana uygun?",
     "whyThisFilm": "Neden bu film?",
+    "matchTemplate": {
+      "energyPace": "Sürükleyici temposu şu anki enerjine tam oturuyor.",
+      "emotionTheme": "Bu film, %{theme} temalarıyla %{emotion} ruh haline karşılık veriyor.",
+      "emotionPick": "Ruh halin %{emotion} olduğunda harika bir seçim — %{theme} anlatımın en iyisi."
+    },
+    "matchEmotion": {
+      "joy": "neşeli",
+      "sadness": "hüzünlü",
+      "fear": "gergin",
+      "anger": "öfkeli",
+      "surprise": "meraklı",
+      "disgust": "eleştirel",
+      "anticipation": "beklenti dolu",
+      "trust": "güven dolu"
+    },
+    "matchVisual": {
+      "cinematic": "görkemli sinematik",
+      "minimalist": "sakin ve samimi",
+      "experimental": "cesur ve alışılmadık",
+      "lush": "zengin görsel",
+      "raw": "sert ve sahici"
+    },
     "addToWatchlist": "İzleme Listesine Ekle",
     "addedToWatchlist": "Listeye Eklendi",
     "watchTrailer": "Fragmanı İzle",
