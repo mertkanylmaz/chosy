@@ -13,8 +13,10 @@
  *                 tanınmayan response otomatik sıfır sinyal sayılır.
  *
  * Idempotent: (gauntlet_id, film_id) üzerinde partial UNIQUE index (069).
- * Zaten cevaplanmışsa hiçbir şey yazılmaz, mevcut durum açıkça döner
- * (`status: 'already_answered'`) — sessiz başarı DEĞİL.
+ * Zaten cevaplanmışsa `watch_feedback`'e yazılmaz, mevcut durum açıkça döner
+ * (`status: 'already_answered'`) — sessiz başarı DEĞİL. O dalda yalnız
+ * KAYITLI cevaba göre `markWatched` idempotent olarak yeniden çağrılır
+ * (K-29 atomiklik boşluğu, `_shared/watchFeedback.ts`).
  *
  * Deploy: supabase functions deploy submit-watch-feedback
  */
@@ -32,7 +34,7 @@ import {
   resolveAppUser,
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
-import { markWatched } from '../_shared/gauntletCore.ts'
+import { syncWatchedFromFeedback } from '../_shared/watchFeedback.ts'
 import {
   isValidWatchFeedbackResponse,
   type WatchFeedbackResponse,
@@ -56,13 +58,6 @@ interface GauntletRow {
   user_id: string | null
   champion_film_id: string | null
 }
-
-/** `watchlist.watched_at`'i dolduran response'lar (CTO kararı, C.4). */
-const WATCHLIST_RESPONSES: ReadonlySet<WatchFeedbackResponse> = new Set([
-  'loved',
-  'ok',
-  'abandoned',
-])
 
 // ─── Girdi doğrulama ─────────────────────────────────────────────────────────
 
@@ -177,10 +172,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
     if (existingRes.data) {
       const existing = existingRes.data as { id: string; response: WatchFeedbackResponse }
+      // K-29 (Karar 6b): önceki istek INSERT'ten sonra `markWatched`'ta
+      // düşmüş olabilir — yeniden deneme buraya gelir. KAYITLI cevaba göre
+      // idempotent olarak tekrar çağrılır; `watched_at` doluysa dokunulmaz.
+      const markedWatched = await syncWatchedFromFeedback(
+        service,
+        appUserId,
+        filmId,
+        existing.response,
+      )
       logInfo('watch_feedback_already_answered', {
         user_id: appUserId,
         gauntlet_id: gauntletId,
         film_id: filmId,
+        marked_watched: markedWatched,
       })
       const result: WatchFeedbackResult = {
         status: 'already_answered',
@@ -231,9 +236,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     // ── Watchlist upsert (yalnızca loved/ok/abandoned) ─────────────────────
-    if (WATCHLIST_RESPONSES.has(response)) {
-      await markWatched(service, appUserId, filmId)
-    }
+    await syncWatchedFromFeedback(service, appUserId, filmId, response)
 
     logInfo('watch_feedback_answered', {
       user_id: appUserId,

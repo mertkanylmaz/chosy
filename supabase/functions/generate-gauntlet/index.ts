@@ -22,7 +22,8 @@
  * yapar; 1-100 aralığındaysa editoryal, değilse (yayın öncesi ya da takvim
  * bitti) yukarıdaki algoritmik boru hattı.
  *
- *   DAL A — editoryal → generateEditorialQuartet()  · boru hattı HİÇ çalışmaz
+ *   DAL A — editoryal → generateEditorialQuartet()  · boru hattı yalnız izlenen
+ *                                                     film varsa yedek için çalışır
  *   DAL B — algoritmik → generateQuartet()          · yukarıdaki 5 adım
  *
  * Dallanmanın DEĞMEDİĞİ yerler: idempotency, cached serve, deriveProgress,
@@ -69,6 +70,8 @@ import {
   editorialSlotTypes,
   fetchEditorialQuartet,
   fetchLaunchDate,
+  applyWatchedReplacements,
+  fetchWatchedAmong,
 } from '../_shared/editorialCalendar.ts'
 import {
   arrangeUnseen,
@@ -76,6 +79,8 @@ import {
   type Candidate,
   fetchCandidatesByIds,
   MAX_QUARTET_ATTEMPTS,
+  pickReplacements,
+  type ScoredPool,
   selectQuartet,
   toGauntletFilm,
   utcDateString,
@@ -601,51 +606,132 @@ interface GeneratedQuartet {
 /**
  * ── DAL A: EDİTORYAL (E-19, ilk 100 gün) ────────────────────────────────────
  *
- * Boru hattının BEŞ adımının hiçbiri çalışmaz. Sebep adım adım:
+ * Editoryal filmlerin KENDİSİ boru hattından geçmez. Sebep adım adım:
  *   [1] SERT FİLTRE   → film zaten seçilmiş; havuz kurmak yeniden seçmek olurdu
  *   [2] PUANLAMA      → tanınırlık yüzdeliği seçimi etkilemiyor, anlamsız iş
  *   [3] ÇEŞİTLİLİK    → çeşitlilik kararını CTO elle verdi
  *   [4] SLOT          → dördü de 'editorial' (çağıran yazar)
  *   [5] SIRA KARIŞTIR → sıra bracket'in KENDİSİ, karıştırmak kurguyu bozar
  *
- * Doğrudan sonucu: `buildScoredPool` hiç çağrılmaz, dolayısıyla
- * `CONTEXT_MAX_RUNTIME` süre tavanı da uygulanmaz. Bu bir atlama değil,
- * Bible §E-19'un kararıdır ("editoryal seçki bağlam filtresinden geçmiyor").
- * Ölçülmüş örnek: Gün 2 (`epic`) dörtlüsünün runtime'ları 181/206/175/207 dk —
- * `short` (110) ya da `medium` (150) bağlamında havuz yolundan HİÇBİRİ gelmezdi.
+ * Doğrudan sonucu: editoryal filmlere `CONTEXT_MAX_RUNTIME` süre tavanı
+ * uygulanmaz. Bu bir atlama değil, Bible §E-19'un kararıdır ("editoryal seçki
+ * bağlam filtresinden geçmiyor"). Ölçülmüş örnek: Gün 2 (`epic`) dörtlüsünün
+ * runtime'ları 181/206/175/207 dk — `short` (110) ya da `medium` (150)
+ * bağlamında havuz yolundan HİÇBİRİ gelmezdi. `buildScoredPool` yalnız izlenen
+ * bir editoryal filmin YEDEĞİ için çağrılır (aşağıda); yedek normal havuzdan
+ * geldiği için süre tavanı ona uygulanır.
  *
  * `context` yine de `daily_gauntlets.context`'e yazılır: kullanıcının o akşamki
- * beyanı gerçek bir sinyaldir ve `choice_events` üzerinden profile akar; yalnız
- * SEÇİME etki etmez.
+ * beyanı gerçek bir sinyaldir ve `choice_events` üzerinden profile akar.
  *
- * `relaxed: false` ve `poolSize: films.length` — gevşetme merdiveni bu dalda
- * yok, "havuz" da yok. Uydurma bir metrik yazmak yerine dörtlünün kendisi
- * raporlanır.
+ * İzlenen film yoksa `relaxed: false` ve `poolSize: films.length` — gevşetme
+ * merdiveni yok, "havuz" da yok. Uydurma bir metrik yazmak yerine dörtlünün
+ * kendisi raporlanır.
  *
- * ── KİŞİSEL DIŞLAMALAR UYGULANMAZ — tasarım kararı, bug değil ───────────────
- * `fetchExclusions` da çağrılmaz. Yani kullanıcı `watchlist.watched_at` ile
- * ZATEN İZLEDİĞİ bir filmi editoryal günde görebilir; 21 günlük "gösterildi"
- * ve 45 günlük "reddedildi" cooldown'ları da bu dalda geçerli değildir.
+ * ── İZLENEN FİLM ÇIKARILIR (Karar 2a, 2 Eki 2026) ──────────────────────────
+ * Editoryal dörtlü artık bir BAŞLANGIÇ dörtlüsüdür, kilitli bir bracket
+ * değil: yenileme / `neither` / `seen` normal boru hattından çalışır
+ * (`submit-choice` DAL 2). Bu yüzden algoritmik daldaki "izlenen film asla
+ * gelmez" kuralı (`fetchExclusions` → `watched`) burada da uygulanır.
+ * Kullanıcının `watchlist.watched_at` ile izlediği editoryal film, AYNI
+ * pozisyonda normal havuzdan seçilen bir filmle değiştirilir — sıra bracket'in
+ * kendisi olduğu için yerine koyma pozisyonu korur. Seçim `pickReplacements`
+ * ile, kalan editoryal filmler `retained` olarak verilerek yapılır (yenileme
+ * yoluyla aynı kural merdiveni).
  *
- * Bu, takvimin tanımının doğrudan sonucudur: editoryal gün HERKES İÇİN AYNIDIR
- * (Bible §E-19.1 — 400 film, 300 eşleşme, elle kurgu). Kullanıcıya göre film
- * çıkarmak günün bracket'ini kişiselleştirirdi ve 4'ten az filmle kalan
- * kullanıcılar için kaçınılmaz olarak algoritmik bir yedek gerektirirdi —
- * yani tam olarak bu dalın engellemek için var olduğu şeyi.
+ * Yalnız `watched` uygulanır; 21 günlük "gösterildi" ve 45 günlük
+ * "reddedildi" cooldown'ları editoryal filmlerin KENDİSİNE uygulanmaz —
+ * editoryal seçki o günün ortak zeminidir, cooldown kişisel bir tercihtir.
  *
- * İzlenmiş film çıkmasının karşılığı kayıp değil, sinyaldir: kullanıcı `seen`
- * der, `watchlist` güncellenir (`submit-choice` DAL 2), tur harcanmaz.
- * Editoryal günde yenileme uygulanmadığı için (K-23, `isEditorialGauntlet`
- * guard'ı) bu sinyal yeni film getirmez ama KAYDEDİLİR.
+ * `slot_types` dördü için de 'editorial' kalır ve `algorithm_version`
+ * değişmez: gauntlet'in KAYNAĞI editoryal gündür. Yerine koyma `relaxations`
+ * içinde `editorial_watched_replaced` olarak loglanır.
  *
- * Karar: CTO onayı 19 Eyl 2026 (keşif DUR-4).
+ * Yedek bulunamazsa (havuz yetersiz ya da `pickReplacements` null) HATA
+ * FIRLATILMAZ: izlenen editoryal film TUTULUR, her biri Sentry'ye
+ * `step=editorial_watched_no_replacement` ile yazılır ve gauntlet üretilir
+ * (CTO, 2 Eki 2026 — gauntlet'siz gün izlenmiş filmden kötü).
+ *
+ * Eski karar (19 Eyl 2026, DUR-4 — kişisel dışlama yok, yenileme kilitli)
+ * Karar 2a ile kaldırıldı.
  */
 async function generateEditorialQuartet(
   service: SupabaseClient,
+  appUserId: string,
+  context: GauntletContext,
   dayNumber: number,
 ): Promise<GeneratedQuartet> {
-  const films = await fetchEditorialQuartet(service, dayNumber)
-  return { films, relaxed: false, relaxations: [], poolSize: films.length }
+  const editorial = await fetchEditorialQuartet(service, dayNumber)
+  const watched = await fetchWatchedAmong(
+    service,
+    appUserId,
+    editorial.map((f) => f.id),
+  )
+  if (watched.size === 0) {
+    return { films: editorial, relaxed: false, relaxations: [], poolSize: editorial.length }
+  }
+
+  const retained = editorial.filter((f) => !watched.has(f.id))
+  // Havuz yetersizliği (`buildScoredPool` throw) da "yedek yok" sayılır —
+  // editoryal gauntlet bu yüzden ÜRETİLMEZ olmamalı (CTO, 2 Eki 2026).
+  let scored: ScoredPool | null = null
+  let poolError: string | null = null
+  try {
+    scored = await buildScoredPool(service, appUserId, context, 'gauntlet_editorial')
+  } catch (err) {
+    poolError = err instanceof Error ? err.message : String(err)
+  }
+  const picked = scored
+    ? pickReplacements(scored.pool, scored.exclusions, {
+      blockedIds: new Set(editorial.map((f) => f.id)),
+      retained,
+      count: watched.size,
+    })
+    : null
+
+  const { films, replaced } = await applyWatchedReplacements(
+    editorial,
+    watched,
+    picked ? picked.films : null,
+    async (filmId) => {
+      // Yedek yok: izlenen editoryal film TUTULUR, sessiz değil — Sentry.
+      logError(
+        'gauntlet_editorial_watched_no_replacement',
+        new Error('izlenen editoryal film için yedek bulunamadı'),
+        { user_id: appUserId, film_id: filmId, editorial_day_number: dayNumber },
+      )
+      await sentryCapture({
+        message: 'generate-gauntlet: izlenen editoryal film için yedek bulunamadı',
+        level: 'error',
+        tags: { function: 'generate-gauntlet', step: 'editorial_watched_no_replacement' },
+        extra: {
+          film_id: filmId,
+          user_id: appUserId,
+          editorial_day_number: dayNumber,
+          pool_size: scored?.pool.length ?? null,
+          pool_error: poolError,
+        },
+      })
+    },
+  )
+  if (!replaced || !scored || !picked) {
+    return { films, relaxed: false, relaxations: ['editorial_watched_kept'], poolSize: editorial.length }
+  }
+
+  const relaxations = [...scored.relaxations, ...picked.relaxations]
+  logInfo('gauntlet_editorial_watched_replaced', {
+    user_id: appUserId,
+    editorial_day_number: dayNumber,
+    replaced_film_ids: [...watched],
+    replacement_film_ids: picked.films.map((f) => f.id),
+    relaxations,
+  })
+  return {
+    films,
+    relaxed: relaxations.length > 0,
+    relaxations: [...relaxations, 'editorial_watched_replaced'],
+    poolSize: scored.pool.length,
+  }
 }
 
 /** ── DAL B: ALGORİTMİK (v0) — 100 gün bitince ve takvim öncesinde ─────────── */
@@ -917,7 +1003,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const isEditorialDay = dayNumber !== null
 
     const generated = isEditorialDay
-      ? await generateEditorialQuartet(service, dayNumber)
+      ? await generateEditorialQuartet(service, appUserId, context, dayNumber)
       : await generateQuartet(service, appUserId, context)
     const slotTypes = isEditorialDay ? editorialSlotTypes() : slotTypesFor(signalCount)
     const algorithmVersion = isEditorialDay
