@@ -3225,3 +3225,9 @@ kararı); kayıp yalnız çevrimdışıyken çıkış yapan kullanıcıda.
 ### 3. `app/setup-profile.tsx` erişilemez kaldı
 Ekrana tek yol silinen `app/auth.tsx` idi (`isNewUser` dalı); rota
 `_layout`'ta `Stack.Screen` olarak duruyor. **Sprint 4'te silinecek.**
+
+### 4. Android'de çıkış sonrası uygulama içi giriş yolu yok
+Profil'deki giriş butonu `isAnonymous && Platform.OS === 'ios'` koşuluyla
+çizilir (`app/(tabs)/profile.tsx`, ayarlar modalı); `app/auth.tsx` 4b'de
+silindi. Android'de çıkış yapan kullanıcı hesabına uygulamadan geri
+dönemez. **Neden şimdi değil:** Android v1 dışı; kod değişikliği yok.
