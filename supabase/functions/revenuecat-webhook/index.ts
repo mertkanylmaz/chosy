@@ -10,7 +10,8 @@
  *   - NON_RENEWING_PURCHASE → lifetime claim
  *   - CANCELLATION / EXPIRATION → will_renew flag + winback queue
  *   - BILLING_ISSUE → notification log
- *   - SUBSCRIBER_ALIAS → user merge (log only)
+ *   - TRANSFER → hedef kullanıcıya RC REST'ten güncel entitlement (_shared/rcTransfer.ts)
+ *   - SUBSCRIBER_ALIAS → deprecated (log only)
  *
  * Deploy: supabase functions deploy revenuecat-webhook
  */
@@ -18,57 +19,13 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { missingUserSeverity } from '../_shared/rcMissingUserSeverity.ts'
+import { mapProductToTier, TIER_TO_PLAN } from '../_shared/rcProductMap.ts'
+import { fetchRcSubscriber, processTransfer } from '../_shared/rcTransfer.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
-
-// ─── Product ID → Tier Mapping ─────────────────────────────────────────────────
-
-function mapProductToTier(productId: string): string {
-  // Lifetime
-  if (productId === 'com.chosy.lifetime') return 'lifetime'
-
-  // Annual (yeni + eski)
-  if (productId === 'com.chosy.annual') return 'annual'
-  if (productId === 'chosyai_yearly') return 'annual'
-
-  // Monthly (yeni + eski)
-  if (productId === 'com.chosy.monthly') return 'monthly'
-  if (productId === 'chosyai_monthly') return 'monthly'
-
-  // Weekly (eski — sadece legacy)
-  if (productId === 'chosyai_weekly') return 'weekly_legacy'
-
-  return 'free'
-}
-
-// ─── Tier → subscriptions.plan Mapping ─────────────────────────────────────────
-
-/**
- * `mapProductToTier` çıktısını `subscriptions.plan` kelime dağarcığına çevirir.
- *
- * Kaynak sözleşme İSTEMCİDE: `constants/subscriptionPlans.ts`
- *   PlanId       = 'monthly' | 'annual' | 'lifetime'
- *   LegacyPlanId = PlanId | 'weekly' | 'yearly'
- * Migration 104 `subscriptions_plan_check` kısıtını tam olarak LegacyPlanId'e
- * eşitler. Buradaki değerler o listenin DIŞINA ÇIKAMAZ.
- *
- * `free` bilerek YOK: `mapProductToTier` tanımadığı bir `product_id` için
- * 'free' döner. Bu bir abonelik planı değil, eşleme boşluğudur — satıra
- * yazılırsa "ödeme yapan kullanıcı ücretsiz plana düştü" verisi üretir.
- * Çağıran taraf bunu Sentry'ye rapor eder ve satıra DOKUNMAZ.
- *
- * `weekly_legacy` → 'weekly': tier adı 021'de yenilendi, plan kolonundaki
- * tarihsel değer 'weekly' olarak kaldı (021:20 veri göçü bu değeri okuyor).
- */
-const TIER_TO_PLAN: Record<string, string | undefined> = {
-  weekly_legacy: 'weekly',
-  monthly: 'monthly',
-  annual: 'annual',
-  lifetime: 'lifetime',
 }
 
 // ─── Types ──────────────────────────────────────────────────────────────────────
@@ -1069,9 +1026,69 @@ serve(async (req: Request) => {
       }
 
       // ━━ Transfer / Alias ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      case 'TRANSFER':
+      case 'TRANSFER': {
+        // Sprint 7: karar ağacı, idempotency ve RC REST gerekçesi
+        // `_shared/rcTransfer.ts` başlığında. TRANSFER `app_user_id`
+        // TAŞIMAZ — yukarıdaki 3b çözümlemesi (`authUserId`/`appUserId`)
+        // bu dalda anlamsızdır ve KULLANILMAZ; hedefler `transferred_to`.
+        const result = await processTransfer(
+          event.transferred_to,
+          { rcEventId: event.id ?? null, transferredFrom: event.transferred_from },
+          {
+            authUserExists: async (id) => {
+              const { data, error } = await supabase.auth.admin.getUserById(id)
+              if (error) {
+                if (error.status === 404 || error.code === 'user_not_found') return false
+                throw new Error(`auth.admin.getUserById düştü — ${error.message}`)
+              }
+              return data.user !== null
+            },
+            resolveAppUserId: async (id) => {
+              const { data, error } = await supabase
+                .from('users')
+                .select('id')
+                .eq('auth_id', id)
+                .maybeSingle()
+              if (error) throw new Error(`public.users çözümlemesi düştü — ${error.message}`)
+              return (data?.id as string | undefined) ?? null
+            },
+            // Anahtar istek anında okunur; ASLA loglanmaz (rcTransfer.ts).
+            fetchSubscriber: (id) =>
+              fetchRcSubscriber(id, Deno.env.get('REVENUECAT_SECRET_KEY'), fetch),
+            writer: {
+              updateUserTier: async (appUserId, fields) => {
+                const { error, count } = await supabase
+                  .from('users')
+                  .update(fields, { count: 'exact' })
+                  .eq('id', appUserId)
+                return { error, count }
+              },
+              upsertSubscription: async (row) => {
+                const { error } = await supabase
+                  .from('subscriptions')
+                  .upsert(row, { onConflict: 'user_id' })
+                return { error }
+              },
+            },
+            report: sentryCapture,
+            nowMs: () => Date.now(),
+          },
+        )
+
+        if (result.status === 500) {
+          return new Response(
+            JSON.stringify({ error: result.errorCode, retryable: true }),
+            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+          )
+        }
+        break
+      }
+
       case 'SUBSCRIBER_ALIAS': {
-        console.log(`[rc-webhook] ${event.type} for ${authUserId} — logged, no action`)
+        // RC dokümanı: deprecated, yeni projelere gönderilmiyor. Dal yalnız
+        // eski bir teslimat gelirse default'taki "işlenmeyen tip" sinyaline
+        // düşmesin diye duruyor (Sprint 7 kararı 5).
+        console.log(`[rc-webhook] SUBSCRIBER_ALIAS (deprecated) for ${authUserId} — logged, no action`)
         break
       }
 

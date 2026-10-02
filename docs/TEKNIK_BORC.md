@@ -3277,3 +3277,41 @@ sunucu `choice_events`'ten sayıp reddeder (istemci `refreshesRemaining: 0`
 ile butonu kapatır, metin göstermez). Önceden de vardı; editoryal günler artık
 yenileme kullandığı için bu yüzey ilk 100 günde de görünür hale geldi.
 **Neden şimdi değil:** Karar 2a kapsamı dışında, ayrı karar.
+
+---
+
+## 🟡 RevenueCat TRANSFER işleniyor (Sprint 7) — kalan borçlar (3 Eki 2026)
+
+`revenuecat-webhook` TRANSFER dalı artık `transferred_to` hedeflerini çözüp RC
+REST'ten (`GET /v1/subscribers/{id}`, `REVENUECAT_SECRET_KEY`) güncel
+`chosy_plus` durumunu çekiyor ve `_shared/rcTransfer.ts` →
+`applyEntitlement` ile `users` tier + `subscriptions` upsert yazıyor.
+INITIAL_PURCHASE dalı bilinçli olarak DEĞİŞMEDİ (Sprint 7 kararı 1).
+
+### 1. INITIAL_PURCHASE'ta `subscriptions` 0 satır UPDATE hâlâ yalnız uyarı
+
+Satır yoksa (`SUBSCRIPTION_ROW_NOT_FOUND`, warning, 200) abonelik satırı
+oluşmaz; satırı yalnız istemci `upsertSubscription` yaratır. TRANSFER aynı
+durumda `onConflict: 'user_id'` upsert ile satırı yaratıyor.
+**Neden şimdi değil:** Sprint 7 kapsamı TRANSFER; INITIAL_PURCHASE'ı
+`applyEntitlement`'a geçirmek ayrı karar.
+
+### 2. INITIAL_PURCHASE eşlenemeyen üründe `users.subscription_tier`'a 'free' yazıyor
+
+Eşleme kontrolü `users` UPDATE'inden SONRA yapılıyor; tanınmayan `product_id`
+ödeme yapan kullanıcıyı `users` tarafında 'free'ye düşürür (`PRODUCT_ID_UNMAPPED`
+Sentry'ye gider, `subscriptions` yazılmaz). `applyEntitlement` eşlemeyi önce
+kontrol edip hiçbir şey yazmıyor. **Neden şimdi değil:** madde 1 ile birlikte.
+
+### 3. TRANSFER'da lifetime satış kaydı taşınmıyor
+
+Lifetime transferinde yalnız tier/plan yazılıyor; `lifetime_sales` /
+`claim_lifetime_spot` (Uzay B, kurucu sayacı) dokunulmuyor, Sentry
+`RC_TRANSFER_LIFETIME` (info) iz bırakıyor. **Neden şimdi değil:** sayaç
+semantiği (transfer yeni satış mı?) ürün kararı.
+
+### 4. Google Play ürün kimliği biçimi doğrulanmadı
+
+RC v1 `product_identifier` Play aboneliklerinde `ürün:baseplan` biçiminde
+gelebilir; `mapProductToTier` bunu tanımaz → `PRODUCT_ID_UNMAPPED`. Mevcut
+eşlemenin ortak riski. **Neden şimdi değil:** Android v1 dışı.
