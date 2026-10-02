@@ -516,8 +516,8 @@ export default function RootLayout() {
         }
 
         // SIGNED_OUT: yalnızca oturum tamamen yoksa anonim oluştur.
-        // Sosyal auth geçişi sırasında (Apple/Google linkIdentity)
-        // auth.tsx'teki kullanıcı akışı kendi oturumunu yönetir.
+        // Apple bağlama (linkIdentity) ve mevcut hesaba geçiş
+        // (setSession, 1b) SIGNED_OUT yaymaz.
         if (event === 'SIGNED_OUT') {
           // Recovery'ye girerken bilinen ESKİ kimlik. Aşağıdaki başarı dalı
           // yeni kimliği yazmadan önce burada dondurulur.
@@ -659,7 +659,6 @@ function RootLayoutNav() {
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
               <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="auth" />
               <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen

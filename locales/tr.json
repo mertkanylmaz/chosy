@@ -546,7 +546,7 @@
     "freePlan": "Ucretsiz",
     "signOut": "Çıkış Yap",
     "signOutConfirmTitle": "Çıkış Yap",
-    "signOutConfirmMessage": "Çıkış yapmak istediğine emin misin?",
+    "signOutConfirmMessage": "Verilerin hesabında kalır. Geri almak için yeniden giriş yap.",
     "signOutConfirm": "Çıkış Yap",
     "deleteAccount": "Hesabı Sil",
     "deleteAccountConfirmTitle": "Hesabı Sil",

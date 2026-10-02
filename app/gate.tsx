@@ -11,8 +11,8 @@
  *
  * K-12 (R-A-1): auth gating KALDIRILDI. Anonim kullanıcı uygulamanın tam
  * akışını görür; giriş ilk şampiyon sonrasında önerilir (K-13, R-A-2).
- * /auth ekranı silinmedi — profile'dan sign-out ve hesap silme sonrası
- * hâlâ oraya düşülüyor.
+ * /auth ekranı Sprint 1 / 4b'de silindi: çıkış ve hesap silme
+ * `resetToFreshSession` ile onboarding'e döner, giriş Profil'den yapılır.
  */
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
@@ -58,7 +58,7 @@ export default function Gate() {
 
         // Oturum henüz açılmamış olabilir (_layout.tsx signInAnonymously()
         // yarışı). Kimlik yoksa onboarding'e gidilir — anonim oturum orada
-        // veya sonraki açılışta tamamlanır. Anonim kullanıcı ARTIK /auth'a
+        // veya sonraki açılışta tamamlanır. Anonim kullanıcı giriş ekranına
         // zorlanmaz (K-12).
         if (!session) {
           targetRoute.current = '/onboarding';

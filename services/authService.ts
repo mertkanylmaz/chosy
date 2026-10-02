@@ -2,7 +2,7 @@
  * Auth Service — Apple ve Google sosyal kimlik doğrulaması.
  *
  * Akış:
- *   1. Kullanıcı Apple/Google butonuna basar (auth.tsx)
+ *   1. Kullanıcı Apple butonuna basar (Profil / AuthPromptSheet)
  *   2. Native provider'dan idToken alınır
  *   3. Oturum anonimse kimlik `supabase.auth.linkIdentity` ile MEVCUT
  *      anonim kullanıcıya bağlanır — auth.uid değişmez, veri yerinde kalır.
@@ -808,23 +808,6 @@ export async function verifyMagicLinkCode(
       error: 'failed',
       message: err instanceof Error ? err.message : 'Bilinmeyen hata',
     };
-  }
-}
-
-// ─── Sign Out ─────────────────────────────────────────────────────────────────
-
-/**
- * Mevcut oturumu kapatır.
- * _layout.tsx'teki listener otomatik yeni anonim oturum açar (skip akışı).
- */
-export async function signOut(): Promise<void> {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      logger.error('[authService] Sign out hatası:', error.message);
-    }
-  } catch (err) {
-    logger.error('[authService] signOut beklenmedik hata:', err);
   }
 }
 

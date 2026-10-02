@@ -92,7 +92,7 @@ import {
 import Purchases from 'react-native-purchases';
 
 import { clearWatchlist, getWatchlist } from '@/services/watchlist';
-import { signInWithApple, signOut, deleteAccount } from '@/services/authService';
+import { signInWithApple, deleteAccount } from '@/services/authService';
 import { resetToFreshSession } from '@/services/sessionReset';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { getArchetype } from '@/constants/archetypes';
@@ -1219,7 +1219,7 @@ function ProfileScreenContent() {
   // ─── Çıkış ────────────────────────────────────────────────────────────────
 
   /**
-   * Oturumu kapatır ve kullanıcıyı auth ekranına yönlendirir.
+   * Oturumu kapatır ve cihazı yeni anonim kimlikle onboarding'e taşır.
    * Onay Alert'i gösterir — yanlışlıkla çıkışı önler.
    */
   function handleSignOut(): void {
@@ -1235,9 +1235,17 @@ function ProfileScreenContent() {
           text: t('profile.signOutConfirm'),
           style: 'destructive',
           onPress: async () => {
-            posthogAnalytics.reset();
-            await signOut();
-            router.replace('/auth');
+            // Hesap silmeyle aynı rutin (4b): analitik/RC sıfırlama (RC logOut
+            // hatası Sentry'ye) → yerel veri temizliği → signOut → yeni anonim
+            // oturum → onboarding. Kullanıcı Profil'deki "Sign in" ile geri
+            // girer. Sunucudaki hesap ve veri yerinde kalır.
+            await resetToFreshSession({
+              resetSubscriptionState,
+              navigateToOnboarding: () => {
+                if (router.canDismiss()) router.dismissAll();
+                router.replace('/onboarding');
+              },
+            });
           },
         },
       ],
