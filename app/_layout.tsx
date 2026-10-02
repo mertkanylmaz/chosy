@@ -30,11 +30,12 @@ import * as Updates from 'expo-updates';
 import { useRouter } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase';
 import { remoteConfig } from '@/services/remoteConfig';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { configureGoogleSignIn } from '@/services/authService';
-import { initializePurchases } from '@/services/purchaseService';
+import { identifyUser, initializePurchases } from '@/services/purchaseService';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
@@ -191,6 +192,62 @@ async function bootstrapAppUser(): Promise<void> {
       extra: { reason: second.reason },
     },
   );
+}
+
+/** Kimliği RevenueCat'e (ve kalıcıysa PostHog'a) bildiren auth olayları. */
+const IDENTITY_SYNC_EVENTS: ReadonlySet<AuthChangeEvent> = new Set<AuthChangeEvent>([
+  'INITIAL_SESSION', // oturum diskten geri yüklendi (soğuk açılış)
+  'SIGNED_IN',       // mevcut hesaba geçiş (1b setSession), anonim oturum açılışı
+  'USER_UPDATED',    // linkIdentity / e-posta doğrulaması — SIGNED_IN YAYMAZ
+]);
+
+/**
+ * Oturumdaki kullanıcıyı RevenueCat'e `auth.users.id` ile tanıtır; anonim
+ * DEĞİLSE PostHog'a da (eski `app/auth.tsx` handleSuccess'in yerini alır,
+ * 4b'de silindi).
+ *
+ * RC anonim kullanıcıda da çağrılır: webhook `event.app_user_id`'yi
+ * `public.users.auth_id`'ye çözer, yani anonim alım da yalnız RC kimliği
+ * auth id ise hesaba bağlanır. İlk kurulum yarışı (`configure` oturumdan
+ * önce) ve `resetToFreshSession` sonrası (RC `logOut` → `$RCAnonymousID`)
+ * RC aksi hâlde soğuk açılışa kadar yanlış kimlikte kalırdı.
+ * `identifyUser` idempotenttir (mevcut appUserID zaten hedefse `logIn`
+ * yok). Hata yutulmaz → Sentry.
+ *
+ * `not_initialized`: INITIAL_SESSION'da beklenen yarış — RC `configure`
+ * aynı effect turunda `getSession()`'daki bu kullanıcıyla yapılır, yani
+ * kimlik zaten doğru verilir. Diğer olaylarda RC başlamamışsa eşleme
+ * kaçmıştır → Sentry error.
+ */
+function syncProviderIdentity(event: AuthChangeEvent, authId: string, isAnonymous: boolean): void {
+  if (!isAnonymous) {
+    try {
+      posthogAnalytics.identify(authId);
+    } catch (err) {
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: { flow: 'identity_sync', step: 'posthog_identify', event },
+      });
+    }
+  }
+
+  identifyUser(authId)
+    .then((result) => {
+      if (result === 'not_initialized' && event !== 'INITIAL_SESSION') {
+        Sentry.captureMessage('identity_sync: RevenueCat başlamamış — kullanıcı eşlenemedi', {
+          level: 'error',
+          tags: { flow: 'identity_sync', step: 'rc_login', event, error_code: 'RC_NOT_INITIALIZED' },
+          extra: { is_anonymous: isAnonymous },
+        });
+      }
+    })
+    .catch((err: unknown) => {
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: { flow: 'identity_sync', step: 'rc_login', event },
+        extra: { is_anonymous: isAnonymous },
+      });
+    });
 }
 
 /**
@@ -444,6 +501,12 @@ export default function RootLayout() {
           // SIGNED_IN — hangisi önce çözülürse. İkisi de "oturum kuruldu"
           // anıdır ve `noteResolvedIdentity` yalnızca ilkinde uzlaştırır.
           noteResolvedIdentity(session.user.id);
+
+          // RC her kimlikte (anonim dahil) eşitlenir; PostHog yalnız kalıcı
+          // kullanıcıda. Bkz. `syncProviderIdentity`.
+          if (IDENTITY_SYNC_EVENTS.has(event)) {
+            syncProviderIdentity(event, session.user.id, session.user.is_anonymous === true);
+          }
         }
 
         // `public.users` satırını GARANTİ et — oturum bootstrap'ı.

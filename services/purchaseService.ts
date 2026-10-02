@@ -186,35 +186,36 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
   }
 }
 
+/** `identifyUser` sonucu — Sentry kararı çağıranda (olay tipine bağlı). */
+export type IdentifyUserResult = 'identified' | 'already_identified' | 'not_initialized';
+
 /**
  * Supabase kullanıcısı değiştiğinde RevenueCat customer ID'yi günceller.
- * Auth sonrası çağrılır (Apple/Google link).
+ * `app/_layout.tsx` auth dinleyicisi çağırır (anonim dahil her kimlik).
+ *
+ * İdempotent: RC'nin mevcut appUserID'si zaten hedefse `logIn` çağrılmaz.
+ * Webhook `event.app_user_id`'yi `public.users.auth_id`'ye çözer — yani
+ * buraya verilen değer `auth.users.id` olmalıdır.
  *
  * K-49: __DEV__'de EXPO_PUBLIC_RC_TEST_MODE açıksa, sandbox test matrix
  * user'ı login'e geçir — 6 RC state'i (restore/expiration/grace/billing/
  * refund/revoked) izole ortamda test etmek için.
+ *
+ * @throws RC `getAppUserID` / `logIn` hatası — çağıran Sentry'ye yazar.
  */
-export async function identifyUser(supabaseUserId: string): Promise<void> {
-  if (!_initialized) {
-    // Eslenme hic olmuyor — satin alim yanlis RC customer'a baglanabilir.
-    logger.error(
-      '[purchases] identifyUser: RevenueCat baslatilmamis — eslenme atlandi',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'identifyUser' } },
-    );
-    return;
-  }
+export async function identifyUser(supabaseUserId: string): Promise<IdentifyUserResult> {
+  if (!_initialized) return 'not_initialized';
 
-  try {
-    // K-49: Test matrix user override (dev + flag guard'ı)
-    const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
-    const userId = useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+  // K-49: Test matrix user override (dev + flag guard'ı)
+  const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
+  const userId = useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
 
-    await Purchases.logIn(userId);
-    logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
-  } catch (err) {
-    logger.error('[purchases] Kullanıcı eşleştirme hatası:', err);
-  }
+  const current = await Purchases.getAppUserID();
+  if (current === userId) return 'already_identified';
+
+  await Purchases.logIn(userId);
+  logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
+  return 'identified';
 }
 
 // ─── Abonelik Durumu ─────────────────────────────────────────────────────────
