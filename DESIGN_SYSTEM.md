@@ -230,6 +230,7 @@ Tek cümlelik ölçüt: **kullanıcı Wordle oynayan biri gibi değil, Cannes'da
    harf açılışı). Geri kalan her şey 200–300ms fade/translate.
 
 7. **Oynanış tek sayfadır — `ScrollView` YASAK.** *(1 Ağu 2026)*
+   *İstisna: Spotlight — KAPSAM_KILIDI v1.36 §10.*
 
    Oyun ekranı açıldığında oynamak için gereken her şey görünür olmalı. Kaydırmak
    "ne kaçırıyorum?" sorusu doğurur ve günlük oyunun "aç-oyna-çık" ritmini keser.
