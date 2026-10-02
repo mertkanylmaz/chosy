@@ -8,9 +8,10 @@
  * `generate-gauntlet/index.ts` `Deno.serve` içerdiği için import EDİLEMEZ
  * (import anında ikinci bir sunucu kurar — `gauntletCore.ts` başlığındaki aynı
  * gerekçe). Bu yüzden dallanmanın KARAR fonksiyonu (`editorialDayNumber`) ve
- * editoryal üreticinin TAMAMI (`fetchEditorialQuartet`) paylaşılan modülde
- * yaşıyor ve burada doğrudan test ediliyor. Handler'da kalan tek şey üç satırlık
- * `if` — testin kapsamadığı yüzey bilinçli olarak o kadar dar tutuldu.
+ * editoryal üreticinin okuma + izlenen-yerine-koyma parçaları
+ * (`fetchEditorialQuartet`, `fetchWatchedAmong`, `replaceWatchedInPlace`)
+ * paylaşılan modülde yaşıyor ve burada doğrudan test ediliyor. Handler'da
+ * kalan: dallanma `if`'i ve yedeğin `pickReplacements` ile seçilmesi.
  *
  * Sahte `SupabaseClient`: gerçek PostgREST çağrısı yok. `from()` hangi tabloya
  * gidildiğini KAYDEDER; "algoritmik havuza hiç girilmedi" iddiası bu kayıt
@@ -22,9 +23,12 @@ import {
   EDITORIAL_CALENDAR_LENGTH,
   editorialDayNumber,
   editorialSlotTypes,
+  applyWatchedReplacements,
   fetchEditorialQuartet,
-  isEditorialGauntlet,
+  fetchWatchedAmong,
+  replaceWatchedInPlace,
 } from './editorialCalendar.ts'
+import type { Candidate } from './gauntletCore.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
 // ─── Sahte istemci ───────────────────────────────────────────────────────────
@@ -51,6 +55,7 @@ function fakeClient(tables: Record<string, FakeTable>) {
         eq: () => builder,
         lte: () => builder,
         in: () => builder,
+        not: () => builder,
         order: () => builder,
         then: (
           resolve: (v: { data: unknown; error: unknown }) => unknown,
@@ -215,29 +220,75 @@ Deno.test('fetchEditorialQuartet: sorgu hatası yutulmaz', async () => {
   await assertRejects(() => fetchEditorialQuartet(client, 2), Error, 'boom')
 })
 
-// ─── isEditorialGauntlet — submit-choice GUARD'I ─────────────────────────────
-
-Deno.test('isEditorialGauntlet: editoryal dörtlü → true', () => {
-  assertEquals(isEditorialGauntlet(editorialSlotTypes()), true)
-})
-
-Deno.test('isEditorialGauntlet: algoritmik slotlar → false', () => {
-  // generate-gauntlet `slotTypesFor()` çıktıları — regresyon koruması:
-  // bu ikisi true dönerse algoritmik günde yenileme sessizce kapanırdı.
-  assertEquals(isEditorialGauntlet(['global', 'global', 'global', 'global']), false)
-  assertEquals(isEditorialGauntlet(['global', 'personal', 'personal', 'discovery']), false)
-})
-
-Deno.test('isEditorialGauntlet: eksik/boş slot_types → false', () => {
-  // 069 öncesi ya da beklenmedik satır algoritmik sayılır; guard yalnızca
-  // AÇIKÇA editoryal olan günde kapanır.
-  assertEquals(isEditorialGauntlet(null), false)
-  assertEquals(isEditorialGauntlet([]), false)
-})
-
 Deno.test('editorialSlotTypes: her çağrıda yeni dizi (paylaşılan durum yok)', () => {
   const a = editorialSlotTypes()
   const b = editorialSlotTypes()
   assertEquals(a, b)
   assertEquals(a === b, false)
+})
+
+// ─── İzlenen editoryal film (Karar 2a) ───────────────────────────────────────
+
+function cand(id: string): Candidate {
+  return { id } as unknown as Candidate
+}
+
+Deno.test('fetchWatchedAmong: yalnız watchlist okunur, dönen id\'ler küme olur', async () => {
+  const { client, touched } = fakeClient({
+    watchlist: { rows: [{ film_id: 'b' }] },
+  })
+  const watched = await fetchWatchedAmong(client, 'u1', ['a', 'b', 'c', 'd'])
+  assertEquals([...watched], ['b'])
+  assertEquals(touched, ['watchlist'])
+})
+
+Deno.test('fetchWatchedAmong: sorgu hatası yutulmaz', async () => {
+  const { client } = fakeClient({
+    watchlist: { rows: [], error: { message: 'boom' } },
+  })
+  await assertRejects(() => fetchWatchedAmong(client, 'u1', ['a']), Error, 'boom')
+})
+
+Deno.test('replaceWatchedInPlace: izlenen yoksa dörtlü aynen döner', () => {
+  const ed = ['a', 'b', 'c', 'd'].map(cand)
+  assertEquals(
+    replaceWatchedInPlace(ed, new Set(), []).map((f) => f.id),
+    ['a', 'b', 'c', 'd'],
+  )
+})
+
+Deno.test('replaceWatchedInPlace: yedek AYNI pozisyona girer, sıra korunur', () => {
+  const ed = ['a', 'b', 'c', 'd'].map(cand)
+  const out = replaceWatchedInPlace(ed, new Set(['b', 'd']), [cand('x'), cand('y')])
+  assertEquals(out.map((f) => f.id), ['a', 'x', 'c', 'y'])
+})
+
+Deno.test('applyWatchedReplacements: yedek varsa yerine koyar, rapor yok', async () => {
+  const ed = ['a', 'b', 'c', 'd'].map(cand)
+  const reported: string[] = []
+  const out = await applyWatchedReplacements(ed, new Set(['c']), [cand('x')], (id) => {
+    reported.push(id)
+    return Promise.resolve()
+  })
+  assertEquals(out.replaced, true)
+  assertEquals(out.films.map((f) => f.id), ['a', 'b', 'x', 'd'])
+  assertEquals(reported, [])
+})
+
+Deno.test('applyWatchedReplacements: yedek yok → film kalır + hata raporlanır', async () => {
+  const ed = ['a', 'b', 'c', 'd'].map(cand)
+  const reported: string[] = []
+  const out = await applyWatchedReplacements(ed, new Set(['b', 'd']), null, (id) => {
+    reported.push(id)
+    return Promise.resolve()
+  })
+  assertEquals(out.replaced, false)
+  assertEquals(out.films.map((f) => f.id), ['a', 'b', 'c', 'd'])
+  assertEquals(reported, ['b', 'd'])
+})
+
+Deno.test('replaceWatchedInPlace: yedek sayısı tutmazsa sessizce geçilmez', () => {
+  const ed = ['a', 'b', 'c', 'd'].map(cand)
+  assertThrows(() => replaceWatchedInPlace(ed, new Set(['a', 'b']), [cand('x')]))
+  assertThrows(() => replaceWatchedInPlace(ed, new Set(['a']), [cand('x'), cand('y')]))
 })

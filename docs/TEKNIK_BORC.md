@@ -3118,3 +3118,29 @@ her biri ayrı yerleşim turu ister.
 event seli üretebilir. Fix 8'in 60 sn / tür kısması yalnız
 `gameService.searchFilms`'in kendi catch'ine uygulandı. **Neden şimdi değil:**
 `searchFilmsDb` başka çağıranlarca da kullanılıyor; kısma kararı ortak.
+
+## 🟡 Editoryal gün yenileme kilidi kaldırıldı (Sprint 2 / Karar 2a) — kalan borçlar (2 Eki 2026)
+
+`submit-choice` artık `refreshBlockedReason: 'editorial_day'` döndürmüyor;
+editoryal günde `neither`/`seen` normal havuzdan yenileniyor. `generate-gauntlet`
+DAL A izlenen editoryal filmi aynı pozisyonda havuzdan yedekliyor. Bible:
+KAPSAM_KILIDI v1.37, R-20.
+
+### 1. İstemcide ölü `editorial_day` yolu + `gauntlet.editorialNoRefresh` anahtarı
+
+`components/gauntlet/GauntletShell/index.tsx` (`applyRefreshResult`,
+`editorialRefreshBlocked` state'i) ve `services/gauntletService.ts`
+(`refreshBlockedReason?: 'editorial_day'`) hâlâ alanı işliyor;
+`locales/en.json` + `tr.json` → `gauntlet.editorialNoRefresh` duruyor. Sunucu
+alanı artık göndermediği için yol hiç tetiklenmez. **Neden şimdi değil:**
+deploy sırası sunucu önce; eski sunucu sürümüne karşı geriye dönük uyum ve
+istemci build'i ayrı tur. Sonraki istemci turunda üçü birlikte silinir.
+
+### 2. Cached serve `refreshesRemaining`'i her zaman 2 döndürüyor
+
+`generate-gauntlet` (`REFRESHES_PER_DAY_FREE`, cached serve + 23505 yolu)
+harcanmış yenilemeyi düşmüyor; yeniden açılışta istemci 2 hak gösterir,
+sunucu `choice_events`'ten sayıp reddeder (istemci `refreshesRemaining: 0`
+ile butonu kapatır, metin göstermez). Önceden de vardı; editoryal günler artık
+yenileme kullandığı için bu yüzey ilk 100 günde de görünür hale geldi.
+**Neden şimdi değil:** Karar 2a kapsamı dışında, ayrı karar.

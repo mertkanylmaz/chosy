@@ -18,9 +18,10 @@
  * ürettiği ölçüldü (`generate-gauntlet/index.ts:252-268`).
  *
  * ── Bu modülün YAPMADIĞI şey ────────────────────────────────────────────────
- * Yedek kulübesine (position 5-6) DOKUNMAZ. `neither`/`seen` yenilemesinin
- * editoryal karşılığı K-23'ün işidir; burada yalnızca ana sıra (1-4) okunur.
- * `submit-choice` o güne ait yenilemeyi `isEditorialGauntlet` ile kapatır.
+ * Yedek kulübesine (position 5-6) DOKUNMAZ; burada yalnızca ana sıra (1-4)
+ * okunur. Editoryal günde `neither`/`seen` yenilemesi ve izlenen filmin yedeği
+ * normal havuzdan gelir (Karar 2a, 2 Eki 2026 — `isEditorialGauntlet` guard'ı
+ * kaldırıldı).
  */
 
 import { type Candidate, fetchCandidatesByIds } from './gauntletCore.ts'
@@ -212,21 +213,72 @@ export async function fetchEditorialQuartet(
   return films
 }
 
-// ─── Editoryal gün tespiti (submit-choice guard'ı) ───────────────────────────
+// ─── İzlenen editoryal filmin yerine koyulması (Karar 2a) ───────────────────
 
 /**
- * Kayıtlı bir gauntlet editoryal takvimden mi geldi.
- *
- * Kaynak `daily_gauntlets.slot_types` — üretim anındaki gerçeği taşır ve
- * `launch_date` sonradan değiştirilse bile DEĞİŞMEZ. `day_number`'ı yeniden
- * hesaplamak yerine satıra bakmanın sebebi bu: dün üretilmiş bir gauntlet'e
- * bugünün takvim penceresiyle karar vermek, gece yarısını geçen bir oturumu
- * ortasından kırardı.
- *
- * "Herhangi biri editoryal" yeterlidir, "dördü birden" değil: kısmi bir karışım
- * bugün üretilemez, ama üretilseydi de o gün editoryal kurgu altındadır ve
- * algoritmik yenileme yine yasak olmalıdır — kapı güvenli yöne kapanır.
+ * Verilen filmlerden kullanıcının izlediklerini (`watchlist.watched_at` dolu)
+ * döner. Algoritmik daldaki `fetchExclusions` → `watched` ile AYNI tanım;
+ * yalnız dört editoryal filmle sınırlı sorgu.
  */
-export function isEditorialGauntlet(slotTypes: readonly string[] | null): boolean {
-  return (slotTypes ?? []).includes('editorial')
+export async function fetchWatchedAmong(
+  service: SupabaseClient,
+  appUserId: string,
+  filmIds: string[],
+): Promise<Set<string>> {
+  if (filmIds.length === 0) return new Set()
+  const { data, error } = await service
+    .from('watchlist')
+    .select('film_id')
+    .eq('user_id', appUserId)
+    .in('film_id', filmIds)
+    .not('watched_at', 'is', null)
+  if (error) throw new Error(`izlenen film sorgusu başarısız: ${error.message}`)
+  return new Set(((data ?? []) as { film_id: string }[]).map((r) => r.film_id))
+}
+
+/**
+ * İzlenen editoryal filmleri AYNI pozisyonda yedeklerle değiştirir — sıra
+ * bracket'in kendisidir (position 1 = savunan, 2/3/4 = tur meydan
+ * okuyucuları), bu yüzden yer korunur. Yedekler editoryal sıradaki izlenen
+ * filmlerin sırasıyla tüketilir.
+ *
+ * Yedek sayısı izlenen sayısıyla tutmazsa throw — eksik dörtlü ya da
+ * kullanılmayan yedek sessizce geçilmez.
+ */
+export function replaceWatchedInPlace(
+  editorial: Candidate[],
+  watched: Set<string>,
+  replacements: Candidate[],
+): Candidate[] {
+  const slots = editorial.filter((f) => watched.has(f.id)).length
+  if (slots !== replacements.length) {
+    throw new Error(
+      `yedek sayısı uyuşmuyor: ${slots} izlenen, ${replacements.length} yedek`,
+    )
+  }
+  let next = 0
+  return editorial.map((f) => (watched.has(f.id) ? replacements[next++] : f))
+}
+
+/**
+ * Yedek varsa izlenen filmleri değiştirir; yedek YOKSA (`null`) izlenen
+ * editoryal filmler TUTULUR ve her biri `reportMissing` ile raporlanır.
+ *
+ * Gerekçe (CTO, 2 Eki 2026): editoryal günün gauntlet'i hiç üretilmemesi,
+ * izlenmiş bir filmin bracket'te kalmasından daha kötüdür — kullanıcı o filme
+ * `seen` diyebilir. Sessiz değil: çağıran Sentry'ye yazar.
+ */
+export async function applyWatchedReplacements(
+  editorial: Candidate[],
+  watched: Set<string>,
+  replacements: Candidate[] | null,
+  reportMissing: (filmId: string) => Promise<void>,
+): Promise<{ films: Candidate[]; replaced: boolean }> {
+  if (replacements) {
+    return { films: replaceWatchedInPlace(editorial, watched, replacements), replaced: true }
+  }
+  for (const f of editorial) {
+    if (watched.has(f.id)) await reportMissing(f.id)
+  }
+  return { films: editorial, replaced: false }
 }
