@@ -47,10 +47,12 @@ import { useMood } from '@/contexts/MoodContext';
 import { supabase } from '@/services/supabase';
 import {
   addToWatchlist,
+  canUnwatch,
   toggleWatched,
-  getWatchedFilmIds,
+  getWatchedState,
   removeFromWatchlist,
   getWatchlist,
+  type WatchedSource,
 } from '@/services/watchlist';
 import { explainBatch, type FilmForExplanation } from '@/services/matchExplanation';
 import {
@@ -311,6 +313,8 @@ export default function FilmDetailScreen() {
   // ── Watchlist & izleme ───────────────────────────────────────────────────────
   const [watchlistAdded, setWatchlistAdded] = useState(false);
   const [isWatched, setIsWatched] = useState(false);
+  /** Gauntlet kaynaklı işaret geri alınamaz — buton kilitlenir (Fix 6). */
+  const [watchedSource, setWatchedSource] = useState<WatchedSource | null>(null);
   const [isInWatchlist, setIsInWatchlist] = useState(false);
 
   // ── AI aciklama ──────────────────────────────────────────────────────────────
@@ -446,8 +450,11 @@ export default function FilmDetailScreen() {
   /** Izlendi kontrolu */
   useEffect(() => {
     if (!id || !UUID_REGEX.test(id)) return;
-    getWatchedFilmIds()
-      .then((set) => setIsWatched(set.has(id)))
+    getWatchedState(id)
+      .then((state) => {
+        setIsWatched(state.watched);
+        setWatchedSource(state.source);
+      })
       .catch((err: unknown) => {
         Sentry.captureException(err, {
           tags: { component: 'FilmDetail', flow: 'watchedCheck' },
@@ -461,7 +468,9 @@ export default function FilmDetailScreen() {
     if (!id || !UUID_REGEX.test(id)) return;
     getWatchlist()
       .then((list) => {
-        const found = list.some((item) => item.film.id === id);
+        // Saved = satir var VE izlenmemis (Fix 6). Izlenmis film listede
+        // gorunmez; "kaldir" eylemi de sunulmaz (satir izleme gecmisidir).
+        const found = list.some((item) => item.film.id === id && item.watchedAt === null);
         setIsInWatchlist(found);
         if (found) setWatchlistAdded(true);
       })
@@ -602,19 +611,23 @@ export default function FilmDetailScreen() {
     ]);
   }, [film, t]);
 
+  const watchedLocked = isWatched && !canUnwatch(watchedSource);
+
   const handleToggleWatched = useCallback(async () => {
-    if (!film) return;
+    if (!film || watchedLocked) return;
     hapticMedium();
     try {
-      const newState = await toggleWatched(film.id);
-      setIsWatched(newState);
+      // Sunucuya yazilamazsa servis islemi kuyruga alir (`status: 'queued'`)
+      // ve hatayi Sentry'ye yazar; ekran yeni durumu gosterir.
+      const result = await toggleWatched(film.id, isWatched);
+      setIsWatched(result.watched);
+      setWatchedSource(result.watched ? (watchedSource ?? 'manual') : null);
     } catch {
-      // Yazma basarisiz — isWatched eski degerinde kalir. Sessizce
-      // "izlenmedi" yazmak yerine kullaniciya bildir; servis katmani
-      // hatayi zaten Sentry'ye yazdi.
+      // Yazma da kuyruk da basarisiz — isWatched eski degerinde kalir.
+      // Servis katmani hatayi zaten Sentry'ye yazdi.
       Alert.alert(t('errors.watchedToggle'));
     }
-  }, [film, t]);
+  }, [film, isWatched, watchedLocked, watchedSource, t]);
 
   const handleShare = () => {
     if (film) shareFilmCard();
@@ -930,6 +943,7 @@ export default function FilmDetailScreen() {
             <TouchableOpacity
               style={[styles.actionBtn, isWatched && styles.actionBtnWatched]}
               onPress={handleToggleWatched}
+              disabled={watchedLocked}
               activeOpacity={0.8}
             >
               <Ionicons

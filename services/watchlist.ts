@@ -14,40 +14,324 @@ import { updateUserVector } from './userProfile';
 import { logger } from '../utils/logger';
 import { posthogAnalytics } from './posthog';
 import { tasteSignals } from './tasteSignalService';
-import { getAppUserId } from './auth-utils'; // re-export aşağıda, iç kullanım için de import
+import { getAppUserId, readAppUserId } from './auth-utils'; // re-export aşağıda, iç kullanım için de import
 
-// ─── Watched Status (local) ──────────────────────────────────────────────────
+// ─── Watched Status (sunucu: watchlist.watched_at) ───────────────────────────
+//
+// B-1 / Fix 6: "izlendi"nin tek kaynağı `watchlist.watched_at` (+
+// `watched_source`). AsyncStorage yalnızca sunucuya yazılamayan işaretlerin
+// kuyruğudur (`chosy_watched_pending_{authId}`); `syncWatchedFilms` açılışta
+// boşaltır. Eski cihaz-yerel küme (`chosy_watched_films`) yalnızca tek seferlik
+// taşıma için okunur.
 
-export const WATCHED_KEY = 'chosy_watched_films';
+/** Fix 6 öncesi cihaz-yerel izlendi kümesi — yalnızca `watchSync` taşıması okur. */
+export const LEGACY_WATCHED_KEY = 'chosy_watched_films';
+
+/** Bekleyen izlendi yazmaları kimliğe bağlıdır: başka kimliğe flush edilmez. */
+export function watchedPendingKey(authId: string): string {
+  return `chosy_watched_pending_${authId}`;
+}
+
+/** `watchlist_watched_source_valid` CHECK'i (072) ile birebir. */
+export type WatchedSource = 'manual' | 'gauntlet_feedback' | 'local_sync';
+
+/** Bekleyen (sunucuya yazılamamış) izlendi işlemi — kaynak etiketiyle. */
+export interface PendingWatchedOp {
+  filmId: string;
+  watched: boolean;
+  source: 'manual';
+  queuedAt: string;
+}
+
+export interface WatchedState {
+  watched: boolean;
+  /** `null`: izlenmemiş ya da 072 öncesi kaynağı bilinmeyen işaret */
+  source: WatchedSource | null;
+}
+
+export interface ToggleWatchedResult {
+  watched: boolean;
+  /** `queued`: sunucu yazımı başarısız, bekleyen kuyruğa alındı (Sentry'ye yazıldı) */
+  status: 'synced' | 'queued';
+}
 
 /**
- * Filmin izlendi durumunu toggle eder.
- * AsyncStorage'da JSON Set olarak saklanır.
- *
- * CRITICAL: Yazma başarısız olursa throw eder — çağıran taraf yakalamalı.
- * Daha önce `false` dönüyordu; bu "izlenmedi" ile ayırt edilemiyordu ve
- * UI kalıcı olarak yanlış durum gösteriyordu (watchSync bunu sunucuya
- * taşıdığı için kayıp kalıcı oluyordu).
- *
- * @returns Yeni izlendi durumu
- * @throws AsyncStorage okuma/yazma başarısız olursa
+ * Gauntlet kaynaklı işaret ("seen" ya da "dün izledin mi?" cevabı) kullanıcı
+ * tarafından geri alınamaz; diğer kaynaklar alınabilir (Fix 6 karar 4).
  */
-export async function toggleWatched(filmId: string): Promise<boolean> {
-  try {
-    const raw = await AsyncStorage.getItem(WATCHED_KEY);
-    const set: Set<string> = raw ? new Set(JSON.parse(raw)) : new Set();
-    const isWatched = set.has(filmId);
-    if (isWatched) {
-      set.delete(filmId);
-    } else {
-      set.add(filmId);
+export function canUnwatch(source: WatchedSource | null): boolean {
+  return source !== 'gauntlet_feedback';
+}
+
+/** Unwatch, gauntlet kaynaklı bir işarete denk geldi — UI bu yolu göstermemeli. */
+export class WatchedLockedError extends Error {
+  constructor(filmId: string) {
+    super(`[watchlist] gauntlet_feedback kaynaklı izlendi işareti geri alınamaz: ${filmId}`);
+    this.name = 'WatchedLockedError';
+  }
+}
+
+/**
+ * İzlendi durumunu sunucuya yazar. Kuyruğa alma YAPMAZ — çağıran karar verir.
+ *
+ * İzlendi: satır yoksa açılır (`ignoreDuplicates`), varsa yalnızca
+ * `watched_at` NULL iken doldurulur — mevcut izleme tarihi ezilmez
+ * (`markWatched`, `_shared/gauntletCore.ts` ile aynı kural).
+ *
+ * İzlenmedi: satır SİLİNMEZ; `watched_at` + `watched_source` NULL'a çekilir.
+ * `gauntlet_feedback` kaynaklı satıra dokunulmaz → `WatchedLockedError`.
+ *
+ * @throws Sunucu reddederse ya da işaret kilitliyse
+ */
+export async function writeWatchedToServer(
+  appUserId: string,
+  filmId: string,
+  watched: boolean,
+  source: 'manual' | 'local_sync',
+): Promise<void> {
+  if (watched) {
+    const nowIso = new Date().toISOString();
+
+    const { error: insertError } = await supabase
+      .from('watchlist')
+      .upsert(
+        {
+          user_id: appUserId,
+          film_id: filmId,
+          watched_at: nowIso,
+          watched_source: source,
+          added_from_session: null,
+        },
+        { onConflict: 'user_id,film_id', ignoreDuplicates: true },
+      );
+    if (insertError) {
+      throw new Error(
+        `[watchlist] izlendi INSERT başarısız: ${insertError.code} — ${insertError.message}`,
+      );
     }
-    await AsyncStorage.setItem(WATCHED_KEY, JSON.stringify([...set]));
-    return !isWatched;
+
+    const { error: updateError } = await supabase
+      .from('watchlist')
+      .update({ watched_at: nowIso, watched_source: source })
+      .eq('user_id', appUserId)
+      .eq('film_id', filmId)
+      .is('watched_at', null);
+    if (updateError) {
+      throw new Error(
+        `[watchlist] izlendi UPDATE başarısız: ${updateError.code} — ${updateError.message}`,
+      );
+    }
+    return;
+  }
+
+  const { data: cleared, error: clearError } = await supabase
+    .from('watchlist')
+    .update({ watched_at: null, watched_source: null })
+    .eq('user_id', appUserId)
+    .eq('film_id', filmId)
+    .not('watched_at', 'is', null)
+    .or('watched_source.is.null,watched_source.neq.gauntlet_feedback')
+    .select('film_id');
+  if (clearError) {
+    throw new Error(
+      `[watchlist] izlenmedi UPDATE başarısız: ${clearError.code} — ${clearError.message}`,
+    );
+  }
+  if ((cleared ?? []).length > 0) return;
+
+  // 0 satır: ya zaten izlenmemiş (hedef durum, sorun yok) ya da işaret
+  // gauntlet kaynaklı. İkincisini sessizce "başarılı" saymıyoruz.
+  const { data: row, error: readError } = await supabase
+    .from('watchlist')
+    .select('watched_source')
+    .eq('user_id', appUserId)
+    .eq('film_id', filmId)
+    .maybeSingle();
+  if (readError) {
+    throw new Error(
+      `[watchlist] izlenmedi doğrulama okuması başarısız: ${readError.code} — ${readError.message}`,
+    );
+  }
+  if (row?.watched_source === 'gauntlet_feedback') {
+    throw new WatchedLockedError(filmId);
+  }
+}
+
+/** Oturumun auth id'si — yerel oturumdan okunur, ağ gerektirmez. */
+async function readAuthId(): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user.id ?? null;
+}
+
+/** @throws AsyncStorage okuma ya da JSON çözümleme başarısızsa */
+export async function readPendingWatchedOps(authId: string): Promise<PendingWatchedOp[]> {
+  const raw = await AsyncStorage.getItem(watchedPendingKey(authId));
+  return raw ? (JSON.parse(raw) as PendingWatchedOp[]) : [];
+}
+
+/** Aynı filme ait önceki bekleyen işlem yenisiyle değişir (son niyet geçerli). */
+async function enqueuePendingWatchedOp(authId: string, op: PendingWatchedOp): Promise<void> {
+  const ops = (await readPendingWatchedOps(authId)).filter((o) => o.filmId !== op.filmId);
+  ops.push(op);
+  await AsyncStorage.setItem(watchedPendingKey(authId), JSON.stringify(ops));
+}
+
+/**
+ * Verilen işlemleri kuyruktan çıkarır — kuyruk yeniden okunur, böylece bu
+ * arada eklenen yeni işlemler korunur. Kuyruk boşalırsa anahtar silinir.
+ *
+ * @throws AsyncStorage başarısızsa
+ */
+export async function removePendingWatchedOps(
+  authId: string,
+  done: (op: PendingWatchedOp) => boolean,
+): Promise<number> {
+  const remaining = (await readPendingWatchedOps(authId)).filter((o) => !done(o));
+  if (remaining.length === 0) {
+    await AsyncStorage.removeItem(watchedPendingKey(authId));
+  } else {
+    await AsyncStorage.setItem(watchedPendingKey(authId), JSON.stringify(remaining));
+  }
+  return remaining.length;
+}
+
+/**
+ * Bekleyen işlemleri sunucu durumunun üstüne bindirir. Kuyruk okunamazsa
+ * sunucu durumu olduğu gibi döner ve hata Sentry'ye yazılır (sessiz değil).
+ */
+async function readPendingOverlay(): Promise<Map<string, PendingWatchedOp>> {
+  try {
+    const authId = await readAuthId();
+    if (!authId) return new Map();
+    const ops = await readPendingWatchedOps(authId);
+    return new Map(ops.map((op) => [op.filmId, op]));
+  } catch (err) {
+    logger.error('[watchlist] bekleyen izlendi kuyruğu okunamadı', err, {
+      code: 'WATCHLIST_WATCHED_PENDING_READ_FAILED',
+    });
+    return new Map();
+  }
+}
+
+/**
+ * Sunucudaki izlendi durumunun üstüne bekleyen işlemi bindirir. Gauntlet
+ * kaynaklı işaret bekleyen bir "izlenmedi" ile geri alınmaz.
+ */
+function overlayPendingWatched(
+  watchedAt: string | null,
+  watchedSource: WatchedSource | null,
+  op: PendingWatchedOp | undefined,
+): Pick<WatchlistItem, 'watchedAt' | 'watchedSource'> {
+  if (!op || (watchedSource === 'gauntlet_feedback' && !op.watched)) {
+    return { watchedAt, watchedSource };
+  }
+  if (!op.watched) return { watchedAt: null, watchedSource: null };
+  return { watchedAt: watchedAt ?? op.queuedAt, watchedSource: watchedSource ?? op.source };
+}
+
+/**
+ * Filmin izlendi durumunu değiştirir: önce sunucuya yazar
+ * (`watched_source = 'manual'`). Sunucu yazımı başarısızsa hata Sentry'ye
+ * yazılır ve işlem `chosy_watched_pending_{authId}` kuyruğuna alınır;
+ * `syncWatchedFilms` bir sonraki açılışta boşaltır.
+ *
+ * @param currentlyWatched Ekranın gösterdiği mevcut durum
+ * @throws Oturum yoksa, işaret gauntlet kaynaklıysa (`WatchedLockedError`)
+ *         ya da kuyruğa yazma da başarısızsa
+ */
+export async function toggleWatched(
+  filmId: string,
+  currentlyWatched: boolean,
+): Promise<ToggleWatchedResult> {
+  const target = !currentlyWatched;
+  try {
+    const authId = await readAuthId();
+    if (!authId) {
+      throw new Error('[watchlist] toggleWatched: oturum yok');
+    }
+
+    try {
+      const appUserId = await readAppUserId();
+      if (!appUserId) {
+        throw new Error('[watchlist] toggleWatched: public.users kimliği okunamadı');
+      }
+      await writeWatchedToServer(appUserId, filmId, target, 'manual');
+    } catch (writeErr) {
+      if (writeErr instanceof WatchedLockedError) throw writeErr;
+
+      logger.error('[watchlist] izlendi sunucuya yazılamadı, kuyruğa alındı', writeErr, {
+        code: 'WATCHLIST_WATCHED_WRITE_QUEUED',
+        extra: { filmId, target },
+      });
+      await enqueuePendingWatchedOp(authId, {
+        filmId,
+        watched: target,
+        source: 'manual',
+        queuedAt: new Date().toISOString(),
+      });
+      return { watched: target, status: 'queued' };
+    }
+
+    // Sunucu yazımı daha yeni niyet: aynı filme ait eski bekleyen işlem
+    // sonradan flush edilip bunu ezmesin.
+    try {
+      await removePendingWatchedOps(authId, (op) => op.filmId === filmId);
+    } catch (cleanupErr) {
+      logger.error('[watchlist] eski bekleyen izlendi işlemi silinemedi', cleanupErr, {
+        code: 'WATCHLIST_WATCHED_PENDING_CLEANUP_FAILED',
+        extra: { filmId },
+      });
+    }
+    return { watched: target, status: 'synced' };
   } catch (err) {
     // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
     logger.error('[watchlist] toggleWatched hata', err, {
-      code: 'WATCHLIST_TOGGLE_WATCHED_FAILED',
+      code:
+        err instanceof WatchedLockedError
+          ? 'WATCHLIST_WATCHED_LOCKED'
+          : 'WATCHLIST_TOGGLE_WATCHED_FAILED',
+      extra: { filmId, target },
+    });
+    throw err;
+  }
+}
+
+/**
+ * Tek filmin izlendi durumu: sunucu + bekleyen kuyruk.
+ *
+ * @throws Sunucu okuması başarısızsa
+ */
+export async function getWatchedState(filmId: string): Promise<WatchedState> {
+  try {
+    const appUserId = await readAppUserId();
+    let serverAt: string | null = null;
+    let serverSource: WatchedSource | null = null;
+
+    if (appUserId) {
+      const { data, error } = await supabase
+        .from('watchlist')
+        .select('watched_at, watched_source')
+        .eq('user_id', appUserId)
+        .eq('film_id', filmId)
+        .maybeSingle();
+      if (error) {
+        throw new Error(`[watchlist] getWatchedState failed: ${error.code} — ${error.message}`);
+      }
+      serverAt = (data?.watched_at as string | null) ?? null;
+      serverSource = serverAt ? ((data?.watched_source as WatchedSource | null) ?? null) : null;
+    }
+
+    const { watchedAt, watchedSource } = overlayPendingWatched(
+      serverAt,
+      serverSource,
+      (await readPendingOverlay()).get(filmId),
+    );
+    return { watched: watchedAt !== null, source: watchedSource };
+  } catch (err) {
+    logger.error('[watchlist] getWatchedState hata', err, {
+      code: 'WATCHLIST_WATCHED_READ_FAILED',
       extra: { filmId },
     });
     throw err;
@@ -55,17 +339,42 @@ export async function toggleWatched(filmId: string): Promise<boolean> {
 }
 
 /**
- * Tüm izlenen film ID'lerini döndürür.
+ * İzlenen tüm film ID'leri: `watchlist.watched_at IS NOT NULL` + bekleyen kuyruk.
+ * Oturum yoksa boş küme (hata değil — `getWatchlist` ile aynı).
+ *
+ * @throws Sunucu okuması başarısızsa
  */
 export async function getWatchedFilmIds(): Promise<Set<string>> {
   try {
-    const raw = await AsyncStorage.getItem(WATCHED_KEY);
-    return raw ? new Set(JSON.parse(raw)) : new Set();
+    const appUserId = await readAppUserId();
+    const ids = new Set<string>();
+    const gauntletLocked = new Set<string>();
+
+    if (appUserId) {
+      const { data, error } = await supabase
+        .from('watchlist')
+        .select('film_id, watched_source')
+        .eq('user_id', appUserId)
+        .not('watched_at', 'is', null);
+      if (error) {
+        throw new Error(`[watchlist] getWatchedFilmIds failed: ${error.code} — ${error.message}`);
+      }
+      for (const row of data ?? []) {
+        ids.add(row.film_id as string);
+        if (row.watched_source === 'gauntlet_feedback') gauntletLocked.add(row.film_id as string);
+      }
+    }
+
+    for (const op of (await readPendingOverlay()).values()) {
+      if (op.watched) ids.add(op.filmId);
+      else if (!gauntletLocked.has(op.filmId)) ids.delete(op.filmId);
+    }
+    return ids;
   } catch (err) {
     logger.error('[watchlist] getWatchedFilmIds hatasi', err, {
       code: 'WATCHLIST_WATCHED_READ_FAILED',
     });
-    return new Set();
+    throw err;
   }
 }
 
@@ -77,6 +386,9 @@ export interface WatchlistItem {
   sessionId: string | null;
   /** Mood session'ındaki kullanıcı prompt metni (null = bilinmiyor) */
   sessionPrompt: string | null;
+  /** `null` = izlenmemiş → Saved. Dolu = izlendi (Profil "Watched"). */
+  watchedAt: string | null;
+  watchedSource: WatchedSource | null;
 }
 
 /**
@@ -185,6 +497,8 @@ interface WatchlistRow {
   created_at: string;
   match_score: number | null;
   added_from_session: string | null;
+  watched_at: string | null;
+  watched_source: WatchedSource | null;
   sessions: { raw_input: string | null } | null;
   films: {
     id: string;
@@ -232,7 +546,7 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
     const { data, error } = await supabase
       .from('watchlist')
       .select(
-        'created_at, match_score, added_from_session, sessions(raw_input), films(id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, genres)',
+        'created_at, match_score, added_from_session, watched_at, watched_source, sessions(raw_input), films(id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, genres)',
       )
       .eq('user_id', appUserId)
       .order('created_at', { ascending: false });
@@ -242,6 +556,8 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         `[watchlist] getWatchlist failed: ${error?.code ?? 'no-data'} — ${error?.message ?? 'empty response'}`,
       );
     }
+
+    const pending = await readPendingOverlay();
 
     return (data as unknown as WatchlistRow[])
       .filter((row) => row.films)
@@ -262,6 +578,7 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
         addedAt: row.created_at,
         sessionId: row.added_from_session ?? null,
         sessionPrompt: row.sessions?.raw_input ?? null,
+        ...overlayPendingWatched(row.watched_at, row.watched_source, pending.get(row.films.id)),
       }));
   } catch (err) {
     // Tek log noktası — hata çağırana yayılır, sessiz yutma yok (kural 1).
@@ -273,7 +590,9 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
 }
 
 /**
- * Kullanıcının tüm watchlist'ini temizler.
+ * Kullanıcının Saved listesini temizler — yalnızca `watched_at IS NULL`
+ * satırlar silinir. İzlenmiş satırlar kalır: Profil "Watched" sayacının ve
+ * gauntlet aday filtresinin (`fetchExclusions`) kaynağı onlar (B-1 / Fix 6).
  *
  * CRITICAL: DELETE başarısız olursa throw eder — çağıran taraf yakalamalı.
  * Daha önce hata yutuluyordu; profile ve watchlist-detail ekranlarında
@@ -290,7 +609,8 @@ export async function clearWatchlist(): Promise<void> {
     const { error } = await supabase
       .from('watchlist')
       .delete()
-      .eq('user_id', appUserId);
+      .eq('user_id', appUserId)
+      .is('watched_at', null);
 
     if (error) {
       throw new Error(
@@ -307,7 +627,9 @@ export async function clearWatchlist(): Promise<void> {
 }
 
 /**
- * Filmi watchlist'ten siler.
+ * Filmi Saved listesinden siler — yalnızca `watched_at IS NULL` ise. İzlenmiş
+ * satır silinmez (izleme geçmişi korunur; bkz. `clearWatchlist`). UI izlenmiş
+ * film için bu eylemi sunmaz.
  * Başarılı olursa true, hata olursa false döner.
  * Çağıran, false durumunda UI'ı geri almalıdır.
  *
@@ -323,7 +645,8 @@ export async function removeFromWatchlist(filmId: string): Promise<boolean> {
     const { error } = await supabase
       .from('watchlist')
       .delete()
-      .match({ film_id: filmId, user_id: appUserId });
+      .match({ film_id: filmId, user_id: appUserId })
+      .is('watched_at', null);
 
     if (error) {
       logger.error('[watchlist] removeFromWatchlist hata', error, {
@@ -443,6 +766,9 @@ export async function getWatchlistGroupedBySessions(): Promise<WatchlistGroup[]>
         addedAt: f.added_at,
         sessionId: row.session_id ?? null,
         sessionPrompt: row.prompt ?? null,
+        // RPC (121) yalnızca watched_at IS NULL satırları döndürür.
+        watchedAt: null,
+        watchedSource: null,
       })),
     }));
   } catch (err) {

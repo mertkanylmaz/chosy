@@ -45,7 +45,7 @@ const RUNTIME_BOUNDS: Record<RuntimeFilter, [number, number]> = {
  * Client-side filtreleme — Edge Function gerektirmez.
  *
  * @param items     - Mevcut watchlist öğeleri
- * @param watchedIds - İzlenmiş film ID'leri (AsyncStorage'dan)
+ * @param watchedIds - İzlenmiş film ID'leri (`watchlist.watched_at` + bekleyen kuyruk, `getWatchedFilmIds`)
  * @param filters   - Runtime + tür filtreleri
  * @returns Seçilen film ve aday sayısı, veya null (uygun film yoksa)
  */

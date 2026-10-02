@@ -425,7 +425,8 @@ export default function RootLayout() {
       });
     });
 
-    // watchSync: chosy_watched_films → watchlist.watched_at kurtarma senkronu.
+    // watchSync: bekleyen izlendi kuyruğu (chosy_watched_pending_{authId})
+    // flush'ı + eski chosy_watched_films'in tek seferlik taşınması.
     // Yalnızca INITIAL_SESSION'da, tek seferlik (bu effect bir kez kurulur).
     let hasSyncedWatchedFilms = false;
 

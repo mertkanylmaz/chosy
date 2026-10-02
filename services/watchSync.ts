@@ -1,65 +1,160 @@
 /**
- * chosy_watched_films (AsyncStorage) → watchlist.watched_at senkronu.
+ * İzlendi senkronu — açılışta iki iş (B-1 / Fix 6):
  *
- * ── Neden var ──────────────────────────────────────────────────────────────
- * toggleWatched() watchlist üyeliğinden bağımsız çalışır — kullanıcı bir
- * filmi watchlist'e hiç eklemeden "izledim" işaretleyebilir. AsyncStorage bu
- * yüzden watched_at'in tarihsel tek kaynağı ve sunucudan tamamen kopuk.
- * Bu modül cihazdaki mevcut veriyi tek seferlik kurtarır; "dün izledin mi?"
- * akışını veya gauntlet ekranını implemente ETMEZ.
+ *   1. Bekleyen kuyruk: `chosy_watched_pending_{authId}`. `toggleWatched`
+ *      sunucuya yazamadığında işlemi buraya koyar. Yalnızca o anki kimliğin
+ *      anahtarı okunur — başka kimliğin kuyruğu bu kimliğe flush edilmez.
+ *      Başarılı işlemler kuyruktan çıkar, kuyruk boşalınca anahtar silinir.
+ *   2. Eski cihaz-yerel küme: `chosy_watched_films` (Fix 6 öncesi
+ *      `toggleWatched`'ın tek deposu). Tek seferlik taşınır: o anki kimliğin
+ *      watchlist'ine yazılır, hata yoksa anahtar silinir. Hata varsa anahtar
+ *      kalır ve sonraki açılışta yeniden denenir.
  *
  * Var olan `watched_at` DOLU satırlar asla ezilmez — sunucu verisi yerel
- * veriden önceliklidir. Bkz. syncWatchedFilms() içindeki iki adımlı strateji.
+ * veriden önceliklidir.
  */
 import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
 import { readAppUserId } from './auth-utils';
-import { WATCHED_KEY } from './watchlist';
+import {
+  LEGACY_WATCHED_KEY,
+  WatchedLockedError,
+  readPendingWatchedOps,
+  removePendingWatchedOps,
+  writeWatchedToServer,
+  type PendingWatchedOp,
+} from './watchlist';
 import { logger } from '../utils/logger';
 
 export interface SyncResult {
-  synced: number;
-  skipped: number;
+  /** Sunucuya yazılıp kuyruktan çıkan bekleyen işlem */
+  pendingFlushed: number;
+  /** Kuyrukta kalan (bir sonraki açılışta yeniden denenecek) işlem */
+  pendingRemaining: number;
+  /** Eski kümeden taşınan film */
+  legacySynced: number;
+  /** Eski kümede olup sunucuda zaten izlenmiş film */
+  legacySkipped: number;
   errors: string[];
   error?: 'NO_IDENTITY';
 }
 
 /**
- * AsyncStorage'daki izlenmiş film ID'lerini watchlist tablosuna senkronlar.
- *
- * PostgREST'in upsert()'ü ON CONFLICT DO UPDATE'e koşullu WHERE ekleyemez —
- * ignoreDuplicates:true conflict'te hiç dokunmaz, false ise doluyu da ezer.
- * Bu yüzden iki adımlı: (1) mevcut satırları oku, (2) yalnızca watched_at
- * NULL olanları `&watched_at=is.null` filtresiyle koşullu UPDATE et, (3)
- * hiç satırı olmayanları ignoreDuplicates upsert ile ekle (race-safe).
+ * Bekleyen izlendi işlemlerini boşaltır ve eski `chosy_watched_films`
+ * anahtarını taşır.
  */
 export async function syncWatchedFilms(): Promise<SyncResult> {
-  const raw = await AsyncStorage.getItem(WATCHED_KEY);
-  const filmIds = raw ? Array.from(new Set(JSON.parse(raw) as string[])) : [];
+  const result: SyncResult = {
+    pendingFlushed: 0,
+    pendingRemaining: 0,
+    legacySynced: 0,
+    legacySkipped: 0,
+    errors: [],
+  };
 
-  if (filmIds.length === 0) {
-    return { synced: 0, skipped: 0, errors: [] };
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const authId = session?.user.id ?? null;
+
+  const pendingOps = authId ? await readPendingWatchedOps(authId) : [];
+  const legacyRaw = await AsyncStorage.getItem(LEGACY_WATCHED_KEY);
+  const legacyFilmIds = legacyRaw
+    ? Array.from(new Set(JSON.parse(legacyRaw) as string[]))
+    : [];
+
+  if (pendingOps.length === 0 && legacyFilmIds.length === 0) {
+    // Taşınacak eski veri yok ama boş anahtar duruyorsa kaldır.
+    if (legacyRaw !== null) await AsyncStorage.removeItem(LEGACY_WATCHED_KEY);
+    return result;
   }
 
-  const appUserId = await readAppUserId();
+  const appUserId = authId ? await readAppUserId() : null;
 
-  if (!appUserId) {
+  if (!authId || !appUserId) {
     Sentry.captureMessage(
       'syncWatchedFilms: app kullanıcı kimliği yok, senkron atlandı',
       {
         level: 'warning',
         tags: { function: 'syncWatchedFilms', error_code: 'NO_IDENTITY' },
-        extra: { filmIdCount: filmIds.length },
+        extra: {
+          hasAuthId: authId !== null,
+          pendingCount: pendingOps.length,
+          legacyCount: legacyFilmIds.length,
+        },
       },
     );
-    return { synced: 0, skipped: 0, errors: [], error: 'NO_IDENTITY' };
+    return { ...result, pendingRemaining: pendingOps.length, error: 'NO_IDENTITY' };
   }
 
-  const errors: string[] = [];
+  await flushPending(authId, appUserId, pendingOps, result);
 
-  // Adım 0 — mevcut satırları oku
+  if (legacyFilmIds.length > 0) {
+    await migrateLegacy(appUserId, legacyFilmIds, result);
+  }
+
+  logger.log('[watchSync] tamamlandı:', result);
+  return result;
+}
+
+/** Bekleyen işlemleri sırayla yazar; yazılanlar ve kilitliler kuyruktan çıkar. */
+async function flushPending(
+  authId: string,
+  appUserId: string,
+  ops: PendingWatchedOp[],
+  result: SyncResult,
+): Promise<void> {
+  const done: PendingWatchedOp[] = [];
+
+  for (const op of ops) {
+    try {
+      await writeWatchedToServer(appUserId, op.filmId, op.watched, op.source);
+      done.push(op);
+    } catch (err) {
+      if (err instanceof WatchedLockedError) {
+        // Gauntlet işareti geri alınamaz; işlem uygulanamaz, kuyrukta
+        // tutmak her açılışta aynı hatayı üretirdi.
+        Sentry.captureMessage('syncWatchedFilms: bekleyen unwatch gauntlet işaretine çarptı', {
+          level: 'warning',
+          tags: { function: 'syncWatchedFilms', error_code: 'PENDING_LOCKED' },
+          extra: { appUserId, filmId: op.filmId },
+        });
+        done.push(op);
+        continue;
+      }
+      const message = err instanceof Error ? err.message : String(err);
+      logger.error('[watchSync] bekleyen izlendi işlemi yazılamadı:', message, { skipBridge: true });
+      Sentry.captureMessage(`syncWatchedFilms: bekleyen işlem yazılamadı — ${message}`, {
+        level: 'error',
+        tags: { function: 'syncWatchedFilms', error_code: 'PENDING_WRITE_FAILED' },
+        extra: { appUserId, filmId: op.filmId, watched: op.watched },
+      });
+      result.errors.push(message);
+    }
+  }
+
+  // Kuyruk yeniden okunur: flush sürerken eklenen işlemler korunur.
+  result.pendingRemaining = await removePendingWatchedOps(authId, (op) =>
+    done.some((d) => d.filmId === op.filmId && d.queuedAt === op.queuedAt),
+  );
+  result.pendingFlushed = done.length;
+}
+
+/**
+ * Eski kümeyi taşır. PostgREST'in upsert()'ü ON CONFLICT DO UPDATE'e koşullu
+ * WHERE ekleyemez — bu yüzden iki adım: (1) mevcut satırları oku, yalnızca
+ * watched_at NULL olanları koşullu UPDATE et, (2) hiç satırı olmayanları
+ * ignoreDuplicates upsert ile ekle (race-safe). Hata yoksa anahtar silinir.
+ */
+async function migrateLegacy(
+  appUserId: string,
+  filmIds: string[],
+  result: SyncResult,
+): Promise<void> {
+  const errorCountBefore = result.errors.length;
+
   const { data: existingRows, error: selectError } = await supabase
     .from('watchlist')
     .select('film_id, watched_at')
@@ -76,14 +171,14 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
         extra: { appUserId, pg_code: selectError.code },
       },
     );
-    return { synced: 0, skipped: 0, errors: [selectError.message] };
+    result.errors.push(selectError.message);
+    return;
   }
 
   const existingByFilmId = new Map(
     (existingRows ?? []).map((row) => [row.film_id as string, row.watched_at as string | null]),
   );
 
-  const alreadyWatched: string[] = [];
   const needsUpdate: string[] = [];
   const needsInsert: string[] = [];
 
@@ -93,11 +188,10 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
     } else if (existingByFilmId.get(filmId) === null) {
       needsUpdate.push(filmId);
     } else {
-      alreadyWatched.push(filmId);
+      result.legacySkipped += 1;
     }
   }
 
-  let synced = 0;
   const nowIso = new Date().toISOString();
 
   // Adım 1 — yalnızca watched_at NULL olanları koşullu güncelle
@@ -120,9 +214,9 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
           extra: { appUserId, pg_code: updateError.code, filmIdCount: needsUpdate.length },
         },
       );
-      errors.push(updateError.message);
+      result.errors.push(updateError.message);
     } else {
-      synced += updated?.length ?? 0;
+      result.legacySynced += updated?.length ?? 0;
     }
   }
 
@@ -152,13 +246,15 @@ export async function syncWatchedFilms(): Promise<SyncResult> {
           extra: { appUserId, pg_code: insertError.code, filmIdCount: needsInsert.length },
         },
       );
-      errors.push(insertError.message);
+      result.errors.push(insertError.message);
     } else {
-      synced += inserted?.length ?? 0;
+      result.legacySynced += inserted?.length ?? 0;
     }
   }
 
-  const result: SyncResult = { synced, skipped: alreadyWatched.length, errors };
-  logger.log('[watchSync] tamamlandı:', result);
-  return result;
+  // Tek seferlik: bu kimliğe yazıldı, anahtar kaldırılır. Hata varsa kalır
+  // ve sonraki açılış yeniden dener (dolu satırlar ezilmediği için güvenli).
+  if (result.errors.length === errorCountBefore) {
+    await AsyncStorage.removeItem(LEGACY_WATCHED_KEY);
+  }
 }
