@@ -3197,3 +3197,31 @@ JWT'sini tutar. Sentry fatal (`step=set_session`), kullanıcıya genel bağlama
 hatası; `_layout` USER_NOT_FOUND kurtarması sonraki açılışta yeni anonim
 kimlik açar; kullanıcı Profil'den Apple ile yeniden girer (yeni anonim
 kimlikte taşınacak ilerleme yoktur).
+
+---
+
+## 🟡 Çıkış yapma (Sprint 1 / 4b) — kalan borçlar (3 Eki 2026)
+
+Çıkış artık hesap silmeyle aynı rutin: `resetToFreshSession`
+(`services/sessionReset.ts`).
+
+### 1. Çıkışta sunucu oturumu kapanmaz — refresh token geçerli kalır
+`resetToFreshSession` `signOut({ scope: 'local' })` çağırır (hesap silmede
+sunucudaki kullanıcı zaten yok, `/logout` 403 dönerdi). Çıkışta ise
+hesap yaşar: cihazdan silinen oturumun refresh token'ı sunucuda geçerli
+kalır, süresi dolana ya da başka bir global çıkışa kadar. **Neden şimdi
+değil:** "silmeyle aynı rutin" kararı (4b); kapsam `local` kalır.
+
+### 2. Çıkışta gönderilmemiş yerel kuyruklar kaybolur
+`sweepUserStorage` allowlist dışındaki her AsyncStorage anahtarını siler; bu
+kuyruklar da dahil, gönderilmemiş içerikleriyle birlikte:
+`chosy_watched_pending_{authId}` (izledim işaretleri),
+`chosy_offline_queue` (genel çevrimdışı işlemler),
+`taste_signal_offline_queue` (zevk sinyalleri),
+`chosy_gauntlet_pending_choice` (bekleyen gauntlet seçimi). Çıkıştan önce
+flush denenmez. **Neden şimdi değil:** kod değişikliği kapsam dışı (4b
+kararı); kayıp yalnız çevrimdışıyken çıkış yapan kullanıcıda.
+
+### 3. `app/setup-profile.tsx` erişilemez kaldı
+Ekrana tek yol silinen `app/auth.tsx` idi (`isNewUser` dalı); rota
+`_layout`'ta `Stack.Screen` olarak duruyor. **Sprint 4'te silinecek.**
