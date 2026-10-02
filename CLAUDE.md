@@ -100,8 +100,8 @@ Expo ~54.0.34 · React Native 0.81.5 · Reanimated ~4.1.1 · expo-router ~6.0.23
 
 - `films` kolonları: `poster_url` (`poster_path` DEĞİL), `imdb_votes` ve
   `vote_average` (`vote_count` DEĞİL), `director`, `country text[]`,
-  `genres text[]`, `runtime`, `curation_tier`, `dimensions_json`
-- `profile_vector` → `film_profiles` tablosunda (`films`'te değil)
+  `genres text[]`, `runtime`, `curation_tier`
+- `profile_vector` ve `dimensions_json` → `film_profiles` tablosunda (`films`'te değil)
 - İzlenmiş film: ayrı tablo yok — `watchlist.watched_at`
 - Oyun temaları: `constants/gameThemes.ts` (`gameTokens.ts` YOKTUR)
 - Oyun kabuğu: `GameShell` (`GameScreenShell` YOKTUR)
