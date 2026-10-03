@@ -1,7 +1,8 @@
 -- ============================================================================
 -- 122 merge_anonymous_user — doğrulama testleri (Sprint 1 / 1b)
 --
--- ÖN KOŞUL: migration 122 `supabase db push` ile uygulanmış olmalı.
+-- ÖN KOŞUL: migration 122 VE 123 `supabase db push` ile uygulanmış olmalı
+--   (T3b/T3c/T3d 123 davranışını sınar; 122 canlıyken T3b FAIL verir).
 --
 -- ÇALIŞTIRMA: dosyanın tamamı tek seferde (psql ya da Supabase SQL Editor).
 --   Sonuç: tek bir SELECT, her test için bir satır → (n, test, result).
@@ -54,6 +55,14 @@ LANGUAGE sql AS $$
     (user_id, gauntlet_id, session_id, round, film_a, film_b, winner, outcome, algorithm_version)
   SELECT p_user, p_gauntlet, gen_random_uuid(), 1, f[1], f[2], f[1], 'choice', 't122-test'
     FROM (SELECT pg_temp.t122_films() AS f) x
+$$;
+
+-- Satırı tamamlanmış yapar (champion_film_id dolu) — 123 testleri için.
+CREATE FUNCTION pg_temp.t122_complete(p_gauntlet uuid) RETURNS void
+LANGUAGE sql AS $$
+  UPDATE public.daily_gauntlets
+     SET champion_film_id = (pg_temp.t122_films())[1]
+   WHERE id = p_gauntlet
 $$;
 
 CREATE FUNCTION pg_temp.t122_check(p_ok boolean, p_detail text) RETURNS text
@@ -125,8 +134,32 @@ BEGIN
     r::text);
 END $$;
 
--- T3b: previous satırı + hedefin GEÇMİŞİ var (10 gün önce) → hedef kazanır (TURUNCU 2).
+-- T3b (123 ile güncellendi): previous + TAMAMLANMIŞ + hedefin geçmişi var (10 gün
+--      önce), tarih çakışması yok → merged; gauntlet, olay ve düzeltme taşınır.
 CREATE FUNCTION pg_temp.t3b() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user(); ga uuid; gb uuid; r jsonb;
+BEGIN
+  ga := pg_temp.t122_gauntlet(a, pg_temp.t122_today() - 1, 'previous');
+  PERFORM pg_temp.t122_complete(ga);
+  PERFORM pg_temp.t122_event(a, ga);
+  INSERT INTO public.context_corrections (user_id, gauntlet_id, predicted, corrected)
+  VALUES (a, ga, '{}'::jsonb, '{}'::jsonb);
+  gb := pg_temp.t122_gauntlet(b, pg_temp.t122_today() - 10);
+  r := public.merge_anonymous_user(a, b);
+  RETURN pg_temp.t122_check(
+    r->>'status' = 'merged' AND r->>'moved_cycle' = 'previous'
+    AND (r->>'events_moved')::int = 1
+    AND (r->>'corrections_moved')::int = 1
+    AND (SELECT user_id FROM public.daily_gauntlets WHERE id = ga) = b
+    AND (SELECT count(*) FROM public.choice_events WHERE gauntlet_id = ga AND user_id = b) = 1
+    AND (SELECT count(*) FROM public.context_corrections WHERE gauntlet_id = ga AND user_id = b) = 1
+    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b)
+    AND NOT pg_temp.t122_user_exists(a),
+    r::text);
+END $$;
+
+-- T3c (123): previous + TAMAMLANMAMIŞ + hedefin geçmişi var → target_won (TURUNCU 2 kalır).
+CREATE FUNCTION pg_temp.t3c() RETURNS text LANGUAGE plpgsql AS $$
 DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user(); ga uuid; gb uuid; r jsonb;
 BEGIN
   ga := pg_temp.t122_gauntlet(a, pg_temp.t122_today() - 1, 'previous');
@@ -134,8 +167,86 @@ BEGIN
   r := public.merge_anonymous_user(a, b);
   RETURN pg_temp.t122_check(
     r->>'status' = 'target_won'
+    AND (r->>'dropped_gauntlet_id')::uuid = ga
     AND NOT EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = ga)
-    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b),
+    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b)
+    AND NOT pg_temp.t122_user_exists(a),
+    r::text);
+END $$;
+
+-- T3d (123): TAMAMLANMIŞ previous + hedefte AYNI tarihte satır var → target_won.
+CREATE FUNCTION pg_temp.t3d() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user(); ga uuid; gb uuid; r jsonb;
+BEGIN
+  ga := pg_temp.t122_gauntlet(a, pg_temp.t122_today() - 1, 'previous');
+  PERFORM pg_temp.t122_complete(ga);
+  PERFORM pg_temp.t122_event(a, ga);
+  gb := pg_temp.t122_gauntlet(b, pg_temp.t122_today() - 1);
+  r := public.merge_anonymous_user(a, b);
+  RETURN pg_temp.t122_check(
+    r->>'status' = 'target_won'
+    AND (r->>'dropped_gauntlet_id')::uuid = ga
+    AND NOT EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = ga)
+    AND NOT EXISTS (SELECT 1 FROM public.choice_events WHERE gauntlet_id = ga)
+    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b)
+    AND NOT pg_temp.t122_user_exists(a),
+    r::text);
+END $$;
+
+-- T3e (123, karar 3b): TAMAMLANMIŞ previous + hedefte YALNIZCA bugünkü satır var
+--      (tarihler farklı, çakışma yok) → merged; hedefin bugünkü satırı engel değil.
+CREATE FUNCTION pg_temp.t3e() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user(); ga uuid; gb uuid; r jsonb;
+BEGIN
+  ga := pg_temp.t122_gauntlet(a, pg_temp.t122_today() - 1, 'previous');
+  PERFORM pg_temp.t122_complete(ga);
+  PERFORM pg_temp.t122_event(a, ga);
+  gb := pg_temp.t122_gauntlet(b, pg_temp.t122_today());
+  r := public.merge_anonymous_user(a, b);
+  RETURN pg_temp.t122_check(
+    r->>'status' = 'merged' AND r->>'moved_cycle' = 'previous'
+    AND (SELECT user_id FROM public.daily_gauntlets WHERE id = ga) = b
+    AND (SELECT count(*) FROM public.choice_events WHERE gauntlet_id = ga AND user_id = b) = 1
+    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b)
+    AND NOT pg_temp.t122_user_exists(a),
+    r::text);
+END $$;
+
+-- T3f (123): TAMAMLANMIŞ current (bugün) + hedefin eski geçmişi var → merged.
+CREATE FUNCTION pg_temp.t3f() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user(); ga uuid; gb uuid; r jsonb;
+BEGIN
+  ga := pg_temp.t122_gauntlet(a, pg_temp.t122_today());
+  PERFORM pg_temp.t122_complete(ga);
+  PERFORM pg_temp.t122_event(a, ga);
+  gb := pg_temp.t122_gauntlet(b, pg_temp.t122_today() - 10);
+  r := public.merge_anonymous_user(a, b);
+  RETURN pg_temp.t122_check(
+    r->>'status' = 'merged' AND r->>'moved_cycle' = 'current'
+    AND (SELECT user_id FROM public.daily_gauntlets WHERE id = ga) = b
+    AND EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gb AND user_id = b)
+    AND NOT pg_temp.t122_user_exists(a),
+    r::text);
+END $$;
+
+-- T3g (123, karar 3a): kaynakta TAMAMLANMIŞ previous (bugün-1) + bugünkü satır →
+--      bugünkü taşınır, previous CASCADE ile düşer (v1 "tek satır" kapsamı).
+CREATE FUNCTION pg_temp.t3g() RETURNS text LANGUAGE plpgsql AS $$
+DECLARE a uuid := pg_temp.t122_user(); b uuid := pg_temp.t122_user();
+        gp uuid; gt uuid; r jsonb;
+BEGIN
+  gp := pg_temp.t122_gauntlet(a, pg_temp.t122_today() - 1, 'previous');
+  PERFORM pg_temp.t122_complete(gp);
+  PERFORM pg_temp.t122_event(a, gp);
+  gt := pg_temp.t122_gauntlet(a, pg_temp.t122_today());
+  r := public.merge_anonymous_user(a, b);
+  RETURN pg_temp.t122_check(
+    r->>'status' = 'merged'
+    AND (r->>'moved_gauntlet_id')::uuid = gt
+    AND (SELECT user_id FROM public.daily_gauntlets WHERE id = gt) = b
+    AND NOT EXISTS (SELECT 1 FROM public.daily_gauntlets WHERE id = gp)
+    AND NOT EXISTS (SELECT 1 FROM public.choice_events WHERE gauntlet_id = gp)
+    AND NOT pg_temp.t122_user_exists(a),
     r::text);
 END $$;
 
@@ -257,16 +368,21 @@ SELECT t.n, t.test, pg_temp.t122_isolated(t.fn) AS result
     (1,  'T1  merged (bugün, hedef boş)',              't1'),
     (2,  'T2  target_won (ikisi de bugün)',            't2'),
     (3,  'T3  merged previous (= T6b, bugün-1)',       't3'),
-    (4,  'T3b target_won previous + hedef geçmişi',    't3b'),
-    (5,  'T4a nothing_to_move',                        't4a'),
-    (6,  'T4b already_merged (idempotent)',            't4b'),
-    (7,  'T4c p_from = p_to → 22023',                  't4c'),
-    (8,  'T4d hedef yok → P0002, kaynak korunur',      't4d'),
-    (9,  'T5  context_corrections taşınır',            't5'),
-    (10, 'T6a UTC sınırı: dünkü current taşınmaz',     't6a'),
-    (11, 'T6c UTC-batısı previous bugün-2 taşınır',    't6c'),
-    (12, 'T6d previous bugün-3 pencere dışı',          't6d'),
-    (13, 'T7  grant / INVOKER / search_path / kilit',  't7')
+    (4,  'T3b merged tamamlanmış previous + geçmiş',   't3b'),
+    (5,  'T3c target_won tamamlanmamış previous',      't3c'),
+    (6,  'T3d target_won tamamlanmış + aynı tarih',    't3d'),
+    (7,  'T4a nothing_to_move',                        't4a'),
+    (8,  'T4b already_merged (idempotent)',            't4b'),
+    (9,  'T4c p_from = p_to → 22023',                  't4c'),
+    (10, 'T4d hedef yok → P0002, kaynak korunur',      't4d'),
+    (11, 'T5  context_corrections taşınır',            't5'),
+    (12, 'T6a UTC sınırı: dünkü current taşınmaz',     't6a'),
+    (13, 'T6c UTC-batısı previous bugün-2 taşınır',    't6c'),
+    (14, 'T6d previous bugün-3 pencere dışı',          't6d'),
+    (15, 'T7  grant / INVOKER / search_path / kilit',  't7'),
+    (16, 'T3e merged tamamlanmış previous + hedefte yalnız bugün', 't3e'),
+    (17, 'T3f merged tamamlanmış current + hedef geçmişi',         't3f'),
+    (18, 'T3g bugünkü taşınır, tamamlanmış previous düşer',        't3g')
   ) AS t(n, test, fn)
  ORDER BY t.n;
 
