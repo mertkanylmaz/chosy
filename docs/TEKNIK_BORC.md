@@ -3315,3 +3315,37 @@ semantiği (transfer yeni satış mı?) ürün kararı.
 RC v1 `product_identifier` Play aboneliklerinde `ürün:baseplan` biçiminde
 gelebilir; `mapProductToTier` bunu tanımaz → `PRODUCT_ID_UNMAPPED`. Mevcut
 eşlemenin ortak riski. **Neden şimdi değil:** Android v1 dışı.
+
+## 🟡 Lifetime ve setup-profile ölü kodu (Sprint 4 / 4b) — kalan borçlar (3 Eki 2026)
+
+### 1. Lifetime sunucu tarafı yerinde duruyor
+
+`supabase/functions/process-lifetime-purchase`, `lifetime-counter`,
+`_shared/rcProductMap.ts` / `rcTransfer.ts` lifetime dalları, `is_founding_member`
+ve `claim_lifetime_spot` RPC'leri ile ilgili tablolar silinmedi; istemci çağıranı
+(`app/lifetime.tsx`, `services/lifetimeService.ts`) silindi. Edge Function ve
+migration olduğu için ayrı DUR işi. **Neden şimdi değil:** 4b yalnız istemci.
+
+### 2. Lifetime ürünü istemcide artık eşlenmiyor — gerçek sahip sayısı ölçülmedi
+
+`productIdToTier('com.chosy.lifetime')` ve `planIdToTier('lifetime')` artık
+'free' döner; profil ekranı bunu premium + 'free' = `PROFILE_UNKNOWN_PLAN`
+(plan satırı çizilmez, Sentry) yolunda işler. Gerçek bir lifetime satın alımı
+varsa o kullanıcının `tier` değeri istemcide 'free' olur; `tier`'ın kota/limit
+etkisi bu işte doğrulanmadı. 4b öncesi `lifetime_sales` sayımı alınmadı.
+**Neden şimdi değil:** talimat legacy ürünü bilinmeyen yola düşürmekti.
+
+### 3. Yetim kalan istemci kalıntıları
+
+- `services/authService.ts` `updateUserProfile`: tek çağıranı `setup-profile`
+  idi (auth kodu, dokunulmadı).
+- `locales/*.json`: `setup.*` (9 anahtar) ve `paywall.lifetimeTitle` /
+  `lifetimeBadge` / `lifetimeDesc` / `lifetimeDuration` artık kullanılmıyor.
+- `constants/avatarGlyphs.ts` başlık yorumu (satır 13) silinen
+  `app/setup-profile.tsx`'e atıf yapıyor; `ARCHITECTURE.md` ve
+  `DESIGN_SYSTEM.md` de öyle.
+- Lifetime'ın istemci tipleri/akışları kaldı: `SubscriptionTier` / `PlanId`
+  'lifetime', `PLANS.lifetime`, `TIER_LIMITS.lifetime`, `PaywallBase` lifetime
+  kartı (`paywall_lifetime_enabled`), `PaywallLifetimeSoldout` +
+  `lifetime_soldout` tetikleyicisi, `quotaEngine.ts` `includes('lifetime')`.
+  **Neden şimdi değil:** tip sözleşmesini daraltmak kapsam genişlemesi.

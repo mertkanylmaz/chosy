@@ -731,12 +731,12 @@ function ProfileScreenContent() {
   // ── Plan bilgisi (B-1 / Fix 7) ──
   // Rozet entitlement'tan (`premiumStatus`), plan adi `tier`'dan gelir.
   // Eslenemeyen urun ID'si `tier`'i 'free' birakir: premium + 'free' =
-  // bilinmeyen plan → plan satiri CIZILMEZ (ne 'lifetime' ne "Free") + Sentry.
+  // bilinmeyen/legacy plan (lifetime dahil) → plan satiri CIZILMEZ (ne
+  // "Lifetime" ne "Free") + Sentry.
   // `weekly_legacy` bilinen eski plan: satir yok, Sentry yok.
   const knownPlanTitle: string | null =
     tier === 'annual' ? t('paywall.annualTitle')
       : tier === 'monthly' ? t('paywall.monthlyTitle')
-      : tier === 'lifetime' ? t('paywall.lifetimeTitle')
       : null;
   const isUnknownPremiumPlan =
     premiumStatus === 'premium' && tier !== 'weekly_legacy' && knownPlanTitle === null;
@@ -748,7 +748,7 @@ function ProfileScreenContent() {
    */
   const planLine: string | null = (() => {
     if (premiumStatus !== 'premium' || knownPlanTitle === null) return null;
-    if (tier === 'lifetime' || !expiresAt) return knownPlanTitle;
+    if (!expiresAt) return knownPlanTitle;
     const date = expiresAt.toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-US', {
       day: 'numeric',
       month: 'short',
@@ -1776,8 +1776,7 @@ function ProfileScreenContent() {
                 Tek CTA (K-48: tek entitlement `chosy_plus`). Onceki iki CTA'dan
                 "Founding Member" kaldirildi: bible §7.3 lifetime satisini
                 donduruyor. `lifetime_founding` offering'i RevenueCat'te durur,
-                `/lifetime` route'u kod olarak korunur — yalnizca Profile'dan
-                link verilmez. */}
+                `/lifetime` route'u ve istemci claim akisi silindi (Sprint 4b). */}
             <SectionHeading title={t('profile.proSection')} />
 
             {/* `loading`'de CTA cizilmez — abonelik cozulmeden upsell yok. */}

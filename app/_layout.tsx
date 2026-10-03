@@ -735,7 +735,6 @@ function RootLayoutNav() {
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
               <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="setup-profile" />
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="discover"
@@ -759,10 +758,6 @@ function RootLayoutNav() {
               />
               <Stack.Screen
                 name="paywall"
-                options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
-              />
-              <Stack.Screen
-                name="lifetime"
                 options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
               />
               <Stack.Screen

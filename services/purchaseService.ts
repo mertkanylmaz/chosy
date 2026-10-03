@@ -351,61 +351,6 @@ export async function getOfferings(): Promise<OfferingsResult> {
   }
 }
 
-// ─── Lifetime Offering ──────────────────────────────────────────────────────
-
-/**
- * RevenueCat'ten lifetime_founding offering paketlerini döndürür.
- * Lifetime ürünü ayrı offering'te tutulur — paywall'daki default'tan ayrı.
- * Fallback: default offering'teki lifetime paketini arar.
- */
-export async function getLifetimeOffering(): Promise<OfferingsResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] getLifetimeOffering: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getLifetimeOffering' } },
-    );
-    return { items: [], errorKind: 'not_initialized' };
-  }
-
-  try {
-    const offerings = await Purchases.getOfferings();
-
-    // Önce ayrı lifetime offering'i dene
-    const lifetimeOffering = offerings.all['lifetime_founding'];
-    if (lifetimeOffering?.availablePackages?.length) {
-      return { items: lifetimeOffering.availablePackages };
-    }
-
-    // Fallback: default offering'teki lifetime paketini bul
-    const current = offerings.current;
-    if (current) {
-      const lifetimePkg = current.availablePackages.filter(
-        (p) => p.product.identifier === 'com.chosy.lifetime',
-      );
-      if (lifetimePkg.length > 0) return { items: lifetimePkg };
-    }
-
-    // Lifetime ürünü hiçbir yerde yok. Eskiden buradan "tüm paketler"
-    // dönüyordu — lifetime ekranında lifetime OLMAYAN ürünleri 89.99
-    // iddiasıyla gösterme riski. Paketler veri kaybı olmasın diye hâlâ
-    // dönüyor ama errorKind ile işaretli: çağıran render ETMEMELİ.
-    logger.error(
-      '[purchases] Lifetime offering bulunamadi',
-      new Error('no lifetime offering'),
-      { code: 'RC_NO_LIFETIME_OFFERING' },
-    );
-    return { items: current?.availablePackages ?? [], errorKind: 'no_data' };
-  } catch (err) {
-    const errorKind = classifyPurchaseError(err);
-    logger.error('[purchases] Lifetime offering hatasi', err, {
-      code: 'RC_LIFETIME_OFFERINGS_FAILED',
-      extra: { errorKind },
-    });
-    return { items: [], errorKind };
-  }
-}
-
 // ─── Satın Alma ──────────────────────────────────────────────────────────────
 
 /**
