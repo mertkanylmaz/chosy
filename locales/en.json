@@ -165,7 +165,7 @@
     "moodCardEmotionalTitle": "Emotional",
     "moodCardEmotionalSubtitle": "An emotional journey awaits",
     "filterTrigger": "Filter",
-    "filterActiveCount": "{{count}} active",
+    "filterActiveCount": "%{count} active",
     "filterSheetTitle": "Filters",
     "filterClear": "Clear",
     "filterApply": "Apply"

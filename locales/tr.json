@@ -773,8 +773,8 @@
     "exhaustedDaily": "Bugünkü arama hakkın doldu. Yarın tekrar gel veya yükselt.",
     "exhaustedWeekly": "Haftalık limitine ulaştın. Daha fazlası için yükselt.",
     "exhaustedFree": "Ücretsiz arama hakkını kullandın. Daha fazlası için Chosy Pro'ya yükselt.",
-    "limitInfo": "Bugun %{used}/%{limit} kullanildi",
-    "upgradeButton": "Plus'a Yukselt",
+    "limitInfo": "Bugün %{used}/%{limit} kullanıldı",
+    "upgradeButton": "Plus'a Yükselt",
     "waitUntil": "%{time} tarihinde sıfırlanır"
   },
   "paywall": {
