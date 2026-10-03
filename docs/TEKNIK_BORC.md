@@ -3402,3 +3402,24 @@ Kod DEĞİŞTİRİLMEDİ (auth kodu, CTO kararı bekliyor).
 4. **Risk:** `auth.users`'ta kalan satırda Apple e-postası (veya relay adresi)
    durabilir — yalnızca Apple'a bağlanmış hesaplar için; anonim hesaplarda e-posta yok.
    Elle silme bunu da temizler.
+
+## 🟠 merge_anonymous_user 123 sonrası arşiv ve taşıma notları (Sprint 9, 3 Eki 2026)
+
+Kod DEĞİŞTİRİLMEDİ. Migration 123 (tamamlanmış anonim satır geçmişe rağmen taşınır)
+migration-guard'ın bulduğu dört notu kayda geçirir; hepsi bilinçli kabul.
+
+1. **Eskiyen yorum:** `supabase/functions/get-archive-status/index.ts:138-139`
+   "previous kullanıcı başına en fazla bir tane ve en erken satırdır" diyor. 123 sonrası
+   geçmişi olan hedefte taşınan previous en erken satır olmayabilir; hedefin kendi eski
+   previous satırı varsa kullanıcıda iki previous da olabilir. Davranış bozulmuyor:
+   `effectiveArchiveAnchor` (`_shared/previousCycle.ts:210`) min-tabanlı,
+   `decidePreviousCycle` 2+ satırda güvenli şekilde NOT_ELIGIBLE döner. Yalnız yorum eskidi.
+2. **`fetchPersonalDays` filtresi:** `get-archive-status/index.ts:185` `.eq('cycle','current')`
+   uygular. Taşınan previous satırı için hedefin o tarihte current satırı yoksa tarih
+   arşivde "kaçırıldı" görünür; kullanıcı o gün şampiyon seçmiş olsa da. **Ürün kararı
+   olarak kayıt:** 122'ye göre regresyon değil (122'de satır siliniyordu); giderilmedi.
+3. **3a sınırı (v1 "tek satır" kapsamı):** Kaynakta hem tamamlanmış previous hem bugünkü
+   satır varsa (anonim kullanıcı 18:00 öncesi previous'u bitirip sonrası bugünkünü
+   açtıysa) bugünkü taşınır, previous CASCADE ile düşer. Test: `122_merge_tests.sql` T3g.
+4. **Geri alma:** 123'ü geri almak SQL Editor'da değil, 122 gövdesi + 122 COMMENT'i içeren
+   yeni migration (124) ile yapılır (123 başlığında yazılı).
