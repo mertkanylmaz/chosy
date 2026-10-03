@@ -28,7 +28,6 @@
     "enrich:imdb": "tsx scripts/enrich-imdb-ratings.ts",
     "enrich:metadata": "tsx scripts/enrich-films-metadata.ts",
     "profile-films": "tsx scripts/profile-films.ts",
-    "seed-database": "tsx scripts/seed-database.ts",
     "seed:films": "tsx scripts/seed-films-to-db.ts",
     "db:verify": "tsx scripts/verify-db-state.ts",
     "db:tier-stats": "tsx scripts/verify-db-state.ts",

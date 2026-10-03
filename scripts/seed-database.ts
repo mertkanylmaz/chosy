@@ -1,8 +1,16 @@
 /**
  * Film ve profil verilerini Supabase'e yükler.
- * Çalıştırmak için: npx tsx scripts/seed-database.ts
  *
- * Gerekli env var: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+ * ⛔ DEVRE DIŞI (P-1c C, 3 Eki 2026). Bu script `poster_url`/`backdrop_url`'e
+ * TMDb `poster_path`/`backdrop_path`'i HAM yazar (`/abc.jpg`, geçerli URI
+ * değil — `seedFilms` aşağıda) ve `tmdb_id` üzerinden UPSERT yapar: yeniden
+ * koşarsa listesindeki filmlerin düzgün tam URL'lerini ham yolla EZER.
+ * Canlıdaki 915 ham poster satırının kaynağı bu script (2026-03-09 / 03-20).
+ * `package.json` script'i kaldırıldı; bilinçli koşum için açık onay gerekir:
+ *
+ *   $env:ALLOW_SEED = '1'; npx tsx scripts/seed-database.ts
+ *
+ * Gerekli env var: ALLOW_SEED=1, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  * Girdi:           data/films-raw.json
  *                  data/films-profiled.json
  */
@@ -91,6 +99,15 @@ interface FilmProfileRow {
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
+
+// P-1c C: açık onay olmadan hiçbir şey yapılmaz — DB'ye bağlanmadan çıkılır.
+if (process.env.ALLOW_SEED !== '1') {
+  console.error(
+    'Hata: seed-database.ts devre dışı — ham poster_path yazar ve mevcut tam URL\'leri ezer. ' +
+      'Bilinçli koşum için ALLOW_SEED=1 ver (bkz. dosya başı).',
+  );
+  process.exit(1);
+}
 
 const SUPABASE_URL =
   process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
