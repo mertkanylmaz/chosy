@@ -19,6 +19,7 @@
     "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",
+    "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",
     "test:config-store": "deno test tests/config/configStore.test.ts",
     "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcMissingUserDecision.test.ts _shared/rcTransfer.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",

@@ -21,6 +21,7 @@
     "tests/game-system",
     "tests/games",
     "tests/identity",
+    "tests/net",
     "tests/gauntlet",
     "tests/profile",
     "tests/subscription",

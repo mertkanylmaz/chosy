@@ -3,10 +3,12 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
 import { resolveIsOnline, resolveForcedHttpError } from './networkStatus';
 import { isE2ETestMode } from '@/utils/e2eTestMode';
+import { decideFetchPolicy, retryDelayMs, urlPath } from '@/utils/fetchPolicy';
 
 /**
  * K-42 Maestro iOS override (DUR NOKTASI onaylı). `setAirplaneMode`
@@ -75,6 +77,78 @@ function requestUrl(input: string | Request | URL): string {
   return String(input);
 }
 
+/**
+ * ── Zaman aşımı + tek yeniden deneme (Sprint 10c) ───────────────────────────
+ * Karar `utils/fetchPolicy.ts`'te (metot+yol → süre/deneme). Burası yalnız
+ * uygular. Zaman aşımında `fetch` kendi yerel `AbortError`'ını fırlatır ve bu
+ * olduğu gibi çağırana gider — yeni hata tipi/metni YOK; ekranların mevcut
+ * loadError/Sentry yolu aynen işler. Yalnız yanıt BAŞLIKLARI zaman aşımına
+ * tabidir (gövde okuması değil).
+ *
+ * Çağıranın `signal`'i dinlenir: iptal edilirse bizim denetleyicimiz de
+ * iptal olur; bu bir zaman aşımı sayılmaz → yeniden deneme ve Sentry YOK.
+ */
+const timeoutReported = new Set<string>();
+
+/** Oturum başına yol başına en fazla 1 capture. Yalnız yol — sorgu/PII yok. */
+function reportTimeout(method: string, url: string, timeoutMs: number): void {
+  const path = urlPath(url);
+  if (timeoutReported.has(path)) return;
+  timeoutReported.add(path);
+  Sentry.captureMessage('network_request_timeout', {
+    level: 'warning',
+    tags: { path, method },
+    extra: { timeout_ms: timeoutMs },
+  });
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithPolicy(
+  input: string | Request | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  const method = (init?.method ?? (typeof input === 'object' && 'method' in input ? input.method : 'GET')).toUpperCase();
+  const url = requestUrl(input);
+  const policy = decideFetchPolicy(method, url);
+  if (policy === null) {
+    return fetch(input, init);
+  }
+
+  const callerSignal = init?.signal ?? (typeof input === 'object' && 'signal' in input ? input.signal : undefined);
+
+  for (let attempt = 0; ; attempt += 1) {
+    if (callerSignal?.aborted) {
+      // Yerel AbortError'ı fetch'in kendisi üretsin.
+      return fetch(input, { ...init, signal: callerSignal });
+    }
+
+    const controller = new AbortController();
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, policy.timeoutMs);
+    const onCallerAbort = () => controller.abort();
+    callerSignal?.addEventListener('abort', onCallerAbort);
+
+    try {
+      return await fetch(input, { ...init, signal: controller.signal });
+    } catch (err) {
+      if (!timedOut) throw err;
+      reportTimeout(method, url, policy.timeoutMs);
+      if (attempt >= policy.retries) throw err;
+    } finally {
+      clearTimeout(timer);
+      callerSignal?.removeEventListener('abort', onCallerAbort);
+    }
+
+    await sleep(retryDelayMs(Math.random()));
+  }
+}
+
 const supabaseFetch: typeof fetch = async (input, init) => {
   if (isE2ETestMode()) {
     const online = await resolveIsOnline();
@@ -89,7 +163,7 @@ const supabaseFetch: typeof fetch = async (input, init) => {
       });
     }
   }
-  return fetch(input, init);
+  return fetchWithPolicy(input, init);
 };
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

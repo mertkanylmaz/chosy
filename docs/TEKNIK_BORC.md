@@ -3437,3 +3437,10 @@ migration-guard'ın bulduğu dört notu kayda geçirir; hepsi bilinçli kabul.
 ## Sprint 10b — app_config
 
 - app_config bayrak değişikliği en geç 5 dk'da yansır (Kural 6, v1.40).
+
+## Sprint 10c — ağ zaman aşımı
+
+- Zaman aşımı yalnızca yanıt BAŞLIĞINA uygulanır; gövde okuması takılırsa (gövde takılması) korunmuyor.
+- Ham `fetch` çağıranlar (`merge-anonymous-user`, `delete-account`) `supabaseFetch`'i atlar, zaman aşımsızdır.
+- `parse-mood` ve `rerank-films` kendi `AbortController`'ını taşır (sarmalayıcıdan geçmez).
+- `network_request_timeout` (Sentry) sayısı OTA sonrası izlenecek. Eşik: oturum başına >3 ise süreleri gevşet.
