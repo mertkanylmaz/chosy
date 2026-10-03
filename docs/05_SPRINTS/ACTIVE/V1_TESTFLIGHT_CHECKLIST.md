@@ -287,6 +287,28 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       `games.result_poster` breadcrumb'ı **yok**. Poster URL'i w780 (canlıda
       sunucu `original` veriyor; Deno testi dönüşümü doğruluyor, cihaz yalnız
       yüklenmeyi doğrular).
+      ⚠️ P-2 (`e29d6a1`) içeren build'de Spotlight sonucu poster **çizmez**
+      (`hidePoster`, kare çizilir) — bu build'de N10 yerine N11 geçerli. N10'un
+      poster kontrolü P-2 öncesi build içindir.
+- [ ] N11. **Spotlight 16:9 kare + sonuç reveal + geri (P-2).** Build
+      `2155e1a`, `e29d6a1`, `e2518a7` commit'lerini içermeli. Beau Travail
+      günü (2026-10-04) ya da o günün bulmacası:
+      - Oyun ekranında kutu 16:9; Beau Travail'de sağdaki figür (baş + gövde)
+        kutunun **içinde**, kare yanlardan kırpılmıyor.
+      - **SE ve büyük ekranda (Pro Max) aynı kare** görünüyor — yalnız ölçek farkı.
+      - SE: harf klavyesi + arama kutusu ekranda; iki satırlık başlıkta üst bölge
+        ~5pt kayabilir (geometri testi), aksiyon barı itilmiyor.
+      - Bitir — üç yol ayrı ayrı: tahminle kazan · harfle hakları tüket · yanlış
+        tahminle hakları tüket → sonuç ekranında aynı kutu bitiş anındaki
+        bulanıklıktan **netleşerek akıyor** (~600ms), boş kare/flaş yok; poster yok.
+        Film adı ResultCard'da önceki gibi beliriyor.
+      - Uygulamayı öldür-aç → kart üzerinden sonuç: kare **animasyonsuz net**.
+      - **Reduce Motion** açık → bitişte kare anında net.
+      - Sonuç ekranında **Watch Tonight** butonu ekran içinde (SE dahil,
+        kaydırmadan ya da en az P-2 öncesi kadar yukarıda).
+      - Buton etiketi EN "Back" / TR "Geri". Kart girişinde → champion'a dönüyor.
+        **Bildirim girişinde** (geçmiş yok) → Home'a (`/(tabs)`) gidiyor, ölü buton yok.
+      - Share Score görselinde kare de poster de yok (değişmedi).
 
 ---
 
