@@ -16,7 +16,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image } from 'expo-image';
 import { CloudSlash, Eye } from 'phosphor-react-native';
 import Animated, {
   FadeIn,
@@ -51,6 +50,7 @@ import type {
 } from '@/types/game';
 
 import { SPOTLIGHT_MAX_BLUR } from './constants';
+import { SpotlightStill, type StillReveal } from './SpotlightStill';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
@@ -203,6 +203,11 @@ export function SpotlightGame() {
   const [dnaUpdated, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
   const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  /**
+   * Sonuc karesinin netlesmesi (P-2): bu oturumda biten oyun gecisle
+   * netlesir, yeniden acilan bitmis oyun animasyonsuz net gelir.
+   */
+  const [stillReveal, setStillReveal] = useState<Exclude<StillReveal, 'none'>>('static');
 
   const loadPuzzle = useCallback(async () => {
     try {
@@ -236,6 +241,7 @@ export function SpotlightGame() {
 
       if (progress?.completed) {
         setWon(progress.won);
+        setStillReveal('static');
         setScreenState('completed');
         return;
       }
@@ -289,6 +295,7 @@ export function SpotlightGame() {
           if (res.revealed_solution) setRevealedFilm(res.revealed_solution);
           if (res.why_this_movie) setWhyThisMovie(res.why_this_movie);
           hapticMedium();
+          setStillReveal('animate');
           setScreenState('completed');
           trackGameCompleted({
             gameId: 'spotlight',
@@ -346,6 +353,7 @@ export function SpotlightGame() {
           if (res.why_this_movie) setWhyThisMovie(res.why_this_movie);
           if (res.won) hapticSuccess();
           else hapticMedium();
+          setStillReveal('animate');
           setScreenState('completed');
           trackGameCompleted({
             gameId: 'spotlight',
@@ -398,6 +406,8 @@ export function SpotlightGame() {
 
   const attemptsLeft = Math.max(0, SPOTLIGHT_MAX_ATTEMPTS - attempts);
   const blurAmount = blurForProgress(revealedMap.size, puzzleData?.letter_count ?? 0);
+  /** Sonuc ekraninda kare cizilebilir mi — yoksa ResultCard posteri kalir */
+  const hasStill = Boolean(puzzleData?.backdrop_url);
 
   // ─── Render: durum ekranlari ──────────────────────────────────────────────
 
@@ -458,7 +468,21 @@ export function SpotlightGame() {
           contentContainerStyle={[styles.completedContainer, { paddingTop: topInset }]}
           showsVerticalScrollIndicator={false}
         >
+          {/*
+            Ayni kare kutusu, sonucta netlesir (P-2). Alt kat bitis anindaki
+            bulaniklikta — gecis oyuncunun son gordugu kareden baslar. Kare
+            varken ResultCard posteri cizmez: tek kahraman gorsel.
+          */}
+          {hasStill && (
+            <SpotlightStill
+              uri={puzzleData?.backdrop_url ?? ''}
+              blurRadius={blurAmount}
+              reveal={stillReveal}
+              styles={styles}
+            />
+          )}
           <ResultCard
+            hidePoster={hasStill}
             solved={won}
             attempts={attempts}
             maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
@@ -519,14 +543,12 @@ export function SpotlightGame() {
           Kutu kaynakla ayni oranda (16:9, P-2): cover kirpmaz. Ust bolgede
           artan alan maske ile aksiyon bari arasinda kalir.
         */}
-        <Animated.View entering={FadeIn.duration(400)} style={styles.stillWrap}>
-              <Image
-                source={{ uri: puzzleData?.backdrop_url ?? '' }}
-                style={styles.still}
-                contentFit="cover"
-                blurRadius={blurAmount}
-                transition={300}
-              />
+        <SpotlightStill
+          uri={puzzleData?.backdrop_url ?? ''}
+          blurRadius={blurAmount}
+          reveal="none"
+          styles={styles}
+        >
               {/*
             Kalan hak rozeti — yuzen kontrol, yani chrome. Duz scrim yerine cam:
             altinda gercekten gorsel akiyor, saglama sorusu geciliyor.
@@ -543,7 +565,7 @@ export function SpotlightGame() {
                   {t('games.spotlight.attempts_left', { count: attemptsLeft })}
                 </Text>
               </GlassSurface>
-            </Animated.View>
+            </SpotlightStill>
 
             {/* Baslik maskesi */}
             <View style={styles.maskBlock}>

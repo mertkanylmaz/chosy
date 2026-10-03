@@ -60,6 +60,15 @@ export const BONUS_CARD_ENTRY = {
 } as const;
 
 /**
+ * Spotlight sonuç karesi — bulanık kat → net kat çapraz geçişi (P-2). Işık
+ * sızması süresi yeniden kullanılır (§7.2): kare "aydınlanır". Yalnız oturum
+ * içi bitişte; bitmiş oyunun yeniden açılışında ve Reduce Motion'da anında net.
+ */
+export const SPOTLIGHT_STILL_REVEAL = {
+  duration: DISSOLVE_DURATION.lightBleed,
+} as const;
+
+/**
  * Dokunma onayı — seçim sunucuya giderken SEÇİLMEYEN posterin opaklığı.
  * §7.1 "seçim onayı" bir Kesme'dir: 0ms, animasyonsuz uygulanır (Reduce
  * Motion'da da aynı). Elenme opaklığından (0.25) bilinçli olarak AYRI —

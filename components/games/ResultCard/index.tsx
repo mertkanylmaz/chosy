@@ -44,6 +44,7 @@ import {
 } from '@/utils/gameAnalytics';
 import type { DimensionProgress, RankProgress } from '@/types/game';
 
+import { resultHeroMode } from './heroMode';
 import { styles } from './styles';
 
 interface ResultCardProps {
@@ -100,6 +101,11 @@ interface ResultCardProps {
   onBackToHub?: () => void;
   /** Sonuc basligi yerine oyuna ozel mesaj (orn. "3 tahminde buldun!") */
   resultMessage?: string;
+  /**
+   * Poster cizilmez — cagiran kendi kahraman gorselini cizer (Spotlight
+   * karesi, P-2). Varsayilan false: diger oyunlarda davranis degismez.
+   */
+  hidePoster?: boolean;
 }
 
 /** XP hesaplama — erken tahmin = daha fazla XP */
@@ -134,6 +140,7 @@ export function ResultCard({
   countdownLabel,
   onBackToHub,
   resultMessage,
+  hidePoster = false,
 }: ResultCardProps) {
   const { t } = useLanguage();
   const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
@@ -151,7 +158,8 @@ export function ResultCard({
 
   useEffect(() => {
     setPosterFailed(false);
-    if (poster.reason !== 'invalid_uri') return;
+    // Cizilmeyecek poster icin uyari gurultu olur (hidePoster yalniz Spotlight)
+    if (hidePoster || poster.reason !== 'invalid_uri') return;
     Sentry.captureException(new Error('ResultCard poster URL gecersiz (http(s) degil)'), {
       level: 'warning',
       tags: { component: 'ResultCard', game_type: gameType ?? 'unknown', film_id: posterFilmId },
@@ -171,7 +179,12 @@ export function ResultCard({
     setPosterFailed(true);
   }, [posterFilmId, gameType, poster.resized]);
 
-  const showPlaceholder = poster.reason === 'invalid_uri' || posterFailed;
+  const heroMode = resultHeroMode({
+    hidePoster,
+    invalidUri: poster.reason === 'invalid_uri',
+    posterFailed,
+    hasUrl: poster.url !== null,
+  });
   // Use server XP if provided, otherwise fall back to local calculation
   const xp = xpAwarded ?? calculateXP(solved, attempts, maxAttempts);
   const hasDnaReveal = xpAwarded != null; // Edge Function path provides xpAwarded
@@ -204,20 +217,19 @@ export function ResultCard({
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
         {/* ── Perde: cozum filmi kahraman, kesif hedefi bu ── */}
         <View style={styles.filmHero}>
-          {showPlaceholder ? (
+          {heroMode === 'placeholder' && (
             <View style={[styles.poster, styles.posterPlaceholder]} accessible={false}>
               <FilmSlate size={40} color={Colors.textTertiary} weight="thin" />
             </View>
-          ) : (
-            poster.url !== null && (
-              <Image
-                source={{ uri: poster.url }}
-                style={styles.poster}
-                contentFit="cover"
-                transition={200}
-                onError={handlePosterError}
-              />
-            )
+          )}
+          {heroMode === 'poster' && poster.url !== null && (
+            <Image
+              source={{ uri: poster.url }}
+              style={styles.poster}
+              contentFit="cover"
+              transition={200}
+              onError={handlePosterError}
+            />
           )}
           <Text style={styles.filmTitle}>{filmTitle}</Text>
           {filmYear > 0 && (

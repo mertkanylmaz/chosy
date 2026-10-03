@@ -96,6 +96,10 @@ export const createStyles = (theme: GameTheme) => {
     width: '100%',
     height: '100%',
   },
+  /** Sonucta net kat — bulanik katin tam ustunde (SpotlightStill) */
+  stillLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
   /**
    * Kalan hak rozeti — gorselin sag ustunde yuzen kontrol, yani chrome.
    * Konumlandirma GlassSurface'in DIS node'una gider; yuzey/kenarlik
@@ -204,6 +208,7 @@ export const createStyles = (theme: GameTheme) => {
   },
 
   completedContainer: {
+    gap: Theme.spacing.md,
     paddingBottom: Theme.spacing.xl,
   },
   });
