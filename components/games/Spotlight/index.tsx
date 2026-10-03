@@ -50,6 +50,7 @@ import type {
   WhyThisMovieText,
 } from '@/types/game';
 
+import { SPOTLIGHT_MAX_BLUR } from './constants';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
@@ -65,8 +66,8 @@ const SPOTLIGHT_MAX_ATTEMPTS = 6;
 /** Ekran klavyesi duzeni */
 const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
 
-/** En yuksek bulaniklik — hic harf acilmamisken */
-const MAX_BLUR = 40;
+/** En yuksek bulaniklik — hic harf acilmamisken (tek kaynak: ./constants) */
+const MAX_BLUR = SPOTLIGHT_MAX_BLUR;
 
 /**
  * Ust bolgede gorselin disindaki sabit dikey yuk: gorselin ust marji

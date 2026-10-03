@@ -9,6 +9,12 @@
  *   outline → dolgusuz, `graphite` kenar, `bone` metin.
  *
  * Haptik ve iş mantığı çağıran yerde (§8, OutlineAction sözleşmesi).
+ *
+ * S-2: `iconOnly` — ikincil ikon satırı (Sonraya bırak / Paylaş). 44pt kare
+ * dokunma hedefi, metin çizilmez; `label` VoiceOver etiketi olarak kalır.
+ * `selected` → ikon dolu çizilir ve eylem tamamlanmış olarak okunur
+ * (ör. "Kaydedildi"); devre dışı sönükleştirmesi uygulanmaz, çünkü ikon
+ * tek başına "kullanılamaz" gibi görünürdü.
  */
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
@@ -29,6 +35,10 @@ interface ChampionActionButtonProps {
   disabled?: boolean;
   /** VoiceOver'a "meşgul" — görsel durumla aynı şey değil (PrimaryAction ile aynı). */
   busy?: boolean;
+  /** S-2: yalnız ikon, 44pt kare (ikincil ikon satırı). */
+  iconOnly?: boolean;
+  /** S-2: eylem tamamlandı — ikon dolu, sönükleştirme yok. */
+  selected?: boolean;
 }
 
 export function ChampionActionButton({
@@ -38,6 +48,8 @@ export function ChampionActionButton({
   onPress,
   disabled = false,
   busy = false,
+  iconOnly = false,
+  selected = false,
 }: ChampionActionButtonProps): React.JSX.Element {
   const onDark = variant === 'outline';
   const contentColor = onDark ? color.text.primary : color.surface.base;
@@ -46,19 +58,25 @@ export function ChampionActionButton({
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.8}
-      style={[styles.button, styles[variant], disabled && styles.disabled]}
+      style={[
+        iconOnly ? styles.iconButton : styles.button,
+        styles[variant],
+        disabled && !selected && styles.disabled,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={label}
-      accessibilityState={{ disabled, busy }}
+      accessibilityState={{ disabled, busy, selected }}
     >
       <IconComponent
         size={size.iconAction}
         color={contentColor}
-        weight={variant === 'outline' ? 'regular' : 'fill'}
+        weight={variant === 'outline' && !selected ? 'regular' : 'fill'}
       />
-      <Text style={[styles.text, onDark ? styles.textOnDark : styles.textOnFill]} numberOfLines={1}>
-        {label}
-      </Text>
+      {!iconOnly && (
+        <Text style={[styles.text, onDark ? styles.textOnDark : styles.textOnFill]} numberOfLines={1}>
+          {label}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 }

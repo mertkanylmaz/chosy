@@ -1476,7 +1476,18 @@
     "dismissTomorrow": "Never mind, tomorrow",
     "bonus": {
       "label": "Today's bonus",
-      "title": "Spotlight"
+      "title": "Spotlight",
+      "subtitle": {
+        "one": "Guess the film from a blurred frame · %{count} try",
+        "other": "Guess the film from a blurred frame · %{count} tries"
+      },
+      "subtitleNeutral": "Guess the film from a blurred frame",
+      "continueHint": "You're mid-game. Pick up where you left off.",
+      "solvedHint": "Solved. A new frame tomorrow.",
+      "failedHint": "Not this time. A new frame tomorrow.",
+      "play": "Play",
+      "continue": "Continue",
+      "a11yHint": "Opens today's Spotlight puzzle"
     },
     "share": {
       "action": "Share",

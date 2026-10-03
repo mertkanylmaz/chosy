@@ -51,6 +51,7 @@ import {
   useLastChampion,
 } from '@/components/gauntlet/WaitingChampion';
 import {
+  BONUS_CARD_ENTRY,
   CHAMPION_HAPTIC_DELAY,
   DISSOLVE_DURATION,
   REDUCED_MOTION_DURATION,
@@ -74,6 +75,7 @@ import {
 import { subscribeToReconnect } from '@/services/networkStatus';
 import { decidePreviousCycleProbeNow, markPreviousCycle } from '@/services/previousCycle';
 import { isE2ETestMode } from '@/utils/e2eTestMode';
+import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import {
   getPermissionState,
@@ -299,6 +301,14 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [defenderFilm, setDefenderFilm] = useState<GauntletFilm | null>(null);
   const [animateReveal, setAnimateReveal] = useState(false);
+  /**
+   * S-2: Spotlight kartının sarmalayıcısı mount edildi mi. SALT GÖRSEL —
+   * oyun mantığına girmez. Canlı finalde reveal'ın görsel bitişinden
+   * `BONUS_CARD_ENTRY.delay` sonra, resume'da ve Reduce Motion'da reveal
+   * bildirir bildirmez true olur. Sarmalayıcı (ve `onCardLayout`) ondan önce
+   * YOK: champion ask'inin dwell sayacı görünmeyen kartta başlamasın.
+   */
+  const [bonusCardMounted, setBonusCardMounted] = useState(false);
   const [refreshesRemaining, setRefreshesRemaining] = useState(0);
   /**
    * E-19: sunucu bu gauntlet'in editoryal takvimden geldiğini bildirdi ve
@@ -374,6 +384,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bonusEntryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
@@ -743,6 +754,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (hapticTimerRef.current) clearTimeout(hapticTimerRef.current);
+      if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1196,6 +1208,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             },
           );
         }
+        // S-2: önceki bir şampiyondan kalan kart/zamanlayıcı bu reveal'a taşınmaz.
+        if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
+        setBonusCardMounted(false);
         setChampion(result.champion);
         setAnimateReveal(true); // canlı final: 720ms kara boşluk (§7.3)
         completedDateKeyRef.current = localDateKey();
@@ -1387,6 +1402,54 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     bottomInset: tabBarInset,
   });
 
+  // ── Spotlight kartının girişi (S-2) ────────────────────────────────────────
+  //
+  // `ChampionReveal` sekansın görsel bitişini bildirir (resume'da mount'ta).
+  // Canlı finalde kart `BONUS_CARD_ENTRY.delay` sonra mount edilir; resume'da
+  // ve Reduce Motion'da hemen. Mount anı = `onCardLayout` = dwell'in başlangıcı.
+  const handleRevealSettled = useCallback(() => {
+    if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
+    if (!animateReveal || isReducedMotion) {
+      setBonusCardMounted(true);
+      return;
+    }
+    bonusEntryTimerRef.current = setTimeout(() => {
+      bonusEntryTimerRef.current = null;
+      if (mountedRef.current) setBonusCardMounted(true);
+    }, BONUS_CARD_ENTRY.delay);
+  }, [animateReveal, isReducedMotion]);
+
+  /**
+   * S-2 dwell kanıtı (yalnız __DEV__, prod'da `logger.log` sessiz): kartın
+   * mount anı ve ardından gösterilen ask. `ask_shown` PostHog event'i
+   * `trigger`'ı taşır; burada ≈8000 ms fark dwell'in ateşlendiğini gösterir.
+   */
+  const bonusCardMountedAtRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!bonusCardMounted) {
+      bonusCardMountedAtRef.current = null;
+      return;
+    }
+    bonusCardMountedAtRef.current = Date.now();
+    if (__DEV__) {
+      logger.log('[S-2 dwell] spotlight kartı mount edildi', {
+        windowHeight,
+        tabBarInset,
+        resumed: !animateReveal,
+      });
+    }
+    // Yalnız mount geçişinde — ölçü değişimi yeni bir mount değil.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bonusCardMounted]);
+  useEffect(() => {
+    if (!__DEV__ || championAsk.askType === null) return;
+    const mountedAt = bonusCardMountedAtRef.current;
+    logger.log('[S-2 dwell] ask gösterildi', {
+      askType: championAsk.askType,
+      msSinceCardMount: mountedAt === null ? null : Date.now() - mountedAt,
+    });
+  }, [championAsk.askType]);
+
   // ── Işık sızması ───────────────────────────────────────────────────────────
 
   /**
@@ -1552,6 +1615,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
               cycle={cycleModeRef.current}
+              onRevealSettled={handleRevealSettled}
             />
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
@@ -1561,11 +1625,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
                 noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
                 V-3 Tur G2 (C7, V3-D6): yüzen/mutlak konum kaldırıldı —
-                kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu
-                aynı: şampiyon varsa. */}
-            <View style={styles.bonusCardInline} onLayout={championAsk.onCardLayout}>
-              <SpotlightBonusCard onPress={championAsk.onSpotlightPress} />
-            </View>
+                kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu:
+                şampiyon varsa VE giriş anı geldiyse (S-2, `bonusCardMounted`).
+                İçeriğin sonunda olduğu için geç mount üstteki düzeni kaydırmaz. */}
+            {bonusCardMounted && (
+              <View style={styles.bonusCardInline} onLayout={championAsk.onCardLayout}>
+                <SpotlightBonusCard
+                  gameType="spotlight"
+                  entry={animateReveal ? 'reveal' : 'resume'}
+                  onPress={championAsk.onSpotlightPress}
+                />
+              </View>
+            )}
           </ScrollView>
 
           {/* K-42 (C.9b-UI): bayat gösterge — V-3 Tur G2'den beri hero'nun

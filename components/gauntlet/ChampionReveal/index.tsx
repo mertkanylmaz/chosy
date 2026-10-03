@@ -45,6 +45,11 @@
  *
  * V-4 Tur B: hero ~%60 → ~%46 ve blok boşlukları sıkılaştı — ≥ 844pt'de üç
  * eylem kaydırmadan görünür (bütçe styles.ts `body` notunda). Mantık aynı.
+ *
+ * S-2 (3 Eki 2026): tek birincil eylem (Watch Now; yoksa dolgulu "Sonraya
+ * bırak") + ikincil ikon satırı — Spotlight kartı fold'a girer. Kaydetme,
+ * paylaşım ve Watch Now mantığı DEĞİŞMEDİ. `onRevealSettled` sekansın görsel
+ * bitişini bildirir (kartın giriş zamanlaması GauntletShell'de).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
@@ -174,6 +179,12 @@ interface ChampionRevealProps {
    * ilk filmi. Yalnız etiketi değiştirir; davranış aynı.
    */
   cycle?: CycleMode;
+  /**
+   * S-2: sekansın GÖRSEL bitişi — meta/eylem geçişi tamamlandığında bir kez.
+   * Resume yolunda (`animateReveal: false`) mount'ta hemen çağrılır. Salt
+   * bildirim: reveal zamanlaması bu prop'tan etkilenmez.
+   */
+  onRevealSettled?: () => void;
 }
 
 /** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
@@ -187,6 +198,7 @@ export function ChampionReveal({
   rounds,
   gauntletId,
   cycle = 'current',
+  onRevealSettled,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language, region } = useLanguage();
   const router = useRouter();
@@ -206,6 +218,7 @@ export function ChampionReveal({
     region,
   );
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -213,8 +226,24 @@ export function ChampionReveal({
     return () => {
       mountedRef.current = false;
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
     };
   }, []);
+
+  /** S-2: `onRevealSettled` mount başına en fazla bir kez. */
+  const onRevealSettledRef = useRef(onRevealSettled);
+  onRevealSettledRef.current = onRevealSettled;
+  const settledFiredRef = useRef(false);
+  const fireSettled = useCallback(() => {
+    if (settledFiredRef.current || !mountedRef.current) return;
+    settledFiredRef.current = true;
+    onRevealSettledRef.current?.();
+  }, []);
+
+  // Resume yolu: sekans yok, her şey zaten görünür.
+  useEffect(() => {
+    if (!animateReveal) fireSettled();
+  }, [animateReveal, fireSettled]);
 
   /** Kısa ömürlü onay/hata metni — paylaşım ve kaydetme aynı satırı kullanır. */
   const showNotice = useCallback((message: string) => {
@@ -311,6 +340,10 @@ export function ChampionReveal({
   );
   const watchLink = providersState === 'ok' ? providers?.link : undefined;
   const showWatchNow = watchLink !== undefined && watchLink !== '' && providerCount > 0;
+  /** S-2: Watch Now birincilse "Sonraya bırak" ikon satırına iner. */
+  const showSaveIcon = showWatchNow && gauntletId !== undefined;
+  const saveLabel =
+    saveState === 'saved' ? t('gauntlet.saveForLater.saved') : t('gauntlet.saveForLater.action');
 
   /** Tarayıcı açılamazsa sessiz geçilmez: Sentry + görünür mesaj (§15.2). */
   const handleWatchNow = useCallback(async () => {
@@ -455,6 +488,10 @@ export function ChampionReveal({
     posterOpacity.value = withDelay(posterAt, withTiming(1, fade));
     titleOpacity.value = withDelay(titleAt, withTiming(1, fade));
     metaOpacity.value = withDelay(metaAt, withTiming(1, fade));
+
+    // S-2: görsel bitiş = son geçişin (meta + eylemler) tamamlandığı an.
+    if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    settleTimerRef.current = setTimeout(fireSettled, metaAt + fadeDuration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [animateReveal, isReducedMotion, posterLoaded, waitCapReached]);
 
@@ -570,42 +607,57 @@ export function ChampionReveal({
 
           {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
 
-          {/* C6 — tam genişlik, alt alta, ≥ 48pt. */}
+          {/* S-2 — TEK birincil eylem, tam genişlik ≥ 48pt: Watch Now; yoksa
+              "Sonraya bırak" dolgulu (L9 davranışı). İkincil eylemler altta
+              44pt ikon satırı — Spotlight kartı fold'a girsin diye yığın
+              160 → 100pt (bütçe: docs/investigations/S2_CHAMPION_SPOTLIGHT_KESIF.md §5). */}
           <View style={styles.actionsStack}>
-            {showWatchNow && (
+            {showWatchNow ? (
               <ChampionActionButton
                 label={t('gauntlet.watchNow.action')}
                 icon={Play}
                 variant="marquee"
                 onPress={() => void handleWatchNow()}
               />
+            ) : (
+              gauntletId !== undefined && (
+                <ChampionActionButton
+                  label={saveLabel}
+                  icon={BookmarkSimple}
+                  variant="filled"
+                  onPress={() => void handleSaveForLater()}
+                  // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
+                  // tamamlandı, tekrar basılacak bir şey yok.
+                  disabled={saveState !== 'idle'}
+                  busy={saveState === 'saving'}
+                />
+              )
             )}
 
-            {/* "Sonraya bırak" — mantık aynı; Watch Now yokken dolgulu. */}
-            {gauntletId !== undefined && (
-              <ChampionActionButton
-                label={
-                  saveState === 'saved'
-                    ? t('gauntlet.saveForLater.saved')
-                    : t('gauntlet.saveForLater.action')
-                }
-                icon={BookmarkSimple}
-                variant={showWatchNow ? 'outline' : 'filled'}
-                onPress={() => void handleSaveForLater()}
-                // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
-                // tamamlandı, tekrar basılacak bir şey yok.
-                disabled={saveState !== 'idle'}
-                busy={saveState === 'saving'}
-              />
-            )}
-
-            {date !== undefined && (
-              <ChampionActionButton
-                label={t('gauntlet.share.action')}
-                icon={ShareNetwork}
-                variant="outline"
-                onPress={() => void handleShare()}
-              />
+            {(showSaveIcon || date !== undefined) && (
+              <View style={styles.iconRow}>
+                {showSaveIcon && (
+                  <ChampionActionButton
+                    label={saveLabel}
+                    icon={BookmarkSimple}
+                    variant="outline"
+                    iconOnly
+                    selected={saveState === 'saved'}
+                    onPress={() => void handleSaveForLater()}
+                    disabled={saveState !== 'idle'}
+                    busy={saveState === 'saving'}
+                  />
+                )}
+                {date !== undefined && (
+                  <ChampionActionButton
+                    label={t('gauntlet.share.action')}
+                    icon={ShareNetwork}
+                    variant="outline"
+                    iconOnly
+                    onPress={() => void handleShare()}
+                  />
+                )}
+              </View>
             )}
           </View>
 

@@ -18,6 +18,14 @@ export const styles = StyleSheet.create({
     paddingHorizontal: space.base,
     borderRadius: radius.pill,
   },
+  /** S-2: ikincil ikon satırı — 44pt kare dokunma hedefi (K-54), metin yok. */
+  iconButton: {
+    width: size.touchTarget,
+    height: size.touchTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.pill,
+  },
   marquee: {
     backgroundColor: color.reward.primary,
   },

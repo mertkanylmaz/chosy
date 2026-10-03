@@ -1476,7 +1476,18 @@
     "dismissTomorrow": "Boşver, yarın",
     "bonus": {
       "label": "Bugünün bonusu",
-      "title": "Spotlight"
+      "title": "Spotlight",
+      "subtitle": {
+        "one": "Bulanık bir kareden filmi tahmin et · %{count} hak",
+        "other": "Bulanık bir kareden filmi tahmin et · %{count} hak"
+      },
+      "subtitleNeutral": "Bulanık bir kareden filmi tahmin et",
+      "continueHint": "Yarıda bıraktın. Kaldığın yerden devam et.",
+      "solvedHint": "Çözdün. Yarın yeni bir kare.",
+      "failedHint": "Bu sefer olmadı. Yarın yeni bir kare.",
+      "play": "Oyna",
+      "continue": "Devam et",
+      "a11yHint": "Bugünün Spotlight bulmacasını açar"
     },
     "share": {
       "action": "Paylaş",

@@ -14,7 +14,7 @@
     "test:editorial": "cd supabase/functions && deno test --allow-read --allow-net _shared/editorialCalendar.test.ts",
     "test:previous-cycle": "deno test tests/gauntlet/previousCycleProbe.test.ts tests/gauntlet/cycleRules.test.ts && cd supabase/functions && deno test --allow-read _shared/previousCycle.test.ts",
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
-    "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts",
+    "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
     "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
     "test:notif-ask": "deno test tests/gauntlet/notificationAskCheck.test.ts",

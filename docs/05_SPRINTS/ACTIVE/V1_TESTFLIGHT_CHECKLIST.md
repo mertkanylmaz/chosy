@@ -242,6 +242,43 @@ Build `74208e8` ve sonrasını içermeli.
       DNA vaadi yok; kaçırılan akşamı arşivden oynama anlatılıyor (`e73b1a5`).
 - [ ] M8. Dil TR ↔ EN: M3–M7 metinleri her iki dilde doğru.
 
+## N. Şampiyon CTA + Spotlight kartı (S-2, 3 Eki 2026; S-1 ask sırasıyla birlikte)
+
+Build S-2 commit'ini ve sonrasını içermeli. Geometri Deno testli
+(`tests/gauntlet/championFold.test.ts`); **8 sn dwell tetiği cihaz doğrulaması
+bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
+(`chosy_ask_state` — yeni kurulum ya da ertesi gün).
+
+- [ ] N1. Eylemler: Watch now tek tam genişlik buton; altında ortalı iki ikon
+      (yer imi = Sonraya bırak, paylaş). Watch now yoksa Sonraya bırak bone
+      dolgulu birincil, ikon satırında yalnız paylaş. Kaydedince yer imi dolu
+      çiziliyor, sönük değil; VoiceOver "Saved/Kaydedildi" okuyor.
+- [ ] N2. Canlı final: reveal bitiminden ~1 sn sonra Spotlight kartı **opaklıkla**
+      beliriyor (kesme değil). Kart: bugünün karesi bulanık (oyun başındaki
+      bulanıklıkla aynı), "TODAY'S BONUS · Spotlight" + "Guess the film from a
+      blurred frame · 6 tries" + PLAY. Uygulamayı kapat-aç (resume) → kart
+      **gecikmesiz, animasyonsuz** orada.
+- [ ] N3. **Reduce Motion** açık → kart reveal biter bitmez anında, geçişsiz.
+- [ ] N4. **Dwell (Metro/`__DEV__` log)** 844pt+ cihazda, kaydırmadan bekle →
+      log: `[S-2 dwell] spotlight kartı mount edildi` ardından
+      `[S-2 dwell] ask gösterildi … msSinceCardMount ≈ 8000`. PostHog
+      `ask_shown` `trigger: 'dwell'`. Kart mount olmadan önce sayaç başlamıyor
+      (msSinceCardMount reveal süresini içermiyor).
+- [ ] N5. SE / mini: kart ilk ekranda kısmen görünüyor (SE ≥ %30); kaydırıp
+      bırakınca 8 sn sonra ask (kabul edilen davranış).
+- [ ] N6. Spotlight'ı yarıda bırak → champion'a dön → kart CONTINUE + "Yarıda
+      bıraktın…"; uygulamayı öldür-aç → hâlâ CONTINUE. Çöz → "Çözdün. Yarın
+      yeni bir kare.", fiil yok; dokununca sonuç ekranı, yeniden oynatma yok.
+      Kaybet → "Bu sefer olmadı…".
+- [ ] N7. Gauntlet turları sırasında ve bekleme ekranında Spotlight'a dair hiçbir
+      iz yok.
+- [ ] N8. PostHog: `spotlight_card_viewed` (`game_id`, `state`, `resumed`,
+      `window_height`) mount başına bir kez; `spotlight_card_pressed`
+      (`game_id`, `state`); oyun tarafında `game_daily_opened` /
+      `game_daily_completed` `game_id: 'spotlight'` değişmeden geliyor.
+- [ ] N9. Dil TR ↔ EN: kart metinleri ve a11y ipucu çevrilmiş; uzun TR alt başlık
+      2 satırda, kart yüksekliği değişmiyor.
+
 ---
 
 ## Test edilmeyecekler (uygulanmadı — E-22)
@@ -255,5 +292,5 @@ Build `74208e8` ve sonrasını içermeli.
 
 ## Çıkış kriteri
 
-A–M'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
+A–N'de ❌ yok (gözlem maddeleri hariç). ❌ → CTO oturumunda triyaj → düzeltme turu →
 yeni build.

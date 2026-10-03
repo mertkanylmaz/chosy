@@ -47,6 +47,19 @@ export const BLACKOUT_SEQUENCE = {
 } as const;
 
 /**
+ * Spotlight bonus kartının şampiyon ekranına girişi — S-2 (K-19: kesme değil,
+ * Geçiş). Yalnız CANLI reveal yolunda: kara boşluk sekansının görsel
+ * bitişinden `delay` sonra kart mount edilir ve `duration` boyunca opaklıkla
+ * belirir. Resume yolunda ve Reduce Motion'da gecikme de geçiş de YOK.
+ */
+export const BONUS_CARD_ENTRY = {
+  /** Reveal'ın görsel bitişi → kartın mount anı */
+  delay: 1000,
+  /** Opaklık 0→1 — yeni rakibin süresi yeniden kullanılır (§7.2) */
+  duration: DISSOLVE_DURATION.newContender,
+} as const;
+
+/**
  * Dokunma onayı — seçim sunucuya giderken SEÇİLMEYEN posterin opaklığı.
  * §7.1 "seçim onayı" bir Kesme'dir: 0ms, animasyonsuz uygulanır (Reduce
  * Motion'da da aynı). Elenme opaklığından (0.25) bilinçli olarak AYRI —

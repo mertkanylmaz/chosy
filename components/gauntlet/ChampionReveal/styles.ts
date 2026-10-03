@@ -116,6 +116,12 @@ export const styles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: space.sm,
   },
+  /** S-2: ikincil ikon satırı (Sonraya bırak + Paylaş) — ortalı, 44pt. */
+  iconRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: space.base,
+  },
   /** Pano / kaydetme onayı — kısa ömürlü, butonların ÜSTÜNDE (sabit sıra). */
   shareNotice: {
     ...type.caption,
