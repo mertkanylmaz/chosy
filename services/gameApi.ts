@@ -12,6 +12,7 @@ import { supabase } from './supabase';
 import { ensureAuthSession } from './authSession';
 import { remoteConfig } from './remoteConfig';
 import { logger } from '@/utils/logger';
+import { isNoPuzzleResponse, PuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
 import type {
   DailyChallenge,
@@ -130,7 +131,64 @@ export async function getDailyChest(
 }
 
 /**
+ * Bu oturumda NO_PUZZLE uyarısı zaten gönderilmiş (oyun, gün) çiftleri.
+ * Telemetri tekilleştirmesidir, config değil (`services/tmdb.ts`
+ * `reportedTmdbEndpoints` deseni): kart, ask koordinatörü ve oyun ekranı aynı
+ * gün aynı yokluğu ayrı ayrı okur; her biri ayrı olay üretseydi tek durum
+ * Sentry'de fırtınaya dönerdi. Sunucu tarafı ayrıca kuyruk derinliği uyarısı
+ * verir (P-1c D, sabit fingerprint).
+ */
+const reportedUnavailable = new Set<string>();
+
+function reportPuzzleUnavailableOnce(gameId: string, puzzleDate: string): void {
+  const key = `${gameId}:${puzzleDate}`;
+  if (reportedUnavailable.has(key)) {
+    Sentry.addBreadcrumb({
+      category: 'games.puzzle_unavailable',
+      message: `${gameId} bulmacası yok (tekrar)`,
+      level: 'info',
+      data: { game_id: gameId, puzzle_date: puzzleDate },
+    });
+    return;
+  }
+  reportedUnavailable.add(key);
+  Sentry.captureMessage(`Günlük bulmaca yok: ${gameId}`, {
+    level: 'warning',
+    tags: { game_id: gameId, error_code: 'NO_PUZZLE' },
+    extra: { puzzle_date: puzzleDate },
+    fingerprint: ['client-no-puzzle', gameId],
+  });
+}
+
+/**
+ * `FunctionsHttpError.context` ham Response'tur (gövde okunmamış). Gövde
+ * okunamazsa NO_PUZZLE SAYILMAZ — gerçek hata yoluna düşer (yanlış negatif,
+ * sessiz yanlış pozitiften iyidir). `clone()` gövdeyi tüketmez.
+ */
+async function isNoPuzzleError(error: unknown): Promise<boolean> {
+  const response = (error as { context?: Response }).context;
+  if (!response || typeof response.clone !== 'function' || response.status !== 404) {
+    return false;
+  }
+  try {
+    const body: unknown = await response.clone().json();
+    return isNoPuzzleResponse(response.status, body);
+  } catch (parseErr) {
+    Sentry.addBreadcrumb({
+      category: 'games.puzzle_unavailable',
+      message: 'get-daily-challenge 404 gövdesi okunamadı — genel hata yolu',
+      level: 'warning',
+      data: { error: parseErr instanceof Error ? parseErr.message : String(parseErr) },
+    });
+    return false;
+  }
+}
+
+/**
  * Günlük bulmacayı getirir.
+ *
+ * Bulmaca yoksa (`404 NO_PUZZLE`) `PuzzleUnavailableError` fırlatır — Sentry'ye
+ * (oyun, gün) başına tek `warning`. Diğer hatalar Sentry + throw.
  *
  * @param gameId - Oyun tipi (ör. 'cinemetrics')
  * @param puzzleDate - YYYY-MM-DD formatında tarih
@@ -146,6 +204,11 @@ export async function getDailyChallenge(
   });
 
   if (error) {
+    // P-1c E: NO_PUZZLE ağ hatası değil, veri durumu — ayrı tip, tek warning.
+    if (await isNoPuzzleError(error)) {
+      reportPuzzleUnavailableOnce(gameId, puzzleDate);
+      throw new PuzzleUnavailableError(gameId, puzzleDate);
+    }
     Sentry.captureException(error, {
       tags: { game_id: gameId, puzzle_date: puzzleDate },
     });

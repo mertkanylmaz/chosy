@@ -9,6 +9,7 @@ import {
   AUTH_COOLDOWN_MS,
   AUTH_MAX_SHOWS,
   EMPTY_ASK_STATE,
+  canStartDwell,
   isCardFullyVisible,
   localDayKey,
   parseAskState,
@@ -175,4 +176,94 @@ Deno.test('isCardFullyVisible: tamamen görünür / tab bar altında / üstte ka
   assertEquals(isCardFullyVisible({ ...base, scrollY: 620 }), false) // üst kenar dışarıda
   assertEquals(isCardFullyVisible({ ...base, cardHeight: 0 }), false) // ölçülmedi
   assertEquals(isCardFullyVisible({ ...base, viewportHeight: 0 }), false)
+})
+
+// ── P-1c E: Spotlight bugün yok (unavailable) ────────────────────────────────
+
+Deno.test('unavailable: gün 1 → notif (bildirim sırası korunur)', () => {
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', dayIndex: 1 })), 'notif')
+})
+
+Deno.test('unavailable: gün 1, bildirim sorulmuş → null (auth YOK)', () => {
+  assertEquals(
+    shouldShowAsk(input({ spotlightState: 'unavailable', dayIndex: 1, notifAsked: true })),
+    null,
+  )
+})
+
+Deno.test('unavailable: gün 2, anonim → auth (auth sırası korunur)', () => {
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', dayIndex: 2 })), 'auth')
+})
+
+Deno.test('unavailable: gün 2, kayıtlı → notif; sorulmuşsa null', () => {
+  assertEquals(
+    shouldShowAsk(input({ spotlightState: 'unavailable', isAnonymous: false })),
+    'notif',
+  )
+  assertEquals(
+    shouldShowAsk(input({ spotlightState: 'unavailable', isAnonymous: false, notifAsked: true })),
+    null,
+  )
+})
+
+Deno.test('unavailable: günde 1 ask — bugün gösterildiyse null', () => {
+  const askState = { ...EMPTY_ASK_STATE, lastAskDay: TODAY }
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', askState, dayIndex: 1 })), null)
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', askState, dayIndex: 4 })), null)
+  const shown = recordAskShown(EMPTY_ASK_STATE, 'auth', TODAY, NOW)
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', askState: shown })), null)
+})
+
+Deno.test('unavailable: cooldown ve 3 gösterim sınırı aynen işler', () => {
+  const inCooldown = { lastAskDay: '2026-10-01', auth: { count: 1, lastAt: NOW - DAY } }
+  assertEquals(shouldShowAsk(input({ spotlightState: 'unavailable', askState: inCooldown })), 'notif')
+  const maxed = { lastAskDay: '2026-09-01', auth: { count: AUTH_MAX_SHOWS, lastAt: NOW - 30 * DAY } }
+  assertEquals(
+    shouldShowAsk(input({ spotlightState: 'unavailable', askState: maxed, notifAsked: true })),
+    null,
+  )
+})
+
+Deno.test('unavailable ≡ not_started: tüm gün/kimlik kombinasyonlarında aynı karar', () => {
+  for (const dayIndex of [0, 1, 2, 5]) {
+    for (const isAnonymous of [true, false]) {
+      for (const notifAsked of [true, false]) {
+        const a = shouldShowAsk(input({ spotlightState: 'unavailable', dayIndex, isAnonymous, notifAsked }))
+        const b = shouldShowAsk(input({ spotlightState: 'not_started', dayIndex, isAnonymous, notifAsked }))
+        assertEquals(a, b)
+      }
+    }
+  }
+})
+
+Deno.test('canStartDwell: kartsız (unavailable + reveal bitti) → ölçü beklenmez', () => {
+  const unmeasured = { cardY: 0, cardHeight: 0, scrollY: 0, viewportHeight: 0, bottomInset: 100 }
+  assertEquals(canStartDwell({ ...unmeasured, cardless: true }), true)
+  // Kart fold altında/ölçüsü eski olsa da kartsız dalda çapa reveal bitişidir.
+  const offscreen = { cardY: 2000, cardHeight: 80, scrollY: 0, viewportHeight: 800, bottomInset: 100 }
+  assertEquals(canStartDwell({ ...offscreen, cardless: true }), true)
+})
+
+// ── Regresyon: Spotlight varken dwell davranışı DEĞİŞMEDİ ───────────────────
+
+Deno.test('regresyon: cardless=false iken canStartDwell ≡ isCardFullyVisible (S-2)', () => {
+  const base = { cardY: 600, cardHeight: 80, scrollY: 0, viewportHeight: 800, bottomInset: 100 }
+  const cases = [
+    base,
+    { ...base, cardY: 640 },
+    { ...base, cardY: 900, scrollY: 300 },
+    { ...base, scrollY: 620 },
+    { ...base, cardHeight: 0 },
+    { ...base, viewportHeight: 0 },
+  ]
+  for (const c of cases) {
+    assertEquals(canStartDwell({ ...c, cardless: false }), isCardFullyVisible(c))
+  }
+})
+
+Deno.test('regresyon: mevcut üç Spotlight durumunda karar değişmedi', () => {
+  assertEquals(shouldShowAsk(input({ spotlightState: 'completed', dayIndex: 1 })), 'notif')
+  assertEquals(shouldShowAsk(input({ spotlightState: 'completed', dayIndex: 2 })), 'auth')
+  assertEquals(shouldShowAsk(input({ spotlightState: 'not_started', dayIndex: 2 })), 'auth')
+  assertEquals(shouldShowAsk(input({ spotlightState: 'in_progress', dayIndex: 2 })), null)
 })

@@ -1123,6 +1123,8 @@
       "result_won_letters": "Found it with %{count} letter(s)!",
       "preparing_title": "Today's frame is being prepared",
       "preparing_subtitle": "Spotlight was rebuilt. A new puzzle arrives with the next daily generation.",
+      "unavailable_title": "No frame today",
+      "unavailable_subtitle": "Today's Spotlight puzzle isn't ready yet. Your connection is fine — check back later.",
       "result_lost": "Better luck tomorrow",
       "auto_loss": "The answer was hiding in plain sight!",
       "guess_button": "Guess"

@@ -40,6 +40,7 @@ import {
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
+import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
@@ -309,6 +310,12 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * YOK: champion ask'inin dwell sayacı görünmeyen kartta başlamasın.
    */
   const [bonusCardMounted, setBonusCardMounted] = useState(false);
+  /**
+   * P-1c E: reveal'ın görsel bitişi geldi mi (giriş gecikmesinden ÖNCE).
+   * SALT GÖRSEL. Spotlight bugün yoksa ask dwell'inin çapası budur — kart
+   * çizilmediği için kart ölçüsü beklenemez.
+   */
+  const [revealSettled, setRevealSettled] = useState(false);
   const [refreshesRemaining, setRefreshesRemaining] = useState(0);
   /**
    * E-19: sunucu bu gauntlet'in editoryal takvimden geldiğini bildirdi ve
@@ -1211,6 +1218,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         // S-2: önceki bir şampiyondan kalan kart/zamanlayıcı bu reveal'a taşınmaz.
         if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
         setBonusCardMounted(false);
+        setRevealSettled(false);
         setChampion(result.champion);
         setAnimateReveal(true); // canlı final: 720ms kara boşluk (§7.3)
         completedDateKeyRef.current = localDateKey();
@@ -1397,9 +1405,19 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   //
   // Tetik ve karar `useChampionAsk` + `services/askCoordinator`. Yalnız
   // champion dalı ekrandayken etkin; oyun sırasında hiçbir ask kurulmaz.
+  const championActive =
+    shellState === 'completed_today' && champion !== null && !pendingFeedbackVisible;
+
+  // P-1c E: Spotlight durumu kartın içinde değil burada okunur — bugün bulmaca
+  // yoksa (`unavailable`, sunucu NO_PUZZLE) kart hiç mount edilmez ve ask
+  // dwell'i reveal bitişine çapalanır. Yalnız champion dalında ağa çıkar.
+  const spotlightCard = useSpotlightCardState(championActive);
+  const spotlightUnavailable = spotlightCard.status === 'unavailable';
+
   const championAsk = useChampionAsk({
-    active: shellState === 'completed_today' && champion !== null && !pendingFeedbackVisible,
+    active: championActive,
     bottomInset: tabBarInset,
+    cardlessDwell: spotlightUnavailable && revealSettled,
   });
 
   // ── Spotlight kartının girişi (S-2) ────────────────────────────────────────
@@ -1409,6 +1427,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   // ve Reduce Motion'da hemen. Mount anı = `onCardLayout` = dwell'in başlangıcı.
   const handleRevealSettled = useCallback(() => {
     if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
+    setRevealSettled(true);
     if (!animateReveal || isReducedMotion) {
       setBonusCardMounted(true);
       return;
@@ -1628,10 +1647,11 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
                 kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu:
                 şampiyon varsa VE giriş anı geldiyse (S-2, `bonusCardMounted`).
                 İçeriğin sonunda olduğu için geç mount üstteki düzeni kaydırmaz. */}
-            {bonusCardMounted && (
+            {bonusCardMounted && !spotlightUnavailable && (
               <View style={styles.bonusCardInline} onLayout={championAsk.onCardLayout}>
                 <SpotlightBonusCard
                   gameType="spotlight"
+                  data={spotlightCard}
                   entry={animateReveal ? 'reveal' : 'resume'}
                   onPress={championAsk.onSpotlightPress}
                 />

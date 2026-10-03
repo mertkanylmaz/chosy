@@ -33,6 +33,7 @@ import { isCinemaDnaEnabled } from '@/constants/config';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
 import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
@@ -216,6 +217,11 @@ export function SpotlightGame() {
   const [loadError, setLoadError] = useState(false);
   /** Bulmaca V3 oncesi formatta — bu ekranla oynanamaz */
   const [staleFormat, setStaleFormat] = useState(false);
+  /**
+   * P-1c E: bugun bulmaca yok (sunucu NO_PUZZLE). Ag hatasi DEGIL — "baglantini
+   * kontrol et" demek yanlis teshis olurdu. Sentry uyarisini gameApi yazdi.
+   */
+  const [unavailable, setUnavailable] = useState(false);
 
   const [puzzleId, setPuzzleId] = useState('');
   const [puzzleNo, setPuzzleNo] = useState(0);
@@ -237,6 +243,7 @@ export function SpotlightGame() {
     try {
       setLoadError(false);
       setStaleFormat(false);
+      setUnavailable(false);
       setScreenState('loading');
 
       const puzzleDate = new Date().toLocaleDateString('en-CA');
@@ -273,6 +280,11 @@ export function SpotlightGame() {
       guessStartRef.current = Date.now();
       trackGameOpened('spotlight', data.puzzle_no, 'hub');
     } catch (err) {
+      if (isPuzzleUnavailableError(err)) {
+        // Veri durumu; gameApi (oyun, gun) basina bir kez Sentry'ye yazdi.
+        setUnavailable(true);
+        return;
+      }
       logger.error('[spotlight] Puzzle yuklenemedi:', err);
       setLoadError(true);
     }
@@ -432,6 +444,19 @@ export function SpotlightGame() {
           onRetry={loadPuzzle}
           title={t('games.spotlight.preparing_title')}
           subtitle={t('games.spotlight.preparing_subtitle')}
+        />
+      </GameShell>
+    );
+  }
+
+  if (unavailable) {
+    return (
+      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress>
+        <GameStateView
+          state="error"
+          onRetry={loadPuzzle}
+          title={t('games.spotlight.unavailable_title')}
+          subtitle={t('games.spotlight.unavailable_subtitle')}
         />
       </GameShell>
     );

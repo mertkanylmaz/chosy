@@ -10,6 +10,11 @@
  *   (b) dwell — Spotlight kartı görünür alanda TAMAMEN ve etkileşimsiz
  *       `ASK_DWELL_MS` kalırsa karar verilir.
  *
+ * P-1c E — Spotlight bugün yoksa (NO_PUZZLE) kart çizilmez; `cardlessDwell`
+ * true gelir ve dwell kart ölçüsü yerine reveal'ın görsel bitişine çapalanır
+ * (bitiş + `ASK_DWELL_MS`). Karar `unavailable` ile, ağa yeniden çıkmadan
+ * verilir. Spotlight varken `cardlessDwell` false — S-2 davranışı aynen.
+ *
  * Blur / AppState tabanlı tetik YOK: sheet'ler pencere seviyesinde `Modal`,
  * başka bir tab'ın üstünde açılırdı. Oyun sırasında (champion dışı) hook
  * pasiftir — `active` false iken zamanlayıcı kurulmaz.
@@ -30,7 +35,7 @@ import { resolveAsk, readSpotlightStateForAsk } from '@/services/askCoordinator'
 import { posthogAnalytics } from '@/services/posthog';
 import { markUserFlag } from '@/services/userFlags';
 import {
-  isCardFullyVisible,
+  canStartDwell,
   type AskTrigger,
   type AskType,
   type SpotlightState,
@@ -50,6 +55,11 @@ interface UseChampionAskOptions {
   active: boolean;
   /** Kaydırma içeriğini alttan örten pay (yüzen tab bar). */
   bottomInset: number;
+  /**
+   * P-1c E: Spotlight bugün yok (NO_PUZZLE) VE reveal'ın görsel bitişi geldi.
+   * True iken dwell kart ölçüsü beklemez; karar `unavailable` ile verilir.
+   */
+  cardlessDwell: boolean;
 }
 
 export interface ChampionAskBindings {
@@ -64,7 +74,11 @@ export interface ChampionAskBindings {
   onNotifClose: (granted: boolean) => void;
 }
 
-export function useChampionAsk({ active, bottomInset }: UseChampionAskOptions): ChampionAskBindings {
+export function useChampionAsk({
+  active,
+  bottomInset,
+  cardlessDwell,
+}: UseChampionAskOptions): ChampionAskBindings {
   const [ask, setAsk] = useState<ShownAsk | null>(null);
 
   const mountedRef = useRef(true);
@@ -72,6 +86,8 @@ export function useChampionAsk({ active, bottomInset }: UseChampionAskOptions): 
   activeRef.current = active;
   const bottomInsetRef = useRef(bottomInset);
   bottomInsetRef.current = bottomInset;
+  const cardlessRef = useRef(cardlessDwell);
+  cardlessRef.current = cardlessDwell;
   const askRef = useRef(ask);
   askRef.current = ask;
 
@@ -129,10 +145,12 @@ export function useChampionAsk({ active, bottomInset }: UseChampionAskOptions): 
     clearDwell();
     if (!dwellArmedRef.current || !canAsk()) return;
     const m = metricsRef.current;
-    if (!isCardFullyVisible({ ...m, bottomInset: bottomInsetRef.current })) return;
+    const cardless = cardlessRef.current;
+    if (!canStartDwell({ ...m, bottomInset: bottomInsetRef.current, cardless })) return;
     dwellTimerRef.current = setTimeout(() => {
       dwellTimerRef.current = null;
-      fire('dwell');
+      // Kartsız dalda durum zaten biliniyor — Spotlight için ağa yeniden çıkılmaz.
+      fire('dwell', cardless ? 'unavailable' : undefined);
     }, ASK_DWELL_MS);
   }, [canAsk, clearDwell, fire]);
 
@@ -153,6 +171,14 @@ export function useChampionAsk({ active, bottomInset }: UseChampionAskOptions): 
       clearDwell();
     }
   }, [active, evaluateDwell, clearDwell]);
+
+  // P-1c E: kartsız çapa — reveal bitişi (ya da yokluğun öğrenildiği an,
+  // hangisi sonraysa) dwell'i başlatır. Spotlight varken bu bayrak hiç true
+  // olmaz; efekt yalnız ilk render'da koşar ve `evaluateDwell` eskisi gibi
+  // kart ölçüsüne bakar.
+  useEffect(() => {
+    if (cardlessDwell) evaluateDwell();
+  }, [cardlessDwell, evaluateDwell]);
 
   useFocusEffect(
     useCallback(() => {

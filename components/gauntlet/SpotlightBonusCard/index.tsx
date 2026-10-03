@@ -21,6 +21,10 @@
  * GauntletShell'de: kart sarmalayıcısı o ana kadar mount edilmez ki
  * champion ask'inin dwell sayacı görünmeyen kartta başlamasın.
  *
+ * P-1c E: durum (`useSpotlightCardState`) GauntletShell'de okunur ve `data`
+ * olarak gelir — Shell bugün bulmaca yoksa (`unavailable`) kartı hiç mount
+ * etmez. Kart yine de `unavailable`'da `null` döner (savunma).
+ *
  * ── Tek hedef ───────────────────────────────────────────────────────────────
  * Kartın tamamı tek dokunma alanıdır. İkinci bir eylem (kapat, gizle, "daha
  * fazla oyun") YOK — ikinci hedef bu yüzeyi bir hub'a çevirmeye başlar.
@@ -57,11 +61,13 @@ import { hapticLight } from '@/utils/haptics';
 
 import { isSpotlightPlayable, type SpotlightCardState } from './cardState';
 import { styles } from './styles';
-import { useSpotlightCardState } from './useSpotlightCardState';
+import type { SpotlightCardData } from './useSpotlightCardState';
 
 interface SpotlightBonusCardProps {
   /** Oyun kimliği — analytics `game_id` (kural 8: zorunlu). */
   gameType: 'spotlight';
+  /** Bugünkü Spotlight durumu — GauntletShell `useSpotlightCardState` ile okur. */
+  data: SpotlightCardData;
   /** 'reveal' → canlı finalden sonra opaklıkla girer; 'resume' → anında. */
   entry: 'reveal' | 'resume';
   /** Navigasyondan hemen önce — champion ask'inin Spotlight dönüşü tetiği. */
@@ -73,14 +79,14 @@ type CardStateLabel = SpotlightCardState | 'unknown';
 
 export function SpotlightBonusCard({
   gameType,
+  data,
   entry,
   onPress,
-}: SpotlightBonusCardProps): React.JSX.Element {
+}: SpotlightBonusCardProps): React.JSX.Element | null {
   const { t, language } = useLanguage();
   const router = useRouter();
   const isReducedMotion = useReducedMotion();
   const { height: windowHeight } = useWindowDimensions();
-  const data = useSpotlightCardState();
 
   const stateLabel: CardStateLabel = data.status === 'ready' ? data.state : 'unknown';
 
@@ -98,7 +104,7 @@ export function SpotlightBonusCard({
   // ── spotlight_card_viewed — durum çözülünce, mount başına bir kez ─────────
   const viewedTrackedRef = useRef(false);
   useEffect(() => {
-    if (viewedTrackedRef.current || data.status === 'loading') return;
+    if (viewedTrackedRef.current || data.status === 'loading' || data.status === 'unavailable') return;
     viewedTrackedRef.current = true;
     posthogAnalytics.track('spotlight_card_viewed', {
       game_id: gameType,
@@ -132,6 +138,9 @@ export function SpotlightBonusCard({
   }
   const showVerb = verb !== null && data.status === 'ready' && isSpotlightPlayable(data.state);
   const backdropUrl = data.status === 'ready' ? data.backdropUrl : '';
+
+  // P-1c E: bugün bulmaca yok — kart yok (Shell zaten mount etmez; savunma).
+  if (data.status === 'unavailable') return null;
 
   return (
     <Animated.View style={entryStyle}>

@@ -1123,6 +1123,8 @@
       "result_won_letters": "%{count} harfle buldun!",
       "preparing_title": "Bugünün karesi hazırlanıyor",
       "preparing_subtitle": "Spotlight yenilendi. Yeni bulmaca bir sonraki günlük üretimde gelecek.",
+      "unavailable_title": "Bugün kare yok",
+      "unavailable_subtitle": "Bugünün Spotlight bulmacası henüz hazır değil. Bağlantında sorun yok — daha sonra tekrar bak.",
       "result_lost": "Yarın tekrar dene",
       "auto_loss": "Cevap göz önündeydi!",
       "guess_button": "Tahmin Et"

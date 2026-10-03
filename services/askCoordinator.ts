@@ -27,6 +27,7 @@ import { getChampionDatesSince } from './gauntletService';
 import { shouldAskForNotificationPermission } from './pushNotifications';
 import { supabase } from './supabase';
 import { readUserFlags } from './userFlags';
+import { isPuzzleUnavailableError } from '../utils/puzzleAvailability';
 import {
   askedToday,
   localDayKey,
@@ -55,10 +56,21 @@ async function readAskState(): Promise<AskState> {
   return parseAskState(await AsyncStorage.getItem(ASK_STATE_KEY));
 }
 
-/** Bugünkü Spotlight bulmacasının durumu (`get-daily-challenge`). */
+/**
+ * Bugünkü Spotlight bulmacasının durumu (`get-daily-challenge`).
+ *
+ * P-1c E: bulmaca yoksa (NO_PUZZLE) `unavailable` — karar girdisidir, hata
+ * değil; Sentry uyarısını `gameApi` (oyun, gün) başına bir kez yazdı. Diğer
+ * her hata fırlar ve çağıranda `fatal` olarak kalır.
+ */
 async function readSpotlightState(today: string): Promise<SpotlightState> {
-  const data = await getDailyChallenge('spotlight', today);
-  return spotlightStateFrom(data.progress);
+  try {
+    const data = await getDailyChallenge('spotlight', today);
+    return spotlightStateFrom(data.progress);
+  } catch (err) {
+    if (isPuzzleUnavailableError(err)) return 'unavailable';
+    throw err;
+  }
 }
 
 /** Kişisel champion günü sayısı — `daily_gauntlets`, yeni sorgu yok. */

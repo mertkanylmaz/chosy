@@ -14,6 +14,10 @@
  *   · Gün 2+ → auth (anonim ∧ girişe dönüşmemiş ∧ count < 3 ∧ son
  *              gösterimden ≥ 3 gün), değilse bildirim izni (hiç sorulmadıysa)
  *   · Spotlight yarıda (in_progress) → ask yok
+ *   · Spotlight bugün yok (unavailable, sunucu NO_PUZZLE — P-1c E) → karar
+ *     `not_started` gibi işler; Spotlight beklenmez. Kart çizilmediği için
+ *     dwell kart ölçüsü yerine reveal'ın görsel bitişine çapalanır
+ *     (`canStartDwell`, `cardless`).
  */
 
 /** Gösterilebilecek ask türü. */
@@ -22,8 +26,12 @@ export type AskType = 'notif' | 'auth';
 /** Askı tetikleyen an — analytics `trigger` prop'u. */
 export type AskTrigger = 'spotlight_return' | 'dwell';
 
-/** Bugünkü Spotlight bulmacasının durumu. */
-export type SpotlightState = 'not_started' | 'in_progress' | 'completed';
+/**
+ * Bugünkü Spotlight bulmacasının durumu. `unavailable` = bugün bulmaca yok
+ * (`get-daily-challenge` 404 NO_PUZZLE) — ağ hatası DEĞİL; ağ hatası
+ * karar girdisi olmaz, koordinatörde `fatal` olarak kalır.
+ */
+export type SpotlightState = 'not_started' | 'in_progress' | 'completed' | 'unavailable';
 
 /** Auth askı "Not now" sonrası bekleme süresi. */
 export const AUTH_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
@@ -170,4 +178,17 @@ export function isCardFullyVisible(v: CardViewport): boolean {
   const top = v.scrollY;
   const bottom = v.scrollY + v.viewportHeight - v.bottomInset;
   return v.cardY >= top && v.cardY + v.cardHeight <= bottom;
+}
+
+/**
+ * Dwell zamanlayıcısı şimdi başlayabilir mi (P-1c E).
+ *
+ * `cardless` = Spotlight bugün yok VE reveal'ın görsel bitişi geldi: kart
+ * çizilmez, ölçü beklenmez — çapa reveal bitişidir. Aksi halde S-2 kuralı
+ * aynen: kart görünür alanda tamamen olmalı. Spotlight varken `cardless`
+ * daima false → davranış `isCardFullyVisible` ile birebir.
+ */
+export function canStartDwell(v: CardViewport & { cardless: boolean }): boolean {
+  if (v.cardless) return true;
+  return isCardFullyVisible(v);
 }

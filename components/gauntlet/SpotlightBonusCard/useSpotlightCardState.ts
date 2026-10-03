@@ -8,9 +8,16 @@
  * Ekran her odak aldığında yeniden okunur (K-22): Spotlight'tan dönüşte kart
  * "Continue"/"Solved"/"Failed"a geçer, bitmiş oyun yeniden "Play" demez.
  *
- * Hata: `gameApi` Sentry'ye yazar. Önceki okuma varsa kart onu göstermeye
- * devam eder (breadcrumb ile iz); yoksa `error` — kart nötr çizilir (durum
- * fiili yok), dokunuş oyun ekranına gider ve hatayı o ekran gösterir.
+ * P-1c E: hook GauntletShell'de çağrılır (kartın içinde değil) — kartın
+ * mount edilip edilmeyeceği bu durumdan karar verilir. `enabled` yalnız
+ * champion dalında true; oyun sırasında ağa çıkılmaz.
+ *
+ * Durumlar:
+ * - `unavailable` — bugün bulmaca yok (NO_PUZZLE). Kart çizilmez. Sentry
+ *   uyarısını `gameApi` (oyun, gün) başına bir kez yazdı; burada çift kayıt yok.
+ * - `error` — gerçek hata (`gameApi` Sentry'ye yazdı). Önceki okuma varsa kart
+ *   onu göstermeye devam eder (breadcrumb ile iz); yoksa kart nötr çizilir,
+ *   dokunuş oyun ekranına gider ve hatayı o ekran gösterir.
  */
 import { useCallback, useRef, useState } from 'react';
 
@@ -19,12 +26,14 @@ import { useFocusEffect } from 'expo-router';
 
 import { getDailyChallenge } from '@/services/gameApi';
 import { localDayKey } from '@/utils/askDecision';
+import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
 import { spotlightCardStateFrom, type SpotlightCardState } from './cardState';
 
 export type SpotlightCardData =
   | { status: 'loading' }
   | { status: 'error' }
+  | { status: 'unavailable' }
   | {
       status: 'ready';
       state: SpotlightCardState;
@@ -33,13 +42,14 @@ export type SpotlightCardData =
       maxAttempts: number;
     };
 
-export function useSpotlightCardState(): SpotlightCardData {
+export function useSpotlightCardState(enabled: boolean): SpotlightCardData {
   const [data, setData] = useState<SpotlightCardData>({ status: 'loading' });
   const dataRef = useRef(data);
   dataRef.current = data;
 
   useFocusEffect(
     useCallback(() => {
+      if (!enabled) return undefined;
       let cancelled = false;
       void (async () => {
         try {
@@ -54,6 +64,12 @@ export function useSpotlightCardState(): SpotlightCardData {
           });
         } catch (err) {
           if (cancelled) return;
+          if (isPuzzleUnavailableError(err)) {
+            // Veri durumu: bugün bulmaca yok. Önceki `ready` de geçersizdir
+            // (gün değişti ya da bulmaca kalktı) — tutulmaz.
+            setData({ status: 'unavailable' });
+            return;
+          }
           // gameApi.getDailyChallenge hatayı Sentry'ye yazdı; burada çift
           // capture yok, yalnız kartın hangi dala düştüğünün izi.
           const keepPrevious = dataRef.current.status === 'ready';
@@ -71,7 +87,7 @@ export function useSpotlightCardState(): SpotlightCardData {
       return () => {
         cancelled = true;
       };
-    }, []),
+    }, [enabled]),
   );
 
   return data;
