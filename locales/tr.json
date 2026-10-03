@@ -552,7 +552,7 @@
     "deleteAccountConfirmTitle": "Hesabı Sil",
     "deleteAccountConfirmMessage": "Hesabın, izleme listen, ruh hali geçmişin ve tüm verilerin kalıcı olarak silinecek. Bu işlem geri alınamaz.",
     "deleteAccountConfirm": "Kalıcı Olarak Sil",
-    "deleteAccountAppleSubscriptionNote": "Apple aboneliğin devam eder. Silmeden önce Ayarlar'dan iptal et.",
+    "deleteAccountAppleSubscriptionNote": "Hesabını silmek Apple aboneliğini iptal etmez. Yenilemeleri durdurmak için aboneliğini App Store abonelik ayarlarından iptal et.",
     "versionLine": "Chosy %{version} (%{build})",
     "versionLineNoBuild": "Chosy %{version}",
     "deleteAccountDeleting": "Hesap siliniyor...",

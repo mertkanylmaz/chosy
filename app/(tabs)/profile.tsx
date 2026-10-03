@@ -20,6 +20,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
+  type AlertButton,
   Image,
   Linking,
   Modal,
@@ -1275,11 +1276,24 @@ function ProfileScreenContent() {
           t('profile.deleteAccountAppleSubscriptionNote')
         : t('profile.deleteAccountConfirmMessage');
 
+    // Aktif abonelik varsa (anonim Pro dahil) iptal etmek için mağaza
+    // yönetimine giden buton. Mantık handleManageSubscription'da.
+    const manageButtons: AlertButton[] =
+      premiumStatus === 'premium'
+        ? [
+            {
+              text: t('profile.manageSubscription'),
+              onPress: () => void handleManageSubscription(),
+            },
+          ]
+        : [];
+
     Alert.alert(
       t('profile.deleteAccountConfirmTitle'),
       confirmMessage,
       [
         { text: t('common.cancel'), style: 'cancel' },
+        ...manageButtons,
         {
           text: t('profile.deleteAccountConfirm'),
           style: 'destructive',
@@ -1290,6 +1304,7 @@ function ProfileScreenContent() {
               t('profile.deleteAccountDeleting') + '\n\n' + confirmMessage,
               [
                 { text: t('common.cancel'), style: 'cancel' },
+                ...manageButtons,
                 {
                   text: t('profile.deleteAccountConfirm'),
                   style: 'destructive',
