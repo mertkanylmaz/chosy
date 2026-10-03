@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
+import { ensureAuthSession } from './authSession';
 import { remoteConfig } from './remoteConfig';
 import { logger } from '@/utils/logger';
 
@@ -23,26 +24,6 @@ import type {
   SpotlightGuessResult,
   SpotlightLetterResult,
 } from '@/types/game';
-
-// ─── Auth Helper ─────────────────────────────────────────────────────────────
-
-/**
- * Auth session'ı doğrular ve gerekirse refresh eder.
- * Edge Function çağrısı öncesi JWT'nin geçerli olduğunu garanti eder.
- */
-async function ensureAuthSession(): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const nowSec = Math.floor(Date.now() / 1000);
-  const isExpiredOrSoon = !session ||
-    (session.expires_at != null && session.expires_at < nowSec + 30);
-
-  if (isExpiredOrSoon) {
-    const { error } = await supabase.auth.refreshSession();
-    if (error) {
-      logger.warn('[gameApi] Session refresh failed:', error.message);
-    }
-  }
-}
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 

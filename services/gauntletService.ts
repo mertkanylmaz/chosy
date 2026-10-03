@@ -16,6 +16,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
+import { ensureAuthSession } from './authSession';
 import { cacheGauntlet, readCachedGauntlet, type GauntletSource } from './gauntletCache';
 import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { logger } from '@/utils/logger';
@@ -172,27 +173,6 @@ export function deviceTimeZone(): string | undefined {
     // arızasıdır ve görünmelidir. Ritüel yine de çalışır — timezone opsiyonel.
     logger.warn('[gauntletService] cihaz saat dilimi okunamadı:', err);
     return undefined;
-  }
-}
-
-// ─── Auth helper ─────────────────────────────────────────────────────────────
-
-/**
- * Auth session'ı doğrular ve gerekirse refresh eder (gameApi.ts deseninin
- * kopyası — gameApi "oyun API'lerinin tek kaynağı"dır, gauntlet oraya
- * eklenmez ve o dosyaya dokunulmaz).
- */
-async function ensureAuthSession(): Promise<void> {
-  const { data: { session } } = await supabase.auth.getSession();
-  const nowSec = Math.floor(Date.now() / 1000);
-  const isExpiredOrSoon = !session ||
-    (session.expires_at != null && session.expires_at < nowSec + 30);
-
-  if (isExpiredOrSoon) {
-    const { error } = await supabase.auth.refreshSession();
-    if (error) {
-      logger.warn('[gauntletService] Session refresh failed:', error.message);
-    }
   }
 }
 

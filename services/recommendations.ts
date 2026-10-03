@@ -14,6 +14,7 @@ import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 
 import { getAppUserId } from './auth-utils';
+import { ensureAuthSession, getFreshSession } from './authSession';
 import { getSearchKeywords, consumePendingMoodText, peekPendingMoodText } from './moodSearchState';
 import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
@@ -37,24 +38,9 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
  * Bu fonksiyon session'ı kontrol eder, yoksa refresh dener.
  * Fail durumunda sessiz devam eder — UPDATE RLS'den düşer ama film akışı kesilmez.
  */
-async function ensureAuthSession(): Promise<void> {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    // getSession() cached session döner — expires_at kontrolü ile proaktif refresh
-    const nowSec = Math.floor(Date.now() / 1000);
-    const isExpiredOrSoon = !session ||
-      (session.expires_at != null && session.expires_at < nowSec + 30);
-    if (isExpiredOrSoon) {
-      const { error } = await supabase.auth.refreshSession();
-      if (__DEV__ && error) {
-        // eslint-disable-next-line no-console
-        console.warn('[recommendations] Session refresh failed:', error.message);
-      }
-    }
-  } catch {
-    // Auth check hatası film akışını engellemez
-  }
-}
+// Sprint 10b: yerel kopya `services/authSession.ts`'e taşındı. Fırlatmaz; hata
+// Sentry'ye (flow=auth_session, oturum başına bir capture) yazılır — eski boş
+// catch kalktı. Film akışı yine kesilmez.
 
 // ─── Yardımcı: mood_searches yazma görünürlüğü ──────────────────────────────
 
@@ -759,20 +745,8 @@ async function callRerankFilms(
   candidates: MatchFilmRow[],
   count: number,
 ): Promise<RerankResponse | null> {
-  // Token freshness — tasteParser.ts ile ayni pattern
-  let { data: { session } } = await supabase.auth.getSession();
-  const nowSec = Math.floor(Date.now() / 1000);
-  const isExpiredOrSoon = !session ||
-    (session.expires_at != null && session.expires_at < nowSec + 30);
-
-  if (isExpiredOrSoon) {
-    const refreshResult = await supabase.auth.refreshSession();
-    session = refreshResult.data.session;
-    if (!session) {
-      const retry = await supabase.auth.getSession();
-      session = retry.data.session;
-    }
-  }
+  // Token freshness — authSession.ts (oturum yoksa anon anahtar, eskisi gibi)
+  const session = await getFreshSession();
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
   const controller = new AbortController();

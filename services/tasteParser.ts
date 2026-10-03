@@ -13,6 +13,7 @@
  */
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants/config';
 import { supabase } from './supabase';
+import { getFreshSession } from './authSession';
 import {
   EndingPreference,
   NarrativeStyle,
@@ -87,23 +88,10 @@ export interface ParseMoodResult {
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
   // ── Token freshness garantisi ─────────────────────────────────────────────
-  // getSession() CACHED session döner — expired token'ı null yapmaz.
   // Expired token → edge function getUser() fail → userId null → logMoodSearch SKIP.
-  // Bu yüzden expires_at kontrolü yapıp proaktif refresh ediyoruz.
-  let { data: { session } } = await supabase.auth.getSession();
-  const nowSec = Math.floor(Date.now() / 1000);
-  const isExpiredOrSoon = !session ||
-    (session.expires_at != null && session.expires_at < nowSec + 30);
-
-  if (isExpiredOrSoon) {
-    const refreshResult = await supabase.auth.refreshSession();
-    session = refreshResult.data.session;
-    if (!session) {
-      // Refresh de başarısız — son şans: belki başka bir çağrı refresh etmiştir
-      const retry = await supabase.auth.getSession();
-      session = retry.data.session;
-    }
-  }
+  // auth-js getSession() süresi 90 sn içinde dolacak oturumu kendisi yeniler
+  // (bkz. authSession.ts); oturum yoksa anon anahtara düşülür (eskisi gibi).
+  const session = await getFreshSession();
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
   const controller = new AbortController();
