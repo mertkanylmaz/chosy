@@ -25,14 +25,15 @@
  * kullanıcı dönüş anında paywall görürdü — 31 Ağu 2026 canlı veri ölçümünde
  * 6/6 kullanıcı tam olarak bu durumdaydı.
  *
- * Sessiz fallback yok: durum alınamazsa Sentry servis katmanında yazıldı,
- * burada hiçbir şey gösterilmez (ritüelin üstüne hata basmak, kullanıcının
+ * Sessiz fallback yok: durum alınamazsa Sentry'ye yazılır (ağ/sunucu
+ * hatasında servis katmanı, 401'de bu bileşen), burada hiçbir şey gösterilmez (ritüelin üstüne hata basmak, kullanıcının
  * asıl işini bozar — arşiv ikincil bir yüzey).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 
+import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
@@ -41,7 +42,7 @@ import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { getArchiveStatus } from '@/services/gauntletService';
+import { GauntletAuthPendingError, getArchiveStatus } from '@/services/gauntletService';
 import { hapticLight } from '@/utils/haptics';
 
 export function ArchiveTrigger(): React.JSX.Element | null {
@@ -77,9 +78,28 @@ export function ArchiveTrigger(): React.JSX.Element | null {
         // acilan bir paywall, K-45'in "champion paywall'i yok" yasagiyla ayni
         // pikselleri paylasirdi. Tek giris noktasi asagidaki `handlePress`:
         // kullanici arsiv baglantisina bilincli olarak dokunur.
-      } catch {
-        // Servis katmanı Sentry'ye yazdı. Arşiv ikincil yüzey — ritüelin
-        // üstüne hata basılmaz, giriş bağlantısı hiç görünmez.
+      } catch (err) {
+        // Arşiv ikincil yüzey — ritüelin üstüne hata basılmaz, giriş
+        // bağlantısı bu mount boyunca görünmez. Ama sessiz değil:
+        //   401 (bootstrap penceresi) → servis Sentry'ye YAZMAZ, burada yazılır;
+        //   ağ yok / sunucu hatası   → servis zaten yazdı, çift event yerine
+        //                              breadcrumb (GauntletShell waiting CTA deseni).
+        if (err instanceof GauntletAuthPendingError) {
+          Sentry.captureException(err, {
+            level: 'warning',
+            tags: {
+              component: 'ArchiveTrigger',
+              error_code: 'ARCHIVE_STATUS_AUTH_PENDING',
+            },
+          });
+        } else {
+          Sentry.addBreadcrumb({
+            category: 'gauntlet.archive',
+            level: 'warning',
+            message: 'archive status okunamadı — arşiv bağlantısı gizli',
+            data: { error: err instanceof Error ? err.message : String(err) },
+          });
+        }
       }
     })();
     // Yalnız durum sorgusu — paywall tetiklemediği için abonelik/trigger
