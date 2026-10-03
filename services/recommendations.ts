@@ -7,6 +7,7 @@
  *   3. RPC başarısız olursa JavaScript taraflı fallback devreye girer
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 
 import { TasteProfile, FilmFilters } from '../types';
 import { Film } from '../types/film';
@@ -53,6 +54,49 @@ async function ensureAuthSession(): Promise<void> {
   } catch {
     // Auth check hatası film akışını engellemez
   }
+}
+
+// ─── Yardımcı: mood_searches yazma görünürlüğü ──────────────────────────────
+
+type MoodSearchWriteStep = 'success_path' | 'fallback_path' | 'search_id_missing';
+
+/** Oturum başına flow+step başına tek capture — gerisi breadcrumb (Sentry seli önleme). */
+const reportedMoodSearchWrites = new Set<string>();
+
+/**
+ * mood_searches UPDATE'inin sessiz kaybını Sentry'ye yansıtır (Kural 1).
+ * Yalnızca görünürlük: UPDATE davranışını ve kullanıcı akışını değiştirmez.
+ * `extra` içine arama metni YAZILMAZ — yalnızca uzunluk gibi türev değerler.
+ */
+function reportMoodSearchWriteIssue(params: {
+  step: MoodSearchWriteStep;
+  message: string;
+  error?: { message: string; code?: string } | null;
+  extra: Record<string, unknown>;
+}): void {
+  const { step, message, error, extra } = params;
+  const key = `mood_search_update:${step}`;
+
+  if (reportedMoodSearchWrites.has(key)) {
+    Sentry.addBreadcrumb({
+      category: 'mood_search_update',
+      message,
+      level: 'warning',
+      data: { step, ...extra },
+    });
+    return;
+  }
+  reportedMoodSearchWrites.add(key);
+
+  const tags = { flow: 'mood_search_update', step };
+  if (error) {
+    Sentry.captureException(
+      Object.assign(new Error(`mood_searches UPDATE failed: ${error.message}`), { code: error.code }),
+      { tags, extra: { ...extra, pgCode: error.code ?? null } },
+    );
+    return;
+  }
+  Sentry.captureMessage(message, { level: 'warning', tags, extra });
 }
 
 // ─── Yardımcı: Network Hata Tespiti ──────────────────────────────────────────
@@ -932,6 +976,22 @@ export async function getRecommendations(
     isFalsy: !searchId,
   });
 
+  // searchId yoksa mood_searches UPDATE'i atlanır. İlk batch'te bu beklenmez
+  // (parse-mood INSERT'i başarısız veya searchId taşıma zincirinde kayıp).
+  // Sonraki batch'lerde ve surprise fallback'te null beklenen davranıştır.
+  if (!searchId && isFirstBatch) {
+    const pendingMoodTextLength = peekPendingMoodText()?.length ?? null;
+    reportMoodSearchWriteIssue({
+      step: 'search_id_missing',
+      message: 'mood_searches UPDATE skipped: searchId missing on first batch',
+      extra: {
+        hasPendingMoodText: pendingMoodTextLength !== null,
+        moodTextLength: pendingMoodTextLength,
+        isFirstBatch,
+      },
+    });
+  }
+
   // ── Adım 1: TasteProfile logu ────────────────────────────────────────────
   if (__DEV__) {
     // eslint-disable-next-line no-console
@@ -1204,11 +1264,39 @@ export async function getRecommendations(
         .eq('id', searchId)
         .select('id');
 
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.log('[recommendations] mood_searches fallback update:',
-          fbUpdateError ? `ERROR: ${fbUpdateError.message}` : `rows=${fbUpdateData?.length ?? 0}`,
-          '| searchId:', searchId);
+      const fbRowsAffected = fbUpdateData?.length ?? 0;
+      const { data: { session: fbSession } } = await supabase.auth.getSession();
+      const fbNowSec = Math.floor(Date.now() / 1000);
+      const fbIsExpiring = fbSession?.expires_at != null
+        ? fbSession.expires_at < fbNowSec + 30
+        : null;
+
+      posthogAnalytics.track('mood_search_update_debug_fallback', {
+        searchId,
+        hasSession: !!fbSession,
+        isExpiring: fbIsExpiring,
+        authUid: fbSession?.user?.id ?? null,
+        updateError: fbUpdateError?.message ?? null,
+        updateErrorCode: fbUpdateError?.code ?? null,
+        rowsAffected: fbRowsAffected,
+        rpcVersion,
+        errorCode,
+        filmCount: fallbackFilms?.length ?? 0,
+      });
+
+      if (fbUpdateError || fbRowsAffected === 0) {
+        reportMoodSearchWriteIssue({
+          step: 'fallback_path',
+          message: 'mood_searches UPDATE affected 0 rows (fallback path)',
+          error: fbUpdateError,
+          extra: {
+            searchId,
+            hasSession: !!fbSession,
+            isExpiring: fbIsExpiring,
+            rpc_version: rpcVersion,
+            fallbackReason: errorCode,
+          },
+        });
       }
     }
 
@@ -1264,6 +1352,22 @@ export async function getRecommendations(
       .select('id');
 
     const rowsAffected = updateData?.length ?? 0;
+
+    if (updateError || rowsAffected === 0) {
+      reportMoodSearchWriteIssue({
+        step: 'success_path',
+        message: 'mood_searches UPDATE affected 0 rows (success path)',
+        error: updateError,
+        extra: {
+          searchId,
+          hasSession: preSessionInfo.hasSession,
+          isExpiring: preSessionInfo.expiresAt != null
+            ? preSessionInfo.expiresAt < preSessionInfo.nowSec + 30
+            : null,
+          rpc_version: rpcVersion,
+        },
+      });
+    }
 
     // ── DEBUG: PostHog event — production silent failure telemetri ────────
     posthogAnalytics.track('mood_search_update_debug', {
