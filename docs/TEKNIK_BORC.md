@@ -3444,3 +3444,28 @@ migration-guard'ın bulduğu dört notu kayda geçirir; hepsi bilinçli kabul.
 - Ham `fetch` çağıranlar (`merge-anonymous-user`, `delete-account`) `supabaseFetch`'i atlar, zaman aşımsızdır.
 - `parse-mood` ve `rerank-films` kendi `AbortController`'ını taşır (sarmalayıcıdan geçmez).
 - `network_request_timeout` (Sentry) sayısı OTA sonrası izlenecek. Eşik: oturum başına >3 ise süreleri gevşet.
+
+## 🟡 Champion ask koordinatörü (S-1, K-60) — kalan borçlar (3 Eki 2026)
+
+### 1. Eski "Not now" kullanıcıları auth ask'ini görmez — bilinçli taviz
+
+R-A-2 döneminde (22 Ağu → 3 Eki 2026) "Not now" da `users.auth_prompt_seen = true`
+yazıyordu. K-60 bu bayrağı "girişe dönüşmüş" olarak okur (yalnız gerçek girişte
+yazılır). Sonuç: eski "Not now" kullanıcıları auth_prompt_seen=true nedeniyle auth
+ask'i görmez, bilinçli taviz. Eski "ömür boyu bir kez" davranışı bu kohortta
+korunur. Veri düzeltmesi yapılmadı (`services/askCoordinator.ts` `readAuthState`).
+
+### 2. `isPermissionGranted` fail-open
+
+isPermissionGranted OS izni okunamazsa false dönüyor, bildirim ask'i fail-open
+(Sentry warning var, sessiz değil). Tetikleyici: bildirim opt-in verisinde anomali
+ya da K-55 cihaz matrisi. (`services/pushNotifications.ts` `isPermissionGranted`;
+`shouldAskForNotificationPermission`'ın kendi hata dalı `70ef249` ile Sentry
+`fatal`'a bağlandı, bu madde ondan ayrı.)
+
+### 3. ✅ R-A-2 — `_layout` ikinci push çağrısı (KAPANDI)
+
+`registerForPushNotifications` artık `app/_layout.tsx`'ten çağrılmıyor; açılışta
+yalnız token tazeleme + rozet temizleme kalıyor (`app/_layout.tsx:680-684`).
+İzin isteyen tek yüzeyler: champion `NotificationPromptSheet` (K-60) ve
+`before_18` bekleme CTA'sı. Cihaz testi V1_TESTFLIGHT_CHECKLIST J3'te açık.
