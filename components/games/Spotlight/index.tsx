@@ -508,7 +508,13 @@ export function SpotlightGame() {
                 : t('games.spotlight.result_lost')
             }
             countdown={countdown}
-            onBackToHub={() => router.back()}
+            // Hub yok (IA §2.6) — etiket "Back". Gecmis yoksa (bildirim /
+            // soguk acilis) Home'a: archive.tsx ile ayni desen.
+            backLabel={t('games.common.back')}
+            onBackToHub={() => {
+              if (router.canGoBack()) router.back();
+              else router.replace('/(tabs)');
+            }}
           />
         </ScrollView>
         )}

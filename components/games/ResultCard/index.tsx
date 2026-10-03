@@ -99,6 +99,11 @@ interface ResultCardProps {
   countdownLabel?: string;
   /** "Hub'a don" eylemi — verilirse buton gosterilir */
   onBackToHub?: () => void;
+  /**
+   * Geri butonunun etiketi. Varsayilan `games.result.back_to_hub`; hub'i
+   * olmayan Spotlight "Back" gecer (P-2). Diger oyunlarda degismez.
+   */
+  backLabel?: string;
   /** Sonuc basligi yerine oyuna ozel mesaj (orn. "3 tahminde buldun!") */
   resultMessage?: string;
   /**
@@ -139,6 +144,7 @@ export function ResultCard({
   countdown,
   countdownLabel,
   onBackToHub,
+  backLabel,
   resultMessage,
   hidePoster = false,
 }: ResultCardProps) {
@@ -347,7 +353,7 @@ export function ResultCard({
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.hubText}>{t('games.result.back_to_hub')}</Text>
+              <Text style={styles.hubText}>{backLabel ?? t('games.result.back_to_hub')}</Text>
             </TouchableOpacity>
           )}
         </View>
