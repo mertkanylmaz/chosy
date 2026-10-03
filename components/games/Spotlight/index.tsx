@@ -37,7 +37,6 @@ import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
 import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
-import { clamp, useGameFit } from '@/hooks/useGameLayout';
 import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
@@ -69,20 +68,6 @@ const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
 
 /** En yuksek bulaniklik — hic harf acilmamisken (tek kaynak: ./constants) */
 const MAX_BLUR = SPOTLIGHT_MAX_BLUR;
-
-/**
- * Ust bolgede gorselin disindaki sabit dikey yuk: gorselin ust marji
- * (`stillWrap.marginTop`) + gorsel ile maske blogu arasi bosluk
- * (`topContent.gap`). Maske blogunun kendisi OLCULUR — satir sayisi baslik
- * uzunluguna ve Dynamic Type'a gore degisiyor (B-1 / Fix 8: eski sabit
- * `BOARD_RESERVED_H = 340` maskeyi hep tek satir sayiyordu).
- */
-const TOP_REGION_FIXED_H = Theme.spacing.sm + Theme.spacing.md;
-
-/** Gorselin okunurluk tabani — altinda film karesi tanınmaz oluyor */
-const STILL_MIN = 150;
-/** Ust sinir — buyuk ekranda gorsel ekrani yutmasin */
-const STILL_MAX = 380;
 
 /**
  * Bulaniklik acilan harf oranina gore azalir: hicbiri acikken MAX_BLUR,
@@ -192,26 +177,6 @@ export function SpotlightGame() {
 
   const theme = useGameThemeFor(GAME_TYPE);
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  /** Ust bolgenin (kaydirilabilir alan) gorunur yuksekligi */
-  const fit = useGameFit();
-  /** Maske blogunun (etiket + satirlar) olculen yuksekligi */
-  const maskFit = useGameFit();
-
-  /**
-   * Gorselin yuksekligi ust bolgede maskeden ARTAN alandan pay biciliyor.
-   *
-   * Sabit oran kullanilamaz: Kural 4 gorselin ekran yuksekliginin >=%45'i
-   * olmasini istiyor ama iPhone SE'de (667pt) %45 klavyeyi ekran disina iterdi.
-   * Aksiyon bari bu hesaba girmez — o ust bolgenin disinda, sabit.
-   *
-   * STILL_MIN okunurluk tabani: bu degerin altinda film karesi tanınmaz hale
-   * geliyor ve oyunun tek gorsel ipucu kayboluyor. Taban alana sigmiyorsa
-   * (uzun baslik, acik klavye) ust bolge kayar; aksiyon bari itilmez.
-   */
-  const stillHeight = fit.measured
-    ? clamp(fit.height - maskFit.height - TOP_REGION_FIXED_H, STILL_MIN, STILL_MAX)
-    : STILL_MIN;
 
   const [screenState, setScreenState] = useState<ScreenState>('loading');
   const [loadError, setLoadError] = useState(false);
@@ -546,18 +511,15 @@ export function SpotlightGame() {
         <ScrollView
           style={styles.topRegion}
           contentContainerStyle={styles.topContent}
-          onLayout={fit.onLayout}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
         {/*
           Gorsel — acilan her harf netlestirir. Ekranin kahramani (Kural 4).
-          Yukseklik ust bolgede maskeden artan alandan pay biciliyor.
+          Kutu kaynakla ayni oranda (16:9, P-2): cover kirpmaz. Ust bolgede
+          artan alan maske ile aksiyon bari arasinda kalir.
         */}
-        <Animated.View
-          entering={FadeIn.duration(400)}
-          style={[styles.stillWrap, { height: stillHeight }]}
-        >
+        <Animated.View entering={FadeIn.duration(400)} style={styles.stillWrap}>
               <Image
                 source={{ uri: puzzleData?.backdrop_url ?? '' }}
                 style={styles.still}
@@ -583,8 +545,8 @@ export function SpotlightGame() {
               </GlassSurface>
             </Animated.View>
 
-            {/* Baslik maskesi — yuksekligi olculur, gorsel artandan pay alir */}
-            <View style={styles.maskBlock} onLayout={maskFit.onLayout}>
+            {/* Baslik maskesi */}
+            <View style={styles.maskBlock}>
             <Text style={styles.maskLabel}>{t('games.spotlight.title_label')}</Text>
             {/*
               Kelime gruplari: satir kelimeler ARASINDA kirilir. Slot olcegi

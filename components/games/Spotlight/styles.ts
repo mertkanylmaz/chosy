@@ -20,6 +20,7 @@ import {
   scaled,
   wordSpacing,
 } from './maskLayout';
+import { stillHeightFor } from './stillLayout';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
@@ -30,8 +31,8 @@ const MASK_ROW_PADDING = Theme.spacing.sm;
 /** Maske satirinin kelime dizebilecegi genislik — olcek hesabinin girdisi */
 export const MASK_ROW_W = STILL_W - MASK_ROW_PADDING * 2;
 
-// STILL_H KALDIRILDI (Kural 7): yukseklik artik modul sabiti degil,
-// index.tsx'te olculen alandan pay biciliyor.
+/** Kare kutusu kaynakla ayni oranda (16:9) — cover kirpmaz (P-2) */
+export const STILL_H = stillHeightFor(STILL_W);
 
 /** Klavye tus olcusu — en genis sira 10 sutun */
 const KEY_GAP = 4;
@@ -83,7 +84,7 @@ export const createStyles = (theme: GameTheme) => {
   // ─── Gorsel ───────────────────────────────────────────────────────────────
   stillWrap: {
     width: STILL_W,
-    // height runtime'da: olculen alandan pay biciliyor (index.tsx)
+    height: STILL_H,
     borderRadius: Theme.borderRadius.lg,
     overflow: 'hidden',
     borderWidth: 1,
