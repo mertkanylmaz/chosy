@@ -25,7 +25,10 @@ Onaysız alınan mimari karar protokol ihlalidir.
 3. Migration'lar sadece `supabase db push`. SQL editor migration takibini bozar.
 4. Film verisinde DELETE yok — `curation_tier` ile arşivle.
 5. Feature flag'ler lazy getter ile okunur. Modül seviyesi sabit yasak.
-6. `app_config` değerleri istek başına lazy okunur, modül seviyesinde cache yok.
+6. `app_config` değerleri `services/remoteConfig.ts` üzerinden okunur: 5 dk TTL'li tek kaynak
+   (bellek + AsyncStorage, tek `select key, value`). Bayrak değişikliği en geç 5 dk'da yansır;
+   bunlar özellik bayrağıdır, güvenlik bayrağı değil (yetki sunucuda). Yeni okuma ayrı
+   `.from('app_config')` isteği açmaz.
 7. Tüm string'ler `t()` üzerinden. `en.json` + `tr.json` tam parite.
 8. `types/gauntlet.ts` KİLİTLİ sözleşmedir. Değişimi CTO onayı ister.
 9. Tasarım: token dosyaları tek kaynak. Görseller implementasyon girdisi değil.

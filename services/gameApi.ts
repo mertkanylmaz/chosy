@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
+import { remoteConfig } from './remoteConfig';
 import { logger } from '@/utils/logger';
 
 import type {
@@ -48,24 +49,14 @@ async function ensureAuthSession(): Promise<void> {
 /**
  * Hub'da gosterilecek oyun listesi (app_config: games_enabled).
  *
- * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
- * Okuma basarisiz olursa hata Sentry'ye duser ve null doner; cagiran taraf
- * varsayilan listeyi gosterir (sessiz fallback degil, loglanan bilincli davranis).
+ * Sprint 10b: `remoteConfig` tek kaynağından (5 dk TTL) okunur, ayrı istek yok.
+ * Okuma basarisiz olursa hata `remoteConfig`'te Sentry'ye duser; eski onbellek
+ * varsa o kullanilir, yoksa null doner ve cagiran taraf varsayilan listeyi
+ * gosterir (sessiz fallback degil, loglanan bilincli davranis).
  */
 export async function getEnabledGames(): Promise<string[] | null> {
-  const { data, error } = await supabase
-    .from('app_config')
-    .select('value')
-    .eq('key', 'games_enabled')
-    .single();
-
-  if (error) {
-    Sentry.captureException(error, { tags: { config: 'games_enabled' } });
-    logger.error('[gameApi] getEnabledGames failed:', error, { skipBridge: true });
-    return null;
-  }
-
-  const games = (data?.value as { games?: string[] } | null)?.games;
+  await remoteConfig.hydrate();
+  const games = (remoteConfig.getRaw('games_enabled') as { games?: string[] } | null | undefined)?.games;
   return Array.isArray(games) ? games : null;
 }
 
@@ -85,22 +76,13 @@ export async function getEnabledGames(): Promise<string[] | null> {
  * C.6 sonrasi dogru durum kapali olmak. Okuma HATASI ayri bir yol —
  * Sentry'ye duser ve yine kapali doner (fail-closed).
  *
- * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
+ * Sprint 10b: `remoteConfig` tek kaynağından (5 dk TTL) okunur. Okuma hatasi
+ * `remoteConfig`'te Sentry'ye duser; onbellek yoksa kapali doner (fail-closed).
  */
 export async function isRouletteEnabled(): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('app_config')
-    .select('value')
-    .eq('key', 'games_enabled')
-    .single();
-
-  if (error) {
-    Sentry.captureException(error, { tags: { config: 'games_enabled.roulette' } });
-    logger.error('[gameApi] isRouletteEnabled failed:', error, { skipBridge: true });
-    return false;
-  }
-
-  return (data?.value as { roulette?: boolean } | null)?.roulette === true;
+  await remoteConfig.hydrate();
+  const value = remoteConfig.getRaw('games_enabled') as { roulette?: boolean } | null | undefined;
+  return value?.roulette === true;
 }
 
 /** Cinema DNA rank yapilandirmasi (app_config: dna_config) */
@@ -114,27 +96,16 @@ export interface DnaRankConfig {
 /**
  * Rank esiklerini app_config'ten okur.
  *
- * Config her cagrida okunur — module-level cache YASAK (Hard Rule 4).
- * Okuma basarisiz olursa Sentry'ye duser ve null doner; cagiran taraf
+ * Sprint 10b: `remoteConfig` tek kaynağından (5 dk TTL) okunur. Okuma hatasi
+ * `remoteConfig`'te Sentry'ye duser; onbellek yoksa null doner ve cagiran taraf
  * ilerleme cubugunu gizler (uydurma esik gostermez).
  */
 export async function getDnaConfig(): Promise<DnaRankConfig | null> {
-  const { data, error } = await supabase
-    .from('app_config')
-    .select('value')
-    .eq('key', 'dna_config')
-    .single();
-
-  if (error) {
-    Sentry.captureException(error, { tags: { config: 'dna_config' } });
-    logger.error('[gameApi] getDnaConfig failed:', error, { skipBridge: true });
-    return null;
-  }
-
-  const value = data?.value as {
+  await remoteConfig.hydrate();
+  const value = remoteConfig.getRaw('dna_config') as {
     rank_thresholds?: number[];
     rank_min_dailies?: number[];
-  } | null;
+  } | null | undefined;
 
   if (!Array.isArray(value?.rank_thresholds) || !Array.isArray(value?.rank_min_dailies)) {
     const shapeError = new Error('dna_config missing rank_thresholds/rank_min_dailies');

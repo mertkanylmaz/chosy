@@ -3433,3 +3433,7 @@ migration-guard'ın bulduğu dört notu kayda geçirir; hepsi bilinçli kabul.
    `syncAuthProvider`, Google OAuth `isNewUser`, `updateUserProfile`): kimlik akışı olduğu için
    10a'da dokunulmadı. Hiçbiri açılış yolunda değil, hepsi kullanıcı eylemiyle tetikleniyor;
    kazanç küçük. Gerekirse `getSession()`'a taşınabilir (yalnız `user.id` / `is_anonymous` / `created_at` okunuyor).
+
+## Sprint 10b — app_config
+
+- app_config bayrak değişikliği en geç 5 dk'da yansır (Kural 6, v1.40).

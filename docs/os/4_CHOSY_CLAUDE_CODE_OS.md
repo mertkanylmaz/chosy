@@ -231,7 +231,7 @@ KISITLAR (her zaman geçerli):
 - Migration'lar sadece `supabase db push`. SQL editor kullanma.
 - Film verisinde DELETE yok — curation_tier ile arşivle.
 - Feature flag'ler lazy getter ile okunur, modül seviyesi sabit YASAK.
-- app_config değerleri istek başına lazy okunur.
+- app_config değerleri `services/remoteConfig.ts` üzerinden okunur: 5 dk TTL'li tek kaynak, ayrı `.from('app_config')` isteği YOK (v1.40).
 - Tüm string'ler t() üzerinden, en.json + tr.json parite (1223/1223).
 - Yeni Edge Function'lar jsr: kanalını kullanır (esm.sh değil).
 - Mimari karar gerekiyorsa DUR ve sor.

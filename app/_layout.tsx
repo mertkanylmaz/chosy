@@ -300,12 +300,23 @@ export default function RootLayout() {
   }, [fontError]);
 
   // ── Remote config hydration ──────────────────────────────────────────
-  // Supabase'den app_config çekip flag'leri belleğe yükler.
-  // Fire-and-forget: splash'i bloklamaz, hata durumunda cache/default'a düşer.
+  // Supabase'den app_config çekip flag'leri belleğe yükler (tek kaynak,
+  // 5 dk TTL — Sprint 10b). Fire-and-forget: splash'i bloklamaz, hata
+  // durumunda eski önbelleğe/varsayılana düşer. Uygulama ön plana dönünce
+  // TTL dolduysa yenilenir; taze ise `hydrate()` ağa gitmez.
   useEffect(() => {
-    remoteConfig.hydrate().catch((err) => {
-      logger.warn('[layout] remoteConfig hydrate hatası (graceful devam):', err);
+    const refresh = (): void => {
+      remoteConfig.hydrate().catch((err) => {
+        logger.warn('[layout] remoteConfig hydrate hatası (graceful devam):', err);
+      });
+    };
+    refresh();
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active') refresh();
     });
+    return () => {
+      sub.remove();
+    };
   }, []);
 
   // ── EAS Update: explicit check + fetch + reload ─────────────────────
