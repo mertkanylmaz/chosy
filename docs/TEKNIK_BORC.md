@@ -3382,3 +3382,23 @@ kabul. Varsayılan `false`; oyun dışı çağıran yok, ama TMDb yolu kodda dur
 - `handleGuess` uuid guard'ları (Spotlight `:334` vb.) savunmacı olarak duruyor.
 - Katalog dışı arama hiç sonuç döndürmediğinden kullanıcı "film yok" ile "yazım hatası"
   ayrımını göremez; boş dropdown (K-43) davranışı aynı.
+
+## 🔴 Hesap silme 207 sonrası "dirilen hesap" (Sprint 5 keşfi, 3 Eki 2026)
+
+Kod DEĞİŞTİRİLMEDİ (auth kodu, CTO kararı bekliyor).
+
+1. **Sorun:** `delete-account` 207 (kısmi başarı) döner: `public.users` + cascade silinmiş,
+   `auth.users` satırı kalmış, oturum cihazda açık. `app/_layout.tsx` her
+   `SIGNED_IN`/`INITIAL_SESSION`'da `ensureAppUser()` çalıştırır; o da
+   `upsert({auth_id}, onConflict: 'auth_id')` ile **boş, yeni `id`'li bir `public.users`
+   satırı açar.** Kullanıcı "tekrar dokun" demezse silinmiş sandığı hesap boş olarak
+   geri gelir; PostHog silmesi de (adım 5) hiç çalışmamıştır.
+2. **Çözüm yönü:** bekleyen-silme bayrağı (AsyncStorage) — 207'de yazılır; bir sonraki
+   açılışta `ensureAppUser`'dan ÖNCE `deleteAccount` tekrar denenir, başarıda bayrak
+   silinir. Bayrak varken `ensureAppUser` çağrılmaz.
+3. **Operasyon:** `delete-account: auth user silinemedi (207)` Sentry `fatal`'ı
+   oluşursa ilgili `auth.users` satırı Dashboard'dan elle silinir (auth_uid olay
+   `extra`'sında).
+4. **Risk:** `auth.users`'ta kalan satırda Apple e-postası (veya relay adresi)
+   durabilir — yalnızca Apple'a bağlanmış hesaplar için; anonim hesaplarda e-posta yok.
+   Elle silme bunu da temizler.
