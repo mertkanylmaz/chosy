@@ -1,6 +1,6 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.38
+**Sürüm:** 1.39
 **Tarih:** 3 Ekim 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
@@ -937,7 +937,9 @@ Kararlar kurucu tarafından AskUserQuestion ile verildi (üç soru, üç seçim)
 
 **Değişen kurallar.** (1) **V1-D7**'nin "dünkü şampiyon yok" kısmı geçersiz
 (satırında üstü çizildi). Arşiv / Pro Mode / keşif rotası yasağı **aynen
-geçerli**: kart dokunulamaz, hiçbir rotaya gitmez (K-46 korunur).
+geçerli**: ~~kart dokunulamaz, hiçbir rotaya gitmez~~ *(v1.39 — **yalnız afiş**
+film detayına gider, bkz. E-24.1; kartın geri kalanı hâlâ dokunulamaz)*
+(K-46 korunur).
 (2) "before_18'de ağ çağrısı yok" → **"before_18'de `generate-gauntlet`
 çağrılmaz"** olarak daraldı (E-21.1 "İstemci tetik" satırına not düşüldü).
 D-12'nin `waiting` satırındaki "gauntlet ÇAĞRILMAZ" ifadesi zaten bu dar
@@ -959,6 +961,27 @@ altında). **Doğrulama:** `typecheck` 14 (hepsi `scripts/`) ·
 `typecheck:functions` 32 · `test:waiting` 15 · `test:previous-cycle` 25,
 hepsi yeşil. Cihaz doğrulaması yapılmadı: `before_18` yalnız TestFlight'ta
 test edilebilir.
+
+### E-24.1 — Bekleyiş afişi film detayına gidiyor (3 Eki 2026)
+
+Kurucu kararı (3 Eki 2026). E-24'ün ~~"kart dokunulamaz, rota yok"~~ maddesi
+**yalnızca afiş görseli için** değişti. **Gerekçe:** kullanıcı son seçtiği filmin
+künyesine/izleme bilgisine bekleme ekranından ulaşabilmeli; afiş zaten ekranın
+tek görsel öğesi ve dokunma beklentisi yaratıyor.
+
+- Afişe dokunma → `router.push('/film/<champion_film_id>')` (`films.id` UUID;
+  `app/film/[id].tsx` `.eq('id', id)` ile aynı kolonu okur). Salt navigasyon,
+  hiçbir şey yazılmaz. Geri dönüşte bekleme ekranı korunur.
+- Erişilebilirlik: `accessibilityRole="button"`, etiket `gauntlet.waitingChampionOpen`
+  ("View {title}" / "{title} filmini görüntüle"). Hafif haptic (`hapticLight`).
+- PostHog: `champion_poster_tapped`, alan yalnız `screen: 'waiting'` (`film_id` yok).
+- **Değişmeyen:** sayaç, "Your last pick" etiketi, geri sayım, film adı; tüm kart
+  değil yalnız afiş dokunulabilir. Arşiv / Pro Mode / keşif yasağı (K-46) aynen.
+- **Detay ekranından çıkış yolları (kod taramasıyla):** Pro Mode / arşiv / benzer
+  film / keşif rotası **yok** (`film/[id].tsx` tek `router` kullanımı `back()`).
+  Var olanlar: fragman/Watch Now (`Linking.openURL`, harici), watchlist'e ekle /
+  çıkar, izlendi işaretle (`watchlist.watched_at`), paylaş. Hiçbiri gauntlet
+  durumunu değiştirmez; hiçbiri kapatılmadı.
 
 ### E-25 — Spotlight içerik sürekliliği: editoryal çözüm havuzu, acil havuz, haftalık cron (30 Eyl 2026)
 
@@ -1166,6 +1189,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.39 | 3 Eki 2026 | **Bekleyiş afişi film detayına gidiyor — E-24 "kart dokunulamaz" maddesi yalnız afiş için değişti (kurucu kararı, bkz. §5 E-24.1).** E-24'te ~~"kart dokunulamaz, rota yok"~~ üstü çizildi (silinmedi); gerekçe: kullanıcı son seçtiği filmin detayına ulaşabilmeli. Afiş → `/film/<champion_film_id>`, `accessibilityRole="button"`, `gauntlet.waitingChampionOpen`, `hapticLight`, PostHog `champion_poster_tapped` (`screen: 'waiting'`, `film_id` yok). Sayaç / etiket / geri sayım / K-46 yasakları değişmedi. Detay ekranında Pro Mode/arşiv/benzer film/keşif çıkışı yok (taranıp raporlandı). `LastChampion`'a `filmId` eklendi (salt okuma). Doğrulama: typecheck 14, functions 32, i18n parite. Cihaz doğrulaması TestFlight/OTA. |
 | 1.38 | 3 Eki 2026 | **K-18 — Context bar varsayılan gizli (Sprint 4 / 4c, CTO talimatı).** Bağlam düzeltmesi henüz bir tahmin modelini beslemiyor; editördeki "yarının tahminini iyileştirir" notu doğrulanamaz bir iddia ve kontrol etkisiz. `ContextBar`, `app_config.gauntlet_context_bar_enabled` bayrağının arkasına alındı; varsayılan **gizli** (satır yok = gizli; okuma hatası Sentry'ye düşer, yine gizli). Kod silinmedi, bayrak `true` olunca çubuk geri gelir. K-18'de yalnız "Context bar" ifadesi üstü çizildi (satır silinmedi); Round indicator ve "Choose one" aynen geçerli. Yeniden açma koşulu: "Faz 1: bağlam tahmin modeli gelince". Bayrak satırı seed EDİLMEDİ (migration ayrı DUR işi, bkz. TEKNIK_BORC). |
 | 1.37 | 2 Eki 2026 | **R-20 — ~~Editoryal gün yenileme kilidi~~ kaldırıldı (CTO Karar 2a).** Editoryal dörtlü = başlangıç dörtlüsü; `submit-choice` editoryal guard'ı (`refreshBlockedReason: 'editorial_day'`) silindi, `neither`/`seen` normal boru hattından yenilenir. `generate-gauntlet` DAL A'ya watched-dışlaması eklendi: izlenen editoryal film aynı pozisyonda normal havuzdan yedeklenir. Gerekçe: G-5 ölçümü kilidi değil ürünü ölçmeli; §6.9 Slot-1 global ortak zemini zaten sağlıyor. E-19.1'in K-23 maddesi, watched-dışlama kararı ve §9 yedek kulübesi satırına "geçersiz — bkz. R-20" notu düşüldü (silinmedi). İstemci `editorial_day` yolu + `gauntlet.editorialNoRefresh` geriye dönük uyum için korunuyor (`TEKNIK_BORC.md`). |
 | 1.36 | 2 Eki 2026 | **B-1 / Fix 8 — Spotlight yerleşim kararları (CTO yazılı onayı, keşif raporundaki 4 karar).** (1) **Design OS Kural 7 ("tek sayfa, ScrollView YOK") için Spotlight'a özel istisna:** oynanış ekranının **yalnız üst bölgesi** (kare + başlık maskesi) kendi içinde kayar; harf klavyesi + arama alanı (aksiyon barı) dipte sabit, sistem klavyesi açıkken klavyenin hemen üstünde. Gerekçe: açık klavye + uzun başlık — ölçüm iPhone SE'de klavye açıkken kısa başlıkta bile ~158px, 37 karakterlik başlıkta klavye kapalıyken ~106px taşma; taşma aksiyon barını ekran dışına itiyordu. İstisna **diğer oyunlara genişlemez** (aramalı 5 donmuş oyun aynı risk sınıfında, `TEKNIK_BORC.md`'ye yazıldı). (2) Başlık maskesi kelime bütünlüğünü korur (satır kelimeler arasında kırılır); slot boyutu 2 satıra sığmak için **0.8'e** kadar küçülür, daha uzun başlık 3+ satırla kayan bölgede kalır. (3) **Sabit kutulu metinlerde `maxFontSizeMultiplier` 1.3** (tuş · slot · input) — token `Theme.fontScale.fixedBoxMax`; etiket/gövde tam ölçeklenir (K-54 korunur). K-55 satırına not. (4) `gameService.searchFilms`'in `catch {}`'i Sentry'ye raporluyor (davranış aynı, `[]`): aynı hata türü 60 sn'de en fazla bir capture, gerisi breadcrumb; çevrimdışıyken capture yok. Kullanıcıya hata metni yok (K-43). Oyun mantığı ve puanlama değişmedi. |

@@ -1441,6 +1441,7 @@
     "markWatched": "Bunu izledim",
     "before18": "Bugünün dörtlüsü %{time}'de hazır.",
     "waitingNotifyCta": "%{time}'de hatırlat",
+    "waitingChampionOpen": "%{title} filmini görüntüle",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"

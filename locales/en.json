@@ -1441,6 +1441,7 @@
     "markWatched": "I've watched this",
     "before18": "Today's four will be ready at %{time}.",
     "waitingNotifyCta": "Remind me at %{time}",
+    "waitingChampionOpen": "View %{title}",
     "countdownHours": {
       "one": "%{count} hour",
       "other": "%{count} hours"

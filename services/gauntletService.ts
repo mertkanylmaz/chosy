@@ -741,6 +741,8 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
 
 /** Profil'in son şampiyon okuması — header perdesi + "son seçimin" kartı. */
 export interface LastChampion {
+  /** `films.id` (UUID) — `app/film/[id].tsx` aynı kolonu okur. */
+  filmId: string;
   /** w342 boyutuna indirilmiş tam URL; filmin posteri yoksa `null`. */
   posterUrl: string | null;
   title: string;
@@ -760,7 +762,7 @@ export interface LastChampion {
 export async function getLastChampion(userId: string): Promise<LastChampion | null> {
   const { data, error } = await supabase
     .from('daily_gauntlets')
-    .select('date, champion:films!champion_film_id(poster_url, title)')
+    .select('date, champion_film_id, champion:films!champion_film_id(poster_url, title)')
     .eq('user_id', userId)
     .eq('scope', 'personal')
     .not('champion_film_id', 'is', null)
@@ -773,7 +775,10 @@ export async function getLastChampion(userId: string): Promise<LastChampion | nu
     throw error;
   }
 
-  const row = data as { champion: { poster_url: string | null; title: string } | null } | null;
+  const row = data as {
+    champion_film_id: string;
+    champion: { poster_url: string | null; title: string } | null;
+  } | null;
   if (!row?.champion) return null;
 
   const path = row.champion.poster_url;
@@ -785,7 +790,7 @@ export async function getLastChampion(userId: string): Promise<LastChampion | nu
       ? `https://image.tmdb.org/t/p/w342${path}`
       : path.replace(/(image\.tmdb\.org\/t\/p\/)[^/]+\//, '$1w342/');
 
-  return { posterUrl, title: row.champion.title };
+  return { filmId: row.champion_film_id, posterUrl, title: row.champion.title };
 }
 
 /**
