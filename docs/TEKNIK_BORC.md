@@ -3551,3 +3551,40 @@ ChampionReveal (`:440-458`) ve P-1a sonrası ResultCard'da var.
   `backdrop_url`'ü doğrulamıyor — guard üretimde (`generate-puzzles`
   `spotlightData`) yapılacak; editoryal havuzda 33 ham-yollu film var, ilki
   tahminen 25 Eki (P-1b §6).
+  **Güncelleme (P-1c, 3 Eki):** migration 124 editoryal 33 filmi tam URL'e
+  çevirdi; `generate-puzzles` v54 geçersiz URL'li filmi havuza almıyor.
+
+---
+
+## 🟡 Edge Function'larda iki `sentry.ts` sürümü canlıda (P-1c D yan etkisi, 4 Eki 2026)
+
+`_shared/sentry.ts` 12 Ağu 2026'da (`de13881`, C.0d) ortam etiketini
+`SUPABASE_ENV`'den `CHOSY_ENV`'e çevirdi. Paylaşılan modül değişikliği yalnız
+o tarihten sonra deploy edilen fonksiyonlara ulaştı. P-1c D,
+`get-daily-challenge`'ı (v30 → v31) deploy edince bu fonksiyon da yeni sürüme
+geçti.
+
+**Ölçüm (4 Eki 2026, `supabase functions download` → `_shared/sentry.ts`):**
+`sentry.ts` import eden 24 fonksiyondan 23'ü canlıda (`winback-sequencer`
+deploy edilmemiş).
+
+| Ortam değişkeni | Fonksiyonlar (canlı sürüm) |
+|---|---|
+| `SUPABASE_ENV` (eski, 7) | `parse-mood` (v39) · `submit-guess` (v37) · `recompute-cinema-dna` (v24) · `get-daily-theme` (v22) · `get-daily-chest` (v23) · `dev-reset-games` (v24) · `recompute-taste-vector` (v22) |
+| `CHOSY_ENV` (yeni, 16) | `explain-match` · `delete-account` · `process-lifetime-purchase` · `revenuecat-webhook` · `recompute-user-vector` · `sync-trending` · `generate-gauntlet` · `submit-choice` · `generate-global-slot` · `profile-missing-films` · `submit-watch-feedback` · `submit-context-correction` · `get-archive-status` · `merge-anonymous-user` · `generate-puzzles` · `get-daily-challenge` |
+
+**Bugünkü etki: ölçülen 0.** Supabase secret listesinde `SUPABASE_ENV` yok,
+`CHOSY_ENV` var. Eski sürüm `|| 'production'` varsayılanına düşüyor. Sentry
+son 30 gün edge olayları (`platform:other`) yalnız `environment:production`:
+yeni sürümdeki `delete-account` ve `merge-anonymous-user` olayları da
+`production` geldiği için `CHOSY_ENV` değeri fiilen `production`. İki grup
+aynı etiketi üretiyor. `CHOSY_ENV` değeri doğrudan okunmadı (secret digest).
+
+**Risk:** `CHOSY_ENV` bir gün `staging`/`production` dışında bir değere
+çekilirse eski 7 fonksiyon `production` yazmaya devam eder — environment'a
+bağlı alert/filtre bu fonksiyonları yanlış gruplar. Ayrıca bu 7 fonksiyonun
+canlı sürümü repo ile diff'lenmedi; toplu redeploy başka değişiklikleri de
+taşıyabilir (bkz. "deploy durumu bible'dan okunmaz").
+
+**Düzeltme yönü (ayrı karar):** her fonksiyon için önce canlı ↔ repo diff,
+sonra redeploy. Toplu redeploy bu kayıtla yapılmaz.
