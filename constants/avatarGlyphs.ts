@@ -10,8 +10,8 @@
  * (onaylı): yönetmen sandalyesi → `Chair`, stüdyo ışığı → `Lamp`,
  * tripod → `Aperture`.
  *
- * ⚠️ `app/setup-profile.tsx` hâlâ PNG'leri (`AvatarIcons`) kullanıyor ve
- * `users.avatar_url`'e aynı id'leri yazıyor — o ekran bu işin kapsamı dışında.
+ * Not: PNG'leri (`AvatarIcons`) kullanan eski `app/setup-profile.tsx`
+ * Sprint 4b'de silindi; `users.avatar_url`'e yazdığı id'ler yukarıdaki 9 id'ydi.
  */
 
 import type { ComponentType } from 'react';

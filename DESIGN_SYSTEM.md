@@ -237,7 +237,7 @@ Tek cümlelik ölçüt: **kullanıcı Wordle oynayan biri gibi değil, Cannes'da
 
    **Referans uygulama: Imposter.** `onLayout` ile kullanılabilir yükseklik bir kez
    ölçülür, öğe boyutları kalan alandan pay biçilerek hesaplanır. Ortak mekanizma:
-   `hooks/useGameFit.ts`. Ekranlar kendi ölçüm matematiğini kopyalamaz.
+   `hooks/useGameLayout.ts` (`useGameFit`). Ekranlar kendi ölçüm matematiğini kopyalamaz.
 
    **Kapsam:** yalnız **oynanış**. Sonuç ekranları (`ResultCard`, `QuickResult`)
    `ScrollView`'de kalır — poster + DNA reveal + keşif hunisi + butonlar sığmıyor

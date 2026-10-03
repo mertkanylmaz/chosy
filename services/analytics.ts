@@ -72,7 +72,8 @@ async function trackEvent(payload: EventPayload): Promise<void> {
     if (payload.event === 'slot_film_rerolled' && payload.variant) {
       // slot_spins'teki son spin'i 'rerolled' olarak isaretle
       // (accepted = false zaten default, ek bilgi icin mood_context'e yazalim)
-      // Bu zaten roulette.tsx'de updateRouletteOutcome ile yapiliyor — extra log gereksiz
+      // Bu zaten app/roulette.tsx'in services/roulette.ts → updateRouletteOutcome
+      // cagrisiyla yapiliyor — extra log gereksiz
     }
 
   } catch (err) {

@@ -55,10 +55,10 @@ export async function markEntryShownToday(): Promise<void> {
   }
 }
 
-/** hasEntryShownToday alias — app/index.tsx ile uyumlu */
+/** hasEntryShownToday alias — şu an çağıran yok (app/index.tsx yok) */
 export const wasEntryShownToday = hasEntryShownToday;
 
-/** markEntryShownToday alias — app/index.tsx ile uyumlu */
+/** markEntryShownToday alias — şu an çağıran yok (app/index.tsx yok) */
 export const markEntryShown = markEntryShownToday;
 
 /**
