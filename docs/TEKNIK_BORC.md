@@ -3469,3 +3469,36 @@ ya da K-55 cihaz matrisi. (`services/pushNotifications.ts` `isPermissionGranted`
 yalnız token tazeleme + rozet temizleme kalıyor (`app/_layout.tsx:680-684`).
 İzin isteyen tek yüzeyler: champion `NotificationPromptSheet` (K-60) ve
 `before_18` bekleme CTA'sı. Cihaz testi V1_TESTFLIGHT_CHECKLIST J3'te açık.
+
+## 🟡 Spotlight kartı / champion fold (S-2) — kalan borçlar (3 Eki 2026)
+
+### 1. Spotlight deneme sayısı app kill'de kayboluyor — S-3 adayı
+
+App kill sonrası Spotlight ekranı deneme sayısını 0 gösteriyor, "kalan hak" 6
+görünüyor; sunucu ise gerçek sayıyla 6. denemede 409 ile kesiyor
+(`submit-guess/index.ts:470-472`). Kök neden: `get-daily-challenge`
+`game_scores.attempts`'ı seçiyor ama response'a koymuyor
+(`supabase/functions/get-daily-challenge/index.ts:103`); istemci resume'da
+`progress.guesses.length`'i okuyor (`components/games/Spotlight/index.tsx:262`),
+Spotlight'ta bu dizi her zaman `[]` (`submit-guess/index.ts:514,699`).
+Aynı eksik S-2'de kartın deneme sayısı göstermemesinin ve
+`spotlight_card_*` event'lerinde `attempt_count` olmamasının sebebi (CTO
+kararı 2: Edge Function'a dokunulmadı). Düzeltme: response'a additive
+`attempts` alanı + istemci resume'u — Edge Function deploy'u ister.
+
+### 2. Spotlight `game_daily_opened.source` her zaman `'hub'`
+
+`trackGameOpened('spotlight', …, 'hub')` sabit (`Spotlight/index.tsx:273`).
+Hub yok; tek giriş champion kartı. Kart → oyun funnel'ı `game_id` ile
+kurulabiliyor (CTO onayı, 3 Eki 2026), `source` alanı bugün anlamsız.
+Düzeltme `trackGameOpened` `source` birliğine yeni üye ister.
+
+### 3. `useChampionAsk` kart ölçülerini sıfırlamıyor
+
+Kart sarmalayıcısı unmount olduğunda hook'un `metricsRef`'i (cardY/cardHeight)
+eski değerde kalır (`components/gauntlet/GauntletShell/useChampionAsk.ts:85`).
+Aynı kabuk oturumunda İKİNCİ bir canlı şampiyon gelirse (E-21 önceki döngü →
+18:00 geçişi → bugünün finali) dwell, yeni kart mount olmadan eski ölçülerle
+kurulabilir. Aynı odakta ilk ask zaten çözüldüyse (`resolvedThisFocusRef`)
+etkisiz. S-2'de hook'a dokunulmadı (KORU); düzeltme hook'ta unmount'ta
+`cardHeight = 0` yazmak.
