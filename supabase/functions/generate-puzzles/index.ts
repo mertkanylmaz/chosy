@@ -10,6 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildTitleMask } from '../_shared/spotlightLetters.ts'
+import { isAbsoluteHttpUrl } from '../_shared/imageUrl.ts'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -580,8 +581,9 @@ async function fetchFilms(game: GameType, usedIds: Set<string>, usedDirs: Set<st
  *
  * SIRA KORUNUR — `genOne` Spotlight'ta hash karıştırması yapmaz.
  *
- * Oynanamayacak başlıklar (A-Z dışı harf, slot 3..30 dışı) ve backdrop'suz
- * filmler burada elenir: `tryCandidates` listenin yalnız ilk 3'ünü dener,
+ * Oynanamayacak başlıklar (A-Z dışı harf, slot 3..30 dışı), backdrop'suz ve
+ * poster/backdrop'u mutlak `http(s)` URL olmayan filmler (P-1c A, Sentry
+ * warning ile) burada elenir: `tryCandidates` listenin yalnız ilk 3'ünü dener,
  * başa yığılan retler her tarihi acil havuza düşürürdü.
  *
  * Hariç tutulanlar: son 365 günün tarihli çözümleri (`usedIds`) + Spotlight
@@ -621,6 +623,22 @@ async function fetchSpotlightEditorialPool(usedIds: Set<string>, rpt: Report): P
     if (!f) continue
     if (usedIds.has(f.id) || emergencyIds.has(f.id)) continue
     if (!f.backdrop_url || !f.poster_url) continue
+    // P-1c A: ham `poster_path` (`/abc.jpg`) ya da başka geçersiz değer
+    // Spotlight'ta normalize edilmeden istemciye gider ve çizilmez — film
+    // seçilmez, görünür iz bırakılır (sessiz eleme yok).
+    if (!isAbsoluteHttpUrl(f.backdrop_url) || !isAbsoluteHttpUrl(f.poster_url)) {
+      console.warn(`[gen] Spotlight havuz: geçersiz görsel URL — ${f.title} (${f.id})`)
+      await sentryCapture({
+        message: '[gen] Spotlight havuz: geçersiz poster/backdrop URL — film seçilmedi',
+        level: 'warning',
+        tags: { function: 'generate-puzzles', game: 'spotlight', film_id: f.id },
+        extra: {
+          poster_valid: isAbsoluteHttpUrl(f.poster_url),
+          backdrop_valid: isAbsoluteHttpUrl(f.backdrop_url),
+        },
+      })
+      continue
+    }
     const { slotCount, hasUnreachable } = buildTitleMask(f.title)
     if (hasUnreachable || slotCount < 3 || slotCount > 30) continue
     pool.push(f)
