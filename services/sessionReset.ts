@@ -28,6 +28,7 @@ import { supabase } from './supabase';
 import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearGauntletCache } from './gauntletCache';
+import { clearIdentityCache } from './auth-utils';
 import { logger } from '../utils/logger';
 import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
 
@@ -171,6 +172,13 @@ export async function resetToFreshSession(deps: ResetToFreshSessionDeps): Promis
     }
 
     // ── 3. Bellek ────────────────────────────────────────────────────────
+    // Kimlik eşlemesi (auth id → public.users.id) eski kullanıcıya aitti.
+    try {
+      clearIdentityCache();
+    } catch (err) {
+      captureStep(err, 'identity_cache_clear');
+    }
+
     try {
       deps.resetSubscriptionState();
     } catch (err) {

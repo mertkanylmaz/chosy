@@ -54,7 +54,8 @@ export interface UserFlags {
  */
 export async function readUserFlags(): Promise<UserFlags | null> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -102,7 +103,8 @@ export async function readUserFlags(): Promise<UserFlags | null> {
  */
 export async function markUserFlag(flag: UserFlagName): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       Sentry.captureMessage(`markUserFlag(${flag}): oturum yok`, {
         level: 'warning',

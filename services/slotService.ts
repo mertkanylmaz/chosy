@@ -118,7 +118,8 @@ async function extractStructuredError(error: { message?: string; context?: unkno
  */
 export async function spinPureRandom(): Promise<SlotResult> {
   // Fallback: user_id body'ye ekle (Edge Function JWT sorunu icin)
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   logger.log('[slot] spinPureRandom — user:', user?.id, 'session valid:', !!user);
 
   const { data, error } = await supabase.functions.invoke('slot-pure-random', {

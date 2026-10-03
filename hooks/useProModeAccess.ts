@@ -63,10 +63,12 @@ export function useProModeAccess(): ProModeAccess {
 
   const load = useCallback(async () => {
     try {
-      const { data: authData, error: authError } = await supabase.auth.getUser();
+      // Yerel oturum (ağ yok) — kimlik sunucuda doğrulanmaz, ama aşağıdaki
+      // sorgu RLS ile zaten oturumun sahibine bağlı.
+      const { data: sessionData, error: authError } = await supabase.auth.getSession();
       if (authError) throw authError;
 
-      const authId = authData?.user?.id;
+      const authId = sessionData.session?.user?.id;
       if (!authId) {
         // Oturum yok — grandfathering iddia edilemez. Hata degil.
         setLegacyAccess(false);

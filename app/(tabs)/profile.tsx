@@ -94,6 +94,7 @@ import Purchases from 'react-native-purchases';
 
 import { clearWatchlist, getWatchlist } from '@/services/watchlist';
 import { signInWithApple, deleteAccount } from '@/services/authService';
+import { clearIdentityCache } from '@/services/auth-utils';
 import { resetToFreshSession } from '@/services/sessionReset';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { getArchetype } from '@/constants/archetypes';
@@ -866,8 +867,10 @@ function ProfileScreenContent() {
   const loadAll = useCallback(async () => {
     setLoadError(false);
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const authUser = authData?.user;
+      // Yerel oturum (ağ yok). is_anonymous / app_metadata bayat olabilir:
+      // linkIdentity sonrası oturum yenilenene kadar eski değeri taşır.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authUser = sessionData.session?.user;
       if (!authUser) return;
 
       // Auth provider bilgisi
@@ -1068,8 +1071,8 @@ function ProfileScreenContent() {
     const prev = displayName;
     setDisplayName(newName); // Optimistik guncelleme
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const authId = authData?.user?.id;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authId = sessionData.session?.user?.id;
       if (!authId) throw new Error('no_auth');
 
       const { error } = await supabase
@@ -1340,6 +1343,10 @@ function ProfileScreenContent() {
                         t('profile.deleteAccountError'),
                       );
                     } finally {
+                      // Sonuç ne olursa olsun: partial_failure'da oturum açık
+                      // kalır ama public.users satırı silinmiştir — eski id
+                      // bellekten dönmemeli.
+                      clearIdentityCache();
                       setDeletingAccount(false);
                     }
                   },

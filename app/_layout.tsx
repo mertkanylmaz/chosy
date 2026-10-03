@@ -42,7 +42,7 @@ import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
-import { ensureAppUser } from '@/services/auth-utils';
+import { clearIdentityCache, ensureAppUser } from '@/services/auth-utils';
 import { syncWatchedFilms } from '@/services/watchSync';
 import { consumeIntentionalReset } from '@/services/sessionReset';
 import {
@@ -583,6 +583,9 @@ export default function RootLayout() {
         // Apple bağlama (linkIdentity) ve mevcut hesaba geçiş
         // (setSession, 1b) SIGNED_OUT yaymaz.
         if (event === 'SIGNED_OUT') {
+          // Önceki kimliğin auth id → public.users.id eşlemesi bellekte kalmasın.
+          clearIdentityCache();
+
           // Recovery'ye girerken bilinen ESKİ kimlik. Aşağıdaki başarı dalı
           // yeni kimliği yazmadan önce burada dondurulur.
           const previousAuthId = lastKnownAuthId;

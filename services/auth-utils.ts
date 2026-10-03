@@ -8,6 +8,32 @@ import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
+import { createIdentityCache } from '../utils/identityCache';
+
+/**
+ * `auth.users.id` → `public.users.id` bellek önbelleği (Sprint 10a).
+ * Anahtar authUid: kimlik değişimi kendiliğinden geçersiz kılar. Yalnızca
+ * başarılı çözüm yazılır (null/hata yazılmaz). Mantık: utils/identityCache.ts.
+ * Modül seviyesi tutulan şey `app_config` değeri DEĞİL, kimlik eşlemesidir
+ * (CLAUDE.md kural 6 kapsamı dışı).
+ */
+const identityCache = createIdentityCache();
+
+/** Oturum sonlandığında / kimlik sıfırlandığında çağrılır. */
+export function clearIdentityCache(): void {
+  identityCache.clear();
+}
+
+/**
+ * Oturumun auth id'si — YEREL `getSession()`, ağ yok (ölçüm: `getUser()`
+ * ~215 ms medyan, her çağrıda). Oturum okunamazsa `null`.
+ */
+async function readLocalAuthUid(): Promise<string | null> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
 
 /** `ensureAppUser` sonucu */
 export type EnsureAppUserResult =
@@ -89,6 +115,7 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
       return { ok: false, reason: 'CREATE_FAILED' };
     }
 
+    identityCache.set(authUserId, data.id as string);
     return { ok: true, appUserId: data.id as string };
   } catch (err) {
     logger.error('[auth-utils] ensureAppUser beklenmedik hata:', err, { skipBridge: true });
@@ -112,24 +139,23 @@ export async function ensureAppUser(): Promise<EnsureAppUserResult> {
  */
 export async function readAppUserId(): Promise<string | null> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authUid = await readLocalAuthUid();
+    if (!authUid) return null;
 
-    if (!user) return null;
+    return await identityCache.resolve(authUid, 'read', async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', authUid)
+        .maybeSingle();
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('auth_id', user.id)
-      .maybeSingle();
+      if (error) {
+        logger.error('[auth-utils] readAppUserId okuma hatası:', error.message);
+        return null;
+      }
 
-    if (error) {
-      logger.error('[auth-utils] readAppUserId okuma hatası:', error.message);
-      return null;
-    }
-
-    return (data?.id as string) ?? null;
+      return (data?.id as string) ?? null;
+    });
   } catch (err) {
     logger.error('[auth-utils] readAppUserId beklenmedik hata:', err);
     return null;
@@ -142,44 +168,43 @@ export async function readAppUserId(): Promise<string | null> {
  */
 export async function getAppUserId(): Promise<string | null> {
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const authUid = await readLocalAuthUid();
+    if (!authUid) return null;
 
-    if (!user) return null;
+    return await identityCache.resolve(authUid, 'get', async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', authUid)
+        .single();
 
-    const { data } = await supabase
-      .from('users')
-      .select('id')
-      .eq('auth_id', user.id)
-      .single();
+      if (data) return data.id as string;
 
-    if (data) return data.id as string;
+      // Kayıt yoksa oluştur — race condition için duplicate key (23505) toleransı var
+      const { data: inserted, error: insertError } = await supabase
+        .from('users')
+        .insert({ auth_id: authUid })
+        .select('id')
+        .single();
 
-    // Kayıt yoksa oluştur — race condition için duplicate key (23505) toleransı var
-    const { data: inserted, error: insertError } = await supabase
-      .from('users')
-      .insert({ auth_id: user.id })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      // 23505 = unique_violation: eşzamanlı başka bir çağrı zaten INSERT yaptı
-      if (insertError.code === '23505') {
-        const { data: existing } = await supabase
-          .from('users')
-          .select('id')
-          .eq('auth_id', user.id)
-          .single();
-        return existing?.id ?? null;
+      if (insertError) {
+        // 23505 = unique_violation: eşzamanlı başka bir çağrı zaten INSERT yaptı
+        if (insertError.code === '23505') {
+          const { data: existing } = await supabase
+            .from('users')
+            .select('id')
+            .eq('auth_id', authUid)
+            .single();
+          return (existing?.id as string | undefined) ?? null;
+        }
+        logger.error('[auth-utils] users kaydı oluşturulamadı:', insertError.message);
+        return null;
       }
-      logger.error('[auth-utils] users kaydı oluşturulamadı:', insertError.message);
-      return null;
-    }
 
-    if (!inserted) return null;
+      if (!inserted) return null;
 
-    return inserted.id as string;
+      return inserted.id as string;
+    });
   } catch (err) {
     if (__DEV__) {
       // eslint-disable-next-line no-console

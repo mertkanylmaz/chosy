@@ -50,7 +50,8 @@ import { getAppUserId } from '@/services/watchlist';
  */
 async function getOnboardingKey(): Promise<string> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (user?.id) return `chosy_onboarded_${user.id}`;
   } catch {
     // fallback: global key (auth yoksa, nadir durum)

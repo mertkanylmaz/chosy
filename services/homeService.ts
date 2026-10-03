@@ -38,8 +38,8 @@ interface UserProfileRow {
  * Oturum yoksa null döner.
  */
 async function fetchUserProfile(): Promise<UserProfileRow | null> {
-  const { data: authData } = await supabase.auth.getUser();
-  const authUser = authData?.user;
+  const { data: sessionData } = await supabase.auth.getSession();
+  const authUser = sessionData.session?.user;
   if (!authUser) return null;
 
   const { data } = await supabase

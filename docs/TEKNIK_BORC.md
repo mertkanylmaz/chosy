@@ -3423,3 +3423,13 @@ migration-guard'ın bulduğu dört notu kayda geçirir; hepsi bilinçli kabul.
    açtıysa) bugünkü taşınır, previous CASCADE ile düşer. Test: `122_merge_tests.sql` T3g.
 4. **Geri alma:** 123'ü geri almak SQL Editor'da değil, 122 gövdesi + 122 COMMENT'i içeren
    yeni migration (124) ile yapılır (123 başlığında yazılı).
+
+## Sprint 10a — kalan `getUser()` çağrıları (ağ turu)
+
+1. `services/slotService.ts` `spinMoodFiltered` (:146) ve `spinTriple` (:172): hâlâ `auth.getUser()`
+   (ağ). `spinPureRandom` (:121) 10a'da `getSession()`'a taşındı. Slot oyunu donuk
+   olduğu için bırakıldı; oyun açılırsa aynı kalıpla taşınır.
+2. `services/authService.ts` içindeki 5 `getUser()` (`isCurrentUserAnonymous`, `syncDisplayName`,
+   `syncAuthProvider`, Google OAuth `isNewUser`, `updateUserProfile`): kimlik akışı olduğu için
+   10a'da dokunulmadı. Hiçbiri açılış yolunda değil, hepsi kullanıcı eylemiyle tetikleniyor;
+   kazanç küçük. Gerekirse `getSession()`'a taşınabilir (yalnız `user.id` / `is_anonymous` / `created_at` okunuyor).
