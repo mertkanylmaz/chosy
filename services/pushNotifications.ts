@@ -24,6 +24,7 @@ import * as Sentry from '@sentry/react-native';
 import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
 import { logger } from '@/utils/logger';
+import { checkShouldAskForNotification } from '@/utils/notificationAskCheck';
 import { i18n } from '@/constants/i18n';
 import { UNLOCK_HOUR } from '@/components/gauntlet/GauntletShell/unlockClock';
 
@@ -439,26 +440,27 @@ export async function cancelDailyReminder(): Promise<void> {
  * Migration 103'ün DB bayrakları burada KULLANILMAZ — bir cihazda verilen izin
  * diğerinde geçerli değildir.
  *
+ * Okunamıyorsa sorulmaz (fail-closed) ve hata Sentry'ye `fatal` yazılır —
+ * prod'da `logger.warn` sessizdir, tek başına yetmez. Saf mantık:
+ * `utils/notificationAskCheck.ts`.
+ *
  * @returns Daha önce sorulmadıysa ve izin zaten verilmemişse true
  */
 export async function shouldAskForNotificationPermission(): Promise<boolean> {
-  try {
-    const asked = await AsyncStorage.getItem(PERMISSION_ASKED_KEY);
-    if (asked === 'true') return false;
-
-    // İzin zaten verilmiş (ör. kullanıcı Ayarlar'dan açmış) — sormaya gerek yok.
-    const granted = await isPermissionGranted();
-    if (granted) {
-      await AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true');
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    // Okunamıyorsa sorma — fail-closed. Sessiz değil: log bırakır.
-    logger.warn('[push] shouldAskForNotificationPermission okunamadı:', err);
-    return false;
-  }
+  return checkShouldAskForNotification({
+    readAsked: () => AsyncStorage.getItem(PERMISSION_ASKED_KEY),
+    isGranted: isPermissionGranted,
+    markAsked: () => AsyncStorage.setItem(PERMISSION_ASKED_KEY, 'true'),
+    reportError: (err) => {
+      Sentry.captureException(err, {
+        level: 'fatal',
+        tags: {
+          flow: 'push_permission_ask_check',
+          fn: 'shouldAskForNotificationPermission',
+        },
+      });
+    },
+  });
 }
 
 /**
