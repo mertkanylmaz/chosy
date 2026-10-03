@@ -11,6 +11,12 @@ interface SentryEventParams {
   level?: 'fatal' | 'error' | 'warning' | 'info';
   tags?: Record<string, string>;
   extra?: Record<string, unknown>;
+  /**
+   * Sabit gruplama anahtarı (Sentry `fingerprint`). Verilmezse Sentry mesaja
+   * göre gruplar. Tekrarlayan durum uyarılarında (ör. kuyruk derinliği) tek
+   * issue altında toplamak için.
+   */
+  fingerprint?: string[];
 }
 
 /**
@@ -44,6 +50,7 @@ export async function sentryCapture(params: SentryEventParams): Promise<void> {
         ...params.tags,
       },
       extra: params.extra || {},
+      ...(params.fingerprint ? { fingerprint: params.fingerprint } : {}),
     };
 
     await fetch(endpoint, {

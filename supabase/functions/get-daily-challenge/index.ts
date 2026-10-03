@@ -22,6 +22,65 @@ import {
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildWhyThisMovie, type WhyThisMovieText } from '../_shared/whyThisMovie.ts'
 
+/**
+ * Kuyruk derinliği alarm eşiği (P-1c D). İstenen tarih DAHİL ileriye doğru
+ * üretilmiş tarihli bulmaca sayısı bu değere eşit ya da altındaysa Sentry
+ * warning. Haftalık cron 14 günlük lookahead ile çalışır; sağlıklı kuyruk
+ * hiçbir zaman 7'nin altına inmez — ≤5, bir koşumun kaçtığını gösterir.
+ */
+const QUEUE_LOW_WATERMARK = 5
+
+/**
+ * Cron'dan bağımsız kuyruk sağlığı sinyali (P-1c D, 3 Eki 2026).
+ *
+ * Neden burada: `cron.job_run_details` 401'de bile `succeeded` yazar ve
+ * Spotlight 11 Ağu – 30 Eyl arası 50 gün sinyal vermeden bulmacasız kaldı
+ * (P-1b). Bu kontrol istemcinin her açılışında koşar; kuyruğun ucunu cron'un
+ * değil kullanıcının gördüğü yerden ölçer. NO_PUZZLE (derinlik 0) dahil.
+ *
+ * Sessiz değil ama kullanıcı yolunu bozmaz: sayım hatası loglanır ve
+ * yanıta dokunulmaz. Sabit fingerprint → tek Sentry issue.
+ * Dondurulmuş oyun (eski build çağrısı) için uyarı üretilmez —
+ * `games_enabled` yalnız eşik altı nadir yolda okunur.
+ */
+async function reportQueueDepth(
+  service: ReturnType<typeof getServiceClient>,
+  gameId: string,
+  puzzleDate: string,
+): Promise<void> {
+  const { count, error } = await service
+    .from('daily_puzzles')
+    .select('id', { count: 'exact', head: true })
+    .eq('game_type', gameId)
+    .gte('date', puzzleDate)
+    .eq('is_emergency_pool', false)
+
+  if (error) {
+    logError('get-daily-challenge.queue_depth_failed', error, { gameId, puzzleDate })
+    return
+  }
+
+  const depth = count ?? 0
+  if (depth > QUEUE_LOW_WATERMARK) return
+
+  try {
+    const enabled = await getAppConfig<{ games?: string[] }>(service, 'games_enabled')
+    if (!Array.isArray(enabled.games) || !enabled.games.includes(gameId)) return
+  } catch (err) {
+    // Bayrak okunamadıysa uyarı yine gönderilir — yanlış pozitif, sessiz
+    // kayıptan iyidir.
+    logError('get-daily-challenge.games_enabled_read_failed', err, { gameId })
+  }
+
+  await sentryCapture({
+    message: `Bulmaca kuyruğu azaldı: ${gameId}`,
+    level: 'warning',
+    tags: { fn: 'get-daily-challenge', game_id: gameId, check: 'puzzle_queue_depth' },
+    extra: { depth, puzzle_date: puzzleDate, threshold: QUEUE_LOW_WATERMARK },
+    fingerprint: ['puzzle-queue-low', gameId],
+  })
+}
+
 /** Imposter güven bahsi config'i (app_config: imposter_confidence_config) */
 interface ImposterConfidenceConfig {
   levels: number[]
@@ -87,6 +146,9 @@ Deno.serve(async (req: Request) => {
       .eq('game_id', gameId)
       .eq('puzzle_date', puzzleDate)
       .single()
+
+    // P-1c D: kuyruk ucu — bulmaca olsa da olmasa da (NO_PUZZLE = derinlik 0).
+    await reportQueueDepth(service, gameId, puzzleDate)
 
     if (puzzleError || !puzzle) {
       logError('get-daily-challenge.no_puzzle', puzzleError, { gameId, puzzleDate })
