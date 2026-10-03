@@ -32,14 +32,20 @@ import { hapticLight } from '@/utils/haptics';
 
 import { styles } from './styles';
 
-export function SpotlightBonusCard(): React.JSX.Element {
+interface SpotlightBonusCardProps {
+  /** Navigasyondan hemen önce — champion ask'inin Spotlight dönüşü tetiği. */
+  onPress?: () => void;
+}
+
+export function SpotlightBonusCard({ onPress }: SpotlightBonusCardProps): React.JSX.Element {
   const { t } = useLanguage();
   const router = useRouter();
 
   const handlePress = useCallback(() => {
     void hapticLight();
+    onPress?.();
     router.push('/games/spotlight');
-  }, [router]);
+  }, [router, onPress]);
 
   return (
     <TouchableOpacity

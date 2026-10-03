@@ -1,16 +1,17 @@
 /**
  * AuthPromptSheet — K-13: "Save your cinema journey" + "Not now".
  *
- * Tetikleyici: ilk şampiyon reveal'ının hemen ardı (GauntletShell). Değer
- * karşılığı sorulur — değer ÖNCE verilir, giriş SONRA istenir.
+ * Tetikleyici: gün 2+ champion ekranında, Spotlight dönüşü ya da kart
+ * üzerinde dwell (GauntletShell/useChampionAsk → services/askCoordinator).
+ * Değer karşılığı sorulur — değer ÖNCE verilir, giriş SONRA istenir.
  *
  * §7.1 yüzey listesi bunu "sheet · atlanabilir" olarak kilitler: full-screen
  * DEĞİL, ritüelin son anını kesmez, backdrop'a dokunmak kapatır.
  *
- * ── "Not now" da bayrağı yazar (CTO kararı, 22 Ağu 2026) ───────────────────
- * K-13 prompt'u "atlanabilir" tanımlıyor; her şampiyonda tekrar sormak
- * atlanabilirliği geri alırdı. Sheet ömür boyu EN FAZLA bir kez görünür.
- * Giriş yolu kapanmaz — profile → Sign In her zaman açıktır.
+ * ── "Not now" (CTO kararı, 3 Eki 2026 — 22 Ağu kararının yerine) ──────────
+ * "Not now" 3 gün cooldown başlatır, toplam en fazla 3 gösterim
+ * (`chosy_ask_state`). `auth_prompt_seen` yalnız gerçek giriş tamamlanınca
+ * yazılır. Giriş yolu kapanmaz — profile → Sign In her zaman açıktır.
  *
  * Tek sağlayıcı UI'da: Apple (yalnız iOS). E-posta magic link (K-14) UI'dan
  * sökülü — MagicLinkForm + authService fonksiyonları geri açılabilir altyapı
@@ -43,8 +44,8 @@ interface AuthPromptSheetProps {
   visible: boolean;
   /**
    * Sheet kapandı. `completed` giriş yapıldıysa true, "Not now" ya da
-   * backdrop ile kapatıldıysa false. İki durumda da `auth_prompt_seen`
-   * yazılır — bayrağı çağıran taraf (GauntletShell) yazar.
+   * backdrop ile kapatıldıysa false. `auth_prompt_seen` yalnız true'da
+   * yazılır — bayrağı çağıran taraf (useChampionAsk) yazar.
    */
   onClose: (completed: boolean) => void;
 }

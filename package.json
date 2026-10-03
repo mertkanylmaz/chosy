@@ -16,6 +16,7 @@
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
     "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
+    "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
     "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",

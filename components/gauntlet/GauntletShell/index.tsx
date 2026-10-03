@@ -75,14 +75,12 @@ import { subscribeToReconnect } from '@/services/networkStatus';
 import { decidePreviousCycleProbeNow, markPreviousCycle } from '@/services/previousCycle';
 import { isE2ETestMode } from '@/utils/e2eTestMode';
 import { posthogAnalytics } from '@/services/posthog';
-import { resolveChampionPrompt, type ChampionPrompt } from '@/services/championPrompts';
 import {
   getPermissionState,
   markNotificationPermissionAsked,
   registerForPushNotifications,
 } from '@/services/pushNotifications';
 import { supabase } from '@/services/supabase';
-import { markUserFlag } from '@/services/userFlags';
 import type {
   ChoiceSubmission,
   DailyGauntlet,
@@ -111,22 +109,12 @@ import {
 } from './cycleRules';
 import { contentTopFor, headerGapFor, styles } from './styles';
 import { UNLOCK_HOUR, formatUnlockTime, nextUnlockAfter } from './unlockClock';
+import { useChampionAsk } from './useChampionAsk';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
 //
 // 18:00 kapısı (`UNLOCK_HOUR`) ve saf saat kuralı `./unlockClock.ts`'te —
 // Deno testli, istemcide TEK tanım (V-1 D9).
-
-/**
- * Şampiyon reveal'ı ile tek-seferlik istem sheet'i arasındaki bekleme (ms).
- *
- * §7.3 kara boşluk sekansı 120 + 400 + 200 + 200 = 920ms sürüyor; sheet o
- * bitmeden açılırsa imza anın üstüne biner. Bir tasarım token'ı DEĞİL —
- * `constants/design/motion.ts` §7'nin birebir karşılığıdır ve oraya ürün
- * kararı yazılmaz; bu değer bir istem orkestrasyonu sabitidir, o yüzden
- * ürün sabitlerinin arasında durur.
- */
-const CHAMPION_PROMPT_DELAY = 1800;
 
 /**
  * 401 retry politikası (CTO 🔴2, 14.08.2026): maks 5 deneme; deneme k
@@ -341,12 +329,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const [shareRounds, setShareRounds] = useState<ShareRound[]>([]);
   /**
-   * Şampiyon sonrası açılan tek-seferlik istem (R-A-2). ShellState'e üye
-   * DEĞİL — beş durum sözleşmesi bozulmaz; bu, `completed_today` render'ının
-   * üzerine binen bir sheet'tir ve altındaki şampiyon ekranı görünür kalır.
-   */
-  const [championPrompt, setChampionPrompt] = useState<ChampionPrompt>('none');
-  /**
    * K-42 offline durumu. ShellState'e üye DEĞİL — beş durum sözleşmesi
    * bozulmaz; ikisi de mevcut render'ın üzerine binen göstergelerdir.
    *
@@ -392,7 +374,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const promptTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
   /** `gauntlet_started` bir gauntlet başına en fazla bir kez ateşlenir —
    *  applyGauntlet 401 retry/resume gibi nedenlerle birden çok kez
@@ -762,7 +743,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
       if (hapticTimerRef.current) clearTimeout(hapticTimerRef.current);
-      if (promptTimerRef.current) clearTimeout(promptTimerRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -1237,21 +1217,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
           void hapticHeavy();
         }, CHAMPION_HAPTIC_DELAY);
 
-        // ── K-13 / K-15 İSTEM TETİKLEYİCİSİ (R-A-2) ────────────────────────
-        // Kararı `resolveChampionPrompt()` verir: anonim + bayrak yoksa auth
-        // prompt, aksi hâlde (ve yalnızca bir SONRAKİ akşam) bildirim izni.
-        // İkisi asla aynı oturumda art arda gösterilmez.
-        //
-        // Yalnızca CANLI reveal'da çalışır — resume yolundan (applyGauntlet,
-        // progress.status === 'champion') tetiklenmez: kullanıcı o şampiyonu
-        // zaten görmüştür, uygulama açılışına sheet düşürmek istem değil,
-        // kesintidir.
-        promptTimerRef.current = setTimeout(() => {
-          void resolveChampionPrompt().then((kind) => {
-            if (!mountedRef.current || kind === 'none') return;
-            setChampionPrompt(kind);
-          });
-        }, CHAMPION_PROMPT_DELAY);
+        // K-13 / K-15 istemi reveal'dan TETİKLENMEZ — Spotlight'ı örtüyordu
+        // (CTO kararı, 3 Eki 2026). Tetik: `useChampionAsk` (Spotlight
+        // dönüşü ya da kart üzerinde dwell).
         return;
       }
 
@@ -1410,27 +1378,14 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     [seenMode, handleSeenPick, handleChoice],
   );
 
-  // ── Şampiyon sonrası istemler (R-A-2) ──────────────────────────────────────
-
-  /**
-   * Auth prompt kapandı. "Not now" da giriş de AYNI bayrağı yazar
-   * (CTO kararı, 22 Ağu 2026): sheet ömür boyu en fazla bir kez görünür.
-   * Yazma başarısız olursa `markUserFlag` Sentry'ye yazar; sheet yine kapanır
-   * — kullanıcının kapatma eylemi bir ağ hatasına rehin edilmez.
-   */
-  const handleAuthPromptClose = useCallback((completed: boolean) => {
-    setChampionPrompt('none');
-    void markUserFlag('auth_prompt_seen');
-    posthogAnalytics.track('auth_prompt_closed', { completed });
-  }, []);
-
-  /**
-   * Bildirim istemi kapandı. "Sorduk" işareti sheet'in kendi içinde
-   * (cihaz-yerel AsyncStorage) yazılır — OS izni cihaz başınadır.
-   */
-  const handleNotificationPromptClose = useCallback(() => {
-    setChampionPrompt('none');
-  }, []);
+  // ── Şampiyon sonrası tek ask (K-13 / K-15) ─────────────────────────────────
+  //
+  // Tetik ve karar `useChampionAsk` + `services/askCoordinator`. Yalnız
+  // champion dalı ekrandayken etkin; oyun sırasında hiçbir ask kurulmaz.
+  const championAsk = useChampionAsk({
+    active: shellState === 'completed_today' && champion !== null && !pendingFeedbackVisible,
+    bottomInset: tabBarInset,
+  });
 
   // ── Işık sızması ───────────────────────────────────────────────────────────
 
@@ -1582,6 +1537,12 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               { paddingBottom: tabBarInset + space.lg },
             ]}
             showsVerticalScrollIndicator={false}
+            onLayout={championAsk.onScrollLayout}
+            onScroll={championAsk.onScroll}
+            scrollEventThrottle={100}
+            onTouchStart={championAsk.onTouchStart}
+            onScrollEndDrag={championAsk.onScrollSettled}
+            onMomentumScrollEnd={championAsk.onScrollSettled}
           >
             <ChampionReveal
               champion={champion}
@@ -1602,8 +1563,8 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
                 V-3 Tur G2 (C7, V3-D6): yüzen/mutlak konum kaldırıldı —
                 kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu
                 aynı: şampiyon varsa. */}
-            <View style={styles.bonusCardInline}>
-              <SpotlightBonusCard />
+            <View style={styles.bonusCardInline} onLayout={championAsk.onCardLayout}>
+              <SpotlightBonusCard onPress={championAsk.onSpotlightPress} />
             </View>
           </ScrollView>
 
@@ -1616,15 +1577,15 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             </View>
           )}
 
-          {/* R-A-2: şampiyonun ÜSTÜNE binen tek-seferlik istem. Akşam başına
-              en fazla biri açılır — kararı resolveChampionPrompt() verir. */}
+          {/* Champion oturumunda TEK modal ask, günde en fazla bir — kararı
+              services/askCoordinator verir; Spotlight'ı örtmez. */}
           <AuthPromptSheet
-            visible={championPrompt === 'auth'}
-            onClose={handleAuthPromptClose}
+            visible={championAsk.askType === 'auth'}
+            onClose={championAsk.onAuthClose}
           />
           <NotificationPromptSheet
-            visible={championPrompt === 'notification'}
-            onClose={handleNotificationPromptClose}
+            visible={championAsk.askType === 'notif'}
+            onClose={championAsk.onNotifClose}
           />
 
           {/* G4b: native tab bar payının saha ölçümü — görsel çıktısı yok,
