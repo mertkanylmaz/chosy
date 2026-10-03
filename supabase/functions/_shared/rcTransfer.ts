@@ -36,6 +36,7 @@
  * okur, index.ts gerçek adaptörü verir.
  */
 
+import { isUuid } from './rcAuthUser.ts'
 import { mapProductToTier, TIER_TO_PLAN } from './rcProductMap.ts'
 
 /**
@@ -46,8 +47,6 @@ import { mapProductToTier, TIER_TO_PLAN } from './rcProductMap.ts'
  * 089 öncesinden kalmış bir 'premium' satırını da düzeltir.
  */
 export const RC_ENTITLEMENT_ID = 'chosy_plus'
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 // ─── Tipler ─────────────────────────────────────────────────────────────────────
 
@@ -378,7 +377,7 @@ export async function processTransfer(
     // ── (a) çözülemeyen hedef: REST ÇAĞRILMAZ ─────────────────────────────
     let unresolvable: 'rc_anonymous' | 'not_uuid' | 'auth_user_missing' | null = null
     if (id.startsWith('$RCAnonymousID')) unresolvable = 'rc_anonymous'
-    else if (!UUID_RE.test(id)) unresolvable = 'not_uuid'
+    else if (!isUuid(id)) unresolvable = 'not_uuid'
     else {
       let exists: boolean
       try {

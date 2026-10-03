@@ -18,7 +18,7 @@
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
     "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
-    "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcTransfer.test.ts",
+    "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcMissingUserDecision.test.ts _shared/rcTransfer.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",
     "enrich:imdb": "tsx scripts/enrich-imdb-ratings.ts",
     "enrich:metadata": "tsx scripts/enrich-films-metadata.ts",

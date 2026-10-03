@@ -46,6 +46,10 @@ const SUBSCRIPTION_LIFECYCLE_EVENTS: readonly string[] = [
   'UNCANCELLATION',
 ];
 
+export function isFirstPurchaseEvent(eventType: string): boolean {
+  return FIRST_PURCHASE_EVENTS.includes(eventType);
+}
+
 export function missingUserSeverity(eventType: string): MissingUserSeverity {
   if (SUBSCRIPTION_LIFECYCLE_EVENTS.includes(eventType)) {
     return { level: 'warning', expectedDeletedUser: true };

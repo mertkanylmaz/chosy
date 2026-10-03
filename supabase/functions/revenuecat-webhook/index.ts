@@ -18,7 +18,8 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sentryCapture } from '../_shared/sentry.ts'
-import { missingUserSeverity } from '../_shared/rcMissingUserSeverity.ts'
+import { authUserExists } from '../_shared/rcAuthUser.ts'
+import { decideMissingUser } from '../_shared/rcMissingUserDecision.ts'
 import { mapProductToTier, TIER_TO_PLAN } from '../_shared/rcProductMap.ts'
 import { fetchRcSubscriber, processTransfer } from '../_shared/rcTransfer.ts'
 
@@ -288,20 +289,36 @@ serve(async (req: Request) => {
      * 29 Eyl 2026: seviye olay tipine göre (`rcMissingUserSeverity.ts`).
      * İlk satın alma → `error`; silinmiş hesabın abonelik yaşam döngüsü
      * (RENEWAL, CANCELLATION, …) → `warning` + `expected_deleted_user`.
-     * Yanıt kodu DEĞİŞMEDİ: her tipte 500 + `retryable: true`.
+     *
+     * Sprint 5: `auth.users` varlığına göre dört dal (`rcMissingUserDecision.ts`).
+     * UUID olmayan id (`$RCAnonymousID`) ve auth'u VAR olan kimlik (giriş
+     * yarışı) bugünkü gibi 500 + retry; auth'u da olmayan UUID meşru silinmiş
+     * hesaptır → 200, retry yok. Varlık sorgusu düşerse 500 + error.
      */
     const appUserMissing = async (): Promise<Response> => {
-      const severity = missingUserSeverity(event.type)
-      const log = severity.level === 'error' ? console.error : console.warn
-      log(`[rc-webhook] public.users satırı yok — auth_id=${authUserId} (${event.type})`)
+      const decision = await decideMissingUser(
+        event.type,
+        authUserId,
+        (id) => authUserExists(supabase, id),
+      )
+      const log = decision.level === 'error' ? console.error : console.warn
+      log(`[rc-webhook] public.users satırı yok — auth_id=${authUserId} (${event.type}) → ${decision.kind}`)
+
+      const isDeleted = decision.kind === 'deleted_account'
       await sentryCapture({
-        message: 'revenuecat-webhook: auth_id için public.users satırı bulunamadı — ödeme işlenemedi',
-        level: severity.level,
+        message: isDeleted
+          ? 'revenuecat-webhook: hesap silinmiş (auth.users da yok) — olay işlenmedi, retry yok'
+          : decision.kind === 'lookup_failed'
+            ? `revenuecat-webhook: auth.users varlık sorgusu düştü — ${decision.errorMessage}`
+            : 'revenuecat-webhook: auth_id için public.users satırı bulunamadı — ödeme işlenemedi',
+        level: decision.level,
         tags: {
-          error_code: 'APP_USER_NOT_FOUND',
+          error_code: decision.errorCode,
           function: 'revenuecat-webhook',
           event_type: event.type,
-          ...(severity.expectedDeletedUser ? { expected_deleted_user: 'true' } : {}),
+          missing_user_kind: decision.kind,
+          ...(decision.expectedDeletedUser ? { expected_deleted_user: 'true' } : {}),
+          ...(decision.refundReview ? { refund_review: 'true' } : {}),
         },
         extra: {
           auth_user_id: authUserId,
@@ -309,9 +326,17 @@ serve(async (req: Request) => {
           transaction_id: event.transaction_id ?? null,
         },
       })
+
+      if (isDeleted) {
+        // Retry bunu düzeltmez: hesap yok. 200 → RC retry kuyruğundan düşer.
+        return new Response(
+          JSON.stringify({ ok: true, note: 'account_deleted' }),
+          { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        )
+      }
       return new Response(
-        JSON.stringify({ error: 'APP_USER_NOT_FOUND', retryable: true }),
-        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        JSON.stringify({ error: decision.errorCode, retryable: decision.retryable }),
+        { status: decision.status, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
     }
 
@@ -1035,14 +1060,7 @@ serve(async (req: Request) => {
           event.transferred_to,
           { rcEventId: event.id ?? null, transferredFrom: event.transferred_from },
           {
-            authUserExists: async (id) => {
-              const { data, error } = await supabase.auth.admin.getUserById(id)
-              if (error) {
-                if (error.status === 404 || error.code === 'user_not_found') return false
-                throw new Error(`auth.admin.getUserById düştü — ${error.message}`)
-              }
-              return data.user !== null
-            },
+            authUserExists: (id) => authUserExists(supabase, id),
             resolveAppUserId: async (id) => {
               const { data, error } = await supabase
                 .from('users')
