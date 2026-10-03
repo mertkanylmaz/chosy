@@ -626,7 +626,7 @@
   },
   "authPrompt": {
     "title": "Bu geceki seçimini kaybetme",
-    "body": "Streak'in ve izleme listen burada kayıtlı — ücretsiz, abonelik gerekmez.",
+    "body": "Her gecenin seçimi ve izleme listen burada kayıtlı — ücretsiz, abonelik gerekmez.",
     "notNow": "Şimdi değil"
   },
   "notificationPrompt": {
