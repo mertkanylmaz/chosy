@@ -433,6 +433,7 @@ export default function LoglineScreen() {
         <FilmSearchInput
           onSelect={handleGuess}
           disabled={gameState !== 'playing' || isSubmitting}
+          catalogOnly
         />
       </View>
       <ContextualPaywall {...paywallProps} />

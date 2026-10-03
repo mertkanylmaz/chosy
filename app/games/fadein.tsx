@@ -513,6 +513,7 @@ export default function FadeInScreen() {
             onSelect={handleGuess}
             placeholder={t('games.fadein.search_placeholder')}
             disabled={isSubmitting}
+            catalogOnly
           />
         </Animated.View>
       )}

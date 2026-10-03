@@ -688,6 +688,7 @@ export function CineMetricsGame() {
             onSelect={(film) => setSelectedFilm(film)}
             disabled={isGameOver || isSubmitting}
             placeholder={t('games.search_placeholder')}
+            catalogOnly
           />
           <TouchableOpacity
             style={[

@@ -3364,3 +3364,21 @@ migration ile seed + `UPDATE`). Migration bu işin kapsamı dışındaydı.
 Çubuk gizliyken `handleContextCorrect` → `submitContextCorrection` yolu çağrılmaz;
 `context_opened` PostHog olayı da üretilmez (olay serisinde 3 Eki 2026'dan sonra
 düşüş beklenir). Kod silinmedi; bayrak açılınca geri gelir.
+
+## 🟡 Oyun aramasında yalnız katalog (Sprint 6 / Fix 9) — kalan borçlar (3 Eki 2026)
+
+### 1. Katalog dışı tahmin artık mümkün değil
+
+`searchFilms(query, catalogOnly)` ve `FilmSearchInput` `catalogOnly` prop'u eklendi;
+FadeIn, CineMetrics, Logline, Quoted ve Spotlight `true` geçer, TMDb fallback bu
+oyunlarda KAPALI. Katalogda olmayan bir film artık arama sonucunda çıkmaz
+(Spotlight'ta uuid'siz seçimin genel hata kutusu yolu ulaşılamaz oldu). Bu bilinçli
+kabul. Varsayılan `false`; oyun dışı çağıran yok, ama TMDb yolu kodda duruyor.
+
+### 2. Kalan notlar
+
+- `components/games/Detective/index.tsx` `FilmSearchInput`'u import ediyor ama JSX'te
+  kullanmıyor (yetim import); dokunulmadı.
+- `handleGuess` uuid guard'ları (Spotlight `:334` vb.) savunmacı olarak duruyor.
+- Katalog dışı arama hiç sonuç döndürmediğinden kullanıcı "film yok" ile "yazım hatası"
+  ayrımını göremez; boş dropdown (K-43) davranışı aynı.

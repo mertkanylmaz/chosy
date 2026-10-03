@@ -709,9 +709,16 @@ export async function getCachedResult(
 /**
  * Film arama — oyunlardaki tahmin input'u için.
  * Önce Supabase DB'de arar (title, original_title, tr_title, director, cast).
- * DB sonuç vermezse TMDb API'ye fallback yapar.
+ * DB sonuç vermezse TMDb API'ye fallback yapar — `catalogOnly` hariç.
+ *
+ * `catalogOnly` (varsayılan false): yalnız katalog filmleri döner, TMDb yolu
+ * KAPALI. Oyunlarda cevap her zaman katalogdadır; uuid'siz (katalog dışı)
+ * sonuç seçilince tahmin gönderilemez (Fix 9).
  */
-export async function searchFilms(query: string): Promise<FilmSearchResult[]> {
+export async function searchFilms(
+  query: string,
+  catalogOnly = false,
+): Promise<FilmSearchResult[]> {
   if (!query || query.trim().length < 2) return [];
 
   try {
@@ -726,6 +733,9 @@ export async function searchFilms(query: string): Promise<FilmSearchResult[]> {
         posterPath: r.poster_url ?? null,
       }));
     }
+
+    // Katalog dışı sonuç istenmiyor: DB boşsa sonuç da boş.
+    if (catalogOnly) return [];
 
     // 2) TMDb fallback — DB'de eşleşme yoksa
     const tmdbResults = await searchMovies(query.trim());

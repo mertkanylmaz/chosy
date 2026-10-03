@@ -35,12 +35,18 @@ interface FilmSearchInputProps {
   disabled?: boolean;
   /** Placeholder text */
   placeholder?: string;
+  /**
+   * Yalnız katalog filmleri (TMDb fallback kapalı). Oyun çağıranları true
+   * geçer: cevap her zaman katalogdadır, uuid'siz sonuç tahmin edilemez.
+   */
+  catalogOnly?: boolean;
 }
 
 export function FilmSearchInput({
   onSelect,
   disabled = false,
   placeholder,
+  catalogOnly = false,
 }: FilmSearchInputProps) {
   const theme = useGameTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -98,7 +104,7 @@ export function FilmSearchInput({
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const films = await searchFilms(text);
+        const films = await searchFilms(text, catalogOnly);
         setResults(films);
         setShowDropdown(films.length > 0);
       } catch (err) {
@@ -112,7 +118,7 @@ export function FilmSearchInput({
         setShowDropdown(false);
       }
     }, 300);
-  }, []);
+  }, [catalogOnly]);
 
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {

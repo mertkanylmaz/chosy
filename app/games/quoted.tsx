@@ -383,6 +383,7 @@ export default function QuotedScreen() {
         <FilmSearchInput
           onSelect={handleGuess}
           disabled={gameState !== 'playing' || isSubmitting}
+          catalogOnly
         />
       </View>
       <ContextualPaywall {...paywallProps} />

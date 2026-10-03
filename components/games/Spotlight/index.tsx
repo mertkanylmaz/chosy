@@ -651,7 +651,7 @@ export function SpotlightGame() {
             {/* Film tahmini — kazanma yolu */}
             <View style={styles.guessArea}>
               <Text style={styles.guessLabel}>{t('games.spotlight.which_film')}</Text>
-              <FilmSearchInput onSelect={handleGuess} disabled={isBusy} />
+              <FilmSearchInput onSelect={handleGuess} disabled={isBusy} catalogOnly />
           </View>
         </View>
       </View>
