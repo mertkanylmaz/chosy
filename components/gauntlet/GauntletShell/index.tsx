@@ -58,6 +58,7 @@ import {
 import { radius, size, space, type } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
+import { isGauntletContextBarEnabled } from '@/services/appConfigFlags';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
   GauntletAuthPendingError,
@@ -364,6 +365,22 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const [titleLinesById, setTitleLinesById] = useState<Record<string, PosterTitleLines>>({});
   const reportTitleLines = useCallback((filmId: string, lines: PosterTitleLines) => {
     setTitleLinesById((prev) => (prev[filmId] === lines ? prev : { ...prev, [filmId]: lines }));
+  }, []);
+
+  /**
+   * K-18: bağlam çubuğu varsayılan GİZLİ (app_config:
+   * gauntlet_context_bar_enabled). Düzeltme henüz tahmini etkilemiyor; etkisiz
+   * kontrol gösterilmez. Kural 6: kabuk her açıldığında lazy okunur, cache yok.
+   */
+  const [contextBarEnabled, setContextBarEnabled] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void isGauntletContextBarEnabled().then((enabled) => {
+      if (!cancelled) setContextBarEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const shellStateRef = useRef(shellState);
@@ -1657,7 +1674,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   return (
       <View style={[styles.content, { paddingTop: contentTopFor(windowHeight) }]}>
         <View style={styles.header}>
-          <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
+          {contextBarEnabled && (
+            <ContextBar context={gauntlet.context} onCorrect={handleContextCorrect} />
+          )}
           {/* C.9b-UI G1 (D-06 · L-7): güven yüzdesi Gauntlet'ten KALDIRILDI.
               "%0 tanıyorum" ilk günlerde doğrulanabilir biçimde yanlış bir
               iddiaydı ve ürünün tüm zekâ savını tek hamlede çürütüyordu.

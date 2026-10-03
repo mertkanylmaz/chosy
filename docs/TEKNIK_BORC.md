@@ -3349,3 +3349,18 @@ etkisi bu işte doğrulanmadı. 4b öncesi `lifetime_sales` sayımı alınmadı.
   kartı (`paywall_lifetime_enabled`), `PaywallLifetimeSoldout` +
   `lifetime_soldout` tetikleyicisi, `quotaEngine.ts` `includes('lifetime')`.
   **Neden şimdi değil:** tip sözleşmesini daraltmak kapsam genişlemesi.
+
+## 🟡 Bağlam çubuğu varsayılan gizli (Sprint 4 / 4c) — kalan borçlar (3 Eki 2026)
+
+### 1. `gauntlet_context_bar_enabled` satırı seed edilmedi
+
+`isGauntletContextBarEnabled()` satır yokken `maybeSingle` ile gizli döner; bayrağı
+açmak için `app_config`'e satır gerekir (091 `discover_tab_enabled` deseni:
+migration ile seed + `UPDATE`). Migration bu işin kapsamı dışındaydı.
+**Neden şimdi değil:** bayrak açılmadıkça satıra ihtiyaç yok.
+
+### 2. Kapalıyken `ContextBar` ve `submitContextCorrection` ulaşılamaz
+
+Çubuk gizliyken `handleContextCorrect` → `submitContextCorrection` yolu çağrılmaz;
+`context_opened` PostHog olayı da üretilmez (olay serisinde 3 Eki 2026'dan sonra
+düşüş beklenir). Kod silinmedi; bayrak açılınca geri gelir.
