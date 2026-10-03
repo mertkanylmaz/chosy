@@ -11,12 +11,14 @@
  *
  * Share: useShareCapture + GameShareCard ile PNG capture.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
+import * as Sentry from '@sentry/react-native';
 import {
   CalendarBlank,
   CheckCircle,
+  FilmSlate,
   Fire,
   ShareNetwork,
   Star,
@@ -27,6 +29,7 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
+import { resultPosterUrl } from '@/utils/posterUrl';
 import { getPosterUrl } from '@/services/tmdb';
 import { GameShareCard, useShareCapture } from '@/components/ShareCards';
 import { DnaXpReveal } from '@/components/games/DnaXpReveal';
@@ -136,7 +139,39 @@ export function ResultCard({
   const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture();
 
   // Hazir URL varsa TMDb yolu cozumlemesine gerek yok
-  const posterUrl = filmPosterUrl ?? getPosterUrl(filmPosterPath ?? null, 'w342');
+  const rawPosterUrl = filmPosterUrl ?? getPosterUrl(filmPosterPath ?? null, 'w342');
+  /**
+   * P-1a: sunucu `films.poster_url`'u ham veriyor (canlida `/t/p/original/`,
+   * ~1,3 MB) — 148x222'lik kutu icin w780'e getirilir. `http(s)` ile
+   * baslamayan deger (ham `poster_path`) cizilemez: yer tutucu + Sentry.
+   */
+  const poster = useMemo(() => resultPosterUrl(rawPosterUrl), [rawPosterUrl]);
+  const posterFilmId = filmUuid ?? (filmId != null ? String(filmId) : 'unknown');
+  const [posterFailed, setPosterFailed] = useState(false);
+
+  useEffect(() => {
+    setPosterFailed(false);
+    if (poster.reason !== 'invalid_uri') return;
+    Sentry.captureException(new Error('ResultCard poster URL gecersiz (http(s) degil)'), {
+      level: 'warning',
+      tags: { component: 'ResultCard', game_type: gameType ?? 'unknown', film_id: posterFilmId },
+      extra: { poster_url: rawPosterUrl },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawPosterUrl]);
+
+  /** Yukleme hatasi: invalid_uri yolunda Image hic cizilmez, cift kayit olmaz. */
+  const handlePosterError = useCallback(() => {
+    Sentry.addBreadcrumb({
+      category: 'games.result_poster',
+      message: 'ResultCard posteri yuklenemedi - yer tutucu gosterildi',
+      level: 'warning',
+      data: { film_id: posterFilmId, game_type: gameType ?? 'unknown', resized: poster.resized },
+    });
+    setPosterFailed(true);
+  }, [posterFilmId, gameType, poster.resized]);
+
+  const showPlaceholder = poster.reason === 'invalid_uri' || posterFailed;
   // Use server XP if provided, otherwise fall back to local calculation
   const xp = xpAwarded ?? calculateXP(solved, attempts, maxAttempts);
   const hasDnaReveal = xpAwarded != null; // Edge Function path provides xpAwarded
@@ -169,13 +204,20 @@ export function ResultCard({
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
         {/* ── Perde: cozum filmi kahraman, kesif hedefi bu ── */}
         <View style={styles.filmHero}>
-          {posterUrl && (
-            <Image
-              source={{ uri: posterUrl }}
-              style={styles.poster}
-              contentFit="cover"
-              transition={200}
-            />
+          {showPlaceholder ? (
+            <View style={[styles.poster, styles.posterPlaceholder]} accessible={false}>
+              <FilmSlate size={40} color={Colors.textTertiary} weight="thin" />
+            </View>
+          ) : (
+            poster.url !== null && (
+              <Image
+                source={{ uri: poster.url }}
+                style={styles.poster}
+                contentFit="cover"
+                transition={200}
+                onError={handlePosterError}
+              />
+            )
           )}
           <Text style={styles.filmTitle}>{filmTitle}</Text>
           {filmYear > 0 && (

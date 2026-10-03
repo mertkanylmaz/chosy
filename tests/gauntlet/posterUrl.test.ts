@@ -9,6 +9,7 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
   CHAMPION_POSTER_WIDTH,
+  resultPosterUrl,
   upgradePosterUrl,
 } from '../../utils/posterUrl.ts'
 
@@ -123,4 +124,76 @@ Deno.test('hedef genişlik parametreyle ezilebilir', () => {
   const r = upgradePosterUrl(`${BASE}/w500${FILE}`, 1280)
   assertEquals(r.upgraded, true)
   assertEquals(r.url, `${BASE}/w1280${FILE}`)
+})
+
+// ─── resultPosterUrl — oyun sonuç kartı (P-1a) ───────────────────────────────
+
+Deno.test('sonuç: original → w780 (küçültülür)', () => {
+  const r = resultPosterUrl(`${BASE}/original${FILE}`)
+  assertEquals(r.resized, true)
+  assertEquals(r.url, `${BASE}/w780${FILE}`)
+  assertEquals(r.reason, undefined)
+})
+
+Deno.test('sonuç: w500 → w780 (Champion yükseltmesiyle aynı)', () => {
+  const r = resultPosterUrl(`${BASE}/w500${FILE}`)
+  assertEquals(r.resized, true)
+  assertEquals(r.url, `${BASE}/w780${FILE}`)
+  assertEquals(r.url, upgradePosterUrl(`${BASE}/w500${FILE}`).url)
+})
+
+Deno.test('sonuç: w1280 → w780 (hedeften geniş küçültülür)', () => {
+  const r = resultPosterUrl(`${BASE}/w1280${FILE}`)
+  assertEquals(r.resized, true)
+  assertEquals(r.url, `${BASE}/w780${FILE}`)
+})
+
+Deno.test('sonuç: zaten w780 → değişmez', () => {
+  const url = `${BASE}/w780${FILE}`
+  const r = resultPosterUrl(url)
+  assertEquals(r.resized, false)
+  assertEquals(r.url, url)
+  assertEquals(r.reason, 'already_target')
+})
+
+Deno.test('sonuç: ham poster_path → url null, invalid_uri (yer tutucu + Sentry çağıranda)', () => {
+  const r = resultPosterUrl(FILE)
+  assertEquals(r.url, null)
+  assertEquals(r.resized, false)
+  assertEquals(r.reason, 'invalid_uri')
+})
+
+Deno.test('sonuç: şemasız TMDb yolu da invalid_uri', () => {
+  const r = resultPosterUrl(`image.tmdb.org/t/p/original${FILE}`)
+  assertEquals(r.url, null)
+  assertEquals(r.reason, 'invalid_uri')
+})
+
+Deno.test('sonuç: TMDb olmayan tam URL → dönüşüm yok, olduğu gibi', () => {
+  const url = `https://cdn.example.com/t/p/original${FILE}`
+  const r = resultPosterUrl(url)
+  assertEquals(r.resized, false)
+  assertEquals(r.url, url)
+  assertEquals(r.reason, 'not_tmdb')
+})
+
+Deno.test('sonuç: TMDb host ama tanınmayan boyut → dönüşüm yok', () => {
+  const url = `${BASE}/medium${FILE}`
+  const r = resultPosterUrl(url)
+  assertEquals(r.resized, false)
+  assertEquals(r.url, url)
+  assertEquals(r.reason, 'not_tmdb')
+})
+
+Deno.test('sonuç: boş / null / undefined → url null, empty', () => {
+  assertEquals(resultPosterUrl('').reason, 'empty')
+  assertEquals(resultPosterUrl('   ').url, null)
+  assertEquals(resultPosterUrl(null).reason, 'empty')
+  assertEquals(resultPosterUrl(undefined).reason, 'empty')
+})
+
+Deno.test('sonuç: upgradePosterUrl davranışı değişmedi — original hâlâ dokunulmaz', () => {
+  const url = `${BASE}/original${FILE}`
+  assertEquals(upgradePosterUrl(url).url, url)
+  assertEquals(upgradePosterUrl(url).reason, 'already_large_enough')
 })

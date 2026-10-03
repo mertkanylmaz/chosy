@@ -41,6 +41,12 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.goldHairline,
   },
+  /** P-1a: poster cizilemediginde (gecersiz URI / yukleme hatasi). */
+  posterPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.bgElevated,
+  },
   filmTitle: {
     ...Theme.typography.serifHero,
     fontSize: 28,

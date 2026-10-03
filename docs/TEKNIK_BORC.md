@@ -3502,3 +3502,52 @@ Aynı kabuk oturumunda İKİNCİ bir canlı şampiyon gelirse (E-21 önceki dön
 kurulabilir. Aynı odakta ilk ask zaten çözüldüyse (`resolvedThisFocusRef`)
 etkisiz. S-2'de hook'a dokunulmadı (KORU); düzeltme hook'ta unmount'ta
 `cardHeight = 0` yazmak.
+
+---
+
+## 🟡 Poster yüzeyleri (P-1a) — kalan borçlar (3 Eki 2026)
+
+Kaynak: `docs/investigations/P1_SPOTLIGHT_POSTER_TUTARLILIK_KESIF.md`. P-1a
+yalnız oyun sonuç kartını (`components/games/ResultCard`) düzeltti:
+`resultPosterUrl` (`utils/posterUrl.ts`) ile w780, `http(s)` olmayan değerde
+yer tutucu + Sentry, `onError`'da breadcrumb + yer tutucu.
+
+### 1. Film detayı posteri DB yerine canlı TMDb'den
+
+`app/film/[id].tsx:395-409` önce `films.poster_url`'ü alıyor, `tmdb_id` varsa
+runtime `GET /movie/{id}?language=en-US&include_image_language=en,null`
+yanıtındaki `poster_path` ile **eziyor** (`toTmdbUrl`, w780). Diğer tüm
+yüzeyler DB değerini gösteriyor. 3 Eki ölçümünde 6/6 aynı dosya; TMDb birincil
+posteri değişirse film detayı (ve oradan üretilen `FilmShareCard`,
+`:1137-1144`) diğer yüzeylerden **sessizce ayrışır**. Karar: DB mi, canlı
+TMDb mi tek kaynak (ürün kararı).
+
+### 2. Watchlist'te üç ayrı boyut kuralı
+
+- `services/watchlist.ts:517-521` `toTmdbUrl`: tam URL'i **olduğu gibi**
+  geçiriyor (canlıda `original`, ~1,3 MB/poster), ham yola **w780** ekliyor.
+- `components/Watchlist/WatchlistCard/index.tsx:91-94`: ham yola **w500**.
+- `components/Watchlist/SessionAccordion/index.tsx:59-62`: ham yola **w185**.
+
+Aynı film üç farklı boyutta / ham-tam ayrımına göre farklı URL'le istenebilir;
+`original` liste görünümünde gereksiz yük. Düzeltme yönü: tek normalizasyon
+(`resultPosterUrl` deseni ya da `gauntletCore.toW500PosterUrl`).
+
+### 3. ResultCard dışındaki poster yüzeylerinde `onError` yok
+
+Yükleme hatası iz bırakmıyor — boş kutu, Sentry'de kayıt yok:
+`components/gauntlet/PosterTile/index.tsx:225`,
+`components/gauntlet/PendingWatchFeedbackCard/index.tsx:65-66`,
+`components/gauntlet/WaitingChampion/index.tsx:92, 131-132`,
+`components/Watchlist/WatchlistCard/index.tsx:112`,
+`components/Watchlist/SessionAccordion/index.tsx`,
+`app/film/[id].tsx:841-843`, `components/ShareCards/FilmShareCard.tsx:49-72`.
+ChampionReveal (`:440-458`) ve P-1a sonrası ResultCard'da var.
+
+### 4. Kapsam dışı bırakılan (P-1a kararıyla)
+
+- Spotlight oyun ekranı karesi (`components/games/Spotlight/index.tsx:536-537`)
+  ve bonus kartı karesi (`SpotlightBonusCard/index.tsx:149-151`) ham
+  `backdrop_url`'ü doğrulamıyor — guard üretimde (`generate-puzzles`
+  `spotlightData`) yapılacak; editoryal havuzda 33 ham-yollu film var, ilki
+  tahminen 25 Eki (P-1b §6).

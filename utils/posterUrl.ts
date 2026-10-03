@@ -90,3 +90,70 @@ export function upgradePosterUrl(
 
   return { url: `${prefix}w${targetWidth}${filePath}`, upgraded: true }
 }
+
+// ─── Oyun sonuç kartı (P-1a, 3 Eki 2026) ─────────────────────────────────────
+
+/** `resultPosterUrl`'ün URL'i boyutlandırmadığı durumlar. `undefined` → boyutlandı. */
+export type ResultPosterSkipReason =
+  /** Boş ya da yalnızca boşluk — sunucu poster vermedi. */
+  | 'empty'
+  /** `http(s)://` ile başlamıyor (ör. ham `poster_path` `/abc.jpg`) — görsel çizilemez. */
+  | 'invalid_uri'
+  /** Tam URL ama TMDb boyut deseni değil — olduğu gibi kullanılır. */
+  | 'not_tmdb'
+  /** Zaten hedef boyutta. */
+  | 'already_target'
+
+export interface ResultPosterResult {
+  /** Çizilecek URL. `null` → çizilemez (`empty` ya da `invalid_uri`). */
+  url: string | null
+  /** Boyut değiştirildi mi. */
+  resized: boolean
+  /** Değiştirilmediyse nedeni. */
+  reason?: ResultPosterSkipReason
+}
+
+/**
+ * Oyun sonuç kartı (ResultCard) posterini hedef genişliğe getirir.
+ *
+ * `upgradePosterUrl`'den farkı: bu yüzey sunucudan `films.poster_url`'ü HAM
+ * alıyor (`submit-guess` / `get-daily-challenge` `revealed_solution`), canlıda
+ * bu `/t/p/original/` (Akira: 1,27 MB; w780 172 KB). Bu yüzden burada
+ * **küçültme de yapılır**. `upgradePosterUrl`'ün "küçültme yok" kuralı (CTO
+ * kararı 19.09.2026) Champion için aynen geçerli — o fonksiyon değişmedi.
+ *
+ * Boyut seçimi ve desen Champion ile ortak: küçükse `upgradePosterUrl`'e
+ * devredilir, aynı `TMDB_POSTER_PATTERN` ve `CHAMPION_POSTER_WIDTH` kullanılır.
+ *
+ * Saf: Sentry raporu çağıranın işi (`invalid_uri` → çağıran raporlar).
+ */
+export function resultPosterUrl(
+  raw: string | null | undefined,
+  targetWidth: number = CHAMPION_POSTER_WIDTH,
+): ResultPosterResult {
+  const value = (raw ?? '').trim()
+  if (value === '') return { url: null, resized: false, reason: 'empty' }
+
+  if (!/^https?:\/\//i.test(value)) {
+    return { url: null, resized: false, reason: 'invalid_uri' }
+  }
+
+  const match = TMDB_POSTER_PATTERN.exec(value)
+  if (!match) return { url: value, resized: false, reason: 'not_tmdb' }
+
+  const [, prefix, sizeSegment, widthDigits, filePath] = match
+
+  if (sizeSegment !== 'original') {
+    const width = Number(widthDigits)
+    if (width === targetWidth) {
+      return { url: value, resized: false, reason: 'already_target' }
+    }
+    if (width < targetWidth) {
+      const up = upgradePosterUrl(value, targetWidth)
+      return { url: up.url, resized: up.upgraded }
+    }
+  }
+
+  // `original` ya da hedeften geniş → hedefe indirilir.
+  return { url: `${prefix}w${targetWidth}${filePath}`, resized: true }
+}

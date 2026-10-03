@@ -278,6 +278,15 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       `game_daily_completed` `game_id: 'spotlight'` değişmeden geliyor.
 - [ ] N9. Dil TR ↔ EN: kart metinleri ve a11y ipucu çevrilmiş; uzun TR alt başlık
       2 satırda, kart yüksekliği değişmiyor.
+- [ ] N10. **Spotlight sonuç posteri (P-1a).** Build P-1a commit'ini içermeli.
+      Akira günü (2026-10-03) ya da o günün bulmacası: oyunu bitir (kazan ya da
+      hakları tüket) → sonuç ekranında poster **yükleniyor**, boş kutu ya da
+      film şeridi yer tutucusu değil. Uygulamayı öldür-aç → kart üzerinden
+      sonuç ekranı yeniden açılınca poster yine yükleniyor (resume yolu,
+      `get-daily-challenge`). Sentry'de `component:ResultCard` uyarısı ve
+      `games.result_poster` breadcrumb'ı **yok**. Poster URL'i w780 (canlıda
+      sunucu `original` veriyor; Deno testi dönüşümü doğruluyor, cihaz yalnız
+      yüklenmeyi doğrular).
 
 ---
 
