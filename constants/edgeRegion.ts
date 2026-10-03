@@ -14,8 +14,11 @@
  *   projenin fiziksel yerleşimidir.
  * - Otomatik yedek bölge YOK: bölge kesintisi Sentry'de görünür kalır
  *   (`services/gauntletService.ts` → `recordTiming`).
- * - Yalnız submit-choice, generate-gauntlet ve get-archive-status bu bölgeyle
- *   çağrılır; diğer fonksiyonlar kapsam dışıdır.
+ * - Bu bölgeyle çağrılanlar: submit-choice, generate-gauntlet, get-archive-status,
+ *   submit-watch-feedback, submit-context-correction, explain-match (`invoke`
+ *   `region`) ve merge-anonymous-user (ham fetch: `x-region` başlığı +
+ *   `forceFunctionRegion` sorgusu — `invoke`'un yaptığının aynısı). Diğer
+ *   fonksiyonlar kapsam dışıdır (parse-mood ham fetch, bölgesiz).
  */
 import { FunctionRegion } from '@supabase/supabase-js';
 

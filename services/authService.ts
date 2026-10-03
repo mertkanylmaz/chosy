@@ -34,6 +34,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { createEphemeralAuthClient, supabase } from './supabase';
 import { logger } from '../utils/logger';
+import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
 //
@@ -223,9 +224,11 @@ async function mergeAnonymousProgress(
 
   let response: Response;
   try {
-    response = await fetch(`${supabaseUrl}/functions/v1/merge-anonymous-user`, {
+    // invoke() ile aynı bölge sabitleme: başlık + forceFunctionRegion sorgusu.
+    response = await fetch(`${supabaseUrl}/functions/v1/merge-anonymous-user?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
       method: 'POST',
       headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
         'Authorization': `Bearer ${targetAccessToken}`,
         'Content-Type': 'application/json',
         'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',

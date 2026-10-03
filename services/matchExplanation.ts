@@ -11,6 +11,7 @@
  */
 import * as Sentry from '@sentry/react-native';
 
+import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { i18n } from '@/constants/i18n';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
@@ -149,6 +150,7 @@ export async function explainBatch(
         locale,
         films: toFetch.map((f) => ({ filmId: f.filmId, dimensions: f.dimensions })),
       },
+      region: GAUNTLET_EDGE_REGION,
     });
 
     if (error) {

@@ -567,6 +567,7 @@ export async function submitWatchFeedback(
   const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('submit-watch-feedback', {
     body: { gauntletId, filmId, response },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -607,6 +608,7 @@ export async function submitContextCorrection(
   const startedAt = performance.now();
   const { data, error } = await supabase.functions.invoke('submit-context-correction', {
     body: { gauntletId, corrected },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
