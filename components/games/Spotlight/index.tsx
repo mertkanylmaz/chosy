@@ -14,7 +14,7 @@
  * oyuncunun kendi actigi harfler ve pozisyonlari doner (Hard Rule 1 + 2).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { CloudSlash, Eye } from 'phosphor-react-native';
 import Animated, {
@@ -531,7 +531,16 @@ export function SpotlightGame() {
       currentAttempt={attempts}
       maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
     >
-      <View style={styles.screen}>
+      {/*
+        Oynanis kabi — sahipsiz dokunus klavyeyi kapatir (P-3c B1). RN'de
+        "disari dokununca kapat" yalniz ScrollView'da var; bosluk, etiket ve
+        hata kutusu input'u blur etmiyordu, liste (A1) kapanmiyordu.
+        Bubble fazi: en derin dokunulabilir (liste satiri, Kapat, harf tusu,
+        ust bolge ScrollView'i) once sahiplenir, buraya yalniz sahipsiz
+        dokunus duser. CAPTURE KULLANILMAZ — satir dokunusunu yutar.
+        Header GameShell'de, bu kabin disinda (donmus oyunlar etkilenmesin).
+      */}
+      <Pressable style={styles.screen} onPress={Keyboard.dismiss} accessible={false}>
         {/*
           Ust bolge — gorsel + baslik maskesi. Kendi icinde kayar (Kural 7'nin
           Spotlight istisnasi, KAPSAM_KILIDI v1.36); aksiyon bari bunun
@@ -675,7 +684,7 @@ export function SpotlightGame() {
               />
           </View>
         </View>
-      </View>
+      </Pressable>
     </GameShell>
   );
 }
