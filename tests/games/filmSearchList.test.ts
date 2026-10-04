@@ -16,6 +16,7 @@ import {
   type SearchListEvent,
   type SearchListState,
 } from '../../components/games/FilmSearchInput/listState.ts'
+import { createSearchGate } from '../../components/games/FilmSearchInput/searchGate.ts'
 
 function run(events: SearchListEvent[], listControls: boolean): SearchListState {
   return events.reduce((s, e) => reduceSearchList(s, e, listControls), INITIAL_SEARCH_LIST)
@@ -143,4 +144,38 @@ Deno.test('regresyon: listControls kapali → basis olaylari acik/kapali durumun
     false,
   )
   assertEquals(pressed.open, base.open)
+})
+
+// ─── Arama kapisi (P-3 A3) ──────────────────────────────────────────────────
+
+Deno.test('A3: yazdiktan sonra X → yoldaki yanit bayat, liste yeniden acilmaz', () => {
+  const gate = createSearchGate()
+  const ticket = gate.ticket() // "ar" yazildi, 300 ms zamanlayici kuruldu
+  gate.cancel() // X
+  assertEquals(gate.isCurrent(ticket), false)
+})
+
+Deno.test('A3: satir secimi yoldaki aramayi bayatlatir', () => {
+  const gate = createSearchGate()
+  gate.cancel() // onceki harf
+  const ticket = gate.ticket() // 3. harf
+  gate.cancel() // eski listeden hemen secim
+  assertEquals(gate.isCurrent(ticket), false)
+})
+
+Deno.test('A3: sira disi donen eski yanit yeni sorguyu ezmez', () => {
+  const gate = createSearchGate()
+  gate.cancel()
+  const old = gate.ticket() // "ar"
+  gate.cancel()
+  const fresh = gate.ticket() // "arr"
+  assertEquals(gate.isCurrent(old), false)
+  assertEquals(gate.isCurrent(fresh), true)
+})
+
+Deno.test('A3: araya bir sey girmezse yanit uygulanir', () => {
+  const gate = createSearchGate()
+  gate.cancel()
+  const ticket = gate.ticket()
+  assert(gate.isCurrent(ticket))
 })

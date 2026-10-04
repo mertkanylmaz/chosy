@@ -31,6 +31,7 @@ import type { FilmSearchResult } from '@/services/gameTypes';
 
 import { DROPDOWN_MAX_H, dropdownMaxHeight } from './dropdownHeight';
 import { INITIAL_SEARCH_LIST, reduceSearchList, type SearchListEvent } from './listState';
+import { createSearchGate } from './searchGate';
 import { createStyles } from './styles';
 
 interface FilmSearchInputProps {
@@ -72,6 +73,18 @@ export function FilmSearchInput({
   );
   const showDropdown = list.open;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Bayat yanıt kapısı (P-3 A3) — bkz. searchGate.ts */
+  const gateRef = useRef(createSearchGate());
+
+  /** Bekleyen 300 ms aramayı ve yoldaki isteği iptal eder */
+  const cancelPendingSearch = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = null;
+    gateRef.current.cancel();
+  }, []);
+
+  // Unmount: zamanlayıcı ekran kapandıktan sonra istek atmasın
+  useEffect(() => cancelPendingSearch, [cancelPendingSearch]);
 
   const insets = useSafeAreaInsets();
   /**
@@ -111,7 +124,7 @@ export function FilmSearchInput({
 
   const handleChange = useCallback((text: string) => {
     setQuery(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
+    cancelPendingSearch();
 
     if (text.trim().length < 2) {
       setResults([]);
@@ -119,9 +132,12 @@ export function FilmSearchInput({
       return;
     }
 
+    const ticket = gateRef.current.ticket();
     debounceRef.current = setTimeout(async () => {
       try {
         const films = await searchFilms(text, catalogOnly);
+        // Arada X / seçim / yeni harf geldiyse bu yanıt bayat — uygulanmaz
+        if (!gateRef.current.isCurrent(ticket)) return;
         setResults(films);
         dispatchList({ type: 'results', count: films.length });
       } catch (err) {
@@ -131,22 +147,24 @@ export function FilmSearchInput({
         logger.error('[FilmSearchInput] Film araması başarısız', err, {
           code: 'FILM_SEARCH_INPUT_FAILED',
         });
+        if (!gateRef.current.isCurrent(ticket)) return;
         setResults([]);
         dispatchList({ type: 'dismiss' });
       }
     }, 300);
-  }, [catalogOnly]);
+  }, [catalogOnly, cancelPendingSearch]);
 
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {
       hapticLight();
+      cancelPendingSearch();
       Keyboard.dismiss();
       setQuery('');
       dispatchList({ type: 'select' });
       setResults([]);
       onSelect(film);
     },
-    [onSelect],
+    [onSelect, cancelPendingSearch],
   );
 
   return (
@@ -235,6 +253,7 @@ export function FilmSearchInput({
             accessibilityRole="button"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             onPress={() => {
+              cancelPendingSearch();
               setQuery('');
               setResults([]);
               dispatchList({ type: 'dismiss' });
