@@ -309,6 +309,33 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       - Buton etiketi EN "Back" / TR "Geri". Kart girişinde → champion'a dönüyor.
         **Bildirim girişinde** (geçmiş yok) → Home'a (`/(tabs)`) gidiyor, ölü buton yok.
       - Share Score görselinde kare de poster de yok (değişmedi).
+- [ ] N13. **Spotlight arama listesi (P-3).** Build `fix/spotlight-search`
+      dalının `d69438f`, `1e4e6e6`, `a3cbee7` commit'lerini içermeli. Her madde
+      **SE ve büyük ekranda (Pro Max)** ayrı ayrı; oynanmamış bir günde başla
+      (hak harcanır — yeni hesap ya da yeni gün):
+      - **Klavye açıkken satıra dokun** → tahmin **gidiyor** (hak sayacı değişir
+        ya da oyun biter), liste ve klavye kapanıyor. Tek dokunuş yetiyor; ilk
+        dokunuş "yutulup" yalnızca klavyeyi kapatmıyor. (Tuzak — en önemli madde.)
+      - **Dışarı dokun** (karenin/maskenin üstü, klavye açık) → klavye **ve**
+        liste kapanıyor. Liste klavyesiz ekranda asılı kalmıyor.
+      - **Kapat** satırı listenin altında (input'a bitişik), EN "Close list" / TR
+        "Listeyi kapat"; dokununca liste kapanıyor, yazılan metin ve klavye
+        kalıyor. Yazmaya devam → liste yeniden açılıyor.
+      - **X + hızlı yazma:** 2 harf yaz ve 300 ms dolmadan X'e bas → liste boş
+        input'un üstünde **yeniden açılmıyor**. Aynısını yavaş ağda tekrarla
+        (ağ bağlantı koşullandırıcı / zayıf hücresel).
+      - 4+ sonuçta **kaydırma göstergesi** görünüyor; liste kaydırılırken satır
+        yanlışlıkla seçilmiyor.
+      - **Aynı yanlış filme tekrar:** yanlış bir film tahmin et → tekrar ara → o
+        film listede **soluk** ve "Denendi"/"Tried" etiketli; dokununca hiçbir
+        şey olmuyor, **hak düşmüyor**, liste açık kalıyor. Uygulamayı öldür-aç
+        → aynı film hâlâ "Denendi" (sunucu geçmişinden).
+      - **Harf tuşlarına dönüş:** liste açıkken harf tuşları örtülü (bilinen,
+        TEKNIK_BORC). Kapat ya da dışarı dokunuşla liste kapanınca 26 tuşun
+        hepsi dokunulabilir; harf tahmini çalışıyor.
+      - VoiceOver: denenmiş satır "<film>, Tried" okunuyor, düğme devre dışı.
+      - Dondurulmuş oyun yok (app_config); FilmSearchInput'un eski davranışı
+        yalnız birim testiyle (`npm run test:film-search` regresyon bloğu) korunuyor.
 
 ---
 
