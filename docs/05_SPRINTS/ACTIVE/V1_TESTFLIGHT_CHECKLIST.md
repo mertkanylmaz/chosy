@@ -336,6 +336,18 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       - VoiceOver: denenmiş satır "<film>, Tried" okunuyor, düğme devre dışı.
       - Dondurulmuş oyun yok (app_config); FilmSearchInput'un eski davranışı
         yalnız birim testiyle (`npm run test:film-search` regresyon bloğu) korunuyor.
+- [ ] N14. **Spotlight "NEXT PUZZLE" sayacı sonraki 18:00'e (P-4a).** Build
+      `fix/spotlight-search` dalının P-4a commit'ini içermeli. Bitmiş bir
+      Spotlight'ın sonuç ekranını aç (kazan ya da kaybet; yeniden açılan bitmiş
+      oyun da olur):
+      - 18:00 **sonrası** (ör. 21:30): sayaç ≈ `20:30:xx` — ertesi gün 18:00'e
+        sayıyor. Gece yarısına (≈ `02:30`) sayıyorsa ❌.
+      - 18:00 **öncesi** (ör. 10:00): sayaç ≈ `08:00:xx` — aynı gün 18:00.
+      - Saniye her saniye azalıyor; uygulamayı arka plana alıp 1 dk sonra dön →
+        sayaç duvar saatine göre doğru (1 dk düşmüş).
+      - Bilinen (TEKNIK_BORC "Spotlight gün sınırı"): bulmaca hâlâ **00:00'da**
+        değişir. 00:00 sonrası Spotlight'ı açınca yeni bulmaca gelmesi bu maddede
+        ❌ sayılmaz.
 
 ---
 
