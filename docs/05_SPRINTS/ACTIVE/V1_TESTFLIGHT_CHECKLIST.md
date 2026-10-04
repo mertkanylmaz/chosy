@@ -362,6 +362,23 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       - Bilinen (TEKNIK_BORC "Spotlight gün sınırı"): bulmaca hâlâ **00:00'da**
         değişir. 00:00 sonrası Spotlight'ı açınca yeni bulmaca gelmesi bu maddede
         ❌ sayılmaz.
+- [ ] N15. **Spotlight yarıda bırak → geri dön (P-3d).** Sunucu `get-daily-challenge`
+      v32 canlıda (4 Eki 2026); build `78fd0c9`'u içermeli. Oynanmamış bir günde:
+      - 2–3 harf dene (en az 1 isabet, 1 ıska), 1 yanlış film tahmin et → kalan hakkı
+        not al (ör. "3 left"). Uygulamayı **öldür**, yeniden aç, Spotlight'a gir:
+        - **Maske:** isabet harfleri doğru pozisyonlarda açık, diğer kutular boş.
+        - **Tuşlar:** denenmiş harfler işaretli (isabet altın, ıska sönük).
+        - **Kalan hak:** öldürmeden önceki sayıyla aynı (6 değil).
+        - **Bulanıklık:** öldürmeden önceki seviyede (açılan harf oranına göre).
+        - Yanlış tahmin edilen film aramada "Denendi" (N13).
+      - **Denenmiş harfe bas** → tuş devre dışı, hiçbir şey olmuyor; **hata kutusu
+        ÇIKMIYOR** (eskiden LETTER_ALREADY_TRIED → hata kutusu).
+      - Yeni bir harf dene → sayaç ve maske kaldığı yerden devam ediyor.
+      - Harfle **kazan**, sonuç ekranındaki "Found it with N letters" sayısını not al;
+        öldür-aç → **aynı N** (eskiden 0). Hiç harf denemeden filmi bilirsen EN
+        "Got it without trying a single letter!" / TR "Hiç harf denemeden buldun!".
+      - Sentry: bu akışta `SPOTLIGHT_PROGRESS_FIELDS_MISSING` ve
+        `spotlight_progress_malformed` olayı **yok**.
 
 ---
 
