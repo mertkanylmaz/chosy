@@ -136,14 +136,16 @@ Deno.test('bos maske 0 satir, olcek 1', () => {
 // ─── Dropdown yuksekligi ─────────────────────────────────────────────────────
 
 /*
- * Alt kenar modeli (iOS):
- *   GameShell `KeyboardAvoidingView behavior="padding"` kullanir ve RN bu
- *   modda kapsayicinin `paddingBottom`'unu KENDI degeriyle EZER
+ * Alt kenar modeli (iOS, P-2d):
+ *   RN `KeyboardAvoidingView behavior="padding"` kapsayicinin
+ *   `paddingBottom`'unu KENDI degeriyle EZER
  *   (react-native/Libraries/Components/Keyboard/KeyboardAvoidingView.js:279,
- *   `compose(style, {paddingBottom: bottomHeight})`). GameShell'in
- *   `max(insets.bottom, 8)` alt payi bu yuzden iOS'ta hic uygulanmaz:
- *   klavye kapaliyken alt pay 0, aciksa klavyenin cakisma yuksekligi
- *   (tam ekran cerceve → klavye yuksekligi). Modelde alt pay = keyboardH.
+ *   `compose(style, {paddingBottom: bottomHeight})`). Bu yuzden GameShell alt
+ *   payi (bottomPad = max(insets.bottom, 8)) KAV'a degil icerik View'ina
+ *   verir ve `keyboardVerticalOffset = −bottomPad` gecer:
+ *     klavye kapali → KAV 0 + icerik bottomPad
+ *     klavye acik   → KAV (klavye − bottomPad) + icerik bottomPad = klavye
+ *   (tam ekran cerceve; KAV payi = cerceve alti − (klavye Y'si + bottomPad)).
  *
  * Tab bar payi YOK: oyun ekranlari `(tabs)` disinda (app/games/), GameShell
  * sabit 83'u bu yuzden kaldirdi (components/games/GameShell/index.tsx:355).
@@ -155,12 +157,19 @@ const SCREEN_PAD_BOTTOM = 8
 const SCREEN_GAP = 16
 const SEARCH_INPUT_H = 52
 
+/** GameShell'in toplam alt payi — yukaridaki alt kenar modeli */
+function shellBottom(bottomInset: number, keyboardH: number): number {
+  const bottomPad = Math.max(bottomInset, 8)
+  const kavPad = keyboardH > 0 ? Math.max(keyboardH - bottomPad, 0) : 0
+  return kavPad + bottomPad
+}
+
 /**
  * Klavye acikken input'un ust Y'si — KeyboardAvoidingView (padding) icerigi
  * klavyenin ustunde bitirir; input aksiyon barinin en altinda.
  */
 function inputTopWithKeyboard(windowH: number, keyboardH: number): number {
-  return windowH - keyboardH - SCREEN_PAD_BOTTOM - SEARCH_INPUT_H
+  return windowH - shellBottom(0, keyboardH) - SCREEN_PAD_BOTTOM - SEARCH_INPUT_H
 }
 
 Deno.test('SE + klavye 216: dropdown header altina sigar', () => {
@@ -190,8 +199,21 @@ Deno.test('alan yoksa negatif degil 0', () => {
 
 // ─── Aksiyon bari modeli ─────────────────────────────────────────────────────
 
+Deno.test('klavye acikken toplam alt pay = klavye yuksekligi (inset cift sayilmaz)', () => {
+  for (const inset of [0, 34]) {
+    for (const kb of [216, 260, 336]) {
+      assertEquals(shellBottom(inset, kb), kb, `inset=${inset} klavye=${kb}`)
+    }
+  }
+})
+
+Deno.test('klavye kapaliyken alt pay = max(inset, 8): SE 8, Face ID 34', () => {
+  assertEquals(shellBottom(0, 0), 8)
+  assertEquals(shellBottom(34, 0), 34)
+})
+
 Deno.test('SE + klavye + QuickType: ust bolge 58pt — aksiyon bari itilmez', () => {
-  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 260), 58)
+  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 0, 260), 58)
 })
 
 // ─── Kare kutusu 16:9 (P-2) ──────────────────────────────────────────────────
@@ -229,11 +251,17 @@ const STILL_MARGIN_TOP = 8
 
 /**
  * Oynanis ust bolgesi (kayan alan). Olculer kod okumasindan:
- *   alt pay = keyboardH (KAV, dosyadaki alt kenar modeli; kapaliyken 0) ·
- *   screen paddingBottom 8 · screen gap 16 · aksiyon bari 216 (dosya basi).
+ *   GameShell alt payi (shellBottom, alt kenar modeli) · screen paddingBottom 8 ·
+ *   screen gap 16 · aksiyon bari 216 (dosya basi).
  */
-function topRegionH(windowH: number, contentTop: number, keyboardH: number): number {
-  return windowH - contentTop - keyboardH - SCREEN_PAD_BOTTOM - SCREEN_GAP - ACTION_BAR_H
+function topRegionH(
+  windowH: number,
+  contentTop: number,
+  bottomInset: number,
+  keyboardH: number,
+): number {
+  return windowH - contentTop - shellBottom(bottomInset, keyboardH) - SCREEN_PAD_BOTTOM -
+    SCREEN_GAP - ACTION_BAR_H
 }
 /**
  * Ust icerik = stillWrap.marginTop 8 + kare + topContent.gap 16 +
@@ -251,36 +279,49 @@ function stillVisibleH(screenW: number, topRegion: number): number {
   return Math.max(0, Math.min(stillHeightFor(stillW(screenW)), topRegion - STILL_MARGIN_TOP))
 }
 
-Deno.test('SE: aksiyon bari (harf klavyesi + arama kutusu) sigar, ust bolge 318pt', () => {
-  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 0), 318)
+Deno.test('SE: aksiyon bari (harf klavyesi + arama kutusu) sigar, ust bolge 310pt', () => {
+  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 0, 0), 310)
 })
 
 Deno.test('SE: kare + tek satir maske ust bolgeye sigar, artan alan maske ile klavye arasinda', () => {
-  const spare = topRegionH(SE_H, SE_CONTENT_TOP, 0) - topContentH(375, 1)
-  assertAlmostEquals(spare, 39.06, 0.01)
+  const spare = topRegionH(SE_H, SE_CONTENT_TOP, 0, 0) - topContentH(375, 1)
+  assertAlmostEquals(spare, 31.06, 0.01)
 })
 
-Deno.test('SE: iki satir maske (tam olcek) de sigar — ~3pt artar, ust bolge kaymaz', () => {
-  // Eski dinamik hesap SE'de bu durumda kareyi ~196pt'ye cekiyordu; 16:9 kare 192.94pt.
-  const spare = topRegionH(SE_H, SE_CONTENT_TOP, 0) - topContentH(375, 2)
-  assertAlmostEquals(spare, 3.06, 0.01)
+Deno.test('SE: iki satir maske (tam olcek) ust bolgeyi ~4.94pt asar — bolge kayar, aksiyon bari itilmez', () => {
+  // Eski dinamik hesap SE'de bu durumda kareyi 188pt'ye indiriyordu; 16:9 kare
+  // 192.94pt. Fark kayan ust bolgeye duser (Kural 7 istisnasi, KAPSAM_KILIDI v1.36).
+  const overflow = topContentH(375, 2) - topRegionH(SE_H, SE_CONTENT_TOP, 0, 0)
+  assertAlmostEquals(overflow, 4.94, 0.01)
 })
 
-Deno.test('Pro Max: kare + iki satir maske rahat sigar, ~198pt artar', () => {
-  // 932pt, safe-area ust 59 + header 68 + progress 21. Alt inset 34 iOS'ta
-  // KAV tarafindan ezilir (dosyadaki alt kenar modeli) — hesaba girmez.
-  const spare = topRegionH(932, 59 + 68 + 21, 0) - topContentH(430, 2)
-  assertAlmostEquals(spare, 198.13, 0.01)
+Deno.test('Pro Max: kare + iki satir maske rahat sigar, ~164pt artar', () => {
+  // 932pt, safe-area ust 59 + header 68 + progress 21, alt inset 34
+  const spare = topRegionH(932, 59 + 68 + 21, 34, 0) - topContentH(430, 2)
+  assertAlmostEquals(spare, 164.13, 0.01)
 })
 
 // ─── Sistem klavyesi acikken gorunen kare (P-2d) ─────────────────────────────
 
 Deno.test('SE + klavye 260 (QuickType): karenin 192.94pt\'sinin yalniz 50pt\'si gorunur', () => {
-  const visible = stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 260))
+  const visible = stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 0, 260))
   assertEquals(visible, 50)
   assertAlmostEquals(visible / stillHeightFor(stillW(375)), 0.259, 1e-3)
 })
 
 Deno.test('SE + klavye 216: karenin yalniz 94pt\'si gorunur', () => {
-  assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 216)), 94)
+  assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 0, 216)), 94)
+})
+
+/**
+ * Regresyon kilidi (P-2d): alt payin icerik View'ina tasinmasi klavye ACIK
+ * rakamlari degistirmemeli. Degerler 6e44b87'deki (KAV payi ezerken) modelin
+ * ciktisidir; ofset −bottomPad toplami klavyeye esitler, inset fark etmez.
+ */
+Deno.test('regresyon: klavye acik 58/50/94 alt pay tasinmasindan etkilenmez', () => {
+  for (const inset of [0, 34]) {
+    assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, inset, 260), 58, `inset=${inset}`)
+    assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, inset, 260)), 50)
+    assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, inset, 216)), 94)
+  }
 })
