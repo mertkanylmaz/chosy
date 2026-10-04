@@ -135,10 +135,24 @@ Deno.test('bos maske 0 satir, olcek 1', () => {
 
 // ─── Dropdown yuksekligi ─────────────────────────────────────────────────────
 
+/*
+ * Alt kenar modeli (iOS):
+ *   GameShell `KeyboardAvoidingView behavior="padding"` kullanir ve RN bu
+ *   modda kapsayicinin `paddingBottom`'unu KENDI degeriyle EZER
+ *   (react-native/Libraries/Components/Keyboard/KeyboardAvoidingView.js:279,
+ *   `compose(style, {paddingBottom: bottomHeight})`). GameShell'in
+ *   `max(insets.bottom, 8)` alt payi bu yuzden iOS'ta hic uygulanmaz:
+ *   klavye kapaliyken alt pay 0, aciksa klavyenin cakisma yuksekligi
+ *   (tam ekran cerceve → klavye yuksekligi). Modelde alt pay = keyboardH.
+ *
+ * Tab bar payi YOK: oyun ekranlari `(tabs)` disinda (app/games/), GameShell
+ * sabit 83'u bu yuzden kaldirdi (components/games/GameShell/index.tsx:355).
+ */
 const SE_H = 667
 const SE_CONTENT_TOP = 20 + 68 + 21
 const ACTION_BAR_H = 216
 const SCREEN_PAD_BOTTOM = 8
+const SCREEN_GAP = 16
 const SEARCH_INPUT_H = 52
 
 /**
@@ -176,12 +190,8 @@ Deno.test('alan yoksa negatif degil 0', () => {
 
 // ─── Aksiyon bari modeli ─────────────────────────────────────────────────────
 
-Deno.test('SE + klavye + QuickType: ust bolge >= 0 — aksiyon bari itilmez', () => {
-  // Icerik alani = pencere − ust chrome − klavye; ust bolge kalanidir
-  const content = SE_H - SE_CONTENT_TOP - 260
-  const gap = 16
-  const topRegion = content - SCREEN_PAD_BOTTOM - ACTION_BAR_H - gap
-  assert(topRegion >= 0, `ust bolge ${topRegion}`)
+Deno.test('SE + klavye + QuickType: ust bolge 58pt — aksiyon bari itilmez', () => {
+  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 260), 58)
 })
 
 // ─── Kare kutusu 16:9 (P-2) ──────────────────────────────────────────────────
@@ -214,42 +224,63 @@ Deno.test('eski 361×380 kutu kaynagin yalniz ~%53\'unu gosteriyordu (P-2 kesif)
   assertEquals(v.y, 1)
 })
 
+/** stillWrap.marginTop — karenin ust bolgedeki ust payi */
+const STILL_MARGIN_TOP = 8
+
 /**
- * Oynanis ust bolgesi (klavye kapali). Olculer kod okumasindan:
- *   GameShell alt padding = max(insets.bottom, 8) · screen paddingBottom 8 ·
- *   screen gap 16 · aksiyon bari 216 (dosya basi).
- *   Ust icerik = stillWrap.marginTop 8 + kare + topContent.gap 16 +
- *   maske etiketi 14 + maskBlock.gap 16 + satirlar (32×n + 4×(n−1)).
+ * Oynanis ust bolgesi (kayan alan). Olculer kod okumasindan:
+ *   alt pay = keyboardH (KAV, dosyadaki alt kenar modeli; kapaliyken 0) ·
+ *   screen paddingBottom 8 · screen gap 16 · aksiyon bari 216 (dosya basi).
  */
-function topRegionH(windowH: number, contentTop: number, bottomInset: number): number {
-  return windowH - contentTop - Math.max(bottomInset, 8) - SCREEN_PAD_BOTTOM - 16 - ACTION_BAR_H
+function topRegionH(windowH: number, contentTop: number, keyboardH: number): number {
+  return windowH - contentTop - keyboardH - SCREEN_PAD_BOTTOM - SCREEN_GAP - ACTION_BAR_H
 }
+/**
+ * Ust icerik = stillWrap.marginTop 8 + kare + topContent.gap 16 +
+ * maske etiketi 14 + maskBlock.gap 16 + satirlar (32×n + 4×(n−1)).
+ */
 function topContentH(screenW: number, maskRows: number): number {
   const rows = 32 * maskRows + 4 * (maskRows - 1)
-  return 8 + stillHeightFor(stillW(screenW)) + 16 + 14 + 16 + rows
+  return STILL_MARGIN_TOP + stillHeightFor(stillW(screenW)) + 16 + 14 + 16 + rows
+}
+/**
+ * Karenin gorunen yuksekligi — ust bolge kaydirilmamisken (offset 0).
+ * Odakta scrollTo yok; KAV alani alttan daraltir, kare alttan kirpilir.
+ */
+function stillVisibleH(screenW: number, topRegion: number): number {
+  return Math.max(0, Math.min(stillHeightFor(stillW(screenW)), topRegion - STILL_MARGIN_TOP))
 }
 
-Deno.test('SE: aksiyon bari (harf klavyesi + arama kutusu) sigar, ust bolge >= 0', () => {
-  const top = topRegionH(SE_H, SE_CONTENT_TOP, 0)
-  assertEquals(top, 310)
-  assert(top >= 0)
+Deno.test('SE: aksiyon bari (harf klavyesi + arama kutusu) sigar, ust bolge 318pt', () => {
+  assertEquals(topRegionH(SE_H, SE_CONTENT_TOP, 0), 318)
 })
 
 Deno.test('SE: kare + tek satir maske ust bolgeye sigar, artan alan maske ile klavye arasinda', () => {
   const spare = topRegionH(SE_H, SE_CONTENT_TOP, 0) - topContentH(375, 1)
-  assert(spare > 0, `artan ${spare}`)
-  assertAlmostEquals(spare, 31.06, 0.01)
+  assertAlmostEquals(spare, 39.06, 0.01)
 })
 
-Deno.test('SE: iki satir maske (tam olcek) ust bolgeyi ~5pt asar — bolge kayar, aksiyon bari itilmez', () => {
-  // Eski dinamik hesap SE'de bu durumda kareyi 188pt'ye indiriyordu; 16:9 kare
-  // 192.94pt. Fark kayan ust bolgeye duser (Kural 7 istisnasi, KAPSAM_KILIDI v1.36).
-  const overflow = topContentH(375, 2) - topRegionH(SE_H, SE_CONTENT_TOP, 0)
-  assert(overflow > 0 && overflow < 5, `tasma ${overflow}`)
+Deno.test('SE: iki satir maske (tam olcek) de sigar — ~3pt artar, ust bolge kaymaz', () => {
+  // Eski dinamik hesap SE'de bu durumda kareyi ~196pt'ye cekiyordu; 16:9 kare 192.94pt.
+  const spare = topRegionH(SE_H, SE_CONTENT_TOP, 0) - topContentH(375, 2)
+  assertAlmostEquals(spare, 3.06, 0.01)
 })
 
-Deno.test('Pro Max: kare + iki satir maske rahat sigar', () => {
-  // 932pt, safe-area ust 59 + header 68 + progress 21, alt inset 34
-  const spare = topRegionH(932, 59 + 68 + 21, 34) - topContentH(430, 2)
-  assert(spare > 100, `artan ${spare}`)
+Deno.test('Pro Max: kare + iki satir maske rahat sigar, ~198pt artar', () => {
+  // 932pt, safe-area ust 59 + header 68 + progress 21. Alt inset 34 iOS'ta
+  // KAV tarafindan ezilir (dosyadaki alt kenar modeli) — hesaba girmez.
+  const spare = topRegionH(932, 59 + 68 + 21, 0) - topContentH(430, 2)
+  assertAlmostEquals(spare, 198.13, 0.01)
+})
+
+// ─── Sistem klavyesi acikken gorunen kare (P-2d) ─────────────────────────────
+
+Deno.test('SE + klavye 260 (QuickType): karenin 192.94pt\'sinin yalniz 50pt\'si gorunur', () => {
+  const visible = stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 260))
+  assertEquals(visible, 50)
+  assertAlmostEquals(visible / stillHeightFor(stillW(375)), 0.259, 1e-3)
+})
+
+Deno.test('SE + klavye 216: karenin yalniz 94pt\'si gorunur', () => {
+  assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, 216)), 94)
 })
