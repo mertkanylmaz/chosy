@@ -59,6 +59,11 @@ export interface GuessEntry {
 
 /** Sunucudaki oyun ilerleme durumu */
 export interface GameProgress {
+  /**
+   * Sunucudaki hak sayaci (`game_scores.attempts`, P-3d). P-3d oncesi
+   * get-daily-challenge dondurmez — opsiyonel.
+   */
+  attempts?: number;
   guesses: GuessEntry[];
   guess_timestamps: string[];
   completed: boolean;

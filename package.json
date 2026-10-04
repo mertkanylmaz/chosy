@@ -21,6 +21,7 @@
     "test:notif-ask": "deno test tests/gauntlet/notificationAskCheck.test.ts",
     "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:film-search": "deno test tests/games/filmSearchList.test.ts",
+    "test:spotlight-progress": "cd supabase/functions && deno test _shared/spotlightProgress.test.ts",
     "test:result-card": "deno test tests/games/resultHeroMode.test.ts",
     "test:next-puzzle": "deno test --unstable-sloppy-imports tests/games/nextPuzzleClock.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",

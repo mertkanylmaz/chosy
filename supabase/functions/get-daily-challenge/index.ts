@@ -21,6 +21,7 @@ import {
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildWhyThisMovie, type WhyThisMovieText } from '../_shared/whyThisMovie.ts'
+import { spotlightProgressFields } from '../_shared/spotlightProgress.ts'
 
 /**
  * Kuyruk derinliği alarm eşiği (P-1c D). İstenen tarih DAHİL ileriye doğru
@@ -193,8 +194,34 @@ Deno.serve(async (req: Request) => {
 
     // ─── 4. Build response ─────────────────────────────────────────────────
     const progressJson = scoreRow?.progress_json
+
+    // Spotlight resume (P-3d): denenmis harfler + oyuncunun KENDI actigi
+    // pozisyonlar, beyaz listeyle. Baslik/acilmamis karakter donmez
+    // (_shared/spotlightProgress.ts). Bozuk oge sessiz yutulmaz.
+    let spotlightFields: ReturnType<typeof spotlightProgressFields>['fields'] | undefined
+    if (scoreRow && gameId === 'spotlight') {
+      const { fields, dropped } = spotlightProgressFields(progressJson)
+      spotlightFields = fields
+      if (dropped > 0) {
+        logError('get-daily-challenge.spotlight_progress_malformed', new Error('dropped items'), {
+          userId, puzzleId: puzzle.id, dropped,
+        })
+        await sentryCapture({
+          message: `get-daily-challenge: spotlight progress ${dropped} bozuk oge dusuruldu`,
+          level: 'warning',
+          tags: { fn: 'get-daily-challenge', game: 'spotlight' },
+          extra: { puzzle_id: puzzle.id, dropped },
+        })
+      }
+    }
+
     const progress = scoreRow
       ? {
+          // Sunucudaki gercek hak sayaci (P-3d). Spotlight'ta `guesses` hep
+          // bos — harf ve film tahminleri ayri dizilerde — istemci hakki
+          // guesses.length'ten turetince yeniden acilista 6 hak goruyordu.
+          attempts: scoreRow.attempts,
+          ...(spotlightFields ?? {}),
           guesses: progressJson?.guesses ?? [],
           completed: scoreRow.completed_at != null,
           won: scoreRow.solved ?? false,

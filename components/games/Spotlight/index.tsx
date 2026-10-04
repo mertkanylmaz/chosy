@@ -230,10 +230,27 @@ export function SpotlightGame() {
       setWhyThisMovie(data.why_this_movie ?? null);
       if (data.revealed_solution) setRevealedFilm(data.revealed_solution);
 
+      // Resume (P-3d): denenmis harfler, acilmis pozisyonlar ve hak sayaci
+      // sunucudan. `progress` null = oyuncu bu bulmacada henuz hamle yapmadi.
+      // Spotlight'ta `guesses` hep bos; hak `attempts`'tan okunur.
       const progress = data.progress;
+      if (
+        progress &&
+        (typeof progress.attempts !== 'number' ||
+          !Array.isArray(progress.spotlight_letters) ||
+          !Array.isArray(progress.spotlight_revealed))
+      ) {
+        // Sessiz fallback yasak: P-3d oncesi get-daily-challenge — resume
+        // eksik gelir (bos maske, yanlis hak). Deploy sirasi hatasi.
+        logger.error(
+          '[spotlight] progress resume alanlari eksik',
+          new Error('SPOTLIGHT_PROGRESS_FIELDS_MISSING'),
+          { code: 'SPOTLIGHT_PROGRESS_FIELDS_MISSING' },
+        );
+      }
       setTriedLetters(progress?.spotlight_letters ?? []);
       setRevealed(progress?.spotlight_revealed ?? []);
-      setAttempts(progress?.guesses?.length ?? 0);
+      setAttempts(progress?.attempts ?? progress?.guesses?.length ?? 0);
       setGuessedFilmIds(progress?.spotlight_guesses?.map((g) => g.film_id) ?? []);
 
       if (progress?.completed) {
