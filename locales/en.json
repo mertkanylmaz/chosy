@@ -1120,7 +1120,11 @@
       "title_label": "The title",
       "attempts_left": "%{count} left",
       "which_film": "Which film?",
-      "result_won_letters": "Found it with %{count} letter(s)!",
+      "result_won_letters": {
+        "zero": "Got it without trying a single letter!",
+        "one": "Found it with 1 letter!",
+        "other": "Found it with %{count} letters!"
+      },
       "preparing_title": "Today's frame is being prepared",
       "preparing_subtitle": "Spotlight was rebuilt. A new puzzle arrives with the next daily generation.",
       "unavailable_title": "No frame today",

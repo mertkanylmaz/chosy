@@ -1120,7 +1120,11 @@
       "title_label": "Başlık",
       "attempts_left": "%{count} hak",
       "which_film": "Hangi film?",
-      "result_won_letters": "%{count} harfle buldun!",
+      "result_won_letters": {
+        "zero": "Hiç harf denemeden buldun!",
+        "one": "1 harfle buldun!",
+        "other": "%{count} harfle buldun!"
+      },
       "preparing_title": "Bugünün karesi hazırlanıyor",
       "preparing_subtitle": "Spotlight yenilendi. Yeni bulmaca bir sonraki günlük üretimde gelecek.",
       "unavailable_title": "Bugün kare yok",
