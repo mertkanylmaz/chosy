@@ -3670,3 +3670,14 @@ K-16'da incelenmedi. **Tetikleyici:** abonelik açılmadan önce ya da ilk
 CLAUDE.md kural 1). Fonksiyon hiçbir yerden çağrılmıyor (grep, 4 Eki).
 **Tetikleyici:** fonksiyon yeniden bağlanırsa önce hata kontrolü; yoksa silinmesi
 ayrı temizlik işi.
+
+### 6. Migration 125 — yedeksiz silme (migration-guard KIRMIZI 1'e bilinçli istisna)
+migration-guard, 125'teki `DELETE FROM game_scores` (yetimler) için push
+öncesi ham satır dökümü + `pg_dump` istedi (KIRMIZI 1). **Alınmadı — CTO
+kararı, 4 Eki 2026.** Gerekçe: (a) FK kurulduktan sonra yetim satır geri
+yüklenemez — sahibi olan `public.users` satırı yok, FK reddeder; (b) satırlar
+silinmiş hesaplara ait, hesap silme taahhüdü gereği verinin tutulmaması
+amaçlanan sonuç; döküm almak silinmiş kullanıcı verisini repo/disk dışında
+yaşatırdı. Kapsam: yalnız 125'in yetim satırları (beklenen ~17). Bu istisna
+başka migration'lara emsal değildir — canlı kullanıcı verisini silen her
+migration'da yedek kuralı geçerli.
