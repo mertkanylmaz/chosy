@@ -550,6 +550,10 @@ export function SpotlightGame() {
           style={styles.topRegion}
           contentContainerStyle={styles.topContent}
           keyboardShouldPersistTaps="handled"
+          // P-3c B2: kareyi suruklemek klavyeyi kapatir → blur → liste kapanir.
+          // YALNIZ burada: liste ScrollView'inda sonuclari kaydirmak listeyi
+          // kapatirdi (FilmSearchInput A1 kurali).
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
         {/*
