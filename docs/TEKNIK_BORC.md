@@ -3617,3 +3617,44 @@ kararı ister. Kullanıcı etkisi ölçülmedi.
 **Tetikleyici:** Spotlight completion oranı düşükse (özellikle küçük
 ekranlarda arama açılıp tahmin gönderilmeden çıkış) ya da cihaz geri
 bildiriminde "arama sırasında görsel kayboluyor" gelirse.
+
+---
+
+## 🟡 Spotlight arama listesi — P-3 sonrası kalanlar (4 Eki 2026)
+
+P-3 (`fix/spotlight-search`) liste kapatma yollarını, bayat aramayı ve
+denenmiş filmleri istemcide ele aldı. Aşağıdakiler bilinçli olarak kaldı.
+Kaynak: `docs/investigations/P3_SPOTLIGHT_ARAMA_LISTESI_KESIF.md`.
+
+### 1. Liste açıkken harf tuşları örtülü (A4)
+Dropdown input'un hemen üstüne açılır; arada yalnız harf klavyesi ve etiket
+var. 1 sonuç ZXCVBNM'yi, 3 sonuç 26 tuşun tamamını örter — SE'de de Pro
+Max'te de. SE + QuickType (260pt) klavyede input ile header arasında 234pt
+var, üst bölge **58pt**: listeyi harf klavyesinin üstüne taşıyacak yer yok.
+P-3'te liste kolay kapanır (blur, Kapat), örtme sürer. Kapat satırı (44pt)
+ile SE + QuickType'ta görünen sonuç ~3.29 → ~2.67 satıra indi
+(`tests/games/spotlightLayout.test.ts`).
+**Neden şimdi değil:** Çözüm seçenekleri (liste satır tavanı ya da paylaşılan
+FilmSearchInput'a aksiyon barı sınırı için yeni ölçüm/prop) yerleşim/pattern
+kararı ister. **Tetikleyici:** N13'te "harf tuşlarına dönüş" ❌ ya da kullanıcı
+geri bildirimi.
+
+### 2. Sunucuda Spotlight tekrar-tahmin kuralı yok
+`submit-guess` Spotlight film tahmininde aynı filmi ikinci kez kabul eder ve
+hak düşer (`supabase/functions/submit-guess/index.ts:676, 684-700`); harf için
+`LETTER_ALREADY_TRIED` var (`:474-476`), film için karşılığı yok. P-3 yalnız
+istemcide önledi (denenmiş satır dokunulamaz) — eski istemci, doğrudan API
+çağrısı ya da progress yüklenmeden yapılan tahmin hâlâ hak yakar.
+**Neden şimdi değil:** Edge Function davranış değişikliği, CTO onayı ister;
+P-3 kapsamı "sunucuya dokunma". **Tetikleyici:** Spotlight sunucu turu.
+
+### 3. Android'de liste satırı dokunması doğrulanmadı
+Dropdown kabının (52pt) dışına taşar. iOS'ta taşan `overflow: visible` çocuk
+dokunuş alır; Android'de taşan satırların dokunuş alıp almadığı — yoksa
+dokunuşun altındaki harf tuşuna düşüp harf hakkı yakıp yakmadığı — cihazda
+denenmedi. **Tetikleyici:** Android build'i öncesi zorunlu cihaz testi.
+
+### 4. Pro Max klavye yüksekliği 336pt varsayım
+P-3 keşif geometrisindeki Pro Max satırları sistem klavyesini 336pt kabul
+eder; ölçülmedi. Sonuç (≥3 sonuçta 26 tuş örtülü) 216–346 aralığındaki her
+değer için aynı. **Tetikleyici:** Pro Max'te N13 sırasında ekran görüntüsüyle ölç.
