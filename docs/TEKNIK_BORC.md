@@ -3588,3 +3588,32 @@ taşıyabilir (bkz. "deploy durumu bible'dan okunmaz").
 
 **Düzeltme yönü (ayrı karar):** her fonksiyon için önce canlı ↔ repo diff,
 sonra redeploy. Toplu redeploy bu kayıtla yapılmaz.
+
+---
+
+## 🟡 Spotlight: sistem klavyesi açıkken kare 50pt görünür (P-2d, 4 Eki 2026)
+
+Arama kutusu odaktayken (iPhone SE 667pt, QuickType'lı 260pt klavye)
+üst bölge 58pt'ye iner; 192.94pt'lik 16:9 karenin yalnız üst **50pt**'si
+görünür (%26), maske hiç görünmez. 216pt klavyede 94pt. Arama sonuçları
+gelince liste üst sınıra kadar uzanır ve kalan 50pt'yi de örter — arama
+sırasında kare pratikte görünmez.
+
+**Regresyon DEĞİL.** P-2 öncesi (2155e1a^) kare ölçülen alandan
+`clamp(…, 150, 380)` alıyordu; klavye açılınca 150pt tabanına zıplıyor,
+görünen kısım yine 50pt'ydi (150'nin %33'ü). Yeni sürümde kare 192.94pt
+sabit, yerleşim zıplamıyor; görünen yükseklik aynı.
+
+Mekanizma: odakta `scrollTo` yok (Spotlight / GameShell / FilmSearchInput,
+eski ve yeni). GameShell KAV alanı alttan daraltır, üst bölge kaydırma
+konumunu korur, kare alttan kırpılır. Rakamlar
+`tests/games/spotlightLayout.test.ts` (`stillVisibleH`) — kod okumasından,
+cihazda ölçülmedi.
+
+**Neden şimdi değil:** Davranış P-2 öncesiyle aynı; düzeltme (kareyi
+odakta küçültmek/sabitlemek, listeyi kareye göre sınırlamak) yerleşim
+kararı ister. Kullanıcı etkisi ölçülmedi.
+
+**Tetikleyici:** Spotlight completion oranı düşükse (özellikle küçük
+ekranlarda arama açılıp tahmin gönderilmeden çıkış) ya da cihaz geri
+bildiriminde "arama sırasında görsel kayboluyor" gelirse.
