@@ -31,6 +31,7 @@ import {
 import {
   DROPDOWN_GAP,
   DROPDOWN_MAX_H,
+  SEARCH_CLOSE_ROW_H,
   dropdownMaxHeight,
 } from '../../components/games/FilmSearchInput/dropdownHeight.ts'
 import {
@@ -186,6 +187,20 @@ Deno.test('bol alanda eski sabit korunur (FadeIn / CineMetrics davranisi degisme
 
 Deno.test('alan yoksa negatif degil 0', () => {
   assertEquals(dropdownMaxHeight({ inputTopY: 100, boundaryTopY: 109 }), 0)
+})
+
+/** Sonuc satiri = paddingVertical 8×2 + poster 54 + hairline 0.5 (SE @2x) */
+const RESULT_ROW_H = 70.5
+/** Dropdown kenarligi ust + alt */
+const DROPDOWN_BORDER = 2
+
+Deno.test('P-3 Kapat satiri: SE + QuickType 260 ile ~2.67 sonuc satiri gorunur (eskiden ~3.29)', () => {
+  const h = dropdownMaxHeight({ inputTopY: inputTopWithKeyboard(SE_H, 260), boundaryTopY: SE_CONTENT_TOP })
+  const withClose = (h - DROPDOWN_BORDER - SEARCH_CLOSE_ROW_H) / RESULT_ROW_H
+  const without = (h - DROPDOWN_BORDER) / RESULT_ROW_H
+  assertAlmostEquals(withClose, 2.67, 0.01)
+  assertAlmostEquals(without, 3.29, 0.01)
+  assert(withClose >= 2, 'en az 2 tam sonuc satiri gorunmeli')
 })
 
 // ─── Aksiyon bari modeli ─────────────────────────────────────────────────────

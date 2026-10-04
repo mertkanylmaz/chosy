@@ -1186,6 +1186,7 @@
       }
     },
     "search_placeholder": "Film ara...",
+    "search_close": "Listeyi kapat",
     "result": {
       "solved": "Harika Tahmin!",
       "solved_detail": "%{attempts}/%{maxAttempts} denemede bildin",

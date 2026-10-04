@@ -1186,6 +1186,7 @@
       }
     },
     "search_placeholder": "Search for a film...",
+    "search_close": "Close list",
     "result": {
       "solved": "Great Guess!",
       "solved_detail": "Solved in %{attempts}/%{maxAttempts} guesses",

@@ -8,11 +8,15 @@
  * header'ının altında gerçekten kalan alana göre kısılır — hesap
  * `dropdownHeight.ts`. Ölçüm input yerleştiğinde, dropdown açıldığında ve
  * klavye açılıp kapandığında tazelenir.
+ *
+ * `listControls` (P-3, Spotlight): liste odaktan çıkınca kapanır, altta
+ * görünür "Kapat" satırı ve kaydırma göstergesi çizilir. Açık/kapalı durumu
+ * `listState.ts` reducer'ında; blur'un satır dokunuşunu yutmaması orada.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
+import { CaretDown, FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
@@ -26,6 +30,7 @@ import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
 import { DROPDOWN_MAX_H, dropdownMaxHeight } from './dropdownHeight';
+import { INITIAL_SEARCH_LIST, reduceSearchList, type SearchListEvent } from './listState';
 import { createStyles } from './styles';
 
 interface FilmSearchInputProps {
@@ -40,6 +45,12 @@ interface FilmSearchInputProps {
    * geçer: cevap her zaman katalogdadır, uuid'siz sonuç tahmin edilemez.
    */
   catalogOnly?: boolean;
+  /**
+   * P-3 liste kontrolleri: odaktan çıkınca kapanma, görünür "Kapat" satırı,
+   * kaydırma göstergesi. Varsayılan kapalı — dondurulmuş oyunların çıktısı
+   * değişmez; yalnız Spotlight açar.
+   */
+  listControls?: boolean;
 }
 
 export function FilmSearchInput({
@@ -47,13 +58,19 @@ export function FilmSearchInput({
   disabled = false,
   placeholder,
   catalogOnly = false,
+  listControls = false,
 }: FilmSearchInputProps) {
   const theme = useGameTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FilmSearchResult[]>([]);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [list, dispatchList] = useReducer(
+    (state: typeof INITIAL_SEARCH_LIST, event: SearchListEvent) =>
+      reduceSearchList(state, event, listControls),
+    INITIAL_SEARCH_LIST,
+  );
+  const showDropdown = list.open;
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const insets = useSafeAreaInsets();
@@ -98,7 +115,7 @@ export function FilmSearchInput({
 
     if (text.trim().length < 2) {
       setResults([]);
-      setShowDropdown(false);
+      dispatchList({ type: 'dismiss' });
       return;
     }
 
@@ -106,7 +123,7 @@ export function FilmSearchInput({
       try {
         const films = await searchFilms(text, catalogOnly);
         setResults(films);
-        setShowDropdown(films.length > 0);
+        dispatchList({ type: 'results', count: films.length });
       } catch (err) {
         // Savunmacı: servis bugün hatayı kendisi raporlayıp [] döner. Bu dal
         // ancak servis sözleşmesi değişirse çalışır. Kullanıcıya hata metni
@@ -115,7 +132,7 @@ export function FilmSearchInput({
           code: 'FILM_SEARCH_INPUT_FAILED',
         });
         setResults([]);
-        setShowDropdown(false);
+        dispatchList({ type: 'dismiss' });
       }
     }, 300);
   }, [catalogOnly]);
@@ -125,7 +142,7 @@ export function FilmSearchInput({
       hapticLight();
       Keyboard.dismiss();
       setQuery('');
-      setShowDropdown(false);
+      dispatchList({ type: 'select' });
       setResults([]);
       onSelect(film);
     },
@@ -137,10 +154,14 @@ export function FilmSearchInput({
       {/* Dropdown — INPUT'UN ÜSTÜNDE açılır, yüksekliği kalan alana göre */}
       {showDropdown && (
         <View style={[styles.dropdown, { maxHeight: dropdownHeight }]}>
+          {/*
+            "handled": satıra dokunuş klavyeyi kapatmaz → input satırın
+            onPress'inden önce blur olmaz (listState.ts, tuzak katman 1).
+          */}
           <ScrollView
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
-            showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={listControls}
           >
             {results.slice(0, 6).map((item) => {
               const poster = getPosterUrl(item.posterPath, 'w92');
@@ -150,6 +171,8 @@ export function FilmSearchInput({
                   style={styles.resultRow}
                   accessibilityRole="button"
                   accessibilityLabel={item.title}
+                  onPressIn={() => dispatchList({ type: 'rowPressIn' })}
+                  onPressOut={() => dispatchList({ type: 'rowPressOut' })}
                   onPress={() => handleSelect(item)}
                 >
                   {poster ? (
@@ -173,6 +196,19 @@ export function FilmSearchInput({
               );
             })}
           </ScrollView>
+          {/* Görünür kapat — input'a en yakın kenarda; sorguyu silmez (X siler) */}
+          {listControls && (
+            <TouchableOpacity
+              style={styles.closeRow}
+              accessibilityRole="button"
+              onPress={() => dispatchList({ type: 'dismiss' })}
+            >
+              <CaretDown size={14} color={Colors.textTertiary} weight="bold" />
+              <Text style={styles.closeText} maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}>
+                {t('games.search_close')}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
 
@@ -189,6 +225,8 @@ export function FilmSearchInput({
           autoCapitalize="words"
           autoCorrect={false}
           returnKeyType="search"
+          onFocus={() => dispatchList({ type: 'focus' })}
+          onBlur={() => dispatchList({ type: 'blur' })}
           // Sabit 52px satır — tavansız AX boyutunda metin kırpılıyordu
           maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
         />
@@ -199,7 +237,7 @@ export function FilmSearchInput({
             onPress={() => {
               setQuery('');
               setResults([]);
-              setShowDropdown(false);
+              dispatchList({ type: 'dismiss' });
             }}
           >
             <XCircle size={20} color={Colors.textTertiary} weight="duotone" />

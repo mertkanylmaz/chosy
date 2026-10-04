@@ -22,6 +22,11 @@ export const DROPDOWN_MAX_H = 280;
 export const SEARCH_INPUT_H = 52;
 /** Dropdown ile input arasi bosluk — eski `bottom: 56` = 52 + 4 */
 export const DROPDOWN_GAP = 4;
+/**
+ * P-3 "Kapat" satiri (`listControls`) — dropdown'in ALTINDA, maxHeight'in
+ * icinde. HIG asgari dokunma hedefi; sonuc satirlarina kalan alan bu kadar azalir.
+ */
+export const SEARCH_CLOSE_ROW_H = 44;
 
 export interface DropdownSpace {
   /** Input'un pencere koordinatinda ust kenari */

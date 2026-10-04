@@ -10,7 +10,7 @@ import { Colors } from '@/constants/Colors';
 import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
-import { DROPDOWN_GAP, SEARCH_INPUT_H } from './dropdownHeight';
+import { DROPDOWN_GAP, SEARCH_CLOSE_ROW_H, SEARCH_INPUT_H } from './dropdownHeight';
 
 export const createStyles = (theme: GameTheme) => {
   /** Accent'in hairline hali — %22 alfa */
@@ -83,6 +83,20 @@ export const createStyles = (theme: GameTheme) => {
   },
   resultYear: {
     ...Theme.typography.caption,
+  },
+  /** P-3 "Kapat" satiri — listenin input'a bakan kenari, sabit yukseklik */
+  closeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Theme.spacing.xs,
+    height: SEARCH_CLOSE_ROW_H,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: Colors.borderSubtle,
+  },
+  closeText: {
+    ...Theme.typography.caption,
+    color: Colors.textTertiary,
   },
   });
 };
