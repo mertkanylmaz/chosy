@@ -310,17 +310,31 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
         **Bildirim girişinde** (geçmiş yok) → Home'a (`/(tabs)`) gidiyor, ölü buton yok.
       - Share Score görselinde kare de poster de yok (değişmedi).
 - [ ] N13. **Spotlight arama listesi (P-3).** Build `fix/spotlight-search`
-      dalının `d69438f`, `1e4e6e6`, `a3cbee7` commit'lerini içermeli. Her madde
+      dalının `d69438f`, `1e4e6e6`, `a3cbee7` ve P-3c `26be223`, `e6adfda`
+      commit'lerini içermeli. Her madde
       **SE ve büyük ekranda (Pro Max)** ayrı ayrı; oynanmamış bir günde başla
       (hak harcanır — yeni hesap ya da yeni gün):
       - **Klavye açıkken satıra dokun** → tahmin **gidiyor** (hak sayacı değişir
         ya da oyun biter), liste ve klavye kapanıyor. Tek dokunuş yetiyor; ilk
         dokunuş "yutulup" yalnızca klavyeyi kapatmıyor. (Tuzak — en önemli madde.)
-      - **Dışarı dokun** (karenin/maskenin üstü, klavye açık) → klavye **ve**
-        liste kapanıyor. Liste klavyesiz ekranda asılı kalmıyor.
+      - **Dışarı dokun** (klavye açık, liste açık) → klavye **ve** liste
+        kapanıyor; liste klavyesiz ekranda asılı kalmıyor. Ayrı ayrı dene:
+        karenin/maskenin açıkta kalan kısmı · üst bölge ile harf klavyesi
+        arasındaki boşluk · "Hangi film?" etiketi · (varsa) hata kutusu ·
+        **denenmiş (sönük) harf tuşu**. **Header HARİÇ:** başlık/ilerleme
+        çubuğuna dokunmak klavyeyi kapatmaz — bilinçli (GameShell'e dokunulmadı),
+        ❌ sayılmaz. Görünür (denenmemiş) harf tuşuna dokunmak harfi gönderir,
+        listeyi kapatmaz — beklenen.
+      - **Üst bölgeyi sürükle** (kareyi yukarı/aşağı çek, klavye açık) → klavye
+        ve liste kapanıyor. **Listeyi kaydırmak** ise listeyi/klavyeyi
+        KAPATMIYOR (4+ sonuçla dene).
       - **Kapat** satırı listenin altında (input'a bitişik), EN "Close list" / TR
         "Listeyi kapat"; dokununca liste kapanıyor, yazılan metin ve klavye
         kalıyor. Yazmaya devam → liste yeniden açılıyor.
+      - **B3 kararı için gözlem — SE + QuickType (260pt):** 4+ sonuçlu listede
+        Kapat satırı **görünüyor mu** (kırpılmış/eksik değil), input'tan ayrı bir
+        satır olarak **fark ediliyor mu**? Ekran görüntüsü al; Pro Max'te de.
+        Sonuç B3'ü (Kapat'ı listenin üstüne taşıma) belirler.
       - **X + hızlı yazma:** 2 harf yaz ve 300 ms dolmadan X'e bas → liste boş
         input'un üstünde **yeniden açılmıyor**. Aynısını yavaş ağda tekrarla
         (ağ bağlantı koşullandırıcı / zayıf hücresel).
