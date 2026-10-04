@@ -22,6 +22,7 @@
     "test:spotlight-layout": "deno test tests/games/spotlightLayout.test.ts",
     "test:film-search": "deno test tests/games/filmSearchList.test.ts",
     "test:result-card": "deno test tests/games/resultHeroMode.test.ts",
+    "test:next-puzzle": "deno test --unstable-sloppy-imports tests/games/nextPuzzleClock.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",
     "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",

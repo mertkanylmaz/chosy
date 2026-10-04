@@ -52,6 +52,7 @@ import type {
 import { SPOTLIGHT_MAX_BLUR } from './constants';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
+import { nextPuzzleCountdown } from './nextPuzzleClock';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
 type ScreenState = 'loading' | 'playing' | 'completed';
@@ -137,24 +138,13 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles }: KeyButtonP
   );
 }
 
-/** Gece yarısına geri sayım */
+/** Sonraki yerel 18:00'e geri sayım (P-4a) — kural `nextPuzzleClock.ts`'te. */
 function useCountdown(): string {
   const [timeLeft, setTimeLeft] = useState('');
 
   useEffect(() => {
     const update = () => {
-      const now = new Date();
-      const midnight = new Date(now);
-      midnight.setHours(24, 0, 0, 0);
-      const diff = midnight.getTime() - now.getTime();
-
-      const h = Math.floor(diff / 3600000);
-      const m = Math.floor((diff % 3600000) / 60000);
-      const s = Math.floor((diff % 60000) / 1000);
-
-      setTimeLeft(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
-      );
+      setTimeLeft(nextPuzzleCountdown(new Date()));
     };
 
     update();
