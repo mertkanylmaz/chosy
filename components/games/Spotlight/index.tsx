@@ -195,6 +195,12 @@ export function SpotlightGame() {
   const [triedLetters, setTriedLetters] = useState<string[]>([]);
   const [revealed, setRevealed] = useState<RevealedTitleChar[]>([]);
   const [attempts, setAttempts] = useState(0);
+  /**
+   * Daha once tahmin edilen filmler (films.id) — arama listesinde soluk ve
+   * dokunulamaz. Kaynak sunucu: yuklemede `progress.spotlight_guesses`, sonra
+   * sunucunun kabul ettigi her yanlis tahmin eklenir.
+   */
+  const [guessedFilmIds, setGuessedFilmIds] = useState<string[]>([]);
   const [isBusy, setIsBusy] = useState(false);
   const [actionError, setActionError] = useState(false);
 
@@ -238,6 +244,7 @@ export function SpotlightGame() {
       setTriedLetters(progress?.spotlight_letters ?? []);
       setRevealed(progress?.spotlight_revealed ?? []);
       setAttempts(progress?.guesses?.length ?? 0);
+      setGuessedFilmIds(progress?.spotlight_guesses?.map((g) => g.film_id) ?? []);
 
       if (progress?.completed) {
         setWon(progress.won);
@@ -266,6 +273,7 @@ export function SpotlightGame() {
       setTriedLetters([]);
       setRevealed([]);
       setAttempts(0);
+      setGuessedFilmIds([]);
       setWon(false);
       setActionError(false);
       loadPuzzle();
@@ -340,6 +348,7 @@ export function SpotlightGame() {
       try {
         const res = await submitSpotlightGuess(puzzleId, filmUuid);
         setAttempts(res.attempts_used);
+        setGuessedFilmIds((prev) => (prev.includes(filmUuid) ? prev : [...prev, filmUuid]));
         setTriedLetters(res.tried_letters);
         setRevealed(res.revealed);
         trackGuessSubmitted('spotlight', res.attempts_used, Date.now() - guessStartRef.current);
@@ -667,7 +676,13 @@ export function SpotlightGame() {
             {/* Film tahmini — kazanma yolu */}
             <View style={styles.guessArea}>
               <Text style={styles.guessLabel}>{t('games.spotlight.which_film')}</Text>
-              <FilmSearchInput onSelect={handleGuess} disabled={isBusy} catalogOnly listControls />
+              <FilmSearchInput
+                onSelect={handleGuess}
+                disabled={isBusy}
+                catalogOnly
+                listControls
+                triedFilmIds={guessedFilmIds}
+              />
           </View>
         </View>
       </View>

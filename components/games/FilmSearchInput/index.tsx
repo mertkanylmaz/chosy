@@ -30,7 +30,12 @@ import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
 import { DROPDOWN_MAX_H, dropdownMaxHeight } from './dropdownHeight';
-import { INITIAL_SEARCH_LIST, reduceSearchList, type SearchListEvent } from './listState';
+import {
+  INITIAL_SEARCH_LIST,
+  isTriedFilm,
+  reduceSearchList,
+  type SearchListEvent,
+} from './listState';
 import { createSearchGate } from './searchGate';
 import { createStyles } from './styles';
 
@@ -52,6 +57,11 @@ interface FilmSearchInputProps {
    * değişmez; yalnız Spotlight açar.
    */
   listControls?: boolean;
+  /**
+   * Daha önce tahmin edilmiş filmlerin `films.id`'leri — satır soluk ve
+   * dokunulamaz, "Denendi" etiketli. Verilmezse hiçbir satır etkilenmez.
+   */
+  triedFilmIds?: readonly string[];
 }
 
 export function FilmSearchInput({
@@ -60,6 +70,7 @@ export function FilmSearchInput({
   placeholder,
   catalogOnly = false,
   listControls = false,
+  triedFilmIds,
 }: FilmSearchInputProps) {
   const theme = useGameTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -183,15 +194,25 @@ export function FilmSearchInput({
           >
             {results.slice(0, 6).map((item) => {
               const poster = getPosterUrl(item.posterPath, 'w92');
+              const tried = isTriedFilm(item.uuid, triedFilmIds);
               return (
                 <TouchableOpacity
                   key={String(item.id)}
-                  style={styles.resultRow}
+                  style={[styles.resultRow, tried && styles.resultRowTried]}
                   accessibilityRole="button"
-                  accessibilityLabel={item.title}
+                  accessibilityLabel={
+                    tried ? `${item.title}, ${t('games.search_tried')}` : item.title
+                  }
+                  accessibilityState={tried ? { disabled: true } : undefined}
+                  // Denenmiş satır `disabled` DEĞİL: dokunuşu yakalamazsa
+                  // ScrollView ("handled") klavyeyi kapatır → blur → liste
+                  // kapanır. Dokunuş yakalanır, tahmin gönderilmez.
+                  activeOpacity={tried ? 1 : undefined}
                   onPressIn={() => dispatchList({ type: 'rowPressIn' })}
                   onPressOut={() => dispatchList({ type: 'rowPressOut' })}
-                  onPress={() => handleSelect(item)}
+                  onPress={() => {
+                    if (!tried) handleSelect(item);
+                  }}
                 >
                   {poster ? (
                     <Image
@@ -210,6 +231,11 @@ export function FilmSearchInput({
                     </Text>
                     <Text style={styles.resultYear}>{item.year}</Text>
                   </View>
+                  {tried && (
+                    <Text style={styles.triedText} maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}>
+                      {t('games.search_tried')}
+                    </Text>
+                  )}
                 </TouchableOpacity>
               );
             })}

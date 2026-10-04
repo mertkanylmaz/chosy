@@ -74,3 +74,15 @@ export function reduceSearchList(
       return { ...state, open: false, rowPressActive: false };
   }
 }
+
+/**
+ * Satir daha once tahmin edilmis bir film mi (P-3 madde 3, Spotlight).
+ * Eslesme `films.id` (uuid) uzerinden; uuid'siz sonuc asla "denendi" sayilmaz.
+ * `triedFilmIds` verilmezse (donmus oyunlar) her zaman false.
+ */
+export function isTriedFilm(
+  uuid: string | undefined,
+  triedFilmIds: readonly string[] | undefined,
+): boolean {
+  return uuid != null && triedFilmIds != null && triedFilmIds.includes(uuid);
+}

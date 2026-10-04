@@ -12,6 +12,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.t
 
 import {
   INITIAL_SEARCH_LIST,
+  isTriedFilm,
   reduceSearchList,
   type SearchListEvent,
   type SearchListState,
@@ -178,4 +179,19 @@ Deno.test('A3: araya bir sey girmezse yanit uygulanir', () => {
   gate.cancel()
   const ticket = gate.ticket()
   assert(gate.isCurrent(ticket))
+})
+
+// ─── Denenmis filmler (P-3 madde 3) ─────────────────────────────────────────
+
+Deno.test('denenmis film uuid eslesmesiyle isaretlenir', () => {
+  assert(isTriedFilm('a', ['a', 'b']))
+  assertEquals(isTriedFilm('c', ['a', 'b']), false)
+})
+
+Deno.test('uuid icermeyen sonuc asla denendi sayilmaz', () => {
+  assertEquals(isTriedFilm(undefined, ['a']), false)
+})
+
+Deno.test('regresyon: triedFilmIds verilmezse (donmus oyunlar) hicbir satir etkilenmez', () => {
+  assertEquals(isTriedFilm('a', undefined), false)
 })

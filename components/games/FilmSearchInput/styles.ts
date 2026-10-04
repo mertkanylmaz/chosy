@@ -84,6 +84,17 @@ export const createStyles = (theme: GameTheme) => {
   resultYear: {
     ...Theme.typography.caption,
   },
+  /**
+   * Daha once tahmin edilmis film — Spotlight klavyesindeki `keyMiss` ile ayni
+   * sonukluk: "denendi, tekrar denenemez" sinyali iki yerde ayni dilde.
+   */
+  resultRowTried: {
+    opacity: 0.35,
+  },
+  triedText: {
+    ...Theme.typography.caption,
+    color: Colors.textTertiary,
+  },
   /** P-3 "Kapat" satiri — listenin input'a bakan kenari, sabit yukseklik */
   closeRow: {
     flexDirection: 'row',
