@@ -3658,3 +3658,58 @@ denenmedi. **Tetikleyici:** Android build'i öncesi zorunlu cihaz testi.
 P-3 keşif geometrisindeki Pro Max satırları sistem klavyesini 336pt kabul
 eder; ölçülmedi. Sonuç (≥3 sonuçta 26 tuş örtülü) 216–346 aralığındaki her
 değer için aynı. **Tetikleyici:** Pro Max'te N13 sırasında ekran görüntüsüyle ölç.
+
+---
+
+## 🟡 Spotlight gün sınırı ve backdrop — P-4a sonrası kalanlar (4 Eki 2026)
+
+P-4a (`fix/spotlight-search`) yalnız sonuç ekranı "NEXT PUZZLE" sayacını
+sonraki yerel 18:00'e çekti (`components/games/Spotlight/nextPuzzleClock.ts`,
+hedef `nextUnlockAfter`). Aşağıdakiler bilinçli olarak kaldı.
+Kaynak: `docs/investigations/P4_GUN_SINIRI_KESIF.md`,
+`docs/investigations/P3b_BACKDROP_ISO_KESIF.md`.
+
+### 1. Bulmaca günü hâlâ yerel gece yarısı
+Spotlight anahtarı yerel takvim günü: oyun ekranı
+`toLocaleDateString('en-CA')` (`components/games/Spotlight/index.tsx:219`),
+kart ve ask `localDayKey` (`useSpotlightCardState.ts:56`,
+`services/askCoordinator.ts:111`, `:153`). Yeni bulmaca 00:00'da açılır,
+sayaç ise 18:00'e sayar — 00:00–18:00 arası sayaç "sonraki bulmaca"yı
+gösterirken hub'dan açılan Spotlight zaten yeni bulmacadır. Anahtar
+PRODUCT_OS §3.6 ("Gün dönümü yerel gece yarısı") ve `chosy-conventions` §9.4
+ile yazılı; değişimi ürün kararı.
+**Neden şimdi değil:** Ritüel günü tanımı (son mu sonraki mi 18:00) gauntlet
+anahtarıyla birlikte tek tanıma bağlanmalı. **Tetikleyici:** M2 Faz 2b ile
+birlikte 18:00'e çekilir.
+
+### 2. İleri tarihli bulmacalara erişim açık
+`get-daily-challenge` `puzzle_date`'in yalnız biçimine bakar
+(`supabase/functions/get-daily-challenge/index.ts:130-148`);
+`public_daily_puzzles` görünümünde tarih üst sınırı yok
+(`supabase/migrations/064_puzzle_view_strip_solution.sql:62-64`);
+`submit-guess` bulmacayı `puzzle_id` ile bulur, tarihe bakmaz
+(`submit-guess/index.ts:372-376`). 4 Eki 2026 14:03 UTC ölçümü: 9 ileri
+tarihli geçerli Spotlight satırı (son tarih 2026-10-13). Çözüm alanı view'da
+yok — cevap sızıntısı değil, ileri bulmacayı açma/oynama erişimi.
+**Neden şimdi değil:** Edge Function davranışı (+ muhtemelen view migration'ı),
+CTO onayı ister; gün sınırı değişirse doğrulama ritüel penceresine göre
+tasarlanmalı. **Tetikleyici:** ≥1K kullanıcı ya da gün sınırı değişimi
+(madde 1).
+
+### 3. UTC− bölgelerde gauntlet anahtarı
+Normal akış anahtarı hâlâ `utcDateString()`
+(`supabase/functions/generate-gauntlet/index.ts:891`); UTC− bölgelerde yerel
+akşam ortasında D+1'e döner. Kayıt ve ölçülmüş etkiler yukarıda: *"18:00 yerel
+kilit ↔ UTC döngü anahtarı (M2 Faz 2b)"* (oradaki `:805` satır referansı
+bugün `:891`). P-4 keşfi yeni ölçüm eklemedi. **Tetikleyici:** M2 Faz 2b.
+
+### 4. 5 istisna backdrop — karar bekliyor
+Editoryal havuzun 400 backdrop'undan 395'i TMDb'de textless; 5'i istisna:
+Jurassic Park (`iso_639_1 = "pi"`) ve `/images` listesinden düşmüş 4 dosya
+(Lethal Weapon, Cold War, The Big Lebowski, Interstellar — CDN'de hâlâ 200).
+Jurassic Park ve The Big Lebowski film karesi değil, illüstrasyon/key-art.
+w300 görsel kontrolde 5'inde de okunur metin görülmedi.
+**Neden şimdi değil:** `films.backdrop_url` veri düzeltmesi; dosya seçimi ve
+yolu (migration mı) karar ister. **Tetikleyici:** CTO kararı. İlgili
+editoryal günler: `day_number` 5, 18, 29, 64, 85 (takvim tarihine
+dönüşümü ölçülmedi).
