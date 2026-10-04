@@ -3617,3 +3617,5 @@ kararı ister. Kullanıcı etkisi ölçülmedi.
 **Tetikleyici:** Spotlight completion oranı düşükse (özellikle küçük
 ekranlarda arama açılıp tahmin gönderilmeden çıkış) ya da cihaz geri
 bildiriminde "arama sırasında görsel kayboluyor" gelirse.
+
+**Not (P-2e, 4 Eki):** `app/games/index.tsx:251` aynı `max(insets.bottom, 8)` desenini KAV'sız düz bir `View`'da kullanıyor — ezilmiyor, etkilenmiyor; oraya KAV eklenirse aynı tuzak doğar (bkz. `87ac952`).

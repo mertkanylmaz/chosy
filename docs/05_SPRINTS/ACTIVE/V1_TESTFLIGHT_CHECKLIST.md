@@ -309,6 +309,22 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
       - Buton etiketi EN "Back" / TR "Geri". Kart girişinde → champion'a dönüyor.
         **Bildirim girişinde** (geçmiş yok) → Home'a (`/(tabs)`) gidiyor, ölü buton yok.
       - Share Score görselinde kare de poster de yok (değişmedi).
+- [ ] N12. **GameShell alt payı (P-2e).** Build `87ac952` commit'ini içermeli.
+      iOS'ta KAV `padding` modu alt payı eziyordu; pay iç View'a alındı,
+      `keyboardVerticalOffset` iOS'ta −bottomPad. Spotlight oyun ekranında:
+      - **Face ID'li iPhone:** arama kutusunun alt kenarı ana ekran çubuğundan
+        **ayrı** — çubuk kutunun üstünde değil (önce: kutu ekran altına ~9pt).
+        SE'de kutu ekran altından ~16pt yukarıda (8 GameShell + 8 ekran payı).
+      - Arama kutusuna dokun → **260pt (QuickType açık) ve 216pt (QuickType
+        kapalı)** klavyede kutu klavyenin **hemen üstünde**; arada ana ekran
+        çubuğu kadar (~34pt) fazladan boşluk yok, kutu klavyenin altında kalmıyor.
+      - Ayarlar › Erişilebilirlik › Hareket › **Prefer Cross-Fade Transitions**
+        açıkken aynı adım: kutu klavyenin altında kalıyor mu? (RN bu modda
+        klavye payını 0 hesaplıyor — B öncesi de aynı; sonucu yaz, düzeltme ayrı iş.)
+      - Sonuç ekranında en alta kaydır: içerik ana ekran çubuğunun üstünde
+        bitiyor, altta gradyan boşluğu (~34pt) var; kırık/düz renk şerit yok.
+      - **Android:** edge-to-edge — arama kutusu gezinme çubuğunun üstünde,
+        klavye açılınca klavyenin hemen üstünde; çift boşluk ya da örtüşme yok.
 
 ---
 
