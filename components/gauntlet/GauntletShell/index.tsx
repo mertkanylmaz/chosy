@@ -41,6 +41,8 @@ import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
+import { SpotlightTeaser } from '@/components/gauntlet/SpotlightTeaser';
+import { isTeaserSlotActive, isTeaserVisible } from '@/components/gauntlet/SpotlightTeaser/teaserRules';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
@@ -61,6 +63,7 @@ import { radius, size, space, type } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { isGauntletContextBarEnabled } from '@/services/appConfigFlags';
+import { getEnabledGames } from '@/services/gameApi';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
   GauntletAuthPendingError,
@@ -1414,6 +1417,41 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const spotlightCard = useSpotlightCardState(championActive);
   const spotlightUnavailable = spotlightCard.status === 'unavailable';
 
+  // ── Bekleyiş teaser'ı (P-5, K-62) ──────────────────────────────────────────
+  //
+  // Spotlight bayrağı: `games_enabled.games` (remoteConfig tek kaynağı, 5 dk
+  // TTL — taze ise ağ yok). Her before_18 girişinde lazy okunur (kural 5).
+  // `null` = okunamadı → teaser gizli (fail-closed); hata `remoteConfig`'te
+  // Sentry'ye yazıldı.
+  const [spotlightEnabled, setSpotlightEnabled] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (shellState !== 'before_18') return;
+    let cancelled = false;
+    getEnabledGames()
+      .then((games) => {
+        if (!cancelled) setSpotlightEnabled(games === null ? null : games.includes('spotlight'));
+      })
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'GauntletShell', flow: 'spotlightTeaserFlag' },
+        });
+        if (!cancelled) setSpotlightEnabled(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [shellState]);
+
+  const teaserSlot = {
+    shellState,
+    pendingFeedbackShown: pendingFeedbackVisible && !!gauntlet?.pendingWatchFeedback,
+    spotlightEnabled,
+  };
+  // AYRI hook örneği: champion örneğinin durumu (ve `cardlessDwell` → ask)
+  // sabah okunan teaser durumuyla karışmasın. Yalnız teaser yeri varken ağa çıkar.
+  const teaserSpotlight = useSpotlightCardState(isTeaserSlotActive(teaserSlot));
+  const showTeaser = isTeaserVisible(teaserSlot, teaserSpotlight);
+
   const championAsk = useChampionAsk({
     active: championActive,
     bottomInset: tabBarInset,
@@ -1525,8 +1563,16 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     // (K-46). V-2 Tur E1: koşullu bildirim CTA'sı. V1-D7 revizyonu
     // (30 Eyl 2026): sayacın altında son şampiyon — dokunulamaz, rota yok;
     // perdesi kökte (aşağıda), güvenli alanın dışına taşsın diye.
+    // P-5 (K-62): kilitli Spotlight karesi CTA ile son şampiyon arasında.
+    // İçerik KAYDIRILABİLİR — AX5 ve küçük ekranda taşma kesilmesin; sığdığında
+    // eskisi gibi dikeyde ortalı (`flexGrow` + `justifyContent`). Salt düzen.
     return (
-      <View style={styles.centerContent}>
+      <ScrollView
+        style={styles.waitingScroll}
+        contentContainerStyle={styles.waitingScrollContent}
+        showsVerticalScrollIndicator={false}
+        alwaysBounceVertical={false}
+      >
         <Text style={styles.stateText}>
           {t('gauntlet.before18', { time: formatUnlockTime(language) })}
         </Text>
@@ -1538,8 +1584,11 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             disabled={waitingNotifyBusy}
           />
         )}
+        {showTeaser && teaserSpotlight.status === 'ready' && (
+          <SpotlightTeaser backdropUrl={teaserSpotlight.backdropUrl} />
+        )}
         {waitingChampion && <WaitingChampionCard champion={waitingChampion} />}
-      </View>
+      </ScrollView>
     );
   }
 

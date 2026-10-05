@@ -70,6 +70,22 @@ export const styles = StyleSheet.create({
     paddingHorizontal: space.xl,
     gap: space.lg,
   },
+  /**
+   * P-5: bekleyiş (before_18) kaydırması. İçerik sığdığında `centerContent`
+   * ile aynı görünüm (ortalı, aynı yatay pay ve aralık); sığmadığında
+   * (AX5, küçük ekran) kaydırılır, kesilmez.
+   */
+  waitingScroll: {
+    flex: 1,
+  },
+  waitingScrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.xl,
+    paddingVertical: space.lg,
+    gap: space.lg,
+  },
   /** §15.3 anahtar metinleri (Bekleyiş / Tükeniş) ve §15.2 hata mesajı */
   stateText: {
     ...type.body,

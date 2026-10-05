@@ -1395,7 +1395,7 @@
     "disabledSuccess": "Bildirimler kapatıldı",
     "dailyReminderLabel": "Akşam %{time} bildirimi",
     "dailyReminderTitle": "Bu akşamın dörtlüsü hazır",
-    "dailyReminderBody": "Üç tur, tek film. Bu akşamın şampiyonunu seç.",
+    "dailyReminderBody": "Üç tur, tek film. Sonra bugünün karesi.",
     "permissionDeniedTitle": "Bildirimler kapalı",
     "permissionDeniedMessage": "Akşam bildirimini almak için Ayarlar'dan Chosy bildirimlerine izin ver.",
     "openSettings": "Ayarlar'ı Aç",
@@ -1450,6 +1450,7 @@
     "before18": "Bugünün dörtlüsü %{time}'de hazır.",
     "waitingNotifyCta": "%{time}'de hatırlat",
     "waitingChampionOpen": "%{title} filmini görüntüle",
+    "spotlightTeaser": "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır.",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"

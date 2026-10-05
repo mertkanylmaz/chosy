@@ -382,6 +382,38 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
 
 ---
 
+## O. Bekleyiş ekranında Spotlight teaser'ı (P-5, K-62)
+
+Build `feat/spotlight-ritual-teaser`'ı içermeli. **Yayın, `fix/spotlight-search`
+OTA'sı doğrulanana kadar YASAK.** 18:00 öncesi, oynanmamış bir günde.
+
+- [ ] O1. **Bekleyiş ekranı.** Metin + sayaç altında bulanık kare, ortasında kilit;
+      altında TR "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır." /
+      EN "Today's frame is waiting. It opens after your four." Karenin kenarı
+      **mor değil** (nötr). Kareye ve metne dokun → **hiçbir şey olmuyor**
+      (opaklık değişimi, haptik, gezinme yok). Son şampiyon afişi hâlâ dokunulabilir.
+- [ ] O2. **Gizlenme.** (a) Bugünün Spotlight'ı başlamışsa/bitmişse teaser yok.
+      (b) `games_enabled.games`'ten `spotlight` çıkarılınca en geç 5 dk içinde
+      (uygulamayı arka plana al/aç) teaser yok. (c) Bulmaca yoksa (NO_PUZZLE) teaser
+      yok, hata metni de yok. (d) 18:00 sonrası gauntlet ve champion'da teaser yok.
+- [ ] O3. **VoiceOver.** Teaser tek öğe olarak okunuyor, "düğme" denmiyor; kare ve
+      kilit ayrıca okunmuyor.
+- [ ] O4. **Reduce Motion açık/kapalı:** teaser animasyonsuz beliriyor (iki durumda
+      aynı).
+- [ ] O5. **Dynamic Type AX5** (Ayarlar → Erişilebilirlik → Daha Büyük Metin, en
+      büyük): içerik kesilmiyor, aşağı kaydırılabiliyor; metin, sayaç, CTA, teaser
+      ve son şampiyon sırayla erişilebilir.
+- [ ] O6. **Küçük ekran (SE / mini):** standart yazı boyutunda düzen ortalı, taşma
+      yok; bildirim CTA'sı + teaser + son şampiyon birlikteyken kaydırma çalışıyor.
+- [ ] O7. **Bildirim metni.** Bildirim izni açık bir cihazda uygulamayı aç (yeniden
+      planlama tetiklenir); 18:00 bildirimi gövdesi TR "Üç tur, tek film. Sonra
+      bugünün karesi." / EN "Three rounds, one film. Then today's frame." **Tek**
+      bildirim geliyor (çift yok).
+- [ ] O8. **PostHog:** `spotlight_teaser_viewed` günde bir kez (ekrana ikinci
+      girişte yeniden atılmıyor; ertesi gün tekrar atılıyor).
+
+---
+
 ## Test edilmeyecekler (uygulanmadı — E-22)
 
 | Plan maddesi | Durum |

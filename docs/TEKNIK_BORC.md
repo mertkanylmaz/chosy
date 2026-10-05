@@ -3713,3 +3713,34 @@ w300 görsel kontrolde 5'inde de okunur metin görülmedi.
 yolu (migration mı) karar ister. **Tetikleyici:** CTO kararı. İlgili
 editoryal günler: `day_number` 5, 18, 29, 64, 85 (takvim tarihine
 dönüşümü ölçülmedi).
+
+## 🟡 Spotlight bekleyiş teaser'ı (P-5, K-62) — kalan borçlar (5 Eki 2026)
+
+### 1. Kare erken iniyor — erken bakıp çözme riski
+Bekleyiş ekranı (`before_18`) bugünün Spotlight karesini 18:00'den saatler önce
+indirir (`components/gauntlet/SpotlightTeaser/index.tsx`). `backdrop_url` TMDb
+`/original/` (~1920px); bulanıklık (`SPOTLIGHT_MAX_BLUR`) yalnız istemcide
+uygulanır, bulanık olmayan dosya `get-daily-challenge` yanıtındaki URL'de ve
+expo-image disk önbelleğinde durur. Kullanıcı kareyi tersine görsel aramayla
+dörtlüden önce çözebilir. `get-daily-challenge` gauntlet durumuna bakmıyor —
+champion kartı (S-2) aynı dosyayı zaten indiriyordu; K-62 pencereyi genişletti.
+İlişkili: yukarıda *"Spotlight gün sınırı ve backdrop — P-4a sonrası kalanlar"*
+§2 (ileri tarihli bulmacaya erişim).
+**Neden şimdi değil:** düzeltme sunucu tarafında (önceden bulanıklaştırılmış ya da
+küçük boyutlu teaser görseli, veya kare URL'sini champion'a bağlamak) — Edge
+Function / üretim hattı değişikliği, CTO onayı ister. **Tetikleyici:** Spotlight
+çözüm oranında/süresinde 18:00 öncesi açılan oturumlarda anomali.
+
+### 2. Spotlight bayrağı champion kartında okunmuyor
+Teaser `app_config.games_enabled.games` içinde `spotlight` arar (fail-closed).
+Champion ekranındaki `SpotlightBonusCard` bu listeye bakmıyor, yalnız `NO_PUZZLE`
+(`unavailable`) durumuna bakıyor. Bayrak kapatılınca teaser hemen (≤5 dk TTL)
+gizlenir, champion kartı bulmaca kuyruğu bitene kadar görünmeye devam eder.
+**Neden şimdi değil:** champion yolu K-60 ask dwell'ine bağlı (`cardlessDwell`);
+oraya koşul eklemek ask davranışını etkiler, P-5 kapsamı `askCoordinator`'a
+dokunmuyor. **Tetikleyici:** Spotlight'ı dondurma kararı.
+
+### 3. Teaser görselinin maliyeti ölçülmedi
+Bekleyiş ekranında ikinci bulanık görsel (perde + kare) ve her odakta +1
+`get-daily-challenge` çağrısı. Bellek/indirme cihazda ölçülmedi.
+**Tetikleyici:** TestFlight §O gözlemi ya da Sentry performans verisi.

@@ -43,6 +43,16 @@ const PUSH_TOKEN_KEY = 'chosy_push_token';
  */
 const DAILY_REMINDER_ID = 'chosy_daily_reminder';
 
+/**
+ * Hatırlatıcı metninin sürümü. Metin planlama anında dondurulduğu için
+ * `dailyReminderTitle`/`dailyReminderBody` değiştiğinde bu sayı ARTIRILIR —
+ * `ensureDailyReminderScheduled()` sürümü farklı kaydı bir sonraki açılışta
+ * yeniden planlar. Sürüm alanı olmayan eski kayıt = 1.
+ *   1 — "Üç tur, tek film. Bu akşamın şampiyonunu seç." (K-15, V-2 Tur E1)
+ *   2 — "Üç tur, tek film. Sonra bugünün karesi." (P-5, K-62)
+ */
+const DAILY_REMINDER_COPY_VERSION = 2;
+
 // ─── Notification Handler Config ──────────────────────────────────────────────
 
 /**
@@ -70,6 +80,7 @@ export interface NotificationData {
   offerId?: string;      // promotional offer ID
   source?: string;       // notification source (e.g. 'daily_pick')
   locale?: string;       // yerel hatırlatıcının planlandığı dil (K-15)
+  copyVersion?: number;  // yerel hatırlatıcı metninin sürümü (P-5)
 }
 
 /** OS bildirim izninin üç hâli — `undetermined`: henüz hiç sorulmadı. */
@@ -360,8 +371,9 @@ export async function getNotificationStatus(): Promise<boolean | null> {
 // değişince de 18:00'de çalar.
 //
 // Bildirim metni planlama anındaki dilde dondurulur. Bu yüzden kayıt kendi
-// dilini `data.locale`'de taşır; `ensureDailyReminderScheduled()` dil
-// değişmişse yeniden planlar, aynıysa dokunmaz (idempotent).
+// dilini `data.locale`'de, metin sürümünü `data.copyVersion`'da taşır;
+// `ensureDailyReminderScheduled()` dil ya da metin sürümü değişmişse yeniden
+// planlar, ikisi de aynıysa dokunmaz (idempotent).
 
 /**
  * Yerel 18:00 hatırlatıcısının planlı olduğunu garanti eder.
@@ -380,16 +392,28 @@ export async function ensureDailyReminderScheduled(): Promise<boolean> {
     const locale = i18n.locale;
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const existing = scheduled.find((n) => n.identifier === DAILY_REMINDER_ID);
-    const existingLocale = (existing?.content.data as NotificationData | undefined)?.locale;
-    if (existing && existingLocale === locale) return true;
+    const existingData = existing?.content.data as NotificationData | undefined;
+    const existingCopyVersion = existingData?.copyVersion ?? 1;
+    if (
+      existing &&
+      existingData?.locale === locale &&
+      existingCopyVersion === DAILY_REMINDER_COPY_VERSION
+    ) {
+      return true;
+    }
 
-    // Aynı kimlikle planlamak üstüne yazar; yine de dil değişiminde eskiyi
-    // açıkça iptal ediyoruz — platform davranışına yaslanmıyoruz.
+    // Aynı kimlikle planlamak üstüne yazar; yine de dil/metin değişiminde
+    // eskiyi açıkça iptal ediyoruz — platform davranışına yaslanmıyoruz.
     if (existing) {
       await Notifications.cancelScheduledNotificationAsync(DAILY_REMINDER_ID);
     }
 
-    const data: NotificationData = { screen: 'mood', source: 'daily_reminder', locale };
+    const data: NotificationData = {
+      screen: 'mood',
+      source: 'daily_reminder',
+      locale,
+      copyVersion: DAILY_REMINDER_COPY_VERSION,
+    };
     await Notifications.scheduleNotificationAsync({
       identifier: DAILY_REMINDER_ID,
       content: {

@@ -403,6 +403,8 @@ Kişiselleştirme yok: bağlam filtresi + çeşitlilik kuralları + rastgele 4. 
 
 Gauntlet çekirdek döngüdür. İki günlük ritüel olamaz. Oyunlar **bilgi eksenini** ölçtüğü için korunuyor — gauntlet bunu ölçemez.
 
+**Spotlight ritüelin ikinci yarısıdır** (5 Eki 2026, bible K-62): önce dörtlü, sonra bugünün karesi — tek ritüelin iki parçası, ikinci bir ritüel değil. Bekleyiş ekranında kare kilitli ve bulanık duyurulur ("Dörtlünden sonra açılır"); giriş yine yalnız champion ekranındaki bonus kartıdır (K-05, ayrı hub yok). Paywall kapısı yok.
+
 ### 7.2 Spotlight V3 — doğrulanmış mekanik ✅
 
 | | |

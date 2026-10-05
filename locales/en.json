@@ -1395,7 +1395,7 @@
     "disabledSuccess": "Notifications disabled",
     "dailyReminderLabel": "Evening reminder at %{time}",
     "dailyReminderTitle": "Tonight's four are ready",
-    "dailyReminderBody": "Three rounds, one film. Pick tonight's champion.",
+    "dailyReminderBody": "Three rounds, one film. Then today's frame.",
     "permissionDeniedTitle": "Notifications are off",
     "permissionDeniedMessage": "Allow notifications for Chosy in Settings to get your evening reminder.",
     "openSettings": "Open Settings",
@@ -1450,6 +1450,7 @@
     "before18": "Today's four will be ready at %{time}.",
     "waitingNotifyCta": "Remind me at %{time}",
     "waitingChampionOpen": "View %{title}",
+    "spotlightTeaser": "Today's frame is waiting. It opens after your four.",
     "countdownHours": {
       "one": "%{count} hour",
       "other": "%{count} hours"

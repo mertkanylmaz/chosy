@@ -6,8 +6,10 @@
  * yok."* Ayrı hub YOK — Discover kalktığı için Cinema Games section'ı da
  * gitti; tek giriş burası.
  *
- * §7.1 ile uyumlu: bonus ritüelin ÇIKIŞINDA durur, içinde değil. Gauntlet
- * bitmeden görünmez; günün işi bitti, isteyen devam eder (dessert, kapı değil).
+ * K-62 (5 Eki 2026): Spotlight ritüelin İKİNCİ YARISI — ~~dessert~~ değil.
+ * Kart yine dörtlünün ÇIKIŞINDA durur, gauntlet bitmeden açılmaz; bekleyiş
+ * ekranındaki kilitli kare (`SpotlightTeaser`) yalnız duyurur, giriş değildir.
+ * Paywall kapısı yok.
  *
  * ── S-2 (3 Eki 2026) ────────────────────────────────────────────────────────
  * Görsel: bugünün karesi `SPOTLIGHT_MAX_BLUR`'da — oyunun başladığı görüntü.
