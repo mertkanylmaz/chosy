@@ -3713,3 +3713,70 @@ w300 görsel kontrolde 5'inde de okunur metin görülmedi.
 yolu (migration mı) karar ister. **Tetikleyici:** CTO kararı. İlgili
 editoryal günler: `day_number` 5, 18, 29, 64, 85 (takvim tarihine
 dönüşümü ölçülmedi).
+
+---
+
+## 🟡 Spotlight arama ve sonuç ekranı — P-6 sonrası ertelenenler (6 Eki 2026)
+
+P-6a (`fix/spotlight-result`, OTA `12d91cec`) istemci tarafını, P-6b
+(`fix/search-ranking`, migration 126) arama sıralamasını ele aldı.
+Aşağıdakiler bilinçli olarak kaldı.
+Kaynak: `docs/investigations/P6_SPOTLIGHT_ARAMA_SONUC_KESIF.md`.
+
+### 1. `why_this_movie` locale'siz — TR kullanıcı İngilizce görüyor
+`buildWhyThisMovie(film, locale = 'en')`
+(`supabase/functions/_shared/whyThisMovie.ts:32`) locale parametresi
+alıyor, ama hiçbir çağıran geçmiyor: `get-daily-challenge/index.ts:311`,
+`submit-guess/index.ts:575, 815, 1028, 1185, 1290, 1590`. Sonuç ekranındaki
+"About this film" / "Film hakkında" (P-6a) açılınca `why_text` ("Directed by
+… · min") ve `fun_fact` ("TMDB audience score …") TR arayüzde İngilizce.
+İstemci isteklerde locale göndermiyor; düzeltme istemci + iki Edge Function
+(`_shared` modülü: tüketici önce, üretici sonra deploy sırası).
+**Neden şimdi değil:** Edge Function sözleşmesi değişir, CTO onayı ister;
+v1 kitlesi EN ağırlıklı. **Tetikleyici:** TR yayını.
+
+### 2. Arama listesi kareyi ve maskeyi örtüyor — kareyi şeride küçültme (M)
+Sonuçlar açıkken liste input'un üstünden header'ın altına kadar uzanır
+(tavan 280pt, `components/games/FilmSearchInput/dropdownHeight.ts:133`).
+Cihaz gözleminde 16:9 karenin ~%60'ını ve başlık maskesini örtüyor: oyuncu
+tahmin seçerken dayandığı iki bilgiyi (kare + açılmış harfler) göremiyor.
+"%60" cihaz gözlemi, kod geometrisiyle ölçülmedi. Aynı dikey alan
+çakışmasının diğer yüzleri: *"sistem klavyesi açıkken kare 50pt görünür"*
+(P-2d) ve *"P-3 sonrası kalanlar §1 — harf tuşları örtülü"*.
+Olası çözüm: odaktayken kareyi şeride küçült (tam genişlik × ~96pt), maskeyi
+şeridin altına sabitle, listeyi maske altı ile input arasına sınırla.
+Dokunur: `SpotlightStill` yerleşimi, `Spotlight/styles.ts` (`STILL_H` odak
+durumuna bağlı), `dropdownHeight.ts` (üst sınır = maske altı; paylaşılan
+`FilmSearchInput`'a varsayılan kapalı yeni prop), blur algısı,
+`tests/games/spotlightLayout.test.ts`.
+**Neden şimdi değil:** yerleşim/pattern kararı; şeridin karenin hangi
+bölgesini göstereceği (TMDb'de odak noktası verisi yok) ürün kararı.
+**Tetikleyici:** "listede kareyi göremiyorum" geri bildirimi.
+
+### 3. `imdb_votes` kirli — arama sıralamasında `curation_tier` ikincil sinyal
+Kolonda OMDb (IMDb oyu) ve TMDb `vote_count` karışık (kök neden yukarıda,
+*"`sync-trending` `imdb_votes = 0` yazıyor"*). 6 Eki 2026 ölçümü (3.557 film):
+1.097 NULL/0, 486 şüpheli düşük (`imdb_votes` 1–30.000 ve `imdb_rating`
+≥ 7,5). Örnek: The Revenant 19.699 (TMDb sayısı; IMDb ~900K), Beau Travail
+376. Migration 126 bu yüzden kademe içinde önce `curation_tier`'a (core 0 ·
+extended/trending 1 · archive 2), sonra `NULLIF(imdb_votes, 0)`'a bakıyor;
+aynı tier içinde sıra hâlâ kirli veriye bağlı ("The Re"de The Revenant 3.).
+**Neden şimdi değil:** veri düzeltmesi OMDb anahtarı + backfill ister
+(`scripts/backfill-film-metadata.ts`; `OMDB_API_KEY` `.env`'de yok).
+**Tetikleyici:** arama sıralaması şikâyeti ya da popülerlik sinyali gereken
+yeni iş (gauntlet tanınırlık yüzdeliği de aynı kolonu okuyor).
+
+### 4. Backdrop `iso_639_1` kontrolü `generate-puzzles`'ta yok (P-3b)
+Spotlight havuzu (`fetchSpotlightEditorialPool`,
+`supabase/functions/generate-puzzles/index.ts:596`) backdrop için yalnız
+varlık ve mutlak URL'e bakıyor (`:625`, `:629`); karenin yazısız
+(`iso_639_1` boş) olduğu doğrulanmıyor. Bugünkü 400'lük havuzda yazılı tek
+dosya Jurassic Park (`"pi"`), veri kaydı yukarıda *"P-4a sonrası kalanlar
+§4"*. Kod kontrolü olmadığından havuz değişirse (yeni editoryal dönem, P-6c2
+alternatif kareleri) yazılı bir kare oyuna girebilir; başlık yazısı çözümü
+sızdırır (`chosy-conventions` §9). Not: `/images`'tan düşmüş dosyaların
+(`iso` okunamaz) nasıl ele alınacağı da bu kararın parçası.
+**Neden şimdi değil:** Edge Function'a TMDb çağrısı (ya da `films`'te
+`backdrop_iso` kolonu — şema) ekler; mimari karar. **Tetikleyici:** havuzun
+backdrop'larını değiştiren ilk iş (P-6c2 alternatifleri uygulanırken) ya da
+yeni editoryal dönem.
