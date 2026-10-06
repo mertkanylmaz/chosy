@@ -379,8 +379,13 @@ bekliyor** (N4). Ask'i yeniden görmek için o günün ask kaydı temiz olmalı
         "Got it without trying a single letter!" / TR "Hiç harf denemeden buldun!".
       - Sentry: bu akışta `SPOTLIGHT_PROGRESS_FIELDS_MISSING` ve
         `spotlight_progress_malformed` olayı **yok**.
-- [ ] N16. **Spotlight sonuç ekranı + arama ipucu (P-6a).** Build `fix/spotlight-result`
-      dalını içermeli. **SE, iPhone 15 Pro ve Pro Max**'te ayrı ayrı:
+- [ ] N16. **Spotlight sonuç ekranı + arama ipucu (P-6a).** OTA: `production` / iOS /
+      runtime 2.1.0, grup `12d91cec-0fd9-4d2a-9de4-c626e153db6b`, commit `dca2f71`
+      (6 Eki 2026). Geri dönüş hedefi: `c2068ed1-8153-484c-a64e-1eebb6baa171`
+      (P-3c/P-3d, `3f8ce18`). Uygulamayı iki kez soğuk aç (ilk açılış indirir, ikinci
+      uygular). ⚠️ P-5 bu güncellemeyi içermiyor: P-5 yalnız `fix/spotlight-result`
+      merge edilmiş daldan yayınlanmalı, yoksa P-6a geri alınır.
+      **SE, iPhone 15 Pro ve Pro Max**'te ayrı ayrı:
       - **Sayaç ilk ekranda:** oyunu bitir → sonuç ekranında, kaydırmadan, "Next puzzle"
         etiketi **ve** saat (hh:mm:ss) görünüyor; durum satırının ("Great Guess!" /
         "Found it with N letters") hemen altında. Film adı **iki satır** olan bir günde de
