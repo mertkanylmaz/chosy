@@ -21,9 +21,11 @@
 -- İmza, dönüş tipi, STABLE, SECURITY INVOKER ve GRANT'lar 029 ile aynı.
 -- archive filtresi YOK: editoryal takvimdeki 400 filmin 33'ü archive.
 -- `relevance_rank` artık kademe: (5 − kademe) / 5 → 1.0 birebir … 0.0 kişi.
--- Sınırlar (CTO, 6 Eki 2026): sorgu ilk 100 karakter (`left(search_query,
--- 100)`; RPC anon'a açık, kelime sayısı maliyeti çarpar); sonuç en çok 25
--- (`LEAST(result_limit, 25)`; NULL → 25). İstemci bugün 10 istiyor.
+-- Sınırlar (CTO, 6 Eki 2026): sorgu ilk 100 karakter
+-- (`left(coalesce(search_query, ''), 100)`, normalizasyondan önce; RPC anon'a
+-- açık, kelime sayısı maliyeti çarpar); normalize sorgu 2 karakterden kısaysa
+-- boş sonuç; sonuç en çok 25 (`LEAST(result_limit, 25)`; NULL → 25).
+-- İstemci bugün 10 istiyor.
 --
 -- ── Kademeler (küçük önce) ────────────────────────────────────────────────
 --   0  birebir başlık (artikel atılmış hâli dahil)          — K0
@@ -35,9 +37,10 @@
 -- "Başlık" = title, original_title, tr_title; en iyi kademe alınır.
 --
 -- ── Kademe içi sıra ─────────────────────────────────────────────────────
---   a) tam kelime: sorgunun son kelimesi başlıkta tam kelime (iyelik "s"
---      kabul) — "Beau" → Beau Travail, Beauty and the Beast'ten önce;
---      "The King" → The King's Speech, The Kingdom'dan önce.
+--   a) tam kelime: sorgunun tamamı (artikelsiz) başlıkta tam kelime/ifade
+--      olarak geçer, iyelik "s" kabul ("king" ↔ "kings") — "Beau" → Beau
+--      Travail, Beauty and the Beast'ten önce; "The King" → The King's
+--      Speech, The Kingdom'dan önce.
 --      (DUR 2'de eklendi, CTO onayı 6 Eki 2026: "Beau" kabul kriteri bu
 --      olmadan sağlanmıyor — Beauty and the Beast core, Beau Travail extended.)
 --   b) curation_tier: core 0 · extended/trending 1 · archive/NULL 2
@@ -60,7 +63,9 @@
 -- (D ağırlığı, GIN) üzerinden önek tsquery ile.
 --
 -- ── Performans (canlı, pg_temp kopyası, 6 Eki 2026, 3 tekrar min/max) ─────
---   029: 14–16 ms · 126: 76–89 ms (tek kelime/iki kelime), "The" 167–173 ms.
+--   029: 14–16 ms · 126: 76–89 ms (tek kelime/iki kelime), "The" 167–173 ms,
+--   "an" 176–238 ms. Tek harf ("a", "e") 374–521 ms ölçüldü → 2 karakter alt
+--   sınırıyla boş döner.
 --   Daha hızlısı saklı normalize kolon / ifade index'i ister (yeni nesne) —
 --   bu migration'ın kapsamı dışında.
 --
@@ -165,7 +170,11 @@ BEGIN
                'æ', 'ae'), 'ß', 'ss'), 'œ', 'oe'),
            '[^[:alnum:]]+', ' ', 'g'));
 
-  IF q_raw = '' THEN
+  -- 2 karakterden kısa normalize sorgu boş döner (boş/NULL/yalnız noktalama
+  -- dahil). İstemci zaten 2 karakter altını göndermiyor
+  -- (services/searchFilms.ts); RPC anon'a açık ve tek harf ön elemeyi
+  -- daraltmadığı için 374–521 ms ölçüldü ("a", "e"; 6 Eki 2026).
+  IF length(q_raw) < 2 THEN
     RETURN;
   END IF;
 
