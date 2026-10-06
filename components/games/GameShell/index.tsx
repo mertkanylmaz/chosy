@@ -11,9 +11,13 @@
  * içeriklerine `paddingHorizontal` EKLEMEZ ve genişlik hesabında
  * `gameContentWidth()` kullanır — ayrıntı: constants/gameLayout.ts.
  *
- * Alt boşluk `insets.bottom`'dan gelir. Eskiden sabit `paddingBottom: 83`
- * vardı (tab bar payı), ama oyun ekranları root Stack'te — tab bar yok.
- * O sabit 83px ölü alan yaratıp içeriği dikeyde sıkıştırıyordu.
+ * Alt boşluk `max(insets.bottom, 8)` — içerik View'ına verilir, KAV'a DEĞİL:
+ * iOS'ta `behavior="padding"` KAV'ın paddingBottom'unu kendi değeriyle ezer
+ * (RN KeyboardAvoidingView.js, `compose(style, {paddingBottom})`); klavye
+ * kapalıyken 0 olur, içerik ana ekran çubuğunun altına iner (P-2d). Klavye
+ * açıkken çift sayılmasın diye `keyboardVerticalOffset` iOS'ta −bottomPad.
+ * Eskiden sabit `paddingBottom: 83` vardı (tab bar payı), ama oyun ekranları
+ * root Stack'te — tab bar yok.
  */
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, TouchableOpacity, View } from 'react-native';
@@ -280,6 +284,11 @@ export function GameShell({
   // Cam chrome kendi safe-area boşluğunu taşır; container'ınki sıfırlanır ki
   // bulanıklık durum çubuğunun altına kadar uzansın.
   const containerPaddingTop = floatingHeader ? 0 : insets.top;
+  /**
+   * Alt pay — içerik View'ına verilir, KAV'a değil (dosya başı). Gesture
+   * bar'ı olmayan cihazlarda insets.bottom 0 gelir, o yüzden taban.
+   */
+  const bottomPad = Math.max(insets.bottom, Theme.spacing.sm);
 
   const chrome = (
     <>
@@ -348,19 +357,14 @@ export function GameShell({
   return (
     <GameThemeContext.Provider value={theme}>
     <KeyboardAvoidingView
-      style={[
-        styles.container,
-        {
-          paddingTop: containerPaddingTop,
-          // Sabit 83 (tab bar payı) kaldırıldı — oyunlar tab bar'ın içinde değil.
-          // Gesture bar'ı olmayan cihazlarda insets.bottom 0 gelir, o yüzden taban.
-          paddingBottom: Math.max(insets.bottom, Theme.spacing.sm),
-        },
-      ]}
+      // Alt pay burada YOK: iOS `padding` modu paddingBottom'u ezer (dosya başı).
+      // Sabit 83 (tab bar payı) da kaldırıldı — oyunlar tab bar'ın içinde değil.
+      style={[styles.container, { paddingTop: containerPaddingTop }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      // paddingBottom 83 iken klavye telafisi de 83 idi; padding gidince
-      // offset de gitmeli, yoksa klavye açılınca içerik 83px fazla kayar.
-      keyboardVerticalOffset={0}
+      // iOS: içerik View'ı zaten bottomPad taşıyor. Ofset KAV'ın klavye payını
+      // bottomPad kadar azaltır, toplam yine klavye yüksekliği olur (SE 252+8,
+      // Face ID 226+34 = 260). Android `height` modunda alt pay ezilmiyor → 0.
+      keyboardVerticalOffset={Platform.OS === 'ios' ? -bottomPad : 0}
     >
       {/*
         Ambiyans — her şeyin arkasında, dokunma almaz. Temadan gelir, oyun
@@ -373,7 +377,7 @@ export function GameShell({
       <View
         style={[
           styles.backdrop,
-          { top: -containerPaddingTop, bottom: -Math.max(insets.bottom, Theme.spacing.sm) },
+          { top: -containerPaddingTop, bottom: -bottomPad },
         ]}
         pointerEvents="none"
       >
@@ -394,7 +398,7 @@ export function GameShell({
       */}
       <View
         ref={contentRef}
-        style={contentPadding ? styles.content : styles.contentFlush}
+        style={[contentPadding ? styles.content : styles.contentFlush, { paddingBottom: bottomPad }]}
         onLayout={measureContentTop}
       >
         <GameShellContentTopContext.Provider value={contentTop}>

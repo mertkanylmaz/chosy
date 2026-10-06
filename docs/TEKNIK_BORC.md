@@ -3618,6 +3618,8 @@ kararı ister. Kullanıcı etkisi ölçülmedi.
 ekranlarda arama açılıp tahmin gönderilmeden çıkış) ya da cihaz geri
 bildiriminde "arama sırasında görsel kayboluyor" gelirse.
 
+**Not (P-2e, 4 Eki):** `app/games/index.tsx:251` aynı `max(insets.bottom, 8)` desenini KAV'sız düz bir `View`'da kullanıyor — ezilmiyor, etkilenmiyor; oraya KAV eklenirse aynı tuzak doğar (bkz. `87ac952`).
+
 ---
 
 ## 🟡 Spotlight arama listesi — P-3 sonrası kalanlar (4 Eki 2026)
@@ -3843,3 +3845,65 @@ gateway kuralı) ya da çağrıyı `authenticated`'a daraltmak (istemci her zama
 **Neden şimdi değil:** GRANT/erişim sözleşmesi ya da yeni katman — mimari karar;
 bugün anormal yük gözlenmedi. **Tetikleyici:** anormal yük (Supabase CPU /
 `search_films` çağrı sayısında sıçrama) ya da ≥ 5K günlük kullanıcı.
+
+---
+
+## 🟡 Hesap silme zinciri — K-16 sonrası kalanlar (4 Eki 2026)
+
+Keşif: `docs/investigations/K16_GAME_SCORES_SILME_KESIF.md` (dal
+`fix/spotlight-search`). `game_scores.user_id` FK'si migration 125 taslağıyla
+ele alınıyor (onay bekliyor); 125 uygulanınca yukarıdaki "game_scores — 9
+sahipsiz satır" kaydı kapanır. Aşağıdakiler 125'in dışında.
+
+### 1. Merge'de anonim kullanıcının oyun skorları silinir (karar)
+125 sonrası `merge_anonymous_user` (122:151 `DELETE FROM users`) anonim
+kullanıcının `game_scores` satırlarını CASCADE ile **siler**; bugün yetim
+kalıyorlar. Taşıma yapılmaz — 122 v1 kapsamı kilitli (`122:10-12`). Sonuç:
+anonim oynayıp Apple ile mevcut hesaba giren oyuncunun o günkü Spotlight
+ilerlemesi ve geçmiş skorları kaybolur. **Tetikleyici:** merge oranı
+ölçülebilir hale gelince ya da "girişten sonra Spotlight sıfırlandı" geri
+bildirimi; taşıma ayrı migration (hedefte aynı `puzzle_id` varsa "hedef kazanır").
+
+### 2. `delete-account` başlık yorumu FK sayısı
+`supabase/functions/delete-account/index.ts:10-11` "public.users'a bağlı 26
+FK'nin biri hariç hepsi ON DELETE CASCADE" diyor. Canlıda 27 FK (26 CASCADE +
+`users.referred_by` SET NULL); 125 sonrası **28** (27 CASCADE + 1 SET NULL).
+Yalnız yorum; davranış değişmez. **Tetikleyici:** delete-account'a dokunan
+ilk iş (yorum için tek başına redeploy yapılmaz).
+
+### 3. `trial_claims` — e-posta tutma ve şema sapması
+- Canlı kolonlar: `id uuid`, `user_id uuid NULL`, `email text NOT NULL`,
+  `claimed_at`. Repo `012_auth_profile_fields.sql:69-72` tabloyu
+  `email TEXT PRIMARY KEY, claimed_at` olarak tanımlar; `070:27-29` "tabloda
+  user_id kolonu yok" der. **Şema sapması** — `id`/`user_id`'nin hangi yoldan
+  geldiği doğrulanmadı (Dashboard? 012 `CREATE TABLE IF NOT EXISTS` no-op notu).
+- `email` FK'siz ve hesap silmede **sağ kalır** (amaç: aynı e-postayla ikinci
+  trial engeli). Hesap silme sonrası e-posta tutmak GDPR silme taahhüdüyle
+  çatışabilir; hash'lenmiş tutma ya da süreli tutma seçenek.
+- Bugün 0 satır. **Tetikleyici: Trial akışı açılmadan ÖNCE karar** (tutma
+  biçimi + şemanın repo'ya migration ile hizalanması).
+
+### 4. `subscriptions.rc_customer_id` ölçülmedi
+FK'siz `text` kimlik kolonu (RevenueCat müşteri kimliği). `subscriptions`
+satırı `user_id` CASCADE ile gidiyor, ama `rc_customer_id`'nin app/auth
+kimliğiyle ilişkisi ve RevenueCat tarafında silme (müşteri silme API'si)
+K-16'da incelenmedi. **Tetikleyici:** abonelik açılmadan önce ya da ilk
+ödeme yapan kullanıcının hesap silme talebi.
+
+### 5. Ölü istemci yazıcısı sessiz hata yutuyor
+`services/gameService.ts:612` `submitGameScore` `game_scores` upsert'inin
+`{ error }` sonucunu okumuyor (PostgREST hata fırlatmaz → sessiz başarısızlık,
+CLAUDE.md kural 1). Fonksiyon hiçbir yerden çağrılmıyor (grep, 4 Eki).
+**Tetikleyici:** fonksiyon yeniden bağlanırsa önce hata kontrolü; yoksa silinmesi
+ayrı temizlik işi.
+
+### 6. Migration 125 — yedeksiz silme (migration-guard KIRMIZI 1'e bilinçli istisna)
+migration-guard, 125'teki `DELETE FROM game_scores` (yetimler) için push
+öncesi ham satır dökümü + `pg_dump` istedi (KIRMIZI 1). **Alınmadı — CTO
+kararı, 4 Eki 2026.** Gerekçe: (a) FK kurulduktan sonra yetim satır geri
+yüklenemez — sahibi olan `public.users` satırı yok, FK reddeder; (b) satırlar
+silinmiş hesaplara ait, hesap silme taahhüdü gereği verinin tutulmaması
+amaçlanan sonuç; döküm almak silinmiş kullanıcı verisini repo/disk dışında
+yaşatırdı. Kapsam: yalnız 125'in yetim satırları (beklenen ~17). Bu istisna
+başka migration'lara emsal değildir — canlı kullanıcı verisini silen her
+migration'da yedek kuralı geçerli.
