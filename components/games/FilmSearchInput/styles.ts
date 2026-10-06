@@ -95,6 +95,16 @@ export const createStyles = (theme: GameTheme) => {
     ...Theme.typography.caption,
     color: Colors.textTertiary,
   },
+  /** P-6a yalnizca-artikel ipucu — sonuc satiri yerine, dokunulamaz */
+  hintRow: {
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.md,
+  },
+  hintText: {
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
   /** P-3 "Kapat" satiri — listenin input'a bakan kenari, sabit yukseklik */
   closeRow: {
     flexDirection: 'row',

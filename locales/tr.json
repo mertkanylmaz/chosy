@@ -1192,6 +1192,7 @@
     "search_placeholder": "Film ara...",
     "search_close": "Listeyi kapat",
     "search_tried": "Denendi",
+    "search_article_hint": "Yazmaya devam et, \"%{word}\" yüzlerce filme uyuyor.",
     "result": {
       "solved": "Harika Tahmin!",
       "solved_detail": "%{attempts}/%{maxAttempts} denemede bildin",
@@ -1226,6 +1227,8 @@
       "title": "Neden Bu Film?",
       "fun_fact_title": "Ilginc Bilgi",
       "watch_tonight": "Bu Aksam Izle",
+      "where_to_watch": "Nerede izlenir",
+      "about_title": "Film hakkında",
       "add_watchlist": "Listeye Ekle",
       "added_watchlist": "Eklendi",
       "add_failed": "Tekrar dene"

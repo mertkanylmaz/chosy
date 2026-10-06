@@ -36,7 +36,7 @@ import { DnaXpReveal } from '@/components/games/DnaXpReveal';
 import { formatFactor } from '@/components/games/ConfidenceSelector';
 import type { DnaSignal } from '@/components/games/DnaXpReveal';
 import { PlayNextBridge } from '@/components/games/PlayNextBridge';
-import { WhyThisMovieFunnel } from '@/components/games/WhyThisMovie';
+import { WhyThisMovieFunnel, type WhyCtaEmphasis } from '@/components/games/WhyThisMovie';
 import {
   trackResultCardViewed,
   trackShareRendered,
@@ -97,6 +97,17 @@ interface ResultCardProps {
   countdown?: string;
   /** Geri sayim etiketi (varsayilan: games.result.next_puzzle) */
   countdownLabel?: string;
+  /**
+   * Geri sayimin yeri (P-6a). `'bottom'` (varsayilan): aksiyonlarin altinda.
+   * `'top'`: durum satirinin hemen alti — kahraman karesi + uzun kart ilk
+   * ekranda sayaci asagi itiyordu (Spotlight). Geometri:
+   * `tests/games/resultCountdownLayout.test.ts`.
+   */
+  countdownPlacement?: 'top' | 'bottom';
+  /** WhyThisMovieFunnel CTA vurgusu — bkz. `WhyThisMovieFunnel.ctaEmphasis` */
+  ctaEmphasis?: WhyCtaEmphasis;
+  /** WhyThisMovieFunnel aciklama basligi — verilmezse "Why This Movie?" */
+  whyTitle?: string;
   /** "Hub'a don" eylemi — verilirse buton gosterilir */
   onBackToHub?: () => void;
   /**
@@ -143,6 +154,9 @@ export function ResultCard({
   whyThisMovie,
   countdown,
   countdownLabel,
+  countdownPlacement = 'bottom',
+  ctaEmphasis,
+  whyTitle,
   onBackToHub,
   backLabel,
   resultMessage,
@@ -193,6 +207,16 @@ export function ResultCard({
   });
   // Use server XP if provided, otherwise fall back to local calculation
   const xp = xpAwarded ?? calculateXP(solved, attempts, maxAttempts);
+
+  /** Bir sonraki bulmacaya geri sayim — `countdownPlacement`'a gore tek yerde cizilir */
+  const countdownBlock = countdown ? (
+    <View style={styles.countdownSection}>
+      <Text style={styles.countdownLabel}>
+        {countdownLabel ?? t('games.result.next_puzzle_label')}
+      </Text>
+      <Text style={styles.countdownTime}>{countdown}</Text>
+    </View>
+  ) : null;
   const hasDnaReveal = xpAwarded != null; // Edge Function path provides xpAwarded
 
   // Track result card view once on mount
@@ -268,6 +292,8 @@ export function ResultCard({
           </Text>
         </View>
 
+        {countdownPlacement === 'top' && countdownBlock}
+
         {/* ── XP + DNA Reveal ── */}
         {hasDnaReveal ? (
           <DnaXpReveal
@@ -294,6 +320,8 @@ export function ResultCard({
             filmId={filmId}
             filmUuid={filmUuid}
             gameType={gameType ?? 'unknown'}
+            ctaEmphasis={ctaEmphasis}
+            title={whyTitle}
           />
         )}
 
@@ -358,15 +386,8 @@ export function ResultCard({
           )}
         </View>
 
-        {/* ── Bir sonraki bulmacaya geri sayim ── */}
-        {countdown ? (
-          <View style={styles.countdownSection}>
-            <Text style={styles.countdownLabel}>
-              {countdownLabel ?? t('games.result.next_puzzle_label')}
-            </Text>
-            <Text style={styles.countdownTime}>{countdown}</Text>
-          </View>
-        ) : null}
+        {/* ── Bir sonraki bulmacaya geri sayim (varsayilan yer) ── */}
+        {countdownPlacement === 'bottom' && countdownBlock}
 
         {/* ── Play Next Bridge ── */}
         {gameType && (

@@ -1192,6 +1192,7 @@
     "search_placeholder": "Search for a film...",
     "search_close": "Close list",
     "search_tried": "Tried",
+    "search_article_hint": "Keep typing — \"%{word}\" matches hundreds of films.",
     "result": {
       "solved": "Great Guess!",
       "solved_detail": "Solved in %{attempts}/%{maxAttempts} guesses",
@@ -1226,6 +1227,8 @@
       "title": "Why This Movie?",
       "fun_fact_title": "Fun Fact",
       "watch_tonight": "Watch Tonight",
+      "where_to_watch": "Where to watch",
+      "about_title": "About this film",
       "add_watchlist": "Add to List",
       "added_watchlist": "Added",
       "add_failed": "Try again"

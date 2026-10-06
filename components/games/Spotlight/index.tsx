@@ -524,6 +524,11 @@ export function SpotlightGame() {
                 : t('games.spotlight.result_lost')
             }
             countdown={countdown}
+            // P-6a: kare + kart ilk ekranda sayaci asagi itiyordu — durum
+            // satirinin altina. Bonus oyunda film sayfasi ikincil CTA.
+            countdownPlacement="top"
+            ctaEmphasis="secondary"
+            whyTitle={t('games.why_this_movie.about_title')}
             // Hub yok (IA §2.6) — etiket "Back". Gecmis yoksa (bildirim /
             // soguk acilis) Home'a: archive.tsx ile ayni desen.
             backLabel={t('games.common.back')}

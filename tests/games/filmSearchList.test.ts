@@ -18,6 +18,7 @@ import {
   type SearchListState,
 } from '../../components/games/FilmSearchInput/listState.ts'
 import { createSearchGate } from '../../components/games/FilmSearchInput/searchGate.ts'
+import { isArticleOnlyQuery } from '../../components/games/FilmSearchInput/articleQuery.ts'
 
 function run(events: SearchListEvent[], listControls: boolean): SearchListState {
   return events.reduce((s, e) => reduceSearchList(s, e, listControls), INITIAL_SEARCH_LIST)
@@ -194,4 +195,24 @@ Deno.test('uuid icermeyen sonuc asla denendi sayilmaz', () => {
 
 Deno.test('regresyon: triedFilmIds verilmezse (donmus oyunlar) hicbir satir etkilenmez', () => {
   assertEquals(isTriedFilm('a', undefined), false)
+})
+
+// ─── Yalnizca-artikel sorgu (P-6a) ──────────────────────────────────────────
+
+Deno.test('the / a / an tek basina artikel sayilir — buyuk harf ve bosluk farketmez', () => {
+  for (const q of ['the', 'The', 'THE', ' the ', 'The ', 'a', 'A', 'an', 'An ']) {
+    assert(isArticleOnlyQuery(q), `"${q}" artikel sayilmali`)
+  }
+})
+
+Deno.test('artikelle baslayan ya da artikel iceren sorgu aranir', () => {
+  for (const q of ['The K', 'the kin', 'Then', 'There Will Be Blood', 'An Education', 'Anora', 'Theo', 'a b', '']) {
+    assertEquals(isArticleOnlyQuery(q), false, `"${q}" aranmali`)
+  }
+})
+
+Deno.test('ipucu satiri listeyi odaktayken acar (1 satir), odak yokken acmaz', () => {
+  const hint: SearchListEvent = { type: 'results', count: 1 }
+  assert(run([{ type: 'focus' }, hint], true).open)
+  assertEquals(run([{ type: 'focus' }, { type: 'blur' }, hint], true).open, false)
 })
