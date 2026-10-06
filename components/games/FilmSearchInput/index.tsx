@@ -12,6 +12,10 @@
  * `listControls` (P-3, Spotlight): liste odaktan çıkınca kapanır, altta
  * görünür "Kapat" satırı ve kaydırma göstergesi çizilir. Açık/kapalı durumu
  * `listState.ts` reducer'ında; blur'un satır dokunuşunu yutmaması orada.
+ *
+ * P-6a (yine yalnız `listControls`): yeni sonuçlar listenin başından çizilir
+ * (`scrollTo(0)`), yalnızca-artikel sorgu ("The") aranmaz, ipucu satırı
+ * gösterilir (`articleQuery.ts`).
  */
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -29,6 +33,7 @@ import { searchFilms } from '@/services/gameService';
 import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
+import { isArticleOnlyQuery } from './articleQuery';
 import { DROPDOWN_MAX_H, dropdownMaxHeight } from './dropdownHeight';
 import {
   INITIAL_SEARCH_LIST,
@@ -77,6 +82,8 @@ export function FilmSearchInput({
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<FilmSearchResult[]>([]);
+  /** Yalnızca-artikel sorguda ipucuna yazılan kelime (ör. "The") — yoksa null */
+  const [articleHint, setArticleHint] = useState<string | null>(null);
   const [list, dispatchList] = useReducer(
     (state: typeof INITIAL_SEARCH_LIST, event: SearchListEvent) =>
       reduceSearchList(state, event, listControls),
@@ -96,6 +103,15 @@ export function FilmSearchInput({
 
   // Unmount: zamanlayıcı ekran kapandıktan sonra istek atmasın
   useEffect(() => cancelPendingSearch, [cancelPendingSearch]);
+
+  /**
+   * Liste açık kaldıkça ScrollView eski kaydırma konumunu korur; yeni harfle
+   * gelen sonuçlar kaydırılmış konumda, üst satırları kesik çiziliyordu (P-6 §2).
+   */
+  const listScrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    if (listControls) listScrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [results, listControls]);
 
   const insets = useSafeAreaInsets();
   /**
@@ -139,16 +155,26 @@ export function FilmSearchInput({
 
     if (text.trim().length < 2) {
       setResults([]);
+      setArticleHint(null);
       dispatchList({ type: 'dismiss' });
       return;
     }
 
     const ticket = gateRef.current.ticket();
     debounceRef.current = setTimeout(async () => {
+      // Aynı 300 ms'lik bekleme: "The K" yazarken ipucu bir an yanıp sönmez
+      if (listControls && isArticleOnlyQuery(text)) {
+        setResults([]);
+        setArticleHint(text.trim());
+        // İpucu tek satır — reducer için listede 1 satır var
+        dispatchList({ type: 'results', count: 1 });
+        return;
+      }
       try {
         const films = await searchFilms(text, catalogOnly);
         // Arada X / seçim / yeni harf geldiyse bu yanıt bayat — uygulanmaz
         if (!gateRef.current.isCurrent(ticket)) return;
+        setArticleHint(null);
         setResults(films);
         dispatchList({ type: 'results', count: films.length });
       } catch (err) {
@@ -160,10 +186,11 @@ export function FilmSearchInput({
         });
         if (!gateRef.current.isCurrent(ticket)) return;
         setResults([]);
+        setArticleHint(null);
         dispatchList({ type: 'dismiss' });
       }
     }, 300);
-  }, [catalogOnly, cancelPendingSearch]);
+  }, [catalogOnly, listControls, cancelPendingSearch]);
 
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {
@@ -173,6 +200,7 @@ export function FilmSearchInput({
       setQuery('');
       dispatchList({ type: 'select' });
       setResults([]);
+      setArticleHint(null);
       onSelect(film);
     },
     [onSelect, cancelPendingSearch],
@@ -188,10 +216,18 @@ export function FilmSearchInput({
             onPress'inden önce blur olmaz (listState.ts, tuzak katman 1).
           */}
           <ScrollView
+            ref={listScrollRef}
             keyboardShouldPersistTaps="handled"
             nestedScrollEnabled
             showsVerticalScrollIndicator={listControls}
           >
+            {articleHint !== null && (
+              <View style={styles.hintRow} accessibilityRole="text">
+                <Text style={styles.hintText}>
+                  {t('games.search_article_hint', { word: articleHint })}
+                </Text>
+              </View>
+            )}
             {results.slice(0, 6).map((item) => {
               const poster = getPosterUrl(item.posterPath, 'w92');
               const tried = isTriedFilm(item.uuid, triedFilmIds);
@@ -282,6 +318,7 @@ export function FilmSearchInput({
               cancelPendingSearch();
               setQuery('');
               setResults([]);
+              setArticleHint(null);
               dispatchList({ type: 'dismiss' });
             }}
           >

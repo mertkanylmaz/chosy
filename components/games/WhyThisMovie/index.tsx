@@ -47,7 +47,17 @@ interface WhyThisMovieFunnelProps {
   filmUuid?: string;
   /** Game type for analytics */
   gameType: string;
+  /**
+   * CTA vurgusu (P-6a). `'primary'` (varsayilan): dolu "Watch Tonight".
+   * `'secondary'`: cerceveli "Where to watch" — bonus oyunda (Spotlight) film
+   * sayfasi asil hedef degil. Davranis ayni: film sayfasini acar.
+   */
+  ctaEmphasis?: 'primary' | 'secondary';
+  /** Aciklama basligi — verilmezse `games.why_this_movie.title` */
+  title?: string;
 }
+
+export type WhyCtaEmphasis = NonNullable<WhyThisMovieFunnelProps['ctaEmphasis']>;
 
 /**
  * WhyThisMovieFunnel — contextual discovery card after game completion.
@@ -59,7 +69,10 @@ export function WhyThisMovieFunnel({
   filmId,
   filmUuid,
   gameType,
+  ctaEmphasis = 'primary',
+  title,
 }: WhyThisMovieFunnelProps) {
+  const secondaryCta = ctaEmphasis === 'secondary';
   const { t } = useLanguage();
   const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
@@ -214,14 +227,20 @@ export function WhyThisMovieFunnel({
       {canResolveFilm && (
         <View style={styles.ctaColumn}>
           <TouchableOpacity
-            style={styles.watchButton}
+            style={secondaryCta ? styles.addButton : styles.watchButton}
             onPress={handleWatchTonight}
             activeOpacity={0.7}
             accessibilityRole="button"
           >
-            <FilmReel size={18} color={Colors.textOnAccent} weight="duotone" />
-            <Text style={styles.watchButtonText}>
-              {t('games.why_this_movie.watch_tonight')}
+            <FilmReel
+              size={secondaryCta ? 16 : 18}
+              color={secondaryCta ? Colors.gold : Colors.textOnAccent}
+              weight="duotone"
+            />
+            <Text style={secondaryCta ? styles.addButtonText : styles.watchButtonText}>
+              {secondaryCta
+                ? t('games.why_this_movie.where_to_watch')
+                : t('games.why_this_movie.watch_tonight')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -262,7 +281,7 @@ export function WhyThisMovieFunnel({
             <View style={styles.iconWrap}>
               <Lightbulb size={16} color={ACCENT} weight="duotone" />
             </View>
-            <Text style={styles.headerTitle}>{t('games.why_this_movie.title')}</Text>
+            <Text style={styles.headerTitle}>{title ?? t('games.why_this_movie.title')}</Text>
             <CaretDown
               size={16}
               color={Colors.textSecondary}
