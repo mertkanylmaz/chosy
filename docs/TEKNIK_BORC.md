@@ -3780,3 +3780,19 @@ sızdırır (`chosy-conventions` §9). Not: `/images`'tan düşmüş dosyaların
 `backdrop_iso` kolonu — şema) ekler; mimari karar. **Tetikleyici:** havuzun
 backdrop'larını değiştiren ilk iş (P-6c2 alternatifleri uygulanırken) ya da
 yeni editoryal dönem.
+
+### 5. Arama normalizasyonu performansı — 80–170 ms (migration 126)
+Migration 126 (`fix/search-ranking`) başlık normalizasyonunu her çağrıda inline
+yapıyor: `films`'i dört kez tarayıp ~10 bin adı `translate`/`replace` ile
+anahtara çeviriyor, regex'i yalnız ön elemeyi geçen adaylara uyguluyor. 029'un
+trigram index'leri bu ifadede kullanılmıyor; kadro araması GIN `search_vector`
+ile. Push öncesi ölçüm (canlı veri, `pg_temp` kopyası, 6 Eki 2026, 3 tekrar):
+029 14–16 ms; 126 76–89 ms, "The" 167–173 ms. Tek geçişli ilk sürüm 300 ms
+idi. Çağrı istemcide 300 ms debounce'lu; RPC anon'a açık, sorgu 100 karakter
+ve sonuç 25 ile sınırlı.
+Olası çözüm: `films`'te saklı normalize başlık kolonu (generated ya da trigger;
+`search_vector` trigger'ı örnek) + bu kolonda `pg_trgm` GIN indeksi; fonksiyon
+satır başına normalizasyon yerine index'li `LIKE`'a döner.
+**Neden şimdi değil:** yeni kolon + index şema kararı; bugünkü süre debounce'lu
+otomatik tamamlamada kabul edilebilir (CTO, 6 Eki 2026).
+**Tetikleyici:** `search_films` p95 > 300 ms ya da ≥ 5K günlük kullanıcı.
