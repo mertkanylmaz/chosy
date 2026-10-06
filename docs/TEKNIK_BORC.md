@@ -3802,7 +3802,9 @@ RPC `anon` ve `authenticated`'a GRANT'lı (029, 126) ve PostgREST üzerinden
 oturumsuz çağrılabiliyor; uygulama tarafında ya da veritabanında çağrı başına
 hız sınırı yok. 126'dan sonra çağrı başına maliyet 029'un ~5 katı (80–170 ms,
 §5); sorgu 100 karakter, sonuç 25 ve normalize sorgu ≥ 2 karakterle sınırlı
-(tek harf 374–521 ms ölçülmüştü, artık boş döner). İstemci 300 ms debounce'lu,
+(tek harf "a"/"e" 374–521 ms ölçülmüştü, artık boş döner — ama sınır artikelli
+sorguya bakıyor: "the e", "a x" geçer, artikel atılınca tek harf kalır; canlıda
+"the e" 503–523 ms, 6 Eki 2026 push sonrası). İstemci 300 ms debounce'lu,
 2 karakter altını göndermiyor — ama doğrudan API çağrısı bu korumaları atlar.
 Olası çözüm: Supabase/PostgREST önünde hız sınırı (Edge Function proxy ya da
 gateway kuralı) ya da çağrıyı `authenticated`'a daraltmak (istemci her zaman
