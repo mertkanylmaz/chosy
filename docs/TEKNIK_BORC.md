@@ -3796,3 +3796,17 @@ satır başına normalizasyon yerine index'li `LIKE`'a döner.
 **Neden şimdi değil:** yeni kolon + index şema kararı; bugünkü süre debounce'lu
 otomatik tamamlamada kabul edilebilir (CTO, 6 Eki 2026).
 **Tetikleyici:** `search_films` p95 > 300 ms ya da ≥ 5K günlük kullanıcı.
+
+### 6. `search_films` anon'a açık, hız sınırı yok
+RPC `anon` ve `authenticated`'a GRANT'lı (029, 126) ve PostgREST üzerinden
+oturumsuz çağrılabiliyor; uygulama tarafında ya da veritabanında çağrı başına
+hız sınırı yok. 126'dan sonra çağrı başına maliyet 029'un ~5 katı (80–170 ms,
+§5); sorgu 100 karakter, sonuç 25 ve normalize sorgu ≥ 2 karakterle sınırlı
+(tek harf 374–521 ms ölçülmüştü, artık boş döner). İstemci 300 ms debounce'lu,
+2 karakter altını göndermiyor — ama doğrudan API çağrısı bu korumaları atlar.
+Olası çözüm: Supabase/PostgREST önünde hız sınırı (Edge Function proxy ya da
+gateway kuralı) ya da çağrıyı `authenticated`'a daraltmak (istemci her zaman
+`ensureAuthSession()` ile anonim oturum açıyor — doğrulanmalı).
+**Neden şimdi değil:** GRANT/erişim sözleşmesi ya da yeni katman — mimari karar;
+bugün anormal yük gözlenmedi. **Tetikleyici:** anormal yük (Supabase CPU /
+`search_films` çağrı sayısında sıçrama) ya da ≥ 5K günlük kullanıcı.
