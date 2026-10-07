@@ -3917,3 +3917,26 @@ bilinçli olarak çözülmedi (kapsam kayması); yalnız §10.1'e not düşüld�
 temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
 
 - **V1-D6 bayat (7 Eki 2026):** `7_CHOSY_V1_KAPSAM_KILIDI.md` V1-D6 satırı watched sayısının kaynağını `watch_feedback` (`loved`/`ok`/`abandoned`) yazıyor; kod B-1/Fix 6'dan beri `watchlist.watched_at` okuyor ve `disliked` (migration 128) da izlenmiş sayılır. Satır bilinçli düzeltilmedi (watch-feedback T1 kapsamı dışı).
+
+### Watch-feedback T1 kapanış borçları (7 Eki 2026)
+
+- **23505 yarış dalı testi yalnızca köprüyü kilitliyor.** Dal `Deno.serve` içinde,
+  import edilemiyor; `watchFeedback.test.ts` kayıtlı değer başına
+  `syncWatchedFromFeedback` sözleşmesini test ediyor, dalın çağrıldığını değil.
+  Dalı `_shared`'e çıkarıp doğrudan test etmek ayrı iş (fix `a907209`).
+- **Docker/WSL2 kurulu değil (backlog).** Yerel Supabase (`supabase start`) çalışmıyor;
+  migration replay'i, function matrisi (`asked_at`/`answered_at`) ve
+  `recompute-taste-vector` gerçek config testi yalnız prod transaction+ROLLBACK
+  fallback'iyle ve birim testlerle kapatıldı.
+- **B1 — istemci retry, T3 gereksinimi.** `GauntletShell` cevabı fire-and-forget
+  gönderiyor, `submitWatchFeedback` retry etmiyor; INSERT sonrası `markWatched`
+  düşerse satır var olduğu için pending bir daha seçmez ve `watched_at` eksik
+  kalır. T3'te cevap gönderimine en az bir yeniden deneme eklenecek.
+- **B2 — sunucu tarafı onarım, ölçüme bağlı.** İzleme sorgusu (watch-sınıfı cevap
+  olup `watchlist.watched_at` NULL/satır yok; beklenen 0) sıfırdan büyükse
+  `generate-gauntlet` pending seçimi bu durumu onaracak şekilde değerlendirilir.
+- **127 DOWN notu yanlış numaraya atıf yapıyor.** `127_deletion_requests.sql`
+  "Geri alma ayrı migration'la (128): DROP TABLE" diyor; 128 artık
+  `watch_feedback_disliked`. Geri alma komutu doğru (`DROP TABLE
+  public.deletion_requests`, tablo boşken), numara bayat. Uygulanmış migration
+  dosyası bilinçli olarak değiştirilmedi.
