@@ -11,13 +11,12 @@ import { withAlpha } from '@/constants/gameThemes';
 export const resultStyles = StyleSheet.create({
   container: {
     gap: space.md,
+    paddingTop: space.lg,
     alignItems: 'center',
   },
-  /** Film adı — serif yalnız film adlarında (V3-D1). Boyut `display-m` token'ından. */
-  filmTitle: {
-    ...type.filmTitle,
-    fontSize: type['display-m'].fontSize,
-    lineHeight: type['display-m'].lineHeight,
+  /** Film adı — Design OS `display-m` (Archivo Expanded 600, 22/26) */
+  title: {
+    ...type['display-m'],
     color: color.text.primary,
     textAlign: 'center',
   },
@@ -32,10 +31,16 @@ export const resultStyles = StyleSheet.create({
     gap: space.xs,
     paddingTop: space.sm,
   },
-  /** Kazanç başlığı — marquee: ödül katmanı */
-  statusWon: {
+  /** FLAWLESS — marquee: ödül katmanı yalnız kusursuzda */
+  statusFlawless: {
     ...type['display-m'],
     color: color.reward.primary,
+    textAlign: 'center',
+  },
+  /** FOUND IT — bone, bir kademe küçük (`title`): FLAWLESS'tan ayrışır, film adıyla yarışmaz */
+  statusFound: {
+    ...type.title,
+    color: color.text.primary,
     textAlign: 'center',
   },
   /** Kayıp başlığı — altın YOK */
@@ -58,6 +63,14 @@ export const resultStyles = StyleSheet.create({
     alignSelf: 'stretch',
     gap: space.sm,
     paddingTop: space.sm,
+  },
+  /** İkincil eylemler — Save + Share yan yana (fontScale <= 1.3) */
+  actionsRow: {
+    flexDirection: 'row',
+    gap: space.sm,
+  },
+  actionsRowItem: {
+    flex: 1,
   },
   /** Kaydet hatası — sakin satır içi metin; kutu/renk dolgusu yok */
   saveError: {

@@ -12,7 +12,7 @@
  * filmden türetilmiş hiçbir veri taşımaz (`SpotlightShareCard`).
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Text, View } from 'react-native';
+import { AccessibilityInfo, Text, useWindowDimensions, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BookmarkSimple, FilmReel, ShareNetwork } from 'phosphor-react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
@@ -48,6 +48,9 @@ import { useScreenReaderEnabled } from './useScreenReaderEnabled';
  * watchlist üyeliği okunmaz (okuma yolu yok); yazma başarısı doğru kabul edilir.
  */
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+/** Bu ölçeğin üstünde Save + Share dikey yığılır (Dynamic Type) */
+const SIDE_BY_SIDE_MAX_FONT_SCALE = 1.3;
 
 interface SpotlightResultProps {
   puzzleId: string;
@@ -203,6 +206,46 @@ export function SpotlightResult({
   }, [shareVariant, shareChancesLeft, puzzleId, share, announce, t]);
 
   const saved = saveState === 'saved';
+  const statusStyle =
+    variant === 'flawless'
+      ? styles.statusFlawless
+      : variant === 'found'
+        ? styles.statusFound
+        : styles.statusLost;
+  // Dynamic Type: büyük yazıda Save + Share yan yana sığmaz → dikey
+  const { fontScale } = useWindowDimensions();
+  const sideBySide = fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;
+
+  const saveButton = filmId ? (
+    <ChampionActionButton
+      label={
+        saved ? t('games.spotlight.action_save_done') : t('games.spotlight.action_save_for_later')
+      }
+      icon={BookmarkSimple}
+      variant="outline"
+      onPress={handleSave}
+      disabled={saveState === 'saving' || saved}
+      busy={saveState === 'saving'}
+      selected={saved}
+    />
+  ) : null;
+  const shareButton = canShare ? (
+    <ChampionActionButton
+      label={t('games.spotlight.action_share')}
+      icon={ShareNetwork}
+      variant="outline"
+      onPress={handleShare}
+      disabled={isCapturing}
+      busy={isCapturing}
+    />
+  ) : null;
+  const saveErrorText =
+    saveState === 'error' ? (
+      <Text style={styles.saveError}>{t('games.spotlight.action_save_error')}</Text>
+    ) : null;
+  const shareErrorText = shareFailed ? (
+    <Text style={styles.saveError}>{t('games.spotlight.share_error')}</Text>
+  ) : null;
 
   return (
     <View style={styles.container}>
@@ -229,7 +272,16 @@ export function SpotlightResult({
         />
       ) : null}
 
-      {film ? <Text style={styles.filmTitle}>{film.title}</Text> : null}
+      {film ? (
+        <Text
+          style={styles.title}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
+          {film.title}
+        </Text>
+      ) : null}
       {film && film.year > 0 ? <Text style={styles.meta}>{String(film.year)}</Text> : null}
 
       <Animated.View
@@ -239,7 +291,7 @@ export function SpotlightResult({
         accessibilityRole="header"
         accessibilityLabel={statusLabel}
       >
-        <Text style={isLost ? styles.statusLost : styles.statusWon}>{statusText}</Text>
+        <Text style={statusStyle}>{statusText}</Text>
         {detailText ? <Text style={styles.statusDetail}>{detailText}</Text> : null}
         {subText ? <Text style={styles.statusSub}>{subText}</Text> : null}
       </Animated.View>
@@ -247,46 +299,26 @@ export function SpotlightResult({
       {filmId || canShare ? (
         <View style={styles.actions}>
           {filmId ? (
-            <>
-              <ChampionActionButton
-                label={t('games.spotlight.action_where_to_watch')}
-                icon={FilmReel}
-                variant="marquee"
-                onPress={handleWhereToWatch}
-              />
-              <ChampionActionButton
-                label={
-                  saved
-                    ? t('games.spotlight.action_save_done')
-                    : t('games.spotlight.action_save_for_later')
-                }
-                icon={BookmarkSimple}
-                variant="outline"
-                onPress={handleSave}
-                disabled={saveState === 'saving' || saved}
-                busy={saveState === 'saving'}
-                selected={saved}
-              />
-              {saveState === 'error' ? (
-                <Text style={styles.saveError}>{t('games.spotlight.action_save_error')}</Text>
-              ) : null}
-            </>
+            <ChampionActionButton
+              label={t('games.spotlight.action_where_to_watch')}
+              icon={FilmReel}
+              variant="marquee"
+              onPress={handleWhereToWatch}
+            />
           ) : null}
-          {canShare ? (
+          {sideBySide && saveButton && shareButton ? (
+            <View style={styles.actionsRow}>
+              <View style={styles.actionsRowItem}>{saveButton}</View>
+              <View style={styles.actionsRowItem}>{shareButton}</View>
+            </View>
+          ) : (
             <>
-              <ChampionActionButton
-                label={t('games.spotlight.action_share')}
-                icon={ShareNetwork}
-                variant="outline"
-                onPress={handleShare}
-                disabled={isCapturing}
-                busy={isCapturing}
-              />
-              {shareFailed ? (
-                <Text style={styles.saveError}>{t('games.spotlight.share_error')}</Text>
-              ) : null}
+              {saveButton}
+              {shareButton}
             </>
-          ) : null}
+          )}
+          {saveErrorText}
+          {shareErrorText}
         </View>
       ) : null}
 

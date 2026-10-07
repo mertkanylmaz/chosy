@@ -73,7 +73,12 @@ export function ChampionActionButton({
         weight={variant === 'outline' && !selected ? 'regular' : 'fill'}
       />
       {!iconOnly && (
-        <Text style={[styles.text, onDark ? styles.textOnDark : styles.textOnFill]} numberOfLines={1}>
+        <Text
+          style={[styles.text, onDark ? styles.textOnDark : styles.textOnFill]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+        >
           {label}
         </Text>
       )}
