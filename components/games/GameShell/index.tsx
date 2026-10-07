@@ -208,6 +208,17 @@ interface GameShellProps {
    * `useAnimatedScrollHandler` veya `onScroll` ile beslenir.
    */
   scrollY?: SharedValue<number>;
+  /**
+   * Ambiyans gradyanlarını çizme; zemin `theme.ambientBase[0]` düz renk.
+   * Varsayılan `false` — mevcut oyunlar `GameBackdrop`'u aynen çizer.
+   * Spotlight (düz ink, 07.10.2026 kararı) kullanır.
+   */
+  flatBackdrop?: boolean;
+  /**
+   * Küçük başlık: eyebrow Martian Mono/smoke, başlık SF Pro 15 — oyun adı
+   * baskın olmaz. Varsayılan `false` (serif 20pt başlık aynen kalır).
+   */
+  compactHeader?: boolean;
 }
 
 /**
@@ -226,6 +237,8 @@ export function GameShell({
   contentPadding = true,
   floatingHeader = false,
   scrollY,
+  flatBackdrop = false,
+  compactHeader = false,
 }: GameShellProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -293,7 +306,7 @@ export function GameShell({
   const chrome = (
     <>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, compactHeader && styles.headerCompact]}>
         <TouchableOpacity
           style={styles.headerSlot}
           accessibilityRole="button"
@@ -310,13 +323,21 @@ export function GameShell({
         <Animated.View style={[styles.titleBlock, floatingHeader && titleAnimatedStyle]}>
           {subtitle ? (
             <Animated.Text
-              style={[styles.eyebrow, floatingHeader && eyebrowAnimatedStyle]}
+              style={[
+                styles.eyebrow,
+                compactHeader && styles.eyebrowCompact,
+                floatingHeader && eyebrowAnimatedStyle,
+              ]}
               numberOfLines={1}
             >
               {subtitle}
             </Animated.Text>
           ) : null}
-          <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+          <Text
+            style={[styles.title, compactHeader && styles.titleCompact]}
+            numberOfLines={1}
+            accessibilityRole="header"
+          >
             {title}
           </Text>
         </Animated.View>
@@ -381,7 +402,11 @@ export function GameShell({
         ]}
         pointerEvents="none"
       >
-        <GameBackdrop theme={theme} />
+        {flatBackdrop ? (
+          <View style={[styles.flatBackdrop, { backgroundColor: theme.ambientBase[0] }]} />
+        ) : (
+          <GameBackdrop theme={theme} />
+        )}
       </View>
 
       {/*

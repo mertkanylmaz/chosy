@@ -18,7 +18,7 @@
  * gösterilir (`articleQuery.ts`).
  */
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
 import { CaretDown, FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +29,7 @@ import { useGameShellContentTop, useGameTheme } from '@/components/games/GameShe
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { searchFilms } from '@/services/gameService';
+import { searchFilms, searchFilmsStrict } from '@/services/gameService';
 import { getPosterUrl } from '@/services/tmdb';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
@@ -67,7 +67,21 @@ interface FilmSearchInputProps {
    * dokunulamaz, "Denendi" etiketli. Verilmezse hiçbir satır etkilenmez.
    */
   triedFilmIds?: readonly string[];
+  /**
+   * Yerleşim. 'dropdown' (varsayılan): liste input'un ÜSTÜNDE açılır, donmuş
+   * oyunların çıktısı. 'sheet' (Spotlight cevap sayfası): sonuçlar input'un
+   * ALTINDA, her zaman görünür; seçim sorguyu ve sonuçları silmez; yükleniyor /
+   * hata + tekrar dene / boş durumu çizilir. `listControls`, 'sheet'te yok sayılır.
+   */
+  layout?: 'dropdown' | 'sheet';
+  /** Input mount olunca odaklanır (yalnız 'sheet'te anlamlı). */
+  autoFocus?: boolean;
+  /** 'sheet': input ile liste arasında tek sakin satır (ör. yanlış tahmin geri bildirimi). */
+  inlineNote?: string | null;
 }
+
+/** 'sheet' yerleşiminin arama durumu */
+type SearchStatus = 'idle' | 'loading' | 'ready' | 'offline' | 'error';
 
 export function FilmSearchInput({
   onSelect,
@@ -76,7 +90,11 @@ export function FilmSearchInput({
   catalogOnly = false,
   listControls = false,
   triedFilmIds,
+  layout = 'dropdown',
+  autoFocus = false,
+  inlineNote = null,
 }: FilmSearchInputProps) {
+  const isSheet = layout === 'sheet';
   const theme = useGameTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const { t } = useLanguage();
@@ -90,6 +108,7 @@ export function FilmSearchInput({
     INITIAL_SEARCH_LIST,
   );
   const showDropdown = list.open;
+  const [status, setStatus] = useState<SearchStatus>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Bayat yanıt kapısı (P-3 A3) — bkz. searchGate.ts */
   const gateRef = useRef(createSearchGate());
@@ -156,26 +175,44 @@ export function FilmSearchInput({
     if (text.trim().length < 2) {
       setResults([]);
       setArticleHint(null);
+      setStatus('idle');
       dispatchList({ type: 'dismiss' });
       return;
     }
 
     const ticket = gateRef.current.ticket();
+    setStatus('loading');
     debounceRef.current = setTimeout(async () => {
       // Aynı 300 ms'lik bekleme: "The K" yazarken ipucu bir an yanıp sönmez
       if (listControls && isArticleOnlyQuery(text)) {
         setResults([]);
         setArticleHint(text.trim());
+        setStatus('ready');
         // İpucu tek satır — reducer için listede 1 satır var
         dispatchList({ type: 'results', count: 1 });
         return;
       }
       try {
+        if (isSheet) {
+          // Strict: gerçek hata "bulunamadı"dan ayrılır. Bayat yanıt kapısı aynı.
+          const outcome = await searchFilmsStrict(text, catalogOnly);
+          if (!gateRef.current.isCurrent(ticket)) return;
+          setArticleHint(null);
+          if (outcome.status === 'ok') {
+            setResults(outcome.films);
+            setStatus('ready');
+          } else {
+            setResults([]);
+            setStatus(outcome.status === 'offline' ? 'offline' : 'error');
+          }
+          return;
+        }
         const films = await searchFilms(text, catalogOnly);
         // Arada X / seçim / yeni harf geldiyse bu yanıt bayat — uygulanmaz
         if (!gateRef.current.isCurrent(ticket)) return;
         setArticleHint(null);
         setResults(films);
+        setStatus('ready');
         dispatchList({ type: 'results', count: films.length });
       } catch (err) {
         // Savunmacı: servis bugün hatayı kendisi raporlayıp [] döner. Bu dal
@@ -187,14 +224,20 @@ export function FilmSearchInput({
         if (!gateRef.current.isCurrent(ticket)) return;
         setResults([]);
         setArticleHint(null);
+        setStatus('error');
         dispatchList({ type: 'dismiss' });
       }
     }, 300);
-  }, [catalogOnly, listControls, cancelPendingSearch]);
+  }, [catalogOnly, listControls, isSheet, cancelPendingSearch]);
 
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {
       hapticLight();
+      if (isSheet) {
+        // Sheet: sorgu, sonuçlar ve klavye yerinde kalır (yanlış tahminde yeniden denenir)
+        onSelect(film);
+        return;
+      }
       cancelPendingSearch();
       Keyboard.dismiss();
       setQuery('');
@@ -203,8 +246,148 @@ export function FilmSearchInput({
       setArticleHint(null);
       onSelect(film);
     },
-    [onSelect, cancelPendingSearch],
+    [onSelect, cancelPendingSearch, isSheet],
   );
+
+  if (isSheet) {
+    const visible = results.slice(0, 6);
+    return (
+      <View style={styles.sheetContainer}>
+        <View style={styles.inputRow}>
+          <MagnifyingGlass size={20} color={Colors.textTertiary} weight="duotone" />
+          <TextInput
+            style={styles.input}
+            value={query}
+            onChangeText={handleChange}
+            placeholder={placeholder ?? t('games.search_placeholder')}
+            placeholderTextColor={Colors.textTertiary}
+            // editable=false odagi dusurur (klavye kapanir); bekleyen tahminde
+            // yalniz satir secimi kilitlenir, yazma acik kalir.
+            editable
+            autoFocus={autoFocus}
+            autoCapitalize="words"
+            autoCorrect={false}
+            returnKeyType="search"
+            maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
+          />
+          {query.length > 0 && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('games.search_clear')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              onPress={() => {
+                cancelPendingSearch();
+                setQuery('');
+                setResults([]);
+                setArticleHint(null);
+                setStatus('idle');
+              }}
+            >
+              <XCircle size={20} color={Colors.textTertiary} weight="duotone" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {inlineNote ? (
+          <Text style={styles.sheetNote} accessibilityLiveRegion="polite">
+            {inlineNote}
+          </Text>
+        ) : null}
+
+        <ScrollView
+          style={styles.sheetList}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator
+        >
+          {status === 'loading' && (
+            <View style={styles.sheetStatus} accessibilityRole="progressbar">
+              <ActivityIndicator color={Colors.textTertiary} />
+            </View>
+          )}
+          {status === 'error' && (
+            <View style={styles.sheetStatus}>
+              <Text style={styles.sheetStatusText}>{t('games.search_load_failed')}</Text>
+              <TouchableOpacity
+                style={styles.sheetRetry}
+                accessibilityRole="button"
+                onPress={() => handleChange(query)}
+              >
+                <Text style={styles.sheetRetryText}>{t('games.search_retry')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {status === 'offline' && (
+            <View style={styles.sheetStatus}>
+              <Text style={styles.sheetStatusText}>{t('games.search_offline')}</Text>
+              <TouchableOpacity
+                style={styles.sheetRetry}
+                accessibilityRole="button"
+                onPress={() => handleChange(query)}
+              >
+                <Text style={styles.sheetRetryText}>{t('games.search_retry')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {status === 'idle' && (
+            <View style={styles.sheetStatus}>
+              <Text style={styles.sheetStatusText}>{t('games.search_invite')}</Text>
+            </View>
+          )}
+          {status === 'ready' && articleHint !== null && (
+            <View style={styles.hintRow} accessibilityRole="text">
+              <Text style={styles.hintText}>
+                {t('games.search_article_hint', { word: articleHint })}
+              </Text>
+            </View>
+          )}
+          {status === 'ready' && articleHint === null && visible.length === 0 && (
+            <View style={styles.sheetStatus}>
+              <Text style={styles.sheetStatusText}>{t('games.search_empty')}</Text>
+            </View>
+          )}
+          {status === 'ready' &&
+            visible.map((item) => {
+              const poster = getPosterUrl(item.posterPath, 'w92');
+              const tried = isTriedFilm(item.uuid, triedFilmIds);
+              return (
+                <TouchableOpacity
+                  key={String(item.id)}
+                  style={[styles.resultRow, styles.sheetRow, tried && styles.resultRowTried]}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    tried ? `${item.title}, ${t('games.search_tried')}` : item.title
+                  }
+                  accessibilityState={tried ? { disabled: true } : undefined}
+                  activeOpacity={tried ? 1 : undefined}
+                  onPress={() => {
+                    if (!tried && !disabled) handleSelect(item);
+                  }}
+                >
+                  {poster ? (
+                    <Image source={{ uri: poster }} style={styles.resultPoster} contentFit="cover" />
+                  ) : (
+                    <View style={[styles.resultPoster, styles.noPoster]}>
+                      <FilmSlate size={16} color={Colors.textTertiary} weight="duotone" />
+                    </View>
+                  )}
+                  <View style={styles.resultInfo}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>
+                      {item.title}
+                    </Text>
+                    <Text style={styles.resultYear}>{item.year}</Text>
+                  </View>
+                  {tried && (
+                    <Text style={styles.triedText} maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}>
+                      {t('games.search_tried')}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+        </ScrollView>
+      </View>
+    );
+  }
 
   return (
     <View ref={containerRef} style={styles.container} onLayout={measureInput}>
@@ -319,6 +502,7 @@ export function FilmSearchInput({
               setQuery('');
               setResults([]);
               setArticleHint(null);
+              setStatus('idle');
               dispatchList({ type: 'dismiss' });
             }}
           >

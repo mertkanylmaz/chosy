@@ -12,10 +12,6 @@
 import { StyleSheet } from 'react-native';
 
 import { color, radius, size, space, type } from '@/constants/design/semantic';
-import { GAME_THEMES } from '@/constants/gameThemes';
-
-/** Spotlight'ın kendi kimliği — tek kaynak `gameThemes`, hardcode yok. */
-const SPOTLIGHT_ACCENT = GAME_THEMES.spotlight.accent;
 
 /** Bulanık kare — dokunma hedefinin (44) üstünde, kart yüksekliğini belirler. */
 const FRAME_SIZE = size.touchTarget + space.md;
@@ -32,15 +28,15 @@ export const styles = StyleSheet.create({
     backgroundColor: color.surface.raised,
   },
   /**
-   * Morun TEK göründüğü yer: karenin kenarı. Karanlık Salon'da renk bilgi
-   * taşır — mor burada "bu başka bir oyun" demek, "bu önemli" demek değil.
+   * Nötr hairline (graphite). Oyun teması bu karta sızmaz (07.10.2026):
+   * Gauntlet'in şampiyon ekranında altın/mor oynanış rengi bilgi taşımaz.
    */
   frame: {
     width: FRAME_SIZE,
     height: FRAME_SIZE,
     borderRadius: radius.poster,
     borderWidth: size.hairline,
-    borderColor: SPOTLIGHT_ACCENT,
+    borderColor: color.surface.border,
     overflow: 'hidden',
     backgroundColor: color.surface.base,
   },

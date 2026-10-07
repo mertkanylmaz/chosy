@@ -26,6 +26,11 @@ interface PrimaryActionProps {
   disabled?: boolean;
   /** VoiceOver'a "şu an meşgul" demek için — görsel durumla aynı şey değil. */
   busy?: boolean;
+  /**
+   * `gold` — Spotlight oynanış CTA'sı (DESIGN_OS 07.10.2026): düz marquee dolgu,
+   * ink metin, kenar/parıltı yok. Varsayılan `default` aynen kalır (gauntlet).
+   */
+  variant?: 'default' | 'gold';
 }
 
 export function PrimaryAction({
@@ -33,18 +38,23 @@ export function PrimaryAction({
   onPress,
   disabled = false,
   busy = false,
+  variant = 'default',
 }: PrimaryActionProps): React.JSX.Element {
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}
-      style={[styles.button, disabled && styles.buttonDisabled]}
+      style={[
+        styles.button,
+        variant === 'gold' && styles.buttonGold,
+        disabled && styles.buttonDisabled,
+      ]}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled, busy }}
     >
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, variant === 'gold' && styles.labelGold]}>{label}</Text>
     </TouchableOpacity>
   );
 }

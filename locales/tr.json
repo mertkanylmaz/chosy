@@ -1116,9 +1116,10 @@
       },
       "turn_indicator": "%{current} film kaldı",
       "result_won": "%{turns} tahminde buldun!",
-      "case_label": "FİLM #%{number}",
-      "title_label": "Başlık",
-      "attempts_left": "%{count} hak",
+      "case_label": "FİLM %{number}",
+      "chances_label": "HAK",
+      "chances_a11y": "%{total} haktan %{left} tanesi kaldı",
+      "helper": "Harf seç. Filmi netleştir.",
       "which_film": "Hangi film?",
       "result_won_letters": {
         "zero": "Hiç harf denemeden buldun!",
@@ -1131,7 +1132,16 @@
       "unavailable_subtitle": "Bugünün Spotlight bulmacası henüz hazır değil. Bağlantında sorun yok — daha sonra tekrar bak.",
       "result_lost": "Yarın tekrar dene",
       "auto_loss": "Cevap göz önündeydi!",
-      "guess_button": "Tahmin Et"
+      "guess_button": "Tahmin Et",
+      "answer_cta": "FİLMİ BİLİYORUM",
+      "answer_title": "Filmi bul",
+      "answer_placeholder": "Film ara",
+      "answer_close": "Kapat",
+      "answer_wrong": {
+        "zero": "O değil. Hak kalmadı.",
+        "one": "O değil. 1 hak kaldı.",
+        "other": "O değil. %{count} hak kaldı."
+      }
     },
     "detective": {
       "title": "Chosy Detective",
@@ -1193,6 +1203,12 @@
     "search_close": "Listeyi kapat",
     "search_tried": "Denendi",
     "search_article_hint": "Yazmaya devam et, \"%{word}\" yüzlerce filme uyuyor.",
+    "search_clear": "Aramayı temizle",
+    "search_load_failed": "Filmler yüklenemedi. Tekrar dene.",
+    "search_retry": "Tekrar dene",
+    "search_offline": "Çevrimdışısın. Bağlanıp tekrar dene.",
+    "search_invite": "Adın en az iki harfini yaz.",
+    "search_empty": "Film bulunamadı. Başka yazımı dene.",
     "result": {
       "solved": "Harika Tahmin!",
       "solved_detail": "%{attempts}/%{maxAttempts} denemede bildin",

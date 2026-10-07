@@ -34,6 +34,7 @@ import {
   SEARCH_CLOSE_ROW_H,
   dropdownMaxHeight,
 } from '../../components/games/FilmSearchInput/dropdownHeight.ts'
+import { chanceStates } from '../../components/games/Spotlight/chances.ts'
 import {
   STILL_ASPECT,
   coverVisibleFraction,
@@ -339,4 +340,19 @@ Deno.test('regresyon: klavye acik 58/50/94 alt pay tasinmasindan etkilenmez', ()
     assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, inset, 260)), 50)
     assertEquals(stillVisibleH(375, topRegionH(SE_H, SE_CONTENT_TOP, inset, 216)), 94)
   }
+})
+
+// ─── Hak noktalari ───────────────────────────────────────────────────────────
+
+Deno.test('hak noktalari: sayi = max, dolu = kalan, yalniz azalir', () => {
+  assertEquals(chanceStates(6, 6), [true, true, true, true, true, true])
+  assertEquals(chanceStates(6, 4), [true, true, true, true, false, false])
+  assertEquals(chanceStates(6, 0).filter(Boolean).length, 0)
+  assertEquals(chanceStates(6, 0).length, 6)
+})
+
+Deno.test('hak noktalari: tasan / negatif deger kenetlenir, sayi degismez', () => {
+  assertEquals(chanceStates(5, 9).length, 5)
+  assertEquals(chanceStates(5, 9).filter(Boolean).length, 5)
+  assertEquals(chanceStates(5, -2).filter(Boolean).length, 0)
 })

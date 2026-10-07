@@ -25,6 +25,15 @@ export const styles = StyleSheet.create({
     borderColor: color.accent.edgeStrong,
   },
   /**
+   * Altın varyant — kenar dolguyla aynı renk (çift çizgi/halo yok). Marquee
+   * değeri `color.reward.primary`'den okunur; Spotlight oynanış accent'i ile
+   * aynı değerdir (`GAME_THEMES.spotlight.accent`), ayrı hex tutulmaz.
+   */
+  buttonGold: {
+    backgroundColor: color.reward.primary,
+    borderColor: color.reward.primary,
+  },
+  /**
    * Devre dışı: buton KAYBOLMAZ, yalnız sönükleşir. Yer tutmaya devam eder
    * ki hazır olduğunda düzen zıplamasın (C2e "pop-in yok").
    */
@@ -35,5 +44,9 @@ export const styles = StyleSheet.create({
     ...type['body-strong'],
     color: color.text.primary,
     textAlign: 'center',
+  },
+  /** ink / marquee ≈ 8.4:1 (§2.7) */
+  labelGold: {
+    color: color.surface.base,
   },
 });

@@ -30,6 +30,9 @@
  */
 
 import { Colors } from './Colors';
+// primitives.ts hiçbir şey import etmez → döngü yok. semantic.ts'ten İMPORT EDİLMEZ:
+// semantic.ts → gameThemes.ts (withAlpha) olduğundan o yön döngü üretirdi.
+import { palette } from './design/primitives';
 
 /**
  * Oyun kimlikleri. Bu union eskiden üç yerde ayrı ayrı yazılıydı
@@ -48,7 +51,7 @@ export type GameType =
 /**
  * Ambiyans geometrisi.
  * - `orbs` — iki köşeye yerleşmiş, ekran dışına taşan parıltı küreleri (varsayılan)
- * - `beam` — üst köşeden aşağı açılan projektör huzmesi (yalnız Spotlight)
+ * - `beam` — üst köşeden aşağı açılan projektör huzmesi (07.10.2026'dan beri hiçbir oyun kullanmıyor)
  */
 export type AmbientVariant = 'orbs' | 'beam';
 
@@ -145,26 +148,27 @@ export const GAME_THEMES: Record<GameType, GameTheme> = {
   },
 
   /**
-   * Mor sahne huzmesi — tiyatro ışığı (DESIGN_OS §2.6, C.6).
+   * Sinema altını, düz ink zemin (DESIGN_OS 07.10.2026 Spotlight kararı).
    *
-   * ~~accent: Colors.accentPrimary (#E8A838)~~ → `#8B5CF6`. Gerekçe: eski
-   * değer ödül altınıyla (`marquee`, XP/rank/streak) aynı aileydi; aynı
-   * ekranda ödül katmanı ile oynanış katmanı ayırt edilemiyordu — bu
-   * dosyanın kendi doktrininin ("oynanış oyunun teması, ödül Chosy'nin
-   * altını") ihlaliydi. `#8B5CF6` dondurulan Logline'dan devralındı.
+   * ~~Mor sahne huzmesi (`#8B5CF6`, `ambientVariant: 'beam'`)~~ → emekli.
+   * Oynanış accent'i `palette.marquee`; `Colors.gold` (#D4A843) ve
+   * `Colors.accentPrimary` (#E8A838) ile KARIŞTIRILMAZ. Altın SIT: hak
+   * noktaları, birincil CTA, anlamlı durum geri bildirimi — dekorasyon değil.
    *
-   * `ambientVariant: 'beam'` korunur — mor huzme gerekçeyi güçlendirir.
+   * Ambiyans yok: `ambientBase` üç duraklı ink (düz zemin), parıltılar tam
+   * şeffaf. `GameShell`'in `flatBackdrop` prop'u gradyan katmanlarını hiç
+   * çizmez; bu değerler yalnız tip sözleşmesini doldurur.
    */
   spotlight: {
-    accent: '#8B5CF6',
-    accentOn: '#F0F0F5',
-    accentDim: 'rgba(139,92,246,0.14)',
-    accentGlow: 'rgba(139,92,246,0.70)',
-    ambientBase: ['#180F2E', '#100C1D', '#07080F'],
-    ambientGlowA: ['rgba(167,139,250,0.28)', 'rgba(167,139,250,0)'],
-    ambientGlowB: ['rgba(139,92,246,0.16)', 'rgba(139,92,246,0)'],
-    ambientVariant: 'beam',
-    progressGradient: ['#8B5CF6', '#A78BFA'],
+    accent: palette.marquee,
+    accentOn: palette.ink,
+    accentDim: withAlpha(palette.marquee, 0.14),
+    accentGlow: withAlpha(palette.marquee, 0.35),
+    ambientBase: [palette.ink, palette.ink, palette.ink],
+    ambientGlowA: [withAlpha(palette.ink, 0), withAlpha(palette.ink, 0)],
+    ambientGlowB: [withAlpha(palette.ink, 0), withAlpha(palette.ink, 0)],
+    ambientVariant: 'orbs',
+    progressGradient: [palette.marquee, palette.marquee],
   },
 
   /** Karanlık oda kırmızısı — banyo lambası, henüz gelişmemiş görüntü */

@@ -16,7 +16,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { CloudSlash, Eye } from 'phosphor-react-native';
+import { CloudSlash } from 'phosphor-react-native';
 import Animated, {
   FadeIn,
   FadeInUp,
@@ -33,13 +33,17 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
-import { trackGameOpened, trackGuessSubmitted, trackGameCompleted } from '@/utils/gameAnalytics';
+import {
+  trackGameOpened,
+  trackGuessSubmitted,
+  trackGameCompleted,
+  trackSpotlightAnswerSheetOpened,
+} from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
 import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
 import { ResultCard } from '@/components/games/ResultCard';
-import { FilmSearchInput } from '@/components/games/FilmSearchInput';
-import { GlassSurface } from '@/components/games/GlassSurface';
+import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
   DailyChallenge,
@@ -50,6 +54,8 @@ import type {
 } from '@/types/game';
 
 import { SPOTLIGHT_MAX_BLUR } from './constants';
+import { AnswerSheet } from './AnswerSheet';
+import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
 import { nextPuzzleCountdown } from './nextPuzzleClock';
@@ -60,9 +66,6 @@ type ScreenState = 'loading' | 'playing' | 'completed';
 /** Bu ekranin oyun kimligi — tema ve GameShell ayni sabiti okur,
  *  ikisi birbirinden kayamaz. */
 const GAME_TYPE = 'spotlight' as const;
-
-/** Yanlis harf + yanlis film tahmini icin toplam hak */
-const SPOTLIGHT_MAX_ATTEMPTS = 6;
 
 /** Ekran klavyesi duzeni */
 const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
@@ -111,21 +114,23 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles }: KeyButtonP
   }));
 
   return (
-    <Animated.View style={animatedStyle}>
-      <Pressable
-        style={[styles.key, tried && (hit ? styles.keyHit : styles.keyMiss)]}
-        onPressIn={() => {
-          scale.value = withSpring(0.9, PRESS_SPRING);
-        }}
-        onPressOut={() => {
-          scale.value = withSpring(1, PRESS_SPRING);
-        }}
-        onPress={onPress}
-        disabled={disabled}
-        accessibilityRole="button"
-        accessibilityLabel={letter}
-        accessibilityState={{ disabled }}
-      >
+    // Hucre bosluksuz dokunma alanidir (50pt yukseklik, DESIGN_OS §14 istisnasi);
+    // gorunen yuzey animasyonlu ic View'dir.
+    <Pressable
+      style={styles.keyCell}
+      onPressIn={() => {
+        scale.value = withSpring(0.9, PRESS_SPRING);
+      }}
+      onPressOut={() => {
+        scale.value = withSpring(1, PRESS_SPRING);
+      }}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={letter}
+      accessibilityState={{ disabled }}
+    >
+      <Animated.View style={[styles.key, animatedStyle, tried && (hit ? styles.keyHit : styles.keyMiss)]}>
         <Text
           style={[styles.keyText, hit && styles.keyTextHit]}
           // Sabit 42px tus — tavansiz AX boyutunda harf kirpiliyordu
@@ -133,8 +138,9 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles }: KeyButtonP
         >
           {letter}
         </Text>
-      </Pressable>
-    </Animated.View>
+        {tried && <View style={styles.keyStrike} pointerEvents="none" />}
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -180,6 +186,11 @@ export function SpotlightGame() {
 
   const [puzzleId, setPuzzleId] = useState('');
   const [puzzleNo, setPuzzleNo] = useState(0);
+  /**
+   * Toplam hak — sunucudaki `puzzle.max_attempts`. Sabit YOK: eksikse oyun
+   * acilmaz, gorunur hata + retry cikar (sessiz fallback yasak).
+   */
+  const [maxAttempts, setMaxAttempts] = useState(0);
   const [puzzleData, setPuzzleData] = useState<SpotlightPuzzleData | null>(null);
 
   const [triedLetters, setTriedLetters] = useState<string[]>([]);
@@ -192,7 +203,16 @@ export function SpotlightGame() {
    */
   const [guessedFilmIds, setGuessedFilmIds] = useState<string[]>([]);
   const [isBusy, setIsBusy] = useState(false);
+  /**
+   * Senkron tahmin kilidi: `isBusy` state'i ayni karede iki hizli dokunusa
+   * karsi bayat kalir; ref aninda yazilir. Yalniz film tahminini korur.
+   */
+  const guessLockRef = useRef(false);
   const [actionError, setActionError] = useState(false);
+  /** Cevap sayfasi (Sprint 1) — oyun durumundan bagimsiz, yalniz sunum */
+  const [answerOpen, setAnswerOpen] = useState(false);
+  /** Sayfa acikken son tahmin yanlisti — sakin satir gosterilir */
+  const [lastGuessWrong, setLastGuessWrong] = useState(false);
 
   const [won, setWon] = useState(false);
   const [xpAwarded, setXpAwarded] = useState(0);
@@ -224,8 +244,20 @@ export function SpotlightGame() {
         return;
       }
 
+      const serverMax = data.puzzle.max_attempts;
+      if (typeof serverMax !== 'number' || !Number.isFinite(serverMax) || serverMax < 1) {
+        logger.error(
+          '[spotlight] puzzle.max_attempts eksik veya gecersiz',
+          new Error('SPOTLIGHT_MAX_ATTEMPTS_MISSING'),
+          { code: 'SPOTLIGHT_MAX_ATTEMPTS_MISSING' },
+        );
+        setLoadError(true);
+        return;
+      }
+
       setPuzzleId(data.puzzle.id);
       setPuzzleNo(data.puzzle_no);
+      setMaxAttempts(serverMax);
       setPuzzleData(pd);
       setWhyThisMovie(data.why_this_movie ?? null);
       if (data.revealed_solution) setRevealedFilm(data.revealed_solution);
@@ -341,7 +373,7 @@ export function SpotlightGame() {
   /** Filmi tahmin et — kazanma yolu */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (isBusy || screenState !== 'playing') return;
+      if (isBusy || guessLockRef.current || screenState !== 'playing') return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -350,6 +382,7 @@ export function SpotlightGame() {
         return;
       }
 
+      guessLockRef.current = true;
       setIsBusy(true);
       setActionError(false);
       try {
@@ -370,6 +403,7 @@ export function SpotlightGame() {
           if (res.won) hapticSuccess();
           else hapticMedium();
           setStillReveal('animate');
+          setAnswerOpen(false);
           setScreenState('completed');
           trackGameCompleted({
             gameId: 'spotlight',
@@ -380,12 +414,14 @@ export function SpotlightGame() {
             extra: { letters_tried: res.tried_letters.length },
           });
         } else {
+          setLastGuessWrong(true);
           hapticWarning();
         }
       } catch (err) {
         logger.error('[spotlight] Tahmin gonderilemedi:', err);
         setActionError(true);
       } finally {
+        guessLockRef.current = false;
         setIsBusy(false);
       }
     },
@@ -420,7 +456,17 @@ export function SpotlightGame() {
   const maskScale = useMemo(() => fitMaskScale(maskWords, MASK_ROW_W), [maskWords]);
   const maskStyles = useMemo(() => createMaskStyles(theme, maskScale), [theme, maskScale]);
 
-  const attemptsLeft = Math.max(0, SPOTLIGHT_MAX_ATTEMPTS - attempts);
+  const attemptsLeft = Math.max(0, maxAttempts - attempts);
+
+  const openAnswerSheet = useCallback(() => {
+    if (isBusy) return;
+    hapticLight();
+    setLastGuessWrong(false);
+    setActionError(false);
+    setAnswerOpen(true);
+    trackSpotlightAnswerSheetOpened(puzzleId, Math.max(0, maxAttempts - attempts));
+  }, [isBusy, puzzleId, maxAttempts, attempts]);
+  const closeAnswerSheet = useCallback(() => setAnswerOpen(false), []);
   const blurAmount = blurForProgress(revealedMap.size, puzzleData?.letter_count ?? 0);
   /** Sonuc ekraninda kare cizilebilir mi — yoksa ResultCard posteri kalir */
   const hasStill = Boolean(puzzleData?.backdrop_url);
@@ -429,7 +475,7 @@ export function SpotlightGame() {
 
   if (staleFormat) {
     return (
-      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress>
+      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress flatBackdrop compactHeader>
         <GameStateView
           state="error"
           onRetry={loadPuzzle}
@@ -442,7 +488,7 @@ export function SpotlightGame() {
 
   if (unavailable) {
     return (
-      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress>
+      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress flatBackdrop compactHeader>
         <GameStateView
           state="error"
           onRetry={loadPuzzle}
@@ -455,7 +501,7 @@ export function SpotlightGame() {
 
   if (loadError) {
     return (
-      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress>
+      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress flatBackdrop compactHeader>
         <GameStateView state="error" onRetry={loadPuzzle} />
       </GameShell>
     );
@@ -463,7 +509,7 @@ export function SpotlightGame() {
 
   if (screenState === 'loading') {
     return (
-      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress>
+      <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress flatBackdrop compactHeader>
         <GameStateView state="loading" />
       </GameShell>
     );
@@ -475,8 +521,10 @@ export function SpotlightGame() {
         gameType={GAME_TYPE}
         title={t('games.spotlight.title')}
         currentAttempt={attempts}
-        maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
+        maxAttempts={maxAttempts}
         hideProgress
+        flatBackdrop
+        compactHeader
         floatingHeader
       >
         {({ topInset }) => (
@@ -501,7 +549,7 @@ export function SpotlightGame() {
             hidePoster={hasStill}
             solved={won}
             attempts={attempts}
-            maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
+            maxAttempts={maxAttempts}
             filmTitle={revealedFilm?.title ?? ''}
             filmYear={revealedFilm?.year ?? 0}
             filmPosterUrl={revealedFilm?.poster_url ?? null}
@@ -549,9 +597,13 @@ export function SpotlightGame() {
     <GameShell
       gameType={GAME_TYPE}
       title={t('games.spotlight.title')}
-      subtitle={t('games.spotlight.case_label', { number: puzzleNo })}
+      // "FILM 026" — sunucunun `puzzle_no`'su, 3 haneye sifirla doldurulur
+      subtitle={t('games.spotlight.case_label', { number: String(puzzleNo).padStart(3, '0') })}
       currentAttempt={attempts}
-      maxAttempts={SPOTLIGHT_MAX_ATTEMPTS}
+      maxAttempts={maxAttempts}
+      hideProgress
+      flatBackdrop
+      compactHeader
     >
       {/*
         Oynanis kabi — sahipsiz dokunus klavyeyi kapatir (P-3c B1). RN'de
@@ -579,37 +631,21 @@ export function SpotlightGame() {
           showsVerticalScrollIndicator={false}
         >
         {/*
-          Gorsel — acilan her harf netlestirir. Ekranin kahramani (Kural 4).
-          Kutu kaynakla ayni oranda (16:9, P-2): cover kirpmaz. Ust bolgede
-          artan alan maske ile aksiyon bari arasinda kalir.
+          Gorsel — acilan her harf netlestirir. Ekranin kahramani: rozet veya
+          chrome yok. Kutu kaynakla ayni oranda (16:9, P-2): cover kirpmaz.
         */}
         <SpotlightStill
           uri={puzzleData?.backdrop_url ?? ''}
           blurRadius={blurAmount}
           reveal="none"
           styles={styles}
-        >
-              {/*
-            Kalan hak rozeti — yuzen kontrol, yani chrome. Duz scrim yerine cam:
-            altinda gercekten gorsel akiyor, saglama sorusu geciliyor.
-          */}
-              <GlassSurface
-                radius={Theme.borderRadius.full}
-                intensity={18}
-                noShadow
-                style={styles.attemptsBadge}
-                contentStyle={styles.attemptsBadgeContent}
-              >
-                <Eye size={12} weight="duotone" color={Colors.textPrimary} />
-                <Text style={styles.attemptsText}>
-                  {t('games.spotlight.attempts_left', { count: attemptsLeft })}
-                </Text>
-              </GlassSurface>
-            </SpotlightStill>
+        />
+
+        {/* Hak — gorsel netligi ILERLEME, nokta RISK. Deger sunucunun max_attempts'i */}
+        <ChancesRow max={maxAttempts} left={attemptsLeft} />
 
             {/* Baslik maskesi */}
             <View style={styles.maskBlock}>
-            <Text style={styles.maskLabel}>{t('games.spotlight.title_label')}</Text>
             {/*
               Kelime gruplari: satir kelimeler ARASINDA kirilir. Slot olcegi
               maske 2 satira sigsin diye 0.8'e kadar kuculur; daha uzun baslik
@@ -654,6 +690,7 @@ export function SpotlightGame() {
                 </View>
               ))}
             </View>
+            <Text style={styles.helper}>{t('games.spotlight.helper')}</Text>
             </View>
         </ScrollView>
 
@@ -698,19 +735,28 @@ export function SpotlightGame() {
               ))}
             </View>
 
-            {/* Film tahmini — kazanma yolu */}
+            {/* Film tahmini — kazanma yolu: cevap sayfasini acar */}
             <View style={styles.guessArea}>
-              <Text style={styles.guessLabel}>{t('games.spotlight.which_film')}</Text>
-              <FilmSearchInput
-                onSelect={handleGuess}
+              <PrimaryAction
+                label={t('games.spotlight.answer_cta')}
+                onPress={openAnswerSheet}
                 disabled={isBusy}
-                catalogOnly
-                listControls
-                triedFilmIds={guessedFilmIds}
+                busy={isBusy}
+                variant="gold"
               />
           </View>
         </View>
       </Pressable>
+      <AnswerSheet
+        visible={answerOpen}
+        onClose={closeAnswerSheet}
+        onSelect={handleGuess}
+        busy={isBusy}
+        triedFilmIds={guessedFilmIds}
+        inlineNote={
+          lastGuessWrong ? t('games.spotlight.answer_wrong', { count: attemptsLeft }) : null
+        }
+      />
     </GameShell>
   );
 }

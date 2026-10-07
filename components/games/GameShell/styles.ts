@@ -8,6 +8,7 @@
 import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { color, space, type as typeScale } from '@/constants/design/semantic';
 import { Theme } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
@@ -31,6 +32,10 @@ export const styles = StyleSheet.create({
     right: 0,
     // zIndex verilmiyor: bu ilk çocuk, çizim sırası zaten header/içeriğin
     // altında bırakıyor. Negatif zIndex Android'de görünümü tamamen gizliyor.
+  },
+  /** `flatBackdrop` — gradyansız düz zemin; rengi runtime'da temadan gelir */
+  flatBackdrop: {
+    flex: 1,
   },
   /**
    * Yüzen cam chrome — `floatingHeader` açıkken header + progress'i sarar.
@@ -74,6 +79,24 @@ export const styles = StyleSheet.create({
   },
   eyebrow: {
     ...Theme.typography.eyebrow,
+  },
+  /** `compactHeader` — daha az dikey yer, üst barda nefes */
+  headerCompact: {
+    paddingTop: space.sm,
+    paddingBottom: space.xs,
+    minHeight: 48,
+  },
+  /** Film numarası: Martian Mono, smoke (≥12pt mono, §2.7 AA 6.2:1) */
+  eyebrowCompact: {
+    ...typeScale.meta,
+    color: color.text.secondary,
+    textTransform: 'none',
+  },
+  /** Oyun adı sessiz: SF Pro 15, bone — numara ve geri okla yarışmaz */
+  titleCompact: {
+    ...typeScale.callout,
+    fontWeight: '600',
+    color: color.text.primarySoft,
   },
   /**
    * Header başlığı serifTitle'ın (26) küçültülmüş hâli — üst barda 26 fazla

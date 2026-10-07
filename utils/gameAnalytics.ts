@@ -68,6 +68,14 @@ export function trackGameCompleted(params: {
   });
 }
 
+/** Spotlight cevap sayfasi acildi ("FILMI BILIYORUM"). Olay adi urun spesifikasyonundan. */
+export function trackSpotlightAnswerSheetOpened(puzzleId: string, chancesRemaining: number): void {
+  posthogAnalytics.track('spotlight_answer_sheet_opened', {
+    puzzle_id: puzzleId,
+    chances_remaining: chancesRemaining,
+  });
+}
+
 // ─── Result Card Downstream ───────────────────────────────────────────────
 
 /** Sonuc karti goruntulenince */

@@ -1116,9 +1116,10 @@
       },
       "turn_indicator": "%{current} films remaining",
       "result_won": "Found it in %{turns} guess(es)!",
-      "case_label": "FILM #%{number}",
-      "title_label": "The title",
-      "attempts_left": "%{count} left",
+      "case_label": "FILM %{number}",
+      "chances_label": "CHANCES",
+      "chances_a11y": "%{left} of %{total} chances left",
+      "helper": "Pick letters. Bring the film into focus.",
       "which_film": "Which film?",
       "result_won_letters": {
         "zero": "Got it without trying a single letter!",
@@ -1131,7 +1132,16 @@
       "unavailable_subtitle": "Today's Spotlight puzzle isn't ready yet. Your connection is fine — check back later.",
       "result_lost": "Better luck tomorrow",
       "auto_loss": "The answer was hiding in plain sight!",
-      "guess_button": "Guess"
+      "guess_button": "Guess",
+      "answer_cta": "I KNOW THE FILM",
+      "answer_title": "Name the film",
+      "answer_placeholder": "Search films",
+      "answer_close": "Close",
+      "answer_wrong": {
+        "zero": "Not that one. No chances left.",
+        "one": "Not that one. 1 chance left.",
+        "other": "Not that one. %{count} chances left."
+      }
     },
     "detective": {
       "title": "Chosy Detective",
@@ -1193,6 +1203,12 @@
     "search_close": "Close list",
     "search_tried": "Tried",
     "search_article_hint": "Keep typing — \"%{word}\" matches hundreds of films.",
+    "search_clear": "Clear search",
+    "search_load_failed": "Couldn't load films. Try again.",
+    "search_retry": "Try again",
+    "search_offline": "You're offline. Reconnect and try again.",
+    "search_invite": "Type at least two letters of the title.",
+    "search_empty": "No film found. Try another spelling.",
     "result": {
       "solved": "Great Guess!",
       "solved_detail": "Solved in %{attempts}/%{maxAttempts} guesses",

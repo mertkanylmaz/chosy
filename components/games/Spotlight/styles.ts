@@ -1,12 +1,13 @@
 /**
- * Spotlight V3 stilleri — Festival Layer.
+ * Spotlight V3 stilleri — "Karanlık Salon" (DESIGN_OS 07.10.2026 kararı).
  *
- * Tek gorsel + harf harf acilan baslik. Gorsel ekranin kahramani
- * (Kural 4), altinda harf kutulari, en altta klavye.
+ * Hiyerarşi (yukarıdan aşağı): görsel → hak noktaları → başlık maskesi →
+ * yardımcı satır → harf tahtası → birincil CTA. Zemin düz ink; altın SIT
+ * (hak noktaları, CTA, anlamlı durum). Ham hex yok — token + `withAlpha`.
  */
 import { Dimensions, StyleSheet } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha, type GameTheme } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
@@ -34,63 +35,81 @@ export const MASK_ROW_W = STILL_W - MASK_ROW_PADDING * 2;
 /** Kare kutusu kaynakla ayni oranda (16:9) — cover kirpmaz (P-2) */
 export const STILL_H = stillHeightFor(STILL_W);
 
-/** Klavye tus olcusu — en genis sira 10 sutun */
-const KEY_GAP = 4;
-/** Aksiyon barinin ic boslugu — tus genisligi hesabinin girdisi */
-const ACTION_BAR_PADDING = Theme.spacing.sm;
-const KEY_W = Math.floor(
-  (STILL_W - ACTION_BAR_PADDING * 2 - KEY_GAP * 9) / 10,
-);
-
-/** Aksiyon barinin dis yaricapi — tus yaricapi bundan concentric turetilir */
-const ACTION_BAR_RADIUS = Theme.borderRadius.xl;
+/**
+ * Harf tahtasi — en genis sira 10 sutun, tahta kare ile ayni genislikte.
+ *
+ * Dokunma hedefi ISTISNASI (DESIGN_OS §14): 10 tusluk sira 390pt ekranda 44pt
+ * genislige ulasamaz. Karar: tus YUKSEKLIGI ≥ 48pt (hucre 50), bosluklar yok —
+ * her tus hucresinin tamami dokunma alani, gorunen yuzey hucreye `KEY_INSET`
+ * kadar girintili (sistem klavyesi deseni). Genislik < 44pt olabilir.
+ */
+const KEY_CELL_W = Math.floor(STILL_W / 10);
+const KEY_CELL_H = 50;
+const KEY_INSET = 2;
+const KEY_RADIUS = 8;
 
 export { SCREEN_W };
 
 export const createStyles = (theme: GameTheme) => {
-  /** Accent'in hairline hali — %22 alfa, altin hairline ile ayni siddet */
-  const accentHairline = withAlpha(theme.accent, 0.22);
+  /** Anlamli durum geri bildirimi: baslikta cikan harf — altin hairline */
+  const hitBorder = withAlpha(theme.accent, 0.55);
 
   return StyleSheet.create({
   /**
    * Oynanis kabi: ust bolge (kayar) + aksiyon bari (sabit).
    *
    * Festival Layer Kural 7 "tek sayfa, ScrollView YOK" icin Spotlight'a OZEL
-   * istisna (KAPSAM_KILIDI v1.36): uzun baslik + acik klavyede icerik ekrana
+   * istisna (KAPSAM_KILIDI v1.36): uzun baslik + kucuk ekranda icerik ekrana
    * sigmiyor ve tasma aksiyon barini ekran disina itiyordu (B-1 / Fix 8).
    */
   screen: {
     flex: 1,
-    gap: Theme.spacing.md,
-    paddingBottom: Theme.spacing.sm,
+    gap: space.sm,
+    paddingBottom: space.sm,
   },
   /**
-   * Ust bolge — gorsel + baslik maskesi. Kalan alani alir ve gerektiginde
-   * KENDI ICINDE kayar. `minHeight: 0` bilincli: tasan icerik bu bolgeyi
-   * buyutup aksiyon barini itemez; kuculen bu bolgedir.
+   * Ust bolge — gorsel + hak + maske. Kalan alani alir ve gerektiginde KENDI
+   * ICINDE kayar. `minHeight: 0` bilincli: tasan icerik bu bolgeyi buyutup
+   * aksiyon barini itemez; kuculen bu bolgedir.
    */
   topRegion: {
     flex: 1,
     minHeight: 0,
   },
+  /**
+   * `flexGrow: 1`: uzun ekranda artan dikey bosluk maske bloguna verilir
+   * (asagida `maskBlock`), gorsel ve hak satiri ustte kalir.
+   */
   topContent: {
-    gap: Theme.spacing.md,
+    flexGrow: 1,
+    gap: space.md,
   },
-  /** Maske etiketi + satirlari — yuksekligi olculur, gorsel kalan alandan pay alir */
+  /**
+   * Maske + yardimci satir — gorsel ile tahta arasindaki bosluga ortalanir;
+   * olu bosluk iki yanda esit bolunur, kompozisyon tek parca okunur.
+   */
   maskBlock: {
-    gap: Theme.spacing.md,
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: space.md,
+  },
+  /** Yardimci satir — bone@70% (smoke 13pt alti yasak, §2.7) */
+  helper: {
+    ...type.callout,
+    color: withAlpha(color.text.primary, 0.7),
+    textAlign: 'center',
   },
 
   // ─── Gorsel ───────────────────────────────────────────────────────────────
+  /** Kahraman: ekranin en doygun ogesi — rozet/gradyan/chrome yok */
   stillWrap: {
     width: STILL_W,
     height: STILL_H,
-    borderRadius: Theme.borderRadius.lg,
+    borderRadius: radius.surface,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: accentHairline,
-    backgroundColor: Colors.bgCard,
-    marginTop: Theme.spacing.sm,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    backgroundColor: color.surface.raised,
   },
   still: {
     width: '100%',
@@ -100,116 +119,89 @@ export const createStyles = (theme: GameTheme) => {
   stillLayer: {
     ...StyleSheet.absoluteFillObject,
   },
-  /**
-   * Kalan hak rozeti — gorselin sag ustunde yuzen kontrol, yani chrome.
-   * Konumlandirma GlassSurface'in DIS node'una gider; yuzey/kenarlik
-   * component'ten gelir, burada tanimlanmaz.
-   */
-  attemptsBadge: {
-    position: 'absolute',
-    top: Theme.spacing.sm,
-    right: Theme.spacing.sm,
-  },
-  /** GlassSurface'in IC node'u — rozetin ic nefesi */
-  attemptsBadgeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  attemptsText: {
-    ...Theme.typography.eyebrow,
-    color: Colors.textPrimary,
-  },
 
   // ─── Baslik maskesi ───────────────────────────────────────────────────────
-  maskLabel: {
-    ...Theme.typography.eyebrow,
-    textAlign: 'center',
-  },
   // Slot / ayrac / satir stilleri olcege bagli → `createMaskStyles`
 
-  // ─── Aksiyon bari (chrome — cam) ──────────────────────────────────────────
-  /**
-   * Aksiyon bari — artik YUZMUYOR, normal akista ekranin dibinde.
-   * Ekran kaymadigi icin altindan gececek icerik yok; cam orada Kural 5'in
-   * derinlik testini gecmezdi.
-   */
+  // ─── Aksiyon bari ─────────────────────────────────────────────────────────
+  /** Tahta + CTA — normal akista ekranin dibinde, kareyle ayni genislik */
   actionBar: {
-    gap: Theme.spacing.sm,
-    paddingHorizontal: ACTION_BAR_PADDING,
+    gap: space.md,
   },
 
-  // ─── Klavye ───────────────────────────────────────────────────────────────
+  // ─── Harf tahtasi ─────────────────────────────────────────────────────────
   keyboard: {
-    gap: KEY_GAP,
     alignItems: 'center',
   },
   keyboardRow: {
     flexDirection: 'row',
-    gap: KEY_GAP,
     justifyContent: 'center',
   },
-  /**
-   * Concentric: aksiyon barinin yaricapi ACTION_BAR_RADIUS, ic boslugu
-   * ACTION_BAR_PADDING → tusun yaricapi aradaki farktan turetilir.
-   */
+  /** Dokunma hucresi — bosluksuz; tum alan basilabilir */
+  keyCell: {
+    width: KEY_CELL_W,
+    height: KEY_CELL_H,
+  },
+  /** Gorunen yuzey: charcoal, graphite kenar, ust kenarda ince isik (dokunsal) */
   key: {
-    width: KEY_W,
-    height: 42,
+    flex: 1,
+    margin: KEY_INSET,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Theme.concentric(ACTION_BAR_RADIUS, ACTION_BAR_PADDING),
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderRadius: KEY_RADIUS,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    borderTopColor: withAlpha(color.text.primary, 0.1),
+    backgroundColor: color.surface.raised,
   },
-  /** Baslikta cikan harf */
+  /** Baslikta cikan harf — hafif sonuk, altin hairline */
   keyHit: {
-    borderColor: theme.accent,
-    backgroundColor: theme.accentDim,
+    borderColor: hitBorder,
+    opacity: 0.75,
   },
   /** Baslikta olmayan harf — sonuk, tekrar denenemez */
   keyMiss: {
-    borderColor: 'transparent',
     opacity: 0.35,
   },
   keyText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.textPrimary,
+    ...type['body-strong'],
+    color: color.text.primary,
   },
   keyTextHit: {
     color: theme.accent,
   },
+  /** Kullanilmis tus: renkten bagimsiz isaret — harfin uzerinden ince cizgi */
+  keyStrike: {
+    position: 'absolute',
+    width: 16,
+    height: size.hairline * 1.5,
+    backgroundColor: withAlpha(color.text.primary, 0.6),
+    transform: [{ rotate: '-35deg' }],
+  },
 
   // ─── Tahmin alani ─────────────────────────────────────────────────────────
   guessArea: {
-    gap: Theme.spacing.sm,
-  },
-  guessLabel: {
-    ...Theme.typography.eyebrow,
-    textAlign: 'center',
+    gap: space.sm,
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Theme.spacing.sm,
-    paddingHorizontal: Theme.spacing.md,
-    paddingVertical: Theme.spacing.sm,
+    gap: space.sm,
+    paddingHorizontal: space.md,
+    paddingVertical: space.sm,
     borderRadius: Theme.borderRadius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
   },
   errorText: {
     flex: 1,
-    ...Theme.typography.caption,
-    color: Colors.textSecondary,
+    ...type.caption,
+    color: color.text.secondary,
   },
 
   completedContainer: {
-    gap: Theme.spacing.md,
-    paddingBottom: Theme.spacing.xl,
+    gap: space.md,
+    paddingBottom: space.xl,
   },
   });
 };
@@ -218,9 +210,12 @@ export const createStyles = (theme: GameTheme) => {
  * Baslik maskesi stilleri — slot boyutu ve yazisi `scale` ile kuculur
  * (maskLayout.ts › fitMaskScale; 1.0 → 0.8, bes kademe). Olculer tam olcekte
  * eski sabitlerle ayni; `scale === 1` gorunumu degistirmez.
+ *
+ * Renk: bone (altin degil) — maske okunurluk icindir, durum geri bildirimi
+ * hak noktalari ve tahtadadir. Slot cizgisi acilmamisken bone@45%, acilinca
+ * tam bone: kontrast yuksek, mor/aksan yok.
  */
-export const createMaskStyles = (theme: GameTheme, scale: number) => {
-  const accentHairline = withAlpha(theme.accent, 0.22);
+export const createMaskStyles = (_theme: GameTheme, scale: number) => {
   const slotH = scaled(MASK_SLOT_H, scale);
   const glyph = {
     ...Theme.typography.serifTitle,
@@ -257,14 +252,14 @@ export const createMaskStyles = (theme: GameTheme, scale: number) => {
       alignItems: 'center',
       justifyContent: 'flex-end',
       borderBottomWidth: 2,
-      borderBottomColor: accentHairline,
+      borderBottomColor: withAlpha(color.text.primary, 0.45),
     },
     slotRevealed: {
-      borderBottomColor: theme.accent,
+      borderBottomColor: color.text.primary,
     },
     slotText: {
       ...glyph,
-      color: theme.accent,
+      color: color.text.primary,
     },
     /** Kelime ici gorunur ayrac (tire, iki nokta...) */
     separator: {
@@ -275,7 +270,7 @@ export const createMaskStyles = (theme: GameTheme, scale: number) => {
     },
     separatorText: {
       ...glyph,
-      color: Colors.textTertiary,
+      color: color.text.secondary,
     },
   });
 };

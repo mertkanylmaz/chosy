@@ -105,6 +105,43 @@ export const createStyles = (theme: GameTheme) => {
     color: Colors.textSecondary,
     textAlign: 'center',
   },
+  // ─── 'sheet' yerlesimi (Spotlight cevap sayfasi) — yalniz layout="sheet" ──
+  sheetContainer: {
+    flex: 1,
+    gap: Theme.spacing.sm,
+  },
+  sheetNote: {
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  sheetList: {
+    flex: 1,
+  },
+  sheetRow: {
+    minHeight: 56,
+  },
+  sheetStatus: {
+    alignItems: 'center',
+    gap: Theme.spacing.sm,
+    paddingVertical: Theme.spacing.lg,
+    paddingHorizontal: Theme.spacing.md,
+  },
+  sheetStatusText: {
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+  sheetRetry: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Theme.spacing.md,
+  },
+  sheetRetryText: {
+    ...Theme.typography.caption,
+    color: Colors.textPrimary,
+    textDecorationLine: 'underline',
+  },
   /** P-3 "Kapat" satiri — listenin input'a bakan kenari, sabit yukseklik */
   closeRow: {
     flexDirection: 'row',

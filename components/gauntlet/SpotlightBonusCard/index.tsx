@@ -32,8 +32,8 @@
  * fazla oyun") YOK — ikinci hedef bu yüzeyi bir hub'a çevirmeye başlar.
  *
  * ── Renk ────────────────────────────────────────────────────────────────────
- * Mor (`#8B5CF6`) YALNIZ bu kartta, karenin kenarında. Karanlık Salon
- * paletine sızmaz; değer `GAME_THEMES.spotlight.accent`'ten okunur.
+ * Kart NÖTR: karenin kenarı graphite hairline. Oyun temasından (`GAME_THEMES`)
+ * ayrıldı (07.10.2026) — şampiyon ekranı Spotlight'ın oynanış rengini taşımaz.
  *
  * ── Analytics (S-2) ─────────────────────────────────────────────────────────
  * `spotlight_card_viewed` — kart mount edilip durum çözülünce, mount başına
