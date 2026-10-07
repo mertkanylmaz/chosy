@@ -76,6 +76,33 @@ export function trackSpotlightAnswerSheetOpened(puzzleId: string, chancesRemaini
   });
 }
 
+/**
+ * Spotlight sonuc gorunumu — bulmaca basina BIR KEZ (tek-atis korumasi
+ * `Spotlight/resultViewed.ts`, `Spotlight/index.tsx`'te). Render olayi degil.
+ * `resumed`: ekran tamamlanmis bulmacayla acildi ve bu bulmacanin ilk gorunumu.
+ */
+export function trackSpotlightResultViewed(params: {
+  won: boolean;
+  chancesLeft: number;
+  resumed: boolean;
+}): void {
+  posthogAnalytics.track('spotlight_result_viewed', {
+    won: params.won,
+    chances_left: params.chancesLeft,
+    resumed: params.resumed,
+  });
+}
+
+/** Spotlight sonucunda "Where to Watch" dokunusu — dokunus basina. */
+export function trackSpotlightWhereToWatchTapped(puzzleId: string): void {
+  posthogAnalytics.track('spotlight_where_to_watch_tapped', { puzzle_id: puzzleId });
+}
+
+/** Spotlight sonucunda "Save for Later" dokunusu — dokunus basina (sonuctan bagimsiz). */
+export function trackSpotlightSaveForLaterTapped(puzzleId: string): void {
+  posthogAnalytics.track('spotlight_save_for_later_tapped', { puzzle_id: puzzleId });
+}
+
 // ─── Result Card Downstream ───────────────────────────────────────────────
 
 /** Sonuc karti goruntulenince */

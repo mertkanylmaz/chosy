@@ -1169,7 +1169,17 @@
         "one": "Not that one. 1 chance left.",
         "other": "Not that one. %{count} chances left."
       },
-      "answer_error": "Couldn't send your guess. Pick the film again."
+      "answer_error": "Couldn't send your guess. Pick the film again.",
+      "result_found": "FOUND IT",
+      "result_flawless": "FLAWLESS",
+      "result_chances_left": "%{left} OF %{total} CHANCES LEFT",
+      "result_out_of_chances": "OUT OF CHANCES",
+      "result_lost_sub": "Here's the film.",
+      "result_next_film": "A NEW FILM TOMORROW",
+      "action_where_to_watch": "Where to Watch",
+      "action_save_for_later": "Save for Later",
+      "action_save_done": "Saved",
+      "action_save_error": "Couldn't save. Try again."
     },
     "detective": {
       "title": "Chosy Detective",

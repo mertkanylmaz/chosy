@@ -24,7 +24,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
+import * as Sentry from '@sentry/react-native';
 import { CloudSlash } from 'phosphor-react-native';
 import Animated, {
   FadeIn,
@@ -36,7 +37,6 @@ import Animated, {
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
-import { isCinemaDnaEnabled } from '@/constants/config';
 import {
   EASE_OUT_QUART,
   REDUCED_MOTION_DURATION,
@@ -50,11 +50,11 @@ import {
   trackGuessSubmitted,
   trackGameCompleted,
   trackSpotlightAnswerSheetOpened,
+  trackSpotlightResultViewed,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
 import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
-import { ResultCard } from '@/components/games/ResultCard';
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import type { FilmSearchResult } from '@/services/gameTypes';
 import type {
@@ -76,8 +76,10 @@ import { AnswerSheet } from './AnswerSheet';
 import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
-import { nextPuzzleCountdown } from './nextPuzzleClock';
+import { resultState } from './resultState';
+import { shouldFireResultViewed } from './resultViewed';
 import { validateSpotlightLoad } from './resumeValidation';
+import { SpotlightResult } from './SpotlightResult';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
 type ScreenState = 'loading' | 'playing' | 'completed';
@@ -172,30 +174,11 @@ function KeyButton({
   );
 }
 
-/** Sonraki yerel 18:00'e geri sayım (P-4a) — kural `nextPuzzleClock.ts`'te. */
-function useCountdown(): string {
-  const [timeLeft, setTimeLeft] = useState('');
-
-  useEffect(() => {
-    const update = () => {
-      setTimeLeft(nextPuzzleCountdown(new Date()));
-    };
-
-    update();
-    const interval = setInterval(update, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  return timeLeft;
-}
-
 /**
  * Spotlight V3 oyun ekrani.
  */
 export function SpotlightGame() {
   const { t } = useLanguage();
-  const router = useRouter();
-  const countdown = useCountdown();
   const openTimeRef = useRef(Date.now());
   const guessStartRef = useRef(Date.now());
 
@@ -274,10 +257,12 @@ export function SpotlightGame() {
   const [lastGuessWrong, setLastGuessWrong] = useState(false);
 
   const [won, setWon] = useState(false);
-  const [xpAwarded, setXpAwarded] = useState(0);
-  const [dnaUpdated, setDnaUpdated] = useState(false);
+  // Sonuc ekrani artik odul/DNA/aciklama metni okumaz (K-33); sunucu yaniti ve
+  // asagidaki yazimlar degismedi — yalniz okuyucular kalkti.
+  const [, setXpAwarded] = useState(0);
+  const [, setDnaUpdated] = useState(false);
   const [revealedFilm, setRevealedFilm] = useState<RevealedFilm | null>(null);
-  const [whyThisMovie, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
+  const [, setWhyThisMovie] = useState<WhyThisMovieText | null>(null);
   /**
    * Sonuc karesinin netlesmesi (P-2): bu oturumda biten oyun gecisle
    * netlesir, yeniden acilan bitmis oyun animasyonsuz net gelir.
@@ -590,8 +575,72 @@ export function SpotlightGame() {
   const blurAmount = puzzleData
     ? blurForProgress(revealedMap.size, puzzleData.letter_count, SPOTLIGHT_MAX_BLUR)
     : SPOTLIGHT_MAX_BLUR;
-  /** Sonuc ekraninda kare cizilebilir mi — yoksa ResultCard posteri kalir */
+  /** Sonuc ekraninda kare cizilebilir mi — yoksa kare cizilmez (Sentry'ye yazilir) */
   const hasStill = Boolean(puzzleData?.backdrop_url);
+
+  // ─── Sonuc: durum + analitik ──────────────────────────────────────────────
+  // Hak etiketi YALNIZ {won, attempts, maxAttempts}'ten turer (resultState.ts);
+  // harf verisi girmez. Anomali sessizce kenetlenmez: Sentry + hak satiri yok.
+  const resultInfo = useMemo(
+    () => resultState({ won, attempts, maxAttempts }),
+    [won, attempts, maxAttempts],
+  );
+  const resultFilmId = revealedFilm?.film_id ?? null;
+  /**
+   * Tek-atis kumeleri bu ekranda (SpotlightResult yeniden mount olabilir).
+   * `viewed`: bulmaca basina bir `spotlight_result_viewed`. `reported`: ayni
+   * veri hatasi icin bulmaca basina bir Sentry kaydi. Useffect'in yeniden
+   * kosmasi (focus ile yeniden yukleme, Where to Watch'tan donus) ikisini de
+   * tekrarlayamaz.
+   */
+  const viewedRef = useRef<Set<string>>(new Set());
+  const reportedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (screenState !== 'completed' || puzzleId === '') return;
+
+    if (!resultInfo.ok && shouldFireResultViewed(reportedRef.current, `anomaly:${puzzleId}`)) {
+      Sentry.captureMessage(`Spotlight sonuc durumu gecersiz: ${resultInfo.reason}`, {
+        level: 'error',
+        tags: { component: 'SpotlightResult', reason: resultInfo.reason },
+        extra: { puzzle_id: puzzleId, won, attempts, max_attempts: maxAttempts },
+      });
+    }
+    if (!hasStill && shouldFireResultViewed(reportedRef.current, `still:${puzzleId}`)) {
+      logger.error(
+        '[spotlight] Sonuc karesi yok — backdrop_url bos',
+        new Error('SPOTLIGHT_RESULT_NO_STILL'),
+        { code: 'SPOTLIGHT_RESULT_NO_STILL', extra: { puzzle_id: puzzleId } },
+      );
+    }
+    if (resultFilmId === null && shouldFireResultViewed(reportedRef.current, `film:${puzzleId}`)) {
+      logger.error(
+        '[spotlight] Sonuc filmi kimliksiz — eylemler sunulmuyor',
+        new Error('SPOTLIGHT_RESULT_NO_FILM_ID'),
+        { code: 'SPOTLIGHT_RESULT_NO_FILM_ID', extra: { puzzle_id: puzzleId } },
+      );
+    }
+
+    if (resultInfo.ok && shouldFireResultViewed(viewedRef.current, puzzleId)) {
+      trackSpotlightResultViewed({
+        won,
+        chancesLeft: resultInfo.chancesLeft,
+        // `static` yalniz tamamlanmis bulmacayla acilista (loadPuzzle) ayarlanir;
+        // bu oturumda biten oyun `animate` ile gelir. Ilk gorunumde gecerli.
+        resumed: stillReveal === 'static',
+      });
+    }
+  }, [
+    screenState,
+    puzzleId,
+    resultInfo,
+    won,
+    attempts,
+    maxAttempts,
+    hasStill,
+    resultFilmId,
+    stillReveal,
+  ]);
 
   // ─── Render: durum ekranlari ──────────────────────────────────────────────
 
@@ -657,57 +706,19 @@ export function SpotlightGame() {
           showsVerticalScrollIndicator={false}
         >
           {/*
-            Ayni kare kutusu, sonucta netlesir (P-2). Alt kat bitis anindaki
-            bulaniklikta — gecis oyuncunun son gordugu kareden baslar. Kare
-            varken ResultCard posteri cizmez: tek kahraman gorsel.
+            Ayni kare kutusu, sonucta netlesir (P-2): SpotlightResult kareyi
+            kendi cizer. Alt kat bitis anindaki bulaniklikta — gecis oyuncunun
+            son gordugu kareden baslar. Header (geri) GameShell'de.
           */}
-          {hasStill && (
-            <SpotlightStill
-              uri={puzzleData?.backdrop_url ?? ''}
-              blurRadius={blurAmount}
-              reveal={stillReveal}
-              styles={styles}
-            />
-          )}
-          <ResultCard
-            hidePoster={hasStill}
-            solved={won}
-            attempts={attempts}
-            maxAttempts={maxAttempts}
-            filmTitle={revealedFilm?.title ?? ''}
-            filmYear={revealedFilm?.year ?? 0}
-            filmPosterUrl={revealedFilm?.poster_url ?? null}
-            filmUuid={revealedFilm?.film_id}
-            streak={0}
-            gameTitle={t('games.spotlight.title')}
-            gameType={GAME_TYPE}
-            puzzleNo={puzzleNo}
-            xpAwarded={xpAwarded}
-            // Cinema DNA v1'de gizli (`isCinemaDnaEnabled`): "Cinema DNA
-            // Updated" cipi gorunmeyen bir ozelligi vaat ederdi. Sunucu yaniti
-            // ve oyun mantigi degismez; yalnizca cip cizilmez.
-            dnaUpdated={isCinemaDnaEnabled() && dnaUpdated}
-            whyThisMovie={whyThisMovie ?? undefined}
-            resultMessage={
-              won
-                ? t('games.spotlight.result_won_letters', {
-                    count: triedLetters.length,
-                  })
-                : t('games.spotlight.result_lost')
-            }
-            countdown={countdown}
-            // P-6a: kare + kart ilk ekranda sayaci asagi itiyordu — durum
-            // satirinin altina. Bonus oyunda film sayfasi ikincil CTA.
-            countdownPlacement="top"
-            ctaEmphasis="secondary"
-            whyTitle={t('games.why_this_movie.about_title')}
-            // Hub yok (IA §2.6) — etiket "Back". Gecmis yoksa (bildirim /
-            // soguk acilis) Home'a: archive.tsx ile ayni desen.
-            backLabel={t('games.common.back')}
-            onBackToHub={() => {
-              if (router.canGoBack()) router.back();
-              else router.replace('/(tabs)');
-            }}
+          <SpotlightResult
+            puzzleId={puzzleId}
+            won={won}
+            result={resultInfo}
+            film={revealedFilm}
+            stillUri={hasStill ? (puzzleData?.backdrop_url ?? null) : null}
+            blurRadius={blurAmount}
+            stillReveal={stillReveal}
+            stillStyles={styles}
           />
         </ScrollView>
         )}

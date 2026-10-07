@@ -1169,7 +1169,17 @@
         "one": "O değil. 1 hak kaldı.",
         "other": "O değil. %{count} hak kaldı."
       },
-      "answer_error": "Tahmin gönderilemedi. Filmi yeniden seç."
+      "answer_error": "Tahmin gönderilemedi. Filmi yeniden seç.",
+      "result_found": "BULDUN",
+      "result_flawless": "KUSURSUZ",
+      "result_chances_left": "%{total} HAKTAN %{left} KALDI",
+      "result_out_of_chances": "HAKLARIN BİTTİ",
+      "result_lost_sub": "İşte film.",
+      "result_next_film": "YARIN YENİ BİR FİLM",
+      "action_where_to_watch": "Nerede İzlenir",
+      "action_save_for_later": "Sonrası İçin Kaydet",
+      "action_save_done": "Kaydedildi",
+      "action_save_error": "Kaydedilemedi. Tekrar dene."
     },
     "detective": {
       "title": "Chosy Detective",
