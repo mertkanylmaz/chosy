@@ -10,13 +10,18 @@
  *               belirir; bitince ön kat olur, eski kat sessizce 0'a iner
  *
  * Eski kat geçiş boyunca opak kalır → iki yarı saydam kat arasında zemin
- * parlamaz ("dip" yok). Kurallar:
+ * parlamaz ("dip" yok). Değişmez: eski kat, gelen kat YÜKLENDİ onaylanmadan asla
+ * gizlenmez; zaman aşımı ya da hata tek başına eski katı kaldırmaz. Kat durumu
+ * (pending | loaded | failed) ve bilet kontrolü saf makinede (focusWatchdog.ts).
+ * Kurallar:
  *   - ilk mount / resume: animasyon yok, doğru düzey doğrudan çizilir
  *   - düzey değişmediyse (yanlış harf, sheet aç/kapa, re-render) hiçbir şey olmaz
  *   - hızlı ardışık değişim: gelen kat yeni düzeye yeniden hedeflenir, kuyruk yok
  *   - unmount: animasyon iptal edilir, bayat geri çağrı state'e dokunmaz
  *   - gelen katın `onLoad`'u SPOTLIGHT_STILL_LOAD_TIMEOUT_MS içinde gelmezse kat
- *     yine de öne alınır + SPOTLIGHT_STILL_LOAD_TIMEOUT kaydı (focusWatchdog.ts)
+ *     yine de öne alınır (eski kat opak altta kalır) + SPOTLIGHT_STILL_LOAD_TIMEOUT
+ *     kaydı; GEÇ gelen `onLoad` kabul edilir ve eski katı o zaman gizler
+ *   - gelen katın `onError`'u: kat başarısız işaretlenir, eski kat görünür kalır
  *
  * Yeni oyun state'i yok — tek girdi `blurRadius` (kanonik ilerlemeden türer).
  * Sonuç ekranı bu bileşeni KULLANMAZ (SpotlightStill › ResultStill).
@@ -41,7 +46,15 @@ import {
 import { logger } from '@/utils/logger';
 
 import { SPOTLIGHT_STILL_LOAD_TIMEOUT_MS } from './constants';
-import { createLoadWatchdog, type LoadWatchdog } from './focusWatchdog';
+import {
+  createFocusState,
+  createLoadWatchdog,
+  focusReduce,
+  type FocusEffect,
+  type FocusEvent,
+  type FocusState,
+  type LoadWatchdog,
+} from './focusWatchdog';
 import type { createStyles } from './styles';
 
 type Layer = 0 | 1;
@@ -56,8 +69,6 @@ interface FocusStillProps {
   /** Kutunun üstünde yüzen chrome */
   children?: ReactNode;
 }
-
-const other = (layer: Layer): Layer => (layer === 0 ? 1 : 0);
 
 export function FocusStill({
   uri,
@@ -85,13 +96,13 @@ export function FocusStill({
 
   /** Son istenen düzey — render'dan bağımsız karar için */
   const targetRef = useRef(blurRadius);
+  const uriRef = useRef(uri);
+  uriRef.current = uri;
+  /** Son `onError` metni — makine saf kalsın diye log etkisi buradan okur */
+  const lastErrorRef = useRef('');
   const blursRef = useRef<[number, number]>([blurRadius, blurRadius]);
-  /** Oturmuş, opak kat */
-  const frontRef = useRef<Layer>(0);
-  /** Yeni düzeyi taşıyan kat (yükleniyor ya da belirmekte); yoksa null */
-  const incomingRef = useRef<Layer | null>(null);
-  /** Gelen katın EN SON düzeyi henüz yüklenmedi */
-  const awaitingRef = useRef(false);
+  /** Kat durum makinesi (focusWatchdog.ts) — görünürlük kararlarının tek kaynağı */
+  const machineRef = useRef<FocusState>(createFocusState());
   const firstLoadedRef = useRef(false);
   const mountedRef = useRef(true);
   const watchdogRef = useRef<LoadWatchdog | null>(null);
@@ -101,18 +112,6 @@ export function FocusStill({
       SPOTLIGHT_STILL_LOAD_TIMEOUT_MS,
     );
   }
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      watchdogRef.current?.cancel();
-      cancelAnimation(opacity0);
-      cancelAnimation(opacity1);
-    };
-    // opacity* kararlı referans
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const opacityOf = useCallback(
     (layer: Layer) => (layer === 0 ? opacity0 : opacity1),
@@ -128,6 +127,86 @@ export function FocusStill({
     setBlurs(next);
   }, []);
 
+  // Etkiler her zaman en güncel süre/işleyiciyle çalışsın (bayat kapanış yok)
+  const dispatchRef = useRef<(event: FocusEvent) => void>(() => {});
+
+  const runEffect = useCallback(
+    (effect: FocusEffect) => {
+      switch (effect.type) {
+        case 'assign':
+          setLayerBlur(effect.layer, targetRef.current);
+          break;
+        case 'armWatchdog':
+          // Yeniden hedefleme taze süre alır; önceki zamanlayıcı arm içinde iptal olur
+          watchdogRef.current?.arm(() => dispatchRef.current({ type: 'timeout' }));
+          break;
+        case 'cancelWatchdog':
+          watchdogRef.current?.cancel();
+          break;
+        case 'startFade':
+          setTop(effect.layer);
+          withFocusTiming(opacityOf(effect.layer), duration, () =>
+            dispatchRef.current({ type: 'fadeDone', layer: effect.layer }),
+          );
+          break;
+        case 'hide':
+          opacityOf(effect.layer).value = 0;
+          break;
+        case 'log':
+          if (effect.code === 'SPOTLIGHT_STILL_LOAD_TIMEOUT') {
+            // `onLoad` süresinde gelmedi: kat yine de öne alındı, ön kat opak kaldı;
+            // olay kayda geçer (cihazda varsayımı doğrulamak için)
+            logger.error(
+              '[spotlight] Odak katmani onLoad gelmedi — kat one alindi, onceki kat opak kaldi',
+              new Error('SPOTLIGHT_STILL_LOAD_TIMEOUT'),
+              {
+                code: 'SPOTLIGHT_STILL_LOAD_TIMEOUT',
+                extra: {
+                  backdrop_url: uriRef.current,
+                  blur_radius: targetRef.current,
+                  timeout_ms: SPOTLIGHT_STILL_LOAD_TIMEOUT_MS,
+                },
+              },
+            );
+          } else {
+            logger.error(
+              '[spotlight] Odak karesi yuklenemedi — onceki netlik kaldi',
+              lastErrorRef.current,
+              { code: 'SPOTLIGHT_STILL_LOAD', extra: { backdrop_url: uriRef.current } },
+            );
+          }
+          break;
+      }
+    },
+    [duration, opacityOf, setLayerBlur],
+  );
+
+  const dispatch = useCallback(
+    (event: FocusEvent) => {
+      if (!mountedRef.current) return;
+      const step = focusReduce(machineRef.current, event);
+      machineRef.current = step.state;
+      step.effects.forEach(runEffect);
+    },
+    [runEffect],
+  );
+  dispatchRef.current = dispatch;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      // Unmount: zamanlayıcı ve animasyonlar iptal, sonrasında state'e dokunulmaz
+      const step = focusReduce(machineRef.current, { type: 'unmount' });
+      machineRef.current = step.state;
+      mountedRef.current = false;
+      watchdogRef.current?.cancel();
+      cancelAnimation(opacity0);
+      cancelAnimation(opacity1);
+    };
+    // opacity* kararlı referans
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   /** Düzey değişti mi — yalnız değişince katman işi yapılır */
   useEffect(() => {
     if (blurRadius === targetRef.current) return;
@@ -139,39 +218,12 @@ export function FocusStill({
       setBlurs([blurRadius, blurRadius]);
       return;
     }
+    dispatch({ type: 'retarget' });
+  }, [blurRadius, dispatch]);
 
-    // Yeniden hedefleme: belirmekte olan kat varsa onu, yoksa arkadaki katı kullan
-    const incoming = incomingRef.current ?? other(frontRef.current);
-    incomingRef.current = incoming;
-    awaitingRef.current = true;
-    setLayerBlur(incoming, blurRadius);
-    // Yeniden hedefleme taze süre alır; önceki zamanlayıcı arm içinde iptal olur
-    watchdogRef.current?.arm(() => loadTimeoutRef.current());
-  }, [blurRadius, setLayerBlur]);
-
-  /** Çapraz geçiş bitti: gelen kat ön kat olur, eski kat sessizce gizlenir */
-  const settle = useCallback(
-    (layer: Layer) => {
-      if (!mountedRef.current || incomingRef.current !== layer || awaitingRef.current) return;
-      opacityOf(other(layer)).value = 0;
-      frontRef.current = layer;
-      incomingRef.current = null;
-    },
-    [opacityOf],
-  );
-
-  /** Gelen katı öne al: çapraz geçiş — yükleme ve zaman aşımı AYNI yolu kullanır */
-  const promote = useCallback(
-    (layer: Layer) => {
-      awaitingRef.current = false;
-      setTop(layer);
-      withFocusTiming(opacityOf(layer), duration, () => settle(layer));
-    },
-    [duration, opacityOf, settle],
-  );
-
+  /** `ticket`: geri çağrının bağlandığı render'daki kat bileti — bayat olay makinede elenir */
   const handleLoad = useCallback(
-    (layer: Layer) => {
+    (layer: Layer, ticket: number) => {
       if (!firstLoadedRef.current) {
         // İlk kare — animasyonsuz; resume'da da doğrudan doğru düzey
         if (layer === 0) {
@@ -180,54 +232,20 @@ export function FocusStill({
         }
         return;
       }
-      if (!awaitingRef.current || incomingRef.current !== layer) return;
-      // Bayat yükleme: bu kat artık başka düzey istiyor
-      if (blursRef.current[layer] !== targetRef.current) return;
-
-      watchdogRef.current?.cancel();
-      promote(layer);
+      dispatch({ type: 'load', layer, ticket });
     },
-    [promote],
+    [dispatch],
   );
-
-  /**
-   * `onLoad` süresinde gelmedi: varsayım (blurRadius değişince yeniden yükleme)
-   * tutmuyor olabilir. Görsel eski düzeyde sıkışmasın diye gelen kat yine de
-   * öne alınır; olay kayda geçer (cihazda varsayımı doğrulamak için).
-   */
-  const handleLoadTimeout = useCallback(() => {
-    const layer = incomingRef.current;
-    if (!mountedRef.current || layer === null || !awaitingRef.current) return;
-    logger.error(
-      '[spotlight] Odak katmani onLoad gelmedi — kat yine de one alindi',
-      new Error('SPOTLIGHT_STILL_LOAD_TIMEOUT'),
-      {
-        code: 'SPOTLIGHT_STILL_LOAD_TIMEOUT',
-        extra: { backdrop_url: uri, blur_radius: targetRef.current, timeout_ms: SPOTLIGHT_STILL_LOAD_TIMEOUT_MS },
-      },
-    );
-    promote(layer);
-  }, [promote, uri]);
-  // Bekçi her zaman en güncel işleyiciyi çağırır (arm anındaki kapanış bayatlamasın)
-  const loadTimeoutRef = useRef(handleLoadTimeout);
-  loadTimeoutRef.current = handleLoadTimeout;
 
   const handleError = useCallback(
-    (layer: Layer, error: string) => {
-      // Yalnız geçişin gelen katı: ilk kare/ön kat hata davranışı değişmedi
-      if (incomingRef.current !== layer || !awaitingRef.current) return;
-      watchdogRef.current?.cancel();
-      logger.error('[spotlight] Odak karesi yuklenemedi — onceki netlik kaldi', error, {
-        code: 'SPOTLIGHT_STILL_LOAD',
-        extra: { backdrop_url: uri },
-      });
-      // Çapraz geçiş yok, ön kat görünür kalır
-      awaitingRef.current = false;
-      incomingRef.current = null;
-      opacityOf(layer).value = 0;
+    (layer: Layer, ticket: number, error: string) => {
+      lastErrorRef.current = error;
+      dispatch({ type: 'error', layer, ticket });
     },
-    [opacityOf, uri],
+    [dispatch],
   );
+
+  const tickets = machineRef.current.ticket;
 
   return (
     <Animated.View
@@ -244,8 +262,8 @@ export function FocusStill({
           contentFit="cover"
           blurRadius={blurs[0]}
           transition={ready ? 0 : 300}
-          onLoad={() => handleLoad(0)}
-          onError={(e) => handleError(0, e.error)}
+          onLoad={() => handleLoad(0, tickets[0])}
+          onError={(e) => handleError(0, tickets[0], e.error)}
           accessible={false}
         />
       </Animated.View>
@@ -256,8 +274,8 @@ export function FocusStill({
           contentFit="cover"
           blurRadius={blurs[1]}
           transition={0}
-          onLoad={() => handleLoad(1)}
-          onError={(e) => handleError(1, e.error)}
+          onLoad={() => handleLoad(1, tickets[1])}
+          onError={(e) => handleError(1, tickets[1], e.error)}
           accessible={false}
         />
       </Animated.View>
