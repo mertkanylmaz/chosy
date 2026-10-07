@@ -23,6 +23,7 @@ import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 export const WATCHLIST_RESPONSES: ReadonlySet<WatchFeedbackResponse> = new Set([
   'loved',
   'ok',
+  'disliked',
   'abandoned',
 ])
 

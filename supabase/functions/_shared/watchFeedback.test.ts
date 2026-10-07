@@ -58,8 +58,15 @@ function fakeClient(existing: WatchRow | null, opts: { failInsert?: boolean } = 
   return { client: client as unknown as SupabaseClient, writes, touched }
 }
 
-Deno.test('WATCHLIST_RESPONSES: K-29 kümesi birebir (loved/ok/abandoned)', () => {
-  assertEquals([...WATCHLIST_RESPONSES].sort(), ['abandoned', 'loved', 'ok'])
+Deno.test('WATCHLIST_RESPONSES: K-29 kümesi birebir (loved/ok/disliked/abandoned)', () => {
+  assertEquals([...WATCHLIST_RESPONSES].sort(), ['abandoned', 'disliked', 'loved', 'ok'])
+})
+
+Deno.test('K-29: disliked → watched_at yazar (satisfaction sinyali, izlenmiş sayılır)', async () => {
+  const f = fakeClient(null)
+  const marked = await syncWatchedFromFeedback(f.client, 'u1', 'film1', 'disliked')
+  assertEquals(marked, true)
+  assertEquals(f.writes, ['insert:film1:gauntlet_feedback'])
 })
 
 Deno.test('K-29: satır yoksa (önceki markWatched düşmüş) yeniden denemede yazılır', async () => {

@@ -85,8 +85,9 @@ export function validateTasteVectorConfig(cfg: unknown): TasteVectorConfig {
   if (!c.feedback_weights || typeof c.feedback_weights !== 'object') {
     problems.push('feedback_weights eksik')
   } else {
-    // watch_feedback.response CHECK ile ayni dort deger.
-    for (const k of ['loved', 'ok', 'abandoned', 'not_watched']) {
+    // watch_feedback.response CHECK'in agirlik tasiyan degerleri (skipped haric —
+    // kasitli olarak agirliksiz, bkz. migration 086). 'disliked': migration 128/129.
+    for (const k of ['loved', 'ok', 'disliked', 'abandoned', 'not_watched']) {
       if (!finite(c.feedback_weights[k])) problems.push(`feedback_weights['${k}'] sayi degil`)
     }
   }

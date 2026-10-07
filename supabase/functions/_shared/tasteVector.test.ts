@@ -57,13 +57,13 @@ function assertThrows(fn: () => unknown, contains: string, msg = ''): void {
   throw new Error(`${msg}: hata bekleniyordu, atilmadi`)
 }
 
-/** Migration 074'teki seed ile BIREBIR ayni. Iraklarsa test kirmizi yanar. */
+/** Migration 074 seed'i + 129 ('disliked' = abandoned). Iraklarsa test kirmizi yanar. */
 const CONFIG: TasteVectorConfig = {
   round_weights: { '1': 1.0, '2': 0.9, '3': 0.8 },
   low_confidence_multiplier: 0.3,
   low_intent_multiplier: 0.1,
   low_intent_streak: 3,
-  feedback_weights: { loved: 3.0, ok: 0.5, abandoned: -3.0, not_watched: 0 },
+  feedback_weights: { loved: 3.0, ok: 0.5, disliked: -3.0, abandoned: -3.0, not_watched: 0 },
   full_confidence_signals: 50,
 }
 
@@ -194,6 +194,30 @@ Deno.test('loved/abandoned sayilir, not_watched sayilmaz ama raporlanir', () => 
   const r = base({ events, filmVectors, feedback })
   assertEquals(r.signal_count, 22)
   assertEquals(r.skipped.zero_weight_feedback, 1)
+})
+
+Deno.test('disliked negatif katki verir ve taninmayan sayilmaz (129 agirligi)', () => {
+  const { events, filmVectors } = makeEvents(20)
+  const film = 'film-fb-2'
+  filmVectors.set(film, fakeFilmVector(777))
+  const row = (response: string): WatchFeedbackRow => ({
+    id: 'fb-d',
+    user_id: 'u1',
+    film_id: film,
+    response,
+    created_at: '2026-08-02T00:00:00.000Z',
+  })
+  const without = base({ events, filmVectors, feedback: [] })
+  const withDisliked = base({ events, filmVectors, feedback: [row('disliked')] })
+  const withAbandoned = base({ events, filmVectors, feedback: [row('abandoned')] })
+  assertEquals(withDisliked.signal_count, 21)
+  assertEquals(withDisliked.skipped.unknown_feedback_response, 0)
+  // ayni agirlik → ayni vektor; negatif katki vektoru degistirir
+  assertEquals(formatPgVector(withDisliked.taste_vector), formatPgVector(withAbandoned.taste_vector))
+  assertEquals(
+    formatPgVector(withDisliked.taste_vector) === formatPgVector(without.taste_vector),
+    false,
+  )
 })
 
 Deno.test('taninmayan feedback response sessizce yutulmaz', () => {

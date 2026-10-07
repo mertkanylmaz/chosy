@@ -154,11 +154,22 @@ export function isValidChoiceOutcome(v: unknown): v is ChoiceOutcome {
 /**
  * Migration 086'daki `watch_feedback.response` CHECK kısıtıyla birebir aynı küme.
  */
-export type WatchFeedbackResponse = 'loved' | 'ok' | 'abandoned' | 'not_watched' | 'skipped';
+export type WatchFeedbackResponse =
+  | 'loved'
+  | 'ok'
+  | 'disliked' // "Not for me" — satisfaction sinyali; migration 128, bible v1.46 (CTO onaylı, salt ekleme)
+  | 'abandoned' // legacy davranış sinyali; "Not for me" DEĞİL, yeni UI'dan çıkar ama geçerli kalır
+  | 'not_watched'
+  | 'skipped';
 
 export function isValidWatchFeedbackResponse(v: unknown): v is WatchFeedbackResponse {
   return (
-    v === 'loved' || v === 'ok' || v === 'abandoned' || v === 'not_watched' || v === 'skipped'
+    v === 'loved' ||
+    v === 'ok' ||
+    v === 'disliked' ||
+    v === 'abandoned' ||
+    v === 'not_watched' ||
+    v === 'skipped'
   );
 }
 
