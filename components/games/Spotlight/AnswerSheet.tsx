@@ -17,11 +17,21 @@
 import React, { useEffect } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { runOnJS, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { X } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
-import { PRESS_SPRING } from '@/constants/animations';
+import {
+  EASE_OUT_QUART,
+  REDUCED_MOTION_DURATION,
+  SPOTLIGHT_FOCUS_STEP,
+} from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
@@ -54,6 +64,9 @@ export function AnswerSheet({
 }: AnswerSheetProps) {
   const { t } = useLanguage();
   const translateY = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+  /** Esige varmayan kaydirma geri doner: ease-out, spring yok; Reduce Motion'da 100ms */
+  const snapBackMs = reduceMotion ? REDUCED_MOTION_DURATION.crossFade : SPOTLIGHT_FOCUS_STEP.duration;
 
   useEffect(() => {
     if (visible) translateY.value = 0;
@@ -69,7 +82,7 @@ export function AnswerSheet({
       if (e.translationY > DISMISS_DISTANCE || e.velocityY > DISMISS_VELOCITY) {
         runOnJS(onClose)();
       } else {
-        translateY.value = withSpring(0, PRESS_SPRING);
+        translateY.value = withTiming(0, { duration: snapBackMs, easing: EASE_OUT_QUART });
       }
     });
 
@@ -121,6 +134,8 @@ export function AnswerSheet({
                 layout="sheet"
                 autoFocus
                 catalogOnly
+                // Satir secimi kendi haptigini calmaz — tahmin sonucu tek haptik (hapticMap.ts)
+                silentSelect
                 placeholder={t('games.spotlight.answer_placeholder')}
                 onSelect={onSelect}
                 disabled={busy}

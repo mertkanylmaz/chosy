@@ -5,6 +5,7 @@ import { GAME_THEMES, withAlpha } from '@/constants/gameThemes';
 
 /** Nokta çapı — sabit; dolu/boş geçişi düzeni oynatmaz */
 const DOT = 10;
+const DOT_BORDER = size.hairline * 1.5;
 
 export const chancesStyles = StyleSheet.create({
   /** Dar ekran / büyük Dynamic Type'ta etiket ve noktalar temiz sarılır */
@@ -32,12 +33,20 @@ export const chancesStyles = StyleSheet.create({
     width: DOT,
     height: DOT,
     borderRadius: DOT / 2,
-    borderWidth: size.hairline * 1.5,
+    borderWidth: DOT_BORDER,
   },
-  /** Kalan hak — marquee dolgu */
+  /**
+   * Kalan hak — marquee dolgu. Boş noktanın ÜSTÜNDE katman; opaklığı
+   * değişir (B6), kenar payı kadar taşar ki smoke halka altın çevresinde görünmesin.
+   */
   dotFilled: {
+    position: 'absolute',
+    top: -DOT_BORDER,
+    left: -DOT_BORDER,
+    right: -DOT_BORDER,
+    bottom: -DOT_BORDER,
+    borderRadius: DOT / 2,
     backgroundColor: GAME_THEMES.spotlight.accent,
-    borderColor: GAME_THEMES.spotlight.accent,
   },
   /**
    * Harcanan hak — içi boş, smoke kenar. Smoke/ink = 6.13:1 (≥3:1 gerekir,

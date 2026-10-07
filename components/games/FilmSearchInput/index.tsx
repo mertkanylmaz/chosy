@@ -78,6 +78,12 @@ interface FilmSearchInputProps {
   autoFocus?: boolean;
   /** 'sheet': input ile liste arasında tek sakin satır (ör. yanlış tahmin geri bildirimi). */
   inlineNote?: string | null;
+  /**
+   * Satır seçiminde kendi hafif haptiğini ÇALMAZ — haptiği çağıran yer sonuca
+   * göre verir (Spotlight: tahmin sonucu tek haptik). Varsayılan `false`:
+   * dondurulmuş oyunların davranışı aynen kalır.
+   */
+  silentSelect?: boolean;
 }
 
 /** 'sheet' yerleşiminin arama durumu */
@@ -93,6 +99,7 @@ export function FilmSearchInput({
   layout = 'dropdown',
   autoFocus = false,
   inlineNote = null,
+  silentSelect = false,
 }: FilmSearchInputProps) {
   const isSheet = layout === 'sheet';
   const theme = useGameTheme();
@@ -232,7 +239,7 @@ export function FilmSearchInput({
 
   const handleSelect = useCallback(
     (film: FilmSearchResult) => {
-      hapticLight();
+      if (!silentSelect) hapticLight();
       if (isSheet) {
         // Sheet: sorgu, sonuçlar ve klavye yerinde kalır (yanlış tahminde yeniden denenir)
         onSelect(film);
@@ -246,7 +253,7 @@ export function FilmSearchInput({
       setArticleHint(null);
       onSelect(film);
     },
-    [onSelect, cancelPendingSearch, isSheet],
+    [onSelect, cancelPendingSearch, isSheet, silentSelect],
   );
 
   if (isSheet) {

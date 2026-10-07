@@ -19,18 +19,21 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { CloudSlash } from 'phosphor-react-native';
 import Animated, {
   FadeIn,
-  FadeInUp,
   useAnimatedStyle,
+  useReducedMotion,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
-import { PRESS_SPRING } from '@/constants/animations';
 import { isCinemaDnaEnabled } from '@/constants/config';
+import {
+  EASE_OUT_QUART,
+  REDUCED_MOTION_DURATION,
+  SPOTLIGHT_FOCUS_STEP,
+} from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 import {
@@ -53,8 +56,10 @@ import type {
   WhyThisMovieText,
 } from '@/types/game';
 
-import { SPOTLIGHT_MAX_BLUR } from './constants';
+import { SPOTLIGHT_KEY_PRESS, SPOTLIGHT_MAX_BLUR } from './constants';
 import { blurForProgress } from './focus';
+import { keyPressState } from './hapticMap';
+import { playSpotlightHaptic } from './playHaptic';
 import { AnswerSheet } from './AnswerSheet';
 import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
@@ -85,34 +90,41 @@ interface KeyButtonProps {
    * her renderda 26 StyleSheet uretilirdi.
    */
   styles: ReturnType<typeof createStyles>;
+  /** Reduce Motion: ebeveynden — ekranda 26 tus, her biri hook acmaz */
+  reduceMotion: boolean;
 }
 
 /**
- * Tek klavye tusu — basista spring ile kuculur.
+ * Tek klavye tusu — basista ince opaklik/olcek geri bildirimi.
  *
- * `TouchableOpacity`'nin opaklik solmasi yerine `PRESS_SPRING`: Apple 2026
- * motion standardi sabit easing degil spring istiyor (bkz. DESIGN_SYSTEM.md
- * › Motion). Kural 6 ihlal edilmiyor — bu bir "anlamli animasyon" degil,
- * dokunma geri bildirimi.
+ * Spring/bounce YOK (Spotlight hareket dili): sure token, easing ease-out.
+ * Reduce Motion'da olcek uygulanmaz, yalniz opaklik. Kullanilmis/kilitli tus
+ * (`disabled`) hicbir gorsel tepki vermez — Pressable basisi zaten almaz.
  */
-function KeyButton({ letter, tried, hit, disabled, onPress, styles }: KeyButtonProps) {
-  const scale = useSharedValue(1);
+function KeyButton({ letter, tried, hit, disabled, onPress, styles, reduceMotion }: KeyButtonProps) {
+  const pressed = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    opacity: 1 - pressed.value * (1 - SPOTLIGHT_KEY_PRESS.opacity),
+    transform: reduceMotion
+      ? []
+      : [{ scale: 1 - pressed.value * (1 - SPOTLIGHT_KEY_PRESS.scale) }],
   }));
+
+  const animatePress = (to: 0 | 1) => {
+    pressed.value = withTiming(to, {
+      duration: REDUCED_MOTION_DURATION.crossFade,
+      easing: EASE_OUT_QUART,
+    });
+  };
 
   return (
     // Hucre bosluksuz dokunma alanidir (50pt yukseklik, DESIGN_OS §14 istisnasi);
     // gorunen yuzey animasyonlu ic View'dir.
     <Pressable
       style={styles.keyCell}
-      onPressIn={() => {
-        scale.value = withSpring(0.9, PRESS_SPRING);
-      }}
-      onPressOut={() => {
-        scale.value = withSpring(1, PRESS_SPRING);
-      }}
+      onPressIn={() => animatePress(1)}
+      onPressOut={() => animatePress(0)}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -197,6 +209,12 @@ export function SpotlightGame() {
    * karsi bayat kalir; ref aninda yazilir. Yalniz film tahminini korur.
    */
   const guessLockRef = useRef(false);
+  /**
+   * Harf icin ayni senkron kilit — hizli iki tus ayni karede `isBusy` bayatken
+   * ikinci istegi (ve ikinci haptigi) gecirmesin. Basis haptigi kilitten SONRA.
+   */
+  const letterLockRef = useRef(false);
+  const reduceMotion = useReducedMotion();
   const [actionError, setActionError] = useState(false);
   /** Cevap sayfasi (Sprint 1) — oyun durumundan bagimsiz, yalniz sunum */
   const [answerOpen, setAnswerOpen] = useState(false);
@@ -311,9 +329,16 @@ export function SpotlightGame() {
   /** Harf dene — dogrulama sunucuda */
   const handleLetter = useCallback(
     async (letter: string) => {
+      if (letterLockRef.current || guessLockRef.current) return;
       if (isBusy || screenState !== 'playing') return;
       if (triedLetters.includes(letter)) return;
 
+      letterLockRef.current = true;
+      // Basis haptigi: yalniz kabul edilen (uygun) tus, anlik
+      playSpotlightHaptic({
+        type: 'key_press',
+        state: keyPressState(false, false),
+      });
       setIsBusy(true);
       setActionError(false);
       try {
@@ -330,7 +355,7 @@ export function SpotlightGame() {
           setDnaUpdated(res.dna_updated);
           if (res.revealed_solution) setRevealedFilm(res.revealed_solution);
           if (res.why_this_movie) setWhyThisMovie(res.why_this_movie);
-          hapticMedium();
+          playSpotlightHaptic({ type: 'letter_result', hit: res.hit, completed: true });
           setStillReveal('animate');
           setScreenState('completed');
           trackGameCompleted({
@@ -347,12 +372,13 @@ export function SpotlightGame() {
           return;
         }
 
-        if (res.hit) hapticSuccess();
-        else hapticWarning();
+        // Dogru harf sessiz; yanlis harf tek uyari (hapticMap.ts)
+        playSpotlightHaptic({ type: 'letter_result', hit: res.hit, completed: false });
       } catch (err) {
         logger.error('[spotlight] Harf gonderilemedi:', err);
         setActionError(true);
       } finally {
+        letterLockRef.current = false;
         setIsBusy(false);
       }
     },
@@ -362,7 +388,7 @@ export function SpotlightGame() {
   /** Filmi tahmin et — kazanma yolu */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
-      if (isBusy || guessLockRef.current || screenState !== 'playing') return;
+      if (isBusy || guessLockRef.current || letterLockRef.current || screenState !== 'playing') return;
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
@@ -389,8 +415,7 @@ export function SpotlightGame() {
           setDnaUpdated(res.dna_updated);
           if (res.revealed_solution) setRevealedFilm(res.revealed_solution);
           if (res.why_this_movie) setWhyThisMovie(res.why_this_movie);
-          if (res.won) hapticSuccess();
-          else hapticMedium();
+          playSpotlightHaptic({ type: 'guess_result', won: res.won, completed: true });
           setStillReveal('animate');
           setAnswerOpen(false);
           setScreenState('completed');
@@ -404,7 +429,7 @@ export function SpotlightGame() {
           });
         } else {
           setLastGuessWrong(true);
-          hapticWarning();
+          playSpotlightHaptic({ type: 'guess_result', won: false, completed: false });
         }
       } catch (err) {
         logger.error('[spotlight] Tahmin gonderilemedi:', err);
@@ -447,9 +472,18 @@ export function SpotlightGame() {
 
   const attemptsLeft = Math.max(0, maxAttempts - attempts);
 
+  /** Acilan harf: yalniz opaklik, ease-out (kayma/spring yok); Reduce Motion'da 100ms */
+  const revealEntering = useMemo(
+    () =>
+      FadeIn.duration(
+        reduceMotion ? REDUCED_MOTION_DURATION.crossFade : SPOTLIGHT_FOCUS_STEP.duration,
+      ).easing(EASE_OUT_QUART),
+    [reduceMotion],
+  );
+
   const openAnswerSheet = useCallback(() => {
     if (isBusy) return;
-    hapticLight();
+    playSpotlightHaptic({ type: 'cta_press' });
     setLastGuessWrong(false);
     setActionError(false);
     setAnswerOpen(true);
@@ -669,7 +703,7 @@ export function SpotlightGame() {
                       >
                         {ch != null ? (
                           <Animated.Text
-                            entering={FadeInUp.duration(250)}
+                            entering={revealEntering}
                             style={maskStyles.slotText}
                             maxFontSizeMultiplier={Theme.fontScale.fixedBoxMax}
                           >
@@ -718,10 +752,9 @@ export function SpotlightGame() {
                       hit={hitLetters.has(letter)}
                       disabled={triedLetters.includes(letter) || isBusy}
                       styles={styles}
-                      onPress={() => {
-                        hapticLight();
-                        handleLetter(letter);
-                      }}
+                      reduceMotion={reduceMotion}
+                      // Basis haptigi handleLetter'da, kilitten sonra (tek atis)
+                      onPress={() => handleLetter(letter)}
                     />
                   ))}
                 </View>

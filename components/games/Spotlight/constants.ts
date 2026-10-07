@@ -14,6 +14,16 @@
 export const SPOTLIGHT_MAX_BLUR = 24;
 
 /**
+ * Tuş basış geri bildirimi — ince, yaylanmasız (spring/bounce yok). Süre token
+ * (`REDUCED_MOTION_DURATION.crossFade`), easing `EASE_OUT_QUART`. Reduce Motion'da
+ * ölçek uygulanmaz, yalnız opaklık.
+ */
+export const SPOTLIGHT_KEY_PRESS = {
+  scale: 0.98,
+  opacity: 0.7,
+} as const;
+
+/**
  * Odak katmanı yükleme bekleme sınırı (ms) — gelen katın `onLoad`'u bu sürede
  * gelmezse kat yine de öne alınır (FocusStill). Varsayım: expo-image yalnız
  * `blurRadius` değişince `onLoad`'u yeniden tetikler. Cihazda doğrulanana
