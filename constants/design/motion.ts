@@ -62,10 +62,20 @@ export const BONUS_CARD_ENTRY = {
 /**
  * Spotlight sonuç karesi — bulanık kat → net kat çapraz geçişi (P-2). Işık
  * sızması süresi yeniden kullanılır (§7.2): kare "aydınlanır". Yalnız oturum
- * içi bitişte; bitmiş oyunun yeniden açılışında ve Reduce Motion'da anında net.
+ * içi bitişte (başarıda "odak çekme"); bitmiş oyunun yeniden açılışında anında
+ * net. Reduce Motion'da süre `REDUCED_MOTION_DURATION.crossFade`.
  */
 export const SPOTLIGHT_STILL_REVEAL = {
   duration: DISSOLVE_DURATION.lightBleed,
+} as const;
+
+/**
+ * Spotlight oynanış karesi — açılan pozisyonla bir bulanıklık düzeyinden
+ * ötekine çapraz geçiş (iki katın yalnız opaklığı). ~300ms'e en yakın token:
+ * kalan posterin süresi (280). Easing: EASE_OUT_QUART, spring/overshoot yok.
+ */
+export const SPOTLIGHT_FOCUS_STEP = {
+  duration: DISSOLVE_DURATION.remainingPoster,
 } as const;
 
 /**

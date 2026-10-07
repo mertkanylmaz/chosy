@@ -13,16 +13,20 @@
 import React, { useCallback, type ReactNode } from 'react';
 import { Image, type ImageErrorEventData } from 'expo-image';
 import Animated, {
-  FadeIn,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 
-import { EASE_OUT_QUART, SPOTLIGHT_STILL_REVEAL } from '@/constants/design/motion';
+import {
+  EASE_OUT_QUART,
+  REDUCED_MOTION_DURATION,
+  SPOTLIGHT_STILL_REVEAL,
+} from '@/constants/design/motion';
 import { logger } from '@/utils/logger';
 
+import { FocusStill } from './FocusStill';
 import type { createStyles } from './styles';
 
 /**
@@ -42,9 +46,28 @@ interface SpotlightStillProps {
   children?: ReactNode;
 }
 
-export function SpotlightStill({ uri, blurRadius, reveal, styles, children }: SpotlightStillProps) {
+/**
+ * Oynanış (`none`) → FocusStill: açılan pozisyonla iki katlı odak geçişi.
+ * Sonuç (`animate`/`static`) → ResultStill: bitiş anındaki bulanıklıktan net kata.
+ */
+export function SpotlightStill(props: SpotlightStillProps) {
+  if (props.reveal === 'none') {
+    return (
+      <FocusStill uri={props.uri} blurRadius={props.blurRadius} styles={props.styles}>
+        {props.children}
+      </FocusStill>
+    );
+  }
+  return <ResultStill {...props} />;
+}
+
+function ResultStill({ uri, blurRadius, reveal, styles, children }: SpotlightStillProps) {
   const isReducedMotion = useReducedMotion();
-  const animate = reveal === 'animate' && !isReducedMotion;
+  // Reduce Motion: geçiş kalkmaz, 100ms çapraz geçişe iner (§7.5)
+  const animate = reveal === 'animate';
+  const revealDuration = isReducedMotion
+    ? REDUCED_MOTION_DURATION.crossFade
+    : SPOTLIGHT_STILL_REVEAL.duration;
   const sharpOpacity = useSharedValue(animate ? 0 : 1);
   const sharpStyle = useAnimatedStyle(() => ({ opacity: sharpOpacity.value }));
 
@@ -52,12 +75,12 @@ export function SpotlightStill({ uri, blurRadius, reveal, styles, children }: Sp
   const handleSharpLoad = useCallback(() => {
     if (!animate) return;
     sharpOpacity.value = withTiming(1, {
-      duration: SPOTLIGHT_STILL_REVEAL.duration,
+      duration: revealDuration,
       easing: EASE_OUT_QUART,
     });
     // sharpOpacity kararlı referans
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate]);
+  }, [animate, revealDuration]);
 
   const handleSharpError = useCallback(
     (event: ImageErrorEventData) => {
@@ -70,32 +93,27 @@ export function SpotlightStill({ uri, blurRadius, reveal, styles, children }: Sp
   );
 
   return (
-    <Animated.View
-      entering={reveal === 'none' ? FadeIn.duration(400) : undefined}
-      style={styles.stillWrap}
-    >
+    <Animated.View style={styles.stillWrap}>
       {reveal !== 'static' && (
         <Image
           source={{ uri }}
           style={styles.still}
           contentFit="cover"
           blurRadius={blurRadius}
-          transition={reveal === 'none' ? 300 : 0}
+          transition={0}
         />
       )}
-      {reveal !== 'none' && (
-        <Animated.View style={[styles.stillLayer, sharpStyle]}>
-          <Image
-            source={{ uri }}
-            style={styles.still}
-            contentFit="cover"
-            transition={0}
-            onLoad={handleSharpLoad}
-            onError={handleSharpError}
-            accessible={false}
-          />
-        </Animated.View>
-      )}
+      <Animated.View style={[styles.stillLayer, sharpStyle]}>
+        <Image
+          source={{ uri }}
+          style={styles.still}
+          contentFit="cover"
+          transition={0}
+          onLoad={handleSharpLoad}
+          onError={handleSharpError}
+          accessible={false}
+        />
+      </Animated.View>
       {children}
     </Animated.View>
   );

@@ -119,6 +119,13 @@ export const createStyles = (theme: GameTheme) => {
   stillLayer: {
     ...StyleSheet.absoluteFillObject,
   },
+  /** FocusStill: belirmekte olan kat eski katın üstünde çizilir */
+  layerTop: {
+    zIndex: 2,
+  },
+  layerBase: {
+    zIndex: 1,
+  },
 
   // ─── Baslik maskesi ───────────────────────────────────────────────────────
   // Slot / ayrac / satir stilleri olcege bagli → `createMaskStyles`

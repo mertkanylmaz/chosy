@@ -9,4 +9,6 @@
  * harf oranıyla azaltır; şampiyon ekranındaki bonus kartı (S-2) bugünün
  * karesini tam bu değerde gösterir, oyunun başladığı görüntüyle aynı.
  */
-export const SPOTLIGHT_MAX_BLUR = 40;
+// KALİBRASYON DÜĞMESİ (07.10.2026: 40 → 24) — kurucu cihazda 5 bulmacayla ayarlar.
+// Tek yer burası: oyun, teaser ve bonus kartı hep bunu okur.
+export const SPOTLIGHT_MAX_BLUR = 24;

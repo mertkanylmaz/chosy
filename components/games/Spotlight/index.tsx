@@ -54,6 +54,7 @@ import type {
 } from '@/types/game';
 
 import { SPOTLIGHT_MAX_BLUR } from './constants';
+import { blurForProgress } from './focus';
 import { AnswerSheet } from './AnswerSheet';
 import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
@@ -69,18 +70,6 @@ const GAME_TYPE = 'spotlight' as const;
 
 /** Ekran klavyesi duzeni */
 const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
-
-/** En yuksek bulaniklik — hic harf acilmamisken (tek kaynak: ./constants) */
-const MAX_BLUR = SPOTLIGHT_MAX_BLUR;
-
-/**
- * Bulaniklik acilan harf oranina gore azalir: hicbiri acikken MAX_BLUR,
- * hepsi acikken 0. Netlesme oyuncunun tek gorsel odulu.
- */
-function blurForProgress(revealedCount: number, total: number): number {
-  if (total <= 0) return 0;
-  return Math.round(MAX_BLUR * (1 - Math.min(1, revealedCount / total)));
-}
 
 // ─── Klavye tusu ─────────────────────────────────────────────────────────────
 
@@ -467,7 +456,11 @@ export function SpotlightGame() {
     trackSpotlightAnswerSheetOpened(puzzleId, Math.max(0, maxAttempts - attempts));
   }, [isBusy, puzzleId, maxAttempts, attempts]);
   const closeAnswerSheet = useCallback(() => setAnswerOpen(false), []);
-  const blurAmount = blurForProgress(revealedMap.size, puzzleData?.letter_count ?? 0);
+  const blurAmount = blurForProgress(
+    revealedMap.size,
+    puzzleData?.letter_count ?? 0,
+    SPOTLIGHT_MAX_BLUR,
+  );
   /** Sonuc ekraninda kare cizilebilir mi — yoksa ResultCard posteri kalir */
   const hasStill = Boolean(puzzleData?.backdrop_url);
 
