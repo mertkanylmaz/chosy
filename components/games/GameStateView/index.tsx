@@ -23,6 +23,8 @@ import { hapticLight } from '@/utils/haptics';
 
 import { createStyles } from './styles';
 
+const RETRY_HIT_SLOP = { top: 8, bottom: 8, left: 8, right: 8 } as const;
+
 interface GameStateViewProps {
   /** Hangi durum gösterilecek */
   state: 'loading' | 'error';
@@ -32,6 +34,12 @@ interface GameStateViewProps {
   title?: string;
   /** Özel alt metin */
   subtitle?: string;
+  /**
+   * Tekrar dene düğmesinin etkin dokunma alanını ≥44pt'e genişletir (görünüm
+   * değişmez). Varsayılan KAPALI — dondurulmuş oyunların çıktısı aynen kalır;
+   * yalnız Spotlight açar.
+   */
+  enlargeRetryTarget?: boolean;
 }
 
 /**
@@ -42,6 +50,7 @@ export function GameStateView({
   onRetry,
   title,
   subtitle,
+  enlargeRetryTarget = false,
 }: GameStateViewProps): React.JSX.Element {
   const theme = useGameTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
@@ -90,8 +99,8 @@ export function GameStateView({
             onRetry();
           }}
           activeOpacity={0.8}
-          // Gorunen yukseklik ~32pt: etkin dokunma alani >=44pt (gorunum degismez)
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          // Gorunen yukseklik ~32pt: opt-in ile etkin dokunma alani >=44pt (gorunum degismez)
+          hitSlop={enlargeRetryTarget ? RETRY_HIT_SLOP : undefined}
           accessibilityRole="button"
           accessibilityLabel={t('games.result.retry')}
         >

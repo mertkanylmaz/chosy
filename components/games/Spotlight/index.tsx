@@ -566,6 +566,15 @@ export function SpotlightGame() {
     [reduceMotion],
   );
 
+  /** Hata kutusu: yalniz opaklik; Reduce Motion'da 100ms (en yakin mevcut token) */
+  const noticeEntering = useMemo(
+    () =>
+      FadeIn.duration(
+        reduceMotion ? REDUCED_MOTION_DURATION.crossFade : SPOTLIGHT_FOCUS_STEP.duration,
+      ),
+    [reduceMotion],
+  );
+
   const openAnswerSheet = useCallback(() => {
     if (isBusy) return;
     playSpotlightHaptic({ type: 'cta_press' });
@@ -592,6 +601,7 @@ export function SpotlightGame() {
         <GameStateView
           state="error"
           onRetry={loadPuzzle}
+          enlargeRetryTarget
           title={t('games.spotlight.preparing_title')}
           subtitle={t('games.spotlight.preparing_subtitle')}
         />
@@ -605,6 +615,7 @@ export function SpotlightGame() {
         <GameStateView
           state="error"
           onRetry={loadPuzzle}
+          enlargeRetryTarget
           title={t('games.spotlight.unavailable_title')}
           subtitle={t('games.spotlight.unavailable_subtitle')}
         />
@@ -615,7 +626,7 @@ export function SpotlightGame() {
   if (loadError) {
     return (
       <GameShell gameType={GAME_TYPE} title={t('games.spotlight.title')} currentAttempt={0} maxAttempts={1} hideProgress flatBackdrop compactHeader>
-        <GameStateView state="error" onRetry={loadPuzzle} />
+        <GameStateView state="error" onRetry={loadPuzzle} enlargeRetryTarget />
       </GameShell>
     );
   }
@@ -823,7 +834,7 @@ export function SpotlightGame() {
           kuculen ust bolgedir, aksiyon bari degil.
         */}
         {actionError && (
-          <Animated.View entering={FadeIn.duration(200)} style={styles.errorBox}>
+          <Animated.View entering={noticeEntering} style={styles.errorBox}>
             <CloudSlash size={18} weight="duotone" color={Colors.textTertiary} />
             <Text style={styles.errorText}>{t('games.result.error_subtitle')}</Text>
           </Animated.View>

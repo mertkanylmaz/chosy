@@ -40,6 +40,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
+  DISSOLVE_DURATION,
   EASE_OUT_QUART,
   REDUCED_MOTION_DURATION,
   SPOTLIGHT_FOCUS_STEP,
@@ -85,6 +86,10 @@ export function FocusStill({
   const duration = isReducedMotion
     ? REDUCED_MOTION_DURATION.crossFade
     : SPOTLIGHT_FOCUS_STEP.duration;
+  /** Kutunun ilk belirişi: yalnız opaklık; Reduce Motion'da 100ms (en yakın token: yeni rakip 360) */
+  const enteringFade = FadeIn.duration(
+    isReducedMotion ? REDUCED_MOTION_DURATION.crossFade : DISSOLVE_DURATION.newContender,
+  );
 
   /** Her katın o an yüklediği bulanıklık — görünürken değişmez */
   const [blurs, setBlurs] = useState<[number, number]>([blurRadius, blurRadius]);
@@ -268,7 +273,7 @@ export function FocusStill({
 
   return (
     <Animated.View
-      entering={FadeIn.duration(400)}
+      entering={enteringFade}
       style={styles.stillWrap}
       accessible
       accessibilityRole="image"

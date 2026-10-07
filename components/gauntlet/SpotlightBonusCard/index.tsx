@@ -155,8 +155,8 @@ export function SpotlightBonusCard({
         accessibilityLabel={`${kicker}. ${subtitle}${showVerb ? `. ${verb}` : ''}`}
         accessibilityHint={t('gauntlet.bonus.a11yHint')}
       >
-        {/* Bugünün karesi, oyunun başladığı bulanıklıkta. Mor kenar kartın
-            tek renkli öğesi — metin değil kenar. */}
+        {/* Bugünün karesi, oyunun başladığı bulanıklıkta. Kenar nötr hairline:
+            kart renksiz, altın yalnız oyun ekranında (Spotlight, 07.10.2026). */}
         <View style={styles.frame}>
           {backdropUrl !== '' && (
             <Image

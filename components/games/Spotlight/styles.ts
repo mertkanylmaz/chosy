@@ -245,7 +245,7 @@ export const createStyles = (theme: GameTheme) => {
  *
  * Renk: bone (altin degil) — maske okunurluk icindir, durum geri bildirimi
  * hak noktalari ve tahtadadir. Slot cizgisi acilmamisken bone@45%, acilinca
- * tam bone: kontrast yuksek, mor/aksan yok.
+ * tam bone: kontrast yuksek, aksan rengi yok (altin hak noktalarinda ve CTA'da).
  */
 export const createMaskStyles = (_theme: GameTheme, scale: number) => {
   const slotH = scaled(MASK_SLOT_H, scale);

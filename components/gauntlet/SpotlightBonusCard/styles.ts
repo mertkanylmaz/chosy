@@ -29,7 +29,7 @@ export const styles = StyleSheet.create({
   },
   /**
    * Nötr hairline (graphite). Oyun teması bu karta sızmaz (07.10.2026):
-   * Gauntlet'in şampiyon ekranında altın/mor oynanış rengi bilgi taşımaz.
+   * Gauntlet'in şampiyon ekranında oyunun altın oynanış rengi bilgi taşımaz.
    */
   frame: {
     width: FRAME_SIZE,

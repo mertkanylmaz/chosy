@@ -4,8 +4,8 @@
  * Sütun düzeni: AX5'te satır düzeni metni karenin yanında ezer; sütunda
  * metin tam genişliği kullanır ve before_18 kaydırması taşmayı karşılar.
  *
- * Kenar NÖTR (`surface.border`): mor yalnız champion ekranındaki bonus
- * kartında kalır (SpotlightBonusCard — "morun TEK göründüğü yer").
+ * Kenar NÖTR (`surface.border`), champion ekranındaki bonus kartıyla aynı:
+ * oyun rengi (altın) yalnız Spotlight oynanış ekranındadır.
  * Cam YOK, gölge YOK (§4.3).
  */
 import { StyleSheet } from 'react-native';
