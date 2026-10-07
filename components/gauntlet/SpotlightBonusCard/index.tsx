@@ -60,6 +60,7 @@ import { BONUS_CARD_ENTRY, EASE_OUT_QUART } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { hapticLight } from '@/utils/haptics';
+import { SPOTLIGHT_IMAGE_SIZE, tmdbSizedUrl } from '@/utils/tmdbSizedUrl';
 
 import { isSpotlightPlayable, type SpotlightCardState } from './cardState';
 import { styles } from './styles';
@@ -159,7 +160,7 @@ export function SpotlightBonusCard({
         <View style={styles.frame}>
           {backdropUrl !== '' && (
             <Image
-              source={{ uri: backdropUrl }}
+              source={{ uri: tmdbSizedUrl(backdropUrl, SPOTLIGHT_IMAGE_SIZE.bonusCard) }}
               style={styles.frameImage}
               contentFit="cover"
               blurRadius={SPOTLIGHT_MAX_BLUR}

@@ -26,6 +26,7 @@ import {
 } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
+import { SPOTLIGHT_IMAGE_SIZE, tmdbSizedUrl } from '@/utils/tmdbSizedUrl';
 
 import { FocusStill } from './FocusStill';
 import type { createStyles } from './styles';
@@ -60,7 +61,7 @@ export function SpotlightStill(props: SpotlightStillProps) {
   if (props.reveal === 'none') {
     return (
       <FocusStill
-        uri={props.uri}
+        uri={tmdbSizedUrl(props.uri, SPOTLIGHT_IMAGE_SIZE.hero)}
         blurRadius={props.blurRadius}
         styles={props.styles}
         accessibilityLabel={label}
@@ -69,7 +70,13 @@ export function SpotlightStill(props: SpotlightStillProps) {
       </FocusStill>
     );
   }
-  return <ResultStill {...props} accessibilityLabel={label} />;
+  return (
+    <ResultStill
+      {...props}
+      uri={tmdbSizedUrl(props.uri, SPOTLIGHT_IMAGE_SIZE.resultStill)}
+      accessibilityLabel={label}
+    />
+  );
 }
 
 function ResultStill({

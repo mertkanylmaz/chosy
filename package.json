@@ -20,7 +20,7 @@
     "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
     "test:puzzle-availability": "deno test tests/games/puzzleAvailability.test.ts",
     "test:notif-ask": "deno test tests/gauntlet/notificationAskCheck.test.ts",
-    "test:spotlight-layout": "deno test --allow-read tests/games/spotlightLayout.test.ts tests/games/chanceDotContrast.test.ts tests/games/spotlightFocus.test.ts tests/games/spotlightFocusWatchdog.test.ts tests/games/spotlightHaptics.test.ts tests/games/spotlightA11y.test.ts",
+    "test:spotlight-layout": "deno test --allow-read tests/games/spotlightLayout.test.ts tests/games/chanceDotContrast.test.ts tests/games/spotlightFocus.test.ts tests/games/spotlightFocusWatchdog.test.ts tests/games/spotlightHaptics.test.ts tests/games/spotlightA11y.test.ts tests/games/tmdbSizedUrl.test.ts",
     "test:film-search": "deno test tests/games/filmSearchList.test.ts",
     "test:spotlight-progress": "cd supabase/functions && deno test _shared/spotlightProgress.test.ts",
     "test:result-card": "deno test tests/games/resultHeroMode.test.ts tests/games/resultCountdownLayout.test.ts",

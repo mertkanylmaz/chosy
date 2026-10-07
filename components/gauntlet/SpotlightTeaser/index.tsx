@@ -31,6 +31,7 @@ import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { localDayKey } from '@/utils/askDecision';
+import { SPOTLIGHT_IMAGE_SIZE, tmdbSizedUrl } from '@/utils/tmdbSizedUrl';
 
 import { LOCK_ICON_SIZE, styles } from './styles';
 import { shouldTrackTeaserView } from './teaserRules';
@@ -79,7 +80,7 @@ export function SpotlightTeaser({ backdropUrl }: SpotlightTeaserProps): React.JS
         importantForAccessibility="no-hide-descendants"
       >
         <Image
-          source={{ uri: backdropUrl }}
+          source={{ uri: tmdbSizedUrl(backdropUrl, SPOTLIGHT_IMAGE_SIZE.teaser) }}
           style={styles.frameImage}
           contentFit="cover"
           blurRadius={SPOTLIGHT_MAX_BLUR}
