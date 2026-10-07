@@ -9,7 +9,7 @@
  *
  * Yukarıdan aşağı: wordmark → "SPOTLIGHT · FILM NNN" → soyut huzme (statik,
  * her kartta aynı kompozisyon) → başlık maskesi → hak göstergesi → durum →
- * davet → marka. URL / caption / link YOK.
+ * davet. URL / caption / link YOK.
  *
  * Yalnız react-native-svg + expo-linear-gradient; yeni font/asset yok.
  * Ortak `ShareCards/styles.ts` değiştirilmez; biçim tanımları bu dosyada yaşar.
@@ -17,9 +17,9 @@
 import React, { forwardRef, useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Circle, Defs, LinearGradient as SvgGradient, Polygon, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
-import { color, radius, size, space, type } from '@/constants/design/semantic';
+import { color, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -37,18 +37,25 @@ export type SpotlightShareCardProps = {
 
 // ─── Sabitler ────────────────────────────────────────────────────────────────
 
-const SLOT_W = 12;
+const SLOT_W = 10.5;
 const SLOT_H = 3;
-const SLOT_GAP = 3;
-const WORD_GAP = 14;
+const SLOT_GAP = 2.6;
+const WORD_GAP = 12.3;
+/** Maske beam'in altında kalsın diye aşağı itilir (maske = bilgi, beam = atmosfer) */
+const MASK_OFFSET_TOP = 56;
 const DOT_R = 6;
 const DOT_GAP = 10;
 const DOT_STROKE = 1.5;
 
-/** Huzme: tepe noktası kartın üstünde, tabanı mask bölgesinde — veri girdisi yok */
-const BEAM_APEX_HALF = 10;
-const BEAM_BASE_Y = 330;
-const BEAM_BASE_HALF = 130;
+/**
+ * Huzme: kartın üst kenarına oturan iki radyal elips — çokgen sınırı yoktur,
+ * kenarlar gradient ile erir. Maske bölgesinde (y ≳ 200) opaklık ≤ %8.
+ * Veri girdisi yok.
+ */
+const BEAM_WIDE_RX = 170;
+const BEAM_WIDE_RY = 250;
+const BEAM_CORE_RX = 62;
+const BEAM_CORE_RY = 210;
 
 function SpotlightShareCardImpl(
   { puzzleNo, chancesLeft, total, variant, maskWords }: SpotlightShareCardProps,
@@ -85,22 +92,30 @@ function SpotlightShareCardImpl(
         style={cardStyles.beam}
       >
         <Defs>
-          <SvgGradient id="spotlightBeamFill" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={color.accent.active} stopOpacity={0.34} />
-            <Stop offset="0.6" stopColor={color.accent.active} stopOpacity={0.1} />
+          <RadialGradient id="spotlightBeamWide" cx="0.5" cy="0.5" r="0.5">
+            <Stop offset="0" stopColor={color.accent.active} stopOpacity={0.24} />
+            <Stop offset="0.35" stopColor={color.accent.active} stopOpacity={0.11} />
+            <Stop offset="0.7" stopColor={color.accent.active} stopOpacity={0.035} />
             <Stop offset="1" stopColor={color.accent.active} stopOpacity={0} />
-          </SvgGradient>
-          <SvgGradient id="spotlightBeamCore" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={color.accent.active} stopOpacity={0.22} />
+          </RadialGradient>
+          <RadialGradient id="spotlightBeamCore" cx="0.5" cy="0.5" r="0.5">
+            <Stop offset="0" stopColor={color.accent.active} stopOpacity={0.2} />
+            <Stop offset="0.5" stopColor={color.accent.active} stopOpacity={0.06} />
             <Stop offset="1" stopColor={color.accent.active} stopOpacity={0} />
-          </SvgGradient>
+          </RadialGradient>
         </Defs>
-        <Polygon
-          points={`${cx - BEAM_APEX_HALF},0 ${cx + BEAM_APEX_HALF},0 ${cx + BEAM_BASE_HALF},${BEAM_BASE_Y} ${cx - BEAM_BASE_HALF},${BEAM_BASE_Y}`}
-          fill="url(#spotlightBeamFill)"
+        <Ellipse
+          cx={cx}
+          cy={0}
+          rx={BEAM_WIDE_RX}
+          ry={BEAM_WIDE_RY}
+          fill="url(#spotlightBeamWide)"
         />
-        <Polygon
-          points={`${cx - 4},0 ${cx + 4},0 ${cx + 52},${BEAM_BASE_Y} ${cx - 52},${BEAM_BASE_Y}`}
+        <Ellipse
+          cx={cx}
+          cy={0}
+          rx={BEAM_CORE_RX}
+          ry={BEAM_CORE_RY}
           fill="url(#spotlightBeamCore)"
         />
       </Svg>
@@ -131,6 +146,9 @@ function SpotlightShareCardImpl(
         </View>
 
         <View style={cardStyles.foot}>
+          <Text style={cardStyles.chancesLabel}>
+            {t('games.spotlight.share_card_chances_label')}
+          </Text>
           <Svg width={dotsWidth} height={DOT_R * 2 + DOT_STROKE * 2}>
             {dots.map((filled, i) => (
               <Circle
@@ -148,7 +166,6 @@ function SpotlightShareCardImpl(
             {statusText}
           </Text>
           <Text style={cardStyles.invite}>{t('games.spotlight.share_card_invite')}</Text>
-          <Text style={cardStyles.brand}>{t('games.spotlight.share_card_brand')}</Text>
         </View>
       </View>
     </View>
@@ -162,9 +179,9 @@ const cardStyles = StyleSheet.create({
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
     backgroundColor: color.surface.base,
-    borderRadius: radius.surface,
-    borderWidth: size.hairline,
-    borderColor: color.surface.border,
+    // Bitmap export: dikdörtgen, opak, radius 0, çerçeve yok
+    borderRadius: 0,
+    borderWidth: 0,
     overflow: 'hidden',
   },
   beam: {
@@ -200,6 +217,7 @@ const cardStyles = StyleSheet.create({
   },
   maskArea: {
     flex: 1,
+    paddingTop: MASK_OFFSET_TOP,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -224,6 +242,11 @@ const cardStyles = StyleSheet.create({
     alignItems: 'center',
     gap: space.md,
   },
+  chancesLabel: {
+    ...type.meta,
+    color: color.text.secondary,
+    letterSpacing: 2,
+  },
   status: {
     ...type['label-caps'],
     color: color.text.primary,
@@ -234,10 +257,5 @@ const cardStyles = StyleSheet.create({
     ...type.callout,
     color: color.text.primarySoft,
     textAlign: 'center',
-  },
-  brand: {
-    ...type.meta,
-    color: color.text.secondary,
-    marginTop: space.xs,
   },
 });

@@ -1183,10 +1183,10 @@
       "action_share": "Share Spotlight",
       "share_card_title": "SPOTLIGHT · FILM %{n}",
       "share_card_title_no_n": "SPOTLIGHT",
-      "share_card_found": "FOUND IT · %{left}/%{total} CHANCES LEFT",
-      "share_card_flawless": "FLAWLESS · %{left}/%{total} CHANCES LEFT",
-      "share_card_invite": "Could you recognize today's film?",
-      "share_card_brand": "CHOSY APP",
+      "share_card_found": "FOUND IT · %{left}/%{total}",
+      "share_card_flawless": "FLAWLESS · %{left}/%{total}",
+      "share_card_chances_label": "CHANCES LEFT",
+      "share_card_invite": "Could you recognize tonight's film?",
       "share_error": "Couldn't share. Try again."
     },
     "detective": {

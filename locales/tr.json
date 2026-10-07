@@ -1183,10 +1183,10 @@
       "action_share": "Spotlight'ı Paylaş",
       "share_card_title": "SPOTLIGHT · FİLM %{n}",
       "share_card_title_no_n": "SPOTLIGHT",
-      "share_card_found": "BULDUN · %{left}/%{total} HAK KALDI",
-      "share_card_flawless": "KUSURSUZ · %{left}/%{total} HAK KALDI",
-      "share_card_invite": "Bugünün filmini tanır mıydın?",
-      "share_card_brand": "CHOSY APP",
+      "share_card_found": "BULDUN · %{left}/%{total}",
+      "share_card_flawless": "KUSURSUZ · %{left}/%{total}",
+      "share_card_chances_label": "KALAN HAK",
+      "share_card_invite": "Bu akşamın filmini tanır mıydın?",
       "share_error": "Paylaşılamadı. Tekrar dene."
     },
     "detective": {
