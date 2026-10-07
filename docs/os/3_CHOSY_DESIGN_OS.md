@@ -749,6 +749,8 @@ Get-ChildItem -Recurse -Include *.tsx app,components |
 - [ ] Poster yüklenemezse anlamlı yer tutucu
 - [ ] Ağ hatasında gerçek mesaj — **sessiz boş ekran yasak**
 
+> **İstisna (07.10.2026):** 10 tuşlu harf satırlarında genişlik <44pt; tuş yüksekliği ≥48pt, boşluklar hit alanlarıyla kapatılır (sistem klavyesi deseni).
+
 ---
 
 ## 15. METİN DİLİ
@@ -911,6 +913,12 @@ gölgede.
 Bu bir **bible değişikliğidir ve sürüm artışı ister** — Design OS'un yetkisi
 dışındadır. **Ayrı DUR NOKTASI olarak açıldı**, taslağı
 `docs/investigations/` altında. Bu turda karara bağlanmadı.
+
+### 17.3 Spotlight görsel dili (07.10.2026)
+
+07.10.2026 — Spotlight görsel dili: mor → sinema altını (marquee #D4A72C). Beam ambient kalktı (düz ink). SpotlightBonusCard oyun temasından ayrıldı (nötr). Doktrin daraltması: Spotlight gameplay ekranında XP/rank/streak/ödül öğesi gösterilmez. 'REVEALS' yerine 'CHANCES/HAK'.
+
+> §2.6 (mor accent gerekçesi) bu kararla geçersizdir.
 
 ---
 
