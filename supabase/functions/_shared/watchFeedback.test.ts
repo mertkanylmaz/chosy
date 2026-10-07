@@ -98,6 +98,28 @@ Deno.test('K-29: not_watched / skipped → watchlist\'e hiç gidilmez', async ()
   }
 })
 
+// 23505 yarış dalı (submit-watch-feedback/index.ts) `Deno.serve` içinde olduğundan
+// doğrudan import edilemez; dal, KAYITLI cevapla bu köprüyü çağırır (already_answered
+// dalıyla aynı). Aşağıdaki test o sözleşmeyi her kayıtlı değer için kilitler:
+// watch-sınıfı → yazar, not_watched/skipped → watchlist'e hiç gidilmez.
+Deno.test('K-29 yarış dalı: kayıtlı cevaba göre sync — watch sınıfı yazar, diğerleri dokunmaz', async () => {
+  const cases: [Parameters<typeof syncWatchedFromFeedback>[3], boolean][] = [
+    ['loved', true],
+    ['ok', true],
+    ['disliked', true],
+    ['abandoned', true],
+    ['not_watched', false],
+    ['skipped', false],
+  ]
+  for (const [recorded, expectWrite] of cases) {
+    const f = fakeClient(null)
+    const marked = await syncWatchedFromFeedback(f.client, 'u1', 'film1', recorded)
+    assertEquals(marked, expectWrite, recorded)
+    assertEquals(f.writes.length, expectWrite ? 1 : 0, recorded)
+    assertEquals(f.touched.length > 0, expectWrite, recorded)
+  }
+})
+
 Deno.test('K-29: markWatched hatası yutulmaz (handler 503 döner, istemci yeniden dener)', async () => {
   const f = fakeClient(null, { failInsert: true })
   await assertRejects(

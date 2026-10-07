@@ -226,9 +226,25 @@ Deno.serve(async (req: Request): Promise<Response> => {
             `idempotency yarışı çözülemedi: ${retry.error?.message ?? 'satır yok'}`,
           )
         }
+        // Yarışı kazanan istek INSERT'ten sonra `markWatched`'ta düşmüş olabilir
+        // ve istemci yeniden denemez (fire-and-forget) — `already_answered`
+        // dalıyla aynı: KAYITLI cevaba göre idempotent köprü (K-29).
+        const recorded = retry.data.response as WatchFeedbackResponse
+        const markedWatched = await syncWatchedFromFeedback(
+          service,
+          appUserId,
+          filmId,
+          recorded,
+        )
+        logInfo('watch_feedback_race_synced', {
+          user_id: appUserId,
+          gauntlet_id: gauntletId,
+          film_id: filmId,
+          marked_watched: markedWatched,
+        })
         const result: WatchFeedbackResult = {
           status: 'already_answered',
-          response: retry.data.response as WatchFeedbackResponse,
+          response: recorded,
         }
         return jsonResponse(result)
       }
