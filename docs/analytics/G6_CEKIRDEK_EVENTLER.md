@@ -59,9 +59,36 @@ kapıya koymak 20 kontenjanının birini boşa harcardı. Event kodda kalıyor.
 
 | # | Event | Nerede | Not |
 |---|---|---|---|
-| 6 | `watched_prompted` | `PendingWatchFeedbackCard:53` | E-07'nin paydası |
-| 7 | `watched_confirmed` | `PendingWatchFeedbackCard:38` | payı |
-| 8 | `watched_not_yet` | `PendingWatchFeedbackCard:40` | payı (negatif dal) |
+| 6 | `watched_prompted` | `PendingWatchFeedbackCard/feedbackFlow.ts` (`shownEvents`) | E-07'nin paydası |
+| 7 | `watched_confirmed` | `PendingWatchFeedbackCard/feedbackFlow.ts` (`reduceFlow`, satisfaction) | payı. **T3 (7 Eki 2026): artık `loved` / `ok` / `disliked`'ı içerir** (`abandoned` legacy, yeni UI'dan üretilmez). Eskiden `disliked` olmadığı için bu kümede yoktu. |
+| 8 | `watched_not_yet` | `PendingWatchFeedbackCard/feedbackFlow.ts` (`reduceFlow`, Not yet + Skip) | payı (negatif dal): `not_watched` ve `skipped` |
+
+> **T3 notu (7 Eki 2026):** "Nerede" sütunu `PendingWatchFeedbackCard:NN` satır
+> numaralarını taşıyordu; olay üretimi `feedbackFlow.ts`'e taşındı (saf mantık,
+> birim testli). Çekirdek 20 değişmedi.
+
+#### 1.2.1 T3 ile eklenen olaylar (çekirdek 20 DIŞINDA — kontenjan dolu)
+
+Watch-feedback State 1 + State 2 ekranı (`PendingWatchFeedbackCard`) yeni
+olayları, eskilerle **yan yana** atar:
+
+| Event | Ne zaman | Props |
+|---|---|---|
+| `outcome_shown` | Kart ekrana geldi (`watched_prompted` ile aynı an) | `film_id` |
+| `outcome_answered` | Nihai cevap verildi — kart gösterimi başına **en fazla bir** | `film_id`, `type`: `watched` \| `not_yet` \| `skipped` |
+| `satisfaction_answered` | Yes → satisfaction seçildi | `film_id`, `value`: `loved` \| `ok` \| `disliked` |
+
+- `type: watched` yalnız satisfaction seçilince atılır; "Yes" tek başına olay
+  üretmez (satır da yazılmaz). Yes → Back → Yes yolu analitikte görünmez.
+- Skip **yalnızca** `outcome_answered(type: skipped)` atar. Ayrı bir
+  `outcome_skipped` olayı YOKTUR (CTO kararı, 7 Eki 2026) — çift sayım olmasın.
+- `abandoned` yeni UI'dan seçilemez; `value` / `response` içinde görünmez.
+
+**Eski `watched_*` olayları (6–8) süreklilik için yan yana atılmaya devam
+eder.** Emekliye ayırma koşulu (ikisi birlikte): **400 aktif kullanıcı** VE
+E-07 paydalarının (yanıtlanma oranı, Watched-it Rate) yeni olaylarla
+**yeniden kurulması**. O zamana kadar eski olaylar silinmez ve paydalar
+değiştirilmez.
 
 **E-07 kuralı:** yanıtlanma oranı = (6+7) / 5. Bu oran %50'nin altındaysa
 Watched-it Rate istatistiksel olarak yorumlanamaz ve **ürün kararı alınmaz.**

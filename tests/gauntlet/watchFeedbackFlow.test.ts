@@ -131,11 +131,8 @@ Deno.test('Not yet ve Skip olayları', () => {
   assertEquals(ny.events[0].props, { film_id: FILM, type: 'not_yet' });
 
   const sk = reduceFlow(INITIAL_FLOW, 'skip', FILM);
-  assertEquals(sk.events.map((e) => e.name), [
-    'outcome_answered',
-    'outcome_skipped',
-    'watched_not_yet',
-  ]);
+  // Skip yalnızca outcome_answered(type: skipped) atar — ayrı bir outcome_skipped YOK.
+  assertEquals(sk.events.map((e) => e.name), ['outcome_answered', 'watched_not_yet']);
   assertEquals(sk.events[0].props, { film_id: FILM, type: 'skipped' });
 });
 

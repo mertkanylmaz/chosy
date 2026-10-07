@@ -94,7 +94,6 @@ export function reduceFlow(state: FlowState, event: FlowEvent, filmId: string): 
           accepted: true,
           events: [
             { name: 'outcome_answered', props: { film_id: filmId, type: 'skipped' } },
-            { name: 'outcome_skipped', props: { film_id: filmId } },
             { name: 'watched_not_yet', props: { response: 'skipped' } },
           ],
         };
