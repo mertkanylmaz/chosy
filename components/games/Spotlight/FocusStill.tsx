@@ -15,6 +15,8 @@
  *   - düzey değişmediyse (yanlış harf, sheet aç/kapa, re-render) hiçbir şey olmaz
  *   - hızlı ardışık değişim: gelen kat yeni düzeye yeniden hedeflenir, kuyruk yok
  *   - unmount: animasyon iptal edilir, bayat geri çağrı state'e dokunmaz
+ *   - gelen katın `onLoad`'u SPOTLIGHT_STILL_LOAD_TIMEOUT_MS içinde gelmezse kat
+ *     yine de öne alınır + SPOTLIGHT_STILL_LOAD_TIMEOUT kaydı (focusWatchdog.ts)
  *
  * Yeni oyun state'i yok — tek girdi `blurRadius` (kanonik ilerlemeden türer).
  * Sonuç ekranı bu bileşeni KULLANMAZ (SpotlightStill › ResultStill).
@@ -38,6 +40,8 @@ import {
 } from '@/constants/design/motion';
 import { logger } from '@/utils/logger';
 
+import { SPOTLIGHT_STILL_LOAD_TIMEOUT_MS } from './constants';
+import { createLoadWatchdog, type LoadWatchdog } from './focusWatchdog';
 import type { createStyles } from './styles';
 
 type Layer = 0 | 1;
@@ -82,11 +86,19 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
   const awaitingRef = useRef(false);
   const firstLoadedRef = useRef(false);
   const mountedRef = useRef(true);
+  const watchdogRef = useRef<LoadWatchdog | null>(null);
+  if (watchdogRef.current === null) {
+    watchdogRef.current = createLoadWatchdog<ReturnType<typeof setTimeout>>(
+      { set: (cb, ms) => setTimeout(cb, ms), clear: (h) => clearTimeout(h) },
+      SPOTLIGHT_STILL_LOAD_TIMEOUT_MS,
+    );
+  }
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      watchdogRef.current?.cancel();
       cancelAnimation(opacity0);
       cancelAnimation(opacity1);
     };
@@ -125,6 +137,8 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
     incomingRef.current = incoming;
     awaitingRef.current = true;
     setLayerBlur(incoming, blurRadius);
+    // Yeniden hedefleme taze süre alır; önceki zamanlayıcı arm içinde iptal olur
+    watchdogRef.current?.arm(() => loadTimeoutRef.current());
   }, [blurRadius, setLayerBlur]);
 
   /** Çapraz geçiş bitti: gelen kat ön kat olur, eski kat sessizce gizlenir */
@@ -136,6 +150,16 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
       incomingRef.current = null;
     },
     [opacityOf],
+  );
+
+  /** Gelen katı öne al: çapraz geçiş — yükleme ve zaman aşımı AYNI yolu kullanır */
+  const promote = useCallback(
+    (layer: Layer) => {
+      awaitingRef.current = false;
+      setTop(layer);
+      withFocusTiming(opacityOf(layer), duration, () => settle(layer));
+    },
+    [duration, opacityOf, settle],
   );
 
   const handleLoad = useCallback(
@@ -152,17 +176,39 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
       // Bayat yükleme: bu kat artık başka düzey istiyor
       if (blursRef.current[layer] !== targetRef.current) return;
 
-      awaitingRef.current = false;
-      setTop(layer);
-      withFocusTiming(opacityOf(layer), duration, () => settle(layer));
+      watchdogRef.current?.cancel();
+      promote(layer);
     },
-    [duration, opacityOf, settle],
+    [promote],
   );
+
+  /**
+   * `onLoad` süresinde gelmedi: varsayım (blurRadius değişince yeniden yükleme)
+   * tutmuyor olabilir. Görsel eski düzeyde sıkışmasın diye gelen kat yine de
+   * öne alınır; olay kayda geçer (cihazda varsayımı doğrulamak için).
+   */
+  const handleLoadTimeout = useCallback(() => {
+    const layer = incomingRef.current;
+    if (!mountedRef.current || layer === null || !awaitingRef.current) return;
+    logger.error(
+      '[spotlight] Odak katmani onLoad gelmedi — kat yine de one alindi',
+      new Error('SPOTLIGHT_STILL_LOAD_TIMEOUT'),
+      {
+        code: 'SPOTLIGHT_STILL_LOAD_TIMEOUT',
+        extra: { backdrop_url: uri, blur_radius: targetRef.current, timeout_ms: SPOTLIGHT_STILL_LOAD_TIMEOUT_MS },
+      },
+    );
+    promote(layer);
+  }, [promote, uri]);
+  // Bekçi her zaman en güncel işleyiciyi çağırır (arm anındaki kapanış bayatlamasın)
+  const loadTimeoutRef = useRef(handleLoadTimeout);
+  loadTimeoutRef.current = handleLoadTimeout;
 
   const handleError = useCallback(
     (layer: Layer, error: string) => {
       // Yalnız geçişin gelen katı: ilk kare/ön kat hata davranışı değişmedi
       if (incomingRef.current !== layer || !awaitingRef.current) return;
+      watchdogRef.current?.cancel();
       logger.error('[spotlight] Odak karesi yuklenemedi — onceki netlik kaldi', error, {
         code: 'SPOTLIGHT_STILL_LOAD',
         extra: { backdrop_url: uri },
