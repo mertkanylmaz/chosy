@@ -464,6 +464,8 @@ Gauntlet fonksiyoneldir → Ionicons. Şampiyon marka anıdır → Phosphor duot
 
 **Kurallar:** ~~Tab bar gizli~~ → **v4.1: tab bar KALIR** · poster 2:3 sabit, kırpma yok · başlık >18 karakter tek satırda kısaltılır · ikincil eylemler buton değil metin bağlantısı · yükleme `graphite` iskelet, spinner yok · hata gerçek mesaj, sessiz boş ekran yasak.
 
+> **Not (7 Eki 2026, bible v1.46):** Watch-feedback Home state'inde tab bar GÖRÜNÜR. Diğer immersive ritual ekranlarında mevcut hide kuralları değişmez. §10.5.2 / §10.5.9 ile çelişki için bkz. `docs/TEKNIK_BORC.md`.
+
 ### 10.2 Şampiyon
 
 Tek poster ortalanmış · `display-xl` başlık · meta satırı · ~~anlatı cümlesi

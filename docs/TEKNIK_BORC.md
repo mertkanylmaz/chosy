@@ -3907,3 +3907,13 @@ amaçlanan sonuç; döküm almak silinmiş kullanıcı verisini repo/disk dış�
 yaşatırdı. Kapsam: yalnız 125'in yetim satırları (beklenen ~17). Bu istisna
 başka migration'lara emsal değildir — canlı kullanıcı verisini silen her
 migration'da yedek kuralı geçerli.
+
+### Design OS tab bar çelişkisi (7 Eki 2026)
+
+`3_CHOSY_DESIGN_OS.md` §10.1 (v4.1) ve §17 madde 3 "tab bar kalır" der; §10.5.2
+("Gauntlet — 3 tur: GİZLİ"), §10.5.9 ("gauntlet sırasında tab bar gizli") ve
+13.08.2026 navigasyon kaydı hâlâ "gizli" der. Watch-feedback T1 kapsamında
+bilinçli olarak çözülmedi (kapsam kayması); yalnız §10.1'e not düşüldü. Ayrı
+temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
+
+- **V1-D6 bayat (7 Eki 2026):** `7_CHOSY_V1_KAPSAM_KILIDI.md` V1-D6 satırı watched sayısının kaynağını `watch_feedback` (`loved`/`ok`/`abandoned`) yazıyor; kod B-1/Fix 6'dan beri `watchlist.watched_at` okuyor ve `disliked` (migration 128) da izlenmiş sayılır. Satır bilinçli düzeltilmedi (watch-feedback T1 kapsamı dışı).
