@@ -9,6 +9,7 @@ import { StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
 import { color, space, type as typeScale } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
 export const styles = StyleSheet.create({
@@ -86,10 +87,10 @@ export const styles = StyleSheet.create({
     paddingBottom: space.xs,
     minHeight: 48,
   },
-  /** Film numarası: Martian Mono, smoke (≥12pt mono, §2.7 AA 6.2:1) */
+  /** Film numarası: Martian Mono 12pt, bone@70% (smoke 13pt altında yasak, §2.7) */
   eyebrowCompact: {
     ...typeScale.meta,
-    color: color.text.secondary,
+    color: withAlpha(color.text.primary, 0.7),
     textTransform: 'none',
   },
   /** Oyun adı sessiz: SF Pro 15, bone — numara ve geri okla yarışmaz */

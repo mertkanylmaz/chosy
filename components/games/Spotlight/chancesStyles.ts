@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 import { color, size, space, type } from '@/constants/design/semantic';
-import { GAME_THEMES } from '@/constants/gameThemes';
+import { GAME_THEMES, withAlpha } from '@/constants/gameThemes';
 
 /** Nokta çapı — sabit; dolu/boş geçişi düzeni oynatmaz */
 const DOT = 10;
@@ -17,9 +17,10 @@ export const chancesStyles = StyleSheet.create({
     rowGap: space.sm,
     minHeight: space.lg,
   },
+  /** bone@70% — smoke 13pt altında yasak (§2.7); etiket 12pt */
   label: {
     ...type.meta,
-    color: color.text.secondary,
+    color: withAlpha(color.text.primary, 0.7),
   },
   dots: {
     flexDirection: 'row',
@@ -38,9 +39,13 @@ export const chancesStyles = StyleSheet.create({
     backgroundColor: GAME_THEMES.spotlight.accent,
     borderColor: GAME_THEMES.spotlight.accent,
   },
-  /** Harcanan hak — içi boş, graphite kenar */
+  /**
+   * Harcanan hak — içi boş, smoke kenar. Smoke/ink = 6.13:1 (≥3:1 gerekir,
+   * §2.7 metin-dışı bileşen); graphite 1.30:1 ile yetmiyordu. Durumu renk değil
+   * şekil (dolu/boş) taşır. Test: tests/games/chanceDotContrast.test.ts
+   */
   dotSpent: {
     backgroundColor: 'transparent',
-    borderColor: color.surface.border,
+    borderColor: color.text.secondary,
   },
 });
