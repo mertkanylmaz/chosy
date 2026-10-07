@@ -1179,7 +1179,15 @@
       "action_where_to_watch": "Where to Watch",
       "action_save_for_later": "Save for Later",
       "action_save_done": "Saved",
-      "action_save_error": "Couldn't save. Try again."
+      "action_save_error": "Couldn't save. Try again.",
+      "action_share": "Share Spotlight",
+      "share_card_title": "SPOTLIGHT · FILM %{n}",
+      "share_card_title_no_n": "SPOTLIGHT",
+      "share_card_found": "FOUND IT · %{left}/%{total} CHANCES LEFT",
+      "share_card_flawless": "FLAWLESS · %{left}/%{total} CHANCES LEFT",
+      "share_card_invite": "Could you recognize today's film?",
+      "share_card_brand": "CHOSY APP",
+      "share_error": "Couldn't share. Try again."
     },
     "detective": {
       "title": "Chosy Detective",

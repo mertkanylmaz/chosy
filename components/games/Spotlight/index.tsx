@@ -79,6 +79,7 @@ import { fitMaskScale, groupMaskWords } from './maskLayout';
 import { resultState } from './resultState';
 import { shouldFireResultViewed } from './resultViewed';
 import { validateSpotlightLoad } from './resumeValidation';
+import { buildShareMask } from '@/components/ShareCards/spotlightShareMask';
 import { SpotlightResult } from './SpotlightResult';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
@@ -531,6 +532,11 @@ export function SpotlightGame() {
     () => groupMaskWords(puzzleData?.title_mask ?? []),
     [puzzleData],
   );
+  /** Paylasim karti maskesi — yalniz yapi (kelime basina slot sayisi), harf yok */
+  const shareMaskWords = useMemo(
+    () => buildShareMask(puzzleData?.title_mask ?? []),
+    [puzzleData],
+  );
   /** Maskenin 2 satira sigdigi en buyuk olcek, taban 0.8 */
   const maskScale = useMemo(() => fitMaskScale(maskWords, MASK_ROW_W), [maskWords]);
   const maskStyles = useMemo(() => createMaskStyles(theme, maskScale), [theme, maskScale]);
@@ -719,6 +725,8 @@ export function SpotlightGame() {
             blurRadius={blurAmount}
             stillReveal={stillReveal}
             stillStyles={styles}
+            puzzleNo={puzzleNo}
+            shareMaskWords={shareMaskWords}
           />
         </ScrollView>
         )}

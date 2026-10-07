@@ -26,6 +26,7 @@
     "test:result-card": "deno test tests/games/resultHeroMode.test.ts tests/games/resultCountdownLayout.test.ts",
     "test:next-puzzle": "deno test --unstable-sloppy-imports tests/games/nextPuzzleClock.test.ts",
     "test:spotlight-result": "deno test tests/games/spotlightResultState.test.ts tests/games/spotlightResultViewed.test.ts",
+    "test:spotlight-share": "deno test tests/games/spotlightShareMask.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",
     "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",

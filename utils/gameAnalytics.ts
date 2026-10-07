@@ -103,6 +103,22 @@ export function trackSpotlightSaveForLaterTapped(puzzleId: string): void {
   posthogAnalytics.track('spotlight_save_for_later_tapped', { puzzle_id: puzzleId });
 }
 
+/**
+ * Spotlight sonucunda "Share Spotlight" dokunusu — dokunus basina. Tamamlanma
+ * olayi YOK: `useShareCapture.share()` tamamlanma ile iptali ayirmaz.
+ */
+export function trackSpotlightShareTapped(params: {
+  puzzleId: string;
+  chancesLeft: number;
+  variant: 'found' | 'flawless';
+}): void {
+  posthogAnalytics.track('spotlight_share_tapped', {
+    puzzle_id: params.puzzleId,
+    chances_left: params.chancesLeft,
+    variant: params.variant,
+  });
+}
+
 // ─── Result Card Downstream ───────────────────────────────────────────────
 
 /** Sonuc karti goruntulenince */

@@ -4,15 +4,17 @@
  * Ortak sonuç kartından ayrıldı: donmuş oyunlar onu kullanmaya devam eder.
  * Yukarıdan aşağı: kare (tam keskin) → film adı → yıl → durum (FOUND IT /
  * FLAWLESS / OUT OF CHANCES) → hak satırı → Where to Watch → Save for Later →
- * alt satır. Header (geri) `GameShell`'dedir.
+ * Share Spotlight (yalnız kazanılmış oyunda) → alt satır. Header (geri)
+ * `GameShell`'dedir.
  *
  * Hak satırı ve etiket `resultState`'ten gelir (saf, harf verisi almaz).
- * Bu ekranda ödül/ilerleme çipi, sayaç, saat, ikinci kart ve paylaşım YOK.
+ * Bu ekranda ödül/ilerleme çipi, sayaç, saat ve ikinci kart YOK. Paylaşım kartı
+ * filmden türetilmiş hiçbir veri taşımaz (`SpotlightShareCard`).
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { BookmarkSimple, FilmReel } from 'phosphor-react-native';
+import { BookmarkSimple, FilmReel, ShareNetwork } from 'phosphor-react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import {
@@ -25,8 +27,12 @@ import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton
 import { logger } from '@/utils/logger';
 import {
   trackSpotlightSaveForLaterTapped,
+  trackSpotlightShareTapped,
   trackSpotlightWhereToWatchTapped,
 } from '@/utils/gameAnalytics';
+import { SpotlightShareCard } from '@/components/ShareCards/SpotlightShareCard';
+import { styles as shareStyles } from '@/components/ShareCards/styles';
+import { useShareCapture } from '@/components/ShareCards/useShareCapture';
 import type { RevealedFilm } from '@/types/game';
 
 import { playSpotlightHaptic } from './playHaptic';
@@ -57,6 +63,10 @@ interface SpotlightResultProps {
   stillReveal: Exclude<StillReveal, 'none'>;
   /** Kare kutusunun stilleri — oyunla aynı kutu */
   stillStyles: ReturnType<typeof createStyles>;
+  /** Sunucunun `puzzle_no`'su — paylaşım kartı başlığı; 0 / geçersiz → numara yok */
+  puzzleNo: number;
+  /** Başlık maskesinin kelime başına slot sayısı (`buildShareMask`) — harf içermez */
+  shareMaskWords: readonly number[];
 }
 
 export function SpotlightResult({
@@ -68,8 +78,18 @@ export function SpotlightResult({
   blurRadius,
   stillReveal,
   stillStyles,
+  puzzleNo,
+  shareMaskWords,
 }: SpotlightResultProps): React.JSX.Element {
   const { t } = useLanguage();
+  const trackingProps = useMemo(() => ({ puzzle_id: puzzleId }), [puzzleId]);
+  const { cardRef, share, isCapturing, isShareAvailable } = useShareCapture({
+    cardType: 'spotlight_result',
+    trackingProps,
+  });
+  const [shareFailed, setShareFailed] = useState(false);
+  /** Senkron kilit — hızlı çift dokunuş ikinci capture'ı başlatmasın */
+  const shareLockRef = useRef(false);
   const router = useRouter();
   const reduceMotion = useReducedMotion();
   const screenReaderOn = useScreenReaderEnabled();
@@ -150,10 +170,56 @@ export function SpotlightResult({
     }
   }, [film, filmId, puzzleId, saveState, announce, t]);
 
+  // Paylaşım YALNIZ kazanılmış oyunda ve hak verisi geçerliyken; native modül yoksa buton yok
+  const shareVariant = result.ok && result.variant !== 'lost' ? result.variant : null;
+  const shareChancesLeft = result.ok ? result.chancesLeft : 0;
+  const shareTotal = result.ok ? result.total : 0;
+  const canShare = shareVariant !== null && isShareAvailable;
+
+  const handleShare = useCallback(async () => {
+    if (shareVariant === null || shareLockRef.current) return;
+    shareLockRef.current = true;
+    playSpotlightHaptic({ type: 'cta_press' });
+    trackSpotlightShareTapped({
+      puzzleId,
+      chancesLeft: shareChancesLeft,
+      variant: shareVariant,
+    });
+    setShareFailed(false);
+    try {
+      const ok = await share();
+      if (!ok) {
+        // Hook hata nedenini ayırmıyor (capture hatası / modül yok / cihaz yok) — görünür kıl
+        logger.error('[spotlight] Paylasim basarisiz', new Error('SPOTLIGHT_SHARE_FAILED'), {
+          code: 'SPOTLIGHT_SHARE_FAILED',
+          extra: { puzzle_id: puzzleId },
+        });
+        setShareFailed(true);
+        announce(t('games.spotlight.share_error'));
+      }
+    } finally {
+      shareLockRef.current = false;
+    }
+  }, [shareVariant, shareChancesLeft, puzzleId, share, announce, t]);
+
   const saved = saveState === 'saved';
 
   return (
     <View style={styles.container}>
+      {canShare && shareVariant !== null ? (
+        // Ekran dışı — PNG capture için. Karta film verisi girmez (spoiler-safe)
+        <View style={shareStyles.offscreen} pointerEvents="none" accessibilityElementsHidden>
+          <SpotlightShareCard
+            ref={cardRef}
+            puzzleNo={puzzleNo}
+            chancesLeft={shareChancesLeft}
+            total={shareTotal}
+            variant={shareVariant}
+            maskWords={shareMaskWords}
+          />
+        </View>
+      ) : null}
+
       {stillUri ? (
         <SpotlightStill
           uri={stillUri}
@@ -178,29 +244,48 @@ export function SpotlightResult({
         {subText ? <Text style={styles.statusSub}>{subText}</Text> : null}
       </Animated.View>
 
-      {filmId ? (
+      {filmId || canShare ? (
         <View style={styles.actions}>
-          <ChampionActionButton
-            label={t('games.spotlight.action_where_to_watch')}
-            icon={FilmReel}
-            variant="marquee"
-            onPress={handleWhereToWatch}
-          />
-          <ChampionActionButton
-            label={
-              saved
-                ? t('games.spotlight.action_save_done')
-                : t('games.spotlight.action_save_for_later')
-            }
-            icon={BookmarkSimple}
-            variant="outline"
-            onPress={handleSave}
-            disabled={saveState === 'saving' || saved}
-            busy={saveState === 'saving'}
-            selected={saved}
-          />
-          {saveState === 'error' ? (
-            <Text style={styles.saveError}>{t('games.spotlight.action_save_error')}</Text>
+          {filmId ? (
+            <>
+              <ChampionActionButton
+                label={t('games.spotlight.action_where_to_watch')}
+                icon={FilmReel}
+                variant="marquee"
+                onPress={handleWhereToWatch}
+              />
+              <ChampionActionButton
+                label={
+                  saved
+                    ? t('games.spotlight.action_save_done')
+                    : t('games.spotlight.action_save_for_later')
+                }
+                icon={BookmarkSimple}
+                variant="outline"
+                onPress={handleSave}
+                disabled={saveState === 'saving' || saved}
+                busy={saveState === 'saving'}
+                selected={saved}
+              />
+              {saveState === 'error' ? (
+                <Text style={styles.saveError}>{t('games.spotlight.action_save_error')}</Text>
+              ) : null}
+            </>
+          ) : null}
+          {canShare ? (
+            <>
+              <ChampionActionButton
+                label={t('games.spotlight.action_share')}
+                icon={ShareNetwork}
+                variant="outline"
+                onPress={handleShare}
+                disabled={isCapturing}
+                busy={isCapturing}
+              />
+              {shareFailed ? (
+                <Text style={styles.saveError}>{t('games.spotlight.share_error')}</Text>
+              ) : null}
+            </>
           ) : null}
         </View>
       ) : null}

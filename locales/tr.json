@@ -1179,7 +1179,15 @@
       "action_where_to_watch": "Nerede İzlenir",
       "action_save_for_later": "Sonrası İçin Kaydet",
       "action_save_done": "Kaydedildi",
-      "action_save_error": "Kaydedilemedi. Tekrar dene."
+      "action_save_error": "Kaydedilemedi. Tekrar dene.",
+      "action_share": "Spotlight'ı Paylaş",
+      "share_card_title": "SPOTLIGHT · FİLM %{n}",
+      "share_card_title_no_n": "SPOTLIGHT",
+      "share_card_found": "BULDUN · %{left}/%{total} HAK KALDI",
+      "share_card_flawless": "KUSURSUZ · %{left}/%{total} HAK KALDI",
+      "share_card_invite": "Bugünün filmini tanır mıydın?",
+      "share_card_brand": "CHOSY APP",
+      "share_error": "Paylaşılamadı. Tekrar dene."
     },
     "detective": {
       "title": "Chosy Detective",
