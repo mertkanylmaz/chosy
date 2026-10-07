@@ -21,7 +21,9 @@ export type SpotlightHapticEvent =
   /** Cevap sayfasında sonuç satırı seçimi — kendi haptiği YOK, sonuç belirler */
   | { type: 'result_row_select' }
   /** Sunucunun film tahmini sonucu */
-  | { type: 'guess_result'; won: boolean; completed: boolean };
+  | { type: 'guess_result'; won: boolean; completed: boolean }
+  /** İstek ağ hatasıyla gitmedi (hak harcanmadı) — mevcut uyarı haptiği, bir kez */
+  | { type: 'action_error' };
 
 export function hapticForEvent(event: SpotlightHapticEvent): SpotlightHaptic {
   switch (event.type) {
@@ -39,6 +41,8 @@ export function hapticForEvent(event: SpotlightHapticEvent): SpotlightHaptic {
     case 'guess_result':
       if (event.won) return 'success';
       return event.completed ? 'medium' : 'warning';
+    case 'action_error':
+      return 'warning';
   }
 }
 

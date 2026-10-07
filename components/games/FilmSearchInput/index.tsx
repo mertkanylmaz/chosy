@@ -20,7 +20,7 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { ActivityIndicator, Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Image } from 'expo-image';
-import { CaretDown, FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
+import { CaretDown, CloudSlash, FilmSlate, MagnifyingGlass, XCircle } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/Colors';
@@ -79,6 +79,12 @@ interface FilmSearchInputProps {
   /** 'sheet': input ile liste arasında tek sakin satır (ör. yanlış tahmin geri bildirimi). */
   inlineNote?: string | null;
   /**
+   * 'sheet': not satırının altında tek sakin HATA satırı (ör. tahmin isteği ağ hatasıyla
+   * gitmedi). Sorgu ve sonuçlar korunur, seçim açık kalır. Varsayılan null — mevcut
+   * çağıranların çıktısı değişmez.
+   */
+  inlineError?: string | null;
+  /**
    * Satır seçiminde kendi hafif haptiğini ÇALMAZ — haptiği çağıran yer sonuca
    * göre verir (Spotlight: tahmin sonucu tek haptik). Varsayılan `false`:
    * dondurulmuş oyunların davranışı aynen kalır.
@@ -99,6 +105,7 @@ export function FilmSearchInput({
   layout = 'dropdown',
   autoFocus = false,
   inlineNote = null,
+  inlineError = null,
   silentSelect = false,
 }: FilmSearchInputProps) {
   const isSheet = layout === 'sheet';
@@ -299,6 +306,14 @@ export function FilmSearchInput({
           <Text style={styles.sheetNote} accessibilityLiveRegion="polite">
             {inlineNote}
           </Text>
+        ) : null}
+
+        {inlineError ? (
+          // Canlı bölge YOK: duyuru çağıranın tek `AccessibilityInfo` çağrısıyla yapılır
+          <View style={styles.sheetError}>
+            <CloudSlash size={16} weight="duotone" color={Colors.textTertiary} />
+            <Text style={styles.sheetErrorText}>{inlineError}</Text>
+          </View>
         ) : null}
 
         <ScrollView

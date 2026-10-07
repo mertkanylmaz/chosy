@@ -1121,6 +1121,7 @@
       "chances_a11y": "Hak: %{total} üzerinden %{left} kaldı.",
       "still_a11y": "Film karesi.",
       "still_a11y_blurred": "Film karesi. Bulanık.",
+      "still_error": "Kare yüklenemedi.",
       "key_a11y_available": "%{letter} harfi. Kullanılabilir.",
       "key_a11y_used_hit": "%{letter} harfi. Kullanıldı, başlıkta var.",
       "key_a11y_used_miss": "%{letter} harfi. Kullanıldı, başlıkta yok.",
@@ -1167,7 +1168,8 @@
         "zero": "O değil. Hak kalmadı.",
         "one": "O değil. 1 hak kaldı.",
         "other": "O değil. %{count} hak kaldı."
-      }
+      },
+      "answer_error": "Tahmin gönderilemedi. Filmi yeniden seç."
     },
     "detective": {
       "title": "Chosy Detective",

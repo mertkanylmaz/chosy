@@ -27,6 +27,7 @@
  * Sonuç ekranı bu bileşeni KULLANMAZ (SpotlightStill › ResultStill).
  */
 import React, { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   FadeIn,
@@ -66,6 +67,8 @@ interface FocusStillProps {
   styles: ReturnType<typeof createStyles>;
   /** VoiceOver etiketi — kare tek `image` öğesi, düğme değil */
   accessibilityLabel: string;
+  /** İlk kare yüklenemezse kutuda gösterilen sakin tek satır (i18n çağıranda) */
+  errorMessage: string;
   /** Kutunun üstünde yüzen chrome */
   children?: ReactNode;
 }
@@ -75,6 +78,7 @@ export function FocusStill({
   blurRadius,
   styles,
   accessibilityLabel,
+  errorMessage,
   children,
 }: FocusStillProps) {
   const isReducedMotion = useReducedMotion();
@@ -88,6 +92,8 @@ export function FocusStill({
   const [top, setTop] = useState<Layer>(0);
   /** İlk kare yüklenince true: sonraki yüklemelerde expo-image kendi geçişini kapatır */
   const [ready, setReady] = useState(false);
+  /** İlk kare yüklenemedi — kutu boş kalmasın, mesaj gösterilir (oyun kullanılabilir kalır) */
+  const [firstFrameFailed, setFirstFrameFailed] = useState(false);
 
   const opacity0 = useSharedValue(1);
   const opacity1 = useSharedValue(0);
@@ -229,6 +235,7 @@ export function FocusStill({
         if (layer === 0) {
           firstLoadedRef.current = true;
           setReady(true);
+          setFirstFrameFailed(false);
         }
         return;
       }
@@ -239,6 +246,18 @@ export function FocusStill({
 
   const handleError = useCallback(
     (layer: Layer, ticket: number, error: string) => {
+      if (!firstLoadedRef.current) {
+        // Ekranda henüz kare yok → geçiş katı da yok. Aynı URI'yi iki kat birlikte
+        // yükler; tek kayıt için yalnız kat 0 raporlar (kat 1 aynı nedenle düşer).
+        if (layer === 0 && mountedRef.current) {
+          logger.error('[spotlight] Ilk kare yuklenemedi', error, {
+            code: 'SPOTLIGHT_STILL_LOAD_FIRST',
+            extra: { backdrop_url: uriRef.current, blur_radius: targetRef.current },
+          });
+          setFirstFrameFailed(true);
+        }
+        return;
+      }
       lastErrorRef.current = error;
       dispatch({ type: 'error', layer, ticket });
     },
@@ -253,7 +272,7 @@ export function FocusStill({
       style={styles.stillWrap}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={firstFrameFailed ? `${accessibilityLabel} ${errorMessage}` : accessibilityLabel}
     >
       <Animated.View style={[styles.stillLayer, top === 0 ? styles.layerTop : styles.layerBase, style0]}>
         <Image
@@ -279,6 +298,11 @@ export function FocusStill({
           accessible={false}
         />
       </Animated.View>
+      {firstFrameFailed && (
+        <View style={styles.stillError} pointerEvents="none">
+          <Text style={styles.stillErrorText}>{errorMessage}</Text>
+        </View>
+      )}
       {children}
     </Animated.View>
   );

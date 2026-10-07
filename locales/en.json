@@ -1121,6 +1121,7 @@
       "chances_a11y": "Chances: %{left} of %{total} remaining.",
       "still_a11y": "Film still.",
       "still_a11y_blurred": "Film still. Blurred.",
+      "still_error": "Couldn't load the still.",
       "key_a11y_available": "Letter %{letter}. Available.",
       "key_a11y_used_hit": "Letter %{letter}. Used, in the title.",
       "key_a11y_used_miss": "Letter %{letter}. Used, not in the title.",
@@ -1167,7 +1168,8 @@
         "zero": "Not that one. No chances left.",
         "one": "Not that one. 1 chance left.",
         "other": "Not that one. %{count} chances left."
-      }
+      },
+      "answer_error": "Couldn't send your guess. Pick the film again."
     },
     "detective": {
       "title": "Chosy Detective",

@@ -115,6 +115,23 @@ export const createStyles = (theme: GameTheme) => {
     color: Colors.textSecondary,
     textAlign: 'center',
   },
+  /** Ağ hatası: not satırından ayrı — çerçeveli, simgeli, kırmızı/sarsıntı yok */
+  sheetError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Theme.spacing.sm,
+    paddingHorizontal: Theme.spacing.md,
+    paddingVertical: Theme.spacing.sm,
+    borderRadius: Theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sheetErrorText: {
+    flexShrink: 1,
+    ...Theme.typography.caption,
+    color: Colors.textSecondary,
+  },
   sheetList: {
     flex: 1,
   },

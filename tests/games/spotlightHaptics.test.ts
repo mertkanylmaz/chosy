@@ -63,10 +63,15 @@ Deno.test('her olay en fazla BİR haptik üretir (tür tek değer, dizi değil)'
     { type: 'guess_result', won: true, completed: true },
     { type: 'guess_result', won: false, completed: false },
     { type: 'guess_result', won: false, completed: true },
+    { type: 'action_error' },
   ]
   for (const e of events) {
     const h = hapticForEvent(e)
     assertEquals(Array.isArray(h), false, JSON.stringify(e))
     assertEquals(h === null || typeof h === 'string', true, JSON.stringify(e))
   }
+})
+
+Deno.test('ağ hatası (istek gitmedi): mevcut uyarı haptiği, tek', () => {
+  assertEquals(hapticForEvent({ type: 'action_error' }), 'warning')
 })

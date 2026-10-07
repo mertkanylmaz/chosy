@@ -10,7 +10,8 @@
  * göstermek çözüm sızıntısı değil (Spotlight kuralı 1). Paylaşım görseline
  * girmez — o ayrı `GameShareCard` (kural 5).
  */
-import React, { useCallback, type ReactNode } from 'react';
+import React, { useCallback, useState, type ReactNode } from 'react';
+import { Text, View } from 'react-native';
 import { Image, type ImageErrorEventData } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
@@ -65,6 +66,7 @@ export function SpotlightStill(props: SpotlightStillProps) {
         blurRadius={props.blurRadius}
         styles={props.styles}
         accessibilityLabel={label}
+        errorMessage={t('games.spotlight.still_error')}
       >
         {props.children}
       </FocusStill>
@@ -75,6 +77,7 @@ export function SpotlightStill(props: SpotlightStillProps) {
       {...props}
       uri={tmdbSizedUrl(props.uri, SPOTLIGHT_IMAGE_SIZE.resultStill)}
       accessibilityLabel={label}
+      errorMessage={t('games.spotlight.still_error')}
     />
   );
 }
@@ -85,8 +88,9 @@ function ResultStill({
   reveal,
   styles,
   accessibilityLabel,
+  errorMessage,
   children,
-}: SpotlightStillProps & { accessibilityLabel: string }) {
+}: SpotlightStillProps & { accessibilityLabel: string; errorMessage: string }) {
   const isReducedMotion = useReducedMotion();
   // Reduce Motion: geçiş kalkmaz, 100ms çapraz geçişe iner (§7.5)
   const animate = reveal === 'animate';
@@ -95,6 +99,8 @@ function ResultStill({
     : SPOTLIGHT_STILL_REVEAL.duration;
   const sharpOpacity = useSharedValue(animate ? 0 : 1);
   const sharpStyle = useAnimatedStyle(() => ({ opacity: sharpOpacity.value }));
+  /** Net kare yüklenemedi — kutu boş/bulanık kalmasın, sakin mesaj gösterilir */
+  const [failed, setFailed] = useState(false);
 
   /** Geçiş net kat yüklenince başlar — yüklenmemiş katı belirtmek boş kare gösterirdi */
   const handleSharpLoad = useCallback(() => {
@@ -113,6 +119,7 @@ function ResultStill({
         code: 'SPOTLIGHT_STILL_LOAD',
         extra: { backdrop_url: uri },
       });
+      setFailed(true);
     },
     [uri],
   );
@@ -122,7 +129,7 @@ function ResultStill({
       style={styles.stillWrap}
       accessible
       accessibilityRole="image"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={failed ? `${accessibilityLabel} ${errorMessage}` : accessibilityLabel}
     >
       {reveal !== 'static' && (
         <Image
@@ -145,6 +152,11 @@ function ResultStill({
           accessible={false}
         />
       </Animated.View>
+      {failed && (
+        <View style={styles.stillError} pointerEvents="none">
+          <Text style={styles.stillErrorText}>{errorMessage}</Text>
+        </View>
+      )}
       {children}
     </Animated.View>
   );

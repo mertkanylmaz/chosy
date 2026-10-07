@@ -77,6 +77,7 @@ import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
 import { fitMaskScale, groupMaskWords } from './maskLayout';
 import { nextPuzzleCountdown } from './nextPuzzleClock';
+import { validateSpotlightLoad } from './resumeValidation';
 import { createMaskStyles, createStyles, MASK_ROW_W } from './styles';
 
 type ScreenState = 'loading' | 'playing' | 'completed';
@@ -261,6 +262,14 @@ export function SpotlightGame() {
   const [actionError, setActionError] = useState(false);
   /** Cevap sayfasi (Sprint 1) — oyun durumundan bagimsiz, yalniz sunum */
   const [answerOpen, setAnswerOpen] = useState(false);
+  /** Async catch'in sayfa acik mi sorusu icin — kapanista bayat closure okunmasin */
+  const answerOpenRef = useRef(false);
+  answerOpenRef.current = answerOpen;
+  /**
+   * Tahmin istegi gitmedi (ag/sunucu hatasi) — SAYFANIN ICINDE gosterilir; ekran
+   * Modal'in arkasinda kalir. Hak sayaci etkilenmez: hak yalniz sunucu yanitindan gelir.
+   */
+  const [guessError, setGuessError] = useState(false);
   /** Sayfa acikken son tahmin yanlisti — sakin satir gosterilir */
   const [lastGuessWrong, setLastGuessWrong] = useState(false);
 
@@ -305,6 +314,19 @@ export function SpotlightGame() {
         return;
       }
 
+      // Yükleme/resume doğrulaması (saf: resumeValidation.ts). Eksik ya da tutarsız
+      // veri sessiz "taze oyun" ya da tam netlik olmaz: hata durumu + retry + log.
+      const validation = validateSpotlightLoad(pd, serverMax, data.progress ?? null);
+      if (!validation.ok) {
+        logger.error(
+          `[spotlight] Yukleme/resume dogrulamasi basarisiz: ${validation.detail}`,
+          new Error(validation.code),
+          { code: validation.code, extra: { detail: validation.detail, puzzle_id: data.puzzle.id } },
+        );
+        setLoadError(true);
+        return;
+      }
+
       setPuzzleId(data.puzzle.id);
       setPuzzleNo(data.puzzle_no);
       setMaxAttempts(serverMax);
@@ -316,23 +338,10 @@ export function SpotlightGame() {
       // sunucudan. `progress` null = oyuncu bu bulmacada henuz hamle yapmadi.
       // Spotlight'ta `guesses` hep bos; hak `attempts`'tan okunur.
       const progress = data.progress;
-      if (
-        progress &&
-        (typeof progress.attempts !== 'number' ||
-          !Array.isArray(progress.spotlight_letters) ||
-          !Array.isArray(progress.spotlight_revealed))
-      ) {
-        // Sessiz fallback yasak: P-3d oncesi get-daily-challenge — resume
-        // eksik gelir (bos maske, yanlis hak). Deploy sirasi hatasi.
-        logger.error(
-          '[spotlight] progress resume alanlari eksik',
-          new Error('SPOTLIGHT_PROGRESS_FIELDS_MISSING'),
-          { code: 'SPOTLIGHT_PROGRESS_FIELDS_MISSING' },
-        );
-      }
+      // Doğrulama geçti: progress varsa bu alanlar mevcut ve tutarlı (taze oyun = null)
       setTriedLetters(progress?.spotlight_letters ?? []);
       setRevealed(progress?.spotlight_revealed ?? []);
-      setAttempts(progress?.attempts ?? progress?.guesses?.length ?? 0);
+      setAttempts(progress?.attempts ?? 0);
       setGuessedFilmIds(progress?.spotlight_guesses?.map((g) => g.film_id) ?? []);
 
       if (progress?.completed) {
@@ -436,6 +445,17 @@ export function SpotlightGame() {
     [isBusy, screenState, triedLetters, puzzleId, announce, maxAttempts, t],
   );
 
+  /**
+   * Tahmin gonderilemedi: sayfa aciksa hata sayfanin icinde, degilse ekranda gorunur
+   * (sessiz yol yok). Tek haptik + tek VoiceOver duyurusu; hak sayaci dokunulmaz.
+   */
+  const reportGuessFailure = useCallback(() => {
+    if (answerOpenRef.current) setGuessError(true);
+    else setActionError(true);
+    playSpotlightHaptic({ type: 'action_error' });
+    announce(t('games.spotlight.answer_error'));
+  }, [announce, t]);
+
   /** Filmi tahmin et — kazanma yolu */
   const handleGuess = useCallback(
     async (film: FilmSearchResult) => {
@@ -443,14 +463,17 @@ export function SpotlightGame() {
 
       const filmUuid = film.uuid;
       if (!filmUuid) {
-        logger.warn('[spotlight] Film UUID yok — tahmin gonderilemiyor');
-        setActionError(true);
+        logger.error('[spotlight] Film UUID yok — tahmin gonderilemiyor', new Error('SPOTLIGHT_GUESS_NO_UUID'), {
+          code: 'SPOTLIGHT_GUESS_NO_UUID',
+        });
+        reportGuessFailure();
         return;
       }
 
       guessLockRef.current = true;
       setIsBusy(true);
       setActionError(false);
+      setGuessError(false);
       try {
         const res = await submitSpotlightGuess(puzzleId, filmUuid);
         setAttempts(res.attempts_used);
@@ -490,13 +513,13 @@ export function SpotlightGame() {
         }
       } catch (err) {
         logger.error('[spotlight] Tahmin gonderilemedi:', err);
-        setActionError(true);
+        reportGuessFailure();
       } finally {
         guessLockRef.current = false;
         setIsBusy(false);
       }
     },
-    [isBusy, screenState, puzzleId, announce, maxAttempts, t],
+    [isBusy, screenState, puzzleId, announce, maxAttempts, t, reportGuessFailure],
   );
 
   /** Pozisyon → harf haritasi; maskeyi cizmek icin */
@@ -548,15 +571,16 @@ export function SpotlightGame() {
     playSpotlightHaptic({ type: 'cta_press' });
     setLastGuessWrong(false);
     setActionError(false);
+    setGuessError(false);
     setAnswerOpen(true);
     trackSpotlightAnswerSheetOpened(puzzleId, Math.max(0, maxAttempts - attempts));
   }, [isBusy, puzzleId, maxAttempts, attempts]);
   const closeAnswerSheet = useCallback(() => setAnswerOpen(false), []);
-  const blurAmount = blurForProgress(
-    revealedMap.size,
-    puzzleData?.letter_count ?? 0,
-    SPOTLIGHT_MAX_BLUR,
-  );
+  // letter_count yuklemede dogrulandi (tam sayi > 0, maske ile tutarli). Bulmaca
+  // yokken kare cizilmez; yine de eksik veri tam netlik degil azami bulaniklik verir.
+  const blurAmount = puzzleData
+    ? blurForProgress(revealedMap.size, puzzleData.letter_count, SPOTLIGHT_MAX_BLUR)
+    : SPOTLIGHT_MAX_BLUR;
   /** Sonuc ekraninda kare cizilebilir mi — yoksa ResultCard posteri kalir */
   const hasStill = Boolean(puzzleData?.backdrop_url);
 
@@ -860,6 +884,7 @@ export function SpotlightGame() {
         inlineNote={
           lastGuessWrong ? t('games.spotlight.answer_wrong', { count: attemptsLeft }) : null
         }
+        inlineError={guessError ? t('games.spotlight.answer_error') : null}
       />
     </GameShell>
   );

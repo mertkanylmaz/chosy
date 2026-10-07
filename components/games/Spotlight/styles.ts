@@ -119,6 +119,20 @@ export const createStyles = (theme: GameTheme) => {
   stillLayer: {
     ...StyleSheet.absoluteFillObject,
   },
+  /** Kare yüklenemedi: kutuyu opak örter, sakin tek satır — boş kare kalmaz */
+  stillError: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: space.md,
+    backgroundColor: color.surface.raised,
+  },
+  stillErrorText: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+  },
   /** FocusStill: belirmekte olan kat eski katın üstünde çizilir */
   layerTop: {
     zIndex: 2,

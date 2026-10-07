@@ -62,6 +62,8 @@ interface AnswerSheetProps {
   triedFilmIds: readonly string[];
   /** Yanlis tahmin sonrasi sakin satir; yoksa null */
   inlineNote: string | null;
+  /** Tahmin isteği ağ hatasıyla gitmedi — sayfa İÇİNDE sakin hata satırı; yoksa null */
+  inlineError: string | null;
   /** Sayfa tamamen kapandi (iOS) — çağıran VoiceOver odağını CTA'ya döndürür */
   onDismissed?: () => void;
 }
@@ -73,6 +75,7 @@ export function AnswerSheet({
   busy,
   triedFilmIds,
   inlineNote,
+  inlineError,
   onDismissed,
 }: AnswerSheetProps) {
   const { t } = useLanguage();
@@ -165,6 +168,7 @@ export function AnswerSheet({
                 disabled={busy}
                 triedFilmIds={triedFilmIds}
                 inlineNote={inlineNote}
+                inlineError={inlineError}
               />
             </View>
           </Animated.View>
