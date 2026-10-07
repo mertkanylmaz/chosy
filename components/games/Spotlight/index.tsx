@@ -14,7 +14,16 @@
  * oyuncunun kendi actigi harfler ve pozisyonlari doner (Hard Rule 1 + 2).
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { CloudSlash } from 'phosphor-react-native';
 import Animated, {
@@ -59,7 +68,10 @@ import type {
 import { SPOTLIGHT_KEY_PRESS, SPOTLIGHT_MAX_BLUR } from './constants';
 import { blurForProgress } from './focus';
 import { keyPressState } from './hapticMap';
+import { hasHitBar, isStruck, KEY_A11Y_KEY, keyStateFor, type KeyState } from './keyState';
+import { composeMaskLabel } from './maskA11y';
 import { playSpotlightHaptic } from './playHaptic';
+import { useScreenReaderEnabled } from './useScreenReaderEnabled';
 import { AnswerSheet } from './AnswerSheet';
 import { ChancesRow } from './ChancesRow';
 import { SpotlightStill, type StillReveal } from './SpotlightStill';
@@ -80,8 +92,10 @@ const KEY_ROWS = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
 
 interface KeyButtonProps {
   letter: string;
-  tried: boolean;
-  hit: boolean;
+  /** Uc durum: uygun / kullanildi+basliktta var / kullanildi+basliktta yok */
+  state: KeyState;
+  /** VoiceOver: "Harf A. Kullanilabilir." vb. (i18n) */
+  a11yLabel: string;
   disabled: boolean;
   onPress: () => void;
   /**
@@ -101,7 +115,17 @@ interface KeyButtonProps {
  * Reduce Motion'da olcek uygulanmaz, yalniz opaklik. Kullanilmis/kilitli tus
  * (`disabled`) hicbir gorsel tepki vermez — Pressable basisi zaten almaz.
  */
-function KeyButton({ letter, tried, hit, disabled, onPress, styles, reduceMotion }: KeyButtonProps) {
+function KeyButton({
+  letter,
+  state,
+  a11yLabel,
+  disabled,
+  onPress,
+  styles,
+  reduceMotion,
+}: KeyButtonProps) {
+  const hit = state === 'used_hit';
+  const tried = state !== 'available';
   const pressed = useSharedValue(0);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -128,8 +152,8 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles, reduceMotion
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={letter}
-      accessibilityState={{ disabled }}
+      accessibilityLabel={a11yLabel}
+      accessibilityState={{ disabled: tried || disabled }}
     >
       <Animated.View style={[styles.key, animatedStyle, tried && (hit ? styles.keyHit : styles.keyMiss)]}>
         <Text
@@ -139,7 +163,9 @@ function KeyButton({ letter, tried, hit, disabled, onPress, styles, reduceMotion
         >
           {letter}
         </Text>
-        {tried && <View style={styles.keyStrike} pointerEvents="none" />}
+        {/* Renksiz ayrim: yalniz "basliktta yok" ustu cizili, "basliktta var" alt cubuklu */}
+        {isStruck(state) && <View style={styles.keyStrike} pointerEvents="none" />}
+        {hasHitBar(state) && <View style={styles.keyHitBar} pointerEvents="none" />}
       </Animated.View>
     </Pressable>
   );
@@ -215,6 +241,23 @@ export function SpotlightGame() {
    */
   const letterLockRef = useRef(false);
   const reduceMotion = useReducedMotion();
+  const screenReaderOn = useScreenReaderEnabled();
+  /** CTA dugumu — cevap sayfasi kapaninca VoiceOver odagi buraya doner */
+  const ctaRef = useRef<React.ElementRef<typeof TouchableOpacity>>(null);
+  /**
+   * VoiceOver anonu — YALNIZ kullanici eyleminin sonucunda ve ekran okuyucu
+   * aciksken; mount/resume'da cagrilmaz (cagri yerleri handleLetter/handleGuess).
+   */
+  const announce = useCallback(
+    (message: string) => {
+      if (screenReaderOn) AccessibilityInfo.announceForAccessibility(message);
+    },
+    [screenReaderOn],
+  );
+  const focusCta = useCallback(() => {
+    const node = screenReaderOn && ctaRef.current ? findNodeHandle(ctaRef.current) : null;
+    if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+  }, [screenReaderOn]);
   const [actionError, setActionError] = useState(false);
   /** Cevap sayfasi (Sprint 1) — oyun durumundan bagimsiz, yalniz sunum */
   const [answerOpen, setAnswerOpen] = useState(false);
@@ -346,6 +389,14 @@ export function SpotlightGame() {
         setTriedLetters(res.tried_letters);
         setRevealed(res.revealed);
         setAttempts(res.attempts_used);
+        announce(
+          res.hit
+            ? t('games.spotlight.announce_letter_hit', { letter })
+            : t('games.spotlight.announce_letter_miss', {
+                letter,
+                count: Math.max(0, maxAttempts - res.attempts_used),
+              }),
+        );
 
         // Haklar bittiyse oyun burada kapanir — aksi halde oyuncu "0 hak"
         // ile ekranda kilitli kalir ve sonraki harf 409 alir.
@@ -382,7 +433,7 @@ export function SpotlightGame() {
         setIsBusy(false);
       }
     },
-    [isBusy, screenState, triedLetters, puzzleId],
+    [isBusy, screenState, triedLetters, puzzleId, announce, maxAttempts, t],
   );
 
   /** Filmi tahmin et — kazanma yolu */
@@ -430,6 +481,12 @@ export function SpotlightGame() {
         } else {
           setLastGuessWrong(true);
           playSpotlightHaptic({ type: 'guess_result', won: false, completed: false });
+          // Sayfadaki satirla AYNI metin, bir kez (iOS'ta canli bolge yok)
+          announce(
+            t('games.spotlight.answer_wrong', {
+              count: Math.max(0, maxAttempts - res.attempts_used),
+            }),
+          );
         }
       } catch (err) {
         logger.error('[spotlight] Tahmin gonderilemedi:', err);
@@ -439,7 +496,7 @@ export function SpotlightGame() {
         setIsBusy(false);
       }
     },
-    [isBusy, screenState, puzzleId],
+    [isBusy, screenState, puzzleId, announce, maxAttempts, t],
   );
 
   /** Pozisyon → harf haritasi; maskeyi cizmek icin */
@@ -469,6 +526,11 @@ export function SpotlightGame() {
   /** Maskenin 2 satira sigdigi en buyuk olcek, taban 0.8 */
   const maskScale = useMemo(() => fitMaskScale(maskWords, MASK_ROW_W), [maskWords]);
   const maskStyles = useMemo(() => createMaskStyles(theme, maskScale), [theme, maskScale]);
+  /** VoiceOver ozeti — ekranda gorunenden fazlasini icermez */
+  const maskLabel = useMemo(
+    () => composeMaskLabel(maskWords, revealedMap, t),
+    [maskWords, revealedMap, t],
+  );
 
   const attemptsLeft = Math.max(0, maxAttempts - attempts);
 
@@ -678,7 +740,16 @@ export function SpotlightGame() {
               maske 2 satira sigsin diye 0.8'e kadar kuculur; daha uzun baslik
               3+ satira kirilir ve bu bolgeyle birlikte kayar.
             */}
-            <View style={maskStyles.maskRow}>
+            {/*
+              Tek erisilebilir oge: kelime sayisi, uzunluklar, acik pozisyonlar
+              (maskA11y.ts). Slotlar VoiceOver'dan gizli — slot basina gurultu yok.
+            */}
+            <View accessible accessibilityRole="text" accessibilityLabel={maskLabel}>
+            <View
+              style={maskStyles.maskRow}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
               {maskWords.map((word) => (
                 <View key={word[0].index} style={maskStyles.maskWord}>
                   {word.map(({ token, index }) => {
@@ -717,6 +788,7 @@ export function SpotlightGame() {
                 </View>
               ))}
             </View>
+            </View>
             <Text style={styles.helper}>{t('games.spotlight.helper')}</Text>
             </View>
         </ScrollView>
@@ -744,19 +816,23 @@ export function SpotlightGame() {
             <View style={styles.keyboard}>
               {KEY_ROWS.map((row) => (
                 <View key={row} style={styles.keyboardRow}>
-                  {[...row].map((letter) => (
-                    <KeyButton
-                      key={letter}
-                      letter={letter}
-                      tried={triedLetters.includes(letter)}
-                      hit={hitLetters.has(letter)}
-                      disabled={triedLetters.includes(letter) || isBusy}
-                      styles={styles}
-                      reduceMotion={reduceMotion}
-                      // Basis haptigi handleLetter'da, kilitten sonra (tek atis)
-                      onPress={() => handleLetter(letter)}
-                    />
-                  ))}
+                  {[...row].map((letter) => {
+                    const used = triedLetters.includes(letter);
+                    const state = keyStateFor(used, hitLetters.has(letter));
+                    return (
+                      <KeyButton
+                        key={letter}
+                        letter={letter}
+                        state={state}
+                        a11yLabel={t(`games.spotlight.${KEY_A11Y_KEY[state]}`, { letter })}
+                        disabled={used || isBusy}
+                        styles={styles}
+                        reduceMotion={reduceMotion}
+                        // Basis haptigi handleLetter'da, kilitten sonra (tek atis)
+                        onPress={() => handleLetter(letter)}
+                      />
+                    );
+                  })}
                 </View>
               ))}
             </View>
@@ -766,6 +842,7 @@ export function SpotlightGame() {
               <PrimaryAction
                 label={t('games.spotlight.answer_cta')}
                 onPress={openAnswerSheet}
+                buttonRef={ctaRef}
                 disabled={isBusy}
                 busy={isBusy}
                 variant="gold"
@@ -776,6 +853,7 @@ export function SpotlightGame() {
       <AnswerSheet
         visible={answerOpen}
         onClose={closeAnswerSheet}
+        onDismissed={focusCta}
         onSelect={handleGuess}
         busy={isBusy}
         triedFilmIds={guessedFilmIds}

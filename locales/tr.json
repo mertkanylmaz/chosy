@@ -1118,7 +1118,33 @@
       "result_won": "%{turns} tahminde buldun!",
       "case_label": "FİLM %{number}",
       "chances_label": "HAK",
-      "chances_a11y": "%{total} haktan %{left} tanesi kaldı",
+      "chances_a11y": "Hak: %{total} üzerinden %{left} kaldı.",
+      "still_a11y": "Film karesi.",
+      "still_a11y_blurred": "Film karesi. Bulanık.",
+      "key_a11y_available": "%{letter} harfi. Kullanılabilir.",
+      "key_a11y_used_hit": "%{letter} harfi. Kullanıldı, başlıkta var.",
+      "key_a11y_used_miss": "%{letter} harfi. Kullanıldı, başlıkta yok.",
+      "mask_a11y_title": "Başlık.",
+      "mask_a11y_words": {
+        "one": "%{count} kelime.",
+        "other": "%{count} kelime."
+      },
+      "mask_a11y_blank": "boş",
+      "mask_a11y_word_blank": {
+        "one": "Kelime %{n}: 1 harf, boş.",
+        "other": "Kelime %{n}: %{count} harf, hepsi boş."
+      },
+      "mask_a11y_word": {
+        "zero": "Kelime %{n}: harf yok, %{cells}.",
+        "one": "Kelime %{n}: 1 harf, %{cells}.",
+        "other": "Kelime %{n}: %{count} harf, %{cells}."
+      },
+      "announce_letter_hit": "%{letter} başlıkta var.",
+      "announce_letter_miss": {
+        "zero": "%{letter} başlıkta yok. Hak kalmadı.",
+        "one": "%{letter} başlıkta yok. 1 hak kaldı.",
+        "other": "%{letter} başlıkta yok. %{count} hak kaldı."
+      },
       "helper": "Harf seç. Filmi netleştir.",
       "which_film": "Hangi film?",
       "result_won_letters": {

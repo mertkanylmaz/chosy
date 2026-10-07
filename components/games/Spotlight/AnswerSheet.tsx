@@ -14,8 +14,17 @@
  * Arama veri kaynagi ve sozlesmesi degismez: icerik `FilmSearchInput`
  * (`layout="sheet"`).
  */
-import React, { useEffect } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, Text, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useRef } from 'react';
+import {
+  AccessibilityInfo,
+  findNodeHandle,
+  KeyboardAvoidingView,
+  Modal, Platform,
+  Pressable,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -37,6 +46,7 @@ import { FilmSearchInput } from '@/components/games/FilmSearchInput';
 import type { FilmSearchResult } from '@/services/gameTypes';
 
 import { answerSheetStyles as styles } from './answerSheetStyles';
+import { useScreenReaderEnabled } from './useScreenReaderEnabled';
 
 /** Asagi kaydirma esigi: mesafe (pt) veya hiz (pt/sn) */
 const DISMISS_DISTANCE = 100;
@@ -52,6 +62,8 @@ interface AnswerSheetProps {
   triedFilmIds: readonly string[];
   /** Yanlis tahmin sonrasi sakin satir; yoksa null */
   inlineNote: string | null;
+  /** Sayfa tamamen kapandi (iOS) — çağıran VoiceOver odağını CTA'ya döndürür */
+  onDismissed?: () => void;
 }
 
 export function AnswerSheet({
@@ -61,9 +73,12 @@ export function AnswerSheet({
   busy,
   triedFilmIds,
   inlineNote,
+  onDismissed,
 }: AnswerSheetProps) {
   const { t } = useLanguage();
   const translateY = useSharedValue(0);
+  const titleRef = useRef<Text>(null);
+  const screenReaderOn = useScreenReaderEnabled();
   const reduceMotion = useReducedMotion();
   /** Esige varmayan kaydirma geri doner: ease-out, spring yok; Reduce Motion'da 100ms */
   const snapBackMs = reduceMotion ? REDUCED_MOTION_DURATION.crossFade : SPOTLIGHT_FOCUS_STEP.duration;
@@ -90,32 +105,40 @@ export function AnswerSheet({
     transform: [{ translateY: translateY.value }],
   }));
 
+  /** Sayfa açılınca VoiceOver odağı sayfa başlığına (ekranın geri kalanı modal ile gizli) */
+  const focusTitle = useCallback(() => {
+    const node = titleRef.current ? findNodeHandle(titleRef.current) : null;
+    if (node != null) AccessibilityInfo.setAccessibilityFocus(node);
+  }, []);
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
       onRequestClose={onClose}
+      onShow={focusTitle}
+      onDismiss={onDismissed}
       statusBarTranslucent
     >
       <GestureHandlerRootView style={styles.root}>
         <Pressable
           style={styles.backdrop}
           onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel={t('games.spotlight.answer_close')}
+          // Gorunmez dokunma alani: VoiceOver icin ayri Kapat dugmesi var, ikilemesin
+          accessible={false}
         />
         <KeyboardAvoidingView
           style={styles.root}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           pointerEvents="box-none"
         >
-          <Animated.View style={[styles.sheet, sheetMotion]}>
+          <Animated.View style={[styles.sheet, sheetMotion]} accessibilityViewIsModal>
             <GestureDetector gesture={pan}>
               <Animated.View style={styles.header}>
                 <View style={styles.grabber} accessibilityElementsHidden importantForAccessibility="no" />
                 <View style={styles.titleRow}>
-                  <Text style={styles.title} accessibilityRole="header">
+                  <Text ref={titleRef} style={styles.title} accessibilityRole="header">
                     {t('games.spotlight.answer_title')}
                   </Text>
                   <TouchableOpacity
@@ -132,7 +155,8 @@ export function AnswerSheet({
             <View style={styles.body}>
               <FilmSearchInput
                 layout="sheet"
-                autoFocus
+                // VoiceOver acikken klavye odagi baslik odagini ezmesin: alan elle etkinlestirilir
+                autoFocus={!screenReaderOn}
                 catalogOnly
                 // Satir secimi kendi haptigini calmaz — tahmin sonucu tek haptik (hapticMap.ts)
                 silentSelect

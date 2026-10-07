@@ -90,6 +90,8 @@ export function GameStateView({
             onRetry();
           }}
           activeOpacity={0.8}
+          // Gorunen yukseklik ~32pt: etkin dokunma alani >=44pt (gorunum degismez)
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           accessibilityRole="button"
           accessibilityLabel={t('games.result.retry')}
         >

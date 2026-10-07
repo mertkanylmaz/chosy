@@ -31,6 +31,11 @@ interface PrimaryActionProps {
    * ink metin, kenar/parıltı yok. Varsayılan `default` aynen kalır (gauntlet).
    */
   variant?: 'default' | 'gold';
+  /**
+   * Düğümün ref'i — çağıran VoiceOver odağını programatik taşıyabilsin diye
+   * (ör. sayfa kapanınca CTA'ya dön). Verilmezse hiçbir şey değişmez.
+   */
+  buttonRef?: React.Ref<React.ElementRef<typeof TouchableOpacity>>;
 }
 
 export function PrimaryAction({
@@ -39,9 +44,11 @@ export function PrimaryAction({
   disabled = false,
   busy = false,
   variant = 'default',
+  buttonRef,
 }: PrimaryActionProps): React.JSX.Element {
   return (
     <TouchableOpacity
+      ref={buttonRef}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.85}

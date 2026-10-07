@@ -51,13 +51,21 @@ interface FocusStillProps {
   /** Hedef bulanıklık — `blurForProgress` çıktısı */
   blurRadius: number;
   styles: ReturnType<typeof createStyles>;
+  /** VoiceOver etiketi — kare tek `image` öğesi, düğme değil */
+  accessibilityLabel: string;
   /** Kutunun üstünde yüzen chrome */
   children?: ReactNode;
 }
 
 const other = (layer: Layer): Layer => (layer === 0 ? 1 : 0);
 
-export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProps) {
+export function FocusStill({
+  uri,
+  blurRadius,
+  styles,
+  accessibilityLabel,
+  children,
+}: FocusStillProps) {
   const isReducedMotion = useReducedMotion();
   const duration = isReducedMotion
     ? REDUCED_MOTION_DURATION.crossFade
@@ -222,7 +230,13 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
   );
 
   return (
-    <Animated.View entering={FadeIn.duration(400)} style={styles.stillWrap}>
+    <Animated.View
+      entering={FadeIn.duration(400)}
+      style={styles.stillWrap}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+    >
       <Animated.View style={[styles.stillLayer, top === 0 ? styles.layerTop : styles.layerBase, style0]}>
         <Image
           source={{ uri }}
@@ -232,6 +246,7 @@ export function FocusStill({ uri, blurRadius, styles, children }: FocusStillProp
           transition={ready ? 0 : 300}
           onLoad={() => handleLoad(0)}
           onError={(e) => handleError(0, e.error)}
+          accessible={false}
         />
       </Animated.View>
       <Animated.View style={[styles.stillLayer, top === 1 ? styles.layerTop : styles.layerBase, style1]}>

@@ -74,7 +74,11 @@ export function ChancesRow({ max, left }: ChancesRowProps): React.JSX.Element {
       })}
     >
       <Text style={styles.label}>{t('games.spotlight.chances_label')}</Text>
-      <View style={styles.dots} importantForAccessibility="no-hide-descendants">
+      <View
+        style={styles.dots}
+        importantForAccessibility="no-hide-descendants"
+        accessibilityElementsHidden
+      >
         {states.map((filled, i) => (
           <ChanceDot key={i} filled={filled} />
         ))}

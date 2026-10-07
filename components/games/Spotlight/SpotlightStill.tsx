@@ -24,6 +24,7 @@ import {
   REDUCED_MOTION_DURATION,
   SPOTLIGHT_STILL_REVEAL,
 } from '@/constants/design/motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { logger } from '@/utils/logger';
 
 import { FocusStill } from './FocusStill';
@@ -51,17 +52,34 @@ interface SpotlightStillProps {
  * Sonuç (`animate`/`static`) → ResultStill: bitiş anındaki bulanıklıktan net kata.
  */
 export function SpotlightStill(props: SpotlightStillProps) {
+  const { t } = useLanguage();
+  // "Bulanik" yalniz oynanista ve gercekten bulanikken; bitmis oyunda / net karede degil
+  const blurred = props.reveal === 'none' && props.blurRadius > 0;
+  const label = t(blurred ? 'games.spotlight.still_a11y_blurred' : 'games.spotlight.still_a11y');
+
   if (props.reveal === 'none') {
     return (
-      <FocusStill uri={props.uri} blurRadius={props.blurRadius} styles={props.styles}>
+      <FocusStill
+        uri={props.uri}
+        blurRadius={props.blurRadius}
+        styles={props.styles}
+        accessibilityLabel={label}
+      >
         {props.children}
       </FocusStill>
     );
   }
-  return <ResultStill {...props} />;
+  return <ResultStill {...props} accessibilityLabel={label} />;
 }
 
-function ResultStill({ uri, blurRadius, reveal, styles, children }: SpotlightStillProps) {
+function ResultStill({
+  uri,
+  blurRadius,
+  reveal,
+  styles,
+  accessibilityLabel,
+  children,
+}: SpotlightStillProps & { accessibilityLabel: string }) {
   const isReducedMotion = useReducedMotion();
   // Reduce Motion: geçiş kalkmaz, 100ms çapraz geçişe iner (§7.5)
   const animate = reveal === 'animate';
@@ -93,7 +111,12 @@ function ResultStill({ uri, blurRadius, reveal, styles, children }: SpotlightSti
   );
 
   return (
-    <Animated.View style={styles.stillWrap}>
+    <Animated.View
+      style={styles.stillWrap}
+      accessible
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel}
+    >
       {reveal !== 'static' && (
         <Image
           source={{ uri }}
@@ -101,6 +124,7 @@ function ResultStill({ uri, blurRadius, reveal, styles, children }: SpotlightSti
           contentFit="cover"
           blurRadius={blurRadius}
           transition={0}
+          accessible={false}
         />
       )}
       <Animated.View style={[styles.stillLayer, sharpStyle]}>

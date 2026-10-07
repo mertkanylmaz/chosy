@@ -1118,7 +1118,33 @@
       "result_won": "Found it in %{turns} guess(es)!",
       "case_label": "FILM %{number}",
       "chances_label": "CHANCES",
-      "chances_a11y": "%{left} of %{total} chances left",
+      "chances_a11y": "Chances: %{left} of %{total} remaining.",
+      "still_a11y": "Film still.",
+      "still_a11y_blurred": "Film still. Blurred.",
+      "key_a11y_available": "Letter %{letter}. Available.",
+      "key_a11y_used_hit": "Letter %{letter}. Used, in the title.",
+      "key_a11y_used_miss": "Letter %{letter}. Used, not in the title.",
+      "mask_a11y_title": "Title.",
+      "mask_a11y_words": {
+        "one": "%{count} word.",
+        "other": "%{count} words."
+      },
+      "mask_a11y_blank": "blank",
+      "mask_a11y_word_blank": {
+        "one": "Word %{n}: 1 letter, blank.",
+        "other": "Word %{n}: %{count} letters, all blank."
+      },
+      "mask_a11y_word": {
+        "zero": "Word %{n}: no letters, %{cells}.",
+        "one": "Word %{n}: 1 letter, %{cells}.",
+        "other": "Word %{n}: %{count} letters, %{cells}."
+      },
+      "announce_letter_hit": "%{letter} is in the title.",
+      "announce_letter_miss": {
+        "zero": "%{letter} is not in the title. No chances left.",
+        "one": "%{letter} is not in the title. 1 chance left.",
+        "other": "%{letter} is not in the title. %{count} chances left."
+      },
       "helper": "Pick letters. Bring the film into focus.",
       "which_film": "Which film?",
       "result_won_letters": {

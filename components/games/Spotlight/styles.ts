@@ -161,10 +161,21 @@ export const createStyles = (theme: GameTheme) => {
     borderTopColor: withAlpha(color.text.primary, 0.1),
     backgroundColor: color.surface.raised,
   },
-  /** Baslikta cikan harf — hafif sonuk, altin hairline */
+  /**
+   * Baslikta cikan harf — SONUK DEGIL, ustu CIZILMEZ: altin harf + altin hairline
+   * + alt cubuk (`keyHitBar`). Durum renge degil sekle de dayanir (§2.7).
+   */
   keyHit: {
     borderColor: hitBorder,
-    opacity: 0.75,
+  },
+  /** Sekil isareti: harfin altinda ince altin cubuk (marquee/raised >> 3:1) */
+  keyHitBar: {
+    position: 'absolute',
+    bottom: 7,
+    width: 14,
+    height: 2,
+    borderRadius: 1,
+    backgroundColor: theme.accent,
   },
   /** Baslikta olmayan harf — sonuk, tekrar denenemez */
   keyMiss: {
