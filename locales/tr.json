@@ -1629,12 +1629,18 @@
       }
     },
     "pendingFeedback": {
-      "question": "Dünün filmini izledin mi?",
-      "loved": "Sevdim",
-      "ok": "İyiydi",
-      "abandoned": "Yarım bıraktım",
-      "notWatched": "İzlemedim",
-      "skip": "Şimdi değil"
+      "label": "Dünkü film",
+      "posterA11y": "%{title}, %{year}",
+      "question": "İzledin mi?",
+      "yes": "Evet, izledim",
+      "notYet": "Henüz değil",
+      "watchedOther": "Başka bir şey izledim",
+      "skip": "Atla",
+      "satisfactionQuestion": "Nasıldı?",
+      "loved": "Çok sevdim",
+      "ok": "Fena değildi",
+      "notForMe": "Bana göre değil",
+      "back": "Geri"
     }
   },
   "archive": {

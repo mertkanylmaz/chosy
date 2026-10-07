@@ -1629,12 +1629,18 @@
       }
     },
     "pendingFeedback": {
-      "question": "Did you watch yesterday's film?",
+      "label": "Last night's film",
+      "posterA11y": "%{title}, %{year}",
+      "question": "Did you watch it?",
+      "yes": "Yes, I watched it",
+      "notYet": "Not yet",
+      "watchedOther": "I watched something else",
+      "skip": "Skip",
+      "satisfactionQuestion": "How was it?",
       "loved": "Loved it",
       "ok": "It was fine",
-      "abandoned": "Didn't finish it",
-      "notWatched": "Haven't watched it",
-      "skip": "Not now"
+      "notForMe": "Not for me",
+      "back": "Back"
     }
   },
   "archive": {
