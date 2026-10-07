@@ -34,3 +34,16 @@ export async function isGauntletContextBarEnabled(): Promise<boolean> {
   await remoteConfig.hydrate();
   return remoteConfig.getRaw('gauntlet_context_bar_enabled') === true;
 }
+
+/**
+ * Watch-feedback State 1'deki "I watched something else" seçeneği görünür mü
+ * (app_config: watch_feedback_watched_other_enabled).
+ *
+ * T1b (arama sheet'i + `other_film_id`) bitmeden GÖSTERİLMEZ. Varsayılan KAPALI:
+ * satır yoksa, okuma hatasında ve hiç önbellek yokken false; yalnızca değer
+ * `true` ise açık. Lazy getter — modül seviyesi sabit yasak (kural 5).
+ */
+export async function isWatchedOtherEnabled(): Promise<boolean> {
+  await remoteConfig.hydrate();
+  return remoteConfig.getRaw('watch_feedback_watched_other_enabled') === true;
+}

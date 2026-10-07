@@ -33,6 +33,10 @@ import { ContextBar } from '@/components/gauntlet/ContextBar';
 import { LightBleed } from '@/components/gauntlet/LightBleed';
 import { PendingWatchFeedbackCard } from '@/components/gauntlet/PendingWatchFeedbackCard';
 import {
+  RetryExhaustedError,
+  submitWithRetry,
+} from '@/components/gauntlet/PendingWatchFeedbackCard/feedbackFlow';
+import {
   PosterTile,
   type PosterTileAnimationState,
   type PosterTitleLines,
@@ -62,7 +66,7 @@ import {
 import { radius, size, space, type } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
-import { isGauntletContextBarEnabled } from '@/services/appConfigFlags';
+import { isGauntletContextBarEnabled, isWatchedOtherEnabled } from '@/services/appConfigFlags';
 import { getEnabledGames } from '@/services/gameApi';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
@@ -379,6 +383,22 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     let cancelled = false;
     void isGauntletContextBarEnabled().then((enabled) => {
       if (!cancelled) setContextBarEnabled(enabled);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  /**
+   * "I watched something else" (T1b): varsayılan KAPALI, lazy okunur (kural 5/6).
+   * T1b bağlanana kadar kart `onWatchedOther` almaz — bayrak tek başına ölü bir
+   * buton göstermez.
+   */
+  const [watchedOtherEnabled, setWatchedOtherEnabled] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void isWatchedOtherEnabled().then((enabled) => {
+      if (!cancelled) setWatchedOtherEnabled(enabled);
     });
     return () => {
       cancelled = true;
@@ -1297,28 +1317,36 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }, [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, applyRefreshResult]);
 
   /**
-   * "Dün izledin mi?" cevabı (C.4). Kart ANINDA kapanır — network sonucu
+   * "Dün izledin mi?" cevabı (C.4, T3). Kart ANINDA kapanır — network sonucu
    * BEKLENMEZ (CTO şartı: "sonucu beklemeden normal akışa devam et, asla
-   * bloklamaz"). Optimistic: başarısız olursa `watch_feedback` satırı hiç
-   * yazılmaz, bir sonraki generate-gauntlet çağrısında soru KENDİLİĞİNDEN
-   * yeniden görünür — veri kaybı yok, sessiz fallback değil, kendi kendini
-   * onaran bir yol. Hata yalnızca Sentry'ye gider (kullanıcıya gösterilmez);
-   * `silent_retry` etiketi bu sınıfı "kullanıcı etkilenmedi, otomatik
-   * telafi var" olarak işaretler — Sentry'deki hata oranı taramasında
-   * gürültüden ayıklanabilsin diye.
+   * bloklamaz"). Optimistic kapanış korunur ama gönderim artık BİR kez
+   * backoff ile yeniden denenir (T3 B1, `submitWithRetry`); sunucu idempotent
+   * olduğu için çift satır riski yok. İki deneme de düşerse: `watch_feedback`
+   * satırı hiç yazılmaz, bir sonraki generate-gauntlet çağrısında (Home'a
+   * sonraki açılış) soru KENDİLİĞİNDEN yeniden görünür — veri kaybı yok.
+   * Hata Sentry'ye `RetryExhaustedError` olarak gider (ilk ve son hata
+   * `extra`'da); kullanıcıya gösterilmez, sessiz de yutulmaz. `silent_retry`
+   * etiketi bu sınıfı "kullanıcı etkilenmedi, otomatik telafi var" olarak
+   * işaretler.
    */
   const handlePendingFeedback = useCallback(
     (response: WatchFeedbackResponse) => {
       const pending = gauntlet?.pendingWatchFeedback;
       setPendingFeedbackVisible(false);
       if (!pending) return; // savunma: kart yanlışlıkla pending olmadan gösterildiyse
-      submitWatchFeedback(pending.gauntletId, pending.film.id, response).catch((err) => {
+      submitWithRetry(() =>
+        submitWatchFeedback(pending.gauntletId, pending.film.id, response),
+      ).catch((err: unknown) => {
         Sentry.captureException(err, {
           tags: {
             component: 'GauntletShell',
             flow: 'pendingWatchFeedback',
             silent_retry: 'next_gauntlet_fetch',
           },
+          extra:
+            err instanceof RetryExhaustedError
+              ? { response, firstError: String(err.first), lastError: String(err.last) }
+              : { response },
         });
       });
     },
@@ -1525,6 +1553,11 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   if (shellState === 'ready' || shellState === 'in_progress') {
     bleedColor = defenderFilm?.dominantColor;
   }
+  // T3: "Last night's film" kartı — düşük alfa sızma, GÖSTERİLEN filmin rengiyle.
+  // Increase Contrast / Reduce Transparency'de `LightBleed` zaten kapatır.
+  if (pendingFeedbackVisible && gauntlet?.pendingWatchFeedback) {
+    bleedColor = gauntlet.pendingWatchFeedback.film.dominantColor;
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -1554,6 +1587,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       <PendingWatchFeedbackCard
         film={gauntlet.pendingWatchFeedback.film}
         onRespond={handlePendingFeedback}
+        watchedOtherEnabled={watchedOtherEnabled}
       />
     );
   }

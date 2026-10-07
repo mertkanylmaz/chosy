@@ -18,6 +18,7 @@
     "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
     "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
+    "test:watch-feedback": "deno test --unstable-sloppy-imports tests/gauntlet/watchFeedbackFlow.test.ts",
     "test:puzzle-availability": "deno test tests/games/puzzleAvailability.test.ts",
     "test:notif-ask": "deno test tests/gauntlet/notificationAskCheck.test.ts",
     "test:spotlight-layout": "deno test --allow-read tests/games/spotlightLayout.test.ts tests/games/chanceDotContrast.test.ts tests/games/spotlightFocus.test.ts tests/games/spotlightFocusWatchdog.test.ts tests/games/spotlightHaptics.test.ts tests/games/spotlightA11y.test.ts tests/games/spotlightResume.test.ts tests/games/tmdbSizedUrl.test.ts",
