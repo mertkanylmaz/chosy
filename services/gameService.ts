@@ -13,7 +13,8 @@ import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
 import { earnSlotToken } from './slotService';
 import { fetchMovieCredits, fetchMovieDetails, searchMovies } from './tmdb';
-import { searchFilmsDb } from './searchFilms';
+import { searchFilmsDb, searchFilmsDbStrict } from './searchFilms';
+import { classifyFilmSearch, type FilmSearchOutcome } from './filmSearchOutcome';
 import type { TmdbCredits } from './tmdb';
 import { getQuoteForFilm, getQuotableFilmIds } from '@/constants/movieQuotes';
 import { i18n } from '@/constants/i18n';
@@ -751,6 +752,44 @@ export async function searchFilms(
     reportFilmSearchFailure(err, query.trim().length);
     return [];
   }
+}
+
+/**
+ * Strict film arama (Sprint 1B, Spotlight cevap sayfası): `searchFilms` ile aynı
+ * kaynak ve sıralama, ama hata [] ile karışmaz — `ok` / `offline` / `failed`.
+ * `searchFilms` değişmedi. Başarısızlık aynı raporlama kapısından geçer
+ * (çevrimdışı = breadcrumb, çevrimiçi = Sentry, 60 sn kısma).
+ */
+export async function searchFilmsStrict(
+  query: string,
+  catalogOnly = false,
+): Promise<FilmSearchOutcome<FilmSearchResult>> {
+  const q = query.trim();
+  if (q.length < 2) return { status: 'ok', films: [] };
+
+  const outcome = await classifyFilmSearch<FilmSearchResult>(async () => {
+    const dbResults = await searchFilmsDbStrict(q, 10);
+    if (dbResults.length > 0) {
+      return dbResults.map((r) => ({
+        id: r.tmdb_id,
+        uuid: r.id,
+        title: r.title,
+        year: r.year?.toString() ?? '',
+        posterPath: r.poster_url ?? null,
+      }));
+    }
+    if (catalogOnly) return [];
+    const tmdbResults = await searchMovies(q);
+    return tmdbResults.map((r) => ({
+      id: r.id,
+      title: r.title,
+      year: r.release_date?.split('-')[0] ?? '',
+      posterPath: r.poster_path,
+    }));
+  }, getIsOnline);
+
+  if (outcome.status !== 'ok') reportFilmSearchFailure(outcome.error, q.length);
+  return outcome;
 }
 
 /** Aynı hata türü için iki `captureException` arasındaki en kısa süre */

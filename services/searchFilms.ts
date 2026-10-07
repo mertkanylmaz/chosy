@@ -53,3 +53,24 @@ export async function searchFilmsDb(
     return [];
   }
 }
+
+/**
+ * Strict varyant (Sprint 1B): `searchFilmsDb` ile AYNI RPC, ama hatayi yutmaz —
+ * RPC hatasi ve beklenmedik istisna firlatilir. `searchFilmsDb` degismedi;
+ * sonuc ayirt edilebilsin diye (bos liste = gercekten eslesme yok).
+ */
+export async function searchFilmsDbStrict(
+  query: string,
+  limit = 20,
+): Promise<DbFilmSearchResult[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) return [];
+
+  const { data, error } = await supabase.rpc('search_films', {
+    search_query: trimmed,
+    result_limit: limit,
+  });
+  if (error) throw error;
+
+  return (data as DbFilmSearchResult[]) ?? [];
+}

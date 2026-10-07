@@ -19,6 +19,7 @@ import {
 } from '../../components/games/FilmSearchInput/listState.ts'
 import { createSearchGate } from '../../components/games/FilmSearchInput/searchGate.ts'
 import { isArticleOnlyQuery } from '../../components/games/FilmSearchInput/articleQuery.ts'
+import { classifyFilmSearch } from '../../services/filmSearchOutcome.ts'
 
 function run(events: SearchListEvent[], listControls: boolean): SearchListState {
   return events.reduce((s, e) => reduceSearchList(s, e, listControls), INITIAL_SEARCH_LIST)
@@ -215,4 +216,70 @@ Deno.test('ipucu satiri listeyi odaktayken acar (1 satir), odak yokken acmaz', (
   const hint: SearchListEvent = { type: 'results', count: 1 }
   assert(run([{ type: 'focus' }, hint], true).open)
   assertEquals(run([{ type: 'focus' }, { type: 'blur' }, hint], true).open, false)
+})
+
+// ─── Strict arama sonucu (Sprint 1B) ────────────────────────────────────────
+
+const ONLINE = () => true
+const OFFLINE = () => false
+
+Deno.test('strict: basarili arama ok + sonuclar', async () => {
+  const r = await classifyFilmSearch(() => Promise.resolve(['a', 'b']), ONLINE)
+  assertEquals(r, { status: 'ok', films: ['a', 'b'] })
+})
+
+Deno.test('strict: bos sonuc ok(bos) — hata DEGIL, "bulunamadi" durumu', async () => {
+  const r = await classifyFilmSearch(() => Promise.resolve([] as string[]), ONLINE)
+  assertEquals(r, { status: 'ok', films: [] })
+})
+
+Deno.test('strict: cevrimdisiyken hata offline, bos liste degil', async () => {
+  const r = await classifyFilmSearch(() => Promise.reject(new Error('Network request failed')), OFFLINE)
+  assertEquals(r.status, 'offline')
+})
+
+Deno.test('strict: cevrimiciyken RPC hatasi failed — "bulunamadi" a donusmez', async () => {
+  const r = await classifyFilmSearch(() => Promise.reject(new Error('rpc 500')), ONLINE)
+  assertEquals(r.status, 'failed')
+  assert(r.status === 'failed' && r.error instanceof Error)
+})
+
+Deno.test('strict: tekrar dene ayni sorguyu yeniden calistirir ve basarida ok doner', async () => {
+  let calls = 0
+  const run = () => (++calls === 1 ? Promise.reject(new Error('boom')) : Promise.resolve(['x']))
+  const first = await classifyFilmSearch(run, ONLINE)
+  const retry = await classifyFilmSearch(run, ONLINE)
+  assertEquals(first.status, 'failed')
+  assertEquals(retry, { status: 'ok', films: ['x'] })
+  assertEquals(calls, 2)
+})
+
+Deno.test('bayat yanit: yavas eski sorgu, yeni sorgunun sonucunu ezmez (hata dahil)', async () => {
+  const gate = createSearchGate()
+  const applied: string[] = []
+  let releaseOld!: (v: string[]) => void
+  let failOld!: (e: Error) => void
+
+  const oldTicket = gate.ticket()
+  const oldDone = classifyFilmSearch(() => new Promise<string[]>((res) => (releaseOld = res)), ONLINE)
+    .then((r) => { if (gate.isCurrent(oldTicket)) applied.push(`old:${r.status}`) })
+
+  gate.cancel() // kullanici yeni harf yazdi
+  const newTicket = gate.ticket()
+  const newDone = classifyFilmSearch(() => Promise.resolve(['new']), ONLINE)
+    .then((r) => { if (gate.isCurrent(newTicket)) applied.push(`new:${r.status}`) })
+
+  await newDone
+  releaseOld(['old'])
+  await oldDone
+  assertEquals(applied, ['new:ok'])
+
+  // Eski istek HATA ile dondugunde de uygulanmaz
+  const t2 = gate.ticket()
+  const failDone = classifyFilmSearch(() => new Promise<string[]>((_, rej) => (failOld = rej)), ONLINE)
+    .then((r) => { if (gate.isCurrent(t2)) applied.push(`late:${r.status}`) })
+  gate.cancel()
+  failOld(new Error('late'))
+  await failDone
+  assertEquals(applied, ['new:ok'])
 })
