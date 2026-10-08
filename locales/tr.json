@@ -1518,7 +1518,7 @@
     "spotlightTeaser": "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır.",
     "waitingEyebrow": "SIRADAKİ GÖSTERİM",
     "waitingFramesTagline": "DÖRT FİLM · ÜÇ SEÇİM · BİR KAZANAN",
-    "waitingFirstScreening": "İlk gösterimin seni bekliyor.",
+    "waitingFirstScreening": "Gösterimin seni bekliyor.",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"
