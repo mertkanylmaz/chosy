@@ -57,6 +57,7 @@ import {
   WaitingCurtain,
   useLastChampion,
 } from '@/components/gauntlet/WaitingChampion';
+import { WaitingView } from '@/components/gauntlet/WaitingView';
 import {
   BONUS_CARD_ENTRY,
   CHAMPION_HAPTIC_DELAY,
@@ -1598,31 +1599,29 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     // (30 Eyl 2026): sayacın altında son şampiyon — dokunulamaz, rota yok;
     // perdesi kökte (aşağıda), güvenli alanın dışına taşsın diye.
     // P-5 (K-62): kilitli Spotlight karesi CTA ile son şampiyon arasında.
-    // İçerik KAYDIRILABİLİR — AX5 ve küçük ekranda taşma kesilmesin; sığdığında
-    // eskisi gibi dikeyde ortalı (`flexGrow` + `justifyContent`). Salt düzen.
+    // Düzen (kaydırılabilir, dikeyde ortalı) `WaitingView`'de; ne gösterileceği
+    // ve her parçanın davranışı burada kurulur (slot).
     return (
-      <ScrollView
-        style={styles.waitingScroll}
-        contentContainerStyle={styles.waitingScrollContent}
-        showsVerticalScrollIndicator={false}
-        alwaysBounceVertical={false}
-      >
-        <Text style={styles.stateText}>
-          {t('gauntlet.before18', { time: formatUnlockTime(language) })}
-        </Text>
-        {unlockAt && <UnlockCountdown target={unlockAt} onElapsed={runClockPulse} />}
-        {waitingNotifyEligible && (
-          <QuietAction
-            label={t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) })}
-            onPress={() => void handleWaitingNotify()}
-            disabled={waitingNotifyBusy}
-          />
-        )}
-        {showTeaser && teaserSpotlight.status === 'ready' && (
-          <SpotlightTeaser backdropUrl={teaserSpotlight.backdropUrl} />
-        )}
-        {waitingChampion && <WaitingChampionCard champion={waitingChampion} />}
-      </ScrollView>
+      <WaitingView
+        unlockTimeLabel={formatUnlockTime(language)}
+        countdown={unlockAt && <UnlockCountdown target={unlockAt} onElapsed={runClockPulse} />}
+        notifyAction={
+          waitingNotifyEligible && (
+            <QuietAction
+              label={t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) })}
+              onPress={() => void handleWaitingNotify()}
+              disabled={waitingNotifyBusy}
+            />
+          )
+        }
+        teaser={
+          showTeaser &&
+          teaserSpotlight.status === 'ready' && (
+            <SpotlightTeaser backdropUrl={teaserSpotlight.backdropUrl} />
+          )
+        }
+        championSection={waitingChampion && <WaitingChampionCard champion={waitingChampion} />}
+      />
     );
   }
 
