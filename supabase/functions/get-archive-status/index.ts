@@ -27,12 +27,13 @@
  * Arşiv en fazla 7 gün geriye gider. Daha eskisi sessizce gizlenmez, `too_old`
  * olarak işaretlenip istemcide açık mesajla kapatılır (K-43: sessiz boşluk yok).
  *
- * ── Bilinen sınırlama: gün anahtarı UTC ──────────────────────────────────────
- * `utcDateString()` kullanılıyor, kullanıcı-yerel gün değil. UTC+3'te gece
- * yarısından hemen sonra açan kullanıcı için sınıflandırma ±1 gün kayabilir.
- * CTO kararı (31 Ağu 2026): M2 Faz 2b beklenmeden UTC ile kurulur, kayma bilinen
- * sınırlama olarak taşınır. `daily_gauntlets.date` zaten UTC yazıldığı için bu
- * fonksiyon tabloyla TUTARLIDIR; düzeltme M2'de iki taraf birden yapılır.
+ * ── Gün anahtarı: cycle tarihi (F1) ──────────────────────────────────────────
+ * "Bugün" artık UTC değil, kullanıcının cycle tarihidir (`_shared/cycleDate.ts`:
+ * en son geçilmiş yerel 18:00'in yerel takvim tarihi) — `daily_gauntlets.date`
+ * ile aynı anahtar. Saat dilimi kaynağı: istek gövdesindeki `timezone` (geçerliyse),
+ * yoksa `users.timezone` (generate-gauntlet her çağrıda yazar; mevcut istemci
+ * bu fonksiyona henüz tz göndermiyor). İkisi de geçersizse 400 `TZ_REQUIRED` —
+ * sessiz UTC yok.
  *
  * ── Kapsam dışı ──────────────────────────────────────────────────────────────
  * Kaçırılan gün için KİŞİSEL gauntlet geriye dönük üretilmez — `generate-gauntlet`
@@ -61,11 +62,8 @@ import {
   resolveAppUser,
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
-import {
-  fetchCandidatesByIds,
-  toGauntletFilm,
-  utcDateString,
-} from '../_shared/gauntletCore.ts'
+import { fetchCandidatesByIds, toGauntletFilm } from '../_shared/gauntletCore.ts'
+import { addDays, cycleDate, isValidTimeZone } from '../_shared/cycleDate.ts'
 import { effectiveArchiveAnchor } from '../_shared/previousCycle.ts'
 import type { GauntletFilm } from '../../../types/gauntlet.ts'
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
@@ -103,7 +101,7 @@ const MIN_COMPLETED_FOR_ELIGIBILITY = 1
 type DayStatus = 'completed' | 'missed' | 'too_old'
 
 interface ArchiveDay {
-  /** YYYY-MM-DD (UTC gün anahtarı). */
+  /** YYYY-MM-DD (cycle tarihi — `daily_gauntlets.date` ile aynı anahtar). */
   date: string
   status: DayStatus
   /**
@@ -154,7 +152,7 @@ async function findAnchorDate(
   return effectiveArchiveAnchor((data ?? []) as { date: string; cycle: string }[])
 }
 
-/** [from, to] arası kapalı aralıktaki UTC gün anahtarları, artan sırada. */
+/** [from, to] arası kapalı aralıktaki gün anahtarları (takvim tarihi), artan sırada. */
 function dateRange(from: string, to: string): string[] {
   const out: string[] = []
   const cur = new Date(`${from}T00:00:00Z`)
@@ -238,6 +236,8 @@ async function fetchGlobalSelections(
 async function buildArchiveStatus(
   service: SupabaseClient,
   appUserId: string,
+  /** Kullanıcının şu anki cycle tarihi (`cycleDate`). */
+  today: string,
 ): Promise<ArchiveStatus> {
   const anchor = await findAnchorDate(service, appUserId)
   if (!anchor) {
@@ -253,8 +253,8 @@ async function buildArchiveStatus(
 
   // Pencere dünde biter — bugün henüz kaçırılmış sayılamaz (18:00 kapısı da
   // bugünün hükmünü gün bitmeden vermeyi engeller).
-  const yesterday = utcDateString(-1)
-  const windowStart = utcDateString(-ARCHIVE_WINDOW_DAYS)
+  const yesterday = addDays(today, -1)
+  const windowStart = addDays(today, -ARCHIVE_WINDOW_DAYS)
 
   // Anchor pencereden eskiyse pencere kazanır; yeniyse anchor kazanır.
   const from = anchor > windowStart ? anchor : windowStart
@@ -343,8 +343,40 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return errorResponse('AUTH_ERROR', 'Kimlik doğrulama başarısız', 500)
   }
 
+  // ── Saat dilimi: gövde (geçerliyse) → users.timezone → 400 TZ_REQUIRED ─────
+  let tz: string | null = null
   try {
-    const status = await buildArchiveStatus(service, appUserId)
+    const raw = req.method === 'POST' ? await req.text() : ''
+    const parsed = raw.trim() === '' ? {} : (JSON.parse(raw) as { timezone?: unknown })
+    if (isValidTimeZone(parsed.timezone)) tz = parsed.timezone
+  } catch (err) {
+    logError('archive_bad_json', err, { user_id: appUserId })
+    return errorResponse('INVALID_INPUT', 'Geçersiz JSON gövdesi', 400)
+  }
+
+  try {
+    if (tz === null) {
+      const stored = await service
+        .from('users')
+        .select('timezone')
+        .eq('id', appUserId)
+        .maybeSingle()
+      if (stored.error) throw new Error(`users.timezone okunamadı: ${stored.error.message}`)
+      const column = (stored.data as { timezone: string | null } | null)?.timezone ?? null
+      if (isValidTimeZone(column)) tz = column
+    }
+    if (tz === null) {
+      logError('archive_tz_required', new Error('Geçerli IANA saat dilimi yok'), {
+        user_id: appUserId,
+      })
+      return errorResponse(
+        'TZ_REQUIRED',
+        'Geçerli bir IANA saat dilimi (timezone) zorunlu',
+        400,
+      )
+    }
+
+    const status = await buildArchiveStatus(service, appUserId, cycleDate(tz, new Date()))
     logInfo('archive_status_built', {
       user_id: appUserId,
       missed_count: status.missedCount,
