@@ -1526,8 +1526,7 @@
     "championTitle": "Your pick",
     "championAccessibilityLabel": "Your pick: %{title}, %{year}, %{runtime} minutes",
     "watchNow": {
-      "action": "Watch now",
-      "error": "Couldn't open the page. Try again."
+      "action": "Watch now"
     },
     "championOpenFilm": "Open details for %{title}",
     "confidence": "I know %{percent}% of you",

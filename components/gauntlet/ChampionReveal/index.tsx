@@ -60,7 +60,6 @@ import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { BookmarkSimple, FilmSlate, Play, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
@@ -351,41 +350,30 @@ export function ChampionReveal({
   }, [router, champion.id]);
 
   /**
-   * V-3 Tur G2 (C6, V3-D3): Watch Now — TMDB'nin bölgeye özel `link`'i
-   * uygulama içi tarayıcıda. Sağlayıcı yoksa ya da `link` yoksa buton HİÇ
-   * render edilmez (devre dışı değil). Sayı `orderProviders` uzunluğudur —
+   * Watch Now — film detay ekranına gider (dış link yok). Sağlayıcı yoksa
+   * buton HİÇ render edilmez (devre dışı değil). Sayı `orderProviders` uzunluğudur —
    * logo satırındaki "See all" ile aynı tekilleştirilmiş kaynak.
    */
   const providerCount = useMemo(
     () => (providersState === 'ok' && providers ? orderProviders(providers).length : 0),
     [providersState, providers],
   );
-  const watchLink = providersState === 'ok' ? providers?.link : undefined;
-  const showWatchNow = watchLink !== undefined && watchLink !== '' && providerCount > 0;
+  const showWatchNow = providerCount > 0;
   /** S-2: Watch Now birincilse "Sonraya bırak" ikon satırına iner. */
   const showSaveIcon = showWatchNow && gauntletId !== undefined;
   const saveLabel =
     saveState === 'saved' ? t('gauntlet.saveForLater.saved') : t('gauntlet.saveForLater.action');
 
-  /** Tarayıcı açılamazsa sessiz geçilmez: Sentry + görünür mesaj (§15.2). */
-  const handleWatchNow = useCallback(async () => {
-    if (!watchLink) return;
+  /** Kullanıcı uygulamada kalır: Watch now film detay ekranına gider. */
+  const handleWatchNow = useCallback(() => {
     void hapticLight();
     posthogAnalytics.track('watch_now_tapped', {
       film_id: champion.id,
       region,
       provider_count: providerCount,
     });
-    try {
-      await WebBrowser.openBrowserAsync(watchLink);
-    } catch (err) {
-      Sentry.captureException(err, {
-        tags: { component: 'ChampionReveal', flow: 'watch_now' },
-        extra: { film_id: champion.id, region },
-      });
-      showNotice(t('gauntlet.watchNow.error'));
-    }
-  }, [watchLink, champion.id, region, providerCount, showNotice, t]);
+    router.push(`/film/${champion.id}`);
+  }, [router, champion.id, region, providerCount]);
 
   /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran

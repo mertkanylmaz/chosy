@@ -1526,8 +1526,7 @@
     "championTitle": "Seçimin",
     "championAccessibilityLabel": "Seçimin: %{title}, %{year}, %{runtime} dakika",
     "watchNow": {
-      "action": "Şimdi izle",
-      "error": "Sayfa açılamadı. Tekrar dene."
+      "action": "Şimdi izle"
     },
     "championOpenFilm": "%{title} detaylarını aç",
     "confidence": "Seni %%{percent} tanıyorum",
