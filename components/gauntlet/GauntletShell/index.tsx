@@ -1263,6 +1263,27 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const championActive =
     shellState === 'completed_today' && champion !== null && !pendingFeedbackVisible;
 
+  // F2/C7: champion ekranı görüldü — cycle (gauntletId) + oturum başına BİR kez.
+  // `source`: canlı final mi (`live`, reveal animasyonlu) yoksa açılış/yeniden
+  // yükleme mi (`resume`). Feedback kartı örtüyorsa ekran görünmüş sayılmaz
+  // (`championActive` onu zaten dışlar). Mevcut wrapper: posthogAnalytics.
+  const championViewedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!championActive || !gauntlet) return;
+    if (championViewedRef.current.has(gauntlet.gauntletId)) return;
+    championViewedRef.current.add(gauntlet.gauntletId);
+    const boundary = nextCycleAt ? Date.parse(nextCycleAt) : Number.NaN;
+    posthogAnalytics.track('champion_viewed', {
+      source: animateReveal ? 'live' : 'resume',
+      minutes_to_next_cycle: Number.isNaN(boundary)
+        ? null
+        : Math.max(0, Math.round((boundary - Date.now()) / 60_000)),
+    });
+    // Yalnız championActive / gauntlet kimliği değişince: reveal animasyonu ya da
+    // sayaç tazelenmesi olayı yeniden ateşlememeli.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [championActive, gauntlet?.gauntletId]);
+
   // P-1c E: Spotlight durumu kartın içinde değil burada okunur — bugün bulmaca
   // yoksa (`unavailable`, sunucu NO_PUZZLE) kart hiç mount edilmez ve ask
   // dwell'i reveal bitişine çapalanır. Yalnız champion dalında ağa çıkar.
