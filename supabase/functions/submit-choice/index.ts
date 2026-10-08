@@ -819,6 +819,97 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(result)
     }
 
+    // ── F2.2: yenileme adayı HAM OLAYDAN ÖNCE aranır ──────────────────────────
+    // `neither`/`seen` için yerine koyulacak aday yoksa 409 REFRESH_UNAVAILABLE
+    // döner ve `choice_events`'e satır YAZILMAZ: kullanıcı başka bir şey
+    // yapamadığı bir eylem için ne hak kaybeder ne sinyal üretir. Hak ZATEN
+    // bitmişse (`refreshWithinLimit` false) aday aranmaz; o yolda olay yine yazılır
+    // ("iki de olmaz" gerçek bir sinyaldir, 069 prensibi) ve 200 `refreshAllowed:false` döner.
+    // Aday araması olaydan önce çalıştığı için dışlama kümesinde bu olayın filmleri
+    // YOKTUR; zararsız — `blockedIds` dörtlünün tamamını zaten kapsar.
+    const refreshWithinLimit = !isAdvancing &&
+      (refreshLimit === UNLIMITED || usedBefore + 1 <= refreshLimit)
+    let refreshPlan: {
+      replacedIds: string[]
+      retained: Candidate[]
+      scored: Awaited<ReturnType<typeof buildScoredPool>>
+      picked: NonNullable<ReturnType<typeof pickReplacements>>
+    } | null = null
+    if (refreshWithinLimit) {
+      // Elde kalan film: 'seen' kazananı işaretler → KAYBEDEN kalır.
+      // 'neither' iki filmi de reddeder → hiçbiri kalmaz.
+      const retainedId = submission.outcome === 'seen'
+        ? (submission.winner === submission.filmA
+          ? submission.filmB
+          : submission.filmA)
+        : null
+      const replacedIds = submission.outcome === 'seen'
+        ? [submission.winner as string]
+        : [submission.filmA, submission.filmB]
+
+      const retainedMap = await fetchCandidatesByIds(
+        service,
+        retainedId ? [retainedId] : [],
+      )
+      const retained: Candidate[] = []
+      if (retainedId) {
+        const c = retainedMap.get(retainedId)
+        if (!c) throw new Error(`elde kalan film çözümlenemedi: ${retainedId}`)
+        retained.push(c)
+      }
+
+      // ADIM 1-2-3-5 yeniden çağrılır — mantık KOPYALANMAZ, gauntletCore'dan
+      // gelir (generate-gauntlet ile aynı havuz tanımı).
+      const context = gauntlet.context
+      if (!context) {
+        throw new Error(`gauntlet bağlamı boş: ${gauntlet.id}`)
+      }
+
+      const scored = await buildScoredPool(service, appUserId, context, 'choice', {
+        today: gauntlet.date,
+      })
+      const picked = pickReplacements(scored.pool, scored.exclusions, {
+        // Dörtlünün TAMAMI bloklanır: yerine gelen film turnuvada zaten
+        // bulunan bir filmle aynı olamaz.
+        blockedIds: new Set(gauntlet.film_ids),
+        retained,
+        count: replacedIds.length,
+      })
+
+      if (!picked) {
+        // Aday kalmadı. Sessizce eski çifti geri vermek YASAK, oyunu bitirmek
+        // (`exhausted`) de DEĞİL (F2.1): açık 409 `REFRESH_UNAVAILABLE`. Gauntlet
+        // state'i DEĞİŞMEZ — `film_ids` aynı kalır, tur ilerlemez, çift oynanabilir.
+        // F2.2: aday araması ham olay yazımından ÖNCE yapılır — bu dalda
+        // `choice_events`'e HİÇBİR satır yazılmaz, yenileme hakkı tüketilmez ve
+        // `seen` için `markWatched` çalışmaz.
+        logError(
+          'choice_replacement_unavailable',
+          new Error('yerine koyulacak aday bulunamadı'),
+          { user_id: appUserId, gauntlet_id: gauntlet.id, pool_size: scored.pool.length },
+        )
+        await sentryCapture({
+          message: 'submit-choice: yenileme için aday bulunamadı (REFRESH_UNAVAILABLE)',
+          level: 'warning',
+          tags: { function: 'submit-choice', error_code: 'REFRESH_UNAVAILABLE' },
+          extra: {
+            user_id: appUserId,
+            gauntlet_id: gauntlet.id,
+            round: submission.round,
+            outcome: submission.outcome,
+            pool_size: scored.pool.length,
+          },
+        })
+        return errorResponse(
+          'REFRESH_UNAVAILABLE',
+          'Yenileme için uygun aday bulunamadı; mevcut çift korunuyor',
+          409,
+        )
+      }
+
+      refreshPlan = { replacedIds, retained, scored, picked }
+    }
+
     // ── HAM OLAY YAZIMI ───────────────────────────────────────────────────────
     // Yenileme hakkı bitmiş olsa bile olay YAZILIR: "iki de olmaz" gerçek bir
     // sinyaldir ve cinema_dna'nın kaynağıdır (069 prensibi). Hakkın bitmesi
@@ -984,75 +1075,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return jsonResponse(result)
     }
 
-    // Elde kalan film: 'seen' kazananı işaretler → KAYBEDEN kalır.
-    // 'neither' iki filmi de reddeder → hiçbiri kalmaz.
-    const retainedId = submission.outcome === 'seen'
-      ? (submission.winner === submission.filmA
-        ? submission.filmB
-        : submission.filmA)
-      : null
-    const replacedIds = submission.outcome === 'seen'
-      ? [submission.winner as string]
-      : [submission.filmA, submission.filmB]
-
-    const retainedMap = await fetchCandidatesByIds(
-      service,
-      retainedId ? [retainedId] : [],
-    )
-    const retained: Candidate[] = []
-    if (retainedId) {
-      const c = retainedMap.get(retainedId)
-      if (!c) throw new Error(`elde kalan film çözümlenemedi: ${retainedId}`)
-      retained.push(c)
+    if (!refreshPlan) {
+      // `refreshWithinLimit` ile yukarıdaki hak kapısı aynı koşulu paylaşır; buraya
+      // plansız düşülmesi bir invariant ihlalidir — sessizce geçilmez.
+      throw new Error('refreshPlan yok: hak kapısı geçildi ama aday planı hazırlanmadı')
     }
-
-    // ADIM 1-2-3-5 yeniden çağrılır — mantık KOPYALANMAZ, gauntletCore'dan
-    // gelir (generate-gauntlet ile aynı havuz tanımı).
-    const context = gauntlet.context
-    if (!context) {
-      throw new Error(`gauntlet bağlamı boş: ${gauntlet.id}`)
-    }
-
-    const scored = await buildScoredPool(service, appUserId, context, 'choice', {
-      today: gauntlet.date,
-    })
-    const picked = pickReplacements(scored.pool, scored.exclusions, {
-      // Dörtlünün TAMAMI bloklanır: yerine gelen film turnuvada zaten
-      // bulunan bir filmle aynı olamaz.
-      blockedIds: new Set(gauntlet.film_ids),
-      retained,
-      count: replacedIds.length,
-    })
-
-    if (!picked) {
-      // Aday kalmadı. Sessizce eski çifti geri vermek YASAK, oyunu bitirmek
-      // (`exhausted`) de DEĞİL (F2.1): açık 409 `REFRESH_UNAVAILABLE`. Gauntlet
-      // state'i DEĞİŞMEZ — `film_ids` aynı kalır, tur ilerlemez, çift oynanabilir.
-      // Ham olay (neither/seen) yukarıda zaten yazıldı ("iki de olmaz" gerçek bir
-      // sinyaldir, 069 prensibi); yenileme hakkı o olayla tüketilmiştir.
-      logError(
-        'choice_replacement_unavailable',
-        new Error('yerine koyulacak aday bulunamadı'),
-        { user_id: appUserId, gauntlet_id: gauntlet.id, pool_size: scored.pool.length },
-      )
-      await sentryCapture({
-        message: 'submit-choice: yenileme için aday bulunamadı (REFRESH_UNAVAILABLE)',
-        level: 'warning',
-        tags: { function: 'submit-choice', error_code: 'REFRESH_UNAVAILABLE' },
-        extra: {
-          user_id: appUserId,
-          gauntlet_id: gauntlet.id,
-          round: submission.round,
-          outcome: submission.outcome,
-          pool_size: scored.pool.length,
-        },
-      })
-      return errorResponse(
-        'REFRESH_UNAVAILABLE',
-        'Yenileme için uygun aday bulunamadı; mevcut çift korunuyor',
-        409,
-      )
-    }
+    const { replacedIds, retained, scored, picked } = refreshPlan
 
     // daily_gauntlets.film_ids güncellenir: sonraki turlar ve 21 günlük
     // "gösterildi" filtresi turnuvanın GERÇEK halini görmeli.

@@ -36,3 +36,20 @@ Deno.test("timeout outcome'u 400 INVALID_INPUT ile reddedilir ve olay yazımınd
   assert(reject > 0 && write > 0 && reject < write, 'timeout reddi olay yazımından önce olmalı');
   assert(src.slice(reject, reject + 60).includes('400'), '400 durum kodu yok');
 });
+
+Deno.test('F2.2: REFRESH_UNAVAILABLE ham olay yazımından (record_choice_event) ve markWatched çağrısından ÖNCE döner', () => {
+  const denied = src.indexOf(DENIED);
+  const write = src.indexOf("rpc('record_choice_event'");
+  const watched = src.indexOf('await markWatched(');
+  assert(denied > 0 && write > 0 && watched > 0, 'işaretçiler bulunamadı');
+  assert(denied < write, 'aday yoksa choice_events satırı yazılmamalı: ret, olay yazımından ÖNCE olmalı');
+  assert(denied < watched, 'aday yoksa seen için markWatched çalışmamalı');
+});
+
+Deno.test('F2.2: hak bitmişse aday aranmaz ve olay yine yazılır (refreshWithinLimit kapısı)', () => {
+  assert(src.includes('const refreshWithinLimit = !isAdvancing'), 'refreshWithinLimit kapısı yok');
+  const gate = src.indexOf('const refreshWithinLimit');
+  const write = src.indexOf("rpc('record_choice_event'");
+  assert(gate > 0 && gate < write, 'kapı olay yazımından önce hesaplanmalı');
+  assert(src.includes("'refreshPlan yok"), 'plansız düşüş invariant hatası vermeli');
+});
