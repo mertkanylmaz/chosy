@@ -84,6 +84,12 @@ export const type = {
   'display-l': { fontFamily: 'ArchivoExpanded_700Bold', fontSize: 30, lineHeight: 34, letterSpacing: -0.45 },
   'display-m': { fontFamily: 'ArchivoExpanded_600SemiBold', fontSize: 22, lineHeight: 26, letterSpacing: -0.22 },
 
+  /**
+   * W1.1: iOS Large Title (34/41, bold). Sistem fontu, letterSpacing YOK —
+   * iOS'ta SF'nin optik izlemesi sistemden gelir, üstüne eklenmez.
+   */
+  largeTitle: { fontFamily: Theme.fonts.inter, fontWeight: '700', fontSize: 34, lineHeight: 41 },
+
   title: { fontFamily: Theme.fonts.inter, fontWeight: '600', fontSize: 20, lineHeight: 24, letterSpacing: -0.4 },
   body: { fontFamily: Theme.fonts.inter, fontWeight: '400', fontSize: 17, lineHeight: 24, letterSpacing: -0.2 },
   'body-strong': { fontFamily: Theme.fonts.inter, fontWeight: '600', fontSize: 17, lineHeight: 24, letterSpacing: -0.2 },
