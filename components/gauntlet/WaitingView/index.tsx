@@ -61,7 +61,7 @@ export function WaitingView({
   const isReducedMotion = useReducedMotion();
   const compact = isWaitingCompact(height);
 
-  const title = t('tabs.home');
+  const title = t('gauntlet.tonightsFour');
   const subtitle = t('gauntlet.before18', { time: unlockTimeLabel });
 
   return (
@@ -79,7 +79,9 @@ export function WaitingView({
           accessibilityRole="header"
           accessibilityLabel={`${title}. ${subtitle}`}
         >
-          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.title} accessibilityRole="header">
+            {title}
+          </Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
         {countdown}

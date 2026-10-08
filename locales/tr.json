@@ -1525,6 +1525,7 @@
       "other": "%{count} dakika"
     },
     "countdownA11y": "%{hours} %{minutes}",
+    "tonightsFour": "Bugünün dörtlüsü",
     "opensIn": "%{time} sonra açılır",
     "durationHoursMinutes": "%{hours} sa %{minutes} dk",
     "durationMinutes": "%{minutes} dk",

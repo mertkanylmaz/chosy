@@ -1525,6 +1525,7 @@
       "other": "%{count} minutes"
     },
     "countdownA11y": "%{hours} %{minutes}",
+    "tonightsFour": "Tonight's four",
     "opensIn": "Opens in %{time}",
     "durationHoursMinutes": "%{hours}h %{minutes}m",
     "durationMinutes": "%{minutes}m",
