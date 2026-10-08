@@ -3940,3 +3940,20 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   `watch_feedback_disliked`. Geri alma komutu doğru (`DROP TABLE
   public.deletion_requests`, tablo boşken), numara bayat. Uygulanmış migration
   dosyası bilinçli olarak değiştirilmedi.
+
+### Arşiv `chosy_plus` ile kilitli değil (9 Eki 2026, R-C-1 keşfi)
+
+- **Durum:** Kilit yok. `get-archive-status` yalnız kimlik doğruluyor, entitlement/tier
+  okumuyor; `app/archive.tsx` içinde premium/tier/paywall kontrolü yok. Tek "kapı"
+  `ArchiveTrigger.tsx` giriş bağlantısı: premium veya `!archiveEligible` kullanıcı
+  doğrudan arşive gidiyor, paywall yalnız free + eligible kullanıcıda açılıyor.
+  `/archive` rotasına doğrudan giden herkes girer.
+- **Etki:** Paywall'da "kaçırdığın akşamları geri al" türü vaat verilemez (R-C-1'de
+  benefit3 bu yüzden eklenmedi). K-46 gerçek bir kilit değil, soft bir tetikleyici.
+- **Karar bekliyor:** Arşivi gerçekten kilitlemek (sunucu gate'i + ekran gate'i) ya da
+  K-46'yı soft tetikleyici olarak belgelemek. Bu sprintte dokunulmadı (CTO, 9 Eki 2026).
+- **Aynı turda not:** `TIER_LIMITS.watchlistMaxFilms` (`constants/subscriptionPlans.ts`)
+  tanımlı ama hiçbir yerde uygulanmıyor; "sınırsız watchlist" vaadi bu yüzden kaldırıldı.
+- **A/B verisi (9 Eki 2026, R-C-1):** `paywall_quota_v1` `social_proof` kolu 2026-10-09
+  itibarıyla `control` ile aynı kopyayı gösteriyor (doğrulanamayan sosyal kanıt metni
+  kaldırıldı). Bu tarihten sonraki veri bu kol için geçersizdir.

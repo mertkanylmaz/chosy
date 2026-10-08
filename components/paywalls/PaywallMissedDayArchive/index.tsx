@@ -18,7 +18,7 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import { CalendarBlank, ClockCounterClockwise, Sparkle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
@@ -52,7 +52,7 @@ export default function PaywallMissedDayArchive({
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="calendar-outline" size={28} color={Colors.accentPrimary} />
+        <CalendarBlank size={28} color={Colors.accentPrimary} weight="duotone" />
       </View>
       <Text style={localStyles.title}>{t('contextPaywall.missedDayTitle')}</Text>
       <Text style={localStyles.subtitle}>
@@ -62,13 +62,13 @@ export default function PaywallMissedDayArchive({
       {/* K-47: iki değer, fazlası yok. */}
       <View style={localStyles.values}>
         <View style={localStyles.valueRow}>
-          <Ionicons name="play-back-outline" size={18} color={Colors.gold} />
+          <ClockCounterClockwise size={18} color={Colors.gold} weight="duotone" />
           <Text style={localStyles.valueText}>
             {t('contextPaywall.missedDayValueFunctional')}
           </Text>
         </View>
         <View style={localStyles.valueRow}>
-          <Ionicons name="sparkles-outline" size={18} color={Colors.gold} />
+          <Sparkle size={18} color={Colors.gold} weight="duotone" />
           <Text style={localStyles.valueText}>
             {t('contextPaywall.missedDayValueIdentity')}
           </Text>

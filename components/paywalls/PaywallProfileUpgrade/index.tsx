@@ -8,7 +8,8 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import { Diamond, MagnifyingGlass, Waveform } from 'phosphor-react-native';
+import type { IconProps } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
@@ -27,11 +28,11 @@ interface Props {
 
 // ─── Benefit Items ──────────────────────────────────────────────────────────
 
-const BENEFITS: { icon: keyof typeof Ionicons.glyphMap; key: string }[] = [
-  { icon: 'search-outline', key: 'contextPaywall.profileBenefit1' },
-  { icon: 'infinite-outline', key: 'contextPaywall.profileBenefit2' },
-  { icon: 'film-outline', key: 'contextPaywall.profileBenefit3' },
-  { icon: 'flash-outline', key: 'contextPaywall.profileBenefit4' },
+// Yalniz dogrulanmis vaatler: Pro Mode (sinirsiz arama — migration 117) ve
+// ton/tempo okuma. Arsiv vaadi YOK: arsiv chosy_plus ile kilitli degil (R-C-1).
+const BENEFITS: { Icon: React.ComponentType<IconProps>; key: string }[] = [
+  { Icon: MagnifyingGlass, key: 'contextPaywall.profileBenefit1' },
+  { Icon: Waveform, key: 'contextPaywall.profileBenefit2' },
 ];
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -48,7 +49,7 @@ export default function PaywallProfileUpgrade({
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="diamond" size={28} color={Colors.accentPrimary} />
+        <Diamond size={28} color={Colors.accentPrimary} weight="duotone" />
       </View>
       <Text style={localStyles.title}>{t('contextPaywall.profileTitle')}</Text>
       <Text style={localStyles.subtitle}>{t('contextPaywall.profileSubtitle')}</Text>
@@ -56,7 +57,7 @@ export default function PaywallProfileUpgrade({
       <View style={localStyles.benefitList}>
         {BENEFITS.map((b) => (
           <View key={b.key} style={localStyles.benefitRow}>
-            <Ionicons name={b.icon} size={18} color={Colors.accentPrimary} />
+            <b.Icon size={18} color={Colors.accentPrimary} weight="duotone" />
             <Text style={localStyles.benefitText}>{t(b.key)}</Text>
           </View>
         ))}
@@ -71,7 +72,6 @@ export default function PaywallProfileUpgrade({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      ctaLabel={t('contextPaywall.profileCta')}
       dismissLabel={t('contextPaywall.profileDismiss')}
     />
   );

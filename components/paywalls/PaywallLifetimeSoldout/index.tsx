@@ -8,7 +8,7 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import { Medal } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
@@ -39,7 +39,7 @@ export default function PaywallLifetimeSoldout({
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="ribbon" size={28} color={Colors.gold} />
+        <Medal size={28} color={Colors.gold} weight="duotone" />
       </View>
       <Text style={localStyles.title}>{t('contextPaywall.lifetimeSoldoutTitle')}</Text>
       <Text style={localStyles.subtitle}>{t('contextPaywall.lifetimeSoldoutSubtitle')}</Text>

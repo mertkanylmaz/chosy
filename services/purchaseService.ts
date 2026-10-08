@@ -15,10 +15,12 @@
  */
 
 import { Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 import Purchases, {
   type CustomerInfo,
   type CustomerInfoUpdateListener,
   type PurchasesPackage,
+  INTRO_ELIGIBILITY_STATUS,
   LOG_LEVEL,
   PURCHASES_ERROR_CODE,
 } from 'react-native-purchases';
@@ -26,6 +28,7 @@ import Purchases, {
 import { RC_ENTITLEMENT_ID } from '@/constants/subscriptionPlans';
 import { posthogAnalytics } from '@/services/posthog';
 import { logger } from '@/utils/logger';
+import type { TrialEligibility } from '@/utils/paywallPricing';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -348,6 +351,61 @@ export async function getOfferings(): Promise<OfferingsResult> {
       extra: { errorKind },
     });
     return { items: [], errorKind };
+  }
+}
+
+/**
+ * Ürünlerin ücretsiz deneme uygunluğu (Apple 3.1.2: trial vaadi yalnız uygun
+ * kullanıcıya gösterilir).
+ *
+ * Okunamayan her şey `'unknown'` döner ve çağıran trial VAAT ETMEZ. Hata Sentry'ye
+ * `warning` olarak yazılır. Android her zaman UNKNOWN döner (RC belgesi) — orada
+ * bu beklenen durumdur, uyarı üretilmez.
+ */
+export async function getTrialEligibility(
+  productIds: string[],
+): Promise<Record<string, TrialEligibility>> {
+  const unknownAll = (): Record<string, TrialEligibility> =>
+    Object.fromEntries(productIds.map((id) => [id, 'unknown' as const]));
+
+  // Başlatılmamışsa getOfferings zaten RC_NOT_INITIALIZED yazdı.
+  if (!_initialized || productIds.length === 0) return unknownAll();
+
+  try {
+    const raw = await Purchases.checkTrialOrIntroductoryPriceEligibility(productIds);
+    const out: Record<string, TrialEligibility> = {};
+    let anyUnknown = false;
+
+    for (const id of productIds) {
+      const status = raw[id]?.status;
+      if (status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_ELIGIBLE) {
+        out[id] = 'eligible';
+      } else if (
+        status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_INELIGIBLE ||
+        status === INTRO_ELIGIBILITY_STATUS.INTRO_ELIGIBILITY_STATUS_NO_INTRO_OFFER_EXISTS
+      ) {
+        out[id] = 'ineligible';
+      } else {
+        out[id] = 'unknown';
+        anyUnknown = true;
+      }
+    }
+
+    if (anyUnknown && Platform.OS === 'ios') {
+      Sentry.captureMessage('RC trial eligibility UNKNOWN — trial gösterilmedi', {
+        level: 'warning',
+        tags: { error_code: 'RC_TRIAL_ELIGIBILITY_UNKNOWN' },
+        extra: { productIds, statuses: out },
+      });
+    }
+    return out;
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { error_code: 'RC_TRIAL_ELIGIBILITY_FAILED' },
+      extra: { productIds },
+    });
+    return unknownAll();
   }
 }
 

@@ -16,6 +16,7 @@
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
     "test:teaser": "deno test --unstable-sloppy-imports tests/gauntlet/spotlightTeaser.test.ts",
     "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts",
+    "test:paywall-pricing": "deno test tests/subscription/paywallPricing.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
     "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
     "test:watch-feedback": "deno test --unstable-sloppy-imports tests/gauntlet/watchFeedbackFlow.test.ts",
