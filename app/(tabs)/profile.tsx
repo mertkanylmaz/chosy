@@ -39,6 +39,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import Constants from 'expo-constants';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 // V-4 Tur C: ikon aileleri — marka anlari Phosphor, fonksiyonel simgeler
 // (ayar, geri, chevron, kapat, kilit) Ionicons.
@@ -468,7 +469,7 @@ function SettingsModal({
    * Promise reddiydi — kullanici hicbir sey gormuyordu.
    */
   function openLegalLink(url: string): void {
-    Linking.openURL(url).catch((err: unknown) => {
+    WebBrowser.openBrowserAsync(url).catch((err: unknown) => {
       Sentry.captureException(err, {
         level: 'warning',
         tags: { screen: 'profile', flow: 'legal_link' },

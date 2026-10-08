@@ -17,7 +17,6 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Linking,
   Modal,
   ScrollView,
   Text,
@@ -28,6 +27,7 @@ import type { PurchasesPackage } from 'react-native-purchases';
 
 import * as Sentry from '@sentry/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as WebBrowser from 'expo-web-browser';
 import { Sparkle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
@@ -342,7 +342,7 @@ export default function PaywallBase({
    */
   const openLegalLink = useCallback(async (url: string, kind: 'terms' | 'privacy') => {
     try {
-      await Linking.openURL(url);
+      await WebBrowser.openBrowserAsync(url);
     } catch (err) {
       Sentry.captureException(err, {
         tags: { error_code: 'PAYWALL_LEGAL_LINK_FAILED', link: kind },
