@@ -749,7 +749,9 @@ function RootLayoutNav() {
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
               <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="(tabs)" />
+              {/* Home kök ekrandır: geri kaydırma jesti yığındaki `gate`'e (siyah
+                  yükleme ekranı) düşürüyordu. Geri gidilecek bir yer yok. */}
+              <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
               <Stack.Screen
                 name="discover"
                 options={{ animation: 'slide_from_right', headerShown: false }}
