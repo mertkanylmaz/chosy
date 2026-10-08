@@ -43,6 +43,12 @@ export const styles = StyleSheet.create({
   championScrollContent: {
     flexGrow: 1,
   },
+  /** F2: "Next screening in …" satırı — aksiyonların altı, bonus kartının üstü. */
+  nextScreening: {
+    marginTop: space.base,
+    paddingHorizontal: space.lg,
+    alignItems: 'center',
+  },
   /**
    * V-3 Tur G2 (C7): Spotlight kartı kaydırma içeriğinin SONUNDA, satır içi.
    * Yatay boşluk kartın kendi `marginHorizontal`'ında.

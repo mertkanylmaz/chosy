@@ -1,50 +1,40 @@
 /**
- * UnlockCountdown — bekleyiş ekranının (before_18) 18:00 geri sayımı. V-1 Tur 6.
+ * UnlockCountdown — champion ekranında bir sonraki cycle geçişine geri sayım
+ * ("Next screening in 5h 12m"). V-1 Tur 6'da bekleme ekranı için doğdu, F2'de
+ * champion ekranına taşındı.
  *
  * AYRI ve `memo` bileşen: `useCountdown` saniyede bir render üretir; sayaç
  * GauntletShell'in içinde yaşasaydı bütün kabuk her saniye yeniden çizilirdi.
  *
- * Sıfırda sayaç donmaz — `onElapsed` çağıranın mevcut nabız + `load()` yolunu
- * tetikler ve kabuk `bootstrapping`'e ("Hazırlanıyor" iskeleti) geçer.
+ * Hedef sunucunun söylediği `next_cycle_at`'tir (istemci 18:00 hesaplamaz).
+ * Sıfırda sayaç donmaz — `onElapsed` kabuğun cycle kontrolünü tetikler; sunucu
+ * yeni cycle'ı döndürürse hedef değişir, aynı cycle ise ekran olduğu gibi kalır.
  *
- * Görünüm (W1, `variant="display"`): yalnız saat:dakika ("02:50"), dakika TAVAN (`displayParts`), saniye hanesi YOK — her saniye
- * değişen rakam hareket sayılırdı (K-54, eskiden yalnız Reduce Motion'da
- * gizliydi). Geri sayım MANTIĞI (useCountdown, onElapsed) değişmedi.
+ * Görünüm: tek satır, `type.caption` (13/18, iOS footnote ölçüsü), ikincil
+ * metin rengi; dakika TAVAN (`displayParts`), saniye hanesi YOK — her saniye
+ * değişen rakam hareket sayılırdı (K-54). Rakamlar `tabular-nums`.
  *
- * W1.1 `variant="inline"` (W1.2: L1, title ağırlığı): tek satır ("Opens in 2h 50m") — SF
- * title (600 20/24), birincil renk, `maxFontSizeMultiplier` YOK (gövde gibi ölçeklenir).
- * Aynı `displayParts` (tavan), aynı hook, aynı `onElapsed`, aynı VoiceOver metni.
- *
- * A11y (K-54):
- *   - VoiceOver → ekrandakiyle aynı değer ("2 saat 50 dakika"); iki nokta seslendirilmez.
- *   - Martian Mono 1.4x ile sınırlı (DESIGN_OS §3.5).
+ * A11y (K-54): VoiceOver ekrandakiyle aynı değeri okur ("5 saat 12 dakika").
  */
 import React, { memo } from 'react';
 import { Text } from 'react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
-import { formatCountdown } from '@/hooks/countdownCore';
 import { useCountdown } from '@/hooks/useCountdown';
-import { MONO_MAX_FONT_SCALE } from '@/components/gauntlet/WaitingView/styles';
 
 import { displayParts } from './displayParts';
 import { formatDuration } from './formatDuration';
 import { styles } from './styles';
 
 interface UnlockCountdownProps {
-  /** Kapı anı — `getNextUnlockAt()`. Referansı sabit tutulmalı (useMemo). */
+  /** Geçiş anı — sunucunun `next_cycle_at`'i. Referansı sabit tutulmalı (useMemo). */
   target: Date;
   /** Sayaç sıfıra ulaştığında bir kez. */
   onElapsed: () => void;
-  /** `display`: Martian Mono 22/26 "02:50" (varsayılan). `inline`: "Opens in 2h 50m". */
-  variant?: 'display' | 'inline';
+  variant?: 'inline';
 }
 
-function UnlockCountdownImpl({
-  target,
-  onElapsed,
-  variant = 'display',
-}: UnlockCountdownProps): React.JSX.Element {
+function UnlockCountdownImpl({ target, onElapsed }: UnlockCountdownProps): React.JSX.Element {
   const { t } = useLanguage();
   const remainingMs = useCountdown(target, onElapsed);
   // Dakika TAVAN (saniye gösterilmediği için 00:00 yalnız gerçek sıfırda).
@@ -55,24 +45,11 @@ function UnlockCountdownImpl({
   const a11yLabel = parts.hours > 0
     ? t('gauntlet.countdownA11y', { hours: hoursLabel, minutes: minutesLabel })
     : minutesLabel;
-
-  if (variant === 'inline') {
-    const time = formatDuration(parts, (key, vars) => t(`gauntlet.${key}`, vars));
-    return (
-      <Text style={styles.inline} accessibilityRole="timer" accessibilityLabel={a11yLabel}>
-        {t('gauntlet.opensIn', { time })}
-      </Text>
-    );
-  }
+  const time = formatDuration(parts, (key, vars) => t(`gauntlet.${key}`, vars));
 
   return (
-    <Text
-      style={styles.countdown}
-      accessibilityRole="timer"
-      accessibilityLabel={a11yLabel}
-      maxFontSizeMultiplier={MONO_MAX_FONT_SCALE}
-    >
-      {formatCountdown({ ...parts, seconds: 0 }, false)}
+    <Text style={styles.inline} accessibilityRole="timer" accessibilityLabel={a11yLabel}>
+      {t('gauntlet.nextScreening', { time })}
     </Text>
   );
 }

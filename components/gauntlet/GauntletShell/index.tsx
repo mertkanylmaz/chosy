@@ -19,7 +19,7 @@
  * Ret akışı yalnızca Seviye 1 ("İkisi de değil", tek buton, her rette aynı)
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
@@ -49,6 +49,7 @@ import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
+import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
@@ -815,6 +816,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     }
   }, [applyGauntlet]);
 
+  /**
+   * Champion ekranı sayacının hedefi — sunucunun `next_cycle_at`'i. Alan yoksa
+   * (F1 öncesi önbellek kaydı) ya da çözülemiyorsa null → satır GİZLİ.
+   * Referans yalnız değer değişince yenilenir; sayaç her render'da kurulmaz.
+   */
+  const countdownTarget = useMemo(() => {
+    if (!nextCycleAt) return null;
+    const ms = Date.parse(nextCycleAt);
+    return Number.isNaN(ms) ? null : new Date(ms);
+  }, [nextCycleAt]);
+  const handleCountdownElapsed = useCallback(() => void checkCycle('pulse'), [checkCycle]);
+
   // Seçim uçuşta / geçiş oynuyor / kuyrukta seçim var → cycle geçişi ertelenir.
   useEffect(() => {
     busyRef.current = submitting || transitioning || choiceFrozen;
@@ -1460,6 +1473,19 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               gauntletId={gauntlet?.gauntletId}
               onRevealSettled={handleRevealSettled}
             />
+
+            {/* F2: bir sonraki cycle'a geri sayım — aksiyon satırının altında,
+                Spotlight kartının üstünde, kaydırmadan görünür. Hedef sunucunun
+                `next_cycle_at`'i; yoksa satır gizli. */}
+            {countdownTarget !== null && (
+              <View style={styles.nextScreening}>
+                <UnlockCountdown
+                  variant="inline"
+                  target={countdownTarget}
+                  onElapsed={handleCountdownElapsed}
+                />
+              </View>
+            )}
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
                 dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
