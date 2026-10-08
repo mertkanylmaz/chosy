@@ -335,6 +335,23 @@ export default function PaywallBase({
       : ctaLabel ??
         (trialDays > 0 ? t('contextPaywall.ctaTrial', { days: trialDays }) : noTrialCta);
 
+  /**
+   * Terms/Privacy linki. Acilmazsa Sentry'ye error + kullaniciya mevcut hata
+   * kopyasi (`errors.openLink`); sessiz reddedilen promise birakilmaz (kural 1).
+   * Repoda toast altyapisi yok — profile/film ekranlari da Alert kullaniyor.
+   */
+  const openLegalLink = useCallback(async (url: string, kind: 'terms' | 'privacy') => {
+    try {
+      await Linking.openURL(url);
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { error_code: 'PAYWALL_LEGAL_LINK_FAILED', link: kind },
+        extra: { url },
+      });
+      Alert.alert(t('errors.openLink'));
+    }
+  }, [t]);
+
   /** Restore */
   const handleRestore = useCallback(async () => {
     try {
@@ -585,7 +602,7 @@ export default function PaywallBase({
                 {/* Legal links */}
                 <View style={styles.legalRow}>
                   <TouchableOpacity
-                    onPress={() => Linking.openURL(TERMS_URL)}
+                    onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="link"
                     accessibilityLabel={t('paywall.termsAction')}
@@ -594,7 +611,7 @@ export default function PaywallBase({
                   </TouchableOpacity>
                   <Text style={styles.legalSeparator}>·</Text>
                   <TouchableOpacity
-                    onPress={() => Linking.openURL(PRIVACY_URL)}
+                    onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="link"
                     accessibilityLabel={t('paywall.privacyAction')}
