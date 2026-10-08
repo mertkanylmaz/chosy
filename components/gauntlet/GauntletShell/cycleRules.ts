@@ -10,7 +10,7 @@
  * ── Geçiş kuralı (F2.1, F2'nin otomatik geçişini DEĞİŞTİRİR) ────────────────
  * Uygulama ön plandayken içerik ASLA kendiliğinden değişmez. Otomatik geçiş
  * yalnızca (1) soğuk açılışta ve (2) AppState 'active' olduğunda (arka plandan
- * dönüş). Ön planda `next_cycle_at` geçtiğinde:
+ * dönüş; `in_progress` ve meşgulken HAYIR, bkz. `rolloverOnActive`). Ön planda `next_cycle_at` geçtiğinde:
  *   - completed_today / exhausted: sayaç satırı "hazır" butonuna döner;
  *     kullanıcı basınca geçiş uygulanır.
  *   - ready / in_progress: HİÇBİR ŞEY değişmez, mevcut tur oynanır.
@@ -53,13 +53,15 @@ export interface RolloverGuard {
 
 /**
  * AppState 'active' (arka plandan dönüş) sırasında otomatik geçiş uygulanabilir
- * mi. Her gösterim durumunda evet (kullanıcı ekranı zaten bırakmıştı); yalnız
- * yükleme sürerken ve seçim uçuştayken / kuyruktayken ertelenir.
+ * mi (F2.2). Yalnız bitmemiş OLMAYAN ekranlarda: `ready` (hiç seçim yapılmamış)
+ * ve `completed_today`. Devam eden tur (`in_progress`), yükleme (`bootstrapping`)
+ * ve uçuştaki / kuyruktaki seçim (`busy`) için KAPALI: davranış ön plandaki
+ * duruma eşittir — tur oynanır, bitince sayaç satırı "hazır" butonuna döner.
  * Ön plandaki geçiş bu fonksiyona SORULMAZ — ön planda otomatik geçiş yoktur.
  */
 export function rolloverOnActive(guard: RolloverGuard): boolean {
   if (guard.busy) return false;
-  return guard.state !== 'bootstrapping';
+  return guard.state === 'ready' || guard.state === 'completed_today';
 }
 
 /** Sayaç satırının sunucuyla ilişkisi (ön planda, kullanıcı eylemiyle ilerler). */

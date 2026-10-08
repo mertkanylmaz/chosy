@@ -45,13 +45,21 @@ Deno.test('isNewCycle: aynı date → hayır; farklı ya da gauntlet yok → eve
 
 // ─── rolloverOnActive (yalnız arka plandan dönüş) ───────────────────────────
 
-Deno.test('rolloverOnActive: her gösterim durumunda evet, yükleme ve meşgulken hayır', () => {
-  const states: CycleShellState[] = ['ready', 'in_progress', 'completed_today'];
-  for (const state of states) {
-    assertEquals(rolloverOnActive({ state, busy: false }), true, state);
-    assertEquals(rolloverOnActive({ state, busy: true }), false, `${state} busy`);
-  }
+Deno.test('rolloverOnActive: ready ve completed_today otomatik geçer', () => {
+  assertEquals(rolloverOnActive({ state: 'ready', busy: false }), true);
+  assertEquals(rolloverOnActive({ state: 'completed_today', busy: false }), true);
+});
+
+Deno.test('rolloverOnActive: in_progress ve bootstrapping için KAPALI (F2.2)', () => {
+  assertEquals(rolloverOnActive({ state: 'in_progress', busy: false }), false);
   assertEquals(rolloverOnActive({ state: 'bootstrapping', busy: false }), false);
+});
+
+Deno.test('rolloverOnActive: busy (seçim uçuşta / kuyrukta) her durumda KAPALI', () => {
+  const states: CycleShellState[] = ['ready', 'in_progress', 'completed_today', 'bootstrapping'];
+  for (const state of states) {
+    assertEquals(rolloverOnActive({ state, busy: true }), false, state);
+  }
 });
 
 // ─── cycleRowPhase ──────────────────────────────────────────────────────────
@@ -102,9 +110,17 @@ Deno.test('senaryo: oyun 18:03\'te biter → satır hemen "hazır" butonu (zaman
   assertEquals(cycleRowPhase({ boundaryPassed, status: 'idle' }), 'ready');
 });
 
-Deno.test('senaryo: arka plandan 18:10\'da dönüş, tur ortasında → geçiş uygulanır (kullanıcı ekranı bırakmıştı)', () => {
+Deno.test('senaryo: arka plandan 18:10 dönüş, tur ortasında → geçiş YOK; tur biter, satır butona döner', () => {
   assertEquals(shouldRefetch(at('2026-10-08T15:10:00Z'), NEXT), true);
-  assertEquals(rolloverOnActive({ state: 'in_progress', busy: false }), true);
+  assertEquals(rolloverOnActive({ state: 'in_progress', busy: false }), false);
+  // Tur bitince (completed_today) satır zamandan türetilir: sınır geçmiş → buton.
+  assertEquals(showsCycleRow('completed_today'), true);
+  assertEquals(cycleRowPhase({ boundaryPassed: true, status: 'idle' }), 'ready');
+});
+
+Deno.test('senaryo: arka plandan dönüş, ready (hiç seçim yok) → otomatik geçer', () => {
+  assertEquals(shouldRefetch(at('2026-10-08T15:10:00Z'), NEXT), true);
+  assertEquals(rolloverOnActive({ state: 'ready', busy: false }), true);
 });
 
 Deno.test('senaryo: İstanbul 03:30 — sunucu aynı date döner → isNewCycle false, satır sayaçta kalır', () => {
