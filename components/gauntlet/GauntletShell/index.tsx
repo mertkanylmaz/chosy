@@ -20,7 +20,16 @@
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import {
+  AppState,
+  ScrollView,
+  Text,
+  View,
+  useWindowDimensions,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -106,8 +115,16 @@ import {
   showsCycleRow,
   type RowStatus,
 } from './cycleRules';
-import { contentTopFor, headerGapFor, styles } from './styles';
+import {
+  BONUS_CARD_MARGIN,
+  BONUS_CARD_RESERVE_HEIGHT,
+  contentTopFor,
+  headerGapFor,
+  styles,
+} from './styles';
+import { useBelowHeight } from './useBelowHeight';
 import { useChampionAsk } from './useChampionAsk';
+import { useSpotlightVisible } from './useSpotlightVisible';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
 
@@ -1510,6 +1527,37 @@ function GauntletShellContent(): React.JSX.Element {
     cardlessDwell: spotlightUnavailable && revealSettled,
   });
 
+  // F2.3: hero'nun altındaki içerik ölçülür → hero yüksekliği (ChampionReveal).
+  const below = useBelowHeight(BONUS_CARD_RESERVE_HEIGHT);
+  const belowHeight = below.total({
+    card: !spotlightUnavailable,
+    cycle: true,
+    archive: true,
+  });
+  const spotlightVisible = useSpotlightVisible({
+    active: championActive,
+    cycleKey: gauntlet?.gauntletId,
+    source: animateReveal ? 'live' : 'resume',
+    bottomInset: tabBarInset,
+  });
+  const handleCardLayout = (e: LayoutChangeEvent): void => {
+    championAsk.onCardLayout(e);
+    spotlightVisible.onCardLayout(e);
+    below.onLayoutOf('card')({
+      nativeEvent: {
+        layout: { ...e.nativeEvent.layout, height: e.nativeEvent.layout.height + BONUS_CARD_MARGIN },
+      },
+    } as LayoutChangeEvent);
+  };
+  const handleScrollLayout = (e: LayoutChangeEvent): void => {
+    championAsk.onScrollLayout(e);
+    spotlightVisible.onScrollLayout(e);
+  };
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>): void => {
+    championAsk.onScroll(e);
+    spotlightVisible.onScroll(e);
+  };
+
   // ── Spotlight kartının girişi (S-2) ────────────────────────────────────────
   //
   // `ChampionReveal` sekansın görsel bitişini bildirir (resume'da mount'ta).
@@ -1692,8 +1740,8 @@ function GauntletShellContent(): React.JSX.Element {
               { paddingBottom: tabBarInset + space.lg },
             ]}
             showsVerticalScrollIndicator={false}
-            onLayout={championAsk.onScrollLayout}
-            onScroll={championAsk.onScroll}
+            onLayout={handleScrollLayout}
+            onScroll={handleScroll}
             scrollEventThrottle={100}
             onTouchStart={championAsk.onTouchStart}
             onScrollEndDrag={championAsk.onScrollSettled}
@@ -1706,46 +1754,55 @@ function GauntletShellContent(): React.JSX.Element {
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
               onRevealSettled={handleRevealSettled}
+              belowHeight={belowHeight}
             />
 
-            {/* F2.1: sonraki gösterim satırı — aksiyonların altında, Spotlight
-                kartının üstünde. Ön planda içerik kendiliğinden değişmez:
-                geçiş anı gelince satır "hazır" butonuna döner. Hedef sunucunun
-                `next_cycle_at`'i; yoksa satır gizli. */}
-            {showsCycleRow(shellState) && countdownTarget !== null && (
-              <CycleRow
-                phase={cycleRowPhase({ boundaryPassed, status: rowStatus })}
-                target={countdownTarget}
-                onElapsed={syncBoundary}
-                onPressReady={() => void handleCyclePress()}
-                checkFailed={rowCheckFailed}
-                onRemind={
-                  remindEligible && championAsk.askType === null ? handleRemindPress : undefined
-                }
-              />
-            )}
+            {/* F2.3 sırası: Watch now satırı (ChampionReveal) → Spotlight bonus
+                kartı → sayaç satırı. Tek düzen: canlı ve dönüş aynı.
+                C.9b-UI C4 (IA §2.6): "Bugünün bonusu" Spotlight'ın TEK giriş
+                noktası. §7.1: bonus ritüelin ÇIKIŞINDA durur. Kart giriş anı
+                gelince (S-2, `bonusCardMounted`) mount edilir; o ana kadar
+                yeri ayrılır (hero zıplamasın) ve dwell/görünürlük sayaçları
+                kurulmaz (`onLayout` yalnız mount edilmiş slotta). */}
+            {!spotlightUnavailable &&
+              (bonusCardMounted ? (
+                <View style={styles.bonusCardInline} onLayout={handleCardLayout}>
+                  <SpotlightBonusCard
+                    gameType="spotlight"
+                    data={spotlightCard}
+                    entry={animateReveal ? 'reveal' : 'resume'}
+                    cycleDate={gauntlet?.date ?? ''}
+                    onPress={championAsk.onSpotlightPress}
+                  />
+                </View>
+              ) : (
+                <View style={styles.bonusCardReserve} />
+              ))}
+
+            {/* F2.1: sonraki gösterim satırı. Ön planda içerik kendiliğinden
+                değişmez: geçiş anı gelince satır "hazır" butonuna döner.
+                Hedef sunucunun `next_cycle_at`'i; yoksa satır gizli. Sarmalayıcı
+                her zaman çizilir (ölçüm: hero yüksekliği). */}
+            <View onLayout={below.onLayoutOf('cycle')}>
+              {showsCycleRow(shellState) && countdownTarget !== null && (
+                <CycleRow
+                  phase={cycleRowPhase({ boundaryPassed, status: rowStatus })}
+                  target={countdownTarget}
+                  onElapsed={syncBoundary}
+                  onPressReady={() => void handleCyclePress()}
+                  checkFailed={rowCheckFailed}
+                  onRemind={
+                    remindEligible && championAsk.askType === null ? handleRemindPress : undefined
+                  }
+                />
+              )}
+            </View>
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
                 dokunmaz — kendi durumunu kendi sorar, hiçbir prop almaz. */}
-            <ArchiveTrigger />
-
-            {/* C.9b-UI C4 (IA §2.6): "Bugünün bonusu" — Spotlight'ın TEK giriş
-                noktası. Ayrı hub yok. §7.1: bonus ritüelin ÇIKIŞINDA durur.
-                V-3 Tur G2 (C7, V3-D6): yüzen/mutlak konum kaldırıldı —
-                kaydırılabilir içeriğin SONUNDA satır içi. Görünme koşulu:
-                şampiyon varsa VE giriş anı geldiyse (S-2, `bonusCardMounted`).
-                İçeriğin sonunda olduğu için geç mount üstteki düzeni kaydırmaz. */}
-            {bonusCardMounted && !spotlightUnavailable && (
-              <View style={styles.bonusCardInline} onLayout={championAsk.onCardLayout}>
-                <SpotlightBonusCard
-                  gameType="spotlight"
-                  data={spotlightCard}
-                  entry={animateReveal ? 'reveal' : 'resume'}
-                  cycleDate={gauntlet?.date ?? ''}
-                  onPress={championAsk.onSpotlightPress}
-                />
-              </View>
-            )}
+            <View onLayout={below.onLayoutOf('archive')}>
+              <ArchiveTrigger />
+            </View>
           </ScrollView>
 
           {/* K-42 (C.9b-UI): bayat gösterge — V-3 Tur G2'den beri hero'nun

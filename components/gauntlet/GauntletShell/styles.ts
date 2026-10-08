@@ -9,6 +9,15 @@ import { POSTER_META_BLOCK_HEIGHT } from '@/components/gauntlet/PosterTile/style
 import { color, radius, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 
+/**
+ * F2.3: Spotlight kartı slotunun üst boşluğu (`styles.bonusCardInline`) ve
+ * kart mount edilmeden önce ayrılan yer (boşluk + 72pt kart: 2 × space.sm +
+ * 56pt kare, SpotlightBonusCard/styles.ts). Kart `BONUS_CARD_ENTRY.delay`
+ * sonra mount olur; yer baştan ayrılırsa hero o anda zıplamaz.
+ */
+export const BONUS_CARD_MARGIN = space.lg;
+export const BONUS_CARD_RESERVE_HEIGHT = BONUS_CARD_MARGIN + space.sm * 2 + 56;
+
 export const styles = StyleSheet.create({
   /**
    * Dış kabuk — TAM EKRAN, dolgusuz. Işık sızması burada yaşar ve ekranın
@@ -48,7 +57,11 @@ export const styles = StyleSheet.create({
    * Yatay boşluk kartın kendi `marginHorizontal`'ında.
    */
   bonusCardInline: {
-    marginTop: space.lg,
+    marginTop: BONUS_CARD_MARGIN,
+  },
+  /** Kart mount edilmeden önce yer tutar (hero zıplamasın). */
+  bonusCardReserve: {
+    height: BONUS_CARD_RESERVE_HEIGHT,
   },
   /**
    * V-3 Tur G2: bayat gösterge hero'nun üstünde sabit — `top` inline

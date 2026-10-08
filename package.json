@@ -16,7 +16,7 @@
     "test:submit-choice": "deno test --allow-read tests/gauntlet/submitChoiceRefresh.test.ts",
     "test:cycle": "deno test --allow-read tests/gauntlet/cycleDate.test.ts tests/gauntlet/gauntletCacheRules.test.ts tests/gauntlet/cycleRollover.test.ts tests/gauntlet/cycleDateKey.test.ts",
     "test:waiting": "deno test tests/gauntlet/unlockClock.test.ts tests/gauntlet/countdownCore.test.ts",
-    "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts",
+    "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts tests/gauntlet/heroHeight.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
     "test:ask": "deno test tests/gauntlet/askDecision.test.ts",
     "test:watch-feedback": "deno test --unstable-sloppy-imports tests/gauntlet/watchFeedbackFlow.test.ts",
