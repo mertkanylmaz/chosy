@@ -15,10 +15,10 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
-  /** W1.1 inline: gövde metni gibi — SF caption, ikincil renk, sola hizalı. */
+  /** W1.2 inline (L1): SF title (600 20/24), birincil renk, sola hizalı. */
   inline: {
-    ...type.caption,
-    color: color.text.secondary,
+    ...type.title,
+    color: color.text.primary,
     fontVariant: ['tabular-nums'],
   },
 });

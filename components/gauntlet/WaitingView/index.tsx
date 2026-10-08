@@ -7,8 +7,8 @@
  * kurulur ve slot/prop olarak gelir. Burası yalnız düzen.
  *
  * W1.1 — iOS-native düzen: tümü sola hizalı, üstten akar.
- *   1. Büyük başlık (`largeTitle`) + alt satır (`gauntlet.before18`)
- *   2. Zaman (inline geri sayım)
+ *   1. Büyük başlık (`largeTitle`)
+ *   2. L1 inline geri sayım (title, birincil) → L2 tek gri cümle (`todayAtTagline`)
  *   3. Inset grup: bildirim satırı (varsa) + Spotlight satırı (varsa);
  *      ikisi de yoksa grup çizilmez
  *   4. Last Pick (yalnız şampiyon varsa): etiket + ayrı grup, tek satır
@@ -16,7 +16,7 @@
  * K-46: arşiv, Pro Mode ve keşif rotası YOK. İçerik KAYDIRILABİLİR — AX5 ve
  * küçük ekranda taşma kesilmesin.
  *
- * A11y okuma sırası: başlık+alt satır → zaman → bildirim → Spotlight → Last Pick.
+ * A11y okuma sırası: başlık → zaman → L2 → bildirim → Spotlight → Last Pick.
  */
 import React from 'react';
 import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
@@ -62,7 +62,7 @@ export function WaitingView({
   const compact = isWaitingCompact(height);
 
   const title = t('gauntlet.tonightsFour');
-  const subtitle = t('gauntlet.before18', { time: unlockTimeLabel });
+  const tagline = t('gauntlet.todayAtTagline', { time: unlockTimeLabel });
 
   return (
     <ScrollView
@@ -71,20 +71,15 @@ export function WaitingView({
       showsVerticalScrollIndicator={false}
       alwaysBounceVertical
     >
-      {/* 1–2 — Başlık + alt satır tek VoiceOver öğesi; ardından zaman. */}
+      {/* 1–2 — Başlık (header) → L1 geri sayım → L2 cümle. VoiceOver sırası aynı. */}
       <View style={styles.header}>
-        <View
-          style={styles.headerText}
-          accessible
-          accessibilityRole="header"
-          accessibilityLabel={`${title}. ${subtitle}`}
-        >
-          <Text style={styles.title} accessibilityRole="header">
-            {title}
-          </Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+        <View style={styles.headerLines}>
+          {countdown}
+          <Text style={styles.subtitle}>{tagline}</Text>
         </View>
-        {countdown}
       </View>
 
       {/* 3 — Inset grup. Satır yoksa hiç çizilmez. Ayraç inset'i: yan yana düzende

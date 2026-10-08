@@ -11,8 +11,8 @@
  * değişen rakam hareket sayılırdı (K-54, eskiden yalnız Reduce Motion'da
  * gizliydi). Geri sayım MANTIĞI (useCountdown, onElapsed) değişmedi.
  *
- * W1.1 `variant="inline"`: tek satır gövde metni ("Opens in 2h 50m") — SF
- * caption, ikincil renk, `maxFontSizeMultiplier` YOK (gövde gibi ölçeklenir).
+ * W1.1 `variant="inline"` (W1.2: L1, title ağırlığı): tek satır ("Opens in 2h 50m") — SF
+ * title (600 20/24), birincil renk, `maxFontSizeMultiplier` YOK (gövde gibi ölçeklenir).
  * Aynı `displayParts` (tavan), aynı hook, aynı `onElapsed`, aynı VoiceOver metni.
  *
  * A11y (K-54):

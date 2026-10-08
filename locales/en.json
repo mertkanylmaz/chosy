@@ -1512,7 +1512,7 @@
     "roundShort": "%{current} / %{total}",
     "rejectNeither": "Neither",
     "markWatched": "I've watched this",
-    "before18": "Today's four will be ready at %{time}.",
+    "todayAtTagline": "Today at %{time}. Four films, three choices, one winner.",
     "waitingNotifyCta": "Remind me at %{time}",
     "waitingChampionOpen": "View %{title}",
     "spotlightTeaser": "Today's frame is waiting. It opens after your four.",

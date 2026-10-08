@@ -1512,7 +1512,7 @@
     "roundShort": "%{current} / %{total}",
     "rejectNeither": "İkisi de değil",
     "markWatched": "Bunu izledim",
-    "before18": "Bugünün dörtlüsü %{time}'de hazır.",
+    "todayAtTagline": "Bugün %{time}. Dört film, üç seçim, tek kazanan.",
     "waitingNotifyCta": "%{time}'de hatırlat",
     "waitingChampionOpen": "%{title} filmini görüntüle",
     "spotlightTeaser": "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır.",

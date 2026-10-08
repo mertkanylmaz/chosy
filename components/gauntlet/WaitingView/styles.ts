@@ -60,16 +60,20 @@ export const styles = StyleSheet.create({
   scrollContentCompact: {
     gap: space.base,
   },
+  /** Başlık → (8) → L1+L2 bloğu. Alt boşluk: bölüm gap'ine +sm (≈ bir kademe büyük). */
   header: {
-    gap: space.xs,
+    gap: space.sm,
+    marginBottom: space.sm,
   },
-  headerText: {
+  /** L1 (geri sayım) → (4) → L2. */
+  headerLines: {
     gap: space.xs,
   },
   title: {
     ...type.largeTitle,
     color: color.text.primary,
   },
+  /** L2: tek gri cümle. */
   subtitle: {
     ...type.callout,
     color: color.text.secondary,
