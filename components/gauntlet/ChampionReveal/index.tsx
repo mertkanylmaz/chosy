@@ -39,8 +39,8 @@
  * V-3 Tur G2 (C1–C8, kurucu referansı): tam genişlik poster hero (~%60,
  * `ink`'e geçiş — heroScrim.ts), serif başlık (`filmTitle`, V3-D1 — Archivo
  * display-xl bu ekrandan çıktı), en fazla 3 logo + "See all" (V3-D5) ve alt
- * alta üç eylem: Watch Now (düz `marquee`, V3-D2; TMDB `link` uygulama içi
- * tarayıcıda, V3-D3 — sağlayıcı/link yoksa render edilmez), Sonraya bırak,
+ * alta üç eylem: Watch Now (düz `marquee`, V3-D2; 8 Eki 2026'dan beri film
+ * detayına gider — sağlayıcı yoksa render edilmez), Sonraya bırak,
  * Paylaş. Reveal sekansı, kaydetme ve paylaşım mantığı DEĞİŞMEDİ.
  *
  * V-4 Tur B: hero ~%60 → ~%46 ve blok boşlukları sıkılaştı — ≥ 844pt'de üç
@@ -59,7 +59,6 @@ import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { BookmarkSimple, FilmSlate, Play, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
@@ -329,25 +328,26 @@ export function ChampionReveal({
   }, [router, champion.id]);
 
   /**
-   * V-3 Tur G2 (C6, V3-D3): Watch Now — TMDB'nin bölgeye özel `link`'i
-   * uygulama içi tarayıcıda. Sağlayıcı yoksa ya da `link` yoksa buton HİÇ
-   * render edilmez (devre dışı değil). Sayı `orderProviders` uzunluğudur —
-   * logo satırındaki "See all" ile aynı tekilleştirilmiş kaynak.
+   * V-3 Tur G2 (C6): Watch Now. Sağlayıcı yoksa buton HİÇ render edilmez
+   * (devre dışı değil). Sayı `orderProviders` uzunluğudur — logo satırındaki
+   * "See all" ile aynı tekilleştirilmiş kaynak.
+   *
+   * 8 Eki 2026 (kurucu kararı): kullanıcı uygulamada tutulur. Watch Now artık
+   * TMDB `link`'ini tarayıcıda AÇMAZ — film detay ekranına gider (afişe
+   * dokunuşla aynı salt navigasyon). Uygulamadan tek çıkış, film detaydaki
+   * YouTube fragmanıdır.
    */
   const providerCount = useMemo(
     () => (providersState === 'ok' && providers ? orderProviders(providers).length : 0),
     [providersState, providers],
   );
-  const watchLink = providersState === 'ok' ? providers?.link : undefined;
-  const showWatchNow = watchLink !== undefined && watchLink !== '' && providerCount > 0;
+  const showWatchNow = providerCount > 0;
   /** S-2: Watch Now birincilse "Sonraya bırak" ikon satırına iner. */
   const showSaveIcon = showWatchNow && gauntletId !== undefined;
   const saveLabel =
     saveState === 'saved' ? t('gauntlet.saveForLater.saved') : t('gauntlet.saveForLater.action');
 
-  /** Tarayıcı açılamazsa sessiz geçilmez: Sentry + görünür mesaj (§15.2). */
-  const handleWatchNow = useCallback(async () => {
-    if (!watchLink) return;
+  const handleWatchNow = useCallback(() => {
     void hapticLight();
     posthogAnalytics.track('watch_now_tapped', {
       film_id: champion.id,
@@ -355,16 +355,8 @@ export function ChampionReveal({
       region,
       provider_count: providerCount,
     });
-    try {
-      await WebBrowser.openBrowserAsync(watchLink);
-    } catch (err) {
-      Sentry.captureException(err, {
-        tags: { component: 'ChampionReveal', flow: 'watch_now' },
-        extra: { film_id: champion.id, region },
-      });
-      showNotice(t('gauntlet.watchNow.error'));
-    }
-  }, [watchLink, champion.id, cycle, region, providerCount, showNotice, t]);
+    router.push(`/film/${champion.id}`);
+  }, [router, champion.id, cycle, region, providerCount]);
 
   /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
@@ -617,7 +609,7 @@ export function ChampionReveal({
                 label={t('gauntlet.watchNow.action')}
                 icon={Play}
                 variant="marquee"
-                onPress={() => void handleWatchNow()}
+                onPress={handleWatchNow}
               />
             ) : (
               gauntletId !== undefined && (

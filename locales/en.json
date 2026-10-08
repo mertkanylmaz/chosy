@@ -1462,8 +1462,7 @@
     "championAccessibilityLabel": "Tonight's film: %{title}, %{year}, %{runtime} minutes",
     "championAccessibilityLabelFirst": "Your first film: %{title}, %{year}, %{runtime} minutes",
     "watchNow": {
-      "action": "Watch now",
-      "error": "Couldn't open the page. Try again."
+      "action": "Watch now"
     },
     "championOpenFilm": "Open details for %{title}",
     "close": "Close",
