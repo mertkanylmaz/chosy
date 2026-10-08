@@ -84,7 +84,13 @@ import {
   selectQuartet,
   toGauntletFilm,
 } from '../_shared/gauntletCore.ts'
-import { cycleDate, isValidTimeZone, nextCycleAt } from '../_shared/cycleDate.ts'
+import {
+  chosenBeforeCycleStart,
+  cycleDate,
+  cycleStartAt,
+  isValidTimeZone,
+  nextCycleAt,
+} from '../_shared/cycleDate.ts'
 import { decidePreviousCycle, resolvePreviousCycle } from '../_shared/previousCycle.ts'
 import type {
   DailyGauntlet,
@@ -329,6 +335,14 @@ async function countSignals(
 /**
  * "Dün izledin mi?" adayı — bu kullanıcının BUGÜNDEN ÖNCEKİ en son tarihli
  * champion'a ulaşmış gauntlet'i, henüz watch_feedback satırı yoksa.
+ *
+ * F2.2 ek kriter: şampiyon MEVCUT cycle başlamadan ÖNCE seçilmiş olmalı
+ * (`chosenBeforeCycleStart`). Önceki cycle'ın oyunu 18:00'i geçip 18:03'te
+ * biterse 18:05'te gelen yükleme o filmi "dün" diye sormaz.
+ * Seçim anı: `daily_gauntlets`'ta tamamlanma zamanı kolonu YOK (`generated_at`
+ * satırın ÜRETİM anıdır) — şampiyonu işaretleyen `choice_events` satırının
+ * (`round = 3`, `outcome = 'choice'`) `created_at`'i kullanılır; o satır
+ * `record_choice_event` ile `champion_film_id` ile AYNI transaction'da yazılır.
  * FK yok (gauntlet_id watch_feedback'te serbest UUID) → PostgREST embed
  * kurulamaz, iki adımlı çözüm fetchExclusions'daki Promise.all deseniyle
  * aynı ruhta: aday satırları çek, feedback'i olanları çıkar.
@@ -337,6 +351,8 @@ async function findPendingWatchFeedbackCandidate(
   service: SupabaseClient,
   appUserId: string,
   todayDate: string,
+  /** Mevcut cycle'ın başlangıç anı (ISO UTC) — `cycleStartAt(tz, cycleDate)`. */
+  cycleStartIso: string,
 ): Promise<{ gauntletId: string; filmId: string } | null> {
   const { data, error } = await service
     .from('daily_gauntlets')
@@ -364,7 +380,37 @@ async function findPendingWatchFeedbackCandidate(
     throw new Error(`pendingWatchFeedback feedback sorgusu başarısız: ${fbError.message}`)
   }
   const answered = new Set((fbRows ?? []).map((r) => r.gauntlet_id as string))
-  const pending = rows.find((r) => !answered.has(r.id))
+
+  const { data: evRows, error: evError } = await service
+    .from('choice_events')
+    .select('gauntlet_id,created_at')
+    .in('gauntlet_id', gauntletIds)
+    .eq('round', 3)
+    .eq('outcome', 'choice')
+  if (evError) {
+    throw new Error(`pendingWatchFeedback şampiyon zamanı sorgusu başarısız: ${evError.message}`)
+  }
+  const chosenAt = new Map<string, string>(
+    ((evRows ?? []) as { gauntlet_id: string; created_at: string }[]).map(
+      (r) => [r.gauntlet_id, r.created_at],
+    ),
+  )
+
+  const pending = rows.find((r) => {
+    if (answered.has(r.id)) return false
+    const at = chosenAt.get(r.id)
+    if (at === undefined) {
+      // Şampiyonlu ama seçim olayı yok: veri anomalisi (atomik RPC'den beri
+      // oluşmaz). Zaman kapısı doğrulanamaz; eski davranış (`date < bugün`)
+      // korunur — soru kaybolmaz. Sessiz değil, iz bırakır.
+      logInfo('pending_feedback_champion_event_missing', {
+        user_id: appUserId,
+        gauntlet_id: r.id,
+      })
+      return true
+    }
+    return chosenBeforeCycleStart(at, cycleStartIso)
+  })
   return pending ? { gauntletId: pending.id, filmId: pending.champion_film_id } : null
 }
 
@@ -377,8 +423,14 @@ async function resolvePendingWatchFeedback(
   service: SupabaseClient,
   appUserId: string,
   todayDate: string,
+  cycleStartIso: string,
 ): Promise<PendingWatchFeedback | null> {
-  const candidate = await findPendingWatchFeedbackCandidate(service, appUserId, todayDate)
+  const candidate = await findPendingWatchFeedbackCandidate(
+    service,
+    appUserId,
+    todayDate,
+    cycleStartIso,
+  )
   if (!candidate) return null
 
   const filmsById = await fetchCandidatesByIds(service, [candidate.filmId])
@@ -904,7 +956,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
     }
 
-    const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, cycleToday)
+    const pendingWatchFeedback = await resolvePendingWatchFeedback(
+      service,
+      appUserId,
+      cycleToday,
+      cycleStartAt(tz, cycleToday),
+    )
 
     // ── Idempotency: aynı kullanıcı + gün ikinci çağrıda YENİ üretim yapmaz ──
     const existing = await service

@@ -134,21 +134,49 @@ export function cycleDate(tz: string, now: Date): string {
 }
 
 /**
- * `now`'dan SONRAKİ ilk yerel 18:00, ISO 8601 UTC. Tam 18:00:00'da bir
- * sonraki günün 18:00'i döner (sınır dahil değil).
- *
- * Duvar saatinden kurulur, milisaniye eklenerek DEĞİL: DST günlerinde iki
- * yerel 18:00 arası 23 ya da 25 saat olabilir. Offset o anın kendisinde
- * ölçülür; geçiş araya girerse ikinci iterasyon düzeltir.
+ * `tz` diliminde `YYYY-MM-DD` takvim gününün `hour`:00 duvar saatinin UTC anı (ms).
+ * Duvar saatinden kurulur, milisaniye eklenerek DEĞİL: DST günlerinde iki yerel
+ * 18:00 arası 23 ya da 25 saat olabilir. Offset o anın kendisinde ölçülür; geçiş
+ * araya girerse ikinci iterasyon düzeltir.
  */
-export function nextCycleAt(tz: string, now: Date): string {
-  const today = localDateString(tz, now)
-  const targetDate = isPastCycleHour(tz, now) ? addDays(today, 1) : today
-  const [y, m, d] = targetDate.split('-').map(Number)
-  const wall = Date.UTC(y, m - 1, d, CYCLE_HOUR, 0, 0)
+function zonedInstant(tz: string, date: string, hour: number): number {
+  const [y, m, d] = date.split('-').map(Number)
+  const wall = Date.UTC(y, m - 1, d, hour, 0, 0)
   const firstOffset = offsetMs(new Date(wall), tz)
   let instant = wall - firstOffset
   const secondOffset = offsetMs(new Date(instant), tz)
   if (secondOffset !== firstOffset) instant = wall - secondOffset
-  return new Date(instant).toISOString()
+  return instant
+}
+
+/**
+ * `now`'dan SONRAKİ ilk yerel 18:00, ISO 8601 UTC. Tam 18:00:00'da bir
+ * sonraki günün 18:00'i döner (sınır dahil değil).
+ */
+export function nextCycleAt(tz: string, now: Date): string {
+  const today = localDateString(tz, now)
+  const targetDate = isPastCycleHour(tz, now) ? addDays(today, 1) : today
+  return new Date(zonedInstant(tz, targetDate, CYCLE_HOUR)).toISOString()
+}
+
+/**
+ * Bir cycle'ın BAŞLANGIÇ anı: `cycleDate`'in yerel 18:00'i, ISO 8601 UTC.
+ * `cycleDate(tz, now)` yerel 18:00'i geçmiş en son günü verdiği için bu an her
+ * zaman `now`'dan önce ya da ona eşittir.
+ */
+export function cycleStartAt(tz: string, cycleDateKey: string): string {
+  return new Date(zonedInstant(tz, cycleDateKey, CYCLE_HOUR)).toISOString()
+}
+
+/**
+ * "Dün izledin mi?" adayı için zaman kapısı: şampiyon, MEVCUT cycle başlamadan
+ * ÖNCE seçilmiş olmalı (kesin küçük). Önceki cycle'ın oyunu 18:00'i geçip
+ * 18:03'te bitmişse, 18:05'te gelen yüklemede o film "dün" sayılmaz — iki dakika
+ * önce seçilen filmi sormak anlamsızdır. Okunamayan zaman `false` döner.
+ */
+export function chosenBeforeCycleStart(chosenAtIso: string, cycleStartIso: string): boolean {
+  const chosen = Date.parse(chosenAtIso)
+  const start = Date.parse(cycleStartIso)
+  if (Number.isNaN(chosen) || Number.isNaN(start)) return false
+  return chosen < start
 }

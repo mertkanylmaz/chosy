@@ -10,7 +10,9 @@ import { assert, assertEquals, assertThrows } from 'https://deno.land/std@0.208.
 
 import {
   addDays,
+  chosenBeforeCycleStart,
   cycleDate,
+  cycleStartAt,
   isValidTimeZone,
   localDateString,
   nextCycleAt,
@@ -215,3 +217,74 @@ Deno.test('generate-gauntlet: UTC gün anahtarı kalmadı, tz zorunlu ve next_cy
   assert(src.includes("'TZ_REQUIRED'"), 'TZ_REQUIRED yok')
   assertEquals(src.split('next_cycle_at: nextCycle').length - 1, 3, 'üç yanıt yolunun üçünde next_cycle_at olmalı')
 })
+
+// ─── F2.2 · "Dün izledin mi?" zaman kapısı ──────────────────────────────────
+
+Deno.test("cycleStartAt: cycle tarihinin yerel 18:00'i (İstanbul, New York DST bitişi, Kiritimati)", () => {
+  assertEquals(cycleStartAt('Europe/Istanbul', '2026-10-08'), '2026-10-08T15:00:00.000Z');
+  assertEquals(cycleStartAt('America/New_York', '2026-10-31'), '2026-10-31T22:00:00.000Z'); // EDT
+  assertEquals(cycleStartAt('America/New_York', '2026-11-01'), '2026-11-01T23:00:00.000Z'); // EST
+  assertEquals(cycleStartAt('Pacific/Kiritimati', '2026-10-08'), '2026-10-08T04:00:00.000Z');
+});
+
+Deno.test("cycleStartAt: her an now'dan önce ya da eşit, cycle uzunluğu ≤25 saat", () => {
+  const zones = ['Europe/Istanbul', 'America/New_York', 'Pacific/Pago_Pago', 'Asia/Makassar'];
+  const start = Date.parse('2026-10-01T00:00:00Z');
+  for (const tz of zones) {
+    for (let t = start; t < start + 60 * 24 * HOUR; t += 47 * 60_000) {
+      const now = new Date(t);
+      const cs = Date.parse(cycleStartAt(tz, cycleDate(tz, now)));
+      assert(cs <= t, `${tz} ${now.toISOString()}: başlangıç now'dan sonra`);
+      const span = Date.parse(nextCycleAt(tz, now)) - cs;
+      assert(span > 0 && span <= 25 * HOUR, `${tz} ${now.toISOString()}: cycle uzunluğu ${span / HOUR}s`);
+    }
+  }
+});
+
+Deno.test("pending feedback: önceki cycle şampiyonu 18:03'te seçildi, 18:05'te yükleme → aday DEĞİL", () => {
+  const tz = 'Europe/Istanbul';
+  const chosenAt = '2026-10-08T15:03:00.000Z'; // 18:03 yerel — cycle 2026-10-07 hâlâ oynanıyordu
+  const loadAt = at('2026-10-08T15:05:00Z'); // 18:05 yerel
+  const start = cycleStartAt(tz, cycleDate(tz, loadAt));
+  assertEquals(cycleDate(tz, loadAt), '2026-10-08');
+  assertEquals(chosenBeforeCycleStart(chosenAt, start), false);
+});
+
+Deno.test("pending feedback: aynı şampiyon ertesi cycle'da aday", () => {
+  const tz = 'Europe/Istanbul';
+  const chosenAt = '2026-10-08T15:03:00.000Z';
+  const loadAt = at('2026-10-09T15:05:00Z'); // ertesi gün 18:05 yerel
+  const start = cycleStartAt(tz, cycleDate(tz, loadAt));
+  assertEquals(cycleDate(tz, loadAt), '2026-10-09');
+  assertEquals(chosenBeforeCycleStart(chosenAt, start), true);
+});
+
+Deno.test("pending feedback: 17:59'da seçilen şampiyon 18:05 yüklemesinde aday; tam 18:00 aday değil", () => {
+  const start = cycleStartAt('Europe/Istanbul', '2026-10-08'); // 15:00Z
+  assertEquals(chosenBeforeCycleStart('2026-10-08T14:59:00.000Z', start), true);
+  assertEquals(chosenBeforeCycleStart('2026-10-08T15:00:00.000Z', start), false); // kesin küçük
+});
+
+Deno.test('pending feedback: New York DST bitiş günü sınırı doğru (EDT→EST)', () => {
+  const tz = 'America/New_York';
+  // 31 Eki 18:03 EDT = 22:03Z seçildi; 31 Eki 18:05 EDT yükleme → aday değil.
+  const loadSame = at('2026-10-31T22:05:00Z');
+  assertEquals(chosenBeforeCycleStart('2026-10-31T22:03:00.000Z', cycleStartAt(tz, cycleDate(tz, loadSame))), false);
+  // 1 Kas 18:05 EST = 23:05Z yükleme → ertesi cycle, aday.
+  const loadNext = at('2026-11-01T23:05:00Z');
+  assertEquals(chosenBeforeCycleStart('2026-10-31T22:03:00.000Z', cycleStartAt(tz, cycleDate(tz, loadNext))), true);
+});
+
+Deno.test('pending feedback: okunamayan zaman → false (iyimser varsayım yok)', () => {
+  assertEquals(chosenBeforeCycleStart('dün', '2026-10-08T15:00:00.000Z'), false);
+  assertEquals(chosenBeforeCycleStart('2026-10-08T14:00:00.000Z', 'yarın'), false);
+});
+
+Deno.test('generate-gauntlet: aday sorgusu şampiyon seçim anını (choice_events round 3) cycle başlangıcıyla karşılaştırır', async () => {
+  const src = (
+    await Deno.readTextFile(new URL('../../supabase/functions/generate-gauntlet/index.ts', import.meta.url))
+  ).replace(/\s+/g, ' ');
+  assert(src.includes('chosenBeforeCycleStart(at, cycleStartIso)'), 'zaman kapısı yok');
+  assert(src.includes('cycleStartAt(tz, cycleToday)'), 'cycle başlangıcı hesaplanmıyor');
+  assert(src.includes(".eq('round', 3) .eq('outcome', 'choice')"), 'şampiyon olayı (round 3, choice) sorgulanmıyor');
+});
