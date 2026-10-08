@@ -168,6 +168,28 @@ export async function readCachedGauntlet(
 }
 
 /**
+ * Aktif gauntlet'in cycle tarihi (`DailyGauntlet.date`, sunucu hesaplar) —
+ * son başarılı yanıtın işaretçisinden, AĞSIZ. Spotlight bulmaca anahtarının
+ * (rota parametresi yoksa) ve ask kararının TEK kaynağı: yerel takvim gününden
+ * türetilmez. Kayıt yoksa ya da okunamazsa `null`; çağıran görünür hata verir.
+ */
+export async function readCachedCycleDate(): Promise<string | null> {
+  try {
+    const pointer = await readPointer();
+    return pointer?.date ?? null;
+  } catch (err) {
+    logger.error(
+      '[gauntletCache] Cycle tarihi okunamadı:', err,
+      {
+        code: 'GAUNTLET_CACHE_READ_FAILED',
+        sampleRate: 0.2,
+      },
+    );
+    return null;
+  }
+}
+
+/**
  * Kullanıcının tüm gauntlet cache kayıtlarını ve işaretçisini siler.
  * Kimlik sıfırlaması gibi "bu cihaz artık başka biri" durumları içindir.
  */

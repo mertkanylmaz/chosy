@@ -19,6 +19,7 @@ import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCinemaDna } from '@/hooks/useCinemaDna';
 import { getEnabledGames } from '@/services/gameApi';
+import { readCachedCycleDate } from '@/services/gauntletCache';
 import { supabase } from '@/services/supabase';
 import { logger } from '@/utils/logger';
 import { trackPlayNextTapped } from '@/utils/gameAnalytics';
@@ -61,7 +62,9 @@ export function PlayNextBridge({ currentGame }: PlayNextBridgeProps) {
   /** Bugün oynanmamış oyunlardan DNA profilini en çok geliştirecek olanı bul */
   const findSuggestion = useCallback(async () => {
     try {
-      const puzzleDate = new Date().toLocaleDateString('en-CA');
+      // F2: gün anahtarı = aktif cycle tarihi (yerel takvim günü değil).
+      const puzzleDate = await readCachedCycleDate();
+      if (!puzzleDate) return;
 
       const { data: scores } = await supabase
         .from('game_scores')

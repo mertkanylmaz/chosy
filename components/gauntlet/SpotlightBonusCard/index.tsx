@@ -73,6 +73,8 @@ interface SpotlightBonusCardProps {
   data: SpotlightCardData;
   /** 'reveal' → canlı finalden sonra opaklıkla girer; 'resume' → anında. */
   entry: 'reveal' | 'resume';
+  /** Aktif gauntlet'in cycle tarihi — oyun ekranına rota parametresi olarak geçer. */
+  cycleDate: string;
   /** Navigasyondan hemen önce — champion ask'inin Spotlight dönüşü tetiği. */
   onPress?: () => void;
 }
@@ -84,6 +86,7 @@ export function SpotlightBonusCard({
   gameType,
   data,
   entry,
+  cycleDate,
   onPress,
 }: SpotlightBonusCardProps): React.JSX.Element | null {
   const { t, language } = useLanguage();
@@ -121,8 +124,8 @@ export function SpotlightBonusCard({
     void hapticLight();
     posthogAnalytics.track('spotlight_card_pressed', { game_id: gameType, state: stateLabel });
     onPress?.();
-    router.push('/games/spotlight');
-  }, [router, onPress, gameType, stateLabel]);
+    router.push({ pathname: '/games/spotlight', params: { date: cycleDate } });
+  }, [router, onPress, gameType, stateLabel, cycleDate]);
 
   // ── Metin ────────────────────────────────────────────────────────────────
   const kicker = `${t('gauntlet.bonus.label').toLocaleUpperCase(language)} · ${t('gauntlet.bonus.title')}`;

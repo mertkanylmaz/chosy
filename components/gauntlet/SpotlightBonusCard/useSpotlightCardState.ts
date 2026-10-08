@@ -1,7 +1,9 @@
 /**
  * useSpotlightCardState — bonus kartının bugünkü Spotlight durumu (S-2).
  *
- * Kaynak `getDailyChallenge('spotlight', yerel gün)`: bulmaca (`backdrop_url`,
+ * Kaynak `getDailyChallenge('spotlight', cycle tarihi)` — tarih aktif gauntlet'in
+ * `date` alanıdır (sunucu hesaplar, F2); yerel takvim gününden TÜRETİLMEZ
+ * (chosy-conventions §9.4'ün "cihaz yerel tarihi" kuralı eskidir, F3'te güncellenir): bulmaca (`backdrop_url`,
  * `max_attempts`) + kullanıcının sunucudaki ilerlemesi. App kill'e dayanıklı —
  * durum `game_scores`'ta, istemcide türetilen sayaç yok.
  *
@@ -25,7 +27,6 @@ import * as Sentry from '@sentry/react-native';
 import { useFocusEffect } from 'expo-router';
 
 import { getDailyChallenge } from '@/services/gameApi';
-import { localDayKey } from '@/utils/askDecision';
 import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
 import { spotlightCardStateFrom, type SpotlightCardState } from './cardState';
@@ -42,18 +43,19 @@ export type SpotlightCardData =
       maxAttempts: number;
     };
 
-export function useSpotlightCardState(enabled: boolean): SpotlightCardData {
+export function useSpotlightCardState(enabled: boolean, cycleDate: string | undefined): SpotlightCardData {
   const [data, setData] = useState<SpotlightCardData>({ status: 'loading' });
   const dataRef = useRef(data);
   dataRef.current = data;
 
   useFocusEffect(
     useCallback(() => {
-      if (!enabled) return undefined;
+      // Tarih yoksa (gauntlet henüz yüklenmedi) ağa çıkılmaz; yerel tarihe düşülmez.
+      if (!enabled || !cycleDate) return undefined;
       let cancelled = false;
       void (async () => {
         try {
-          const challenge = await getDailyChallenge('spotlight', localDayKey(new Date()));
+          const challenge = await getDailyChallenge('spotlight', cycleDate);
           if (cancelled) return;
           const backdrop = challenge.puzzle.puzzle_data.backdrop_url;
           setData({
@@ -87,7 +89,7 @@ export function useSpotlightCardState(enabled: boolean): SpotlightCardData {
       return () => {
         cancelled = true;
       };
-    }, [enabled]),
+    }, [enabled, cycleDate]),
   );
 
   return data;

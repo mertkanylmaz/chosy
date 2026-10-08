@@ -24,7 +24,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Sentry from '@sentry/react-native';
 import { CloudSlash } from 'phosphor-react-native';
 import Animated, {
@@ -53,6 +53,8 @@ import {
   trackSpotlightResultViewed,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
+import { readCachedCycleDate } from '@/services/gauntletCache';
+import { resolveSpotlightDate } from '@/utils/cycleDateKey';
 import { GameShell, useGameThemeFor } from '@/components/games/GameShell';
 import { GameStateView } from '@/components/games/GameStateView';
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
@@ -270,6 +272,10 @@ export function SpotlightGame() {
    */
   const [stillReveal, setStillReveal] = useState<Exclude<StillReveal, 'none'>>('static');
 
+  // F2: bulmaca anahtarı = cycle tarihi (sunucu hesaplar). Bonus kart `date`
+  // parametresini geçirir; yoksa önbellekteki aktif cycle tarihi kullanılır.
+  const { date: routeDate } = useLocalSearchParams<{ date?: string }>();
+
   const loadPuzzle = useCallback(async () => {
     try {
       setLoadError(false);
@@ -277,7 +283,17 @@ export function SpotlightGame() {
       setUnavailable(false);
       setScreenState('loading');
 
-      const puzzleDate = new Date().toLocaleDateString('en-CA');
+      const puzzleDate = resolveSpotlightDate(routeDate, await readCachedCycleDate());
+      if (puzzleDate === null) {
+        // Yerel takvim gününe SESSİZ düşüş yok: tarih bilinmiyorsa görünür hata.
+        Sentry.captureMessage('Spotlight: cycle tarihi çözülemedi', {
+          level: 'error',
+          tags: { component: 'Spotlight', error_code: 'SPOTLIGHT_CYCLE_DATE_MISSING' },
+          extra: { routeDate: typeof routeDate === 'string' ? routeDate : typeof routeDate },
+        });
+        setLoadError(true);
+        return;
+      }
       const data: DailyChallenge = await getDailyChallenge('spotlight', puzzleDate);
       const pd = data.puzzle.puzzle_data as unknown as SpotlightPuzzleData;
 
@@ -350,7 +366,7 @@ export function SpotlightGame() {
       logger.error('[spotlight] Puzzle yuklenemedi:', err);
       setLoadError(true);
     }
-  }, []);
+  }, [routeDate]);
 
   useFocusEffect(
     useCallback(() => {

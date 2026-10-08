@@ -23,6 +23,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { readAppUserId } from './auth-utils';
 import { getDailyChallenge } from './gameApi';
+import { readCachedCycleDate } from './gauntletCache';
 import { getChampionDatesSince } from './gauntletService';
 import { shouldAskForNotificationPermission } from './pushNotifications';
 import { supabase } from './supabase';
@@ -30,7 +31,6 @@ import { readUserFlags } from './userFlags';
 import { isPuzzleUnavailableError } from '../utils/puzzleAvailability';
 import {
   askedToday,
-  localDayKey,
   parseAskState,
   recordAskShown,
   shouldShowAsk,
@@ -73,6 +73,17 @@ async function readSpotlightState(today: string): Promise<SpotlightState> {
   }
 }
 
+/**
+ * Aktif cycle tarihi — ask'in "günde bir" anahtarı ve Spotlight bulmaca tarihi.
+ * Sunucunun `DailyGauntlet.date`'i (önbellek işaretçisi); yerel takvim gününden
+ * türetilmez. Yoksa throw: çağıranın mevcut `fatal` yolu ask'i göstermez.
+ */
+async function requireCycleDate(): Promise<string> {
+  const date = await readCachedCycleDate();
+  if (!date) throw new Error('askCoordinator: aktif cycle tarihi yok');
+  return date;
+}
+
 /** Kişisel champion günü sayısı — `daily_gauntlets`, yeni sorgu yok. */
 async function readDayIndex(): Promise<number> {
   const userId = await readAppUserId();
@@ -108,7 +119,7 @@ export async function resolveAsk(
 ): Promise<AskDecision | null> {
   try {
     const nowDate = new Date();
-    const today = localDayKey(nowDate);
+    const today = await requireCycleDate();
 
     const askState = await readAskState();
     // Ucuz ön eleme: bugün ask gösterildiyse ağa hiç çıkılmaz.
@@ -150,7 +161,7 @@ export async function resolveAsk(
 /** Spotlight dönüşünde durum okuması — hata Sentry'ye `fatal`, ask yok. */
 export async function readSpotlightStateForAsk(): Promise<SpotlightState | null> {
   try {
-    return await readSpotlightState(localDayKey(new Date()));
+    return await readSpotlightState(await requireCycleDate());
   } catch (err) {
     Sentry.captureException(err, {
       level: 'fatal',

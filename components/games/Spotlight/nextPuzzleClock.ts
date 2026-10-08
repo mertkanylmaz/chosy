@@ -1,23 +1,23 @@
 /**
- * Spotlight sonuç ekranı "NEXT PUZZLE" sayacı — saf (P-4a, 4 Eki 2026).
+ * Spotlight sonuç ekranı "NEXT PUZZLE" sayacı — saf.
  *
- * Hedef bir sonraki YEREL 18:00 — ritüelin kapısı. Saat kuralı burada
- * yazılmaz: hedef `nextUnlockAfter` (GauntletShell/unlockClock.ts), biçim
- * `countdownParts` + `formatCountdown` (hooks/countdownCore.ts). Bu dosya
- * yalnız ikisini birleştirir.
+ * Hedef SUNUCUNUN söylediği bir sonraki cycle geçişidir (`next_cycle_at`,
+ * F2); istemci 18:00'i kendisi hesaplamaz. Bulmaca anahtarı da cycle tarihine
+ * bağlı olduğundan (F2/C4) sayaç ve yeni bulmaca aynı anda döner. Biçim
+ * `countdownParts` + `formatCountdown` (hooks/countdownCore.ts).
  *
- * Bilinen tutarsızlık (TEKNIK_BORC): bulmaca anahtarı hâlâ yerel takvim
- * günü (`Spotlight/index.tsx` `puzzleDate`) — 00:00'da yeni bulmaca açılır,
- * sayaç ise 18:00'e sayar. M2 Faz 2b ile anahtar da 18:00'e çekilecek.
+ * `nextCycleAt` yoksa ya da okunamıyorsa `null` — uydurma bir süre gösterilmez.
  *
  * React Native'den bağımsız — `tests/games/nextPuzzleClock.test.ts`.
  */
 
 import { countdownParts, formatCountdown } from '../../../hooks/countdownCore';
-import { nextUnlockAfter } from '../../gauntlet/GauntletShell/unlockClock';
 
-/** `now`'dan sonraki yerel 18:00'e kalan süre, "SS:DD:ss". */
-export function nextPuzzleCountdown(now: Date): string {
-  const remainingMs = nextUnlockAfter(now).getTime() - now.getTime();
+/** `now`'dan `nextCycleAt`'e kalan süre, "SS:DD:ss". */
+export function nextPuzzleCountdown(now: Date, nextCycleAt: string | undefined): string | null {
+  if (!nextCycleAt) return null;
+  const boundary = Date.parse(nextCycleAt);
+  if (Number.isNaN(boundary)) return null;
+  const remainingMs = Math.max(0, boundary - now.getTime());
   return formatCountdown(countdownParts(remainingMs), true);
 }
