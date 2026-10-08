@@ -1512,10 +1512,6 @@
     "roundShort": "%{current} / %{total}",
     "rejectNeither": "Neither",
     "markWatched": "I've watched this",
-    "todayAtTagline": "Today at %{time}. Four films, three choices, one winner.",
-    "waitingNotifyCta": "Remind me at %{time}",
-    "waitingChampionOpen": "View %{title}",
-    "spotlightTeaser": "Today's frame is waiting. It opens after your four.",
     "countdownHours": {
       "one": "%{count} hour",
       "other": "%{count} hours"
@@ -1525,7 +1521,6 @@
       "other": "%{count} minutes"
     },
     "countdownA11y": "%{hours} %{minutes}",
-    "tonightsFour": "Tonight's four",
     "nextScreening": "Next screening in %{time}",
     "durationHoursMinutes": "%{hours}h %{minutes}m",
     "durationMinutes": "%{minutes}m",

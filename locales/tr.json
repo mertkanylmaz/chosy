@@ -1512,10 +1512,6 @@
     "roundShort": "%{current} / %{total}",
     "rejectNeither": "İkisi de değil",
     "markWatched": "Bunu izledim",
-    "todayAtTagline": "Bugün %{time}. Dört film, üç seçim, tek kazanan.",
-    "waitingNotifyCta": "%{time}'de hatırlat",
-    "waitingChampionOpen": "%{title} filmini görüntüle",
-    "spotlightTeaser": "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır.",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"
@@ -1525,7 +1521,6 @@
       "other": "%{count} dakika"
     },
     "countdownA11y": "%{hours} %{minutes}",
-    "tonightsFour": "Bugünün dörtlüsü",
     "nextScreening": "Sonraki gösterim %{time}",
     "durationHoursMinutes": "%{hours} sa %{minutes} dk",
     "durationMinutes": "%{minutes} dk",
