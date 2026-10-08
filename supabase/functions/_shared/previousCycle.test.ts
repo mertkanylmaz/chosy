@@ -10,6 +10,7 @@
  */
 
 import { assert, assertEquals, assertNotEquals, assertThrows } from 'jsr:@std/assert@1'
+import { cycleDate } from './cycleDate.ts'
 import {
   addDays,
   decidePreviousCycle,
@@ -26,21 +27,18 @@ function keyOf(now: string, tz: string): string {
   return r.key
 }
 
-/** Normal akışın `utcDateString()`'i — bu anda. */
-const utcKey = (d: Date) => d.toISOString().slice(0, 10)
-
 // ─── Anahtar hesabı ─────────────────────────────────────────────────────────
 
-Deno.test('anahtar: İstanbul sabah → dün yerel 18:00 (15:00Z) UTC tarihi', () => {
+Deno.test('anahtar: İstanbul sabah → dünün yerel tarihi', () => {
   assertEquals(keyOf('2026-09-27T07:00:00Z', 'Europe/Istanbul'), '2026-09-26')
 })
 
 Deno.test('anahtar: İstanbul 01:00 — "önceki UTC günü" iki gün geri düşerdi, burada düşmez', () => {
-  // Yerel 28 Eyl 01:00 = 27 Eyl 22:00Z. Etkin döngü 27 Eyl 18:00 yerel.
+  // Yerel 28 Eyl 01:00 = 27 Eyl 22:00Z. Etkin döngü 27 Eyl 18:00 yerel → 27 Eyl.
   assertEquals(keyOf('2026-09-27T22:00:00Z', 'Europe/Istanbul'), '2026-09-27')
 })
 
-Deno.test('anahtar: New York sabah (UTC−4) → dün 18:00 EDT = 22:00Z', () => {
+Deno.test('anahtar: New York sabah (UTC−4) → dünün yerel tarihi', () => {
   assertEquals(keyOf('2026-09-27T14:00:00Z', 'America/New_York'), '2026-09-26')
 })
 
@@ -54,15 +52,17 @@ Deno.test('anahtar: Tokyo (+9) sabah 08:00', () => {
 
 Deno.test('anahtar: Kiritimati (+14) ve Pago Pago (−11) uç dilimler', () => {
   assertEquals(keyOf('2026-09-27T20:00:00Z', 'Pacific/Kiritimati'), '2026-09-27')
-  assertEquals(keyOf('2026-09-27T20:00:00Z', 'Pacific/Pago_Pago'), '2026-09-27')
+  // 27 Eyl 20:00Z = Pago Pago 09:00 (27 Eyl) → dün 26 Eyl. Eski UTC anahtarı
+  // (dün 18:00 SST = 05:00Z 27 Eyl) burada 27 Eyl veriyordu; yerel tarih 26.
+  assertEquals(keyOf('2026-09-27T20:00:00Z', 'Pacific/Pago_Pago'), '2026-09-26')
 })
 
 Deno.test('anahtar: DST geçiş günleri (NY bitiş/başlangıç, Londra bitiş)', () => {
-  // 1 Kas 2026 EST sabahı; önceki 18:00 hâlâ EDT (−4) → 22:00Z 31 Eki.
+  // 1 Kas 2026 EST sabahı → dün 31 Eki.
   assertEquals(keyOf('2026-11-01T15:00:00Z', 'America/New_York'), '2026-10-31')
-  // 8 Mar 2026 EDT sabahı; önceki 18:00 EST (−5) → 23:00Z 7 Mar.
+  // 8 Mar 2026 EDT sabahı → dün 7 Mar.
   assertEquals(keyOf('2026-03-08T14:00:00Z', 'America/New_York'), '2026-03-07')
-  // 25 Eki 2026 GMT sabahı; önceki 18:00 BST (+1) → 17:00Z 24 Eki.
+  // 25 Eki 2026 GMT sabahı → dün 24 Eki.
   assertEquals(keyOf('2026-10-25T10:00:00Z', 'Europe/London'), '2026-10-24')
 })
 
@@ -78,18 +78,15 @@ Deno.test('anahtar: geçersiz timezone RangeError fırlatır (sessiz geri dönü
   assertThrows(() => resolvePreviousCycle(at('2026-09-27T07:00:00Z'), 'Mars/Olympus'), RangeError)
 })
 
-Deno.test('CTO SARI-1: Chicago yaz saati günü çakışması tespit edilir', () => {
-  // 14 Mar 2027 10:00 CDT: dün 18:00 CST = 00:00Z 14 Mar; bugün 18:00 CDT = 23:00Z 14 Mar.
+Deno.test('F1: Chicago yaz saati günü artık çakışmaz — yerel takvimde ardışık günler', () => {
+  // 14 Mar 2027 10:00 CDT. Eski UTC anahtarında dün 18:00 CST (00:00Z 14 Mar) ile
+  // bugün 18:00 CDT (23:00Z 14 Mar) AYNI güne düşüyordu; yerel tarihte düşmez.
   const r = resolvePreviousCycle(at('2027-03-14T15:00:00Z'), 'America/Chicago')
-  assertEquals(r.key, '2027-03-14')
+  assertEquals(r.key, '2027-03-13')
   assertEquals(r.nextKey, '2027-03-14')
-  assertEquals(r.collides, true)
 })
 
-Deno.test('satır tarihi kuralı: çakışmayan her anahtar, bu akşamki normal akışın anahtarından farklı (2026–27)', () => {
-  // Ölçüt normal akışın GERÇEK anahtarı: kapı açıldıktan sonraki her anın
-  // utcDateString()'i. İlk sürüm yanlış şeyi (ertesi günün önceki anahtarını)
-  // karşılaştırıyordu ve Chicago çakışmasını kaçırdı (CTO SARI-1).
+Deno.test('F1: key = nextKey − 1 gün; kapı kapalıyken key === cycleDate (2026–27, çakışma 0)', () => {
   const zones = [
     'Europe/Istanbul', 'America/New_York', 'America/Chicago', 'America/Winnipeg',
     'America/Denver', 'America/Los_Angeles', 'Asia/Tokyo', 'Pacific/Kiritimati',
@@ -97,30 +94,21 @@ Deno.test('satır tarihi kuralı: çakışmayan her anahtar, bu akşamki normal 
   ]
   const start = Date.parse('2026-01-01T00:00:00Z')
   const hour = 3_600_000
-  let collisions = 0
   for (const tz of zones) {
     for (let t = start; t < start + 2 * 365 * 86_400_000; t += 6 * hour) {
-      const r = resolvePreviousCycle(new Date(t), tz)
-      if (r.afterUnlock) continue
-      assert(r.key <= utcKey(new Date(t)), `${tz} ${new Date(t).toISOString()}`)
-      if (r.collides) {
-        collisions++
-        continue // decidePreviousCycle reddeder (aşağıdaki test)
-      }
-      // Kapının açıldığı ilk saat: normal akış anahtarı ≠ key. UTC tarihi
-      // zamanla monoton arttığı için akşamın geri kalanı bundan büyük/eşittir.
-      for (let h = 1; h < 26; h++) {
-        const probe = new Date(t + h * hour)
-        const pr = resolvePreviousCycle(probe, tz)
-        if (!pr.afterUnlock) continue
-        assertNotEquals(utcKey(probe), r.key, `${tz} ${new Date(t).toISOString()} → ${probe.toISOString()}`)
-        break
+      const now = new Date(t)
+      const r = resolvePreviousCycle(now, tz)
+      assertEquals(r.key, addDays(r.nextKey, -1), `${tz} ${now.toISOString()}`)
+      assertNotEquals(r.key, r.nextKey, `${tz} ${now.toISOString()}`)
+      if (!r.afterUnlock) {
+        // Kapı kapalıyken önceki döngü anahtarı normal akışın anahtarıdır.
+        assertEquals(r.key, cycleDate(tz, now), `${tz} ${now.toISOString()}`)
+      } else {
+        // Kapı açıkken normal akışın anahtarı bu akşamınkidir — önceki döngüyle çakışmaz.
+        assertEquals(cycleDate(tz, now), r.nextKey, `${tz} ${now.toISOString()}`)
       }
     }
   }
-  // Çakışma gerçekten var ve yalnız nadir DST günlerinde.
-  assert(collisions > 0, 'Chicago/Winnipeg çakışması ölçülmedi')
-  assert(collisions < 40, `beklenmedik çakışma sayısı: ${collisions}`)
 })
 
 // ─── Uygunluk kararı ────────────────────────────────────────────────────────
@@ -131,7 +119,6 @@ const res = (key: string, over: Partial<PreviousCycleResolution> = {}): Previous
   key,
   nextKey: addDays(key, 1),
   afterUnlock: false,
-  collides: false,
   ...over,
 })
 
@@ -162,14 +149,6 @@ Deno.test('CTO SARI-3: kapı açık + satır yok → current DÖNMEZ, açık ret
     kind: 'reject',
     code: 'PREVIOUS_CYCLE_OUT_OF_WINDOW',
     reason: 'gate_open',
-  })
-})
-
-Deno.test('CTO SARI-1: DST çakışması → açık ret (bu akşamı gölgelemez)', () => {
-  assertEquals(decidePreviousCycle([], res('2027-03-14', { collides: true }), LAUNCH), {
-    kind: 'reject',
-    code: 'PREVIOUS_CYCLE_OUT_OF_WINDOW',
-    reason: 'dst_collision',
   })
 })
 
