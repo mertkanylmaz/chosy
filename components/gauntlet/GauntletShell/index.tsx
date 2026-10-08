@@ -49,7 +49,7 @@ import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
-import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
+import { CycleRow } from '@/components/gauntlet/CycleRow';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
@@ -68,6 +68,7 @@ import {
   GauntletAuthPendingError,
   GauntletFetchError,
   getTodayGauntletWithFallback,
+  isRefreshUnavailable,
   submitChoice,
   submitContextCorrection,
   submitWatchFeedback,
@@ -77,6 +78,7 @@ import {
 import { subscribeToReconnect } from '@/services/networkStatus';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
+import { getPermissionState } from '@/services/pushNotifications';
 import { supabase } from '@/services/supabase';
 import type {
   ChoiceSubmission,
@@ -95,7 +97,15 @@ import {
   hapticSuccess,
 } from '@/utils/haptics';
 
-import { canRollOver, isNewCycle, shouldRefetch } from './cycleRules';
+import {
+  cycleRowPhase,
+  isNewCycle,
+  retryDelayMs,
+  rolloverOnActive,
+  shouldRefetch,
+  showsCycleRow,
+  type RowStatus,
+} from './cycleRules';
 import { contentTopFor, headerGapFor, styles } from './styles';
 import { useChampionAsk } from './useChampionAsk';
 
@@ -194,6 +204,7 @@ type StateTrigger =
   | 'connectivity'
   | 'pulse'
   | 'app_state'
+  | 'cycle_press'
   | 'retry'
   | 'retry_button'
   | 'submit401'
@@ -210,26 +221,21 @@ interface TileStates {
   right: PosterTileAnimationState;
 }
 
-interface GauntletShellProps {
-  /** "Boşver, yarın" — ekranı kapatır (hata durumu DEĞİL, sağlıklı çıkış §3.3). */
-  onDismiss?: () => void;
-}
-
 // ─── Bileşen ─────────────────────────────────────────────────────────────────
 
 /**
  * V-2 Tur B: alt pay ölçümü kabuğun DIŞINDA kurulur — `useTabBarInset()`
  * yalnız provider altında okunabilir ve ölçüm view'ı tam ekranı kaplamalı.
  */
-export function GauntletShell(props: GauntletShellProps): React.JSX.Element {
+export function GauntletShell(): React.JSX.Element {
   return (
     <TabBarInsetProvider>
-      <GauntletShellContent {...props} />
+      <GauntletShellContent />
     </TabBarInsetProvider>
   );
 }
 
-function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Element {
+function GauntletShellContent(): React.JSX.Element {
   const { t, region } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
@@ -283,6 +289,25 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    * ki kullanıcı sonuçsuz kalacak bir eylemi tekrarlamasın.
    */
   const [editorialRefreshBlocked, setEditorialRefreshBlocked] = useState(false);
+  /**
+   * F2.1/B: sunucu bu gauntlet için yenileme adayı bulamadı (409
+   * `REFRESH_UNAVAILABLE`). Gauntlet kimliğiyle tutulur — yeni cycle'da kendiliğinden
+   * düşer. "Neither" bu gauntlet boyunca GİZLİ kalır.
+   */
+  const [refreshUnavailableFor, setRefreshUnavailableFor] = useState<string | null>(null);
+  /** "I've watched this": yerine koyma başarısız olan çift (gauntletId:sol:sağ) — buton devre dışı. */
+  const [seenBlockedPair, setSeenBlockedPair] = useState<string | null>(null);
+  /**
+   * F2.1/C: ön planda `next_cycle_at` geçti mi. Geçişi UYGULAMAZ; yalnız sayaç
+   * satırının "hazır" butonuna dönüşmesini sürer. Nabız / sayaç sıfırı / durum
+   * değişimi günceller.
+   */
+  const [boundaryPassed, setBoundaryPassed] = useState(false);
+  const [rowStatus, setRowStatus] = useState<RowStatus>('idle');
+  const [rowCheckFailed, setRowCheckFailed] = useState(false);
+  /** F2.1/D: bildirim izni `undetermined` ise sayaç satırında "Remind me" çıkar. */
+  const [remindEligible, setRemindEligible] = useState(false);
+  const [remindSheetVisible, setRemindSheetVisible] = useState(false);
   const [seenMode, setSeenMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   /**
@@ -367,6 +392,14 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const gauntletDateRef = useRef<string | null>(null);
   const busyRef = useRef(false);
   const lastRefetchAtRef = useRef(0);
+  /** "Birazdan" yeniden sorgusunun sunucudan aldığı yeni cycle — basılınca ağsız uygulanır. */
+  const stashedCycleRef = useRef<CycleGauntlet | null>(null);
+  const rowRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rowRetryWakeRef = useRef<(() => void) | null>(null);
+  const rowRetryTokenRef = useRef(0);
+  const rowRetryAttemptRef = useRef(0);
+  /** Son `submit` hatasının sınıfı: handleNeither/handleSeenPick buna göre butonları kapatır. */
+  const lastSubmitErrorRef = useRef<'refresh_unavailable' | 'error' | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -734,73 +767,45 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     });
   }, [flushThenLoad]);
 
-  /**
-   * Cycle geçiş kontrolü. SUNUCU karar verir: `next_cycle_at` geçtiyse
-   * `generate-gauntlet`'e yeniden sorulur; dönen `date` mevcutla AYNIysa
-   * HİÇBİR ŞEY yapılmaz (remount yok, titreme yok, event yok). Farklıysa
-   * gösterilen her şey sıfırlanır ve yanıt `applyGauntlet`'ten geçer — böylece
-   * "dünün sorusu" (pendingWatchFeedback) → yeni gauntlet sırası korunur.
-   *
-   * Tetikleyiciler: (a) champion sayacının sıfırı, (b) AppState 'active',
-   * (c) dakikalık nabız. Devam eden tur ve uçuştaki seçim kesilmez
-   * (`canRollOver`); tur bitince bir sonraki kontrol geçişi uygular.
-   */
-  const checkCycle = useCallback(async (trigger: StateTrigger): Promise<void> => {
-    if (!shouldRefetch(new Date(), nextCycleAtRef.current)) return;
-    const guard = () => canRollOver({ state: shellStateRef.current, busy: busyRef.current });
-    if (!guard() || loadingRef.current) return;
-    const startedAt = Date.now();
-    if (startedAt - lastRefetchAtRef.current < MIN_REFETCH_INTERVAL_MS) return;
-    lastRefetchAtRef.current = startedAt;
+  // ── Cycle geçişi (F2.1 / C) ────────────────────────────────────────────────
+  //
+  // Uygulama ön plandayken içerik ASLA kendiliğinden değişmez. Otomatik geçiş
+  // YALNIZ soğuk açılışta (mount → load) ve AppState 'active'te (arka plandan
+  // dönüş). Ön planda `next_cycle_at` geçince bitmiş ekranlarda (champion /
+  // exhausted) sayaç satırı "hazır" butonuna döner; ready / in_progress'te
+  // hiçbir şey değişmez. Karar kuralları: ./cycleRules.ts (saf, testli).
 
-    loadingRef.current = true;
+  /** Ön planda geçiş anı geçti mi — yalnız satırın görünümünü sürer. */
+  const syncBoundary = useCallback(() => {
+    setBoundaryPassed(shouldRefetch(new Date(), nextCycleAtRef.current));
+  }, []);
+
+  const clearRowRetry = useCallback(() => {
+    rowRetryTokenRef.current += 1;
+    if (rowRetryTimerRef.current) clearTimeout(rowRetryTimerRef.current);
+    rowRetryTimerRef.current = null;
+    // Bekleyen döngüyü uyandır ki askıda kalmasın (token uyuşmazlığıyla çıkar).
+    rowRetryWakeRef.current?.();
+    rowRetryWakeRef.current = null;
+  }, []);
+
+  /** Yalnız ağdan: `null` = ulaşılamadı (servis uyarıyı Sentry'ye yazdı). */
+  const fetchLatest = useCallback(async (trigger: StateTrigger): Promise<CycleGauntlet | null> => {
     try {
       const { gauntlet: g, source } = await getTodayGauntletWithFallback();
-      if (!mountedRef.current) return;
       if (source !== 'network') {
-        // Çevrimdışı: servis GAUNTLET_OFFLINE uyarısını yazdı; ekran olduğu
-        // gibi kalır, bağlantı gelince (ya da bir sonraki nabızda) yeniden sorulur.
         Sentry.addBreadcrumb({
           category: 'gauntlet.cycle',
           message: 'cycle kontrolü çevrimdışı — ekran korunuyor',
           level: 'warning',
           data: { trigger, source },
         });
-        return;
+        return null;
       }
-      if (!isNewCycle(gauntletDateRef.current, g.date)) {
-        // Aynı cycle (cihaz saati sunucudan ileri olabilir). Yalnız izlenen
-        // geçiş anı tazelenir; değişmediyse state'e dokunulmaz.
-        if (g.next_cycle_at !== nextCycleAtRef.current) {
-          nextCycleAtRef.current = g.next_cycle_at;
-          setNextCycleAt(g.next_cycle_at);
-        }
-        return;
-      }
-      if (!guard()) return; // fetch sürerken oyun başladı — sonraki kontrol
-      Sentry.addBreadcrumb({
-        category: 'gauntlet.cycle',
-        message: `yeni cycle ${gauntletDateRef.current ?? 'none'} -> ${g.date}`,
-        level: 'info',
-        data: { trigger },
-      });
-      if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
-      setChampion(null);
-      setPair(null);
-      setDefenderFilm(null);
-      setSeenMode(false);
-      setAnimateReveal(false);
-      setBonusCardMounted(false);
-      setRevealSettled(false);
-      setPendingFeedbackVisible(false);
-      setActionError(null);
-      setIsStale(false);
-      authAttemptsRef.current = 0;
-      applyGauntlet(g, trigger);
+      return g;
     } catch (err) {
-      if (!mountedRef.current) return;
       // Sentry servis katmanında yazıldı (GauntletFetchError uyarı, diğerleri
-      // exception); 401 bootstrap penceresidir. Ekran korunur, nabız yeniden dener.
+      // exception); 401 bootstrap penceresidir. Ekran korunur.
       Sentry.addBreadcrumb({
         category: 'gauntlet.cycle',
         message: 'cycle kontrolü başarısız — ekran korunuyor',
@@ -811,10 +816,151 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
           error_message: err instanceof Error ? err.message.slice(0, 200) : null,
         },
       });
+      return null;
+    }
+  }, []);
+
+  /**
+   * Yeni cycle'ı uygula: gösterilen her şey sıfırlanır, yanıt `applyGauntlet`'ten
+   * geçer — böylece "dünün sorusu" (pendingWatchFeedback) → yeni gauntlet sırası
+   * korunur (reset_and_load).
+   */
+  const rollTo = useCallback((g: CycleGauntlet, trigger: StateTrigger) => {
+    clearRowRetry();
+    rowRetryAttemptRef.current = 0;
+    stashedCycleRef.current = null;
+    setRowStatus('idle');
+    setRowCheckFailed(false);
+    setBoundaryPassed(false);
+    Sentry.addBreadcrumb({
+      category: 'gauntlet.cycle',
+      message: `yeni cycle ${gauntletDateRef.current ?? 'none'} -> ${g.date}`,
+      level: 'info',
+      data: { trigger },
+    });
+    if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
+    setChampion(null);
+    setPair(null);
+    setDefenderFilm(null);
+    setSeenMode(false);
+    setAnimateReveal(false);
+    setBonusCardMounted(false);
+    setRevealSettled(false);
+    setPendingFeedbackVisible(false);
+    setActionError(null);
+    setIsStale(false);
+    authAttemptsRef.current = 0;
+    applyGauntlet(g, trigger);
+  }, [applyGauntlet, clearRowRetry]);
+
+  /** Sunucu aynı cycle'ı döndürdü: izlenen geçiş anı sunucunun söylediğine çekilir. */
+  const adoptServerBoundary = useCallback((g: CycleGauntlet) => {
+    if (g.next_cycle_at !== nextCycleAtRef.current) {
+      nextCycleAtRef.current = g.next_cycle_at;
+      setNextCycleAt(g.next_cycle_at);
+    }
+  }, []);
+
+  /**
+   * "Birazdan": sunucu henüz aynı cycle'ı döndürüyor. 30 sn'den başlayıp en fazla
+   * 5 dk aralıkla yeniden sorar. Yeni cycle gelirse İÇERİK DEĞİŞMEZ — yanıt
+   * saklanır, satır "hazır" butonuna döner, basınca ağsız uygulanır.
+   */
+  const startRowRetry = useCallback(() => {
+    clearRowRetry();
+    const token = rowRetryTokenRef.current;
+    const loop = async (): Promise<void> => {
+      for (;;) {
+        const delay = retryDelayMs(rowRetryAttemptRef.current);
+        rowRetryAttemptRef.current += 1;
+        await new Promise<void>((resolve) => {
+          rowRetryWakeRef.current = resolve;
+          rowRetryTimerRef.current = setTimeout(resolve, delay);
+        });
+        if (!mountedRef.current || token !== rowRetryTokenRef.current) return;
+        if (loadingRef.current) continue;
+        loadingRef.current = true;
+        let g: CycleGauntlet | null = null;
+        try {
+          g = await fetchLatest('pulse');
+        } finally {
+          loadingRef.current = false;
+        }
+        if (!mountedRef.current || token !== rowRetryTokenRef.current) return;
+        if (g && isNewCycle(gauntletDateRef.current, g.date)) {
+          stashedCycleRef.current = g;
+          rowRetryAttemptRef.current = 0;
+          setRowStatus('idle');
+          return;
+        }
+        if (g) adoptServerBoundary(g);
+      }
+    };
+    void loop();
+  }, [adoptServerBoundary, clearRowRetry, fetchLatest]);
+
+  /** "Tonight's four are ready" butonu: reset_and_load → applyGauntlet. */
+  const handleCyclePress = useCallback(async (): Promise<void> => {
+    if (loadingRef.current) return;
+    void hapticLight();
+    setRowCheckFailed(false);
+    setRowStatus('checking');
+    clearRowRetry();
+    let g = stashedCycleRef.current;
+    if (!g) {
+      loadingRef.current = true;
+      try {
+        g = await fetchLatest('cycle_press');
+      } finally {
+        loadingRef.current = false;
+      }
+    }
+    if (!mountedRef.current) return;
+    if (!g) {
+      // Ulaşılamadı: satır butona döner ve kısa bir mesaj gösterir (sessiz değil).
+      setRowStatus('idle');
+      setRowCheckFailed(true);
+      return;
+    }
+    if (isNewCycle(gauntletDateRef.current, g.date)) {
+      rollTo(g, 'cycle_press');
+      return;
+    }
+    adoptServerBoundary(g);
+    rowRetryAttemptRef.current = 0;
+    setRowStatus('any_moment');
+    startRowRetry();
+  }, [adoptServerBoundary, clearRowRetry, fetchLatest, rollTo, startRowRetry]);
+
+  /**
+   * Arka plandan dönüş (AppState 'active'): iOS arka planda zamanlayıcıları durdurur,
+   * geçiş anı geçmiş olabilir. Otomatik geçişin ön plan dışındaki TEK yolu (soğuk
+   * açılıştan sonra). Sunucu aynı cycle'ı döndürürse satır devralır.
+   */
+  const handleBecameActive = useCallback(async (): Promise<void> => {
+    syncBoundary();
+    if (!shouldRefetch(new Date(), nextCycleAtRef.current)) return;
+    const guard = () => rolloverOnActive({ state: shellStateRef.current, busy: busyRef.current });
+    if (!guard() || loadingRef.current) return;
+    const startedAt = Date.now();
+    if (startedAt - lastRefetchAtRef.current < MIN_REFETCH_INTERVAL_MS) return;
+    lastRefetchAtRef.current = startedAt;
+
+    loadingRef.current = true;
+    let g: CycleGauntlet | null = null;
+    try {
+      g = await fetchLatest('app_state');
     } finally {
       loadingRef.current = false;
     }
-  }, [applyGauntlet]);
+    if (!g || !mountedRef.current) return;
+    if (!isNewCycle(gauntletDateRef.current, g.date)) {
+      adoptServerBoundary(g);
+      return;
+    }
+    if (!guard()) return; // fetch sürerken seçim başladı — satır butona döner
+    rollTo(g, 'app_state');
+  }, [adoptServerBoundary, fetchLatest, rollTo, syncBoundary]);
 
   /**
    * Champion ekranı sayacının hedefi — sunucunun `next_cycle_at`'i. Alan yoksa
@@ -826,26 +972,70 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     const ms = Date.parse(nextCycleAt);
     return Number.isNaN(ms) ? null : new Date(ms);
   }, [nextCycleAt]);
-  const handleCountdownElapsed = useCallback(() => void checkCycle('pulse'), [checkCycle]);
 
-  // Seçim uçuşta / geçiş oynuyor / kuyrukta seçim var → cycle geçişi ertelenir.
+  // Seçim uçuşta / geçiş oynuyor / kuyrukta seçim var → arka plan dönüşünde geçiş ertelenir.
   useEffect(() => {
     busyRef.current = submitting || transitioning || choiceFrozen;
   }, [submitting, transitioning, choiceFrozen]);
 
-  // Dakikalık nabız: `next_cycle_at` geçti mi.
+  // Geçiş anı değişti ya da bir ekran bitti: satırın durumunu zamandan türet.
+  // (Oyun 18:03'te biterse satır hemen "hazır" butonudur.)
   useEffect(() => {
-    const id = setInterval(() => void checkCycle('pulse'), CLOCK_TICK_MS);
-    return () => clearInterval(id);
-  }, [checkCycle]);
+    syncBoundary();
+  }, [nextCycleAt, shellState, syncBoundary]);
 
-  // Arka plandan dönüş: iOS arka planda zamanlayıcıyı durdurur; 18:00 geçmiş olabilir.
+  // Sınır henüz gelmediyse bayat "birazdan"/saklı yanıt kalmasın.
+  useEffect(() => {
+    if (boundaryPassed) return;
+    clearRowRetry();
+    rowRetryAttemptRef.current = 0;
+    stashedCycleRef.current = null;
+    setRowStatus('idle');
+  }, [boundaryPassed, clearRowRetry]);
+
+  // Dakikalık nabız: YALNIZ satırın durumunu günceller, içeriğe dokunmaz.
+  useEffect(() => {
+    const id = setInterval(syncBoundary, CLOCK_TICK_MS);
+    return () => clearInterval(id);
+  }, [syncBoundary]);
+
+  // ── "Remind me" (F2.1 / D) ─────────────────────────────────────────────────
+  //
+  // İzin `undetermined` ise (verilmemiş VE kalıcı reddedilmemiş) sayaç satırının
+  // sonunda. Okunamazsa (`null`) gizli — getPermissionState hatayı Sentry'ye yazar.
+  const refreshRemindEligibility = useCallback(async (): Promise<void> => {
+    const permission = await getPermissionState();
+    if (mountedRef.current) setRemindEligible(permission === 'undetermined');
+  }, []);
+
+  useEffect(() => {
+    if (shellState === 'completed_today') void refreshRemindEligibility();
+  }, [shellState, refreshRemindEligibility]);
+
+  const handleRemindPress = useCallback(() => {
+    void hapticLight();
+    setRemindSheetVisible(true);
+  }, []);
+
+  const handleRemindClose = useCallback((_granted: boolean) => {
+    // `notification_prompt_answered` / `_dismissed` olayları sheet'in içinde
+    // surface='champion_countdown' ile atıldı; "sorduk" işareti de orada yazıldı.
+    setRemindSheetVisible(false);
+    void refreshRemindEligibility();
+  }, [refreshRemindEligibility]);
+
+  // Arka plandan dönüş: geçiş + izin durumu (kullanıcı Ayarlar'dan değiştirmiş olabilir).
   useEffect(() => {
     const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') void checkCycle('app_state');
+      if (next !== 'active') return;
+      void handleBecameActive();
+      void refreshRemindEligibility();
     });
     return () => sub.remove();
-  }, [checkCycle]);
+  }, [handleBecameActive, refreshRemindEligibility]);
+
+  // Zamanlayıcılar unmount'ta temizlenir.
+  useEffect(() => clearRowRetry, [clearRowRetry]);
 
   // ── Oyun eylemleri ─────────────────────────────────────────────────────────
 
@@ -854,6 +1044,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       setSubmitting(true);
       setActionError(null);
       choiceQueuedRef.current = false;
+      lastSubmitErrorRef.current = null;
       try {
         return await submitChoice(submission);
       } catch (err) {
@@ -871,9 +1062,15 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
           choiceQueuedRef.current = true;
           setChoiceFrozen(true);
           setActionError(null);
+        } else if (isRefreshUnavailable(err)) {
+          // F2.1: aday kalmadı — hata değil durum. Gauntlet state'i değişmedi,
+          // çift oynanabilir; kullanıcıya açıkça söylenir.
+          lastSubmitErrorRef.current = 'refresh_unavailable';
+          setActionError(t('gauntlet.refreshUnavailable'));
         } else {
           // Sunucu yanıtladı ama hata döndü — Sentry servis katmanında
           // yazıldı, kullanıcıya görünür hata (§15.2).
+          lastSubmitErrorRef.current = 'error';
           setActionError(t('gauntlet.submitError'));
         }
         return null;
@@ -1125,7 +1322,13 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       positionOfWinner: null,
       latencyMs,
     });
-    if (!result || !mountedRef.current) return;
+    if (!mountedRef.current) return;
+    if (!result) {
+      if (lastSubmitErrorRef.current === 'refresh_unavailable') {
+        setRefreshUnavailableFor(gauntlet.gauntletId);
+      }
+      return;
+    }
     posthogAnalytics.track('choice_rejected', {
       gauntlet_id: result.gauntletId,
       algorithm_version: result.algorithmVersion,
@@ -1235,7 +1438,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       });
       if (!mountedRef.current) return;
       setSeenMode(false);
-      if (!result) return;
+      if (!result) {
+        // Yerine konacak aday yok ya da hata döndü: çift DEĞİŞMEDİ. Aynı çift için
+        // buton devre dışı kalır (tekrar basış aynı sonucu verir); aday yoksa
+        // "Neither" (iki aday ister) de kapanır.
+        if (lastSubmitErrorRef.current !== null) {
+          setSeenBlockedPair(`${gauntlet.gauntletId}:${pair.left.id}:${pair.right.id}`);
+        }
+        if (lastSubmitErrorRef.current === 'refresh_unavailable') {
+          setRefreshUnavailableFor(gauntlet.gauntletId);
+        }
+        return;
+      }
       // İzlenen film defender'sa sızma rengi elde kalan filme geçer
       // (submit-choice DAL 2: 'seen'de KAYBEDEN kalır). Değilse dokunulmaz.
       const retained = side === 'left' ? pair.right : pair.left;
@@ -1488,24 +1702,27 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             <ChampionReveal
               champion={champion}
               animateReveal={animateReveal}
-              onDismiss={onDismiss}
               date={gauntlet?.date}
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
               onRevealSettled={handleRevealSettled}
             />
 
-            {/* F2: bir sonraki cycle'a geri sayım — aksiyon satırının altında,
-                Spotlight kartının üstünde, kaydırmadan görünür. Hedef sunucunun
+            {/* F2.1: sonraki gösterim satırı — aksiyonların altında, Spotlight
+                kartının üstünde. Ön planda içerik kendiliğinden değişmez:
+                geçiş anı gelince satır "hazır" butonuna döner. Hedef sunucunun
                 `next_cycle_at`'i; yoksa satır gizli. */}
-            {countdownTarget !== null && (
-              <View style={styles.nextScreening}>
-                <UnlockCountdown
-                  variant="inline"
-                  target={countdownTarget}
-                  onElapsed={handleCountdownElapsed}
-                />
-              </View>
+            {showsCycleRow(shellState) && countdownTarget !== null && (
+              <CycleRow
+                phase={cycleRowPhase({ boundaryPassed, status: rowStatus })}
+                target={countdownTarget}
+                onElapsed={syncBoundary}
+                onPressReady={() => void handleCyclePress()}
+                checkFailed={rowCheckFailed}
+                onRemind={
+                  remindEligible && championAsk.askType === null ? handleRemindPress : undefined
+                }
+              />
             )}
 
             {/* K-46: ritüel bittikten SONRA arşiv teklifi. Oyun mantığına
@@ -1560,8 +1777,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     return (
         <View style={styles.centerContent}>
           <Text style={styles.stateText}>{t('gauntlet.exhausted')}</Text>
-          {onDismiss && (
-            <QuietAction label={t('gauntlet.dismissTomorrow')} onPress={onDismiss} />
+          {/* Yedek: sunucu artık yenilemede oyunu bitirmiyor (409), ama eski
+              kayıtlar hâlâ `exhausted` olabilir — kullanıcı bir sonraki cycle'ı
+              bu satırdan görür. */}
+          {countdownTarget !== null && (
+            <CycleRow
+              phase={cycleRowPhase({ boundaryPassed, status: rowStatus })}
+              target={countdownTarget}
+              onElapsed={syncBoundary}
+              onPressReady={() => void handleCyclePress()}
+              checkFailed={rowCheckFailed}
+              onRemind={remindEligible ? handleRemindPress : undefined}
+            />
           )}
         </View>
     );
@@ -1583,6 +1810,9 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   }
 
   const outOfRefreshes = refreshesRemaining === 0; // -1 = sınırsız (Pro)
+  /** F2.1/B: hak yok ya da sunucu aday bulamadı → "Neither" GİZLİ (devre dışı değil). */
+  const neitherHidden = outOfRefreshes || refreshUnavailableFor === gauntlet.gauntletId;
+  const seenBlocked = seenBlockedPair === `${gauntlet.gauntletId}:${pair.left.id}:${pair.right.id}`;
   /** V-4 Tur B: iki başlık da ölçüldüyse büyüğü; yoksa doğal yükseklik. */
   const leftTitleLines = titleLinesById[pair.left.id];
   const rightTitleLines = titleLinesById[pair.right.id];
@@ -1664,26 +1894,21 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
             <OutlineAction label={t('gauntlet.cancel')} onPress={handleSeenToggle} />
           ) : (
             <>
-              <OutlineAction
-                label={t('gauntlet.rejectNeither')}
-                onPress={() => void handleNeither()}
-                disabled={interactionsLocked || outOfRefreshes || editorialRefreshBlocked}
-              />
+              {!neitherHidden && (
+                <OutlineAction
+                  label={t('gauntlet.rejectNeither')}
+                  onPress={() => void handleNeither()}
+                  disabled={interactionsLocked || editorialRefreshBlocked}
+                />
+              )}
               <OutlineAction
                 label={t('gauntlet.markWatched')}
                 onPress={handleSeenToggle}
-                disabled={interactionsLocked}
+                disabled={interactionsLocked || seenBlocked}
               />
             </>
           )}
         </View>
-        {/* Hak bitince "Boşver, yarın" — eskiden satırın üçüncü bağlantısıydı;
-            iki eşit buton düzeninde altta metin bağlantısı olarak kalır. */}
-        {!seenMode && outOfRefreshes && onDismiss && (
-          <View style={styles.dismissRow}>
-            <QuietAction label={t('gauntlet.dismissTomorrow')} onPress={onDismiss} />
-          </View>
-        )}
         </View>
       </View>
   );
@@ -1713,6 +1938,13 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       >
         {renderBody()}
       </View>
+      {/* F2.1/D: sayaç satırındaki "Remind me" — kullanıcı eylemi, askCoordinator'ın
+          günlük limitine girmez. Hem champion hem exhausted ekranından açılır. */}
+      <NotificationPromptSheet
+        visible={remindSheetVisible}
+        surface="champion_countdown"
+        onClose={handleRemindClose}
+      />
     </View>
   );
 }

@@ -36,20 +36,32 @@ import {
 } from '@/services/pushNotifications';
 import { hapticLight } from '@/utils/haptics';
 
+/**
+ * Sheet'in hangi yüzeyden açıldığı — analytics `surface` alanı.
+ * `champion_sheet`: champion sonrası ask (askCoordinator kararı).
+ * `champion_countdown`: sayaç satırındaki "Remind me" (kullanıcı eylemi, F2.1/D).
+ */
+export type NotificationPromptSurface = 'champion_sheet' | 'champion_countdown';
+
 interface NotificationPromptSheetProps {
   visible: boolean;
+  surface?: NotificationPromptSurface;
   /** Sheet kapandı — `granted` OS izni verildiyse true. */
   onClose: (granted: boolean) => void;
 }
 
-export function NotificationPromptSheet({ visible, onClose }: NotificationPromptSheetProps) {
+export function NotificationPromptSheet({
+  visible,
+  surface = 'champion_sheet',
+  onClose,
+}: NotificationPromptSheetProps) {
   const { t } = useLanguage();
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!visible) return;
-    posthogAnalytics.track('notification_prompt_viewed', { surface: 'champion_sheet' });
-  }, [visible]);
+    posthogAnalytics.track('notification_prompt_viewed', { surface });
+  }, [visible, surface]);
 
   const handleEnable = useCallback(async () => {
     if (busy) return;
@@ -63,21 +75,21 @@ export function NotificationPromptSheet({ visible, onClose }: NotificationPrompt
     await markNotificationPermissionAsked();
 
     posthogAnalytics.track('notification_prompt_answered', {
-      surface: 'champion_sheet',
+      surface,
       granted,
     });
 
     setBusy(false);
     onClose(granted);
-  }, [busy, onClose]);
+  }, [busy, onClose, surface]);
 
   const handleDismiss = useCallback(async () => {
     if (busy) return;
     void hapticLight();
     await markNotificationPermissionAsked();
-    posthogAnalytics.track('notification_prompt_dismissed', { surface: 'champion_sheet' });
+    posthogAnalytics.track('notification_prompt_dismissed', { surface });
     onClose(false);
-  }, [busy, onClose]);
+  }, [busy, onClose, surface]);
 
   return (
     <Modal

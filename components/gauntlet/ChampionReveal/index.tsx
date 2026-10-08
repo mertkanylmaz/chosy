@@ -14,19 +14,14 @@
  *
  * Resume yolunda (`animateReveal: false`) sekans atlanır, doğrudan gösterilir.
  *
- * Şampiyon watchlist'e OTOMATİK YAZILMAZ (PRODUCT_OS §3.7) — `onDismiss`
- * yalnızca ekranı kapatır, hiçbir yazma eylemi tetiklemez.
+ * Şampiyon watchlist'e OTOMATİK YAZILMAZ (PRODUCT_OS §3.7). Home bir tab;
+ * "Kapat" eylemi yoktur (F2.1: hiç bağlanmamış `onDismiss` kaldırıldı).
  *
  * C.9b-2: "Sonraya bırak" eklendi (IA §2.3). §3.7 KORUNUYOR — yazma yalnızca
  * kullanıcının açık dokunuşuyla olur, ekranın açılması hiçbir şey yazmaz.
  * Yazan taraf SUNUCU (`submit-choice` action: 'save_for_later'); bu bileşen
  * `getAppUserId()` çağırmaz ve INSERT yapmaz. Kaydedilen satır İZLENDİ
  * değildir — `watched_at` NULL kalır.
- *
- * ⚠️ 14.08.2026 cihaz testinde bulundu: bu bileşende çıkış eylemi hiç
- * YOKTU — kullanıcı şampiyon ekranında sıkışıyordu (kök neden: plan
- * boşluğu, GauntletShell'in oyun içi olaylar tablosu completed_today→
- * champion dalına hiçbir eylem bağlamamıştı). `onDismiss` bu turda eklendi.
  *
  * C.5: "Paylaş" sessiz eylemi. Paylaşılan şey METİNDİR (§16 madde 12) —
  * ekran görüntüsü alınmaz, poster/still gönderilmez.
@@ -70,7 +65,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
-import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -155,8 +149,6 @@ interface ChampionRevealProps {
   champion: GauntletFilm;
   /** true: canlı final geçişi (kara boşluk sekansı); false: resume, doğrudan göster */
   animateReveal: boolean;
-  /** Ekranı kapatır — YAZMA eylemi DEĞİL (§3.7). Yoksa çıkış kontrolü gösterilmez. */
-  onDismiss?: () => void;
   /**
    * `DailyGauntlet.date` (YYYY-MM-DD). Yoksa paylaşım eylemi GÖSTERİLMEZ —
    * tarihsiz braket metni üretmektense eylemi hiç sunmamak dürüst olandır.
@@ -174,11 +166,6 @@ interface ChampionRevealProps {
    */
   gauntletId?: string;
   /**
-   * V-2 Tur C: E-21 önceki döngü şampiyonu "Bugünün filmi" DEĞİL — kullanıcının
-   * ilk filmi. Yalnız etiketi değiştirir; davranış aynı.
-   */
-  cycle?: 'current' | 'previous';
-  /**
    * S-2: sekansın GÖRSEL bitişi — meta/eylem geçişi tamamlandığında bir kez.
    * Resume yolunda (`animateReveal: false`) mount'ta hemen çağrılır. Salt
    * bildirim: reveal zamanlaması bu prop'tan etkilenmez.
@@ -192,11 +179,9 @@ type SaveState = 'idle' | 'saving' | 'saved';
 export function ChampionReveal({
   champion,
   animateReveal,
-  onDismiss,
   date,
   rounds,
   gauntletId,
-  cycle = 'current',
   onRevealSettled,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language, region } = useLanguage();
@@ -350,7 +335,6 @@ export function ChampionReveal({
     void hapticLight();
     posthogAnalytics.track('watch_now_tapped', {
       film_id: champion.id,
-      cycle,
       region,
       provider_count: providerCount,
     });
@@ -363,7 +347,7 @@ export function ChampionReveal({
       });
       showNotice(t('gauntlet.watchNow.error'));
     }
-  }, [watchLink, champion.id, cycle, region, providerCount, showNotice, t]);
+  }, [watchLink, champion.id, region, providerCount, showNotice, t]);
 
   /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
@@ -498,17 +482,16 @@ export function ChampionReveal({
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
   const metaStyle = useAnimatedStyle(() => ({ opacity: metaOpacity.value }));
 
-  /** C2: önceki döngü şampiyonu "Bu akşamın filmi" DEĞİL, kullanıcının ilk filmi. */
-  const isFirst = cycle === 'previous';
-  const kickerText = t(isFirst ? 'gauntlet.championTitleFirst' : 'gauntlet.championTitle');
+  const kickerText = t('gauntlet.championTitle');
 
   return (
     <View
       style={styles.container}
-      accessibilityLabel={t(
-        isFirst ? 'gauntlet.championAccessibilityLabelFirst' : 'gauntlet.championAccessibilityLabel',
-        { title: champion.title, year: champion.year, runtime: champion.runtime },
-      )}
+      accessibilityLabel={t('gauntlet.championAccessibilityLabel', {
+        title: champion.title,
+        year: champion.year,
+        runtime: champion.runtime,
+      })}
     >
       {/*
         C1 hero — ekranın ~%46'sı (V-4 Tur B; önce ~%60), `cover`. VoiceOver'dan GİZLİ: çerçevenin en
@@ -660,7 +643,6 @@ export function ChampionReveal({
             )}
           </View>
 
-          {onDismiss && <QuietAction label={t('gauntlet.close')} onPress={onDismiss} />}
         </Animated.View>
       </View>
     </View>

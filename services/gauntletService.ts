@@ -118,12 +118,27 @@ export class GauntletFetchError extends Error {
  */
 export class GauntletHttpError extends Error {
   readonly status: number;
+  /** Sunucunun `{ error: <kod> }` alanı (örn. `REFRESH_UNAVAILABLE`); yoksa null. */
+  readonly code: string | null;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, code: string | null = null) {
     super(message);
     this.name = 'GauntletHttpError';
     this.status = status;
+    this.code = code;
   }
+}
+
+/**
+ * `submit-choice` yenileme (neither/seen) için yerine koyacak aday bulamadı
+ * (F2.1): 409 `REFRESH_UNAVAILABLE`. Hata DEĞİL, durum bildirimidir — gauntlet
+ * state'i değişmedi, çift oynanabilir. Sentry'ye exception olarak YAZILMAZ
+ * (sunucu uyarıyı zaten yazdı); iz breadcrumb ile kalır.
+ */
+export const REFRESH_UNAVAILABLE_CODE = 'REFRESH_UNAVAILABLE';
+
+export function isRefreshUnavailable(err: unknown): boolean {
+  return err instanceof GauntletHttpError && err.status === 409 && err.code === REFRESH_UNAVAILABLE_CODE;
 }
 
 /**
@@ -409,9 +424,18 @@ export async function submitChoice(
     recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'error', {
       response: invokeErrorResponse(error),
     });
-    const { status, detail } = await parseInvokeError(error);
+    const { status, detail, code } = await parseInvokeError(error);
     if (status === 401) {
       throw new GauntletAuthPendingError(detail);
+    }
+    if (status === 409 && code === REFRESH_UNAVAILABLE_CODE) {
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.refresh',
+        message: 'yenileme için aday yok (REFRESH_UNAVAILABLE)',
+        level: 'warning',
+        data: { outcome: submission.outcome, round: submission.round },
+      });
+      throw new GauntletHttpError(detail || 'refresh unavailable', status, code);
     }
     if (status === null) {
       // K-42: sunucuya ulaşılamadı. Seçim kuyruğa alınabilir — çağıran karar
@@ -437,7 +461,7 @@ export async function submitChoice(
       extra: { detail, gauntlet_id: submission.gauntletId },
     });
     logger.error('[gauntletService] submitChoice failed:', detail, { skipBridge: true });
-    throw new GauntletHttpError(detail || 'submit-choice failed', status);
+    throw new GauntletHttpError(detail || 'submit-choice failed', status, code);
   }
 
   recordTiming(`submit-choice(${submission.outcome})`, startedAt, 'ok', { response });

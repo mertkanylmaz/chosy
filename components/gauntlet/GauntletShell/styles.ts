@@ -43,12 +43,6 @@ export const styles = StyleSheet.create({
   championScrollContent: {
     flexGrow: 1,
   },
-  /** F2: "Next screening in …" satırı — aksiyonların altı, bonus kartının üstü. */
-  nextScreening: {
-    marginTop: space.base,
-    paddingHorizontal: space.lg,
-    alignItems: 'center',
-  },
   /**
    * V-3 Tur G2 (C7): Spotlight kartı kaydırma içeriğinin SONUNDA, satır içi.
    * Yatay boşluk kartın kendi `marginHorizontal`'ında.
@@ -188,10 +182,6 @@ export const styles = StyleSheet.create({
     width: '100%',
     // V-2 Tur C: lg → base — eylem satırı soruya bağlı tek grup.
     marginTop: space.base,
-  },
-  /** Hak bitince "Boşver, yarın" metin bağlantısı — buton satırının altında. */
-  dismissRow: {
-    marginTop: space.md,
   },
   /**
    * Bootstrapping — graphite iskelet (§10.1: spinner yok, §7.4 iskelet
