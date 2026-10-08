@@ -82,7 +82,8 @@ function parseUtcDate(value: string, label: string): number {
  * Bugünün editoryal gün numarası, ya da takvim dışındaysa `null`.
  *
  * SAF fonksiyon: iki `YYYY-MM-DD` metni alır, DB'ye ve saate bakmaz. Çağıran
- * `todayDate`'i `utcDateString()`'ten geçirir — burada ikinci bir `new Date()`
+ * `todayDate` olarak kullanıcının CYCLE TARİHİNİ (`cycleDate`, F1) geçirir —
+ * `daily_gauntlets.date` ile aynı değer. Burada ikinci bir `new Date()`
  * BİLİNÇLİ OLARAK yok: gün dönümünde `daily_gauntlets.date` ile `day_number`
  * ayrışırsa kullanıcı "yarının temasını" görürdü (keşif G-01).
  *
@@ -90,10 +91,6 @@ function parseUtcDate(value: string, label: string): number {
  *   - yayın öncesi (`day_number < 1`)
  *   - takvim bitti (`day_number > 100`)
  * Bu bir fallback DEĞİL, tanımın kendisidir: editoryal dönem sonludur.
- *
- * ⚠️ M2 Faz 2b (kullanıcı-yerel gün anahtarı) geldiğinde bu hesap da o anahtara
- * taşınmalıdır; bugün ikisi de UTC olduğu için ayrışma yok (keşif DUR-5,
- * ertelendi).
  */
 export function editorialDayNumber(
   todayDate: string,

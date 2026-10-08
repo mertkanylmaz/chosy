@@ -55,6 +55,12 @@ export interface GauntletProgress {
 
 export interface DailyGauntlet {
   gauntletId: string;
+  /**
+   * Cycle tarihi (YYYY-MM-DD) — kullanıcının en son geçtiği yerel 18:00'in
+   * YEREL takvim tarihi. Sunucu otoritedir (kendi saati + istek gövdesindeki
+   * IANA `timezone`); UTC günü DEĞİLDİR. İstanbul 8 Eki 17:59 → 2026-10-07,
+   * 18:00 → 2026-10-08, 9 Eki 03:30 → 2026-10-08. `daily_gauntlets.date` ile aynı değer.
+   */
   date: string;
   context: GauntletContext;
   contextPredicted: boolean;
@@ -101,8 +107,7 @@ export type GauntletCycle = 'previous';
  * bekleyiş ekranını gösterir.
  * - `PREVIOUS_CYCLE_NOT_ELIGIBLE`: kullanıcının kişisel satırı var.
  * - `PREVIOUS_CYCLE_OUT_OF_WINDOW`: önceki döngü şu an sunulamaz — anahtar
- *   `launch_date`'ten önce, 18:00 kapısı açık (etkin döngü bugünkü) ya da
- *   yaz saati gününde anahtar bu akşamın anahtarıyla çakışıyor.
+ *   `launch_date`'ten önce ya da 18:00 kapısı açık (etkin döngü bugünkü).
  */
 export type PreviousCycleRejectCode =
   | 'PREVIOUS_CYCLE_NOT_ELIGIBLE'
