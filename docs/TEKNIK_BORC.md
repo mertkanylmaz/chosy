@@ -3940,3 +3940,19 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   `watch_feedback_disliked`. Geri alma komutu doğru (`DROP TABLE
   public.deletion_requests`, tablo boşken), numara bayat. Uygulanmış migration
   dosyası bilinçli olarak değiştirilmedi.
+
+### R-B-0f — Süresi geçmiş `active` abonelik satırları için günlük doğrulama cron'u (9 Eki 2026)
+
+- **Sorun:** `subscriptions.expires_at < now() - 24h` olduğu halde `status='active'` kalan
+  satırlar var (örn. 4 Eki'de dolan sandbox satırı). O kullanıcı için EXPIRATION olayı hiç
+  gelmedi (`winback_queue` boş, function loglarında yok); nedeni belirsiz.
+- **Önerilen iş:** günlük cron, bu satırları **RC REST ile doğrular** (`GET /v1/subscribers/{id}`,
+  `rcTransfer.ts:fetchRcSubscriber` yeniden kullanılır) ve yalnızca RC "aktif değil" derse
+  düzeltir.
+- **Yasak:** yalnız tarihe bakıp kör expire etmek — billing retry / grace period'daki
+  kullanıcı erişimini haksız keser.
+- **Neden ertelendi:** R-B-0e'de tek-değişken prensibi; yeni cron mimari karar (CTO, DUR 1 kararı 4).
+- **R-B-0e'den kalan kapsam dışı:** `NON_RENEWING_PURCHASE` → `claim_lifetime_spot` RPC'si
+  `subscriptions`'a yazıyor ama `environment` geçirmiyor (RPC imzası değişimi gerekir).
+  `index.ts` dalları (INITIAL_PURCHASE/UNCANCELLATION/EXPIRATION) Deno test ile
+  kapsanmıyor — `Deno.serve` içinde, import edilemiyor.
