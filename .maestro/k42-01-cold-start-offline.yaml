@@ -28,8 +28,8 @@
 # flow flaky çıkarsa önce bunu düşünün — GauntletShell/networkStatus'a ek
 # müdahale gerekir (kapsam dışı, bkz. docs/testing/MAESTRO.md).
 #
-# ÖN KOŞUL — cihaz saati 18:00 sonrası GEREKMEZ: `isE2ETestMode()` UNLOCK_HOUR
-# kapısını `preview-e2e` build'inde bypass eder (GauntletShell/index.tsx).
+# ÖN KOŞUL — cihaz saati önemsiz: Home artık saat kapısı uygulamaz (F2) —
+# her saatte `generate-gauntlet` çağırır; cycle tarihini sunucu belirler.
 appId: com.chosy.ai
 ---
 - launchApp:

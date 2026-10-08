@@ -6,13 +6,9 @@
  * durum, koşul ya da yönlendirme mantığı OLMAZ — eklenirse K-03'ün "tek
  * route" kilidi iki yere bölünür.
  *
- * ⚠️ `onDismiss` BİLİNÇLİ OLARAK VERİLMEZ (CTO kararı 19.08.2026).
- * Prop opsiyoneldir ve GauntletShell/ChampionReveal içindeki üç çağrı yeri de
- * `onDismiss &&` ile korumalıdır; verilmediğinde "Kapat" / "Boşver, yarın"
- * sessiz eylemleri hiç render edilmez (kırık buton oluşmaz). Gerekçe: Home
- * bir tab, "geri" kavramı yok; bible §7.1 champion'ı "Home içinde · kalıcı"
- * olarak tanımlar. Eski `dev-gauntlet.tsx` `router.back()` veriyordu çünkü
- * O ekran stack'e push edilen bir test route'uydu — o bağlam artık yok.
+ * Home bir tab, "geri" kavramı yok; bible §7.1 champion'ı "Home içinde · kalıcı"
+ * olarak tanımlar. F2.1: hiç bağlanmamış `onDismiss` prop'u ve onun "Kapat" /
+ * "Boşver, yarın" eylemleri kaldırıldı — Shell artık prop almaz.
  *
  * Mood search buradan ÇIKARILDI, silinmedi →
  * `components/Home/MoodSearchScreen/`. C.9c onu Profile altına bağlayacak.

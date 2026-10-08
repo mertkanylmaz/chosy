@@ -26,7 +26,6 @@
     "test:film-search": "deno test tests/games/filmSearchList.test.ts",
     "test:spotlight-progress": "cd supabase/functions && deno test _shared/spotlightProgress.test.ts",
     "test:result-card": "deno test tests/games/resultHeroMode.test.ts tests/games/resultCountdownLayout.test.ts",
-    "test:next-puzzle": "deno test --unstable-sloppy-imports tests/games/nextPuzzleClock.test.ts",
     "test:spotlight-result": "deno test tests/games/spotlightResultState.test.ts tests/games/spotlightResultViewed.test.ts",
     "test:spotlight-share": "deno test tests/games/spotlightShareMask.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",

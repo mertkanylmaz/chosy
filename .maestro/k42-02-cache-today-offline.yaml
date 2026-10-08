@@ -15,7 +15,7 @@
 # `resolveIsOnline()` ilk isteği bu kontrolden önce göndermez. Detay/kırılganlık
 # notu: `.maestro/k42-01-cold-start-offline.yaml`.
 #
-# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
+# ÖN KOŞUL — cihaz saati önemsiz: saat kapısı yok (F2), cycle'ı sunucu belirler.
 appId: com.chosy.ai
 ---
 - launchApp:

@@ -30,7 +30,7 @@
 # ⚠️ `clear-error` sonda ZORUNLU: bayrak process ömrü boyunca yaşar ve
 # aynı cihazda koşan sonraki flow'ları kırar.
 #
-# ÖN KOŞUL — 18:00 sonrası GEREKMEZ (`preview-e2e` UNLOCK_HOUR bypass'ı).
+# ÖN KOŞUL — cihaz saati önemsiz: saat kapısı yok (F2), cycle'ı sunucu belirler.
 appId: com.chosy.ai
 ---
 - launchApp:
