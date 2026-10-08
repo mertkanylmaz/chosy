@@ -8,7 +8,7 @@
 import React, { useCallback } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Ionicons } from '@expo/vector-icons';
+import { PlayCircle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
@@ -39,7 +39,7 @@ export default function PaywallStreamingLink({
   const renderHeader = useCallback(() => (
     <View style={localStyles.header}>
       <View style={localStyles.iconCircle}>
-        <Ionicons name="play-circle-outline" size={28} color={Colors.accentPrimary} />
+        <PlayCircle size={28} color={Colors.accentPrimary} weight="duotone" />
       </View>
       <Text style={localStyles.title}>
         {t('contextPaywall.streamingTitle')}

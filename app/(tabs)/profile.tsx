@@ -733,12 +733,15 @@ function ProfileScreenContent() {
   // ── Plan bilgisi (B-1 / Fix 7) ──
   // Rozet entitlement'tan (`premiumStatus`), plan adi `tier`'dan gelir.
   // Eslenemeyen urun ID'si `tier`'i 'free' birakir: premium + 'free' =
-  // bilinmeyen/legacy plan (lifetime dahil) → plan satiri CIZILMEZ (ne
-  // "Lifetime" ne "Free") + Sentry.
+  // bilinmeyen plan → plan satiri CIZILMEZ (ne "Free") + Sentry.
   // `weekly_legacy` bilinen eski plan: satir yok, Sentry yok.
+  // Lifetime: istemci eslemesi (`planIdToTier`) 'lifetime'i tier'a CEVIRMIYOR
+  // ve `tier` 'free' kaliyor; bu yuzden DB plan kimligi (`planId`) okunur
+  // (REACT-NATIVE-J). Tier esleme bosluğu ayrica raporlandi.
   const knownPlanTitle: string | null =
     tier === 'annual' ? t('paywall.annualTitle')
       : tier === 'monthly' ? t('paywall.monthlyTitle')
+      : planId === 'lifetime' ? t('paywall.lifetimeTitle')
       : null;
   const isUnknownPremiumPlan =
     premiumStatus === 'premium' && tier !== 'weekly_legacy' && knownPlanTitle === null;

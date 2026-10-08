@@ -13,7 +13,7 @@
  *   - Restore + ToS + Privacy
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -26,8 +26,9 @@ import {
 } from 'react-native';
 import type { PurchasesPackage } from 'react-native-purchases';
 
+import * as Sentry from '@sentry/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import { Sparkle } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
@@ -35,6 +36,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
   getOfferings,
+  getTrialEligibility,
   purchasePackage,
   restorePurchases,
 } from '@/services/purchaseService';
@@ -53,6 +55,12 @@ import {
 import type { PaywallVariant } from '@/services/conversion';
 import { hapticSuccess, hapticMedium } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
+import {
+  buildAnnualPricing,
+  trialDaysFor,
+  type AnnualPricing,
+  type TrialEligibility,
+} from '@/utils/paywallPricing';
 import { styles } from './styles';
 
 // ─── Legal URLs ──────────────────────────────────────────────────────────────
@@ -73,12 +81,18 @@ interface PaywallBaseProps {
   onConvert: (plan: PlanId) => void;
   /** Kapatma / dismiss callback */
   onDismiss: () => void;
-  /** Custom header render (variant-specific) */
-  renderHeader: () => React.ReactNode;
+  /**
+   * Custom header render (variant-specific).
+   * `pricing`: yillik planin aylik esdegeri + tasarruf yuzdesi (RC urunlerinden);
+   * paketler yuklenmediyse veya tasarruf yoksa null — header fiyatli kopyadan vazgecer.
+   */
+  renderHeader: (pricing: AnnualPricing | null) => React.ReactNode;
   /**
    * CTA butonu metni (variant-aware).
    * Metin secili planin trial suresine bagliysa fonksiyon gecilir —
    * plan secimi bu component'te yasadigi icin variant disaridan bilemez (K-59).
+   * Trial yoksa (uygun degil / okunamadi) ve plan lifetime degilse fonksiyon
+   * CAGRILMAZ; "Get Chosy Plus" gosterilir.
    */
   ctaLabel?: string | ((trialDays: number) => string);
   /** Dismiss butonu metni */
@@ -90,14 +104,19 @@ interface PaywallBaseProps {
 interface PlanOption {
   id: PlanId;
   badgeKey: string | null;
-  savingKey: string | null;
 }
 
+/** Rozet yalniz annual'da: "BEST VALUE" aylik/yillik fiyat farkindan dogrulanabilir. */
 const PLAN_OPTIONS: PlanOption[] = [
-  { id: 'monthly', badgeKey: null, savingKey: null },
-  { id: 'annual', badgeKey: 'contextPaywall.mostPopular', savingKey: 'contextPaywall.annualSaving' },
-  { id: 'lifetime', badgeKey: 'contextPaywall.bestValue', savingKey: null },
+  { id: 'monthly', badgeKey: null },
+  { id: 'annual', badgeKey: 'contextPaywall.bestValue' },
+  { id: 'lifetime', badgeKey: null },
 ];
+
+/** Fiyat birimi i18n anahtari (`paywall.<unit>`). */
+function unitKeyFor(id: PlanId): 'oneTime' | 'perYear' | 'perMonth' {
+  return id === 'lifetime' ? 'oneTime' : id === 'annual' ? 'perYear' : 'perMonth';
+}
 
 // ─── Component ──────────────────────────────────────────────────────────────
 
@@ -114,10 +133,12 @@ export default function PaywallBase({
   ctaLabel,
   dismissLabel,
 }: PaywallBaseProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { refreshSubscription, refreshQuota } = useSubscription();
 
   const [packages, setPackages] = useState<PurchasesPackage[]>([]);
+  /** productId → trial uygunlugu. Bos/eksik = 'unknown' (trial vaat edilmez). */
+  const [eligibility, setEligibility] = useState<Record<string, TrialEligibility>>({});
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('annual');
   const [purchasing, setPurchasing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -139,9 +160,45 @@ export default function PaywallBase({
   // TS2367 uretir — triggerOrchestrator'daki ayni cast deseni kullaniliyor.
   const lifetimeEnabled =
     (remoteConfig as { get(k: string): unknown }).get('paywall_lifetime_enabled') === true;
-  const planOptions = lifetimeEnabled
-    ? PLAN_OPTIONS
-    : PLAN_OPTIONS.filter((o) => o.id !== 'lifetime');
+  /** Plan -> RC urunu. Fiyat/trial yalniz buradan okunur; sabit fiyat yok. */
+  const productFor = useCallback(
+    (id: PlanId) =>
+      packages.find((p) => p.product.identifier === PLANS[id].rcProductId)?.product,
+    [packages],
+  );
+
+  // RC'de urunu olmayan plan satin alinamaz — karti gosterme.
+  const planOptions = useMemo(
+    () =>
+      (lifetimeEnabled ? PLAN_OPTIONS : PLAN_OPTIONS.filter((o) => o.id !== 'lifetime'))
+        .filter((o) => productFor(o.id) !== undefined),
+    [lifetimeEnabled, productFor],
+  );
+
+  // Secili plan listede degilse (paket eksik) ilk mevcut plana gec.
+  useEffect(() => {
+    if (planOptions.length > 0 && !planOptions.some((o) => o.id === selectedPlan)) {
+      setSelectedPlan(planOptions[0].id);
+    }
+  }, [planOptions, selectedPlan]);
+
+  /** Yillik aylik esdeger + tasarruf: product.price ve currencyCode'dan hesaplanir. */
+  const pricing = useMemo<AnnualPricing | null>(() => {
+    const monthly = productFor('monthly');
+    const annual = productFor('annual');
+    if (!monthly || !annual) return null;
+    try {
+      return buildAnnualPricing(monthly, annual, language);
+    } catch (err) {
+      // Gecersiz currencyCode vb. — tasarruf satiri gizlenir, sessiz degil.
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { error_code: 'PAYWALL_PRICING_FORMAT_FAILED' },
+        extra: { monthlyCurrency: monthly.currencyCode, annualCurrency: annual.currencyCode },
+      });
+      return null;
+    }
+  }, [productFor, language]);
 
   // Paketleri yukle
   useEffect(() => {
@@ -154,7 +211,19 @@ export default function PaywallBase({
       // Servis katmani Sentry'ye zaten yazdi, burada tekrar loglamiyoruz.
       const res = await getOfferings();
       if (cancelled) return;
+
+      // Uygunluk sorgusu da kendi hatasini Sentry'ye yazar ve asla firlatmaz;
+      // okunamazsa 'unknown' doner → trial gosterilmez.
+      const productIds = res.items
+        .map((p) => p.product.identifier)
+        .filter((id) => PLAN_OPTIONS.some((o) => PLANS[o.id].rcProductId === id));
+      const elig = res.errorKind || productIds.length === 0
+        ? {}
+        : await getTrialEligibility(productIds);
+      if (cancelled) return;
+
       setPackages(res.items);
+      setEligibility(elig);
       setOfferingsError(res.errorKind ?? null);
       setLoading(false);
     }
@@ -247,14 +316,41 @@ export default function PaywallBase({
     }
   }, [selectedPlan, packages, purchasing, t, refreshSubscription, refreshQuota, onConvert, variant]);
 
-  /** Secili planin ASC'deki trial suresi (K-59): monthly 3 · annual 7 · lifetime 0 */
-  const trialDays = PLANS[selectedPlan].trialDays;
+  /**
+   * Secili planin trial suresi: gun sayisi RC `introPrice`'tan, uygunluk RC
+   * eligibility'den. Uygun degil / okunamadi / lifetime → 0 (vaat yok).
+   */
+  const selectedProduct = productFor(selectedPlan);
+  const trialDays = selectedProduct
+    ? trialDaysFor(eligibility[selectedProduct.identifier] ?? 'unknown', selectedProduct)
+    : 0;
 
   /** CTA metni — trial suresine bagli variant'lar fonksiyon gecer */
+  const noTrialCta = t('contextPaywall.ctaNoTrial');
   const resolvedCtaLabel =
     typeof ctaLabel === 'function'
-      ? ctaLabel(trialDays)
-      : ctaLabel ?? t('contextPaywall.ctaDefault');
+      ? trialDays > 0 || selectedPlan === 'lifetime'
+        ? ctaLabel(trialDays)
+        : noTrialCta
+      : ctaLabel ??
+        (trialDays > 0 ? t('contextPaywall.ctaTrial', { days: trialDays }) : noTrialCta);
+
+  /**
+   * Terms/Privacy linki. Acilmazsa Sentry'ye error + kullaniciya mevcut hata
+   * kopyasi (`errors.openLink`); sessiz reddedilen promise birakilmaz (kural 1).
+   * Repoda toast altyapisi yok — profile/film ekranlari da Alert kullaniyor.
+   */
+  const openLegalLink = useCallback(async (url: string, kind: 'terms' | 'privacy') => {
+    try {
+      await Linking.openURL(url);
+    } catch (err) {
+      Sentry.captureException(err, {
+        tags: { error_code: 'PAYWALL_LEGAL_LINK_FAILED', link: kind },
+        extra: { url },
+      });
+      Alert.alert(t('errors.openLink'));
+    }
+  }, [t]);
 
   /** Restore */
   const handleRestore = useCallback(async () => {
@@ -352,7 +448,7 @@ export default function PaywallBase({
             bounces={false}
           >
             {/* Custom Header (variant-specific) */}
-            {renderHeader()}
+            {renderHeader(pricing)}
 
             {/* Loading */}
             {loading ? (
@@ -361,7 +457,7 @@ export default function PaywallBase({
                 size="large"
                 style={{ marginVertical: 40 }}
               />
-            ) : offeringsError ? (
+            ) : offeringsError || planOptions.length === 0 ? (
               /* Paketler yuklenemedi — sessizce bos paywall acmak yerine
                  gorunur hata. Eskiden buraya kadar gelinip satin alma
                  aninda genel "purchaseError" veriliyordu. */
@@ -382,11 +478,12 @@ export default function PaywallBase({
                 {/* Plan Cards */}
                 <View style={styles.planContainer}>
                   {planOptions.map((option) => {
-                    const plan = PLANS[option.id];
                     const isSelected = selectedPlan === option.id;
 
-                    const unitKey = option.id === 'lifetime' ? 'oneTime' : option.id === 'annual' ? 'perYear' : 'perMonth';
-                    const planLabel = `${t(`paywall.${option.id}Title`)}, ${plan.displayPrice} ${t(`paywall.${unitKey}`)}`;
+                    // planOptions yalniz RC urunu olan planlari icerir.
+                    const priceText = productFor(option.id)?.priceString ?? '';
+                    const unitText = t(`paywall.${unitKeyFor(option.id)}`);
+                    const planLabel = `${t(`paywall.${option.id}Title`)}, ${priceText} ${unitText}`;
 
                     return (
                       <TouchableOpacity
@@ -410,11 +507,14 @@ export default function PaywallBase({
                             )}
                           </View>
                           <Text style={styles.planPrice}>
-                            {plan.displayPrice} {t(`paywall.${option.id === 'lifetime' ? 'oneTime' : option.id === 'annual' ? 'perYear' : 'perMonth'}`)}
+                            {priceText} {unitText}
                           </Text>
-                          {option.id === 'annual' && (
+                          {option.id === 'annual' && pricing && (
                             <Text style={styles.planSaving}>
-                              {t('contextPaywall.annualSaving')}
+                              {t('contextPaywall.annualSaving', {
+                                percent: pricing.savingsPercent,
+                                monthly: pricing.monthlyEquivalent,
+                              })}
                             </Text>
                           )}
                         </View>
@@ -427,13 +527,17 @@ export default function PaywallBase({
                   })}
                 </View>
 
-                {/* Trial Info — secili plana gore (K-59: ASC'de monthly 3 gun,
-                    annual 7 gun; lifetime non-consumable, trial yok) */}
-                <Text style={styles.trialInfo}>
-                  {trialDays > 0
-                    ? t('contextPaywall.trialInfo', { days: trialDays })
-                    : t('contextPaywall.trialInfoNoTrial')}
-                </Text>
+                {/* Trial satiri — Apple 3.1.2: sure + sonraki fiyat. Gun RC introPrice'tan,
+                    uygunluk RC eligibility'den; uygun degil/okunamadi/lifetime → gizli. */}
+                {trialDays > 0 && selectedProduct && (
+                  <Text style={styles.trialInfo}>
+                    {t('contextPaywall.trialLine', {
+                      days: trialDays,
+                      price: selectedProduct.priceString,
+                      period: t(`paywall.${unitKeyFor(selectedPlan)}`),
+                    })}
+                  </Text>
+                )}
 
                 {/* CTA */}
                 <TouchableOpacity
@@ -455,7 +559,7 @@ export default function PaywallBase({
                       <ActivityIndicator color={Colors.textOnAccent} size="small" />
                     ) : (
                       <>
-                        <Ionicons name="sparkles" size={18} color={Colors.textOnAccent} />
+                        <Sparkle size={18} color={Colors.textOnAccent} weight="duotone" />
                         <Text style={styles.ctaText}>
                           {resolvedCtaLabel}
                         </Text>
@@ -498,7 +602,7 @@ export default function PaywallBase({
                 {/* Legal links */}
                 <View style={styles.legalRow}>
                   <TouchableOpacity
-                    onPress={() => Linking.openURL(TERMS_URL)}
+                    onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="link"
                     accessibilityLabel={t('paywall.termsAction')}
@@ -507,7 +611,7 @@ export default function PaywallBase({
                   </TouchableOpacity>
                   <Text style={styles.legalSeparator}>·</Text>
                   <TouchableOpacity
-                    onPress={() => Linking.openURL(PRIVACY_URL)}
+                    onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     accessibilityRole="link"
                     accessibilityLabel={t('paywall.privacyAction')}
