@@ -7,18 +7,21 @@
  * Sıfırda sayaç donmaz — `onElapsed` çağıranın mevcut nabız + `load()` yolunu
  * tetikler ve kabuk `bootstrapping`'e ("Hazırlanıyor" iskeleti) geçer.
  *
+ * Görünüm (W1): yalnız saat:dakika ("02:49"), saniye hanesi YOK — her saniye
+ * değişen rakam hareket sayılırdı (K-54, eskiden yalnız Reduce Motion'da
+ * gizliydi). Geri sayım MANTIĞI (useCountdown, onElapsed) değişmedi.
+ *
  * A11y (K-54):
- *   - Reduce Motion → saniye hanesi gizli (her saniye değişen rakam hareket).
- *   - VoiceOver → "2 saat 49 dakika"; saniye ve iki nokta seslendirilmez.
+ *   - VoiceOver → "2 saat 49 dakika"; iki nokta seslendirilmez.
+ *   - Martian Mono 1.4x ile sınırlı (DESIGN_OS §3.5).
  */
 import React, { memo } from 'react';
 import { Text } from 'react-native';
 
-import { useReducedMotion } from 'react-native-reanimated';
-
 import { useLanguage } from '@/contexts/LanguageContext';
 import { countdownParts, formatCountdown } from '@/hooks/countdownCore';
 import { useCountdown } from '@/hooks/useCountdown';
+import { MONO_MAX_FONT_SCALE } from '@/components/gauntlet/WaitingView/styles';
 
 import { styles } from './styles';
 
@@ -31,7 +34,6 @@ interface UnlockCountdownProps {
 
 function UnlockCountdownImpl({ target, onElapsed }: UnlockCountdownProps): React.JSX.Element {
   const { t } = useLanguage();
-  const isReducedMotion = useReducedMotion();
   const remainingMs = useCountdown(target, onElapsed);
   const parts = countdownParts(remainingMs);
 
@@ -42,8 +44,13 @@ function UnlockCountdownImpl({ target, onElapsed }: UnlockCountdownProps): React
     : minutesLabel;
 
   return (
-    <Text style={styles.countdown} accessibilityRole="timer" accessibilityLabel={a11yLabel}>
-      {formatCountdown(parts, !isReducedMotion)}
+    <Text
+      style={styles.countdown}
+      accessibilityRole="timer"
+      accessibilityLabel={a11yLabel}
+      maxFontSizeMultiplier={MONO_MAX_FONT_SCALE}
+    >
+      {formatCountdown(parts, false)}
     </Text>
   );
 }

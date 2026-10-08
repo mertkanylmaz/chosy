@@ -16,13 +16,14 @@
  * sayaç her koşulda görünür, ritüelin asıl işi bozulmaz.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
+import { isWaitingCompact } from '@/components/gauntlet/WaitingView/styles';
 import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
@@ -109,6 +110,9 @@ export function WaitingCurtain({ posterUrl }: { posterUrl: string }): React.JSX.
 export function WaitingChampionCard({ champion }: { champion: LastChampion }): React.JSX.Element {
   const { t } = useLanguage();
   const router = useRouter();
+  // W1: kısa ekranda poster küçülür (WaitingView ile aynı eşik).
+  const { height: windowHeight } = useWindowDimensions();
+  const compact = isWaitingCompact(windowHeight);
 
   /**
    * Kurucu kararı (3 Eki 2026, E-24 değişikliği): YALNIZ afiş film detayına
@@ -121,6 +125,8 @@ export function WaitingChampionCard({ champion }: { champion: LastChampion }): R
     router.push(`/film/${champion.filmId}`);
   }, [router, champion.filmId]);
 
+  const posterStyle = [styles.poster, compact && styles.posterCompact];
+
   return (
     <View style={styles.card}>
       <Pressable
@@ -129,15 +135,15 @@ export function WaitingChampionCard({ champion }: { champion: LastChampion }): R
         accessibilityLabel={t('gauntlet.waitingChampionOpen', { title: champion.title })}
       >
         {champion.posterUrl ? (
-          <ExpoImage source={{ uri: champion.posterUrl }} style={styles.poster} contentFit="cover" />
+          <ExpoImage source={{ uri: champion.posterUrl }} style={posterStyle} contentFit="cover" />
         ) : (
-          <View style={styles.poster} />
+          <View style={posterStyle} />
         )}
       </Pressable>
-      <Text style={styles.label}>{t('profile.lastPickLabel')}</Text>
-      <Text style={styles.title} numberOfLines={2}>
-        {champion.title}
-      </Text>
+      <View style={styles.texts}>
+        <Text style={styles.label}>{t('profile.lastPickLabel')}</Text>
+        <Text style={styles.title}>{champion.title}</Text>
+      </View>
     </View>
   );
 }

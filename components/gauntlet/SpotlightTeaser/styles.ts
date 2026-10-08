@@ -13,8 +13,9 @@ import { StyleSheet } from 'react-native';
 import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 
-/** Kare 16:9 (`backdrop_url` film karesi) — son şampiyon afişiyle (120pt) dengeli. */
+/** Kare 16:9 (`backdrop_url` film karesi). Kısa ekranda (SE/mini) küçülür. */
 const FRAME_WIDTH = 160;
+const FRAME_WIDTH_COMPACT = 128;
 
 /** Kilidin bulanık kare üstünde okunması için hafif örtü. */
 const FRAME_DIM = withAlpha(color.surface.base, 0.35);
@@ -22,10 +23,19 @@ const FRAME_DIM = withAlpha(color.surface.base, 0.35);
 export const LOCK_ICON_SIZE = size.iconAction;
 
 export const styles = StyleSheet.create({
+  /**
+   * W1: bekleyiş dilinin kutusu — `charcoal` yüzey, `graphite` kenar (nötr,
+   * K-62). Yalnız yerleşim; içerik (kare + kilit + metin) aynı.
+   */
   root: {
     alignItems: 'center',
     gap: space.sm,
     alignSelf: 'stretch',
+    padding: space.md,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+    backgroundColor: color.surface.raised,
   },
   frame: {
     width: FRAME_WIDTH,
@@ -37,6 +47,9 @@ export const styles = StyleSheet.create({
     backgroundColor: color.surface.base,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  frameCompact: {
+    width: FRAME_WIDTH_COMPACT,
   },
   frameImage: {
     ...StyleSheet.absoluteFillObject,

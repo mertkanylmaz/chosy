@@ -13,8 +13,9 @@ export const CURTAIN_BLUR = 28;
 export const CURTAIN_DIM = withAlpha(color.surface.base, 0.7);
 export const CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
-/** Afiş 2:3 — tur ekranı afişinden küçük, "dün" ikincil. */
-const POSTER_WIDTH = 120;
+/** Afiş 2:3 — tur ekranı afişinden küçük, "dün" ikincil. Kısa ekranda daha küçük. */
+const POSTER_WIDTH = 96;
+const POSTER_WIDTH_COMPACT = 72;
 
 export const styles = StyleSheet.create({
   curtain: {
@@ -37,10 +38,12 @@ export const styles = StyleSheet.create({
   curtainFade: {
     ...StyleSheet.absoluteFillObject,
   },
+  /** W1: poster solda, etiket + başlık sağda (satır). Bölüm aralığını WaitingView verir. */
   card: {
+    alignSelf: 'stretch',
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: space.sm,
-    marginTop: space.lg,
+    gap: space.base,
   },
   poster: {
     width: POSTER_WIDTH,
@@ -48,16 +51,23 @@ export const styles = StyleSheet.create({
     borderRadius: radius.poster,
     backgroundColor: color.surface.border,
   },
+  posterCompact: {
+    width: POSTER_WIDTH_COMPACT,
+  },
+  /** `flex: 1` + `flexShrink`: uzun başlık ve AX5'te metin sarar, kırpılmaz. */
+  texts: {
+    flex: 1,
+    flexShrink: 1,
+    gap: space.xs,
+  },
   label: {
     ...type['label-caps'],
     color: color.text.secondary,
     textTransform: 'uppercase',
-    marginTop: space.xs,
   },
   /** Serif yalnız film adında (V3-D1) */
   title: {
     ...type.filmTitle,
     color: color.text.primary,
-    textAlign: 'center',
   },
 });

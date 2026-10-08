@@ -27,6 +27,7 @@ import { Image } from 'expo-image';
 import { Lock } from 'phosphor-react-native';
 
 import { SPOTLIGHT_MAX_BLUR } from '@/components/games/Spotlight/constants';
+import { isWaitingCompact } from '@/components/gauntlet/WaitingView/styles';
 import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
@@ -75,7 +76,7 @@ export function SpotlightTeaser({ backdropUrl }: SpotlightTeaserProps): React.JS
   return (
     <View style={styles.root} accessible accessibilityLabel={text}>
       <View
-        style={styles.frame}
+        style={[styles.frame, isWaitingCompact(windowHeight) && styles.frameCompact]}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
