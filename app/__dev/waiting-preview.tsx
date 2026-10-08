@@ -22,7 +22,6 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightTeaser } from '@/components/gauntlet/SpotlightTeaser';
 import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
 import {
@@ -75,14 +74,14 @@ function Preview(): React.JSX.Element {
       >
         <WaitingView
           unlockTimeLabel={formatUnlockTime(language)}
-          countdown={<UnlockCountdown target={target} onElapsed={noop} />}
-          notifyAction={
-            withCta && (
-              <QuietAction
-                label={t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) })}
-                onPress={noop}
-              />
-            )
+          countdown={<UnlockCountdown variant="inline" target={target} onElapsed={noop} />}
+          notify={
+            withCta
+              ? {
+                  label: t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) }),
+                  onPress: noop,
+                }
+              : undefined
           }
           teaser={withTeaser && <SpotlightTeaser backdropUrl={FIXTURE_BACKDROP} />}
           championSection={withChampion && <WaitingChampionCard champion={FIXTURE_CHAMPION} />}

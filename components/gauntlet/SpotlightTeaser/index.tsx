@@ -3,6 +3,9 @@
  * P-5, K-62: Spotlight ritüelin ikinci yarısıdır; bekleyişte varlığı
  * duyurulur, açılışı dörtlünün (champion) arkasında kalır.
  *
+ * W1.1: satır düzeni — yüzey/ayraç WaitingView'in inset grubunda; burası
+ * yalnız satırın içi (≈44pt bulanık kare + Lock, başlık + metin).
+ *
  * DOKUNULAMAZ: Pressable YOK, dokunma geri bildirimi YOK, rota YOK. K-05
  * değişmez — Spotlight'ın tek giriş noktası hâlâ champion ekranındaki bonus
  * kartı; bu yüzey bir hub ya da ikinci giriş DEĞİL.
@@ -27,7 +30,7 @@ import { Image } from 'expo-image';
 import { Lock } from 'phosphor-react-native';
 
 import { SPOTLIGHT_MAX_BLUR } from '@/components/games/Spotlight/constants';
-import { isWaitingCompact } from '@/components/gauntlet/WaitingView/styles';
+import { isLargeText } from '@/components/gauntlet/WaitingView/styles';
 import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
@@ -57,7 +60,9 @@ interface SpotlightTeaserProps {
 
 export function SpotlightTeaser({ backdropUrl }: SpotlightTeaserProps): React.JSX.Element {
   const { t } = useLanguage();
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, fontScale } = useWindowDimensions();
+  const stacked = isLargeText(fontScale);
+  const heading = t('games.spotlight.title');
   const text = t('gauntlet.spotlightTeaser');
 
   useEffect(() => {
@@ -74,9 +79,13 @@ export function SpotlightTeaser({ backdropUrl }: SpotlightTeaserProps): React.JS
   }, []);
 
   return (
-    <View style={styles.root} accessible accessibilityLabel={text}>
+    <View
+      style={[styles.root, stacked && styles.rootStacked]}
+      accessible
+      accessibilityLabel={`${heading}. ${text}`}
+    >
       <View
-        style={[styles.frame, isWaitingCompact(windowHeight) && styles.frameCompact]}
+        style={styles.frame}
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
       >
@@ -90,7 +99,10 @@ export function SpotlightTeaser({ backdropUrl }: SpotlightTeaserProps): React.JS
         <View style={styles.frameDim} />
         <Lock size={LOCK_ICON_SIZE} color={color.text.primary} weight="regular" />
       </View>
-      <Text style={styles.text}>{text}</Text>
+      <View style={[styles.texts, stacked && styles.textsStacked]}>
+        <Text style={styles.title}>{heading}</Text>
+        <Text style={styles.text}>{text}</Text>
+      </View>
     </View>
   );
 }

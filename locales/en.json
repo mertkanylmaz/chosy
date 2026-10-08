@@ -1516,9 +1516,6 @@
     "waitingNotifyCta": "Remind me at %{time}",
     "waitingChampionOpen": "View %{title}",
     "spotlightTeaser": "Today's frame is waiting. It opens after your four.",
-    "waitingEyebrow": "NEXT SCREENING",
-    "waitingFramesTagline": "FOUR FILMS · THREE CHOICES · ONE WINNER",
-    "waitingFirstScreening": "Your screening awaits.",
     "countdownHours": {
       "one": "%{count} hour",
       "other": "%{count} hours"

@@ -1604,15 +1604,17 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     return (
       <WaitingView
         unlockTimeLabel={formatUnlockTime(language)}
-        countdown={unlockAt && <UnlockCountdown target={unlockAt} onElapsed={runClockPulse} />}
-        notifyAction={
-          waitingNotifyEligible && (
-            <QuietAction
-              label={t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) })}
-              onPress={() => void handleWaitingNotify()}
-              disabled={waitingNotifyBusy}
-            />
-          )
+        countdown={
+          unlockAt && <UnlockCountdown variant="inline" target={unlockAt} onElapsed={runClockPulse} />
+        }
+        notify={
+          waitingNotifyEligible
+            ? {
+                label: t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) }),
+                onPress: () => void handleWaitingNotify(),
+                disabled: waitingNotifyBusy,
+              }
+            : undefined
         }
         teaser={
           showTeaser &&

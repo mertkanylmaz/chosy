@@ -1,19 +1,15 @@
 /**
- * WaitingView stilleri — before_18 düzeni ("Next screening").
+ * WaitingView stilleri — before_18 düzeni (W1.1: iOS-native, sola hizalı, üstten akar).
  *
  * Yalnız token: renk `color.*`, boşluk `space.*`, yarıçap `radius.*`,
  * tipografi `type.*`. Hardcoded hex yok.
  *
  * Paylaşılan `styles.stateText` BURADA KULLANILMAZ (GauntletShell'de dört dalda
  * kullanılıyor) — başlık `title` kendi stilidir.
- *
- * DESIGN_OS §2.7: `smoke` 13pt altında kullanılmaz. Martian Mono etiketler bu
- * yüzden `meta`'nın ailesini `caption` boyutuyla (13/18) taşır; `type.meta`
- * (12pt) smoke üstünde kullanılmaz.
  */
 import { StyleSheet } from 'react-native';
 
-import { color, size, space, type } from '@/constants/design/semantic';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 
 /** Kısa ekranlar (SE/mini) — `contentTopFor`/`headerGapFor` ile aynı eşik. */
 export const WAITING_COMPACT_BELOW = 700;
@@ -22,15 +18,24 @@ export function isWaitingCompact(windowHeight: number): boolean {
   return windowHeight < WAITING_COMPACT_BELOW;
 }
 
-/** Martian Mono etiket: `meta` ailesi, `caption` ölçüsü (13/18), `label-caps` harf aralığı oranı. */
-export const monoLabel = {
-  fontFamily: type.meta.fontFamily,
-  fontSize: type.caption.fontSize,
-  lineHeight: type.caption.lineHeight,
-  letterSpacing: type['label-caps'].letterSpacing,
-} as const;
+/**
+ * Büyük yazı eşiği: `useWindowDimensions().fontScale` bunu geçince Spotlight ve
+ * Last Pick satırlarında görsel metnin ÜSTÜNE dizilir (yan yana değil).
+ */
+export const LARGE_TEXT_FONT_SCALE = 1.35;
 
-/** Martian Mono sayaç: `meta-strong` ailesi, `display-m` ölçüsü (22/26). Archivo DEĞİL. */
+export function isLargeText(fontScale: number): boolean {
+  return fontScale >= LARGE_TEXT_FONT_SCALE;
+}
+
+/** Inset grup satırı: yatay dolgu, görsel/ikon sütunu ve aralarındaki boşluk. */
+export const ROW_PADDING_X = space.base;
+export const ROW_ICON_COLUMN = size.touchTarget;
+export const ROW_GAP = space.md;
+/** Satır ayracının sol inset'i = görsel/ikon sütununun bittiği yer. */
+export const ROW_SEPARATOR_INSET = ROW_PADDING_X + ROW_ICON_COLUMN + ROW_GAP;
+
+/** Martian Mono sayaç (`variant="display"`): `meta-strong` ailesi, `display-m` ölçüsü (22/26). */
 export const monoCountdown = {
   fontFamily: type['meta-strong'].fontFamily,
   fontSize: type['display-m'].fontSize,
@@ -45,63 +50,71 @@ export const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
-  /**
-   * İçerik sığdığında dikeyde ortalı (`flexGrow` + `justifyContent`);
-   * sığmadığında (AX5, küçük ekran) kaydırılır, kesilmez.
-   */
+  /** Üstten akar, sola hizalı. Taşarsa (AX5, küçük ekran) kaydırılır, kesilmez. */
   scrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: space.lg,
-    paddingVertical: space.lg,
+    paddingHorizontal: space.base,
+    paddingTop: space.base,
+    paddingBottom: space.lg,
     gap: space.lg,
   },
   scrollContentCompact: {
-    paddingVertical: space.base,
     gap: space.base,
   },
-  section: {
+  header: {
+    gap: space.xs,
+  },
+  headerText: {
+    gap: space.xs,
+  },
+  title: {
+    ...type.largeTitle,
+    color: color.text.primary,
+  },
+  subtitle: {
+    ...type.callout,
+    color: color.text.secondary,
+  },
+  championWrap: {
     alignSelf: 'stretch',
-    alignItems: 'center',
-    gap: space.md,
+  },
+
+  /** Inset grup — tek yüzey: charcoal, ≈14 köşe, hairline graphite kenar. */
+  group: {
+    alignSelf: 'stretch',
+    borderRadius: radius.poster,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.surface.border,
+    backgroundColor: color.surface.raised,
+    overflow: 'hidden',
   },
   separator: {
-    alignSelf: 'stretch',
-    height: size.hairline,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: color.surface.border,
   },
-  eyebrowRow: {
-    alignSelf: 'stretch',
+
+  /** Notify satırı. */
+  row: {
+    minHeight: size.touchTarget,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.md,
+    paddingHorizontal: ROW_PADDING_X,
+    gap: ROW_GAP,
   },
-  eyebrowLine: {
-    flex: 1,
-    height: size.hairline,
+  rowPressed: {
     backgroundColor: color.surface.border,
   },
-  eyebrow: {
-    ...monoLabel,
+  rowDisabled: {
+    opacity: 0.35,
+  },
+  rowIcon: {
+    width: ROW_ICON_COLUMN,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowText: {
+    ...type.body,
+    flex: 1,
     flexShrink: 1,
-    color: color.text.secondary,
-    textAlign: 'center',
-  },
-  /** Mevcut ekran-başlığı token'ı (`title`, SF Pro 600 20/24). */
-  title: {
-    ...type.title,
     color: color.text.primary,
-    textAlign: 'center',
-  },
-  tagline: {
-    ...monoLabel,
-    color: color.text.secondary,
-    textAlign: 'center',
-  },
-  firstScreening: {
-    ...type.callout,
-    color: color.text.primary,
-    textAlign: 'center',
   },
 });

@@ -1,21 +1,23 @@
 /**
- * SpotlightTeaser stilleri — P-5 (K-62).
+ * SpotlightTeaser stilleri — P-5 (K-62), W1.1 satır düzeni.
  *
- * Sütun düzeni: AX5'te satır düzeni metni karenin yanında ezer; sütunda
- * metin tam genişliği kullanır ve before_18 kaydırması taşmayı karşılar.
+ * Yüzey (charcoal kutu, kenar, köşe) artık `WaitingView`'in inset grubunda;
+ * burası yalnız SATIRIN içi: solda ≈44pt bulanık kare + kilit, sağda başlık
+ * ve metin. Büyük yazıda (`fontScale` eşiği) görsel metnin ÜSTÜNE dizilir.
  *
- * Kenar NÖTR (`surface.border`), champion ekranındaki bonus kartıyla aynı:
- * oyun rengi (altın) yalnız Spotlight oynanış ekranındadır.
- * Cam YOK, gölge YOK (§4.3).
+ * Nötr: oyun rengi (altın) yalnız Spotlight oynanış ekranındadır.
+ * Cam YOK, gölge YOK (§4.3). Basılı durum YOK — satır dokunulamaz (K-05).
  */
 import { StyleSheet } from 'react-native';
 
-import { color, radius, size, space, type } from '@/constants/design/semantic';
+import {
+  ROW_GAP,
+  ROW_ICON_COLUMN,
+  ROW_PADDING_X,
+} from '@/components/gauntlet/WaitingView/styles';
+import { color, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
-
-/** Kare 16:9 (`backdrop_url` film karesi). Kısa ekranda (SE/mini) küçülür. */
-const FRAME_WIDTH = 160;
-const FRAME_WIDTH_COMPACT = 128;
+import { Theme } from '@/constants/theme';
 
 /** Kilidin bulanık kare üstünde okunması için hafif örtü. */
 const FRAME_DIM = withAlpha(color.surface.base, 0.35);
@@ -23,33 +25,28 @@ const FRAME_DIM = withAlpha(color.surface.base, 0.35);
 export const LOCK_ICON_SIZE = size.iconAction;
 
 export const styles = StyleSheet.create({
-  /**
-   * W1: bekleyiş dilinin kutusu — `charcoal` yüzey, `graphite` kenar (nötr,
-   * K-62). Yalnız yerleşim; içerik (kare + kilit + metin) aynı.
-   */
   root: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: space.sm,
-    alignSelf: 'stretch',
-    padding: space.md,
-    borderRadius: radius.surface,
-    borderWidth: size.hairline,
-    borderColor: color.surface.border,
-    backgroundColor: color.surface.raised,
+    paddingHorizontal: ROW_PADDING_X,
+    paddingVertical: space.sm,
+    gap: ROW_GAP,
   },
+  /** Büyük yazı: görsel üstte, metin altında, sola hizalı. */
+  rootStacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    paddingVertical: space.md,
+  },
+  /** ≈44pt kare (`backdrop_url` karesi, bulanık) — ikon sütunuyla aynı genişlik. */
   frame: {
-    width: FRAME_WIDTH,
-    aspectRatio: 16 / 9,
-    borderRadius: radius.poster,
-    borderWidth: size.hairline,
-    borderColor: color.surface.border,
+    width: ROW_ICON_COLUMN,
+    height: ROW_ICON_COLUMN,
+    borderRadius: Theme.borderRadius.sm,
     overflow: 'hidden',
     backgroundColor: color.surface.base,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  frameCompact: {
-    width: FRAME_WIDTH_COMPACT,
   },
   frameImage: {
     ...StyleSheet.absoluteFillObject,
@@ -58,9 +55,21 @@ export const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: FRAME_DIM,
   },
+  texts: {
+    flex: 1,
+    flexShrink: 1,
+    gap: space.xs,
+  },
+  textsStacked: {
+    flex: 0,
+    alignSelf: 'stretch',
+  },
+  title: {
+    ...type.body,
+    color: color.text.primary,
+  },
   text: {
-    ...type.callout,
+    ...type.caption,
     color: color.text.secondary,
-    textAlign: 'center',
   },
 });

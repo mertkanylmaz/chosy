@@ -4,8 +4,13 @@
  */
 import { StyleSheet } from 'react-native';
 
-import { color, radius, space, type } from '@/constants/design/semantic';
+import {
+  ROW_GAP,
+  ROW_PADDING_X,
+} from '@/components/gauntlet/WaitingView/styles';
+import { color, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
+import { Theme } from '@/constants/theme';
 
 /** Bulanıklık posteri tanınmaz kılar, renk dokusu kalır (Profil ile aynı). */
 export const CURTAIN_BLUR = 28;
@@ -13,9 +18,13 @@ export const CURTAIN_BLUR = 28;
 export const CURTAIN_DIM = withAlpha(color.surface.base, 0.7);
 export const CURTAIN_FADE_TOP = withAlpha(color.surface.base, 0);
 
-/** Afiş 2:3 — tur ekranı afişinden küçük, "dün" ikincil. Kısa ekranda daha küçük. */
-const POSTER_WIDTH = 96;
-const POSTER_WIDTH_COMPACT = 72;
+/**
+ * Last Pick satırındaki afiş — 2:3, yerel sabit boyut (≈48x72). Satır
+ * yüksekliğini (72 + dikey dolgu) belirler; Dynamic Type'la ölçeklenmez,
+ * metin sütunu ölçeklenir.
+ */
+const POSTER_WIDTH = 48;
+const POSTER_HEIGHT = 72;
 
 export const styles = StyleSheet.create({
   curtain: {
@@ -38,36 +47,46 @@ export const styles = StyleSheet.create({
   curtainFade: {
     ...StyleSheet.absoluteFillObject,
   },
-  /** W1: poster solda, etiket + başlık sağda (satır). Bölüm aralığını WaitingView verir. */
-  card: {
-    alignSelf: 'stretch',
+  /** W1.1: grup üstü etiket — caption, ikincil, sentence case, harf aralığı YOK. */
+  label: {
+    ...type.caption,
+    color: color.text.secondary,
+    paddingHorizontal: ROW_PADDING_X,
+    paddingBottom: space.sm,
+  },
+  /** Tüm satır dokunulabilir: poster + başlık + caret. */
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: space.base,
+    paddingHorizontal: ROW_PADDING_X,
+    paddingVertical: space.sm,
+    gap: ROW_GAP,
+  },
+  rowPressed: {
+    backgroundColor: color.surface.border,
+  },
+  /** Poster + başlık. Büyük yazıda (`fontScale` eşiği) alt alta. */
+  content: {
+    flex: 1,
+    flexShrink: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: ROW_GAP,
+  },
+  contentStacked: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
   },
   poster: {
     width: POSTER_WIDTH,
-    aspectRatio: 2 / 3,
-    borderRadius: radius.poster,
+    height: POSTER_HEIGHT,
+    borderRadius: Theme.borderRadius.sm,
     backgroundColor: color.surface.border,
   },
-  posterCompact: {
-    width: POSTER_WIDTH_COMPACT,
-  },
   /** `flex: 1` + `flexShrink`: uzun başlık ve AX5'te metin sarar, kırpılmaz. */
-  texts: {
-    flex: 1,
-    flexShrink: 1,
-    gap: space.xs,
-  },
-  label: {
-    ...type['label-caps'],
-    color: color.text.secondary,
-    textTransform: 'uppercase',
-  },
-  /** Serif yalnız film adında (V3-D1) */
   title: {
     ...type.filmTitle,
+    flexShrink: 1,
     color: color.text.primary,
   },
 });

@@ -1516,9 +1516,6 @@
     "waitingNotifyCta": "%{time}'de hatırlat",
     "waitingChampionOpen": "%{title} filmini görüntüle",
     "spotlightTeaser": "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır.",
-    "waitingEyebrow": "SIRADAKİ GÖSTERİM",
-    "waitingFramesTagline": "DÖRT FİLM · ÜÇ SEÇİM · BİR KAZANAN",
-    "waitingFirstScreening": "Gösterimin seni bekliyor.",
     "countdownHours": {
       "one": "%{count} saat",
       "other": "%{count} saat"
