@@ -83,8 +83,8 @@ import {
   type ScoredPool,
   selectQuartet,
   toGauntletFilm,
-  utcDateString,
 } from '../_shared/gauntletCore.ts'
+import { cycleDate, isValidTimeZone, nextCycleAt } from '../_shared/cycleDate.ts'
 import { decidePreviousCycle, resolvePreviousCycle } from '../_shared/previousCycle.ts'
 import type {
   DailyGauntlet,
@@ -126,27 +126,28 @@ const SIGNALS_FOR_FULL_CONFIDENCE = 18
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
+/**
+ * Yanıt = kilitli `DailyGauntlet` + EKLEMELİ `next_cycle_at` (bir sonraki yerel
+ * 18:00, ISO 8601 UTC). `types/gauntlet.ts` DEĞİŞMEZ: eski istemciler alanı
+ * görmezden gelir, yeni istemci sayacı bundan kurar.
+ */
+type GauntletResponse = DailyGauntlet & { next_cycle_at: string }
+
 interface GenerateRequest {
   context?: unknown
   /**
-   * M2 Faz 2a — write-through saat dilimi (IANA adı, örn. "Europe/Istanbul").
+   * Kullanıcının IANA saat dilimi (örn. "Europe/Istanbul"). F1'den beri
+   * ZORUNLU: gün anahtarı (`date` = cycle tarihi) sunucuda bu alandan
+   * hesaplanır. Yok ya da geçersizse 400 `TZ_REQUIRED` — sessiz UTC yok.
    *
-   * OPSİYONEL ve GERİYE UYUMLU: alanı hiç göndermeyen eski istemciler aynen
-   * çalışır; o durumda `users.timezone` OKUNMAZ ve DEĞİŞTİRİLMEZ. Yani bu
-   * alanın eklenmesi mevcut istemcilerde davranış değişikliği üretmez.
-   *
-   * ⚠️ Bu alan bu sprint'te yalnızca DEPOLANIR. Gauntlet'in gün anahtarı
-   * (`date`) HÂLÂ `utcDateString()`'tir — kullanıcı-yerel güne bağlama işi
-   * M2 Faz 2b'ye ertelendi (write-through verisi birikene kadar). Buradaki
-   * yazımı gün hesabına bağlamak, 229/237 kullanıcının kolon DEFAULT'u olan
-   * 'UTC' değerine düşmesi ve ritüelin saatinin kayması demek olurdu.
+   * Geçerli ve `users.timezone`'dan farklıysa kolona yazılır (M2 Faz 2a
+   * write-through, davranış korunur).
    */
   timezone?: unknown
   /**
    * E-21 — önceki döngü niyet bayrağı (`GauntletCycle`). Yalnız `'previous'`
    * kabul edilir; alan yoksa davranış E-21 öncesiyle birebir aynıdır. İstemci
-   * TARİH göndermez — anahtar `timezone`'dan sunucuda hesaplanır, bu yüzden
-   * bu dalda `timezone` ZORUNLUDUR.
+   * TARİH göndermez — anahtar `timezone`'dan sunucuda hesaplanır.
    */
   cycle?: unknown
 }
@@ -156,41 +157,6 @@ interface GenerateRequest {
 const COMPANIONS = ['alone', 'partner', 'friends', 'family']
 const DURATIONS = ['short', 'medium', 'any']
 const ENERGIES = ['drained', 'normal', 'open']
-
-/** `users.timezone` kolonunun genişliği için makul üst sınır. */
-const MAX_TIMEZONE_LENGTH = 64
-
-/**
- * IANA saat dilimi adı doğrulaması.
- *
- * Sabit offset ("+03:00", "UTC+3") KASITLI OLARAK REDDEDİLİR: DST yalnızca
- * bölge adıyla çözülebilir, offset'te yaz/kış bilgisi yoktur. M2 Faz 1
- * ölçümünde sahadaki 8 gerçek değerin hepsi zaten IANA'ydı
- * ("Europe/Istanbul", "America/New_York") — bu kontrol o biçimi korur.
- *
- * `Intl.DateTimeFormat` bilinmeyen bölge adında RangeError atar; Deno'da ek
- * bağımlılık gerektirmeyen tek gerçek IANA doğrulaması budur. Regex tek
- * başına yetmez (biçimi doğru, adı uydurma bir değeri geçirirdi), Intl tek
- * başına da yetmez ("UTC+3" gibi bazı offset biçimlerini kabul eder).
- */
-function isValidTimeZone(v: unknown): v is string {
-  if (typeof v !== 'string') return false
-  if (v.length === 0 || v.length > MAX_TIMEZONE_LENGTH) return false
-  // "Area/Location" (çok parçalı olabilir: "America/Argentina/Buenos_Aires").
-  // "UTC" tek istisna — geçerli bir IANA adıdır ve gerçekten UTC'de yaşayan
-  // kullanıcı bunu bildirebilir.
-  if (v !== 'UTC' && !/^[A-Za-z][A-Za-z0-9_-]*(\/[A-Za-z0-9_+-]+)+$/.test(v)) {
-    return false
-  }
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: v })
-    return true
-  } catch {
-    // RangeError = bölge adı bu runtime'ın IANA veritabanında yok.
-    // Boş catch değil: doğrulama sonucu olarak false döner.
-    return false
-  }
-}
 
 /**
  * `GauntletContext` şekil doğrulaması. `types/gauntlet.ts` dış paket
@@ -660,6 +626,7 @@ async function generateEditorialQuartet(
   appUserId: string,
   context: GauntletContext,
   dayNumber: number,
+  cycleToday: string,
 ): Promise<GeneratedQuartet> {
   const editorial = await fetchEditorialQuartet(service, dayNumber)
   const watched = await fetchWatchedAmong(
@@ -677,7 +644,9 @@ async function generateEditorialQuartet(
   let scored: ScoredPool | null = null
   let poolError: string | null = null
   try {
-    scored = await buildScoredPool(service, appUserId, context, 'gauntlet_editorial')
+    scored = await buildScoredPool(service, appUserId, context, 'gauntlet_editorial', {
+      today: cycleToday,
+    })
   } catch (err) {
     poolError = err instanceof Error ? err.message : String(err)
   }
@@ -739,9 +708,10 @@ async function generateQuartet(
   service: SupabaseClient,
   appUserId: string,
   context: GauntletContext,
+  cycleToday: string,
 ): Promise<GeneratedQuartet> {
   // ── ADIM 1 + ADIM 2 (+ süre yayılımı eşikleri) ─────────────────────────────
-  const scored = await buildScoredPool(service, appUserId, context, 'gauntlet')
+  const scored = await buildScoredPool(service, appUserId, context, 'gauntlet', { today: cycleToday })
   const relaxations = [...scored.relaxations]
 
   // ── ADIM 3 + ADIM 5 — çeşitlilik seçimi ve çift kontrolü ──────────────────
@@ -841,54 +811,49 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   const wantsPrevious = body.cycle === 'previous'
 
-  // ── M2 Faz 2a: write-through saat dilimi ───────────────────────────────────
-  // Alan YOKSA hiçbir şey yapılmaz — eski istemciler için tam geriye uyumluluk
-  // ve `users.timezone` olduğu gibi kalır.
-  //
-  // Alan VARSA ama geçersizse: istek 400 ile REDDEDİLMEZ. `timezone` ritüelin
-  // ön koşulu değil, yan bilgidir; bozuk bir değer yüzünden kullanıcının o
-  // akşamki gauntlet'ini düşürmek orantısız olurdu. Sessiz de geçilmez —
-  // Sentry'ye warning düşer, çünkü bu bir istemci hatasıdır ve görünmelidir.
-  if (body.timezone !== undefined) {
-    if (isValidTimeZone(body.timezone)) {
-      await persistTimezone(service, appUserId, body.timezone)
-    } else {
-      logError('gauntlet_tz_invalid', new Error('Geçersiz IANA saat dilimi'), {
+  // ── F1: saat dilimi ZORUNLU ────────────────────────────────────────────────
+  // Gün anahtarı (cycle tarihi) kullanıcının yerel 18:00 sınırına bağlıdır ve
+  // sunucuda hesaplanır. Tahmini/UTC bir dilimle yanlış günün satırını
+  // yazmak 18:00 idempotency'sini bozar — bu yüzden açık ret, sessiz geri
+  // dönüş YOK. Ret görünür kalır (log + Sentry warning): eski/bozuk bir
+  // istemci tz göndermiyorsa bunu saha izinden görmek gerekir.
+  if (!isValidTimeZone(body.timezone)) {
+    logError('gauntlet_tz_required', new Error('Geçerli IANA saat dilimi yok'), {
+      user_id: appUserId,
+      received: typeof body.timezone === 'string' ? body.timezone : typeof body.timezone,
+    })
+    await sentryCapture({
+      message: 'generate-gauntlet: TZ_REQUIRED — saat dilimi yok ya da geçersiz',
+      level: 'warning',
+      tags: { function: 'generate-gauntlet', error_code: 'TZ_REQUIRED' },
+      extra: {
         user_id: appUserId,
         received: typeof body.timezone === 'string' ? body.timezone : typeof body.timezone,
-      })
-      await sentryCapture({
-        message: 'generate-gauntlet: geçersiz timezone gövdede',
-        level: 'warning',
-        tags: { function: 'generate-gauntlet' },
-        extra: {
-          user_id: appUserId,
-          received: typeof body.timezone === 'string' ? body.timezone : typeof body.timezone,
-        },
-      })
-    }
-  }
-
-  // E-21: önceki döngünün anahtarı isteğin timezone'undan hesaplanır —
-  // `users.timezone` kolonu DEĞİL. Alan yoksa/geçersizse AÇIK RET: tahmini
-  // bir dilimle yanlış günün satırını yazmak, 18:00 idempotency'sini
-  // bozabilirdi. Yalnız `cycle` gönderen (yeni) istemci bu yola girer (K-44).
-  if (wantsPrevious && !isValidTimeZone(body.timezone)) {
+      },
+    })
     return errorResponse(
-      'INVALID_INPUT',
-      "cycle:'previous' için geçerli bir IANA timezone zorunlu",
+      'TZ_REQUIRED',
+      'Geçerli bir IANA saat dilimi (timezone) zorunlu',
       400,
     )
   }
+  const tz: string = body.timezone
+
+  // M2 Faz 2a write-through: yalnız geçerli ve farklıysa yazar (persistTimezone).
+  await persistTimezone(service, appUserId, tz)
+
+  // Tek anlık: cycle tarihi, E-21 anahtarı ve next_cycle_at AYNI `now`'dan
+  // hesaplanır — istek ortasında 18:00'i geçen bir çağrı tutarsız olmasın.
+  const now = new Date()
+  const nextCycle = nextCycleAt(tz, now)
 
   let cycle: 'current' | 'previous' = 'current'
 
   try {
-    // ⚠️ HÂLÂ UTC. Kullanıcı-yerel gün anahtarına geçiş M2 Faz 2b'dir; bu
-    // sprint yalnızca güvenilir timezone verisini TOPLAR. Yukarıdaki
-    // write-through'u buraya bağlamak, kolonu henüz dolmamış kullanıcıları
-    // 18:00 UTC'ye (İstanbul'da 21:00) kaydırırdı.
-    let date = utcDateString()
+    // F1: gün anahtarı = cycle tarihi (en son geçilmiş yerel 18:00'in yerel
+    // takvim tarihi). `DailyGauntlet.date` ve `daily_gauntlets.date` bu değerdir.
+    const cycleToday = cycleDate(tz, now)
+    let date = cycleToday
 
     // ── E-21: önceki döngü ────────────────────────────────────────────────────
     // Karar verildikten sonra aşağıdaki idempotency / üretim / 23505 yolu
@@ -897,8 +862,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     // Previous isteğine ASLA current gauntlet dönmez (istemci yanıt şeklinden
     // döngüyü ayıramaz): ya kendi önceki döngü satırı ya açık ret.
     if (wantsPrevious) {
-      const tz = body.timezone as string
-      const resolved = resolvePreviousCycle(new Date(), tz)
+      const resolved = resolvePreviousCycle(now, tz)
       const personal = await service
         .from('daily_gauntlets')
         .select('id,date,cycle')
@@ -940,7 +904,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       })
     }
 
-    const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, date)
+    const pendingWatchFeedback = await resolvePendingWatchFeedback(service, appUserId, cycleToday)
 
     // ── Idempotency: aynı kullanıcı + gün ikinci çağrıda YENİ üretim yapmaz ──
     const existing = await service
@@ -972,7 +936,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
       const films = await fetchFilmsByIds(service, row.film_ids)
       const progress = await deriveProgress(service, row, films)
       assertProgressInvariant(progress)
-      const response: DailyGauntlet = {
+      const response: GauntletResponse = {
+        next_cycle_at: nextCycle,
         gauntletId: row.id,
         date,
         context: row.context ?? context,
@@ -1003,8 +968,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const isEditorialDay = dayNumber !== null
 
     const generated = isEditorialDay
-      ? await generateEditorialQuartet(service, appUserId, context, dayNumber)
-      : await generateQuartet(service, appUserId, context)
+      ? await generateEditorialQuartet(service, appUserId, context, dayNumber, date)
+      : await generateQuartet(service, appUserId, context, date)
     const slotTypes = isEditorialDay ? editorialSlotTypes() : slotTypesFor(signalCount)
     const algorithmVersion = isEditorialDay
       ? EDITORIAL_ALGORITHM_VERSION
@@ -1059,7 +1024,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
         // progress TÜRETİLİR — istemcide ikinci bir kod yolu doğmasın.
         const progress = await deriveProgress(service, row, films)
         assertProgressInvariant(progress)
-        const response: DailyGauntlet = {
+        const response: GauntletResponse = {
+          next_cycle_at: nextCycle,
           gauntletId: row.id,
           date,
           context: row.context ?? context,
@@ -1105,7 +1071,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
     assertProgressInvariant(progress)
 
-    const response: DailyGauntlet = {
+    const response: GauntletResponse = {
+      next_cycle_at: nextCycle,
       gauntletId: insert.data.id,
       date,
       context,

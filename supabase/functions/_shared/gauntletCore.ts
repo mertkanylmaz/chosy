@@ -18,6 +18,7 @@
  */
 
 import type { SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+import { addDays } from './cycleDate.ts'
 import { getAppConfig, logInfo } from './gameUtils.ts'
 import { sentryCapture } from './sentry.ts'
 import type {
@@ -395,6 +396,8 @@ export async function fetchCandidatesByIds(
 export async function fetchExclusions(
   service: SupabaseClient,
   appUserId: string,
+  /** Kullanıcının cycle tarihi (`cycleDate`) — soğuma penceresi bundan geriye sayılır. */
+  today: string,
 ): Promise<Exclusions> {
   const [watchRes, shownRes, choiceRes, pairRes] = await Promise.all([
     service
@@ -406,7 +409,7 @@ export async function fetchExclusions(
       .from('daily_gauntlets')
       .select('film_ids')
       .eq('user_id', appUserId)
-      .gte('date', utcDateString(-SHOWN_COOLDOWN_DAYS)),
+      .gte('date', addDays(today, -SHOWN_COOLDOWN_DAYS)),
     service
       .from('choice_events')
       .select('film_a,film_b,winner,outcome')
@@ -879,10 +882,16 @@ export interface ScoredPoolOptions {
    */
   relaxedTiers?: string[] | null
   /**
-   * Dışlama kümesi. Varsayılan `fetchExclusions(service, appUserId)`.
+   * Dışlama kümesi. Varsayılan `fetchExclusions(service, appUserId, opts.today)`.
    * Global slot `fetchGlobalExclusions(service)` sonucunu geçirir.
    */
   exclusions?: Exclusions
+  /**
+   * Kullanıcının cycle tarihi. `appUserId` verildiği ve `exclusions` geçilmediği
+   * her çağrıda ZORUNLU (kişisel soğuma penceresi buna bağlı); eksikse throw —
+   * UTC "bugün"e sessiz düşüş yok.
+   */
+  today?: string
 }
 
 /**
@@ -936,7 +945,13 @@ export async function buildScoredPool(
         'dışlamasız havuz sessiz fallback olur',
     )
   } else {
-    exclusions = await fetchExclusions(service, appUserId)
+    if (!opts.today) {
+      throw new Error(
+        'buildScoredPool: kişisel dışlama için opts.today (cycle tarihi) zorunlu — ' +
+          'UTC "bugün"e sessiz düşüş yok',
+      )
+    }
+    exclusions = await fetchExclusions(service, appUserId, opts.today)
   }
 
   // ── ADIM 1 — gevşetme merdiveni: cooldown → tier ────────────────────────────

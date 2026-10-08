@@ -150,6 +150,8 @@ interface ChoiceResult {
 interface GauntletRow {
   id: string
   user_id: string | null
+  /** Cycle tarihi (F1) — kişisel soğuma penceresinin "bugün"ü. */
+  date: string
   film_ids: string[]
   champion_film_id: string | null
   context: GauntletContext | null
@@ -715,7 +717,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const [gauntletRes, settled] = await Promise.all([
       service
         .from('daily_gauntlets')
-        .select('id,user_id,film_ids,champion_film_id,context,algorithm_version,slot_types')
+        .select('id,user_id,date,film_ids,champion_film_id,context,algorithm_version,slot_types')
         .eq('id', submission.gauntletId)
         .maybeSingle(),
       service
@@ -999,7 +1001,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
       throw new Error(`gauntlet bağlamı boş: ${gauntlet.id}`)
     }
 
-    const scored = await buildScoredPool(service, appUserId, context, 'choice')
+    const scored = await buildScoredPool(service, appUserId, context, 'choice', {
+      today: gauntlet.date,
+    })
     const picked = pickReplacements(scored.pool, scored.exclusions, {
       // Dörtlünün TAMAMI bloklanır: yerine gelen film turnuvada zaten
       // bulunan bir filmle aynı olamaz.
