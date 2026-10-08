@@ -3956,3 +3956,15 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   `subscriptions`'a yazıyor ama `environment` geçirmiyor (RPC imzası değişimi gerekir).
   `index.ts` dalları (INITIAL_PURCHASE/UNCANCELLATION/EXPIRATION) Deno test ile
   kapsanmıyor — `Deno.serve` içinde, import edilemiyor.
+
+### R-B-0g — INITIAL_PURCHASE `subscriptions`'a UPDATE yapıyor; sandbox satırı PRODUCTION etiketlenebilir (9 Eki 2026)
+
+- **Sorun:** INITIAL_PURCHASE dalı `subscriptions`'a UPDATE yapıyor. Satır yoksa istemcinin
+  `upsertSubscription`'ı satırı kolon DEFAULT'u `'PRODUCTION'` ile yaratır → webhook önce
+  gelirse sandbox satırı PRODUCTION etiketlenir (webhook'un yazdığı `environment` yalnız
+  mevcut satırı günceller; 0 satır `SUBSCRIPTION_ROW_NOT_FOUND` uyarısıyla geçilir).
+- **Öneri:** INITIAL_PURCHASE da `applyEntitlement` (upsert) kullansın. Bu, `environment`
+  değerini her zaman olaydan yazar; satır yoksa yaratır.
+- **Not:** `applyEntitlement` TEKNIK_BORC'ta "INITIAL_PURCHASE bu fonksiyonu kullanmaz"
+  diye kayıtlı (`rcTransfer.ts`); davranış farkları (eşleme önce, 0 satır uyarısı yok)
+  ayrı sprintte değerlendirilmeli.
