@@ -17,7 +17,8 @@ import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import { ensureAuthSession } from './authSession';
-import { cacheGauntlet, readCachedGauntlet, type GauntletSource } from './gauntletCache';
+import { cacheGauntlet, readCachedGauntlet } from './gauntletCache';
+import type { GauntletSource } from './gauntletCacheRules';
 import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { logger } from '@/utils/logger';
 import { classifyGenerateError } from './previousCycleRules';
@@ -34,6 +35,15 @@ import {
 } from '@/types/gauntlet';
 
 // ─── Yanıt tipleri ───────────────────────────────────────────────────────────
+
+/**
+ * `generate-gauntlet` yanıtı = kilitli `DailyGauntlet` + EKLEMELİ
+ * `next_cycle_at` (F1: bir sonraki yerel 18:00, ISO 8601 UTC). Kilitli tipe
+ * DOKUNULMAZ; alan burada, bu dosyada tanımlıdır. Opsiyonel: F1 öncesi
+ * yazılmış önbellek kayıtlarında yok.
+ */
+export type CycleGauntlet = DailyGauntlet & { next_cycle_at?: string };
+
 
 export type NextStep = 'round2' | 'round3' | 'champion' | 'refresh' | 'exhausted';
 
@@ -286,7 +296,7 @@ export interface GauntletRequestOptions {
 export async function getTodayGauntlet(
   context: GauntletContext = NEUTRAL_CONTEXT,
   options: GauntletRequestOptions = {},
-): Promise<DailyGauntlet> {
+): Promise<CycleGauntlet> {
   await ensureAuthSession();
 
   const startedAt = performance.now();
@@ -338,7 +348,7 @@ export async function getTodayGauntlet(
   }
 
   recordTiming('generate-gauntlet', startedAt, 'ok', { response });
-  const gauntlet = data as DailyGauntlet;
+  const gauntlet = data as CycleGauntlet;
 
   // K-42: başarılı yanıt diske yazılır. `await` EDİLMEZ — cache yazımı
   // kullanıcının ekranını bekletmez; hata durumu modülün kendi içinde
@@ -380,8 +390,8 @@ async function cacheOwnerId(): Promise<string | null> {
  * Ağ yolu başarılıysa davranış BİREBİR aynıdır — yalnız `source: 'network'`
  * etiketi eklenir. Başarısızsa iki katmanlı yerel geri düşüş devreye girer:
  *
- *   1. Bugünün tarihiyle cache → `cache_today`
- *   2. En son yazılmış herhangi bir gün → `cache_stale`
+ *   1. Son kopya, `next_cycle_at` hâlâ gelecekte → `cache_today`
+ *   2. Geçiş anı geçmiş ya da alan yok → `cache_stale`
  *   3. Hiçbiri yok → hata YENİDEN FIRLATILIR, çağıran mevcut hata ekranına düşer
  *
  * ── Hangi hata cache'e düşürür ─────────────────────────────────────────────
@@ -397,7 +407,7 @@ async function cacheOwnerId(): Promise<string | null> {
 export async function getTodayGauntletWithFallback(
   context: GauntletContext = NEUTRAL_CONTEXT,
   options: GauntletRequestOptions = {},
-): Promise<{ gauntlet: DailyGauntlet; source: GauntletSource; cachedDate?: string }> {
+): Promise<{ gauntlet: CycleGauntlet; source: GauntletSource; cachedDate?: string }> {
   try {
     const gauntlet = await getTodayGauntlet(context, options);
     return { gauntlet, source: 'network' };
@@ -687,7 +697,8 @@ export async function getArchiveStatus(): Promise<ArchiveStatus> {
 
   const startedAt = performance.now();
   const { data, error, response } = await supabase.functions.invoke('get-archive-status', {
-    body: {},
+    // F1: sunucu "bugün"ü cycle tarihinden sayar; tz yoksa users.timezone'a düşer.
+    body: { timezone: deviceTimeZone() },
     region: GAUNTLET_EDGE_REGION,
   });
 

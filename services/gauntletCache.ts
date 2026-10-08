@@ -18,18 +18,21 @@
  * ayrı bir İŞARETÇİ anahtarında saklanır; offline okuma onu kullanır.
  *
  * ── Tarih ──────────────────────────────────────────────────────────────────
- * Yazarken `DailyGauntlet.date` (SUNUCU günü, M2'de user-tz'ye bağlı) anahtara
- * girer. Okurken cihazın yerel tarihi ile karşılaştırılır. İkisi gece yarısı
- * sınırında ayrışabilir; ayrıştığında kayıt "bugünün değil" sayılır ve 2.
- * katmana düşer. Bilinçli olarak İYİMSER DEĞİL: yanlışlıkla "bugün" demektense
- * kullanıcıya "bu bugünün verisi değil" demek tercih edilir.
+ * Yazarken `DailyGauntlet.date` (SUNUCUNUN cycle tarihi) anahtara girer.
+ * "Bu kopya mevcut cycle'ın mı" kararı cihaz tarihine DEĞİL, kopyanın
+ * taşıdığı `next_cycle_at`'e bakar (`gauntletCacheRules.cacheSourceFor`):
+ * geçiş anı geçmişse ya da alan yoksa kopya "bugünün değil" sayılır. Bilinçli
+ * olarak İYİMSER DEĞİL.
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { logger } from '@/utils/logger';
 
-import type { DailyGauntlet } from '@/types/gauntlet';
+import { cacheSourceFor, type GauntletSource } from './gauntletCacheRules';
+import type { CycleGauntlet } from './gauntletService';
+
+export type { GauntletSource };
 
 // ─── Anahtarlar ──────────────────────────────────────────────────────────────
 
@@ -47,12 +50,9 @@ function cacheKey(userId: string, date: string): string {
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
-/** Yanıtın nereden geldiği. `network` dışındakiler yerel kopyadır. */
-export type GauntletSource = 'network' | 'cache_today' | 'cache_stale';
-
 /** Diskteki kayıt şekli. `gauntlet` sunucudan geldiği gibi saklanır. */
 interface CacheEntry {
-  gauntlet: DailyGauntlet;
+  gauntlet: CycleGauntlet;
   /** Sunucunun bildirdiği gün (`DailyGauntlet.date`). */
   date: string;
   /** Yazılma anı (ISO 8601) — hangi kaydın daha yeni olduğunu belirler. */
@@ -66,25 +66,13 @@ interface PointerEntry {
 
 /** Okuma sonucu. Çağıran `source`'a bakarak UI kararını verir. */
 export interface CachedGauntlet {
-  gauntlet: DailyGauntlet;
+  gauntlet: CycleGauntlet;
   source: 'cache_today' | 'cache_stale';
   /** Kaydın ait olduğu gün — `cache_stale` durumunda kullanıcıya gösterilir. */
   date: string;
 }
 
 // ─── Yardımcılar ─────────────────────────────────────────────────────────────
-
-/**
- * Cihazın yerel tarihi (YYYY-MM-DD).
- * `toISOString()` KULLANILMAZ — o UTC'ye çevirir ve saat farkı olan cihazlarda
- * günü kaydırır.
- */
-export function localDateString(now: Date = new Date()): string {
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 async function readPointer(): Promise<PointerEntry | null> {
   const raw = await AsyncStorage.getItem(POINTER_KEY);
@@ -104,7 +92,7 @@ async function readPointer(): Promise<PointerEntry | null> {
  */
 export async function cacheGauntlet(
   userId: string,
-  gauntlet: DailyGauntlet,
+  gauntlet: CycleGauntlet,
 ): Promise<void> {
   try {
     const entry: CacheEntry = {
@@ -130,10 +118,10 @@ export async function cacheGauntlet(
 // ─── Okuma ───────────────────────────────────────────────────────────────────
 
 /**
- * İki katmanlı okuma (K-42 Parça 2):
- *   1. Bugünün tarihiyle kayıt varsa → `cache_today`
- *   2. Yoksa en son yazılan HERHANGİ bir tarih → `cache_stale`
- *   3. Hiçbiri yoksa → `null` (çağıran mevcut hata ekranına düşer)
+ * Son yazılan kaydı okur (işaretçi). Kaynak `next_cycle_at`'e göre etiketlenir:
+ *   1. Geçiş anı gelecekte → `cache_today`
+ *   2. Geçmiş ya da alan yok → `cache_stale`
+ *   3. Kayıt yoksa → `null` (çağıran mevcut hata ekranına düşer)
  *
  * @param userId Biliniyorsa geçilir; `null` ise işaretçideki kimlik kullanılır
  *               (offline yol — kimlik sorgusu ağ ister).
@@ -145,7 +133,7 @@ export async function readCachedGauntlet(
     const pointer = await readPointer();
     const effectiveUserId = userId ?? pointer?.userId ?? null;
 
-    if (!effectiveUserId) {
+    if (!effectiveUserId || !pointer) {
       // Ne kimlik var ne işaretçi — hiç başarılı yanıt alınmamış demektir.
       return null;
     }
@@ -153,32 +141,20 @@ export async function readCachedGauntlet(
     // Kimlik biliniyor ve işaretçi BAŞKA kullanıcıyı gösteriyorsa, o kaydı
     // gösterme. Cihaz el değiştirmiş veya kimlik sıfırlanmış olabilir
     // (bkz. utils/identityReset.ts) — başkasının gauntlet'i sızmamalı.
-    if (userId && pointer && pointer.userId !== userId) {
+    if (userId && pointer.userId !== userId) {
       logger.warn('[gauntletCache] İşaretçi başka kullanıcıya ait, cache atlandı');
       return null;
     }
 
-    // ── Katman 1: bugün ──────────────────────────────────────────────────
-    const today = localDateString();
-    const todayRaw = await AsyncStorage.getItem(cacheKey(effectiveUserId, today));
-    if (todayRaw) {
-      const entry = JSON.parse(todayRaw) as CacheEntry;
-      return { gauntlet: entry.gauntlet, source: 'cache_today', date: entry.date };
-    }
+    const raw = await AsyncStorage.getItem(cacheKey(pointer.userId, pointer.date));
+    if (!raw) return null;
 
-    // ── Katman 2: en son yazılan kayıt ───────────────────────────────────
-    if (!pointer) return null;
-
-    const lastRaw = await AsyncStorage.getItem(cacheKey(pointer.userId, pointer.date));
-    if (!lastRaw) return null;
-
-    const entry = JSON.parse(lastRaw) as CacheEntry;
-
-    // İşaretçi bugünü gösteriyorsa katman 1 zaten yakalardı; buraya düşmesi
-    // sunucu günü ile cihaz günü ayrıştı demektir. Yine de "bugünün değil"
-    // olarak işaretlenir — iyimser varsayım YAPILMAZ.
-    const source = entry.date === today ? 'cache_today' : 'cache_stale';
-    return { gauntlet: entry.gauntlet, source, date: entry.date };
+    const entry = JSON.parse(raw) as CacheEntry;
+    return {
+      gauntlet: entry.gauntlet,
+      source: cacheSourceFor(entry.gauntlet.next_cycle_at, new Date()),
+      date: entry.date,
+    };
   } catch (err) {
     logger.error(
       '[gauntletCache] Cache okuması başarısız:', err,
