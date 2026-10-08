@@ -1,12 +1,15 @@
 /**
  * GauntletShell — günlük gauntlet ritüelinin durum makinesi. C.2-2.
  *
- * BEŞ durum (CTO onayı 14.08.2026 — dört değil):
- *   before_18       → PRODUCT_OS §3.6: gauntlet ÇAĞRILMAZ, bekleyiş metni
+ * DÖRT durum (F2: `before_18` kalktı — Home bekleme göstermez):
  *   bootstrapping   → yükleme + 401 penceresi, graphite iskelet
  *   ready           → Tur 1 (progress yok ya da completedRounds === 0)
  *   in_progress     → resume (completedRounds > 0)
- *   completed_today → champion (ChampionReveal) ya da exhausted (§15.3)
+ *   completed_today → mevcut cycle'da tamamlandı: champion (ChampionReveal) ya da exhausted (§15.3)
+ *
+ * Cycle sınırı yerel 18:00; cycle tarihine ve geçiş anına SUNUCU karar verir
+ * (`gauntlet.date`, `next_cycle_at`). İstemci yerel saatten cycle tarihi
+ * HESAPLAMAZ; yalnız `next_cycle_at` geçtiyse sunucuya yeniden sorar.
  *
  * İstemci progress TÜRETMEZ — C.2-0 deriveProgress tek gerçek kaynak; bu
  * bileşen yalnızca backend'in dediğini gösterir. Kimlik `ensureAppUser()`
@@ -16,8 +19,8 @@
  * Ret akışı yalnızca Seviye 1 ("İkisi de değil", tek buton, her rette aynı)
  * + "Boşver, yarın". Seviye 2/3 dalları C.3 / Faz D.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
@@ -45,19 +48,10 @@ import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
 import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
-import { SpotlightTeaser } from '@/components/gauntlet/SpotlightTeaser';
-import { isTeaserSlotActive, isTeaserVisible } from '@/components/gauntlet/SpotlightTeaser/teaserRules';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { ROUND_INDICATOR_HEIGHT } from '@/components/gauntlet/RoundIndicator/styles';
-import { UnlockCountdown } from '@/components/gauntlet/UnlockCountdown';
-import {
-  WaitingChampionCard,
-  WaitingCurtain,
-  useLastChampion,
-} from '@/components/gauntlet/WaitingChampion';
-import { WaitingView } from '@/components/gauntlet/WaitingView';
 import {
   BONUS_CARD_ENTRY,
   CHAMPION_HAPTIC_DELAY,
@@ -68,33 +62,23 @@ import { radius, size, space, type } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
 import { isGauntletContextBarEnabled, isWatchedOtherEnabled } from '@/services/appConfigFlags';
-import { getEnabledGames } from '@/services/gameApi';
 import { enqueuePendingChoice, flushPendingChoice } from '@/services/gauntletOfflineQueue';
 import {
   GauntletAuthPendingError,
   GauntletFetchError,
-  PreviousCycleRejectedError,
-  getArchiveStatus,
   getTodayGauntletWithFallback,
   submitChoice,
   submitContextCorrection,
   submitWatchFeedback,
   type ChoiceResult,
+  type CycleGauntlet,
 } from '@/services/gauntletService';
 import { subscribeToReconnect } from '@/services/networkStatus';
-import { decidePreviousCycleProbeNow, markPreviousCycle } from '@/services/previousCycle';
-import { isE2ETestMode } from '@/utils/e2eTestMode';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
-import {
-  getPermissionState,
-  markNotificationPermissionAsked,
-  registerForPushNotifications,
-} from '@/services/pushNotifications';
 import { supabase } from '@/services/supabase';
 import type {
   ChoiceSubmission,
-  DailyGauntlet,
   GauntletContext,
   GauntletFilm,
   OklchColor,
@@ -110,22 +94,11 @@ import {
   hapticSuccess,
 } from '@/utils/haptics';
 
-import {
-  gauntletCycleProps,
-  previousLoadOutcome,
-  previousOfflineOutcome,
-  pulseAction,
-  requestOptionsFor,
-  type CycleMode,
-} from './cycleRules';
+import { canRollOver, isNewCycle, shouldRefetch } from './cycleRules';
 import { contentTopFor, headerGapFor, styles } from './styles';
-import { UNLOCK_HOUR, formatUnlockTime, nextUnlockAfter } from './unlockClock';
 import { useChampionAsk } from './useChampionAsk';
 
 // ─── Ürün sabitleri ──────────────────────────────────────────────────────────
-//
-// 18:00 kapısı (`UNLOCK_HOUR`) ve saf saat kuralı `./unlockClock.ts`'te —
-// Deno testli, istemcide TEK tanım (V-1 D9).
 
 /**
  * 401 retry politikası (CTO 🔴2, 14.08.2026): maks 5 deneme; deneme k
@@ -136,38 +109,14 @@ import { useChampionAsk } from './useChampionAsk';
 const MAX_AUTH_ATTEMPTS = 5;
 const AUTH_RETRY_BACKOFF_MS = [300, 600, 1200, 2400, 4800] as const;
 
-/** before_18 kapısı ve gün dönümü (CTO 🟠3) aynı dakikalık nabızla izlenir. */
+/** Cycle geçişi dakikalık nabızla izlenir (`next_cycle_at` geçti mi). */
 const CLOCK_TICK_MS = 60_000;
 
-function isUnlockedNow(): boolean {
-  // CTO kararı 14.08.2026: geliştirmede kapı açık — 14:00'te ekran
-  // görülebilmeli. Production build'de bu dal ölü koddur.
-  if (__DEV__) return true;
-  // K-42 Maestro iOS override (DUR NOKTASI onaylı): yalnız `preview-e2e`
-  // build'inde (tek doğruluk kaynağı: utils/e2eTestMode.ts) saat kapısı
-  // atlanır — release-mode Maestro flow'ları 18:00 öncesi de koşabilsin.
-  // Diğer TÜM build'lerde (production dahil) bu dal ölü koddur.
-  if (isE2ETestMode()) return true;
-  return new Date().getHours() >= UNLOCK_HOUR;
-}
-
 /**
- * Bekleyiş ekranı geri sayımının hedefi: bir sonraki kapı anı, yerel saat
- * (V-1 Tur 6). `isUnlockedNow()` ile AYNI bypass — geliştirmede ve
- * preview-e2e'de kapı hep açık, hedef `now`: sayaç anında biter ve nabız
- * yolu yüklemeyi açar.
+ * Aynı cycle'a düşen (cihaz saati ileri / sunucu henüz dönmemiş) yeniden
+ * sorgular arasındaki asgari aralık — her nabızda sunucuya gidilmesin.
  */
-function getNextUnlockAt(now: Date = new Date()): Date {
-  if (__DEV__) return now;
-  if (isE2ETestMode()) return now;
-  return nextUnlockAfter(now);
-}
-
-/** Gün dönümü YEREL gece yarısı (PRODUCT_OS §3.6) — UTC değil. */
-function localDateKey(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
+const MIN_REFETCH_INTERVAL_MS = 30_000;
 
 /**
  * ⚠️ Bu kural generate-gauntlet/deriveProgress'in POZİSYONEL mantığının
@@ -227,12 +176,12 @@ function orderPair(a: GauntletFilm, b: GauntletFilm): [GauntletFilm, GauntletFil
 
 // ─── Tipler ──────────────────────────────────────────────────────────────────
 
-type ShellState = 'before_18' | 'bootstrapping' | 'ready' | 'in_progress' | 'completed_today';
+type ShellState = 'bootstrapping' | 'ready' | 'in_progress' | 'completed_today';
 
 /**
  * Durum geçişini tetikleyen kaynak — YALNIZ saha teşhisi için
  * (`gauntlet.state` breadcrumb'ı). Hiçbir dal bu değere göre karar vermez.
- *   mount / auth / connectivity / pulse → açılış ve yeniden yükleme kaynakları
+ *   mount / auth / connectivity / pulse / app_state → açılış ve yeniden yükleme kaynakları
  *   retry        → 401 backoff'unun otomatik denemesi
  *   retry_button → kullanıcının "Tekrar dene"si
  *   submit401    → oyun ortasında 401, bootstrap'a dönüş
@@ -243,6 +192,7 @@ type StateTrigger =
   | 'auth'
   | 'connectivity'
   | 'pulse'
+  | 'app_state'
   | 'retry'
   | 'retry_button'
   | 'submit401'
@@ -279,7 +229,7 @@ export function GauntletShell(props: GauntletShellProps): React.JSX.Element {
 }
 
 function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Element {
-  const { t, region, language } = useLanguage();
+  const { t, region } = useLanguage();
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   // V-2 Tur C: tur göstergesi → poster arası boşluk ekran yüksekliğine bağlı.
@@ -287,12 +237,12 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   /** V-2 Tur B: tab bar + home indicator — TÜM dalların alt payı buradan. */
   const tabBarInset = useTabBarInset();
 
-  const [shellState, setShellState] = useState<ShellState>(
-    isUnlockedNow() ? 'bootstrapping' : 'before_18',
-  );
+  const [shellState, setShellState] = useState<ShellState>('bootstrapping');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [gauntlet, setGauntlet] = useState<DailyGauntlet | null>(null);
+  const [gauntlet, setGauntlet] = useState<CycleGauntlet | null>(null);
+  /** Sunucunun bildirdiği sonraki cycle geçişi (ISO UTC). Yoksa geçiş izlenmez. */
+  const [nextCycleAt, setNextCycleAt] = useState<string | undefined>(undefined);
   const [round, setRound] = useState<1 | 2 | 3>(1);
   const [pair, setPair] = useState<Pair | null>(null);
   const [tileStates, setTileStates] = useState<TileStates>({ left: 'idle', right: 'idle' });
@@ -411,7 +361,11 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const loadingRef = useRef(false);
   const authAttemptsRef = useRef(0);
   const pairShownAtRef = useRef(Date.now());
-  const completedDateKeyRef = useRef<string | null>(null);
+  /** Nabız / AppState callback'leri için son değerler (kapanış bayatlamasın). */
+  const nextCycleAtRef = useRef<string | undefined>(undefined);
+  const gauntletDateRef = useRef<string | null>(null);
+  const busyRef = useRef(false);
+  const lastRefetchAtRef = useRef(0);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hapticTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -428,21 +382,12 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
    */
   const recordedStateRef = useRef<ShellState | null>(null);
   /**
-   * E-21: istenen döngü. `previous` yalnız mount'taki önceki döngü sorgusuyla
-   * girilir; yalnız nabız (18:00 / gece yarısı) ve ret onu `current`'a
-   * döndürür. `load` modu TETİKLEYİCİDEN DEĞİL buradan okur — önceki döngü
-   * oyunu sırasındaki reconnect / 401 / retry sabah bugünün satırını üretmesin.
-   */
-  const cycleModeRef = useRef<CycleMode>('current');
-  /**
    * Son `submit` çağrısı seçimi K-42 kuyruğuna mı aldı? YALNIZ dokunma
    * onayının geri alınıp alınmayacağını belirler (CTO kararı 29.09.2026:
    * donukken vurgu kalır — kullanıcı hangi seçimin beklediğini görür).
    * Kuyruk davranışı bu değere bakmaz.
    */
   const choiceQueuedRef = useRef(false);
-  /** Analytics `cycle` etiketi için önceki döngü gauntlet'inin kimliği (3i). */
-  const previousGauntletIdRef = useRef<string | null>(null);
 
   /**
    * B5 saha teşhisi: her ShellState geçişi bir `gauntlet.state` breadcrumb'ı
@@ -508,13 +453,15 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     setChampion(null);
     setPair(null);
     setSeenMode(false);
-    completedDateKeyRef.current = localDateKey();
     transitionTo('completed_today', trigger);
   }, [transitionTo]);
 
   const applyGauntlet = useCallback(
-    (g: DailyGauntlet, trigger: StateTrigger) => {
+    (g: CycleGauntlet, trigger: StateTrigger) => {
       setGauntlet(g);
+      gauntletDateRef.current = g.date;
+      nextCycleAtRef.current = g.next_cycle_at;
+      setNextCycleAt(g.next_cycle_at);
       setRefreshesRemaining(g.refreshesRemaining);
       setActionError(null);
       // E-19: yeni gauntlet = yeni gün olabilir. Editoryal kilit gauntlet'e
@@ -539,7 +486,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         }
         setChampion(p.champion);
         setAnimateReveal(false); // resume: kara boşluk yalnız canlı finalde
-        completedDateKeyRef.current = localDateKey();
         transitionTo('completed_today', trigger);
         return;
       }
@@ -591,7 +537,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
           context_companion: g.context.companion,
           context_duration: g.context.duration,
           context_energy: g.context.energy,
-          ...gauntletCycleProps(g.gauntletId, previousGauntletIdRef.current),
         });
       }
     },
@@ -599,21 +544,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   );
 
   // ── Yükleme + 401 retry (CTO 🔴2) ──────────────────────────────────────────
-
-  /**
-   * E-21: önceki döngü bu kullanıcı için kapandı (sunucu reddetti ya da
-   * yeniden açılışta oyun zaten bitmiş) → bekleyiş ekranı. Hata DEĞİL; sunucu
-   * hatası (5xx/400) bu yoldan geçmez, `loadError`'a düşer (3g).
-   */
-  const closePreviousCycle = useCallback((trigger: StateTrigger) => {
-    cycleModeRef.current = 'current';
-    void markPreviousCycle('closed');
-    setLoadError(null);
-    setGauntlet(null);
-    setChampion(null);
-    setPair(null);
-    transitionTo('before_18', trigger);
-  }, [transitionTo]);
 
   const load = useCallback(async (trigger: StateTrigger): Promise<void> => {
     if (loadingRef.current) {
@@ -630,52 +560,18 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     loadingRef.current = true;
     setLoadError(null);
     try {
-      // K-42: ağ → bugünün yerel kopyası → en son yerel kopya. Kaynak
+      // K-42: ağ → mevcut cycle'ın yerel kopyası → en son yerel kopya. Kaynak
       // `source` ile gelir; `progress` HER DURUMDA sunucunun türettiği
       // değerdir — istemci turu hâlâ SAYMAZ, yalnız kopyayı gösterir.
-      const mode = cycleModeRef.current;
-      const { gauntlet: g, source } = await getTodayGauntletWithFallback(
-        undefined,
-        requestOptionsFor(mode),
-      );
+      const { gauntlet: g, source } = await getTodayGauntletWithFallback();
       if (!mountedRef.current) return;
       authAttemptsRef.current = 0;
-      if (mode === 'previous') {
-        if (previousLoadOutcome(g.progress?.status, shellStateRef.current) === 'close') {
-          closePreviousCycle(trigger);
-          return;
-        }
-        previousGauntletIdRef.current = g.gauntletId;
-        void markPreviousCycle('previous');
-      }
-      // `cache_today` gösterge ÜRETMEZ: yerel kopya ama bugünün verisi,
+      // `cache_today` gösterge ÜRETMEZ: yerel kopya ama mevcut cycle'ın verisi,
       // kullanıcı için fark yok — görsel gürültü eklemek yanlış olurdu.
       setIsStale(source === 'cache_stale');
       applyGauntlet(g, trigger);
     } catch (err) {
       if (!mountedRef.current) return;
-      if (err instanceof PreviousCycleRejectedError) {
-        closePreviousCycle(trigger);
-        return;
-      }
-      if (
-        err instanceof GauntletFetchError &&
-        cycleModeRef.current === 'previous' &&
-        previousOfflineOutcome(shellStateRef.current) === 'before_18'
-      ) {
-        // CTO SARI-4: açılışta ağ yok → bekleyiş ekranı, hata ekranı değil.
-        // İz YAZILMAZ (bir sonraki açılış yeniden sorar); GAUNTLET_OFFLINE
-        // uyarısı servis katmanında Sentry'ye yazıldı.
-        Sentry.addBreadcrumb({
-          category: 'gauntlet.cycle',
-          message: 'previous probe offline -> before_18',
-          level: 'warning',
-          data: { trigger },
-        });
-        cycleModeRef.current = 'current';
-        transitionTo('before_18', trigger);
-        return;
-      }
       if (err instanceof GauntletAuthPendingError) {
         const attempt = authAttemptsRef.current + 1;
         authAttemptsRef.current = attempt;
@@ -698,7 +594,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     } finally {
       loadingRef.current = false;
     }
-  }, [applyGauntlet, showLoadError, closePreviousCycle, transitionTo]);
+  }, [applyGauntlet, showLoadError]);
 
   /**
    * K-42: bekleyen seçim varsa ÖNCE onu gönder, sonra yükle.
@@ -741,24 +637,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     void flushThenLoad('retry_button');
   }, [flushThenLoad]);
 
-  /**
-   * E-21: 18:00 öncesi açılışta önceki döngü sorulmalı mı? Mevcut kullanıcı
-   * (cache ya da `closed` iz'i var) için AĞ ÇAĞRISI YOK — akış eskisi.
-   * Sorulacaksa mevcut bootstrapping makinesi kullanılır: 401 penceresi,
-   * `loadError` + "Tekrar dene" ve K-42 kuyruk flush'ı aynen geçerli.
-   */
-  const probePreviousCycle = useCallback(async (): Promise<void> => {
-    const decision = await decidePreviousCycleProbeNow(isUnlockedNow());
-    if (!mountedRef.current || !decision.probe) return;
-    // Karar beklenirken nabız kapıyı açmış olabilir — yalnız hâlâ before_18 ise.
-    if (shellStateRef.current !== 'before_18') return;
-    cycleModeRef.current = 'previous';
-    authAttemptsRef.current = 0;
-    transitionTo('bootstrapping', 'mount');
-    await flushThenLoad('mount');
-  }, [flushThenLoad, transitionTo]);
-
-  // Mount: yalnız kapı açıksa çağır — before_18'de AĞ ÇAĞRISI YOK (§3.6).
+  // Mount: her açılış sunucuya sorar — cycle tarihini sunucu belirler.
   useEffect(() => {
     mountedRef.current = true;
     // B5: başlangıç durumu useState'ten gelir, setter'dan geçmez — ilk
@@ -770,16 +649,8 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       data: { from: null, to: shellStateRef.current, trigger: 'mount' },
     });
     recordedStateRef.current = shellStateRef.current;
-    if (shellStateRef.current === 'bootstrapping') {
-      // K-42 tetikleyici (a): açılışta bekleyen seçim varsa önce o gider.
-      void flushThenLoad('mount');
-    } else if (shellStateRef.current === 'before_18') {
-      probePreviousCycle().catch((err: unknown) => {
-        Sentry.captureException(err, {
-          tags: { component: 'GauntletShell', flow: 'previousCycleProbe' },
-        });
-      });
-    }
+    // K-42 tetikleyici (a): açılışta bekleyen seçim varsa önce o gider.
+    void flushThenLoad('mount');
     return () => {
       mountedRef.current = false;
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
@@ -797,7 +668,7 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   // auth kimliği oturum açarsa (hesap silme → anonim kurtarma, ölü JWT
   // kurtarması, başka hesaba giriş) ekran eski kullanıcının durumunda
   // KALMAZ — yeni kullanıcıya açılışta ne gösterilecekse o gösterilir:
-  // 18:00 öncesi E-21 önceki döngü sorgusu, sonrası bugünün gauntlet'i.
+  // mevcut cycle'ın gauntlet'i (sunucu belirler).
   // 30 Eyl TestFlight: hesap silindikten sonra açılış kararı ölü kimlikle
   // verilmiş ("mevcut kullanıcı"), yeni anonim kullanıcı 18:00'i beklemişti.
   //
@@ -808,32 +679,20 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const lastAuthIdRef = useRef<string | null>(null);
 
   const restartForNewIdentity = useCallback(() => {
-    cycleModeRef.current = 'current';
-    completedDateKeyRef.current = null;
     authAttemptsRef.current = 0;
     if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    gauntletDateRef.current = null;
+    nextCycleAtRef.current = undefined;
+    setNextCycleAt(undefined);
     setGauntlet(null);
     setChampion(null);
     setPair(null);
     setSeenMode(false);
     setAnimateReveal(false);
-    setIdentityEpoch((n) => n + 1);
-
-    if (isUnlockedNow()) {
-      transitionTo('bootstrapping', 'auth');
-      void flushThenLoad('auth');
-      return;
-    }
-    transitionTo('before_18', 'auth');
-    // probePreviousCycle `shellStateRef`'e bakar; ref render'da güncellenir,
-    // burada aynı değer elle yazılır ki karar bayat durumla verilmesin.
-    shellStateRef.current = 'before_18';
-    probePreviousCycle().catch((err: unknown) => {
-      Sentry.captureException(err, {
-        tags: { component: 'GauntletShell', flow: 'previousCycleProbe', trigger: 'identity_change' },
-      });
-    });
-  }, [flushThenLoad, probePreviousCycle, transitionTo]);
+    setPendingFeedbackVisible(false);
+    transitionTo('bootstrapping', 'auth');
+    void flushThenLoad('auth');
+  }, [flushThenLoad, transitionTo]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -868,156 +727,112 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   // DEĞİL — açılış flush'ı yukarıdaki mount effect'inin işi.
   useEffect(() => {
     return subscribeToReconnect(() => {
-      // P0-1: 18:00 kapısı. before_18'de AĞ ÇAĞRISI YOK (§3.6) — kapıyı
-      // yalnız dakikalık nabız açar. `=== 'bootstrapping'` değil: in_progress
-      // sırasında bekleyen seçimin flush'ı (K-42) korunmalı.
-      if (shellStateRef.current === 'before_18') return;
+      // `=== 'bootstrapping'` değil: in_progress sırasında bekleyen seçimin
+      // flush'ı (K-42) korunmalı.
       void flushThenLoad('connectivity');
     });
   }, [flushThenLoad]);
 
   /**
-   * Nabız gövdesi. Dakikalık zamanlayıcı VE bekleyiş sayacının sıfırı
-   * (V-1 Tur 6) aynı yolu çağırır — ayrı bir kapı mekanizması yok. Sayaç
-   * sıfırda bunu hemen çağırır, kullanıcı bir sonraki dakika tikini beklemez.
+   * Cycle geçiş kontrolü. SUNUCU karar verir: `next_cycle_at` geçtiyse
+   * `generate-gauntlet`'e yeniden sorulur; dönen `date` mevcutla AYNIysa
+   * HİÇBİR ŞEY yapılmaz (remount yok, titreme yok, event yok). Farklıysa
+   * gösterilen her şey sıfırlanır ve yanıt `applyGauntlet`'ten geçer — böylece
+   * "dünün sorusu" (pendingWatchFeedback) → yeni gauntlet sırası korunur.
+   *
+   * Tetikleyiciler: (a) champion sayacının sıfırı, (b) AppState 'active',
+   * (c) dakikalık nabız. Devam eden tur ve uçuştaki seçim kesilmez
+   * (`canRollOver`); tur bitince bir sonraki kontrol geçişi uygular.
    */
-  const runClockPulse = useCallback(() => {
-    // Karar saf kuralda (cycleRules.pulseAction): 18:00 kapısı, yerel gece
-    // yarısı (§3.6 — dünün şampiyonu gösterilmez) ve E-21 "18:00 geçişi"
-    // (önceki döngü şampiyonu → bugünün gauntlet'i).
-    const action = pulseAction({
-      state: shellStateRef.current,
-      mode: cycleModeRef.current,
-      unlocked: isUnlockedNow(),
-      dateKeyChanged:
-        completedDateKeyRef.current !== null &&
-        completedDateKeyRef.current !== localDateKey(),
-    });
-    if (action === 'none') return;
-    // Nabzın açtığı her yükleme bugünün döngüsüdür.
-    cycleModeRef.current = 'current';
-    if (action === 'open_gate') {
-      transitionTo('bootstrapping', 'pulse');
-      authAttemptsRef.current = 0;
-      void load('pulse');
-      return;
-    }
-    completedDateKeyRef.current = null;
-    setGauntlet(null);
-    setChampion(null);
-    setPair(null);
-    setAnimateReveal(false);
-    if (action === 'reset_and_load') {
-      transitionTo('bootstrapping', 'pulse');
-      authAttemptsRef.current = 0;
-      void load('pulse');
-    } else {
-      transitionTo('before_18', 'pulse');
-    }
-  }, [load, transitionTo]);
+  const checkCycle = useCallback(async (trigger: StateTrigger): Promise<void> => {
+    if (!shouldRefetch(new Date(), nextCycleAtRef.current)) return;
+    const guard = () => canRollOver({ state: shellStateRef.current, busy: busyRef.current });
+    if (!guard() || loadingRef.current) return;
+    const startedAt = Date.now();
+    if (startedAt - lastRefetchAtRef.current < MIN_REFETCH_INTERVAL_MS) return;
+    lastRefetchAtRef.current = startedAt;
 
-  // Dakikalık nabız: 18:00 kapısı + gün dönümü (CTO 🟠3 — ayrı mekanizma yok).
-  useEffect(() => {
-    const id = setInterval(runClockPulse, CLOCK_TICK_MS);
-    return () => clearInterval(id);
-  }, [runClockPulse]);
-
-  /**
-   * Bekleyiş sayacının hedefi — yalnız `before_18`'e HER girişte yeniden
-   * hesaplanır (gece yarısı sıfırlaması, E-21 kapanışı dahil). Referans
-   * sabit kalır: sayaç her render'da yeniden kurulmaz.
-   */
-  const unlockAt = useMemo(
-    () => (shellState === 'before_18' ? getNextUnlockAt() : null),
-    [shellState],
-  );
-
-  /** V1-D7 revizyonu (30 Eyl 2026): bekleyişte son şampiyon — perde + kart. */
-  /** Kabuk açıkken kimlik değişimi sayacı — `restartForNewIdentity` artırır. */
-  const [identityEpoch, setIdentityEpoch] = useState(0);
-  const waitingChampion = useLastChampion(shellState === 'before_18', identityEpoch);
-
-  // PostHog: waiting_viewed — bekleyiş ekranına her giriş bir kez.
-  useEffect(() => {
-    if (!unlockAt) return;
-    posthogAnalytics.track('waiting_viewed', {
-      minutes_to_unlock: Math.max(0, Math.round((unlockAt.getTime() - Date.now()) / 60_000)),
-    });
-  }, [unlockAt]);
-
-  /**
-   * V-2 Tur E1 — bekleyiş ekranı bildirim CTA'sı (K-15 yerel 18:00).
-   * Koşul: OS izni `undetermined` VE kullanıcının ≥1 şampiyonu var.
-   * "≥1 şampiyon" kaynağı `get-archive-status` `completedCount` (CTO onayı:
-   * son 7 UTC gün — daha uzun ara vermiş kullanıcı CTA'yı görmez).
-   * Okuma hatasında CTA gizli kalır; `getArchiveStatus` hatayı kendisi
-   * Sentry'ye yazar, 401 penceresi burada breadcrumb bırakır.
-   */
-  const [waitingNotifyEligible, setWaitingNotifyEligible] = useState(false);
-  const [waitingNotifyBusy, setWaitingNotifyBusy] = useState(false);
-
-  useEffect(() => {
-    if (!unlockAt) {
-      setWaitingNotifyEligible(false);
-      return;
-    }
-    let cancelled = false;
-    void (async () => {
-      const permission = await getPermissionState();
-      if (permission !== 'undetermined') {
-        if (!cancelled) setWaitingNotifyEligible(false);
+    loadingRef.current = true;
+    try {
+      const { gauntlet: g, source } = await getTodayGauntletWithFallback();
+      if (!mountedRef.current) return;
+      if (source !== 'network') {
+        // Çevrimdışı: servis GAUNTLET_OFFLINE uyarısını yazdı; ekran olduğu
+        // gibi kalır, bağlantı gelince (ya da bir sonraki nabızda) yeniden sorulur.
+        Sentry.addBreadcrumb({
+          category: 'gauntlet.cycle',
+          message: 'cycle kontrolü çevrimdışı — ekran korunuyor',
+          level: 'warning',
+          data: { trigger, source },
+        });
         return;
       }
-      try {
-        const status = await getArchiveStatus();
-        if (!cancelled) setWaitingNotifyEligible(status.completedCount >= 1);
-      } catch (err) {
-        Sentry.addBreadcrumb({
-          category: 'gauntlet',
-          level: 'warning',
-          message: 'waiting notify CTA: archive status okunamadı — CTA gizli',
-          data: { error: err instanceof Error ? err.message : String(err) },
-        });
-        if (!cancelled) setWaitingNotifyEligible(false);
+      if (!isNewCycle(gauntletDateRef.current, g.date)) {
+        // Aynı cycle (cihaz saati sunucudan ileri olabilir). Yalnız izlenen
+        // geçiş anı tazelenir; değişmediyse state'e dokunulmaz.
+        if (g.next_cycle_at !== nextCycleAtRef.current) {
+          nextCycleAtRef.current = g.next_cycle_at;
+          setNextCycleAt(g.next_cycle_at);
+        }
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [unlockAt]);
-
-  const handleWaitingNotify = useCallback(async () => {
-    if (waitingNotifyBusy) return;
-    void hapticLight();
-    setWaitingNotifyBusy(true);
-    posthogAnalytics.track('waiting_notify_tapped', {
-      minutes_to_unlock: unlockAt
-        ? Math.max(0, Math.round((unlockAt.getTime() - Date.now()) / 60_000))
-        : null,
-    });
-
-    // OS diyaloğunu açar; kabulde yerel 18:00 hatırlatıcısını planlar
-    // (ensureDailyReminderScheduled) ve token'ı sunucuya yazar.
-    const granted = await registerForPushNotifications();
-    // Kabul de ret de "sorduk" sayılır — şampiyon sheet'i tekrar sormaz.
-    await markNotificationPermissionAsked();
-    posthogAnalytics.track('notification_prompt_answered', {
-      surface: 'waiting_cta',
-      granted,
-    });
-
-    if (!mountedRef.current) return;
-    setWaitingNotifyBusy(false);
-    setWaitingNotifyEligible(false);
-  }, [waitingNotifyBusy, unlockAt]);
-
-  // E-21: önceki döngü canlı oynanıp bitti (şampiyon ya da tükeniş) — reveal
-  // bu oturumda görünür, yeniden açılışta bekleyiş ekranı gelir.
-  useEffect(() => {
-    if (shellState === 'completed_today' && cycleModeRef.current === 'previous') {
-      void markPreviousCycle('closed');
+      if (!guard()) return; // fetch sürerken oyun başladı — sonraki kontrol
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.cycle',
+        message: `yeni cycle ${gauntletDateRef.current ?? 'none'} -> ${g.date}`,
+        level: 'info',
+        data: { trigger },
+      });
+      if (bonusEntryTimerRef.current) clearTimeout(bonusEntryTimerRef.current);
+      setChampion(null);
+      setPair(null);
+      setDefenderFilm(null);
+      setSeenMode(false);
+      setAnimateReveal(false);
+      setBonusCardMounted(false);
+      setRevealSettled(false);
+      setPendingFeedbackVisible(false);
+      setActionError(null);
+      setIsStale(false);
+      authAttemptsRef.current = 0;
+      applyGauntlet(g, trigger);
+    } catch (err) {
+      if (!mountedRef.current) return;
+      // Sentry servis katmanında yazıldı (GauntletFetchError uyarı, diğerleri
+      // exception); 401 bootstrap penceresidir. Ekran korunur, nabız yeniden dener.
+      Sentry.addBreadcrumb({
+        category: 'gauntlet.cycle',
+        message: 'cycle kontrolü başarısız — ekran korunuyor',
+        level: 'warning',
+        data: {
+          trigger,
+          error_type: err instanceof Error ? err.name : null,
+          error_message: err instanceof Error ? err.message.slice(0, 200) : null,
+        },
+      });
+    } finally {
+      loadingRef.current = false;
     }
-  }, [shellState]);
+  }, [applyGauntlet]);
+
+  // Seçim uçuşta / geçiş oynuyor / kuyrukta seçim var → cycle geçişi ertelenir.
+  useEffect(() => {
+    busyRef.current = submitting || transitioning || choiceFrozen;
+  }, [submitting, transitioning, choiceFrozen]);
+
+  // Dakikalık nabız: `next_cycle_at` geçti mi.
+  useEffect(() => {
+    const id = setInterval(() => void checkCycle('pulse'), CLOCK_TICK_MS);
+    return () => clearInterval(id);
+  }, [checkCycle]);
+
+  // Arka plandan dönüş: iOS arka planda zamanlayıcıyı durdurur; 18:00 geçmiş olabilir.
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') void checkCycle('app_state');
+    });
+    return () => sub.remove();
+  }, [checkCycle]);
 
   // ── Oyun eylemleri ─────────────────────────────────────────────────────────
 
@@ -1152,7 +967,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         context_companion: gauntlet.context.companion,
         context_duration: gauntlet.context.duration,
         context_energy: gauntlet.context.energy,
-        ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
       });
 
       // Braket zinciri (C.5): tur GERÇEKLEŞTİ — kazanan ve elenen belli.
@@ -1245,18 +1059,15 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
         setRevealSettled(false);
         setChampion(result.champion);
         setAnimateReveal(true); // canlı final: 720ms kara boşluk (§7.3)
-        completedDateKeyRef.current = localDateKey();
         transitionTo('completed_today', 'choice');
         posthogAnalytics.track('gauntlet_completed', {
           gauntlet_id: result.gauntletId,
           algorithm_version: result.algorithmVersion,
           champion_film_id: result.champion.id,
-          ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
         });
         posthogAnalytics.track('champion_revealed', {
           gauntlet_id: result.gauntletId,
           champion_film_id: result.champion.id,
-          ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
         });
 
         void hapticSuccess();
@@ -1312,7 +1123,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
       context_companion: gauntlet.context.companion,
       context_duration: gauntlet.context.duration,
       context_energy: gauntlet.context.energy,
-      ...gauntletCycleProps(result.gauntletId, previousGauntletIdRef.current),
     });
     applyRefreshResult(result, pair);
   }, [pair, gauntlet, submitting, transitioning, choiceFrozen, round, submit, applyRefreshResult]);
@@ -1446,41 +1256,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
   const spotlightCard = useSpotlightCardState(championActive);
   const spotlightUnavailable = spotlightCard.status === 'unavailable';
 
-  // ── Bekleyiş teaser'ı (P-5, K-62) ──────────────────────────────────────────
-  //
-  // Spotlight bayrağı: `games_enabled.games` (remoteConfig tek kaynağı, 5 dk
-  // TTL — taze ise ağ yok). Her before_18 girişinde lazy okunur (kural 5).
-  // `null` = okunamadı → teaser gizli (fail-closed); hata `remoteConfig`'te
-  // Sentry'ye yazıldı.
-  const [spotlightEnabled, setSpotlightEnabled] = useState<boolean | null>(null);
-  useEffect(() => {
-    if (shellState !== 'before_18') return;
-    let cancelled = false;
-    getEnabledGames()
-      .then((games) => {
-        if (!cancelled) setSpotlightEnabled(games === null ? null : games.includes('spotlight'));
-      })
-      .catch((err: unknown) => {
-        Sentry.captureException(err, {
-          tags: { component: 'GauntletShell', flow: 'spotlightTeaserFlag' },
-        });
-        if (!cancelled) setSpotlightEnabled(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [shellState]);
-
-  const teaserSlot = {
-    shellState,
-    pendingFeedbackShown: pendingFeedbackVisible && !!gauntlet?.pendingWatchFeedback,
-    spotlightEnabled,
-  };
-  // AYRI hook örneği: champion örneğinin durumu (ve `cardlessDwell` → ask)
-  // sabah okunan teaser durumuyla karışmasın. Yalnız teaser yeri varken ağa çıkar.
-  const teaserSpotlight = useSpotlightCardState(isTeaserSlotActive(teaserSlot));
-  const showTeaser = isTeaserVisible(teaserSlot, teaserSpotlight);
-
   const championAsk = useChampionAsk({
     active: championActive,
     bottomInset: tabBarInset,
@@ -1593,40 +1368,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     );
   }
 
-  if (shellState === 'before_18') {
-    // V-1 Tur 6: metin + geri sayım. Arşiv, Pro Mode ve keşif rotası YOK
-    // (K-46). V-2 Tur E1: koşullu bildirim CTA'sı. V1-D7 revizyonu
-    // (30 Eyl 2026): sayacın altında son şampiyon — dokunulamaz, rota yok;
-    // perdesi kökte (aşağıda), güvenli alanın dışına taşsın diye.
-    // P-5 (K-62): kilitli Spotlight karesi CTA ile son şampiyon arasında.
-    // Düzen (kaydırılabilir, dikeyde ortalı) `WaitingView`'de; ne gösterileceği
-    // ve her parçanın davranışı burada kurulur (slot).
-    return (
-      <WaitingView
-        unlockTimeLabel={formatUnlockTime(language)}
-        countdown={
-          unlockAt && <UnlockCountdown variant="inline" target={unlockAt} onElapsed={runClockPulse} />
-        }
-        notify={
-          waitingNotifyEligible
-            ? {
-                label: t('gauntlet.waitingNotifyCta', { time: formatUnlockTime(language) }),
-                onPress: () => void handleWaitingNotify(),
-                disabled: waitingNotifyBusy,
-              }
-            : undefined
-        }
-        teaser={
-          showTeaser &&
-          teaserSpotlight.status === 'ready' && (
-            <SpotlightTeaser backdropUrl={teaserSpotlight.backdropUrl} />
-          )
-        }
-        championSection={waitingChampion && <WaitingChampionCard champion={waitingChampion} />}
-      />
-    );
-  }
-
   if (shellState === 'bootstrapping') {
     if (loadError) {
       // §15.2: hata özür dilemez, gerçek mesaj + tekrar dene. Sessiz boş
@@ -1717,7 +1458,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
               date={gauntlet?.date}
               rounds={shareRounds}
               gauntletId={gauntlet?.gauntletId}
-              cycle={cycleModeRef.current}
               onRevealSettled={handleRevealSettled}
             />
 
@@ -1913,10 +1653,6 @@ function GauntletShellContent({ onDismiss }: GauntletShellProps): React.JSX.Elem
     <View style={styles.root}>
       {/* Sızma dolgusuz katmanda — ışık ekranın kenarına ulaşır (§5.1). */}
       <LightBleed dominantColor={bleedColor} />
-      {/* V1-D7 revizyonu: bekleyiş perdesi dolgusuz katmanda — ekran kenarına ulaşır. */}
-      {shellState === 'before_18' && waitingChampion?.posterUrl && (
-        <WaitingCurtain posterUrl={waitingChampion.posterUrl} />
-      )}
       <View
         style={[
           styles.insetLayer,

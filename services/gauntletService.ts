@@ -21,16 +21,12 @@ import { cacheGauntlet, readCachedGauntlet } from './gauntletCache';
 import type { GauntletSource } from './gauntletCacheRules';
 import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { logger } from '@/utils/logger';
-import { classifyGenerateError } from './previousCycleRules';
 
 import {
-  isPreviousCycleRejectCode,
   type ChoiceSubmission,
   type DailyGauntlet,
   type GauntletContext,
-  type GauntletCycle,
   type GauntletFilm,
-  type PreviousCycleRejectCode,
   type WatchFeedbackResponse,
 } from '@/types/gauntlet';
 
@@ -127,22 +123,6 @@ export class GauntletHttpError extends Error {
     super(message);
     this.name = 'GauntletHttpError';
     this.status = status;
-  }
-}
-
-/**
- * E-21: `cycle: 'previous'` isteği sunucuda açıkça reddedildi (409). Hata
- * DEĞİL, uygunluk cevabıdır — kullanıcı bekleyiş ekranını görür. Bu yüzden
- * Sentry'ye exception olarak YAZILMAZ; iz breadcrumb ile kalır. Diğer her
- * hata (5xx, 400, ağ) mevcut yollardan geçer ve görünür kalır (3g).
- */
-export class PreviousCycleRejectedError extends Error {
-  readonly code: PreviousCycleRejectCode;
-
-  constructor(code: PreviousCycleRejectCode, message: string) {
-    super(message);
-    this.name = 'PreviousCycleRejectedError';
-    this.code = code;
   }
 }
 
@@ -274,11 +254,6 @@ async function parseInvokeError(
   return { status: response.status, detail: `[${response.status}] ${detail}`, code };
 }
 
-export interface GauntletRequestOptions {
-  /** E-21: yalnız sıfır satırlı kullanıcı için, 18:00 öncesi. */
-  cycle?: GauntletCycle;
-}
-
 // ─── API ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -295,33 +270,19 @@ export interface GauntletRequestOptions {
  */
 export async function getTodayGauntlet(
   context: GauntletContext = NEUTRAL_CONTEXT,
-  options: GauntletRequestOptions = {},
 ): Promise<CycleGauntlet> {
   await ensureAuthSession();
 
   const startedAt = performance.now();
   const { data, error, response } = await supabase.functions.invoke('generate-gauntlet', {
-    // `cycle` yalnız verildiğinde gövdeye girer — current istek birebir eskisi.
-    body: {
-      context,
-      timezone: deviceTimeZone(),
-      ...(options.cycle ? { cycle: options.cycle } : {}),
-    },
+    // Cycle tarihini sunucu belirler; istemci yalnız tz gönderir (F1: zorunlu).
+    body: { context, timezone: deviceTimeZone() },
     region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
     recordTiming('generate-gauntlet', startedAt, 'error', { response: invokeErrorResponse(error) });
-    const { status, detail, code } = await parseInvokeError(error);
-    const kind = classifyGenerateError(status, code);
-    if (kind === 'previous_rejected' && isPreviousCycleRejectCode(code)) {
-      Sentry.addBreadcrumb({
-        category: 'gauntlet.cycle',
-        message: `previous rejected: ${code}`,
-        level: 'info',
-      });
-      throw new PreviousCycleRejectedError(code, detail);
-    }
+    const { status, detail } = await parseInvokeError(error);
     if (status === 401) {
       // Sentry kararı çağıranda: ilk denemeler beklenen pencere, 5. deneme
       // gerçek kimlik arızası (GauntletShell retry politikası).
@@ -353,14 +314,9 @@ export async function getTodayGauntlet(
   // K-42: başarılı yanıt diske yazılır. `await` EDİLMEZ — cache yazımı
   // kullanıcının ekranını bekletmez; hata durumu modülün kendi içinde
   // loglanır (sessiz değil).
-  // E-21: önceki döngü YAZILMAZ. Anahtarı yerel "bugün"le çakışabilir (batı
-  // dilimleri) ve akşam çevrimdışı yolda bugünün sonucu gibi `cache_today`
-  // görünürdü (CTO SARI-5). Cache varlığı ayrıca "mevcut kullanıcı" sinyalidir.
-  if (!options.cycle) {
-    void cacheOwnerId().then((ownerId) => {
-      if (ownerId) return cacheGauntlet(ownerId, gauntlet);
-    });
-  }
+  void cacheOwnerId().then((ownerId) => {
+    if (ownerId) return cacheGauntlet(ownerId, gauntlet);
+  });
 
   return gauntlet;
 }
@@ -406,18 +362,13 @@ async function cacheOwnerId(): Promise<string | null> {
  */
 export async function getTodayGauntletWithFallback(
   context: GauntletContext = NEUTRAL_CONTEXT,
-  options: GauntletRequestOptions = {},
 ): Promise<{ gauntlet: CycleGauntlet; source: GauntletSource; cachedDate?: string }> {
   try {
-    const gauntlet = await getTodayGauntlet(context, options);
+    const gauntlet = await getTodayGauntlet(context);
     return { gauntlet, source: 'network' };
   } catch (err) {
     if (err instanceof GauntletAuthPendingError) throw err;
     if (!(err instanceof GauntletFetchError)) throw err;
-    // E-21: önceki döngü cache'lenmez; buradaki kopya başka bir döngüye ait
-    // olurdu. Çağıran (GauntletShell) bağlantı hatasını kendisi karşılar.
-    if (options.cycle) throw err;
-
     const ownerId = await cacheOwnerId();
     const cached = await readCachedGauntlet(ownerId);
 

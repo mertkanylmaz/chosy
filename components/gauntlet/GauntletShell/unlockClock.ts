@@ -14,7 +14,7 @@
  * ürün kuralı — bu yüzden constants/design/ altında DEĞİL, burada.
  *
  * İstemcide TEK tanım (V-1 D9). Sunucu aynası:
- * supabase/functions/_shared/previousCycle.ts `UNLOCK_HOUR`.
+ * supabase/functions/_shared/previousCycle.ts `UNLOCK_HOUR` (cycle sınırı: _shared/cycleDate.ts `CYCLE_HOUR`).
  */
 export const UNLOCK_HOUR = 18;
 

@@ -85,7 +85,6 @@ import { withAlpha } from '@/constants/gameThemes';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { posthogAnalytics } from '@/services/posthog';
 import { saveChampionForLater } from '@/services/gauntletService';
-import type { CycleMode } from '@/components/gauntlet/GauntletShell/cycleRules';
 import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
 import { upgradePosterUrl } from '@/utils/posterUrl';
@@ -178,7 +177,7 @@ interface ChampionRevealProps {
    * V-2 Tur C: E-21 önceki döngü şampiyonu "Bugünün filmi" DEĞİL — kullanıcının
    * ilk filmi. Yalnız etiketi değiştirir; davranış aynı.
    */
-  cycle?: CycleMode;
+  cycle?: 'current' | 'previous';
   /**
    * S-2: sekansın GÖRSEL bitişi — meta/eylem geçişi tamamlandığında bir kez.
    * Resume yolunda (`animateReveal: false`) mount'ta hemen çağrılır. Salt
