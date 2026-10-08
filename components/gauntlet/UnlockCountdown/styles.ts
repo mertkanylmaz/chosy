@@ -6,13 +6,19 @@
 import { StyleSheet } from 'react-native';
 
 import { monoCountdown } from '@/components/gauntlet/WaitingView/styles';
-import { color } from '@/constants/design/semantic';
+import { color, type } from '@/constants/design/semantic';
 
 export const styles = StyleSheet.create({
   countdown: {
     ...monoCountdown,
     color: color.text.primary,
     textAlign: 'center',
+    fontVariant: ['tabular-nums'],
+  },
+  /** W1.1 inline: gövde metni gibi — SF caption, ikincil renk, sola hizalı. */
+  inline: {
+    ...type.caption,
+    color: color.text.secondary,
     fontVariant: ['tabular-nums'],
   },
 });

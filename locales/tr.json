@@ -1528,6 +1528,9 @@
       "other": "%{count} dakika"
     },
     "countdownA11y": "%{hours} %{minutes}",
+    "opensIn": "%{time} sonra açılır",
+    "durationHoursMinutes": "%{hours} sa %{minutes} dk",
+    "durationMinutes": "%{minutes} dk",
     "exhausted": "Bugün ikna olmadın galiba. Yarın yeni bir dörtlü hazır olacak.",
     "question": "Bu akşam hangisini izlerdin?",
     "seenPrompt": "Hangisini izledin?",

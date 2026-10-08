@@ -7,9 +7,13 @@
  * Sıfırda sayaç donmaz — `onElapsed` çağıranın mevcut nabız + `load()` yolunu
  * tetikler ve kabuk `bootstrapping`'e ("Hazırlanıyor" iskeleti) geçer.
  *
- * Görünüm (W1): yalnız saat:dakika ("02:50"), dakika TAVAN (`displayParts`), saniye hanesi YOK — her saniye
+ * Görünüm (W1, `variant="display"`): yalnız saat:dakika ("02:50"), dakika TAVAN (`displayParts`), saniye hanesi YOK — her saniye
  * değişen rakam hareket sayılırdı (K-54, eskiden yalnız Reduce Motion'da
  * gizliydi). Geri sayım MANTIĞI (useCountdown, onElapsed) değişmedi.
+ *
+ * W1.1 `variant="inline"`: tek satır gövde metni ("Opens in 2h 50m") — SF
+ * caption, ikincil renk, `maxFontSizeMultiplier` YOK (gövde gibi ölçeklenir).
+ * Aynı `displayParts` (tavan), aynı hook, aynı `onElapsed`, aynı VoiceOver metni.
  *
  * A11y (K-54):
  *   - VoiceOver → ekrandakiyle aynı değer ("2 saat 50 dakika"); iki nokta seslendirilmez.
@@ -24,6 +28,7 @@ import { useCountdown } from '@/hooks/useCountdown';
 import { MONO_MAX_FONT_SCALE } from '@/components/gauntlet/WaitingView/styles';
 
 import { displayParts } from './displayParts';
+import { formatDuration } from './formatDuration';
 import { styles } from './styles';
 
 interface UnlockCountdownProps {
@@ -31,9 +36,15 @@ interface UnlockCountdownProps {
   target: Date;
   /** Sayaç sıfıra ulaştığında bir kez. */
   onElapsed: () => void;
+  /** `display`: Martian Mono 22/26 "02:50" (varsayılan). `inline`: "Opens in 2h 50m". */
+  variant?: 'display' | 'inline';
 }
 
-function UnlockCountdownImpl({ target, onElapsed }: UnlockCountdownProps): React.JSX.Element {
+function UnlockCountdownImpl({
+  target,
+  onElapsed,
+  variant = 'display',
+}: UnlockCountdownProps): React.JSX.Element {
   const { t } = useLanguage();
   const remainingMs = useCountdown(target, onElapsed);
   // Dakika TAVAN (saniye gösterilmediği için 00:00 yalnız gerçek sıfırda).
@@ -44,6 +55,15 @@ function UnlockCountdownImpl({ target, onElapsed }: UnlockCountdownProps): React
   const a11yLabel = parts.hours > 0
     ? t('gauntlet.countdownA11y', { hours: hoursLabel, minutes: minutesLabel })
     : minutesLabel;
+
+  if (variant === 'inline') {
+    const time = formatDuration(parts, (key, vars) => t(`gauntlet.${key}`, vars));
+    return (
+      <Text style={styles.inline} accessibilityRole="timer" accessibilityLabel={a11yLabel}>
+        {t('gauntlet.opensIn', { time })}
+      </Text>
+    );
+  }
 
   return (
     <Text

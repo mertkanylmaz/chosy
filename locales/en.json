@@ -1528,6 +1528,9 @@
       "other": "%{count} minutes"
     },
     "countdownA11y": "%{hours} %{minutes}",
+    "opensIn": "Opens in %{time}",
+    "durationHoursMinutes": "%{hours}h %{minutes}m",
+    "durationMinutes": "%{minutes}m",
     "exhausted": "Not convinced today, it seems. A fresh four will be ready tomorrow.",
     "question": "Which would you watch tonight?",
     "seenPrompt": "Which one have you watched?",
