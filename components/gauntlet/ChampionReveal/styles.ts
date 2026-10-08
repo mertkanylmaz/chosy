@@ -15,7 +15,6 @@ export const styles = StyleSheet.create({
    * sızması da orada. Buraya renk koymak o katmanı yeniden örter.
    */
   container: {
-    flex: 1,
     backgroundColor: 'transparent',
   },
   /** C1: kenardan kenara, köşesiz. Yükseklik inline. */
@@ -111,16 +110,17 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: space.base,
   },
-  /** C6: tam genişlik, alt alta. V-4 Tur B: aralık `space.sm`. */
-  actionsStack: {
+  /** F2.3: Watch now + kaydet + paylaş tek satırda; ikonlar 44pt (K-54). */
+  actionsRow: {
     alignSelf: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: space.sm,
   },
-  /** S-2: ikincil ikon satırı (Sonraya bırak + Paylaş) — ortalı, 44pt. */
-  iconRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: space.base,
+  /** Birincil eylem kalan genişliği alır. */
+  primarySlot: {
+    flex: 1,
   },
   /** Pano / kaydetme onayı — kısa ömürlü, butonların ÜSTÜNDE (sabit sıra). */
   shareNotice: {

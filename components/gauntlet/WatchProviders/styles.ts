@@ -12,12 +12,12 @@ import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 
 /**
- * Şampiyon satırındaki logo — V-3 referans uyumu: 36 → 60pt (en fazla 3
- * logo, platform ekranın odak öğesi). TMDB w92 kaynağı 3x'te 60pt'yi
- * karşılamaz (180px gerekir) → `index.tsx` w185 ister. Logolar DOKUNULMAZ
- * (TestFlight 2.1.0 kararı), bu yüzden K-54'ün 44pt hedefi uygulanmaz.
+ * Şampiyon satırındaki logo — F2.3: 60 → 52pt (satıra "See all" da sığsın).
+ * Boyut için token yok (en yakını `size.touchTarget` 44). w185 kaynağı 3x'te
+ * 52pt'yi (156px) karşılar. Logolar DOKUNULMAZ (TestFlight 2.1.0 kararı),
+ * bu yüzden K-54'ün 44pt hedefi logolara uygulanmaz; "See all" 52pt ≥ 44.
  */
-const ROW_LOGO_SIZE = 60;
+const ROW_LOGO_SIZE = 52;
 
 /** "See all" sheet'inin liste satırındaki logo — isimle yan yana, 36pt kalır. */
 const SHEET_LOGO_SIZE = 36;
@@ -38,9 +38,9 @@ export const styles = StyleSheet.create({
    */
   row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
     justifyContent: 'center',
-    gap: space.lg,
+    gap: space.md,
     minHeight: ROW_LOGO_SIZE,
   },
   logo: {
@@ -73,21 +73,16 @@ export const styles = StyleSheet.create({
     fontWeight: '500',
   },
   /**
-   * V-3 referans uyumu: "See all →" pill'i logoların ALTINDA, ortalı (G2'de
-   * yanındaydı). Dokunulur — görsel yükseklik caption + 2×`space.sm` (34pt),
-   * K-54'ün 44pt hedefi `hitSlop` ile tamamlanır.
+   * F2.3: "See all" logolarla aynı yükseklikte (52pt) karo — ok + caption,
+   * dolgusuz hairline kenar. Genişlik içeriğe göre büyür (Dynamic Type).
    */
-  logoLine: {
+  seeAllTile: {
+    minHeight: ROW_LOGO_SIZE,
+    minWidth: ROW_LOGO_SIZE,
+    paddingHorizontal: space.xs,
     alignItems: 'center',
-    gap: space.md,
-  },
-  seeAllPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: space.xs,
-    paddingHorizontal: space.md,
-    paddingVertical: space.sm,
-    borderRadius: radius.pill,
+    justifyContent: 'center',
+    borderRadius: radius.poster,
     borderWidth: size.hairline,
     borderColor: color.surface.border,
   },

@@ -46,7 +46,7 @@ import { styles } from './styles';
 
 /**
  * V-3 Tur G2 (V3-D5): satırda en fazla 3 logo; fazlası "See all" sheet'inde.
- * V-3 referans uyumu: logolar 60pt, "See all" satırın altında.
+ * F2.3: logolar 52pt, "See all" satırın sonunda dördüncü öğe.
  * Sıralama `selectTopProviders` kuralı (flatrate > free > ads > rent > buy).
  */
 const MAX_PROVIDERS = 3;
@@ -139,32 +139,33 @@ export function WatchProvidersRow({
 
     return (
       <>
-        <View style={styles.logoLine}>
-          <View style={styles.row}>
-            {list.map((provider) => (
-              <Image
-                key={provider.provider_id}
-                source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
-                style={styles.logo}
-                contentFit="cover"
-                cachePolicy="memory-disk"
-                accessibilityLabel={provider.provider_name}
-              />
-            ))}
-          </View>
+        {/* F2.3: "See all" logoların SONUNA, aynı yükseklikte dördüncü öğe.
+            En fazla 3 logo + See all; ≤ 3 sağlayıcıda See all yok. */}
+        <View style={styles.row}>
+          {list.map((provider) => (
+            <Image
+              key={provider.provider_id}
+              source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
+              style={styles.logo}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              accessibilityLabel={provider.provider_name}
+            />
+          ))}
           {ordered.length > MAX_PROVIDERS && (
             <TouchableOpacity
-              style={styles.seeAllPill}
+              style={styles.seeAllTile}
               onPress={openSheet}
               activeOpacity={0.7}
-              hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
               accessibilityRole="button"
               accessibilityLabel={t('gauntlet.watchProviders.seeAllA11y', {
                 count: ordered.length,
               })}
             >
-              <Text style={styles.seeAllText}>{t('gauntlet.watchProviders.seeAll')}</Text>
               <ArrowRight size={size.iconInline} color={color.text.primary} />
+              <Text style={styles.seeAllText} numberOfLines={1}>
+                {t('gauntlet.watchProviders.seeAll')}
+              </Text>
             </TouchableOpacity>
           )}
         </View>

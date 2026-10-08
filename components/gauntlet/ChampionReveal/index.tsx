@@ -45,9 +45,15 @@
  * bırak") + ikincil ikon satırı — Spotlight kartı fold'a girer. Kaydetme,
  * paylaşım ve Watch Now mantığı DEĞİŞMEDİ. `onRevealSettled` sekansın görsel
  * bitişini bildirir (kartın giriş zamanlaması GauntletShell'de).
+ *
+ * F2.3: tek düzen (canlı = dönüş). Hero yüksekliği dinamik (`heroHeight.ts`:
+ * pencere − altındaki içerik − tab bar payı, [160pt, %42]); Watch now + kaydet
+ * + paylaş tek satır; "See all" logo satırının sonunda (WatchProviders);
+ * sıra Watch now → Spotlight → sayaç (GauntletShell). Reveal animasyonu,
+ * başlık tipografisi ve renkler DEĞİŞMEDİ.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { LayoutChangeEvent, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import * as Clipboard from 'expo-clipboard';
 import * as Sentry from '@sentry/react-native';
@@ -77,6 +83,7 @@ import {
 import { color, size, space } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
+import { useTabBarInset } from '@/hooks/useTabBarInset';
 import { posthogAnalytics } from '@/services/posthog';
 import { saveChampionForLater } from '@/services/gauntletService';
 import type { GauntletFilm } from '@/types/gauntlet';
@@ -85,6 +92,7 @@ import { upgradePosterUrl } from '@/utils/posterUrl';
 import { hapticLight } from '@/utils/haptics';
 import { orderProviders } from '@/utils/watchProviderList';
 
+import { heroHeight as computeHeroHeight } from './heroHeight';
 import {
   HERO_HEIGHT_RATIO,
   SCRIM_HEIGHT_RATIO,
@@ -171,7 +179,16 @@ interface ChampionRevealProps {
    * bildirim: reveal zamanlaması bu prop'tan etkilenmez.
    */
   onRevealSettled?: () => void;
+  /**
+   * F2.3: bu bileşenin ALTINDA, aynı kaydırma içinde duran içeriğin yüksekliği
+   * (Spotlight kartı + sayaç + arşiv; GauntletShell ölçer). Hero yüksekliği
+   * bununla birlikte hesaplanır. Ölçülmediyse 0.
+   */
+  belowHeight?: number;
 }
+
+/** Kaydırma içeriğinin tab bar payının altındaki boşluğu (GauntletShell: `tabBarInset + space.lg`). */
+const SCROLL_BOTTOM_GAP = space.lg;
 
 /** "Sonraya bırak" eyleminin durumu — çift dokunuşa ve tekrar yazmaya karşı. */
 type SaveState = 'idle' | 'saving' | 'saved';
@@ -183,6 +200,7 @@ export function ChampionReveal({
   rounds,
   gauntletId,
   onRevealSettled,
+  belowHeight = 0,
 }: ChampionRevealProps): React.JSX.Element {
   const { t, language, region } = useLanguage();
   const router = useRouter();
@@ -190,10 +208,30 @@ export function ChampionReveal({
   /** C1: açıkken geçiş çizilmez — poster sert kenarla biter, altı düz `ink`. */
   const reduceTransparency = useReduceTransparency();
   const { height: windowHeight } = useWindowDimensions();
-  const heroHeight = Math.round(windowHeight * HERO_HEIGHT_RATIO);
-  /** V-4 Tur A: geçişler hero'ya oranlı — alt ~%35, üst %25 (heroScrim.ts). */
-  const scrimHeight = Math.round(heroHeight * SCRIM_HEIGHT_RATIO);
+  const tabBarInset = useTabBarInset();
+  /** F2.3: gövdenin (başlık + meta + eylemler) ölçülen yüksekliği. */
+  const [bodyHeight, setBodyHeight] = useState(0);
+  const bodyMarginTop = reduceTransparency ? space.lg : -TITLE_OVERLAP;
+  const heroHeight = computeHeroHeight(
+    windowHeight,
+    Math.max(0, bodyHeight + bodyMarginTop) + belowHeight,
+    tabBarInset + SCROLL_BOTTOM_GAP,
+  );
+  /**
+   * Alt geçişin MUTLAK payı değişmez (heroScrim.ts SCRIM_WINDOW_RATIO): hero
+   * artık dinamik, ama başlık bloğunun arkasındaki `ink` opaklığı (kontrast
+   * ölçümü) hero'dan bağımsız olarak aynı kalmalı. Hero'dan uzun olamaz.
+   */
+  const scrimHeight = Math.min(
+    heroHeight,
+    Math.round(windowHeight * HERO_HEIGHT_RATIO * SCRIM_HEIGHT_RATIO),
+  );
+  /** V-4 Tur A: üst geçiş hero'nun üst %25'i (heroScrim.ts). */
   const topScrimHeight = Math.round(heroHeight * TOP_SCRIM_HEIGHT_RATIO);
+  const handleBodyLayout = useCallback((e: LayoutChangeEvent) => {
+    const next = Math.round(e.nativeEvent.layout.height);
+    setBodyHeight((prev) => (prev === next ? prev : next));
+  }, []);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   /** C2e: dort durum - loading / ok / empty / error. */
@@ -545,7 +583,7 @@ export function ChampionReveal({
 
       {/* C3: blok geçişin üstüne biner (kontrast ölçümü heroScrim.ts). Reduce
           Transparency'de geçiş yok — blok posterin ALTINDA, düz ink üstünde. */}
-      <View style={[styles.body, { marginTop: reduceTransparency ? space.lg : -TITLE_OVERLAP }]}>
+      <View style={[styles.body, { marginTop: bodyMarginTop }]} onLayout={handleBodyLayout}>
         <Animated.View style={titleStyle}>
           {/* V-4 Tur A (V4-D2): etiket HER ZAMAN burada, serif başlığın hemen
               üstünde — posterin basılı başlığına binmez (TestFlight 906). */}
@@ -589,60 +627,58 @@ export function ChampionReveal({
 
           {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
 
-          {/* S-2 — TEK birincil eylem, tam genişlik ≥ 48pt: Watch Now; yoksa
-              "Sonraya bırak" dolgulu (L9 davranışı). İkincil eylemler altta
-              44pt ikon satırı — Spotlight kartı fold'a girsin diye yığın
-              160 → 100pt (bütçe: docs/investigations/S2_CHAMPION_SPOTLIGHT_KESIF.md §5). */}
-          <View style={styles.actionsStack}>
+          {/* F2.3 — tek satır: [Watch now (flex:1)] [kaydet] [paylaş]. Watch now
+              yoksa dolgulu "Sonraya bırak" birincil olur (L9 davranışı). İkonlar
+              44pt kare (K-54). Kaydetme, paylaşım ve Watch now mantığı DEĞİŞMEDİ. */}
+          <View style={styles.actionsRow}>
             {showWatchNow ? (
-              <ChampionActionButton
-                label={t('gauntlet.watchNow.action')}
-                icon={Play}
-                variant="marquee"
-                onPress={() => void handleWatchNow()}
-              />
+              <View style={styles.primarySlot}>
+                <ChampionActionButton
+                  label={t('gauntlet.watchNow.action')}
+                  icon={Play}
+                  variant="marquee"
+                  onPress={() => void handleWatchNow()}
+                />
+              </View>
             ) : (
               gauntletId !== undefined && (
-                <ChampionActionButton
-                  label={saveLabel}
-                  icon={BookmarkSimple}
-                  variant="filled"
-                  onPress={() => void handleSaveForLater()}
-                  // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
-                  // tamamlandı, tekrar basılacak bir şey yok.
-                  disabled={saveState !== 'idle'}
-                  busy={saveState === 'saving'}
-                />
-              )
-            )}
-
-            {(showSaveIcon || date !== undefined) && (
-              <View style={styles.iconRow}>
-                {showSaveIcon && (
+                <View style={styles.primarySlot}>
                   <ChampionActionButton
                     label={saveLabel}
                     icon={BookmarkSimple}
-                    variant="outline"
-                    iconOnly
-                    selected={saveState === 'saved'}
+                    variant="filled"
                     onPress={() => void handleSaveForLater()}
+                    // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
+                    // tamamlandı, tekrar basılacak bir şey yok.
                     disabled={saveState !== 'idle'}
                     busy={saveState === 'saving'}
                   />
-                )}
-                {date !== undefined && (
-                  <ChampionActionButton
-                    label={t('gauntlet.share.action')}
-                    icon={ShareNetwork}
-                    variant="outline"
-                    iconOnly
-                    onPress={() => void handleShare()}
-                  />
-                )}
-              </View>
+                </View>
+              )
+            )}
+
+            {showSaveIcon && (
+              <ChampionActionButton
+                label={saveLabel}
+                icon={BookmarkSimple}
+                variant="outline"
+                iconOnly
+                selected={saveState === 'saved'}
+                onPress={() => void handleSaveForLater()}
+                disabled={saveState !== 'idle'}
+                busy={saveState === 'saving'}
+              />
+            )}
+            {date !== undefined && (
+              <ChampionActionButton
+                label={t('gauntlet.share.action')}
+                icon={ShareNetwork}
+                variant="outline"
+                iconOnly
+                onPress={() => void handleShare()}
+              />
             )}
           </View>
-
         </Animated.View>
       </View>
     </View>
