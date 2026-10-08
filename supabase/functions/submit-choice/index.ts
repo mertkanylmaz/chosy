@@ -698,6 +698,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
   }
   const submission: ChoiceSubmission = raw
 
+  // F2.1: `timeout` outcome'u kabul edilmez. İstemci hiç göndermiyor ve
+  // champion'sız bitiş (`exhausted`) ürün olarak kalktı; kabul etmek sahte bir
+  // "kimse kazanmadı" yolunu açık tutardı. Canlıda yalnız 3 eski satır var
+  // (14 Ağu 2026, tek gauntlet — elle test). DB CHECK ve kilitli tip DEĞİŞMEZ.
+  if ((submission.outcome as string) === 'timeout') {
+    logInfo('choice_timeout_rejected', {
+      user_id: appUserId,
+      gauntlet_id: submission.gauntletId,
+    })
+    return errorResponse('INVALID_INPUT', "outcome 'timeout' kabul edilmiyor", 400)
+  }
+
   const ruleError = validateBusinessRules(submission)
   if (ruleError) {
     logInfo('choice_rule_violation', {
@@ -1013,19 +1025,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     })
 
     if (!picked) {
-      // Aday kalmadı. Sessizce eski çifti geri vermek YASAK — durum açıkça
-      // bildirilir ve Sentry'ye düşer.
-      const result = baseResult('exhausted', usedAfter)
-      result.exhaustedReason = 'no_candidates'
+      // Aday kalmadı. Sessizce eski çifti geri vermek YASAK, oyunu bitirmek
+      // (`exhausted`) de DEĞİL (F2.1): açık 409 `REFRESH_UNAVAILABLE`. Gauntlet
+      // state'i DEĞİŞMEZ — `film_ids` aynı kalır, tur ilerlemez, çift oynanabilir.
+      // Ham olay (neither/seen) yukarıda zaten yazıldı ("iki de olmaz" gerçek bir
+      // sinyaldir, 069 prensibi); yenileme hakkı o olayla tüketilmiştir.
       logError(
-        'choice_replacement_exhausted',
+        'choice_replacement_unavailable',
         new Error('yerine koyulacak aday bulunamadı'),
         { user_id: appUserId, gauntlet_id: gauntlet.id, pool_size: scored.pool.length },
       )
       await sentryCapture({
-        message: 'submit-choice: yenileme için aday bulunamadı',
+        message: 'submit-choice: yenileme için aday bulunamadı (REFRESH_UNAVAILABLE)',
         level: 'warning',
-        tags: { function: 'submit-choice' },
+        tags: { function: 'submit-choice', error_code: 'REFRESH_UNAVAILABLE' },
         extra: {
           user_id: appUserId,
           gauntlet_id: gauntlet.id,
@@ -1034,7 +1047,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           pool_size: scored.pool.length,
         },
       })
-      return jsonResponse(result)
+      return errorResponse(
+        'REFRESH_UNAVAILABLE',
+        'Yenileme için uygun aday bulunamadı; mevcut çift korunuyor',
+        409,
+      )
     }
 
     // daily_gauntlets.film_ids güncellenir: sonraki turlar ve 21 günlük
