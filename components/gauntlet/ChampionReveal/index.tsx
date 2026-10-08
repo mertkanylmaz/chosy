@@ -622,10 +622,10 @@ export function ChampionReveal({
             {showWatchNow ? (
               <View style={styles.primarySlot}>
                 <ChampionActionButton
-                  label={t('gauntlet.watchNow.action')}
+                  label={t('gauntlet.watchProviders.sheetTitle')}
                   icon={Play}
                   variant="marquee"
-                  onPress={() => void handleWatchNow()}
+                  onPress={handleWatchNow}
                 />
               </View>
             ) : (

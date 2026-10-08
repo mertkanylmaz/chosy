@@ -316,7 +316,7 @@
     "shareMessage": "%{title} (%{year}) — Discovered on Chosy.ai",
     "removeFromWatchlist": "Remove from List",
     "removeConfirmMessage": "Remove this film from your watchlist?",
-    "watchNow": "Watch Now",
+    "watchTrailer": "Watch trailer",
     "director": "Director",
     "crew": "Crew",
     "watchOn": "Watch On",
@@ -1525,9 +1525,6 @@
     "cancel": "Cancel",
     "championTitle": "Your pick",
     "championAccessibilityLabel": "Your pick: %{title}, %{year}, %{runtime} minutes",
-    "watchNow": {
-      "action": "Watch now"
-    },
     "championOpenFilm": "Open details for %{title}",
     "confidence": "I know %{percent}% of you",
     "loadError": "Today's films couldn't load. Try again.",

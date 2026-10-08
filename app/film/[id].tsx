@@ -955,7 +955,7 @@ export default function FilmDetailScreen() {
                   !hasTrailer && styles.actionBtnTextDisabled,
                 ]}
               >
-                {t('filmDetail.watchNow').toUpperCase()}
+                {t('filmDetail.watchTrailer').toUpperCase()}
               </Text>
             </TouchableOpacity>
 

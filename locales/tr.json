@@ -316,7 +316,7 @@
     "shareMessage": "%{title} (%{year}) — Chosy.ai'da keşfettim",
     "removeFromWatchlist": "Listeden Çıkar",
     "removeConfirmMessage": "Bu filmi izleme listenden kaldırmak istiyor musun?",
-    "watchNow": "Izle",
+    "watchTrailer": "Fragmanı izle",
     "director": "Yonetmen",
     "crew": "Ekip",
     "watchOn": "Platformlar",
@@ -1525,9 +1525,6 @@
     "cancel": "Vazgeç",
     "championTitle": "Seçimin",
     "championAccessibilityLabel": "Seçimin: %{title}, %{year}, %{runtime} dakika",
-    "watchNow": {
-      "action": "Şimdi izle"
-    },
     "championOpenFilm": "%{title} detaylarını aç",
     "confidence": "Seni %%{percent} tanıyorum",
     "loadError": "Bugünün filmleri yüklenemedi. Tekrar dene.",
