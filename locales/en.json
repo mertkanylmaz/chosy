@@ -561,6 +561,8 @@
     "deleteAccountError": "Your account couldn't be deleted. Try again.",
     "deleteAccountNetworkError": "No connection. Please check your internet and try again.",
     "deleteAccountPartialError": "Your data was deleted, but your login could not be removed. Please tap Delete Account once more to finish.",
+    "deleteAccountAppleCancelled": "Account deletion needs Apple confirmation. Nothing was deleted.",
+    "deleteAccountIdentitiesError": "We couldn't verify your sign-in method. Nothing was deleted. Please try again.",
     "nicknameTitle": "Your Nickname",
     "nicknamePlaceholder": "Enter your nickname",
     "avatarHint": "Tap to change",
