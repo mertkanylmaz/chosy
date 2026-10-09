@@ -133,6 +133,7 @@ let _initialized = false;
 /** Zaman aşımları (R-2): kilitli karar 4. */
 export const RC_READY_TIMEOUT_MS = 10_000;
 export const RC_IDENTITY_TIMEOUT_MS = 10_000;
+export const RC_LISTENER_TIMEOUT_MS = 30_000;
 
 const _rcReady = new RcReadySignal();
 const _identityReady = new IdentityReadySignal();
@@ -150,11 +151,14 @@ function effectiveRcUserId(supabaseUserId: string): string {
  * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (configure
  *   başarısız — kaynağında zaten raporlandı)
  */
-export function whenRcReady(timeoutMs: number = RC_READY_TIMEOUT_MS): Promise<void> {
+export function whenRcReady(
+  timeoutMs: number = RC_READY_TIMEOUT_MS,
+  caller?: string,
+): Promise<void> {
   return _rcReady.wait(timeoutMs, (err) => {
     logger.error('[purchases] RevenueCat configure zaman asimi', err, {
       code: 'RC_READY_TIMEOUT',
-      extra: { timeoutMs },
+      extra: { timeoutMs, caller: caller ?? null },
     });
   });
 }
@@ -166,11 +170,14 @@ export function whenRcReady(timeoutMs: number = RC_READY_TIMEOUT_MS): Promise<vo
  * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (`logIn`
  *   hatası — `identifyUser` çağıranı raporlar)
  */
-export function whenIdentityReady(timeoutMs: number = RC_IDENTITY_TIMEOUT_MS): Promise<void> {
+export function whenIdentityReady(
+  timeoutMs: number = RC_IDENTITY_TIMEOUT_MS,
+  caller?: string,
+): Promise<void> {
   return _identityReady.wait(timeoutMs, (err) => {
     logger.error('[purchases] RevenueCat kimlik eslemesi zaman asimi', err, {
       code: 'RC_IDENTITY_TIMEOUT',
-      extra: { timeoutMs },
+      extra: { timeoutMs, caller: caller ?? null },
     });
   });
 }
@@ -275,7 +282,7 @@ export async function identifyUser(supabaseUserId: string): Promise<IdentifyUser
   // zaten Sentry'ye yazıldı (whenRcReady / initializePurchases) — mevcut
   // 'not_initialized' dönüşü korunur.
   try {
-    await whenRcReady();
+    await whenRcReady(RC_READY_TIMEOUT_MS, 'identifyUser');
   } catch (err) {
     if (err instanceof RcReadinessError) return 'not_initialized';
     throw err;
@@ -369,21 +376,18 @@ function parseCustomerInfo(info: CustomerInfo): SubscriptionInfo {
  * Abonelik yenilenme, expire, cancel gibi olaylarda tetiklenir.
  * SubscriptionContext bu callback'i kullanarak state'i günceller.
  *
- * @returns Cleanup fonksiyonu (listener'ı kaldırır)
+ * Bağlama `configure` bitene kadar bekler (`whenRcReady`, 30 sn) — soğuk
+ * açılışta provider effect'i `initializePurchases`'tan önce koşar, bu normal
+ * akıştır ve log üretmez. Cleanup bağlanmadan ÖNCE çağrılırsa bağlama iptal
+ * edilir. 30 sn'de bağlanamazsa Sentry'ye `RC_READY_TIMEOUT` yazılır.
+ *
+ * @returns Cleanup fonksiyonu (listener'ı kaldırır / bekleyen bağlamayı iptal eder)
  */
 export function addSubscriptionListener(
   callback: (info: SubscriptionInfo) => void,
 ): () => void {
-  if (!_initialized) {
-    // Listener hic takilmiyor — abonelik yenilenme/expire/cancel olaylari
-    // sessizce islenmez.
-    logger.error(
-      '[purchases] addSubscriptionListener: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'addSubscriptionListener' } },
-    );
-    return () => {};
-  }
+  let cancelled = false;
+  let attached: CustomerInfoUpdateListener | null = null;
 
   // Named referans — removeCustomerInfoUpdateListener ayni fonksiyonu alir
   const listenerFn: CustomerInfoUpdateListener = (customerInfo) => {
@@ -391,10 +395,26 @@ export function addSubscriptionListener(
     callback(parsed);
   };
 
-  Purchases.addCustomerInfoUpdateListener(listenerFn);
+  whenRcReady(RC_LISTENER_TIMEOUT_MS, 'addSubscriptionListener')
+    .then(() => {
+      if (cancelled) return;
+      Purchases.addCustomerInfoUpdateListener(listenerFn);
+      attached = listenerFn;
+    })
+    .catch((err: unknown) => {
+      // Zaman aşımı / configure hatası kaynağında zaten Sentry'ye yazıldı.
+      if (err instanceof RcReadinessError) return;
+      logger.error('[purchases] addSubscriptionListener baglama hatasi', err, {
+        code: 'RC_LISTENER_ATTACH_FAILED',
+      });
+    });
 
   return () => {
-    Purchases.removeCustomerInfoUpdateListener(listenerFn);
+    cancelled = true;
+    if (attached) {
+      Purchases.removeCustomerInfoUpdateListener(attached);
+      attached = null;
+    }
   };
 }
 
