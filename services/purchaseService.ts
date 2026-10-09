@@ -151,6 +151,22 @@ function effectiveRcUserId(supabaseUserId: string): string {
 }
 
 /**
+ * `whenRcReady` sarmalayıcısı: hazırsa true; zaman aşımı/configure hatasında false.
+ * Zaman aşımı `whenRcReady` içinde Sentry'ye (`RC_READY_TIMEOUT`) yazıldı,
+ * configure hatası kaynağında raporlandı — çağıran yeniden loglamaz, kendi
+ * mevcut hata dönüşünü kullanır. Beklenmeyen hata fırlar.
+ */
+async function rcReadyOrFalse(caller: string): Promise<boolean> {
+  try {
+    await whenRcReady(RC_READY_TIMEOUT_MS, caller);
+    return true;
+  } catch (err) {
+    if (err instanceof RcReadinessError) return false;
+    throw err;
+  }
+}
+
+/**
  * `configure` başarıyla bitene kadar bekler. Bekleme normal akıştır (log yok);
  * yalnız zaman aşımı Sentry'ye `error` yazar.
  *
@@ -258,7 +274,7 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     // Native crash'i JS katmaninda yakala — uygulamayi cokertme
     logger.error('[purchases] RevenueCat baslatma hatasi:', err);
     _rcReady.markFailed(err);
-    // _initialized = false kalir; diger servisler _initialized guard ile korunur
+    // _initialized = false kalir; rcReady 'failed' olur, bekleyenler hizli hata alir
   }
 }
 
@@ -333,12 +349,9 @@ export async function getSubscriptionStatus(): Promise<SubscriptionInfo> {
     rcCustomerId: null,
   };
 
-  if (!_initialized) {
-    logger.error(
-      '[purchases] getSubscriptionStatus: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getSubscriptionStatus' } },
-    );
+  // Soğuk açılışta provider effect'i configure'dan önce koşar: bekle (REACT-NATIVE-7
+  // ile aynı yarış). Hazır olunamazsa mevcut 'not_initialized' dönüşü korunur.
+  if (!(await rcReadyOrFalse('getSubscriptionStatus'))) {
     return { ...defaultStatus, errorKind: 'not_initialized' };
   }
 
@@ -431,12 +444,9 @@ export function addSubscriptionListener(
  * Paywall UI bunu kullanarak fiyat/trial bilgilerini gösterir.
  */
 export async function getOfferings(): Promise<OfferingsResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] getOfferings: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getOfferings' } },
-    );
+  // Soğuk açılışta paywall configure'dan önce açılırsa fiyatsız kalmasın: bekle.
+  // Hazır olunamazsa mevcut boş + 'not_initialized' dönüşü korunur.
+  if (!(await rcReadyOrFalse('getOfferings'))) {
     return { items: [], errorKind: 'not_initialized' };
   }
 
@@ -479,8 +489,10 @@ export async function getTrialEligibility(
   const unknownAll = (): Record<string, TrialEligibility> =>
     Object.fromEntries(productIds.map((id) => [id, 'unknown' as const]));
 
-  // Başlatılmamışsa getOfferings zaten RC_NOT_INITIALIZED yazdı.
-  if (!_initialized || productIds.length === 0) return unknownAll();
+  if (productIds.length === 0) return unknownAll();
+  // Hazır olunamazsa 'unknown': trial VAAT EDİLMEZ (Apple 3.1.2). Zaman aşımı
+  // rcReadyOrFalse içinde Sentry'ye yazıldı.
+  if (!(await rcReadyOrFalse('getTrialEligibility'))) return unknownAll();
 
   try {
     const raw = await Purchases.checkTrialOrIntroductoryPriceEligibility(productIds);
