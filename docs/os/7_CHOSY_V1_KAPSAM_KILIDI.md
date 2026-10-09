@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.46
-**Tarih:** 7 Ekim 2026
+**Sürüm:** 1.47
+**Tarih:** 9 Ekim 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -1010,6 +1010,71 @@ Görünüm yalnız `v`, `title_mask`, `backdrop_url`, `letter_count` döndürüy
 koşumundan sonra `net._http_response` ile kanıtlanır; `job_run_details`
 kanıt değildir.
 
+### E-26 — Third-party AI rızası: Anthropic'e veri giden her eylemden önce just-in-time rıza (9 Eki 2026)
+
+CTO kararı (9 Eki 2026), Apple 5.1.2(i). **Gerekçe:** Pro Mode ve film detayı,
+kullanıcının yazdığı metni ve ondan çıkarılan mood profilini üçüncü taraf bir
+AI'a (Anthropic/Claude) gönderiyor; bunun için açık rıza alınmıyordu. Hiçbir
+dokümanda yoktu.
+
+- **Kapsam (ölçüldü, Edge Function gövdeleri okundu):** istemciden Anthropic'e
+  veri götüren **tam 4 çağrı** var. `parse-mood` → yalnız yazılan metin
+  (`raw_input`); `rerank-films` → mood metni (en fazla 500 karakter) + en fazla
+  50 aday filmin başlık/yıl/tür/150 karakterlik özeti; `explain-match` → o
+  aramadan çıkarılan `TasteProfile` + film boyut vektörü; `slot-mood-filtered` →
+  preset ya da yazılan mood metni. **Hiçbirinde e-posta, `user_id` veya
+  `auth_id` LLM gövdesine girmiyor** (yalnız sunucuda kota/rate-limit için
+  kullanılıyor). Gönderilen "film tercih profili" uzun vadeli
+  `preferences_vector` DEĞİL, o aramanın mood profilidir.
+  `parse-taste`, `recommend`, `generate-puzzles`, `profile-missing-films` de
+  Anthropic çağırır ama istemciden çağrılmaz; kapı gerekmez.
+- **Tek kapı:** `services/aiConsent.ts`. `ensureAiConsent(surface, {explicit?})`
+  rıza yoksa sheet açar; `hasAiConsent()` sessiz okur (sheet açmaz, otomatik
+  tetiklenen çağrılar için). **LLM'e giden her çağrı bu modülden geçer; modül
+  dışında rıza kontrolü yazılmaz.** Kapı dışında LLM çağrısı: grep ile 0.
+- **Saklama:** `public.users.ai_consent_at timestamptz NULL` +
+  `ai_consent_version smallint NULL` (migration **131**). DEFAULT ve CHECK
+  bilinçli yok: NULL = "rıza yok / geri çekildi". Rıza =
+  `ai_consent_at IS NOT NULL` VE `ai_consent_version >= AI_CONSENT_VERSION`
+  (kodda 1; metin esaslı değişince artırılır, eski sürüm "rıza yok" sayılır).
+  Yeni policy gerekmedi: "users: self update" (`auth_id = auth.uid()::text`)
+  kolonları kapsıyor. Yazma `.eq('auth_id', user.id)` ile; **etkilenen satır 1
+  değilse başarı sayılmaz** (Sentry error, LLM çağrısı yapılmaz, sheet açık
+  kalıp tekrar denenebilir — sessiz 0-row dersi). Canlı doğrulama: iki kolon
+  `timestamptz`/`smallint`, `is_nullable = YES`, default NULL; 304 satırın 304'ü
+  iki kolonda NULL (backfill yok).
+- **Yüzeyler:** Mood Search — kota tüketilmeden **önce** sor (ret halinde arama
+  hakkı harcanmaz); ret → kısa açıklama + "Ayarlardan aç". Film detay — rıza
+  yoksa otomatik `explain-match` **yok**, "Kişisel açıklamayı aç" CTA'sı.
+  Rerank — rıza yoksa atlanır, vektör sıralaması kalır. Roulette mood spin
+  (flag kapalı, kod kapıda). Gauntlet / Spotlight / watchlist **değişmedi**.
+- **Ret:** uygulama kullanılabilir kalır. Ret yalnız **oturum belleğinde**
+  (kalıcı yazılmaz); örtük tetikleyiciler aynı oturumda sheet'i yeniden açmaz,
+  bilinçli eylem (Ayarlar anahtarı, CTA) açar.
+- **Ayarlar:** `profile.tsx` ayarlar modalında push anahtarının altında "AI
+  önerileri" anahtarı. Kapatmak `ai_consent_at = NULL` yazar. Ayarlar bir Modal
+  olduğundan iOS kök VC'den ikinci Modal sunamaz → host kaydı yığın (son kayıtlı
+  aktif), ayarlar modalı kendi `AiConsentHost`'unu içine monte eder.
+- **Sheet metni (EN/TR):** Anthropic (Claude); giden = arama için yazılan metin
+  ve o aramadan çıkarılan mood profili; amaç = film önermek ve nedenini
+  açıklamak; gitmeyen = e-posta ve hesap bilgileri. İki eşit ağırlıkta buton
+  (Kabul / Şimdi değil), hiçbiri accent dolgusu almaz.
+- **PostHog:** `ai_consent_shown {surface}`, `ai_consent_granted {surface}`,
+  `ai_consent_declined {surface}`, `ai_consent_revoked`. Çekirdek 20'ye girmez
+  (G-6 §1.2.1 gibi).
+- **Sunucu tarafı zorlama BU SPRİNTTE YOK** (Edge Function 403 eski istemcileri
+  kilitlerdi) → §9 ve `docs/TEKNIK_BORC.md`. Bu kapı **istemci beyanıdır.**
+- **Bible gerçeğe uyduruldu:** `CLAUDE.md` "Serbest metin girdisi yok" diyordu;
+  Pro Mode'da serbest metin vardır (PRODUCT_OS §2.5 / IA kararı). Düzeltme
+  `CLAUDE.md`'de, Product OS 🔒 satırı (ritüel girdisi) **değişmedi**.
+- **Migration numarası dersi:** yerelde en yüksek 129'du, uzakta zaten 130
+  (`subscriptions_environment`, `fix/rc-webhook-env`) uygulanmıştı → rıza
+  migration'ı **131**; 130 dosyası yalnız dosya düzeyinde yerel takibe alındı
+  (içerik uzaktaki `statements` ile birebir). CLAUDE.md numaralandırma kuralı
+  `supabase migration list` (uzak dahil) ile güncellendi.
+- **Kod:** `d0d88fc` (130 takibi) · `9dc9b54` (131) · `914f630` (servis + sheet) ·
+  `d78135d` (4 çağrı yeri) · `439c525` (Ayarlar). Dal `fix/ai-consent`, **push /
+  OTA / build yapılmadı**; cihaz doğrulaması yapılmadı.
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -1171,6 +1236,8 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **`sync-trending` 31 Ağustos'tan beri ölü** | **Açık, P0 ile bağlı (Vault anahtarı).** `weekly-trending-sync` (jobid 6, Pzt 06:00 UTC) her hafta `succeeded` yazıyor; `films`'e son ekleme **2026-08-31 06:00** (15 film); 09-07/14/21/28 koşumlarında **0** yeni film (09-19'daki 94 film editoryal ingest, elle). Trending tier'ı bir aydır tazelenmiyor. Aynı Vault anahtarı — anahtar düzelince sonraki Pazartesi koşumu doğrular. Kaynak: v1.43, `P1c_ADIM0_KESIF.md` §1. |
 | **K-61 küçük cihazda dwell kaydırma sonrası** | **Bilinçli taviz.** ≤ 812pt (SE sınıfı dahil), 2 satır başlık, "See all" ya da arşiv bağlantısı varken Spotlight kartı ilk ekranda tamamen görünmez; K-60 dwell'i kullanıcı kaydırıp bırakınca başlar. SE'de kart ilk ekranda ~%35 görünür. Hero oranı poster-first gereği değişmedi. Tab bar payı ölçülmedi (iOS standart varsayımı, telemetri kaydı Sentry'de bulunamadı). Kaynak: v1.42, `docs/investigations/S2_CHAMPION_SPOTLIGHT_KESIF.md` §5. |
 | **K-62 kare erken iniyor** | **Bilinen risk, kabul edildi.** Bekleyiş teaser'ı bugünün Spotlight karesini (`backdrop_url`, TMDb `/original/`) 18:00'den saatler önce indirir; bulanıklık yalnız istemcide uygulanır, bulanık olmayan dosya ağ yanıtında ve cihaz önbelleğinde durur. Erken bakan kullanıcı kareyi tersine görsel aramayla çözebilir. `get-daily-challenge` gauntlet durumuna bakmıyor; S-2'den beri champion kartı da aynı dosyayı indiriyordu, K-62 pencereyi 18:00 öncesine genişletti. **Tetikleyici:** Spotlight çözüm süresinde/oranında anomali ya da sunucu tarafı kare kapısı kararı. Kaynak: v1.44, `docs/TEKNIK_BORC.md`. |
+| **Third-party AI rızası sunucuda zorlanmıyor (E-26)** | **Bilinçli taviz, bu sprintte yok.** Edge Function'lar `ai_consent_at`'e bakmıyor; zorlama (403) rıza kapısı olmayan eski istemcileri kilitlerdi. Bugün rıza **istemci beyanıdır**: kapısız eski build'ler aynı fonksiyonları çağırmaya devam eder, kullanıcı kendi satırındaki kolonu (RLS self-update) değiştirebilir. **Tetikleyici:** eski build payı ihmal edilebilir seviyeye inince (EAS/TestFlight sürüm dağılımı) ya da App Review geri bildirimi. Kaynak: v1.47, `docs/TEKNIK_BORC.md`. |
+| **E-26 cihaz doğrulaması yapılmadı** | **TestFlight turu kalemi.** Kod dalda (`fix/ai-consent`), push/OTA yok. Senaryolar: (i) Pro Mode ilk arama → sheet, Kabul → arama sürer; (ii) "Şimdi değil" → arama hakkı harcanmaz, "Ayarlardan aç" görünür, aynı oturumda ikinci aramada sheet yeniden açılmaz; (iii) Ayarlar'da anahtar aç → sheet **ayarlar modalının üstünde** görünür (iOS iç içe Modal varsayımı, cihazda görülmedi); (iv) anahtarı kapat → film detayda CTA, otomatik açıklama yok; (v) uçak modunda Kabul → hata metni, tekrar denenebilir. Roulette flag kapalı → mood spin yolu cihazda görülemez. Kaynak: v1.47. |
 
 ---
 
@@ -1199,6 +1266,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.47 | 9 Eki 2026 | **E-26 — Third-party AI (Anthropic/Claude) rızası, Apple 5.1.2(i).** CTO kararı: kullanıcı verisini LLM'e götüren **4 istemci çağrısı** (`parse-mood`, `rerank-films`, `explain-match`, `slot-mood-filtered`) tek kapıdan (`services/aiConsent.ts`: `ensureAiConsent` sheet açar, `hasAiConsent` sessiz okur) geçer; kapı dışı LLM çağrısı grep ile 0. Saklama `users.ai_consent_at` + `ai_consent_version` (migration **131**, DEFAULT/CHECK yok, 304/304 satır NULL doğrulandı). Rıza = `ai_consent_at NOT NULL` ve `version >= 1`; yazma `.eq('auth_id')`, **0 satır = başarı değil**. Ret yalnız oturum belleğinde; Mood Search kotadan önce sorar; film detayda otomatik `explain-match` yerine CTA; Ayarlar'da "AI önerileri" anahtarı. LLM gövdelerinde e-posta/hesap kimliği yok (4 gövde okundu); gönderilen profil `TasteProfile` (mood), `preferences_vector` değil. **Sunucu zorlaması yok** (§9, TEKNIK_BORC). **Migration numarası olayı:** uzakta 130 (`subscriptions_environment`) zaten uygulanmıştı → rıza 131; 130 dosyası yalnız dosya düzeyinde takibe alındı. `CLAUDE.md` "Serbest metin girdisi yok" ifadesi gerçeğe uyduruldu (Pro Mode istisnası), numaralandırma kuralı uzak dahil olacak şekilde güncellendi. Kod dalda (`fix/ai-consent`: `d0d88fc`, `9dc9b54`, `914f630`, `d78135d`, `439c525`), push/OTA yok, cihaz doğrulaması açık. Doğrulama: `typecheck` 14/14 baseline, i18n 1458/1458 parite, `lint:all` temiz. |
 | 1.46 | 7 Eki 2026 | **Watch-feedback T1 kararları (CTO).** (1) **K-29:** `disliked` additive eklendi ("Not for me"); `abandoned` legacy davranış sinyali olarak kalır, yeni UI'dan çıkar. `types/gauntlet.ts` salt-ekleme değişikliği onaylandı. (2) Not yet / Skip persistence'ı değişmedi; Not yet follow-up'ı backlog'da (hipotez, eşik ≈ %30). (3) `UNIQUE (user_id, gauntlet_id)` önerisi geri çekildi. (4) `watched_other` T1b'ye ayrıldı. (5) **K-03:** watch-feedback Home state'inde tab bar görünür; Design OS §10.1'e not düşüldü, §10.5.2 / §10.5.9 / 13.08 satırlarına dokunulmadı — çelişki `TEKNIK_BORC.md`'ye kaydedildi. (6) `disliked` taste ağırlığı başlangıçta `abandoned` ile aynı (-3.0), `app_config`'ten ayarlanır. Bu kayıtta kod yok; uygulama T1 migration ve kodunda. |
 | 1.45 | 6 Eki 2026 | **K-62 guardrail eşikleri + K-15 durum düzeltmesi (CTO kararı).** (1) **K-62:** v1.44 tetik eşiği tanımlamamıştı, guardrail ölçülse de ne zaman bakılacağı belirsizdi. Eşikler: medyan `latency_ms` ≤ 1750 ms ya da `low_confidence` ≥ %24,8 → **inceleme tetikleyicisi, otomatik alarm değil** (kullanıcı bazında dağılıma bakılır). Kapı: yayından sonra ≥ 14 gün ve ≥ 150 seçim, altında "yetersiz veri". Gerekçe: taban örneklemi küçük (27 seçim / 7 kullanıcı); kapı ve "alarm değil, dağılıma bak" şartı küçük örneklem gürültüsüne karar bağlamamak için. Taban yayın gününde yeniden ölçülür. (2) **K-15:** "KARAR VERİLDİ, UYGULANMADI" (v1.31) gerçekle çelişiyordu — yerel hatırlatıcı `e6e87be`'den (28 Eyl) beri kodda, P-5'te `copyVersion` ile metin değişiminde yeniden planlanıyor. Bible gerçeğe uyduruldu (D-12/D-13 emsali): ifade üstü çizildi, **cihaz doğrulaması bekliyor** (V1_TESTFLIGHT_CHECKLIST O7). Aynı bayat ifadeye E-22 tablosundaki K-15 satırında ve §9'daki K-15 satırında "geçersiz — bkz. K-15" notu düşüldü (silinmedi). Kod değişikliği yok. |
 | 1.44 | 5 Eki 2026 | **K-62: Spotlight ritüelin ikinci yarısı (CTO kararı, P-5 Aşama 1).** Bekleyiş ekranında (`before_18`) bugünün karesi kilitli ve bulanık, dokunulamaz; metin "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır." Akşam bildirimi gövdesinin ikinci cümlesi "Sonra bugünün karesi." oldu (tek push, D-02; yerel planlama, sunucu değişmedi). **Değişmeyenler:** K-05 (ayrı hub yok, tek giriş champion kartı) ve paywall kapısı yok. Not: brifte üstü çizilmesi istenen "dessert" ifadesi Product OS §7.1'de bulunamadı (`docs/os/` altında hiç geçmiyor); yalnız `SpotlightBonusCard` yorumunda vardı, orası güncellendi. Product OS §7.1'e K-62 satırı eklendi. Guardrail: `choice_events.latency_ms` medyanı + `low_confidence` oranı (taban CTO brifinden: 27 seçim / 7 kullanıcı, 2500 ms, %14,8). §9'a bir satır (kare erken iniyor). K-05 satırına not düşüldü. Edge Function, şema ve `askCoordinator` değişmedi. |
