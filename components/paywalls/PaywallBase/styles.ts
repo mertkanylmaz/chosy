@@ -38,6 +38,28 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Üst bant: tutamaç + ✕ ────────────────────────────────────────────────
+  /**
+   * Opak şerit: kaydırılan içerik tutamaç ve ✕'in ALTINDAN geçer, üstünden
+   * değil. Zemin sheet ile aynı token (`surface.raised`) — görünür bir bant
+   * değil, yalnız örtü. Altındaki `topFade` içeriğe/hero ışığına yumuşak geçiş.
+   */
+  topBand: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: PAYWALL_TOP_INSET,
+    backgroundColor: color.surface.raised,
+    zIndex: 1,
+  },
+  topFade: {
+    position: 'absolute',
+    top: PAYWALL_TOP_INSET,
+    left: 0,
+    right: 0,
+    height: space.md,
+    zIndex: 1,
+  },
   dragHandleArea: {
     position: 'absolute',
     top: 0,
@@ -46,7 +68,7 @@ export const styles = StyleSheet.create({
     height: PAYWALL_TOP_INSET,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   dragHandle: {
     width: 40,
@@ -64,7 +86,7 @@ export const styles = StyleSheet.create({
     height: size.touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    zIndex: 3,
   },
 
   // ─── Kaydırılabilir içerik ────────────────────────────────────────────────

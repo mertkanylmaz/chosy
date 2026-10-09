@@ -29,6 +29,11 @@ import { PAYWALL_GUTTER, PAYWALL_TOP_INSET } from '../PaywallBase/styles';
 /** Küçük ekran eşiği (iPhone SE/8 sınıfı). */
 const COMPACT_HEIGHT = 667;
 
+const LIGHT_HEIGHT_REGULAR = 300;
+const LIGHT_HEIGHT_COMPACT = 210;
+/** `styles.root.marginTop` ile aynı: kökün sheet üstünden uzaklığı. */
+const ROOT_TOP_OFFSET = space.sm;
+
 /** Işığın en parlak noktadaki opaklığı — "düşük opaklık", metin kontrastı bunun üstünden ölçülür. */
 export const LIGHT_PEAK_OPACITY = 0.2;
 
@@ -41,6 +46,10 @@ export function ProHero(): React.JSX.Element {
   const { t } = useLanguage();
   const { height } = useWindowDimensions();
   const compact = height <= COMPACT_HEIGHT;
+  const lightHeight = compact ? LIGHT_HEIGHT_COMPACT : LIGHT_HEIGHT_REGULAR;
+  // Üst şerit (PAYWALL_TOP_INSET) ışığın tepesini örter; tepe noktası şeridin
+  // hemen altına denk gelsin diye elips merkezi aşağı alınır (viewBox birimi).
+  const lightPeakY = ((PAYWALL_TOP_INSET - ROOT_TOP_OFFSET) / lightHeight) * 100;
 
   return (
     <View style={styles.root}>
@@ -64,8 +73,8 @@ export function ProHero(): React.JSX.Element {
               <Stop offset="1" stopColor={color.reward.primary} stopOpacity={0} />
             </RadialGradient>
           </Defs>
-          <Ellipse cx={50} cy={0} rx={75} ry={80} fill="url(#proLightWide)" />
-          <Ellipse cx={88} cy={18} rx={30} ry={45} fill="url(#proLightSide)" />
+          <Ellipse cx={50} cy={lightPeakY} rx={75} ry={80} fill="url(#proLightWide)" />
+          <Ellipse cx={88} cy={lightPeakY + 18} rx={30} ry={45} fill="url(#proLightSide)" />
         </Svg>
       </View>
 
@@ -110,8 +119,8 @@ const styles = StyleSheet.create({
     left: -PAYWALL_GUTTER,
     right: -PAYWALL_GUTTER,
   },
-  lightRegular: { height: 300 },
-  lightCompact: { height: 210 },
+  lightRegular: { height: LIGHT_HEIGHT_REGULAR },
+  lightCompact: { height: LIGHT_HEIGHT_COMPACT },
   brand: {
     ...type['display-l'],
     color: color.text.primary,
