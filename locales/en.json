@@ -901,7 +901,7 @@
     "emptyTitle": "No results found",
     "emptySubtitle": "Try adjusting your filters or describing a different mood",
     "quotaTitle": "Daily limit reached",
-    "quotaSubtitle": "Unlimited mood searches with Chosy Pro",
+    "quotaSubtitle": "Upgrade to Chosy Pro for more searches",
     "unknownTitle": "This couldn't load",
     "unknownSubtitle": "Try again.",
     "boundaryTitle": "The app stopped unexpectedly",
@@ -1422,7 +1422,7 @@
   },
   "contextPaywall": {
     "quotaTitle": "Your discoveries are done for today",
-    "quotaSubtitle": "Upgrade to Chosy Pro for more daily mood searches and unlimited games.",
+    "quotaSubtitle": "Unlimited mood searches with Chosy Pro",
     "quotaValueTitle": "Just %{price}/month for unlimited discoveries",
     "quotaValueSubtitle": "Annual plan saves you %{percent} compared to monthly.",
     "quotaCta": "Try %{days} Days Free",
