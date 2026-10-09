@@ -3957,3 +3957,30 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
 - **A/B verisi (9 Eki 2026, R-C-1):** `paywall_quota_v1` `social_proof` kolu 2026-10-09
   itibarıyla `control` ile aynı kopyayı gösteriyor (doğrulanamayan sosyal kanıt metni
   kaldırıldı). Bu tarihten sonraki veri bu kol için geçersizdir.
+
+### RC sıralaması sonrası kalanlar (9 Eki 2026, R-2)
+
+- **PaywallBase restore/alım sonrası çift yazma yolu.** `handleRestore`
+  (`components/paywalls/PaywallBase/index.tsx`) restore başarısında
+  `users.subscription_tier` UPDATE'i + `upsertSubscription` ile `subscriptions`
+  satırını istemciden yazıyor; alım başarı dalı da aynı iki yazmayı yapıyor.
+  Sunucuda aynı alanları webhook yazıyor (`revenuecat-webhook`:
+  INITIAL_PURCHASE / TRANSFER `applyEntitlement`). Yani tier ve abonelik satırı için
+  iki bağımsız yazıcı var ve tier eşlemesi iki ayrı yerde hesaplanıyor
+  (istemci `productIdToTier`, sunucu `mapProductToTier`). **R-2'de bilinçli
+  dokunulmadı** (CTO, 9 Eki 2026, bible E-26 #7). **Karar bekliyor:** tek yazıcı
+  hangisi olacak (sunucu webhook tek kaynak + istemci yalnız yenileme, ya da
+  mevcut hâl belgelenir).
+- **Cihazda doğrulanmadı.** `whenRcReady` / `whenIdentityReady` sırası yalnız Deno
+  birim testleriyle (`tests/subscription/rcReadiness.test.ts`, 14 senaryo) ve
+  kod okumasıyla doğrulandı. Soğuk açılış, temiz kurulum ve hesap silme sonrası
+  kimlik geçişi TestFlight'ta ölçülmeli; izlenecek Sentry kodları:
+  `RC_READY_TIMEOUT`, `RC_IDENTITY_TIMEOUT`, `RC_LISTENER_ATTACH_FAILED`.
+- **Aynı `transferred_from` için ikinci TRANSFER yokluğu çıkarım.** CHOSY-EDGE-FUNCTIONS-14'ün
+  üç olayında `transferred_from` değerleri farklı; aynı saniyedeki
+  `RC_TRANSFER_LIFETIME` (applied) kaydının aynı çağrıya ait olduğu zaman
+  damgasından çıkarıldı, `rc_event_id` ile eşleştirilemedi.
+- **Yeni `PurchaseErrorKind`: `'not_ready'`.** `PaywallBase` iki dalı
+  (`errors.accountNotReady`) işliyor. `PurchaseErrorKind` başka tüketicileri
+  (`SubscriptionContext`) generic olarak `errorKind` alanını koruyor; yeni değere
+  özel dal eklenmedi.
