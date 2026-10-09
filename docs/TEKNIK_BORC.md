@@ -4137,7 +4137,7 @@ değil" borcu E-29 ile karara bağlandı (arşiv ücretsiz görüntüleme; paywa
    taşınmalı ve `buildOffer`'a `lifetime` planı eklenmeli.
 7. **`recordTrialStarted` ölü kod.** `trial_started` istemciden yazılmaz; doğru kaynak
    RC webhook (`INITIAL_PURCHASE` + `period_type = TRIAL`). Webhook türevi yapılmadı.
-8. **Hata kutusu metni** (`quota.quotaSubtitle` / en.json "Upgrade to Chosy Pro for more
+8. **Hata kutusu metni** (`errorState.quotaSubtitle` / en.json "Upgrade to Chosy Pro for more
    searches"): ücretli katmanda arama sınırsız; metin yanlış. Bu turda dokunulmadı
    (başka ad alanı, paywall değil).
 
@@ -4171,3 +4171,8 @@ değil" borcu E-29 ile karara bağlandı (arşiv ücretsiz görüntüleme; paywa
 19. Hero ışığı, ≤667pt'te örnek kartın ilk ekranda kalması, en büyük Dynamic Type'ta
     alt alan (`fontScale >= 1.35` eşiği tahmindir), VoiceOver sırası ve sandbox'ta
     `eligible`/`ineligible` metinleri **cihazda görülmedi**.
+20. **Restore akışı yan işleri `try/catch`'siz** (`PaywallBase` `handleRestore`): tier güncelleme,
+    `upsertSubscription`, `clearQuotaCache`, `refreshSubscription`, `refreshQuota` tek dış `try`'de;
+    biri patlarsa RC restore başarılı olsa bile kullanıcı "restore başarısız" görür. Satın almadaki
+    `postPurchaseStep` deseni (R-5 B6) restore'a uygulanmadı. Ayrıca tier güncelleme hatası
+    `logger.warn` (Sentry'ye gitmiyor). Bkz. E-28 #7 çift yazma yolu borcu.
