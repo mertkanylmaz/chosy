@@ -144,6 +144,20 @@ E-09 bu altısını adıyla şart koşuyor; altısı da çekirdektedir.
    kabul eder (023:14). Aynı bilgi `action='shown'` satırında
    `trigger_context.missedDayCount` ile duruyor. Veri kaybı yok, isim farkı var.
 
+#### 1.6.1 R-5 ile eklenen olaylar (çekirdek 20 DIŞINDA — kontenjan dolu)
+
+| Event | Nerede | Alanlar | Not |
+|---|---|---|---|
+| `paywall_plan_selected` | `PaywallBase` `selectPlan` | plan (`annual`\|`monthly`), source (`variant.name`), trial_shown (boolean) | Yalnız seçim DEĞİŞİRSE; varsayılan seçili annual olay üretmez. `trial_shown` `buildOffer`'ın o plan için `trial` döndürmesidir. |
+| `purchase_failed` | `PaywallBase` `handlePurchase` | error_kind, plan | İptal DEĞİL (o `purchase_cancelled`). `error_kind`: `package_missing` · `entitlement_pending` · `not_ready` · RC `errorKind` · `unknown` · `exception`. |
+
+**Bilinen çift sayım (düzeltilmedi, R-5 kararı):** `paywall_viewed`
+(`ContextualPaywall`) ve `paywall_shown` (`recordPaywallShown`, `PaywallBase`)
+paywall her göründüğünde birlikte ateşlenir; ikisi de aynı eylemi sayar. Funnel
+paydası olarak **yalnız biri** kullanılmalı, toplanmamalı. Düzeltme
+`TEKNIK_BORC.md` "R-5 ertelenenler"de. `trial_started` istemciden yazılmaz
+(`recordTrialStarted` ölü kod; kaynak RC webhook).
+
 ---
 
 ## 2. Çekirdek dışı 73 — neden dışarıda

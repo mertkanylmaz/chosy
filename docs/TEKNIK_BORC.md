@@ -4101,3 +4101,73 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   (2) iki fonksiyonu ve `lifetime_sales` yazıcılarını arşivlemek, (3) ölü paywall
   varyantı `PaywallLifetimeSoldout` ve `lifetime_soldout` tetikleyicisini R-D temizliğine
   almak. Mevcut lifetime sahipleri (canlıda 1 sandbox) etkilenmez.
+
+## 🟡 R-5 ertelenenler (9 Eki 2026, bible E-29)
+
+R-5 paywall doğruluk denetimi ve V2 uygulaması (`fix/paywall-v2`) sırasında bilinçli
+olarak yapılmayan veya yeni açılan kalemler. Önceki "Arşiv `chosy_plus` ile kilitli
+değil" borcu E-29 ile karara bağlandı (arşiv ücretsiz görüntüleme; paywall açmaz).
+
+### Sunucu maliyeti ve kota
+
+1. **`rerank-films` kota/yetki yok, günlük üst sınır yok, token loglanmıyor (P1).**
+   Yalnız `requireUser` + 10 istek/dk (`_shared/rateLimit.ts`). Anonim oturum da
+   çağırabilir; teorik üst sınır ≈ 14.400 istek/gün/kullanıcı. `mood_searches.llm_tokens_*`
+   yalnız `parse-mood`'u kapsar; rerank maliyeti ölçülemiyor. Gerekli: yetki/kota
+   kararı (mimari), günlük üst sınır, token loglama.
+2. **`parse-mood` kota RPC hatasında fail-open** (`index.ts` `checkSearchQuota`):
+   Sentry'ye yazılıyor ama istek geçiyor. Karar bekliyor.
+3. **Pro Mode kapısı istemcidedir** (`isPremium || legacy_mood_access`); sunucuda yalnız
+   günlük kota var (free = 3). Kapıyı atlayan free kullanıcı günde 3 arama alır.
+
+### Ölü / sessiz kod
+
+4. **Ölü varyantlar ve metinleri** — açılmadan önce YENİDEN YAZILMALI (yanlış vaat
+   içerirler): `streaming_link` (`WatchProviders` zaten ücretsiz), `mood_history`
+   ("kaçırdığın akşamları yeniden oyna"; Cinema DNA kapalı), `missed_day_archive`
+   ("yeniden oyna", "şampiyonunu seç", başlıkta sabit "iki"), `streak_milestone`,
+   onboarding ve roulette anahtarları (`contextPaywall.*`). Hepsi `triggerToVariant`
+   null / gönderen yok / flag kapalı.
+5. **`ctaLabel` ve `dismissLabel` prop'ları deprecated, `PaywallBase` bunları OKUMAZ.**
+   Varyantlardaki sabit CTA'lar (`quotaCta`, `quotaCtaNoTrial`, `moodHistoryCta`,
+   `streamingCta`, `lifetimeSoldoutCta`, `missedDayCta`) ve `*Dismiss` anahtarları ölü.
+   `quotaCtaNoTrial` ayrıca "Unlock Lifetime Access" (satılmayan ürün) diyordu.
+6. **Lifetime kartı `PaywallBase`'ten kaldırıldı.** `paywall_lifetime_enabled` açılsa
+   bile kart çıkmaz. Geri açmak için kart `e540e22`'deki `PaywallBase` sürümünden
+   taşınmalı ve `buildOffer`'a `lifetime` planı eklenmeli.
+7. **`recordTrialStarted` ölü kod.** `trial_started` istemciden yazılmaz; doğru kaynak
+   RC webhook (`INITIAL_PURCHASE` + `period_type = TRIAL`). Webhook türevi yapılmadı.
+8. **Hata kutusu metni** (`quota.quotaSubtitle` / en.json "Upgrade to Chosy Pro for more
+   searches"): ücretli katmanda arama sınırsız; metin yanlış. Bu turda dokunulmadı
+   (başka ad alanı, paywall değil).
+
+### Analitik
+
+9. **`paywall_viewed` / `paywall_shown` çift sayım** — ikisi de her görünmede ateşlenir.
+   Düzeltilmedi (G6 listesine not düşüldü, `G6_CEKIRDEK_EVENTLER.md` §1.6.1).
+10. **`paywall_events` yazım hataları `logger.warn`** (`triggerOrchestrator.ts`
+    `recordEvent`): Sentry'ye gitmiyor. Kural 1 gri alanı; `logger.error`'a çevrilmeli.
+
+### Ekran ve akış
+
+11. **`app/paywall.tsx` boş ekran flash'ı** — derin bağlantıyla açılırsa 100 ms sonra
+    geri döner.
+12. **Pro Mode'a Home girişi yok** — yalnız Profil'den. Keşfedilebilirlik IA kararı.
+13. **Arşiv replay** — arşivde gauntlet oynanmaz; oynanır yapılıp kilitlenirse Pro'nun
+    ikinci değer ayağı adayı (yeni sözleşme/mimari kararı).
+14. **İkinci bağlamsal giriş** — paywall'ın tek girişi Pro Mode kapısı.
+
+### Deney ve ürün kalemleri
+
+15. **Deneme 7 / 14 gün ve "denemesiz" deneyi.**
+16. **Değer önerisi copy testi** ("Find the right movie for your mood" varyantı).
+17. **Mood Search ücretsiz deneme** (ör. 1 arama).
+18. **ASC:** monthly ürününden intro offer kaldırılması kurucu eylemi; kod monthly'de
+    deneme göstermez, ama ASC'de tanımlıysa Apple ödeme sayfasında gösterir
+    (**doğrulanmadı**).
+
+### Cihaz doğrulaması (açık)
+
+19. Hero ışığı, ≤667pt'te örnek kartın ilk ekranda kalması, en büyük Dynamic Type'ta
+    alt alan (`fontScale >= 1.35` eşiği tahmindir), VoiceOver sırası ve sandbox'ta
+    `eligible`/`ineligible` metinleri **cihazda görülmedi**.
