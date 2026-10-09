@@ -19,6 +19,7 @@
     "test:champion": "deno test --unstable-sloppy-imports tests/gauntlet/watchProviderList.test.ts tests/gauntlet/heroScrim.test.ts tests/gauntlet/championFold.test.ts tests/gauntlet/heroHeight.test.ts",
     "test:paywall-pricing": "deno test tests/subscription/paywallPricing.test.ts",
     "test:ritual": "deno test tests/profile/ritualWeek.test.ts",
+    "test:profile-plan": "deno test tests/profile/unknownPlan.test.ts",
     "test:apple-revoke": "cd supabase/functions && deno test _shared/appleRevoke.test.ts",
     "test:ask":"deno test tests/gauntlet/askDecision.test.ts",
     "test:watch-feedback": "deno test --unstable-sloppy-imports tests/gauntlet/watchFeedbackFlow.test.ts",

@@ -116,6 +116,7 @@ import { getChampionDatesSince, getLastChampion, type LastChampion } from '@/ser
 import { RitualRing } from '@/components/Profile/RitualRing';
 import { buildRitualWeek, ritualWeekStart } from '@/components/Profile/RitualRing/ritualWeek';
 import type { PremiumStatus } from '@/utils/premiumStatus';
+import { isUnknownPremiumPlan as isUnknownPremiumPlanFn } from '@/utils/profilePlan';
 
 import type { SwipeInsight } from '@/types/profile';
 import type { TasteProfile } from '@/types/index';
@@ -778,8 +779,15 @@ function ProfileScreenContent() {
       : tier === 'monthly' ? t('paywall.monthlyTitle')
       : planId === 'lifetime' ? t('paywall.lifetimeTitle')
       : null;
-  const isUnknownPremiumPlan =
-    premiumStatus === 'premium' && tier !== 'weekly_legacy' && knownPlanTitle === null;
+  // REACT-NATIVE-J: yalnız aktif + planId dolu + tanınmayan plan hata sayılır
+  // (`utils/profilePlan.ts`); expired/free/planId null → hata yok.
+  const isUnknownPremiumPlan = isUnknownPremiumPlanFn({
+    premiumStatus,
+    status: subStatus,
+    planId,
+    tier,
+    planKnown: knownPlanTitle !== null,
+  });
 
   /**
    * Rozet alt satiri. "renews" DEGIL: `willRenew` context'e tasinmiyor,
