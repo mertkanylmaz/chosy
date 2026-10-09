@@ -13,7 +13,7 @@
  *   - Restore + ToS + Privacy
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -140,7 +140,27 @@ export default function PaywallBase({
   /** productId → trial uygunlugu. Bos/eksik = 'unknown' (trial vaat edilmez). */
   const [eligibility, setEligibility] = useState<Record<string, TrialEligibility>>({});
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('annual');
-  const [purchasing, setPurchasing] = useState(false);
+  /**
+   * Satın alma / restore kilidi (R-5 B5). Karar `busyRef`'ten okunur — React
+   * state'i render sonrası güncellendiği için aynı tick'teki ikinci dokunuşu
+   * yakalayamaz. `busy` yalnız görünüm içindir (spinner, devre dışı).
+   */
+  const busyRef = useRef(false);
+  const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
+  const purchasing = busy === 'purchase';
+  const restoring = busy === 'restore';
+
+  const acquireLock = useCallback((kind: 'purchase' | 'restore'): boolean => {
+    if (busyRef.current) return false;
+    busyRef.current = true;
+    setBusy(kind);
+    return true;
+  }, []);
+
+  const releaseLock = useCallback(() => {
+    busyRef.current = false;
+    setBusy(null);
+  }, []);
   const [loading, setLoading] = useState(true);
   /** Dolu ise paketler guvenilir degil — plan kartlari yerine hata gosterilir */
   const [offeringsError, setOfferingsError] = useState<PurchaseErrorKind | null>(null);
@@ -241,9 +261,8 @@ export default function PaywallBase({
 
   /** Satin alma */
   const handlePurchase = useCallback(async () => {
-    if (purchasing) return;
+    if (!acquireLock('purchase')) return;
     hapticMedium();
-    setPurchasing(true);
 
     try {
       const plan = PLANS[selectedPlan];
@@ -251,16 +270,13 @@ export default function PaywallBase({
 
       if (!pkg) {
         Alert.alert(t('paywall.purchaseError'));
-        setPurchasing(false);
         return;
       }
 
       const result = await purchasePackage(pkg);
 
-      if (result.cancelled) {
-        setPurchasing(false);
-        return;
-      }
+      // İptal: sessiz, kilit finally'de açılır.
+      if (result.cancelled) return;
 
       if (result.success) {
         hapticSuccess();
@@ -315,9 +331,9 @@ export default function PaywallBase({
       logger.error('[paywall-base] Satin alma hatasi:', err);
       Alert.alert(t('paywall.purchaseError'));
     } finally {
-      setPurchasing(false);
+      releaseLock();
     }
-  }, [selectedPlan, packages, purchasing, t, refreshSubscription, refreshQuota, onConvert, variant]);
+  }, [selectedPlan, packages, acquireLock, releaseLock, t, refreshSubscription, refreshQuota, onConvert, variant]);
 
   /**
    * Secili planin trial suresi: gun sayisi RC `introPrice`'tan, uygunluk RC
@@ -357,6 +373,7 @@ export default function PaywallBase({
 
   /** Restore */
   const handleRestore = useCallback(async () => {
+    if (!acquireLock('restore')) return;
     try {
       const result = await restorePurchases();
       if (result.success) {
@@ -411,8 +428,10 @@ export default function PaywallBase({
     } catch (err) {
       logger.error('[paywall-base] Restore hatasi:', err);
       Alert.alert(t('errors.restoreFailed'));
+    } finally {
+      releaseLock();
     }
-  }, [t, refreshSubscription, refreshQuota, onDismiss]);
+  }, [t, acquireLock, releaseLock, refreshSubscription, refreshQuota, onDismiss]);
 
   /**
    * Dismiss + tracking.
@@ -423,6 +442,8 @@ export default function PaywallBase({
    * olduğunu söyleyemez.
    */
   const handleDismiss = useCallback((method: PaywallDismissMethod) => {
+    // Satın alma / restore sürerken hiçbir kapanış yolu çalışmaz (R-5 B5).
+    if (busyRef.current) return;
     recordPaywallDismissed(variant, method).catch(() => {});
     onDismiss();
   }, [variant, onDismiss]);
@@ -441,6 +462,7 @@ export default function PaywallBase({
           <TouchableOpacity
             style={styles.dragHandleArea}
             onPress={() => handleDismiss('drag_handle')}
+            disabled={busy !== null}
             activeOpacity={1}
             accessibilityRole="button"
             accessibilityLabel={t('paywall.closeSheet')}
@@ -452,9 +474,11 @@ export default function PaywallBase({
           <TouchableOpacity
             style={styles.closeButton}
             onPress={() => handleDismiss('dismiss_button')}
+            disabled={busy !== null}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel={t('paywall.closeSheet')}
+            accessibilityState={{ disabled: busy !== null }}
           >
             <X size={22} color={Colors.textWhite} weight="bold" />
           </TouchableOpacity>
@@ -506,11 +530,16 @@ export default function PaywallBase({
                       <TouchableOpacity
                         key={option.id}
                         style={[styles.planCard, isSelected && styles.planCardSelected]}
-                        onPress={() => { hapticMedium(); setSelectedPlan(option.id); }}
+                        onPress={() => {
+                          if (busyRef.current) return;
+                          hapticMedium();
+                          setSelectedPlan(option.id);
+                        }}
+                        disabled={busy !== null}
                         activeOpacity={0.8}
                         accessibilityRole="radio"
                         accessibilityLabel={planLabel}
-                        accessibilityState={{ selected: isSelected }}
+                        accessibilityState={{ selected: isSelected, disabled: busy !== null }}
                       >
                         <View style={styles.planInfo}>
                           <View style={styles.planTitleRow}>
@@ -558,13 +587,13 @@ export default function PaywallBase({
 
                 {/* CTA */}
                 <TouchableOpacity
-                  style={[styles.ctaButton, purchasing && styles.ctaDisabled]}
+                  style={[styles.ctaButton, busy !== null && styles.ctaDisabled]}
                   onPress={handlePurchase}
-                  disabled={purchasing}
+                  disabled={busy !== null}
                   activeOpacity={0.8}
                   accessibilityRole="button"
                   accessibilityLabel={resolvedCtaLabel}
-                  accessibilityState={{ disabled: purchasing, busy: purchasing }}
+                  accessibilityState={{ disabled: busy !== null, busy: purchasing }}
                 >
                   <LinearGradient
                     colors={[Colors.accentPrimary, Colors.accentHover]}
@@ -589,6 +618,7 @@ export default function PaywallBase({
                 <TouchableOpacity
                   style={styles.dismissButton}
                   onPress={() => handleDismiss('dismiss_button')}
+                  disabled={busy !== null}
                   activeOpacity={0.7}
                   accessibilityRole="button"
                   accessibilityLabel={dismissLabel ?? t('contextPaywall.dismissDefault')}
@@ -605,13 +635,19 @@ export default function PaywallBase({
             <TouchableOpacity
               style={styles.restoreButton}
               onPress={handleRestore}
+              disabled={busy !== null}
               activeOpacity={0.7}
               accessibilityRole="button"
               accessibilityLabel={t('paywall.restorePurchases')}
+              accessibilityState={{ disabled: busy !== null, busy: restoring }}
             >
-              <Text style={styles.restoreText}>
-                {t('paywall.restorePurchases')}
-              </Text>
+              {restoring ? (
+                <ActivityIndicator color={Colors.textSecondary} size="small" />
+              ) : (
+                <Text style={styles.restoreText}>
+                  {t('paywall.restorePurchases')}
+                </Text>
+              )}
             </TouchableOpacity>
 
             {/* Legal links */}
