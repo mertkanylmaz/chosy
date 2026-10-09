@@ -238,12 +238,14 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    columnGap: space.xs,
+    columnGap: space.sm,
     marginTop: space.xs,
   },
   legalItem: {
     minHeight: size.touchTarget,
-    paddingHorizontal: space.sm,
+    // Yatay padding küçük: üç etiket 393pt'te TEK satıra sığsın. Yükseklik
+    // 44pt kalır; büyük Dynamic Type'ta flexWrap satırı serbestçe kırar.
+    paddingHorizontal: space.xs,
     justifyContent: 'center',
     alignItems: 'center',
   },
