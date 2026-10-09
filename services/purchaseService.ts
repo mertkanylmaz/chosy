@@ -29,6 +29,13 @@ import { RC_ENTITLEMENT_ID } from '@/constants/subscriptionPlans';
 import { posthogAnalytics } from '@/services/posthog';
 import { logger } from '@/utils/logger';
 import type { TrialEligibility } from '@/utils/paywallPricing';
+import {
+  IdentityReadySignal,
+  RcReadinessError,
+  RcReadySignal,
+} from '@/utils/rcReadiness';
+
+export { RcReadinessError } from '@/utils/rcReadiness';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -123,6 +130,51 @@ export interface PurchaseResult {
 
 let _initialized = false;
 
+/** Zaman aşımları (R-2): kilitli karar 4. */
+export const RC_READY_TIMEOUT_MS = 10_000;
+export const RC_IDENTITY_TIMEOUT_MS = 10_000;
+
+const _rcReady = new RcReadySignal();
+const _identityReady = new IdentityReadySignal();
+
+/** K-49 dev test modu: RC'ye verilecek kimlik. Yalnız `__DEV__`'de override eder. */
+function effectiveRcUserId(supabaseUserId: string): string {
+  const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
+  return useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+}
+
+/**
+ * `configure` başarıyla bitene kadar bekler. Bekleme normal akıştır (log yok);
+ * yalnız zaman aşımı Sentry'ye `error` yazar.
+ *
+ * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (configure
+ *   başarısız — kaynağında zaten raporlandı)
+ */
+export function whenRcReady(timeoutMs: number = RC_READY_TIMEOUT_MS): Promise<void> {
+  return _rcReady.wait(timeoutMs, (err) => {
+    logger.error('[purchases] RevenueCat configure zaman asimi', err, {
+      code: 'RC_READY_TIMEOUT',
+      extra: { timeoutMs },
+    });
+  });
+}
+
+/**
+ * RC appUserID Supabase auth id'ye eşitlenene kadar bekler (ilk `logIn` dahil).
+ * Kimlik değiştiğinde (hesap silme, hesaba geçiş) sinyal yeniden kurulur.
+ *
+ * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (`logIn`
+ *   hatası — `identifyUser` çağıranı raporlar)
+ */
+export function whenIdentityReady(timeoutMs: number = RC_IDENTITY_TIMEOUT_MS): Promise<void> {
+  return _identityReady.wait(timeoutMs, (err) => {
+    logger.error('[purchases] RevenueCat kimlik eslemesi zaman asimi', err, {
+      code: 'RC_IDENTITY_TIMEOUT',
+      extra: { timeoutMs },
+    });
+  });
+}
+
 /**
  * RevenueCat SDK'yı başlatır. Uygulama açılışında bir kez çağrılır.
  * Supabase user ID ile eşleştirilir.
@@ -130,12 +182,14 @@ let _initialized = false;
 export async function initializePurchases(supabaseUserId?: string): Promise<void> {
   // JS modülü zaten işaretli — tekrar configure etme
   if (_initialized) return;
+  _rcReady.reopenIfFailed();
 
   // Native RC instance zaten ayarlanmış (Fast Refresh senaryosu) — sadece flag'i senkronize et
   try {
     const alreadyConfigured = await Purchases.isConfigured();
     if (alreadyConfigured) {
       _initialized = true;
+      _rcReady.markReady();
       logger.log('[purchases] RevenueCat zaten yapılandırılmış — flag senkronize edildi');
       return;
     }
@@ -163,6 +217,7 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
         },
       },
     );
+    _rcReady.markFailed(new Error('RC api key missing'));
     return;
   }
 
@@ -180,11 +235,16 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     });
 
     _initialized = true;
+    _rcReady.markReady();
+    // configure aynı appUserID ile yapıldıysa `logIn` gerekmez → kimlik hazır.
+    // appUserID verilmediyse (yeni kurulum) ilk `identifyUser` resolve eder.
+    if (supabaseUserId) _identityReady.complete(effectiveRcUserId(supabaseUserId));
     logger.log('[purchases] RevenueCat baslatildi');
 
   } catch (err) {
     // Native crash'i JS katmaninda yakala — uygulamayi cokertme
     logger.error('[purchases] RevenueCat baslatma hatasi:', err);
+    _rcReady.markFailed(err);
     // _initialized = false kalir; diger servisler _initialized guard ile korunur
   }
 }
@@ -211,14 +271,27 @@ export async function identifyUser(supabaseUserId: string): Promise<IdentifyUser
 
   // K-49: Test matrix user override (dev + flag guard'ı)
   const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
-  const userId = useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+  const userId = effectiveRcUserId(supabaseUserId);
 
-  const current = await Purchases.getAppUserID();
-  if (current === userId) return 'already_identified';
+  // Geçişin hedefi önce kaydedilir: eşzamanlı çağrılarda deferred değişmez,
+  // yalnız en son hedef için resolve olur (bkz. utils/rcReadiness.ts).
+  _identityReady.begin(userId);
+  try {
+    const current = await Purchases.getAppUserID();
+    if (current === userId) {
+      _identityReady.complete(userId);
+      return 'already_identified';
+    }
 
-  await Purchases.logIn(userId);
-  logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
-  return 'identified';
+    await Purchases.logIn(userId);
+    _identityReady.complete(userId);
+    logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
+    return 'identified';
+  } catch (err) {
+    // Bekleyenler zaman aşımına kadar beklemesin; hata çağırana fırlar (Sentry orada).
+    _identityReady.fail(userId, err);
+    throw err;
+  }
 }
 
 // ─── Abonelik Durumu ─────────────────────────────────────────────────────────
@@ -526,6 +599,9 @@ export async function logOutPurchases(): Promise<void> {
     return;
   }
 
+  // Kimlik değişiyor: bayat "hazır" sinyali restore/purchase'ı anonim kimlikte
+  // başlatırdı. Sıradaki `identifyUser` (yeni anonim oturum) resolve eder.
+  _identityReady.begin(null);
   await Purchases.logOut();
   logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
 }
