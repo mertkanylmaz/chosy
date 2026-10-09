@@ -36,6 +36,7 @@ import { remoteConfig } from '@/services/remoteConfig';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { configureGoogleSignIn } from '@/services/authService';
 import { identifyUser, initializePurchases } from '@/services/purchaseService';
+import { AiConsentHost } from '@/components/AiConsentSheet';
 import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
@@ -781,6 +782,7 @@ function RootLayoutNav() {
                 options={{ animation: 'slide_from_right' }}
               />
             </Stack>
+            <AiConsentHost />
           </ThemeProvider>
           </SubscriptionProvider>
         </MoodProvider>

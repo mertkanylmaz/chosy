@@ -79,6 +79,7 @@ import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/ser
 import { startPreload, clearPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
 import { parseMood } from '@/services/tasteParser';
+import { ensureAiConsent, hasAiConsent } from '@/services/aiConsent';
 import { saveSession } from '@/services/watchlist';
 import { readAppUserId } from '@/services/auth-utils';
 import { FilmFilters, TasteProfile } from '@/types';
@@ -140,6 +141,8 @@ export default function MoodSearchScreen() {
   const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
   /** Kota doldu overlay gorunurlugu */
   const [showQuotaExhausted, setShowQuotaExhausted] = useState(false);
+  /** AI rizasi reddedildi (R-1) — kisa aciklama + "Ayarlardan ac" gosterilir. */
+  const [aiOff, setAiOff] = useState(false);
   /** Son kota sonucu — QuotaExhausted overlay'ine aktarilir */
   const [lastQuotaResult, setLastQuotaResult] = useState<import('@/constants/subscriptionPlans').QuotaStatus | null>(null);
   /** TextInput focus durumu — glow efekti icin */
@@ -177,6 +180,24 @@ export default function MoodSearchScreen() {
     }, []),
   );
 
+  // Ayarlar'dan AI onerileri acilip geri donuldugunde bildirim kalkar.
+  useFocusEffect(
+    useCallback(() => {
+      if (!aiOff) return;
+      let active = true;
+      hasAiConsent()
+        .then((granted) => {
+          if (active && granted) setAiOff(false);
+        })
+        .catch((err: unknown) => {
+          logger.error('[HomeScreen] AI rizasi okunamadi:', err);
+        });
+      return () => {
+        active = false;
+      };
+    }, [aiOff]),
+  );
+
   const { animatedStyle: btnAnimStyle, onPressIn: btnPressIn, onPressOut: btnPressOut } = useScalePress(0.95);
 
   /**
@@ -208,6 +229,14 @@ export default function MoodSearchScreen() {
     hapticLight();
     Keyboard.dismiss();
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
+
+    // ── AI rizasi (R-1) — kota tuketilmeden ONCE ─────────────────────────
+    // Metin Claude'a gitmeden rıza alinir; reddedilirse arama hakki harcanmaz.
+    if (!(await ensureAiConsent('mood_search'))) {
+      setAiOff(true);
+      return;
+    }
+    setAiOff(false);
 
     // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
     // Onboarding'de kota tuketme (ilk arama bedava).
@@ -290,6 +319,14 @@ export default function MoodSearchScreen() {
       }
 
       const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
+
+      // Rıza arama sirasinda geri cekildi (R-1) — hata degil, kullanici tercihi.
+      if (errorCode === 'AI_CONSENT_REQUIRED') {
+        setAiOff(true);
+        setPhase('input');
+        return;
+      }
+
       posthogAnalytics.track('mood_search_failed', {
         error: err instanceof Error ? err.message : 'unknown',
         error_code: errorCode,
@@ -471,6 +508,20 @@ export default function MoodSearchScreen() {
               </TouchableOpacity>
             </Animated.View>
           </View>
+
+          {/* ── AI kapali (R-1) — kisa aciklama + Ayarlar'a yonlendirme ── */}
+          {aiOff && (
+            <View style={styles.aiOffBanner}>
+              <Text style={styles.errorBannerText}>{t('aiConsent.offBody')}</Text>
+              <TouchableOpacity
+                onPress={() => router.navigate('/(tabs)/profile' as never)}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text style={styles.aiOffLink}>{t('aiConsent.openSettings')}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* ── Hata mesaji — search bar altinda ─────────────────── */}
           {moodError != null && (
@@ -743,6 +794,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(239,68,68,0.3)',
+  },
+  aiOffBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginHorizontal: 20,
+    marginBottom: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: Colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  aiOffLink: {
+    color: Colors.textWhite,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   errorBannerText: {
     flex: 1,

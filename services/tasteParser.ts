@@ -14,6 +14,7 @@
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants/config';
 import { supabase } from './supabase';
 import { getFreshSession } from './authSession';
+import { hasAiConsent } from './aiConsent';
 import {
   EndingPreference,
   NarrativeStyle,
@@ -87,6 +88,13 @@ export interface ParseMoodResult {
 }
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
+  // ── AI rızası (R-1) ───────────────────────────────────────────────────────
+  // Sheet'i çağıran taraf açar (`ensureAiConsent`, kota tüketilmeden ÖNCE);
+  // burası sessiz son kapıdır: rıza yoksa metin Edge Function'a gitmez.
+  if (!(await hasAiConsent())) {
+    throw new MoodParseError('AI_CONSENT_REQUIRED', 'AI suggestions are turned off.');
+  }
+
   // ── Token freshness garantisi ─────────────────────────────────────────────
   // Expired token → edge function getUser() fail → userId null → logMoodSearch SKIP.
   // auth-js getSession() süresi 90 sn içinde dolacak oturumu kendisi yeniler

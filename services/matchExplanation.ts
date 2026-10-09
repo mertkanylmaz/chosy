@@ -15,6 +15,7 @@ import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { i18n } from '@/constants/i18n';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
+import { hasAiConsent } from './aiConsent';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -112,6 +113,9 @@ function _applyFallback(
 
 // ─── Ana fonksiyon ────────────────────────────────────────────────────────────
 
+/** Rıza yokken Katman 1'i atlamak için iç sinyal — hata DEĞİL, Sentry'ye gitmez. */
+class AiConsentSkip extends Error {}
+
 /**
  * Birden fazla film için açıklama üretir.
  * Önce cache kontrolü yapar, eksik filmler için Edge Function çağırır,
@@ -143,7 +147,19 @@ export async function explainBatch(
   if (toFetch.length === 0) return result;
 
   // ── Katman 1: Claude API (Edge Function) ────────────────────────────────────
+  // AI rızası (R-1): rıza yoksa profil ve film boyutları Edge Function'a
+  // gitmez, doğrudan şablona düşülür. Film detayı rıza yokken bu fonksiyonu
+  // hiç çağırmaz (CTA gösterir); bu, fonksiyonun kendi kapısıdır.
+  const consented = await hasAiConsent();
+  if (!consented) {
+    Sentry.addBreadcrumb({
+      category: 'ai_consent',
+      level: 'info',
+      message: 'explain-match atlandı — AI rızası yok',
+    });
+  }
   try {
+    if (!consented) throw new AiConsentSkip();
     const { data, error } = await supabase.functions.invoke('explain-match', {
       body: {
         userProfile,
@@ -191,10 +207,12 @@ export async function explainBatch(
       });
     }
   } catch (err) {
-    Sentry.captureException(err, {
-      tags: { component: 'matchExplanation', flow: 'explain-match' },
-      extra: { film_count: toFetch.length },
-    });
+    if (!(err instanceof AiConsentSkip)) {
+      Sentry.captureException(err, {
+        tags: { component: 'matchExplanation', flow: 'explain-match' },
+        extra: { film_count: toFetch.length },
+      });
+    }
   }
 
   // ── Katman 2: Template fallback ─────────────────────────────────────────────

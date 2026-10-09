@@ -6,6 +6,7 @@
  * Triple: premium, 3 filtreli slot
  */
 import { supabase } from './supabase';
+import { ensureAiConsent } from './aiConsent';
 import { logger } from '../utils/logger';
 import { Film } from '../types/film';
 
@@ -144,6 +145,13 @@ export async function spinPureRandom(): Promise<SlotResult> {
  * Mood Filtered slot — premium only.
  */
 export async function spinMoodFiltered(mood: string): Promise<SlotResult> {
+  // AI rızası (R-1): mood metni Edge Function üzerinden Claude'a gider. Rıza
+  // yoksa sheet açılır; ret/yazma hatasında çağrı YAPILMAZ.
+  if (!(await ensureAiConsent('roulette'))) {
+    const refused: SlotError = { error: 'AI_CONSENT_REQUIRED' };
+    throw refused;
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke('slot-mood-filtered', {
     body: { mood, user_id: user?.id },

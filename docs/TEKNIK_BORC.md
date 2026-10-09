@@ -3985,3 +3985,29 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
 - **Not:** `applyEntitlement` TEKNIK_BORC'ta "INITIAL_PURCHASE bu fonksiyonu kullanmaz"
   diye kayıtlı (`rcTransfer.ts`); davranış farkları (eşleme önce, 0 satır uyarısı yok)
   ayrı sprintte değerlendirilmeli.
+
+### Third-party AI rızası sunucuda zorlanmıyor (9 Eki 2026, R-1 / bible E-26)
+
+- **Durum:** LLM'e veri götüren 4 istemci çağrısı (`parse-mood`, `rerank-films`,
+  `explain-match`, `slot-mood-filtered`) istemcide `services/aiConsent.ts`
+  kapısından geçiyor. Edge Function'lar `users.ai_consent_at`'e **bakmıyor**.
+- **Neden yapılmadı:** Sunucuda 403 dönmek, rıza kapısı olmayan eski build'leri
+  (kapısız `parse-mood` çağıranlar dahil) kilitlerdi. CTO kararı (9 Eki 2026):
+  bu sprintte sunucu zorlaması yok.
+- **Etki:** Rıza bugün **istemci beyanıdır.** (i) Kapısız eski build'ler rıza
+  vermeden aynı fonksiyonlara veri göndermeye devam eder. (ii) `ai_consent_at`
+  RLS "users: self update" ile kullanıcının kendi satırında yazılabilir; kolon
+  sunucu tarafında kanıt değeri taşımaz.
+- **Zorlama eklenirken karar gerekenler (mimari, bu kayıtta verilmedi):** kolonun
+  güvenilir olması için yazma yolunun istemciden alınması (ör. service-role RPC)
+  mi, yoksa kolonun yalnız beyan kalıp zorlamanın başka bir işaretle mi yapılacağı;
+  hata kodu (`AI_CONSENT_REQUIRED`) ve istemcinin onu işlemesi (bugün
+  `tasteParser` bu kodu yerelde üretiyor, sunucudan beklemiyor).
+- **Tetikleyici:** eski build payının ihmal edilebilir seviyeye inmesi
+  (EAS/TestFlight sürüm dağılımı) ya da App Review geri bildirimi.
+- **Test boşluğu:** `aiConsent.ts` Sentry/supabase'e bağlı olduğundan deno ile
+  import edilemiyor; rıza kararı (`ai_consent_version >= AI_CONSENT_VERSION`,
+  0-satır = başarı değil, ret oturum belleği) için birim test YOK. Doğrulama:
+  `typecheck`, grep ve cihaz (bible §9, "E-26 cihaz doğrulaması").
+- **Küçük taviz:** Ret oturum belleğinde; uygulama kapanınca unutulur ve bir
+  sonraki otomatik tetikleyicide sheet yeniden gösterilir (CTO kararı).

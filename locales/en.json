@@ -525,6 +525,7 @@
     "gamesLongest": "Best: %{count}",
     "settingsSection": "Settings",
     "closeSettings": "Close Settings",
+    "aiSuggestions": "AI suggestions",
     "personaPlaceholder": "Discover your type",
     "editProfile": "Edit Profile",
     "memberSince": "Since %{date}",
@@ -628,6 +629,22 @@
     "title": "Don't lose tonight's pick",
     "body": "Every night's pick and your watchlist stay saved here — free, no subscription needed.",
     "notNow": "Not now"
+  },
+  "aiConsent": {
+    "title": "Let Claude help you choose",
+    "intro": "Searches and personal explanations run on Claude, an AI from Anthropic.",
+    "sentLabel": "Sent",
+    "sentText": "The text you type for a search and the mood profile taken from that search.",
+    "purposeLabel": "Used for",
+    "purposeText": "Picking films and explaining why they fit.",
+    "notSentLabel": "Not sent",
+    "notSentText": "Your email and account details.",
+    "accept": "Accept",
+    "decline": "Not now",
+    "saveError": "Couldn't save your choice. Try again.",
+    "offBody": "AI suggestions are off. You can turn them on in Settings.",
+    "openSettings": "Open Settings",
+    "explainCta": "Turn on personal explanation"
   },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",

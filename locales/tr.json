@@ -525,6 +525,7 @@
     "gamesLongest": "En iyi: %{count}",
     "settingsSection": "Ayarlar",
     "closeSettings": "Ayarları Kapat",
+    "aiSuggestions": "AI önerileri",
     "personaPlaceholder": "Türünü keşfet",
     "editProfile": "Profili Düzenle",
     "memberSince": "Üye: %{date}",
@@ -628,6 +629,22 @@
     "title": "Bu geceki seçimini kaybetme",
     "body": "Her gecenin seçimi ve izleme listen burada kayıtlı — ücretsiz, abonelik gerekmez.",
     "notNow": "Şimdi değil"
+  },
+  "aiConsent": {
+    "title": "Seçmene Claude yardım etsin",
+    "intro": "Aramalar ve kişisel açıklamalar, Anthropic'in yapay zekâsı Claude ile çalışır.",
+    "sentLabel": "Gönderilen",
+    "sentText": "Arama için yazdığın metin ve bu aramadan çıkarılan mood profili.",
+    "purposeLabel": "Amaç",
+    "purposeText": "Film önermek ve neden uyduğunu açıklamak.",
+    "notSentLabel": "Gönderilmeyen",
+    "notSentText": "E-postan ve hesap bilgilerin.",
+    "accept": "Kabul",
+    "decline": "Şimdi değil",
+    "saveError": "Seçimin kaydedilemedi. Tekrar dene.",
+    "offBody": "AI önerileri kapalı. Ayarlar'dan açabilirsin.",
+    "openSettings": "Ayarlardan aç",
+    "explainCta": "Kişisel açıklamayı aç"
   },
   "notificationPrompt": {
     "title": "Dördün her akşam hazır olsun mu?",
