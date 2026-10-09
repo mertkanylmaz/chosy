@@ -4176,3 +4176,27 @@ değil" borcu E-29 ile karara bağlandı (arşiv ücretsiz görüntüleme; paywa
     biri patlarsa RC restore başarılı olsa bile kullanıcı "restore başarısız" görür. Satın almadaki
     `postPurchaseStep` deseni (R-5 B6) restore'a uygulanmadı. Ayrıca tier güncelleme hatası
     `logger.warn` (Sentry'ye gitmiyor). Bkz. E-28 #7 çift yazma yolu borcu.
+
+## 🟡 R-6 ertelenenler (9 Eki 2026)
+
+Sentry bulgularının küçük düzeltmeleri `fix/sentry-polish`'te yapıldı (REACT-NATIVE-J koşulu,
+REACT-NATIVE-C teşhisi, Sentry environment). Aşağıdakiler bilinçli olarak yapılmadı.
+
+1. **`getAppUserId` içindeki `users` insert'inin kaldırılması** (REACT-NATIVE-C kök çözümü).
+   Satır açma işi `ensureAppUser()`'a ait; `getAppUserId` hâlâ insert deniyor ve RLS'e
+   takılabiliyor. Bu turda yalnız teşhis eklendi (select hatasında insert yok; insert hatasına
+   `hasSession`, `accessTokenExpiresInSec`, `authIdMatchesSession`). **Teşhis verisi geldikten
+   sonra** insert kaldırılacak.
+2. **Listener "premium değil" dalında `premiumStatus` ara durumu** (REACT-NATIVE-J ikinci
+   katman, P2): `SubscriptionContext` listener dalı (`~543-551`) bu turda DOKUNULMADI.
+   Premium'dan çıkışta geçici `tier='free'` + `planId` dolu ara durumu mümkün; yeni koşul
+   (`utils/profilePlan.ts`) `status` aktif değilse hata saymadığı için gürültü kesildi ama
+   ara durum modellenmedi.
+3. **Launch sonrası ilk hafta günlük ölçüm:** `auth.users`'ta olup `public.users`'ta olmayan
+   kullanıcı sayısı (`count=exact`, read-only). REACT-NATIVE-C'nin gerçek etkisini ve (1)'in
+   güvenle kaldırılıp kaldırılamayacağını belirler.
+4. **Sentry `environment` değişti:** `preview` kanalı artık `environment: 'preview'`
+   (varsayılan `production`, `__DEV__` → `development`). **Alarm ve dashboard filtreleri
+   `preview` environment'ını dışlamalı** ve geçmiş `production` karşılaştırmaları bu
+   tarihten (OTA yayılımından) sonra kırılır. Ayrıca `update_channel` etiketi eklendi
+   (`embedded` = kanalsız).
