@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.46
-**Tarih:** 7 Ekim 2026
+**Sürüm:** 1.47
+**Tarih:** 9 Ekim 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -708,6 +708,9 @@ ihlalleri · canlı tetikleme doğrulaması.
 Profil → Ayarlar → "Delete Account" (`app/(tabs)/profile.tsx:696`), iki aşamalı
 onay, `services/authService.ts:644`, Edge Function `delete-account` (canlıda
 ACTIVE v23, 24 Nis 2026). App Store Guideline 5.1.1(v) şartı karşılanıyor.
+> ⚠️ **Kısmen geçersiz — bkz. E-26, 9 Eki 2026.** Bu cümle yalnız hesap/veri silmeyi
+> ölçtü; Sign in with Apple kullanıcıları için Apple tarafındaki **token revoke**
+> yoktu. 5.1.1(v) o boşluk kapanana kadar tam karşılanmıyordu.
 Deploy edilen kodun repo ile aynı olduğu dolaylı kanıtlandı (dosya mtime deploy'dan
 29 dk önce, o tarihten sonra tek commit ve o da salt ekleme).
 
@@ -1010,6 +1013,43 @@ Görünüm yalnız `v`, `title_mask`, `backdrop_url`, `letter_count` döndürüy
 koşumundan sonra `net._http_response` ile kanıtlanır; `job_run_details`
 kanıt değildir.
 
+### E-26 — Sign in with Apple token revoke: hesap silmede (R-3, 9 Eki 2026)
+
+**Boşluk.** `delete-account` veriyi ve auth kaydını siliyordu ama Apple'a revoke
+çağrısı yapmıyordu; Apple ile girmiş kullanıcının Apple tarafındaki oturumu/tokenı
+açık kalıyordu (Guideline 5.1.1(v)). E-20 bunu ölçmemişti (bkz. oradaki not).
+Kararlar CTO tarafından, keşif sonrası DUR NOKTASI 1'de onaylandı.
+
+| Konu | Karar |
+|---|---|
+| Token saklama | **Saklanmaz, migration yok.** Silme anında Apple ile yeniden doğrulama. |
+| İstemci | Silme onayından sonra `supabase.auth.getUserIdentities()` (ağ, taze; `app_metadata.provider` birincil sağlayıcıdır ve `linkIdentity` sonrası bayat kalabilir). Okuma başarısızsa silme **başlamaz**. Apple identity varsa `signInAsync({ requestedScopes: [] })` → `authorizationCode` → **hemen** `delete-account` gövdesine (`appleAuthorizationCode`; code ~5 dk geçerli, tek kullanımlık). Kullanıcı Apple ekranını iptal ederse silme **iptal**, hiçbir veri silinmez, `t()` mesajı. Apple identity yoksa (anonim / e-posta) adım atlanır. |
+| Karar yeri | Apple identity kararı **sunucuda** (`getUser().identities`). Gövde alanı opsiyonel → eski client geriye uyumlu. |
+| Karar tablosu | Identity yok → hiçbir şey · identity var + code yok → silme devam, Sentry `warning` `APPLE_REVOKE_SKIPPED_OLD_CLIENT` · identity var + code var → revoke dene. |
+| Sunucu akışı | `client_secret` = ES256 JWT (`npm:jose`, kid=`APPLE_KEY_ID`, iss=`APPLE_TEAM_ID`, sub=`APPLE_CLIENT_ID`, aud=`https://appleid.apple.com`, exp=iat+300; `APPLE_PRIVATE_KEY` literal `\n` → satır sonu) → `/auth/token` (code → refresh_token) → **sub eşleştirmesi** → `/auth/revoke`. Her Apple çağrısı tek deneme, 10 sn timeout. |
+| `APPLE_CLIENT_ID` | **Bundle id `com.chosy.ai`**, Services ID değil: native akışta authorization code `signInAsync`'in client'ına bağlıdır. |
+| sub eşleştirmesi | `/auth/token` yanıtındaki `id_token`'ın `sub`'ı, Apple identity'nin `provider_id`'si ile karşılaştırılır (token doğrudan Apple'dan TLS ile geldiği için imza doğrulanmaz, yalnız payload decode). Uyuşmazlıkta (veya karşılaştırılamıyorsa) **revoke yok**, Sentry `warning` `APPLE_REVOKE_SUB_MISMATCH`, silme devam. Gerekçe: kullanıcı yeniden doğrulamada başka Apple ID seçerse başka hesabın tokenı revoke edilmesin. |
+| Hata sözleşmesi | Revoke/token hatası ve eksik secret **silmeyi engellemez**; Sentry `error` `APPLE_REVOKE_FAILED` / `APPLE_SECRETS_MISSING`. code, token, secret, private key **asla** loglanmaz (testle doğrulandı). |
+| Yerleşim | JWT doğrulamasından hemen sonra, **ilk silme adımından önce**; satırlı ve satırsız (auth-only) dalların ikisini de kapsar. `verify_jwt` ve mevcut silme sırası değişmedi. Yanıta `apple_revoke` alanı eklendi (geriye uyumlu). |
+
+**Uygulama.** `9f4231c` (`_shared/appleRevoke.ts` + `test:apple-revoke`, 18 test, Apple
+uçları mock) · `af02ed3` (`delete-account` entegrasyonu) · `9f3d22a` (istemci
+yeniden doğrulama + `deleteAccountAppleCancelled` / `deleteAccountIdentitiesError`,
+en/tr parity 1440). Doğrulama: `test:apple-revoke` 18/18, `tsc` 14/14,
+`typecheck:functions` 32/32 (baseline), `deno check delete-account` temiz.
+
+**Sapma (kayıtlı).** Apple identity var ama cihazda Apple girişi kullanılamıyor /
+`authorizationCode` yok / beklenmedik hata (`unavailable`): silme **engellenmez** —
+kullanıcı hesabını silebilmeli. İstemci `logger.error` (Sentry) yazar, sunucu code
+alamadığı için `APPLE_REVOKE_SKIPPED_OLD_CLIENT` warning yazar. Gövde parse'ı
+başarısızsa boş gövde sayılır (eski client gövdesizdir).
+
+**Açık / ölçülmemiş.** (1) `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_CLIENT_ID` /
+`APPLE_PRIVATE_KEY` secret'ları 9 Eki 2026'da `supabase secrets list` ile **ölçüldü:
+yok**. Kurulmadan canlıda her Apple kullanıcısı için `APPLE_SECRETS_MISSING` düşer
+(silme yine çalışır). (2) Canlı uçtan uca doğrulama (gerçek Apple revoke) **yapılmadı**;
+testler Apple uçlarını mock'luyor. (3) Deploy edilmedi.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -1171,6 +1211,8 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **`sync-trending` 31 Ağustos'tan beri ölü** | **Açık, P0 ile bağlı (Vault anahtarı).** `weekly-trending-sync` (jobid 6, Pzt 06:00 UTC) her hafta `succeeded` yazıyor; `films`'e son ekleme **2026-08-31 06:00** (15 film); 09-07/14/21/28 koşumlarında **0** yeni film (09-19'daki 94 film editoryal ingest, elle). Trending tier'ı bir aydır tazelenmiyor. Aynı Vault anahtarı — anahtar düzelince sonraki Pazartesi koşumu doğrular. Kaynak: v1.43, `P1c_ADIM0_KESIF.md` §1. |
 | **K-61 küçük cihazda dwell kaydırma sonrası** | **Bilinçli taviz.** ≤ 812pt (SE sınıfı dahil), 2 satır başlık, "See all" ya da arşiv bağlantısı varken Spotlight kartı ilk ekranda tamamen görünmez; K-60 dwell'i kullanıcı kaydırıp bırakınca başlar. SE'de kart ilk ekranda ~%35 görünür. Hero oranı poster-first gereği değişmedi. Tab bar payı ölçülmedi (iOS standart varsayımı, telemetri kaydı Sentry'de bulunamadı). Kaynak: v1.42, `docs/investigations/S2_CHAMPION_SPOTLIGHT_KESIF.md` §5. |
 | **K-62 kare erken iniyor** | **Bilinen risk, kabul edildi.** Bekleyiş teaser'ı bugünün Spotlight karesini (`backdrop_url`, TMDb `/original/`) 18:00'den saatler önce indirir; bulanıklık yalnız istemcide uygulanır, bulanık olmayan dosya ağ yanıtında ve cihaz önbelleğinde durur. Erken bakan kullanıcı kareyi tersine görsel aramayla çözebilir. `get-daily-challenge` gauntlet durumuna bakmıyor; S-2'den beri champion kartı da aynı dosyayı indiriyordu, K-62 pencereyi 18:00 öncesine genişletti. **Tetikleyici:** Spotlight çözüm süresinde/oranında anomali ya da sunucu tarafı kare kapısı kararı. Kaynak: v1.44, `docs/TEKNIK_BORC.md`. |
+| **Apple revoke: secret'lar yok, deploy edilmedi (E-26)** | **Açık, P0 (App Store 5.1.1(v)).** `APPLE_*` dört secret kurulmadan revoke çalışmaz (`APPLE_SECRETS_MISSING`). Sıra: secret'lar → `delete-account` deploy → client OTA. Canlı revoke bir TestFlight hesabıyla Sentry'de `APPLE_*` kodu olmadığı ve Apple'ın Hesap ayarlarında uygulamanın düştüğü görülerek doğrulanır. Kaynak: v1.47, E-26. |
+| **Apple revoke gate'i geniş: eski client uyarısı** | Apple identity var + code yok → `APPLE_REVOKE_SKIPPED_OLD_CLIENT` warning (silme sürer). Eski sürümler OTA ile gidince gate daraltılır; o zamana kadar warning gürültüsü beklenir. Kaynak: v1.47, `docs/TEKNIK_BORC.md`. |
 
 ---
 
@@ -1199,6 +1241,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.47 | 9 Eki 2026 | **E-26 — Sign in with Apple token revoke (R-3, CTO onaylı).** Hesap silmede Apple token revoke yoktu (E-20'nin "5.1.1(v) karşılanıyor" cümlesi kısmen geçersiz ilan edildi, silinmedi). Karar: token saklanmaz/migration yok; silme anında yeniden doğrulama → `authorizationCode` → sunucuda code → refresh_token → `sub` eşleştirme → revoke. Revoke hatası silmeyi engellemez (Sentry `APPLE_*` kodları); kullanıcı Apple ekranını iptal ederse silme iptal. `APPLE_CLIENT_ID` = bundle id. Uygulama `9f4231c` `af02ed3` `9f3d22a`; `test:apple-revoke` 18/18, tsc 14, functions 32. Deploy edilmedi, `APPLE_*` secret'ları yok (ölçüldü). §9'a iki madde. |
 | 1.46 | 7 Eki 2026 | **Watch-feedback T1 kararları (CTO).** (1) **K-29:** `disliked` additive eklendi ("Not for me"); `abandoned` legacy davranış sinyali olarak kalır, yeni UI'dan çıkar. `types/gauntlet.ts` salt-ekleme değişikliği onaylandı. (2) Not yet / Skip persistence'ı değişmedi; Not yet follow-up'ı backlog'da (hipotez, eşik ≈ %30). (3) `UNIQUE (user_id, gauntlet_id)` önerisi geri çekildi. (4) `watched_other` T1b'ye ayrıldı. (5) **K-03:** watch-feedback Home state'inde tab bar görünür; Design OS §10.1'e not düşüldü, §10.5.2 / §10.5.9 / 13.08 satırlarına dokunulmadı — çelişki `TEKNIK_BORC.md`'ye kaydedildi. (6) `disliked` taste ağırlığı başlangıçta `abandoned` ile aynı (-3.0), `app_config`'ten ayarlanır. Bu kayıtta kod yok; uygulama T1 migration ve kodunda. |
 | 1.45 | 6 Eki 2026 | **K-62 guardrail eşikleri + K-15 durum düzeltmesi (CTO kararı).** (1) **K-62:** v1.44 tetik eşiği tanımlamamıştı, guardrail ölçülse de ne zaman bakılacağı belirsizdi. Eşikler: medyan `latency_ms` ≤ 1750 ms ya da `low_confidence` ≥ %24,8 → **inceleme tetikleyicisi, otomatik alarm değil** (kullanıcı bazında dağılıma bakılır). Kapı: yayından sonra ≥ 14 gün ve ≥ 150 seçim, altında "yetersiz veri". Gerekçe: taban örneklemi küçük (27 seçim / 7 kullanıcı); kapı ve "alarm değil, dağılıma bak" şartı küçük örneklem gürültüsüne karar bağlamamak için. Taban yayın gününde yeniden ölçülür. (2) **K-15:** "KARAR VERİLDİ, UYGULANMADI" (v1.31) gerçekle çelişiyordu — yerel hatırlatıcı `e6e87be`'den (28 Eyl) beri kodda, P-5'te `copyVersion` ile metin değişiminde yeniden planlanıyor. Bible gerçeğe uyduruldu (D-12/D-13 emsali): ifade üstü çizildi, **cihaz doğrulaması bekliyor** (V1_TESTFLIGHT_CHECKLIST O7). Aynı bayat ifadeye E-22 tablosundaki K-15 satırında ve §9'daki K-15 satırında "geçersiz — bkz. K-15" notu düşüldü (silinmedi). Kod değişikliği yok. |
 | 1.44 | 5 Eki 2026 | **K-62: Spotlight ritüelin ikinci yarısı (CTO kararı, P-5 Aşama 1).** Bekleyiş ekranında (`before_18`) bugünün karesi kilitli ve bulanık, dokunulamaz; metin "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır." Akşam bildirimi gövdesinin ikinci cümlesi "Sonra bugünün karesi." oldu (tek push, D-02; yerel planlama, sunucu değişmedi). **Değişmeyenler:** K-05 (ayrı hub yok, tek giriş champion kartı) ve paywall kapısı yok. Not: brifte üstü çizilmesi istenen "dessert" ifadesi Product OS §7.1'de bulunamadı (`docs/os/` altında hiç geçmiyor); yalnız `SpotlightBonusCard` yorumunda vardı, orası güncellendi. Product OS §7.1'e K-62 satırı eklendi. Guardrail: `choice_events.latency_ms` medyanı + `low_confidence` oranı (taban CTO brifinden: 27 seçim / 7 kullanıcı, 2500 ms, %14,8). §9'a bir satır (kare erken iniyor). K-05 satırına not düşüldü. Edge Function, şema ve `askCoordinator` değişmedi. |
