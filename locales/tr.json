@@ -431,6 +431,7 @@
     "accountSetupIncompleteTitle": "Arama kullanılamıyor",
     "accountSetupIncomplete": "Bu hesapta mood araması şu an çalışmıyor. Bildirim bize ulaştı.",
     "restoreFailed": "Satın alımlar geri yüklenemedi. Tekrar dene.",
+    "accountNotReady": "Hesabın hâlâ hazırlanıyor. Biraz bekleyip tekrar dene.",
     "offeringsLoad": "Planlar yüklenemedi. Tekrar dene.",
     "purchasePendingTitle": "Satın alma işleniyor",
     "purchasePending": "Satın alman tamamlandı ama henüz aktifleşmedi. Genelde birkaç saniye sürer — kontrol etmek için bu ekranı tekrar aç.",

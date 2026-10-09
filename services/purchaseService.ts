@@ -29,6 +29,13 @@ import { RC_ENTITLEMENT_ID } from '@/constants/subscriptionPlans';
 import { posthogAnalytics } from '@/services/posthog';
 import { logger } from '@/utils/logger';
 import type { TrialEligibility } from '@/utils/paywallPricing';
+import {
+  IdentityReadySignal,
+  RcReadinessError,
+  RcReadySignal,
+} from '@/utils/rcReadiness';
+
+export { RcReadinessError } from '@/utils/rcReadiness';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -55,7 +62,13 @@ export type PurchaseErrorKind =
   /** Satın alma geçti ama entitlement henüz aktif değil (RC senkron gecikmesi) */
   | 'entitlement_pending'
   /** Sorgu başarılı, sonuç gerçekten boş */
-  | 'no_data';
+  | 'no_data'
+  /**
+   * RC henüz hazır değil: configure bitmedi ya da kimlik (`logIn`) oturmadı.
+   * İşlem BAŞLATILMADI — anonim RC kimliğinde satın alma/restore yapılmaz.
+   * Retry anlamlı ("biraz bekle, tekrar dene").
+   */
+  | 'not_ready';
 
 /**
  * RC hatasını PurchaseErrorKind'a çevirir.
@@ -123,6 +136,74 @@ export interface PurchaseResult {
 
 let _initialized = false;
 
+/** Zaman aşımları (R-2): kilitli karar 4. */
+export const RC_READY_TIMEOUT_MS = 10_000;
+export const RC_IDENTITY_TIMEOUT_MS = 10_000;
+export const RC_LISTENER_TIMEOUT_MS = 30_000;
+
+const _rcReady = new RcReadySignal();
+const _identityReady = new IdentityReadySignal();
+
+/** K-49 dev test modu: RC'ye verilecek kimlik. Yalnız `__DEV__`'de override eder. */
+function effectiveRcUserId(supabaseUserId: string): string {
+  const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
+  return useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+}
+
+/**
+ * `whenRcReady` sarmalayıcısı: hazırsa true; zaman aşımı/configure hatasında false.
+ * Zaman aşımı `whenRcReady` içinde Sentry'ye (`RC_READY_TIMEOUT`) yazıldı,
+ * configure hatası kaynağında raporlandı — çağıran yeniden loglamaz, kendi
+ * mevcut hata dönüşünü kullanır. Beklenmeyen hata fırlar.
+ */
+async function rcReadyOrFalse(caller: string): Promise<boolean> {
+  try {
+    await whenRcReady(RC_READY_TIMEOUT_MS, caller);
+    return true;
+  } catch (err) {
+    if (err instanceof RcReadinessError) return false;
+    throw err;
+  }
+}
+
+/**
+ * `configure` başarıyla bitene kadar bekler. Bekleme normal akıştır (log yok);
+ * yalnız zaman aşımı Sentry'ye `error` yazar.
+ *
+ * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (configure
+ *   başarısız — kaynağında zaten raporlandı)
+ */
+export function whenRcReady(
+  timeoutMs: number = RC_READY_TIMEOUT_MS,
+  caller?: string,
+): Promise<void> {
+  return _rcReady.wait(timeoutMs, (err) => {
+    logger.error('[purchases] RevenueCat configure zaman asimi', err, {
+      code: 'RC_READY_TIMEOUT',
+      extra: { timeoutMs, caller: caller ?? null },
+    });
+  });
+}
+
+/**
+ * RC appUserID Supabase auth id'ye eşitlenene kadar bekler (ilk `logIn` dahil).
+ * Kimlik değiştiğinde (hesap silme, hesaba geçiş) sinyal yeniden kurulur.
+ *
+ * @throws RcReadinessError `timeout` (Sentry'ye yazıldı) | `failed` (`logIn`
+ *   hatası — `identifyUser` çağıranı raporlar)
+ */
+export function whenIdentityReady(
+  timeoutMs: number = RC_IDENTITY_TIMEOUT_MS,
+  caller?: string,
+): Promise<void> {
+  return _identityReady.wait(timeoutMs, (err) => {
+    logger.error('[purchases] RevenueCat kimlik eslemesi zaman asimi', err, {
+      code: 'RC_IDENTITY_TIMEOUT',
+      extra: { timeoutMs, caller: caller ?? null },
+    });
+  });
+}
+
 /**
  * RevenueCat SDK'yı başlatır. Uygulama açılışında bir kez çağrılır.
  * Supabase user ID ile eşleştirilir.
@@ -130,12 +211,14 @@ let _initialized = false;
 export async function initializePurchases(supabaseUserId?: string): Promise<void> {
   // JS modülü zaten işaretli — tekrar configure etme
   if (_initialized) return;
+  _rcReady.reopenIfFailed();
 
   // Native RC instance zaten ayarlanmış (Fast Refresh senaryosu) — sadece flag'i senkronize et
   try {
     const alreadyConfigured = await Purchases.isConfigured();
     if (alreadyConfigured) {
       _initialized = true;
+      _rcReady.markReady();
       logger.log('[purchases] RevenueCat zaten yapılandırılmış — flag senkronize edildi');
       return;
     }
@@ -163,6 +246,7 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
         },
       },
     );
+    _rcReady.markFailed(new Error('RC api key missing'));
     return;
   }
 
@@ -180,12 +264,17 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     });
 
     _initialized = true;
+    _rcReady.markReady();
+    // configure aynı appUserID ile yapıldıysa `logIn` gerekmez → kimlik hazır.
+    // appUserID verilmediyse (yeni kurulum) ilk `identifyUser` resolve eder.
+    if (supabaseUserId) _identityReady.complete(effectiveRcUserId(supabaseUserId));
     logger.log('[purchases] RevenueCat baslatildi');
 
   } catch (err) {
     // Native crash'i JS katmaninda yakala — uygulamayi cokertme
     logger.error('[purchases] RevenueCat baslatma hatasi:', err);
-    // _initialized = false kalir; diger servisler _initialized guard ile korunur
+    _rcReady.markFailed(err);
+    // _initialized = false kalir; rcReady 'failed' olur, bekleyenler hizli hata alir
   }
 }
 
@@ -204,21 +293,46 @@ export type IdentifyUserResult = 'identified' | 'already_identified' | 'not_init
  * user'ı login'e geçir — 6 RC state'i (restore/expiration/grace/billing/
  * refund/revoked) izole ortamda test etmek için.
  *
+ * `configure` bitmediyse `whenRcReady` (10 sn) bekler; süre dolarsa
+ * `'not_initialized'` döner (Sentry'ye `RC_READY_TIMEOUT` yazıldı).
+ *
  * @throws RC `getAppUserID` / `logIn` hatası — çağıran Sentry'ye yazar.
  */
 export async function identifyUser(supabaseUserId: string): Promise<IdentifyUserResult> {
-  if (!_initialized) return 'not_initialized';
+  // configure bitmeden gelen olay (INITIAL_SESSION / yeni kurulumda SIGNED_IN)
+  // eşlemeyi kaçırmaz: configure'ı bekle, sonra logIn. Zaman aşımı/başarısızlık
+  // zaten Sentry'ye yazıldı (whenRcReady / initializePurchases) — mevcut
+  // 'not_initialized' dönüşü korunur.
+  try {
+    await whenRcReady(RC_READY_TIMEOUT_MS, 'identifyUser');
+  } catch (err) {
+    if (err instanceof RcReadinessError) return 'not_initialized';
+    throw err;
+  }
 
   // K-49: Test matrix user override (dev + flag guard'ı)
   const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';
-  const userId = useTestUser ? 'test_user_matrix_k49' : supabaseUserId;
+  const userId = effectiveRcUserId(supabaseUserId);
 
-  const current = await Purchases.getAppUserID();
-  if (current === userId) return 'already_identified';
+  // Geçişin hedefi önce kaydedilir: eşzamanlı çağrılarda deferred değişmez,
+  // yalnız en son hedef için resolve olur (bkz. utils/rcReadiness.ts).
+  _identityReady.begin(userId);
+  try {
+    const current = await Purchases.getAppUserID();
+    if (current === userId) {
+      _identityReady.complete(userId);
+      return 'already_identified';
+    }
 
-  await Purchases.logIn(userId);
-  logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
-  return 'identified';
+    await Purchases.logIn(userId);
+    _identityReady.complete(userId);
+    logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
+    return 'identified';
+  } catch (err) {
+    // Bekleyenler zaman aşımına kadar beklemesin; hata çağırana fırlar (Sentry orada).
+    _identityReady.fail(userId, err);
+    throw err;
+  }
 }
 
 // ─── Abonelik Durumu ─────────────────────────────────────────────────────────
@@ -235,12 +349,9 @@ export async function getSubscriptionStatus(): Promise<SubscriptionInfo> {
     rcCustomerId: null,
   };
 
-  if (!_initialized) {
-    logger.error(
-      '[purchases] getSubscriptionStatus: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getSubscriptionStatus' } },
-    );
+  // Soğuk açılışta provider effect'i configure'dan önce koşar: bekle (REACT-NATIVE-7
+  // ile aynı yarış). Hazır olunamazsa mevcut 'not_initialized' dönüşü korunur.
+  if (!(await rcReadyOrFalse('getSubscriptionStatus'))) {
     return { ...defaultStatus, errorKind: 'not_initialized' };
   }
 
@@ -284,21 +395,18 @@ function parseCustomerInfo(info: CustomerInfo): SubscriptionInfo {
  * Abonelik yenilenme, expire, cancel gibi olaylarda tetiklenir.
  * SubscriptionContext bu callback'i kullanarak state'i günceller.
  *
- * @returns Cleanup fonksiyonu (listener'ı kaldırır)
+ * Bağlama `configure` bitene kadar bekler (`whenRcReady`, 30 sn) — soğuk
+ * açılışta provider effect'i `initializePurchases`'tan önce koşar, bu normal
+ * akıştır ve log üretmez. Cleanup bağlanmadan ÖNCE çağrılırsa bağlama iptal
+ * edilir. 30 sn'de bağlanamazsa Sentry'ye `RC_READY_TIMEOUT` yazılır.
+ *
+ * @returns Cleanup fonksiyonu (listener'ı kaldırır / bekleyen bağlamayı iptal eder)
  */
 export function addSubscriptionListener(
   callback: (info: SubscriptionInfo) => void,
 ): () => void {
-  if (!_initialized) {
-    // Listener hic takilmiyor — abonelik yenilenme/expire/cancel olaylari
-    // sessizce islenmez.
-    logger.error(
-      '[purchases] addSubscriptionListener: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'addSubscriptionListener' } },
-    );
-    return () => {};
-  }
+  let cancelled = false;
+  let attached: CustomerInfoUpdateListener | null = null;
 
   // Named referans — removeCustomerInfoUpdateListener ayni fonksiyonu alir
   const listenerFn: CustomerInfoUpdateListener = (customerInfo) => {
@@ -306,10 +414,26 @@ export function addSubscriptionListener(
     callback(parsed);
   };
 
-  Purchases.addCustomerInfoUpdateListener(listenerFn);
+  whenRcReady(RC_LISTENER_TIMEOUT_MS, 'addSubscriptionListener')
+    .then(() => {
+      if (cancelled) return;
+      Purchases.addCustomerInfoUpdateListener(listenerFn);
+      attached = listenerFn;
+    })
+    .catch((err: unknown) => {
+      // Zaman aşımı / configure hatası kaynağında zaten Sentry'ye yazıldı.
+      if (err instanceof RcReadinessError) return;
+      logger.error('[purchases] addSubscriptionListener baglama hatasi', err, {
+        code: 'RC_LISTENER_ATTACH_FAILED',
+      });
+    });
 
   return () => {
-    Purchases.removeCustomerInfoUpdateListener(listenerFn);
+    cancelled = true;
+    if (attached) {
+      Purchases.removeCustomerInfoUpdateListener(attached);
+      attached = null;
+    }
   };
 }
 
@@ -320,12 +444,9 @@ export function addSubscriptionListener(
  * Paywall UI bunu kullanarak fiyat/trial bilgilerini gösterir.
  */
 export async function getOfferings(): Promise<OfferingsResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] getOfferings: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'getOfferings' } },
-    );
+  // Soğuk açılışta paywall configure'dan önce açılırsa fiyatsız kalmasın: bekle.
+  // Hazır olunamazsa mevcut boş + 'not_initialized' dönüşü korunur.
+  if (!(await rcReadyOrFalse('getOfferings'))) {
     return { items: [], errorKind: 'not_initialized' };
   }
 
@@ -368,8 +489,10 @@ export async function getTrialEligibility(
   const unknownAll = (): Record<string, TrialEligibility> =>
     Object.fromEntries(productIds.map((id) => [id, 'unknown' as const]));
 
-  // Başlatılmamışsa getOfferings zaten RC_NOT_INITIALIZED yazdı.
-  if (!_initialized || productIds.length === 0) return unknownAll();
+  if (productIds.length === 0) return unknownAll();
+  // Hazır olunamazsa 'unknown': trial VAAT EDİLMEZ (Apple 3.1.2). Zaman aşımı
+  // rcReadyOrFalse içinde Sentry'ye yazıldı.
+  if (!(await rcReadyOrFalse('getTrialEligibility'))) return unknownAll();
 
   try {
     const raw = await Purchases.checkTrialOrIntroductoryPriceEligibility(productIds);
@@ -412,17 +535,35 @@ export async function getTrialEligibility(
 // ─── Satın Alma ──────────────────────────────────────────────────────────────
 
 /**
+ * Satın alma/restore anonim RC kimliğinde BAŞLAMAZ: alım `$RCAnonymousID`'ye
+ * yazılırsa webhook eşleyemez, Pro açılmaz; restore ise EDGE-14'teki sahte
+ * TRANSFER'i üretir. `configure` + kimlik eşlemesi beklenir.
+ *
+ * @returns null = hazır; aksi hâlde çağıranın döneceği `errorKind`.
+ *   Zaman aşımı `whenRcReady` / `whenIdentityReady` içinde Sentry'ye yazıldı;
+ *   configure/logIn hatası kaynağında raporlandı.
+ */
+async function awaitPurchaseReadiness(fn: string): Promise<PurchaseErrorKind | null> {
+  try {
+    await whenRcReady(RC_READY_TIMEOUT_MS, fn);
+    await whenIdentityReady(RC_IDENTITY_TIMEOUT_MS, fn);
+    return null;
+  } catch (err) {
+    if (!(err instanceof RcReadinessError)) throw err;
+    // configure hiç yapılamadı (key yok / native hata) = eski 'not_initialized'.
+    if (err.signal === 'rc' && err.reason === 'failed') return 'not_initialized';
+    return 'not_ready';
+  }
+}
+
+/**
  * Belirtilen paketi satın alır.
  * Paywall'dan çağrılır.
  */
 export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] purchasePackage: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'purchasePackage' } },
-    );
-    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
+  const notReady = await awaitPurchaseReadiness('purchasePackage');
+  if (notReady) {
+    return { success: false, error: 'RevenueCat hazır değil', errorKind: notReady };
   }
 
   posthogAnalytics.track('purchase_started', {
@@ -526,6 +667,9 @@ export async function logOutPurchases(): Promise<void> {
     return;
   }
 
+  // Kimlik değişiyor: bayat "hazır" sinyali restore/purchase'ı anonim kimlikte
+  // başlatırdı. Sıradaki `identifyUser` (yeni anonim oturum) resolve eder.
+  _identityReady.begin(null);
   await Purchases.logOut();
   logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
 }
@@ -535,16 +679,15 @@ export async function logOutPurchases(): Promise<void> {
 /**
  * Önceki satın alımları geri yükler.
  * App Store review guide: bu buton zorunlu.
+ *
+ * `configure` + kimlik eşlemesi hazır olana kadar bekler (10 + 10 sn); hazır
+ * olunamazsa RC çağrılmaz ve `errorKind: 'not_ready'` döner.
  */
 export async function restorePurchases(): Promise<PurchaseResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] restorePurchases: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'restorePurchases' } },
-    );
-    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: 'not_initialized' });
-    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
+  const notReady = await awaitPurchaseReadiness('restorePurchases');
+  if (notReady) {
+    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: notReady });
+    return { success: false, error: 'RevenueCat hazır değil', errorKind: notReady };
   }
 
   try {
