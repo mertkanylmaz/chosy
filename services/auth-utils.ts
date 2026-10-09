@@ -163,6 +163,41 @@ export async function readAppUserId(): Promise<string | null> {
 }
 
 /**
+ * `users` insert'i reddedildiğinde oturumun durumunu özetler (yalnız bool/sayı).
+ * Token, auth id ve e-posta DÖNMEZ. Okuma başarısız olursa `sessionReadFailed`
+ * işaretlenir — teşhis verisi eksikliği sessiz kalmaz.
+ */
+async function readSessionDiagnostics(authUid: string): Promise<{
+  hasSession: boolean;
+  accessTokenExpiresInSec: number | null;
+  authIdMatchesSession: boolean;
+  sessionReadFailed?: true;
+}> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    const session = data.session;
+    return {
+      hasSession: session !== null,
+      accessTokenExpiresInSec:
+        session?.expires_at != null ? session.expires_at - Math.floor(Date.now() / 1000) : null,
+      authIdMatchesSession: session?.user?.id === authUid,
+    };
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { function: 'readSessionDiagnostics', error_code: 'APP_USER_DIAG_FAILED' },
+    });
+    return {
+      hasSession: false,
+      accessTokenExpiresInSec: null,
+      authIdMatchesSession: false,
+      sessionReadFailed: true,
+    };
+  }
+}
+
+/**
  * Auth kullanıcısının `users` tablosundaki UUID'sini döndürür.
  * Kayıt yoksa (anonim dahil) otomatik oluşturur.
  */
@@ -172,11 +207,27 @@ export async function getAppUserId(): Promise<string | null> {
     if (!authUid) return null;
 
     return await identityCache.resolve(authUid, 'get', async () => {
-      const { data } = await supabase
+      // `maybeSingle`: 0 satır hata DEĞİL (data null) → insert yolu. `single`
+      // 0 satırı da PGRST116 hatası olarak döndürür ve gerçek okuma hatasından
+      // ayırt edilemezdi. Birden fazla satır hâlâ hata (PGRST116) → aşağıda.
+      const { data, error: selectError } = await supabase
         .from('users')
         .select('id')
         .eq('auth_id', authUid)
-        .single();
+        .maybeSingle();
+
+      if (selectError) {
+        // Okuma BAŞARISIZ (0 satır değil): satırın varlığı bilinmiyor, insert
+        // denemek RLS hatası üretir ve teşhisi bozar (REACT-NATIVE-C). Sessiz
+        // değil: `logger.warn` prod'da sessiz olduğu için Sentry'ye warning
+        // seviyesinde elle yazılır.
+        Sentry.captureMessage('getAppUserId: users select hatası — insert denenmedi', {
+          level: 'warning',
+          tags: { function: 'getAppUserId', error_code: 'APP_USER_SELECT_FAILED' },
+          extra: { stage: 'getAppUserId.select', pg_code: selectError.code, message: selectError.message },
+        });
+        return null;
+      }
 
       if (data) return data.id as string;
 
@@ -197,7 +248,14 @@ export async function getAppUserId(): Promise<string | null> {
             .single();
           return (existing?.id as string | undefined) ?? null;
         }
-        logger.error('[auth-utils] users kaydı oluşturulamadı:', insertError.message);
+        // Oturum teşhisi (REACT-NATIVE-C): RLS reddi oturum yokluğundan mu,
+        // süresi dolmuş token'dan mı, auth id uyuşmazlığından mı? Yalnız
+        // bool/sayı — token, auth id ve e-posta ASLA loglanmaz.
+        const diagnostics = await readSessionDiagnostics(authUid);
+        logger.error('[auth-utils] users kaydı oluşturulamadı:', insertError.message, {
+          code: 'APP_USER_INSERT_FAILED',
+          extra: { stage: 'getAppUserId.insert', pg_code: insertError.code, ...diagnostics },
+        });
         return null;
       }
 
