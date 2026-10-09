@@ -105,6 +105,8 @@ import {
   getNotificationStatus,
   toggleNotifications,
 } from '@/services/pushNotifications';
+import { AiConsentHost } from '@/components/AiConsentSheet';
+import { ensureAiConsent, hasAiConsent, revokeAiConsent } from '@/services/aiConsent';
 import { formatUnlockTime } from '@/components/gauntlet/GauntletShell/unlockClock';
 import { getChampionDatesSince, getLastChampion, type LastChampion } from '@/services/gauntletService';
 import { RitualRing } from '@/components/Profile/RitualRing';
@@ -391,6 +393,9 @@ interface SettingsModalProps {
   /** `users.push_enabled` — `null`: okunamadı (switch devre dışı). */
   notificationsEnabled: boolean | null;
   onToggleNotifications: (enabled: boolean) => void;
+  /** AI rızası (R-1) — `null`: henüz okunmadı (switch devre dışı). */
+  aiSuggestionsEnabled: boolean | null;
+  onToggleAiSuggestions: (enabled: boolean) => void;
   onLinkApple: () => void;
   onClearWatchlist: () => void;
   onManageSubscription: () => void;
@@ -420,6 +425,8 @@ function SettingsModal({
   linkingAccount,
   notificationsEnabled,
   onToggleNotifications,
+  aiSuggestionsEnabled,
+  onToggleAiSuggestions,
   onLinkApple,
   onClearWatchlist,
   onManageSubscription,
@@ -544,6 +551,27 @@ function SettingsModal({
               accessibilityState={{
                 checked: notificationsEnabled === true,
                 disabled: notificationsEnabled === null,
+              }}
+            />
+          </View>
+
+          {/* AI önerileri (R-1) — kapatınca rıza geri çekilir, açınca sheet açılır */}
+          <View style={settingsModalStyles.row}>
+            <View style={settingsModalStyles.rowLeft}>
+              <Ionicons name="sparkles-outline" size={16} color={color.text.secondary} />
+              <Text style={settingsModalStyles.rowLabel}>{t('profile.aiSuggestions')}</Text>
+            </View>
+            <Switch
+              value={aiSuggestionsEnabled === true}
+              onValueChange={(next) => { hapticSelection(); onToggleAiSuggestions(next); }}
+              disabled={aiSuggestionsEnabled === null}
+              trackColor={{ false: color.surface.border, true: color.accent.active }}
+              ios_backgroundColor={color.surface.border}
+              accessibilityRole="switch"
+              accessibilityLabel={t('profile.aiSuggestions')}
+              accessibilityState={{
+                checked: aiSuggestionsEnabled === true,
+                disabled: aiSuggestionsEnabled === null,
               }}
             />
           </View>
@@ -696,6 +724,8 @@ function SettingsModal({
 
         </TouchableOpacity>
       </TouchableOpacity>
+      {/* R-1: iOS Modal üstüne Modal'ı kök VC'den sunamaz — rıza sheet'i bu modalın içinden açılır. */}
+      <AiConsentHost />
     </Modal>
   );
 }
@@ -798,6 +828,8 @@ function ProfileScreenContent() {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [linkingAccount, setLinkingAccount] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  /** `users.ai_consent_at` (R-1) — `null`: henüz okunmadı. */
+  const [aiSuggestionsEnabled, setAiSuggestionsEnabled] = useState<boolean | null>(null);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   /** `users.push_enabled` — `null`: henüz okunmadı ya da okunamadı. */
@@ -1391,6 +1423,45 @@ function ProfileScreenContent() {
     Alert.alert(t('notifications.toggleError'));
   }
 
+  // ─── AI önerileri anahtarı (R-1) ────────────────────────────────────
+
+  /** Ayarlar her açıldığında güncel rıza okunur (başka yüzeyden verilmiş olabilir). */
+  useEffect(() => {
+    if (!showSettings) return;
+    let active = true;
+    hasAiConsent()
+      .then((granted) => {
+        if (active) setAiSuggestionsEnabled(granted);
+      })
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { screen: 'profile', flow: 'ai_consent_read' },
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [showSettings]);
+
+  /**
+   * Açmak rıza sheet'ini açar (sonuç reddederse anahtar geri döner); kapatmak
+   * rızayı geri çeker. Geri çekme yazılamadıysa anahtar geri alınır ve hata
+   * gösterilir — rıza sunucuda duruyorsa arayüz "kapalı" demez.
+   */
+  async function handleToggleAiSuggestions(enabled: boolean): Promise<void> {
+    const prev = aiSuggestionsEnabled;
+    setAiSuggestionsEnabled(enabled); // Optimistic
+    if (enabled) {
+      const granted = await ensureAiConsent('settings', { explicit: true });
+      if (!granted) setAiSuggestionsEnabled(prev); // Rollback
+      return;
+    }
+    const revoked = await revokeAiConsent();
+    if (revoked) return;
+    setAiSuggestionsEnabled(prev); // Rollback
+    Alert.alert(t('aiConsent.saveError'));
+  }
+
   // ─── Share Archetype ─────────────────────────────────────────────────
 
   async function handleShareArchetype(): Promise<void> {
@@ -1903,6 +1974,8 @@ function ProfileScreenContent() {
         linkingAccount={linkingAccount}
         notificationsEnabled={notificationsEnabled}
         onToggleNotifications={(enabled) => void handleToggleNotifications(enabled)}
+        aiSuggestionsEnabled={aiSuggestionsEnabled}
+        onToggleAiSuggestions={(enabled) => void handleToggleAiSuggestions(enabled)}
         onLinkApple={handleLinkApple}
         onClearWatchlist={handleClearWatchlist}
         onManageSubscription={() => void handleManageSubscription()}

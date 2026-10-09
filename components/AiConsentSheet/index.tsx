@@ -100,7 +100,9 @@ export function AiConsentSheet({ visible, busy, errorMsg, onAccept, onDecline }:
 
 /**
  * Kök layout'a bir kez monte edilir. Servisin `ensureAiConsent` çağrısını
- * sheet'e çevirir; sonuç `show()` Promise'ine döner.
+ * sheet'e çevirir; sonuç `show()` Promise'ine döner. Başka bir Modal'ın
+ * (ör. Ayarlar) içinden rıza istenecekse o Modal kendi host'unu içine monte
+ * eder; en son monte edilen host aktiftir.
  */
 export function AiConsentHost() {
   const { t } = useLanguage();
@@ -120,7 +122,7 @@ export function AiConsentHost() {
   }, []);
 
   useEffect(() => {
-    registerAiConsentHost({
+    const unregister = registerAiConsentHost({
       show: (surface) =>
         new Promise<boolean>((resolve) => {
           surfaceRef.current = surface;
@@ -130,7 +132,7 @@ export function AiConsentHost() {
         }),
     });
     return () => {
-      registerAiConsentHost(null);
+      unregister();
       // Host sökülürken bekleyen çağrı askıda kalmasın: ret sayılır.
       resolveRef.current?.(false);
       resolveRef.current = null;

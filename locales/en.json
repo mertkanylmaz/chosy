@@ -525,6 +525,7 @@
     "gamesLongest": "Best: %{count}",
     "settingsSection": "Settings",
     "closeSettings": "Close Settings",
+    "aiSuggestions": "AI suggestions",
     "personaPlaceholder": "Discover your type",
     "editProfile": "Edit Profile",
     "memberSince": "Since %{date}",

@@ -61,15 +61,25 @@ export interface AiConsentHost {
   show: (surface: AiConsentSurface) => Promise<boolean>;
 }
 
-let host: AiConsentHost | null = null;
+/**
+ * Kayıtlı host'lar — SONUNCU aktiftir. Kök layout bir host monte eder; iOS
+ * bir Modal'ın üstüne başka bir Modal'ı kök VC'den sunamadığı için Ayarlar
+ * modalı kendi host'unu içine monte eder ve kapanınca listeden çıkar.
+ */
+const hosts: AiConsentHost[] = [];
 let pendingPrompt: Promise<boolean> | null = null;
 let declinedThisSession = false;
 
 /** auth kullanıcısına bağlı önbellek — hesap değişince geçersiz. */
 let cache: { authId: string; granted: boolean } | null = null;
 
-export function registerAiConsentHost(next: AiConsentHost | null): void {
-  host = next;
+/** Host kaydeder; dönen fonksiyon kaydı kaldırır (unmount'ta çağrılır). */
+export function registerAiConsentHost(next: AiConsentHost): () => void {
+  hosts.push(next);
+  return () => {
+    const i = hosts.lastIndexOf(next);
+    if (i !== -1) hosts.splice(i, 1);
+  };
 }
 
 async function currentAuthId(): Promise<string | null> {
@@ -243,6 +253,7 @@ export async function ensureAiConsent(
   // Aynı anda iki tetikleyici (ör. arama + rerank) tek sheet paylaşır.
   if (pendingPrompt !== null) return pendingPrompt;
 
+  const host = hosts.length > 0 ? hosts[hosts.length - 1] : null;
   if (host === null) {
     const err = new Error('aiConsent: sheet host kayıtlı değil — rıza istenemedi');
     logger.error('[aiConsent]', err);
