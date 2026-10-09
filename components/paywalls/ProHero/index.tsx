@@ -1,5 +1,6 @@
 /**
  * ProHero — Chosy Pro paywall'ının Mood Search anlatımı (R-5 V2, madde 8-9).
+ * Sıra: hero → örnek kart → (PaywallBase plan kartları) → `ProBenefits`.
  *
  * Hero KODLA çizilir, görsel dosyası yoktur: koyu zemin üzerinde `marquee`
  * token'ından türetilmiş, düşük opaklıkta iki radyal ışık ("projektör ışığı").
@@ -90,18 +91,28 @@ export function ProHero(): React.JSX.Element {
         <Text style={styles.exampleLabel}>{t('paywallPro.exampleLabel')}</Text>
         <Text style={styles.exampleText}>{t('paywallPro.exampleText')}</Text>
       </View>
+    </View>
+  );
+}
 
-      <View style={styles.benefits}>
-        {BENEFITS.map(({ Icon, titleKey, bodyKey }) => (
-          <View key={titleKey} style={styles.benefitRow}>
-            <Icon size={size.iconAction} color={color.reward.primary} weight="duotone" />
-            <View style={styles.benefitText}>
-              <Text style={styles.benefitTitle}>{t(titleKey)}</Text>
-              <Text style={styles.benefitBody}>{t(bodyKey)}</Text>
-            </View>
+/**
+ * İki fayda satırı — plan kartlarının ALTINDA gösterilir (`renderBelowPlans`).
+ * Kartlar ilk ekranda tam görünsün diye hero'dan ayrıldı (R-5 fit).
+ */
+export function ProBenefits(): React.JSX.Element {
+  const { t } = useLanguage();
+
+  return (
+    <View style={styles.benefits}>
+      {BENEFITS.map(({ Icon, titleKey, bodyKey }) => (
+        <View key={titleKey} style={styles.benefitRow}>
+          <Icon size={size.iconAction} color={color.reward.primary} weight="duotone" />
+          <View style={styles.benefitText}>
+            <Text style={styles.benefitTitle}>{t(titleKey)}</Text>
+            <Text style={styles.benefitBody}>{t(bodyKey)}</Text>
           </View>
-        ))}
-      </View>
+        </View>
+      ))}
     </View>
   );
 }
@@ -168,7 +179,7 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
   },
   benefits: {
-    marginTop: space.md,
+    marginTop: space.base,
     gap: space.sm,
   },
   benefitRow: {

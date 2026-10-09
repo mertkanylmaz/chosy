@@ -99,6 +99,12 @@ interface PaywallBaseProps {
    */
   renderHeader: (pricing: AnnualPricing | null) => React.ReactNode;
   /**
+   * Plan kartlarının (veya yükleme/hata bloğunun) ALTINDA, kaydırılan alanın
+   * içinde gösterilecek içerik. Hero'daki fayda satırları gibi, kartlardan
+   * sonra gelmesi gereken içerik içindir (R-5 fit).
+   */
+  renderBelowPlans?: () => React.ReactNode;
+  /**
    * @deprecated R-5: CTA metni `buildOffer`'dan gelir (tek kaynak). Prop
    * olu varyantlarin imzasini bozmamak icin duruyor, OKUNMAZ.
    * Bkz. docs/TEKNIK_BORC.md "R-5 ertelenenler".
@@ -146,6 +152,7 @@ export default function PaywallBase({
   onConvert,
   onDismiss,
   renderHeader,
+  renderBelowPlans,
 }: PaywallBaseProps) {
   const { t, language } = useLanguage();
   const { refreshSubscription, refreshQuota, premiumStatus } = useSubscription();
@@ -680,6 +687,8 @@ export default function PaywallBase({
                 })}
               </View>
             )}
+
+            {renderBelowPlans?.()}
 
             {inlineFooter && footer}
           </ScrollView>

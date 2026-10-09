@@ -12,7 +12,7 @@ import React, { useCallback } from 'react';
 import type { PlanId } from '@/constants/subscriptionPlans';
 import type { PaywallVariant } from '@/services/conversion';
 import PaywallBase from '../PaywallBase';
-import { ProHero } from '../ProHero';
+import { ProBenefits, ProHero } from '../ProHero';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -33,6 +33,7 @@ export default function PaywallProfileUpgrade({
   onDismiss,
 }: Props) {
   const renderHeader = useCallback(() => <ProHero />, []);
+  const renderBelowPlans = useCallback(() => <ProBenefits />, []);
 
   return (
     <PaywallBase
@@ -41,6 +42,7 @@ export default function PaywallProfileUpgrade({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
+      renderBelowPlans={renderBelowPlans}
     />
   );
 }
