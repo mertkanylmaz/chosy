@@ -118,6 +118,24 @@ function unitKeyFor(id: PlanId): 'oneTime' | 'perYear' | 'perMonth' {
   return id === 'lifetime' ? 'oneTime' : id === 'annual' ? 'perYear' : 'perMonth';
 }
 
+// ─── Başarı sonrası yan iş ──────────────────────────────────────────────────
+
+/**
+ * Başarılı satın alma sonrası tek bir yan işi çalıştırır. Hata yutulmaz
+ * (Sentry, kural 1) ama yayılmaz: ödeme alınmışken kullanıcıya "satın alma
+ * gitmedi" demek yanlış ve çift ödeme riskidir.
+ */
+async function postPurchaseStep(step: string, fn: () => Promise<unknown>): Promise<void> {
+  try {
+    await fn();
+  } catch (err) {
+    logger.error('[paywall-base] Satin alma sonrasi adim basarisiz:', err, {
+      code: 'PAYWALL_POST_PURCHASE_STEP_FAILED',
+      extra: { step },
+    });
+  }
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 
 /**
@@ -279,43 +297,55 @@ export default function PaywallBase({
       if (result.cancelled) return;
 
       if (result.success) {
+        // Başarı kriteri `purchaseService`'te belirlendi (entitlements.active
+        // [chosy_plus]). Bundan sonraki her adım YAN İŞTİR: biri patlarsa
+        // ödeme zaten alınmıştır, kullanıcıya "Try again" gösterilmez (çift
+        // ödeme riski) — hata Sentry'ye gider, başarı akışı sürer (R-5 B6).
         hapticSuccess();
 
-        const userId = await getAppUserId();
-        if (userId) {
-          await upsertSubscription({
-            userId,
-            plan: selectedPlan,
-            status: 'active',
-            rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
+        // Nesne sarmalayıcı: kapanış içinde atanan `let`, TS'te `null`'a
+        // daralır ve `if` bloğunu `never` yapar.
+        const resolved: { userId: string | null } = { userId: null };
+        await postPurchaseStep('get_app_user_id', async () => {
+          resolved.userId = await getAppUserId();
+        });
+
+        if (resolved.userId) {
+          const uid: string = resolved.userId;
+          await postPurchaseStep('upsert_subscription', async () => {
+            await upsertSubscription({
+              userId: uid,
+              plan: selectedPlan,
+              status: 'active',
+              rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
+            });
           });
 
           // KRITIK: users.subscription_tier'i hemen guncelle.
           // Quota RPC'leri (check_and_consume_quota) bu kolonu okur.
           // Webhook async gelebilir — kullanici arada "limit reached" gorebilir.
-          const tier = selectedPlan === 'annual' ? 'annual'
-            : selectedPlan === 'lifetime' ? 'lifetime'
-            : 'monthly';
-          const { error: tierErr } = await supabase
-            .from('users')
-            .update({
-              subscription_tier: tier,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', userId);
-
-          if (tierErr) {
-            logger.warn('[paywall-base] users.subscription_tier guncelleme hatasi:', tierErr.message);
-          }
+          await postPurchaseStep('update_subscription_tier', async () => {
+            const tier = selectedPlan === 'annual' ? 'annual'
+              : selectedPlan === 'lifetime' ? 'lifetime'
+              : 'monthly';
+            const { error: tierErr } = await supabase
+              .from('users')
+              .update({
+                subscription_tier: tier,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', uid);
+            if (tierErr) throw tierErr;
+          });
 
           // Client-side quota cache'ini temizle — yeni tier ile fresh quota
-          await clearQuotaCache(userId);
+          await postPurchaseStep('clear_quota_cache', () => clearQuotaCache(uid));
         }
 
-        await recordPaywallConverted(variant);
-        await refreshSubscription();
-        await refreshQuota();
-        onConvert(selectedPlan);
+        await postPurchaseStep('record_converted', () => recordPaywallConverted(variant));
+        await postPurchaseStep('refresh_subscription', () => refreshSubscription());
+        await postPurchaseStep('refresh_quota', () => refreshQuota());
+        await postPurchaseStep('on_convert', async () => { onConvert(selectedPlan); });
       } else if (result.errorKind === 'entitlement_pending') {
         // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
         // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.
