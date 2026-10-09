@@ -629,6 +629,19 @@
     "body": "Every night's pick and your watchlist stay saved here — free, no subscription needed.",
     "notNow": "Not now"
   },
+  "aiConsent": {
+    "title": "Let Claude help you choose",
+    "intro": "Searches and personal explanations run on Claude, an AI from Anthropic.",
+    "sentLabel": "Sent",
+    "sentText": "The text you type for a search and the mood profile taken from that search.",
+    "purposeLabel": "Used for",
+    "purposeText": "Picking films and explaining why they fit.",
+    "notSentLabel": "Not sent",
+    "notSentText": "Your email and account details.",
+    "accept": "Accept",
+    "decline": "Not now",
+    "saveError": "Couldn't save your choice. Try again."
+  },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",
     "body": "One notification a day, when tonight's four are picked. Nothing else.",

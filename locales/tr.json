@@ -629,6 +629,19 @@
     "body": "Her gecenin seçimi ve izleme listen burada kayıtlı — ücretsiz, abonelik gerekmez.",
     "notNow": "Şimdi değil"
   },
+  "aiConsent": {
+    "title": "Seçmene Claude yardım etsin",
+    "intro": "Aramalar ve kişisel açıklamalar, Anthropic'in yapay zekâsı Claude ile çalışır.",
+    "sentLabel": "Gönderilen",
+    "sentText": "Arama için yazdığın metin ve bu aramadan çıkarılan mood profili.",
+    "purposeLabel": "Amaç",
+    "purposeText": "Film önermek ve neden uyduğunu açıklamak.",
+    "notSentLabel": "Gönderilmeyen",
+    "notSentText": "E-postan ve hesap bilgilerin.",
+    "accept": "Kabul",
+    "decline": "Şimdi değil",
+    "saveError": "Seçimin kaydedilemedi. Tekrar dene."
+  },
   "notificationPrompt": {
     "title": "Dördün her akşam hazır olsun mu?",
     "body": "Günde tek bildirim, bu gecenin dördü seçildiğinde. Başka hiçbir şey.",

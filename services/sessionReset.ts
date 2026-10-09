@@ -29,6 +29,7 @@ import { posthogAnalytics } from './posthog';
 import { logOutPurchases } from './purchaseService';
 import { clearGauntletCache } from './gauntletCache';
 import { clearIdentityCache } from './auth-utils';
+import { resetAiConsentSession } from './aiConsent';
 import { logger } from '../utils/logger';
 import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
 
@@ -177,6 +178,13 @@ export async function resetToFreshSession(deps: ResetToFreshSessionDeps): Promis
       clearIdentityCache();
     } catch (err) {
       captureStep(err, 'identity_cache_clear');
+    }
+
+    // AI rızası da eski kullanıcıya aitti: önbellek ve oturum reti sıfırlanır.
+    try {
+      resetAiConsentSession();
+    } catch (err) {
+      captureStep(err, 'ai_consent_reset');
     }
 
     try {
