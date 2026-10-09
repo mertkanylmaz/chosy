@@ -16,6 +16,11 @@
  *
  * Sıra kritik: önce public (cascade), sonra auth. Tersi "ters orphan" üretir.
  *
+ * Adım 0 (tüm dallardan önce): Sign in with Apple token revoke (5.1.1(v)).
+ * İstek gövdesi opsiyonel `{ appleAuthorizationCode }`; Apple identity kararı
+ * sunucuda (`getUser().identities`). Başarısızlık silmeyi engellemez, Sentry'ye
+ * APPLE_* kodlarıyla gider. Detay: _shared/appleRevoke.ts
+ *
  * Deploy:
  *   supabase functions deploy delete-account
  *
@@ -30,11 +35,14 @@
  *   POSTHOG_PROJECT_ID         — PostHog proje numarası
  *   POSTHOG_API_HOST           — opsiyonel, varsayılan https://us.posthog.com
  *                                (ingestion host'u us.i.posthog.com DEĞİL)
+ *   APPLE_TEAM_ID / APPLE_KEY_ID / APPLE_PRIVATE_KEY (literal "\n" olabilir)
+ *   APPLE_CLIENT_ID            — bundle id (com.chosy.ai), Services ID DEĞİL
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+import { decideAppleRevoke, revokeAppleSignIn } from '../_shared/appleRevoke.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
@@ -188,6 +196,41 @@ serve(async (req: Request) => {
 
   const authUid = user.id
 
+  // ── Sign in with Apple token revoke (5.1.1(v)) ────────────────────────────
+  // JWT doğrulamasından hemen sonra, İLK silme adımından ÖNCE; satırlı ve
+  // satırsız (auth-only) dalların ikisini de kapsar. Başarısızlık silmeyi
+  // ENGELLEMEZ — revokeAppleSignIn fırlatmaz, her hata Sentry'ye raporlanır.
+  // Karar sunucuda: getUser().identities. Gövde opsiyonel (eski client gövdesiz
+  // çağırır → boş gövde beklenen durum, hata değil).
+  const reqBody = await req.json().catch(() => null) as
+    | { appleAuthorizationCode?: unknown }
+    | null
+  const appleCode = typeof reqBody?.appleAuthorizationCode === 'string'
+    ? reqBody.appleAuthorizationCode
+    : undefined
+
+  const appleOutcome = await revokeAppleSignIn(
+    decideAppleRevoke(user.identities, appleCode),
+    appleCode,
+    {
+      teamId: Deno.env.get('APPLE_TEAM_ID'),
+      keyId: Deno.env.get('APPLE_KEY_ID'),
+      clientId: Deno.env.get('APPLE_CLIENT_ID'),
+      privateKey: Deno.env.get('APPLE_PRIVATE_KEY'),
+    },
+    {
+      fetchFn: fetch,
+      nowSec: () => Math.floor(Date.now() / 1000),
+      report: (r) =>
+        sentryCapture({
+          message: `delete-account: ${r.code}`,
+          level: r.level,
+          tags: { fn: 'delete-account', step: 'apple_revoke', apple_code: r.code },
+          extra: { auth_uid: authUid, ...r.detail },
+        }),
+    },
+  )
+
   // Admin client — service role ile tam yetki
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false },
@@ -250,7 +293,12 @@ serve(async (req: Request) => {
       const phDeleted = await deletePostHogPerson(authUid)
 
       return new Response(
-        JSON.stringify({ success: true, note: 'auth_only', posthog_deleted: phDeleted }),
+        JSON.stringify({
+          success: true,
+          note: 'auth_only',
+          posthog_deleted: phDeleted,
+          apple_revoke: appleOutcome,
+        }),
         { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
     }
@@ -335,7 +383,11 @@ serve(async (req: Request) => {
     console.log('[delete-account] Hesap tamamen silindi:', authUid)
 
     return new Response(
-      JSON.stringify({ success: true, posthog_deleted: posthogDeleted }),
+      JSON.stringify({
+        success: true,
+        posthog_deleted: posthogDeleted,
+        apple_revoke: appleOutcome,
+      }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
