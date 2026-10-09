@@ -264,10 +264,22 @@ export type IdentifyUserResult = 'identified' | 'already_identified' | 'not_init
  * user'ı login'e geçir — 6 RC state'i (restore/expiration/grace/billing/
  * refund/revoked) izole ortamda test etmek için.
  *
+ * `configure` bitmediyse `whenRcReady` (10 sn) bekler; süre dolarsa
+ * `'not_initialized'` döner (Sentry'ye `RC_READY_TIMEOUT` yazıldı).
+ *
  * @throws RC `getAppUserID` / `logIn` hatası — çağıran Sentry'ye yazar.
  */
 export async function identifyUser(supabaseUserId: string): Promise<IdentifyUserResult> {
-  if (!_initialized) return 'not_initialized';
+  // configure bitmeden gelen olay (INITIAL_SESSION / yeni kurulumda SIGNED_IN)
+  // eşlemeyi kaçırmaz: configure'ı bekle, sonra logIn. Zaman aşımı/başarısızlık
+  // zaten Sentry'ye yazıldı (whenRcReady / initializePurchases) — mevcut
+  // 'not_initialized' dönüşü korunur.
+  try {
+    await whenRcReady();
+  } catch (err) {
+    if (err instanceof RcReadinessError) return 'not_initialized';
+    throw err;
+  }
 
   // K-49: Test matrix user override (dev + flag guard'ı)
   const useTestUser = __DEV__ && process.env.EXPO_PUBLIC_RC_TEST_MODE === 'true';

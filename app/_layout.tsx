@@ -215,10 +215,11 @@ const IDENTITY_SYNC_EVENTS: ReadonlySet<AuthChangeEvent> = new Set<AuthChangeEve
  * `identifyUser` idempotenttir (mevcut appUserID zaten hedefse `logIn`
  * yok). Hata yutulmaz → Sentry.
  *
- * `not_initialized`: INITIAL_SESSION'da beklenen yarış — RC `configure`
- * aynı effect turunda `getSession()`'daki bu kullanıcıyla yapılır, yani
- * kimlik zaten doğru verilir. Diğer olaylarda RC başlamamışsa eşleme
- * kaçmıştır → Sentry error.
+ * `identifyUser` RC `configure`'ı kendisi bekler (`whenRcReady`, 10 sn); yeni
+ * kurulumda `SIGNED_IN`'in `configure`'dan önce gelmesi artık eşlemeyi
+ * kaçırmaz. `not_initialized` yalnız configure başarısız/zaman aşımıdır ve
+ * servis bunu zaten Sentry'ye yazdı (`RC_READY_TIMEOUT` / `RC_API_KEY_MISSING`)
+ * — burada ikinci bir rapor üretilmez.
  */
 function syncProviderIdentity(event: AuthChangeEvent, authId: string, isAnonymous: boolean): void {
   if (!isAnonymous) {
@@ -233,15 +234,6 @@ function syncProviderIdentity(event: AuthChangeEvent, authId: string, isAnonymou
   }
 
   identifyUser(authId)
-    .then((result) => {
-      if (result === 'not_initialized' && event !== 'INITIAL_SESSION') {
-        Sentry.captureMessage('identity_sync: RevenueCat başlamamış — kullanıcı eşlenemedi', {
-          level: 'error',
-          tags: { flow: 'identity_sync', step: 'rc_login', event, error_code: 'RC_NOT_INITIALIZED' },
-          extra: { is_anonymous: isAnonymous },
-        });
-      }
-    })
     .catch((err: unknown) => {
       Sentry.captureException(err, {
         level: 'error',
