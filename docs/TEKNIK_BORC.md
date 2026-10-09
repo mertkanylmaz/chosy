@@ -4081,3 +4081,23 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   parite için silinmedi.
 - **Yeniden açma işi:** ekranı geri açmak, sunucu RPC'lerini kimlik uzayı ve ödül
   mantığı açısından yeniden denetlemeyi gerektirir (E-14 ile 111 sonrası).
+
+### Lifetime emeklilik (9 Eki 2026, R-4)
+
+- **Durum:** v1'de yeni lifetime satılmaz (bible §7.3, D-08). Canlı `app_config`:
+  `paywall_lifetime_enabled=false`, `paywall_lifetime_soldout=false`; kod varsayılanı da
+  `false` (`services/remoteConfig.ts`, `PaywallBase` yalnız `=== true` ile gösterir).
+- **Kararı (CTO, R-4):** `lifetime-counter` ve `process-lifetime-purchase` Edge Function'ları
+  **canlı kalır, silinmez.**
+- **Ölçüm (R-4 grep, release/2.1.0):** `lifetime-counter`, `process-lifetime-purchase`,
+  `claim_lifetime_spot`, `get_lifetime_*`, `lifetime_sales` için `app/`, `components/`,
+  `services/`, `hooks/`, `contexts/`, `utils/` altında **0 eşleşme**; istemci hiçbirini
+  çağırmıyor. Eşleşmeler yalnız `supabase/functions/` içinde (iki fonksiyonun kendisi,
+  `revenuecat-webhook` NON_RENEWING_PURCHASE dalı ve `_shared/rcTransfer.ts` yorumu).
+- **Kalan sunucu yüzeyi:** webhook `NON_RENEWING_PURCHASE` → `claim_lifetime_spot` hâlâ
+  çalışır (ASC'de lifetime IAP Approved ve canlı olduğundan mağazadan satın alma teknik
+  olarak mümkün). Bayrak istemci UI'ını kapatır, mağaza ürününü kapatmaz.
+- **Emeklilik işi (yapılmadı):** (1) ASC'de lifetime IAP'ı satıştan kaldırmak,
+  (2) iki fonksiyonu ve `lifetime_sales` yazıcılarını arşivlemek, (3) ölü paywall
+  varyantı `PaywallLifetimeSoldout` ve `lifetime_soldout` tetikleyicisini R-D temizliğine
+  almak. Mevcut lifetime sahipleri (canlıda 1 sandbox) etkilenmez.
