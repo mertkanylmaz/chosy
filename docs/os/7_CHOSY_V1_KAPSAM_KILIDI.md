@@ -1,7 +1,7 @@
 # 🔒 CHOSY V1.0 — KAPSAM KİLİDİ VE KARAR ANAYASASI
 
-**Sürüm:** 1.46
-**Tarih:** 7 Ekim 2026
+**Sürüm:** 1.47
+**Tarih:** 9 Ekim 2026
 **Statü:** KİLİTLİ — CTO onayı olmadan değiştirilemez
 **Yetki seviyesi:** Bu doküman `1_PRODUCT_OS`, `2_BUSINESS_MODEL`, `3_DESIGN_OS`, `4_CLAUDE_CODE_OS`, `6_IA_REVIZE_KARAR_GUNLUGU` ile **eşit** seviyededir ve çelişki halinde **v1.0 kapsamı için bu doküman üstündür.**
 
@@ -469,6 +469,7 @@ Buna karşılık bible'da **adı olmayan** gerçek bir durum vardır: `exhausted
 | **R-18** | 8 eksenli çoklu-hue radar mockup'ı | IA §4 | Zaten reddedilmişti; **C.9 sonrası, 6 eksenli tek renk ailesiyle** yeniden tasarlanacak. v1 kapsamı dışı. |
 | **R-19** | Mevcut kullanıcı köprü aksiyonları: **"Chosy değişti" köprü ekranı** + **63 kişiye kurucu mesajı** + **G-9 kapısı** (relaunch sonrası 14 günde kayıp <%20) | Bu doküman E-05 / §6 / §7.4 | **Kapatıldı — CTO kararı, 26 Eyl 2026. İkame yok.** Gerekçe: korunacak bir alışkanlık yok. Ölçüm (26 Eyl 2026, 1 Eyl öncesi açılmış **253** `public.users` hesabı; mood araması + watchlist + `choice_events` toplamı): **192 hesapta hiç etkileşim yok**, 49'unda 1–5, 11'inde 6–20, yalnız 1'inde >20; ≥7 aktif gün **2**, streak ≥3 **1** hesap. G-9'un koruma amacı bu tabanda uygulanamaz. Kullanıcı verisi (auth, `public.users`, watchlist, streak) zaten korunuyor; §6'nın veri koruyan satırları geçerli kalır. **Kod durumu:** köprü ekranı `1d2a66f` ile **uygulanmıştı** (`app/relaunch-intro.tsx`, yönlendirme `app/gate.tsx:118-126`, bayrak migration 103). Yönlendirmenin kapatılması **ayrı kod işi** (§9); kapatılana kadar 2.1.0 build'i ekranı eski kohorta gösterir. *(Not: CTO gerekçesindeki "22 kayıttan 12'si" yalnız 1–25 Eyl kohortuydu; 22 kaydın 3'ü 26 Eyl test kimliği. Yerine tam taban ölçümü yazıldı, karar değişmedi.)* |
 | **R-20** | ~~**Editoryal gün yenileme kilidi**~~ — E-19.1 `submit-choice` guard'ı (`refreshBlockedReason: 'editorial_day'`, editoryal günde `neither`/`seen` yeni çift getirmez) + DAL A'da watched-dışlamasının uygulanmaması | E-19.1 (19 Eyl 2026) | **Kaldırıldı — CTO Karar 2a, 2 Eki 2026.** Editoryal dörtlü bir **başlangıç dörtlüsüdür**; yenileme / `neither` / `seen` algoritmik gündeki gibi normal boru hattından (`buildScoredPool` + `pickReplacements`) çalışır, yenileme hakkı limiti aynen geçerli. Kullanıcının izlediği (`watchlist.watched_at`) editoryal film üretimde çıkarılır ve **aynı pozisyonda** normal havuzdan yedeklenir; `slot_types=['editorial'×4]` ve `algorithm_version='v1-editorial-calendar'` korunur. Gerekçe: G-5 (neither rate) editoryal kilit altında ürün davranışını değil kilidi ölçüyordu; ortak zemini zaten `1_PRODUCT_OS` §6.9 Slot-1 global sağlıyor. İstemcideki `editorial_day` işleme yolu ve `gauntlet.editorialNoRefresh` anahtarı silinmedi (eski sunucu yanıtıyla geriye dönük uyum) — `TEKNIK_BORC.md`. Deploy sırası: sunucu önce. |
+| **R-21** | **`initializePurchases`'ı `getSession()`'ın önüne almak** (RC `configure`'ı oturumdan bağımsız, hemen başlatmak) — REACT-NATIVE-7'nin "en kısa" çözümü olarak önerildi | E-26 (9 Eki 2026) | **Reddedildi (CTO).** `appUserID`'siz `configure` RC'de `$RCAnonymousID` doğurur; oturum sonra gelince `logIn` fazladan bir anonim→kullanıcı TRANSFER üretir (CHOSY-EDGE-FUNCTIONS-14'ün sebep olduğu olay sınıfı). **Yerine:** `configure` sırası aynen kalır (oturum → `appUserID` ile configure); bekleyenler `rcReady`/`identityReady` sinyallerini bekler (bkz. E-26). |
 
 ---
 
@@ -1010,6 +1011,41 @@ Görünüm yalnız `v`, `title_mask`, `backdrop_url`, `letter_count` döndürüy
 koşumundan sonra `net._http_response` ile kanıtlanır; `job_run_details`
 kanıt değildir.
 
+### E-26 — RevenueCat sıralaması: hazırlık sinyalleri (R-2, 9 Eki 2026)
+
+CTO kararları (9 Eki 2026), dal `fix/rc-sequencing`. Sentry ölçümü: **REACT-NATIVE-7**
+(`addSubscriptionListener` → `RC_NOT_INITIALIZED`) 45 olay · 4 kullanıcı · ilk görülme
+5 Eyl, son 8 Eki; **CHOSY-EDGE-FUNCTIONS-14** (TRANSFER hedefi `$RCAnonymousID`,
+"çözülemedi") 3 olay (5, 7, 8 Eki), Users Impacted 0. Üç olayın `transferred_from`
+değerleri birbirinden farklı; anonim hedefler zincir kuruyor (her olayın hedefi
+bir sonrakinin kaynağı) — restore/alımın anonim RC kimliğindeyken koştuğuyla
+uyumlu (çıkarım, doğrulanmadı).
+
+| # | Karar |
+|---|---|
+| 1 | `purchaseService` iki hazırlık sinyali verir: **`rcReady`** (`Purchases.configure` bitti) ve **`identityReady`** (RC appUserID = Supabase auth id; `configure` aynı kimlikle yapıldıysa hemen hazır, değilse ilk `identifyUser` → `logIn`). Export: `whenRcReady(ms)`, `whenIdentityReady(ms)`. Zaman aşımı → tipli hata (`RcReadinessError`) + Sentry error. |
+| 2 | **Kimlik değişimi sinyali yeniden kurar** (hesap silme → yeni anonim, mevcut hesaba geçiş). Bekleyen bir geçiş varken yeni geçiş gelirse deferred **değiştirilmez**, hedef güncellenir; yalnız **son hedef** için `logIn` bitince resolve olur (aksi hâlde eski bekleyenler timeout'a düşer). `logIn` hatasında bekleyenler hızlı hata alır. `logOutPurchases` kimliği pending yapar. |
+| 3 | `addSubscriptionListener` `rcReady`'yi bekleyip bağlanır; bekleme normal akıştır, log yok. Cleanup bağlanmadan önce çağrılırsa bağlama iptal. 30 sn'de bağlanamazsa Sentry error. |
+| 4 | **`identifyUser` `'not_initialized'` dönmek yerine `whenRcReady(10 sn)` bekler**, sonra `logIn`. **Kapsama alındı** (yeni kurulumda `SIGNED_IN`'in `configure`'dan önce gelme yarışı): App Review temiz kurulumla test eder; `logIn` kaçarsa alım `$RCAnonymousID`'ye yazılır, webhook eşleyemez, Pro açılmaz. Zaman aşımında Sentry error + eski `'not_initialized'` dönüşü korunur. |
+| 5 | **`restorePurchases` ve `purchasePackage` `rcReady` + `identityReady` bekler** (10 + 10 sn). Satın alma/restore anonim RC kimliğinde **asla başlamaz**. Hazır olunamazsa RC çağrılmaz; yeni `PurchaseErrorKind` **`'not_ready'`** + `errors.accountNotReady` (en/tr). `configure` hiç yapılamadıysa eski `'not_initialized'` korunur. |
+| 6 | Zaman aşımları: `rcReady` 10 sn · `identityReady` 10 sn · listener 30 sn. |
+| 7 | `PaywallBase`'in restore sonrası `users`/`subscriptions`'a kendi yazdığı ikinci yol **değiştirilmedi** → `TEKNIK_BORC.md` "çift yazma yolu". |
+| — | Reddedilen: `initializePurchases`'ı `getSession`'dan öne almak → **R-21**. |
+
+**Uygulama.** `5f88bc8` (sinyaller + `utils/rcReadiness.ts`, 14 Deno testi),
+`75b39bb` (`identifyUser` bekler; `_layout` ikinci rapor bloğu kaldırıldı —
+servis zaten yazıyor), `9eed468` (listener), `114258a` (restore + alım,
+`'not_ready'`, locale, `PaywallBase` iki dal). **Durum:** commit'lendi; push, OTA,
+build ve cihaz doğrulaması **yok**. `tsc` 14 · `tsc:functions` 32 (ikisi de
+baseline, 9 Eki 2026 ölçümü).
+
+**Doğrulanmadı.** (a) "Aynı `transferred_from` için ikinci TRANSFER yok" çıkarımı
+yalnız üç olayın `transferred_from` karşılaştırmasına dayanır; her olayla aynı
+saniyedeki `RC_TRANSFER_LIFETIME` (applied) kaydının aynı webhook çağrısına
+ait olduğu zaman damgasından çıkarıldı, `rc_event_id` eşleşmesi okunamadı.
+(b) Soğuk açılış sırası ve hesap silme sonrası kimlik geçişi gerçek cihazda
+(TestFlight) ölçülmedi.
+
 ---
 
 ## 6. MEVCUT KULLANICIYI KAÇIRMAMA PLANI (E-05 detayı)
@@ -1171,6 +1207,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | **`sync-trending` 31 Ağustos'tan beri ölü** | **Açık, P0 ile bağlı (Vault anahtarı).** `weekly-trending-sync` (jobid 6, Pzt 06:00 UTC) her hafta `succeeded` yazıyor; `films`'e son ekleme **2026-08-31 06:00** (15 film); 09-07/14/21/28 koşumlarında **0** yeni film (09-19'daki 94 film editoryal ingest, elle). Trending tier'ı bir aydır tazelenmiyor. Aynı Vault anahtarı — anahtar düzelince sonraki Pazartesi koşumu doğrular. Kaynak: v1.43, `P1c_ADIM0_KESIF.md` §1. |
 | **K-61 küçük cihazda dwell kaydırma sonrası** | **Bilinçli taviz.** ≤ 812pt (SE sınıfı dahil), 2 satır başlık, "See all" ya da arşiv bağlantısı varken Spotlight kartı ilk ekranda tamamen görünmez; K-60 dwell'i kullanıcı kaydırıp bırakınca başlar. SE'de kart ilk ekranda ~%35 görünür. Hero oranı poster-first gereği değişmedi. Tab bar payı ölçülmedi (iOS standart varsayımı, telemetri kaydı Sentry'de bulunamadı). Kaynak: v1.42, `docs/investigations/S2_CHAMPION_SPOTLIGHT_KESIF.md` §5. |
 | **K-62 kare erken iniyor** | **Bilinen risk, kabul edildi.** Bekleyiş teaser'ı bugünün Spotlight karesini (`backdrop_url`, TMDb `/original/`) 18:00'den saatler önce indirir; bulanıklık yalnız istemcide uygulanır, bulanık olmayan dosya ağ yanıtında ve cihaz önbelleğinde durur. Erken bakan kullanıcı kareyi tersine görsel aramayla çözebilir. `get-daily-challenge` gauntlet durumuna bakmıyor; S-2'den beri champion kartı da aynı dosyayı indiriyordu, K-62 pencereyi 18:00 öncesine genişletti. **Tetikleyici:** Spotlight çözüm süresinde/oranında anomali ya da sunucu tarafı kare kapısı kararı. Kaynak: v1.44, `docs/TEKNIK_BORC.md`. |
+| **`PaywallBase` restore sonrası çift yazma yolu** | **Bilinçli bırakıldı (E-26 #7).** Restore başarısında `PaywallBase` (`handleRestore`) `users.subscription_tier` + `subscriptions` satırını webhook'tan bağımsız kendisi yazıyor; sunucu yazımıyla iki yol var. R-2'de dokunulmadı. Ayrıntı ve tetikleyici `docs/TEKNIK_BORC.md` "çift yazma yolu". |
 
 ---
 
@@ -1199,6 +1236,7 @@ Discover · Today's Pick · Cinema Games hub · Badge/Collections UI · Quiz gir
 | 1.18 | 25 Eyl 2026 | **Düzeltme: Lifetime IAP açık maddesi geçersizdi.** CTO teyidi: "Chosy Plus Lifetime" ASC'de zaten **Approved ve canlı**; Save / Add for Review butonlarının pasif olması normal davranıştır (submit edilecek yeni bir şey yok). v1.14'te §9'a alınan "tamamlanamıyor" maddesi yanlış teşhisti, ✅ olarak kapatıldı. Kod tarafında değişiklik yok. |
 | 1.19 | 25 Eyl 2026 | **Lifetime IAP tutarsızlıkları kapatıldı.** v1.18 §9'daki maddeyi düzeltmişti ama aynı tespitin izi iki yerde daha duruyordu: §8 **R-D kapsamından** "Lifetime IAP'ın ASC'de tamamlanması (K-59)" çıkarıldı (yapılacak iş yok) ve §2.7 **K-59 notundaki** "Açık madde … zorunlu bir alan eksik … tamamlanmalıdır" cümlesi gerçekle uyumlu hâle getirildi (zaten Approved ve canlı, ek işlem gerekmiyor). Kod değişikliği yok. |
 
+| 1.47 | 9 Eki 2026 | **RevenueCat sıralaması — hazırlık sinyalleri (CTO kararları, yeni §5 E-26).** REACT-NATIVE-7 (45 olay · 4 kullanıcı) ve CHOSY-EDGE-FUNCTIONS-14 (3 olay) için: `rcReady` + `identityReady` sinyalleri; kimlik değişiminde sinyal yeniden kurulur, bekleyen geçişte deferred değişmez, yalnız son hedef için resolve; `addSubscriptionListener` configure'ı bekler (30 sn); `identifyUser` configure'ı bekler (yeni kurulum yarışı kapsama alındı); `restorePurchases` + `purchasePackage` anonim RC kimliğinde başlamaz, yeni `PurchaseErrorKind` `'not_ready'` + `errors.accountNotReady`. **R-21:** `initializePurchases`'ı `getSession`'dan öne almak reddedildi (fazladan `$RCAnonymousID` TRANSFER). §9'a `PaywallBase` çift yazma yolu borcu eklendi. İkinci-TRANSFER yokluğu ve soğuk açılış sırası **çıkarım/cihazda doğrulanmadı** olarak kayıtlı. Kod `5f88bc8`…`114258a`; push/OTA yok. |
 | 1.46 | 7 Eki 2026 | **Watch-feedback T1 kararları (CTO).** (1) **K-29:** `disliked` additive eklendi ("Not for me"); `abandoned` legacy davranış sinyali olarak kalır, yeni UI'dan çıkar. `types/gauntlet.ts` salt-ekleme değişikliği onaylandı. (2) Not yet / Skip persistence'ı değişmedi; Not yet follow-up'ı backlog'da (hipotez, eşik ≈ %30). (3) `UNIQUE (user_id, gauntlet_id)` önerisi geri çekildi. (4) `watched_other` T1b'ye ayrıldı. (5) **K-03:** watch-feedback Home state'inde tab bar görünür; Design OS §10.1'e not düşüldü, §10.5.2 / §10.5.9 / 13.08 satırlarına dokunulmadı — çelişki `TEKNIK_BORC.md`'ye kaydedildi. (6) `disliked` taste ağırlığı başlangıçta `abandoned` ile aynı (-3.0), `app_config`'ten ayarlanır. Bu kayıtta kod yok; uygulama T1 migration ve kodunda. |
 | 1.45 | 6 Eki 2026 | **K-62 guardrail eşikleri + K-15 durum düzeltmesi (CTO kararı).** (1) **K-62:** v1.44 tetik eşiği tanımlamamıştı, guardrail ölçülse de ne zaman bakılacağı belirsizdi. Eşikler: medyan `latency_ms` ≤ 1750 ms ya da `low_confidence` ≥ %24,8 → **inceleme tetikleyicisi, otomatik alarm değil** (kullanıcı bazında dağılıma bakılır). Kapı: yayından sonra ≥ 14 gün ve ≥ 150 seçim, altında "yetersiz veri". Gerekçe: taban örneklemi küçük (27 seçim / 7 kullanıcı); kapı ve "alarm değil, dağılıma bak" şartı küçük örneklem gürültüsüne karar bağlamamak için. Taban yayın gününde yeniden ölçülür. (2) **K-15:** "KARAR VERİLDİ, UYGULANMADI" (v1.31) gerçekle çelişiyordu — yerel hatırlatıcı `e6e87be`'den (28 Eyl) beri kodda, P-5'te `copyVersion` ile metin değişiminde yeniden planlanıyor. Bible gerçeğe uyduruldu (D-12/D-13 emsali): ifade üstü çizildi, **cihaz doğrulaması bekliyor** (V1_TESTFLIGHT_CHECKLIST O7). Aynı bayat ifadeye E-22 tablosundaki K-15 satırında ve §9'daki K-15 satırında "geçersiz — bkz. K-15" notu düşüldü (silinmedi). Kod değişikliği yok. |
 | 1.44 | 5 Eki 2026 | **K-62: Spotlight ritüelin ikinci yarısı (CTO kararı, P-5 Aşama 1).** Bekleyiş ekranında (`before_18`) bugünün karesi kilitli ve bulanık, dokunulamaz; metin "Bugünün karesi seni bekliyor. Dörtlünden sonra açılır." Akşam bildirimi gövdesinin ikinci cümlesi "Sonra bugünün karesi." oldu (tek push, D-02; yerel planlama, sunucu değişmedi). **Değişmeyenler:** K-05 (ayrı hub yok, tek giriş champion kartı) ve paywall kapısı yok. Not: brifte üstü çizilmesi istenen "dessert" ifadesi Product OS §7.1'de bulunamadı (`docs/os/` altında hiç geçmiyor); yalnız `SpotlightBonusCard` yorumunda vardı, orası güncellendi. Product OS §7.1'e K-62 satırı eklendi. Guardrail: `choice_events.latency_ms` medyanı + `low_confidence` oranı (taban CTO brifinden: 27 seçim / 7 kullanıcı, 2500 ms, %14,8). §9'a bir satır (kare erken iniyor). K-05 satırına not düşüldü. Edge Function, şema ve `askCoordinator` değişmedi. |
