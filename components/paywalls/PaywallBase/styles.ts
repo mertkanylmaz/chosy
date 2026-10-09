@@ -32,6 +32,17 @@ export const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
+  /** ✕ — 44×44pt dokunma alanı, sheet'in sağ üstü */
+  closeButton: {
+    position: 'absolute',
+    top: 4,
+    right: 8,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
   dragHandle: {
     width: 40,
     height: 4,

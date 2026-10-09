@@ -28,7 +28,7 @@ import type { PurchasesPackage } from 'react-native-purchases';
 import * as Sentry from '@sentry/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
-import { Sparkle } from 'phosphor-react-native';
+import { Sparkle, X } from 'phosphor-react-native';
 
 import { Colors } from '@/constants/Colors';
 import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
@@ -448,6 +448,17 @@ export default function PaywallBase({
             <View style={styles.dragHandle} />
           </TouchableOpacity>
 
+          {/* ✕ — yükleme / offeringsError dahil HER durumda görünür (R-5 B4) */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={() => handleDismiss('dismiss_button')}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('paywall.closeSheet')}
+          >
+            <X size={22} color={Colors.textWhite} weight="bold" />
+          </TouchableOpacity>
+
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
@@ -587,41 +598,42 @@ export default function PaywallBase({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Restore */}
-                <TouchableOpacity
-                  style={styles.restoreButton}
-                  onPress={handleRestore}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('paywall.restorePurchases')}
-                >
-                  <Text style={styles.restoreText}>
-                    {t('paywall.restorePurchases')}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Legal links */}
-                <View style={styles.legalRow}>
-                  <TouchableOpacity
-                    onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityRole="link"
-                    accessibilityLabel={t('paywall.termsAction')}
-                  >
-                    <Text style={styles.legalLink}>{t('paywall.termsAction')}</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.legalSeparator}>·</Text>
-                  <TouchableOpacity
-                    onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    accessibilityRole="link"
-                    accessibilityLabel={t('paywall.privacyAction')}
-                  >
-                    <Text style={styles.legalLink}>{t('paywall.privacyAction')}</Text>
-                  </TouchableOpacity>
-                </View>
               </>
             )}
+
+            {/* Restore */}
+            <TouchableOpacity
+              style={styles.restoreButton}
+              onPress={handleRestore}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={t('paywall.restorePurchases')}
+            >
+              <Text style={styles.restoreText}>
+                {t('paywall.restorePurchases')}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Legal links */}
+            <View style={styles.legalRow}>
+              <TouchableOpacity
+                onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="link"
+                accessibilityLabel={t('paywall.termsAction')}
+              >
+                <Text style={styles.legalLink}>{t('paywall.termsAction')}</Text>
+              </TouchableOpacity>
+              <Text style={styles.legalSeparator}>·</Text>
+              <TouchableOpacity
+                onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="link"
+                accessibilityLabel={t('paywall.privacyAction')}
+              >
+                <Text style={styles.legalLink}>{t('paywall.privacyAction')}</Text>
+              </TouchableOpacity>
+            </View>
           </ScrollView>
         </View>
       </View>
