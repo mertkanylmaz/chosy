@@ -1,33 +1,22 @@
 /**
- * ArchiveTrigger — K-46'nın istemci tarafı (R-C Parça 2c).
+ * ArchiveTrigger — K-46'nın istemci tarafı (R-C Parça 2c, E-29 ile revize).
  *
  * Ritüel ekranı dinlenme hâline geldiğinde bir kez `get-archive-status`
- * sorar ve üç dalın birine düşer:
+ * sorar; kaçırılan gün varsa arşive giriş bağlantısını gösterir.
  *
- *   missedCount === 0            → hiçbir şey göstermez.
- *   missedCount === 1            → ÜCRETSİZ telafi. Arşive doğrudan giriş.
- *   archiveEligible === true     → K-46 paywall'ı (2. kaçırılan gün).
- *
- * Paywall'ı AÇAN tek şey kullanıcının arşiv bağlantısına dokunmasıdır
- * (CTO kararı, 24 Eyl 2026). Durum sorgusu mount'ta yapılır ama kendiliğinden
- * hiçbir şey açmaz — bu bileşen şampiyon ekranının içinde yaşıyor ve dayatılan
- * bir paywall K-45'in "champion paywall'ı yok" yasağına komşu olurdu.
- *
- * ── "İlk kaçırma ücretsiz" nerede saklanıyor ────────────────────────────────
- * Hiçbir yerde. Kalıcı durum tutulmuyor (CTO kararı 31 Ağu 2026, Seçenek A):
- * kural `missedCount`'tan türetiliyor. Şemaya bir "hak tüketildi" kolonu
- * eklemek yerine `paywall_triggered` eventiyle ölçüp sonra karar veriyoruz —
- * ölçmeden migration açmıyoruz.
- *
- * ── Uygunluk kararı burada VERİLMEZ ─────────────────────────────────────────
- * `archiveEligible` sunucudan gelir ve katılım şartını (pencerede en az 1
- * tamamlanmış gün) içerir. İstemci eşiği kendisi hesaplasaydı, ara veren her
- * kullanıcı dönüş anında paywall görürdü — 31 Ağu 2026 canlı veri ölçümünde
- * 6/6 kullanıcı tam olarak bu durumdaydı.
+ * ── E-29 (R-5): arşiv paywall AÇMAZ ─────────────────────────────────────────
+ * Arşiv ücretsiz ve yalnız görüntülemedir (`app/archive.tsx`). Önceki
+ * sürümde 2. kaçırılan gün paywall açıyordu ve paywall "yeniden oyna" /
+ * "şampiyonunu kendi saatinde seç" vaat ediyordu; ikisi de 2.1.0'da yok
+ * (arşivde gauntlet oynanmaz). Bağlantı artık HER durumda doğrudan
+ * `/archive`'e gider. `missed_day_archive` varyantı ve tetikleyici tipi
+ * silinmedi (docs/TEKNIK_BORC.md "R-5 ertelenenler"), yalnız buradan
+ * çağrılmıyor. 2.1.0'da paywall'ın tek kullanıcı girişi Pro Mode kapısıdır.
  *
  * Sessiz fallback yok: durum alınamazsa Sentry'ye yazılır (ağ/sunucu
- * hatasında servis katmanı, 401'de bu bileşen), burada hiçbir şey gösterilmez (ritüelin üstüne hata basmak, kullanıcının
- * asıl işini bozar — arşiv ikincil bir yüzey).
+ * hatasında servis katmanı, 401'de bu bileşen), burada hiçbir şey gösterilmez
+ * (ritüelin üstüne hata basmak, kullanıcının asıl işini bozar — arşiv
+ * ikincil bir yüzey).
  */
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -36,20 +25,15 @@ import { View, StyleSheet } from 'react-native';
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 
-import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
-import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useSubscription } from '@/contexts/SubscriptionContext';
 import { GauntletAuthPendingError, getArchiveStatus } from '@/services/gauntletService';
 import { hapticLight } from '@/utils/haptics';
 
 export function ArchiveTrigger(): React.JSX.Element | null {
   const { t } = useLanguage();
-  const { premiumStatus } = useSubscription();
   const [missedCount, setMissedCount] = useState(0);
-  const [eligible, setEligible] = useState(false);
   /** Aynı mount'ta durumu iki kez sormayı önler. */
   const askedRef = useRef(false);
 
@@ -57,11 +41,6 @@ export function ArchiveTrigger(): React.JSX.Element | null {
     void hapticLight();
     router.push('/archive');
   }, []);
-
-  const { triggerPaywall, paywallProps } = useContextualPaywall(() => {
-    // Satın alma tamamlandı — kullanıcı zaten arşivi istemişti, oraya götür.
-    openArchive();
-  });
 
   useEffect(() => {
     if (askedRef.current) return;
@@ -71,13 +50,7 @@ export function ArchiveTrigger(): React.JSX.Element | null {
       try {
         const status = await getArchiveStatus();
         setMissedCount(status.missedCount);
-        setEligible(status.archiveEligible);
 
-        // Mount'ta paywall AÇILMAZ (CTO karari, 24 Eyl 2026). Bu bilesen
-        // sampiyon ekraninin icinde yasiyor; kullanici hicbir seye basmadan
-        // acilan bir paywall, K-45'in "champion paywall'i yok" yasagiyla ayni
-        // pikselleri paylasirdi. Tek giris noktasi asagidaki `handlePress`:
-        // kullanici arsiv baglantisina bilincli olarak dokunur.
       } catch (err) {
         // Arşiv ikincil yüzey — ritüelin üstüne hata basılmaz, giriş
         // bağlantısı bu mount boyunca görünmez. Ama sessiz değil:
@@ -102,38 +75,17 @@ export function ArchiveTrigger(): React.JSX.Element | null {
         }
       }
     })();
-    // Yalnız durum sorgusu — paywall tetiklemediği için abonelik/trigger
-    // bağımlılığı yok, mount başına tek çalışır.
+    // Yalnız durum sorgusu — mount başına tek çalışır.
   }, []);
 
   if (missedCount === 0) return null;
-
-  /**
-   * Giriş bağlantısı — paywall'ın TEK giriş noktası. Ücretsiz dal (tek
-   * kaçırma) ve premium kullanıcı doğrudan arşive gider; uygun ama ücretli
-   * dalda bağlantı paywall'ı açar. Kullanıcının bilinçli dokunuşu,
-   * `IMMEDIATE_TRIGGERS` dışı olduğu için cooldown'a tabidir ve gün içinde
-   * tekrar tekrar açılmaz.
-   */
-  const handlePress = () => {
-    // Abonelik cozulmeden (loading) no-op: ne arsiv (free'ye bedava erisim)
-    // ne paywall (odeyene paywall). V-1 Tur 1.
-    if (premiumStatus === 'loading') return;
-    if (premiumStatus === 'premium' || !eligible) {
-      openArchive();
-      return;
-    }
-    void hapticLight();
-    void triggerPaywall({ type: 'missed_day_archive', missedDayCount: missedCount });
-  };
 
   return (
     <View style={styles.wrapper}>
       <QuietAction
         label={t('archive.entry', { count: missedCount })}
-        onPress={handlePress}
+        onPress={openArchive}
       />
-      <ContextualPaywall {...paywallProps} />
     </View>
   );
 }
