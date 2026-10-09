@@ -94,7 +94,11 @@ import {
 import Purchases from 'react-native-purchases';
 
 import { clearWatchlist, getWatchlist } from '@/services/watchlist';
-import { signInWithApple, deleteAccount } from '@/services/authService';
+import {
+  signInWithApple,
+  deleteAccount,
+  reauthenticateAppleForDeletion,
+} from '@/services/authService';
 import { clearIdentityCache } from '@/services/auth-utils';
 import { resetToFreshSession } from '@/services/sessionReset';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -1318,7 +1322,28 @@ function ProfileScreenContent() {
                   onPress: async () => {
                     setDeletingAccount(true);
                     try {
-                      const result = await deleteAccount();
+                      // Apple identity varsa önce yeniden doğrulama (5.1.1(v)).
+                      // Code tek kullanımlık ve ~5 dk geçerli: hemen gönderilir.
+                      // İptal / okuma hatasında hiçbir veri silinmez.
+                      const reauth = await reauthenticateAppleForDeletion();
+                      if (reauth.outcome === 'cancelled') {
+                        Alert.alert(
+                          t('profile.deleteAccountConfirmTitle'),
+                          t('profile.deleteAccountAppleCancelled'),
+                        );
+                        return;
+                      }
+                      if (reauth.outcome === 'identities_failed') {
+                        Alert.alert(
+                          t('profile.deleteAccountConfirmTitle'),
+                          t('profile.deleteAccountIdentitiesError'),
+                        );
+                        return;
+                      }
+
+                      const result = await deleteAccount(
+                        reauth.outcome === 'code' ? reauth.code : undefined,
+                      );
                       if (result.success) {
                         // Sunucu sildi — cihazı yeni anonim kimlikle temiz
                         // başlat; yığın sıfırlanır, geri hareketi yok.

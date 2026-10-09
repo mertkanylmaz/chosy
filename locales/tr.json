@@ -560,6 +560,8 @@
     "deleteAccountError": "Hesap silinemedi. Tekrar dene.",
     "deleteAccountNetworkError": "Bağlantı yok. İnternet bağlantını kontrol edip tekrar dene.",
     "deleteAccountPartialError": "Verilerin silindi ama giriş kaydın kaldırılamadı. İşlemi tamamlamak için Hesabı Sil'e bir kez daha dokun.",
+    "deleteAccountAppleCancelled": "Hesabı silmek için Apple onayı gerekiyor. Hiçbir şey silinmedi.",
+    "deleteAccountIdentitiesError": "Giriş yöntemin doğrulanamadı. Hiçbir şey silinmedi. Tekrar dene.",
     "nicknameTitle": "Takma Adınız",
     "nicknamePlaceholder": "Takma ad girin",
     "avatarHint": "Değiştirmek için dokun",

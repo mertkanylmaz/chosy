@@ -830,6 +830,63 @@ export type DeleteAccountResult =
       message?: string;
     };
 
+/** Silme öncesi Apple yeniden doğrulaması sonucu (App Store 5.1.1(v)). */
+export type AppleReauthResult =
+  /** Apple identity yok (anonim / e-posta) — adım atlanır. */
+  | { outcome: 'not_needed' }
+  /** Yeniden doğrulandı — code tek kullanımlık, ~5 dk geçerli: HEMEN deleteAccount'a ver. */
+  | { outcome: 'code'; code: string }
+  /** Kullanıcı Apple ekranını iptal etti — silme BAŞLAMAZ. */
+  | { outcome: 'cancelled' }
+  /** Identity listesi okunamadı — silme BAŞLAMAZ, kullanıcı tekrar dener. */
+  | { outcome: 'identities_failed' }
+  /**
+   * Apple identity var ama yeniden doğrulama yapılamadı (cihazda Apple girişi
+   * yok / beklenmedik hata). Silme engellenmez (kullanıcı hesabını silebilmeli);
+   * sunucu APPLE_REVOKE_SKIPPED_OLD_CLIENT yazar, istemci tarafı Sentry'ye
+   * error düşer.
+   */
+  | { outcome: 'unavailable' };
+
+/**
+ * Hesap silme onayından sonra, deleteAccount'tan ÖNCE çağrılır. Kullanıcının
+ * auth identity'lerinde Apple varsa Apple ile yeniden doğrulatıp
+ * authorizationCode üretir; sunucu bununla refresh token'ı revoke eder.
+ *
+ * Identity listesi `getUserIdentities()` ile (ağ, taze) okunur —
+ * `app_metadata.provider` birincil provider'dır ve linkIdentity sonrası bayat
+ * kalabilir.
+ */
+export async function reauthenticateAppleForDeletion(): Promise<AppleReauthResult> {
+  const { data, error } = await supabase.auth.getUserIdentities();
+  if (error || !data) {
+    logger.error('[authService] getUserIdentities hatası:', error?.message ?? 'veri yok');
+    return { outcome: 'identities_failed' };
+  }
+  if (!data.identities.some((i) => i.provider === 'apple')) {
+    return { outcome: 'not_needed' };
+  }
+
+  try {
+    if (!(await AppleAuthentication.isAvailableAsync())) {
+      logger.error('[authService] Apple yeniden doğrulama: Apple girişi kullanılamıyor');
+      return { outcome: 'unavailable' };
+    }
+    const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+    if (!credential.authorizationCode) {
+      logger.error('[authService] Apple yeniden doğrulama: authorizationCode yok');
+      return { outcome: 'unavailable' };
+    }
+    return { outcome: 'code', code: credential.authorizationCode };
+  } catch (err) {
+    if ((err as { code?: string }).code === 'ERR_REQUEST_CANCELED') {
+      return { outcome: 'cancelled' };
+    }
+    logger.error('[authService] Apple yeniden doğrulama hatası:', err);
+    return { outcome: 'unavailable' };
+  }
+}
+
 /**
  * Kullanıcının tüm verilerini ve auth kaydını kalıcı olarak siler.
  *
@@ -846,9 +903,14 @@ export type DeleteAccountResult =
  * oturum. Oturum burada kapatılsaydı yeni anonim kimlik, eski kullanıcının
  * yerel verisi silinmeden doğardı (B-1 / Fix 4).
  *
+ * @param appleAuthorizationCode `reauthenticateAppleForDeletion()` çıktısı;
+ *   sunucu Apple token revoke için kullanır. Yoksa (Apple identity'siz hesap)
+ *   alan gönderilmez.
  * @returns Başarı durumu ve opsiyonel hata detayı
  */
-export async function deleteAccount(): Promise<DeleteAccountResult> {
+export async function deleteAccount(
+  appleAuthorizationCode?: string,
+): Promise<DeleteAccountResult> {
   try {
     // Mevcut session token'ı al
     const { data: { session } } = await supabase.auth.getSession();
@@ -867,6 +929,7 @@ export async function deleteAccount(): Promise<DeleteAccountResult> {
         'Content-Type': 'application/json',
         'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
       },
+      body: JSON.stringify(appleAuthorizationCode ? { appleAuthorizationCode } : {}),
     });
 
     // ── HTTP 207: kismi basari — HATA sayilir ────────────────────────────
