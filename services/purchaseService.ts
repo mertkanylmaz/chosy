@@ -62,7 +62,13 @@ export type PurchaseErrorKind =
   /** Satın alma geçti ama entitlement henüz aktif değil (RC senkron gecikmesi) */
   | 'entitlement_pending'
   /** Sorgu başarılı, sonuç gerçekten boş */
-  | 'no_data';
+  | 'no_data'
+  /**
+   * RC henüz hazır değil: configure bitmedi ya da kimlik (`logIn`) oturmadı.
+   * İşlem BAŞLATILMADI — anonim RC kimliğinde satın alma/restore yapılmaz.
+   * Retry anlamlı ("biraz bekle, tekrar dene").
+   */
+  | 'not_ready';
 
 /**
  * RC hatasını PurchaseErrorKind'a çevirir.
@@ -517,17 +523,35 @@ export async function getTrialEligibility(
 // ─── Satın Alma ──────────────────────────────────────────────────────────────
 
 /**
+ * Satın alma/restore anonim RC kimliğinde BAŞLAMAZ: alım `$RCAnonymousID`'ye
+ * yazılırsa webhook eşleyemez, Pro açılmaz; restore ise EDGE-14'teki sahte
+ * TRANSFER'i üretir. `configure` + kimlik eşlemesi beklenir.
+ *
+ * @returns null = hazır; aksi hâlde çağıranın döneceği `errorKind`.
+ *   Zaman aşımı `whenRcReady` / `whenIdentityReady` içinde Sentry'ye yazıldı;
+ *   configure/logIn hatası kaynağında raporlandı.
+ */
+async function awaitPurchaseReadiness(fn: string): Promise<PurchaseErrorKind | null> {
+  try {
+    await whenRcReady(RC_READY_TIMEOUT_MS, fn);
+    await whenIdentityReady(RC_IDENTITY_TIMEOUT_MS, fn);
+    return null;
+  } catch (err) {
+    if (!(err instanceof RcReadinessError)) throw err;
+    // configure hiç yapılamadı (key yok / native hata) = eski 'not_initialized'.
+    if (err.signal === 'rc' && err.reason === 'failed') return 'not_initialized';
+    return 'not_ready';
+  }
+}
+
+/**
  * Belirtilen paketi satın alır.
  * Paywall'dan çağrılır.
  */
 export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] purchasePackage: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'purchasePackage' } },
-    );
-    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
+  const notReady = await awaitPurchaseReadiness('purchasePackage');
+  if (notReady) {
+    return { success: false, error: 'RevenueCat hazır değil', errorKind: notReady };
   }
 
   posthogAnalytics.track('purchase_started', {
@@ -643,16 +667,15 @@ export async function logOutPurchases(): Promise<void> {
 /**
  * Önceki satın alımları geri yükler.
  * App Store review guide: bu buton zorunlu.
+ *
+ * `configure` + kimlik eşlemesi hazır olana kadar bekler (10 + 10 sn); hazır
+ * olunamazsa RC çağrılmaz ve `errorKind: 'not_ready'` döner.
  */
 export async function restorePurchases(): Promise<PurchaseResult> {
-  if (!_initialized) {
-    logger.error(
-      '[purchases] restorePurchases: RevenueCat baslatilmamis',
-      new Error('RC not initialized'),
-      { code: 'RC_NOT_INITIALIZED', extra: { fn: 'restorePurchases' } },
-    );
-    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: 'not_initialized' });
-    return { success: false, error: 'RevenueCat başlatılmadı', errorKind: 'not_initialized' };
+  const notReady = await awaitPurchaseReadiness('restorePurchases');
+  if (notReady) {
+    posthogAnalytics.track('restore_attempted', { result: 'error', error_kind: notReady });
+    return { success: false, error: 'RevenueCat hazır değil', errorKind: notReady };
   }
 
   try {

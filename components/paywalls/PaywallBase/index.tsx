@@ -304,6 +304,9 @@ export default function PaywallBase({
         // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
         // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.
         Alert.alert(t('errors.purchasePendingTitle'), t('errors.purchasePending'));
+      } else if (result.errorKind === 'not_ready') {
+        // RC/kimlik henüz hazır değil: ödeme BAŞLAMADI, tekrar denemek güvenli.
+        Alert.alert(t('errors.accountNotReady'));
       } else {
         // K-43: ham RC metni ekrana gitmez; servis katmani Sentry'ye yazdi.
         Alert.alert(t('paywall.purchaseError'));
@@ -398,6 +401,9 @@ export default function PaywallBase({
       } else if (result.errorKind === 'no_data') {
         // Sorgu basarili, gercekten geri yuklenecek abonelik yok.
         Alert.alert(t('paywall.restoreEmpty'));
+      } else if (result.errorKind === 'not_ready') {
+        // RC/kimlik hazır değil: restore çağrılmadı, "aboneliğin yok" DEME.
+        Alert.alert(t('errors.accountNotReady'));
       } else {
         // Ag/SDK hatasi — "aboneligin yok" DEME. App Store zorunlu akisi.
         Alert.alert(t('errors.restoreFailed'));
