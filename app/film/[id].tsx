@@ -55,6 +55,7 @@ import {
   type WatchedSource,
 } from '@/services/watchlist';
 import { explainBatch, type FilmForExplanation } from '@/services/matchExplanation';
+import { ensureAiConsent, hasAiConsent } from '@/services/aiConsent';
 import {
   fetchMovieDetails,
   fetchMovieWatchProviders,
@@ -325,6 +326,8 @@ export default function FilmDetailScreen() {
   // ── AI aciklama ──────────────────────────────────────────────────────────────
   const [explanation, setExplanation] = useState<string | null>(null);
   const [explanationLoading, setExplanationLoading] = useState(false);
+  /** AI rızası (R-1). `null`: henüz okunmadı — açıklama istenmez, CTA çizilmez. */
+  const [aiConsented, setAiConsented] = useState<boolean | null>(null);
 
   // ── YouTube thumbnail fallback ───────────────────────────────────────────────
   /**
@@ -501,9 +504,35 @@ export default function FilmDetailScreen() {
       });
   }, [id]);
 
+  /** AI rizasi — sessiz okuma (sheet acmaz). Rıza yoksa CTA gosterilir. */
+  useEffect(() => {
+    let active = true;
+    hasAiConsent()
+      .then((granted) => {
+        if (active) setAiConsented(granted);
+      })
+      .catch((err: unknown) => {
+        Sentry.captureException(err, {
+          tags: { component: 'FilmDetail', flow: 'aiConsentRead' },
+        });
+        if (active) setAiConsented(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /** "Kisisel aciklamayi ac" — kullanicinin bilincli eylemi, sheet acar. */
+  const handleEnableExplanation = useCallback(async () => {
+    const granted = await ensureAiConsent('film_detail', { explicit: true });
+    setAiConsented(granted);
+  }, []);
+
   /** AI aciklama yukle */
   useEffect(() => {
     // Boyut verisi yoksa açıklama istenmez; bölüm render edilmez.
+    // Rıza yoksa (ya da henüz okunmadıysa) otomatik çağrı YOK — CTA gösterilir.
+    if (aiConsented !== true) return;
     if (!film || !film.dimensions || !currentProfile || explanation != null) return;
 
     let active = true;
@@ -531,7 +560,7 @@ export default function FilmDetailScreen() {
     return () => {
       active = false;
     };
-  }, [film, currentProfile, explanation]);
+  }, [film, currentProfile, explanation, aiConsented]);
 
   // ── Detail view dwell-time taste signal ────────────────────────────────────
   // Mount → unmount arası aktif süreyi ölçer, AppState background/foreground
@@ -1016,6 +1045,22 @@ export default function FilmDetailScreen() {
                   <GenreChip key={g} label={localizeGenre(g, language)} />
                 ))}
               </ScrollView>
+            )}
+
+            {/* ── "Why this film?" — rıza yokken CTA (R-1, otomatik çağrı yok) ── */}
+            {aiConsented === false && film.dimensions != null && currentProfile != null && (
+              <TouchableOpacity
+                style={styles.whyCard}
+                onPress={() => void handleEnableExplanation()}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel={t('aiConsent.explainCta')}
+              >
+                <View style={styles.whyHeader}>
+                  <Ionicons name="sparkles" size={15} color={Colors.accentPrimary} />
+                  <Text style={styles.whyTitle}>{t('aiConsent.explainCta')}</Text>
+                </View>
+              </TouchableOpacity>
             )}
 
             {/* ── "Why this film?" AI aciklama ── */}

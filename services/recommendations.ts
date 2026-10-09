@@ -22,6 +22,7 @@ import { supabase } from './supabase';
 import { tasteSignals } from './tasteSignalService';
 import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
+import { hasAiConsent } from './aiConsent';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
 
@@ -745,6 +746,11 @@ async function callRerankFilms(
   candidates: MatchFilmRow[],
   count: number,
 ): Promise<RerankResponse | null> {
+  // AI rızası (R-1): rıza yoksa mood metni ve adaylar Edge Function'a gitmez.
+  // Çağıran koşulda da elenir (analytics yanlış "fallback" saymasın); bu,
+  // fonksiyonun kendi kapısıdır.
+  if (!(await hasAiConsent())) return null;
+
   // Token freshness — authSession.ts (oturum yoksa anon anahtar, eskisi gibi)
   const session = await getFreshSession();
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
@@ -1107,7 +1113,8 @@ export async function getRecommendations(
     data.length > 0 &&
     isFirstBatch &&
     rerankFlag &&
-    searchKeywords.length > 0
+    searchKeywords.length > 0 &&
+    (await hasAiConsent())
   ) {
     const moodText = consumePendingMoodText();
     if (moodText) {

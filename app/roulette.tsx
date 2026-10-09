@@ -448,6 +448,12 @@ export default function RouletteScreen() {
       const errorCode = errorObj?.error as string | undefined;
       const errorMsg = err instanceof Error ? err.message : undefined;
 
+      // AI rizasi reddedildi (R-1) — hata degil, kullanici tercihi: loglanmaz.
+      if (errorCode === 'AI_CONSENT_REQUIRED') {
+        setSpinError(t('aiConsent.offBody'));
+        return;
+      }
+
       logger.error('[roulette] handleMoodSpin error:', { errorCode, errorMsg, err });
 
       if (errorCode === 'NEED_MORE_FILMS') {

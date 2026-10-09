@@ -640,7 +640,10 @@
     "notSentText": "E-postan ve hesap bilgilerin.",
     "accept": "Kabul",
     "decline": "Şimdi değil",
-    "saveError": "Seçimin kaydedilemedi. Tekrar dene."
+    "saveError": "Seçimin kaydedilemedi. Tekrar dene.",
+    "offBody": "AI önerileri kapalı. Ayarlar'dan açabilirsin.",
+    "openSettings": "Ayarlardan aç",
+    "explainCta": "Kişisel açıklamayı aç"
   },
   "notificationPrompt": {
     "title": "Dördün her akşam hazır olsun mu?",

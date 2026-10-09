@@ -640,7 +640,10 @@
     "notSentText": "Your email and account details.",
     "accept": "Accept",
     "decline": "Not now",
-    "saveError": "Couldn't save your choice. Try again."
+    "saveError": "Couldn't save your choice. Try again.",
+    "offBody": "AI suggestions are off. You can turn them on in Settings.",
+    "openSettings": "Open Settings",
+    "explainCta": "Turn on personal explanation"
   },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",
