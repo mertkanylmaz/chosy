@@ -3957,3 +3957,28 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
 - **A/B verisi (9 Eki 2026, R-C-1):** `paywall_quota_v1` `social_proof` kolu 2026-10-09
   itibarıyla `control` ile aynı kopyayı gösteriyor (doğrulanamayan sosyal kanıt metni
   kaldırıldı). Bu tarihten sonraki veri bu kol için geçersizdir.
+
+### Sign in with Apple token revoke — kalan işler (9 Eki 2026, R-3)
+
+- **Secret'lar kurulu değil, deploy edilmedi.** `APPLE_TEAM_ID`, `APPLE_KEY_ID`,
+  `APPLE_CLIENT_ID` (= bundle id `com.chosy.ai`), `APPLE_PRIVATE_KEY` 9 Eki 2026'da
+  `supabase secrets list` ile ölçüldü: yok. Kurulmadan her Apple kullanıcısı için
+  `APPLE_SECRETS_MISSING` (error) düşer; silme yine çalışır. Sıra: secret'lar →
+  `delete-account` deploy → client OTA (alan opsiyonel, fonksiyon önce güvenli).
+- **Canlı uçtan uca doğrulama yok.** `test:apple-revoke` (18 test) Apple uçlarını mock'luyor;
+  gerçek `/auth/token` + `/auth/revoke` bir TestFlight Apple hesabıyla denenene kadar
+  kanıtlanmış sayılmaz. Kanıt: Sentry'de `APPLE_*` kodu yok + Apple ID ayarlarında
+  uygulamanın düşmesi.
+- **Gate geniş (karar 3e).** Apple identity var + `appleAuthorizationCode` yok →
+  `APPLE_REVOKE_SKIPPED_OLD_CLIENT` warning, silme sürer. Eski client'lar OTA ile
+  gidince gate daraltılır (code yoksa reddet ya da warning'i kaldır); o zamana kadar
+  warning gürültüsü beklenir.
+- **`unavailable` yolu.** Apple identity var ama cihazda Apple girişi yok / code
+  alınamadı / beklenmedik hata: istemci silmeyi engellemez (kullanıcı hesabını
+  silebilmeli), `logger.error` yazar, sunucu `SKIPPED_OLD_CLIENT` warning'i yazar. İkisi
+  ayrışmıyor; sıklığı Sentry'de ölçülüp gerekirse ayrı kod eklenir.
+- **Retry.** 207 (`auth_user_delete_failed`) sonrası kullanıcı tekrar dokunursa Apple
+  ekranı yeniden çıkar (code tek kullanımlık); ilk denemede revoke başarılı olduysa
+  ikinci deneme `invalid_grant` ile `APPLE_REVOKE_FAILED` yazabilir. Zararsız, gürültü.
+- **Gövde parse'ı.** Geçersiz JSON gövde "gövde yok" sayılır (eski client gövdesiz
+  çağırır); bu durumda Apple kullanıcısı için `SKIPPED_OLD_CLIENT` düşer.
