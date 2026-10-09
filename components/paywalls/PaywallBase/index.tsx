@@ -46,6 +46,7 @@ import { upsertSubscription } from '@/services/subscriptionService';
 import { clearQuotaCache } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import type { PurchaseErrorKind } from '@/services/purchaseService';
+import { posthogAnalytics } from '@/services/posthog';
 import { supabase } from '@/services/supabase';
 import {
   recordPaywallShown,
@@ -296,11 +297,17 @@ export default function PaywallBase({
     if (!acquireLock('purchase')) return;
     hapticMedium();
 
+    // Iptal DEGIL (o `purchase_cancelled`, purchaseService'te); basarisiz sonuc.
+    const trackPurchaseFailed = (errorKind: string) => {
+      posthogAnalytics.track('purchase_failed', { error_kind: errorKind, plan: selectedPlan });
+    };
+
     try {
       const plan = PLANS[selectedPlan];
       const pkg = packages.find((p) => p.product.identifier === plan.rcProductId);
 
       if (!pkg) {
+        trackPurchaseFailed('package_missing');
         Alert.alert(t('paywall.purchaseError'));
         return;
       }
@@ -361,16 +368,20 @@ export default function PaywallBase({
       } else if (result.errorKind === 'entitlement_pending') {
         // Odeme gitmis olabilir — "tekrar dene" DEME, cift odeme riski.
         // Servis katmani RC_ENTITLEMENT_PENDING ile Sentry'ye yazdi.
+        trackPurchaseFailed('entitlement_pending');
         Alert.alert(t('errors.purchasePendingTitle'), t('errors.purchasePending'));
       } else if (result.errorKind === 'not_ready') {
         // RC/kimlik henüz hazır değil: ödeme BAŞLAMADI, tekrar denemek güvenli.
+        trackPurchaseFailed('not_ready');
         Alert.alert(t('errors.accountNotReady'));
       } else {
         // K-43: ham RC metni ekrana gitmez; servis katmani Sentry'ye yazdi.
+        trackPurchaseFailed(result.errorKind ?? 'unknown');
         Alert.alert(t('paywall.purchaseError'));
       }
     } catch (err) {
       logger.error('[paywall-base] Satin alma hatasi:', err);
+      trackPurchaseFailed('exception');
       Alert.alert(t('paywall.purchaseError'));
     } finally {
       releaseLock();
@@ -471,8 +482,16 @@ export default function PaywallBase({
   const selectPlan = useCallback((id: OfferPlan) => {
     if (busyRef.current) return;
     hapticMedium();
+    if (id !== selectedPlan) {
+      posthogAnalytics.track('paywall_plan_selected', {
+        plan: id,
+        source: variant.name,
+        // Secimden sonra ekranda deneme vaadi gorunuyor mu (buildOffer ile ayni kaynak).
+        trial_shown: offers[id].kind === 'trial',
+      });
+    }
     setSelectedPlan(id);
-  }, []);
+  }, [selectedPlan, variant.name, offers]);
 
   // ─── Sabit satın alma alanı ───────────────────────────────────────────────
 
