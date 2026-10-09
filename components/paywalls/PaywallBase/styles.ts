@@ -200,7 +200,7 @@ export const styles = StyleSheet.create({
   // ─── Sabit satın alma alanı ───────────────────────────────────────────────
   footer: {
     paddingHorizontal: PAYWALL_GUTTER,
-    paddingTop: space.md,
+    paddingTop: space.sm,
     borderTopWidth: size.hairline,
     borderTopColor: color.surface.border,
     backgroundColor: color.surface.raised,
@@ -229,7 +229,7 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textAlign: 'center',
-    marginTop: space.sm,
+    marginTop: space.sm - 2,
   },
 
   // ─── Restore · Terms · Privacy ────────────────────────────────────────────

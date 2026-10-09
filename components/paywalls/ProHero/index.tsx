@@ -111,7 +111,8 @@ const styles = StyleSheet.create({
     // Üst bandın (tutamaç + ✕) altına uzanan ışık için; metin akışı aynı kalır.
     marginTop: -PAYWALL_TOP_INSET + space.sm,
     paddingTop: PAYWALL_TOP_INSET,
-    paddingBottom: space.base,
+    // Plan kartları ilk ekranda görünsün diye sıkı (R-5 polish).
+    paddingBottom: space.xs,
   },
   light: {
     position: 'absolute',
@@ -132,30 +133,30 @@ const styles = StyleSheet.create({
     ...type['label-caps'],
     textTransform: 'uppercase',
     color: color.text.primarySoft,
-    marginTop: space.sm,
+    marginTop: space.xs,
   },
   headline: {
     ...type['display-m'],
     color: color.text.primary,
-    marginTop: space.xs + 2,
+    marginTop: space.xs,
   },
   subhead: {
     ...type.callout,
     color: color.text.primarySoft,
-    marginTop: space.sm,
+    marginTop: space.xs,
   },
   example: {
-    marginTop: space.base,
+    marginTop: space.md,
     backgroundColor: color.surface.base,
     borderRadius: radius.surface,
     borderLeftWidth: 2,
     borderLeftColor: color.reward.primary,
-    paddingVertical: space.md,
+    paddingVertical: space.sm + 2,
     paddingHorizontal: space.base,
   },
   exampleCompact: {
-    marginTop: space.md,
-    paddingVertical: space.sm + 2,
+    marginTop: space.sm,
+    paddingVertical: space.sm,
   },
   exampleLabel: {
     ...type.caption,
@@ -167,8 +168,8 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
   },
   benefits: {
-    marginTop: space.base,
-    gap: space.md,
+    marginTop: space.md,
+    gap: space.sm,
   },
   benefitRow: {
     flexDirection: 'row',
