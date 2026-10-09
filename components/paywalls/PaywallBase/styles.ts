@@ -238,6 +238,7 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    columnGap: space.xs,
     marginTop: space.xs,
   },
   legalItem: {
@@ -250,10 +251,6 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textDecorationLine: 'underline',
-  },
-  legalSeparator: {
-    ...type.caption,
-    color: color.text.secondary,
   },
 
   // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────

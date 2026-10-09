@@ -541,7 +541,7 @@ export default function PaywallBase({
         <Text style={styles.description}>{description}</Text>
       ) : null}
 
-      {/* Restore · Terms · Privacy — yükleme ve hata dahil HER durumda */}
+      {/* Restore, Terms, Privacy — ayraçsız (wrap'te yetim işaret kalmaz); yükleme ve hata dahil HER durumda */}
       <View style={styles.legalRow}>
         <TouchableOpacity
           style={styles.legalItem}
@@ -558,7 +558,6 @@ export default function PaywallBase({
             <Text style={styles.legalText}>{t('paywall.restorePurchases')}</Text>
           )}
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>·</Text>
         <TouchableOpacity
           style={styles.legalItem}
           onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
@@ -568,7 +567,6 @@ export default function PaywallBase({
         >
           <Text style={styles.legalText}>{t('paywall.termsAction')}</Text>
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>·</Text>
         <TouchableOpacity
           style={styles.legalItem}
           onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
