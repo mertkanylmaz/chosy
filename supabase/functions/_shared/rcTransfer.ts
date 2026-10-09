@@ -37,6 +37,7 @@
  */
 
 import { isUuid } from './rcAuthUser.ts'
+import type { RcEnvironment } from './rcEnvironment.ts'
 import { mapProductToTier, TIER_TO_PLAN } from './rcProductMap.ts'
 
 /**
@@ -77,6 +78,8 @@ export type SubscriptionUpsertRow = {
   status: 'active'
   expires_at: string | null
   entitlement_id: string
+  /** Olayın `environment` değeri (migration 130). Varsayılan YAZILMAZ. */
+  environment: RcEnvironment
 }
 
 /** `applyEntitlement`'ın yazdığı iki tablo. index.ts supabase ile doldurur. */
@@ -98,8 +101,22 @@ export type ApplyEntitlementResult =
 
 /** `GET /v1/subscribers/{id}` yanıtından kullanılan alt küme. */
 export type RcSubscriberInfo = {
-  entitlements: Record<string, { expires_date?: string | null; product_identifier?: string }>
-  subscriptions: Record<string, { unsubscribe_detected_at?: string | null }>
+  entitlements: Record<
+    string,
+    { expires_date?: string | null; product_identifier?: string; purchase_date?: string | null }
+  >
+  subscriptions: Record<
+    string,
+    {
+      unsubscribe_detected_at?: string | null
+      store?: string | null
+      period_type?: string | null
+      purchase_date?: string | null
+      expires_date?: string | null
+      /** RC REST: aboneliğin sandbox'ta alındığı. TRANSFER'da environment'ın otoriter kaynağı. */
+      is_sandbox?: boolean
+    }
+  >
 }
 
 export type ActiveEntitlement = {
@@ -146,6 +163,7 @@ export type TransferIdOutcome =
   | { id: string; kind: 'unresolvable'; reason: 'rc_anonymous' | 'not_uuid' | 'auth_user_missing' }
   | { id: string; kind: 'app_user_race' }
   | { id: string; kind: 'no_active_entitlement' }
+  | { id: string; kind: 'environment_missing' }
   | { id: string; kind: 'unmapped_product'; productId: string }
   | { id: string; kind: 'applied'; tier: string; plan: string }
   | { id: string; kind: 'failed'; errorCode: string }
@@ -180,6 +198,7 @@ export async function applyEntitlement(
   productId: string,
   expiresAt: string | null,
   willRenew: boolean,
+  environment: RcEnvironment,
 ): Promise<ApplyEntitlementResult> {
   const tier = mapProductToTier(productId)
   const plan = TIER_TO_PLAN[tier]
@@ -201,6 +220,7 @@ export async function applyEntitlement(
     status: 'active',
     expires_at: expiresAt,
     entitlement_id: RC_ENTITLEMENT_ID,
+    environment,
   })
   if (subsError) return { kind: 'db_error', step: 'subscriptions', error: subsError }
 
@@ -314,6 +334,51 @@ export async function fetchRcSubscriber(
   }
 }
 
+/**
+ * TRANSFER'da `event.environment` opsiyoneldir. Yoksa environment, RC REST'teki
+ * aktif ürünün abonelik kaydının `is_sandbox` alanından türetilir (otoriter
+ * kaynak, varsayılan DEĞİL). Alan boolean değilse null → çağıran yazmaz.
+ */
+export function environmentFromSubscriber(
+  info: RcSubscriberInfo,
+  productId: string,
+): RcEnvironment | null {
+  const flag = info.subscriptions[productId]?.is_sandbox
+  if (typeof flag !== 'boolean') return null
+  return flag ? 'SANDBOX' : 'PRODUCTION'
+}
+
+// ─── Tanı logu (R-B-0e, DUR 1 kararı 3) ─────────────────────────────────────────
+
+/** Hedef id'nin ilk 8 karakteri — PII yazmadan korelasyon için yeter. */
+export function shortId(id: string): string {
+  return id.slice(0, 8)
+}
+
+/**
+ * RC REST yanıtından `chosy_plus` entitlement'ının kaynağını gösteren alanlar.
+ * YALNIZ tanıdır: `pickActiveEntitlement`/plan mantığı bunu okumaz. Amaç,
+ * "entitlement neden com.chosy.lifetime gösteriyor" sorusunu RC'nin ham
+ * yanıtıyla yanıtlamak. `entitlement: null` = `chosy_plus` yok.
+ */
+export function buildTransferDiagnostic(targetId: string, info: RcSubscriberInfo) {
+  const ent = info.entitlements[RC_ENTITLEMENT_ID]
+  const productId = ent && typeof ent.product_identifier === 'string' ? ent.product_identifier : null
+  const sub = productId ? info.subscriptions[productId] : undefined
+  return {
+    tag: 'rc_transfer_diag',
+    target: shortId(targetId),
+    entitlement: ent ? RC_ENTITLEMENT_ID : null,
+    product_identifier: productId,
+    purchase_date: ent?.purchase_date ?? sub?.purchase_date ?? null,
+    expires_date: ent?.expires_date ?? null,
+    store: sub?.store ?? null,
+    period_type: sub?.period_type ?? null,
+    is_sandbox: sub?.is_sandbox ?? null,
+    subscription_product_ids: Object.keys(info.subscriptions),
+  }
+}
+
 // ─── processTransfer ────────────────────────────────────────────────────────────
 
 const FN = 'revenuecat-webhook'
@@ -331,7 +396,7 @@ function errorMessage(err: unknown): string {
  */
 export async function processTransfer(
   transferredTo: unknown,
-  ctx: { rcEventId: string | null; transferredFrom: unknown },
+  ctx: { rcEventId: string | null; transferredFrom: unknown; environment: RcEnvironment | null },
   deps: TransferDeps,
 ): Promise<TransferResult> {
   const baseExtra = {
@@ -390,17 +455,22 @@ export async function processTransfer(
     }
 
     if (unresolvable) {
-      console.warn(`[rc-webhook] TRANSFER hedefi çözülemedi (${unresolvable}) — target=${id}`)
+      // `rc_anonymous` / `not_uuid`: hedef hiçbir zaman çözülemez, RC'nin
+      // retry'ı düzeltmez → 200 ama SESSİZ DEĞİL (error). `auth_user_missing`
+      // silinmiş hesap demektir (TestFlight'ta hesap silme beklenen bir yol):
+      // aynı kod, warning seviyesi.
+      const level = unresolvable === 'auth_user_missing' ? 'warning' : 'error'
+      console.error(`[rc-webhook] TRANSFER hedefi çözülemedi (${unresolvable}) — target=${shortId(id)}`)
       await deps.report({
         message: `revenuecat-webhook: TRANSFER hedefi çözülemedi (${unresolvable}) — abonelik yazılmadı`,
-        level: 'warning',
+        level,
         tags: {
-          error_code: 'RC_TRANSFER_TARGET_UNRESOLVABLE',
+          error_code: 'TRANSFER_TARGET_UNRESOLVED',
           function: FN,
           event_type: EVENT_TYPE,
           reason: unresolvable,
         },
-        extra: { ...baseExtra, target_id: id },
+        extra: { ...baseExtra, target_id: id, environment: ctx.environment },
       })
       outcomes.push({ id, kind: 'unresolvable', reason: unresolvable })
       continue
@@ -440,6 +510,8 @@ export async function processTransfer(
       continue
     }
 
+    console.log(JSON.stringify(buildTransferDiagnostic(id, info)))
+
     const active = pickActiveEntitlement(info, deps.nowMs())
     if (!active) {
       console.log(`[rc-webhook] TRANSFER: aktif ${RC_ENTITLEMENT_ID} yok — yazılmadı, target=${id}`)
@@ -453,12 +525,28 @@ export async function processTransfer(
       continue
     }
 
+    // environment: olaydaki değer; yoksa RC REST `is_sandbox`'tan; o da yoksa
+    // YAZILMAZ (varsayılan yok) — 200, retry çözmez ama Sentry error.
+    const environment = ctx.environment ?? environmentFromSubscriber(info, active.productId)
+    if (!environment) {
+      console.error(`[rc-webhook] TRANSFER: environment belirlenemedi — target=${shortId(id)}`)
+      await deps.report({
+        message: 'revenuecat-webhook: TRANSFER environment eksik (olayda yok, RC REST is_sandbox yok) — yazım yapılmadı',
+        level: 'error',
+        tags: { error_code: 'RC_ENVIRONMENT_MISSING', function: FN, event_type: EVENT_TYPE },
+        extra: { ...baseExtra, target_auth_id: id, product_id: active.productId },
+      })
+      outcomes.push({ id, kind: 'environment_missing' })
+      continue
+    }
+
     const result = await applyEntitlement(
       deps.writer,
       appUserId,
       active.productId,
       active.expiresAt,
       active.willRenew,
+      environment,
     )
 
     const writeExtra = {
@@ -466,6 +554,7 @@ export async function processTransfer(
       product_id: active.productId,
       expires_at: active.expiresAt,
       will_renew: active.willRenew,
+      environment,
     }
 
     switch (result.kind) {

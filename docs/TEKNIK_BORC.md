@@ -3957,3 +3957,31 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
 - **A/B verisi (9 Eki 2026, R-C-1):** `paywall_quota_v1` `social_proof` kolu 2026-10-09
   itibarıyla `control` ile aynı kopyayı gösteriyor (doğrulanamayan sosyal kanıt metni
   kaldırıldı). Bu tarihten sonraki veri bu kol için geçersizdir.
+
+### R-B-0f — Süresi geçmiş `active` abonelik satırları için günlük doğrulama cron'u (9 Eki 2026)
+
+- **Sorun:** `subscriptions.expires_at < now() - 24h` olduğu halde `status='active'` kalan
+  satırlar var (örn. 4 Eki'de dolan sandbox satırı). O kullanıcı için EXPIRATION olayı hiç
+  gelmedi (`winback_queue` boş, function loglarında yok); nedeni belirsiz.
+- **Önerilen iş:** günlük cron, bu satırları **RC REST ile doğrular** (`GET /v1/subscribers/{id}`,
+  `rcTransfer.ts:fetchRcSubscriber` yeniden kullanılır) ve yalnızca RC "aktif değil" derse
+  düzeltir.
+- **Yasak:** yalnız tarihe bakıp kör expire etmek — billing retry / grace period'daki
+  kullanıcı erişimini haksız keser.
+- **Neden ertelendi:** R-B-0e'de tek-değişken prensibi; yeni cron mimari karar (CTO, DUR 1 kararı 4).
+- **R-B-0e'den kalan kapsam dışı:** `NON_RENEWING_PURCHASE` → `claim_lifetime_spot` RPC'si
+  `subscriptions`'a yazıyor ama `environment` geçirmiyor (RPC imzası değişimi gerekir).
+  `index.ts` dalları (INITIAL_PURCHASE/UNCANCELLATION/EXPIRATION) Deno test ile
+  kapsanmıyor — `Deno.serve` içinde, import edilemiyor.
+
+### R-B-0g — INITIAL_PURCHASE `subscriptions`'a UPDATE yapıyor; sandbox satırı PRODUCTION etiketlenebilir (9 Eki 2026)
+
+- **Sorun:** INITIAL_PURCHASE dalı `subscriptions`'a UPDATE yapıyor. Satır yoksa istemcinin
+  `upsertSubscription`'ı satırı kolon DEFAULT'u `'PRODUCTION'` ile yaratır → webhook önce
+  gelirse sandbox satırı PRODUCTION etiketlenir (webhook'un yazdığı `environment` yalnız
+  mevcut satırı günceller; 0 satır `SUBSCRIPTION_ROW_NOT_FOUND` uyarısıyla geçilir).
+- **Öneri:** INITIAL_PURCHASE da `applyEntitlement` (upsert) kullansın. Bu, `environment`
+  değerini her zaman olaydan yazar; satır yoksa yaratır.
+- **Not:** `applyEntitlement` TEKNIK_BORC'ta "INITIAL_PURCHASE bu fonksiyonu kullanmaz"
+  diye kayıtlı (`rcTransfer.ts`); davranış farkları (eşleme önce, 0 satır uyarısı yok)
+  ayrı sprintte değerlendirilmeli.

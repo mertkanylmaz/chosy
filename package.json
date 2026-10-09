@@ -33,7 +33,7 @@
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",
     "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",
     "test:config-store": "deno test tests/config/configStore.test.ts",
-    "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcMissingUserDecision.test.ts _shared/rcTransfer.test.ts",
+    "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcMissingUserDecision.test.ts _shared/rcTransfer.test.ts _shared/rcEnvironment.test.ts",
     "fetch:films": "tsx scripts/fetch-films.ts",
     "enrich:imdb": "tsx scripts/enrich-imdb-ratings.ts",
     "enrich:metadata": "tsx scripts/enrich-films-metadata.ts",

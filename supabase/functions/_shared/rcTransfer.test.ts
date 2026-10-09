@@ -9,6 +9,8 @@ import { assertEquals, assertRejects } from 'jsr:@std/assert@1'
 
 import {
   applyEntitlement,
+  buildTransferDiagnostic,
+  environmentFromSubscriber,
   type EntitlementWriter,
   fetchRcSubscriber,
   pickActiveEntitlement,
@@ -85,18 +87,18 @@ const activeMonthly: RcSubscriberInfo = {
   subscriptions: { 'com.chosy.monthly': { unsubscribe_detected_at: null } },
 }
 
-const ctx = { rcEventId: 'evt_1', transferredFrom: ['anon'] }
+const ctx = { rcEventId: 'evt_1', transferredFrom: ['anon'], environment: 'SANDBOX' as const }
 
 // ─── processTransfer: karar ağacı ───────────────────────────────────────────────
 
-Deno.test('(a) $RCAnonymousID → 200 + warning, REST çağrılmaz, yazılmaz', async () => {
+Deno.test('(a) $RCAnonymousID → 200 + error (TRANSFER_TARGET_UNRESOLVED), REST çağrılmaz, yazılmaz', async () => {
   const f = fake()
   const r = await processTransfer(['$RCAnonymousID:abc123'], ctx, f.deps)
   assertEquals(r.status, 200)
   assertEquals(r.outcomes, [{ id: '$RCAnonymousID:abc123', kind: 'unresolvable', reason: 'rc_anonymous' }])
   assertEquals(f.restCalls, [])
   assertEquals(f.userUpdates.length + f.upserts.length, 0)
-  assertEquals(f.reports.map((p) => [p.level, p.tags.error_code]), [['warning', 'RC_TRANSFER_TARGET_UNRESOLVABLE']])
+  assertEquals(f.reports.map((p) => [p.level, p.tags.error_code]), [['error', 'TRANSFER_TARGET_UNRESOLVED']])
 })
 
 Deno.test('(a) UUID olmayan id ve auth.users\'ta olmayan UUID → 200, REST yok', async () => {
@@ -132,6 +134,7 @@ Deno.test('(c) çözülen hedef → REST + users ve subscriptions yazılır', as
     status: 'active',
     expires_at: '2026-11-03T12:00:00.000Z',
     entitlement_id: 'chosy_plus',
+    environment: 'SANDBOX',
   }])
 })
 
@@ -204,21 +207,21 @@ Deno.test('transferred_to geçersiz/boş → 200 + warning', async () => {
 
 Deno.test('applyEntitlement: tanınmayan ürün → hiçbir tabloya yazmaz', async () => {
   const f = fake()
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.unknown', FUTURE, true)
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.unknown', FUTURE, true, 'SANDBOX')
   assertEquals(r, { kind: 'unmapped_product', tier: 'free' })
   assertEquals(f.userUpdates.length + f.upserts.length, 0)
 })
 
 Deno.test('applyEntitlement: users 0 satır → subscriptions yazılmaz', async () => {
   const f = fake({ usersCount: 0 })
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true)
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX')
   assertEquals(r, { kind: 'users_row_vanished' })
   assertEquals(f.upserts.length, 0)
 })
 
 Deno.test('applyEntitlement: legacy weekly → plan weekly', async () => {
   const f = fake()
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'chosyai_weekly', FUTURE, false)
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'chosyai_weekly', FUTURE, false, 'SANDBOX')
   assertEquals(r, { kind: 'applied', tier: 'weekly_legacy', plan: 'weekly' })
   assertEquals(f.userUpdates[0].fields.subscription_will_renew, false)
 })
@@ -323,4 +326,109 @@ Deno.test('fetchRcSubscriber: subscriber alanı yok → RC_REST_MALFORMED', asyn
   const fetchImpl = (() => Promise.resolve(new Response('{"x":1}'))) as typeof fetch
   const err = await assertRejects(() => fetchRcSubscriber(B_AUTH, SECRET, fetchImpl), RcRestError)
   assertEquals(err.code, 'RC_REST_MALFORMED')
+})
+
+// ─── R-B-0e: environment, anonim hedef, tanı logu ───────────────────────────────
+
+Deno.test('TRANSFER: anonim hedef + gerçek hedef → anonim error, gerçek hedef yazılır (PRODUCTION)', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: activeMonthly } })
+  const r = await processTransfer(
+    ['$RCAnonymousID:d26168fb7c13439d8df25cc43f53c621', B_AUTH],
+    { ...ctx, environment: 'PRODUCTION' },
+    f.deps,
+  )
+  assertEquals(r.status, 200)
+  assertEquals(r.outcomes.map((o) => o.kind), ['unresolvable', 'applied'])
+  assertEquals(f.restCalls, [B_AUTH])
+  assertEquals(f.upserts[0].environment, 'PRODUCTION')
+  const un = f.reports.find((p) => p.tags.error_code === 'TRANSFER_TARGET_UNRESOLVED')
+  assertEquals(un?.level, 'error')
+  assertEquals(un?.tags.reason, 'rc_anonymous')
+})
+
+Deno.test('TRANSFER: silinmiş hesap (auth yok) aynı kod, warning seviyesi', async () => {
+  const f = fake()
+  await processTransfer([B_AUTH], ctx, f.deps)
+  assertEquals(f.reports.map((p) => [p.level, p.tags.error_code, p.tags.reason]), [
+    ['warning', 'TRANSFER_TARGET_UNRESOLVED', 'auth_user_missing'],
+  ])
+})
+
+Deno.test('applyEntitlement: INITIAL_PURCHASE SANDBOX / EXPIRATION-sonrası UNCANCELLATION — environment satıra yazılır', async () => {
+  const f = fake()
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX')
+  assertEquals(r.kind, 'applied')
+  assertEquals(f.upserts[0].environment, 'SANDBOX')
+})
+
+Deno.test('buildTransferDiagnostic: lifetime ürün gösteren entitlement alanları, plan mantığından bağımsız', () => {
+  const info: RcSubscriberInfo = {
+    entitlements: {
+      chosy_plus: { product_identifier: 'com.chosy.lifetime', purchase_date: '2026-10-08T22:00:00Z', expires_date: null },
+    },
+    subscriptions: {
+      'com.chosy.lifetime': { store: 'app_store', period_type: 'normal', purchase_date: '2026-10-08T22:00:00Z' },
+      'com.chosy.annual': { store: 'app_store', period_type: 'normal' },
+    },
+  }
+  assertEquals(buildTransferDiagnostic(B_AUTH, info), {
+    tag: 'rc_transfer_diag',
+    target: '11111111',
+    entitlement: 'chosy_plus',
+    product_identifier: 'com.chosy.lifetime',
+    purchase_date: '2026-10-08T22:00:00Z',
+    expires_date: null,
+    store: 'app_store',
+    period_type: 'normal',
+    is_sandbox: null,
+    subscription_product_ids: ['com.chosy.lifetime', 'com.chosy.annual'],
+  })
+})
+
+Deno.test('buildTransferDiagnostic: chosy_plus yok → entitlement null, çökmez', () => {
+  const d = buildTransferDiagnostic(B_AUTH, { entitlements: {}, subscriptions: {} })
+  assertEquals(d.entitlement, null)
+  assertEquals(d.product_identifier, null)
+})
+
+// ─── TRANSFER: environment olay yoksa RC REST is_sandbox'tan ────────────────────
+
+const noEnvCtx = { rcEventId: 'evt_2', transferredFrom: ['anon'], environment: null }
+const annualWith = (is_sandbox?: boolean): RcSubscriberInfo => ({
+  entitlements: { chosy_plus: { expires_date: FUTURE, product_identifier: 'com.chosy.annual' } },
+  subscriptions: { 'com.chosy.annual': { unsubscribe_detected_at: null, ...(is_sandbox === undefined ? {} : { is_sandbox }) } },
+})
+
+Deno.test('TRANSFER environment yok + is_sandbox:true → SANDBOX yazılır', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualWith(true) } })
+  const r = await processTransfer([B_AUTH], noEnvCtx, f.deps)
+  assertEquals(r.status, 200)
+  assertEquals(f.upserts[0].environment, 'SANDBOX')
+})
+
+Deno.test('TRANSFER environment yok + is_sandbox:false → PRODUCTION yazılır', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualWith(false) } })
+  await processTransfer([B_AUTH], noEnvCtx, f.deps)
+  assertEquals(f.upserts[0].environment, 'PRODUCTION')
+})
+
+Deno.test("TRANSFER olay environment'ı varsa o kullanılır (is_sandbox ezmez)", async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualWith(true) } })
+  await processTransfer([B_AUTH], { ...noEnvCtx, environment: 'PRODUCTION' }, f.deps)
+  assertEquals(f.upserts[0].environment, 'PRODUCTION')
+})
+
+Deno.test('TRANSFER environment yok + is_sandbox yok → yazım YOK, 200, Sentry error RC_ENVIRONMENT_MISSING', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualWith() } })
+  const r = await processTransfer([B_AUTH], noEnvCtx, f.deps)
+  assertEquals(r.status, 200)
+  assertEquals(r.outcomes, [{ id: B_AUTH, kind: 'environment_missing' }])
+  assertEquals(f.userUpdates.length + f.upserts.length, 0)
+  assertEquals(f.reports.map((p) => [p.level, p.tags.error_code]), [['error', 'RC_ENVIRONMENT_MISSING']])
+})
+
+Deno.test('environmentFromSubscriber: boolean olmayan değer null', () => {
+  const info = { entitlements: {}, subscriptions: { p: { is_sandbox: 'true' as unknown as boolean } } }
+  assertEquals(environmentFromSubscriber(info, 'p'), null)
+  assertEquals(environmentFromSubscriber(info, 'yok'), null)
 })

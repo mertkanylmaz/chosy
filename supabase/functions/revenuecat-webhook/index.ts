@@ -21,7 +21,8 @@ import { sentryCapture } from '../_shared/sentry.ts'
 import { authUserExists } from '../_shared/rcAuthUser.ts'
 import { decideMissingUser } from '../_shared/rcMissingUserDecision.ts'
 import { mapProductToTier, TIER_TO_PLAN } from '../_shared/rcProductMap.ts'
-import { fetchRcSubscriber, processTransfer } from '../_shared/rcTransfer.ts'
+import { isRcTestEvent, parseRcEnvironment } from '../_shared/rcEnvironment.ts'
+import { fetchRcSubscriber, processTransfer, shortId } from '../_shared/rcTransfer.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -46,6 +47,8 @@ interface RevenueCatEvent {
   type: string
   app_user_id: string
   product_id: string
+  /** 'SANDBOX' | 'PRODUCTION'. Doğrulaması `parseRcEnvironment`'ta (R-B-0e). */
+  environment?: string
   transaction_id?: string
   price_in_purchased_currency?: number
   currency?: string
@@ -205,12 +208,123 @@ serve(async (req: Request) => {
     const payload: RevenueCatWebhook = await req.json()
     const event = payload.event
 
-    console.log(`[rc-webhook] ${event.type} | product: ${event.product_id} | user: ${event.app_user_id}`)
+    if (event.type === 'TRANSFER') {
+      // TRANSFER `product_id`/`app_user_id` TAŞIMAZ; eskiden log "undefined"
+      // basıyordu. Sayılar ve (aşağıda) çözülen hedefler loglanır.
+      const from = Array.isArray(event.transferred_from) ? event.transferred_from.length : 'yok'
+      const to = Array.isArray(event.transferred_to) ? event.transferred_to.length : 'yok'
+      console.log(`[rc-webhook] TRANSFER | from: ${from} | to: ${to}`)
+    } else {
+      console.log(`[rc-webhook] ${event.type} | product: ${event.product_id} | user: ${event.app_user_id}`)
+    }
+
+    // ── 2b. TEST olayı: açıkça ele alınır, yazım YOK ──────────────────────────
+    // RC dashboard'undaki test düğmesi. `environment` kapısından ÖNCE gelir:
+    // TEST'te alanın varlığı garanti değil ve bu bir arıza değil.
+    if (isRcTestEvent(event.type)) {
+      console.log('[rc-webhook] TEST olayı — yazım yok')
+      return new Response(
+        JSON.stringify({ status: 'OK', event_type: event.type, note: 'test_event' }),
+        { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── 2c. environment ayrıştırma (kapı 3b'de; TRANSFER istisnası orada) ──────
+    const environment = parseRcEnvironment(event.environment)
 
     // ── 3. Supabase client ────────────────────────────────────────────────────
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // ── 3a. TRANSFER: kimlik çözümlemesinden ÖNCE, ayrı dal ───────────────────
+    // `app_user_id`/`product_id` yok → aşağıdaki `mapProductToTier` ve
+    // `users.auth_id = undefined` sorgusu bu olay için anlamsızdı; atlanır.
+    // Hedefler `transferred_to`; karar ağacı `_shared/rcTransfer.ts` başlığında.
+    if (event.type === 'TRANSFER') {
+      const result = await processTransfer(
+        event.transferred_to,
+        { rcEventId: event.id ?? null, transferredFrom: event.transferred_from, environment },
+        // `environment` null olabilir: TRANSFER'da alan opsiyonel; processTransfer
+        // RC REST'teki `is_sandbox`'tan türetir, o da yoksa yazmaz (200 + Sentry).
+        {
+          authUserExists: (id) => authUserExists(supabase, id),
+          resolveAppUserId: async (id) => {
+            const { data, error } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_id', id)
+              .maybeSingle()
+            if (error) throw new Error(`public.users çözümlemesi düştü — ${error.message}`)
+            return (data?.id as string | undefined) ?? null
+          },
+          // Anahtar istek anında okunur; ASLA loglanmaz (rcTransfer.ts).
+          fetchSubscriber: (id) =>
+            fetchRcSubscriber(id, Deno.env.get('REVENUECAT_SECRET_KEY'), fetch),
+          writer: {
+            updateUserTier: async (appUserId, fields) => {
+              const { error, count } = await supabase
+                .from('users')
+                .update(fields, { count: 'exact' })
+                .eq('id', appUserId)
+              return { error, count }
+            },
+            upsertSubscription: async (row) => {
+              const { error } = await supabase
+                .from('subscriptions')
+                .upsert(row, { onConflict: 'user_id' })
+              return { error }
+            },
+          },
+          report: sentryCapture,
+          nowMs: () => Date.now(),
+        },
+      )
+
+      // Çözülen hedefler (kısa id + sonuç) — PII yok.
+      console.log(
+        `[rc-webhook] TRANSFER sonuç | status=${result.status} | ` +
+          result.outcomes.map((o) => `${shortId(o.id)}:${o.kind}`).join(', '),
+      )
+
+      if (result.status === 500) {
+        return new Response(
+          JSON.stringify({ error: result.errorCode, retryable: true }),
+          { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+        )
+      }
+      return new Response(
+        JSON.stringify({ status: 'OK', event_type: event.type }),
+        { headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── 3b'. environment kapısı (migration 130) — TRANSFER hariç tüm olaylar ────────────────────────────────
+    // Eksik/tanınmayan değer → varsayılan YAZILMAZ: Sentry error + 500
+    // (RC retry eder). `subscriptions.environment` kolonunun DEFAULT'u
+    // 'PRODUCTION' olduğundan sessiz bir varsayılan, sandbox satırı prod
+    // olarak işaretlerdi.
+    if (!environment) {
+      console.error(`[rc-webhook] event.environment eksik/geçersiz — ${event.type}`)
+      await sentryCapture({
+        message: 'revenuecat-webhook: event.environment eksik/geçersiz — olay işlenmedi',
+        level: 'error',
+        tags: {
+          error_code: 'RC_ENVIRONMENT_MISSING',
+          function: 'revenuecat-webhook',
+          event_type: event.type,
+        },
+        extra: {
+          event_type: event.type,
+          rc_event_id: event.id ?? null,
+          environment_raw: event.environment === undefined ? null : String(event.environment),
+        },
+      })
+      return new Response(
+        JSON.stringify({ error: 'RC_ENVIRONMENT_MISSING', retryable: true }),
+        { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
 
     const tier = mapProductToTier(event.product_id)
 
@@ -495,6 +609,7 @@ serve(async (req: Request) => {
             plan,
             status: 'active',
             expires_at: expiresAt,
+            environment,
           }, { count: 'exact' })
           .eq('user_id', appUserId)
           .in('status', ['active', 'trial', 'expired', 'cancelled'])
@@ -772,7 +887,7 @@ serve(async (req: Request) => {
         if (revokeNow) {
           const { error: cancelSubsError, count: cancelSubsCount } = await supabase
             .from('subscriptions')
-            .update({ status: 'cancelled' }, { count: 'exact' })
+            .update({ status: 'cancelled', environment }, { count: 'exact' })
             .eq('user_id', appUserId)
             .in('status', ['active', 'trial'])
 
@@ -885,7 +1000,7 @@ serve(async (req: Request) => {
         // Subscriptions tablosunu da güncelle
         const { error: expSubsError } = await supabase
           .from('subscriptions')
-          .update({ status: 'expired' })
+          .update({ status: 'expired', environment })
           .eq('user_id', appUserId)
           .eq('status', 'active')
 
@@ -1050,58 +1165,8 @@ serve(async (req: Request) => {
         break
       }
 
-      // ━━ Transfer / Alias ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-      case 'TRANSFER': {
-        // Sprint 7: karar ağacı, idempotency ve RC REST gerekçesi
-        // `_shared/rcTransfer.ts` başlığında. TRANSFER `app_user_id`
-        // TAŞIMAZ — yukarıdaki 3b çözümlemesi (`authUserId`/`appUserId`)
-        // bu dalda anlamsızdır ve KULLANILMAZ; hedefler `transferred_to`.
-        const result = await processTransfer(
-          event.transferred_to,
-          { rcEventId: event.id ?? null, transferredFrom: event.transferred_from },
-          {
-            authUserExists: (id) => authUserExists(supabase, id),
-            resolveAppUserId: async (id) => {
-              const { data, error } = await supabase
-                .from('users')
-                .select('id')
-                .eq('auth_id', id)
-                .maybeSingle()
-              if (error) throw new Error(`public.users çözümlemesi düştü — ${error.message}`)
-              return (data?.id as string | undefined) ?? null
-            },
-            // Anahtar istek anında okunur; ASLA loglanmaz (rcTransfer.ts).
-            fetchSubscriber: (id) =>
-              fetchRcSubscriber(id, Deno.env.get('REVENUECAT_SECRET_KEY'), fetch),
-            writer: {
-              updateUserTier: async (appUserId, fields) => {
-                const { error, count } = await supabase
-                  .from('users')
-                  .update(fields, { count: 'exact' })
-                  .eq('id', appUserId)
-                return { error, count }
-              },
-              upsertSubscription: async (row) => {
-                const { error } = await supabase
-                  .from('subscriptions')
-                  .upsert(row, { onConflict: 'user_id' })
-                return { error }
-              },
-            },
-            report: sentryCapture,
-            nowMs: () => Date.now(),
-          },
-        )
-
-        if (result.status === 500) {
-          return new Response(
-            JSON.stringify({ error: result.errorCode, retryable: true }),
-            { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-          )
-        }
-        break
-      }
-
+      // ━━ Alias ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // TRANSFER yukarıda (3a) erken dalda işlenir.
       case 'SUBSCRIBER_ALIAS': {
         // RC dokümanı: deprecated, yeni projelere gönderilmiyor. Dal yalnız
         // eski bir teslimat gelirse default'taki "işlenmeyen tip" sinyaline
