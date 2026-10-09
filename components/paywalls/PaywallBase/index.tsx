@@ -600,11 +600,6 @@ export default function PaywallBase({
                   </Text>
                 </TouchableOpacity>
 
-                {/* Auto-renew disclosure (Apple 3.1.2c) */}
-                <Text style={styles.autoRenew}>
-                  {t('paywall.autoRenewDisclosure')}
-                </Text>
-
                 {/* Legal links */}
                 <View style={styles.legalRow}>
                   <TouchableOpacity

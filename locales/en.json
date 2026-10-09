@@ -815,7 +815,6 @@
     "oneTime": "one-time",
     "subscribe": "Subscribe",
     "restorePurchases": "Restore Purchases",
-    "autoRenewDisclosure": "Payment will be charged to your Apple ID at confirmation of purchase. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. Manage your subscriptions in App Store Account Settings. Lifetime purchase does not auto-renew.",
     "termsAction": "Terms of Use (EULA)",
     "privacyAction": "Privacy Policy",
     "termsPrefix": "By subscribing you agree to our ",

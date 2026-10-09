@@ -227,14 +227,6 @@ export const styles = StyleSheet.create({
     fontSize: Theme.typography.micro.fontSize,
     color: Colors.textTertiary,
   },
-  autoRenew: {
-    fontSize: Theme.typography.micro.fontSize,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: Theme.typography.micro.lineHeight,
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
 
   // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────
   offeringsErrorBox: {

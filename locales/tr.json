@@ -815,7 +815,6 @@
     "oneTime": "tek seferlik",
     "subscribe": "Abone Ol",
     "restorePurchases": "Satın Alımları Geri Yükle",
-    "autoRenewDisclosure": "Satın alma onaylandığında ödeme Apple ID hesabınıza yansıtılır. Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik olarak yenilenir. Aboneliklerinizi App Store Hesap Ayarlarından yönetebilirsiniz. Ömür boyu satın alma otomatik yenilenmez.",
     "termsAction": "Kullanım Koşulları (EULA)",
     "privacyAction": "Gizlilik Politikası",
     "termsPrefix": "Abone olarak ",
