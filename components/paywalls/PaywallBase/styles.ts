@@ -1,15 +1,26 @@
 /**
- * PaywallBase — shared styles for all contextual paywall variants.
+ * PaywallBase — shared styles for all contextual paywall variants (V2).
+ *
+ * Renkler `constants/design/semantic.ts` tokenlarından gelir (Karanlık Salon).
+ * Düzen: üstte kaydırılabilir içerik, altta SABİT satın alma alanı.
  */
 
 import { Dimensions, StyleSheet } from 'react-native';
 
-import { Colors } from '@/constants/Colors';
-import { Theme } from '@/constants/theme';
+import { color, radius, size, space, type } from '@/constants/design/semantic';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export const PAYWALL_HEIGHT = SCREEN_HEIGHT * 0.85;
+
+/**
+ * Sheet'in üstündeki tutamaç + ✕ bandı. Kaydırılan içerik bu bandın altından
+ * başlar; hero bu bandın ALTINA uzanır (negatif marj) ki ✕ hero üstünde dursun.
+ */
+export const PAYWALL_TOP_INSET = size.touchTarget;
+
+/** Yatay kenar boşluğu — hero bunu negatif marjla aşar. */
+export const PAYWALL_GUTTER = space.lg - space.xs; // 20
 
 export const styles = StyleSheet.create({
   // ─── Bottom Sheet Overlay ──────────────────────────────────────────────────
@@ -20,79 +31,72 @@ export const styles = StyleSheet.create({
   },
   sheet: {
     height: PAYWALL_HEIGHT,
-    backgroundColor: Colors.bgCard,
-    borderTopLeftRadius: Theme.borderRadius.xl,
-    borderTopRightRadius: Theme.borderRadius.xl,
+    backgroundColor: color.surface.raised,
+    borderTopLeftRadius: radius.chrome,
+    borderTopRightRadius: radius.chrome,
     overflow: 'hidden',
   },
 
-  // ─── Drag Handle ──────────────────────────────────────────────────────────
+  // ─── Üst bant: tutamaç + ✕ ────────────────────────────────────────────────
   dragHandleArea: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: PAYWALL_TOP_INSET,
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
+    justifyContent: 'center',
+    zIndex: 1,
   },
   dragHandle: {
     width: 40,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.bgSubtle,
+    backgroundColor: color.text.secondary,
+    opacity: 0.6,
   },
-
-  // ─── Scroll Content ───────────────────────────────────────────────────────
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-
-  // ─── Header ───────────────────────────────────────────────────────────────
-  header: {
+  /** ✕ — 44×44pt dokunma alanı, sheet'in sağ üstü */
+  closeButton: {
+    position: 'absolute',
+    top: 0,
+    right: space.sm,
+    width: size.touchTarget,
+    height: size.touchTarget,
     alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 20,
-  },
-  headerIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: Theme.typography.h2.fontSize,
-    lineHeight: Theme.typography.h2.lineHeight,
-    fontWeight: '800',
-    color: Colors.textWhite,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  headerSubtitle: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: Theme.typography.body.lineHeight,
-    paddingHorizontal: 12,
+    zIndex: 2,
   },
 
-  // ─── Plan Cards ───────────────────────────────────────────────────────────
+  // ─── Kaydırılabilir içerik ────────────────────────────────────────────────
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: PAYWALL_GUTTER,
+    paddingTop: PAYWALL_TOP_INSET,
+    paddingBottom: space.base,
+  },
+
+  // ─── Plan kartları ────────────────────────────────────────────────────────
   planContainer: {
-    gap: 10,
-    marginBottom: 16,
+    gap: space.sm + 2,
+    marginTop: space.xs,
   },
   planCard: {
-    backgroundColor: Colors.bgElevated,
-    borderRadius: Theme.borderRadius.lg,
-    padding: 14,
-    borderWidth: 2,
-    borderColor: 'transparent',
+    minHeight: size.touchTarget,
+    backgroundColor: color.surface.base,
+    borderRadius: radius.surface,
+    paddingVertical: space.md,
+    paddingHorizontal: space.base,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  /** İnce marquee kontur */
   planCardSelected: {
-    borderColor: Colors.accentPrimary,
-    backgroundColor: Colors.accentDim,
+    borderColor: color.reward.primary,
   },
   planInfo: {
     flex: 1,
@@ -100,38 +104,32 @@ export const styles = StyleSheet.create({
   planTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 2,
+    flexWrap: 'wrap',
+    gap: space.sm,
   },
   planTitle: {
-    fontSize: Theme.typography.h3.fontSize,
-    fontWeight: '700',
-    color: Colors.textWhite,
-  },
-  planTitleSelected: {
-    color: Colors.accentPrimary,
+    ...type['body-strong'],
+    color: color.text.primary,
   },
   planBadge: {
-    paddingHorizontal: 8,
+    paddingHorizontal: space.sm,
     paddingVertical: 2,
-    borderRadius: 999,
-    backgroundColor: Colors.gold + '20',
+    borderRadius: radius.pill,
+    backgroundColor: color.reward.primary,
   },
   planBadgeText: {
-    fontSize: Theme.typography.micro.fontSize,
-    fontWeight: '700',
-    color: Colors.gold,
+    ...type['label-caps'],
     letterSpacing: 0.4,
+    color: color.surface.base,
   },
   planPrice: {
-    fontSize: Theme.typography.caption.fontSize,
-    color: Colors.textSecondary,
+    ...type.callout,
+    color: color.text.primarySoft,
     marginTop: 2,
   },
-  planSaving: {
-    fontSize: Theme.typography.micro.fontSize,
-    color: Colors.success,
-    fontWeight: '600',
+  planEquivalent: {
+    ...type.caption,
+    color: color.text.secondary,
     marginTop: 2,
   },
 
@@ -141,123 +139,124 @@ export const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     borderWidth: 2,
-    borderColor: Colors.bgSubtle,
+    borderColor: color.text.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: space.md,
   },
   radioOuterSelected: {
-    borderColor: Colors.accentPrimary,
+    borderColor: color.reward.primary,
   },
   radioInner: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: Colors.accentPrimary,
+    backgroundColor: color.reward.primary,
   },
 
-  // ─── Trial Info ───────────────────────────────────────────────────────────
-  trialInfo: {
-    fontSize: Theme.typography.caption.fontSize,
-    color: Colors.accentPrimary,
-    textAlign: 'center',
-    fontWeight: '600',
-    marginBottom: 12,
+  // ─── Skeleton (fiyatlar yüklenirken; animasyonsuz) ────────────────────────
+  skeletonCard: {
+    height: 68,
+    borderRadius: radius.surface,
+    backgroundColor: color.surface.base,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+  },
+  skeletonLine: {
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: color.surface.border,
+  },
+  skeletonLineWide: { width: '85%' },
+  skeletonLineNarrow: { width: '60%' },
+  skeletonDescription: {
+    marginTop: space.md,
+    gap: 6,
+    alignItems: 'center',
   },
 
-  // ─── CTA Button ──────────────────────────────────────────────────────────
+  // ─── Sabit satın alma alanı ───────────────────────────────────────────────
+  footer: {
+    paddingHorizontal: PAYWALL_GUTTER,
+    paddingTop: space.md,
+    borderTopWidth: size.hairline,
+    borderTopColor: color.surface.border,
+    backgroundColor: color.surface.raised,
+  },
+  /** Büyük Dynamic Type'ta footer içeriğin sonuna akar; sabit değil. */
+  footerInline: {
+    paddingTop: space.lg,
+  },
   ctaButton: {
-    borderRadius: Theme.borderRadius.lg,
-    overflow: 'hidden',
-    marginBottom: 10,
-  },
-  ctaGradient: {
-    flexDirection: 'row',
+    minHeight: size.actionHeight + 6,
+    borderRadius: radius.surface,
+    backgroundColor: color.reward.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    height: 54,
+    paddingHorizontal: space.base,
   },
   ctaText: {
-    fontSize: Theme.typography.h3.fontSize,
-    fontWeight: '800',
-    color: Colors.textOnAccent,
-    letterSpacing: 0.3,
+    ...type['body-strong'],
+    color: color.surface.base,
+    textAlign: 'center',
   },
   ctaDisabled: {
-    opacity: 0.6,
+    opacity: 0.5,
+  },
+  description: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+    marginTop: space.sm,
   },
 
-  // ─── Secondary Actions ────────────────────────────────────────────────────
-  dismissButton: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dismissText: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Colors.textTertiary,
-    fontWeight: '500',
-  },
-
-  // ─── Restore ──────────────────────────────────────────────────────────────
-  restoreButton: {
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  restoreText: {
-    fontSize: Theme.typography.caption.fontSize,
-    color: Colors.textTertiary,
-  },
-
-  // ─── Legal ────────────────────────────────────────────────────────────────
+  // ─── Restore · Terms · Privacy ────────────────────────────────────────────
   legalRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 8,
-    marginBottom: 8,
+    marginTop: space.xs,
   },
-  legalLink: {
-    fontSize: Theme.typography.micro.fontSize,
-    color: Colors.accentPrimary,
+  legalItem: {
+    minHeight: size.touchTarget,
+    paddingHorizontal: space.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  legalText: {
+    ...type.caption,
+    color: color.text.secondary,
     textDecorationLine: 'underline',
   },
   legalSeparator: {
-    fontSize: Theme.typography.micro.fontSize,
-    color: Colors.textTertiary,
-  },
-  autoRenew: {
-    fontSize: Theme.typography.micro.fontSize,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: Theme.typography.micro.lineHeight,
-    paddingHorizontal: 16,
-    marginTop: 8,
+    ...type.caption,
+    color: color.text.secondary,
   },
 
   // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────
   offeringsErrorBox: {
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    gap: 16,
+    paddingVertical: space.lg,
+    paddingHorizontal: space.base,
+    gap: space.base,
   },
   offeringsErrorText: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Colors.textSecondary,
+    ...type.callout,
+    color: color.text.secondary,
     textAlign: 'center',
-    lineHeight: Theme.typography.body.lineHeight,
   },
   offeringsRetryBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    borderRadius: Theme.borderRadius.lg,
-    borderWidth: 1,
-    borderColor: Colors.accentPrimary,
+    minHeight: size.touchTarget,
+    paddingHorizontal: space.lg,
+    borderRadius: radius.surface,
+    borderWidth: size.hairline,
+    borderColor: color.reward.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   offeringsRetryText: {
-    fontSize: Theme.typography.body.fontSize,
-    color: Colors.accentPrimary,
+    ...type.callout,
+    color: color.text.primary,
   },
 });

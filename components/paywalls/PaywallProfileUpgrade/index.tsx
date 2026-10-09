@@ -1,21 +1,18 @@
 /**
- * PaywallProfileUpgrade — profile "Upgrade to Premium" contextual paywall.
+ * PaywallProfileUpgrade — Pro Mode kapısının paywall'ı.
  *
  * Trigger: profile_upgrade
- * Context: Kullanici profil ekranindan bilinçli olarak upgrade istiyor
+ * 2.1.0'da paywall'ın TEK kullanıcı girişi (E-29): Pro Mode kilitli ekranındaki
+ * "Chosy Pro" CTA'sı ve Profil'deki Chosy Pro satırı. İçerik Mood Search
+ * anlatımıdır (`ProHero`); yalnız doğrulanmış vaatler (R-5).
  */
 
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 
-import { Diamond, MagnifyingGlass, Waveform } from 'phosphor-react-native';
-import type { IconProps } from 'phosphor-react-native';
-
-import { Colors } from '@/constants/Colors';
 import type { PlanId } from '@/constants/subscriptionPlans';
-import { useLanguage } from '@/contexts/LanguageContext';
 import type { PaywallVariant } from '@/services/conversion';
 import PaywallBase from '../PaywallBase';
+import { ProHero } from '../ProHero';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
@@ -26,44 +23,16 @@ interface Props {
   onDismiss: () => void;
 }
 
-// ─── Benefit Items ──────────────────────────────────────────────────────────
-
-// Yalniz dogrulanmis vaatler: Pro Mode (sinirsiz arama — migration 117) ve
-// ton/tempo okuma. Arsiv vaadi YOK: arsiv chosy_plus ile kilitli degil (R-C-1).
-const BENEFITS: { Icon: React.ComponentType<IconProps>; key: string }[] = [
-  { Icon: MagnifyingGlass, key: 'contextPaywall.profileBenefit1' },
-  { Icon: Waveform, key: 'contextPaywall.profileBenefit2' },
-];
-
 // ─── Component ──────────────────────────────────────────────────────────────
 
-/** Profile ekranindan upgrade tiklayinca gosterilen paywall */
+/** Profile / Pro Mode kapısından upgrade tıklayınca gösterilen paywall */
 export default function PaywallProfileUpgrade({
   visible,
   variant,
   onConvert,
   onDismiss,
 }: Props) {
-  const { t } = useLanguage();
-
-  const renderHeader = useCallback(() => (
-    <View style={localStyles.header}>
-      <View style={localStyles.iconCircle}>
-        <Diamond size={28} color={Colors.accentPrimary} weight="duotone" />
-      </View>
-      <Text style={localStyles.title}>{t('contextPaywall.profileTitle')}</Text>
-      <Text style={localStyles.subtitle}>{t('contextPaywall.profileSubtitle')}</Text>
-
-      <View style={localStyles.benefitList}>
-        {BENEFITS.map((b) => (
-          <View key={b.key} style={localStyles.benefitRow}>
-            <b.Icon size={18} color={Colors.accentPrimary} weight="duotone" />
-            <Text style={localStyles.benefitText}>{t(b.key)}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  ), [t]);
+  const renderHeader = useCallback(() => <ProHero />, []);
 
   return (
     <PaywallBase
@@ -72,57 +41,6 @@ export default function PaywallProfileUpgrade({
       onConvert={onConvert}
       onDismiss={onDismiss}
       renderHeader={renderHeader}
-      dismissLabel={t('contextPaywall.profileDismiss')}
     />
   );
 }
-
-// ─── Styles ─────────────────────────────────────────────────────────────────
-
-const localStyles = StyleSheet.create({
-  header: {
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 20,
-  },
-  iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.accentDim,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.textWhite,
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  benefitList: {
-    alignSelf: 'stretch',
-    gap: 10,
-    paddingHorizontal: 4,
-  },
-  benefitRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  benefitText: {
-    fontSize: 14,
-    color: Colors.textWhite,
-    fontWeight: '500',
-    flex: 1,
-  },
-});

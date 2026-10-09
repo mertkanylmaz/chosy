@@ -64,7 +64,9 @@ function GateShell({ children }: { children: React.ReactNode }) {
           <TouchableOpacity
             onPress={() => router.back()}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            activeOpacity={0.7}>
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}>
             <Ionicons name="chevron-back" size={24} color={Colors.textWhite} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{t('proMode.title')}</Text>
