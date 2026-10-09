@@ -77,7 +77,9 @@ const sentryDist = Constants.nativeBuildVersion ?? undefined;
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
   enableAutoSessionTracking: true,
-  environment: __DEV__ ? 'development' : 'production',
+  // Varsayılan production. `preview` kanalındaki (TestFlight/OTA test) olaylar
+  // production panolarını kirletmesin diye ayrı environment (R-6).
+  environment: __DEV__ ? 'development' : (Updates.channel === 'preview' ? 'preview' : 'production'),
   tracesSampleRate: __DEV__ ? 1.0 : 0.2,
   enableNative: true,
   release: sentryRelease,
@@ -106,6 +108,7 @@ const runtimeVersion = Updates.runtimeVersion ?? 'unknown';
 Sentry.setTag('update_id', updateId);
 Sentry.setTag('update_source', updateSource);
 Sentry.setTag('runtime_version', runtimeVersion);
+Sentry.setTag('update_channel', Updates.channel ?? 'embedded');
 
 // ── PostHog initialization ───────────────────────────────────────────────────
 posthogAnalytics.init();
