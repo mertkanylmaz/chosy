@@ -43,7 +43,16 @@ const BENEFITS: { Icon: React.ComponentType<IconProps>; titleKey: string; bodyKe
   { Icon: Waveform, titleKey: 'paywallPro.benefit2Title', bodyKey: 'paywallPro.benefit2Body' },
 ];
 
-export function ProHero(): React.JSX.Element {
+interface ProHeroProps {
+  /**
+   * Alt metni gizle. YALNIZ deneme-uygun durumda true gelir: açıklama 3
+   * satıra çıkıp iki plan kartını ilk ekrandan itiyordu (R-5 fit). Başka
+   * kopya silinmez.
+   */
+  hideSubhead?: boolean;
+}
+
+export function ProHero({ hideSubhead = false }: ProHeroProps): React.JSX.Element {
   const { t } = useLanguage();
   const { height } = useWindowDimensions();
   const compact = height <= COMPACT_HEIGHT;
@@ -85,7 +94,7 @@ export function ProHero(): React.JSX.Element {
 
       <Text style={styles.eyebrow}>{t('paywallPro.eyebrow')}</Text>
       <Text style={styles.headline}>{t('paywallPro.headline')}</Text>
-      <Text style={styles.subhead}>{t('paywallPro.subhead')}</Text>
+      {!hideSubhead && <Text style={styles.subhead}>{t('paywallPro.subhead')}</Text>}
 
       <View style={[styles.example, compact && styles.exampleCompact]}>
         <Text style={styles.exampleLabel}>{t('paywallPro.exampleLabel')}</Text>

@@ -83,6 +83,16 @@ const INLINE_FOOTER_FONT_SCALE = 1.35;
 
 // ─── Props ──────────────────────────────────────────────────────────────────
 
+/** `renderHeader`'a ikinci argüman: header'ın yerleşimini etkileyen teklif durumu. */
+export interface PaywallHeaderContext {
+  /**
+   * Annual için deneme vaadi gösteriliyor mu (eligible + intro tanımlı).
+   * Bu durumda açıklama 3 satıra çıkar; hero sığmak için alt metni gizler.
+   * Plan seçiminden BAĞIMSIZ: Monthly'ye dokununca yerleşim zıplamasın.
+   */
+  trialShown: boolean;
+}
+
 interface PaywallBaseProps {
   /** Gosterilecek mi? */
   visible: boolean;
@@ -97,7 +107,7 @@ interface PaywallBaseProps {
    * `pricing`: yillik planin aylik esdegeri + tasarruf yuzdesi (RC urunlerinden);
    * paketler yuklenmediyse veya tasarruf yoksa null — header fiyatli kopyadan vazgecer.
    */
-  renderHeader: (pricing: AnnualPricing | null) => React.ReactNode;
+  renderHeader: (pricing: AnnualPricing | null, ctx: PaywallHeaderContext) => React.ReactNode;
   /**
    * Plan kartlarının (veya yükleme/hata bloğunun) ALTINDA, kaydırılan alanın
    * içinde gösterilecek içerik. Hero'daki fayda satırları gibi, kartlardan
@@ -224,6 +234,7 @@ export default function PaywallBase({
     return out;
   }, [productFor, eligibility]);
   const selectedOffer = offers[selectedPlan];
+  const trialShown = offers.annual.kind === 'trial';
 
   /** Yillik aylik esdeger + tasarruf: product.price ve currencyCode'dan hesaplanir. */
   const pricing = useMemo<AnnualPricing | null>(() => {
@@ -606,7 +617,7 @@ export default function PaywallBase({
             bounces={false}
           >
             {/* Custom Header (variant-specific) */}
-            {renderHeader(pricing)}
+            {renderHeader(pricing, { trialShown })}
 
             {loading ? (
               /* Fiyatlar yükleniyor — animasyonsuz iskelet, fiyat UYDURULMAZ */
