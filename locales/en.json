@@ -819,6 +819,9 @@
     "offerTrialDesc": "Nothing due today. Then %{price}/year. Auto-renews unless canceled. Cancel anytime in your App Store account settings.",
     "offerPaidDescAnnual": "%{price} billed today. Auto-renews at %{price}/year. Cancel anytime in your App Store account settings.",
     "offerPaidDescMonthly": "%{price} billed today. Auto-renews at %{price}/month. Cancel anytime in your App Store account settings.",
+    "loadingPrices": "Loading prices",
+    "saveBadge": "SAVE %{percent}",
+    "perMonthEquivalent": "%{monthly}/mo",
     "subscribe": "Subscribe",
     "restorePurchases": "Restore Purchases",
     "termsAction": "Terms of Use (EULA)",
@@ -1404,12 +1407,6 @@
     "unknownError": "The spin didn't go through. Try again."
   },
   "contextPaywall": {
-    "bestValue": "BEST VALUE",
-    "trialLine": "%{days} days free, then %{price}%{period}",
-    "ctaTrial": "Start %{days}-day free trial",
-    "ctaNoTrial": "Get Chosy Pro",
-    "annualSaving": "Save %{percent} vs monthly (%{monthly}/mo)",
-    "dismissDefault": "Maybe Later",
     "quotaTitle": "Your discoveries are done for today",
     "quotaSubtitle": "Upgrade to Chosy Pro for more daily mood searches and unlimited games.",
     "quotaValueTitle": "Just %{price}/month for unlimited discoveries",

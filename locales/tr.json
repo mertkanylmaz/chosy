@@ -819,6 +819,9 @@
     "offerTrialDesc": "Bugün ödeme yok. Sonra %{price}/yıl. İptal edilmedikçe otomatik yenilenir. App Store hesap ayarlarından istediğin zaman iptal edebilirsin.",
     "offerPaidDescAnnual": "Bugün %{price} tahsil edilir. %{price}/yıl ile otomatik yenilenir. App Store hesap ayarlarından istediğin zaman iptal edebilirsin.",
     "offerPaidDescMonthly": "Bugün %{price} tahsil edilir. %{price}/ay ile otomatik yenilenir. App Store hesap ayarlarından istediğin zaman iptal edebilirsin.",
+    "loadingPrices": "Fiyatlar yükleniyor",
+    "saveBadge": "%{percent} TASARRUF",
+    "perMonthEquivalent": "%{monthly}/ay",
     "subscribe": "Abone Ol",
     "restorePurchases": "Satın Alımları Geri Yükle",
     "termsAction": "Kullanım Koşulları (EULA)",
@@ -1404,12 +1407,6 @@
     "unknownError": "Çevirme tamamlanamadı. Tekrar dene."
   },
   "contextPaywall": {
-    "bestValue": "EN AVANTAJLI",
-    "trialLine": "%{days} gün ücretsiz, sonra %{price}%{period}",
-    "ctaTrial": "%{days} günlük ücretsiz denemeyi başlat",
-    "ctaNoTrial": "Chosy Pro'ya geç",
-    "annualSaving": "Aylığa göre %{percent} tasarruf (%{monthly}/ay)",
-    "dismissDefault": "Belki Sonra",
     "quotaTitle": "Bugunku kesiflerin bitti",
     "quotaSubtitle": "Daha fazla günlük arama ve sınırsız oyun için Chosy Pro'ya yükselt.",
     "quotaValueTitle": "Sınırsız keşif için ayda sadece %{price}",
