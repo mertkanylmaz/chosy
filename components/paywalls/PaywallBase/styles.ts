@@ -101,14 +101,14 @@ export const styles = StyleSheet.create({
 
   // ─── Plan kartları ────────────────────────────────────────────────────────
   planContainer: {
-    gap: space.sm + 2,
+    gap: space.sm,
     marginTop: space.xs,
   },
   planCard: {
     minHeight: size.touchTarget,
     backgroundColor: color.surface.base,
     borderRadius: radius.surface,
-    paddingVertical: space.md,
+    paddingVertical: space.sm + 2,
     paddingHorizontal: space.base,
     borderWidth: size.hairline,
     borderColor: color.surface.border,
@@ -210,7 +210,7 @@ export const styles = StyleSheet.create({
     paddingTop: space.lg,
   },
   ctaButton: {
-    minHeight: size.actionHeight + 6,
+    minHeight: size.actionHeight + 2,
     borderRadius: radius.surface,
     backgroundColor: color.reward.primary,
     alignItems: 'center',
@@ -229,7 +229,7 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textAlign: 'center',
-    marginTop: space.sm - 2,
+    marginTop: space.xs,
   },
 
   // ─── Restore · Terms · Privacy ────────────────────────────────────────────
@@ -238,12 +238,14 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
-    columnGap: space.xs,
+    columnGap: space.sm,
     marginTop: space.xs,
   },
   legalItem: {
     minHeight: size.touchTarget,
-    paddingHorizontal: space.sm,
+    // Yatay padding küçük: üç etiket 393pt'te TEK satıra sığsın. Yükseklik
+    // 44pt kalır; büyük Dynamic Type'ta flexWrap satırı serbestçe kırar.
+    paddingHorizontal: space.xs,
     justifyContent: 'center',
     alignItems: 'center',
   },

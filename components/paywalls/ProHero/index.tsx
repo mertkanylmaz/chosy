@@ -1,5 +1,6 @@
 /**
  * ProHero — Chosy Pro paywall'ının Mood Search anlatımı (R-5 V2, madde 8-9).
+ * Sıra: hero → örnek kart → (PaywallBase plan kartları) → `ProBenefits`.
  *
  * Hero KODLA çizilir, görsel dosyası yoktur: koyu zemin üzerinde `marquee`
  * token'ından türetilmiş, düşük opaklıkta iki radyal ışık ("projektör ışığı").
@@ -42,7 +43,16 @@ const BENEFITS: { Icon: React.ComponentType<IconProps>; titleKey: string; bodyKe
   { Icon: Waveform, titleKey: 'paywallPro.benefit2Title', bodyKey: 'paywallPro.benefit2Body' },
 ];
 
-export function ProHero(): React.JSX.Element {
+interface ProHeroProps {
+  /**
+   * Alt metni gizle. YALNIZ deneme-uygun durumda true gelir: açıklama 3
+   * satıra çıkıp iki plan kartını ilk ekrandan itiyordu (R-5 fit). Başka
+   * kopya silinmez.
+   */
+  hideSubhead?: boolean;
+}
+
+export function ProHero({ hideSubhead = false }: ProHeroProps): React.JSX.Element {
   const { t } = useLanguage();
   const { height } = useWindowDimensions();
   const compact = height <= COMPACT_HEIGHT;
@@ -84,24 +94,34 @@ export function ProHero(): React.JSX.Element {
 
       <Text style={styles.eyebrow}>{t('paywallPro.eyebrow')}</Text>
       <Text style={styles.headline}>{t('paywallPro.headline')}</Text>
-      <Text style={styles.subhead}>{t('paywallPro.subhead')}</Text>
+      {!hideSubhead && <Text style={styles.subhead}>{t('paywallPro.subhead')}</Text>}
 
       <View style={[styles.example, compact && styles.exampleCompact]}>
         <Text style={styles.exampleLabel}>{t('paywallPro.exampleLabel')}</Text>
         <Text style={styles.exampleText}>{t('paywallPro.exampleText')}</Text>
       </View>
+    </View>
+  );
+}
 
-      <View style={styles.benefits}>
-        {BENEFITS.map(({ Icon, titleKey, bodyKey }) => (
-          <View key={titleKey} style={styles.benefitRow}>
-            <Icon size={size.iconAction} color={color.reward.primary} weight="duotone" />
-            <View style={styles.benefitText}>
-              <Text style={styles.benefitTitle}>{t(titleKey)}</Text>
-              <Text style={styles.benefitBody}>{t(bodyKey)}</Text>
-            </View>
+/**
+ * İki fayda satırı — plan kartlarının ALTINDA gösterilir (`renderBelowPlans`).
+ * Kartlar ilk ekranda tam görünsün diye hero'dan ayrıldı (R-5 fit).
+ */
+export function ProBenefits(): React.JSX.Element {
+  const { t } = useLanguage();
+
+  return (
+    <View style={styles.benefits}>
+      {BENEFITS.map(({ Icon, titleKey, bodyKey }) => (
+        <View key={titleKey} style={styles.benefitRow}>
+          <Icon size={size.iconAction} color={color.reward.primary} weight="duotone" />
+          <View style={styles.benefitText}>
+            <Text style={styles.benefitTitle}>{t(titleKey)}</Text>
+            <Text style={styles.benefitBody}>{t(bodyKey)}</Text>
           </View>
-        ))}
-      </View>
+        </View>
+      ))}
     </View>
   );
 }
@@ -168,7 +188,7 @@ const styles = StyleSheet.create({
     marginTop: space.xs,
   },
   benefits: {
-    marginTop: space.md,
+    marginTop: space.base,
     gap: space.sm,
   },
   benefitRow: {
