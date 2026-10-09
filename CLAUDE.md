@@ -6,7 +6,9 @@ Bu dosya KISA tutulur. Bağlama özel bilgi `.claude/skills/` altına taşınır
 ## Ürün (özet)
 
 Chosy günlük bir film ritüelidir: her akşam 4 film, 3 turluk eleme, 1 şampiyon.
-Serbest metin girdisi yok — bağlam tahmin edilir ve düzeltilebilir.
+Ritüelde (gauntlet) serbest metin girdisi yok — bağlam tahmin edilir ve düzeltilebilir.
+Tek istisna Pro Mode (ücretli mood araması): yazılan metin Anthropic'e gider, bu yüzden
+yalnız `services/aiConsent.ts` rıza kapısından sonra çağrılır (bible E-26).
 Detay: `docs/os/1_CHOSY_PRODUCT_OS.md`.
 
 Bonus oyun olarak yalnızca **Spotlight** aktiftir. Diğer 6 oyun `app_config` ile
@@ -111,6 +113,11 @@ Expo ~54.0.34 · React Native 0.81.5 · Reanimated ~4.1.1 · expo-router ~6.0.23
 
 ## Migration numaralandırma
 
-Yeni migration numarası, `supabase/migrations/` klasöründeki en yüksek
-mevcut numaradan +1'dir.
-Yine de eklemeden önce `supabase/migrations/` klasörünü listele ve doğrula.
+Yeni migration numarası, `supabase migration list` çıktısında **Local ve Remote**
+sütunlarının ikisi birlikte baz alınarak en yüksek numaradan +1'dir. Yerel klasör
+tek başına yetmez: başka bir dalda uygulanmış migration uzakta olup yerelde
+olmayabilir (9 Eki 2026: yerelde 129, uzakta 130 vardı; `db push` bu yüzden
+engellenirdi). Uzakta olup yerelde olmayan dosya varsa kaynak daldan yalnız dosya
+düzeyinde alınır — `git checkout <kaynak-dal> -- supabase/migrations/<dosya>.sql`,
+cherry-pick değil, içerik düzenlenmez — ve ayrı bir commit'le takibe alınır.
+Worktree'de `migration list` için önce `supabase link --project-ref <ref>` gerekir.
