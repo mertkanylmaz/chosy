@@ -516,7 +516,7 @@ export default function PaywallBase({
       style={[
         styles.footer,
         inlineFooter && styles.footerInline,
-        !inlineFooter && { paddingBottom: Math.max(insets.bottom, 16) },
+        !inlineFooter && { paddingBottom: Math.max(insets.bottom - 8, 16) },
       ]}
     >
       <TouchableOpacity
