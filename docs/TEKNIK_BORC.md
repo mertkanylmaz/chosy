@@ -4063,3 +4063,21 @@ temizlik işi: hangi ekranda tab bar'ın gizleneceğini tek tabloda netleştir.
   (`errors.accountNotReady`) işliyor. `PurchaseErrorKind` başka tüketicileri
   (`SubscriptionContext`) generic olarak `errorKind` alanını koruyor; yeni değere
   özel dal eklenmedi.
+
+### Referral v2.1.0'da kapalı — kalan yüzey (9 Eki 2026, R-4)
+
+- **Karar:** `app/referral.tsx` açılışta `<Redirect href="/" />` yapar (bible §7.3, yeni
+  bayrak yok). Rota `chosy://referral` deep link'iyle hâlâ çözülebildiği için ekran
+  gövdesi mount edilmez; gövde (`ReferralScreenBody`) silinmedi.
+- **Ölü kod:** `components/ReferralPromptSheet` hiçbir yerden import edilmiyor
+  (`referral_prompt_shown` AsyncStorage anahtarı ve PostHog event'i yazılmıyor).
+- **Canlı sunucu yüzeyi (kapatılmadı):** `process-referral` Edge Function (v28),
+  `apply_invite_code` ve `get_referral_stats` RPC'leri deploy'lu. İstemcide çağıran
+  yalnız kapalı ekran ve ölü sheet; sunucu tarafı yine de doğrudan çağrılabilir.
+- **Dış linkler:** `https://chosy.vercel.app?ref=<kod>` paylaşım linkleri
+  (`referralService.getShareLink`, `ReferralPromptSheet`) daha önce paylaşılmış olabilir;
+  `?ref=` istemcide okunmuyor (grep: 0), yani bu linkler bugün hiçbir şey yapmaz.
+- **Metin kalıntısı:** `referral.*` locale anahtarları ("14 days free" vb.) en/tr'de duruyor;
+  parite için silinmedi.
+- **Yeniden açma işi:** ekranı geri açmak, sunucu RPC'lerini kimlik uzayı ve ödül
+  mantığı açısından yeniden denetlemeyi gerektirir (E-14 ile 111 sonrası).

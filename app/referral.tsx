@@ -24,7 +24,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 
 import { Colors } from '@/constants/Colors';
@@ -42,9 +42,20 @@ import { getAppUserId } from '@/services/watchlist';
 import { hapticLight, hapticSuccess } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 
+// ─── Route ───────────────────────────────────────────────────────────────────
+
+/**
+ * v2.1.0: referral ekranı kapalı (bible §7.3). Rota `chosy://referral` deep
+ * link'iyle hâlâ açılabildiği için gövde mount edilmez — ağ çağrısı yok,
+ * kullanıcı ana ekrana döner. Gövde silinmedi (yeniden açılış için).
+ */
+export default function ReferralScreen() {
+  return <Redirect href="/" />;
+}
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ReferralScreen() {
+function ReferralScreenBody() {
   const router = useRouter();
   const { t } = useLanguage();
 
