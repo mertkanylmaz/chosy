@@ -38,6 +38,28 @@ export const styles = StyleSheet.create({
   },
 
   // ─── Üst bant: tutamaç + ✕ ────────────────────────────────────────────────
+  /**
+   * Opak şerit: kaydırılan içerik tutamaç ve ✕'in ALTINDAN geçer, üstünden
+   * değil. Zemin sheet ile aynı token (`surface.raised`) — görünür bir bant
+   * değil, yalnız örtü. Altındaki `topFade` içeriğe/hero ışığına yumuşak geçiş.
+   */
+  topBand: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: PAYWALL_TOP_INSET,
+    backgroundColor: color.surface.raised,
+    zIndex: 1,
+  },
+  topFade: {
+    position: 'absolute',
+    top: PAYWALL_TOP_INSET,
+    left: 0,
+    right: 0,
+    height: space.md,
+    zIndex: 1,
+  },
   dragHandleArea: {
     position: 'absolute',
     top: 0,
@@ -46,7 +68,7 @@ export const styles = StyleSheet.create({
     height: PAYWALL_TOP_INSET,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   dragHandle: {
     width: 40,
@@ -64,7 +86,7 @@ export const styles = StyleSheet.create({
     height: size.touchTarget,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
+    zIndex: 3,
   },
 
   // ─── Kaydırılabilir içerik ────────────────────────────────────────────────
@@ -178,7 +200,7 @@ export const styles = StyleSheet.create({
   // ─── Sabit satın alma alanı ───────────────────────────────────────────────
   footer: {
     paddingHorizontal: PAYWALL_GUTTER,
-    paddingTop: space.md,
+    paddingTop: space.sm,
     borderTopWidth: size.hairline,
     borderTopColor: color.surface.border,
     backgroundColor: color.surface.raised,
@@ -207,7 +229,7 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textAlign: 'center',
-    marginTop: space.sm,
+    marginTop: space.sm - 2,
   },
 
   // ─── Restore · Terms · Privacy ────────────────────────────────────────────
@@ -216,6 +238,7 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
+    columnGap: space.xs,
     marginTop: space.xs,
   },
   legalItem: {
@@ -228,10 +251,6 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textDecorationLine: 'underline',
-  },
-  legalSeparator: {
-    ...type.caption,
-    color: color.text.secondary,
   },
 
   // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────

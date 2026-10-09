@@ -29,10 +29,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PurchasesPackage } from 'react-native-purchases';
 
 import * as Sentry from '@sentry/react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as WebBrowser from 'expo-web-browser';
 import { X } from 'phosphor-react-native';
 
 import { color } from '@/constants/design/semantic';
+import { withAlpha } from '@/constants/gameThemes';
 import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -539,7 +541,7 @@ export default function PaywallBase({
         <Text style={styles.description}>{description}</Text>
       ) : null}
 
-      {/* Restore · Terms · Privacy — yükleme ve hata dahil HER durumda */}
+      {/* Restore, Terms, Privacy — ayraçsız (wrap'te yetim işaret kalmaz); yükleme ve hata dahil HER durumda */}
       <View style={styles.legalRow}>
         <TouchableOpacity
           style={styles.legalItem}
@@ -556,7 +558,6 @@ export default function PaywallBase({
             <Text style={styles.legalText}>{t('paywall.restorePurchases')}</Text>
           )}
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>·</Text>
         <TouchableOpacity
           style={styles.legalItem}
           onPress={() => { void openLegalLink(TERMS_URL, 'terms'); }}
@@ -566,7 +567,6 @@ export default function PaywallBase({
         >
           <Text style={styles.legalText}>{t('paywall.termsAction')}</Text>
         </TouchableOpacity>
-        <Text style={styles.legalSeparator}>·</Text>
         <TouchableOpacity
           style={styles.legalItem}
           onPress={() => { void openLegalLink(PRIVACY_URL, 'privacy'); }}
@@ -686,7 +686,15 @@ export default function PaywallBase({
 
           {!inlineFooter && footer}
 
-          {/* Üst bant — kaydırılan içeriğin ÜSTÜNDE (zIndex), her durumda görünür */}
+          {/* Opak üst şerit: içerik tutamaç/✕'in altından geçer (zIndex 1 < 2,3) */}
+          <View style={styles.topBand} pointerEvents="none" />
+          <LinearGradient
+            colors={[color.surface.raised, withAlpha(color.surface.raised, 0)]}
+            style={styles.topFade}
+            pointerEvents="none"
+          />
+
+          {/* Tutamaç + ✕ — şeridin ÜSTÜNDE, her durumda görünür */}
           <TouchableOpacity
             style={styles.dragHandleArea}
             onPress={() => handleDismiss('drag_handle')}
