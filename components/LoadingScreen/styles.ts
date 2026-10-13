@@ -53,7 +53,7 @@ export const styles = StyleSheet.create({
   },
 
   /**
-   * "chosy.ai" kelime markası — SF Pro Display 600. §3.4'ün üç Archivo
+   * "chosy" kelime markası — SF Pro Display 600. §3.4'ün üç Archivo
    * yerinden biri DEĞİL (V-1 Tur 7 CTO kararı).
    */
   brandName: {

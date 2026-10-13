@@ -102,7 +102,7 @@ const GameShareCard = forwardRef<View, GameShareCardProps>(
 
         {/* Branding */}
         <View style={cardStyles.branding}>
-          <Text style={cardStyles.brandText}>Chosy.ai</Text>
+          <Text style={cardStyles.brandText}>Chosy</Text>
           <Text style={cardStyles.tagline}>{i18n.t('share.tagline')}</Text>
         </View>
       </View>

@@ -313,7 +313,7 @@
     "filmNotFoundTitle": "Film Bulunamadı",
     "filmNotFoundText": "Bu film artık mevcut değil.",
     "loadError": "Film detayları yüklenemedi. Bağlantını kontrol edip tekrar dene.",
-    "shareMessage": "%{title} (%{year}) — Chosy.ai'da keşfettim",
+    "shareMessage": "%{title} (%{year}) — Chosy'de keşfettim",
     "removeFromWatchlist": "Listeden Çıkar",
     "removeConfirmMessage": "Bu filmi izleme listenden kaldırmak istiyor musun?",
     "watchTrailer": "Fragmanı izle",
@@ -385,7 +385,7 @@
     "newMood": "Yeni Mood",
     "filmDiscovery": "Film Keşfi",
     "newMoodPill": "Yeni mood",
-    "shareMessage": "Chosy.ai'da \"%{title}\" filmini keşfet! %{match}% mood eşleşmesi."
+    "shareMessage": "Chosy'de \"%{title}\" filmini keşfet! %{match}% mood eşleşmesi."
   },
   "filters": {
     "yearRange": "YIL ARALIĞI",
@@ -475,7 +475,7 @@
     "friendsJoined": "%{count} arkadaş katıldı",
     "copyCode": "Kopyala",
     "codeCopied": "Kopyalandı!",
-    "about": "Chosy.ai Hakkında",
+    "about": "Chosy Hakkında",
     "aboutVersion": "Sürüm 1.0.0",
     "noFavorites": "Henüz favori film yok.",
     "noRecommendations": "Geçmiş öneri bulunamadı.",
@@ -768,7 +768,7 @@
     "shareFilm": "Filmi Paylaş",
     "notAvailableTitle": "Paylaşım Kullanılamıyor",
     "notAvailableMessage": "Paylaşım özelliği native build gerektirir. Dev client'ı yeniden derle.",
-    "brand": "Chosy.ai",
+    "brand": "Chosy",
     "tagline": "Ruh haline göre film keşfet",
     "todayIFeel": "Bugün hissediyorum",
     "energyCalm": "Sakin",

@@ -13,7 +13,7 @@ import { ConfigContext, ExpoConfig } from 'expo/config';
  */
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: config.name ?? 'Chosy.ai',
+  name: config.name ?? 'Chosy',
   slug: config.slug ?? 'chosy-ai',
   // plugins burada tanımlanmıyor — app.json'dan { ...config } ile geliyor.
   extra: {

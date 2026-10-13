@@ -5,7 +5,7 @@
  * - C-shaped film strip SVG rotates smoothly (3s per revolution)
  * - Subtle floating motion (2px vertical drift)
  * - Gentle glow pulse behind icon
- * - Static "chosy.ai" + subtitle text
+ * - Static "chosy" + subtitle text
  * - Fade-in on mount, fade-out before onComplete callback
  *
  * @example
@@ -175,7 +175,7 @@ export function LoadingScreen({
 
         {/* Static text — never animated */}
         <View style={styles.textSection}>
-          <Text style={styles.brandName}>chosy.ai</Text>
+          <Text style={styles.brandName}>chosy</Text>
           <Text style={styles.subtitle}>AI FILM RECOMMENDER</Text>
         </View>
       </View>

@@ -313,7 +313,7 @@
     "filmNotFoundTitle": "Film Not Found",
     "filmNotFoundText": "This film is no longer available.",
     "loadError": "Could not load film details. Check your connection and try again.",
-    "shareMessage": "%{title} (%{year}) — Discovered on Chosy.ai",
+    "shareMessage": "%{title} (%{year}) — Discovered on Chosy",
     "removeFromWatchlist": "Remove from List",
     "removeConfirmMessage": "Remove this film from your watchlist?",
     "watchTrailer": "Watch trailer",
@@ -385,7 +385,7 @@
     "newMood": "New Mood",
     "filmDiscovery": "Film Discovery",
     "newMoodPill": "New mood",
-    "shareMessage": "Check out \"%{title}\" on Chosy.ai! %{match}% mood match."
+    "shareMessage": "Check out \"%{title}\" on Chosy! %{match}% mood match."
   },
   "filters": {
     "yearRange": "YEAR RANGE",
@@ -475,7 +475,7 @@
     "friendsJoined": "%{count} friends joined",
     "copyCode": "Copy",
     "codeCopied": "Copied!",
-    "about": "About Chosy.ai",
+    "about": "About Chosy",
     "aboutVersion": "Version 1.0.0",
     "noFavorites": "No favorite films yet.",
     "noRecommendations": "No past recommendations.",
@@ -768,7 +768,7 @@
     "shareFilm": "Share Film",
     "notAvailableTitle": "Share Not Available",
     "notAvailableMessage": "The share feature requires a native build. Please rebuild the dev client.",
-    "brand": "Chosy.ai",
+    "brand": "Chosy",
     "tagline": "Discover movies by your mood",
     "todayIFeel": "Today I feel",
     "energyCalm": "Calm",
