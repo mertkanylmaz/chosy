@@ -123,7 +123,7 @@ serve(async (req) => {
 
       messages.push({
         to: token,
-        title: notif.title || 'Chosy.ai',
+        title: notif.title || 'Chosy',
         body: notif.body || '',
         data: (notif.data as Record<string, unknown>) ?? undefined,
         sound: 'default',
