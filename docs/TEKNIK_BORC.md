@@ -4200,3 +4200,16 @@ REACT-NATIVE-C teşhisi, Sentry environment). Aşağıdakiler bilinçli olarak y
    `preview` environment'ını dışlamalı** ve geçmiş `production` karşılaştırmaları bu
    tarihten (OTA yayılımından) sonra kırılır. Ayrıca `update_channel` etiketi eklendi
    (`embedded` = kanalsız).
+
+---
+
+## Edge bölge sabitleme izlemesi — 20 Ekim 2026 (SPOT-2)
+
+`services/gameApi.ts` → `checkSpotlightRegion` yalnız `submit-guess` çağrılarında
+çalışır ve mesajı Spotlight'a özgüdür (`SPOTLIGHT_EDGE_REGION_MISMATCH`).
+`getDailyChallenge` `GAUNTLET_EDGE_REGION` ile sabitlendi ama **mismatch izlemesi
+yok**: bölge tutmazsa Sentry'de görünmez. Diğer oyunlarda "spotlight" mesajı
+yanıltıcı olacağından kasıtlı eklenmedi.
+
+**Yapılacak:** izlemeyi genel bir isme taşı (`EDGE_REGION_MISMATCH`, `fn` etiketiyle) ve
+`get-daily-challenge` dahil tüm sabitli çağrılara uygula. Öncelik: düşük.
