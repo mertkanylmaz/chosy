@@ -47,6 +47,8 @@ interface SpotlightStillProps {
   styles: ReturnType<typeof createStyles>;
   /** Kutunun üstünde yüzen chrome (kalan hak rozeti) */
   children?: ReactNode;
+  /** Yalnız oynanışta: yeni bulanıklık düzeyi yüklendi (SPOT-2 ölçümü, davranışı etkilemez) */
+  onLevelLoaded?: (blurRadius: number) => void;
 }
 
 /**
@@ -67,6 +69,7 @@ export function SpotlightStill(props: SpotlightStillProps) {
         styles={props.styles}
         accessibilityLabel={label}
         errorMessage={t('games.spotlight.still_error')}
+        onLevelLoaded={props.onLevelLoaded}
       >
         {props.children}
       </FocusStill>

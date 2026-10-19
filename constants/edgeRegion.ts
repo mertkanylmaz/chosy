@@ -19,6 +19,18 @@
  *   `region`) ve merge-anonymous-user (ham fetch: `x-region` başlığı +
  *   `forceFunctionRegion` sorgusu — `invoke`'un yaptığının aynısı). Diğer
  *   fonksiyonlar kapsam dışıdır (parse-mood ham fetch, bölgesiz).
+ *
+ * ── Spotlight (20 Eki 2026, SPOT-1 / SPOT-2) ──────────────────────────────
+ * docs/investigations/SPOT-1_KESIF.md (b5ed3bf): Spotlight harf isteği
+ * (`submit-guess`) eu-central-1'de koştu ve sunucuda 3152 ms sürdü (tek örnek);
+ * aynı pencerede bu bölgeye sabitli fonksiyonlar 0.6–1.4 s ortalamada kaldı.
+ * Artık bu bölgeyle çağrılanlar: `submitSpotlightLetter` ve
+ * `submitSpotlightGuess` (services/gameApi.ts → `submit-guess`). Sabitleme
+ * tutmazsa `SPOTLIGHT_EDGE_REGION_MISMATCH` Sentry uyarısı yazılır.
+ * Bilerek BIRAKILANLAR: `get-daily-challenge` (Spotlight dışında 5 oyun ekranı
+ * da çağırıyor — CTO onayı bekliyor) ve `submit-guess`'in diğer oyun
+ * sarmalayıcıları (donmuş oyunlar). Film arama (`searchFilms*`) Edge Function
+ * değil, doğrudan PostgREST — bölge kavramı yok.
  */
 import { FunctionRegion } from '@supabase/supabase-js';
 

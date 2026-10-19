@@ -72,6 +72,8 @@ interface FocusStillProps {
   errorMessage: string;
   /** Kutunun üstünde yüzen chrome */
   children?: ReactNode;
+  /** İlk kare sonrası her katman yüklemesinde, o katın bulanıklığıyla (yalnız ölçüm) */
+  onLevelLoaded?: (blurRadius: number) => void;
 }
 
 export function FocusStill({
@@ -81,7 +83,10 @@ export function FocusStill({
   accessibilityLabel,
   errorMessage,
   children,
+  onLevelLoaded,
 }: FocusStillProps) {
+  const onLevelLoadedRef = useRef(onLevelLoaded);
+  onLevelLoadedRef.current = onLevelLoaded;
   const isReducedMotion = useReducedMotion();
   const duration = isReducedMotion
     ? REDUCED_MOTION_DURATION.crossFade
@@ -244,6 +249,7 @@ export function FocusStill({
         }
         return;
       }
+      onLevelLoadedRef.current?.(blursRef.current[layer]);
       dispatch({ type: 'load', layer, ticket });
     },
     [dispatch],

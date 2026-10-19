@@ -50,6 +50,7 @@ import {
   trackGuessSubmitted,
   trackGameCompleted,
   trackSpotlightAnswerSheetOpened,
+  trackSpotlightLetterTiming,
   trackSpotlightResultViewed,
 } from '@/utils/gameAnalytics';
 import { getDailyChallenge, submitSpotlightGuess, submitSpotlightLetter } from '@/services/gameApi';
@@ -227,6 +228,18 @@ export function SpotlightGame() {
    * ikinci istegi (ve ikinci haptigi) gecirmesin. Basis haptigi kilitten SONRA.
    */
   const letterLockRef = useRef(false);
+  /**
+   * SPOT-2 olcumu (yalniz gozlem): bulaniklik yuklemesi beklenen son dokunus.
+   * Davranisi etkilemez; kilit/disabled mantigiyla ilgisi yok.
+   */
+  const letterTimingRef = useRef<{
+    tapToResponse: number;
+    responseToState: number;
+    stateAt: number;
+    hit: boolean;
+    attemptIndex: number;
+    targetBlur: number;
+  } | null>(null);
   const reduceMotion = useReducedMotion();
   const screenReaderOn = useScreenReaderEnabled();
   /** CTA dugumu — cevap sayfasi kapaninca VoiceOver odagi buraya doner */
@@ -380,6 +393,33 @@ export function SpotlightGame() {
     }, [loadPuzzle]),
   );
 
+  /**
+   * SPOT-2: bekleyen harf olcumunu TEK olay olarak yollar (analytics sarmalayicisi).
+   * `blurLoadedAt` null → bulaniklik yuklemesi olmadi/gelmedi.
+   */
+  const flushLetterTiming = useCallback((blurLoadedAt: number | null) => {
+    const pending = letterTimingRef.current;
+    if (!pending) return;
+    letterTimingRef.current = null;
+    trackSpotlightLetterTiming({
+      msTapToResponse: pending.tapToResponse,
+      msResponseToState: pending.responseToState,
+      msStateToBlurLoaded:
+        blurLoadedAt == null ? null : Math.round(blurLoadedAt - pending.stateAt),
+      hit: pending.hit,
+      attemptIndex: pending.attemptIndex,
+    });
+  }, []);
+
+  /** Yeni bulaniklik duzeyi yuklendi — bekleyen olcumun hedefiyle eslesirse kapanir */
+  const handleLevelLoaded = useCallback(
+    (blurRadius: number) => {
+      if (letterTimingRef.current?.targetBlur !== blurRadius) return;
+      flushLetterTiming(performance.now());
+    },
+    [flushLetterTiming],
+  );
+
   /** Harf dene — dogrulama sunucuda */
   const handleLetter = useCallback(
     async (letter: string) => {
@@ -388,6 +428,10 @@ export function SpotlightGame() {
       if (triedLetters.includes(letter)) return;
 
       letterLockRef.current = true;
+      // SPOT-2 olcumu: t0 — kilit gecildi. Onceki dokunusun bekleyen olcumu
+      // (bulaniklik yuklemesi gelmediyse) null ile kapanir, kaybolmaz.
+      const t0 = performance.now();
+      flushLetterTiming(null);
       // Basis haptigi: yalniz kabul edilen (uygun) tus, anlik
       playSpotlightHaptic({
         type: 'key_press',
@@ -397,9 +441,34 @@ export function SpotlightGame() {
       setActionError(false);
       try {
         const res = await submitSpotlightLetter(puzzleId, letter);
+        const t1 = performance.now();
         setTriedLetters(res.tried_letters);
         setRevealed(res.revealed);
         setAttempts(res.attempts_used);
+        const t2 = performance.now();
+        // Olcum: bulaniklik duzeyi degisecek mi — render'daki hesapla ayni formul
+        const letterCount = puzzleData?.letter_count ?? 0;
+        const blurBefore = blurForProgress(
+          new Set(revealed.map((r) => r.pos)).size,
+          letterCount,
+          SPOTLIGHT_MAX_BLUR,
+        );
+        const blurAfter = blurForProgress(
+          new Set(res.revealed.map((r) => r.pos)).size,
+          letterCount,
+          SPOTLIGHT_MAX_BLUR,
+        );
+        const timing = {
+          tapToResponse: Math.round(t1 - t0),
+          responseToState: Math.round(t2 - t1),
+          stateAt: t2,
+          hit: res.hit,
+          attemptIndex: res.attempts_used,
+          targetBlur: blurAfter,
+        };
+        letterTimingRef.current = timing;
+        // Yukleme beklenmiyorsa (duzey ayni ya da oyun bitti) hemen kapanir
+        if (res.completed || blurAfter === blurBefore) flushLetterTiming(null);
         announce(
           res.hit
             ? t('games.spotlight.announce_letter_hit', { letter })
@@ -444,7 +513,7 @@ export function SpotlightGame() {
         setIsBusy(false);
       }
     },
-    [isBusy, screenState, triedLetters, puzzleId, announce, maxAttempts, t],
+    [isBusy, screenState, triedLetters, puzzleId, announce, maxAttempts, t, puzzleData, revealed, flushLetterTiming],
   );
 
   /**
@@ -798,6 +867,7 @@ export function SpotlightGame() {
           blurRadius={blurAmount}
           reveal="none"
           styles={styles}
+          onLevelLoaded={handleLevelLoaded}
         />
 
         {/* Hak — gorsel netligi ILERLEME, nokta RISK. Deger sunucunun max_attempts'i */}

@@ -11,6 +11,7 @@ import * as Sentry from '@sentry/react-native';
 import { supabase } from './supabase';
 import { ensureAuthSession } from './authSession';
 import { remoteConfig } from './remoteConfig';
+import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { logger } from '@/utils/logger';
 import { isNoPuzzleResponse, PuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
@@ -25,6 +26,32 @@ import type {
   SpotlightGuessResult,
   SpotlightLetterResult,
 } from '@/types/game';
+
+// ─── Bölge sabitleme (Spotlight) ─────────────────────────────────────────────
+
+/** Süreç başına fonksiyon başına bir capture (her dokunuşta tekrar yazılmaz). */
+const regionMismatchReported = new Set<string>();
+
+/**
+ * Sabitleme tutmadıysa (istek DB'den uzak bir edge'de koştu) Sentry'ye yazar.
+ * `gauntletService.recordTiming` ile aynı kural: otomatik yedek yok, sessiz de geçilmez.
+ */
+function checkSpotlightRegion(fn: string, response: Response | undefined): void {
+  if (!response) return; // sunucuya ulaşılamadı — hata yolu zaten throw/Sentry
+  const edgeRegion = response.headers.get('x-sb-edge-region');
+  if (edgeRegion === GAUNTLET_EDGE_REGION) return;
+  if (regionMismatchReported.has(fn)) return;
+  regionMismatchReported.add(fn);
+  Sentry.captureMessage(`spotlight edge region mismatch: ${fn}`, {
+    level: 'warning',
+    tags: {
+      fn,
+      error_code: 'SPOTLIGHT_EDGE_REGION_MISMATCH',
+      expected_region: GAUNTLET_EDGE_REGION,
+      edge_region: edgeRegion ?? 'missing',
+    },
+  });
+}
 
 // ─── API Functions ───────────────────────────────────────────────────────────
 
@@ -417,12 +444,14 @@ export async function submitSpotlightGuess(
 ): Promise<SpotlightGuessResult> {
   await ensureAuthSession();
 
-  const { data, error } = await supabase.functions.invoke('submit-guess', {
+  const { data, error, response } = await supabase.functions.invoke('submit-guess', {
     body: {
       puzzle_id: puzzleId,
       guess_film_id: guessFilmId,
     },
+    region: GAUNTLET_EDGE_REGION,
   });
+  checkSpotlightRegion('submit-guess', response);
 
   if (error) {
     Sentry.captureException(error, {
@@ -447,12 +476,14 @@ export async function submitSpotlightLetter(
 ): Promise<SpotlightLetterResult> {
   await ensureAuthSession();
 
-  const { data, error } = await supabase.functions.invoke('submit-guess', {
+  const { data, error, response } = await supabase.functions.invoke('submit-guess', {
     body: {
       puzzle_id: puzzleId,
       spotlight_letter: letter,
     },
+    region: GAUNTLET_EDGE_REGION,
   });
+  checkSpotlightRegion('submit-guess', response);
 
   if (error) {
     Sentry.captureException(error, {

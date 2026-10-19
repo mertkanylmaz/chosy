@@ -93,6 +93,27 @@ export function trackSpotlightResultViewed(params: {
   });
 }
 
+/**
+ * Spotlight harf dokunusu gecikmesi (SPOT-2, yalniz gozlem) — dokunus basina BIR olay.
+ * Harf, baslik, kullanici kimligi YOK. `msStateToBlurLoaded` null: bulaniklik
+ * duzeyi degismedi, oyun bitti ya da yukleme sonraki dokunusa kadar gelmedi.
+ */
+export function trackSpotlightLetterTiming(params: {
+  msTapToResponse: number;
+  msResponseToState: number;
+  msStateToBlurLoaded: number | null;
+  hit: boolean;
+  attemptIndex: number;
+}): void {
+  posthogAnalytics.track('spotlight_letter_timing', {
+    ms_tap_to_response: params.msTapToResponse,
+    ms_response_to_state: params.msResponseToState,
+    ms_state_to_blur_loaded: params.msStateToBlurLoaded,
+    hit: params.hit,
+    attempt_index: params.attemptIndex,
+  });
+}
+
 /** Spotlight sonucunda "Where to Watch" dokunusu — dokunus basina. */
 export function trackSpotlightWhereToWatchTapped(puzzleId: string): void {
   posthogAnalytics.track('spotlight_where_to_watch_tapped', { puzzle_id: puzzleId });
