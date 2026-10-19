@@ -27,9 +27,11 @@
  * Artık bu bölgeyle çağrılanlar: `submitSpotlightLetter` ve
  * `submitSpotlightGuess` (services/gameApi.ts → `submit-guess`). Sabitleme
  * tutmazsa `SPOTLIGHT_EDGE_REGION_MISMATCH` Sentry uyarısı yazılır.
- * Bilerek BIRAKILANLAR: `get-daily-challenge` (Spotlight dışında 5 oyun ekranı
- * da çağırıyor — CTO onayı bekliyor) ve `submit-guess`'in diğer oyun
- * sarmalayıcıları (donmuş oyunlar). Film arama (`searchFilms*`) Edge Function
+ * `get-daily-challenge` da bu bölgeyle çağrılır (`getDailyChallenge`, 20 Eki
+ * 2026): tek sarmalayıcı olduğu için Spotlight dışındaki oyun ekranları da
+ * (quoted, logline, imposter, fadein, Detective, CineMetrics) kapsanır; koşullu
+ * pin yok. Bilerek BIRAKILAN: `submit-guess`'in diğer oyun sarmalayıcıları
+ * (donmuş oyunlar). Film arama (`searchFilms*`) Edge Function
  * değil, doğrudan PostgREST — bölge kavramı yok.
  */
 import { FunctionRegion } from '@supabase/supabase-js';

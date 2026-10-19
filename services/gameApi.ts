@@ -228,6 +228,7 @@ export async function getDailyChallenge(
 
   const { data, error } = await supabase.functions.invoke('get-daily-challenge', {
     body: { game_id: gameId, puzzle_date: puzzleDate },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
