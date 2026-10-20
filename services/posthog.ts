@@ -96,6 +96,24 @@ export const posthogAnalytics = {
     applySuperProperties();
   },
 
+  /**
+   * Geçerli PostHog distinct_id'si; SDK başlatılmadıysa `null`.
+   * `identify` / `reset` sonrası değişir — RevenueCat'e her değişimde yeniden
+   * yazılır (`syncPosthogUserIdToRevenueCat`).
+   */
+  getDistinctId(): string | null {
+    return posthog ? posthog.getDistinctId() : null;
+  },
+
+  /**
+   * Person property'leri `$set` ile yazar (register DEĞİL — event'lere
+   * eklenmez). distinct_id'yi DEĞİŞTİRMEZ, kimlik birleştirmez.
+   * Feature flag yeniden yüklemesi kapalı (üçüncü argüman).
+   */
+  setPersonProperties(props: Record<string, string>): void {
+    posthog?.setPersonProperties(props, undefined, false);
+  },
+
   /** Kullanici kimligini sifirla — logout'ta cagir. Super property'ler korunur. */
   reset(): void {
     posthog?.reset();

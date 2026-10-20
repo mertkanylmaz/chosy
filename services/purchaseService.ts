@@ -271,6 +271,7 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     logger.log('[purchases] RevenueCat baslatildi');
 
     enableAdServicesAttribution();
+    void syncPosthogUserIdToRevenueCat();
   } catch (err) {
     // Native crash'i JS katmaninda yakala — uygulamayi cokertme
     logger.error('[purchases] RevenueCat baslatma hatasi:', err);
@@ -299,6 +300,38 @@ function enableAdServicesAttribution(): void {
     Purchases.enableAdServicesAttributionTokenCollection().catch(report);
   } catch (err) {
     report(err);
+  }
+}
+
+/** Son başarıyla yazılan `<rcAppUserID>|<distinct_id>` — aynı çifti tekrar göndermez. */
+let _lastPosthogAttrKey: string | null = null;
+
+/**
+ * RevenueCat subscriber attribute `$posthogUserId` = geçerli PostHog distinct_id
+ * (RC↔PostHog entegrasyonu bu anahtarı okur). RC appUserID davranışına DOKUNMAZ.
+ *
+ * Attribute RC kullanıcısına bağlıdır: `logIn`/`logOut` sonrası yeni kullanıcıya
+ * yeniden yazılmalı; PostHog tarafında `identify`/`reset` distinct_id'yi
+ * değiştirir. Bu yüzden çağrı noktaları: configure sonrası, `identifyUser`
+ * sonrası (identify'dan sonra çalışır), `logOutPurchases` sonrası. Dedup anahtarı
+ * RC kullanıcısı + distinct_id çiftidir.
+ *
+ * Asla fırlatmaz; hata Sentry'ye `POSTHOG_ATTR_FAILED` yazılır (kural 1).
+ */
+export async function syncPosthogUserIdToRevenueCat(): Promise<void> {
+  const distinctId = posthogAnalytics.getDistinctId();
+  if (!distinctId || !_initialized) return;
+  try {
+    const rcUserId = await Purchases.getAppUserID();
+    const key = `${rcUserId}|${distinctId}`;
+    if (key === _lastPosthogAttrKey) return;
+    await Purchases.setAttributes({ $posthogUserId: distinctId });
+    _lastPosthogAttrKey = key;
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { function: 'syncPosthogUserIdToRevenueCat', error_code: 'POSTHOG_ATTR_FAILED' },
+    });
   }
 }
 
@@ -345,11 +378,13 @@ export async function identifyUser(supabaseUserId: string): Promise<IdentifyUser
     const current = await Purchases.getAppUserID();
     if (current === userId) {
       _identityReady.complete(userId);
+      void syncPosthogUserIdToRevenueCat();
       return 'already_identified';
     }
 
     await Purchases.logIn(userId);
     _identityReady.complete(userId);
+    void syncPosthogUserIdToRevenueCat();
     logger.log('[purchases] Kullanıcı eşleştirildi:', userId, { isTest: useTestUser });
     return 'identified';
   } catch (err) {
@@ -696,6 +731,8 @@ export async function logOutPurchases(): Promise<void> {
   _identityReady.begin(null);
   await Purchases.logOut();
   logger.log('[purchases] RevenueCat oturumu sıfırlandı (anonim)');
+  // PostHog reset'i bundan önce çalıştı: yeni anonim RC kullanıcısı yeni distinct_id'yi alır.
+  void syncPosthogUserIdToRevenueCat();
 }
 
 // ─── Geri Yükleme ────────────────────────────────────────────────────────────
