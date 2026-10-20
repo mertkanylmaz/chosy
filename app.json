@@ -8,9 +8,9 @@
     "scheme": "chosy",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/splash-mark.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0A0A"
+      "backgroundColor": "#08090B"
     },
     "ios": {
       "supportsTablet": false,

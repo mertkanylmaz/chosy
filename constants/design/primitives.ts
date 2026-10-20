@@ -6,7 +6,7 @@
  */
 
 export const palette = {
-  ink: '#08090B',
+  ink: '#08090B', // app.json splash.backgroundColor aynı hex'i taşır (JSON token import edemez) — değişirse ikisi birlikte
   charcoal: '#14161A',
   graphite: '#22252B',
   smoke: '#8A8F98',
