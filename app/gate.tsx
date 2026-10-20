@@ -26,6 +26,7 @@ import { LoadingScreen } from '@/components/LoadingScreen';
 import { markGateDone } from '@/services/gateState';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
+import { isGateReadyToNavigate } from '@/utils/gateDecision';
 import { incrementSessionCount } from '../services/entryService';
 
 /** Minimum splash display time (ms) */
@@ -36,10 +37,19 @@ export default function Gate() {
   const targetRoute = useRef<string | null>(null);
   const decisionReady = useRef(false);
   const minTimePassed = useRef(false);
+  /** Onboarded kullanıcı (tabs'e gidiyor): MIN_SPLASH_MS beklenmez. */
+  const skipMinSplash = useRef(false);
 
   /** Try to navigate if both conditions met */
   const tryNavigate = useCallback(() => {
-    if (decisionReady.current && minTimePassed.current && targetRoute.current) {
+    if (
+      targetRoute.current &&
+      isGateReadyToNavigate({
+        decisionReady: decisionReady.current,
+        minTimePassed: minTimePassed.current,
+        skipMinSplash: skipMinSplash.current,
+      })
+    ) {
       // Trigger fade-out (setShowLoading false → LoadingScreen fades → onFadeOutComplete navigates)
       setShowLoading(false);
     }
@@ -121,6 +131,7 @@ export default function Gate() {
 
         // Entry ekranı kaldırıldı — doğrudan ana ekrana yönlendir
         targetRoute.current = '/(tabs)';
+        skipMinSplash.current = true;
         decisionReady.current = true;
         tryNavigate();
       } catch {

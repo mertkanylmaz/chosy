@@ -28,3 +28,21 @@ export function createGateDoneFlag(): GateDoneFlag {
     },
   };
 }
+
+export interface GateReadiness {
+  /** Yönlendirme kararı (hedef rota) verildi mi. */
+  decisionReady: boolean;
+  /** MIN_SPLASH_MS doldu mu. */
+  minTimePassed: boolean;
+  /**
+   * Karar "onboarded=true" ile (tabs)'e vardıysa true: dönen kullanıcı splash
+   * için bekletilmez. Yeni kullanıcı (onboarding) ve hata düşüşü false —
+   * minimum bekleme aynen kalır.
+   */
+  skipMinSplash: boolean;
+}
+
+/** Fade-out'u (dolayısıyla yönlendirmeyi) başlatma zamanı geldi mi. */
+export function isGateReadyToNavigate(r: GateReadiness): boolean {
+  return r.decisionReady && (r.minTimePassed || r.skipMinSplash);
+}
