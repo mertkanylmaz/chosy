@@ -27,6 +27,12 @@ import {
   type WatchProvidersResult,
 } from '@/services/tmdb';
 import { logger } from '@/utils/logger';
+import {
+  resolveLookup,
+  startLoad,
+  type LoadDeps,
+  type TmdbIdLookup,
+} from '@/utils/watchProvidersLoad';
 
 export type WatchProvidersState = 'loading' | 'ok' | 'empty' | 'error' | 'noRegion';
 
@@ -45,8 +51,16 @@ const memo = new Map<string, WatchProvidersResult>();
 
 const key = (filmId: string, region: string): string => `${filmId}|${region}`;
 
-/** `films.tmdb_id` okur. Hata sessizce yutulmaz — bu bizim tablomuz. */
-async function readTmdbId(filmId: string): Promise<number | null> {
+const RESULTS: LoadDeps<WatchProvidersResult>['results'] = {
+  empty: { status: 'empty' },
+  error: { status: 'error' },
+};
+
+/**
+ * `films.tmdb_id` okur. Hata sessizce yutulmaz — bu bizim tablomuz.
+ * `none` (filmin tmdb_id'si gerçekten yok) ile `error` (okuma başarısız) AYRIdır.
+ */
+async function readTmdbId(filmId: string): Promise<TmdbIdLookup> {
   const { data, error } = await supabase
     .from('films')
     .select('tmdb_id')
@@ -63,19 +77,17 @@ async function readTmdbId(filmId: string): Promise<number | null> {
       code: 'WATCH_PROVIDERS_TMDB_ID_FAILED',
       sampleRate: 0.5,
     });
-    return null;
+    return { kind: 'error' };
   }
-  return (data as { tmdb_id: number | null } | null)?.tmdb_id ?? null;
+  const tmdbId = (data as { tmdb_id: number | null } | null)?.tmdb_id ?? null;
+  // Okuma başarılı ama kimlik yok: "sorulacak bir şey yok", hata değil.
+  return tmdbId === null ? { kind: 'none' } : { kind: 'ok', tmdbId };
 }
 
 async function load(filmId: string, region: string): Promise<WatchProvidersResult> {
-  const tmdbId = await readTmdbId(filmId);
-  if (tmdbId === null) {
-    // Kimlik okunamadı VEYA filmde tmdb_id yok. İkisi de "sorulacak bir şey
-    // yok" demek — kullanıcıya hata göstermek yanlış olurdu.
-    return { status: 'empty' };
-  }
-  return fetchWatchProvidersResult(tmdbId, region);
+  return resolveLookup(await readTmdbId(filmId), RESULTS, (tmdbId) =>
+    fetchWatchProvidersResult(tmdbId, region),
+  );
 }
 
 /**
@@ -125,8 +137,42 @@ export function useWatchProviders(
       return;
     }
     setResult(null);
-    void load(filmId, region).then((r) => {
+    const started = startLoad<WatchProvidersResult>({
+      readTmdbId: () => readTmdbId(filmId),
+      fetchProviders: (tmdbId) => fetchWatchProvidersResult(tmdbId, region),
+      results: RESULTS,
+    });
+    void started.promise.then((outcome) => {
+      // Temizlenmiş (film/bölge/yeniden dene değişti) efekt state'i ezmez;
+      // 12 sn sonrası gelen geç sonuç da ilk çözümü değiştiremez (startLoad).
       if (cancelled) return;
+      if (outcome.kind === 'rejected') {
+        Sentry.captureException(outcome.error, {
+          tags: {
+            component: 'useWatchProviders',
+            flow: 'load',
+            error_code: 'WATCH_PROVIDERS_LOAD_REJECTED',
+          },
+          extra: { film_id: filmId },
+        });
+        setResult(RESULTS.error);
+        return;
+      }
+      if (outcome.kind === 'timeout') {
+        Sentry.captureMessage('watch providers yüklemesi zaman aşımına uğradı', {
+          level: 'warning',
+          tags: {
+            component: 'useWatchProviders',
+            flow: 'load',
+            error_code: 'WATCH_PROVIDERS_TIMEOUT',
+            step: outcome.step,
+          },
+          extra: { film_id: filmId, timeout_ms: outcome.timeoutMs },
+        });
+        setResult(RESULTS.error);
+        return;
+      }
+      const r = outcome.result;
       if (r.status !== 'error') memo.set(k, r);
       setResult(r);
       if (r.status === 'empty') {
@@ -142,6 +188,7 @@ export function useWatchProviders(
     });
     return () => {
       cancelled = true;
+      started.cancel();
     };
   }, [filmId, region, k, attempt]);
 
