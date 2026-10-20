@@ -17,6 +17,7 @@ import * as Updates from 'expo-updates';
 
 import { deviceTimeZone } from '@/services/gauntletService';
 import { posthogAnalytics } from '@/services/posthog';
+import { IS_UPGRADE_KEY, resolveIsUpgrade, serializeIsUpgrade } from '@/utils/firstSessionFunnel';
 
 export const FIRST_OPEN_FLAG_KEY = 'chosy_first_open_sent';
 
@@ -47,8 +48,28 @@ export async function trackFirstOpenOnce(): Promise<void> {
     return;
   }
 
+  // Yalnız yerel okuma. Değer saklanır: sonraki funnel halkaları aynısını kullanır.
+  const upgrade = await resolveIsUpgrade(() => AsyncStorage.getAllKeys());
+  if (upgrade.error !== undefined) {
+    Sentry.captureException(upgrade.error, {
+      level: 'error',
+      tags: { function: 'trackFirstOpenOnce', error_code: 'IS_UPGRADE_READ_FAILED' },
+    });
+  }
+  if (upgrade.value !== null) {
+    try {
+      await AsyncStorage.setItem(IS_UPGRADE_KEY, serializeIsUpgrade(upgrade.value));
+    } catch (err) {
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: { function: 'trackFirstOpenOnce', error_code: 'IS_UPGRADE_WRITE_FAILED' },
+      });
+    }
+  }
+
   firstOpenFiredThisSession = true;
   posthogAnalytics.track('first_open', {
+    ...(upgrade.value === null ? {} : { is_upgrade: upgrade.value }),
     timezone: deviceTimeZone() ?? 'unknown',
     locale: deviceLocale(),
     app_version: Constants.expoConfig?.version ?? 'unknown',

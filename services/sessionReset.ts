@@ -31,7 +31,7 @@ import { clearGauntletCache } from './gauntletCache';
 import { clearIdentityCache } from './auth-utils';
 import { resetAiConsentSession } from './aiConsent';
 import { FIRST_OPEN_FLAG_KEY } from './firstOpen';
-import { FIRST_SESSION_FLAG_KEYS } from '../utils/firstSessionFunnel';
+import { FIRST_SESSION_FLAG_KEYS, IS_UPGRADE_KEY } from '../utils/firstSessionFunnel';
 import { REVIEW_PROMPT_VERSION_KEY } from './reviewPrompt';
 import { logger } from '../utils/logger';
 import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
@@ -44,6 +44,7 @@ const DEVICE_LEVEL_KEYS: ReadonlySet<string> = new Set([
   'moodflix_language',
   FIRST_OPEN_FLAG_KEY,
   ...Object.values(FIRST_SESSION_FLAG_KEYS),
+  IS_UPGRADE_KEY,
   REVIEW_PROMPT_VERSION_KEY,
 ]);
 

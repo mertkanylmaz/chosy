@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
     void hapticSuccess();
     posthogAnalytics.track('onboarding_completed');
     // Funnel halkası: kurulum başına bir kez, DB yazımından bağımsız.
-    void trackFirstSessionEventOnce('onboarding_completed');
+    void trackFirstSessionEventOnce('first_onboarding_completed');
     await markOnboardingComplete();
     router.replace('/(tabs)' as never);
   }, [router, markOnboardingComplete]);
