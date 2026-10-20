@@ -44,6 +44,8 @@ import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
 import { clearIdentityCache, ensureAppUser } from '@/services/auth-utils';
+import { trackFirstOpenOnce } from '@/services/firstOpen';
+import { deviceTimeZone } from '@/services/gauntletService';
 import { syncWatchedFilms } from '@/services/watchSync';
 import { consumeIntentionalReset } from '@/services/sessionReset';
 import {
@@ -112,10 +114,13 @@ Sentry.setTag('update_channel', Updates.channel ?? 'embedded');
 
 // ── PostHog initialization ───────────────────────────────────────────────────
 posthogAnalytics.init();
+const deviceTz = deviceTimeZone();
 posthogAnalytics.registerSuperProperties({
   update_id: updateId,
   update_source: updateSource,
   runtime_version: runtimeVersion,
+  // Her event'e IANA saat dilimi: ABD yerel-gün funnel'i (D1) bununla kurulur.
+  ...(deviceTz ? { timezone: deviceTz } : {}),
 });
 
 // Geliştirme ortamında reduced motion strict uyarısını kapat
@@ -135,6 +140,22 @@ export const unstable_settings = {
 SplashScreen.preventAutoHideAsync();
 
 /**
+ * `public.users.id`'yi PostHog person property'si (`app_user_id`) olarak yazar
+ * (`$set`; register değil). distinct_id DEĞİŞMEZ ve `identify` çağrılmaz —
+ * kimlik birleşmesi üretmez (B-211 DUR 4 kararı). Tüm kimliklerde (anonim dahil).
+ */
+function tagPostHogAppUser(appUserId: string): void {
+  try {
+    posthogAnalytics.setPersonProperties({ app_user_id: appUserId });
+  } catch (err) {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { flow: 'identity_sync', step: 'posthog_app_user_id' },
+    });
+  }
+}
+
+/**
  * Oturum bootstrap'ı: `public.users` satırının varlığını garanti eder.
  *
  * Başarısızlık SESSİZ GEÇMEZ. Geçici ağ hatalarını kurtarmak için bir kez
@@ -148,7 +169,10 @@ SplashScreen.preventAutoHideAsync();
  */
 async function bootstrapAppUser(): Promise<void> {
   const first = await ensureAppUser();
-  if (first.ok) return;
+  if (first.ok) {
+    tagPostHogAppUser(first.appUserId);
+    return;
+  }
 
   // Ölü JWT (kullanıcı sunucuda silinmiş): yeniden denemek anlamsız. Yerel
   // oturum kapatılır → SIGNED_OUT → aşağıdaki listener'ın mevcut anonim
@@ -185,6 +209,7 @@ async function bootstrapAppUser(): Promise<void> {
   const second = await ensureAppUser();
   if (second.ok) {
     logger.warn('[layout] ensureAppUser ilk denemede başarısız, ikincide düzeldi');
+    tagPostHogAppUser(second.appUserId);
     return;
   }
 
@@ -359,6 +384,8 @@ export default function RootLayout() {
   // ── PostHog: app_launched event ───────────────────────────────────────────
   useEffect(() => {
     posthogAnalytics.track('app_launched');
+    // Kurulum başına bir kez; gömülü ilk açılışta da çalışır (auth beklemez).
+    void trackFirstOpenOnce();
   }, []);
 
   // ── PostHog: background/inactive geçişinde bekleyen event'leri gönder ─────
