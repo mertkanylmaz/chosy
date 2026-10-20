@@ -23,6 +23,7 @@ import { router } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
 import { LoadingScreen } from '@/components/LoadingScreen';
+import { markGateDone } from '@/services/gateState';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
 import { incrementSessionCount } from '../services/entryService';
@@ -137,6 +138,8 @@ export default function Gate() {
   /** Called after LoadingScreen fade-out animation completes */
   const handleFadeOutComplete = useCallback(() => {
     if (targetRoute.current) {
+      // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
+      markGateDone();
       router.replace(targetRoute.current as never);
     }
   }, []);

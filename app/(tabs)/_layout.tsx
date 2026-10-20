@@ -12,13 +12,15 @@
  * prop'una async fetch sonrası set ediliyor — flag `true` olursa native tab
  * navigator'ı remount eder. Flag bugün K-02 gereği hep false, tetiklenmiyor.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import * as Sentry from '@sentry/react-native';
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { color } from '@/constants/design/semantic';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
+import { isGateDone } from '@/services/gateState';
 import { syncDailyReminderOnLaunch } from '@/services/pushNotifications';
 
 /**
@@ -29,10 +31,47 @@ import { syncDailyReminderOnLaunch } from '@/services/pushNotifications';
 const REMINDER_SYNC_DELAY_MS = 1500;
 
 /**
+ * Gate koruması. Yığın [gate, (tabs)] olarak açılır (initialRouteName 'gate',
+ * URL '/' → (tabs)); gate kararını vermeden (tabs) görünürse GauntletShell
+ * mount olur, sonra gate onboarding'e replace edip onu söker (onboarding
+ * raporu). Bu yüzden gate bitene kadar hiçbir şey render edilmez.
+ *
+ * `<Redirect>` KULLANILMAZ: `router.replace` yığındaki gate'i bulmaz, ikinci
+ * bir gate örneği açar → iki gate, iki `incrementSessionCount`, çift
+ * yönlendirme. `dismissTo` yığında zaten olan gate'e geri çekilir (yoksa ona
+ * gider), tek örnek kalır.
+ */
+function GateGuard() {
+  const router = useRouter();
+
+  useFocusEffect(
+    useCallback(() => {
+      try {
+        router.dismissTo('/gate');
+      } catch (err) {
+        Sentry.captureException(err, {
+          level: 'fatal',
+          tags: { flow: 'gate_guard', error_code: 'GATE_GUARD_REDIRECT_FAILED' },
+        });
+      }
+    }, [router]),
+  );
+
+  return null;
+}
+
+/**
  * Tab navigasyon layout'u.
- * Sıra: Home (Mood Search) → Discover (placeholder, gizli) → Profile
+ * Gate kararı verilene kadar yalnız GateGuard; sonrasında tab kabuğu.
  */
 export default function TabLayout() {
+  return isGateDone() ? <TabsShell /> : <GateGuard />;
+}
+
+/**
+ * Sıra: Home (Mood Search) → Discover (placeholder, gizli) → Profile
+ */
+function TabsShell() {
   const { t, language } = useLanguage();
 
   // ── K-15: yerel 18:00 hatırlatıcısı — açılış eşitlemesi (V-2 Tur E1) ─────
