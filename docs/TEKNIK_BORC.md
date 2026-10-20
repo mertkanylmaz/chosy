@@ -4236,3 +4236,13 @@ yanıltıcı olacağından kasıtlı eklenmedi.
    `chosy_ask_state`'i salt okunur kontrol eder; ask'ler ise pick'ten SONRA (dwell /
    Spotlight dönüşü) gösterildiği için aynı gün review'dan sonra ask çıkabilir. Çözmek ask
    semantiğine dokunur (CTO kararı).
+
+## SPLASH-1 sonrası ertelenenler — 20 Ekim 2026 (2.1.2)
+
+1. **Android 12+ splash kontrolü:** iOS splash'i (`app.json` top-level `splash`, ink zemin +
+   `splash-mark.png`, ekran genişliğine contain) cihazda doğrulanacak. Android 12+ sistem
+   splash'i görseli ayrı mekanizmayla (maskeli ikon alanı) çizer; `splash-mark.png`'nin
+   orada nasıl göründüğü (kırpma, boyut, zemin) bakılmadı.
+2. **`android.adaptiveIcon.backgroundColor` `#0A0A0A`:** splash zemini `#08090B` (ink) oldu,
+   Android adaptive ikon zemini eski `#0A0A0A`'da kaldı. Android splash/ikon kontrolüyle
+   birlikte ele alınır; `android-icon-*.png` dosyaları ayrıca ink ile uyumlu mu bakılır.
