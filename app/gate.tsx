@@ -22,13 +22,12 @@
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import Animated, {
+import {
   Easing,
   runOnJS,
   useAnimatedStyle,
@@ -37,7 +36,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { color } from '@/constants/design/semantic';
+import { SplashMark } from '@/components/SplashMark';
 import { markGateDone } from '@/services/gateState';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
@@ -57,19 +56,7 @@ const EXIT_FADE_MS = 200;
  */
 const EXIT_FAILSAFE_MS = 400;
 
-/**
- * Native splash (app.json `splash`, resizeMode contain, tam ekran) ile aynı
- * görsel: kare PNG ekran genişliğinde, ekranın ortasında (safe-area kayması yok).
- */
-const SPLASH_MARK = require('../assets/images/splash-mark.png');
-
 export default function Gate() {
-  /**
-   * Logo boyutu kesin piksel: ekran genişliği × ekran genişliği (kare), ekranın tam
-   * ortasında. Yüzde/aspectRatio/flex cihazda (HOME-5 ölçümü) uygulanmadı.
-   */
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const markSize = screenWidth;
   /** Yönlendirme bir kez yapılır (zamanlayıcı ve karar aynı anda hazır olabilir). */
   const navigated = useRef(false);
   const targetRoute = useRef<string | null>(null);
@@ -240,43 +227,8 @@ export default function Gate() {
   }, [tryNavigate]);
 
   return (
-    <View style={styles.container}>
+    <SplashMark markStyle={markStyle}>
       <StatusBar style="light" />
-      <Animated.Image
-        source={SPLASH_MARK}
-        style={[
-          styles.mark,
-          {
-            width: markSize,
-            height: markSize,
-            left: (screenWidth - markSize) / 2,
-            top: (screenHeight - markSize) / 2,
-          },
-          markStyle,
-        ]}
-        resizeMode="contain"
-        onLayout={
-          __DEV__
-            ? (e) => {
-                const { width, height } = e.nativeEvent.layout;
-                console.log(
-                  `[gate] mark onLayout ${width}x${height} (beklenen ${markSize}x${markSize}, ekran ${screenWidth}x${screenHeight})`,
-                );
-              }
-            : undefined
-        }
-      />
-    </View>
+    </SplashMark>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: color.surface.base,
-  },
-  /** Boyut ve konum render'da kesin pikselle verilir (useWindowDimensions). */
-  mark: {
-    position: 'absolute',
-  },
-});

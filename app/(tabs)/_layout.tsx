@@ -17,6 +17,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { NativeTabs, Icon, Label } from 'expo-router/unstable-native-tabs';
 import * as Sentry from '@sentry/react-native';
 
+import { SplashMark } from '@/components/SplashMark';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { color } from '@/constants/design/semantic';
 import { isDiscoverTabEnabled } from '@/services/appConfigFlags';
@@ -34,7 +35,7 @@ const REMINDER_SYNC_DELAY_MS = 1500;
  * Gate koruması. Yığın [gate, (tabs)] olarak açılır (initialRouteName 'gate',
  * URL '/' → (tabs)); gate kararını vermeden (tabs) görünürse GauntletShell
  * mount olur, sonra gate onboarding'e replace edip onu söker (onboarding
- * raporu). Bu yüzden gate bitene kadar hiçbir şey render edilmez.
+ * raporu). Bu yüzden gate bitene kadar yalnız splash görünümü (SplashMark) render edilir.
  *
  * `<Redirect>` KULLANILMAZ: `router.replace` yığındaki gate'i bulmaz, ikinci
  * bir gate örneği açar → iki gate, iki `incrementSessionCount`, çift
@@ -57,7 +58,9 @@ function GateGuard() {
     }, [router]),
   );
 
-  return null;
+  // Native splash kalkınca ilk görünen ekran budur (yığın üstü); gate ile aynı kare
+  // (ink + logo) çizilir ki yönlendirmeye kadar C kaybolmasın (HOME-6).
+  return <SplashMark />;
 }
 
 /**
