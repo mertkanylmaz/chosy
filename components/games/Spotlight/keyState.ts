@@ -4,7 +4,7 @@
  * Renge bağımlı olmadan ayırt edilir (Design OS §2.7):
  *   available — kullanılabilir
  *   used_hit  — kullanıldı, başlıkta VAR: üstü çizilmez; altın harf + alt çubuk
- *   used_miss — kullanıldı, başlıkta YOK: sönük + üstü çizili
+ *   used_miss — kullanıldı, başlıkta YOK: koyu (inset) dolgu + çarpı ikonu
  */
 export type KeyState = 'available' | 'used_hit' | 'used_miss';
 
@@ -20,7 +20,7 @@ export const KEY_A11Y_KEY: Record<KeyState, string> = {
   used_miss: 'key_a11y_used_miss',
 };
 
-/** Yalnız `used_miss` üstü çizilir */
+/** Yalnız `used_miss` çarpı ikonu taşır */
 export function isStruck(state: KeyState): boolean {
   return state === 'used_miss';
 }

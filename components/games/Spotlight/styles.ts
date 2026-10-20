@@ -191,9 +191,14 @@ export const createStyles = (theme: GameTheme) => {
     borderRadius: 1,
     backgroundColor: theme.accent,
   },
-  /** Baslikta olmayan harf — sonuk, tekrar denenemez */
+  /**
+   * Baslikta olmayan harf — SONUK DEGIL (opaklik yok): `ink` dolgu + `graphite`
+   * kenar, ust kenarda isik yok → yuzeyden ickaya basilmis (inset) his. Harf
+   * `bone` kalir (okunur); ustune `keyMissMark` carpisi biner. Tekrar denenemez.
+   */
   keyMiss: {
-    opacity: 0.35,
+    backgroundColor: color.surface.base,
+    borderTopColor: color.surface.border,
   },
   keyText: {
     ...type['body-strong'],
@@ -202,13 +207,11 @@ export const createStyles = (theme: GameTheme) => {
   keyTextHit: {
     color: theme.accent,
   },
-  /** Kullanilmis tus: renkten bagimsiz isaret — harfin uzerinden ince cizgi */
-  keyStrike: {
+  /** Yanlis tus: renkten bagimsiz isaret — harfin uzerinde ince carpi ikonu (View sarmali) */
+  keyMissMark: {
     position: 'absolute',
-    width: 16,
-    height: size.hairline * 1.5,
-    backgroundColor: withAlpha(color.text.primary, 0.6),
-    transform: [{ rotate: '-35deg' }],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ─── Tahmin alani ─────────────────────────────────────────────────────────

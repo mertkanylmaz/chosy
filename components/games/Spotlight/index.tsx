@@ -26,7 +26,7 @@ import {
 } from 'react-native';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Sentry from '@sentry/react-native';
-import { CloudSlash } from 'phosphor-react-native';
+import { CloudSlash, X } from 'phosphor-react-native';
 import Animated, {
   FadeIn,
   useAnimatedStyle,
@@ -37,6 +37,7 @@ import Animated, {
 
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
+import { color, size } from '@/constants/design/semantic';
 import {
   EASE_OUT_QUART,
   REDUCED_MOTION_DURATION,
@@ -170,8 +171,18 @@ function KeyButton({
         >
           {letter}
         </Text>
-        {/* Renksiz ayrim: yalniz "basliktta yok" ustu cizili, "basliktta var" alt cubuklu */}
-        {isStruck(state) && <View style={styles.keyStrike} pointerEvents="none" />}
+        {/* Renksiz ayrim: yalniz "basliktta yok" carpili, "basliktta var" alt cubuklu.
+            Ikon a11y'de gizli — etiket (key_a11y_used_miss) bilgiyi zaten veriyor. */}
+        {isStruck(state) && (
+          <View
+            style={styles.keyMissMark}
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <X size={size.iconAction} weight="regular" color={color.text.secondary} />
+          </View>
+        )}
         {hasHitBar(state) && <View style={styles.keyHitBar} pointerEvents="none" />}
       </Animated.View>
     </Pressable>
