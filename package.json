@@ -34,6 +34,7 @@
     "test:spotlight-share": "deno test tests/games/spotlightShareMask.test.ts",
     "test:crypto": "deno test tests/identity/webCryptoAlgorithm.test.ts",
     "test:identity-cache": "deno test tests/identity/identityCache.test.ts",
+    "test:funnel": "deno test tests/analytics/firstSessionFunnel.test.ts",
     "test:gate": "deno test tests/navigation/gateDecision.test.ts",
     "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",
     "test:config-store": "deno test tests/config/configStore.test.ts",

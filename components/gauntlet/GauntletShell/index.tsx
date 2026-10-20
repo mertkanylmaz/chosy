@@ -88,6 +88,7 @@ import {
 import { subscribeToReconnect } from '@/services/networkStatus';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
+import { trackFirstSessionEventOnce } from '@/services/firstSessionFunnel';
 import { getPermissionState } from '@/services/pushNotifications';
 import { maybeRequestReview } from '@/services/reviewPrompt';
 import { supabase } from '@/services/supabase';
@@ -595,6 +596,7 @@ function GauntletShellContent(): React.JSX.Element {
           context_duration: g.context.duration,
           context_energy: g.context.energy,
         });
+        void trackFirstSessionEventOnce('first_gauntlet_started');
       }
     },
     [toExhausted, transitionTo, showLoadError],
@@ -1302,6 +1304,7 @@ function GauntletShellContent(): React.JSX.Element {
           gauntlet_id: result.gauntletId,
           champion_film_id: result.champion.id,
         });
+        void trackFirstSessionEventOnce('first_gauntlet_completed');
         // B-211: 3. ayrı cycle gününde sistem değerlendirme istemi (karar serviste).
         void maybeRequestReview(paywallRouteOpenRef.current);
 

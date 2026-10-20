@@ -39,6 +39,7 @@ import { hapticSuccess } from '@/utils/haptics';
 import { Colors } from '@/constants/Colors';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
+import { trackFirstSessionEventOnce } from '@/services/firstSessionFunnel';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
@@ -140,6 +141,8 @@ export default function OnboardingScreen() {
   const handleStart = useCallback(async () => {
     void hapticSuccess();
     posthogAnalytics.track('onboarding_completed');
+    // Funnel halkası: kurulum başına bir kez, DB yazımından bağımsız.
+    void trackFirstSessionEventOnce('onboarding_completed');
     await markOnboardingComplete();
     router.replace('/(tabs)' as never);
   }, [router, markOnboardingComplete]);
