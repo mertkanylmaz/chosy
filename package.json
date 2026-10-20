@@ -22,6 +22,7 @@
     "test:profile-plan": "deno test tests/profile/unknownPlan.test.ts",
     "test:apple-revoke": "cd supabase/functions && deno test _shared/appleRevoke.test.ts",
     "test:ask":"deno test tests/gauntlet/askDecision.test.ts",
+    "test:review": "deno test tests/gauntlet/reviewDecision.test.ts",
     "test:watch-feedback": "deno test --unstable-sloppy-imports tests/gauntlet/watchFeedbackFlow.test.ts",
     "test:puzzle-availability": "deno test tests/games/puzzleAvailability.test.ts",
     "test:notif-ask": "deno test tests/gauntlet/notificationAskCheck.test.ts",

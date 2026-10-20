@@ -33,6 +33,7 @@ import {
 
 import * as Sentry from '@sentry/react-native';
 import { Image as ExpoImage } from 'expo-image';
+import { usePathname } from 'expo-router';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -88,6 +89,7 @@ import { subscribeToReconnect } from '@/services/networkStatus';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 import { getPermissionState } from '@/services/pushNotifications';
+import { maybeRequestReview } from '@/services/reviewPrompt';
 import { supabase } from '@/services/supabase';
 import type {
   ChoiceSubmission,
@@ -271,6 +273,10 @@ function GauntletShellContent(): React.JSX.Element {
   const [pair, setPair] = useState<Pair | null>(null);
   const [tileStates, setTileStates] = useState<TileStates>({ left: 'idle', right: 'idle' });
   const [champion, setChampion] = useState<GauntletFilm | null>(null);
+  // Review istemi (B-211) paywall rotası açıkken çıkmasın; callback bayatlamasın diye ref.
+  const pathname = usePathname();
+  const paywallRouteOpenRef = useRef(false);
+  paywallRouteOpenRef.current = pathname.includes('paywall');
   /**
    * Işık sızmasını süren film (DESIGN_OS §5, CTO kararı 15.08.2026: defender).
    * SALT GÖRSEL — hiçbir dal bu değere göre karar vermez, oyun mantığına
@@ -1296,6 +1302,8 @@ function GauntletShellContent(): React.JSX.Element {
           gauntlet_id: result.gauntletId,
           champion_film_id: result.champion.id,
         });
+        // B-211: 3. ayrı cycle gününde sistem değerlendirme istemi (karar serviste).
+        void maybeRequestReview(paywallRouteOpenRef.current);
 
         void hapticSuccess();
         hapticTimerRef.current = setTimeout(() => {

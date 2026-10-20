@@ -31,6 +31,7 @@ import { clearGauntletCache } from './gauntletCache';
 import { clearIdentityCache } from './auth-utils';
 import { resetAiConsentSession } from './aiConsent';
 import { FIRST_OPEN_FLAG_KEY } from './firstOpen';
+import { REVIEW_PROMPT_VERSION_KEY } from './reviewPrompt';
 import { logger } from '../utils/logger';
 import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
 
@@ -38,7 +39,11 @@ import { createIntentionalResetFlag } from '../utils/intentionalResetFlag';
  * Silmeden sağ çıkan cihaz düzeyi anahtarlar. Listede olmayan her anahtar
  * silinir — yeni bir anahtar eklendiğinde varsayılan "kullanıcı verisi"dir.
  */
-const DEVICE_LEVEL_KEYS: ReadonlySet<string> = new Set(['moodflix_language', FIRST_OPEN_FLAG_KEY]);
+const DEVICE_LEVEL_KEYS: ReadonlySet<string> = new Set([
+  'moodflix_language',
+  FIRST_OPEN_FLAG_KEY,
+  REVIEW_PROMPT_VERSION_KEY,
+]);
 
 /**
  * Temizlikten muaf prefix'ler:

@@ -29,6 +29,13 @@ function deviceLocale(): string {
   }
 }
 
+/** Bu süreçte `first_open` gönderildi mi → kurulumun ilk oturumu (review istemi bunu dışlar). */
+let firstOpenFiredThisSession = false;
+
+export function wasFirstOpenThisSession(): boolean {
+  return firstOpenFiredThisSession;
+}
+
 export async function trackFirstOpenOnce(): Promise<void> {
   try {
     if ((await AsyncStorage.getItem(FIRST_OPEN_FLAG_KEY)) !== null) return;
@@ -40,6 +47,7 @@ export async function trackFirstOpenOnce(): Promise<void> {
     return;
   }
 
+  firstOpenFiredThisSession = true;
   posthogAnalytics.track('first_open', {
     timezone: deviceTimeZone() ?? 'unknown',
     locale: deviceLocale(),
