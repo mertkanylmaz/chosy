@@ -25,7 +25,7 @@ import React, { useEffect, useRef, useCallback } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import {
   Easing,
@@ -38,6 +38,7 @@ import {
 
 import { SplashMark } from '@/components/SplashMark';
 import { markGateDone } from '@/services/gateState';
+import { markSplashGateSettled, markSplashMarkLoaded } from '@/services/splashGate';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
 import { isGateReadyToNavigate } from '@/utils/gateDecision';
@@ -84,11 +85,15 @@ export default function Gate() {
     }
     // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
     markGateDone();
+    markSplashGateSettled();
     router.replace(targetRoute.current as never);
   }, []);
 
   /** Yalnız logo söner; bitince (veya failsafe ile) finishExit. */
   const startExit = useCallback(() => {
+    // Çıkış başladıysa gate görünür/karar verilmiştir; splash artık gate'i beklemez
+    // (geçiş bitmeden karar gelirse transitionEnd gelmeyebilir).
+    markSplashGateSettled();
     if (reduceMotionRef.current) {
       finishExit();
       return;
@@ -128,6 +133,26 @@ export default function Gate() {
       startExit();
     }
   }, [startExit]);
+
+  // ── HOME-7: native splash kalkışı için gate sinyali ──────────────────────
+  // Soğuk açılışta yığın [gate, (tabs)]; üstteki (tabs) GateGuard'ı dismissTo ile
+  // sökülünce gate ortaya çıkar (Stack fade). Splash o geçiş BİTENE kadar
+  // beklemeli: gate'in `transitionEnd` (closing:false, iOS viewDidAppear) olayı.
+  // Derin bağlantı/bildirimle üstte (tabs) dışında bir ekran varsa GateGuard hiç
+  // mount olmaz, gate odağa gelmez: beklenmez, hemen "hazır" sayılır (aksi halde
+  // açılış failsafe süresi kadar takılırdı). Gate zaten en üstteyse de hazırdır.
+  const navigation = useNavigation();
+  useEffect(() => {
+    const state = navigation.getState();
+    const topName = state?.routes[state.index]?.name;
+    if (topName !== '(tabs)') {
+      markSplashGateSettled();
+      return undefined;
+    }
+    return navigation.addListener('transitionEnd' as never, ((e: { data?: { closing?: boolean } }) => {
+      if (e.data?.closing === false) markSplashGateSettled();
+    }) as never);
+  }, [navigation]);
 
   useEffect(() => {
     // Minimum display timer
@@ -227,7 +252,7 @@ export default function Gate() {
   }, [tryNavigate]);
 
   return (
-    <SplashMark markStyle={markStyle}>
+    <SplashMark markStyle={markStyle} onLoad={markSplashMarkLoaded}>
       <StatusBar style="light" />
     </SplashMark>
   );

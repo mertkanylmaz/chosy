@@ -24,9 +24,11 @@ interface SplashMarkProps {
   markStyle?: StyleProp<AnimatedStyle<StyleProp<ImageStyle>>>;
   /** Zemin içinde render edilir (ör. StatusBar). */
   children?: React.ReactNode;
+  /** Görsel çözüldü (native splash kalkışı bunu bekler, HOME-7). */
+  onLoad?: () => void;
 }
 
-export function SplashMark({ markStyle, children }: SplashMarkProps) {
+export function SplashMark({ markStyle, children, onLoad }: SplashMarkProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const markSize = screenWidth;
 
@@ -46,6 +48,7 @@ export function SplashMark({ markStyle, children }: SplashMarkProps) {
           markStyle,
         ]}
         resizeMode="contain"
+        onLoad={onLoad}
         onLayout={
           __DEV__
             ? (e) => {

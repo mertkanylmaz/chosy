@@ -42,6 +42,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import { MoodProvider } from '@/contexts/MoodContext';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { logger } from '@/utils/logger';
+import { markSplashFontsReady } from '@/services/splashGate';
 import { posthogAnalytics } from '@/services/posthog';
 import { processOfflineQueue } from '@/services/offlineQueue';
 import { clearIdentityCache, ensureAppUser } from '@/services/auth-utils';
@@ -711,11 +712,13 @@ export default function RootLayout() {
     // verilmişse); izin İSTEĞİ bu dosyadan çıkmıştır.
   }, []);
 
-  // Font yüklemesi tamamlanınca (veya hata olunca) splash'i kaldır.
+  // Font yüklemesi tamamlanınca (veya hata olunca) splash kapısına haber ver.
   // fontError durumunda da devam etmeli — sistem fontu ile çalışır.
+  // hideAsync burada DEĞİL: gate geçişi + logo yüklemesiyle birlikte
+  // services/splashGate.ts'te kalkar (HOME-7).
   useEffect(() => {
     if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
+      markSplashFontsReady();
     }
   }, [fontsLoaded, fontError]);
 
