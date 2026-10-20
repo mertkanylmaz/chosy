@@ -41,7 +41,7 @@ import {
   type SpotlightState,
 } from '../utils/askDecision';
 
-const ASK_STATE_KEY = 'chosy_ask_state';
+export const ASK_STATE_KEY = 'chosy_ask_state';
 
 /** `getChampionDatesSince` alt sınırı — tüm geçmişi kapsar. */
 const ALL_TIME = '1970-01-01';

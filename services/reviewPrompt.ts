@@ -18,12 +18,15 @@ import Constants from 'expo-constants';
 import * as StoreReview from 'expo-store-review';
 import { AppState } from 'react-native';
 
+import { ASK_STATE_KEY } from '@/services/askCoordinator';
 import { readAppUserId } from '@/services/auth-utils';
 import { wasFirstOpenThisSession } from '@/services/firstOpen';
+import { readCachedCycleDate } from '@/services/gauntletCache';
 import { getChampionDatesSince } from '@/services/gauntletService';
 import { posthogAnalytics } from '@/services/posthog';
+import { askedToday, parseAskState } from '@/utils/askDecision';
 import { logger } from '@/utils/logger';
-import { reviewSkipReason } from '@/utils/reviewDecision';
+import { REVIEW_PROMPT_DAY, reviewSkipReason } from '@/utils/reviewDecision';
 
 export const REVIEW_PROMPT_VERSION_KEY = 'chosy_review_prompt_version';
 
@@ -35,6 +38,17 @@ function fail(err: unknown, step: string): void {
     level: 'error',
     tags: { function: 'maybeRequestReview', error_code: 'REVIEW_PROMPT_FAILED', step },
   });
+}
+
+/**
+ * Bu cycle gününde ask koordinatörü istem gösterdi mi — SALT OKUNUR
+ * (`chosy_ask_state`; ask semantiğine yazılmaz). Okunamayan durum fırlatır.
+ */
+async function readAskShownToday(): Promise<boolean> {
+  const today = await readCachedCycleDate();
+  if (!today) throw new Error('reviewPrompt: aktif cycle tarihi yok');
+  const state = parseAskState(await AsyncStorage.getItem(ASK_STATE_KEY));
+  return askedToday(state, today);
 }
 
 /**
@@ -54,7 +68,8 @@ export async function maybeRequestReview(paywallVisible: boolean): Promise<void>
     return;
   }
   const preSkip = reviewSkipReason({
-    dayCount: 3, // yalnız yerel nedenleri ayıklamak için; asıl sayı aşağıda
+    dayCount: REVIEW_PROMPT_DAY, // yalnız yerel nedenleri ayıklamak için; asıl sayı aşağıda
+    askShownToday: false,
     appVersion,
     lastPromptedVersion,
     isFirstSession: wasFirstOpenThisSession(),
@@ -67,7 +82,9 @@ export async function maybeRequestReview(paywallVisible: boolean): Promise<void>
   }
 
   let dayCount: number;
+  let askShownToday: boolean;
   try {
+    askShownToday = await readAskShownToday();
     const userId = await readAppUserId();
     if (!userId) throw new Error('reviewPrompt: public.users.id çözülemedi');
     dayCount = (await getChampionDatesSince(userId, ALL_TIME)).length;
@@ -78,6 +95,7 @@ export async function maybeRequestReview(paywallVisible: boolean): Promise<void>
 
   const skip = reviewSkipReason({
     dayCount,
+    askShownToday,
     appVersion,
     lastPromptedVersion,
     isFirstSession: wasFirstOpenThisSession(),
