@@ -19,6 +19,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 
 import { Colors } from '@/constants/Colors';
@@ -111,8 +112,14 @@ export default function Gate() {
                 onboarded = '1';
               }
             }
-          } catch {
+          } catch (err) {
             // DB kontrolü başarısız — güvenli tarafta kal, onboarding göster
+            // (davranış aynı; yalnız görünür). Dönen kullanıcı yanlışlıkla
+            // onboarding'e düşebilir, bu yüzden Sentry'de iz kalır.
+            Sentry.captureException(err, {
+              level: 'warning',
+              tags: { flow: 'gate', error_code: 'GATE_ONBOARDING_DB_CHECK_FAILED' },
+            });
           }
         }
 

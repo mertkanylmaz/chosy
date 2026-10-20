@@ -29,6 +29,7 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Sentry from '@sentry/react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -118,13 +119,20 @@ export default function OnboardingScreen() {
     try {
       const appUserId = await getAppUserId();
       if (appUserId) {
-        await supabase
+        const { error } = await supabase
           .from('users')
           .update({ onboarding_completed_at: new Date().toISOString() })
           .eq('id', appUserId);
+        // supabase-js hatada reddetmez, { error } döner. Kullanıcı akışı
+        // bloklanmaz (AsyncStorage yazımı başarılı), ama sessiz de geçilmez:
+        // DB yazımı düşerse reinstall sonrası onboarding yeniden gösterilir.
+        if (error) throw error;
       }
-    } catch {
-      logger.warn('[Onboarding] DB onboarding_completed_at write failed.');
+    } catch (err) {
+      Sentry.captureException(err, {
+        level: 'error',
+        tags: { flow: 'onboarding', error_code: 'ONBOARDING_DB_WRITE_FAILED' },
+      });
     }
   }, []);
 
