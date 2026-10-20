@@ -359,8 +359,16 @@ export function ChampionReveal({
     [providersState, providers],
   );
   const showWatchNow = providerCount > 0;
+  /**
+   * HOME-2: sağlayıcılar yüklenirken birincil slot NİHAİ (ok) düzenle aynı
+   * durur — "Where to watch" devre dışı, "Sonraya bırak" ikon yerinde. Aksi
+   * halde ilk karede beyaz "Save" birincilken veri gelince sarıya dönüp
+   * düzen zıplıyordu. empty/error/noRegion'da davranış aynı (filled Save).
+   */
+  const providersLoading = providersState === 'loading';
+  const showWatchSlot = showWatchNow || providersLoading;
   /** S-2: Watch Now birincilse "Sonraya bırak" ikon satırına iner. */
-  const showSaveIcon = showWatchNow && gauntletId !== undefined;
+  const showSaveIcon = showWatchSlot && gauntletId !== undefined;
   const saveLabel =
     saveState === 'saved' ? t('gauntlet.saveForLater.saved') : t('gauntlet.saveForLater.action');
 
@@ -619,13 +627,14 @@ export function ChampionReveal({
               yoksa dolgulu "Sonraya bırak" birincil olur (L9 davranışı). İkonlar
               44pt kare (K-54). Kaydetme, paylaşım ve Watch now mantığı DEĞİŞMEDİ. */}
           <View style={styles.actionsRow}>
-            {showWatchNow ? (
+            {showWatchSlot ? (
               <View style={styles.primarySlot}>
                 <ChampionActionButton
                   label={t('gauntlet.watchProviders.sheetTitle')}
                   icon={Play}
                   variant="marquee"
                   onPress={handleWatchNow}
+                  disabled={!showWatchNow}
                 />
               </View>
             ) : (
