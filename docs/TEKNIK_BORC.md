@@ -4213,3 +4213,26 @@ yanıltıcı olacağından kasıtlı eklenmedi.
 
 **Yapılacak:** izlemeyi genel bir isme taşı (`EDGE_REGION_MISMATCH`, `fn` etiketiyle) ve
 `get-daily-challenge` dahil tüm sabitli çağrılara uygula. Öncelik: düşük.
+
+---
+
+## 2.1.1 build sonrası ertelenenler — 20 Ekim 2026 (B-211)
+
+1. **`expo install --check` (2.1.2'ye ertelendi, CTO):** `expo-doctor` 8 pakette sürüm
+   uyuşmazlığı bildiriyor — `expo` 54.0.34 (beklenen ~54.0.37), `expo-constants`,
+   `expo-font`, `expo-localization`, `expo-router`, `expo-updates` (patch),
+   `@react-navigation/bottom-tabs` (minor), `@react-navigation/native`. 2.1.1'de bağımlılık
+   değişmedi; native etkisi olabileceğinden 2.1.2'de tek başına ele alınır.
+2. **(a) `get-daily-challenge` çoklu çağrı:** `components/games/Spotlight/index.tsx`
+   `useFocusEffect` (~384-394) her odakta state sıfırlayıp `loadPuzzle()` çağırıyor;
+   uygulama açılışından sonra 25 sn içinde ~6 çağrı gözlendi. Diğer çağıranlar sayılmadı.
+3. **(b) Sentry REACT-NATIVE-9 `RC_ACTIVE_DB_MISSING`:** `contexts/SubscriptionContext.tsx`
+   (~210-231) RC aktif ama `subscriptions` satırı yokken uyarı atıyor (61 olay, 7 kullanıcı,
+   `activePlanId` `com.chosy.lifetime`). Lifetime için satırın neden gelmediği
+   (webhook ürün/NON_RENEWING eşlemesi) doğrulanmadı.
+4. **(c) `submit-guess/index.ts:166-168` boş catch (SPOT-1):** streak sorgusu hatasında
+   sessizce base XP'ye düşüyor (Kural 1/2 ihlali; yalnız yorum var).
+5. **Review ↔ ask çakışması (kalan boşluk):** review kararı şampiyon seçildiği anda
+   `chosy_ask_state`'i salt okunur kontrol eder; ask'ler ise pick'ten SONRA (dwell /
+   Spotlight dönüşü) gösterildiği için aynı gün review'dan sonra ask çıkabilir. Çözmek ask
+   semantiğine dokunur (CTO kararı).
