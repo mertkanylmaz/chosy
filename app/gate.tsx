@@ -1,9 +1,12 @@
 /**
  * Gate — uygulama açılışında routing kararını verir.
  * Native splash ile birebir aynı görünümü (ink zemin + ortada splash-mark) gösterir;
- * karar hazır olunca bekletmeden yönlendirir. Görünür geçiş TEK: Stack'in `fade`'i
- * (app/_layout.tsx); gate kendi opacity animasyonunu çalıştırmaz — ikisi üst üste
- * binince altta Stack zemini görünüp kararma yaratıyordu (HOME-1 bulgu 5).
+ * karar hazır olunca bekletmeden yönlendirir. Giriş animasyonu YOK (ilk kare native
+ * splash ile aynı, opak). Çıkış SIRALI: önce yalnız logo söner (opacity 1→0, 200 ms),
+ * zemin (ink) opak kalır; sonra `router.replace`. Böylece Stack `fade`'i (app/_layout.tsx)
+ * başladığında logo zaten yoktur ve logo ile yeni ekran içeriği hiçbir karede üst üste
+ * binmez (HOME-4; HOME-1 bulgu 5'te zemin kararması yüzünden bütün ekranı solduran
+ * animasyon kaldırılmıştı — burada zemin solmaz).
  *
  * Sıra:
  *  1. Onboarding tamamlanmadıysa → /onboarding
@@ -19,12 +22,20 @@
  */
 
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { color } from '@/constants/design/semantic';
 import { markGateDone } from '@/services/gateState';
@@ -35,6 +46,16 @@ import { incrementSessionCount } from '../services/entryService';
 
 /** Minimum splash display time (ms) — 0: native splash zaten gösterildi, ek bekleme yok. */
 const MIN_SPLASH_MS = 0;
+
+/** Logo çıkış solması. Easing.out(cubic) projedeki mevcut çıkış eğrisi. */
+const EXIT_FADE_MS = 200;
+
+/**
+ * Animasyon geri çağrısı hiç gelmezse (unmount, worklet kaybı) navigasyonun
+ * takılmaması için tek failsafe. EXIT_FADE_MS'ten bilinçli uzun: normal yolda
+ * hiç tetiklenmez, tetiklenirse Sentry'de iz kalır.
+ */
+const EXIT_FAILSAFE_MS = 400;
 
 /**
  * Native splash (app.json `splash`, resizeMode contain, tam ekran) ile aynı
@@ -51,6 +72,54 @@ export default function Gate() {
   /** Onboarded kullanıcı (tabs'e gidiyor): MIN_SPLASH_MS beklenmez. */
   const skipMinSplash = useRef(false);
 
+  const reduceMotion = useReducedMotion();
+  /** `tryNavigate` kararlı kalsın diye ref üzerinden okunur. */
+  const reduceMotionRef = useRef(reduceMotion);
+  reduceMotionRef.current = reduceMotion;
+  const markOpacity = useSharedValue(1);
+  const markStyle = useAnimatedStyle(() => ({ opacity: markOpacity.value }));
+  /** markGateDone + replace tam bir kez (animasyon bitişi ile failsafe yarışabilir). */
+  const exited = useRef(false);
+  const failsafeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const finishExit = useCallback(() => {
+    if (exited.current) return;
+    exited.current = true;
+    if (failsafeTimer.current !== null) {
+      clearTimeout(failsafeTimer.current);
+      failsafeTimer.current = null;
+    }
+    // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
+    markGateDone();
+    router.replace(targetRoute.current as never);
+  }, []);
+
+  /** Yalnız logo söner; bitince (veya failsafe ile) finishExit. */
+  const startExit = useCallback(() => {
+    if (reduceMotionRef.current) {
+      finishExit();
+      return;
+    }
+    failsafeTimer.current = setTimeout(() => {
+      failsafeTimer.current = null;
+      if (exited.current) return;
+      Sentry.captureMessage('gate çıkış animasyonu geri çağrısı gelmedi', {
+        level: 'warning',
+        tags: { flow: 'gate', error_code: 'GATE_EXIT_ANIM_FALLBACK' },
+        extra: { fade_ms: EXIT_FADE_MS, failsafe_ms: EXIT_FAILSAFE_MS },
+      });
+      finishExit();
+    }, EXIT_FAILSAFE_MS);
+    // `finished` false (iptal) olsa da çıkılır: navigasyon animasyona rehin değil.
+    markOpacity.value = withTiming(
+      0,
+      { duration: EXIT_FADE_MS, easing: Easing.out(Easing.cubic) },
+      () => {
+        runOnJS(finishExit)();
+      },
+    );
+  }, [finishExit, markOpacity]);
+
   /** Try to navigate if both conditions met */
   const tryNavigate = useCallback(() => {
     if (
@@ -63,11 +132,9 @@ export default function Gate() {
     ) {
       if (navigated.current) return;
       navigated.current = true;
-      // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
-      markGateDone();
-      router.replace(targetRoute.current as never);
+      startExit();
     }
-  }, []);
+  }, [startExit]);
 
   useEffect(() => {
     // Minimum display timer
@@ -169,7 +236,11 @@ export default function Gate() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      <Image source={SPLASH_MARK} style={styles.mark} resizeMode="contain" />
+      <Animated.Image
+        source={SPLASH_MARK}
+        style={[styles.mark, markStyle]}
+        resizeMode="contain"
+      />
     </View>
   );
 }
