@@ -270,11 +270,35 @@ export async function initializePurchases(supabaseUserId?: string): Promise<void
     if (supabaseUserId) _identityReady.complete(effectiveRcUserId(supabaseUserId));
     logger.log('[purchases] RevenueCat baslatildi');
 
+    enableAdServicesAttribution();
   } catch (err) {
     // Native crash'i JS katmaninda yakala — uygulamayi cokertme
     logger.error('[purchases] RevenueCat baslatma hatasi:', err);
     _rcReady.markFailed(err);
     // _initialized = false kalir; rcReady 'failed' olur, bekleyenler hizli hata alir
+  }
+}
+
+/**
+ * Apple Ads (AdServices) atıf token'ı toplamayı açar — yalnız iOS, ATT istemi
+ * yok (Standard atıf rıza istemez). `configure` sonrası bir kez çağrılır.
+ *
+ * Başarısızlık uygulama açılışını ve RC hazır durumunu ETKİLEMEZ (yalnız
+ * atıf kaybolur) ama sessiz kalmaz: Sentry `ADSERVICES_TOKEN_FAILED`.
+ * Senkron fırlatma (native modül yok) ve reddedilen Promise aynı yola düşer.
+ */
+function enableAdServicesAttribution(): void {
+  if (Platform.OS !== 'ios') return;
+  const report = (err: unknown): void => {
+    Sentry.captureException(err, {
+      level: 'warning',
+      tags: { function: 'enableAdServicesAttribution', error_code: 'ADSERVICES_TOKEN_FAILED' },
+    });
+  };
+  try {
+    Purchases.enableAdServicesAttributionTokenCollection().catch(report);
+  } catch (err) {
+    report(err);
   }
 }
 
