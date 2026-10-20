@@ -30,6 +30,7 @@ import * as Updates from 'expo-updates';
 import { useRouter } from 'expo-router';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { color } from '@/constants/design/semantic';
 import type { AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from '@/services/supabase';
 import { remoteConfig } from '@/services/remoteConfig';
@@ -138,6 +139,9 @@ export const unstable_settings = {
 
 // Splash ekranın font yüklemesi bitmeden kapanmasını engelle
 SplashScreen.preventAutoHideAsync();
+
+/** gate/(tabs) ekran zemini: ink (DarkTheme'in rgb(1,1,1) zemini yerine). */
+const INK_SCREEN_OPTIONS = { contentStyle: { backgroundColor: color.surface.base } } as const;
 
 /**
  * `public.users.id`'yi PostHog person property'si (`app_user_id`) olarak yazar
@@ -768,13 +772,20 @@ function RootLayoutNav() {
           <SubscriptionProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-              <Stack.Screen name="gate" />
+              {/* Gate → (tabs)/onboarding geçişi: tek görünür geçiş Stack fade'i.
+                  Zemin ink: varsayılan DarkTheme zemini rgb(1,1,1) fade sırasında
+                  altta kalıp kararma yaratıyordu. Yalnız bu iki ekranın kendi
+                  zemini; diğer ekranların geçişi/zemini değişmez. */}
+              <Stack.Screen name="gate" options={INK_SCREEN_OPTIONS} />
               <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
               {/* E-05 köprü ekranı: tek seferlik, kaydırarak atlanamaz. */}
               <Stack.Screen name="relaunch-intro" options={{ gestureEnabled: false }} />
               {/* Home kök ekrandır: geri kaydırma jesti yığındaki `gate`'e (siyah
                   yükleme ekranı) düşürüyordu. Geri gidilecek bir yer yok. */}
-              <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
+              <Stack.Screen
+                name="(tabs)"
+                options={{ ...INK_SCREEN_OPTIONS, gestureEnabled: false }}
+              />
               <Stack.Screen
                 name="discover"
                 options={{ animation: 'slide_from_right', headerShown: false }}

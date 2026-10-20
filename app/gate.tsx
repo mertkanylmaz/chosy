@@ -1,7 +1,9 @@
 /**
  * Gate — uygulama açılışında routing kararını verir.
  * Native splash ile birebir aynı görünümü (ink zemin + ortada splash-mark) gösterir;
- * karar hazır olunca bekletmeden fade-out ile geçiş yapar.
+ * karar hazır olunca bekletmeden yönlendirir. Görünür geçiş TEK: Stack'in `fade`'i
+ * (app/_layout.tsx); gate kendi opacity animasyonunu çalıştırmaz — ikisi üst üste
+ * binince altta Stack zemini görünüp kararma yaratıyordu (HOME-1 bulgu 5).
  *
  * Sıra:
  *  1. Onboarding tamamlanmadıysa → /onboarding
@@ -16,21 +18,13 @@
  * `resetToFreshSession` ile onboarding'e döner, giriş Profil'den yapılır.
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Image, StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useCallback } from 'react';
+import { Image, StyleSheet, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 
 import { color } from '@/constants/design/semantic';
 import { markGateDone } from '@/services/gateState';
@@ -42,9 +36,6 @@ import { incrementSessionCount } from '../services/entryService';
 /** Minimum splash display time (ms) — 0: native splash zaten gösterildi, ek bekleme yok. */
 const MIN_SPLASH_MS = 0;
 
-/** Fade-out süresi (ms) — reduced motion açıkken 0. */
-const FADE_OUT_MS = 500;
-
 /**
  * Native splash (app.json `splash`, resizeMode contain, tam ekran) ile aynı
  * görsel: kare PNG ekran genişliğinde, ekranın ortasında (safe-area kayması yok).
@@ -52,9 +43,8 @@ const FADE_OUT_MS = 500;
 const SPLASH_MARK = require('../assets/images/splash-mark.png');
 
 export default function Gate() {
-  const [showLoading, setShowLoading] = useState(true);
-  const reduceMotion = useReducedMotion();
-  const opacity = useSharedValue(1);
+  /** Yönlendirme bir kez yapılır (zamanlayıcı ve karar aynı anda hazır olabilir). */
+  const navigated = useRef(false);
   const targetRoute = useRef<string | null>(null);
   const decisionReady = useRef(false);
   const minTimePassed = useRef(false);
@@ -71,8 +61,11 @@ export default function Gate() {
         skipMinSplash: skipMinSplash.current,
       })
     ) {
-      // Trigger fade-out (setShowLoading false → LoadingScreen fades → onFadeOutComplete navigates)
-      setShowLoading(false);
+      if (navigated.current) return;
+      navigated.current = true;
+      // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
+      markGateDone();
+      router.replace(targetRoute.current as never);
     }
   }, []);
 
@@ -173,36 +166,11 @@ export default function Gate() {
     return () => clearTimeout(timer);
   }, [tryNavigate]);
 
-  /** Called after fade-out animation completes */
-  const handleFadeOutComplete = useCallback(() => {
-    if (targetRoute.current) {
-      // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
-      markGateDone();
-      router.replace(targetRoute.current as never);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!showLoading) {
-      opacity.value = withTiming(
-        0,
-        { duration: reduceMotion ? 0 : FADE_OUT_MS, easing: Easing.in(Easing.cubic) },
-        (finished) => {
-          if (finished) {
-            runOnJS(handleFadeOutComplete)();
-          }
-        },
-      );
-    }
-  }, [showLoading, reduceMotion, opacity, handleFadeOutComplete]);
-
-  const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
   return (
-    <Animated.View style={[styles.container, fadeStyle]}>
+    <View style={styles.container}>
       <StatusBar style="light" />
       <Image source={SPLASH_MARK} style={styles.mark} resizeMode="contain" />
-    </Animated.View>
+    </View>
   );
 }
 
