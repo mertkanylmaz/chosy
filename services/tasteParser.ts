@@ -1467,6 +1467,14 @@ export function parseMoodLocal(input: string): TasteProfile {
   return ruleBased(input);
 }
 
+/**
+ * Yerel parser girdiden en az bir sinyal çıkardı mı? Nötr (0.5) profilden
+ * farklıysa true. Analitik içindir (`matched_local`); davranışı etkilemez.
+ */
+export function hasLocalMatch(profile: TasteProfile): boolean {
+  return JSON.stringify(profile) !== JSON.stringify(neutralProfile());
+}
+
 /** @deprecated parseTaste yerine parseMood kullanın. */
 export async function parseTaste(input: string): Promise<TasteProfile> {
   const result = await parseMood(input);

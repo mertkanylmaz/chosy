@@ -7,6 +7,7 @@
  */
 import React, { createContext, useCallback, useContext, useState } from 'react';
 
+import { setSearchModeState as setSearchModeStore, type SearchMode } from '@/services/moodSearchState';
 import { FilmFilters, TasteProfile } from '@/types';
 import type { Film } from '@/types/film';
 
@@ -38,6 +39,12 @@ interface MoodState {
    * recommendations.ts bu ID ile film sonuclarini mood_searches'e yazar.
    */
   lastSearchId: string | null;
+  /** Son aramanın üretim yolu: 'ai' (parse-mood) ya da 'basic' (rıza reddi, yerel parser) */
+  searchMode: SearchMode;
+  /** Son aramanın kırpılmış ham girdisi — "Enable AI" tekrarı için. Yalnız bellekte. */
+  lastMoodInput: string | null;
+  setSearchMode: (mode: SearchMode) => void;
+  setLastMoodInput: (input: string | null) => void;
   /** Yeni mood analizi tamamlandığında çağrılır */
   setMoodResult: (profile: TasteProfile, filters: FilmFilters) => void;
   /** Mevcut mood temizlenir (yeni mood başlatıldığında) */
@@ -67,6 +74,8 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [lastMoodText, setLastMoodTextState] = useState<string | null>(null);
   const [lastSessionFilms, setLastSessionFilms] = useState<Film[]>([]);
   const [lastSearchId, setLastSearchIdState] = useState<string | null>(null);
+  const [searchMode, setSearchModeState] = useState<SearchMode>('ai');
+  const [lastMoodInput, setLastMoodInputState] = useState<string | null>(null);
 
   /**
    * Yeni mood sonucu gelince profil + filtreler güncellenir.
@@ -87,6 +96,9 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     setCurrentProfile(null);
     setCurrentFilters(null);
     setCurrentSessionIdState(null);
+    // Mood akışından çıkış/reset: mod 'ai'ye döner (basic izi sonraki aramaya taşınmaz)
+    setSearchModeState('ai');
+    setSearchModeStore('ai');
   }, []);
 
   const setPresetMoodText = useCallback((text: string | null) => {
@@ -118,6 +130,14 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     setLastSearchIdState(id);
   }, []);
 
+  const setSearchMode = useCallback((mode: SearchMode) => {
+    setSearchModeState(mode);
+  }, []);
+
+  const setLastMoodInput = useCallback((input: string | null) => {
+    setLastMoodInputState(input);
+  }, []);
+
   return (
     <MoodContext.Provider
       value={{
@@ -128,6 +148,10 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
         lastMoodText,
         lastSessionFilms,
         lastSearchId,
+        searchMode,
+        lastMoodInput,
+        setSearchMode,
+        setLastMoodInput,
         setMoodResult,
         clearMood,
         setPresetMoodText,

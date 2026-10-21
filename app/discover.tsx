@@ -73,7 +73,7 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt } = useProModeAccess();
@@ -137,9 +137,10 @@ export default function DiscoverScreen() {
       setDeck(managerFilms);
       posthogAnalytics.track('mood_deck_started', {
         deck_size: managerFilms.length,
+        search_mode: searchMode,
       });
     }
-  }, [managerFilms]);
+  }, [managerFilms, searchMode]);
 
   // ── Current film ────────────────────────────────────────────────────────────
 

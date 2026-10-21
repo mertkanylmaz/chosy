@@ -114,3 +114,22 @@ export function consumePendingMoodText(): string | null {
 export function peekPendingMoodText(): string | null {
   return _pendingMoodText;
 }
+
+// ─── Search Mode Store ─────────────────────────────────────────────────────
+
+/**
+ * Aramanın hangi yolla üretildiği: 'ai' (parse-mood) ya da 'basic' (rıza reddi
+ * sonrası yerel parser). Servis katmanı (recommendations) React context'e erişemez;
+ * bu yüzden searchId gibi module-level tutulur. Her arama başında açıkça set edilir.
+ */
+export type SearchMode = 'ai' | 'basic';
+
+let _searchMode: SearchMode = 'ai';
+
+export function setSearchModeState(mode: SearchMode): void {
+  _searchMode = mode;
+}
+
+export function getSearchModeState(): SearchMode {
+  return _searchMode;
+}

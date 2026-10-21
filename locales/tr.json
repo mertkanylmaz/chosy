@@ -647,7 +647,11 @@
     "saveError": "Seçimin kaydedilemedi. Tekrar dene.",
     "offBody": "AI önerileri kapalı. Ayarlar'dan açabilirsin.",
     "openSettings": "Ayarlardan aç",
-    "explainCta": "Kişisel açıklamayı aç"
+    "explainCta": "Kişisel açıklamayı aç",
+    "basicNote": "Temel eşleşmeler gösteriliyor. Daha iyi sonuçlar için yapay zekâyı aç.",
+    "enableAi": "Yapay zekâyı aç",
+    "rerunErrorTitle": "Yapay zekâya geçilemedi",
+    "rerunRetry": "Tekrar dene"
   },
   "notificationPrompt": {
     "title": "Dördün her akşam hazır olsun mu?",

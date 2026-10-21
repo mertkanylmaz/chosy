@@ -647,7 +647,11 @@
     "saveError": "Couldn't save your choice. Try again.",
     "offBody": "AI suggestions are off. You can turn them on in Settings.",
     "openSettings": "Open Settings",
-    "explainCta": "Turn on personal explanation"
+    "explainCta": "Turn on personal explanation",
+    "basicNote": "Showing basic matches. Enable AI for better results.",
+    "enableAi": "Enable AI",
+    "rerunErrorTitle": "Couldn't switch to AI",
+    "rerunRetry": "Try again"
   },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",

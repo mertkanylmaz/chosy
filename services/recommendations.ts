@@ -15,7 +15,12 @@ import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '..
 
 import { getAppUserId } from './auth-utils';
 import { ensureAuthSession, getFreshSession } from './authSession';
-import { getSearchKeywords, consumePendingMoodText, peekPendingMoodText } from './moodSearchState';
+import {
+  getSearchKeywords,
+  getSearchModeState,
+  consumePendingMoodText,
+  peekPendingMoodText,
+} from './moodSearchState';
 import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
 import { supabase } from './supabase';
@@ -959,7 +964,9 @@ export async function getRecommendations(
   // searchId yoksa mood_searches UPDATE'i atlanır. İlk batch'te bu beklenmez
   // (parse-mood INSERT'i başarısız veya searchId taşıma zincirinde kayıp).
   // Sonraki batch'lerde ve surprise fallback'te null beklenen davranıştır.
-  if (!searchId && isFirstBatch) {
+  // 'basic' modda (rıza reddi, parse-mood hiç çağrılmaz) searchId yokluğu
+  // beklenir — yalnız o modda bastırılır; AI yolunda uyarı aynen çalışır.
+  if (!searchId && isFirstBatch && getSearchModeState() !== 'basic') {
     const pendingMoodTextLength = peekPendingMoodText()?.length ?? null;
     reportMoodSearchWriteIssue({
       step: 'search_id_missing',

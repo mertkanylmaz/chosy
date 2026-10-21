@@ -33,6 +33,8 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -52,6 +54,7 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 
+import * as Sentry from '@sentry/react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
@@ -75,10 +78,16 @@ import { hapticLight, hapticSelection } from '@/utils/haptics';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { setPendingSearchId, setSearchKeywords, setPendingMoodText } from '@/services/moodSearchState';
+import {
+  setPendingSearchId,
+  setSearchKeywords,
+  setPendingMoodText,
+  setSearchModeState,
+  type SearchMode,
+} from '@/services/moodSearchState';
 import { startPreload, clearPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
-import { parseMood } from '@/services/tasteParser';
+import { hasLocalMatch, parseMood, parseMoodLocal } from '@/services/tasteParser';
 import { ensureAiConsent, hasAiConsent } from '@/services/aiConsent';
 import { saveSession } from '@/services/watchlist';
 import { readAppUserId } from '@/services/auth-utils';
@@ -121,7 +130,10 @@ export default function MoodSearchScreen() {
   /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
-  const { setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId } = useMood();
+  const {
+    setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId,
+    searchMode, lastMoodInput, setSearchMode, setLastMoodInput,
+  } = useMood();
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt } = useProModeAccess();
@@ -152,6 +164,23 @@ export default function MoodSearchScreen() {
   const [recentSearches, setRecentSearches] = useState<MoodHistoryItem[]>([]);
 
   const pendingFilters = useRef<FilmFilters | null>(null);
+  /** Basic aramanın analitik üst verisi — `mood_search_fallback_shown` için */
+  const basicMeta = useRef<{ input_length: number; matched_local: boolean } | null>(null);
+  /** Not için event en son hangi profil nesnesi için atıldı (render başına bir kez) */
+  const fallbackShownFor = useRef<TasteProfile | null>(null);
+  /** Basic yolda (overlay yok) nötr yükleme göstergesi */
+  const [basicLoading, setBasicLoading] = useState(false);
+
+  // Basic not'u render edildiğinde BİR kez ölç (profil nesnesi başına).
+  useEffect(() => {
+    if (phase !== 'result' || searchMode !== 'basic' || tasteProfile === null) return;
+    if (fallbackShownFor.current === tasteProfile || basicMeta.current === null) return;
+    fallbackShownFor.current = tasteProfile;
+    posthogAnalytics.track('mood_search_fallback_shown', {
+      input_length: basicMeta.current.input_length,
+      matched_local: basicMeta.current.matched_local,
+    });
+  }, [phase, searchMode, tasteProfile]);
 
   // Ekran acildiginda kota bilgisini yenile
   useEffect(() => {
@@ -215,11 +244,108 @@ export default function MoodSearchScreen() {
   // yasak" (CTO onaylı).
 
   /**
-   * "Find Movies" → kota kontrolu → AI processing → profile result
+   * Kota duvarı: contextual paywall, gösterilmezse QuotaExhausted. Normal arama
+   * yolu, ön kota kontrolü ve "Enable AI" tekrarı AYNI handler'ı kullanır.
+   */
+  const showQuotaWall = useCallback(async () => {
+    const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
+    if (!shown) {
+      setShowQuotaExhausted(true);
+    }
+  }, [triggerPaywall]);
+
+  /**
+   * Arama sonrası ortak adım: store'ları yaz → preload başlat → sonuç aşaması.
+   * AI ve basic yol aynı kodu kullanır; fark yalnız profilin kaynağı ve
+   * searchId/keyword/moodText'in (rerank girdileri) boş olmasıdır.
+   */
+  const applySearchResult = useCallback(
+    async (params: {
+      trimmed: string;
+      filters: FilmFilters;
+      profile: TasteProfile;
+      searchId: string | null;
+      searchKeywords: string[];
+      mode: SearchMode;
+      isRerun: boolean;
+    }) => {
+      const { trimmed, filters, profile, searchId, searchKeywords, mode, isRerun } = params;
+
+      if (filters.yearRange !== null) {
+        profile.era_preference = yearRangeToEra(filters.yearRange);
+      }
+
+      // Mod preload'dan ÖNCE yazılır: recommendations.ts aynı modu module-level okur.
+      setSearchModeState(mode);
+      setSearchMode(mode);
+      setLastMoodInput(trimmed);
+
+      // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
+      setLastSearchId(searchId);
+      // Module-level store — React state/ref/effect race condition bypass
+      setPendingSearchId(searchId);
+      // Tematik keyword'ler — match_films_v3 keyword overlap boost icin (basic'te boş)
+      setSearchKeywords(searchKeywords);
+      // Orijinal mood metni — yalnız LLM re-ranker icin; basic yolda null (AI'ya gidecek veri tutulmaz)
+      setPendingMoodText(mode === 'ai' ? trimmed : null);
+
+      setTasteProfile(profile);
+
+      // "Enable AI" tekrarında basic profilin yarım kalmış preload'u atılır
+      if (isRerun) clearPreload();
+
+      // Recommendations preload — animasyonu beklemeden hemen baslat
+      // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
+      // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
+      startPreload(profile, filters);
+
+      // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
+      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      setPhase('result');
+
+      // Session'i arka planda kaydet — hata akisini engellemez.
+      // Tekrarda yeni session açılmaz (aynı arama, aynı kota hakkı).
+      if (!isRerun) {
+        readAppUserId().then((userId) => {
+          if (userId) {
+            saveSession(userId, trimmed, profile).then((sessionId) => {
+              setCurrentSessionId(sessionId);
+            });
+          }
+        });
+      }
+    },
+    [setSearchMode, setLastMoodInput, setLastSearchId, setCurrentSessionId],
+  );
+
+  /** AI yolu: parse-mood + (varsa) rerank. Hata çağırana fırlatılır. */
+  const runAiSearch = useCallback(
+    async (trimmed: string, filters: FilmFilters, isRerun: boolean) => {
+      const [parseResult] = await Promise.all([
+        parseMood(trimmed),
+        new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
+      ]);
+
+      const { profile, searchId, searchKeywords } = parseResult;
+
+      // parseMood bitti — overlay'e sinyal gönder
+      setPipelineStage('done');
+
+      await applySearchResult({
+        trimmed, filters, profile, searchId, searchKeywords, mode: 'ai', isRerun,
+      });
+    },
+    [applySearchResult],
+  );
+
+  /**
+   * "Find Movies" → AI rızası → kota kontrolu → arama → profile result
    *
    * B+C hibrit paywall stratejisi:
-   *   - Kota varsa: normal AI flow
+   *   - Kota varsa: normal akış
    *   - Kota dolmussa: QuotaExhausted overlay (free → paywall, paid → bekleme mesaji)
+   *
+   * Rıza varsa AI yolu (parse-mood), reddedildiyse yerel (basic) yol; kota ikisinde de aynı.
    */
   const handleFindMovies = useCallback(async () => {
     const trimmed = moodText.trim();
@@ -231,27 +357,30 @@ export default function MoodSearchScreen() {
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
     // ── AI rizasi (R-1) — kota tuketilmeden ONCE ─────────────────────────
-    // Metin Claude'a gitmeden rıza alinir; reddedilirse arama hakki harcanmaz.
-    if (!(await ensureAiConsent('mood_search'))) {
-      setAiOff(true);
-      return;
-    }
+    // Metin Claude'a gitmeden rıza alinir. Reddedilirse arama DURMAZ: asagida
+    // yerel (basic) yola gecilir, hicbir sey ucuncu tarafa gitmez.
+    const consented = await ensureAiConsent('mood_search');
+    const mode: SearchMode = consented ? 'ai' : 'basic';
+    // Mod HER aramanın başında, iki yolda da açıkça yazılır (önceki aramadan kalan
+    // değer recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
+    setSearchModeState(mode);
+    setSearchMode(mode);
     setAiOff(false);
+    if (mode === 'basic') setBasicLoading(true);
 
     // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
     // Onboarding'de kota tuketme (ilk arama bedava).
     // `quotaExempt`: grandfathered kohort (legacy_mood_access) istemci
     // duvarina tabi degil — CTO karari 24 Eyl 2026.
+    // Basic yol da AI yoluyla AYNI kota kontrolune tabidir (CTO karari, AI-CONSENT-1).
     if (!isOnboarding && !quotaExempt) {
       const quotaResult = await consumeQuota('search');
       setLastQuotaResult(quotaResult);
       if (!quotaResult.allowed) {
         posthogAnalytics.track('quota_exhausted', { quota_type: 'search' });
         // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
-        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
-        if (!shown) {
-          setShowQuotaExhausted(true);
-        }
+        setBasicLoading(false);
+        await showQuotaWall();
         return;
       }
     }
@@ -264,58 +393,30 @@ export default function MoodSearchScreen() {
 
     const filters: FilmFilters = { yearRange, minRating, regions: [], directors: [] };
 
-    setPipelineStage('parsing');
-    setPhase('processing');
     pendingFilters.current = filters;
 
     try {
       setMoodError(null);
-      const [parseResult] = await Promise.all([
-        parseMood(trimmed),
-        new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
-      ]);
 
-      const { profile, searchId, searchKeywords } = parseResult;
-
-      // parseMood bitti — overlay'e sinyal gönder
-      setPipelineStage('done');
-
-      if (filters.yearRange !== null) {
-        profile.era_preference = yearRangeToEra(filters.yearRange);
+      if (mode === 'basic') {
+        // Bilinçli, görünür, onaya bağlı yol. parse-mood hata fallback'i DEĞİLDİR
+        // (Sprint 1 v5.0 kararı geçerli): AI yolundaki hatalar aşağıdaki catch'e
+        // düşer ve basic'e DÖNMEZ. parseMoodLocal'ın TEK çağrı noktası burasıdır.
+        const profile = parseMoodLocal(trimmed);
+        basicMeta.current = { input_length: trimmed.length, matched_local: hasLocalMatch(profile) };
+        await applySearchResult({
+          trimmed, filters, profile, searchId: null, searchKeywords: [], mode, isRerun: false,
+        });
+        return;
       }
 
-      // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
-      setLastSearchId(searchId);
-      // Module-level store — React state/ref/effect race condition bypass
-      setPendingSearchId(searchId);
-      // Tematik keyword'ler — match_films_v3 keyword overlap boost icin
-      setSearchKeywords(searchKeywords);
-      // Orijinal mood metni — LLM re-ranker icin
-      setPendingMoodText(trimmed);
-
-      setTasteProfile(profile);
-
-      // Recommendations preload — animasyonu beklemeden hemen baslat
-      // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
-      // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
-      startPreload(profile, filters);
-
-      // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
-      await new Promise<void>((resolve) => setTimeout(resolve, 350));
-      setPhase('result');
-
-      // Session'i arka planda kaydet — hata akisini engellemez
-      readAppUserId().then((userId) => {
-        if (userId) {
-          saveSession(userId, trimmed, profile).then((sessionId) => {
-            setCurrentSessionId(sessionId);
-          });
-        }
-      });
+      setPipelineStage('parsing');
+      setPhase('processing');
+      await runAiSearch(trimmed, filters, false);
     } catch (err) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
-        console.log('[HomeScreen] parseMood hatasi:', err instanceof Error ? err.message : err);
+        console.log('[HomeScreen] arama hatasi:', err instanceof Error ? err.message : err);
       }
 
       const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
@@ -325,6 +426,11 @@ export default function MoodSearchScreen() {
         setAiOff(true);
         setPhase('input');
         return;
+      }
+
+      // Basic yolun hatası parse-mood gibi sessiz geçmez: Sentry'ye gider.
+      if (mode === 'basic') {
+        Sentry.captureException(err, { tags: { component: 'MoodSearchScreen', flow: 'basic_search' } });
       }
 
       posthogAnalytics.track('mood_search_failed', {
@@ -343,13 +449,55 @@ export default function MoodSearchScreen() {
 
       // Quota exceeded from edge function — show paywall
       if (userError.type === 'quota') {
-        const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'search' });
-        if (!shown) {
-          setShowQuotaExhausted(true);
-        }
+        await showQuotaWall();
       }
+    } finally {
+      setBasicLoading(false);
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, triggerPaywall]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+
+  /**
+   * "Enable AI" (yalnız basic sonuçta) → onay → AYNI girdiyle AI tekrarı.
+   * Kota DÜŞMEZ: tekrar bayrağı (`isRerun`) açıkça geçilir; metin karşılaştırması yok.
+   * Ret ya da hatada ekran basic sonuçla kalır.
+   */
+  const handleEnableAi = useCallback(async () => {
+    const input = lastMoodInput;
+    if (input === null || phase !== 'result') return;
+
+    posthogAnalytics.track('ai_consent_reprompt_tapped');
+    if (!(await ensureAiConsent('mood_search', { explicit: true }))) return;
+
+    const filters = pendingFilters.current ?? { yearRange: null, minRating: null, regions: [], directors: [] };
+
+    setPipelineStage('parsing');
+    setPhase('processing');
+    try {
+      await runAiSearch(input, filters, true);
+    } catch (err) {
+      const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
+      // Basic sonuç (tasteProfile + store'lar) AI başarılı olana dek değişmez.
+      setPhase('result');
+      if (errorCode === 'AI_CONSENT_REQUIRED') return;
+
+      Sentry.captureException(err, { tags: { component: 'MoodSearchScreen', flow: 'enable_ai_rerun' } });
+      posthogAnalytics.track('mood_search_failed', {
+        error: err instanceof Error ? err.message : 'unknown',
+        error_code: errorCode,
+        mood_length: input.length,
+      });
+      const userError = toUserError(err, 'mood');
+      // Normal yolla aynı kota duvarı; basic sonuçlar ekranda kalır, "Try again" yok.
+      if (userError.type === 'quota') {
+        await showQuotaWall();
+        return;
+      }
+      Alert.alert(t('aiConsent.rerunErrorTitle'), userError.message, [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('aiConsent.rerunRetry'), onPress: () => void handleEnableAi() },
+      ]);
+    }
+  }, [lastMoodInput, phase, runAiSearch, showQuotaWall, t]);
 
   /**
    * "Browse Movies" → MoodContext'e kaydet → film destesine gec
@@ -434,12 +582,22 @@ export default function MoodSearchScreen() {
     return (
       <>
         <StatusBar style="light" backgroundColor={Colors.background} />
+        {/* Kota duvarı "Enable AI" tekrarında da sonuç ekranının üstünde açılabilir */}
+        <QuotaExhausted
+          visible={showQuotaExhausted}
+          onClose={() => setShowQuotaExhausted(false)}
+          quotaStatus={lastQuotaResult}
+          onUpgrade={() => triggerPaywall({ type: 'quota_exhausted', quota: 'search' })}
+        />
+        <ContextualPaywall {...paywallProps} />
         <MoodProfileResult
           profile={tasteProfile}
           onBack={() => setPhase('input')}
           onBrowseMovies={handleBrowseMovies}
           onShareMood={shareMoodCard}
           isShareCapturing={isMoodShareCapturing}
+          showBasicNote={searchMode === 'basic'}
+          onEnableAi={() => void handleEnableAi()}
         />
         {/* Offscreen mood share card — capture icin */}
         <MoodShareCard
@@ -623,6 +781,13 @@ export default function MoodSearchScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
+      {/* Basic yol: AI metni yok, nötr yükleme göstergesi */}
+      {basicLoading && (
+        <View style={styles.basicLoading} pointerEvents="auto">
+          <ActivityIndicator size="large" color={Colors.textWhite} />
+        </View>
+      )}
+
       <AIProcessingOverlay
         visible={phase === 'processing'}
         pipelineStage={pipelineStage}
@@ -794,6 +959,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(239,68,68,0.3)',
+  },
+  basicLoading: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: withAlpha(Colors.background, 0.6),
   },
   aiOffBanner: {
     flexDirection: 'row',
