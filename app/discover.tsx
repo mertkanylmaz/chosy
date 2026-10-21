@@ -13,6 +13,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AppState,
   Dimensions,
   StyleSheet,
   Text,
@@ -25,7 +26,7 @@ import { useScalePress } from '@/hooks/useScalePress';
 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
@@ -47,6 +48,7 @@ import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
+import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
 
@@ -142,6 +144,25 @@ export default function DiscoverScreen() {
     }
   }, [managerFilms, searchMode]);
 
+  // ── Kullanıcı vektörü: kuyruğa alınan sağ kaydırmalar tek seferde yazılır (PERF-1) ──
+  // Çıkış yolları: deste bitti · ekran odağı kaybı/unmount (geri, sekme, yeni mood,
+  // watchlist, onboarding replace) · uygulama arka plana gitti.
+  useEffect(() => {
+    if (deckComplete) void flushUserVectorUpdates();
+  }, [deckComplete]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const sub = AppState.addEventListener('change', (next) => {
+        if (next !== 'active') void flushUserVectorUpdates();
+      });
+      return () => {
+        sub.remove();
+        void flushUserVectorUpdates();
+      };
+    }, []),
+  );
+
   // ── Current film ────────────────────────────────────────────────────────────
 
   const currentFilm = deck[currentIndex] ?? null;
@@ -204,7 +225,7 @@ export default function DiscoverScreen() {
       // Watchlist yazma — arka planda, kullanıcıyı bloklamaz.
       // Servis katmanı hatayı WATCHLIST_ADD_FAILED ile Sentry'ye yazıyor;
       // burada tekrar raporlamak aynı hata için ikinci event üretirdi.
-      addToWatchlist(film, currentSessionId).catch((err) => {
+      addToWatchlist(film, currentSessionId, { deferVectorUpdate: true }).catch((err) => {
         logger.warn('[discover] watchlist yazma basarisiz:', err);
       });
     },

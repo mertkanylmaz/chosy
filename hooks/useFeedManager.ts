@@ -20,7 +20,7 @@ import { consumePendingSearchId, getSearchModeState, peekPendingSearchId } from 
 import { posthogAnalytics } from '@/services/posthog';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { consumePreloadedRecommendations } from '@/services/recommendationPreload';
-import { updateUserVector } from '@/services/userProfile';
+import { queueUserVectorUpdate } from '@/services/userProfile';
 import { getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { logger } from '@/utils/logger';
@@ -589,9 +589,8 @@ export function useFeedManager(
         // NOT: addToWatchlist buradan çağrılmaz.
         // Watchlist işlemi yalnızca onSwipeFilm üzerinden yapılır.
         if (userIdRef.current) {
-          updateUserVector(userIdRef.current, film.id).catch(() => {
-            // Fire-and-forget — hata kullanıcıya yansıtılmaz
-          });
+          // PERF-1: kuyruğa alınır; yazma çağıran ekranın flushUserVectorUpdates'iyle.
+          queueUserVectorUpdate(userIdRef.current, film.id);
         }
       } else if (direction === 'left') {
         dispatch({ type: 'SWIPE_LEFT', filmId: film.id });

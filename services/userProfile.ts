@@ -11,6 +11,7 @@
  */
 
 import { supabase } from './supabase';
+import { logger } from '../utils/logger';
 import { VECTOR_DIM, tasteProfileToVector } from './vectorEncoder';
 import type { TasteProfile } from '../types';
 
@@ -131,55 +132,100 @@ function parseVector(raw: unknown): number[] | null {
 // ─── EMA Tabanlı Anlık Güncelleme ────────────────────────────────────────────
 
 /**
- * Bir swipe sonrası kullanıcının preferences_vector'ünü günceller.
+ * Film listesini sırayla kullanıcı vektörüne işler (tek GET users, tek GET
+ * film_profiles, tek PATCH). Sonuç, filmleri tek tek `updateUserVector`
+ * çağırmakla aynıdır.
  *
- * Algoritma:
+ * Algoritma (her film için, verilen sırayla):
  *   - Mevcut vektör varsa: newVector = 0.8 * current + 0.2 * filmVector
  *   - Soğuk başlangıç (preferences_vector NULL): filmVector doğrudan atanır
  *
- * @param userId - users tablosundaki dahili UUID
- * @param filmId - film_profiles tablosundaki film UUID
+ * @returns false → geçici hata (okuma/yazma), çağıran yeniden deneyebilir
  */
+async function applyUserVectorBatch(userId: string, filmIds: string[]): Promise<boolean> {
+  try {
+    const uniqueIds = [...new Set(filmIds)];
+    const [userRes, filmsRes] = await Promise.all([
+      supabase.from('users').select('preferences_vector').eq('id', userId).single(),
+      supabase.from('film_profiles').select('film_id, profile_vector').in('film_id', uniqueIds),
+    ]);
+    if (userRes.error) throw new Error(`users read: ${userRes.error.message}`);
+    if (filmsRes.error) throw new Error(`film_profiles read: ${filmsRes.error.message}`);
+
+    const filmVectors = new Map<string, number[]>();
+    for (const row of filmsRes.data ?? []) {
+      const vec = parseVector(row.profile_vector);
+      if (vec) filmVectors.set(row.film_id, vec);
+    }
+
+    let vector = parseVector(userRes.data?.preferences_vector);
+    let applied = 0;
+    for (const filmId of filmIds) {
+      const filmVector = filmVectors.get(filmId);
+      if (!filmVector) continue;
+      const base = vector;
+      vector = base ? base.map((val, i) => 0.8 * val + 0.2 * (filmVector[i] ?? 0)) : filmVector;
+      applied += 1;
+    }
+    if (!vector || applied === 0) return true;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ preferences_vector: JSON.stringify(vector) })
+      .eq('id', userId);
+    if (error) throw new Error(`users update: ${error.message}`);
+
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log('[userProfile] Vector updated for user:', userId, 'films:', applied);
+    }
+    return true;
+  } catch (err) {
+    logger.error('[userProfile] updateUserVector hata', err, {
+      code: 'USER_VECTOR_UPDATE_FAILED',
+      extra: { filmCount: filmIds.length },
+    });
+    return false;
+  }
+}
+
+/** Anlık güncelleme — tek film. Hata dışarıya yayılmaz (arka plan güncellemesi). */
 export async function updateUserVector(
   userId: string,
   filmId: string,
 ): Promise<void> {
-  try {
-    const [{ data: userData }, { data: filmData }] = await Promise.all([
-      supabase.from('users').select('preferences_vector').eq('id', userId).single(),
-      supabase.from('film_profiles').select('profile_vector').eq('film_id', filmId).single(),
-    ]);
+  await applyUserVectorBatch(userId, [filmId]);
+}
 
-    const filmVector = parseVector(filmData?.profile_vector);
-    if (!filmVector) return;
+// PERF-1: kaydırma yolunda her sağ kaydırma 3 istek açıyordu. Filmler kuyruğa
+// alınır, deste sonunda / ekrandan çıkışta / arka plana geçişte tek seferde işlenir.
+const pendingVectorFilms = new Map<string, string[]>();
+let vectorWriteChain: Promise<void> = Promise.resolve();
 
-    const currentVector = parseVector(userData?.preferences_vector);
+/** Filmi kullanıcı vektörüne işlenmek üzere kuyruğa alır (ağ isteği YOK). */
+export function queueUserVectorUpdate(userId: string, filmId: string): void {
+  const list = pendingVectorFilms.get(userId);
+  if (list) list.push(filmId);
+  else pendingVectorFilms.set(userId, [filmId]);
+}
 
-    let newVector: number[];
-    if (!currentVector) {
-      // Soğuk başlangıç — film vektörünü doğrudan ata
-      newVector = filmVector;
-    } else {
-      // Ağırlıklı ortalama: %80 mevcut + %20 yeni film
-      newVector = currentVector.map((val, i) => 0.8 * val + 0.2 * (filmVector[i] ?? 0));
+/**
+ * Kuyruğu boşaltıp tek toplu güncellemeyle yazar. Yazmalar sıralıdır (read-modify-write
+ * yarışı yok); geçici hatada filmler kuyruğun başına geri konur. Reddetmez.
+ */
+export function flushUserVectorUpdates(): Promise<void> {
+  const batches = [...pendingVectorFilms.entries()];
+  if (batches.length === 0) return vectorWriteChain;
+  pendingVectorFilms.clear();
+  vectorWriteChain = vectorWriteChain.then(async () => {
+    for (const [userId, filmIds] of batches) {
+      const ok = await applyUserVectorBatch(userId, filmIds);
+      if (!ok) {
+        pendingVectorFilms.set(userId, [...filmIds, ...(pendingVectorFilms.get(userId) ?? [])]);
+      }
     }
-
-    await supabase
-      .from('users')
-      .update({ preferences_vector: JSON.stringify(newVector) })
-      .eq('id', userId);
-
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log('[userProfile] Vector updated for user:', userId);
-    }
-  } catch (err) {
-    if (__DEV__) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[userProfile] updateUserVector hatası:', msg, err);
-    }
-    // Hata dışarıya yayılmaz — arka plan güncelleme, uygulama çökmemeli
-  }
+  });
+  return vectorWriteChain;
 }
 
 // ─── Ana Fonksiyonlar ─────────────────────────────────────────────────────────

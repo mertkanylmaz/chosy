@@ -10,7 +10,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Film } from '../types/film';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
-import { updateUserVector } from './userProfile';
+import { queueUserVectorUpdate, updateUserVector } from './userProfile';
 import { logger } from '../utils/logger';
 import { posthogAnalytics } from './posthog';
 import { tasteSignals } from './tasteSignalService';
@@ -426,7 +426,12 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
  * @param sessionId - Filmin eklendiği mood session UUID'si (opsiyonel)
  * @throws INSERT reddedilirse veya beklenmedik hata oluşursa
  */
-export async function addToWatchlist(film: Film, sessionId?: string | null): Promise<void> {
+export async function addToWatchlist(
+  film: Film,
+  sessionId?: string | null,
+  /** true → kullanıcı vektörü kuyruğa alınır; çağıran `flushUserVectorUpdates` ile yazar (PERF-1). */
+  options?: { deferVectorUpdate?: boolean },
+): Promise<void> {
   try {
     if (!UUID_REGEX.test(film.id)) {
       if (__DEV__) {
@@ -478,7 +483,11 @@ export async function addToWatchlist(film: Film, sessionId?: string | null): Pro
     posthogAnalytics.track('film_added_to_watchlist', { film_id: film.id });
 
     // Arka planda kullanıcı vektörünü güncelle — hata dışarıya yayılmaz
-    updateUserVector(appUserId, film.id);
+    if (options?.deferVectorUpdate) {
+      queueUserVectorUpdate(appUserId, film.id);
+    } else {
+      updateUserVector(appUserId, film.id);
+    }
 
     // Taste signal: watchlist add (fire-and-forget, fail ana akışı etkilemez)
     tasteSignals.recordWatchlistAdd(film.id).catch(() => {});
