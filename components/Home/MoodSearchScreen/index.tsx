@@ -308,7 +308,7 @@ export default function MoodSearchScreen() {
       // Recommendations preload — animasyonu beklemeden hemen baslat
       // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
       // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
-      startPreload(profile, filters);
+      startPreload(profile, filters, trimmed);
 
       // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
       await new Promise<void>((resolve) => setTimeout(resolve, 350));

@@ -10,13 +10,19 @@
  * yuklerken once bu cache'e bakar — hazirsa network call atlanir.
  *
  * Kullanim:
- *   index.tsx (Home):      startPreload(profile, filters)
+ *   index.tsx (Home):      startPreload(profile, filters, moodText)
  *   useFeedManager.ts:     consumePreloadedRecommendations()
  */
 import type { FilmFilters, TasteProfile } from '@/types';
 import type { RecommendationResult } from './recommendations';
 import { getRecommendations } from './recommendations';
-import { consumePendingSearchId, peekPendingSearchId, setPendingSearchId } from './moodSearchState';
+import {
+  consumePendingSearchId,
+  getSearchModeState,
+  peekPendingSearchId,
+  setPendingSearchId,
+  type SearchMode,
+} from './moodSearchState';
 
 // ─── Cache State ────────────────────────────────────────────────────────────
 
@@ -33,8 +39,16 @@ let _preloadProfileKey: string | null = null;
  * Profil icin benzersiz anahtar uretir.
  * Ayni profil icin tekrar preload baslatilmasini engeller.
  */
-function profileKey(profile: TasteProfile): string {
-  return `${profile.energy_level}_${profile.thematic_depth}_${profile.ending_preference}`;
+function profileKey(
+  profile: TasteProfile,
+  moodText: string,
+  mode: SearchMode,
+  searchId: string | null,
+): string {
+  // 3 boyut tek başına yetmez: farklı metin / mod / arama aynı boyutlara düşebilir
+  // ve eski aramanın sonucu yeni aramaya taşınırdı.
+  const dims = `${profile.energy_level}_${profile.thematic_depth}_${profile.ending_preference}`;
+  return [dims, mode, searchId ?? '', moodText.trim().toLowerCase()].join('|');
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -46,14 +60,16 @@ function profileKey(profile: TasteProfile): string {
  *
  * @param profile  - AI tarafindan ayristirilmis TasteProfile
  * @param filters  - Kullanicinin sectigi filtreler
+ * @param moodText - Kullanicinin yazdigi metin (yalniz dedupe anahtari icin; AI'ya gitmez)
  */
 export function startPreload(
   profile: TasteProfile,
   filters: FilmFilters,
+  moodText: string,
 ): void {
-  const key = profileKey(profile);
+  const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId());
 
-  // Ayni profil icin zaten preload baslatildiysa tekrar baslatma
+  // Ayni arama (metin + mod + searchId + boyutlar) icin zaten preload varsa tekrar baslatma
   if (_preloadProfileKey === key && _preloadPromise) return;
 
   _preloadProfileKey = key;
@@ -64,7 +80,7 @@ export function startPreload(
   // tekrar consume edince null bulur.
   const searchId = consumePendingSearchId();
 
-  _preloadPromise = getRecommendations(
+  const promise: Promise<RecommendationResult> = getRecommendations(
     profile,
     8, // BATCH_SIZE
     [], // excludeIds — ilk batch, onceki film yok
@@ -73,7 +89,8 @@ export function startPreload(
     true, // isFirstBatch — LLM reranker aktif
   )
     .then((result) => {
-      _preloadResult = result;
+      // Arada yeni bir preload basladiysa (anahtar degisti) eski sonuc yenisini ezmesin
+      if (_preloadPromise === promise) _preloadResult = result;
       return result;
     })
     .catch((err) => {
@@ -82,12 +99,15 @@ export function startPreload(
         // eslint-disable-next-line no-console
         console.warn('[recommendationPreload] Preload failed:', err);
       }
-      // searchId'yi geri koy — fallback fetch kullanabilsin
-      if (searchId) setPendingSearchId(searchId);
-      _preloadPromise = null;
-      _preloadProfileKey = null;
+      if (_preloadPromise === promise) {
+        // searchId'yi geri koy — fallback fetch kullanabilsin
+        if (searchId) setPendingSearchId(searchId);
+        _preloadPromise = null;
+        _preloadProfileKey = null;
+      }
       throw err;
     });
+  _preloadPromise = promise;
 }
 
 /**
