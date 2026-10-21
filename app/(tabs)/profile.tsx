@@ -61,6 +61,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
+import { invalidateUserCache, readUserRow } from '@/services/userCache';
 import * as Sentry from '@sentry/react-native';
 
 import { logger } from '@/utils/logger';
@@ -927,11 +928,16 @@ function ProfileScreenContent() {
       setAuthEmail(authUser.email ?? null);
       setIsAnonymous(authUser.is_anonymous ?? true);
 
-      const { data: userRow } = await supabase
-        .from('users')
-        .select('id, display_name, username, archetype_id, created_at')
-        .eq('auth_id', authUser.id)
-        .single();
+      // PERF-1: services/userCache (60 sn). push_enabled da bu GET'te gelir; aşağıdaki
+      // getNotificationStatus() aynı satırı önbellekten okur (ikinci GET yok).
+      const { data: userRow } = await readUserRow<{
+        id: string;
+        display_name: string | null;
+        username: string | null;
+        archetype_id: number | null;
+        created_at: string;
+        push_enabled: boolean | null;
+      }>('auth_id', authUser.id, ['id', 'display_name', 'username', 'archetype_id', 'created_at', 'push_enabled']);
 
       if (!userRow) {
         // Bootstrap penceresi: ensureAppUser (app/_layout.tsx) henuz satir
@@ -974,7 +980,7 @@ function ProfileScreenContent() {
         archetype_id: number | null;
         created_at: string;
       };
-      const row = userRow as UserRow;
+      const row: UserRow = userRow;
       const metaName = (authUser.user_metadata?.full_name as string | undefined)
         ?? (authUser.user_metadata?.name as string | undefined)
         ?? null;
@@ -1127,6 +1133,7 @@ function ProfileScreenContent() {
         .from('users')
         .update({ display_name: newName })
         .eq('auth_id', authId);
+      invalidateUserCache();
 
       if (error) throw error;
     } catch (err) {

@@ -34,6 +34,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { createEphemeralAuthClient, supabase } from './supabase';
 import { logger } from '../utils/logger';
+import { invalidateUserCache } from './userCache';
 import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 
 // ─── Google Sign-In (WebBrowser OAuth) ───────────────────────────────────────
@@ -143,6 +144,7 @@ async function syncDisplayName(name: string): Promise<void> {
       .update({ display_name: name })
       .eq('auth_id', user.id)
       .is('display_name', null); // Kullanici daha once isim koyduysa ezme
+    invalidateUserCache();
 
     if (error) {
       logger.warn('[authService] syncDisplayName guncelleme hatasi:', error.message);
@@ -603,6 +605,7 @@ export async function updateUserProfile(
       .from('users')
       .update({ username, avatar_url: avatarUrl })
       .eq('auth_id', user.id);
+    invalidateUserCache();
 
     if (error) {
       logger.error('[authService] updateUserProfile güncelleme hatası:', error.message);

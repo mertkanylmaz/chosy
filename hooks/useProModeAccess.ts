@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/services/supabase';
+import { readUserRow } from '@/services/userCache';
 import { logger } from '@/utils/logger';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
@@ -51,8 +52,9 @@ export interface ProModeAccess {
  * Pro Mode erisim durumunu dondurur.
  *
  * Abonelik durumu `useSubscription()` uzerinden gelir (istemci cache'i);
- * grandfathering bayragi her mount'ta `public.users`'tan taze okunur — modul
- * seviyesinde cache yok (chosy-conventions §6 ile ayni gerekce).
+ * grandfathering bayragi `public.users`'tan `services/userCache` uzerinden
+ * okunur (PERF-1: bellek ici, 60 sn TTL, eszamanli istekler tekil). Bayrak yalniz
+ * migration ile degisir; en kotu durumda degisiklik 60 sn gec yansir.
  */
 export function useProModeAccess(): ProModeAccess {
   const { isPremium, isLoading: subLoading } = useSubscription();
@@ -75,13 +77,16 @@ export function useProModeAccess(): ProModeAccess {
         return;
       }
 
-      const { data, error: queryError } = await supabase
-        .from('users')
-        .select('legacy_mood_access')
-        .eq('auth_id', authId)
-        .single();
+      // PERF-1: 60 sn'lik oturum önbelleği (services/userCache) — dört tüketici
+      // aynı mount'ta ayrı GET atıyordu. Satır yoksa eski `.single()` gibi hata.
+      const { data, error: queryError } = await readUserRow<{ legacy_mood_access: boolean | null }>(
+        'auth_id',
+        authId,
+        ['legacy_mood_access'],
+      );
 
-      if (queryError) throw queryError;
+      if (queryError) throw new Error(queryError.message);
+      if (!data) throw new Error('users satiri yok');
 
       setLegacyAccess(data?.legacy_mood_access === true);
       setError(false);

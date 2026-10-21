@@ -33,6 +33,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
+import { invalidateUserCache, readUserRow } from './userCache';
 import { logger } from '../utils/logger';
 
 /** Migration 103 ile gelen tek-seferlik yüzey bayrakları */
@@ -58,11 +59,12 @@ export async function readUserFlags(): Promise<UserFlags | null> {
     const user = session?.user;
     if (!user) return null;
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('has_seen_relaunch_intro, auth_prompt_seen, legacy_mood_access')
-      .eq('auth_id', user.id)
-      .maybeSingle();
+    // PERF-1: services/userCache (60 sn, tekil istek). Satır yok → data null (maybeSingle ile aynı).
+    const { data, error } = await readUserRow<{
+      has_seen_relaunch_intro: boolean | null;
+      auth_prompt_seen: boolean | null;
+      legacy_mood_access: boolean | null;
+    }>('auth_id', user.id, ['has_seen_relaunch_intro', 'auth_prompt_seen', 'legacy_mood_access']);
 
     if (error) {
       logger.error('[userFlags] okuma hatası:', error.message);
@@ -117,6 +119,7 @@ export async function markUserFlag(flag: UserFlagName): Promise<boolean> {
       .from('users')
       .update({ [flag]: true })
       .eq('auth_id', user.id);
+    invalidateUserCache();
 
     if (error) {
       logger.error(`[userFlags] ${flag} yazılamadı:`, error.message);

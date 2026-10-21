@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
+import { invalidateUserCache } from './userCache';
 import { logger } from '@/utils/logger';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -193,6 +194,7 @@ async function processOperation(op: QueuedOperation): Promise<boolean> {
           .from('users')
           .update({ archetype_id: archetypeId })
           .eq('id', op.userId);
+        invalidateUserCache();
 
         if (error) {
           logger.warn('[offlineQueue] archetype_id sync hatasi:', error.message);

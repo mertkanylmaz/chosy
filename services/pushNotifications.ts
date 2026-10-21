@@ -23,6 +23,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { supabase } from './supabase';
 import { getAppUserId } from './auth-utils';
+import { invalidateUserCache, readUserRow } from './userCache';
 import { logger } from '@/utils/logger';
 import { checkShouldAskForNotification } from '@/utils/notificationAskCheck';
 import { i18n } from '@/constants/i18n';
@@ -252,6 +253,7 @@ export async function savePushTokenToServer(
       p_push_token: pushToken,
       p_timezone: tz,
     });
+    invalidateUserCache();
 
     if (error) {
       logger.error('[push] Failed to save token:', error.message);
@@ -304,6 +306,7 @@ export async function toggleNotifications(enabled: boolean): Promise<ToggleNotif
       p_user_id: userId,
       p_enabled: enabled,
     });
+    invalidateUserCache();
 
     if (error) {
       Sentry.captureException(error, { tags: { flow: 'push_toggle', fn: 'toggle_push_notifications' } });
@@ -340,20 +343,17 @@ export async function getNotificationStatus(): Promise<boolean | null> {
       return null;
     }
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('push_enabled')
-      .eq('id', userId)
-      .single();
+    // PERF-1: services/userCache (profil açılışı satırı zaten getirmiş olur).
+    const { data, error } = await readUserRow<{ push_enabled: boolean }>('id', userId, ['push_enabled']);
 
     if (error || !data) {
-      Sentry.captureException(error ?? new Error('users.push_enabled satırı yok'), {
+      Sentry.captureException(error ? new Error(error.message) : new Error('users.push_enabled satırı yok'), {
         level: 'warning',
         tags: { flow: 'push_status_read', fn: 'getNotificationStatus' },
       });
       return null;
     }
-    return (data as { push_enabled: boolean }).push_enabled;
+    return data.push_enabled;
   } catch (err) {
     Sentry.captureException(err, {
       level: 'warning',
