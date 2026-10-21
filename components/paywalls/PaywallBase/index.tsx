@@ -701,6 +701,8 @@ export default function PaywallBase({
 
             {renderBelowPlans?.()}
 
+            <Text style={styles.aiDisclosure}>{t('paywall.aiDisclosure')}</Text>
+
             {inlineFooter && footer}
           </ScrollView>
 

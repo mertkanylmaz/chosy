@@ -255,6 +255,13 @@ export const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
+  aiDisclosure: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
+    marginTop: space.md,
+  },
+
   // ─── Offering Yukleme Hatasi ──────────────────────────────────────────────
   offeringsErrorBox: {
     alignItems: 'center',
