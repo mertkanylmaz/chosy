@@ -143,7 +143,8 @@ export function SpotlightBonusCard({
     subtitle = t(data.state === 'solved' ? 'gauntlet.bonus.solvedHint' : 'gauntlet.bonus.failedHint');
   }
   const showVerb = verb !== null && data.status === 'ready' && isSpotlightPlayable(data.state);
-  const backdropUrl = data.status === 'ready' ? data.backdropUrl : '';
+  const backdropUrl =
+    data.status === 'ready' ? data.backdropUrl : data.status === 'loading' ? (data.backdropUrl ?? '') : '';
 
   // P-1c E: bugün bulmaca yok — kart yok (Shell zaten mount etmez; savunma).
   if (data.status === 'unavailable') return null;
