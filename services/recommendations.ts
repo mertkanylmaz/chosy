@@ -243,7 +243,8 @@ function determinePickType(
   similarity: number,
   voteAverage: number | null,
 ): Film['pick_type'] {
-  if (similarity >= 0.8) return 'ai_pick';
+  // Basic modda sunucu AI çağırmaz — "AI Pick" etiketi yanlış olur.
+  if (similarity >= 0.8) return getSearchModeState() === 'basic' ? null : 'ai_pick';
   const va = voteAverage ?? 10;
   // Sadece dusuk profilli (va < 7.0) ve yeterli eslesmeli filmler gem olabilir
   // Yuksek puanli filmler (>= 7.5) kesinlikle gem degildir

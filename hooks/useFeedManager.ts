@@ -16,7 +16,7 @@ import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
 import { recordActivity } from '@/services/gamification';
 import { touchActivity } from '@/services/pushNotifications';
-import { consumePendingSearchId, peekPendingSearchId } from '@/services/moodSearchState';
+import { consumePendingSearchId, getSearchModeState, peekPendingSearchId } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
 import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
 import { consumePreloadedRecommendations } from '@/services/recommendationPreload';
@@ -116,6 +116,9 @@ function markSurpriseCards(films: Film[], startIndex: number): Film[] {
           assignedType = 'ai_pick';
         }
       }
+
+      // Basic modda AI çalışmaz — "AI Pick" rozeti gösterilmez.
+      if (assignedType === 'ai_pick' && getSearchModeState() === 'basic') return film;
 
       return { ...film, surpriseType: assignedType };
     }
