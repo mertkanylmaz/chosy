@@ -17,6 +17,9 @@ import { TasteProfile } from '../types';
 import { supabase } from './supabase';
 import { hasAiConsent } from './aiConsent';
 
+/** explain-match istek zaman aşımı */
+const EXPLAIN_TIMEOUT_MS = 10_000;
+
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 /** explainBatch'e iletilen film verisi */
@@ -167,6 +170,8 @@ export async function explainBatch(
         films: toFetch.map((f) => ({ filmId: f.filmId, dimensions: f.dimensions })),
       },
       region: GAUNTLET_EDGE_REGION,
+      // Takılan istek iskeleti sonsuz tutmasın: abort → `error` (ya da catch) → Sentry + şablon.
+      timeout: EXPLAIN_TIMEOUT_MS,
     });
 
     if (error) {

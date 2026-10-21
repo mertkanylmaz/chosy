@@ -559,6 +559,9 @@ export default function FilmDetailScreen() {
 
     return () => {
       active = false;
+      // finally `active` değilken yüklemeyi kapatmaz; bağımlılık değişip efekt erken
+      // dönerse iskelet sonsuza kadar kalırdı. Yeniden başlayan efekt kendi true'sunu yazar.
+      setExplanationLoading(false);
     };
   }, [film, currentProfile, explanation, aiConsented]);
 
