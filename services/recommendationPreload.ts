@@ -13,6 +13,9 @@
  *   index.tsx (Home):      startPreload(profile, filters, moodText)
  *   useFeedManager.ts:     consumePreloadedRecommendations()
  */
+import { Image } from 'expo-image';
+import * as Sentry from '@sentry/react-native';
+
 import type { FilmFilters, TasteProfile } from '@/types';
 import type { RecommendationResult } from './recommendations';
 import { getRecommendations } from './recommendations';
@@ -49,6 +52,24 @@ function profileKey(
   // ve eski aramanın sonucu yeni aramaya taşınırdı.
   const dims = `${profile.energy_level}_${profile.thematic_depth}_${profile.ending_preference}`;
   return [dims, mode, searchId ?? '', moodText.trim().toLowerCase()].join('|');
+}
+
+/**
+ * Ilk 3 filmin posterini onceden yukler — deste acildiginda iskelet beklenmesin.
+ * Kozmetik: hata akisi durdurmaz, yalnizca Sentry breadcrumb birakir.
+ */
+function prefetchPosters(result: RecommendationResult): void {
+  for (const film of result.films.slice(0, 3)) {
+    if (!film.posterUrl) continue;
+    Image.prefetch(film.posterUrl).catch((err: unknown) => {
+      Sentry.addBreadcrumb({
+        category: 'poster_prefetch',
+        level: 'warning',
+        message: 'poster prefetch basarisiz',
+        data: { filmId: film.id, error: err instanceof Error ? err.message : String(err) },
+      });
+    });
+  }
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -91,6 +112,7 @@ export function startPreload(
     .then((result) => {
       // Arada yeni bir preload basladiysa (anahtar degisti) eski sonuc yenisini ezmesin
       if (_preloadPromise === promise) _preloadResult = result;
+      prefetchPosters(result);
       return result;
     })
     .catch((err) => {

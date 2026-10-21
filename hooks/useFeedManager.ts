@@ -560,9 +560,10 @@ export function useFeedManager(
   // ─── Poster Prefetch ─────────────────────────────────────────────────────
 
   useEffect(() => {
+    // currentIndex dahil: ilk kart (index 0) da önceden yüklenir
     const upcoming = state.films.slice(
-      state.currentIndex + 1,
-      state.currentIndex + 4,
+      state.currentIndex,
+      state.currentIndex + 3,
     );
     upcoming.forEach((f) => {
       if (f.posterUrl) {
