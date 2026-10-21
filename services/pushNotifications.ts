@@ -14,7 +14,7 @@
  *   - Call `handleNotificationResponse()` for deep link navigation
  */
 
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import Constants from 'expo-constants';
@@ -565,24 +565,47 @@ export async function markNotificationOpened(notificationId: string): Promise<vo
 
 // ─── Activity Tracking ───────────────────────────────────────────────────────
 
+/** PERF-1: bu oturumda touch_user_activity başarıyla (veya yolda) giden kullanıcı. */
+let touchedUserId: string | null = null;
+let touchSessionWatched = false;
+
+function watchTouchSessionEnd(): void {
+  if (touchSessionWatched) return;
+  touchSessionWatched = true;
+  AppState.addEventListener('change', (next) => {
+    if (next === 'background') touchedUserId = null;
+  });
+}
+
 /**
  * Update last_activity_at on the server.
  * Call on meaningful user actions (mood search, swipe, game play).
  * Also clears winback_stage if user was in a win-back sequence.
  */
 export async function touchActivity(): Promise<void> {
+  let claimedUserId: string | null = null;
   try {
     const userId = await getAppUserId();
     if (!userId) return;
+
+    // PERF-1: oturum başına 1 kez. Oturum = uygulamanın öne gelişi; arka plana
+    // gidince kapı açılır (iOS süreci günlerce canlı tutabilir, last_activity_at
+    // bayatlarsa winback yanlış tetiklenir).
+    watchTouchSessionEnd();
+    if (touchedUserId === userId) return;
+    touchedUserId = userId;
+    claimedUserId = userId;
 
     const { error } = await supabase.rpc('touch_user_activity', {
       p_user_id: userId,
     });
 
     if (error) {
+      touchedUserId = null;
       logger.warn('[push] touchActivity error:', error.message);
     }
   } catch (err) {
+    if (claimedUserId !== null) touchedUserId = null;
     logger.error(
       '[push] touchActivity error:', err,
       {
