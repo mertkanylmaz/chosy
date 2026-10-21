@@ -65,6 +65,15 @@ export interface ActivityResult {
 
 // ─── Ana Fonksiyonlar ────────────────────────────────────────────────────────
 
+/** PERF-1: son başarılı (veya yolda olan) recordActivity'nin UTC günü + kullanıcısı. */
+let lastStreakUtcDate: string | null = null;
+let lastStreakUserId: string | null = null;
+
+function releaseStreakClaim(): void {
+  lastStreakUtcDate = null;
+  lastStreakUserId = null;
+}
+
 /**
  * Bir swipe/etkileşim sonrası streak ve milestone güncellemesi yapar.
  * Hem streak RPC'si hem milestone RPC'si paralel çağrılır.
@@ -72,9 +81,20 @@ export interface ActivityResult {
  * @returns Streak durumu + yeni kazanılan milestone'lar
  */
 export async function recordActivity(): Promise<ActivityResult | null> {
+  let claimed = false;
   try {
     const userId = await getAppUserId();
     if (!userId) return null;
+
+    // PERF-1: update_streak + check_milestones kullanıcı başına UTC günde 1 kez.
+    // Anahtar çağrıdan ÖNCE alınır (eşzamanlı kaydırmalar ikinci RPC açmasın);
+    // RPC başarısız olursa serbest bırakılır, sonraki kaydırma yeniden dener.
+    // Sunucu update_streak içinde CURRENT_DATE (UTC) kullanır — aynı gün anahtarı.
+    const utcDate = new Date().toISOString().slice(0, 10);
+    if (lastStreakUtcDate === utcDate && lastStreakUserId === userId) return null;
+    lastStreakUtcDate = utcDate;
+    lastStreakUserId = userId;
+    claimed = true;
 
     // Streak ve milestone kontrolünü paralel yap
     const [streakResult, milestoneResult] = await Promise.all([
@@ -83,6 +103,7 @@ export async function recordActivity(): Promise<ActivityResult | null> {
     ]);
 
     if (streakResult.error) {
+      releaseStreakClaim();
       if (__DEV__) {
         // eslint-disable-next-line no-console
         console.error('[gamification] update_streak hatası:', streakResult.error.message);
@@ -154,6 +175,7 @@ export async function recordActivity(): Promise<ActivityResult | null> {
       newMilestones: allNewMilestones,
     };
   } catch (err) {
+    if (claimed) releaseStreakClaim();
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.error('[gamification] recordActivity beklenmedik hata:', err);
