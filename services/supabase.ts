@@ -1,6 +1,7 @@
 /**
  * Supabase client — React Native AsyncStorage ile oturum kalıcılığı sağlar.
  */
+import { AppState } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
@@ -90,8 +91,16 @@ function requestUrl(input: string | Request | URL): string {
  */
 const timeoutReported = new Set<string>();
 
-/** Oturum başına yol başına en fazla 1 capture. Yalnız yol — sorgu/PII yok. */
-function reportTimeout(method: string, url: string, timeoutMs: number): void {
+/**
+ * Oturum başına yol başına en fazla 1 capture. Yalnız yol — sorgu/PII yok.
+ *
+ * Uygulama istek başında VEYA sonunda `active` değilse raporlanmaz: arka planda
+ * askıya alınan ağ/zamanlayıcı geri dönüşte sahte zaman aşımı üretiyordu
+ * (kullanıcının yaşadığı bir yavaşlık değil). Yol işaretlenmez; öne dönen
+ * gerçek bir zaman aşımı hâlâ raporlanır.
+ */
+function reportTimeout(method: string, url: string, timeoutMs: number, startedActive: boolean): void {
+  if (!startedActive || AppState.currentState !== 'active') return;
   const path = urlPath(url);
   if (timeoutReported.has(path)) return;
   timeoutReported.add(path);
@@ -126,6 +135,7 @@ async function fetchWithPolicy(
     }
 
     const controller = new AbortController();
+    const startedActive = AppState.currentState === 'active';
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
@@ -138,7 +148,7 @@ async function fetchWithPolicy(
       return await fetch(input, { ...init, signal: controller.signal });
     } catch (err) {
       if (!timedOut) throw err;
-      reportTimeout(method, url, policy.timeoutMs);
+      reportTimeout(method, url, policy.timeoutMs, startedActive);
       if (attempt >= policy.retries) throw err;
     } finally {
       clearTimeout(timer);
