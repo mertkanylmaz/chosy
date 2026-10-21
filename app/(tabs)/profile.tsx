@@ -36,6 +36,7 @@ import {
   View,
 } from 'react-native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import { Image as ExpoImage } from 'expo-image';
 import Constants from 'expo-constants';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -134,6 +135,11 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
 
 /** Saved poster seridindeki yuva sayisi — yukleme dilimi ile ayni kaynak. */
 const SAVED_STRIP_SLOTS = 4;
+
+/** Saved karoları ~80pt genişliğinde: getWatchlist'in w780 posteri yerine w185. */
+function toSavedThumbUrl(url: string): string {
+  return url.replace('/t/p/w780/', '/t/p/w185/');
+}
 
 /**
  * Header perdesi — son sampiyon posteri. Design OS §6 bilincli istisnasi
@@ -849,6 +855,8 @@ function ProfileScreenContent() {
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean | null>(null);
   const [watchlistCount, setWatchlistCount] = useState(0);
   const [watchlistPosters, setWatchlistPosters] = useState<string[]>([]);
+  /** getWatchlist ilk kez döndü mü — dönene kadar poster şeridi iskelet yuvalarla çizilir (yerleşim zıplamasın). */
+  const [watchlistLoaded, setWatchlistLoaded] = useState(false);
   const reduceTransparency = useReduceTransparency();
   /**
    * Son sampiyon — header "perde"si ve Watched'in "son secimin" karti
@@ -1004,26 +1012,7 @@ function ProfileScreenContent() {
       const calibrationArchetypeId = row.archetype_id;
       setArchetypeId(calibrationArchetypeId ?? null);
 
-      // Faz 1: Kritik veriler (üst kısımda görünen)
-      // V-2 Tur E1: `daily_pick_enabled` / `watchlist_notifications_enabled`
-      // artik okunmuyor (K-15 tek switch). Kolonlar silinmedi — TEKNIK_BORC.
-      // Cinema DNA v1'de kapali (`isCinemaDnaEnabled`, CTO 30 Eyl 2026):
-      // kapaliyken `sessions` ve `watchlist` okumalari hic atilmaz.
-      const dnaEnabled = isCinemaDnaEnabled();
-      const [profileData, pushStatus] = await Promise.all([
-        dnaEnabled ? getLastParsedProfile(userId) : Promise.resolve(null),
-        getNotificationStatus(),
-      ]);
-      setNotificationsEnabled(pushStatus);
-
-      setLastProfile(profileData);
-
-      // Faz 2: İkincil veriler (aşağıda, lazy)
-      if (dnaEnabled) {
-        const insightsData = await getSwipeInsights(userId);
-        setSwipeInsights(insightsData);
-      }
-
+      // PERF-1: aşağıdaki iki okuma Faz 1'in beklemesinden bağımsız — hemen başlar.
       // Watched sayisi (non-blocking). B-1 / Fix 6: tek kaynak
       // `watchlist.watched_at` — kaynagi ne olursa olsun izlenen her film
       // (gauntlet "seen", "dun izledin mi?" loved/ok/abandoned, listeden
@@ -1058,11 +1047,33 @@ function ProfileScreenContent() {
           .map((item) => item.film.posterUrl)
           .filter((url): url is string => !!url);
         setWatchlistPosters(posters);
+        setWatchlistLoaded(true);
       }).catch((err) => {
         // Sayac 0 / poster yok kalir — ikincil istatistik, ekrani bloklamaz.
         // Servis katmani hatayi Sentry'ye yazdi.
         logger.warn('[ProfileScreen] watchlist sayaci yuklenemedi:', err);
+        setWatchlistLoaded(true);
       });
+
+      // Faz 1: Kritik veriler (üst kısımda görünen)
+      // V-2 Tur E1: `daily_pick_enabled` / `watchlist_notifications_enabled`
+      // artik okunmuyor (K-15 tek switch). Kolonlar silinmedi — TEKNIK_BORC.
+      // Cinema DNA v1'de kapali (`isCinemaDnaEnabled`, CTO 30 Eyl 2026):
+      // kapaliyken `sessions` ve `watchlist` okumalari hic atilmaz.
+      const dnaEnabled = isCinemaDnaEnabled();
+      const [profileData, pushStatus] = await Promise.all([
+        dnaEnabled ? getLastParsedProfile(userId) : Promise.resolve(null),
+        getNotificationStatus(),
+      ]);
+      setNotificationsEnabled(pushStatus);
+
+      setLastProfile(profileData);
+
+      // Faz 2: İkincil veriler (aşağıda, lazy)
+      if (dnaEnabled) {
+        const insightsData = await getSwipeInsights(userId);
+        setSwipeInsights(insightsData);
+      }
     } catch (err) {
       logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);
@@ -1070,11 +1081,15 @@ function ProfileScreenContent() {
   }, [loadAvatar]);
 
   // ── İlk yükleme (loading spinner gösterir) ───────────────────────────────
+  /** İlk yükleme bitti mi — odak efekti ilk açılışta ikinci loadAll'u başlatmasın (PERF-1). */
+  const initialLoadDoneRef = useRef(false);
+
   useEffect(() => {
     let cancelled = false;
 
     async function init() {
       await loadAll();
+      initialLoadDoneRef.current = true;
       if (!cancelled) setLoading(false);
     }
 
@@ -1085,11 +1100,13 @@ function ProfileScreenContent() {
   // ── Sekmeye dönüldüğünde sessiz yenileme (sign-in sonrası veri güncellenir) ──
   useFocusEffect(
     useCallback(() => {
-      // İlk mount'ta loading zaten çalışıyor; sonraki focus'larda sessiz yenile
-      if (!loading) {
+      // İlk mount'ta ilk yükleme zaten çalışıyor; sonraki focus'larda sessiz yenile.
+      // Bağımlılıkta `loading` YOK: true->false geçişi callback'i yenileyip odaktaki
+      // ekranda loadAll'u ikinci kez çalıştırıyordu.
+      if (initialLoadDoneRef.current) {
         void loadAll();
       }
-    }, [loading, loadAll]),
+    }, [loadAll]),
   );
 
   // ─── Pull-to-refresh ──────────────────────────────────────────────────────
@@ -1853,9 +1870,11 @@ function ProfileScreenContent() {
             {/* d) Saved — watchlist ozeti (K-06: Watchlist ayri tab degil,
                 Profile alt sayfasi) */}
             <SectionHeading title={t('profile.savedSection')} />
-            {watchlistPosters.length > 0 ? (
+            {!watchlistLoaded || watchlistPosters.length > 0 ? (
               /* Poster seridi — 4 esit yuva, 2:3. Eksik yuvalar bos
                  spacer: poster boyutu kayit sayisina gore degismez.
+                 PERF-1: getWatchlist donene kadar da ayni serit sabit boyutlu
+                 bos yuvalarla cizilir (ozet satiri -> serit zıplaması yok).
                  Kartin tamami watchlist-detail'e gider; pill gorsel ipucu. */
               <TouchableOpacity
                 style={styles.savedStripCard}
@@ -1869,19 +1888,24 @@ function ProfileScreenContent() {
                   {Array.from({ length: SAVED_STRIP_SLOTS }, (_, idx) => {
                     const url = watchlistPosters[idx];
                     return url ? (
-                      <Image
+                      <ExpoImage
                         key={`wl-poster-${idx}`}
-                        source={{ uri: url }}
+                        source={{ uri: toSavedThumbUrl(url) }}
                         style={styles.savedStripPoster}
+                        cachePolicy="memory-disk"
+                        contentFit="cover"
+                        transition={150}
                       />
                     ) : (
-                      <View key={`wl-slot-${idx}`} style={styles.savedStripSlot} />
+                      <View key={`wl-slot-${idx}`} style={watchlistLoaded ? styles.savedStripSlot : styles.savedStripPoster} />
                     );
                   })}
                 </View>
                 <View style={styles.savedStripFooter}>
                   <Text style={styles.savedStripCount}>
-                    {t('profile.watchlistSummaryCount', { count: watchlistCount })}
+                    {watchlistLoaded
+                      ? t('profile.watchlistSummaryCount', { count: watchlistCount })
+                      : ' '}
                   </Text>
                   <View style={styles.savedStripSeeAll}>
                     <Text style={styles.savedStripSeeAllText}>{t('profile.seeAll')}</Text>
