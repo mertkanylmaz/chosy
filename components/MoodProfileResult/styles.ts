@@ -93,9 +93,7 @@ export default StyleSheet.create({
 
   // ─── Basic (AI'sız) sonuç notu ──────────────────────────────────────────────
   basicNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+    gap: 8,
     marginTop: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -104,9 +102,19 @@ export default StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  basicNoteRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   basicNoteText: {
     flex: 1,
     color: Colors.textWhite,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
+  },
+  basicNoteBody: {
+    color: Colors.textSecondary,
     fontSize: Theme.typography.caption.fontSize,
     lineHeight: Theme.typography.caption.lineHeight,
   },

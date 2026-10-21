@@ -651,7 +651,10 @@
     "basicNote": "Showing basic matches. Enable AI for better results.",
     "enableAi": "Enable AI",
     "rerunErrorTitle": "Couldn't switch to AI",
-    "rerunRetry": "Try again"
+    "rerunRetry": "Try again",
+    "inlineBody": "Your search text and the mood we detect from it are sent to Anthropic's AI to find films. No account info is shared.",
+    "inlineEnableAndFind": "Enable AI & Find Movies",
+    "inlineBasic": "Continue with basic search"
   },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",

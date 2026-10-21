@@ -651,7 +651,10 @@
     "basicNote": "Temel eşleşmeler gösteriliyor. Daha iyi sonuçlar için yapay zekâyı aç.",
     "enableAi": "Yapay zekâyı aç",
     "rerunErrorTitle": "Yapay zekâya geçilemedi",
-    "rerunRetry": "Tekrar dene"
+    "rerunRetry": "Tekrar dene",
+    "inlineBody": "Arama metnin ve ondan çıkardığımız ruh hâli, film bulmak için Anthropic'in yapay zekâsına gönderilir. Hesap bilgilerin paylaşılmaz.",
+    "inlineEnableAndFind": "Yapay zekâyı aç ve film bul",
+    "inlineBasic": "Temel aramayla devam et"
   },
   "notificationPrompt": {
     "title": "Dördün her akşam hazır olsun mu?",

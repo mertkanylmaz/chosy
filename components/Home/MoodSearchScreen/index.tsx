@@ -88,7 +88,7 @@ import {
 import { startPreload, clearPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
 import { hasLocalMatch, parseMood, parseMoodLocal } from '@/services/tasteParser';
-import { ensureAiConsent, hasAiConsent } from '@/services/aiConsent';
+import { hasAiConsent, recordAiConsent } from '@/services/aiConsent';
 import { saveSession } from '@/services/watchlist';
 import { readAppUserId } from '@/services/auth-utils';
 import { FilmFilters, TasteProfile } from '@/types';
@@ -153,8 +153,13 @@ export default function MoodSearchScreen() {
   const [moodError, setMoodError] = useState<{ type: ErrorType; message: string } | null>(null);
   /** Kota doldu overlay gorunurlugu */
   const [showQuotaExhausted, setShowQuotaExhausted] = useState(false);
-  /** AI rizasi reddedildi (R-1) — kisa aciklama + "Ayarlardan ac" gosterilir. */
-  const [aiOff, setAiOff] = useState(false);
+  /**
+   * AI rizasi (R-1). `null`: henuz okunmadi. `false` → inline aciklama + iki secenek
+   * (AI ile bul / temel arama) gosterilir; sheet bu ekranda ACILMAZ.
+   */
+  const [consented, setConsented] = useState<boolean | null>(null);
+  /** `ai_consent_shown` mount basina bir kez */
+  const inlineShownTracked = useRef(false);
   /** Son kota sonucu — QuotaExhausted overlay'ine aktarilir */
   const [lastQuotaResult, setLastQuotaResult] = useState<import('@/constants/subscriptionPlans').QuotaStatus | null>(null);
   /** TextInput focus durumu — glow efekti icin */
@@ -209,23 +214,29 @@ export default function MoodSearchScreen() {
     }, []),
   );
 
-  // Ayarlar'dan AI onerileri acilip geri donuldugunde bildirim kalkar.
+  // Rıza durumu her odakta okunur: Ayarlar'dan açılıp/kapatılıp dönüldüğünde güncel kalır.
   useFocusEffect(
     useCallback(() => {
-      if (!aiOff) return;
       let active = true;
       hasAiConsent()
         .then((granted) => {
-          if (active && granted) setAiOff(false);
+          if (active) setConsented(granted);
         })
         .catch((err: unknown) => {
-          logger.error('[HomeScreen] AI rizasi okunamadi:', err);
+          Sentry.captureException(err, { tags: { component: 'MoodSearchScreen', flow: 'consent_read' } });
         });
       return () => {
         active = false;
       };
-    }, [aiOff]),
+    }, []),
   );
+
+  // Inline açıklama ilk kez render edildiğinde (mount başına bir kez).
+  useEffect(() => {
+    if (consented !== false || inlineShownTracked.current) return;
+    inlineShownTracked.current = true;
+    posthogAnalytics.track('ai_consent_shown', { surface: 'mood_search', variant: 'inline' });
+  }, [consented]);
 
   const { animatedStyle: btnAnimStyle, onPressIn: btnPressIn, onPressOut: btnPressOut } = useScalePress(0.95);
 
@@ -339,15 +350,36 @@ export default function MoodSearchScreen() {
   );
 
   /**
-   * "Find Movies" → AI rızası → kota kontrolu → arama → profile result
+   * Inline rıza (sheet YOK): `recordAiConsent()` yazar. Başarısızsa Sentry'ye servis
+   * içinde yazılır, kullanıcıya hata gösterilir ve `false` döner — çağıran AI çağrısı
+   * YAPMAZ (onay kaydedilmeden veri gönderilmez).
+   */
+  const grantInlineConsent = useCallback(async (): Promise<boolean> => {
+    if (await hasAiConsent()) {
+      setConsented(true);
+      return true;
+    }
+    const result = await recordAiConsent();
+    if (!result.ok) {
+      Alert.alert(t('aiConsent.saveError'));
+      return false;
+    }
+    posthogAnalytics.track('ai_consent_granted', { surface: 'mood_search', variant: 'inline' });
+    setConsented(true);
+    return true;
+  }, [t]);
+
+  /**
+   * Arama gövdesi: kota kontrolu → arama → profile result.
    *
    * B+C hibrit paywall stratejisi:
    *   - Kota varsa: normal akış
    *   - Kota dolmussa: QuotaExhausted overlay (free → paywall, paid → bekleme mesaji)
    *
-   * Rıza varsa AI yolu (parse-mood), reddedildiyse yerel (basic) yol; kota ikisinde de aynı.
+   * `mode: 'ai'` çağıranın rıza aldığını varsayar (parseMood ayrıca `hasAiConsent` ile
+   * son kapıyı tutar). `mode: 'basic'` yalnız `handleBasicSearch`'ten gelir; kota ikisinde aynı.
    */
-  const handleFindMovies = useCallback(async () => {
+  const runSearch = useCallback(async (mode: SearchMode) => {
     const trimmed = moodText.trim();
     if (!trimmed || phase === 'processing') return;
 
@@ -356,16 +388,10 @@ export default function MoodSearchScreen() {
     Keyboard.dismiss();
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
 
-    // ── AI rizasi (R-1) — kota tuketilmeden ONCE ─────────────────────────
-    // Metin Claude'a gitmeden rıza alinir. Reddedilirse arama DURMAZ: asagida
-    // yerel (basic) yola gecilir, hicbir sey ucuncu tarafa gitmez.
-    const consented = await ensureAiConsent('mood_search');
-    const mode: SearchMode = consented ? 'ai' : 'basic';
     // Mod HER aramanın başında, iki yolda da açıkça yazılır (önceki aramadan kalan
     // değer recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
     setSearchModeState(mode);
     setSearchMode(mode);
-    setAiOff(false);
     if (mode === 'basic') setBasicLoading(true);
 
     // ── Kota kontrolu — RPC atomic consume ──────────────────────────────
@@ -422,8 +448,9 @@ export default function MoodSearchScreen() {
       const errorCode = err instanceof Error && 'code' in err ? (err as { code: string }).code : 'unknown';
 
       // Rıza arama sirasinda geri cekildi (R-1) — hata degil, kullanici tercihi.
+      // Inline secenekler yeniden gorunur.
       if (errorCode === 'AI_CONSENT_REQUIRED') {
-        setAiOff(true);
+        setConsented(false);
         setPhase('input');
         return;
       }
@@ -457,6 +484,34 @@ export default function MoodSearchScreen() {
   }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
 
   /**
+   * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz
+   * (basic'e de düşmez): kullanıcı inline iki seçenekten birini bilinçli seçer.
+   * Rıza burada taze okunur; okunamazsa hasAiConsent fail-closed `false` döner.
+   */
+  const handleFindMovies = useCallback(async () => {
+    if (!(await hasAiConsent())) {
+      setConsented(false);
+      return;
+    }
+    setConsented(true);
+    await runSearch('ai');
+  }, [runSearch]);
+
+  /** Birincil inline buton: önce rıza yazılır, başarılıysa AI arama. */
+  const handleEnableAndFind = useCallback(async () => {
+    if (moodText.trim().length === 0 || phase === 'processing') return;
+    if (!(await grantInlineConsent())) return;
+    await runSearch('ai');
+  }, [moodText, phase, grantInlineConsent, runSearch]);
+
+  /** İkincil inline buton: bilinçli basic arama (`parseMoodLocal` tek çağrı noktası). */
+  const handleBasicSearch = useCallback(async () => {
+    if (moodText.trim().length === 0 || phase === 'processing') return;
+    posthogAnalytics.track('ai_consent_declined', { surface: 'mood_search', variant: 'inline' });
+    await runSearch('basic');
+  }, [moodText, phase, runSearch]);
+
+  /**
    * "Enable AI" (yalnız basic sonuçta) → onay → AYNI girdiyle AI tekrarı.
    * Kota DÜŞMEZ: tekrar bayrağı (`isRerun`) açıkça geçilir; metin karşılaştırması yok.
    * Ret ya da hatada ekran basic sonuçla kalır.
@@ -466,7 +521,7 @@ export default function MoodSearchScreen() {
     if (input === null || phase !== 'result') return;
 
     posthogAnalytics.track('ai_consent_reprompt_tapped');
-    if (!(await ensureAiConsent('mood_search', { explicit: true }))) return;
+    if (!(await grantInlineConsent())) return;
 
     const filters = pendingFilters.current ?? { yearRange: null, minRating: null, regions: [], directors: [] };
 
@@ -497,7 +552,7 @@ export default function MoodSearchScreen() {
         { text: t('aiConsent.rerunRetry'), onPress: () => void handleEnableAi() },
       ]);
     }
-  }, [lastMoodInput, phase, runAiSearch, showQuotaWall, t]);
+  }, [lastMoodInput, phase, grantInlineConsent, runAiSearch, showQuotaWall, t]);
 
   /**
    * "Browse Movies" → MoodContext'e kaydet → film destesine gec
@@ -667,20 +722,6 @@ export default function MoodSearchScreen() {
             </Animated.View>
           </View>
 
-          {/* ── AI kapali (R-1) — kisa aciklama + Ayarlar'a yonlendirme ── */}
-          {aiOff && (
-            <View style={styles.aiOffBanner}>
-              <Text style={styles.errorBannerText}>{t('aiConsent.offBody')}</Text>
-              <TouchableOpacity
-                onPress={() => router.navigate('/(tabs)/profile' as never)}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-              >
-                <Text style={styles.aiOffLink}>{t('aiConsent.openSettings')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* ── Hata mesaji — search bar altinda ─────────────────── */}
           {moodError != null && (
             <View style={styles.errorBanner}>
@@ -747,12 +788,17 @@ export default function MoodSearchScreen() {
 
           {/* ── Sabit Alt Bar: Find Movies butonu ─────────────────── */}
           <View style={styles.bottomBar}>
+            {/* Rıza yok (R-1, inline): tek satır açıklama, birincil + ikincil seçenek.
+                Sheet açılmaz; kullanıcı iki seçenekten birini bilinçli seçer. */}
+            {consented === false && (
+              <Text style={styles.inlineConsentBody}>{t('aiConsent.inlineBody')}</Text>
+            )}
             <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
               <TouchableOpacity
                 style={[styles.findButton, !canSubmit && styles.findButtonDisabled]}
                 onPressIn={btnPressIn}
                 onPressOut={btnPressOut}
-                onPress={handleFindMovies}
+                onPress={consented === false ? handleEnableAndFind : handleFindMovies}
                 disabled={!canSubmit}
                 activeOpacity={1}
               >
@@ -763,7 +809,7 @@ export default function MoodSearchScreen() {
                 />
                 <View style={styles.findButtonContent}>
                   <Text style={[styles.findButtonText, !canSubmit && styles.findButtonTextDisabled]}>
-                    {t('mood.findMovies')}
+                    {consented === false ? t('aiConsent.inlineEnableAndFind') : t('mood.findMovies')}
                   </Text>
                   {/* İkinci satır tek yuva (V-1 Tur 7): disabled → yardımcı metin,
                       enabled → kalan hak. */}
@@ -776,6 +822,19 @@ export default function MoodSearchScreen() {
                 </View>
               </TouchableOpacity>
             </Animated.View>
+            {consented === false && (
+              <TouchableOpacity
+                style={styles.inlineBasicButton}
+                onPress={handleBasicSearch}
+                disabled={!canSubmit}
+                activeOpacity={0.7}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.inlineBasicText, !canSubmit && styles.inlineBasicTextDisabled]}>
+                  {t('aiConsent.inlineBasic')}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
         </KeyboardAvoidingView>
@@ -966,25 +1025,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: withAlpha(Colors.background, 0.6),
   },
-  aiOffBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginHorizontal: 20,
-    marginBottom: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: Colors.card,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  aiOffLink: {
-    color: Colors.textWhite,
+  inlineConsentBody: {
+    color: Colors.textSecondary,
     fontSize: Theme.typography.caption.fontSize,
     lineHeight: Theme.typography.caption.lineHeight,
+    textAlign: 'center',
+  },
+  inlineBasicButton: {
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  inlineBasicText: {
+    color: Colors.textWhite,
+    fontSize: Theme.typography.body.fontSize,
     fontWeight: '600',
     textDecorationLine: 'underline',
+  },
+  inlineBasicTextDisabled: {
+    color: Colors.textTertiary,
   },
   errorBannerText: {
     flex: 1,

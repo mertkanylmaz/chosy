@@ -346,14 +346,17 @@ export default function MoodProfileResult({
           {/* Basic sonuç notu — AI'sız üretildi, tek dokunuşla AI'a geçiş */}
           {showBasicNote === true && onEnableAi && (
             <View style={styles.basicNote}>
-              <Text style={styles.basicNoteText}>{t('aiConsent.basicNote')}</Text>
-              <TouchableOpacity
-                onPress={onEnableAi}
-                activeOpacity={0.7}
-                accessibilityRole="button"
-              >
-                <Text style={styles.basicNoteLink}>{t('aiConsent.enableAi')}</Text>
-              </TouchableOpacity>
+              <View style={styles.basicNoteRow}>
+                <Text style={styles.basicNoteText}>{t('aiConsent.basicNote')}</Text>
+                <TouchableOpacity
+                  onPress={onEnableAi}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.basicNoteLink}>{t('aiConsent.enableAi')}</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.basicNoteBody}>{t('aiConsent.inlineBody')}</Text>
             </View>
           )}
 
