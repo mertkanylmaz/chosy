@@ -77,7 +77,7 @@ export function ChampionActionButton({
           style={[styles.text, onDark ? styles.textOnDark : styles.textOnFill]}
           numberOfLines={1}
           adjustsFontSizeToFit
-          minimumFontScale={0.8}
+          minimumFontScale={0.85}
         >
           {label}
         </Text>

@@ -38,6 +38,9 @@ export const styles = StyleSheet.create({
   },
   text: {
     ...type['body-strong'],
+    // Yeniden mount'ta (film detayından dönüş) adjustsFontSizeToFit ilk ölçümde
+    // kabı 0'a çökertip etiketi "___" çizebiliyordu; alt sınır bunu önler.
+    minWidth: space.xxxl,
   },
   textOnFill: {
     color: color.surface.base,
