@@ -54,6 +54,9 @@ import { logger } from '@/utils/logger';
 import { resolvePremiumStatus, type PremiumStatus } from '@/utils/premiumStatus';
 import * as Sentry from '@sentry/react-native';
 
+/** RC'nin sonuçlanması için en fazla bekleme (PERF-1) — sonra mevcut fallback. */
+const RC_SETTLE_CAP_MS = 3000;
+
 // ─── Context State ───────────────────────────────────────────────────────────
 
 interface SubscriptionState {
@@ -167,6 +170,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setPremiumStatusState(next);
   }, []);
 
+  /** RC 3 sn içinde sonuçlanmadıysa tek seferlik geç yeniden deneme (PERF-1). */
+  const lateRcRetryDoneRef = useRef(false);
+  const refreshSubscriptionRef = useRef<(() => Promise<void>) | null>(null);
+
   /**
    * RevenueCat + Supabase'den abonelik bilgisini ceker.
    */
@@ -184,8 +191,51 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         return;
       }
 
-      rcStatus = await getSubscriptionStatus();
-      const dbSub: SubscriptionRow | null = await getUserSubscription(userId);
+      // PERF-1: RC ve DB birbirinden bağımsız — paralel. RC en fazla 3 sn beklenir
+      // (loading o kadar sürer); aşılırsa 'network' kabul edilir ve mevcut fallback
+      // (önceki durum korunur / ilk yüklemede free) çalışır. RC sonradan başarıyla
+      // dönerse refresh bir kez daha çalışır (aşağıda), free'de takılı kalınmaz.
+      const rcPromise = getSubscriptionStatus();
+      let rcCapTimer: ReturnType<typeof setTimeout> | undefined;
+      let rcTimedOut = false;
+      const rcCapped = Promise.race([
+        rcPromise,
+        new Promise<SubscriptionInfo>((resolve) => {
+          rcCapTimer = setTimeout(() => {
+            rcTimedOut = true;
+            resolve({
+              isPremium: false,
+              activePlanId: null,
+              expiresAt: null,
+              isInTrial: false,
+              rcCustomerId: null,
+              errorKind: 'network',
+            });
+          }, RC_SETTLE_CAP_MS);
+        }),
+      ]);
+      // DB hatası RC sonucunu kaybettirmesin: catch bloğu rcStatus'a bakıyor, o yüzden
+      // önce ikisi de beklenir, hata sonra fırlatılır (eski sıralı akışla aynı davranış).
+      let dbError: unknown = null;
+      let dbSub: SubscriptionRow | null;
+      try {
+        [rcStatus, dbSub] = await Promise.all([
+          rcCapped,
+          getUserSubscription(userId).catch((err: unknown) => {
+            dbError = err;
+            return null;
+          }),
+        ]);
+      } finally {
+        clearTimeout(rcCapTimer);
+      }
+      if (dbError !== null) throw dbError;
+      if (rcTimedOut && !lateRcRetryDoneRef.current) {
+        lateRcRetryDoneRef.current = true;
+        void rcPromise.then((late) => {
+          if (!late.errorKind) void refreshSubscriptionRef.current?.();
+        });
+      }
 
       const previous = premiumStatusRef.current;
       const resolution = resolvePremiumStatus(rcStatus, dbSub, previous);
@@ -493,6 +543,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     setQuota(result);
     logger.log('[subscription-ctx] Quota guncellendi:', result.remaining, 'kalan');
   }, []);
+
+  refreshSubscriptionRef.current = refreshSubscription;
 
   // Ilk yuklemede abonelik durumunu cek
   useEffect(() => {
