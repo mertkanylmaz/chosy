@@ -662,6 +662,14 @@ async function callMatchFilmsV1(
   });
 }
 
+/** getFilmsWithRelaxation telemetrisi (PRO-FIX-3) — yalnız ölçüm, davranışı etkilemez. */
+interface RelaxationTrace {
+  /** Her match_films denemesinin süresi (ms), deneme sırasıyla */
+  attemptMs: number[];
+  /** v3 hata verip v2/v1'e düşüldü mü */
+  v3FellBack: boolean;
+}
+
 /**
  * v2 veya v1 RPC'yi feature flag'e göre çağırır.
  * v2 hata verirse otomatik v1'e döner (graceful fallback).
@@ -677,6 +685,7 @@ async function callMatchFilms(
   moodWeight?: number,
   userWeight?: number,
   searchKeywords?: string[],
+  trace?: RelaxationTrace,
 ): Promise<{ data: MatchFilmRow[] | null; error: { message: string; code?: string } | null }> {
   // v3 hybrid recommendation (Sprint 2 TASK 2.4)
   if (useHybridRecommendation()) {
@@ -701,6 +710,7 @@ async function callMatchFilms(
         throw new TypeError(`Network request failed: ${v3Res.error.message}`);
       }
       // v3 fail → v2'ye düş (graceful fallback chain)
+      if (trace) trace.v3FellBack = true;
     } else {
       return v3Res;
     }
@@ -865,6 +875,7 @@ async function getFilmsWithRelaxation(
   moodWeight?: number,
   userWeight?: number,
   searchKeywords?: string[],
+  trace?: RelaxationTrace,
 ): Promise<MatchFilmRow[] | null> {
   const baseRating = ratingMin ?? 6.5;
 
@@ -874,8 +885,25 @@ async function getFilmsWithRelaxation(
   const TARGET_COUNT = 8;
   const MATCH_COUNT = 12;
 
+  // Telemetri: her denemenin süresi. Ağ hatası fırlatırsa da kaydedilir (finally).
+  const attempt = async (
+    minSimilarity: number,
+    minRating: number | null,
+    attemptEra: { from: number; to: number } | null,
+  ) => {
+    const t0 = Date.now();
+    try {
+      return await callMatchFilms(
+        vectorString, MATCH_COUNT, minSimilarity, minRating, attemptEra, excludeIds,
+        userVectorString, moodWeight, userWeight, searchKeywords, trace,
+      );
+    } finally {
+      trace?.attemptMs.push(Date.now() - t0);
+    }
+  };
+
   // Deneme 1: strict thresholds
-  let res = await callMatchFilms(vectorString, MATCH_COUNT, 0.45, baseRating, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  let res = await attempt(0.45, baseRating, era);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
   if (res.error && isNetworkLikeError(res.error)) {
@@ -891,7 +919,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #1: threshold gevsetildi (0.42, rating 6.0)');
   }
-  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.42, 6.0, era, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  res = await attempt(0.42, 6.0, era);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
     return res.data as MatchFilmRow[];
   }
@@ -901,7 +929,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #2: year kaldirildi (0.40, rating 5.5)');
   }
-  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.40, 5.5, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  res = await attempt(0.40, 5.5, null);
   if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
     return res.data as MatchFilmRow[];
   }
@@ -911,7 +939,7 @@ async function getFilmsWithRelaxation(
     // eslint-disable-next-line no-console
     console.log('[recommendations] Retry #3: son sans (0.38, rating yok, year yok)');
   }
-  res = await callMatchFilms(vectorString, MATCH_COUNT, 0.38, null, null, excludeIds, userVectorString, moodWeight, userWeight, searchKeywords);
+  res = await attempt(0.38, null, null);
   if (res.error) return null;
   // Return whatever we found — even if < TARGET_COUNT. Never pad with junk.
   return (res.data as MatchFilmRow[]) ?? [];
@@ -1081,10 +1109,26 @@ export async function getRecommendations(
   }
 
   // ── Adım 4: Aşamalı filtre gevşetme ile RPC ───────────────────────────────
-  const rawResult = await getFilmsWithRelaxation(
-    vectorString, limit, ratingMin, era, excludeIds,
-    userVectorString, moodWeight, userWeight, searchKeywords,
-  );
+  const relaxationTrace: RelaxationTrace = { attemptMs: [], v3FellBack: false };
+  const relaxationStart = Date.now();
+  let rawResult: MatchFilmRow[] | null;
+  try {
+    rawResult = await getFilmsWithRelaxation(
+      vectorString, limit, ratingMin, era, excludeIds,
+      userVectorString, moodWeight, userWeight, searchKeywords, relaxationTrace,
+    );
+  } finally {
+    // PRO-FIX-3: keyword_boost_active → reranker_condition_check arası 2,2 sn'nin kaynağı.
+    // Ağ hatasıyla fırlasa da gönderilir; hata yine çağırana yayılır.
+    posthogAnalytics.track('mood_relaxation_timing', {
+      relaxation_attempts: relaxationTrace.attemptMs.length,
+      total_ms: Date.now() - relaxationStart,
+      attempt_ms: relaxationTrace.attemptMs.join(','),
+      v3_fell_back: relaxationTrace.v3FellBack,
+      is_first_batch: isFirstBatch,
+      keyword_count: searchKeywords.length,
+    });
+  }
   let data: MatchFilmRow[] = rawResult ?? [];
   const rpcFailed = rawResult === null;
 
