@@ -506,6 +506,9 @@ export async function submitSpotlightLetter(
     body: {
       puzzle_id: puzzleId,
       spotlight_letter: letter,
+      // Bu istemci `won`'u okur: tum slotlar acilinca sunucu oyunu kazanilmis
+      // kapatabilir. Bayrak olmadan eski istemci kaybetti ekrani gosterirdi.
+      supports_auto_win: true,
     },
     region: GAUNTLET_EDGE_REGION,
   });

@@ -489,26 +489,32 @@ export function SpotlightGame() {
               }),
         );
 
-        // Haklar bittiyse oyun burada kapanir — aksi halde oyuncu "0 hak"
-        // ile ekranda kilitli kalir ve sonraki harf 409 alir.
+        // Oyun burada kapanir: haklar bitti (kayip) ya da tum slotlar acildi
+        // (kazanim, `res.won`). Aksi halde oyuncu "0 hak" ile ekranda kilitli
+        // kalir ve sonraki harf 409 alir.
         if (res.completed) {
-          setWon(false);
+          setWon(res.won);
           setXpAwarded(res.xp_awarded);
           setDnaUpdated(res.dna_updated);
           if (res.revealed_solution) setRevealedFilm(res.revealed_solution);
           if (res.why_this_movie) setWhyThisMovie(res.why_this_movie);
-          playSpotlightHaptic({ type: 'letter_result', hit: res.hit, completed: true });
+          // Kazanimda film tahminindeki kazanma haptigi (doğru harf haptiği sessiz)
+          playSpotlightHaptic(
+            res.won
+              ? { type: 'guess_result', won: true, completed: true }
+              : { type: 'letter_result', hit: res.hit, completed: true },
+          );
           setStillReveal('animate');
           setScreenState('completed');
           trackGameCompleted({
             gameId: 'spotlight',
-            won: false,
+            won: res.won,
             guessesUsed: res.attempts_used,
             timeToSolveS: Math.round((Date.now() - openTimeRef.current) / 1000),
             xp: res.xp_awarded,
             extra: {
               letters_tried: res.tried_letters.length,
-              ended_by: 'letters',
+              ended_by: res.won ? 'letters_complete' : 'letters',
             },
           });
           return;
