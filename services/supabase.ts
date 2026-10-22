@@ -2,6 +2,7 @@
  * Supabase client — React Native AsyncStorage ile oturum kalıcılığı sağlar.
  */
 import { AppState } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
@@ -92,6 +93,15 @@ function requestUrl(input: string | Request | URL): string {
 const timeoutReported = new Set<string>();
 
 /**
+ * Uygulamanın son `active`'e geçtiği an (ms). Soğuk açılışta zaten ön plandaysa
+ * modül yüklenme anı; arka planda başladıysa `null` (bilinmiyor).
+ */
+let lastForegroundAtMs: number | null = AppState.currentState === 'active' ? Date.now() : null;
+AppState.addEventListener('change', (next) => {
+  if (next === 'active') lastForegroundAtMs = Date.now();
+});
+
+/**
  * Oturum başına yol başına en fazla 1 capture. Yalnız yol — sorgu/PII yok.
  *
  * Uygulama istek başında VEYA sonunda `active` değilse raporlanmaz: arka planda
@@ -99,16 +109,33 @@ const timeoutReported = new Set<string>();
  * (kullanıcının yaşadığı bir yavaşlık değil). Yol işaretlenmez; öne dönen
  * gerçek bir zaman aşımı hâlâ raporlanır.
  */
-function reportTimeout(method: string, url: string, timeoutMs: number, startedActive: boolean): void {
+function reportTimeout(
+  method: string,
+  url: string,
+  timeoutMs: number,
+  startedActive: boolean,
+  startedAtMs: number,
+): void {
   if (!startedActive || AppState.currentState !== 'active') return;
   const path = urlPath(url);
   if (timeoutReported.has(path)) return;
   timeoutReported.add(path);
-  Sentry.captureMessage('network_request_timeout', {
-    level: 'warning',
-    tags: { path, method },
-    extra: { timeout_ms: timeoutMs },
-  });
+
+  // Teşhis (UX-POLISH 4): "istek sunucuya hiç ulaşmadı" vakaları ön plana
+  // dönüşten kaç ms sonra ve hangi ağ tipinde? Eşikler/davranış değişmez.
+  const msSinceForeground =
+    lastForegroundAtMs === null ? null : Math.max(0, startedAtMs - lastForegroundAtMs);
+  const capture = (net: { net_type: string; net_reachable: boolean | null }): void => {
+    Sentry.captureMessage('network_request_timeout', {
+      level: 'warning',
+      tags: { path, method },
+      extra: { timeout_ms: timeoutMs, ms_since_foreground: msSinceForeground, ...net },
+    });
+  };
+  NetInfo.fetch().then(
+    (state) => capture({ net_type: state.type, net_reachable: state.isInternetReachable }),
+    () => capture({ net_type: 'netinfo_failed', net_reachable: null }),
+  );
 }
 
 function sleep(ms: number): Promise<void> {
@@ -136,6 +163,7 @@ async function fetchWithPolicy(
 
     const controller = new AbortController();
     const startedActive = AppState.currentState === 'active';
+    const startedAtMs = Date.now();
     let timedOut = false;
     const timer = setTimeout(() => {
       timedOut = true;
@@ -148,7 +176,7 @@ async function fetchWithPolicy(
       return await fetch(input, { ...init, signal: controller.signal });
     } catch (err) {
       if (!timedOut) throw err;
-      reportTimeout(method, url, policy.timeoutMs, startedActive);
+      reportTimeout(method, url, policy.timeoutMs, startedActive, startedAtMs);
       if (attempt >= policy.retries) throw err;
     } finally {
       clearTimeout(timer);
