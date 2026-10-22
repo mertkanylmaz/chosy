@@ -136,6 +136,8 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
 
 /** Saved poster seridindeki yuva sayisi — yukleme dilimi ile ayni kaynak. */
 const SAVED_STRIP_SLOTS = 4;
+/** iOS native alert'in kapanış animasyonu için pay — yükleme katmanı sonra açılır. */
+const ALERT_DISMISS_MS = 400;
 
 /**
  * Saved karoları ~80pt genişliğinde: poster w185. Eski `replace('/w780/')`
@@ -1432,6 +1434,11 @@ function ProfileScreenContent() {
                   text: t('profile.deleteAccountConfirm'),
                   style: 'destructive',
                   onPress: async () => {
+                    // Native alert kapanış animasyonu bitmeden katman açılırsa
+                    // uyarı metni ile "Deleting account…" üst üste biner.
+                    await new Promise<void>((resolve) =>
+                      setTimeout(resolve, ALERT_DISMISS_MS),
+                    );
                     setDeletingAccount(true);
                     try {
                       // Apple identity varsa önce yeniden doğrulama (5.1.1(v)).
