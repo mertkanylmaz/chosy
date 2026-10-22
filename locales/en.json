@@ -648,13 +648,8 @@
     "offBody": "AI suggestions are off. You can turn them on in Settings.",
     "openSettings": "Open Settings",
     "explainCta": "Turn on personal explanation",
-    "basicNote": "Showing basic matches. Enable AI for better results.",
-    "enableAi": "Enable AI",
-    "rerunErrorTitle": "Couldn't switch to AI",
-    "rerunRetry": "Try again",
     "inlineBody": "Your search text and the mood we detect from it are sent to Anthropic's AI to find films. No account info is shared.",
-    "inlineEnableAndFind": "Enable AI & Find Movies",
-    "inlineBasic": "Continue with basic search"
+    "inlineEnableAndFind": "Enable AI & Find Movies"
   },
   "notificationPrompt": {
     "title": "Want your four ready every evening?",
