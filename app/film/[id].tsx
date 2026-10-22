@@ -18,7 +18,7 @@
  *       Remove watchlist linki (varsa)
  *       TMDB attribution footer
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   AppState,
@@ -343,7 +343,63 @@ export default function FilmDetailScreen() {
 
   // ── Film verisi yukle ────────────────────────────────────────────────────────
 
+  /** Her yukleme bir sira no alir; gec donen TMDB sonucu baska yuklemeye/unmount'a yazilmaz. */
+  const loadSeqRef = useRef(0);
+
+  /**
+   * TMDB zenginlestirmesi — DB satiri ekranda cizildikten SONRA calisir ve
+   * mevcut `film`e birlestirilir (UX-POLISH 3). Basarisizlik ekrani bozmaz:
+   * film DB verisiyle kalir, hata Sentry'ye gider (`fetchMovieDetails` kendi
+   * `reportTmdbFailure`'ini de yazar). Poster: DB'de varsa DB'ninki kalir.
+   */
+  const mergeTmdbDetails = useCallback(
+    async (filmId: string, tmdbId: number, seq: number) => {
+      try {
+        // V-2 Tur D: bölge cihazdan — eskiden bölgesiz çağrı 'US' demekti.
+        // Bölge okunamadıysa (Sentry'ye LanguageContext yazar) başka bir
+        // bölgenin katalogu SORULMAZ; WATCH ON bölümü boştaki gibi gizli kalır.
+        const [tmdbDetails, providers] = await Promise.all([
+          fetchMovieDetails(tmdbId),
+          region === null ? Promise.resolve(null) : fetchMovieWatchProviders(tmdbId, region),
+        ]);
+        if (seq !== loadSeqRef.current) return;
+
+        if (tmdbDetails) {
+          const firstCountry = tmdbDetails.production_countries?.[0];
+          if (firstCountry) setCountry(firstCountry.name);
+          if (tmdbDetails.credits) setTmdbCredits(tmdbDetails.credits);
+          if (tmdbDetails.videos?.results) {
+            const key = pickYouTubeKey(tmdbDetails.videos.results);
+            if (key) setYoutubeKey(key);
+          }
+          // Spread `dimensions` referansini korur → explainBatch efekti yeniden kosmaz.
+          setFilm((prev) => {
+            if (!prev || prev.id !== filmId) return prev;
+            return {
+              ...prev,
+              title: tmdbDetails.title || prev.title,
+              overview: tmdbDetails.overview || prev.overview,
+              posterUrl:
+                prev.posterUrl !== ''
+                  ? prev.posterUrl
+                  : normalizePosterUrl(tmdbDetails.poster_path) ?? '',
+            };
+          });
+        }
+
+        if (providers) setWatchProviders(providers);
+      } catch (err) {
+        Sentry.captureException(err, {
+          tags: { component: 'FilmDetail', flow: 'loadFilmTmdb' },
+          extra: { film_id: filmId },
+        });
+      }
+    },
+    [region],
+  );
+
   const loadFilm = useCallback(async () => {
+    const seq = ++loadSeqRef.current;
     if (!id || id === 'undefined' || !UUID_REGEX.test(id)) {
       setLoading(false);
       return;
@@ -366,6 +422,9 @@ export default function FilmDetailScreen() {
         supabase.from('film_profiles').select('dimensions_json').eq('film_id', id).maybeSingle(),
       ]);
 
+      // Daha yeni bir yukleme / unmount: bu sonuc yazilmaz.
+      if (seq !== loadSeqRef.current) return;
+
       if (profileRes.error) {
         Sentry.captureException(profileRes.error, {
           tags: { component: 'FilmDetail', flow: 'loadFilmProfile' },
@@ -384,10 +443,6 @@ export default function FilmDetailScreen() {
       if (data) {
         const row = data as FilmDbRow;
 
-        let enOverview = row.overview ?? undefined;
-        let enTitle = row.title;
-        let enPosterUrl = normalizePosterUrl(row.poster_url) ?? '';
-
         const dbCast = (row.cast_json ?? []).map((a) => ({
           name: a.name,
           // profile_path "/xyz.jpg" formatinda; temel URL dogrudan ekleniyor
@@ -396,40 +451,16 @@ export default function FilmDetailScreen() {
             : undefined,
         }));
 
-        if (row.tmdb_id) {
-          // V-2 Tur D: bölge cihazdan — eskiden bölgesiz çağrı 'US' demekti.
-          // Bölge okunamadıysa (Sentry'ye LanguageContext yazar) başka bir
-          // bölgenin katalogu SORULMAZ; WATCH ON bölümü boştaki gibi gizli kalır.
-          const [tmdbDetails, providers] = await Promise.all([
-            fetchMovieDetails(row.tmdb_id),
-            region === null
-              ? Promise.resolve(null)
-              : fetchMovieWatchProviders(row.tmdb_id, region),
-          ]);
-
-          if (tmdbDetails) {
-            if (tmdbDetails.overview) enOverview = tmdbDetails.overview;
-            if (tmdbDetails.title) enTitle = tmdbDetails.title;
-            if (tmdbDetails.poster_path) enPosterUrl = normalizePosterUrl(tmdbDetails.poster_path) ?? enPosterUrl;
-            const firstCountry = tmdbDetails.production_countries?.[0];
-            if (firstCountry) setCountry(firstCountry.name);
-            if (tmdbDetails.credits) setTmdbCredits(tmdbDetails.credits);
-            if (tmdbDetails.videos?.results) {
-              const key = pickYouTubeKey(tmdbDetails.videos.results);
-              if (key) setYoutubeKey(key);
-            }
-          }
-
-          if (providers) setWatchProviders(providers);
-        }
-
+        // UX-POLISH 3: DB satiri gelir gelmez ekran cizilir; TMDB beklenmez.
+        // Poster DB'den (normalizePosterUrl, deste ile ayni w780) — TMDB posteri
+        // yalniz DB'de bos ise devreye girer (asagidaki birlestirme).
         setFilm({
           id: row.id,
-          title: enTitle,
+          title: row.title,
           year: row.year ?? 0,
-          posterUrl: enPosterUrl,
+          posterUrl: normalizePosterUrl(row.poster_url) ?? '',
           backdropUrl: toTmdbUrl(row.backdrop_url, 'w1280'),
-          overview: enOverview,
+          overview: row.overview ?? undefined,
           runtime: row.runtime ?? undefined,
           voteAverage: row.vote_average ?? undefined,
           director: row.director ?? undefined,
@@ -440,6 +471,11 @@ export default function FilmDetailScreen() {
           cast: dbCast.length > 0 ? dbCast : undefined,
           dimensions,
         });
+        setLoading(false);
+
+        if (row.tmdb_id) {
+          await mergeTmdbDetails(row.id, row.tmdb_id, seq);
+        }
       }
     } catch (err) {
       // Kullanıcıya hata görünümü gider; neden de Sentry'de kalır.
@@ -447,14 +483,19 @@ export default function FilmDetailScreen() {
         tags: { component: 'FilmDetail', flow: 'loadFilm' },
         extra: { film_id: id },
       });
-      setLoadError(true);
+      if (seq === loadSeqRef.current) setLoadError(true);
     } finally {
-      setLoading(false);
+      // Eski (iptal edilmis) yukleme, yenisinin iskeletini kapatmasin.
+      if (seq === loadSeqRef.current) setLoading(false);
     }
-  }, [id, region]);
+  }, [id, mergeTmdbDetails]);
 
   useEffect(() => {
     loadFilm();
+    // Unmount / yeni yukleme: gec donen sonuclar eski sira no ile elenir.
+    return () => {
+      loadSeqRef.current += 1;
+    };
   }, [loadFilm]);
 
   /** Push notification acildi — analytics (daily_pick, weekend_pick, mood_recall) */
@@ -529,29 +570,38 @@ export default function FilmDetailScreen() {
     setAiConsented(granted);
   }, []);
 
-  /** AI aciklama yukle */
+  /**
+   * AI aciklama yukle.
+   *
+   * Bagimlilik `film` NESNESI degil, `id` + `dimensions` referansi: film iki kez
+   * yazilir (DB sonra TMDB birlestirmesi) ve nesne bagimliligi efekti yeniden
+   * kosturup ikinci bir LLM istegi (explain-match) atardi. Birlestirme `...prev`
+   * ile `dimensions` referansini korur → efekt yalniz film degisince kosar.
+   */
+  const filmId = film?.id ?? null;
+  const filmDimensions = film?.dimensions;
   useEffect(() => {
     // Boyut verisi yoksa açıklama istenmez; bölüm render edilmez.
     // Rıza yoksa (ya da henüz okunmadıysa) otomatik çağrı YOK — CTA gösterilir.
     if (aiConsented !== true) return;
-    if (!film || !film.dimensions || !currentProfile || explanation != null) return;
+    if (!filmId || !filmDimensions || !currentProfile || explanation != null) return;
 
     let active = true;
     setExplanationLoading(true);
 
     const filmForExplanation: FilmForExplanation = {
-      filmId: film.id,
-      dimensions: film.dimensions,
+      filmId,
+      dimensions: filmDimensions,
     };
 
     explainBatch(currentProfile, [filmForExplanation])
       .then((map) => {
-        if (active && map[film.id]) setExplanation(map[film.id]);
+        if (active && map[filmId]) setExplanation(map[filmId]);
       })
       .catch((err: unknown) => {
         Sentry.captureException(err, {
           tags: { component: 'FilmDetail', flow: 'explainBatch' },
-          extra: { film_id: film.id },
+          extra: { film_id: filmId },
         });
       })
       .finally(() => {
@@ -564,7 +614,7 @@ export default function FilmDetailScreen() {
       // dönerse iskelet sonsuza kadar kalırdı. Yeniden başlayan efekt kendi true'sunu yazar.
       setExplanationLoading(false);
     };
-  }, [film, currentProfile, explanation, aiConsented]);
+  }, [filmId, filmDimensions, currentProfile, explanation, aiConsented]);
 
   // ── Detail view dwell-time taste signal ────────────────────────────────────
   // Mount → unmount arası aktif süreyi ölçer, AppState background/foreground
