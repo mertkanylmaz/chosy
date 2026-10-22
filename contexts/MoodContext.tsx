@@ -41,10 +41,7 @@ interface MoodState {
   lastSearchId: string | null;
   /** Son aramanın üretim yolu: 'ai' (parse-mood) ya da 'basic' (rıza reddi, yerel parser) */
   searchMode: SearchMode;
-  /** Son aramanın kırpılmış ham girdisi — "Enable AI" tekrarı için. Yalnız bellekte. */
-  lastMoodInput: string | null;
   setSearchMode: (mode: SearchMode) => void;
-  setLastMoodInput: (input: string | null) => void;
   /** Yeni mood analizi tamamlandığında çağrılır */
   setMoodResult: (profile: TasteProfile, filters: FilmFilters) => void;
   /** Mevcut mood temizlenir (yeni mood başlatıldığında) */
@@ -75,7 +72,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
   const [lastSessionFilms, setLastSessionFilms] = useState<Film[]>([]);
   const [lastSearchId, setLastSearchIdState] = useState<string | null>(null);
   const [searchMode, setSearchModeState] = useState<SearchMode>('ai');
-  const [lastMoodInput, setLastMoodInputState] = useState<string | null>(null);
 
   /**
    * Yeni mood sonucu gelince profil + filtreler güncellenir.
@@ -134,10 +130,6 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
     setSearchModeState(mode);
   }, []);
 
-  const setLastMoodInput = useCallback((input: string | null) => {
-    setLastMoodInputState(input);
-  }, []);
-
   return (
     <MoodContext.Provider
       value={{
@@ -149,9 +141,7 @@ export function MoodProvider({ children }: { children: React.ReactNode }) {
         lastSessionFilms,
         lastSearchId,
         searchMode,
-        lastMoodInput,
         setSearchMode,
-        setLastMoodInput,
         setMoodResult,
         clearMood,
         setPresetMoodText,

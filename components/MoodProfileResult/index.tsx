@@ -207,10 +207,6 @@ interface Props {
   onShareMood?: () => void;
   /** Share capture devam ediyor mu */
   isShareCapturing?: boolean;
-  /** Sonuç AI'sız (basic) üretildiyse not + "Enable AI" gösterilir */
-  showBasicNote?: boolean;
-  /** "Enable AI" dokunuşu — onay + AI tekrarı üst bileşende */
-  onEnableAi?: () => void;
 }
 
 /**
@@ -219,7 +215,7 @@ interface Props {
  * Tasarım referansı: design-reference/08-mood-profile-result.png
  */
 export default function MoodProfileResult({
-  profile, onBrowseMovies, onBack, onShareMood, isShareCapturing, showBasicNote, onEnableAi,
+  profile, onBrowseMovies, onBack, onShareMood, isShareCapturing,
 }: Props) {
   const router = useRouter();
   const { t } = useLanguage();
@@ -342,23 +338,6 @@ export default function MoodProfileResult({
           >
             {t('moodProfile.description')}
           </Animated.Text>
-
-          {/* Basic sonuç notu — AI'sız üretildi, tek dokunuşla AI'a geçiş */}
-          {showBasicNote === true && onEnableAi && (
-            <View style={styles.basicNote}>
-              <View style={styles.basicNoteRow}>
-                <Text style={styles.basicNoteText}>{t('aiConsent.basicNote')}</Text>
-                <TouchableOpacity
-                  onPress={onEnableAi}
-                  activeOpacity={0.7}
-                  accessibilityRole="button"
-                >
-                  <Text style={styles.basicNoteLink}>{t('aiConsent.enableAi')}</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.basicNoteBody}>{t('aiConsent.inlineBody')}</Text>
-            </View>
-          )}
 
           {/* 2x2 card grid */}
           <View style={styles.grid}>
