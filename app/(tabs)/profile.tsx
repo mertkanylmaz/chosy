@@ -87,6 +87,7 @@ import TasteDNA from '@/components/Profile/TasteDNA';
 // WatchlistSection kaldirildi — watchlist-detail.tsx'e tasindi
 // import GameScoreSummary from '@/components/Profile/GameScoreSummary';
 import ErrorState from '@/components/ErrorState';
+import SkeletonLoader from '@/components/SkeletonLoader';
 // C.9c: CollectionsCard + CinemaIdentity kaldirildi (K-07 · bible §7.3 "Rank · Radar
 // donmus"). Bilesen dosyalari SILINMEDI, yalnizca profilden mount edilmiyor.
 // C.9c: StreakCard hala baglanmadi — K-08 "Streak" bolumu backlog (R-A).
@@ -1028,7 +1029,9 @@ function ProfileScreenContent() {
       // Kimlik `public.users.id` — `auth.uid()` DEGIL; watchlist RLS'i
       // ayni eslemeyi yapar (083).
       // Hata: satir gizlenir + Sentry. Sessiz 0 gosterilmez (kural 1).
-      void (async () => {
+      // `loading` bu iki okuma bitene kadar sürer (loadAll sonunda await) —
+      // yükleme boş durum gibi görünmesin.
+      const watchedRead = (async () => {
         const { count, error } = await supabase
           .from('watchlist')
           .select('id', { count: 'exact', head: true })
@@ -1046,7 +1049,7 @@ function ProfileScreenContent() {
 
       // Saved count + poster previews (non-blocking). Saved = kaydedilmis
       // ve henuz izlenmemis (`watched_at IS NULL`); izlenenler Watched'ta.
-      getWatchlist().then((wl) => {
+      const savedRead = getWatchlist().then((wl) => {
         const saved = wl.filter((item) => item.watchedAt === null);
         setWatchlistCount(saved.length);
         const posters = saved
@@ -1081,6 +1084,7 @@ function ProfileScreenContent() {
         const insightsData = await getSwipeInsights(userId);
         setSwipeInsights(insightsData);
       }
+      await Promise.all([watchedRead, savedRead]);
     } catch (err) {
       logger.error('[ProfileScreen] veri yukleme hatasi:', err);
       setLoadError(true);
@@ -1873,7 +1877,13 @@ function ProfileScreenContent() {
                 karti; sampiyon yoksa davet kopyasi (§15.2). Sampiyon okumasi
                 bekliyorsa ya da hata verdiyse ikisi de cizilmez — okunamayan
                 veri "yok" gibi gosterilmez (kural 1). */}
-            {watchedCount !== null && (watchedCount > 0 || lastChampion.status === 'ok') && (
+            {loading && (
+              <>
+                <SectionHeading title={t('profile.watchedSection')} />
+                <SkeletonLoader height={80} borderRadius={radius.surface} />
+              </>
+            )}
+            {!loading && watchedCount !== null && (watchedCount > 0 || lastChampion.status === 'ok') && (
               <>
                 <SectionHeading title={t('profile.watchedSection')} />
                 <Text style={styles.watchedSubtitle}>{t('profile.watchedSubtitle')}</Text>
@@ -1925,7 +1935,7 @@ function ProfileScreenContent() {
             {/* d) Saved — watchlist ozeti (K-06: Watchlist ayri tab degil,
                 Profile alt sayfasi) */}
             <SectionHeading title={t('profile.savedSection')} />
-            {!watchlistLoaded || watchlistPosters.length > 0 ? (
+            {loading || !watchlistLoaded || watchlistPosters.length > 0 ? (
               /* Poster seridi — 4 esit yuva, 2:3. Eksik yuvalar bos
                  spacer: poster boyutu kayit sayisina gore degismez.
                  PERF-1: getWatchlist donene kadar da ayni serit sabit boyutlu
