@@ -377,8 +377,10 @@ export default function FilmDetailScreen() {
             if (!prev || prev.id !== filmId) return prev;
             return {
               ...prev,
-              title: tmdbDetails.title || prev.title,
-              overview: tmdbDetails.overview || prev.overview,
+              // DB değeri doluysa KORUNUR (ilk çizimden sonra metin değişmez);
+              // TMDB yalnız boş alanı doldurur.
+              title: prev.title !== '' ? prev.title : tmdbDetails.title,
+              overview: prev.overview ? prev.overview : tmdbDetails.overview || undefined,
               posterUrl:
                 prev.posterUrl !== ''
                   ? prev.posterUrl
