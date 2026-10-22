@@ -50,6 +50,7 @@ import { trackFirstOpenOnce } from '@/services/firstOpen';
 import { deviceTimeZone } from '@/services/gauntletService';
 import { syncWatchedFilms } from '@/services/watchSync';
 import { consumeIntentionalReset } from '@/services/sessionReset';
+import { authRecovery, recoverAnonymousSession } from '@/services/authRecovery';
 import {
   savePushTokenToServer,
   clearBadge,
@@ -500,8 +501,8 @@ export default function RootLayout() {
         // resolve eder. Eski `.catch()` yalnızca ağ istisnasını görüyordu;
         // 4xx/5xx yanıtlar sessizce düşüyordu. `throw` ikisini de tek yola
         // sokar — akış davranışı değişmez, yalnızca görünürlük eklenir.
-        supabase.auth.signInAnonymously().then(({ error }) => {
-          if (error) throw error;
+        recoverAnonymousSession().then((outcome) => {
+          if (outcome.status === 'error') throw outcome.error;
         }).catch((err) => {
           if (__DEV__) {
             // eslint-disable-next-line no-console
@@ -597,8 +598,8 @@ export default function RootLayout() {
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
               // `{ error }` resolve'u için: bkz. ilk açılış dalındaki not.
-              supabase.auth.signInAnonymously().then(({ error }) => {
-                if (error) throw error;
+              recoverAnonymousSession().then((outcome) => {
+                if (outcome.status === 'error') throw outcome.error;
               }).catch((err) => {
                 if (__DEV__) {
                   // eslint-disable-next-line no-console
@@ -634,8 +635,14 @@ export default function RootLayout() {
 
           supabase.auth.getSession().then(({ data: { session } }) => {
             if (!session) {
-              supabase.auth.signInAnonymously().then(({ data, error }) => {
-                if (error) throw error;
+              recoverAnonymousSession().then((outcome) => {
+                // Devre kesici (AUTH-LOOP): `blocked` / `rate_limited` raporu
+                // `onTrip`'te yazıldı; `coalesced` / `skipped` zaten başka bir
+                // yol oturumu kuruyor. Hiçbirinde yeni kimlik açılmadı →
+                // `identity_reset_detected` üretilmez.
+                if (outcome.status === 'error') throw outcome.error;
+                if (outcome.status !== 'success') return;
+                const data = outcome.data;
 
                 // Yeni anonim kimlik açıldı — yani kullanıcı sessizce
                 // sıfırlandı: watchlist, gauntlet geçmişi ve DNA'sı artık
@@ -680,8 +687,26 @@ export default function RootLayout() {
       },
     );
 
+    // Devre kesici (AUTH-LOOP): devre açıldıysa SIGNED_OUT bir daha gelmez;
+    // oturum dönene kadar tek çıkış, 5 dk sonra ön plana dönüşte tek yeni hak.
+    const appStateSub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState !== 'active' || !authRecovery.isCooldownElapsed()) return;
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) return;
+        return recoverAnonymousSession().then((outcome) => {
+          if (outcome.status === 'error') throw outcome.error;
+        });
+      }).catch((err) => {
+        Sentry.captureException(err, {
+          level: 'fatal',
+          tags: { flow: 'anonymous_session_recovery' },
+        });
+      });
+    });
+
     return () => {
       subscription.unsubscribe();
+      appStateSub.remove();
     };
   }, []);
 
