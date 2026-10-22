@@ -51,6 +51,7 @@ import { deviceTimeZone } from '@/services/gauntletService';
 import { syncWatchedFilms } from '@/services/watchSync';
 import { consumeIntentionalReset } from '@/services/sessionReset';
 import { authRecovery, recoverAnonymousSession } from '@/services/authRecovery';
+import { detectClockSkew } from '@/utils/clockSkew';
 import {
   savePushTokenToServer,
   clearBadge,
@@ -528,9 +529,29 @@ export default function RootLayout() {
     // Yalnızca INITIAL_SESSION'da, tek seferlik (bu effect bir kez kurulur).
     let hasSyncedWatchedFilms = false;
 
+    // Saat sapması telemetrisi (AUTH-LOOP): oturum (süreç) başına en fazla bir.
+    let clockSkewReported = false;
+
     // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Yalnız TAZE verilmiş oturum: anonim giriş/geçiş ve refresh.
+        // INITIAL_SESSION diskten gelir, verilme anı eskidir. Davranış değişmez.
+        if (
+          !clockSkewReported &&
+          session &&
+          (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
+        ) {
+          const skew = detectClockSkew(session, Date.now());
+          if (skew) {
+            clockSkewReported = true;
+            posthogAnalytics.track('clock_skew_detected', {
+              skew_s: skew.skewS,
+              expires_in: skew.expiresIn,
+            });
+          }
+        }
+
         // Kimlik sıfırlaması tespiti için son bilinen auth id'yi taze tut.
         // SIGNED_OUT'ta `session` zaten null gelir, bu yüzden okuma değil
         // YAZMA burada olmalı (SIGNED_OUT dalı bir öncekini okur).
