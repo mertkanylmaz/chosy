@@ -343,7 +343,9 @@ async function signInToExistingAccount(
   }
 
   // Ana istemci artık B — `users` güncellemesi B'nin satırına gider.
-  void syncAuthProvider('apple');
+  // Beklenir + önbellek boşaltılır (profil bayat satır okumasın, UX-POLISH 6).
+  await syncAuthProvider('apple');
+  invalidateUserCache();
 
   return { outcome: 'identity_already_exists', merge };
 }
@@ -458,8 +460,11 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { outcome: 'failed', message: error.message };
     }
 
-    // users tablosundaki auth_provider guncelle (non-blocking)
-    void syncAuthProvider('apple');
+    // users tablosundaki auth_provider guncelle. BEKLENIR + onbellek bosaltilir:
+    // `void` iken profil odak yenilemesi yazmayla yarisip bayat satiri okuyordu
+    // (UX-POLISH 6). Her iki yardimci da icinde yakalar, burada firlatmaz.
+    await syncAuthProvider('apple');
+    invalidateUserCache();
 
     // Apple ismi: yalnizca ILK authorization'da credential'da gelir.
     // DB'ye yazilmazsa bir sonraki giriste kaybedilir.
@@ -467,7 +472,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     const familyName = credential.fullName?.familyName ?? '';
     const fullAppleName = [givenName, familyName].filter(Boolean).join(' ').trim();
     if (fullAppleName) {
-      void syncDisplayName(fullAppleName);
+      await syncDisplayName(fullAppleName);
     }
 
     // Ilk kez giris mi?

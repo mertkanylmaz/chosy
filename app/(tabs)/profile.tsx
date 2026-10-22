@@ -1102,6 +1102,49 @@ function ProfileScreenContent() {
     return () => { cancelled = true; };
   }, [loadAll]);
 
+  // ── Kimlik değişimi: eski kullanıcının verisi temizlenir, iskelet gösterilir ──
+  // Sekme mount'lu kalır; girişten (başka hesaba geçiş) sonra isim, son seçim ve
+  // Saved ~1,5 sn eski kullanıcınınki görünüyordu. Yalnız GERÇEK kimlik değişimi
+  // (`SIGNED_IN` + farklı auth id) sıfırlar: Apple bağlama (linkIdentity) kimliği
+  // korur, veri odak yenilemesiyle (`loadAll`) güncellenir.
+  const lastAuthIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const authId = session?.user?.id ?? null;
+      if (!authId) return;
+      const previous = lastAuthIdRef.current;
+      lastAuthIdRef.current = authId;
+      if (event !== 'SIGNED_IN' || previous === null || previous === authId) return;
+
+      invalidateUserCache();
+      publicUserIdRef.current = null;
+      setLoading(true);
+      setDisplayName(null);
+      setJoinedAt(null);
+      setAvatarId(null);
+      setArchetypeId(null);
+      setNotificationsEnabled(null);
+      setLastChampion({ status: 'pending' });
+      setRitualWeek(null);
+      setWatchedCount(null);
+      setWatchlistCount(0);
+      setWatchlistPosters([]);
+      setWatchlistLoaded(false);
+      // supabase-js: dinleyici içinde auth çağrısı beklenmez (kilitlenme) — bir tik sonra.
+      setTimeout(() => {
+        if (cancelled) return;
+        void loadAll().finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      }, 0);
+    });
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [loadAll]);
+
   // ── Sekmeye dönüldüğünde sessiz yenileme (sign-in sonrası veri güncellenir) ──
   useFocusEffect(
     useCallback(() => {
