@@ -17,8 +17,11 @@
  * - Bu bölgeyle çağrılanlar: submit-choice, generate-gauntlet, get-archive-status,
  *   submit-watch-feedback, submit-context-correction, explain-match (`invoke`
  *   `region`) ve merge-anonymous-user (ham fetch: `x-region` başlığı +
- *   `forceFunctionRegion` sorgusu — `invoke`'un yaptığının aynısı). Diğer
- *   fonksiyonlar kapsam dışıdır (parse-mood ham fetch, bölgesiz).
+ *   `forceFunctionRegion` sorgusu — `invoke`'un yaptığının aynısı) ve
+ *   parse-mood (ham fetch, aynı desen, PRO-FIX-3, 22 Eki 2026: eu-central-1'de
+ *   koşarken `execution_time_ms` 5,6–6,4 sn, `latency_ms` 3,1–4,5 sn — fark
+ *   Frankfurt ↔ us-west-1 DB/Auth turları). Diğer fonksiyonlar kapsam dışıdır.
+ *   Sabitleme tutarsa log'larda `x_sb_edge_region = us-west-1` görünür.
  *
  * ── Spotlight (20 Eki 2026, SPOT-1 / SPOT-2) ──────────────────────────────
  * docs/investigations/SPOT-1_KESIF.md (b5ed3bf): Spotlight harf isteği

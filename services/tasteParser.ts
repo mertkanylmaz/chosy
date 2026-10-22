@@ -12,6 +12,7 @@
  * - Yönetmen / film referansı: "Nolan style", "like Inception"
  */
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants/config';
+import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 import { supabase } from './supabase';
 import { getFreshSession } from './authSession';
 import { hasAiConsent } from './aiConsent';
@@ -108,9 +109,12 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
   let res: Response;
 
   try {
-    res = await fetch(`${SUPABASE_URL}/functions/v1/parse-mood`, {
+    // Bölge sabitleme: başlık + forceFunctionRegion sorgusu (invoke()'un yaptığının aynısı,
+    // authService.mergeAnonymousProgress ile aynı desen). Yalnız bu fetch'i etkiler.
+    res = await fetch(`${SUPABASE_URL}/functions/v1/parse-mood?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
       method: 'POST',
       headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
         apikey: SUPABASE_ANON_KEY,
