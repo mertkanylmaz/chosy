@@ -38,9 +38,11 @@ export const styles = StyleSheet.create({
   },
   text: {
     ...type['body-strong'],
-    // Yeniden mount'ta (film detayından dönüş) adjustsFontSizeToFit ilk ölçümde
-    // kabı 0'a çökertip etiketi "___" çizebiliyordu; alt sınır bunu önler.
-    minWidth: space.xxxl,
+    // adjustsFontSizeToFit yok: iOS'ta yeniden mount'ta (film detayından dönüş)
+    // ilk ölçümde etiketi küçük/"___" çiziyordu. Sığmayan etiket küçülmez,
+    // en fazla iki satıra iner (minHeight 48 = 2 × lineHeight 24).
+    flexShrink: 1,
+    textAlign: 'center',
   },
   textOnFill: {
     color: color.surface.base,
