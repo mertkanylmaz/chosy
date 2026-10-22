@@ -212,15 +212,40 @@ async function isNoPuzzleError(error: unknown): Promise<boolean> {
 }
 
 /**
+ * Yolda olan `get-daily-challenge` istekleri — anahtar `gameId|puzzleDate`.
+ * YALNIZ in-flight tekilleştirme (UX-POLISH 8): istek bitince kayıt silinir,
+ * TTL/önbellek YOK (`services/userCache` deseni). Spotlight kartı, ask kararı ve
+ * oyun ekranı aynı saniyelerde aynı bulmacayı istiyordu (5 sn'de 3 çağrı).
+ * Sonuç ya da hata tüm bekleyenlere aynen verilir; Sentry yazımı tek kalır.
+ */
+const dailyChallengeInflight = new Map<string, Promise<DailyChallenge>>();
+
+/**
  * Günlük bulmacayı getirir.
  *
  * Bulmaca yoksa (`404 NO_PUZZLE`) `PuzzleUnavailableError` fırlatır — Sentry'ye
  * (oyun, gün) başına tek `warning`. Diğer hatalar Sentry + throw.
+ * Aynı (oyun, gün) için yolda istek varsa ona katılır.
  *
  * @param gameId - Oyun tipi (ör. 'cinemetrics')
  * @param puzzleDate - YYYY-MM-DD formatında tarih
  */
-export async function getDailyChallenge(
+export function getDailyChallenge(
+  gameId: string,
+  puzzleDate: string,
+): Promise<DailyChallenge> {
+  const key = `${gameId}|${puzzleDate}`;
+  const pending = dailyChallengeInflight.get(key);
+  if (pending) return pending;
+
+  const promise: Promise<DailyChallenge> = fetchDailyChallenge(gameId, puzzleDate).finally(() => {
+    if (dailyChallengeInflight.get(key) === promise) dailyChallengeInflight.delete(key);
+  });
+  dailyChallengeInflight.set(key, promise);
+  return promise;
+}
+
+async function fetchDailyChallenge(
   gameId: string,
   puzzleDate: string,
 ): Promise<DailyChallenge> {
