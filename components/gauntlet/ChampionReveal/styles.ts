@@ -127,5 +127,10 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
     textAlign: 'center',
+    // Sabit yükseklik: satır görünmezken de yer tutar (yerleşim kaymaz).
+    height: type.caption.lineHeight,
+  },
+  shareNoticeHidden: {
+    opacity: 0,
   },
 });

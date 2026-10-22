@@ -621,7 +621,16 @@ export function ChampionReveal({
             filmId={champion.id}
           />
 
-          {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
+          {/* Satır HER ZAMAN yerinde (sabit yükseklik); görünürlük opacity ile.
+              Koşullu mount, onay çıkıp kaybolurken altındaki butonları kaydırıyordu. */}
+          <Text
+            style={[styles.shareNotice, shareNotice === null && styles.shareNoticeHidden]}
+            numberOfLines={1}
+            accessibilityElementsHidden={shareNotice === null}
+            importantForAccessibility={shareNotice === null ? 'no-hide-descendants' : 'auto'}
+          >
+            {shareNotice ?? ''}
+          </Text>
 
           {/* F2.3 — tek satır: [Watch now (flex:1)] [kaydet] [paylaş]. Watch now
               yoksa dolgulu "Sonraya bırak" birincil olur (L9 davranışı). İkonlar
