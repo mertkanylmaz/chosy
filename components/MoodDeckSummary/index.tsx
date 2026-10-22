@@ -24,6 +24,12 @@ import { Film } from '@/types/film';
 
 import styles from './styles';
 
+/**
+ * Giriş animasyonu kısa ve gecikmesiz başlar: son kart çıkınca özet boş zemine
+ * mount olur, uzun delay + springify ~0,6 sn karanlık bırakıyordu (POLISH-2 2).
+ */
+const enter = (delay: number) => FadeInDown.delay(delay).duration(200);
+
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface MoodDeckSummaryProps {
@@ -99,7 +105,7 @@ export default function MoodDeckSummary({
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <Animated.View entering={FadeInDown.delay(100).springify()}>
+        <Animated.View entering={enter(0)}>
           <View style={styles.headerIconWrap}>
             <Ionicons
               name={hasLiked ? 'film-outline' : 'help-circle-outline'}
@@ -120,7 +126,7 @@ export default function MoodDeckSummary({
         </Animated.View>
 
         {/* Stats */}
-        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.statsRow}>
+        <Animated.View entering={enter(30)} style={styles.statsRow}>
           <View style={styles.statItem}>
             <Text style={[styles.statNumber, styles.statNumberLiked]}>{likedFilms.length}</Text>
             <Text style={styles.statLabel}>{t('deckSummary.liked')}</Text>
@@ -137,7 +143,7 @@ export default function MoodDeckSummary({
 
         {/* Hero recommendation */}
         {heroFilm && (
-          <Animated.View entering={FadeInDown.delay(300).springify()}>
+          <Animated.View entering={enter(60)}>
             <View style={styles.heroCard}>
               <Image
                 source={{ uri: heroFilm.posterUrl }}
@@ -164,7 +170,7 @@ export default function MoodDeckSummary({
 
         {/* Liked films poster strip */}
         {likedFilms.length > 1 && (
-          <Animated.View entering={FadeInDown.delay(400).springify()}>
+          <Animated.View entering={enter(90)}>
             <Text style={styles.sectionLabel}>{t('deckSummary.addedToWatchlist')}</Text>
             <FlatList
               data={likedFilms}
@@ -190,7 +196,7 @@ export default function MoodDeckSummary({
 
         {/* Insufficient results note */}
         {insufficientResults && (
-          <Animated.View entering={FadeInDown.delay(450).springify()}>
+          <Animated.View entering={enter(110)}>
             <Text style={styles.insufficientNote}>{t('deckSummary.insufficientNote')}</Text>
           </Animated.View>
         )}
@@ -198,7 +204,7 @@ export default function MoodDeckSummary({
 
       {/* Fixed footer — always visible */}
       <Animated.View
-        entering={FadeInDown.delay(500).springify()}
+        entering={enter(120)}
         style={[styles.footer, { paddingBottom: FOOTER_PADDING_BOTTOM }]}
       >
         <TouchableOpacity
