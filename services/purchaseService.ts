@@ -615,6 +615,21 @@ async function awaitPurchaseReadiness(fn: string): Promise<PurchaseErrorKind | n
   }
 }
 
+// ─── Webhook gecikme penceresi ───────────────────────────────────────────────
+
+/** Satın alma/restore sonrası RC → DB webhook'unun makul gecikme payı. */
+export const WEBHOOK_GRACE_MS = 30_000;
+
+let _lastEntitlementGrantAt: number | null = null;
+
+/**
+ * Son başarılı satın alma/restore'un üstünden `WEBHOOK_GRACE_MS` geçmediyse
+ * true. "RC aktif, DB satırı yok" bu pencerede beklenen bir durumdur.
+ */
+export function isWithinWebhookGrace(now: number = Date.now()): boolean {
+  return _lastEntitlementGrantAt !== null && now - _lastEntitlementGrantAt < WEBHOOK_GRACE_MS;
+}
+
 /**
  * Belirtilen paketi satın alır.
  * Paywall'dan çağrılır.
@@ -635,6 +650,7 @@ export async function purchasePackage(pkg: PurchasesPackage): Promise<PurchaseRe
     const isPremium = customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined;
 
     if (isPremium) {
+      _lastEntitlementGrantAt = Date.now();
       posthogAnalytics.track('purchase_completed', {
         package_id: pkg.identifier,
         product_id: pkg.product.identifier,
@@ -756,6 +772,7 @@ export async function restorePurchases(): Promise<PurchaseResult> {
     const isPremium = customerInfo.entitlements.active[RC_ENTITLEMENT_ID] !== undefined;
 
     if (isPremium) {
+      _lastEntitlementGrantAt = Date.now();
       // `restore_completed` KORUNUYOR (geriye dönük seri kırılmasın), yanına
       // E-09'un üç sonuçlu `restore_attempted` olayı eklendi.
       posthogAnalytics.track('restore_completed');

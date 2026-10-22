@@ -31,6 +31,7 @@ import {
 import {
   getSubscriptionStatus,
   addSubscriptionListener,
+  isWithinWebhookGrace,
   type SubscriptionInfo,
 } from '@/services/purchaseService';
 import {
@@ -274,11 +275,22 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         trialStartRef.current = null;
         tierRef.current = newTier;
         // Webhook gecikmesi olcumu — kullaniciya hicbir sey gosterilmez
-        Sentry.captureMessage('subscription: RC aktif, DB satiri yok', {
-          level: 'warning',
-          tags: { function: 'refreshSubscription', error_code: 'RC_ACTIVE_DB_MISSING' },
-          extra: { activePlanId: rcStatus.activePlanId, isInTrial: rcStatus.isInTrial },
-        });
+        // Satin alma/restore'dan sonraki 30 sn icinde beklenen durum: event
+        // degil breadcrumb. Sonrasinda hala yoksa gercek sorun → error.
+        const inGrace = isWithinWebhookGrace();
+        if (inGrace) {
+          Sentry.addBreadcrumb({
+            category: 'subscription',
+            message: 'RC aktif, DB satiri yok (webhook gecikme penceresi)',
+            level: 'info',
+          });
+        } else {
+          Sentry.captureMessage('subscription: RC aktif, DB satiri yok', {
+            level: 'error',
+            tags: { function: 'refreshSubscription', error_code: 'RC_ACTIVE_DB_MISSING' },
+            extra: { activePlanId: rcStatus.activePlanId, isInTrial: rcStatus.isInTrial },
+          });
+        }
       } else if (dbSub && dbSub.status === 'active') {
         const newStatus = dbSub.status as SubscriptionStatus;
         const newTier = planIdToTier(dbSub.plan);
