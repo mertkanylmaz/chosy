@@ -1207,7 +1207,7 @@
       "action_save_for_later": "Save for Later",
       "action_save_done": "Saved",
       "action_save_error": "Couldn't save. Try again.",
-      "action_share": "Share Spotlight",
+      "action_share": "Share",
       "share_card_title": "SPOTLIGHT · FILM %{n}",
       "share_card_title_no_n": "SPOTLIGHT",
       "share_card_found": "FOUND IT · %{left}/%{total}",
