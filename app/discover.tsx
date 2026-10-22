@@ -167,6 +167,9 @@ export default function DiscoverScreen() {
 
   const currentFilm = deck[currentIndex] ?? null;
   const deckSize = deck.length;
+  /** Yigin: [ust, alttaki]. Son kartta alttaki yoktur. */
+  const nextFilm = deck[currentIndex + 1] ?? null;
+  const stackFilms = currentFilm ? (nextFilm ? [currentFilm, nextFilm] : [currentFilm]) : [];
 
   // ── Advance to next card ────────────────────────────────────────────────────
 
@@ -327,20 +330,31 @@ export default function DiscoverScreen() {
     <View style={styles.container}>
       <StatusBar style="light" translucent backgroundColor="transparent" />
 
-      {/* Current swipe card — deckFrozen olunca gesture bloklanir */}
+      {/* 2 kartlik yigin: ust kart etkilesimli, alttaki (index+1) yalniz cizilir.
+          Katman key'i DESTE SIRASINA bagli (currentIndex + i): ilerleyince alttaki
+          kartin katmani ayni key ile uste gecer — React ayni ornegi tasir, remount
+          yok (poster yuklu, shared value'lar yerinde). deckFrozen olunca gesture
+          bloklanir. */}
       {currentFilm && (
         <View
           style={{ height: CARD_HEIGHT }}
           pointerEvents={deckFrozen ? 'none' : 'auto'}
         >
-          <SwipeableCard
-            key={currentFilm.id}
-            film={currentFilm}
-            height={CARD_HEIGHT}
-            bottomOffset={insets.bottom + 80}
-            onSwipeRight={handleSwipeRight}
-            onSwipeLeft={handleSwipeLeft}
-          />
+          {stackFilms.map((stackFilm, i) => (
+            <View
+              key={`deck-${currentIndex + i}`}
+              style={[styles.deckLayer, i === 0 ? styles.deckLayerFront : styles.deckLayerBack]}
+            >
+              <SwipeableCard
+                film={stackFilm}
+                height={CARD_HEIGHT}
+                bottomOffset={insets.bottom + 80}
+                onSwipeRight={handleSwipeRight}
+                onSwipeLeft={handleSwipeLeft}
+                interactive={i === 0}
+              />
+            </View>
+          ))}
         </View>
       )}
 
@@ -404,6 +418,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+
+  // ── Kart yigini ────────────────────────────────────────────────────────────
+  deckLayer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  deckLayerFront: {
+    zIndex: 2,
+  },
+  deckLayerBack: {
+    zIndex: 1,
   },
 
   // ── Skeleton ───────────────────────────────────────────────────────────────

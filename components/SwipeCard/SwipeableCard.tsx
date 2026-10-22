@@ -93,6 +93,13 @@ export interface SwipeableCardProps {
   bottomOffset?: number;
   onSwipeRight: (film: Film) => void;
   onSwipeLeft: (film: Film) => void;
+  /**
+   * `false` → destenin ALTINDAKİ kart (yığın, UX-POLISH 2): yalnız çizilir.
+   * Dokunuş/gesture/erişilebilirlik kapalı; haptic ve rozet animasyonu gibi
+   * mount yan etkileri kart ÜSTE geçince (`true`) çalışır. Aynı örnek üste
+   * geçer — remount yoktur, shared value'lar ve poster olduğu gibi kalır.
+   */
+  interactive?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -108,6 +115,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   bottomOffset = 0,
   onSwipeRight,
   onSwipeLeft,
+  interactive = true,
 }) => {
   const router = useRouter();
   const { language } = useLanguage();
@@ -158,15 +166,17 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sürpriz kart ilk görününce notification haptic (bir kez)
+  // Sürpriz kart ilk görününce notification haptic (bir kez). Alttaki kart
+  // (interactive=false) görünmez sayılır: haptic üste geçince ateşlenir.
   const hapticFiredRef = useRef(false);
   useEffect(() => {
+    if (!interactive) return;
     if (effectiveType != null && !hapticFiredRef.current) {
       hapticFiredRef.current = true;
       hapticSuccess();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [interactive]);
 
   // ── JS thread callback'ler ────────────────────────────────────────────────
 
@@ -226,6 +236,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
    *                           → FlatList dikey scroll devralır
    */
   const panGesture = Gesture.Pan()
+    .enabled(interactive)
     .activeOffsetX([-15, 15])
     .failOffsetY([-10, 10])
     .onUpdate((event) => {
@@ -323,7 +334,12 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <View style={[styles.itemContainer, { height }]}>
+    <View
+      style={[styles.itemContainer, { height }]}
+      pointerEvents={interactive ? 'auto' : 'none'}
+      accessibilityElementsHidden={!interactive}
+      importantForAccessibility={interactive ? 'auto' : 'no-hide-descendants'}
+    >
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.card, cardStyle]}>
 
@@ -397,7 +413,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
               Outer View: entering animasyonu (transform yok)
               Inner View: renk + konum stili
               Bu ayrım Reanimated "transform overwrite by layout animation" uyarısını önler. */}
-          {surpriseLabel != null && (
+          {surpriseLabel != null && interactive && (
             <Animated.View
               entering={FadeInDown.springify().damping(14).stiffness(160)}
               style={styles.surpriseBadgeAnchor}
