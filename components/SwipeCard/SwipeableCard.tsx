@@ -352,7 +352,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
               source={{ uri: fullPosterUrl }}
               style={StyleSheet.absoluteFillObject}
               contentFit="cover"
-              transition={200}
+              transition={120}
               cachePolicy="memory-disk"
             />
           ) : (

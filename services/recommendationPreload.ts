@@ -55,13 +55,14 @@ function profileKey(
 }
 
 /**
- * Ilk 3 filmin posterini onceden yukler — deste acildiginda iskelet beklenmesin.
+ * Destedeki tum filmlerin (en fazla 8) posterini onceden yukler — deste acildiginda iskelet beklenmesin.
  * Kozmetik: hata akisi durdurmaz, yalnizca Sentry breadcrumb birakir.
  */
 function prefetchPosters(result: RecommendationResult): void {
-  for (const film of result.films.slice(0, 3)) {
+  // Ilk 3 ve 4..8 ayni yol: hicbiri await edilmez (fire-and-forget), gecikme eklemez.
+  for (const film of result.films) {
     if (!film.posterUrl) continue;
-    Image.prefetch(film.posterUrl).catch((err: unknown) => {
+    Image.prefetch(film.posterUrl, 'memory-disk').catch((err: unknown) => {
       Sentry.addBreadcrumb({
         category: 'poster_prefetch',
         level: 'warning',
