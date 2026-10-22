@@ -121,3 +121,96 @@ export function findLetterPositions(title: string, letter: string): number[] {
   })
   return positions
 }
+
+// ─── Harf adimi kararlari (saf, test edilebilir) ─────────────────────────────
+
+/**
+ * Basligin TUM 'slot' pozisyonlari acildi mi.
+ *
+ * 'sep' (bosluk, rakam, noktalama) bastan gorunur, 'unreachable' harfli baslik
+ * zaten uretilmez; olcut `classifyChar` ile maskenin slot tanimiyla ayni.
+ */
+export function allSlotsRevealed(title: string, revealedPositions: readonly number[]): boolean {
+  const open = new Set(revealedPositions)
+  let slots = 0
+  let i = 0
+  for (const ch of title) {
+    if (classifyChar(ch) === 'slot') {
+      slots++
+      if (!open.has(i)) return false
+    }
+    i++
+  }
+  return slots > 0
+}
+
+/** Harf istegi on kontrolu — hata ise sunucunun donecegi kod, degilse null */
+export interface LetterPrecheckError {
+  code: 'ALREADY_COMPLETED' | 'MAX_ATTEMPTS' | 'LETTER_ALREADY_TRIED'
+  message: string
+  status: number
+}
+
+export function letterPrecheck(input: {
+  completed: boolean
+  attempts: number
+  maxAttempts: number
+  triedLetters: readonly string[]
+  letter: string
+}): LetterPrecheckError | null {
+  if (input.completed) {
+    return { code: 'ALREADY_COMPLETED', message: 'Puzzle already completed', status: 409 }
+  }
+  if (input.attempts >= input.maxAttempts) {
+    return { code: 'MAX_ATTEMPTS', message: 'No more attempts remaining', status: 409 }
+  }
+  if (input.triedLetters.includes(input.letter)) {
+    return { code: 'LETTER_ALREADY_TRIED', message: 'Letter already guessed', status: 400 }
+  }
+  return null
+}
+
+export interface LetterOutcome {
+  attemptsAfter: number
+  outOfAttempts: boolean
+  /** Tum slotlar acildi ve istemci `supports_auto_win` gonderdi */
+  autoWin: boolean
+  completed: boolean
+  won: boolean
+}
+
+/**
+ * Bir harf adiminin sonucu.
+ *
+ * Otomatik kazanim YALNIZ `supportsAutoWin` ise: eski istemci `won`'u okumaz ve
+ * `completed:true` gorunce kaybetti ekrani gosterir. Bayrak yoksa sonuc
+ * bugunkuyle birebir ayni (yanlis harf hak goturur, hak bitince kapanir).
+ * Otomatik kazanim ekstra hak harcamaz.
+ */
+export function decideLetterOutcome(input: {
+  hit: boolean
+  attemptsBefore: number
+  maxAttempts: number
+  allRevealed: boolean
+  supportsAutoWin: boolean
+}): LetterOutcome {
+  const autoWin = input.supportsAutoWin && input.allRevealed
+  const attemptsAfter = autoWin || input.hit ? input.attemptsBefore : input.attemptsBefore + 1
+  const outOfAttempts = !autoWin && attemptsAfter >= input.maxAttempts
+  return {
+    attemptsAfter,
+    outOfAttempts,
+    autoWin,
+    completed: autoWin || outOfAttempts,
+    won: autoWin,
+  }
+}
+
+/**
+ * Otomatik kazanimin XP basamagi: film tahmini kazanimiyla ayni merdiven.
+ * O yolda indeks `newAttempts - 1` (newAttempts = harcanan hak + 1); burada
+ * ekstra hak yok, indeks harcanan hakka (`attemptsAfter`) esit.
+ */
+export function autoWinLadderIndex(attemptsAfter: number, ladderLength: number): number {
+  return Math.min(attemptsAfter, ladderLength - 1)
+}

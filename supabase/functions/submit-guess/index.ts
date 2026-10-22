@@ -26,7 +26,14 @@ import {
 } from '../_shared/gameUtils.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { buildWhyThisMovie } from '../_shared/whyThisMovie.ts'
-import { findLetterPositions, normalizeLetter } from '../_shared/spotlightLetters.ts'
+import {
+  allSlotsRevealed,
+  autoWinLadderIndex,
+  decideLetterOutcome,
+  findLetterPositions,
+  letterPrecheck,
+  normalizeLetter,
+} from '../_shared/spotlightLetters.ts'
 import {
   calculateCineMetricsFeedback,
   calculateLoglineFeedback,
@@ -237,6 +244,9 @@ Deno.serve(async (req: Request) => {
   let hintOrder: number | undefined
   // Spotlight V3: harf tahmini (tek karakter)
   let spotlightLetter: string | undefined
+  // Istemci `won`'u okuyabiliyor: tum slotlar acilinca oyun kazanilmis sayilir.
+  // Bayrak yoksa davranis eskisiyle birebir ayni (eski istemci kaybetti ekrani gosterir).
+  let supportsAutoWin = false
 
   try {
     const body = await req.json()
@@ -258,6 +268,7 @@ Deno.serve(async (req: Request) => {
     spotlightLetter = typeof body.spotlight_letter === 'string'
       ? normalizeLetter(body.spotlight_letter)
       : undefined
+    supportsAutoWin = body.supports_auto_win === true
   } catch {
     return errorResponse('INVALID_INPUT', 'Invalid request body', 400)
   }
@@ -461,20 +472,18 @@ Deno.serve(async (req: Request) => {
       }
 
       const spProgress = scoreRow.progress_json as ProgressJson
-      if (spProgress?.completed) {
-        return errorResponse('ALREADY_COMPLETED', 'Puzzle already completed', 409)
-      }
 
-      // Hak biten oyuncu harf acmaya devam edememeli — bu dal genel
-      // max-attempts kontrolunden ONCE calisiyor, kendi kontrolunu yapar.
-      if (scoreRow.attempts >= puzzle.max_attempts) {
-        return errorResponse('MAX_ATTEMPTS', 'No more attempts remaining', 409)
-      }
-
+      // Siralama: tamamlandi → hak bitti (bu dal genel max-attempts kontrolunden
+      // ONCE calisir) → harf zaten denendi. Tekrarlanan harf idempotent: 400.
       const triedLetters = spProgress?.spotlight_letters ?? []
-      if (triedLetters.includes(spotlightLetter)) {
-        return errorResponse('LETTER_ALREADY_TRIED', 'Letter already guessed', 400)
-      }
+      const precheck = letterPrecheck({
+        completed: spProgress?.completed === true,
+        attempts: scoreRow.attempts,
+        maxAttempts: puzzle.max_attempts,
+        triedLetters,
+        letter: spotlightLetter,
+      })
+      if (precheck) return errorResponse(precheck.code, precheck.message, precheck.status)
 
       const { data: solFilm, error: solErr } = await service
         .from('films')
@@ -502,9 +511,16 @@ Deno.serve(async (req: Request) => {
           .map(pos => ({ pos, ch: titleChars[pos] })),
       ]
 
-      // Yanlis harf bir hak goturur; dogru harf bedava
-      const attemptsAfter = hit ? scoreRow.attempts : scoreRow.attempts + 1
-      const outOfAttempts = attemptsAfter >= puzzle.max_attempts
+      // Yanlis harf bir hak goturur; dogru harf bedava. Tum slotlar acildiysa
+      // ve istemci destekliyorsa oyun kazanilir (ekstra hak harcanmaz).
+      const outcome = decideLetterOutcome({
+        hit,
+        attemptsBefore: scoreRow.attempts,
+        maxAttempts: puzzle.max_attempts,
+        allRevealed: allSlotsRevealed(solFilm.title as string, revealed.map(r => r.pos)),
+        supportsAutoWin,
+      })
+      const { attemptsAfter, outOfAttempts, autoWin, completed: letterCompleted } = outcome
 
       // Haklar bittiyse oyun BURADA kapanir. Onceki surumde yalnizca
       // out_of_attempts bayragi donuyor, oyun hic tamamlanmiyordu; oyuncu
@@ -513,9 +529,10 @@ Deno.serve(async (req: Request) => {
         ...spProgress,
         guesses: spProgress?.guesses ?? [],
         guess_timestamps: spProgress?.guess_timestamps ?? [],
-        completed: outOfAttempts,
-        won: false,
+        completed: letterCompleted,
+        won: autoWin,
         revealed_count: spProgress?.revealed_count ?? 0,
+        ...(autoWin ? { turns_played: attemptsAfter } : {}),
         spotlight_letters: updatedLetters,
         spotlight_revealed: revealed,
       }
@@ -528,14 +545,26 @@ Deno.serve(async (req: Request) => {
       let letterXp = 0
       const letterDnaSignals: { dim: string; val: number }[] = []
 
-      if (outOfAttempts) {
+      if (letterCompleted) {
         const xpConfig = await getAppConfig<GameXpConfig>(service, 'game_xp_config')
-        letterXp = xpConfig.fail_xp
+        if (autoWin) {
+          // Film tahmini kazanimiyla ayni merdiven ve DNA sinyalleri
+          const ladderIndex = autoWinLadderIndex(attemptsAfter, xpConfig.guess_ladder.length)
+          letterXp = xpConfig.guess_ladder[ladderIndex] ?? xpConfig.fail_xp
+        } else {
+          letterXp = xpConfig.fail_xp
+        }
         letterXp = await applyStreakMultiplier(service, userId, letterXp, xpConfig)
         letterXp = await applyDoubleXp(service, userId, letterXp, puzzle.date)
-        letterDnaSignals.push({ dim: 'knowledge', val: 0.1 })
+        if (autoWin) {
+          const letterPenalty = updatedLetters.length * 0.05
+          letterDnaSignals.push({ dim: 'knowledge', val: Math.max(0.2, 0.8 - letterPenalty) })
+          letterDnaSignals.push({ dim: 'visual_sense', val: Math.max(0.2, 0.9 - letterPenalty) })
+        } else {
+          letterDnaSignals.push({ dim: 'knowledge', val: 0.1 })
+        }
 
-        letterUpdatePayload.solved = false
+        letterUpdatePayload.solved = autoWin
         letterUpdatePayload.completed_at = nowISO
         letterUpdatePayload.xp_awarded = letterXp
         letterUpdatePayload.dna_signals = letterDnaSignals
@@ -557,7 +586,7 @@ Deno.serve(async (req: Request) => {
       let letterWhy: ReturnType<typeof buildWhyThisMovie> | null = null
       let letterDnaUpdated = false
 
-      if (outOfAttempts) {
+      if (letterCompleted) {
         const { data: solFull } = await service
           .from('films')
           .select('id, title, year, genres, director, runtime, vote_average, country, metadata_json, poster_url')
@@ -605,6 +634,7 @@ Deno.serve(async (req: Request) => {
         game_type: 'spotlight',
         hit,
         attempts: attemptsAfter,
+        auto_win: autoWin,
       })
 
       return jsonResponse({
@@ -616,8 +646,8 @@ Deno.serve(async (req: Request) => {
         attempts_used: attemptsAfter,
         max_attempts: puzzle.max_attempts,
         out_of_attempts: outOfAttempts,
-        completed: outOfAttempts,
-        won: false,
+        completed: letterCompleted,
+        won: autoWin,
         xp_awarded: letterXp,
         dna_updated: letterDnaUpdated,
         revealed_solution: letterSolution,

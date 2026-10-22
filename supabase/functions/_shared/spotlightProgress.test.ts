@@ -116,3 +116,29 @@ Deno.test('alan yoksa ya da progress_json null ise bos diziler, 0 dusen', () => 
     assertEquals(dropped, 0)
   }
 })
+
+// ─── Otomatik kazanim sonrasi yeniden acilis (POLISH-2 madde 1) ──────────────
+
+/** submit-guess otomatik kazanimda progress_json'a bunu yazar */
+function autoWonProgress(): Record<string, unknown> {
+  const letters = ['S', 'T', 'A', 'N', 'D', 'B', 'Y', 'M', 'E']
+  return {
+    ...progressAfter(letters),
+    completed: true,
+    won: true,
+    turns_played: 0,
+  }
+}
+
+Deno.test('otomatik kazanim: yeniden acilista tum acik pozisyonlar doner, dusen yok', () => {
+  const { fields, dropped } = spotlightProgressFields(autoWonProgress())
+  assertEquals(dropped, 0)
+  assertEquals(fields.spotlight_revealed.length, [...TITLE].filter((c) => c !== ' ').length)
+})
+
+Deno.test('otomatik kazanim: HARD RULE 1 — won/turns_played gibi alanlar govdeye gecmez', () => {
+  const body = responseBody(autoWonProgress())
+  assert(!body.includes('turns_played'))
+  assert(!body.includes('"won"'))
+  assert(!body.includes(TITLE))
+})

@@ -14,9 +14,13 @@
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
+  allSlotsRevealed,
+  autoWinLadderIndex,
   buildTitleMask,
   classifyChar,
+  decideLetterOutcome,
   findLetterPositions,
+  letterPrecheck,
   normalizeLetter,
 } from '../../supabase/functions/_shared/spotlightLetters.ts'
 
@@ -220,4 +224,107 @@ Deno.test('findLetterPositions: pozisyonlar code point indeksi — maske ile ayn
 Deno.test('findLetterPositions: aksanli harf ASCII karsiligiyla acilmaz', () => {
   // 'é'.toUpperCase() === 'É' ≠ 'E'. Mevcut davranisin kaydi.
   assertEquals(findLetterPositions('Amélie', 'E'), [5])
+})
+
+// ─── Otomatik kazanim (POLISH-2 madde 1) ─────────────────────────────────────
+
+/** submit-guess harf dalinin durumunu taklit eder: harf harf dener */
+function playLetters(title: string, letters: string[], opts: { flag: boolean; max?: number }) {
+  const max = opts.max ?? 6
+  let attempts = 0
+  const tried: string[] = []
+  const open = new Set<number>()
+  let last: ReturnType<typeof decideLetterOutcome> | null = null
+  let completed = false
+  for (const raw of letters) {
+    const letter = normalizeLetter(raw)
+    const pre = letterPrecheck({ completed, attempts, maxAttempts: max, triedLetters: tried, letter })
+    if (pre) return { error: pre, attempts, last }
+    const positions = findLetterPositions(title, letter)
+    positions.forEach((p) => open.add(p))
+    tried.push(letter)
+    last = decideLetterOutcome({
+      hit: positions.length > 0,
+      attemptsBefore: attempts,
+      maxAttempts: max,
+      allRevealed: allSlotsRevealed(title, [...open]),
+      supportsAutoWin: opts.flag,
+    })
+    attempts = last.attemptsAfter
+    completed = last.completed
+  }
+  return { error: null, attempts, last }
+}
+
+Deno.test('allSlotsRevealed: sep yeri acik sayilir, rakam beklenmez', () => {
+  // "Toy Story 3": T o y S t o r y → 8 slot; bosluk ve 3 gorunur
+  const all = new Set<number>()
+  for (const l of ['T', 'O', 'Y', 'S', 'R']) findLetterPositions('Toy Story 3', l).forEach((p) => all.add(p))
+  assertEquals(allSlotsRevealed('Toy Story 3', [...all]), true)
+  all.delete(8)
+  assertEquals(allSlotsRevealed('Toy Story 3', [...all]), false)
+})
+
+Deno.test('bayrakli: son slot acilinca completed + won, ekstra hak yok', () => {
+  const r = playLetters('Toy Story', ['T', 'O', 'Y', 'S', 'R'], { flag: true })
+  assertEquals(r.last?.autoWin, true)
+  assertEquals(r.last?.completed, true)
+  assertEquals(r.last?.won, true)
+  assertEquals(r.attempts, 0)
+})
+
+Deno.test('bayrakli: yanlis harflar hakki goturur, kazanimda hak ayni kalir', () => {
+  const r = playLetters('Toy Story', ['Z', 'Q', 'T', 'O', 'Y', 'S', 'R'], { flag: true })
+  assertEquals(r.last?.won, true)
+  assertEquals(r.attempts, 2)
+})
+
+Deno.test('bayraksiz: tum slotlar acilsa da completed false kalir (eski davranis)', () => {
+  const r = playLetters('Toy Story', ['T', 'O', 'Y', 'S', 'R'], { flag: false })
+  assertEquals(r.last?.autoWin, false)
+  assertEquals(r.last?.completed, false)
+  assertEquals(r.last?.won, false)
+  assertEquals(r.attempts, 0)
+})
+
+Deno.test('bayraksiz: haklar bitince kayip kapanisi eskisiyle ayni', () => {
+  const r = playLetters('Toy Story', ['Z', 'Q', 'X', 'J'], { flag: false, max: 4 })
+  assertEquals(r.last?.outOfAttempts, true)
+  assertEquals(r.last?.completed, true)
+  assertEquals(r.last?.won, false)
+})
+
+Deno.test('bayrakli: haklar bitince yine kayip (otomatik kazanim yok)', () => {
+  const r = playLetters('Toy Story', ['Z', 'Q', 'X', 'J'], { flag: true, max: 4 })
+  assertEquals(r.last?.won, false)
+  assertEquals(r.last?.completed, true)
+})
+
+Deno.test('XP merdiveni: autoWin indeksi = harcanan hak, film tahmini kazanimiyla ayni deger', () => {
+  const ladder = [100, 80, 60, 40, 20, 10]
+  for (let spent = 0; spent <= 5; spent++) {
+    const guessPathIndex = Math.min(spent + 1 - 1, ladder.length - 1) // newAttempts - 1
+    assertEquals(autoWinLadderIndex(spent, ladder.length), guessPathIndex)
+  }
+  assertEquals(autoWinLadderIndex(9, ladder.length), ladder.length - 1)
+})
+
+Deno.test('idempotency: ayni harf tekrar → LETTER_ALREADY_TRIED 400', () => {
+  const r = playLetters('Toy Story', ['T', 't'], { flag: true })
+  assertEquals(r.error?.code, 'LETTER_ALREADY_TRIED')
+  assertEquals(r.error?.status, 400)
+})
+
+Deno.test('idempotency: kazanimdan sonra harf → ALREADY_COMPLETED 409', () => {
+  const r = playLetters('Toy Story', ['T', 'O', 'Y', 'S', 'R', 'A'], { flag: true })
+  assertEquals(r.error?.code, 'ALREADY_COMPLETED')
+  assertEquals(r.error?.status, 409)
+})
+
+Deno.test('on kontrol sirasi: tamamlandi > hak bitti > tekrar', () => {
+  const base = { completed: true, attempts: 6, maxAttempts: 6, triedLetters: ['A'], letter: 'A' }
+  assertEquals(letterPrecheck(base)?.code, 'ALREADY_COMPLETED')
+  assertEquals(letterPrecheck({ ...base, completed: false })?.code, 'MAX_ATTEMPTS')
+  assertEquals(letterPrecheck({ ...base, completed: false, attempts: 2 })?.code, 'LETTER_ALREADY_TRIED')
+  assertEquals(letterPrecheck({ ...base, completed: false, attempts: 2, letter: 'B' }), null)
 })
