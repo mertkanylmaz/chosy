@@ -63,6 +63,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 
 import { supabase } from '@/services/supabase';
 import { invalidateUserCache, readUserRow } from '@/services/userCache';
+import { normalizePosterUrl, SAVED_THUMB_POSTER_SIZE } from '@/utils/posterUrl';
 import * as Sentry from '@sentry/react-native';
 
 import { logger } from '@/utils/logger';
@@ -136,9 +137,13 @@ const LANGUAGES: { code: Locale; labelKey: string }[] = [
 /** Saved poster seridindeki yuva sayisi — yukleme dilimi ile ayni kaynak. */
 const SAVED_STRIP_SLOTS = 4;
 
-/** Saved karoları ~80pt genişliğinde: getWatchlist'in w780 posteri yerine w185. */
+/**
+ * Saved karoları ~80pt genişliğinde: poster w185. Eski `replace('/w780/')`
+ * `/original/` URL'lerini kaçırıp orijinali indiriyordu; normalizasyon her
+ * TMDb biçimini hedef boyuta çeker. Tanınmayan URL olduğu gibi kalır.
+ */
 function toSavedThumbUrl(url: string): string {
-  return url.replace('/t/p/w780/', '/t/p/w185/');
+  return normalizePosterUrl(url, SAVED_THUMB_POSTER_SIZE) ?? url;
 }
 
 /**

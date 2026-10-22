@@ -46,6 +46,7 @@ import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { localizeGenre } from '@/utils/filmFilters';
+import { normalizePosterUrl } from '@/utils/posterUrl';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -78,8 +79,6 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 const VELOCITY_THRESHOLD = 500;
 /** Kart ekrandan çıkış mesafesi */
 const EXIT_X = SCREEN_WIDTH * 1.5;
-
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w780';
 
 /** Action button boyutları */
 const ACTION_BTN_SM = 48;
@@ -122,11 +121,8 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   const thresholdHapticFired = useSharedValue(false);
 
   // ── Türetilmiş değerler ───────────────────────────────────────────────────
-  const fullPosterUrl: string | null = film.posterUrl
-    ? film.posterUrl.startsWith('http')
-      ? film.posterUrl
-      : `${TMDB_IMAGE_BASE}${film.posterUrl}`
-    : null;
+  // Prefetch (useFeedManager, recommendationPreload) ile AYNI fonksiyon ve boyut.
+  const fullPosterUrl: string | null = normalizePosterUrl(film.posterUrl);
 
   const matchPercent = film.matchScore ?? 0;
   const rating = film.voteAverage ?? 0;

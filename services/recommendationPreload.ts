@@ -17,6 +17,7 @@ import { Image } from 'expo-image';
 import * as Sentry from '@sentry/react-native';
 
 import type { FilmFilters, TasteProfile } from '@/types';
+import { normalizePosterUrl } from '@/utils/posterUrl';
 import type { RecommendationResult } from './recommendations';
 import { getRecommendations } from './recommendations';
 import {
@@ -61,8 +62,10 @@ function profileKey(
 function prefetchPosters(result: RecommendationResult): void {
   // Ilk 3 ve 4..8 ayni yol: hicbiri await edilmez (fire-and-forget), gecikme eklemez.
   for (const film of result.films) {
-    if (!film.posterUrl) continue;
-    Image.prefetch(film.posterUrl, 'memory-disk').catch((err: unknown) => {
+    // Kartla AYNI fonksiyon ve boyut: farklı URL önbelleği ıskalatır.
+    const uri = normalizePosterUrl(film.posterUrl);
+    if (!uri) continue;
+    Image.prefetch(uri, 'memory-disk').catch((err: unknown) => {
       Sentry.addBreadcrumb({
         category: 'poster_prefetch',
         level: 'warning',

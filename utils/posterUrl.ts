@@ -157,3 +157,46 @@ export function resultPosterUrl(
   // `original` ya da hedeften geniş → hedefe indirilir.
   return { url: `${prefix}w${targetWidth}${filePath}`, resized: true }
 }
+
+// ─── Deste / Saved / film detayı — tek normalizasyon (UX-POLISH Faz 1) ───────
+
+/** Deste kartı, prefetch ve film detayı için TEK poster boyutu. */
+export const DECK_POSTER_SIZE = 'w780'
+
+/** Saved şeridi karoları (~80pt) için poster boyutu. */
+export const SAVED_THUMB_POSTER_SIZE = 'w185'
+
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p'
+
+/**
+ * `films.poster_url`'ü tek biçime getirir: `https://image.tmdb.org/t/p/{size}/dosya`.
+ *
+ * Prod'da üç biçim var (22 Eki 2026): tam URL `/t/p/original/` (çoğunluk, birkaç
+ * MB — cihazda çözme maliyeti), yalnız yol (`/x.jpg`) ve null. Deste kartı ile
+ * prefetch farklı URL isterse önbellek ıskalıyordu; ikisi de BU fonksiyondan geçer.
+ *
+ * - null / boş → `null`
+ * - TMDb boyut URL'i (original ya da herhangi bir wNNN) → `{size}`. Küçültme
+ *   de yapılır: bu yüzeylerde boyut yüzeye göre seçilir.
+ * - Yalnız yol (`/x.jpg`) → TMDb tam URL'i
+ * - Başka host'taki tam URL → olduğu gibi
+ * - Tanınmayan her şey (`//cdn`, boşluklu metin…) → `null` (çağıran görünür yer tutucu çizer)
+ *
+ * Saf: ağ/RN yok, asla fırlatmaz.
+ */
+export function normalizePosterUrl(
+  raw: string | null | undefined,
+  size: string = DECK_POSTER_SIZE,
+): string | null {
+  const value = (raw ?? '').trim()
+  if (value === '') return null
+
+  const match = TMDB_POSTER_PATTERN.exec(value)
+  if (match) return `${match[1]}${size}${match[4]}`
+
+  if (/^https?:\/\//i.test(value)) return value
+
+  if (/^\/[^/\s]/.test(value)) return `${TMDB_IMAGE_BASE}/${size}${value}`
+
+  return null
+}

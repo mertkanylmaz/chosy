@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/react-native';
 import { TasteProfile, FilmFilters } from '../types';
 import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
+import { normalizePosterUrl } from '../utils/posterUrl';
 
 import { getAppUserId } from './auth-utils';
 import { ensureAuthSession, getFreshSession } from './authSession';
@@ -370,7 +371,7 @@ function rowToFilm(row: MatchFilmRow): Film {
     id: row.id,
     title: row.title,
     year: row.year ?? 0,
-    posterUrl: toTmdbUrl(row.poster_url),
+    posterUrl: normalizePosterUrl(row.poster_url) ?? '',
     matchScore: Math.min(100, Math.round(Math.max(0, row.similarity) * 100)),
     moodTags: [],
     whyThisFilm: reason,
@@ -464,7 +465,7 @@ function scoredRowToFilm(film: FilmTableRow, score: number): Film {
     id: film.id,
     title: film.title,
     year: film.year ?? 0,
-    posterUrl: toTmdbUrl(film.poster_url),
+    posterUrl: normalizePosterUrl(film.poster_url) ?? '',
     matchScore,
     moodTags: film.genres?.slice(0, 3) ?? [],
     whyThisFilm: '',  // overview türkçe olabilir — film/[id].tsx'te TMDB'den EN çekilir

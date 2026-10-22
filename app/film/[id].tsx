@@ -65,6 +65,7 @@ import {
 } from '@/services/tmdb';
 import { flattenProviders } from '@/utils/watchProviderList';
 import { localizeGenre } from '@/utils/filmFilters';
+import { normalizePosterUrl } from '@/utils/posterUrl';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -385,7 +386,7 @@ export default function FilmDetailScreen() {
 
         let enOverview = row.overview ?? undefined;
         let enTitle = row.title;
-        let enPosterUrl = toTmdbUrl(row.poster_url);
+        let enPosterUrl = normalizePosterUrl(row.poster_url) ?? '';
 
         const dbCast = (row.cast_json ?? []).map((a) => ({
           name: a.name,
@@ -409,7 +410,7 @@ export default function FilmDetailScreen() {
           if (tmdbDetails) {
             if (tmdbDetails.overview) enOverview = tmdbDetails.overview;
             if (tmdbDetails.title) enTitle = tmdbDetails.title;
-            if (tmdbDetails.poster_path) enPosterUrl = toTmdbUrl(tmdbDetails.poster_path);
+            if (tmdbDetails.poster_path) enPosterUrl = normalizePosterUrl(tmdbDetails.poster_path) ?? enPosterUrl;
             const firstCountry = tmdbDetails.production_countries?.[0];
             if (firstCountry) setCountry(firstCountry.name);
             if (tmdbDetails.credits) setTmdbCredits(tmdbDetails.credits);

@@ -24,6 +24,7 @@ import { queueUserVectorUpdate } from '@/services/userProfile';
 import { getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { logger } from '@/utils/logger';
+import { normalizePosterUrl } from '@/utils/posterUrl';
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
 
@@ -566,8 +567,10 @@ export function useFeedManager(
       state.currentIndex + 3,
     );
     upcoming.forEach((f) => {
-      if (f.posterUrl) {
-        Image.prefetch(f.posterUrl);
+      // Kartla AYNI fonksiyon ve boyut (SwipeableCard) — aksi halde önbellek ıskalar.
+      const uri = normalizePosterUrl(f.posterUrl);
+      if (uri) {
+        Image.prefetch(uri, 'memory-disk');
       }
     });
   }, [state.currentIndex, state.films]);
