@@ -98,6 +98,17 @@ Sentry.init({
     if (__DEV__ && !process.env.EXPO_PUBLIC_SENTRY_DSN) {
       return null;
     }
+    // Farklı captureMessage/captureException çağrıları tek issue'da toplanmasın
+    // (REACT-NATIVE-9). Açık fingerprint verilmişse dokunulmaz; yoksa mesaj ya
+    // da hata kodu gruplama anahtarına eklenir.
+    if (!event.fingerprint?.length) {
+      const code = event.tags?.error_code ?? event.tags?.code;
+      const key =
+        typeof code === 'string' && code !== 'UNTAGGED'
+          ? code
+          : event.message; // exception değeri dinamik olabilir — parçalanmasın
+      if (key) event.fingerprint = ['{{ default }}', key];
+    }
     return event;
   },
 });
