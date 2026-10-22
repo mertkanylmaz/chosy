@@ -78,3 +78,23 @@ Deno.test('8 doğru harf açıp ilk film tahminini bilen oyun (attempts=1) → f
     ok: true, variant: 'flawless', chancesLeft: 6, total: 6,
   })
 })
+
+Deno.test('otomatik kazanım: 3 yanlış harf (attempts=3) → found, 3 kaldı', () => {
+  // Sunucuda autoWin hakkı artırmaz (spotlightLetters.attemptsAfter): misses = attempts
+  assertEquals(resultState({ won: true, attempts: 3, maxAttempts: MAX, autoWin: true }), {
+    ok: true, variant: 'found', chancesLeft: 3, total: 6,
+  })
+})
+
+Deno.test('otomatik kazanım: 0 yanlış harf (attempts=0) → flawless, anomali değil', () => {
+  assertEquals(resultState({ won: true, attempts: 0, maxAttempts: MAX, autoWin: true }), {
+    ok: true, variant: 'flawless', chancesLeft: 6, total: 6,
+  })
+})
+
+Deno.test('3 yanlış harf: otomatik kazanım ile film tahmini aynı kalan hakkı verir', () => {
+  // Film tahmini yolu: 3 kaçırma + doğru tahmin → attempts=4
+  const guess = resultState({ won: true, attempts: 4, maxAttempts: MAX })
+  const auto = resultState({ won: true, attempts: 3, maxAttempts: MAX, autoWin: true })
+  assertEquals(auto, guess)
+})

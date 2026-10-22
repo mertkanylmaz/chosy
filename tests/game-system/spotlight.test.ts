@@ -309,6 +309,14 @@ Deno.test('XP merdiveni: autoWin indeksi = harcanan hak, film tahmini kazanimiyl
   assertEquals(autoWinLadderIndex(9, ladder.length), ladder.length - 1)
 })
 
+Deno.test('XP: 3 yanlış harf + autoWin, film tahmini yoluyla aynı basamak', () => {
+  const ladder = [100, 80, 60, 40, 20, 10]
+  const autoIdx = autoWinLadderIndex(3, ladder.length)
+  const guessIdx = Math.min(3 + 1 - 1, ladder.length - 1) // newAttempts(=4) - 1
+  assertEquals(autoIdx, guessIdx)
+  assertEquals(ladder[autoIdx], ladder[guessIdx])
+})
+
 Deno.test('idempotency: ayni harf tekrar → LETTER_ALREADY_TRIED 400', () => {
   const r = playLetters('Toy Story', ['T', 't'], { flag: true })
   assertEquals(r.error?.code, 'LETTER_ALREADY_TRIED')

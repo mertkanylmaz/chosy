@@ -14,6 +14,9 @@
  *   won  → misses = attempts - 1;  chancesLeft = maxAttempts - misses
  *   lost → chancesLeft = 0
  *
+ * Otomatik kazanım (`autoWin`) istisnası: `attemptsAfter` artmaz, yani
+ * misses = attempts (0 yanlış harfle kazanım = flawless).
+ *
  * ── FLAWLESS tanımı (CTO kararı) ────────────────────────────────────────────
  * FLAWLESS = doğru film tahmininden ÖNCE sıfır hak kaybı. Sıfır harf seçimi
  * DEMEK DEĞİLDİR; doğru harfler hak harcamaz ve etiketi etkilemez.
@@ -41,6 +44,13 @@ export type ResultStateInput = {
   readonly attempts: number;
   /** Sunucudaki `puzzle.max_attempts` */
   readonly maxAttempts: number;
+  /**
+   * Kazanım yolu: tüm slotlar açılınca sunucu otomatik kazandırır
+   * (`spotlightLetters.ts` — `attemptsAfter` hakkı ARTIRMAZ). Bu yolda doğru
+   * tahmin `attempts`'a eklenmediği için misses = attempts. Harf verisi değil,
+   * yalnız kazanım yolu bilgisidir.
+   */
+  readonly autoWin?: boolean;
 } & NoLetterData;
 
 export type ResultVariant = 'flawless' | 'found' | 'lost';
@@ -63,7 +73,7 @@ export type ResultState =
       reason: ResultStateReason;
     };
 
-export function resultState({ won, attempts, maxAttempts }: ResultStateInput): ResultState {
+export function resultState({ won, attempts, maxAttempts, autoWin = false }: ResultStateInput): ResultState {
   if (!Number.isInteger(maxAttempts) || maxAttempts <= 0) {
     return { ok: false, reason: 'invalid_max_attempts' };
   }
@@ -73,7 +83,7 @@ export function resultState({ won, attempts, maxAttempts }: ResultStateInput): R
   if (attempts > maxAttempts) {
     return { ok: false, reason: 'attempts_exceed_max' };
   }
-  if (won && attempts < 1) {
+  if (won && !autoWin && attempts < 1) {
     return { ok: false, reason: 'won_without_attempt' };
   }
 
@@ -81,7 +91,7 @@ export function resultState({ won, attempts, maxAttempts }: ResultStateInput): R
     return { ok: true, variant: 'lost', chancesLeft: 0, total: maxAttempts };
   }
 
-  const misses = attempts - 1;
+  const misses = autoWin ? attempts : attempts - 1;
   const chancesLeft = maxAttempts - misses;
   return {
     ok: true,

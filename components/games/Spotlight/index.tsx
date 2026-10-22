@@ -284,6 +284,8 @@ export function SpotlightGame() {
   const [lastGuessWrong, setLastGuessWrong] = useState(false);
 
   const [won, setWon] = useState(false);
+  /** Kazanım otomatik (tüm slotlar açıldı) mı — sunucuda bu yolda hak artmaz */
+  const [wonByLetters, setWonByLetters] = useState(false);
   // Sonuc ekrani artik odul/DNA/aciklama metni okumaz (K-33); sunucu yaniti ve
   // asagidaki yazimlar degismedi — yalniz okuyucular kalkti.
   const [, setXpAwarded] = useState(0);
@@ -372,6 +374,9 @@ export function SpotlightGame() {
 
       if (progress?.completed) {
         setWon(progress.won);
+        setWonByLetters(
+          progress.won && !progress.spotlight_guesses?.some((g) => g.correct),
+        );
         setStillReveal('static');
         setScreenState('completed');
         return;
@@ -399,6 +404,7 @@ export function SpotlightGame() {
       setAttempts(0);
       setGuessedFilmIds([]);
       setWon(false);
+      setWonByLetters(false);
       setActionError(false);
       loadPuzzle();
     }, [loadPuzzle]),
@@ -494,6 +500,7 @@ export function SpotlightGame() {
         // kalir ve sonraki harf 409 alir.
         if (res.completed) {
           setWon(res.won);
+          setWonByLetters(res.won);
           setXpAwarded(res.xp_awarded);
           setDnaUpdated(res.dna_updated);
           if (res.revealed_solution) setRevealedFilm(res.revealed_solution);
@@ -690,8 +697,8 @@ export function SpotlightGame() {
   // Hak etiketi YALNIZ {won, attempts, maxAttempts}'ten turer (resultState.ts);
   // harf verisi girmez. Anomali sessizce kenetlenmez: Sentry + hak satiri yok.
   const resultInfo = useMemo(
-    () => resultState({ won, attempts, maxAttempts }),
-    [won, attempts, maxAttempts],
+    () => resultState({ won, attempts, maxAttempts, autoWin: wonByLetters }),
+    [won, attempts, maxAttempts, wonByLetters],
   );
   const resultFilmId = revealedFilm?.film_id ?? null;
   /**
