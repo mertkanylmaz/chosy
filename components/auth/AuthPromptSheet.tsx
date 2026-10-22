@@ -18,7 +18,7 @@
  * olarak duruyor.
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Modal,
@@ -54,11 +54,47 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
   const { t } = useLanguage();
   const [appleBusy, setAppleBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /**
+   * Apple girişi tamamlandı → sheet ANINDA kapanır (çıkış animasyonu yok).
+   * `auth_prompt_completed` zaten tüm ağ zincirinden sonra atılıyor; ardından
+   * slide-out oynarsa sheet "yeniden görünüyor" hissi veriyordu. iOS Modal,
+   * kapanırken SON uygulanan `animationType`'ı kullanır; bu yüzden önce
+   * `animationType='none'` bir commit'te yerleşir, `onClose` bir sonraki
+   * efektte çağrılır (aynı commit'te visible=false native prop'u hiç taşımaz).
+   */
+  const [instantClose, setInstantClose] = useState<'signed_in' | 'existing' | null>(null);
+  const closeFiredRef = useRef(false);
+  /**
+   * `identity_already_exists` dalında GauntletShell yeni kimlikle yeniden
+   * başlayıp bu bileşeni sökebilir (setSession → SIGNED_IN). Söküldüyse
+   * animasyon anlamsızdır: `onClose` doğrudan çağrılır (eski davranış) —
+   * aksi halde `ask` durumu temizlenmez ve sheet yeniden açılırdı.
+   */
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!visible) return;
     posthogAnalytics.track('auth_prompt_viewed', { surface: 'champion_sheet' });
   }, [visible]);
+
+  useEffect(() => {
+    if (!visible) {
+      // Kapandı: bir sonraki açılış yine slide-in ile gelsin.
+      closeFiredRef.current = false;
+      setInstantClose(null);
+      return;
+    }
+    if (instantClose === null || closeFiredRef.current) return;
+    closeFiredRef.current = true;
+    onClose(true);
+    if (instantClose === 'existing') Alert.alert(t('auth.existingAccountSignedIn'));
+  }, [visible, instantClose, onClose, t]);
 
   const handleApple = useCallback(async () => {
     if (appleBusy) return;
@@ -75,7 +111,8 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
             provider: 'apple',
             surface: 'champion_sheet',
           });
-          onClose(true);
+          if (mountedRef.current) setInstantClose('signed_in');
+          else onClose(true);
           return;
         case 'identity_already_exists':
           // Apple kimliği başka hesapta — o hesaba girildi. Taşıma sonucu
@@ -84,8 +121,12 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
             provider: 'apple',
             surface: 'champion_sheet',
           });
-          onClose(true);
-          Alert.alert(t('auth.existingAccountSignedIn'));
+          if (mountedRef.current) {
+            setInstantClose('existing');
+          } else {
+            onClose(true);
+            Alert.alert(t('auth.existingAccountSignedIn'));
+          }
           return;
         case 'canceled':
           // Kullanıcı Apple dialog'unu kapattı — sheet açık kalır, hata yok.
@@ -119,7 +160,12 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
   }, [onClose]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleDismiss}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType={instantClose === null ? 'slide' : 'none'}
+      onRequestClose={handleDismiss}
+    >
       <View style={styles.overlay}>
         <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={handleDismiss} />
 
