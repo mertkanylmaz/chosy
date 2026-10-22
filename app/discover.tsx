@@ -99,6 +99,12 @@ export default function DiscoverScreen() {
         router.replace('/(tabs)' as never);
       }
     },
+    // Satın alma tamamlandı: deste çözülür, geri yaylanan üst kart yeniden
+    // kaydırılabilir (aksi halde kalıcı donmuş kalırdı).
+    onConvert: (plan: Parameters<typeof rawPaywallProps.onConvert>[0]) => {
+      rawPaywallProps.onConvert(plan);
+      setDeckFrozen(false);
+    },
   }), [rawPaywallProps, isOnboarding, deckFrozen, clearMood, router]);
 
   const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
@@ -352,6 +358,7 @@ export default function DiscoverScreen() {
                 onSwipeRight={handleSwipeRight}
                 onSwipeLeft={handleSwipeLeft}
                 interactive={i === 0}
+                frozen={deckFrozen}
               />
             </View>
           ))}

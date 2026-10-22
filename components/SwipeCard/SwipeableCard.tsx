@@ -100,6 +100,11 @@ export interface SwipeableCardProps {
    * geçer — remount yoktur, shared value'lar ve poster olduğu gibi kalır.
    */
   interactive?: boolean;
+  /**
+   * Deste donduruldu (slot kotası tükendi, paywall açık). Kart ekrandan uçmaz /
+   * uçtuysa merkeze geri yaylanır: paywall kapanınca film yerinde görünür.
+   */
+  frozen?: boolean;
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -116,6 +121,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   onSwipeRight,
   onSwipeLeft,
   interactive = true,
+  frozen = false,
 }) => {
   const router = useRouter();
   const { language } = useLanguage();
@@ -127,6 +133,8 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   const skipOpacity = useSharedValue(0);
   /** Threshold geçişinde bir kez tetiklenmesi için guard */
   const thresholdHapticFired = useSharedValue(false);
+  /** Worklet'in okuyabilmesi için `frozen` prop'unun aynası. */
+  const frozenSV = useSharedValue(false);
 
   // ── Türetilmiş değerler ───────────────────────────────────────────────────
   // Prefetch (useFeedManager, recommendationPreload) ile AYNI fonksiyon ve boyut.
@@ -165,6 +173,18 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Dondurulunca kart merkeze yaylanır. Kota kontrolü çıkış animasyonu bittikten
+  // SONRA (async) sonuçlanır; kart o ana kadar ekran dışındadır, geri gelir.
+  useEffect(() => {
+    frozenSV.value = frozen;
+    if (!frozen) return;
+    translateX.value = withSpring(0, { damping: 20, stiffness: 200 });
+    cardRotation.value = withSpring(0, { damping: 20, stiffness: 200 });
+    savedOpacity.value = withSpring(0, { damping: 20, stiffness: 200 });
+    skipOpacity.value = withSpring(0, { damping: 20, stiffness: 200 });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frozen]);
 
   // Sürpriz kart ilk görününce notification haptic (bir kez). Alttaki kart
   // (interactive=false) görünmez sayılır: haptic üste geçince ateşlenir.
@@ -282,9 +302,11 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
     })
     .onEnd((event) => {
       'worklet';
+      // Donmuş destede eşik geçilse de kart çıkmaz: aşağıdaki spring-back dalı.
       const passed =
-        Math.abs(translateX.value) > SWIPE_THRESHOLD ||
-        Math.abs(event.velocityX) > VELOCITY_THRESHOLD;
+        !frozenSV.value &&
+        (Math.abs(translateX.value) > SWIPE_THRESHOLD ||
+          Math.abs(event.velocityX) > VELOCITY_THRESHOLD);
 
       if (passed && translateX.value > 0) {
         savedOpacity.value = withTiming(0.5, { duration: 100 });
