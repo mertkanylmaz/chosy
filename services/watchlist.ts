@@ -599,6 +599,36 @@ export async function getWatchlist(): Promise<WatchlistItem[]> {
 }
 
 /**
+ * Watchlist'teki (izlenmiş satırlar dahil) tüm film ID'leri — yalnız `film_id`.
+ * Öneri dışlaması için: `getWatchlist` posterli tam film satırı çeker, burada
+ * yalnız kimlik gerekir. Oturum yoksa boş küme (hata değil).
+ *
+ * @throws Sorgu reddedilirse
+ */
+export async function getWatchlistFilmIds(): Promise<Set<string>> {
+  try {
+    const appUserId = await readAppUserId();
+    if (!appUserId) return new Set<string>();
+
+    const { data, error } = await supabase
+      .from('watchlist')
+      .select('film_id')
+      .eq('user_id', appUserId);
+    if (error || !data) {
+      throw new Error(
+        `[watchlist] getWatchlistFilmIds failed: ${error?.code ?? 'no-data'} — ${error?.message ?? 'empty response'}`,
+      );
+    }
+    return new Set(data.map((row) => row.film_id as string));
+  } catch (err) {
+    logger.error('[watchlist] getWatchlistFilmIds hatasi', err, {
+      code: 'WATCHLIST_IDS_READ_FAILED',
+    });
+    throw err;
+  }
+}
+
+/**
  * Kullanıcının Saved listesini temizler — yalnızca `watched_at IS NULL`
  * satırlar silinir. İzlenmiş satırlar kalır: Profil "Watched" sayacının ve
  * gauntlet aday filtresinin (`fetchExclusions`) kaynağı onlar (B-1 / Fix 6).
