@@ -112,6 +112,7 @@ export default function DiscoverScreen() {
   const {
     films: managerFilms,
     isLoading,
+    deckReranked,
     hasError,
     errorType,
     retryLoad,
@@ -277,6 +278,7 @@ export default function DiscoverScreen() {
           dislikedFilms={dislikedFilms}
           deckSize={deckSize}
           insufficientResults={insufficientResults || deckSize < 8}
+          reranked={deckReranked}
           onNewMood={handleNewMood}
           onGoWatchlist={handleGoWatchlist}
         />

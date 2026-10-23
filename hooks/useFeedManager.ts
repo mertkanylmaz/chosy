@@ -215,6 +215,8 @@ export interface FeedManager {
   nextFilm: Film | undefined;
   /** Yükleme devam ediyor mu */
   isLoading: boolean;
+  /** İlk batch'e LLM rerank sırası uygulandı mı (`mood_deck_completed.reranked`) */
+  deckReranked: boolean;
   /**
    * Swipe aksiyonu (index tabanlı — eski API, geriye dönük uyumluluk için korundu).
    * - right: watchlist + kullanıcı vektörü (save)
@@ -257,6 +259,7 @@ export function useFeedManager(
   filters: FilmFilters,
 ): FeedManager {
   const [state, dispatch] = useReducer(feedReducer, initialState);
+  const [deckReranked, setDeckReranked] = useState(false);
 
   /** Arka plan yüklemesi devam ediyorsa duplicate isteği engeller */
   const isLoadingRef = useRef(false);
@@ -433,6 +436,7 @@ export function useFeedManager(
               dispatch({ type: 'SET_ERROR', hasError: true, errorType: 'empty' });
               return;
             }
+            setDeckReranked(preloaded.ready.reranked === true);
             dispatch({ type: 'ADD_FILMS', films: preloaded.ready.films });
             return;
           }
@@ -454,6 +458,7 @@ export function useFeedManager(
                 dispatch({ type: 'SET_ERROR', hasError: true, errorType: 'empty' });
                 return;
               }
+              setDeckReranked(result.reranked === true);
               dispatch({ type: 'ADD_FILMS', films: result.films });
               return;
             } catch {
@@ -499,6 +504,7 @@ export function useFeedManager(
           return;
         }
 
+        if (loadedCount === 0) setDeckReranked(result.reranked === true);
         dispatch({ type: 'ADD_FILMS', films: result.films });
       }
     } catch (err) {
@@ -667,6 +673,7 @@ export function useFeedManager(
     currentFilm: state.films[state.currentIndex],
     nextFilm: state.films[state.currentIndex + 1],
     isLoading: state.isLoading,
+    deckReranked,
     hasError: state.hasError,
     errorType: state.errorType,
     retryLoad,

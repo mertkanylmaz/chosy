@@ -41,6 +41,8 @@ interface MoodDeckSummaryProps {
   deckSize: number;
   /** Backend 8'den az film dondurduyse */
   insufficientResults?: boolean;
+  /** Destenin sırası LLM rerank'ten geldi mi (analytics) */
+  reranked?: boolean;
   /** "Yeni Mood Ara" butonu */
   onNewMood: () => void;
   /** "Watchlist'e Git" butonu */
@@ -55,6 +57,7 @@ export default function MoodDeckSummary({
   dislikedFilms,
   deckSize,
   insufficientResults,
+  reranked = false,
   onNewMood,
   onGoWatchlist,
 }: MoodDeckSummaryProps) {
@@ -68,6 +71,7 @@ export default function MoodDeckSummary({
       liked_count: likedFilms.length,
       disliked_count: dislikedFilms.length,
       deck_size: deckSize,
+      reranked,
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
