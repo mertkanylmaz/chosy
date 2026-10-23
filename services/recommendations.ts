@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/react-native';
 import { TasteProfile, FilmFilters } from '../types';
 import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
+import { logger } from '../utils/logger';
 import { normalizePosterUrl } from '../utils/posterUrl';
 
 import { getAppUserId } from './auth-utils';
@@ -24,10 +25,12 @@ import {
 } from './moodSearchState';
 import { posthogAnalytics } from './posthog';
 import { remoteConfig } from './remoteConfig';
+import { getRecentDeckIds, recordShownDeck } from './shownDecksStore';
 import { supabase } from './supabase';
 import { tasteSignals } from './tasteSignalService';
 import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
+import { getWatchedFilmIds, getWatchlistFilmIds } from './watchlist';
 import { hasAiConsent } from './aiConsent';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
@@ -745,6 +748,25 @@ interface RerankResponse {
   fallback?: boolean;
 }
 
+/** Rerank çağrısının başarısızlık nedeni — `llm_rerank_fallback.reason`. */
+type RerankFailure = 'no_consent' | 'timeout' | 'http_error' | 'network_error' | 'bad_body';
+
+type RerankOutcome =
+  | { response: RerankResponse; failure?: undefined }
+  | { response: null; failure: RerankFailure };
+
+/** Rerank zaman aşımı — aşılırsa RPC sırasıyla (C1) devam edilir. */
+const RERANK_TIMEOUT_MS = 6_000;
+
+/** İlk batch'te rerank'a girecek aday sayısı (QUALITY-2 B: 30 aday en iyi sonucu verdi). */
+const FIRST_BATCH_MATCH_COUNT = 30;
+
+/** Sonraki batch'ler için aday sayısı (rerank yok, 8 + yönetmen sınırı payı). */
+const DEFAULT_MATCH_COUNT = 12;
+
+/** `exclude_ids` üst sınırı (PostgREST/RPC gövdesi). */
+const MAX_EXCLUDE_IDS = 500;
+
 /**
  * LLM re-ranker edge function'i cagirarak vektor sonuclarini
  * tematik uygunluga gore yeniden siralar.
@@ -752,7 +774,8 @@ interface RerankResponse {
  * "thailand trip" gibi tematik mood girdilerinde vektor uzayinin
  * yakalayamadigi kavramsal anlami LLM ile doldurur.
  *
- * Hata durumunda null doner — caller orijinal siralamaya doner.
+ * Hata durumunda `response: null` + neden doner — caller orijinal siralamaya
+ * doner ve nedeni `llm_rerank_fallback` olayina yazar.
  *
  * @param moodText   - Kullanicinin orijinal mood metni
  * @param candidates - match_films_v3'ten gelen film satirlari
@@ -762,18 +785,18 @@ async function callRerankFilms(
   moodText: string,
   candidates: MatchFilmRow[],
   count: number,
-): Promise<RerankResponse | null> {
+): Promise<RerankOutcome> {
   // AI rızası (R-1): rıza yoksa mood metni ve adaylar Edge Function'a gitmez.
   // Çağıran koşulda da elenir (analytics yanlış "fallback" saymasın); bu,
   // fonksiyonun kendi kapısıdır.
-  if (!(await hasAiConsent())) return null;
+  if (!(await hasAiConsent())) return { response: null, failure: 'no_consent' };
 
   // Token freshness — authSession.ts (oturum yoksa anon anahtar, eskisi gibi)
   const session = await getFreshSession();
   const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8_000); // 8s timeout
+  const timeoutId = setTimeout(() => controller.abort(), RERANK_TIMEOUT_MS);
 
   try {
     const body = {
@@ -800,25 +823,33 @@ async function callRerankFilms(
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     if (!res.ok) {
-      if (__DEV__) {
-        // eslint-disable-next-line no-console
-        console.error('[recommendations] rerank-films HTTP error:', res.status);
-      }
-      return null;
+      logger.error('[recommendations] rerank-films HTTP hatasi', new Error(`HTTP ${res.status}`), {
+        code: 'RERANK_HTTP_ERROR',
+      });
+      return { response: null, failure: 'http_error' };
     }
 
-    const data: RerankResponse = await res.json();
-    return data;
-  } catch (err) {
-    clearTimeout(timeoutId);
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.error('[recommendations] rerank-films call failed:', err instanceof Error ? err.message : err);
+    const data: unknown = await res.json();
+    if (
+      typeof data !== 'object' ||
+      data === null ||
+      !Array.isArray((data as RerankResponse).reranked_ids)
+    ) {
+      logger.error('[recommendations] rerank-films beklenmeyen govde', new Error('reranked_ids yok'), {
+        code: 'RERANK_BAD_BODY',
+      });
+      return { response: null, failure: 'bad_body' };
     }
-    return null;
+    return { response: data as RerankResponse };
+  } catch (err) {
+    if (controller.signal.aborted) return { response: null, failure: 'timeout' };
+    logger.error('[recommendations] rerank-films cagrisi basarisiz', err, {
+      code: 'RERANK_NETWORK_ERROR',
+    });
+    return { response: null, failure: 'network_error' };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -877,14 +908,16 @@ async function getFilmsWithRelaxation(
   userWeight?: number,
   searchKeywords?: string[],
   trace?: RelaxationTrace,
+  matchCount: number = DEFAULT_MATCH_COUNT,
 ): Promise<MatchFilmRow[] | null> {
   const baseRating = ratingMin ?? 6.5;
 
   // ── Quality-first relaxation (migration 050) ──────────────────────────────
-  // Target: 8 high-quality films. match_count=12 gives buffer for director cap.
+  // Target: 8 high-quality films. matchCount (12; ilk batch'te 30 — rerank adayı)
+  // gives buffer for director cap. Zincir ve eşikler matchCount'tan bağımsız.
   // Never pad with junk — return whatever passes the threshold.
   const TARGET_COUNT = 8;
-  const MATCH_COUNT = 12;
+  const MATCH_COUNT = matchCount;
 
   // Telemetri: her denemenin süresi. Ağ hatası fırlatırsa da kaydedilir (finally).
   const attempt = async (
@@ -954,6 +987,37 @@ export interface RecommendationResult {
   source: 'supabase' | 'fallback';
   /** true when RPC returned fewer films than requested — UI should show "try different words" */
   insufficient_results?: boolean;
+  /** true when the LLM re-ranker's order was applied to this deck (first batch only) */
+  reranked?: boolean;
+}
+
+/**
+ * İlk batch'in dışlama listesi (QUALITY-3).
+ *
+ *   hard  = çağıranın verdikleri + watchlist + izlenmiş (asla gösterilmez)
+ *   soft  = son 3 destede gösterilen filmler (aday yetmezse bırakılır)
+ *
+ * Preload yolu da bu fonksiyondan geçer (startPreload `excludeIds=[]` verir ve
+ * watchlist henüz yüklenmemiş olabilir). Okuma hataları servis katmanında
+ * `logger.error` ile Sentry'ye yazılır; öneri akışı dışlamasız sürer.
+ */
+async function buildFirstBatchExclusions(
+  passed: string[],
+): Promise<{ hard: string[]; soft: string[] }> {
+  const [watchlistIds, watchedIds, recentIds] = await Promise.all([
+    getWatchlistFilmIds().catch(() => new Set<string>()), // hata servis içinde loglandı
+    getWatchedFilmIds().catch(() => new Set<string>()), // hata servis içinde loglandı
+    getRecentDeckIds(),
+  ]);
+  const hard = [...new Set([...passed, ...watchlistIds, ...watchedIds])];
+  const hardSet = new Set(hard);
+  const soft = recentIds.filter((id) => !hardSet.has(id));
+  return { hard, soft };
+}
+
+/** soft önce (kesilmesin), sonra hard; üst sınır MAX_EXCLUDE_IDS. */
+function composeExclusions(hard: string[], soft: string[]): string[] {
+  return [...new Set([...soft, ...hard])].slice(0, MAX_EXCLUDE_IDS);
 }
 
 /**
@@ -1109,15 +1173,38 @@ export async function getRecommendations(
     });
   }
 
+  // ── Adım 3.8: İlk batch dışlaması (watchlist + izlenmiş + son 3 deste) ────
+  let hardExcludeIds = excludeIds;
+  let softExcludeIds: string[] = [];
+  if (isFirstBatch) {
+    const exclusions = await buildFirstBatchExclusions(excludeIds);
+    hardExcludeIds = exclusions.hard;
+    softExcludeIds = exclusions.soft;
+  }
+  const matchCount = isFirstBatch ? FIRST_BATCH_MATCH_COUNT : DEFAULT_MATCH_COUNT;
+
   // ── Adım 4: Aşamalı filtre gevşetme ile RPC ───────────────────────────────
   const relaxationTrace: RelaxationTrace = { attemptMs: [], v3FellBack: false };
   const relaxationStart = Date.now();
   let rawResult: MatchFilmRow[] | null;
   try {
     rawResult = await getFilmsWithRelaxation(
-      vectorString, limit, ratingMin, era, excludeIds,
-      userVectorString, moodWeight, userWeight, searchKeywords, relaxationTrace,
+      vectorString, limit, ratingMin, era, composeExclusions(hardExcludeIds, softExcludeIds),
+      userVectorString, moodWeight, userWeight, searchKeywords, relaxationTrace, matchCount,
     );
+    // Yumuşak dışlama (son 3 deste) desteyi 8'in altına düşürüyorsa bırak:
+    // zincir yalnız watchlist + izlenmişle yeniden koşar. Deste hiçbir zaman
+    // "taze olsun" diye kısalmaz.
+    if (softExcludeIds.length > 0 && (rawResult === null || rawResult.length < limit)) {
+      posthogAnalytics.track('first_batch_soft_exclusion_dropped', {
+        soft_count: softExcludeIds.length,
+        result_count: rawResult?.length ?? null,
+      });
+      rawResult = await getFilmsWithRelaxation(
+        vectorString, limit, ratingMin, era, composeExclusions(hardExcludeIds, []),
+        userVectorString, moodWeight, userWeight, searchKeywords, relaxationTrace, matchCount,
+      );
+    }
   } finally {
     // PRO-FIX-3: keyword_boost_active → reranker_condition_check arası 2,2 sn'nin kaynağı.
     // Ağ hatasıyla fırlasa da gönderilir; hata yine çağırana yayılır.
@@ -1145,6 +1232,7 @@ export async function getRecommendations(
   // ── Adım 4.5: LLM Re-ranker (sadece ilk batch + flag aktif) ──────────────
 
   // Diagnostic: tum kosullari logla — hangi kosul false dondugunu tespit et
+  let rerankApplied = false;
   const rerankFlag = useLlmReranker();
   const peekedMoodText = peekPendingMoodText();
   if (isFirstBatch) {
@@ -1157,7 +1245,7 @@ export async function getRecommendations(
       searchKeywordsCount: searchKeywords.length,
       hasMoodText: peekedMoodText !== null,
       moodTextLength: peekedMoodText?.length ?? 0,
-      allConditionsMet: !rpcFailed && data.length > 0 && rerankFlag && searchKeywords.length > 0 && peekedMoodText !== null,
+      allConditionsMet: !rpcFailed && data.length > 0 && rerankFlag && peekedMoodText !== null,
     });
   }
 
@@ -1166,16 +1254,21 @@ export async function getRecommendations(
     data.length > 0 &&
     isFirstBatch &&
     rerankFlag &&
-    searchKeywords.length > 0 &&
     (await hasAiConsent())
   ) {
     const moodText = consumePendingMoodText();
     if (moodText) {
       const rerankStart = Date.now();
-      const rerankResult = await callRerankFilms(moodText, data, limit);
+      const candidatesCount = data.length;
+      const { response: rerankResult, failure: rerankFailure } = await callRerankFilms(
+        moodText,
+        data,
+        limit,
+      );
 
       if (rerankResult && !rerankResult.fallback && rerankResult.reranked_ids.length > 0) {
         data = reorderByRerankedIds(data, rerankResult.reranked_ids);
+        rerankApplied = true;
 
         if (__DEV__) {
           // eslint-disable-next-line no-console
@@ -1191,6 +1284,8 @@ export async function getRecommendations(
           original_count: rerankResult.original_count,
           reranked_count: rerankResult.reranked_count,
           latency_ms: Date.now() - rerankStart,
+          candidates_count: candidatesCount,
+          returned_ids: rerankResult.reranked_ids.join(','),
           mood_text_length: moodText.length,
           keyword_count: searchKeywords.length,
         });
@@ -1202,6 +1297,8 @@ export async function getRecommendations(
         posthogAnalytics.track('llm_rerank_fallback', {
           had_result: !!rerankResult,
           was_fallback: rerankResult?.fallback ?? false,
+          reason: rerankFailure ?? (rerankResult?.fallback ? 'server_fallback' : 'empty_ids'),
+          candidates_count: candidatesCount,
           latency_ms: Date.now() - rerankStart,
         });
       }
@@ -1334,7 +1431,10 @@ export async function getRecommendations(
       }
     }
 
-    if (fallbackFilms) return { films: fallbackFilms, source: 'fallback', insufficient_results: fallbackFilms.length < limit || undefined };
+    if (fallbackFilms) {
+      if (isFirstBatch) await recordShownDeck(fallbackFilms.map((f) => f.id));
+      return { films: fallbackFilms, source: 'fallback', insufficient_results: fallbackFilms.length < limit || undefined };
+    }
 
     if (__DEV__) {
       // eslint-disable-next-line no-console
@@ -1445,7 +1545,14 @@ export async function getRecommendations(
     });
   }
 
-  return { films, source: 'supabase', insufficient_results: insufficient || undefined };
+  if (isFirstBatch) await recordShownDeck(films.map((f) => f.id));
+
+  return {
+    films,
+    source: 'supabase',
+    insufficient_results: insufficient || undefined,
+    reranked: rerankApplied,
+  };
 }
 
 /**
