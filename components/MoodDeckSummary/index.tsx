@@ -47,6 +47,8 @@ interface MoodDeckSummaryProps {
   onNewMood: () => void;
   /** "Watchlist'e Git" butonu */
   onGoWatchlist: () => void;
+  /** Üstteki kapat (X) — Home'a döner, mood'u temizlemez */
+  onClose: () => void;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -60,6 +62,7 @@ export default function MoodDeckSummary({
   reranked = false,
   onNewMood,
   onGoWatchlist,
+  onClose,
 }: MoodDeckSummaryProps) {
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -92,13 +95,18 @@ export default function MoodDeckSummary({
     onNewMood();
   };
 
+  const handleClose = () => {
+    posthogAnalytics.track('mood_deck_summary_action', { action: 'close' });
+    onClose();
+  };
+
   const handleGoWatchlist = () => {
     posthogAnalytics.track('mood_deck_summary_action', { action: 'watchlist' });
     onGoWatchlist();
   };
 
-  // Footer height: butonlar + padding (tab bar arkasinda kalmasin)
-  const FOOTER_PADDING_BOTTOM = Math.max(insets.bottom, 20) + 83;
+  // Discover stack ekranidir, tab bar yok: yalniz home indicator payi + nefes boslugu
+  const FOOTER_PADDING_BOTTOM = Math.max(insets.bottom, 20) + 16;
 
   return (
     <View style={styles.container}>
@@ -205,6 +213,18 @@ export default function MoodDeckSummary({
           </Animated.View>
         )}
       </ScrollView>
+
+      {/* Kapat (X) — scroll'un ustunde sabit */}
+      <TouchableOpacity
+        style={[styles.closeBtn, { top: insets.top + 12 }]}
+        onPress={handleClose}
+        accessibilityRole="button"
+        accessibilityLabel={t('deckSummary.close')}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="close" size={20} color={Colors.textWhite} />
+      </TouchableOpacity>
 
       {/* Fixed footer — always visible */}
       <Animated.View

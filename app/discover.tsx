@@ -263,6 +263,14 @@ export default function DiscoverScreen() {
     router.navigate('/(tabs)');
   }, [clearMood, router]);
 
+  /**
+   * Yığın [(tabs), discover]: dismissTo mevcut (tabs) kaydına geri çeker, ikinci
+   * bir (tabs) örneği açmaz. Mood temizlenmez (handleNewMood'dan farkı bu).
+   */
+  const handleClose = useCallback(() => {
+    router.dismissTo('/(tabs)');
+  }, [router]);
+
   const handleGoWatchlist = useCallback(() => {
     router.navigate('/(tabs)/profile' as never);
   }, [router]);
@@ -281,6 +289,7 @@ export default function DiscoverScreen() {
           reranked={deckReranked}
           onNewMood={handleNewMood}
           onGoWatchlist={handleGoWatchlist}
+          onClose={handleClose}
         />
         <ContextualPaywall {...paywallProps} />
       </View>

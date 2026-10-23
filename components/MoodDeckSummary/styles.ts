@@ -165,6 +165,21 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
 
+  // ── Close (X) ───────────────────────────────────────────────────────────────
+  closeBtn: {
+    position: 'absolute',
+    right: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(10,10,10,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
   // ── Fixed footer ────────────────────────────────────────────────────────────
   footer: {
     position: 'absolute',

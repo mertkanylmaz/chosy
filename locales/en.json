@@ -192,7 +192,8 @@
     "insufficientNote": "We found fewer strong matches for this mood.",
     "newMood": "Try New Mood",
     "goWatchlist": "Go to Watchlist",
-    "deckProgress": "%{current} of %{total}"
+    "deckProgress": "%{current} of %{total}",
+    "close": "Close"
   },
   "watchlist": {
     "header": "My Watchlist",

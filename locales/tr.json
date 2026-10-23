@@ -192,7 +192,8 @@
     "insufficientNote": "Bu mood icin sinirli sayida guclu eslesme bulduk.",
     "newMood": "Yeni Mood Ara",
     "goWatchlist": "Watchlist'e Git",
-    "deckProgress": "%{current} / %{total}"
+    "deckProgress": "%{current} / %{total}",
+    "close": "Kapat"
   },
   "watchlist": {
     "header": "İzleme Listem",
