@@ -5,6 +5,11 @@
  * Vektor uzayinin yakalayamadigi tematik/kavramsal anlami LLM re-ranking ile
  * doldurur. "thailand trip" -> Wall-E degil The Beach/Hangover 2 gelir.
  *
+ * LLM'e film UUID'si verilmez/istenmez: adaylar 1..N numarali listelenir, model
+ * yalniz sirali numara dizisi dondurur ([3, 12, 1, ...]); numaralar burada
+ * aday id'lerine cevrilir. Cikti ~25 token (UUID ile ~220), girdi de kisalir.
+ * HTTP yaniti degismedi: { reranked_ids (UUID), original_count, reranked_count }.
+ *
  * Deploy: supabase functions deploy rerank-films
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
@@ -47,11 +52,12 @@ Rules:
 - Eliminate films with ZERO thematic connection to the user's intent
 - Among thematically relevant films, prefer higher original similarity scores (they capture emotional tone better)
 - If no films are thematically connected, fall back to the best emotional matches (don't return empty)
-- Return ONLY a JSON array of film IDs in ranked order, nothing else
+- Return ONLY a JSON array of the candidate NUMBERS (the integer before each film) in ranked order, nothing else
+- Never return titles, reasons or explanations
 - Accept both English and Turkish input equally
 
 Return format (ONLY valid JSON, no explanation):
-["id1", "id2", ..., "idN"]`
+[3, 12, 1, ...]`
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 
@@ -119,13 +125,13 @@ serve(async (req: Request): Promise<Response> => {
     .map((c, i) => {
       const overview = (c.overview ?? '').slice(0, 150)
       const genres = (c.genres ?? []).join(', ')
-      return `${i + 1}. [${c.id}] "${c.title}" (${c.year ?? '?'}) | ${genres} | ${overview}`
+      return `${i + 1}. "${c.title}" (${c.year ?? '?'}) | ${genres} | ${overview}`
     })
     .join('\n')
 
   const userMessage = `User mood: "${moodText}"
 
-Select the ${count} most relevant films from these candidates. Return their IDs in ranked order.
+Select the ${count} most relevant films from these candidates. Return their numbers in ranked order.
 
 Candidate films:
 ${filmList}`
@@ -136,7 +142,8 @@ ${filmList}`
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 512,
+      // ${count} numara ~ 3 token/numara + koseli parantez payi
+      max_tokens: 64 + count * 4,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
     })
@@ -153,11 +160,17 @@ ${filmList}`
       throw new Error('LLM returned non-array')
     }
 
-    // Validate: only keep IDs that exist in candidates
-    const candidateIdSet = new Set(candidates.map((c) => c.id))
-    const rerankedIds = parsed
-      .filter((id: unknown) => typeof id === 'string' && candidateIdSet.has(id))
-      .slice(0, count)
+    // Numaralari (1..N) aday id'lerine cevir; aralik disi / tekrar eden / sayi
+    // olmayan girdiler atilir. Yalniz aday listesindeki id'ler donebilir.
+    const seen = new Set<number>()
+    const rerankedIds: string[] = []
+    for (const n of parsed as unknown[]) {
+      const idx = typeof n === 'number' ? n : typeof n === 'string' ? Number(n) : NaN
+      if (!Number.isInteger(idx) || idx < 1 || idx > candidates.length || seen.has(idx)) continue
+      seen.add(idx)
+      rerankedIds.push(candidates[idx - 1].id)
+      if (rerankedIds.length >= count) break
+    }
 
     return new Response(
       JSON.stringify({
