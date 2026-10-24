@@ -5,6 +5,7 @@
 -- Sonuclar TEMP TABLE dryrun_results'a yazilir; ROLLBACK'ten hemen once SELECT edilir.
 -- Beklenen 42501 ic EXCEPTION blogunda yakalanir; islem ROLLBACK'e kadar ilerler.
 -- Son satir: test='zz_summary', result='ALL PASS' | 'FAILURES'.
+-- Sonuclar ayrica DRYRUN_RESULTS hata mesaji olarak doner (beklenen: hata ile biter, islem geri alinir).
 -- Kaynak: supabase/migrations/135_subscription_write_guard.sql (asagiya AYNEN gomulu).
 -- ============================================================
 BEGIN;
@@ -445,4 +446,11 @@ FROM dryrun_results;
 
 SELECT * FROM dryrun_results ORDER BY test;
 
-ROLLBACK;
+-- Cikti kanali: tool yalniz son ifadeyi / hatayi gosterebilir. Sonuclar hata mesajinda
+-- gorunsun; EXCEPTION islemi iptal eder, asagidaki ROLLBACK ikinci emniyettir.
+DO $$ DECLARE v text; BEGIN
+  SELECT string_agg(test || ' | ' || result || ' | ' || coalesce(detail,''), E'\n' ORDER BY test) INTO v
+  FROM dryrun_results;
+  RAISE EXCEPTION E'DRYRUN_RESULTS\n%', v;
+END $$;
+ROLLBACK;  -- ikinci emniyet
