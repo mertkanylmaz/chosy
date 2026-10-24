@@ -63,6 +63,7 @@ import MoodProfileResult from '@/components/MoodProfileResult';
 import QuotaExhausted from '@/components/QuotaExhausted';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import MoodCardGrid from '@/components/Home/MoodCardGrid';
@@ -135,6 +136,8 @@ export default function MoodSearchScreen() {
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt } = useProModeAccess();
+  /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
+  const offerEnabled = useMoodOfferEnabled();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [phase, setPhase] = useState<Phase>('input');
@@ -384,7 +387,9 @@ export default function MoodSearchScreen() {
     // Onboarding'de kota tuketme (ilk arama bedava).
     // `quotaExempt`: grandfathered kohort (legacy_mood_access) istemci
     // duvarina tabi degil — CTO karari 24 Eyl 2026.
-    if (!isOnboarding && !quotaExempt) {
+    // MONEY-1C: `mood_offer_enabled` aciksa istemci sayaci (AsyncStorage) HIC
+    // tuketilmez — tek dogruluk kaynagi parse-mood (429 QUOTA_EXCEEDED).
+    if (!isOnboarding && !quotaExempt && !offerEnabled) {
       const quotaResult = await consumeQuota('search');
       setLastQuotaResult(quotaResult);
       if (!quotaResult.allowed) {
@@ -446,7 +451,7 @@ export default function MoodSearchScreen() {
         await showQuotaWall();
       }
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, offerEnabled, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:

@@ -146,6 +146,12 @@ function getLimitForType(tier: SubscriptionTier, quotaType: string): number {
  * Atomic quota check + consume — client-side.
  * RPC bypass: AsyncStorage sayac + RevenueCat tier.
  *
+ * ⚠️ MONEY-1C: `'search'` icin TEK dogruluk kaynagi artik SUNUCU (parse-mood /
+ * get_quota_status). `mood_offer_enabled` aciksa MoodSearchScreen bu fonksiyonu
+ * 'search' ile CAGIRMAZ. Kod, bayrak kapaliyken eski davranisi korumak icin yerinde;
+ * bayrak kalici acilinca 'search' dali + FREE_DAILY_LIMIT tuketicileri silinir.
+ * 'refine' | 'slot' sayaclari (discover slot kotasi) bu degisiklikten etkilenmez.
+ *
  * Fail-open strateji: hata durumunda kullaniciyi kilitlemez.
  *
  * @param userId Supabase users tablosundaki UUID
