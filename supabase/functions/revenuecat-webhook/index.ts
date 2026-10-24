@@ -23,6 +23,7 @@ import { decideMissingUser } from '../_shared/rcMissingUserDecision.ts'
 import { mapProductToTier, TIER_TO_PLAN } from '../_shared/rcProductMap.ts'
 import { isRcTestEvent, parseRcEnvironment } from '../_shared/rcEnvironment.ts'
 import { fetchRcSubscriber, processTransfer, shortId } from '../_shared/rcTransfer.ts'
+import { decidePurchaseStatus, decideTerminalWrite } from '../_shared/rcSubscriptionStatus.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -53,6 +54,12 @@ interface RevenueCatEvent {
   price_in_purchased_currency?: number
   currency?: string
   expiration_at_ms?: number
+  /**
+   * 'TRIAL' | 'INTRO' | 'NORMAL' | 'PROMOTIONAL' | 'PREPAID' (MONEY-1A).
+   * `?` + `string`: alan gelmezse/yeni değer eklenirse kod çökmez; karar
+   * `_shared/rcSubscriptionStatus.ts`'te, yok/tanınmayan Sentry warning.
+   */
+  period_type?: string
   /**
    * YALNIZ `CANCELLATION` olaylarında gelir (R-C2). RevenueCat'in belgelediği
    * değer kümesi — bu altısı dışında bir değer gelirse gönüllü iptal sayılır
@@ -603,11 +610,38 @@ serve(async (req: Request) => {
         // doğru ama kullanıcının hiç `subscriptions` satırı olmayabilir
         // (satırı istemci `upsertSubscription` ile yaratır). Bunu genel
         // hatayla KARIŞTIRMIYORUZ: ayrı kod, warning seviyesi, 200.
+        // MONEY-1A: trial ile ücretli ayrımı. Karar saf modülde (period_type).
+        const statusDecision = decidePurchaseStatus(
+          event.type as 'INITIAL_PURCHASE' | 'RENEWAL' | 'PRODUCT_CHANGE' | 'UNCANCELLATION',
+          event.period_type,
+        )
+        console.log(
+          `[rc-webhook] subscription status=${statusDecision.status} label=${statusDecision.label} ` +
+            `(${event.type}, period_type=${event.period_type ?? 'yok'})`,
+        )
+        if (statusDecision.warn) {
+          await sentryCapture({
+            message: `revenuecat-webhook: period_type yok/tanınmayan (${String(event.period_type)}) — status 'active' yazıldı`,
+            level: 'warning',
+            tags: {
+              error_code: 'RC_PERIOD_TYPE_MISSING',
+              function: 'revenuecat-webhook',
+              event_type: event.type,
+            },
+            extra: {
+              period_type: event.period_type ?? null,
+              rc_event_id: event.id ?? null,
+              product_id: event.product_id,
+              app_user_id: appUserId,
+            },
+          })
+        }
+
         const { error: subsError, count: subsCount } = await supabase
           .from('subscriptions')
           .update({
             plan,
-            status: 'active',
+            status: statusDecision.status,
             expires_at: expiresAt,
             environment,
           }, { count: 'exact' })
@@ -884,12 +918,15 @@ serve(async (req: Request) => {
         // sessizce atlar ve `subscriptions` ile `users` ıraksardı.
         // Zaten 'cancelled' olan satırı yeniden yazmak da zararsızdır ama
         // listeye alınmadı: 0 satır burada meşru (aşağıda warning).
-        if (revokeNow) {
+        // MONEY-1A: gönüllü iptalde (revokeNow=false) `decideTerminalWrite` null
+        // döner → status ve expires_at korunur, trial 'trial' kalır.
+        const cancelWrite = decideTerminalWrite('CANCELLATION', revokeNow)
+        if (cancelWrite) {
           const { error: cancelSubsError, count: cancelSubsCount } = await supabase
             .from('subscriptions')
-            .update({ status: 'cancelled', environment }, { count: 'exact' })
+            .update({ status: cancelWrite.status, environment }, { count: 'exact' })
             .eq('user_id', appUserId)
-            .in('status', ['active', 'trial'])
+            .in('status', [...cancelWrite.fromStatuses])
 
           if (cancelSubsError) {
             console.error(
@@ -998,11 +1035,15 @@ serve(async (req: Request) => {
         }
 
         // Subscriptions tablosunu da güncelle
+        // MONEY-1A: trial hiç ödemeye dönmeden bittiyse satır 'trial'dır; eski
+        // `.eq('status','active')` onu atlardı.
+        const expWrite = decideTerminalWrite('EXPIRATION', false)!
+        console.log(`[rc-webhook] subscription status=${expWrite.status} label=${expWrite.label}`)
         const { error: expSubsError } = await supabase
           .from('subscriptions')
-          .update({ status: 'expired', environment })
+          .update({ status: expWrite.status, environment })
           .eq('user_id', appUserId)
-          .eq('status', 'active')
+          .in('status', [...expWrite.fromStatuses])
 
         if (expSubsError) {
           console.error('[rc-webhook] expiration subscriptions update failed:', expSubsError.message)
