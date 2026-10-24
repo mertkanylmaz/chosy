@@ -14,7 +14,7 @@
  *   <ContextualPaywall {...paywallProps} />
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { PlanId } from '@/constants/subscriptionPlans';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -60,12 +60,22 @@ export function useContextualPaywall(
     variant: null,
   });
 
+  /** Ekran kaldirildiktan sonra gelen karar state'e yazilmaz (donus: false). */
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   /** Trigger event gonder */
   const triggerPaywall = useCallback(async (event: TriggerEvent): Promise<boolean> => {
     try {
       // `loading` premium sayilir: abonelik cozulmeden odeyen kullaniciya
       // paywall acilmasin (V-1 Tur 1). Paywall bastirmak ozellik acmaz.
       const variant = await shouldShowPaywall(event, isInTrial, premiumStatus !== 'free');
+      if (!mountedRef.current) return false;
       if (variant) {
         setState({ visible: true, variant });
         return true;
