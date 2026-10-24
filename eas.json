@@ -49,7 +49,8 @@
     },
     "preview-store": {
       "extends": "preview",
-      "distribution": "store"
+      "distribution": "store",
+      "autoIncrement": true
     },
     "preview-e2e": {
       "extends": "preview-store",
