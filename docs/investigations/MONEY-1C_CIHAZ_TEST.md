@@ -3,24 +3,61 @@
 Tarih: 25 Eki 2026 · Dal: `feat/money-1c` · Elle test içindir; render altyapısı olmadığı için
 davranışsal doğrulama yalnız cihazda yapılır (testler kaynak-regresyon düzeyinde).
 
-## 0. Hazırlık
+## 0. Hazırlık (bu build için)
 
-- **Build:** `preview-store` profili (kanal `preview`, TestFlight internal) — production'a ulaşmaz.
-  Ayrıntı için rapora bak (kanal → branch eşlemesi `eas channel:view preview` ile doğrulanmalı).
-- **Bayrak:** bu dalda `mood_offer_enabled` satırı `app_config`'te YOKTUR → kapalı sayılır.
-  Yalnız kendi hesabın için açmak: `app_config.mood_offer_testers` = jsonb dizi, içinde
-  **`auth.users.id`** (Supabase Auth → Users, ya da PostHog/RevenueCat'te görünen kimlik).
-  Anonim hesap kullanma: yeniden kurulumda kimlik değişir (D8). Değer en geç 5 dk'da yansır;
-  hızlandırmak için uygulamayı tamamen kapatıp aç.
+### 0.1 Build
+- **Profil:** `preview-store` (kanal `preview`, dağıtım store → TestFlight internal). Production
+  kanalına/branch'ine hiçbir şey gitmez; OTA gerekmez (build JS'i içinde taşır).
+- **ÖNCE `eas.json` düzeltmesi gerekir:** `preview-store` / `preview` profillerinde `autoIncrement`
+  yok. `appVersionSource: remote` olduğundan sayaç tek ve ortak: şu an iOS buildNumber **912**
+  (production 2.1.2'nin son gönderilen numarası). Düzeltme yapılmadan alınan build 912'yi yeniden
+  kullanır ve App Store Connect yüklemeyi reddeder. Öneri: `preview-store` bloğuna
+  `"autoIncrement": true` (sonraki numara 913). `preview-e2e` kendi `autoIncrement: false`'ını korur.
+- **Aynı uygulama:** bundle id `com.chosy.ai`, ASC uygulaması 6761782987 — production ile aynı. TestFlight
+  build'i cihazdaki App Store sürümünün yerine geçer (build numarası daha yüksek olduğu için).
+- **Aynı backend ve servisler:** EAS `preview` ortamındaki tüm `EXPO_PUBLIC_*` değerleri (Supabase URL/anon
+  key, PostHog host/key, Sentry DSN, RevenueCat iOS key, Google client id'leri, TMDb) `production`
+  ortamıyla **birebir aynı**. Yani test production verisi üzerinde koşar: gerçek kota, gerçek kullanıcı
+  tablosu, production PostHog ve Sentry projeleri. RevenueCat satın almaları TestFlight'ta sandbox'tır.
+- Kanal doğrulaması: `preview` kanalı yalnız `preview` branch'ine (son update `release/2.1.0-rc5`,
+  runtime 2.1.0), `production` kanalı yalnız `production` branch'ine bağlı; ikisi %100 eşli, farklı branch
+  id'leri, ikisi de duraklatılmamış. Yeni 2.1.2 preview build'i production update'lerini almaz.
+
+### 0.2 Kimliğini (`auth.users.id`) bulmak
+Tester listesi `auth.users.id` ister. Uygulamada bu id'yi gösteren ekran YOK; Sentry'de `setUser`
+çağrılmıyor (Sentry user.id yok). PostHog `distinct_id` yalnız anonim OLMAYAN hesaplarda auth id'ye
+eşittir; anonim hesapta rastgele PostHog id'sidir — güvenilir yol değil.
+
+**En kolay yol (gerçek hesap):**
+1. Profil ekranında hesabının e-postasına bak (Apple "Hide My Email" ise yönlendirme adresi görünür).
+2. Supabase → Authentication → Users → e-postayla ara → **User UID** (= `auth.users.id`). Ya da SQL:
+   ```sql
+   select id, email, is_anonymous, created_at from auth.users where email = '<EPOSTA>';
+   ```
+3. Doğrula: `select auth_id, id as app_user_id from public.users where auth_id = '<UID>';` satırı dönmeli
+   (`public.users.id` değil, `auth_id` olan listeye girer).
+Anonim hesapla test etme: yeniden kurulumda kimlik değişir (D8).
+
+### 0.3 Bayrağı yalnız kimliğin için açmak
+- Bu dalda `mood_offer_enabled` satırı `app_config`'te YOKTUR → kapalı; `mood_offer_testers` de yoktur.
+  İki satır bayrak değil veri: SQL editor / service role ile (migration DEĞİL):
   ```sql
   INSERT INTO app_config (key, value, description)
   VALUES ('mood_offer_testers', '["<AUTH_USER_ID>"]'::jsonb, 'MONEY-1C test kimlikleri')
   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
   ```
-  Geri alma: `UPDATE app_config SET value = '[]'::jsonb WHERE key = 'mood_offer_testers';`
-- **Hesap durumları:** (a) ücretsiz gerçek hesap, (b) Pro/premium hesap, (c) `legacy_mood_access`
-  hesabı, (d) varsa anonim hesap. Her bölümde ilgili hesapla tekrarla.
-- **Gözlem:** PostHog Live events (kendi kimliğin), gerekirse Sentry.
+- Değer en geç 5 dk'da yansır; hızlandırmak için uygulamayı tamamen kapatıp aç. Aynı cihazda iki test
+  hesabı kullanacaksan ikisini de listeye koy (dizi).
+- **Genel açma YAPMA:** `mood_offer_enabled` satırını `true` yapmak production'daki herkese açar.
+  Bu test için dokunulmaz.
+- Geri alma: `UPDATE app_config SET value = '[]'::jsonb WHERE key = 'mood_offer_testers';`
+
+### 0.4 Hesap durumları ve gözlem
+- **Hesaplar:** (a) ücretsiz gerçek hesap, (b) Pro/premium hesap, (c) `legacy_mood_access` hesabı,
+  (d) varsa anonim hesap. Her bölümde ilgili hesapla tekrarla.
+- **Gözlem:** PostHog Live events (production projesi — kendi kimliğinle filtrele), gerekirse Sentry
+  (production projesi; aynı DSN). Bu build'in olayları gerçek metriklere karışır: test olaylarını
+  tarih/saat ve kimlikle ayırt et.
 
 ## A. Bayrak KAPALI (tester listesi boş/kimlik dışında) — regresyon
 
