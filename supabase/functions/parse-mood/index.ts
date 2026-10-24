@@ -11,7 +11,7 @@ import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
-import { quotaFields } from '../_shared/quotaFields.ts'
+import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 
 // ─── Shared Admin Client ──────────────────────────────────────────────────────
 
@@ -222,36 +222,62 @@ async function checkSearchQuota(
     })
 
     if (error) {
-      console.error('[parse-mood] Quota check error:', error.message)
-      // fail-open: kota altyapisi coktugunde gercek kullaniciyi kesmiyoruz.
-      // Maliyet tarafi artik rate limiter ile kapali (o FAIL-CLOSED).
-      // Sessiz gecis olmamasi icin Sentry'ye yaziliyor (proje kurali 1).
-      await sentryCapture({
-        message: `parse-mood kota kontrolu basarisiz — istek gecirildi: ${error.message}`,
-        level: 'error',
-        tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_FAILED' },
-        extra: { user_id: appUserId },
-      })
-      return { allowed: true, userId: appUserId }
+      return await failClosedQuota(appUserId, 'QUOTA_CHECK_FAILED', error.message)
     }
 
     const result = data as Record<string, unknown>
+    const outcome = classifyQuotaResult(result)
+
+    if (outcome === 'tier_not_configured') {
+      // Yapilandirma hatasi: `subscription_limits`te bu tier'in satiri yok.
+      // 429 DEGIL — kullanici kotayi asmadi. Sentry'de gorunur olmali.
+      await sentryCapture({
+        message: `parse-mood: tier icin subscription_limits satiri yok — istek reddedildi (tier: ${String(result.tier)})`,
+        level: 'error',
+        tags: { function: 'parse-mood', error_code: 'TIER_NOT_CONFIGURED' },
+        extra: { user_id: appUserId, tier: result.tier },
+      })
+      return { allowed: false, userId: appUserId, quotaResult: result, reason: 'TIER_NOT_CONFIGURED' }
+    }
+
+    if (outcome === 'unavailable') {
+      // allowed alani yok / bilinmeyen hata (USER_NOT_FOUND, INVALID_QUOTA_TYPE...)
+      return await failClosedQuota(appUserId, 'QUOTA_CHECK_UNEXPECTED', JSON.stringify(result))
+    }
+
     return {
-      allowed: result.allowed as boolean,
+      allowed: outcome === 'allowed',
       userId: appUserId,
       quotaResult: result,
+      reason: outcome === 'exceeded' ? 'QUOTA_EXCEEDED' : undefined,
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[parse-mood] Quota check exception:', msg)
-    await sentryCapture({
-      message: `parse-mood kota kontrolu istisna firlatti — istek gecirildi: ${msg}`,
-      level: 'error',
-      tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_EXCEPTION' },
-      extra: { user_id: appUserId },
-    })
-    return { allowed: true, userId: appUserId } // fail-open
+    return await failClosedQuota(appUserId, 'QUOTA_CHECK_EXCEPTION', msg)
   }
+}
+
+/**
+ * Kota RPC'si cevap vermedi ya da anlasilmaz cevap verdi → istek REDDEDILIR
+ * (MONEY-1C; onceki hal fail-open'di). Gerekce: rate limiter ayni DB'de zaten
+ * fail-closed, yani fail-open yalniz "kota fonksiyonu bozuk, DB saglam"
+ * durumunda devreye giriyordu — 115 gibi bir migration hatasinda tum kullanim
+ * kotasiz ve ucretli akardi. Hicbir sey tuketilmedi, iade de gerekmez.
+ * Sessiz degil: Sentry `level: error`.
+ */
+async function failClosedQuota(
+  appUserId: string,
+  errorCode: string,
+  detail: string,
+): Promise<{ allowed: false; userId: string; reason: 'QUOTA_UNAVAILABLE' }> {
+  console.error(`[parse-mood] Quota ${errorCode}:`, detail)
+  await sentryCapture({
+    message: `parse-mood kota kontrolu basarisiz — istek reddedildi: ${detail}`,
+    level: 'error',
+    tags: { function: 'parse-mood', error_code: errorCode },
+    extra: { user_id: appUserId },
+  })
+  return { allowed: false, userId: appUserId, reason: 'QUOTA_UNAVAILABLE' }
 }
 
 // ─── Quota Refund + Response Fields (MONEY-1C) ────────────────────────────────
@@ -389,6 +415,31 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  // Kota okunamadi / tier yapilandirilmamis → 503 (429 degil: kullanici kotayi
+  // asmadi). Hicbir sey tuketilmedi. Log satiri yazilmaz: bu bir kullanici
+  // davranisi degil, altyapi durumu — Sentry kaydi zaten var.
+  if (!quotaCheck.allowed && quotaCheck.reason === 'TIER_NOT_CONFIGURED') {
+    return new Response(
+      JSON.stringify({
+        error: 'Plan configuration error. Please try again later.',
+        code: 'TIER_NOT_CONFIGURED',
+        retry_after: 60,
+      }),
+      { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Retry-After': '60' } },
+    )
+  }
+
+  if (!quotaCheck.allowed && quotaCheck.reason === 'QUOTA_UNAVAILABLE') {
+    return new Response(
+      JSON.stringify({
+        error: 'Search quota service is temporarily unavailable. Please try again shortly.',
+        code: 'QUOTA_UNAVAILABLE',
+        retry_after: 30,
+      }),
+      { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Retry-After': '30' } },
+    )
+  }
+
   if (!quotaCheck.allowed) {
     // Log quota exceeded (no mood_text available yet — body not parsed)
     if (quotaCheck.userId) {
@@ -412,8 +463,8 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
-  // Bu noktadan sonra kota TUKETILDI (kota RPC'si cevap verdiyse). Fail-open
-  // yolunda `quotaResult` yok: tuketilmedi, dolayisiyla iade de edilmez.
+  // Bu noktadan sonra kota TUKETILDI: kota RPC'si cevap verdi ve izin verdi.
+  // (Eskiden fail-open yolu `quotaResult` olmadan geciyordu; artik o yol yok.)
   const quotaConsumed = quotaCheck.quotaResult !== undefined
 
   try {
