@@ -36,6 +36,8 @@ const SAFE_DEFAULTS = {
   // MONEY-1C: Pro Mode daveti + ucretsiz arama teklif akisi. Yalniz UX kill-switch
   // (yetki sunucuda: parse-mood kotayi zorlar). Kapaliyken uygulama eskisi gibi.
   mood_offer_enabled: false,
+  // MONEY-1C: bayrak kapaliyken bile acilacak kimlikler (auth.users.id dizisi). Bos = kimse.
+  mood_offer_testers: [] as readonly string[],
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;

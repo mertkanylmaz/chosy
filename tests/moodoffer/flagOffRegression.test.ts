@@ -11,7 +11,9 @@ const read = (p: string) =>
 
 Deno.test('bayrak varsayılanı false ve kill-switch === true', () => {
   assertMatch(read('services/remoteConfig.ts'), /mood_offer_enabled: false/)
-  assertMatch(read('services/appConfigFlags.ts'), /remoteConfig\.get\('mood_offer_enabled'\)[\s\S]*?value === true/)
+  assertMatch(read('services/remoteConfig.ts'), /mood_offer_testers: \[\] as readonly string\[\]/)
+  // karar tek saf fonksiyonda: bayrak === true VEYA kimlik listede
+  assertMatch(read('services/appConfigFlags.ts'), /remoteConfig\.get\('mood_offer_enabled'\)[\s\S]*?evaluateMoodOfferEnabled/)
 })
 
 Deno.test('adım 1: pro-mode kilitli ekran yalnız gate === locked; hook bayrak kapalıyken quota okumaz', () => {
@@ -67,7 +69,7 @@ Deno.test('adım 5: mood_offer tetikleyici/varyant, IMMEDIATE, kill-switch ve ro
   const orch = read('services/conversion/triggerOrchestrator.ts')
   assertMatch(orch, /case 'mood_offer':\s*return 'mood_offer';/)
   assertMatch(orch, /IMMEDIATE_TRIGGERS[\s\S]*?'mood_offer',\s*\]\)/)
-  assertMatch(orch, /mood_offer: 'mood_offer_enabled'/)
+  assertMatch(orch, /if \(variantName === 'mood_offer'\) return isMoodOfferEnabledCached\(\);/)
   assertMatch(read('components/paywalls/ContextualPaywall.tsx'), /case 'mood_offer':\s*return <PaywallMoodOffer/)
   // Teklif kopyasında deneme vaadi yok (eligibility yalnız PaywallBase/buildOffer'da).
   const paywall = read('components/paywalls/PaywallMoodOffer/index.tsx')

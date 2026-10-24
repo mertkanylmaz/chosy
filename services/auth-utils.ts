@@ -28,7 +28,7 @@ export function clearIdentityCache(): void {
  * Oturumun auth id'si — YEREL `getSession()`, ağ yok (ölçüm: `getUser()`
  * ~215 ms medyan, her çağrıda). Oturum okunamazsa `null`.
  */
-async function readLocalAuthUid(): Promise<string | null> {
+export async function readLocalAuthUid(): Promise<string | null> {
   const {
     data: { session },
   } = await supabase.auth.getSession();

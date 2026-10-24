@@ -27,6 +27,7 @@ import type {
 } from './types';
 import { logger } from '@/utils/logger';
 import { remoteConfig } from '@/services/remoteConfig';
+import { isMoodOfferEnabledCached } from '@/services/appConfigFlags';
 import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
@@ -126,8 +127,8 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
 const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
   streaming_link: 'paywall_streaming_link',
   lifetime_soldout: 'paywall_lifetime_soldout',
-  // MONEY-1C kill-switch: bayrak yoksa/kapaliysa teklif HIC uretilmez.
-  mood_offer: 'mood_offer_enabled',
+  // `mood_offer` BURADA DEGIL: karari bayrak VEYA tester listesi verir
+  // (`isMoodOfferEnabledCached`, asagida isVariantEnabled'da).
 };
 
 /**
@@ -136,6 +137,8 @@ const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
  * SAFE_DEFAULTS'ta false → deaktif. DB'de true yapilirsa → aktif.
  */
 function isVariantEnabled(variantName: PaywallVariantName): boolean {
+  // MONEY-1C kill-switch: bayrak kapali VE kimlik tester listesinde degilse teklif HIC uretilmez.
+  if (variantName === 'mood_offer') return isMoodOfferEnabledCached();
   const configKey = VARIANT_CONFIG_KEYS[variantName];
   if (!configKey) return true;
   // remoteConfig.get strict typed — cast ile dynamic key okuma
