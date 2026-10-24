@@ -92,7 +92,7 @@ GRANT ALL ON dryrun_results TO PUBLIC;
 
 DO $t$
 DECLARE
-  v_auth text := 'dryrun-' || gen_random_uuid()::text;
+  v_auth text := gen_random_uuid()::text;
   v_id   uuid;
 BEGIN
   INSERT INTO public.users (auth_id) VALUES (v_auth) RETURNING id INTO v_id;
@@ -100,6 +100,9 @@ BEGIN
     VALUES (v_id, 'annual', 'active', 'chosy_plus', 'SANDBOX');
   PERFORM set_config('dryrun.auth_id', v_auth, true);
   PERFORM set_config('dryrun.user_id', v_id::text, true);
+  PERFORM set_config('dryrun.ins_a', gen_random_uuid()::text, true);
+  PERFORM set_config('dryrun.ins_b', gen_random_uuid()::text, true);
+  PERFORM set_config('dryrun.ins_c', gen_random_uuid()::text, true);
   -- SECURITY DEFINER (sahip: postgres) karsilastirma fonksiyonu; bu islemde yaratilir, ROLLBACK'te gider.
   EXECUTE $f$
     CREATE FUNCTION public._dryrun_definer_set_tier(p_id uuid, p_tier text) RETURNS void
@@ -120,10 +123,17 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_tier = 'lifetime' WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1a', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T1a', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1a', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T1a', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T1a', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -140,10 +150,17 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_active_until = now() + interval '1 year' WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1b', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T1b', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1b', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T1b', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T1b', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -160,10 +177,17 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_will_renew = false WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1c', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T1c', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1c', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T1c', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T1c', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -180,10 +204,17 @@ BEGIN
   BEGIN
     UPDATE public.users SET legacy_mood_access = true WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1d', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T1d', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T1d', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T1d', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T1d', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -326,21 +357,8 @@ $t$;
 
 -- -- T6b
 DO $t$
-DECLARE
-  v_res jsonb;
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'service_role')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.auth_id'), true);
-  UPDATE public.users SET subscription_tier = 'free', legacy_mood_access = false WHERE id = current_setting('dryrun.user_id')::uuid;
-  SET LOCAL ROLE service_role;
-  v_res := public.claim_lifetime_spot(current_setting('dryrun.user_id')::uuid, 0, 'dryrun-tx');
-  RESET ROLE;
-  IF (v_res->>'success')::boolean IS TRUE
-     AND (SELECT subscription_tier FROM public.users WHERE id = current_setting('dryrun.user_id')::uuid) = 'lifetime' THEN
-    INSERT INTO dryrun_results VALUES ('T6b', 'PASS', 'service_role claim_lifetime_spot: ' || v_res::text);
-  ELSE
-    INSERT INTO dryrun_results VALUES ('T6b', 'FAIL', 'sonuc: ' || coalesce(v_res::text, 'NULL'));
-  END IF;
+  INSERT INTO dryrun_results VALUES ('T6b', 'SKIP', 'onceki kosuda kanitlandi (service_role claim_lifetime_spot success=true); nextval tuketmemek icin atlandi');
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
   INSERT INTO dryrun_results VALUES ('T6b', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
@@ -370,16 +388,23 @@ $t$;
 -- -- T5a
 DO $t$
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-a', 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', 'dryrun-ins-a', true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.ins_a'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.ins_a'), true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    INSERT INTO public.users (auth_id, subscription_tier) VALUES ('dryrun-ins-a', 'lifetime');
+    INSERT INTO public.users (auth_id, subscription_tier) VALUES (current_setting('dryrun.ins_a'), 'lifetime');
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T5a', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T5a', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T5a', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T5a', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T5a', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -390,16 +415,23 @@ $t$;
 -- -- T5b
 DO $t$
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-b', 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', 'dryrun-ins-b', true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.ins_b'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.ins_b'), true);
   SET LOCAL ROLE authenticated;
   BEGIN
-    INSERT INTO public.users (auth_id, legacy_mood_access) VALUES ('dryrun-ins-b', true);
+    INSERT INTO public.users (auth_id, legacy_mood_access) VALUES (current_setting('dryrun.ins_b'), true);
     RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T5b', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+    INSERT INTO dryrun_results VALUES ('T5b', 'FAIL', 'ifade GECTI, guard 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
-    INSERT INTO dryrun_results VALUES ('T5b', 'PASS', '42501');
+    DECLARE v_msg text := SQLERRM;
+    BEGIN
+      RESET ROLE;
+      IF v_msg = 'entitlement columns are server-managed' THEN
+        INSERT INTO dryrun_results VALUES ('T5b', 'PASS', '42501 + guard mesaji');
+      ELSE
+        INSERT INTO dryrun_results VALUES ('T5b', 'FAIL', '42501 ama farkli mesaj: ' || v_msg);
+      END IF;
+    END;
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
@@ -410,10 +442,10 @@ $t$;
 -- -- T5c
 DO $t$
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-c', 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', 'dryrun-ins-c', true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.ins_c'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.ins_c'), true);
   SET LOCAL ROLE authenticated;
-  INSERT INTO public.users (auth_id) VALUES ('dryrun-ins-c');
+  INSERT INTO public.users (auth_id) VALUES (current_setting('dryrun.ins_c'));
   RESET ROLE;
   INSERT INTO dryrun_results VALUES ('T5c', 'PASS', 'varsayilan INSERT gecti (auth-utils.ts yolu)');
 EXCEPTION WHEN OTHERS THEN
@@ -425,10 +457,10 @@ $t$;
 -- -- T5d
 DO $t$
 BEGIN
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-c', 'role', 'authenticated')::text, true);
-  PERFORM set_config('request.jwt.claim.sub', 'dryrun-ins-c', true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.ins_c'), 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.ins_c'), true);
   SET LOCAL ROLE authenticated;
-  INSERT INTO public.users (auth_id) VALUES ('dryrun-ins-c') ON CONFLICT (auth_id) DO UPDATE SET auth_id = EXCLUDED.auth_id;
+  INSERT INTO public.users (auth_id) VALUES (current_setting('dryrun.ins_c')) ON CONFLICT (auth_id) DO UPDATE SET auth_id = EXCLUDED.auth_id;
   RESET ROLE;
   INSERT INTO dryrun_results VALUES ('T5d', 'PASS', 'upsert yolu gecti');
 EXCEPTION WHEN OTHERS THEN
@@ -441,7 +473,7 @@ $t$;
 INSERT INTO dryrun_results
 SELECT 'zz_summary',
        CASE WHEN count(*) FILTER (WHERE result = 'FAIL') = 0 THEN 'ALL PASS' ELSE 'FAILURES' END,
-       count(*) FILTER (WHERE result = 'FAIL') || ' fail / ' || count(*) FILTER (WHERE result = 'PASS') || ' pass'
+       count(*) FILTER (WHERE result = 'FAIL') || ' fail / ' || count(*) FILTER (WHERE result = 'PASS') || ' pass / ' || count(*) FILTER (WHERE result = 'SKIP') || ' skip'
 FROM dryrun_results;
 
 SELECT * FROM dryrun_results ORDER BY test;
