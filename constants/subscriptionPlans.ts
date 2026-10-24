@@ -136,7 +136,7 @@ export const RC_OFFERING_ID = 'default';
 
 /**
  * RevenueCat'ten gelen eski veya yeni product_id'yi bizim DB tier'larımıza eşler.
- * Eşlenemeyen ürün (legacy `com.chosy.lifetime` dahil) 'free' döner; profil
+ * Eşlenemeyen ürün 'free' döner (`com.chosy.lifetime` artık 'lifetime'); profil
  * ekranı bunu premium + 'free' = PROFILE_UNKNOWN_PLAN yolu olarak işler.
  */
 export function productIdToTier(productId: string | null): SubscriptionTier {
@@ -146,6 +146,7 @@ export function productIdToTier(productId: string | null): SubscriptionTier {
     // Yeni Planlar
     case 'com.chosy.monthly': return 'monthly';
     case 'com.chosy.annual': return 'annual';
+    case 'com.chosy.lifetime': return 'lifetime';
 
     // Eski/Miras Planlar (Eski kullanıcılar için geriye uyumluluk)
     case 'chosyai_weekly': return 'weekly_legacy';
@@ -168,6 +169,7 @@ export function planIdToTier(planId: string | null): SubscriptionTier {
   switch (planId) {
     case 'monthly': return 'monthly';
     case 'annual': return 'annual';
+    case 'lifetime': return 'lifetime';
     // Eski plan ID'leri — geriye uyumluluk
     case 'weekly': return 'weekly_legacy';
     case 'yearly': return 'annual';

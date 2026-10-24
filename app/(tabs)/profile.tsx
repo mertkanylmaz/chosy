@@ -785,13 +785,12 @@ function ProfileScreenContent() {
   // Eslenemeyen urun ID'si `tier`'i 'free' birakir: premium + 'free' =
   // bilinmeyen plan → plan satiri CIZILMEZ (ne "Free") + Sentry.
   // `weekly_legacy` bilinen eski plan: satir yok, Sentry yok.
-  // Lifetime: istemci eslemesi (`planIdToTier`) 'lifetime'i tier'a CEVIRMIYOR
-  // ve `tier` 'free' kaliyor; bu yuzden DB plan kimligi (`planId`) okunur
-  // (REACT-NATIVE-J). Tier esleme bosluğu ayrica raporlandi.
+  // Lifetime: esleme artik 'lifetime' tier'i uretir (MONEY-SEC-1); RC-only yolda
+  // DB satiri yokken `tier`, DB yolunda `planId` okunur (REACT-NATIVE-J).
   const knownPlanTitle: string | null =
     tier === 'annual' ? t('paywall.annualTitle')
       : tier === 'monthly' ? t('paywall.monthlyTitle')
-      : planId === 'lifetime' ? t('paywall.lifetimeTitle')
+      : (tier === 'lifetime' || planId === 'lifetime') ? t('paywall.lifetimeTitle')
       : null;
   // REACT-NATIVE-J: yalnız aktif + planId dolu + tanınmayan plan hata sayılır
   // (`utils/profilePlan.ts`); expired/free/planId null → hata yok.

@@ -988,7 +988,7 @@ serve(async (req: Request) => {
 
           if (cancelSubsCount === 0) {
             // Meşru durum: kullanıcının hiç `subscriptions` satırı olmayabilir
-            // (satırı istemci `upsertSubscription` yaratır) ya da satır zaten
+            // (satırı webhook / sync-entitlement upsert ile yaratır) ya da satır zaten
             // kapalı olabilir. Genel hatayla karıştırılmıyor — PURCHASE
             // dalındaki `SUBSCRIPTION_ROW_NOT_FOUND` ile aynı kalıp.
             console.warn(

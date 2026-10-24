@@ -35,7 +35,7 @@ import { X } from 'phosphor-react-native';
 
 import { color } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
-import { PLANS, type PlanId, RC_ENTITLEMENT_ID, productIdToTier } from '@/constants/subscriptionPlans';
+import { PLANS, type PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import {
@@ -44,12 +44,11 @@ import {
   purchasePackage,
   restorePurchases,
 } from '@/services/purchaseService';
-import { upsertSubscription } from '@/services/subscriptionService';
+import { syncEntitlement } from '@/services/entitlementSync';
 import { clearQuotaCache } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import type { PurchaseErrorKind } from '@/services/purchaseService';
 import { posthogAnalytics } from '@/services/posthog';
-import { supabase } from '@/services/supabase';
 import {
   recordPaywallShown,
   recordPaywallDismissed,
@@ -353,29 +352,11 @@ export default function PaywallBase({
 
         if (resolved.userId) {
           const uid: string = resolved.userId;
-          await postPurchaseStep('upsert_subscription', async () => {
-            await upsertSubscription({
-              userId: uid,
-              plan: selectedPlan,
-              status: 'active',
-              rcCustomerId: result.customerInfo?.originalAppUserId ?? null,
-            });
-          });
-
-          // KRITIK: users.subscription_tier'i hemen guncelle.
-          // Quota RPC'leri (check_and_consume_quota) bu kolonu okur.
-          // Webhook async gelebilir — kullanici arada "limit reached" gorebilir.
-          await postPurchaseStep('update_subscription_tier', async () => {
-            const tier = selectedPlan === 'annual' ? 'annual' : 'monthly';
-            const { error: tierErr } = await supabase
-              .from('users')
-              .update({
-                subscription_tier: tier,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', uid);
-            if (tierErr) throw tierErr;
-          });
+          // KRITIK: users.subscription_tier + subscriptions satirini SUNUCU yazar
+          // (sync-entitlement, RC REST'ten). Istemci tablolara yazmaz (migration
+          // 135). Basarisizlik UI'i bozmaz: erisim RC'den cozulur, tier webhook ile
+          // gelir; hata servis icinde Sentry'ye gider.
+          await postPurchaseStep('sync_entitlement', () => syncEntitlement('purchase'));
 
           // Client-side quota cache'ini temizle — yeni tier ile fresh quota
           await postPurchaseStep('clear_quota_cache', () => clearQuotaCache(uid));
@@ -432,34 +413,11 @@ export default function PaywallBase({
       if (result.success) {
         hapticSuccess();
 
-        // Restore sonrasi users.subscription_tier'i hemen guncelle
+        // Restore sonrasi tier/subscriptions'i SUNUCU yazar (sync-entitlement).
+        // Basarisizlik restore'u bozmaz; hata servis icinde Sentry'ye gider.
         const userId = await getAppUserId();
-        if (userId && result.customerInfo) {
-          const entitlement = result.customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
-          if (entitlement) {
-            const tier = productIdToTier(entitlement.productIdentifier);
-            if (tier !== 'free') {
-              const { error: tierErr } = await supabase
-                .from('users')
-                .update({
-                  subscription_tier: tier,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', userId);
-
-              if (tierErr) {
-                logger.warn('[paywall-base] Restore tier guncelleme hatasi:', tierErr.message);
-              }
-
-              await upsertSubscription({
-                userId,
-                plan: tier === 'weekly_legacy' ? 'weekly' as PlanId : tier as PlanId,
-                status: 'active',
-                rcCustomerId: result.customerInfo.originalAppUserId ?? null,
-              });
-            }
-          }
-
+        if (userId) {
+          await syncEntitlement('restore');
           // Client-side quota cache temizle
           await clearQuotaCache(userId);
         }

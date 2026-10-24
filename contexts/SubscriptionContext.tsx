@@ -39,7 +39,7 @@ import {
   type SubscriptionRow,
 } from '@/services/subscriptionService';
 import { productIdToTier } from '@/constants/subscriptionPlans';
-import { supabase } from '@/services/supabase';
+import { syncEntitlementFromListener } from '@/services/entitlementSync';
 import {
   canSearchMood,
   recordMoodSearch,
@@ -583,26 +583,23 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         statusRef.current = rcInfo.isInTrial ? 'trial' : 'active';
         setStatus(rcInfo.isInTrial ? 'trial' : 'active');
 
-        // Defensive: users.subscription_tier'i hemen sync et
-        // Quota RPC'leri bu kolonu okuyor — webhook gecikmesini tolere et
+        // Quota RPC'leri users.subscription_tier'i okur. Istemci artik tabloya
+        // yazmaz (migration 135): sunucu RC'den yazar (sync-entitlement). Ayni
+        // plan icin tekrar cagrilmaz (servis ici dedupe + cooldown). Hata UI'i
+        // bozmaz, servis Sentry'ye yazar.
         if (rcInfo.activePlanId) {
           const rcTier = productIdToTier(rcInfo.activePlanId);
           if (rcTier !== 'free') {
             setTier(rcTier);
             tierRef.current = rcTier;
-            getAppUserId().then((uid) => {
-              if (!uid) return;
-              supabase
-                .from('users')
-                .update({
-                  subscription_tier: rcTier,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', uid)
-                .then(({ error }) => {
-                  if (error) logger.warn('[subscription-ctx] RC listener tier sync hatasi:', error.message);
+            const activePlanId = rcInfo.activePlanId;
+            getAppUserId()
+              .then((uid) => (uid ? syncEntitlementFromListener(uid, activePlanId) : false))
+              .catch((err: unknown) => {
+                logger.error('[subscription-ctx] RC listener entitlement sync hatasi:', err, {
+                  code: 'ENTITLEMENT_SYNC_LISTENER_THROW',
                 });
-            });
+              });
           }
         }
       } else {

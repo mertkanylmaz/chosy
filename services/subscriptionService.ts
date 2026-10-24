@@ -4,14 +4,16 @@
  * RevenueCat ödeme yönetir, bu servis Supabase'deki
  * subscriptions tablosunu senkronize tutar.
  *
+ * Yazma YOK: `subscriptions`'a yalnız sunucu yazar (webhook / sync-entitlement,
+ * migration 135). Bu dosya yalnız okur.
+ *
  * Kullanım:
- *   - Satın alma sonrası: upsertSubscription()
  *   - Durum sorgusu: getUserSubscription()
  *   - Context init: getOrCreateSubscription()
  */
 
 import { supabase } from './supabase';
-import type { LegacyPlanId, PlanId, SubscriptionStatus } from '@/constants/subscriptionPlans';
+import type { LegacyPlanId, SubscriptionStatus } from '@/constants/subscriptionPlans';
 import { logger } from '@/utils/logger';
 
 // ─── Yardımcı ────────────────────────────────────────────────────────────────
@@ -66,85 +68,6 @@ export async function getUserSubscription(
   }
 
   return data as SubscriptionRow | null;
-}
-
-/**
- * Abonelik oluşturur veya günceller.
- * RevenueCat satın alma başarılı olduktan sonra çağrılır.
- */
-export async function upsertSubscription(params: {
-  userId: string;
-  plan: PlanId;
-  status: SubscriptionStatus;
-  trialUsed?: boolean;
-  expiresAt?: string | null;
-  rcCustomerId?: string | null;
-}): Promise<SubscriptionRow | null> {
-  const { userId, plan, status, trialUsed, expiresAt, rcCustomerId } = params;
-
-  // Mevcut aktif abonelik var mı?
-  const existing = await getUserSubscription(userId);
-
-  if (existing) {
-    // Güncelle
-    const { data, error } = await supabase
-      .from('subscriptions')
-      .update({
-        plan,
-        status,
-        trial_used: trialUsed ?? existing.trial_used,
-        expires_at: expiresAt ?? existing.expires_at,
-        rc_customer_id: rcCustomerId ?? existing.rc_customer_id,
-      })
-      .eq('id', existing.id)
-      .select()
-      .single();
-
-    if (error) {
-      if (!isTableMissing(error)) logger.error('[subscription] Abonelik güncelleme hatası:', error.message);
-      return null;
-    }
-
-    return data as SubscriptionRow;
-  }
-
-  // Yeni oluştur
-  const { data, error } = await supabase
-    .from('subscriptions')
-    .insert({
-      user_id: userId,
-      plan,
-      status,
-      trial_used: trialUsed ?? false,
-      expires_at: expiresAt ?? null,
-      rc_customer_id: rcCustomerId ?? null,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    if (!isTableMissing(error)) logger.error('[subscription] Abonelik oluşturma hatası:', error.message);
-    return null;
-  }
-
-  return data as SubscriptionRow;
-}
-
-/**
- * Abonelik durumunu günceller (expire, cancel vb.).
- */
-export async function updateSubscriptionStatus(
-  subscriptionId: string,
-  status: SubscriptionStatus,
-): Promise<void> {
-  const { error } = await supabase
-    .from('subscriptions')
-    .update({ status })
-    .eq('id', subscriptionId);
-
-  if (error) {
-    if (!isTableMissing(error)) logger.error('[subscription] Durum güncelleme hatası:', error.message);
-  }
 }
 
 /**
