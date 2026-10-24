@@ -24,6 +24,9 @@ import {
 } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
+import { MoodInviteCard } from '@/components/gauntlet/MoodInviteCard';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
+import { spotlightInviteFits } from '@/utils/moodInvite';
 import { logger } from '@/utils/logger';
 import {
   trackSpotlightSaveForLaterTapped,
@@ -213,8 +216,11 @@ export function SpotlightResult({
         ? styles.statusFound
         : styles.statusLost;
   // Dynamic Type: büyük yazıda Save + Share yan yana sığmaz → dikey
-  const { fontScale } = useWindowDimensions();
+  const { fontScale, height: screenH } = useWindowDimensions();
   const sideBySide = fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;
+  // MONEY-1C: Pro Mode daveti — bayrak kapaliyken ve kucuk ekran / buyuk yazida cizilmez.
+  const moodOfferEnabled = useMoodOfferEnabled();
+  const showMoodInvite = moodOfferEnabled && spotlightInviteFits({ screenH, fontScale });
 
   const saveButton = filmId ? (
     <ChampionActionButton
@@ -321,6 +327,8 @@ export function SpotlightResult({
           {shareErrorText}
         </View>
       ) : null}
+
+      {showMoodInvite ? <MoodInviteCard surface="spotlight_card" /> : null}
 
       <Text style={styles.footer}>{t('games.spotlight.result_next_film')}</Text>
     </View>

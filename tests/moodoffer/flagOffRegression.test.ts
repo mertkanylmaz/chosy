@@ -40,3 +40,25 @@ Deno.test('locales: moodOffer anahtarları en/tr tam parite', () => {
   assert(keys('en').length > 0)
   assert(JSON.stringify(keys('en')) === JSON.stringify(keys('tr')))
 })
+
+Deno.test('adım 4: davet kartı iki yüzeyde de bayrak + sığma kapısının arkasında; Spotlight kartı yerinde', () => {
+  const shell = read('components/gauntlet/GauntletShell/index.tsx')
+  assertMatch(shell, /const showMoodInvite =\s*moodOfferEnabled &&/)
+  assertMatch(shell, /\{showMoodInvite && \(\s*<View onLayout=\{below\.onLayoutOf\('invite'\)\}>/)
+  // Kart Spotlight kartından SONRA, sayaç satırından ÖNCE (altında) — Spotlight konumu değişmedi.
+  const spot = shell.indexOf('<SpotlightBonusCard')
+  const invite = shell.indexOf('<MoodInviteCard')
+  const cycle = shell.indexOf('<CycleRow')
+  assert(spot > 0 && invite > spot && cycle > invite)
+  // Bayrak kapalıyken hero hesabına davet girmez.
+  assertMatch(shell, /invite: showMoodInvite,/)
+  const result = read('components/games/Spotlight/SpotlightResult.tsx')
+  assertMatch(result, /const showMoodInvite = moodOfferEnabled && spotlightInviteFits\(/)
+  assertMatch(result, /\{showMoodInvite \? <MoodInviteCard surface="spotlight_card" \/> : null\}/)
+})
+
+Deno.test('adım 4: askDecision / useChampionAsk dosyalarına dokunulmadı', () => {
+  const ask = read('utils/askDecision.ts')
+  assert(!/mood_offer|MoodInvite|moodInvite/.test(ask))
+  assert(!/mood_offer|MoodInvite|moodInvite/.test(read('components/gauntlet/GauntletShell/useChampionAsk.ts')))
+})

@@ -9,7 +9,7 @@
 import { useCallback, useState } from 'react';
 import type { LayoutChangeEvent } from 'react-native';
 
-export type BelowPart = 'card' | 'cycle' | 'archive';
+export type BelowPart = 'card' | 'cycle' | 'archive' | 'invite';
 
 export interface BelowHeight {
   /** Çizilmeyen parçalar (ör. kart yok) sayılmaz. */
@@ -26,6 +26,8 @@ export function useBelowHeight(initialCard: number): BelowHeight {
     card: initialCard,
     cycle: 0,
     archive: 0,
+    // MONEY-1C: Pro Mode daveti. Bayrak kapaliyken hic render edilmez → 0, toplam degismez.
+    invite: 0,
   });
 
   const onLayoutOf = useCallback(
@@ -40,7 +42,8 @@ export function useBelowHeight(initialCard: number): BelowHeight {
     (rendered: Record<BelowPart, boolean>) =>
       (rendered.card ? heights.card : 0) +
       (rendered.cycle ? heights.cycle : 0) +
-      (rendered.archive ? heights.archive : 0),
+      (rendered.archive ? heights.archive : 0) +
+      (rendered.invite ? heights.invite : 0),
     [heights],
   );
 

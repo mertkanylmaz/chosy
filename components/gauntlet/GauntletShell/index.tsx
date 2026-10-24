@@ -125,6 +125,9 @@ import {
   headerGapFor,
   styles,
 } from './styles';
+import { MoodInviteCard } from '@/components/gauntlet/MoodInviteCard';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
+import { championInviteFits } from '@/utils/moodInvite';
 import { useBelowHeight } from './useBelowHeight';
 import { useChampionAsk } from './useChampionAsk';
 import { useSpotlightVisible } from './useSpotlightVisible';
@@ -1540,10 +1543,28 @@ function GauntletShellContent(): React.JSX.Element {
 
   // F2.3: hero'nun altındaki içerik ölçülür → hero yüksekliği (ChampionReveal).
   const below = useBelowHeight(BONUS_CARD_RESERVE_HEIGHT);
+  // MONEY-1C: Pro Mode daveti, Spotlight kartinin ALTINDA. Bayrak kapaliyken
+  // `showMoodInvite` daima false → hero hesabi ve duzen MONEY-1C oncesiyle ayni.
+  const moodOfferEnabled = useMoodOfferEnabled();
+  const moodInviteBelowWithout = below.total({
+    card: !spotlightUnavailable,
+    cycle: true,
+    archive: true,
+    invite: false,
+  });
+  const showMoodInvite =
+    moodOfferEnabled &&
+    (spotlightUnavailable || bonusCardMounted) &&
+    championInviteFits({
+      screenH: windowHeight,
+      belowWithoutInvite: moodInviteBelowWithout,
+      tabInset: tabBarInset,
+    });
   const belowHeight = below.total({
     card: !spotlightUnavailable,
     cycle: true,
     archive: true,
+    invite: showMoodInvite,
   });
   const spotlightVisible = useSpotlightVisible({
     active: championActive,
@@ -1789,6 +1810,14 @@ function GauntletShellContent(): React.JSX.Element {
               ) : (
                 <View style={styles.bonusCardReserve} />
               ))}
+
+            {/* MONEY-1C: Pro Mode daveti — Spotlight kartının altı. Sarmalayıcı
+                ölçüm içindir; kitle dışıysa kart null döner (yükseklik 0). */}
+            {showMoodInvite && (
+              <View onLayout={below.onLayoutOf('invite')}>
+                <MoodInviteCard surface="champion_card" />
+              </View>
+            )}
 
             {/* F2.1: sonraki gösterim satırı. Ön planda içerik kendiliğinden
                 değişmez: geçiş anı gelince satır "hazır" butonuna döner.
