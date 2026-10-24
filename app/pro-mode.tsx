@@ -132,7 +132,7 @@ export default function ProModeScreen(): React.JSX.Element {
    */
   const handleOfferUpgrade = useCallback(async () => {
     void hapticLight();
-    posthogAnalytics.track('mood_offer_cta', { entry_point: 'quota_exhausted', stage: 'pro_mode_gate' });
+    // Olaylar (mood_offer_shown / _cta / _dismissed) paywall katmanindan gelir.
     const shown = await triggerPaywall({ type: 'mood_offer', entry: 'quota_exhausted' });
     if (!shown) {
       Sentry.captureMessage('[ProMode] mood_offer paywall acilmadi', {

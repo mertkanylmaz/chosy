@@ -10,6 +10,7 @@ export {
   recordPaywallDismissed,
   recordPaywallConverted,
   recordTrialStarted,
+  trackMoodOffer,
 } from './triggerOrchestrator';
 
 export {
@@ -28,4 +29,5 @@ export type {
   PaywallVariantName,
   PaywallEventInsert,
   PaywallDismissMethod,
+  MoodOfferEntry,
 } from './types';

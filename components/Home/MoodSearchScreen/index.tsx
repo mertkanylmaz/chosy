@@ -128,7 +128,7 @@ export default function MoodSearchScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
-  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  const { onboarding, entry } = useLocalSearchParams<{ onboarding?: string; entry?: string }>();
   const isOnboarding = onboarding === '1';
   const {
     setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId,
@@ -136,7 +136,7 @@ export default function MoodSearchScreen() {
   } = useMood();
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled } = useProModeAccess();
   /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
   const offerEnabled = useMoodOfferEnabled();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
@@ -323,13 +323,23 @@ export default function MoodSearchScreen() {
 
   /** AI yolu: parse-mood + (varsa) rerank. Hata çağırana fırlatılır. */
   const runAiSearch = useCallback(
-    async (trimmed: string, filters: FilmFilters) => {
+    async (trimmed: string, filters: FilmFilters, freeSearch: boolean) => {
       const [parseResult] = await Promise.all([
         parseMood(trimmed),
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
       ]);
 
-      const { profile, searchId, searchKeywords } = parseResult;
+      const { profile, searchId, searchKeywords, quota } = parseResult;
+
+      // MONEY-1C: ucretsiz hakla yapilan arama basarili — `remaining` sunucudan
+      // (null = bilinmiyor). Kapaliyken / yetkili kullanicida olay yok.
+      if (freeSearch) {
+        posthogAnalytics.track('mood_search_free_completed', {
+          entry_point: entry ?? 'direct',
+          search_id: searchId,
+          remaining: quota.kind === 'available' ? quota.remaining : quota.kind === 'exhausted' ? 0 : null,
+        });
+      }
 
       // parseMood bitti — overlay'e sinyal gönder
       setPipelineStage('done');
@@ -338,7 +348,7 @@ export default function MoodSearchScreen() {
         trimmed, filters, profile, searchId, searchKeywords,
       });
     },
-    [applySearchResult],
+    [applySearchResult, entry],
   );
 
   /**
@@ -379,6 +389,14 @@ export default function MoodSearchScreen() {
     hapticLight();
     Keyboard.dismiss();
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
+    // MONEY-1C: ucretsiz hak yoluyla baslayan arama (bayrak acik, yetkisiz, onboarding disi).
+    const freeSearch = offerEnabled && !isOnboarding && !proEntitled;
+    if (freeSearch) {
+      posthogAnalytics.track('mood_search_free_started', {
+        entry_point: entry ?? 'direct',
+        mood_text_length: trimmed.length,
+      });
+    }
 
     // Mod HER aramanın başında açıkça yazılır (önceki aramadan kalan değer
     // recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
@@ -417,7 +435,7 @@ export default function MoodSearchScreen() {
 
       setPipelineStage('parsing');
       setPhase('processing');
-      await runAiSearch(trimmed, filters);
+      await runAiSearch(trimmed, filters, freeSearch);
     } catch (err) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
@@ -465,7 +483,7 @@ export default function MoodSearchScreen() {
         }
       }
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, proEntitled, entry, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:

@@ -88,3 +88,15 @@ Deno.test('adım 6: deste/çıkış teklifi eligible kapısında; slot muafiyeti
   const m = read('components/Home/MoodSearchScreen/index.tsx')
   assertMatch(m, /if \(offerEnabled\) \{[\s\S]*?entry: 'quota_exhausted'[\s\S]*?\} else \{\s*await showQuotaWall\(\);/)
 })
+
+Deno.test('adım 8: analitik olayları — yalnız ilgili yüzeyde ve bayrak/varyant kapısı arkasında', () => {
+  const m = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(m, /const freeSearch = offerEnabled && !isOnboarding && !proEntitled;\s*if \(freeSearch\) \{\s*posthogAnalytics\.track\('mood_search_free_started'/)
+  assertMatch(m, /if \(freeSearch\) \{\s*posthogAnalytics\.track\('mood_search_free_completed'/)
+  const o = read('services/conversion/triggerOrchestrator.ts')
+  assertMatch(o, /if \(variant\.trigger\.type !== 'mood_offer'\) return;/)
+  for (const e of ['mood_offer_shown', 'mood_offer_dismissed']) assert(o.includes(`trackMoodOffer('${e}'`), e)
+  assertMatch(read('components/paywalls/PaywallBase/index.tsx'), /trackMoodOffer\('mood_offer_cta'/)
+  const c = read('components/gauntlet/MoodInviteCard/index.tsx')
+  for (const e of ['mood_invite_shown', 'mood_invite_tapped']) assert(c.includes(`track('${e}'`), e)
+})

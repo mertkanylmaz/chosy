@@ -303,6 +303,7 @@ export async function shouldShowPaywall(
 export async function recordPaywallShown(variant: PaywallVariant): Promise<void> {
   await setCooldown(variant.trigger.type);
   trackFunnel('paywall_shown', variant);
+  trackMoodOffer('mood_offer_shown', variant);
   await recordEvent(variant, 'shown');
 }
 
@@ -319,6 +320,7 @@ export async function recordPaywallDismissed(
 ): Promise<void> {
   await incrementDismissal(variant.trigger.type);
   trackFunnel('paywall_dismissed', variant, { dismiss_method: method ?? null });
+  trackMoodOffer('mood_offer_dismissed', variant, { dismiss_method: method ?? null });
   await recordEvent(variant, 'dismissed');
 }
 
@@ -351,6 +353,24 @@ function trackFunnel(
     missed_day_count:
       'missedDayCount' in variant.trigger ? variant.trigger.missedDayCount : null,
     entry_point: 'entry' in variant.trigger ? variant.trigger.entry : null,
+    ...extra,
+  });
+}
+
+/**
+ * MONEY-1C teklif olaylari (`mood_offer_shown` / `_cta` / `_dismissed`): giris noktasi
+ * (`entry_point`) ve ilgili arama (`search_id`) ile. Yalniz `mood_offer` varyantinda;
+ * digerlerinde no-op. `paywall_*` olaylari ayrica entry_point tasir.
+ */
+export function trackMoodOffer(
+  event: 'mood_offer_shown' | 'mood_offer_cta' | 'mood_offer_dismissed',
+  variant: PaywallVariant,
+  extra: Record<string, string | number | boolean | null> = {},
+): void {
+  if (variant.trigger.type !== 'mood_offer') return;
+  posthogAnalytics.track(event, {
+    entry_point: variant.trigger.entry,
+    search_id: variant.trigger.searchId ?? null,
     ...extra,
   });
 }

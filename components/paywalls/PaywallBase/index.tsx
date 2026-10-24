@@ -52,6 +52,7 @@ import { posthogAnalytics } from '@/services/posthog';
 import {
   recordPaywallShown,
   recordPaywallDismissed,
+  trackMoodOffer,
   type PaywallDismissMethod,
   recordPaywallConverted,
 } from '@/services/conversion';
@@ -315,6 +316,11 @@ export default function PaywallBase({
   const handlePurchase = useCallback(async () => {
     if (!acquireLock('purchase')) return;
     hapticMedium();
+    // MONEY-1C: teklifin satin alma CTA'si (yalniz mood_offer varyantinda).
+    trackMoodOffer('mood_offer_cta', variant, {
+      plan: selectedPlan,
+      trial_shown: selectedOffer.kind === 'trial',
+    });
 
     // Iptal DEGIL (o `purchase_cancelled`, purchaseService'te); basarisiz sonuc.
     const trackPurchaseFailed = (errorKind: string) => {
@@ -387,7 +393,7 @@ export default function PaywallBase({
     } finally {
       releaseLock();
     }
-  }, [selectedPlan, packages, acquireLock, releaseLock, t, refreshSubscription, refreshQuota, onConvert, variant]);
+  }, [selectedPlan, selectedOffer.kind, packages, acquireLock, releaseLock, t, refreshSubscription, refreshQuota, onConvert, variant]);
 
   /**
    * Terms/Privacy linki. Acilmazsa Sentry'ye error + kullaniciya mevcut hata
