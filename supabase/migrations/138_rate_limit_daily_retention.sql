@@ -12,7 +12,7 @@
 --   sınırı payı için yeterli, tablo şişmez (kimlik × günlük-fonksiyon sayısı).
 --
 -- SÖZLEŞME: günlük sayaç yazan her kod fonksiyon adını '-daily' ile bitirmek
---   zorundadır (`_shared/rateLimit.ts` checkDailyLimit bunu zorlar).
+--   zorundadır (`_shared/dailyLimit.ts` checkDailyLimit bunu zorlar).
 --
 -- DAVRANIŞ DEĞİŞMEZ: 1 saatlik tüm mevcut sayaçlar (parse-mood, rerank-films,
 --   recommend, ...) aynı silinir. İmza, sahip ve ACL aynı (CREATE OR REPLACE ACL'i
@@ -30,10 +30,10 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- Eşdeğer koşul (CASE ile aynı anlam) ama window_start index'ini
+  -- (idx_rate_limits_window_cleanup) kullanabilir: EXPLAIN ile doğrulandı.
   DELETE FROM public.api_rate_limits
-  WHERE window_start < NOW() - CASE
-    WHEN function_name LIKE '%-daily' THEN INTERVAL '48 hours'
-    ELSE INTERVAL '1 hour'
-  END;
+  WHERE window_start < NOW() - INTERVAL '1 hour'
+    AND (function_name NOT LIKE '%-daily' OR window_start < NOW() - INTERVAL '48 hours');
 END;
 $$;
