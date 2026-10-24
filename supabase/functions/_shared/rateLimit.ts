@@ -49,6 +49,7 @@ const LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
   'rerank-films':  { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
   'recommend':     { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
   'merge-anonymous-user': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
+  'sync-entitlement': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
 }
 
 /** Limit aşıldı — istemci beklemeli (429) */

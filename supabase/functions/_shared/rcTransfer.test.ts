@@ -323,7 +323,24 @@ Deno.test('fetchRcSubscriber: Bearer başlığı, URL kodlaması, yanıt ayrış
   const info = await fetchRcSubscriber('$RCAnonymousID:a/b', SECRET, fetchImpl)
   assertEquals(seenUrl, 'https://api.revenuecat.com/v1/subscribers/%24RCAnonymousID%3Aa%2Fb')
   assertEquals(seenAuth, `Bearer ${SECRET}`)
-  assertEquals(info, activeMonthly)
+  // non_subscriptions yanıtta yoksa boş nesneye normalize edilir (sync-entitlement lifetime environment'ı).
+  assertEquals(info, { ...activeMonthly, non_subscriptions: {} })
+})
+
+Deno.test('fetchRcSubscriber: non_subscriptions ayrıştırılır; environmentFromSubscriber lifetime için buradan okur', async () => {
+  const body = {
+    subscriber: {
+      entitlements: {},
+      subscriptions: {},
+      non_subscriptions: { 'com.chosy.lifetime': [{ is_sandbox: false }, { is_sandbox: true }] },
+    },
+  }
+  const fetchImpl = (() => Promise.resolve(new Response(JSON.stringify(body)))) as typeof fetch
+  const info = await fetchRcSubscriber(B_AUTH, SECRET, fetchImpl)
+  assertEquals(info.non_subscriptions?.['com.chosy.lifetime']?.length, 2)
+  // Son alım otoriter.
+  assertEquals(environmentFromSubscriber(info, 'com.chosy.lifetime'), 'SANDBOX')
+  assertEquals(environmentFromSubscriber(info, 'com.chosy.unknown'), null)
 })
 
 Deno.test('fetchRcSubscriber: subscriber alanı yok → RC_REST_MALFORMED', async () => {

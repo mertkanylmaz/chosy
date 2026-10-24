@@ -118,6 +118,11 @@ export type RcSubscriberInfo = {
       is_sandbox?: boolean
     }
   >
+  /**
+   * RC REST: tek seferlik (lifetime) alımlar `subscriptions` altında DEĞİL burada,
+   * ürün kimliği → alım listesi olarak gelir. Yalnız environment türetmek için okunur.
+   */
+  non_subscriptions?: Record<string, Array<{ is_sandbox?: boolean }>>
 }
 
 export type ActiveEntitlement = {
@@ -348,19 +353,26 @@ export async function fetchRcSubscriber(
     subscriptions: (isRecord(subscriber.subscriptions)
       ? subscriber.subscriptions
       : {}) as RcSubscriberInfo['subscriptions'],
+    non_subscriptions: (isRecord(subscriber.non_subscriptions)
+      ? subscriber.non_subscriptions
+      : {}) as NonNullable<RcSubscriberInfo['non_subscriptions']>,
   }
 }
 
 /**
- * TRANSFER'da `event.environment` opsiyoneldir. Yoksa environment, RC REST'teki
- * aktif ürünün abonelik kaydının `is_sandbox` alanından türetilir (otoriter
+ * TRANSFER'da `event.environment` opsiyoneldir (sync-entitlement'ta hiç yoktur).
+ * Yoksa environment, RC REST'teki aktif ürünün abonelik kaydının `is_sandbox` alanından türetilir (otoriter
  * kaynak, varsayılan DEĞİL). Alan boolean değilse null → çağıran yazmaz.
  */
 export function environmentFromSubscriber(
   info: RcSubscriberInfo,
   productId: string,
 ): RcEnvironment | null {
-  const flag = info.subscriptions[productId]?.is_sandbox
+  // Abonelik: `subscriptions[ürün]`. Lifetime: `non_subscriptions[ürün]` listesinin
+  // son alımı (sync-entitlement; webhook TRANSFER'ı lifetime'ı olay environment'ıyla çözer).
+  const purchases = info.non_subscriptions?.[productId]
+  const flag = info.subscriptions[productId]?.is_sandbox ??
+    (Array.isArray(purchases) ? purchases[purchases.length - 1]?.is_sandbox : undefined)
   if (typeof flag !== 'boolean') return null
   return flag ? 'SANDBOX' : 'PRODUCTION'
 }
