@@ -10,6 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { shouldRefundOnError } from '../_shared/refundPolicy.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
 import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 
@@ -529,11 +530,12 @@ serve(async (req: Request): Promise<Response> => {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     const latencyMs = Date.now() - startTime
 
-    // Hata parse-mood'un kendi tarafinda (LLM/ayristirma): kullanici sonuc
-    // alamadi, hakki geri verilir. Iade, hata kaydindan ONCE beklenir ki
-    // yanitla birlikte guncel `remaining` donebilsin.
+    // Iade YALNIZ LLM'den sonuc alinamayan hatalarda (5xx/529/429, ag, timeout,
+    // kredi) — bkz. `_shared/refundPolicy.ts`. PARSE_FAILED'de iade YOK: LLM
+    // cagrisi yapildi (ucret dogdu) ve girdi modeli JSON uretmemeye yonlendirebilir.
+    // Iade, hata kaydindan ONCE beklenir ki yanitla guncel `remaining` donebilsin.
     const refunded =
-      quotaConsumed && quotaCheck.userId
+      quotaConsumed && quotaCheck.userId && shouldRefundOnError(err)
         ? await refundSearchQuota(quotaCheck.userId, msg)
         : false
     const refundFields = quotaFields(quotaCheck.quotaResult, refunded)
