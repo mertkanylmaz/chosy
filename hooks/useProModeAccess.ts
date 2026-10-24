@@ -17,9 +17,12 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
+import { fetchSearchQuota } from '@/services/searchQuota';
 import { supabase } from '@/services/supabase';
 import { readUserRow } from '@/services/userCache';
 import { logger } from '@/utils/logger';
+import { decideProModeGate, type ProModeGate, type SearchQuota } from '@/utils/searchQuota';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +47,22 @@ export interface ProModeAccess {
   loading: boolean;
   /** Okuma basarisiz olduysa dolu — "kilitli" ile "hata"yi ayirt etmek icin */
   error: boolean;
+  /**
+   * MONEY-1C UX kapisi. `mood_offer_enabled` KAPALIYKEN daima `allowed ? 'enter' : 'locked'`
+   * (bugunku davranis). Acikken ve `withQuota` verildiyse: yetkisiz kullanicida sunucu
+   * hakkina bakar — hak varsa/okunamadiysa 'enter', bittiyse 'offer'.
+   * `allowed` anlami DEGISMEZ; diger tuketiciler (profile, discover) etkilenmez.
+   */
+  gate: ProModeGate;
+  /** Sunucudan okunan arama hakki; `withQuota` yoksa / bayrak kapaliysa 'checking' DEGIL `null`. */
+  searchQuota: SearchQuota | 'checking' | null;
+  /** Hakki yeniden oku (ornegin kota 429 sonrasi). */
+  refreshSearchQuota: () => void;
+}
+
+export interface ProModeAccessOptions {
+  /** Hakki sunucudan oku (yalniz `app/pro-mode.tsx` verir — diger tuketiciler RPC atmaz). */
+  withQuota?: boolean;
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
@@ -56,8 +75,11 @@ export interface ProModeAccess {
  * okunur (PERF-1: bellek ici, 60 sn TTL, eszamanli istekler tekil). Bayrak yalniz
  * migration ile degisir; en kotu durumda degisiklik 60 sn gec yansir.
  */
-export function useProModeAccess(): ProModeAccess {
+export function useProModeAccess(options: ProModeAccessOptions = {}): ProModeAccess {
+  const { withQuota = false } = options;
   const { isPremium, isLoading: subLoading } = useSubscription();
+  const offerEnabled = useMoodOfferEnabled();
+  const [searchQuota, setSearchQuota] = useState<SearchQuota | 'checking'>('checking');
 
   const [legacyAccess, setLegacyAccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -112,9 +134,39 @@ export function useProModeAccess(): ProModeAccess {
   }, [load]);
 
   const stillLoading = loading || subLoading;
+  const allowed = !stillLoading && (isPremium || legacyAccess);
+
+  // Hak yalniz: bayrak acik + pro-mode ekrani istedi + yetki okumasi bitti + yetkisiz.
+  const needsQuota = withQuota && offerEnabled && !stillLoading && !allowed;
+  const [quotaTick, setQuotaTick] = useState(0);
+
+  useEffect(() => {
+    if (!needsQuota) return;
+    let active = true;
+    setSearchQuota('checking');
+    void fetchSearchQuota().then((quota) => {
+      if (active) setSearchQuota(quota);
+    });
+    return () => {
+      active = false;
+    };
+  }, [needsQuota, quotaTick]);
+
+  const refreshSearchQuota = useCallback(() => setQuotaTick((n) => n + 1), []);
+
+  // Yetki/hata okunurken kapi 'enter/locked' kararini degistirmez: `stillLoading`
+  // ve `error` ekranlari zaten once gelir (pro-mode.tsx sirasi).
+  const gate = decideProModeGate({
+    offerEnabled: withQuota && offerEnabled,
+    entitled: allowed,
+    quota: searchQuota,
+  });
 
   return {
-    allowed: !stillLoading && (isPremium || legacyAccess),
+    allowed,
+    gate,
+    searchQuota: needsQuota ? searchQuota : null,
+    refreshSearchQuota,
     // Fail-closed: okuma bitene kadar muafiyet yok, duvar durur.
     quotaExempt: !stillLoading && legacyAccess,
     reason: stillLoading ? 'none' : isPremium ? 'premium' : legacyAccess ? 'legacy' : 'none',

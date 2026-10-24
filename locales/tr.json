@@ -600,6 +600,14 @@
     "errorTitle": "Erişimini kontrol edemedik",
     "errorBody": "Planını doğrulayamadan bağlantı koptu. Birazdan tekrar dene."
   },
+  "moodOffer": {
+    "offerTitle": "Bugünkü ücretsiz aramanı kullandın",
+    "offerBodyTime": "Bir sonraki ücretsiz aramana %{time} var. Ya da Chosy Pro ile sınırsız ara.",
+    "offerBody": "Ücretsiz aramanın hakkı yarın yenilenir. Ya da Chosy Pro ile sınırsız ara.",
+    "offerCta": "Pro ile sınırsız",
+    "timeHoursMinutes": "%{hours} sa %{minutes} dk",
+    "timeMinutes": "%{minutes} dk"
+  },
   "auth": {
     "welcomeTitle": "Mood'un. Filmlerin.",
     "welcomeSubtitle": "Nasıl hissettiğini anlat, AI sana en uygun filmi bulsun.",

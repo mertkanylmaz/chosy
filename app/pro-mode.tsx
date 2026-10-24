@@ -40,6 +40,7 @@ import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight } from '@/utils/haptics';
+import { resetsInLabel } from '@/utils/resetsInLabel';
 import { posthogAnalytics } from '@/services/posthog';
 import { logger } from '@/utils/logger';
 import * as Sentry from '@sentry/react-native';
@@ -84,17 +85,21 @@ function GateShell({ children }: { children: React.ReactNode }) {
 export default function ProModeScreen(): React.JSX.Element {
   const router = useRouter();
   const { t } = useLanguage();
-  const { allowed, reason, loading, error } = useProModeAccess();
+  // `withQuota`: hak sunucudan yalniz bu ekranda okunur (mood_offer_enabled aciksa).
+  const { allowed, reason, loading, error, gate, searchQuota } = useProModeAccess({ withQuota: true });
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   // Ekran acilisi — yalnizca yetki VERILDIGINDE ve durum basina bir kez.
   // `reason === 'legacy'` grandfathering kohortunu isaretler; kohort davranisi
   // olcumsuz kalmasin diye premium'dan ayirt edilerek gonderilir.
+  // Ucretsiz hakla giren (MONEY-1C) kullanici `free_search` olarak ayrilir.
+  const entered = gate === 'enter';
+  const accessReason = allowed ? reason : 'free_search';
   useEffect(() => {
-    if (allowed) {
-      posthogAnalytics.track('pro_mode_opened', { access_reason: reason });
+    if (entered) {
+      posthogAnalytics.track('pro_mode_opened', { access_reason: accessReason });
     }
-  }, [allowed, reason]);
+  }, [entered, accessReason]);
 
   /**
    * Kilitli ekrandaki tek CTA.
@@ -121,8 +126,8 @@ export default function ProModeScreen(): React.JSX.Element {
     }
   }, [triggerPaywall, reason]);
 
-  // ── 1) Yetki okunuyor ──────────────────────────────────────────────────
-  if (loading) {
+  // ── 1) Yetki / hak okunuyor ────────────────────────────────────────────
+  if (loading || gate === 'checking') {
     return (
       <>
         <Stack.Screen options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -155,8 +160,37 @@ export default function ProModeScreen(): React.JSX.Element {
     );
   }
 
+  // ── 2b) Gunluk ucretsiz hak bitti (yalniz mood_offer_enabled acikken) ────
+  if (gate === 'offer') {
+    const resetsAt = searchQuota && searchQuota !== 'checking' && searchQuota.kind === 'exhausted'
+      ? searchQuota.resetsAt
+      : null;
+    const timeLabel = resetsInLabel(t, resetsAt);
+    return (
+      <>
+        <Stack.Screen options={{ headerShown: false, animation: 'slide_from_right' }} />
+        <StatusBar style="light" backgroundColor={Colors.background} />
+        <GateShell>
+          <Ionicons name="time-outline" size={48} color={Colors.gold} />
+          <Text style={styles.stateTitle}>{t('moodOffer.offerTitle')}</Text>
+          <Text style={styles.stateBody}>
+            {timeLabel ? t('moodOffer.offerBodyTime', { time: timeLabel }) : t('moodOffer.offerBody')}
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryBtn}
+            onPress={() => void handleUpgrade()}
+            activeOpacity={0.85}>
+            <Ionicons name="sparkles" size={18} color={Colors.textOnAccent} />
+            <Text style={styles.primaryBtnText}>{t('moodOffer.offerCta')}</Text>
+          </TouchableOpacity>
+        </GateShell>
+        <ContextualPaywall {...paywallProps} />
+      </>
+    );
+  }
+
   // ── 3) Yetki yok — tek Chosy Pro CTA'si ────────────────────────────────
-  if (!allowed) {
+  if (gate === 'locked') {
     return (
       <>
         <Stack.Screen options={{ headerShown: false, animation: 'slide_from_right' }} />

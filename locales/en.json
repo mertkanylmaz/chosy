@@ -600,6 +600,14 @@
     "errorTitle": "We couldn't check your access",
     "errorBody": "The connection dropped before we could confirm your plan. Try again in a moment."
   },
+  "moodOffer": {
+    "offerTitle": "Today's free search is used",
+    "offerBodyTime": "Your next free search is ready in %{time}. Or search without limits with Chosy Pro.",
+    "offerBody": "Your free search comes back tomorrow. Or search without limits with Chosy Pro.",
+    "offerCta": "Unlimited with Pro",
+    "timeHoursMinutes": "%{hours}h %{minutes}m",
+    "timeMinutes": "%{minutes}m"
+  },
   "auth": {
     "welcomeTitle": "Your mood. Your movies.",
     "welcomeSubtitle": "Describe how you feel and AI finds your perfect film, every time.",
