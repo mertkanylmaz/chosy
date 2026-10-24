@@ -4246,3 +4246,17 @@ yanıltıcı olacağından kasıtlı eklenmedi.
 2. **`android.adaptiveIcon.backgroundColor` `#0A0A0A`:** splash zemini `#08090B` (ink) oldu,
    Android adaptive ikon zemini eski `#0A0A0A`'da kaldı. Android splash/ikon kontrolüyle
    birlikte ele alınır; `android-icon-*.png` dosyaları ayrıca ink ile uyumlu mu bakılır.
+
+## AUTH-PENDING-1 sonrası — 24 Ekim 2026 (2.1.2 / orphan-cleanup)
+
+1. **Sentry kullanıcı kimliği (2.1.2, küçük iş):** Sentry event'indeki `user.id`
+   (`8C765B95-…`) `auth.users` ve `public.users`'ta karşılığı olmayan, büyük harfli bir
+   kimlik. `Sentry.setUser`'a Supabase auth id verilmeli ki Sentry olayı DB satırına
+   bağlanabilsin. Şimdilik keşif açılmadı (kurucu kararı, 24 Eki).
+2. **Orphan-cleanup: 22 Eki 13:09:37-13:09:53 UTC fırtınası (SİLİNMEZ):** tek cihaz
+   (IP `186.84.20.226`, Bogotá) 16 sn içinde 30 anonim `auth.users` kaydı açtı
+   (`is_anonymous`, `created_at` aynı pencere). Hepsi sahipsiz. Neden: embedded 911 bundle'ı
+   AUTH-LOOP devre kesicisinden (`1b2e7fc`) önceydi. Temizlik kararı verilene kadar
+   dokunulmaz; orphan sayımına bu 30 kayıt "fırtına" etiketiyle ayrı eklenir.
+   Sorgu: `select id from auth.users where is_anonymous and created_at between
+   '2026-10-22 13:09:30+00' and '2026-10-22 13:10:30+00'`.
