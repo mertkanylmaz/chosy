@@ -79,3 +79,23 @@ export function moodInviteAccess(
   if (input.reason === 'legacy') return showToLegacy ? 'legacy' : null;
   return 'free';
 }
+
+/**
+ * `mood_invite_shown` oturumda YÜZEY BAŞINA bir kez. Kart sığma/ölçüm değişimiyle
+ * yeniden mount olsa da olay tekrarlanmaz. Çağıran modül düzeyinde tek örnek tutar.
+ */
+export interface InviteShownTracker {
+  /** İlk çağrıda true (olayı at), aynı yüzey için sonrakilerde false. */
+  claim: (surface: MoodInviteSurface) => boolean;
+}
+
+export function createInviteShownTracker(): InviteShownTracker {
+  const seen = new Set<MoodInviteSurface>();
+  return {
+    claim(surface) {
+      if (seen.has(surface)) return false;
+      seen.add(surface);
+      return true;
+    },
+  };
+}

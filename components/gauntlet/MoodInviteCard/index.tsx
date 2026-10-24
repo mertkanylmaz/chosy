@@ -9,7 +9,7 @@
  * Dokunuş `/pro-mode`'a gider — kapı orada karar verir (hak varsa arama, bittiyse teklif).
  * Gauntlet ritüeline ve ask kurallarına dokunmaz.
  */
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -17,9 +17,12 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { posthogAnalytics } from '@/services/posthog';
 import { hapticLight } from '@/utils/haptics';
-import { moodInviteAccess, type MoodInviteSurface } from '@/utils/moodInvite';
+import { createInviteShownTracker, moodInviteAccess, type MoodInviteSurface } from '@/utils/moodInvite';
 
 import { styles } from './styles';
+
+/** Oturum boyu yuzey basina bir `mood_invite_shown` (remount'ta tekrarlanmaz). */
+const inviteShown = createInviteShownTracker();
 
 interface MoodInviteCardProps {
   surface: MoodInviteSurface;
@@ -31,11 +34,9 @@ export function MoodInviteCard({ surface }: MoodInviteCardProps): React.JSX.Elem
   const { loading, error, reason } = useProModeAccess();
   const access = moodInviteAccess({ loading, error, reason });
 
-  /** `mood_invite_shown` mount başına bir kez (kitle belli olunca). */
-  const shownTracked = useRef(false);
+  /** `mood_invite_shown` oturumda yüzey başına bir kez (kitle belli olunca). */
   useEffect(() => {
-    if (access === null || shownTracked.current) return;
-    shownTracked.current = true;
+    if (access === null || !inviteShown.claim(surface)) return;
     posthogAnalytics.track('mood_invite_shown', { surface, access });
   }, [access, surface]);
 

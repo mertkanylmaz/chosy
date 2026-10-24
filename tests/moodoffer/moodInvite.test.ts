@@ -6,6 +6,7 @@ import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import {
   CHAMPION_INVITE_MIN_HERO,
   championInviteFits,
+  createInviteShownTracker,
   moodInviteAccess,
   spotlightInviteFits,
 } from '../../utils/moodInvite'
@@ -44,4 +45,20 @@ Deno.test('kitle: premium/trial asla; yükleniyor/hata gizli; free ve legacy gö
   assertEquals(moodInviteAccess({ ...ok, reason: 'legacy' }, false), null)
   assertEquals(moodInviteAccess({ loading: true, error: false, reason: 'none' }), null)
   assertEquals(moodInviteAccess({ loading: false, error: true, reason: 'none' }), null)
+})
+
+Deno.test('mood_invite_shown: oturumda yüzey başına bir kez (remount/yeniden sığma tekrarlamaz)', () => {
+  const t = createInviteShownTracker()
+  assertEquals(t.claim('champion_card'), true)
+  assertEquals(t.claim('champion_card'), false)
+  assertEquals(t.claim('champion_card'), false)
+  assertEquals(t.claim('spotlight_card'), true)
+  assertEquals(t.claim('spotlight_card'), false)
+})
+
+Deno.test('davet kartı olayı modül düzeyi izleyiciyle atar (ref değil)', () => {
+  const src = Deno.readTextFileSync(new URL('../../components/gauntlet/MoodInviteCard/index.tsx', import.meta.url)).replaceAll('\r\n', '\n')
+  assertEquals(src.includes('const inviteShown = createInviteShownTracker();'), true)
+  assertEquals(src.includes('!inviteShown.claim(surface)'), true)
+  assertEquals(src.includes('shownTracked'), false)
 })
