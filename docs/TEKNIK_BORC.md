@@ -4260,3 +4260,27 @@ yanıltıcı olacağından kasıtlı eklenmedi.
    dokunulmaz; orphan sayımına bu 30 kayıt "fırtına" etiketiyle ayrı eklenir.
    Sorgu: `select id from auth.users where is_anonymous and created_at between
    '2026-10-22 13:09:30+00' and '2026-10-22 13:10:30+00'`.
+
+## MONEY-SEC-1 sonrası — 24 Ekim 2026 (135 incelemesi)
+
+1. **RC'de 3 entitlement (kurucu bildirimi: `chosy.ai Pro`, `premium`, `chosy_plus`):** koddaki
+   tek okuyucu `chosy_plus` — istemci `constants/subscriptionPlans.ts` `RC_ENTITLEMENT_ID`
+   (`purchaseService.ts:436,650,772`, `quotaEngine.ts:105`), sunucu `_shared/rcTransfer.ts`
+   `RC_ENTITLEMENT_ID` (TRANSFER ve `sync-entitlement` aktif entitlement seçimi) ve webhook
+   `subscriptions.entitlement_id` upsert'i. `chosy.ai Pro` ve `premium` için kodda okuyucu
+   YOK; `premium` yalnız 089 öncesi satırlarda `subscriptions.entitlement_id` değeri olarak
+   geçti (rcTransfer.ts:46-49 yorumu). Açık: (a) RC dashboard'da hangi ürünler hangi
+   entitlement'a bağlı (özellikle `com.chosy.lifetime` → `chosy_plus` mı; bağlı değilse
+   `sync-entitlement` lifetime için `no_active_entitlement` döner), (b) eski ürünlerin
+   (`chosyai_*`) bağlı olduğu entitlement, (c) eski entitlement'lardan hangisi aktif
+   müşteri taşıyor. Temizlik planı dashboard ölçümünden sonra; ölçülmeden silinmez.
+2. **`search_path`siz SECURITY DEFINER fonksiyonlar:** `check_and_consume_game_quota`,
+   `get_quota_status`, `claim_lifetime_spot` (canlı `proconfig` boş; `check_and_consume_quota`
+   `public, pg_temp` taşıyor). Şema geneli `prosecdef` taraması 19 Ağu notunda zaten açık
+   kalem; bu üçü o taramanın ilk bulguları. Sertleştirme: `ALTER FUNCTION … SET search_path
+   = pg_catalog, public` (gövde değişmez), ayrı migration.
+3. **`get_quota_status` anon EXEC + kimlik doğrulaması:** anon ve authenticated EXEC taşır;
+   gövde `users.id` ve `subscription_tier` okur. 109'un `p_user_id` guard'ı bu fonksiyonda
+   doğrulanmadı — başka kullanıcının `p_user_id`'siyle tier okunabiliyorsa bilgi sızıntısı.
+   Önce gövdede guard var mı bak (`pg_get_functiondef`), yoksa 109 deseniyle ekle ya da EXEC'i
+   daralt.
