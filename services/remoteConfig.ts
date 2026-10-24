@@ -40,7 +40,12 @@ const SAFE_DEFAULTS = {
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;
 
-const store = createConfigStore({ ttlMs: CACHE_TTL_MS });
+// Başarısız yükleme (çevrimdışı + boş önbellek) sonrası 30 sn → 5 dk üstel geri çekilme:
+// her mount'ta ağ isteği ve REMOTE_CONFIG_HYDRATE_FAILED Sentry olayı üretilmez.
+const store = createConfigStore({
+  ttlMs: CACHE_TTL_MS,
+  failureBackoff: { baseMs: 30 * 1000, maxMs: CACHE_TTL_MS },
+});
 
 /** Kalıcı önbellek süreç başına BİR kez geri yüklenir (eşzamanlı çağrılar paylaşır). */
 let restorePromise: Promise<void> | null = null;

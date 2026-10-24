@@ -15,6 +15,11 @@
  *   `stale_on_error` döner; hiç anlık görüntü yoksa `error_no_cache`.
  *   Başarısız yükleme `fetchedAt`'i ilerletmez — sonraki çağrı yeniden dener.
  * - Hata fırlatılmaz, sonuç olarak döner: çağıran Sentry'ye yazmaktan sorumlu.
+ * - Başarısızlık geri çekilmesi (opsiyonel `failureBackoff`): ardışık başarısız
+ *   yüklemelerden sonra yükleyici `baseMs * 2^(n-1)` (üst sınır `maxMs`) dolmadan
+ *   ÇAĞRILMAZ; boş önbellek + çevrimdışı iken her mount'ta istek/Sentry olayı oluşmaz.
+ *   Bayat/boş görüntü hemen döner (`backing_off`). İlk başarıyla sayaç sıfırlanır,
+ *   yani ağ geri gelince en geç `maxMs` içinde toparlanır (kalıcı vazgeçme YOK).
  */
 
 export interface ConfigSnapshot {
@@ -31,7 +36,9 @@ export type RefreshStatus =
   /** Yükleme hata verdi, eski anlık görüntü kullanılıyor. */
   | 'stale_on_error'
   /** Yükleme hata verdi ve elde hiçbir anlık görüntü yok. */
-  | 'error_no_cache';
+  | 'error_no_cache'
+  /** Son başarısızlıktan beri bekleme süresi dolmadı; yükleyici ÇAĞRILMADI. */
+  | 'backing_off';
 
 export interface RefreshResult {
   status: RefreshStatus;
@@ -43,6 +50,8 @@ export interface ConfigStoreOptions {
   ttlMs: number;
   /** Epoch ms. Testte sahte saat verilir. */
   now?: () => number;
+  /** Verilmezse başarısız yükleme sonrası her çağrı yeniden dener (eski davranış). */
+  failureBackoff?: { baseMs: number; maxMs: number };
 }
 
 export interface ConfigStore {
@@ -84,6 +93,15 @@ export function createConfigStore(options: ConfigStoreOptions): ConfigStore {
   const now = options.now ?? Date.now;
   let snapshot: ConfigSnapshot | null = null;
   let inflight: Promise<RefreshResult> | null = null;
+  let failures = 0;
+  let lastFailureAt = 0;
+
+  function isBackingOff(): boolean {
+    const backoff = options.failureBackoff;
+    if (!backoff || failures === 0) return false;
+    const wait = Math.min(backoff.baseMs * 2 ** (failures - 1), backoff.maxMs);
+    return now() - lastFailureAt < wait;
+  }
 
   function isFresh(): boolean {
     return snapshot !== null && now() - snapshot.fetchedAt < options.ttlMs;
@@ -103,6 +121,9 @@ export function createConfigStore(options: ConfigStoreOptions): ConfigStore {
       if (!refreshOptions?.force && isFresh()) {
         return Promise.resolve({ status: 'fresh' });
       }
+      if (!refreshOptions?.force && isBackingOff()) {
+        return Promise.resolve({ status: 'backing_off' });
+      }
 
       // `Promise.resolve().then` — yükleyici senkron fırlatsa da reddedilen
       // promise olur ve `finally` her durumda çalışır.
@@ -111,12 +132,17 @@ export function createConfigStore(options: ConfigStoreOptions): ConfigStore {
         .then(
           (values): RefreshResult => {
             snapshot = { values, fetchedAt: now() };
+            failures = 0;
             return { status: 'refreshed' };
           },
-          (error: unknown): RefreshResult => ({
-            status: snapshot ? 'stale_on_error' : 'error_no_cache',
-            error,
-          }),
+          (error: unknown): RefreshResult => {
+            failures += 1;
+            lastFailureAt = now();
+            return {
+              status: snapshot ? 'stale_on_error' : 'error_no_cache',
+              error,
+            };
+          },
         )
         .finally(() => {
           if (inflight === promise) inflight = null;

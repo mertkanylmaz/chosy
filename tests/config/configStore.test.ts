@@ -172,3 +172,71 @@ Deno.test('taze önbellek yok + ağ hatası + eski önbellek var → eski değer
   assertEquals(failing.state.calls, 1)
   assertEquals(store.getSnapshot()?.values, { flag: 'eski' })
 })
+
+Deno.test('failureBackoff: boş önbellek + hata → bekleme dolana dek yükleyici çağrılmaz (spam yok)', async () => {
+  const c = clock()
+  const store = createConfigStore({ ttlMs: TTL, now: c.now, failureBackoff: { baseMs: 30_000, maxMs: TTL } })
+  const l = loader(new Error('offline'))
+
+  assertEquals((await store.refresh(l.fn)).status, 'error_no_cache')
+  // 20 "mount": hepsi geri çekilmede, ağ/Sentry yok
+  for (let i = 0; i < 20; i++) assertEquals((await store.refresh(l.fn)).status, 'backing_off')
+  assertEquals(l.state.calls, 1)
+
+  c.state.t += 30_000
+  assertEquals((await store.refresh(l.fn)).status, 'error_no_cache')
+  assertEquals(l.state.calls, 2)
+})
+
+Deno.test('failureBackoff: bekleme üstel artar ve maxMs ile sınırlanır', async () => {
+  const c = clock()
+  const store = createConfigStore({ ttlMs: TTL, now: c.now, failureBackoff: { baseMs: 30_000, maxMs: 100_000 } })
+  const l = loader(new Error('offline'))
+
+  await store.refresh(l.fn) // n=1 → 30 sn
+  c.state.t += 30_000
+  await store.refresh(l.fn) // n=2 → 60 sn
+  c.state.t += 59_999
+  assertEquals((await store.refresh(l.fn)).status, 'backing_off')
+  c.state.t += 1
+  await store.refresh(l.fn) // n=3 → min(120, 100) = 100 sn
+  c.state.t += 99_999
+  assertEquals((await store.refresh(l.fn)).status, 'backing_off')
+  c.state.t += 1
+  assertEquals((await store.refresh(l.fn)).status, 'error_no_cache')
+  assertEquals(l.state.calls, 4)
+})
+
+Deno.test('failureBackoff: ilk başarıyla sayaç sıfırlanır (kalıcı vazgeçme yok)', async () => {
+  const c = clock()
+  const store = createConfigStore({ ttlMs: TTL, now: c.now, failureBackoff: { baseMs: 30_000, maxMs: TTL } })
+  await store.refresh(loader(new Error('offline')).fn)
+  c.state.t += 30_000
+  const ok = loader({ a: 1 })
+  assertEquals((await store.refresh(ok.fn)).status, 'refreshed')
+  c.state.t += TTL
+  // TTL doldu; önceki başarısızlık yok sayılır → doğrudan yükler
+  assertEquals((await store.refresh(ok.fn)).status, 'refreshed')
+  assertEquals(ok.state.calls, 2)
+})
+
+Deno.test('failureBackoff: bayat önbellek varken de geri çekilir, eski değer korunur', async () => {
+  const c = clock()
+  const store = createConfigStore({ ttlMs: TTL, now: c.now, failureBackoff: { baseMs: 30_000, maxMs: TTL } })
+  await store.refresh(loader({ a: 1 }).fn)
+  c.state.t += TTL
+  assertEquals((await store.refresh(loader(new Error('x')).fn)).status, 'stale_on_error')
+  const l = loader({ a: 2 })
+  assertEquals((await store.refresh(l.fn)).status, 'backing_off')
+  assertEquals(l.state.calls, 0)
+  assertEquals(store.getSnapshot()?.values, { a: 1 })
+})
+
+Deno.test('failureBackoff verilmezse eski davranış: her çağrı yeniden dener', async () => {
+  const c = clock()
+  const store = createConfigStore({ ttlMs: TTL, now: c.now })
+  const l = loader(new Error('x'))
+  await store.refresh(l.fn)
+  await store.refresh(l.fn)
+  assertEquals(l.state.calls, 2)
+})
