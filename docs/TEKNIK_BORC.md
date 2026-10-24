@@ -4288,3 +4288,56 @@ yanıltıcı olacağından kasıtlı eklenmedi.
    doğrulanmadı — başka kullanıcının `p_user_id`'siyle tier okunabiliyorsa bilgi sızıntısı.
    Önce gövdede guard var mı bak (`pg_get_functiondef`), yoksa 109 deseniyle ekle ya da EXEC'i
    daralt.
+
+## MONEY-1C Faz 2 incelemesi sonrası — 25 Ekim 2026
+
+Bağımsız `a524bff..HEAD` incelemesinden (feat/money-1c) ve hook araştırmasından kalanlar.
+Düzeltilenler (B-1..B-6, K-1, K-2, min girdi, tester listesi) ilgili commit'lerde; aşağıdakiler
+BİLİNÇLİ olarak açık bırakıldı.
+
+1. **Pre-commit hook index'i değil çalışma ağacını typecheck ediyor.** `npm run typecheck`
+   çalışma ağacında koşar; commit'e giren içerik (index) ile farklı olabilir (kısmi stage,
+   `stash --keep-index` hunk-split'i). Hook "yeşil" der, commit'te başka içerik olabilir ya da
+   tersi. Çözüm: index'i geçici dizine export edip (`git checkout-index -a --prefix=…`) orada
+   typecheck. 24 Eki'de bir yanlış commit (26 hata) hook'tan geçti; kök neden kanıtlanamadı
+   (hook mantığı >14'te `exit 1` verir; `| head` boru senaryosu yeniden üretilemedi — SIGPIPE
+   141 verir ve commit'i reddeder). Artık her koşu worktree git dizinindeki `hook-last.log`'a
+   exit kodu + hata sayısı yazıyor; bir sonraki olayda teşhis mümkün.
+2. **pre-push / CI typecheck kapısı yok.** `.github/workflows` yok, `.eas/workflows` yalnız
+   `e2e-test.yml` (tetikleyicisiz). Hook `--no-verify` ile ya da yanlış `core.hooksPath` ile
+   atlanırsa uzak dala hiçbir şey engel olmaz. `core.hooksPath` paylaşılan `.git/config`'te
+   MUTLAK yol (`C:\Users\mertk\moodflix\.githooks`) — worktree'ler ana checkout'un hook'unu
+   kullanıyordu. Bu worktree için `extensions.worktreeConfig` + göreli `.githooks` ayarlandı;
+   ana checkout ve diğer worktree'ler hâlâ mutlak yolda. Kalıcı çözüm: tek göreli yol (ana
+   checkout'ta uygulanacak, ayrı karar) + pre-push typecheck.
+3. **K-2 — KAPANDI** (`app/discover.tsx`): bayrak kapalıyken deste sonunda 700 ms zamanlayıcı
+   kuruluyordu (UI etkisi yok, `claim` null). Artık yalnız teklife uygun kullanıcıda kurulur.
+4. **B-7 — `mood_offer_shown`/`paywall_shown` çift atış (düşük):** paywall görünürken
+   `deckComplete` değişirse `ContextualPaywall` `discover.tsx`'te iki ayrı dal arasında remount
+   olur ve `recordPaywallShown` yeniden tetiklenir (`PaywallBase/index.tsx:302-306`). Teklif
+   görünürken son kartın kaydırılabilirliği doğrulanmadı; pratikte nadir. Çözüm: paywall'ı dal
+   dışına (tek ortak yer) taşımak — gauntlet/deste mantığına dokunur, ayrı iş.
+5. **B-8 — `mood_offer_cta` tanımı belirsiz:** her satın alma dokunuşunda atılıyor, hata
+   sonrası tekrar deneme dahil (`PaywallBase/index.tsx:319`). "CTA tıklaması" mı "satın alma
+   denemesi" mi ürün/analitik kararı; huni raporu bu sayıyı "tıklama" diye okumamalı.
+6. **B-9 — `useProModeAccess` tek karelik eski kota (düşük):** `needsQuota` true→false→true
+   giderse efekt `'checking'`'e çekmeden önce bir karede eski `exhausted`/`available` görünebilir
+   (`hooks/useProModeAccess.ts:687-697`). `refreshSearchQuota` hiçbir yerde çağrılmıyor
+   (kullanılmayan API) — ya kullanılacak ya silinecek.
+7. **B-10 — `get_quota_status` okurken INSERT yapıyor:** bugünün `user_daily_quotas` satırını
+   oluşturur (109). Saf okuma değil; zararsız ama okuma-yazma ayrımını bozar ve MONEY-SEC-1
+   notundaki `search_path`/anon EXEC kalemleriyle aynı fonksiyon — birlikte ele alınmalı.
+8. **`paywall_events.action` CHECK genişlemesi (migration gerekir):** olay `action` değerleri
+   yalnız `shown/dismissed/converted/trial_started`. `mood_offer` şimdilik `trigger_context`
+   jsonb'sine (`entry_point`, `search_id`) yazıyor; ayrı `action` ayrımı (örn. CTA) için
+   migration + CTO onayı gerekir (MONEY-1C_KESIF D6).
+9. **D8 — anonim yeniden kurulum = yeni ücretsiz hak (açık):** `signInAnonymously` her
+   kurulumda yeni `public.users` satırı ve yeni günlük hak üretir; `users` içinde cihaz
+   kimliği/attestation yok. Ücretsiz arama hakkı bu yüzden kötüye kullanılabilir (günde N hak
+   × yeniden kurulum). DeviceCheck/App Attest yeni bağımlılık/mimari olduğundan karar bekliyor
+   (MONEY-1C_KESIF D8). Tester listesi (`mood_offer_testers`) da `auth.users.id` kullandığı için
+   anonim hesapta yeniden kurulumda kimlik değişir; tester gerçek (anonim olmayan) hesapla girmeli.
+10. **Tester kimliği önbelleği:** `appConfigFlags.ts` son çözülen `auth.users.id`'yi modül
+    düzeyinde tutar (`testerAuthId`); hesap değişirse bir sonraki `isMoodOfferEnabled()` çağrısına
+    kadar paywall orkestratörünün senkron kararı eski kimliği görebilir. UX bayrağı, yetki
+    değil; hesap değiştirme akışı `sessionReset`'te sıfırlamayı ekleyebilir.
