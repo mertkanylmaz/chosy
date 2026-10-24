@@ -382,8 +382,8 @@ export default function MoodSearchScreen() {
    */
   const runSearch = useCallback(async () => {
     const trimmed = moodText.trim();
-    // MONEY-1C: bayrak aciksa sunucuyla ayni 2 karakter siniri (kapaliyken: bos degilse).
-    if (!isMoodInputSubmittable(trimmed, offerEnabled) || phase === 'processing') return;
+    // Sunucuyla ayni 2 karakter siniri (bayraktan bagimsiz; sunucu 1 karakteri 400'ler).
+    if (!isMoodInputSubmittable(trimmed) || phase === 'processing') return;
 
     // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
     hapticLight();
@@ -505,7 +505,7 @@ export default function MoodSearchScreen() {
 
   /** Birincil inline buton: önce rıza yazılır, başarılıysa AI arama. */
   const handleEnableAndFind = useCallback(async () => {
-    if (!isMoodInputSubmittable(moodText, offerEnabled) || phase === 'processing') return;
+    if (!isMoodInputSubmittable(moodText) || phase === 'processing') return;
     enableTapped.current = true;
     if (!(await grantInlineConsent())) return;
     await runSearch();
@@ -622,7 +622,7 @@ export default function MoodSearchScreen() {
     );
   }
 
-  const canSubmit = isMoodInputSubmittable(moodText, offerEnabled) && phase !== 'processing';
+  const canSubmit = isMoodInputSubmittable(moodText) && phase !== 'processing';
 
   // ── Input asamasi ──────────────────────────────────────────────────────────
   return (

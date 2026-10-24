@@ -3,18 +3,16 @@
  * Run: npm run test:mood-offer
  */
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
-import { isMoodInputSubmittable, minMoodChars, moodErrorMessageKey } from '../../utils/moodSearchInput.ts'
+import { isMoodInputSubmittable, MOOD_MIN_CHARS, moodErrorMessageKey } from '../../utils/moodSearchInput.ts'
 
-Deno.test('min girdi: bayrak açık 2, kapalı 1 (bugünkü kural)', () => {
-  assertEquals(minMoodChars(true), 2)
-  assertEquals(minMoodChars(false), 1)
-  assertEquals(isMoodInputSubmittable('a', true), false)
-  assertEquals(isMoodInputSubmittable(' a ', true), false)
-  assertEquals(isMoodInputSubmittable('ab', true), true)
-  assertEquals(isMoodInputSubmittable('😭', true), true)
-  assertEquals(isMoodInputSubmittable('a', false), true)
-  assertEquals(isMoodInputSubmittable('   ', false), false)
-  assertEquals(isMoodInputSubmittable('', true), false)
+Deno.test('min girdi: bayraktan bağımsız 2 karakter (sunucu 1 karakteri 400 yapar)', () => {
+  assertEquals(MOOD_MIN_CHARS, 2)
+  assertEquals(isMoodInputSubmittable('a'), false)
+  assertEquals(isMoodInputSubmittable(' a '), false)
+  assertEquals(isMoodInputSubmittable('ab'), true)
+  assertEquals(isMoodInputSubmittable('😭'), true)
+  assertEquals(isMoodInputSubmittable('   '), false)
+  assertEquals(isMoodInputSubmittable(''), false)
 })
 
 Deno.test('hata mesajı: bayrak kapalıyken hiçbir kod eşlenmez', () => {

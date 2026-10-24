@@ -3,20 +3,14 @@
  *
  * Sunucu `parse-mood` kırpılmış girdiyi 2 karakterin altında reddeder (400 INVALID_INPUT,
  * `_shared/moodInput.ts`). İstemci aynı sınırı baştan uygular ki geçersiz istek ağa
- * çıkmasın. `mood_offer_enabled` KAPALIYKEN eski sınır (1) geçerlidir.
+ * çıkmasın. Sınır `mood_offer_enabled`'dan BAĞIMSIZDIR: eski 1 karakter eşiği kullanıcıya
+ * sunucudan dönen 400'ü "Analysis failed" olarak gösteriyordu.
  */
 
 /** Sunucudaki `MIN_INPUT_CHARS` ile aynı tutulur. */
 export const MOOD_MIN_CHARS = 2;
-/** Bayrak kapalıyken bugünkü kural: boş olmayan her şey. */
-const LEGACY_MIN_CHARS = 1;
-
-export function minMoodChars(offerEnabled: boolean): number {
-  return offerEnabled ? MOOD_MIN_CHARS : LEGACY_MIN_CHARS;
-}
-
-export function isMoodInputSubmittable(text: string, offerEnabled: boolean): boolean {
-  return text.trim().length >= minMoodChars(offerEnabled);
+export function isMoodInputSubmittable(text: string): boolean {
+  return text.trim().length >= MOOD_MIN_CHARS;
 }
 
 /**

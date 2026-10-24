@@ -28,11 +28,11 @@ Deno.test('adım 2: istemci AsyncStorage arama sayacı bayrak kapalıyken AYNEN 
   assert(!/FREE_DAILY_LIMIT/.test(screen))
 })
 
-Deno.test('adım 3: min girdi + hata mesajı yalnız offerEnabled ile devreye girer', () => {
+Deno.test('adım 3: hata mesajı yalnız offerEnabled ile; min girdi (2) bayraktan BAĞIMSIZ — bilinçli istisna', () => {
   const screen = read('components/Home/MoodSearchScreen/index.tsx')
-  assertMatch(screen, /isMoodInputSubmittable\(trimmed, offerEnabled\)/)
+  assertMatch(screen, /isMoodInputSubmittable\(trimmed\)/)
   assertMatch(screen, /moodErrorMessageKey\(errorCode, offerEnabled\)/)
-  assertMatch(screen, /const canSubmit = isMoodInputSubmittable\(moodText, offerEnabled\)/)
+  assertMatch(screen, /const canSubmit = isMoodInputSubmittable\(moodText\)/)
 })
 
 Deno.test('locales: moodOffer anahtarları en/tr tam parite', () => {
