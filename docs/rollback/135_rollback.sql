@@ -22,4 +22,8 @@ CREATE POLICY "Users can update own subscriptions" ON public.subscriptions
 
 GRANT INSERT, UPDATE, DELETE ON public.subscriptions TO anon, authenticated;
 
+-- claim_lifetime_spot: 24 Eki 2026'da canlıda anon + authenticated EXEC taşıyordu (PUBLIC varsayılanı).
+-- UYARI: bu GRANT, ödeme doğrulamasız kendine lifetime verme yolunu yeniden açar.
+GRANT EXECUTE ON FUNCTION public.claim_lifetime_spot(uuid, numeric, text) TO PUBLIC, anon, authenticated;
+
 COMMIT;

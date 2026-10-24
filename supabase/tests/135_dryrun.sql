@@ -1,11 +1,10 @@
 -- ============================================================
--- 135 DRY-RUN (MONEY-SEC-1) - CALISTIRILMADI.
--- TEK islem: BEGIN; <135 tam metni>; <testler>; ROLLBACK. Kalici degisiklik birakmaz.
--- Yalniz bir branch/staging DB'de kosulur. Her test RAISE NOTICE ile PASS/FAIL/SKIP yazar;
--- beklenen 42501 EXCEPTION blogunda yakalanir, islem ROLLBACK'e kadar ilerler.
--- Son satir 'ALL PASS' ya da 'FAILURES: n'.
--- Gercek claim_lifetime_spot testi (istege bagli, sequence nextval geri gelmez):
---   oturumda BEGIN'den once  SET dryrun.real_claim = 'on';
+-- 135 DRY-RUN (MONEY-SEC-1)
+-- TEK islem: BEGIN; <135 tam metni>; <testler>; SELECT sonuclar; ROLLBACK. Kalici degisiklik birakmaz
+-- (tek istisna: claim_lifetime_spot'un nextval'i; lifetime_sale_number sekansinda 1 bosluk kabul edildi).
+-- Sonuclar TEMP TABLE dryrun_results'a yazilir; ROLLBACK'ten hemen once SELECT edilir.
+-- Beklenen 42501 ic EXCEPTION blogunda yakalanir; islem ROLLBACK'e kadar ilerler.
+-- Son satir: test='zz_summary', result='ALL PASS' | 'FAILURES'.
 -- Kaynak: supabase/migrations/135_subscription_write_guard.sql (asagiya AYNEN gomulu).
 -- ============================================================
 BEGIN;
@@ -21,7 +20,7 @@ BEGIN;
 -- Çözüm:
 --  1) subscriptions: istemci INSERT/UPDATE policy'leri düşer, yazma GRANT'ları
 --     geri alınır. SELECT policy'si kalır. Yazan: webhook / sync-entitlement
---     (service role) ve claim_lifetime_spot (SECURITY DEFINER).
+--     (service role) ve claim_lifetime_spot (SECURITY DEFINER; EXEC yalnız service_role/postgres).
 --  2) users: abonelik kolonlarını yalnız service_role / SECURITY DEFINER
 --     (sahip: postgres) değiştirebilir. Tablo-düzeyi GRANT varken kolon REVOKE
 --     işlemediğinden BEFORE tetikleyici kullanılır.
@@ -41,6 +40,13 @@ BEGIN;
 DROP POLICY IF EXISTS "Users can insert own subscriptions" ON public.subscriptions;
 DROP POLICY IF EXISTS "Users can update own subscriptions" ON public.subscriptions;
 REVOKE INSERT, UPDATE, DELETE ON public.subscriptions FROM anon, authenticated;
+
+-- 1b) claim_lifetime_spot: SECURITY DEFINER ve anon/authenticated EXEC'li; kendi id'siyle
+--     (p_price=0, ödeme doğrulaması yok) çağıran kendine lifetime tier yazabiliyordu ve
+--     DEFINER olduğu için aşağıdaki tetikleyiciden geçerdi. Çağıranlar yalnız sunucuda:
+--     process-lifetime-purchase + revenuecat-webhook (service role), apply_invite_code
+--     içinden referral akışı (DEFINER, sahip postgres). İstemci doğrudan çağırmaz.
+REVOKE EXECUTE ON FUNCTION public.claim_lifetime_spot(uuid, numeric, text) FROM PUBLIC, anon, authenticated;
 
 -- 2) users: korunan kolonlar açıkça listelenir (yetkiyi etkileyen, istemciden yazılmaması gerekenler)
 --    subscription_tier, subscription_active_until, subscription_will_renew
@@ -79,7 +85,10 @@ CREATE TRIGGER trg_guard_users_subscription_columns
   FOR EACH ROW EXECUTE FUNCTION public.guard_users_subscription_columns();
 -- ===================== 135 TAM METNI (bitis) =====================
 
--- ── SETUP (postgres): test kullanicisi + abonelik satiri + DEFINER karsilastirma fonksiyonu
+-- -- SETUP (postgres): sonuc tablosu, test kullanicisi, abonelik satiri, DEFINER karsilastirma fonksiyonu
+CREATE TEMP TABLE dryrun_results (test text, result text, detail text);
+GRANT ALL ON dryrun_results TO PUBLIC;
+
 DO $t$
 DECLARE
   v_auth text := 'dryrun-' || gen_random_uuid()::text;
@@ -90,9 +99,6 @@ BEGIN
     VALUES (v_id, 'annual', 'active', 'chosy_plus', 'SANDBOX');
   PERFORM set_config('dryrun.auth_id', v_auth, true);
   PERFORM set_config('dryrun.user_id', v_id::text, true);
-  PERFORM set_config('dryrun.fails', '0', true);
-  -- Gercek claim_lifetime_spot yalniz 'on' ise cagrilir (nextval ROLLBACK'te geri GELMEZ).
-  PERFORM set_config('dryrun.real_claim', coalesce(nullif(current_setting('dryrun.real_claim', true), ''), 'off'), true);
   -- SECURITY DEFINER (sahip: postgres) karsilastirma fonksiyonu; bu islemde yaratilir, ROLLBACK'te gider.
   EXECUTE $f$
     CREATE FUNCTION public._dryrun_definer_set_tier(p_id uuid, p_tier text) RETURNS void
@@ -100,11 +106,11 @@ BEGIN
     AS 'UPDATE public.users SET subscription_tier = p_tier, legacy_mood_access = true WHERE id = p_id'
   $f$;
   GRANT EXECUTE ON FUNCTION public._dryrun_definer_set_tier(uuid, text) TO authenticated;
-  RAISE NOTICE 'SETUP ok: user=% auth_id=%', v_id, v_auth;
+  INSERT INTO dryrun_results VALUES ('00_setup', 'INFO', 'user=' || v_id || ' auth_id=' || v_auth);
 END
 $t$;
 
--- ── T1a authenticated subscription_tier UPDATE
+-- -- T1a
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -113,20 +119,18 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_tier = 'lifetime' WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T1a: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T1a', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T1a: 42501';
+    INSERT INTO dryrun_results VALUES ('T1a', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T1a authenticated subscription_tier UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T1a', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T1b authenticated subscription_active_until UPDATE
+-- -- T1b
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -135,20 +139,18 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_active_until = now() + interval '1 year' WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T1b: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T1b', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T1b: 42501';
+    INSERT INTO dryrun_results VALUES ('T1b', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T1b authenticated subscription_active_until UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T1b', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T1c authenticated subscription_will_renew UPDATE
+-- -- T1c
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -157,20 +159,18 @@ BEGIN
   BEGIN
     UPDATE public.users SET subscription_will_renew = false WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T1c: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T1c', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T1c: 42501';
+    INSERT INTO dryrun_results VALUES ('T1c', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T1c authenticated subscription_will_renew UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T1c', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T1d authenticated legacy_mood_access UPDATE
+-- -- T1d
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -179,20 +179,18 @@ BEGIN
   BEGIN
     UPDATE public.users SET legacy_mood_access = true WHERE id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T1d: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T1d', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T1d: 42501';
+    INSERT INTO dryrun_results VALUES ('T1d', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T1d authenticated legacy_mood_access UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T1d', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T1e korunan kolon AYNI degerle UPDATE
+-- -- T1e
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -200,15 +198,14 @@ BEGIN
   SET LOCAL ROLE authenticated;
   UPDATE public.users SET subscription_tier = subscription_tier, legacy_mood_access = legacy_mood_access WHERE id = current_setting('dryrun.user_id')::uuid;
   RESET ROLE;
-  RAISE NOTICE 'PASS T1e: degismeyen deger gecti';
+  INSERT INTO dryrun_results VALUES ('T1e', 'PASS', 'degismeyen deger gecti');
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T1e korunan kolon AYNI degerle UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T1e', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T2 authenticated profil kolonu UPDATE
+-- -- T2
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -217,20 +214,18 @@ BEGIN
   UPDATE public.users SET display_name = 'dryrun-ok' WHERE id = current_setting('dryrun.user_id')::uuid;
   IF NOT FOUND THEN
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T2: 0 satir etkilendi (RLS/jwt kurulumu)';
+    INSERT INTO dryrun_results VALUES ('T2', 'FAIL', '0 satir etkilendi (RLS/jwt kurulumu)');
   ELSE
     RESET ROLE;
-    RAISE NOTICE 'PASS T2: profil kolonu UPDATE gecti';
+    INSERT INTO dryrun_results VALUES ('T2', 'PASS', 'profil kolonu UPDATE gecti');
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T2 authenticated profil kolonu UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T2', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T2b authenticated subscriptions UPDATE
+-- -- T2b
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -239,20 +234,18 @@ BEGIN
   BEGIN
     UPDATE public.subscriptions SET plan = 'lifetime' WHERE user_id = current_setting('dryrun.user_id')::uuid;
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T2b: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T2b', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T2b: 42501';
+    INSERT INTO dryrun_results VALUES ('T2b', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T2b authenticated subscriptions UPDATE: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T2b', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T2c authenticated subscriptions INSERT
+-- -- T2c
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -261,20 +254,18 @@ BEGIN
   BEGIN
     INSERT INTO public.subscriptions (user_id, plan, status) VALUES (gen_random_uuid(), 'annual', 'active');
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T2c: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T2c', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T2c: 42501';
+    INSERT INTO dryrun_results VALUES ('T2c', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T2c authenticated subscriptions INSERT: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T2c', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T2d authenticated kendi subscriptions SELECT
+-- -- T2d
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -282,20 +273,18 @@ BEGIN
   SET LOCAL ROLE authenticated;
   IF (SELECT count(*) FROM public.subscriptions WHERE user_id = current_setting('dryrun.user_id')::uuid) = 1 THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T2d: SELECT 1 satir';
+    INSERT INTO dryrun_results VALUES ('T2d', 'PASS', 'kendi satiri okundu');
   ELSE
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T2d: kendi abonelik satiri okunamadi';
+    INSERT INTO dryrun_results VALUES ('T2d', 'FAIL', 'kendi abonelik satiri okunamadi');
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T2d authenticated kendi subscriptions SELECT: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T2d', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T3 SECURITY DEFINER fonksiyon tier + legacy_mood_access yazar
+-- -- T3
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
@@ -304,66 +293,80 @@ BEGIN
   PERFORM public._dryrun_definer_set_tier(current_setting('dryrun.user_id')::uuid, 'lifetime');
   RESET ROLE;
   IF (SELECT subscription_tier || ':' || legacy_mood_access::text FROM public.users WHERE id = current_setting('dryrun.user_id')::uuid) = 'lifetime:true' THEN
-    RAISE NOTICE 'PASS T3: DEFINER yazdi';
+    INSERT INTO dryrun_results VALUES ('T3', 'PASS', 'DEFINER tier + legacy_mood_access yazdi');
   ELSE
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T3: DEFINER yazimi gorunmuyor';
+    INSERT INTO dryrun_results VALUES ('T3', 'FAIL', 'DEFINER yazimi gorunmuyor');
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T3 SECURITY DEFINER fonksiyon tier + legacy_mood_access yazar: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T3', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T3b gercek claim_lifetime_spot (yalniz dryrun.real_claim=on)
+-- -- T6a
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'authenticated')::text, true);
   PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.auth_id'), true);
-  IF current_setting('dryrun.real_claim') <> 'on' THEN
-    RAISE NOTICE 'SKIP T3b: dryrun.real_claim=off (nextval ROLLBACK edilmez; sale_number boslugu birakir)';
-  ELSE
-    UPDATE public.users SET subscription_tier = 'free' WHERE id = current_setting('dryrun.user_id')::uuid;
-    SET LOCAL ROLE authenticated;
+  SET LOCAL ROLE authenticated;
+  BEGIN
     PERFORM public.claim_lifetime_spot(current_setting('dryrun.user_id')::uuid, 0, 'dryrun-tx');
     RESET ROLE;
-    IF (SELECT subscription_tier FROM public.users WHERE id = current_setting('dryrun.user_id')::uuid) = 'lifetime' THEN
-      RAISE NOTICE 'PASS T3b: claim_lifetime_spot tier yazdi';
-    ELSE
-      PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-      RAISE NOTICE 'FAIL T3b: claim_lifetime_spot sonrasi tier lifetime degil';
-    END IF;
-  END IF;
+    INSERT INTO dryrun_results VALUES ('T6a', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
+  EXCEPTION WHEN insufficient_privilege THEN
+    RESET ROLE;
+    INSERT INTO dryrun_results VALUES ('T6a', 'PASS', '42501');
+  END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T3b gercek claim_lifetime_spot (yalniz dryrun.real_claim=on): beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T6a', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T4 service_role users + subscriptions yazar
+-- -- T6b
+DO $t$
+DECLARE
+  v_res jsonb;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', current_setting('dryrun.auth_id'), 'role', 'service_role')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', current_setting('dryrun.auth_id'), true);
+  UPDATE public.users SET subscription_tier = 'free', legacy_mood_access = false WHERE id = current_setting('dryrun.user_id')::uuid;
+  SET LOCAL ROLE service_role;
+  v_res := public.claim_lifetime_spot(current_setting('dryrun.user_id')::uuid, 0, 'dryrun-tx');
+  RESET ROLE;
+  IF (v_res->>'success')::boolean IS TRUE
+     AND (SELECT subscription_tier FROM public.users WHERE id = current_setting('dryrun.user_id')::uuid) = 'lifetime' THEN
+    INSERT INTO dryrun_results VALUES ('T6b', 'PASS', 'service_role claim_lifetime_spot: ' || v_res::text);
+  ELSE
+    INSERT INTO dryrun_results VALUES ('T6b', 'FAIL', 'sonuc: ' || coalesce(v_res::text, 'NULL'));
+  END IF;
+EXCEPTION WHEN OTHERS THEN
+  RESET ROLE;
+  INSERT INTO dryrun_results VALUES ('T6b', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
+END
+$t$;
+
+-- -- T4
 DO $t$
 BEGIN
+  UPDATE public.subscriptions SET status = 'active' WHERE user_id = current_setting('dryrun.user_id')::uuid;
   SET LOCAL ROLE service_role;
   UPDATE public.users SET subscription_tier = 'monthly', subscription_will_renew = false, legacy_mood_access = false WHERE id = current_setting('dryrun.user_id')::uuid;
   UPDATE public.subscriptions SET status = 'trial' WHERE user_id = current_setting('dryrun.user_id')::uuid;
   RESET ROLE;
   IF (SELECT subscription_tier FROM public.users WHERE id = current_setting('dryrun.user_id')::uuid) = 'monthly'
      AND (SELECT status FROM public.subscriptions WHERE user_id = current_setting('dryrun.user_id')::uuid) = 'trial' THEN
-    RAISE NOTICE 'PASS T4: service_role yazdi';
+    INSERT INTO dryrun_results VALUES ('T4', 'PASS', 'service_role users + subscriptions yazdi');
   ELSE
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T4: service_role yazimi gorunmuyor';
+    INSERT INTO dryrun_results VALUES ('T4', 'FAIL', 'service_role yazimi gorunmuyor');
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T4 service_role users + subscriptions yazar: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T4', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T5a authenticated INSERT tier != free
+-- -- T5a
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-a', 'role', 'authenticated')::text, true);
@@ -372,20 +375,18 @@ BEGIN
   BEGIN
     INSERT INTO public.users (auth_id, subscription_tier) VALUES ('dryrun-ins-a', 'lifetime');
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T5a: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T5a', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T5a: 42501';
+    INSERT INTO dryrun_results VALUES ('T5a', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T5a authenticated INSERT tier != free: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T5a', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T5b authenticated INSERT legacy_mood_access = true
+-- -- T5b
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-b', 'role', 'authenticated')::text, true);
@@ -394,20 +395,18 @@ BEGIN
   BEGIN
     INSERT INTO public.users (auth_id, legacy_mood_access) VALUES ('dryrun-ins-b', true);
     RESET ROLE;
-    PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-    RAISE NOTICE 'FAIL T5b: ifade GECTI, 42501 bekleniyordu';
+    INSERT INTO dryrun_results VALUES ('T5b', 'FAIL', 'ifade GECTI, 42501 bekleniyordu');
   EXCEPTION WHEN insufficient_privilege THEN
     RESET ROLE;
-    RAISE NOTICE 'PASS T5b: 42501';
+    INSERT INTO dryrun_results VALUES ('T5b', 'PASS', '42501');
   END;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T5b authenticated INSERT legacy_mood_access = true: beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T5b', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T5c authenticated INSERT varsayilanlarla (auth-utils.ts yolu)
+-- -- T5c
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-c', 'role', 'authenticated')::text, true);
@@ -415,15 +414,14 @@ BEGIN
   SET LOCAL ROLE authenticated;
   INSERT INTO public.users (auth_id) VALUES ('dryrun-ins-c');
   RESET ROLE;
-  RAISE NOTICE 'PASS T5c: varsayilan INSERT gecti';
+  INSERT INTO dryrun_results VALUES ('T5c', 'PASS', 'varsayilan INSERT gecti (auth-utils.ts yolu)');
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T5c authenticated INSERT varsayilanlarla (auth-utils.ts yolu): beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T5c', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── T5d authenticated UPSERT yalniz auth_id (ON CONFLICT yolu)
+-- -- T5d
 DO $t$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('sub', 'dryrun-ins-c', 'role', 'authenticated')::text, true);
@@ -431,23 +429,20 @@ BEGIN
   SET LOCAL ROLE authenticated;
   INSERT INTO public.users (auth_id) VALUES ('dryrun-ins-c') ON CONFLICT (auth_id) DO UPDATE SET auth_id = EXCLUDED.auth_id;
   RESET ROLE;
-  RAISE NOTICE 'PASS T5d: upsert gecti';
+  INSERT INTO dryrun_results VALUES ('T5d', 'PASS', 'upsert yolu gecti');
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  PERFORM set_config('dryrun.fails', (coalesce(nullif(current_setting('dryrun.fails', true), ''), '0')::int + 1)::text, true);
-  RAISE NOTICE 'FAIL T5d authenticated UPSERT yalniz auth_id (ON CONFLICT yolu): beklenmeyen hata % (%)', SQLERRM, SQLSTATE;
+  INSERT INTO dryrun_results VALUES ('T5d', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 
--- ── OZET
-DO $t$
-BEGIN
-  IF current_setting('dryrun.fails')::int = 0 THEN
-    RAISE NOTICE 'ALL PASS';
-  ELSE
-    RAISE NOTICE 'FAILURES: %', current_setting('dryrun.fails');
-  END IF;
-END
-$t$;
+-- -- OZET satiri
+INSERT INTO dryrun_results
+SELECT 'zz_summary',
+       CASE WHEN count(*) FILTER (WHERE result = 'FAIL') = 0 THEN 'ALL PASS' ELSE 'FAILURES' END,
+       count(*) FILTER (WHERE result = 'FAIL') || ' fail / ' || count(*) FILTER (WHERE result = 'PASS') || ' pass'
+FROM dryrun_results;
+
+SELECT * FROM dryrun_results ORDER BY test;
 
 ROLLBACK;

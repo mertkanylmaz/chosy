@@ -8,7 +8,7 @@
 -- Çözüm:
 --  1) subscriptions: istemci INSERT/UPDATE policy'leri düşer, yazma GRANT'ları
 --     geri alınır. SELECT policy'si kalır. Yazan: webhook / sync-entitlement
---     (service role) ve claim_lifetime_spot (SECURITY DEFINER).
+--     (service role) ve claim_lifetime_spot (SECURITY DEFINER; EXEC yalnız service_role/postgres).
 --  2) users: abonelik kolonlarını yalnız service_role / SECURITY DEFINER
 --     (sahip: postgres) değiştirebilir. Tablo-düzeyi GRANT varken kolon REVOKE
 --     işlemediğinden BEFORE tetikleyici kullanılır.
@@ -28,6 +28,13 @@
 DROP POLICY IF EXISTS "Users can insert own subscriptions" ON public.subscriptions;
 DROP POLICY IF EXISTS "Users can update own subscriptions" ON public.subscriptions;
 REVOKE INSERT, UPDATE, DELETE ON public.subscriptions FROM anon, authenticated;
+
+-- 1b) claim_lifetime_spot: SECURITY DEFINER ve anon/authenticated EXEC'li; kendi id'siyle
+--     (p_price=0, ödeme doğrulaması yok) çağıran kendine lifetime tier yazabiliyordu ve
+--     DEFINER olduğu için aşağıdaki tetikleyiciden geçerdi. Çağıranlar yalnız sunucuda:
+--     process-lifetime-purchase + revenuecat-webhook (service role), apply_invite_code
+--     içinden referral akışı (DEFINER, sahip postgres). İstemci doğrudan çağırmaz.
+REVOKE EXECUTE ON FUNCTION public.claim_lifetime_spot(uuid, numeric, text) FROM PUBLIC, anon, authenticated;
 
 -- 2) users: korunan kolonlar açıkça listelenir (yetkiyi etkileyen, istemciden yazılmaması gerekenler)
 --    subscription_tier, subscription_active_until, subscription_will_renew
