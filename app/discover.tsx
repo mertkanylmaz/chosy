@@ -321,7 +321,8 @@ export default function DiscoverScreen() {
   // Deste bitimi: ozet acildiktan kisa sure sonra. Hangisi ONCE gelirse (bitim ya da
   // cikis) `offerLedger` kazanani belirler; ikincisi bastirilir.
   useEffect(() => {
-    if (!deckComplete) return;
+    // Uygun degilse (bayrak kapali dahil) zamanlayici HIC kurulmaz.
+    if (!deckComplete || !offerEligible) return;
     const timer = setTimeout(() => {
       const entry = offerLedger.claim({ eligible: offerEligible, moment: 'deck_end', key: offerSearchKey });
       if (entry) void triggerPaywall({ type: 'mood_offer', entry, searchId: lastSearchId });

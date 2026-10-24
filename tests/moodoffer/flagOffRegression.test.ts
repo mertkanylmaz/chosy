@@ -82,6 +82,7 @@ Deno.test('adım 6: deste/çıkış teklifi eligible kapısında; slot muafiyeti
   assertMatch(d, /addListener\('beforeRemove'/)
   // x / özet kapat işleyicileri DEĞİŞMEDİ (test:deck-summary aynı kalıbı pinler)
   assertMatch(d, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\('\/\(tabs\)'\)/)
+  assertMatch(d, /if \(!deckComplete \|\| !offerEligible\) return;/) // bayrak kapaliyken 700 ms zamanlayici kurulmaz
   assertMatch(d, /offerLedger\.claim\(\{ eligible: offerEligible, moment: 'deck_end'/)
   assertMatch(d, /premiumStatus !== 'premium' && !quotaExempt && !slotExemptFreeDeck/)
   assertMatch(d, /isOfferEligible\(\{\s*offerEnabled,/)
