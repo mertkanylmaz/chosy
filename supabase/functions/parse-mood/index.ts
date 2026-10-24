@@ -10,6 +10,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { validateRawInput } from '../_shared/moodInput.ts'
 
 // ─── Shared Admin Client ──────────────────────────────────────────────────────
 
@@ -244,6 +245,26 @@ async function checkSearchQuota(
   }
 }
 
+// ─── Input Validation ─────────────────────────────────────────────────────────
+
+/**
+ * Govdeyi okur ve `raw_input`u dogrular (kural: `_shared/moodInput.ts`). Kota
+ * TUKETMEZ — handler bunu kotadan once cagirir. Bozuk JSON da gecersiz girdidir.
+ */
+async function readRawInput(
+  req: Request,
+): Promise<{ ok: true; rawInput: string } | { ok: false }> {
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return { ok: false }
+  }
+
+  const rawInput = validateRawInput((body as { raw_input?: unknown } | null)?.raw_input)
+  return rawInput === null ? { ok: false } : { ok: true, rawInput }
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
 serve(async (req: Request): Promise<Response> => {
@@ -275,7 +296,30 @@ serve(async (req: Request): Promise<Response> => {
 
   const startTime = Date.now()
 
-  // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
+  // ── Girdi dogrulamasi KOTADAN ONCE (MONEY-1C) ─────────────────────────────
+  // Onceki sira: kota tuketilir, sonra govde dogrulanirdi — bos/gecersiz bir
+  // istek hakki yakardi. Ucretsiz hak gunde 1 oldugunda bu, tek bir hatali
+  // istekle hakkin kaybi demek. Gecersiz girdi LLM'e de kotaya da ulasmaz.
+  // Rate limit yukarida kalir: gecersiz istek spam'i yine sinirlanir.
+  const input = await readRawInput(req)
+  if (!input.ok) {
+    if (auth.appUserId) {
+      logMoodSearch({
+        userId: auth.appUserId,
+        parsedProfile: null,
+        latencyMs: Date.now() - startTime,
+        errorCode: 'INVALID_INPUT',
+      }).catch(() => {})
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'raw_input string is required', code: 'INVALID_INPUT' }),
+      { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
+  }
+  const rawInput = input.rawInput
+
+  // Quota check — free user 4. aramada Claude API maliyeti olusturmaz
   const quotaCheck = await checkSearchQuota(auth.appUserId)
 
   // `public.users` satiri yok → kota sayilamaz, istek burada BITER.
@@ -311,32 +355,6 @@ serve(async (req: Request): Promise<Response> => {
         upgrade_url: 'chosy://paywall',
       }),
       { status: 429, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
-
-  let rawInput: string
-  try {
-    const body = await req.json()
-    rawInput = body?.raw_input
-    if (typeof rawInput !== 'string' || rawInput.trim().length === 0) {
-      throw new Error('missing raw_input')
-    }
-    if (rawInput.length > 500) {
-      throw new Error('raw_input too long')
-    }
-  } catch {
-    if (quotaCheck.userId) {
-      logMoodSearch({
-        userId: quotaCheck.userId,
-        parsedProfile: null,
-        latencyMs: Date.now() - startTime,
-        errorCode: 'INVALID_INPUT',
-      }).catch(() => {})
-    }
-
-    return new Response(
-      JSON.stringify({ error: 'raw_input string is required', code: 'INVALID_INPUT' }),
-      { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }
 
