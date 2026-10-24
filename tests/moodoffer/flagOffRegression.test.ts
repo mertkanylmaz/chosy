@@ -91,7 +91,7 @@ Deno.test('adım 6: deste/çıkış teklifi eligible kapısında; slot muafiyeti
 
 Deno.test('adım 8: analitik olayları — yalnız ilgili yüzeyde ve bayrak/varyant kapısı arkasında', () => {
   const m = read('components/Home/MoodSearchScreen/index.tsx')
-  assertMatch(m, /const freeSearch = offerEnabled && !isOnboarding && !proEntitled;\s*if \(freeSearch\) \{\s*posthogAnalytics\.track\('mood_search_free_started'/)
+  assertMatch(m, /if \(freeSearch && \(await hasAiConsent\(\)\)\) \{\s*posthogAnalytics\.track\('mood_search_free_started'/)
   assertMatch(m, /if \(freeSearch\) \{\s*posthogAnalytics\.track\('mood_search_free_completed'/)
   const o = read('services/conversion/triggerOrchestrator.ts')
   assertMatch(o, /if \(variant\.trigger\.type !== 'mood_offer'\) return;/)
@@ -99,4 +99,11 @@ Deno.test('adım 8: analitik olayları — yalnız ilgili yüzeyde ve bayrak/var
   assertMatch(read('components/paywalls/PaywallBase/index.tsx'), /trackMoodOffer\('mood_offer_cta'/)
   const c = read('components/gauntlet/MoodInviteCard/index.tsx')
   for (const e of ['mood_invite_shown', 'mood_invite_tapped']) assert(c.includes(`track('${e}'`), e)
+})
+
+Deno.test('hak bitti metni limit sayısından bağımsız (rakam yok; 1 ve 3 için doğru okunur)', () => {
+  for (const l of ['en', 'tr']) {
+    const m = JSON.parse(read(`locales/${l}.json`)).moodOffer
+    for (const k of ['offerTitle', 'offerBody', 'offerBodyTime']) assert(!/\d/.test(m[k]), `${l}:${k}`)
+  }
 })

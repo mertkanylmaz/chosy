@@ -601,9 +601,9 @@
     "errorBody": "The connection dropped before we could confirm your plan. Try again in a moment."
   },
   "moodOffer": {
-    "offerTitle": "Today's free search is used",
-    "offerBodyTime": "Your next free search is ready in %{time}. Or search without limits with Chosy Pro.",
-    "offerBody": "Your free search comes back tomorrow. Or search without limits with Chosy Pro.",
+    "offerTitle": "You're out of free searches for today",
+    "offerBodyTime": "More free searches in %{time}. Or search without limits with Chosy Pro.",
+    "offerBody": "Your free searches reset tomorrow. Or search without limits with Chosy Pro.",
     "offerCta": "Unlimited with Pro",
     "timeHoursMinutes": "%{hours}h %{minutes}m",
     "timeMinutes": "%{minutes}m",

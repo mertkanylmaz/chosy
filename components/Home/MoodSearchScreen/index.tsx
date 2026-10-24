@@ -391,12 +391,6 @@ export default function MoodSearchScreen() {
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
     // MONEY-1C: ucretsiz hak yoluyla baslayan arama (bayrak acik, yetkisiz, onboarding disi).
     const freeSearch = offerEnabled && !isOnboarding && !proEntitled;
-    if (freeSearch) {
-      posthogAnalytics.track('mood_search_free_started', {
-        entry_point: entry ?? 'direct',
-        mood_text_length: trimmed.length,
-      });
-    }
 
     // Mod HER aramanın başında açıkça yazılır (önceki aramadan kalan değer
     // recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
@@ -429,6 +423,16 @@ export default function MoodSearchScreen() {
     const filters: FilmFilters = { yearRange, minRating, regions: [], directors: [] };
 
     pendingFilters.current = filters;
+
+    // `mood_search_free_started` RIZA dogrulandiktan SONRA: rizayi taze okuyoruz (cagirani
+    // ne varsayiyoruz ne de rizanin arada geri cekilmedigini). Riza yoksa olay atilmaz;
+    // parseMood'un son kapisi AI_CONSENT_REQUIRED'i zaten yonetir.
+    if (freeSearch && (await hasAiConsent())) {
+      posthogAnalytics.track('mood_search_free_started', {
+        entry_point: entry ?? 'direct',
+        mood_text_length: trimmed.length,
+      });
+    }
 
     try {
       setMoodError(null);
