@@ -25,6 +25,7 @@ import {
   VisualStyle,
 } from '../types';
 import { logger } from '../utils/logger';
+import { interpretParseMoodQuota, type SearchQuota } from '../utils/searchQuota';
 
 // ─── MoodParseError ──────────────────────────────────────────────────────────
 
@@ -78,6 +79,10 @@ type EdgeResponse = TasteProfile & {
   profile_description?: string;
   search_id?: string;
   search_keywords?: string[];
+  /** MONEY-1C: kalan hak (parse-mood v2); eski sunucu/istemci sozlesmesinde yok. */
+  remaining?: number | null;
+  limit?: number | null;
+  resets_at?: string | null;
 };
 
 /** parseMood return type — includes searchId for downstream logging */
@@ -86,6 +91,8 @@ export interface ParseMoodResult {
   searchId: string | null;
   /** Tematik keyword'ler — LLM çıkarır, match_films_v3'te keyword overlap boost için */
   searchKeywords: string[];
+  /** MONEY-1C: bu aramadan SONRAki hak (sunucu `remaining`); alan yoksa `unknown` */
+  quota: SearchQuota;
 }
 
 async function callEdgeFunction(input: string): Promise<EdgeResponse> {
@@ -1445,7 +1452,12 @@ export async function parseMood(input: string): Promise<ParseMoodResult> {
     const raw = await callEdgeFunction(input);
     const searchId = raw.search_id ?? null;
     const searchKeywords = Array.isArray(raw.search_keywords) ? raw.search_keywords : [];
-    return { profile: validateAndNormalize(raw), searchId, searchKeywords };
+    return {
+      profile: validateAndNormalize(raw),
+      searchId,
+      searchKeywords,
+      quota: interpretParseMoodQuota(raw),
+    };
   } catch (error) {
     // MoodParseError already structured — re-throw as-is
     if (error instanceof MoodParseError) {

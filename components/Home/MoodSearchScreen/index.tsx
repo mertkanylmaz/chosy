@@ -455,10 +455,17 @@ export default function MoodSearchScreen() {
 
       // Quota exceeded from edge function — show paywall
       if (userError.type === 'quota') {
-        await showQuotaWall();
+        if (offerEnabled) {
+          // MONEY-1C: gunun hakki bittikten sonra ikinci deneme → Pro teklifi
+          // ("Unlimited with Pro"). Teklif acilamazsa (premium, orchestrator) eski duvar.
+          const shown = await triggerPaywall({ type: 'mood_offer', entry: 'quota_exhausted' });
+          if (!shown) await showQuotaWall();
+        } else {
+          await showQuotaWall();
+        }
       }
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, offerEnabled, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:
