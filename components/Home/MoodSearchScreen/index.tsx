@@ -95,6 +95,7 @@ import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
 import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
+import { isOfferEligible } from '@/utils/moodOfferTiming';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 
@@ -136,7 +137,7 @@ export default function MoodSearchScreen() {
   } = useMood();
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt, allowed: proEntitled } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
   /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
   const offerEnabled = useMoodOfferEnabled();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
@@ -390,7 +391,14 @@ export default function MoodSearchScreen() {
     Keyboard.dismiss();
     posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
     // MONEY-1C: ucretsiz hak yoluyla baslayan arama (bayrak acik, yetkisiz, onboarding disi).
-    const freeSearch = offerEnabled && !isOnboarding && !proEntitled;
+    // Erisim OKUNURKEN `allowed` false gorunur; o anda karar verilmez (premium/legacy
+    // kullanici ucretsiz arama olarak sayilmasin) — olay atilmaz, huni kirlenmez.
+    const freeSearch = isOfferEligible({
+      offerEnabled,
+      isOnboarding,
+      accessLoading: proAccessLoading,
+      entitled: proEntitled,
+    });
 
     // Mod HER aramanın başında açıkça yazılır (önceki aramadan kalan değer
     // recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
@@ -487,7 +495,7 @@ export default function MoodSearchScreen() {
         }
       }
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, proEntitled, entry, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, proEntitled, proAccessLoading, entry, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:

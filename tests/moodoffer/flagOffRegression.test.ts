@@ -92,6 +92,8 @@ Deno.test('adım 6: deste/çıkış teklifi eligible kapısında; slot muafiyeti
 Deno.test('adım 8: analitik olayları — yalnız ilgili yüzeyde ve bayrak/varyant kapısı arkasında', () => {
   const m = read('components/Home/MoodSearchScreen/index.tsx')
   assertMatch(m, /if \(freeSearch && \(await hasAiConsent\(\)\)\) \{\s*posthogAnalytics\.track\('mood_search_free_started'/)
+  // Erişim okunurken (loading) ücretsiz arama sayılmaz (B-3)
+  assertMatch(m, /const freeSearch = isOfferEligible\(\{\s*offerEnabled,\s*isOnboarding,\s*accessLoading: proAccessLoading,\s*entitled: proEntitled,/)
   assertMatch(m, /if \(freeSearch\) \{\s*posthogAnalytics\.track\('mood_search_free_completed'/)
   const o = read('services/conversion/triggerOrchestrator.ts')
   assertMatch(o, /if \(variant\.trigger\.type !== 'mood_offer'\) return;/)
