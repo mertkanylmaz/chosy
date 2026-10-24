@@ -52,7 +52,7 @@ import {
 } from '@/services/quotaEngine';
 import { getAppUserId } from '@/services/watchlist';
 import { logger } from '@/utils/logger';
-import { resolvePremiumStatus, type PremiumStatus } from '@/utils/premiumStatus';
+import { isDbEntitled, resolvePremiumStatus, type PremiumStatus } from '@/utils/premiumStatus';
 import * as Sentry from '@sentry/react-native';
 
 /** RC'nin sonuçlanması için en fazla bekleme (PERF-1) — sonra mevcut fallback. */
@@ -291,14 +291,14 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             extra: { activePlanId: rcStatus.activePlanId, isInTrial: rcStatus.isInTrial },
           });
         }
-      } else if (dbSub && dbSub.status === 'active') {
+      } else if (dbSub && isDbEntitled(dbSub.status)) {
         const newStatus = dbSub.status as SubscriptionStatus;
         const newTier = planIdToTier(dbSub.plan);
         setPremiumStatus('premium');
         setPlanId(dbSub.plan);
         setStatus(newStatus);
         setTier(newTier);
-        setIsInTrial(false);
+        setIsInTrial(dbSub.status === 'trial');
         setTrialStartDate(dbSub.started_at);
         setExpiresAt(dbSub.expires_at ? new Date(dbSub.expires_at) : null);
         statusRef.current = newStatus;
@@ -424,7 +424,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setPremiumStatus('premium');
             setIsInTrial(rcStatus.isInTrial);
             setTrialStartDate(currentTrialStart);
-          } else if (dbSub && dbSub.status === 'active') {
+          } else if (dbSub && isDbEntitled(dbSub.status)) {
             currentStatus = dbSub.status as SubscriptionStatus;
             currentPlanId = dbSub.plan;
             currentTrialStart = dbSub.started_at;
@@ -434,6 +434,7 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
             setStatus(currentStatus);
             setPlanId(currentPlanId);
             setPremiumStatus('premium');
+            setIsInTrial(dbSub.status === 'trial');
             setTrialStartDate(currentTrialStart);
           }
           logger.log('[subscription-ctx] Fresh-fetch sonucu:', currentStatus, currentPlanId);

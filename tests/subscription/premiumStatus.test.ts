@@ -7,7 +7,7 @@
 
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
-import { resolvePremiumStatus } from '../../utils/premiumStatus.ts'
+import { isDbEntitled, resolvePremiumStatus } from '../../utils/premiumStatus.ts'
 
 type Kind = 'network' | 'sdk_error'
 
@@ -15,6 +15,8 @@ const RC_ACTIVE = { isPremium: true }
 const RC_NONE = { isPremium: false }
 const RC_NETWORK_ERROR: { isPremium: boolean; errorKind: Kind } = { isPremium: false, errorKind: 'network' }
 const DB_ACTIVE = { status: 'active' }
+const DB_TRIAL = { status: 'trial' }
+const DB_EXPIRED = { status: 'expired' }
 
 // ─── 1. RC aktif + DB satırı yok (webhook gecikmesi) ─────────────────────────
 
@@ -94,5 +96,46 @@ Deno.test('RC errorKind dolu ama isPremium:true → RC güvenilmez, ilk yükleme
   assertEquals(
     resolvePremiumStatus<Kind>({ isPremium: true, errorKind: 'network' }, null, 'loading').status,
     'free',
+  )
+})
+
+// ─── trial (MONEY-1A): webhook artık `trial` yazar, DB dalı onu da premium sayar ──
+
+Deno.test('RC aktif değil, DB trial → premium', () => {
+  assertEquals(resolvePremiumStatus<Kind>(RC_NONE, DB_TRIAL, 'loading'), {
+    status: 'premium',
+    rcActiveDbMissing: false,
+    rcUnreadable: null,
+  })
+})
+
+Deno.test('çevrimdışı: RC hata, DB trial, ilk yükleme → premium (free değil)', () => {
+  assertEquals(resolvePremiumStatus<Kind>(RC_NETWORK_ERROR, DB_TRIAL, 'loading'), {
+    status: 'premium',
+    rcActiveDbMissing: false,
+    rcUnreadable: null,
+  })
+})
+
+Deno.test('çevrimdışı: RC okuması patladı (null), DB trial → premium', () => {
+  assertEquals(resolvePremiumStatus<Kind>(null, DB_TRIAL, 'loading').status, 'premium')
+})
+
+Deno.test('RC aktif + DB trial → premium, rcActiveDbMissing false', () => {
+  assertEquals(resolvePremiumStatus<Kind>(RC_ACTIVE, DB_TRIAL, 'loading'), {
+    status: 'premium',
+    rcActiveDbMissing: false,
+    rcUnreadable: null,
+  })
+})
+
+Deno.test('RC okundu aktif değil, DB expired → free (trial süresi dolmuş)', () => {
+  assertEquals(resolvePremiumStatus<Kind>(RC_NONE, DB_EXPIRED, 'premium').status, 'free')
+})
+
+Deno.test('isDbEntitled: yalnız active ve trial', () => {
+  assertEquals(
+    ['active', 'trial', 'free', 'expired', 'cancelled', ''].map(isDbEntitled),
+    [true, true, false, false, false, false],
   )
 })

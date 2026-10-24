@@ -17,6 +17,11 @@
  * Sentry'ye yazmak ÇAĞIRANIN işidir — bu modül yalnızca bayrak üretir.
  */
 
+/** DB `subscriptions.status` değerlerinden erişim veren kümesi (trial dahil). */
+export function isDbEntitled(status: string): boolean {
+  return status === 'active' || status === 'trial';
+}
+
 /** UI için tek premium kaynağı. `loading` = henüz ne RC ne DB çözüldü. */
 export type PremiumStatus = 'loading' | 'premium' | 'free';
 
@@ -36,7 +41,7 @@ export interface PremiumResolution<K extends string> {
  *
  * Kural sırası:
  * 1. RC okundu ve entitlement aktif → `premium` (DB satırı olmasa da)
- * 2. DB `status === 'active'` → `premium`
+ * 2. DB `status` `active` veya `trial` → `premium` (webhook trial'ı `trial` yazar)
  * 3. RC okundu, aktif değil → `free`
  * 4. RC okunamadı → önceki çözülmüş durum korunur; ilk yüklemedeyse `free`.
  *    Geçici ağ hatası ödeme yapmış kullanıcıyı düşürmesin, ama ilk yüklemede
@@ -57,7 +62,7 @@ export function resolvePremiumStatus<K extends string>(
     return { status: 'premium', rcActiveDbMissing: db === null, rcUnreadable: null };
   }
 
-  if (db?.status === 'active') {
+  if (db !== null && isDbEntitled(db.status)) {
     return { status: 'premium', rcActiveDbMissing: false, rcUnreadable: null };
   }
 
