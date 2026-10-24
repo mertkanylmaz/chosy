@@ -29,25 +29,31 @@ DROP POLICY IF EXISTS "Users can insert own subscriptions" ON public.subscriptio
 DROP POLICY IF EXISTS "Users can update own subscriptions" ON public.subscriptions;
 REVOKE INSERT, UPDATE, DELETE ON public.subscriptions FROM anon, authenticated;
 
--- 2) users: korunan kolonlar açıkça listelenir
+-- 2) users: korunan kolonlar açıkça listelenir (yetkiyi etkileyen, istemciden yazılmaması gerekenler)
 --    subscription_tier, subscription_active_until, subscription_will_renew
---    INSERT varsayılanları (canlıda ölçüldü): tier 'free', active_until NULL, will_renew true.
+--    legacy_mood_access  — check_and_consume_quota (115) kota muafiyeti + Pro Mode kapısı okur
+--    INSERT varsayılanları (canlıda ölçüldü): tier 'free', active_until NULL,
+--    will_renew true, legacy_mood_access false.
+--    SET search_path: tetikleyici fonksiyonu tanımsız-şema çözümlemesine bağımlı olmasın.
 CREATE OR REPLACE FUNCTION public.guard_users_subscription_columns()
 RETURNS trigger
 LANGUAGE plpgsql
+SET search_path = pg_catalog, public
 AS $$
 BEGIN
   IF current_user IN ('authenticated', 'anon') THEN
     IF TG_OP = 'INSERT' THEN
       IF NEW.subscription_tier IS DISTINCT FROM 'free'
          OR NEW.subscription_active_until IS NOT NULL
-         OR NEW.subscription_will_renew IS DISTINCT FROM true THEN
-        RAISE EXCEPTION 'subscription columns are server-managed' USING ERRCODE = '42501';
+         OR NEW.subscription_will_renew IS DISTINCT FROM true
+         OR NEW.legacy_mood_access IS DISTINCT FROM false THEN
+        RAISE EXCEPTION 'entitlement columns are server-managed' USING ERRCODE = '42501';
       END IF;
     ELSIF NEW.subscription_tier IS DISTINCT FROM OLD.subscription_tier
        OR NEW.subscription_active_until IS DISTINCT FROM OLD.subscription_active_until
-       OR NEW.subscription_will_renew IS DISTINCT FROM OLD.subscription_will_renew THEN
-      RAISE EXCEPTION 'subscription columns are server-managed' USING ERRCODE = '42501';
+       OR NEW.subscription_will_renew IS DISTINCT FROM OLD.subscription_will_renew
+       OR NEW.legacy_mood_access IS DISTINCT FROM OLD.legacy_mood_access THEN
+      RAISE EXCEPTION 'entitlement columns are server-managed' USING ERRCODE = '42501';
     END IF;
   END IF;
   RETURN NEW;
