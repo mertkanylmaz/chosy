@@ -11,6 +11,7 @@ import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
+import { quotaFields } from '../_shared/quotaFields.ts'
 
 // ─── Shared Admin Client ──────────────────────────────────────────────────────
 
@@ -19,14 +20,22 @@ import { validateRawInput } from '../_shared/moodInput.ts'
  * persistSession: false ZORUNLU — Deno Deploy'da storage yok,
  * default true client auth module'unu bozuyor (BUG: mood_searches INSERT sessiz fail).
  */
-let _admin: ReturnType<typeof createClient> | null = null
-function getAdmin(): ReturnType<typeof createClient> {
+// `ReturnType<typeof createClient>` jenerikleri varsayilanla orneklediginden
+// tablo/RPC tipleri `never`'a coker. Tip gercek bir cagri yerinden cikarilir
+// (winback-sequencer deseni, bkz. docs/TEKNIK_BORC.md).
+function makeAdminClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  )
+}
+type AdminClient = ReturnType<typeof makeAdminClient>
+
+let _admin: AdminClient | null = null
+function getAdmin(): AdminClient {
   if (!_admin) {
-    _admin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    )
+    _admin = makeAdminClient()
   }
   return _admin
 }
@@ -245,6 +254,40 @@ async function checkSearchQuota(
   }
 }
 
+// ─── Quota Refund + Response Fields (MONEY-1C) ────────────────────────────────
+
+/**
+ * Tuketilen aramayi geri verir (migration 136). parse-mood tukettikten sonra
+ * KENDI hatasiyla dustugunde cagrilir. Hicbir zaman firlatmaz: iade
+ * basarisizsa kullanici yine hata yanitini alir, ama hak kaybi Sentry'ye yazilir
+ * (sessiz fallback yasak). Tuketim basina en cok bir kez cagrilmalidir — RPC
+ * idempotent degil.
+ */
+async function refundSearchQuota(appUserId: string, cause: string): Promise<boolean> {
+  try {
+    const { data, error } = await getAdmin().rpc('refund_quota', {
+      p_user_id: appUserId,
+      p_quota_type: 'search',
+    })
+    if (error) throw new Error(`RPC hatasi: ${error.message}`)
+
+    const result = data as Record<string, unknown> | null
+    if (result?.refunded === true) return true
+
+    throw new Error(`iade edilmedi: ${JSON.stringify(result)}`)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[parse-mood] Quota refund failed:', msg)
+    await sentryCapture({
+      message: `parse-mood kota iadesi basarisiz — kullanici hakkini kaybetti: ${msg}`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: 'QUOTA_REFUND_FAILED' },
+      extra: { user_id: appUserId, cause },
+    })
+    return false
+  }
+}
+
 // ─── Input Validation ─────────────────────────────────────────────────────────
 
 /**
@@ -319,6 +362,16 @@ serve(async (req: Request): Promise<Response> => {
   }
   const rawInput = input.rawInput
 
+  // Sunucu yapilandirma hatasi kotadan ONCE: eksik anahtar yuzunden hak yanmasin.
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) {
+    console.error('[parse-mood] ANTHROPIC_API_KEY is not set')
+    return new Response(
+      JSON.stringify({ error: 'Server configuration error', code: 'CONFIG_ERROR' }),
+      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
+  }
+
   // Quota check — free user 4. aramada Claude API maliyeti olusturmaz
   const quotaCheck = await checkSearchQuota(auth.appUserId)
 
@@ -352,20 +405,16 @@ serve(async (req: Request): Promise<Response> => {
         error: 'Daily search quota exceeded',
         code: 'QUOTA_EXCEEDED',
         ...quotaCheck.quotaResult,
+        ...quotaFields(quotaCheck.quotaResult),
         upgrade_url: 'chosy://paywall',
       }),
       { status: 429, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }
 
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) {
-    console.error('[parse-mood] ANTHROPIC_API_KEY is not set')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error', code: 'CONFIG_ERROR' }),
-      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
+  // Bu noktadan sonra kota TUKETILDI (kota RPC'si cevap verdiyse). Fail-open
+  // yolunda `quotaResult` yok: tuketilmedi, dolayisiyla iade de edilmez.
+  const quotaConsumed = quotaCheck.quotaResult !== undefined
 
   try {
     const client = new Anthropic({ apiKey })
@@ -416,13 +465,27 @@ serve(async (req: Request): Promise<Response> => {
       }).catch(() => null)
     }
 
+    // `remaining`/`limit` EN SONDA: LLM ciktisindaki ayni adli bir alan ezilir.
     return new Response(
-      JSON.stringify({ ...parsed, search_id: searchId }),
+      JSON.stringify({
+        ...parsed,
+        search_id: searchId,
+        ...quotaFields(quotaCheck.quotaResult),
+      }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     const latencyMs = Date.now() - startTime
+
+    // Hata parse-mood'un kendi tarafinda (LLM/ayristirma): kullanici sonuc
+    // alamadi, hakki geri verilir. Iade, hata kaydindan ONCE beklenir ki
+    // yanitla birlikte guncel `remaining` donebilsin.
+    const refunded =
+      quotaConsumed && quotaCheck.userId
+        ? await refundSearchQuota(quotaCheck.userId, msg)
+        : false
+    const refundFields = quotaFields(quotaCheck.quotaResult, refunded)
 
     // ── Sprint 1 v5.0: Anthropic credit/billing detection ─────────────
     // 14 gun boyunca fark edilmeden kaldi — artik FATAL level log
@@ -459,6 +522,7 @@ serve(async (req: Request): Promise<Response> => {
           error: 'AI service is temporarily unavailable. Please try again later.',
           code: 'SERVICE_UNAVAILABLE',
           retry_after: 3600,
+          ...refundFields,
         }),
         { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
@@ -490,7 +554,11 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     return new Response(
-      JSON.stringify({ error: 'Failed to parse mood. Please try again.', code: errorCode }),
+      JSON.stringify({
+        error: 'Failed to parse mood. Please try again.',
+        code: errorCode,
+        ...refundFields,
+      }),
       { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }
