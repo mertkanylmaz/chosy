@@ -16,6 +16,12 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
+import {
+  checkDailyLimit,
+  DailyLimitError,
+  lookupDailyLimit,
+  rerankDailyLimitResponse,
+} from '../_shared/dailyLimit.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -114,6 +120,21 @@ serve(async (req: Request): Promise<Response> => {
       JSON.stringify({ error: 'mood_text and candidates[] are required', code: 'INVALID_INPUT' }),
       { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
+  }
+
+  // ── Günlük limit (MONEY-1C) ───────────────────────────────────────────────
+  // Geçersiz gövde sayacı yakmasın diye doğrulamadan SONRA. Free 15 / premium +
+  // legacy_mood_access 60, UTC gün. Aşılırsa 429 RERANK_DAILY_LIMIT — istemci
+  // bunu `http_error` sayıp RPC sırasıyla devam eder (deck gelmeye devam eder).
+  // Sayaç/tier okunamazsa FAIL-CLOSED (503), rateLimit.ts ile aynı.
+  try {
+    const maxPerDay = await lookupDailyLimit(auth.appUserId)
+    await checkDailyLimit(auth.authUserId, 'rerank-films-daily', maxPerDay)
+  } catch (err) {
+    if (err instanceof DailyLimitError) {
+      return await rerankDailyLimitResponse(err, auth.authUserId, CORS_HEADERS)
+    }
+    return rateLimitResponse(err, CORS_HEADERS)
   }
 
   const moodText = body.mood_text.slice(0, 500)
