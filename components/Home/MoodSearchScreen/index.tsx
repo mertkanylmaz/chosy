@@ -94,6 +94,7 @@ import { FilmFilters, TasteProfile } from '@/types';
 import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
+import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 
@@ -371,7 +372,8 @@ export default function MoodSearchScreen() {
    */
   const runSearch = useCallback(async () => {
     const trimmed = moodText.trim();
-    if (!trimmed || phase === 'processing') return;
+    // MONEY-1C: bayrak aciksa sunucuyla ayni 2 karakter siniri (kapaliyken: bos degilse).
+    if (!isMoodInputSubmittable(trimmed, offerEnabled) || phase === 'processing') return;
 
     // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
     hapticLight();
@@ -440,9 +442,14 @@ export default function MoodSearchScreen() {
 
       const userError = toUserError(err, 'mood');
       // APP_USER_MISSING metni Edge'den cevrilmemis gelir — t() ile degistir.
+      // MONEY-1C (bayrak acik): 503 kota servisi / 400 gecersiz girdi icin cevrilmis metin.
+      // 503'te paywall YOK ve hak harcanmadi — kullanici sadece tekrar dener.
+      const offerMessageKey = moodErrorMessageKey(errorCode, offerEnabled);
       const message = errorCode === 'APP_USER_MISSING'
         ? t('errors.accountSetupIncomplete')
-        : userError.message;
+        : offerMessageKey
+          ? t(offerMessageKey)
+          : userError.message;
       setMoodError({ type: userError.type, message });
       setPhase('input');
 
@@ -469,11 +476,11 @@ export default function MoodSearchScreen() {
 
   /** Birincil inline buton: önce rıza yazılır, başarılıysa AI arama. */
   const handleEnableAndFind = useCallback(async () => {
-    if (moodText.trim().length === 0 || phase === 'processing') return;
+    if (!isMoodInputSubmittable(moodText, offerEnabled) || phase === 'processing') return;
     enableTapped.current = true;
     if (!(await grantInlineConsent())) return;
     await runSearch();
-  }, [moodText, phase, grantInlineConsent, runSearch]);
+  }, [moodText, phase, offerEnabled, grantInlineConsent, runSearch]);
 
   /**
    * "Browse Movies" → MoodContext'e kaydet → film destesine gec
@@ -586,7 +593,7 @@ export default function MoodSearchScreen() {
     );
   }
 
-  const canSubmit = moodText.trim().length > 0 && phase !== 'processing';
+  const canSubmit = isMoodInputSubmittable(moodText, offerEnabled) && phase !== 'processing';
 
   // ── Input asamasi ──────────────────────────────────────────────────────────
   return (

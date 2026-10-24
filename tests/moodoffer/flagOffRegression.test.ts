@@ -27,3 +27,16 @@ Deno.test('adım 2: istemci AsyncStorage arama sayacı bayrak kapalıyken AYNEN 
   assertMatch(screen, /if \(!isOnboarding && !quotaExempt && !offerEnabled\) \{\s*const quotaResult = await consumeQuota\('search'\)/)
   assert(!/FREE_DAILY_LIMIT/.test(screen))
 })
+
+Deno.test('adım 3: min girdi + hata mesajı yalnız offerEnabled ile devreye girer', () => {
+  const screen = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(screen, /isMoodInputSubmittable\(trimmed, offerEnabled\)/)
+  assertMatch(screen, /moodErrorMessageKey\(errorCode, offerEnabled\)/)
+  assertMatch(screen, /const canSubmit = isMoodInputSubmittable\(moodText, offerEnabled\)/)
+})
+
+Deno.test('locales: moodOffer anahtarları en/tr tam parite', () => {
+  const keys = (l: string) => Object.keys(JSON.parse(read(`locales/${l}.json`)).moodOffer ?? {}).sort()
+  assert(keys('en').length > 0)
+  assert(JSON.stringify(keys('en')) === JSON.stringify(keys('tr')))
+})

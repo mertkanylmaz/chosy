@@ -606,7 +606,9 @@
     "offerBody": "Your free search comes back tomorrow. Or search without limits with Chosy Pro.",
     "offerCta": "Unlimited with Pro",
     "timeHoursMinutes": "%{hours}h %{minutes}m",
-    "timeMinutes": "%{minutes}m"
+    "timeMinutes": "%{minutes}m",
+    "errorQuotaUnavailable": "Search is temporarily unavailable. You haven't used a search — try again in a moment.",
+    "errorInvalidInput": "Add a few more words — at least 2 characters — and try again."
   },
   "auth": {
     "welcomeTitle": "Your mood. Your movies.",
