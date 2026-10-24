@@ -26,11 +26,15 @@ Dosyalar: `enrich-films.ts`, `seed-database.ts`, `ai-profile-films.ts`,
 değiştirebilir ve şu an o riski almaya değmez. supabase-js sürüm yükseltmesiyle
 birlikte ele alınacak.
 
-### `supabase/functions` — ~~42~~ → **32** hata
+### `supabase/functions` — ~~42~~ → ~~32~~ → **29** hata
 
 `npm run typecheck:functions` (Deno 2.9.4, `deno check **/index.ts`).
 
-> **Baseline geçmişi: 45 (5 Ağu) → 42 (8 Ağu) → 32 (13 Ağu 2026).**
+> **Baseline geçmişi: 45 (5 Ağu) → 42 (8 Ağu) → 32 (13 Ağu 2026) → 29 (24 Eki 2026).**
+> **32 → 29 (24 Eki 2026, MONEY-1C, CTO onaylı):** `parse-mood` `getAdmin()` tipi
+> `makeAdminClient` deseniyle düzeltildi; dosyadaki 4 `never` hatası kapandı
+> (yeni `refund_quota` çağrısı 5.'yi ekleyecekti), kalan 29'u başka dosyalar. Ham
+> çıktı `Found 29 errors.`
 > 45 → 42 adımı 8 Ağu'da ölçüldü, 9 Ağu C.0b kapanışında teyit edildi.
 > **42 → 32 adımı 13 Ağu 2026'da CTO onayıyla güncellendi**; ham çıktı
 > `Found 32 errors.`, iki bağımsız koşumda teyitli. Düşüş 13 Ağu turunda
@@ -197,7 +201,7 @@ adlandırılacak.
 | Komut | Beklenen | Durum |
 |---|---|---|
 | `npm run typecheck` | tam **14** hata, hepsi `scripts/` altında | ✅ |
-| `npm run typecheck:functions` | ~~**45**~~ → **32** — düşüş hedefli değil, regresyon bekçisi | ✅ |
+| `npm run typecheck:functions` | ~~**45**~~ → ~~**32**~~ → **29** — düşüş hedefli değil, regresyon bekçisi | ✅ |
 
 `typecheck` 14'ü aşarsa veya `scripts/` dışında hata çıkarsa **dur**.
 Sıfır hedefi bu sprintte yok.
