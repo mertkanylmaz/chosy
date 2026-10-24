@@ -5,6 +5,7 @@
 import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
+  buildSubscriptionUpsertRow,
   decidePurchaseStatus,
   decideTerminalWrite,
   OPEN_SUBSCRIPTION_STATUSES,
@@ -90,4 +91,45 @@ Deno.test('EXPIRATION: revokeNow bayrağından bağımsız', () => {
 
 Deno.test('OPEN_SUBSCRIPTION_STATUSES erişim veren iki durum', () => {
   assertEquals([...OPEN_SUBSCRIPTION_STATUSES], ['active', 'trial'])
+})
+
+Deno.test('buildSubscriptionUpsertRow: INITIAL_PURCHASE trial → yalnız sözleşme kolonları (started_at/trial_used yok)', () => {
+  const d = decidePurchaseStatus('INITIAL_PURCHASE', 'TRIAL')
+  const row = buildSubscriptionUpsertRow({
+    userId: 'u1', plan: 'annual', status: d.status, expiresAt: '2026-11-01T00:00:00.000Z',
+    entitlementId: 'chosy_plus', environment: 'PRODUCTION',
+  })
+  assertEquals(row, {
+    user_id: 'u1', plan: 'annual', status: 'trial', expires_at: '2026-11-01T00:00:00.000Z',
+    entitlement_id: 'chosy_plus', environment: 'PRODUCTION',
+  })
+  assertEquals(Object.keys(row).sort(), ['entitlement_id', 'environment', 'expires_at', 'plan', 'status', 'user_id'])
+})
+
+Deno.test('buildSubscriptionUpsertRow: RENEWAL (trial sonrası ilk) → active, expires_at güncellenir', () => {
+  const d = decidePurchaseStatus('RENEWAL', 'NORMAL')
+  const row = buildSubscriptionUpsertRow({
+    userId: 'u1', plan: 'annual', status: d.status, expiresAt: '2027-11-01T00:00:00.000Z',
+    entitlementId: 'chosy_plus', environment: 'SANDBOX',
+  })
+  assertEquals(row.status, 'active')
+  assertEquals(row.expires_at, '2027-11-01T00:00:00.000Z')
+})
+
+Deno.test('buildSubscriptionUpsertRow: lifetime → expires_at null, active', () => {
+  const row = buildSubscriptionUpsertRow({
+    userId: 'u1', plan: 'lifetime', status: 'active', expiresAt: null,
+    entitlementId: 'chosy_plus', environment: 'PRODUCTION',
+  })
+  assertEquals(row.expires_at, null)
+  assertEquals(row.plan, 'lifetime')
+})
+
+Deno.test('buildSubscriptionUpsertRow: onConflict anahtarı user_id satırda mevcut ve dolu', () => {
+  const row = buildSubscriptionUpsertRow({
+    userId: 'u1', plan: 'monthly', status: 'active', expiresAt: null,
+    entitlementId: 'chosy_plus', environment: 'SANDBOX',
+  })
+  assertEquals(typeof row.user_id, 'string')
+  assertEquals(row.user_id.length > 0, true)
 })

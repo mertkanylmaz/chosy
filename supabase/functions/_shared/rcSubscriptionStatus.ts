@@ -107,3 +107,39 @@ export function decideTerminalWrite(
     ? { status: 'cancelled', fromStatuses: OPEN_SUBSCRIPTION_STATUSES, label: 'refund_cancelled' }
     : null
 }
+
+// ─── subscriptions upsert satırı (MONEY-1A commit 4) ───────────────────────────
+
+/**
+ * `subscriptions` upsert gövdesi (`onConflict: 'user_id'`, UNIQUE). Yalnız bu
+ * kolonlar yazılır; started_at / trial_used / rc_customer_id mevcut satırda
+ * korunur. Webhook (INITIAL_PURCHASE/RENEWAL/…, lifetime) ve sync-entitlement
+ * aynı biçimi kullanır — iki yazıcı çelişemez.
+ */
+export interface SubscriptionUpsertFields {
+  user_id: string
+  plan: string
+  status: 'trial' | 'active'
+  /** null = lifetime */
+  expires_at: string | null
+  entitlement_id: string
+  environment: 'PRODUCTION' | 'SANDBOX'
+}
+
+export function buildSubscriptionUpsertRow(p: {
+  userId: string
+  plan: string
+  status: 'trial' | 'active'
+  expiresAt: string | null
+  entitlementId: string
+  environment: 'PRODUCTION' | 'SANDBOX'
+}): SubscriptionUpsertFields {
+  return {
+    user_id: p.userId,
+    plan: p.plan,
+    status: p.status,
+    expires_at: p.expiresAt,
+    entitlement_id: p.entitlementId,
+    environment: p.environment,
+  }
+}

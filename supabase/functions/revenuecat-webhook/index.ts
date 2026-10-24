@@ -23,7 +23,11 @@ import { decideMissingUser } from '../_shared/rcMissingUserDecision.ts'
 import { mapProductToTier, TIER_TO_PLAN } from '../_shared/rcProductMap.ts'
 import { isRcTestEvent, parseRcEnvironment } from '../_shared/rcEnvironment.ts'
 import { fetchRcSubscriber, processTransfer, shortId } from '../_shared/rcTransfer.ts'
-import { decidePurchaseStatus, decideTerminalWrite } from '../_shared/rcSubscriptionStatus.ts'
+import {
+  buildSubscriptionUpsertRow,
+  decidePurchaseStatus,
+  decideTerminalWrite,
+} from '../_shared/rcSubscriptionStatus.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -604,12 +608,6 @@ serve(async (req: Request) => {
           break
         }
 
-        // Update subscriptions table
-        //
-        // `count: 'exact'`: burada 0 satır MEŞRU bir durumdur — kimlik
-        // doğru ama kullanıcının hiç `subscriptions` satırı olmayabilir
-        // (satırı istemci `upsertSubscription` ile yaratır). Bunu genel
-        // hatayla KARIŞTIRMIYORUZ: ayrı kod, warning seviyesi, 200.
         // MONEY-1A: trial ile ücretli ayrımı. Karar saf modülde (period_type).
         const statusDecision = decidePurchaseStatus(
           event.type as 'INITIAL_PURCHASE' | 'RENEWAL' | 'PRODUCT_CHANGE' | 'UNCANCELLATION',
@@ -637,39 +635,25 @@ serve(async (req: Request) => {
           })
         }
 
-        const { error: subsError, count: subsCount } = await supabase
+        // MONEY-1A commit 4: UPDATE yerine UPSERT (`onConflict: 'user_id'`, UNIQUE).
+        // Satırı artık istemci yaratmıyor (MONEY-SEC-1: istemci yazımı kapanır);
+        // yaratıcı webhook'tur. Eski "satır yok → SUBSCRIPTION_ROW_NOT_FOUND
+        // uyarısı" dalı bu yüzden kalktı: 0 satır artık satır YARATILDI demektir.
+        // Upsert yalnız verilen kolonları yazar; started_at/trial_used/rc_customer_id
+        // mevcut satırda korunur.
+        const { error: subsError } = await supabase
           .from('subscriptions')
-          .update({
-            plan,
-            status: statusDecision.status,
-            expires_at: expiresAt,
-            environment,
-          }, { count: 'exact' })
-          .eq('user_id', appUserId)
-          .in('status', ['active', 'trial', 'expired', 'cancelled'])
-
-        if (!subsError && subsCount === 0) {
-          console.warn(`[rc-webhook] subscriptions satırı yok — app_user_id=${appUserId}`)
-          await sentryCapture({
-            message: 'revenuecat-webhook: eşleşen subscriptions satırı yok — plan yazılamadı (users.subscription_tier yazıldı)',
-            level: 'warning',
-            tags: {
-              error_code: 'SUBSCRIPTION_ROW_NOT_FOUND',
-              function: 'revenuecat-webhook',
-              event_type: event.type,
-              tier,
-            },
-            extra: {
-              auth_user_id: authUserId,
-              app_user_id: appUserId,
+          .upsert(
+            buildSubscriptionUpsertRow({
+              userId: appUserId,
               plan,
-              product_id: event.product_id,
-            },
-          })
-          // 200: hata değil, eksik satır. Retry satır yaratmaz —
-          // yetkilendirmenin taşıyıcısı zaten users.subscription_tier.
-          break
-        }
+              status: statusDecision.status,
+              expiresAt,
+              entitlementId: 'chosy_plus',
+              environment,
+            }),
+            { onConflict: 'user_id' },
+          )
 
         if (subsError) {
           console.error('[rc-webhook] subscriptions update failed:', subsError.message)
@@ -836,6 +820,46 @@ serve(async (req: Request) => {
             // Retry güvenli: claim ALREADY_LIFETIME'a düşer, update tekrarlanır.
             return new Response(
               JSON.stringify({ error: 'LIFETIME_USERS_UPDATE_FAILED', retryable: true }),
+              { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+            )
+          }
+
+          // MONEY-SEC-1 ön koşulu: `claim_lifetime_spot` subscriptions'ı yalnız
+          // UPDATE eder (satır yoksa 0 satır). İstemci artık satır yaratmadığı
+          // için lifetime alıcının satırı burada upsert edilir. İdempotent.
+          const { error: lifetimeSubsError } = await supabase
+            .from('subscriptions')
+            .upsert(
+              buildSubscriptionUpsertRow({
+                userId: appUserId,
+                plan: 'lifetime',
+                status: 'active',
+                expiresAt: null,
+                entitlementId: 'chosy_plus',
+                environment,
+              }),
+              { onConflict: 'user_id' },
+            )
+          if (lifetimeSubsError) {
+            console.error('[rc-webhook] lifetime subscriptions upsert failed:', lifetimeSubsError.message)
+            await sentryCapture({
+              message: `revenuecat-webhook: lifetime sonrası subscriptions yazılamadı — ${lifetimeSubsError.message}`,
+              level: 'error',
+              tags: {
+                error_code: 'LIFETIME_SUBSCRIPTION_UPSERT_FAILED',
+                function: 'revenuecat-webhook',
+                event_type: event.type,
+              },
+              extra: {
+                auth_user_id: authUserId,
+                app_user_id: appUserId,
+                transaction_id: event.transaction_id ?? null,
+                pg_code: lifetimeSubsError.code ?? null,
+                pg_details: lifetimeSubsError.details ?? null,
+              },
+            })
+            return new Response(
+              JSON.stringify({ error: 'LIFETIME_SUBSCRIPTION_UPSERT_FAILED', retryable: true }),
               { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
             )
           }
