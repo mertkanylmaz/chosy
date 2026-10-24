@@ -84,7 +84,7 @@ function fake(opts: {
 
 const activeMonthly: RcSubscriberInfo = {
   entitlements: { chosy_plus: { expires_date: FUTURE, product_identifier: 'com.chosy.monthly' } },
-  subscriptions: { 'com.chosy.monthly': { unsubscribe_detected_at: null } },
+  subscriptions: { 'com.chosy.monthly': { unsubscribe_detected_at: null, period_type: 'normal' } },
 }
 
 const ctx = { rcEventId: 'evt_1', transferredFrom: ['anon'], environment: 'SANDBOX' as const }
@@ -207,22 +207,25 @@ Deno.test('transferred_to geçersiz/boş → 200 + warning', async () => {
 
 Deno.test('applyEntitlement: tanınmayan ürün → hiçbir tabloya yazmaz', async () => {
   const f = fake()
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.unknown', FUTURE, true, 'SANDBOX')
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.unknown', FUTURE, true, 'SANDBOX', 'NORMAL')
   assertEquals(r, { kind: 'unmapped_product', tier: 'free' })
   assertEquals(f.userUpdates.length + f.upserts.length, 0)
 })
 
 Deno.test('applyEntitlement: users 0 satır → subscriptions yazılmaz', async () => {
   const f = fake({ usersCount: 0 })
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX')
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX', 'NORMAL')
   assertEquals(r, { kind: 'users_row_vanished' })
   assertEquals(f.upserts.length, 0)
 })
 
 Deno.test('applyEntitlement: legacy weekly → plan weekly', async () => {
   const f = fake()
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'chosyai_weekly', FUTURE, false, 'SANDBOX')
-  assertEquals(r, { kind: 'applied', tier: 'weekly_legacy', plan: 'weekly' })
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'chosyai_weekly', FUTURE, false, 'SANDBOX', 'NORMAL')
+  assertEquals(r, {
+    kind: 'applied', tier: 'weekly_legacy', plan: 'weekly',
+    status: { status: 'active', label: 'paid_continued', warn: false },
+  })
   assertEquals(f.userUpdates[0].fields.subscription_will_renew, false)
 })
 
@@ -231,12 +234,13 @@ Deno.test('applyEntitlement: legacy weekly → plan weekly', async () => {
 Deno.test('pickActiveEntitlement: iptal edilmiş ama süresi dolmamış → willRenew false', () => {
   const info: RcSubscriberInfo = {
     entitlements: { chosy_plus: { expires_date: FUTURE, product_identifier: 'com.chosy.annual' } },
-    subscriptions: { 'com.chosy.annual': { unsubscribe_detected_at: PAST } },
+    subscriptions: { 'com.chosy.annual': { unsubscribe_detected_at: PAST, period_type: 'normal' } },
   }
   assertEquals(pickActiveEntitlement(info, NOW), {
     productId: 'com.chosy.annual',
     expiresAt: '2026-11-03T12:00:00.000Z',
     willRenew: false,
+    periodType: 'NORMAL',
   })
 })
 
@@ -356,7 +360,7 @@ Deno.test('TRANSFER: silinmiş hesap (auth yok) aynı kod, warning seviyesi', as
 
 Deno.test('applyEntitlement: INITIAL_PURCHASE SANDBOX / EXPIRATION-sonrası UNCANCELLATION — environment satıra yazılır', async () => {
   const f = fake()
-  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX')
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX', 'NORMAL')
   assertEquals(r.kind, 'applied')
   assertEquals(f.upserts[0].environment, 'SANDBOX')
 })
@@ -396,7 +400,7 @@ Deno.test('buildTransferDiagnostic: chosy_plus yok → entitlement null, çökme
 const noEnvCtx = { rcEventId: 'evt_2', transferredFrom: ['anon'], environment: null }
 const annualWith = (is_sandbox?: boolean): RcSubscriberInfo => ({
   entitlements: { chosy_plus: { expires_date: FUTURE, product_identifier: 'com.chosy.annual' } },
-  subscriptions: { 'com.chosy.annual': { unsubscribe_detected_at: null, ...(is_sandbox === undefined ? {} : { is_sandbox }) } },
+  subscriptions: { 'com.chosy.annual': { unsubscribe_detected_at: null, period_type: 'normal', ...(is_sandbox === undefined ? {} : { is_sandbox }) } },
 })
 
 Deno.test('TRANSFER environment yok + is_sandbox:true → SANDBOX yazılır', async () => {
@@ -431,4 +435,68 @@ Deno.test('environmentFromSubscriber: boolean olmayan değer null', () => {
   const info = { entitlements: {}, subscriptions: { p: { is_sandbox: 'true' as unknown as boolean } } }
   assertEquals(environmentFromSubscriber(info, 'p'), null)
   assertEquals(environmentFromSubscriber(info, 'yok'), null)
+})
+
+// ─── MONEY-1A: TRANSFER trial/active kararı (rcSubscriptionStatus ile aynı) ─────
+
+const annualPeriod = (period_type?: string): RcSubscriberInfo => ({
+  entitlements: { chosy_plus: { expires_date: FUTURE, product_identifier: 'com.chosy.annual' } },
+  subscriptions: {
+    'com.chosy.annual': {
+      unsubscribe_detected_at: null,
+      ...(period_type === undefined ? {} : { period_type }),
+    },
+  },
+})
+
+Deno.test('pickActiveEntitlement: REST küçük harf period_type büyük harfe çevrilir; yok → null', () => {
+  assertEquals(pickActiveEntitlement(annualPeriod('trial'), NOW)?.periodType, 'TRIAL')
+  assertEquals(pickActiveEntitlement(annualPeriod('normal'), NOW)?.periodType, 'NORMAL')
+  assertEquals(pickActiveEntitlement(annualPeriod(), NOW)?.periodType, null)
+})
+
+Deno.test('applyEntitlement: period_type TRIAL → subscriptions.status trial, users.tier yazılır', async () => {
+  const f = fake()
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX', 'TRIAL')
+  assertEquals(r.kind, 'applied')
+  assertEquals(f.upserts[0].status, 'trial')
+  assertEquals(f.upserts[0].expires_at, FUTURE)
+  assertEquals(f.userUpdates[0].fields.subscription_tier, 'annual')
+})
+
+Deno.test('applyEntitlement: period_type NORMAL → active', async () => {
+  const f = fake()
+  await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX', 'NORMAL')
+  assertEquals(f.upserts[0].status, 'active')
+})
+
+Deno.test('applyEntitlement: period_type null → active + warn (erişim kapanmaz)', async () => {
+  const f = fake()
+  const r = await applyEntitlement(f.deps.writer, B_APP, 'com.chosy.annual', FUTURE, true, 'SANDBOX', null)
+  assertEquals(f.upserts[0].status, 'active')
+  assertEquals(r.kind === 'applied' && r.status.warn, true)
+})
+
+Deno.test('TRANSFER: REST trial → trial satırı, uyarı yok', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualPeriod('trial') } })
+  const r = await processTransfer([B_AUTH], ctx, f.deps)
+  assertEquals(r.status, 200)
+  assertEquals(f.upserts[0].status, 'trial')
+  assertEquals(f.reports.some((p) => p.tags.error_code === 'RC_PERIOD_TYPE_MISSING'), false)
+})
+
+Deno.test('TRANSFER: REST normal → active, uyarı yok', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualPeriod('normal') } })
+  await processTransfer([B_AUTH], ctx, f.deps)
+  assertEquals(f.upserts[0].status, 'active')
+  assertEquals(f.reports.some((p) => p.tags.error_code === 'RC_PERIOD_TYPE_MISSING'), false)
+})
+
+Deno.test('TRANSFER: REST period_type yok → active + Sentry warning RC_PERIOD_TYPE_MISSING', async () => {
+  const f = fake({ authUsers: [B_AUTH], appUsers: { [B_AUTH]: B_APP }, rc: { [B_AUTH]: annualPeriod() } })
+  const r = await processTransfer([B_AUTH], ctx, f.deps)
+  assertEquals(r.status, 200)
+  assertEquals(f.upserts[0].status, 'active')
+  const w = f.reports.find((p) => p.tags.error_code === 'RC_PERIOD_TYPE_MISSING')
+  assertEquals(w?.level, 'warning')
 })

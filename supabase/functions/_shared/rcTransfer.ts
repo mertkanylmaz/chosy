@@ -39,6 +39,7 @@
 import { isUuid } from './rcAuthUser.ts'
 import type { RcEnvironment } from './rcEnvironment.ts'
 import { mapProductToTier, TIER_TO_PLAN } from './rcProductMap.ts'
+import { decidePurchaseStatus, type PurchaseStatusDecision } from './rcSubscriptionStatus.ts'
 
 /**
  * RC entitlement kimliği. İstemci sabitiyle (`constants/subscriptionPlans.ts`
@@ -75,7 +76,7 @@ export type UserTierFields = {
 export type SubscriptionUpsertRow = {
   user_id: string
   plan: string
-  status: 'active'
+  status: 'active' | 'trial'
   expires_at: string | null
   entitlement_id: string
   /** Olayın `environment` değeri (migration 130). Varsayılan YAZILMAZ. */
@@ -94,7 +95,7 @@ export interface EntitlementWriter {
 }
 
 export type ApplyEntitlementResult =
-  | { kind: 'applied'; tier: string; plan: string }
+  | { kind: 'applied'; tier: string; plan: string; status: PurchaseStatusDecision }
   | { kind: 'unmapped_product'; tier: string }
   | { kind: 'users_row_vanished' }
   | { kind: 'db_error'; step: 'users' | 'subscriptions'; error: DbError }
@@ -124,6 +125,11 @@ export type ActiveEntitlement = {
   /** null = lifetime */
   expiresAt: string | null
   willRenew: boolean
+  /**
+   * RC REST `period_type` (REST küçük harf döner: 'trial'/'normal'/'intro';
+   * webhook büyük harf). Burada BÜYÜK harfe çevrilir; yok → null.
+   */
+  periodType: string | null
 }
 
 export type RcRestErrorCode =
@@ -199,10 +205,20 @@ export async function applyEntitlement(
   expiresAt: string | null,
   willRenew: boolean,
   environment: RcEnvironment,
+  periodType: string | null,
 ): Promise<ApplyEntitlementResult> {
   const tier = mapProductToTier(productId)
   const plan = TIER_TO_PLAN[tier]
   if (!plan) return { kind: 'unmapped_product', tier }
+
+  // MONEY-1A: trial/active kararı webhook'taki ile AYNI fonksiyondan. TRANSFER
+  // olay tipi 'PRODUCT_CHANGE' gibi işlenir: RENEWAL değil, period_type belirler.
+  // Lifetime (expiresAt null) non-renewing: RC REST `subscriptions` altında
+  // değil `non_subscriptions` altında gelir, period_type yoktur — bu beklenen,
+  // uyarı üretmez ve deneme olamaz.
+  const statusDecision: PurchaseStatusDecision = expiresAt === null
+    ? { status: 'active', label: 'paid_continued', warn: false }
+    : decidePurchaseStatus('PRODUCT_CHANGE', periodType)
 
   const { error: usersError, count } = await writer.updateUserTier(appUserId, {
     subscription_tier: tier,
@@ -217,14 +233,14 @@ export async function applyEntitlement(
   const { error: subsError } = await writer.upsertSubscription({
     user_id: appUserId,
     plan,
-    status: 'active',
+    status: statusDecision.status,
     expires_at: expiresAt,
     entitlement_id: RC_ENTITLEMENT_ID,
     environment,
   })
   if (subsError) return { kind: 'db_error', step: 'subscriptions', error: subsError }
 
-  return { kind: 'applied', tier, plan }
+  return { kind: 'applied', tier, plan, status: statusDecision }
 }
 
 // ─── RC yanıtı → aktif entitlement ──────────────────────────────────────────────
@@ -263,6 +279,7 @@ export function pickActiveEntitlement(
     productId,
     expiresAt: expiresDate === null ? null : new Date(expiresDate).toISOString(),
     willRenew,
+    periodType: typeof sub?.period_type === 'string' ? sub.period_type.toUpperCase() : null,
   }
 }
 
@@ -547,6 +564,7 @@ export async function processTransfer(
       active.expiresAt,
       active.willRenew,
       environment,
+      active.periodType,
     )
 
     const writeExtra = {
@@ -589,7 +607,18 @@ export async function processTransfer(
         break
       }
       case 'applied': {
-        console.log(`[rc-webhook] TRANSFER: ${result.tier} yazıldı — app_user_id=${appUserId}`)
+        console.log(
+          `[rc-webhook] TRANSFER: ${result.tier} yazıldı — app_user_id=${appUserId} ` +
+            `status=${result.status.status} label=${result.status.label}`,
+        )
+        if (result.status.warn) {
+          await deps.report({
+            message: `revenuecat-webhook: TRANSFER period_type yok/tanınmayan (${String(active.periodType)}) — status 'active' yazıldı`,
+            level: 'warning',
+            tags: { error_code: 'RC_PERIOD_TYPE_MISSING', function: FN, event_type: EVENT_TYPE },
+            extra: { ...baseExtra, target_auth_id: id, ...writeExtra, period_type: active.periodType },
+          })
+        }
         if (result.tier === 'lifetime') {
           // Kural 4: yalnız tier + plan. `lifetime_sales` / `claim_lifetime_spot`
           // (Uzay B, sayaç) TAŞINMAZ — iz bırakılır.
