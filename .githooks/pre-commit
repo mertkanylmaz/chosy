@@ -13,10 +13,32 @@
 #
 # Kacis kapisi: `git commit --no-verify`. Bilincli olarak birakildi — kapi
 # gercekten yanlis alarm verdiginde is akisi tikanmasin.
+#
+# Teshis: her kosunun sonucu (exit kodu + typecheck hata sayisi) calisilan
+# worktree'nin git dizinindeki `hook-last.log` dosyasina yazilir. Bir commit
+# beklenmedik sekilde gectiyse/reddedildiyse ilk bakilacak yer burasi
+# (`git rev-parse --git-path hook-last.log`). Hook, `git commit | head` gibi bir
+# boru yuzunden SIGPIPE ile olurse bile iz birakir (exit 141).
 
 BASELINE=14
 
 fail=0
+count=""
+
+LOG=$(git rev-parse --git-path hook-last.log 2>/dev/null)
+write_log() {
+  status=$?
+  [ -n "$LOG" ] || return 0
+  {
+    printf 'time=%s\n' "$(date '+%Y-%m-%dT%H:%M:%S%z')"
+    printf 'exit=%s\n' "$status"
+    printf 'typecheck_errors=%s baseline=%s\n' "${count:-not-run}" "$BASELINE"
+  } > "$LOG" 2>/dev/null
+}
+trap write_log EXIT
+trap 'exit 141' PIPE
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # ── 1. Bosaltilmis kaynak dosyasi ───────────────────────────────────────────
 staged=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.tsx?$' || true)
