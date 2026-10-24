@@ -62,3 +62,16 @@ Deno.test('adım 4: askDecision / useChampionAsk dosyalarına dokunulmadı', () 
   assert(!/mood_offer|MoodInvite|moodInvite/.test(ask))
   assert(!/mood_offer|MoodInvite|moodInvite/.test(read('components/gauntlet/GauntletShell/useChampionAsk.ts')))
 })
+
+Deno.test('adım 5: mood_offer tetikleyici/varyant, IMMEDIATE, kill-switch ve router', () => {
+  const orch = read('services/conversion/triggerOrchestrator.ts')
+  assertMatch(orch, /case 'mood_offer':\s*return 'mood_offer';/)
+  assertMatch(orch, /IMMEDIATE_TRIGGERS[\s\S]*?'mood_offer',\s*\]\)/)
+  assertMatch(orch, /mood_offer: 'mood_offer_enabled'/)
+  assertMatch(read('components/paywalls/ContextualPaywall.tsx'), /case 'mood_offer':\s*return <PaywallMoodOffer/)
+  // Teklif kopyasında deneme vaadi yok (eligibility yalnız PaywallBase/buildOffer'da).
+  const paywall = read('components/paywalls/PaywallMoodOffer/index.tsx')
+  assert(!/trial|7 days|7 gün/i.test(paywall.replace(/trialShown/g, '').replace(/[^\n]*\*[^\n]*/g, '')))
+  const loc = JSON.parse(read('locales/en.json')).moodOffer
+  assert(!/free trial|7 days|7-day/i.test(`${loc.paywallKickerQuota} ${loc.paywallKickerDeck}`))
+})

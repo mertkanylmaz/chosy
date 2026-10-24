@@ -19,6 +19,7 @@ import PaywallStreamingLink from './PaywallStreamingLink';
 import PaywallProfileUpgrade from './PaywallProfileUpgrade';
 import PaywallLifetimeSoldout from './PaywallLifetimeSoldout';
 import PaywallMissedDayArchive from './PaywallMissedDayArchive';
+import PaywallMoodOffer from './PaywallMoodOffer';
 
 // ⚠️ `streak_milestone` · `watchlist_full` · `roulette_limit` bilesenleri
 // `_archive/` altina tasindi (olu varyant temizligi, 26 Eyl 2026). Bu isimlerle
@@ -66,6 +67,8 @@ export default function ContextualPaywall({
       return <PaywallLifetimeSoldout {...commonProps} />;
     case 'missed_day_archive':
       return <PaywallMissedDayArchive {...commonProps} />;
+    case 'mood_offer':
+      return <PaywallMoodOffer {...commonProps} />;
     default:
       return null;
   }

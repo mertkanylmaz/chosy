@@ -126,6 +126,23 @@ export default function ProModeScreen(): React.JSX.Element {
     }
   }, [triggerPaywall, reason]);
 
+  /**
+   * Gunluk hak bitti ekranindaki CTA (MONEY-1C): `mood_offer` / `quota_exhausted`.
+   * Teklif acilmazsa (bayrak kapali, premium...) sessiz birakilmaz — Sentry.
+   */
+  const handleOfferUpgrade = useCallback(async () => {
+    void hapticLight();
+    posthogAnalytics.track('mood_offer_cta', { entry_point: 'quota_exhausted', stage: 'pro_mode_gate' });
+    const shown = await triggerPaywall({ type: 'mood_offer', entry: 'quota_exhausted' });
+    if (!shown) {
+      Sentry.captureMessage('[ProMode] mood_offer paywall acilmadi', {
+        level: 'warning',
+        tags: { screen: 'pro_mode', flow: 'offer_cta' },
+      });
+      logger.warn('[ProMode] mood_offer paywall acilmadi');
+    }
+  }, [triggerPaywall]);
+
   // ── 1) Yetki / hak okunuyor ────────────────────────────────────────────
   if (loading || gate === 'checking') {
     return (
@@ -178,7 +195,7 @@ export default function ProModeScreen(): React.JSX.Element {
           </Text>
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => void handleUpgrade()}
+            onPress={() => void handleOfferUpgrade()}
             activeOpacity={0.85}>
             <Ionicons name="sparkles" size={18} color={Colors.textOnAccent} />
             <Text style={styles.primaryBtnText}>{t('moodOffer.offerCta')}</Text>

@@ -78,6 +78,8 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
       return 'lifetime_soldout';
     case 'missed_day_archive':
       return 'missed_day_archive';
+    case 'mood_offer':
+      return 'mood_offer';
     default:
       return null;
   }
@@ -90,6 +92,11 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
 const IMMEDIATE_TRIGGERS: ReadonlySet<TriggerType> = new Set([
   'profile_upgrade',
   'lifetime_soldout',
+  // MONEY-1C: teklif zamanlamasi (deste bitimi/cikisi, hak bitti) cagiran tarafta
+  // `search_id` basina bir kez kurulur (utils/moodOfferTiming). Yeni kullanicinin
+  // ilk 24 saatinde de gorunmeli — ilk sampiyon cogunlukla ilk 24 saatte —, bu yuzden
+  // 24 sa kapisi ve 24 sa cooldown'u atlanir. Bayrak kapaliysa varyant uretilmez.
+  'mood_offer',
 ]);
 
 /** Trigger icin ilgili A/B test ID'si */
@@ -119,6 +126,8 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
 const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
   streaming_link: 'paywall_streaming_link',
   lifetime_soldout: 'paywall_lifetime_soldout',
+  // MONEY-1C kill-switch: bayrak yoksa/kapaliysa teklif HIC uretilmez.
+  mood_offer: 'mood_offer_enabled',
 };
 
 /**
@@ -341,6 +350,7 @@ function trackFunnel(
     ab_test_group: variant.abTestGroup,
     missed_day_count:
       'missedDayCount' in variant.trigger ? variant.trigger.missedDayCount : null,
+    entry_point: 'entry' in variant.trigger ? variant.trigger.entry : null,
     ...extra,
   });
 }
@@ -369,6 +379,11 @@ async function recordEvent(
     if ('filmId' in variant.trigger) triggerContext.filmId = variant.trigger.filmId;
     if ('missedDayCount' in variant.trigger) {
       triggerContext.missedDayCount = variant.trigger.missedDayCount;
+    }
+    // MONEY-1C: giris noktasi + arama baglantisi (jsonb; sema/CHECK degismez).
+    if ('entry' in variant.trigger) {
+      triggerContext.entry_point = variant.trigger.entry;
+      if (variant.trigger.searchId) triggerContext.search_id = variant.trigger.searchId;
     }
 
     const row: PaywallEventInsert = {

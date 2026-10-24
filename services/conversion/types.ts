@@ -26,7 +26,20 @@ export type TriggerType =
   | 'roulette_limit'
   | 'lifetime_soldout'
   /** K-46: 2. kaçırılan gün → arşiv. v1'in TEK gauntlet tetikleyicisi. */
-  | 'missed_day_archive';
+  | 'missed_day_archive'
+  /** MONEY-1C: Pro Mode teklifi (ücretsiz arama sonrası / hak bitince). */
+  | 'mood_offer';
+
+/**
+ * MONEY-1C: teklifin açıldığı giriş noktası. `paywall_events.trigger_context.entry_point`
+ * ve PostHog olaylarında aynı değer taşınır.
+ */
+export type MoodOfferEntry =
+  | 'champion_card'
+  | 'spotlight_card'
+  | 'quota_exhausted'
+  | 'deck_end'
+  | 'deck_exit';
 
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =
@@ -44,7 +57,9 @@ export type TriggerEvent =
    * saymaz. Uygunluk kararı da sunucuda: `archiveEligible` false ise bu olay
    * hiç gönderilmez.
    */
-  | { type: 'missed_day_archive'; missedDayCount: number };
+  | { type: 'missed_day_archive'; missedDayCount: number }
+  /** MONEY-1C. `searchId`: teklifi doğuran aramanın `search_id`'si (varsa). */
+  | { type: 'mood_offer'; entry: MoodOfferEntry; searchId?: string | null };
 
 // ─── Paywall Variants ────────────────────────────────────────────────────────
 
@@ -55,7 +70,8 @@ export type PaywallVariantName =
   | 'streaming_link'
   | 'profile_upgrade'
   | 'lifetime_soldout'
-  | 'missed_day_archive';
+  | 'missed_day_archive'
+  | 'mood_offer';
 
 /** Paywall gosterim kararinin sonucu */
 export interface PaywallVariant {
