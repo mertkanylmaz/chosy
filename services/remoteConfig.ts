@@ -33,6 +33,9 @@ const SAFE_DEFAULTS = {
   // D-08 korunuyor: Lifetime kartı paywall'da GÖSTERİLMEZ. Flag yalnız
   // geri dönüş yolunu açık tutar (R-E'de değerlendirilecek).
   paywall_lifetime_enabled: false,
+  // MONEY-1C: Pro Mode daveti + ucretsiz arama teklif akisi. Yalniz UX kill-switch
+  // (yetki sunucuda: parse-mood kotayi zorlar). Kapaliyken uygulama eskisi gibi.
+  mood_offer_enabled: false,
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;

@@ -47,3 +47,17 @@ export async function isWatchedOtherEnabled(): Promise<boolean> {
   await remoteConfig.hydrate();
   return remoteConfig.getRaw('watch_feedback_watched_other_enabled') === true;
 }
+
+/**
+ * Pro Mode daveti + ücretsiz arama teklif akışı (app_config: mood_offer_enabled).
+ *
+ * MONEY-1C. Kill-switch: yalnızca değer `true` ise açık; satır yoksa, okuma
+ * hatasında ve hiç önbellek yokken KAPALI. Bu bir UX bayrağıdır — kotayı
+ * sunucu zorlar. Kapalıyken uygulama MONEY-1C öncesi gibi davranır.
+ * Lazy getter — modül seviyesi sabit yasak (kural 5).
+ */
+export async function isMoodOfferEnabled(): Promise<boolean> {
+  await remoteConfig.hydrate();
+  const value: unknown = remoteConfig.get('mood_offer_enabled');
+  return value === true;
+}
