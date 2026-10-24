@@ -5,6 +5,9 @@
  * görmezden gelir (geriye uyumlu).
  *   remaining / limit = number → o günün kalan hakkı / toplam hakkı
  *   remaining / limit = null   → sınırsız (premium, legacy_mood_access)
+ *   resets_at = ISO string     → hakkın yenileneceği an: bir sonraki 00:00 UTC
+ *                                (kota günü `CURRENT_DATE`, DB saat dilimi UTC)
+ *   resets_at = null           → sınırsız
  *   alanlar yok                → kota sonucu yok / anlaşılmaz — tahmin edilmez
  */
 
@@ -14,6 +17,7 @@ export const UNLIMITED_LIMIT = 999999
 export interface QuotaFields {
   remaining?: number | null
   limit?: number | null
+  resets_at?: string | null
 }
 
 /**
@@ -23,13 +27,19 @@ export interface QuotaFields {
 export function quotaFields(
   quotaResult: Record<string, unknown> | undefined,
   refunded = false,
+  now: Date = new Date(),
 ): QuotaFields {
   const used = quotaResult?.used
   const limit = quotaResult?.limit
   if (typeof used !== 'number' || typeof limit !== 'number') return {}
-  if (limit >= UNLIMITED_LIMIT) return { remaining: null, limit: null }
+  if (limit >= UNLIMITED_LIMIT) return { remaining: null, limit: null, resets_at: null }
   const usedNow = refunded ? Math.max(used - 1, 0) : used
-  return { remaining: Math.max(limit - usedNow, 0), limit }
+  return { remaining: Math.max(limit - usedNow, 0), limit, resets_at: nextUtcMidnight(now) }
+}
+
+/** Bir sonraki 00:00 UTC (ISO). Tam gece yarısında bir SONRAKİ gün: kota günü o an yeni başlamıştır. */
+export function nextUtcMidnight(now: Date): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1)).toISOString()
 }
 
 export type QuotaOutcome = 'allowed' | 'exceeded' | 'tier_not_configured' | 'unavailable'
