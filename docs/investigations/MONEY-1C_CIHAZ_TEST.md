@@ -11,11 +11,9 @@ davranışsal doğrulama yalnız cihazda yapılır (testler kaynak-regresyon dü
 - **`eas.json` (güncel, 25 Eki):** `preview-store` `autoIncrement: true` taşıyor (71f592f ile geldi; bu dalda da var).
   `appVersionSource: remote` olduğundan sayaç tek ve ortak: uzaktaki son iOS buildNumber **914**
   (`eas build:version:get -p ios -e preview-store`), sonraki build **915** olur. `preview-e2e` kendi `autoIncrement: false`'ını korur.
-- **SÜRÜM SORUNU (karar bekler):** bu dalın `app.json` sürümü **2.1.2**; 2.1.2 App Store'a çıktı (production #912), bu yüzden
-  aynı sürüm için TestFlight build'i reddedilir (kapanmış train). 24 Eki'de bu yüzden #913 (2.1.2 preview-store) sonrası geçici
-  **2.1.3** (#914, `build/preview-2.1.3`, `44849a9`) alındı; o commit bu dalın atası DEĞİL. Build'den önce sürüm 2.1.3 (veya üstü)
-  olmalı — bkz. `MONEY-1C_BUILD_PREP.md` §3. runtimeVersion politikası `appVersion` → runtime = sürüm; 2.1.3 için hiçbir kanalda OTA yok,
-  yani build kendi gömülü JS'ini çalıştırır (istenen durum).
+- **Sürüm (karar verildi, 25 Eki 13:05; commit `70942b2`):** `app.json` sürümü **2.1.3**, iOS buildNumber **915** (EAS remote sayacı; son 914). 2.1.2 App Store'da yayında (kapanmış train) olduğu
+  için 2.1.3 kullanılır; `build/preview-2.1.3` dalına commit yok. runtimeVersion politikası `appVersion` → runtime 2.1.3; 2.1.3 için hiçbir kanalda OTA yok, yani build
+  kendi gömülü JS'ini çalıştırır (istenen durum). Ayrıntı: `MONEY-1C_BUILD_PREP.md` §3.
 - **Aynı uygulama:** bundle id `com.chosy.ai`, ASC uygulaması 6761782987 — production ile aynı. TestFlight
   build'i cihazdaki App Store sürümünün yerine geçer (build numarası daha yüksek olduğu için).
 - **Aynı backend ve servisler:** EAS `preview` ortamındaki tüm `EXPO_PUBLIC_*` değerleri (Supabase URL/anon
@@ -55,6 +53,11 @@ Anonim hesapla test etme: yeniden kurulumda kimlik değişir (D8).
   VALUES ('mood_offer_testers', '["<AUTH_USER_ID>"]'::jsonb, 'MONEY-1C test kimlikleri')
   ON CONFLICT (key) DO NOTHING;
   ```
+- **Mevcut tester kimliği kime ait (25 Eki, salt-okunur):** `a25917c2-…` → `public.users.id = 0694d435-…`, **anonim** hesap (`auth_provider=anonymous`, `auth.users.is_anonymous=true`),
+  oluşturma 24 Eki 22:25 UTC, son etkinlik 24 Eki 23:42 UTC, **`subscription_tier = lifetime`** (`subscriptions`: `plan=lifetime`, `status=active`, `environment=SANDBOX`,
+  `entitlement_id=chosy_plus`, 24 Eki 23:43 UTC), 1 `mood_searches` satırı. Yani **premium sandbox hesabı**: kilit kartı, ücretsiz arama, davet kartı gibi ücretsiz-hesap
+  yüzeyleri bu kimlikle GÖRÜNMEZ. Ücretsiz akış testleri için ayrı bir ücretsiz hesabın `auth.users.id`'sini ekle. Anonim hesap yeniden kurulumda kaybolur (D8).
+  Çıkarma gerekirse (çalıştırma): `UPDATE app_config SET value = value - 'a25917c2-7476-41ea-a7fb-3ffecccf03e6' WHERE key = 'mood_offer_testers';`
 - Değer en geç 5 dk'da yansır; hızlandırmak için uygulamayı tamamen kapatıp aç. Aynı cihazda iki test
   hesabı kullanacaksan ikisini de listeye koy (dizi).
 - **Genel açma YAPMA:** `mood_offer_enabled` satırını `true` yapmak production'daki herkese açar.
@@ -188,14 +191,19 @@ kimlikten yeniye TRANSFER eder. Sandbox'ta webhook "TRANSFER hedefi çözülemed
 - [ ] Listeden kimliği çıkar, uygulamayı kapat-aç (5 dk bekle ya da yeniden başlat): tüm yüzeyler
       kaybolur, bölüm A'daki davranışa dönülür.
 
-## C. ESKİ İSTEMCİ (2.1.2 App Store / 2.1.3 TestFlight) + sunucu 139–142 sonrası regresyon
+## C. ESKİ İSTEMCİ (2.1.2 App Store / 2.1.3 TestFlight) + sunucu 139–142 regresyonu — İKİ KOŞU
 
-Sunucu değişiklikleri (139 şema/yetki, 140, parse-mood v43, 141, 142) eski istemciyi bozmamalı. **Sıra önemli:** bu bölüm yeni
-TestFlight build'ini kurmadan ÖNCE, cihazda hâlâ eski sürüm varken koşulur (TestFlight build'i App Store sürümünün yerine geçer, geri
-dönüş zor). 26 Eki smoke A (Bölüm A, runbook) bunun ilk ayağıdır; aşağıdakiler cihazda tamamlayıcıdır. Her madde için `<users.id>` =
-test hesabının `public.users.id`'si.
+Sunucu değişiklikleri eski istemciyi bozmamalı. **İki ayrı koşu, iki ayrı sonuç tablosu:** C-I runbook Bölüm A'dan (26 Eki: 139, 140, parse-mood v43)
+sonra, C-II runbook Bölüm B'den (27 Eki: 141 + 142) sonra. **Sıra önemli:** her ikisi de yeni TestFlight build'ini kurmadan ÖNCE, cihazda hâlâ eski
+sürüm varken koşulur (TestFlight build'i App Store sürümünün yerine geçer, geri dönüş zor). `<users.id>` = test hesabının `public.users.id`'si.
+Hesap notu: tester listesindeki mevcut kimlik (`a25917c2-…`) **premium (lifetime, SANDBOX)** bir anonim hesaptır → ücretsiz akış maddeleri için AYRI bir
+ücretsiz hesap kullan (bkz. `MONEY-1C_BUILD_PREP.md` §4.1).
 
-### C1. Arama (parse-mood v43, 139/140) — eski akış imzası
+### C-I. 141 ÖNCESİ koşu — 26 Eki, runbook smoke A'dan sonra (139 + 140 + parse-mood v43 uygulanmış; 141/142 henüz YOK)
+
+Geri alma tetikleyicileri: runbook Bölüm A **R1–R7** (R1/R6 → `139_rollback.sql` dar/tam, R2 → parse-mood eski kaynağa, R7 → `140_rollback.sql`).
+
+#### C1. Arama (parse-mood v43, 139/140) — eski akış imzası
 - [ ] Ücretsiz hesapla bir mood araması yap: sonuç gelir, deste açılır, hata yok.
 - [ ] `mood_searches` en yeni satırı: `client_search_id` NULL, `status` NULL, `quota_consumed` false, `claim_attempts` 0, öneri listesi dolu
       (runbook smoke A.1). Eski istemci yeni kolonları DOLDURMAZ.
@@ -207,29 +215,61 @@ test hesabının `public.users.id`'si.
 - [ ] Anthropic zaman aşımı: yavaş ağda arama 25 sn civarında "tekrar dene" mesajıyla biter (maxRetries 0, onaylı davranış değişikliği); takılı kalmaz.
 - [ ] Ücretsiz hak (eski istemci yerel sayacı, 3) bitince eski kota duvarı; 2.1.2'de ücretsiz hesap Pro Mode'a girince **hard paywall** (bilinen, FAZ3 §8).
 
-### C2. Sunucu kotası ile uyum (bayrak KAPALI iken sunucu limiti hâlâ 3)
+#### C2. Sunucu kotası ile uyum (bayrak KAPALI iken sunucu limiti hâlâ 3)
 - [ ] `subscription_limits.free.daily_search_limit` hâlâ **3** (Faz 3 öncesi): eski istemci 3 arama yapabilir; 4.'de sunucudan `QUOTA_EXCEEDED` / istemci duvarı.
       (Limit 1'e inmişse C2 koşulmaz — Faz 3 başlamıştır; bkz. FAZ3_ROLLOUT §7.)
 - [ ] Kota satırı gece yarısı (UTC) sıfırlanır; cihaz saati değiştirilince sunucu günü değişmez.
 
-### C3. 141 sonrası (tablo yetkileri) — okuma yolları sağlam
+#### C5. Hesap silme (R7: 140 sonrası service_role DELETE)
+- [ ] Test hesabıyla hesabı sil (Ayarlar): işlem tamamlanır; `mood_searches`/`user_daily_quotas`/`watchlist` o kullanıcının satırları kalkar
+      (`select count(*) from mood_searches where user_id='<users.id>'` → 0). `delete-account` edge log'unda hata YOK.
+
+#### C6. OTA'lı eski çalışma zamanları (2.1.0 / 2.1.1) — cihaz varsa
+- [ ] 2.1.1 App Store build'i: açılışta OTA bulunur/indirilir (`ota_update_found`/`ota_update_fetched`), ikinci soğuk açılışta uygulanır;
+      arama eski akışla çalışır. 2.1.0 için aynı. (Bkz. `MONEY-1C_BUILD_PREP.md` §5; OTA ilk açılışta uygulanmaz.)
+
+**Sonuç tablosu C-I (26 Eki — 141 öncesi):**
+
+| Madde | Hesap | Sonuç (geçti/kaldı) | Zaman (UTC) | Not / Sentry-PostHog bağlantısı |
+|---|---|---|---|---|
+| C1 arama imzası + kota +1 | | | | |
+| C1 UPDATE yazıldı, 42501 yok | | | | |
+| C2 limit 3 / duvar | | | | |
+| C5 hesap silme | | | | |
+| C6 OTA'lı 2.1.0/2.1.1 | | | | |
+| **Kapı:** hepsi geçti → 27 Eki Bölüm B'ye geçilebilir | | evet / hayır | | |
+
+### C-II. 141 SONRASI koşu — 27 Eki, runbook Bölüm B'den sonra (141 + 142 uygulanmış)
+
+**Geri alma tetikleyicisi:** C3'te herhangi bir madde kırmızı (okuma/yazma yolu bozuldu, `permission denied for table`) → runbook **R8 → `141_rollback.sql`**
+(`C:\Users\mertk\moodflix-rollback\`; yalnız 141 öncesi yetkileri birebir kurar). C4'te kırmızı → **R9 → `142_rollback.sql`**. Önce hangi migration'ın
+suçlu olduğunu ayır (141: tablo yetkileri; 142: iki fonksiyon); ikisini birden geri alma yalnız ayrım yapılamıyorsa.
+
+#### C3. 141 sonrası (tablo yetkileri) — okuma/yazma yolları sağlam
 - [ ] Soğuk açılış: `app_config` okunur (bayrak/`remoteConfig` hydrate; Sentry `REMOTE_CONFIG_HYDRATE_FAILED` YOK).
 - [ ] Paywall/abonelik ekranı: planlar ve limitler yüklenir (`subscription_limits`, `promo_codes` SELECT), "permission denied" yok.
 - [ ] Profil → Pro durumu, ücretli (premium) hesapta doğru; satın alma/Restore (sandbox) hâlâ çalışır (istemci `subscriptions`/`lifetime_sales`'e yazmıyor).
 - [ ] Gauntlet, watchlist ekleme/çıkarma, izlendi işareti: hata yok (141 yalnız TRUNCATE/REFERENCES/TRIGGER'ı kaldırır; DML etkilenmez).
+- [ ] **C1 hızlı tekrar:** bir mood araması — eski akış imzası (A.1), `searches_used` +1, Sentry'de 42501 yok.
+- [ ] **C5 tekrar:** hesap silme hâlâ çalışır (service_role DELETE; 141 DELETE'i kaldırmaz).
 
-### C4. 142 sonrası (promo/lifetime fonksiyonları)
+#### C4. 142 sonrası (promo/lifetime fonksiyonları)
 - [ ] Promo kodu girme/uygulama akışı (varsa ekran): eski istemci `increment_promo_usage`'ı doğrudan ÇAĞIRMAZ (tarama: çağıran yok); kod uygulanır, hata yok.
 - [ ] `paywall_lifetime_enabled` kapalı olduğundan lifetime satın alma yüzeyi görünmez; görünüyorsa DUR (142 `claim_lifetime_spot`'ı yalnız service_role çağırır).
-- [ ] Sentry'de `permission denied for function` YOK.
+- [ ] Sentry'de `permission denied for function` YOK; `process-lifetime-purchase` / `revenuecat-webhook` edge log'unda yeni hata yok.
 
-### C5. Hesap silme (R7: 140 sonrası service_role DELETE)
-- [ ] Test hesabıyla hesabı sil (Ayarlar): işlem tamamlanır; `mood_searches`/`user_daily_quotas`/`watchlist` o kullanıcının satırları kalkar
-      (`select count(*) from mood_searches where user_id='<users.id>'` → 0). `delete-account` edge log'unda hata YOK.
+**Sonuç tablosu C-II (27 Eki — 141 sonrası):**
 
-### C6. OTA'lı eski çalışma zamanları (2.1.0 / 2.1.1)
-- [ ] (Cihaz varsa) 2.1.1 App Store build'i: açılışta OTA bulunur/indirilir (`ota_update_found`/`ota_update_fetched`), ikinci soğuk açılışta uygulanır;
-      arama eski akışla çalışır. 2.1.0 için aynı. (Bkz. `MONEY-1C_BUILD_PREP.md` §5; OTA ilk açılışta uygulanmaz.)
+| Madde | Hesap | Sonuç (geçti/kaldı) | Zaman (UTC) | Not / Sentry-PostHog bağlantısı |
+|---|---|---|---|---|
+| C3 açılış + `app_config` | | | | |
+| C3 paywall limit/promo okuma | | | | |
+| C3 Pro durumu / Restore | | | | |
+| C3 gauntlet + watchlist | | | | |
+| C3 C1 hızlı tekrar (arama +1) | | | | |
+| C3 hesap silme tekrar | | | | |
+| C4 promo / lifetime / permission denied | | | | |
+| **Kırmızı varsa:** R8 → `141_rollback.sql` / R9 → `142_rollback.sql` uygulandı mı | | | | |
 
 ## Sonuç notları
 
