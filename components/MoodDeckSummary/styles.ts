@@ -1,6 +1,7 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -110,7 +111,7 @@ export default StyleSheet.create({
   heroMatchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(232,168,56,0.12)',
+    backgroundColor: withAlpha(Colors.accentPrimary, 0.12),
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,

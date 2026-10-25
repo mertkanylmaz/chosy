@@ -174,10 +174,10 @@ export default function MoodDeckSummary({
                 </Text>
                 <Text style={styles.heroTitle} numberOfLines={2}>{heroFilm.title}</Text>
                 <Text style={styles.heroYear}>{heroFilm.year}</Text>
-                {heroFilm.matchScore > 0 && (
+                {(heroFilm.voteAverage ?? 0) > 0 && (
                   <View style={styles.heroMatchBadge}>
-                    <Ionicons name="sparkles" size={14} color="#E8A838" />
-                    <Text style={styles.heroMatchText}>{heroFilm.matchScore}% match</Text>
+                    <Ionicons name="star" size={14} color={Colors.accentPrimary} />
+                    <Text style={styles.heroMatchText}>{(heroFilm.voteAverage ?? 0).toFixed(1)}</Text>
                   </View>
                 )}
               </View>

@@ -38,26 +38,6 @@ export default StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /**
-   * Match Score Rozeti — posterin sağ alt köşesi. V-4 Tur C: opak `charcoal`
-   * + `graphite` kenar (içerik katmanında cam yok, v4.1).
-   */
-  matchBadge: {
-    position: 'absolute',
-    right: 6,
-    bottom: 6,
-    paddingHorizontal: space.sm,
-    paddingVertical: 2,
-    borderRadius: space.sm,
-    backgroundColor: color.surface.raised,
-    borderWidth: size.hairline,
-    borderColor: color.surface.border,
-  },
-  matchBadgeText: {
-    ...type.meta,
-    color: color.text.primary,
-  },
-
   /** Film adı kaldırıldı — sadece yıl·tür */
   cardMeta: {
     ...type.caption,

@@ -4399,3 +4399,7 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
 - **`discover.tsx` `tasteSignals.recordSwipeRight/Left(...).catch(() => {})`:** aynı sınıf; dokunulmadı.
 - **Preload erken dönüşü:** `mood_preload_skipped` olayı B1/B6 teşhisi için eklendi; kök neden #915'te `mood_relaxation_timing.origin/min_rating` ile doğrulanacak.
 - **Faz 2'ye (dokunulmadı):** `AIProcessingOverlay` adım zamanlayıcısı (gerçek aşamaya bağlı değil), Watchlist dışındaki yüzde kalıntıları.
+
+- **Kartta gösterilmeyen şablon metinleri (F0-2):** `SwipeableCard.getAIExplanation` ve `rowToFilm`in "Matches your mood: …" şablonu kullanıcıya gösterilmiyor (çıktı uydurmaydı). Kod yerinde; `getAIExplanation` artık referanssız (eslint uyarısı). `matchScore`, `pick_type`, `surpriseType` verisi akıyor (`watchlist-detail` sıralaması `matchScore` kullanıyor); rozet/kenarlık/6. kart haptic'i kaldırıldı.
+- **Eşleşme yüzdesi kalıntıları (F0-2 kapsamı dışı, dokunulmadı):** `components/Profile/DailyMatchCard` (`dailyMatch.matchScore`) ve `app/roulette.tsx` (`roulette.matchScore`) hâlâ benzerlikten türetilmiş yüzde gösteriyor; Pro Mode akışı dışında, Faz 2'de karar bekler.
+- **`heroMatchBadge` arka planı (F0-2'de token'a çekildi):** `withAlpha(Colors.accentPrimary, 0.12)` kullanıldı (opaklıklı semantic token yok, yeni token eklenmedi). Aynı dosyadaki ve ekran dışı diğer sabit `rgba` kalıntıları ayrıca taranmadı.
