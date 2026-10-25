@@ -84,6 +84,7 @@ import {
   setSearchKeywords,
   setPendingMoodText,
   setSearchModeState,
+  setSearchAnalyticsContext,
 } from '@/services/moodSearchState';
 import { startPreload } from '@/services/recommendationPreload';
 import { getMoodHistory } from '@/services/profileService';
@@ -285,8 +286,10 @@ export default function MoodSearchScreen() {
       searchKeywords: string[];
       /** Kilitli destede ucretsiz sinirin otesindeki posterler indirilmez (yoksa hepsi). */
       prefetchLimit?: number;
+      /** Analitik cekirdegi icin aramanin giris yuzeyi (kullanici metni degil). */
+      entryPoint: string;
     }) => {
-      const { trimmed, filters, profile, searchId, searchKeywords, prefetchLimit } = params;
+      const { trimmed, filters, profile, searchId, searchKeywords, prefetchLimit, entryPoint } = params;
 
       if (filters.yearRange !== null) {
         profile.era_preference = yearRangeToEra(filters.yearRange);
@@ -295,6 +298,8 @@ export default function MoodSearchScreen() {
       // Mod preload'dan ÖNCE yazılır: recommendations.ts aynı modu module-level okur.
       setSearchModeState('ai');
       setSearchMode('ai');
+      // AI yolu rizayla gelir (parseMood son kapiyi tutar): analitik cekirdegi consent=true.
+      setSearchAnalyticsContext({ entryPoint, consent: true });
 
       // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
       setLastSearchId(searchId);
@@ -358,6 +363,7 @@ export default function MoodSearchScreen() {
 
       await applySearchResult({
         trimmed, filters, profile, searchId, searchKeywords, prefetchLimit,
+        entryPoint: entry ?? 'direct',
       });
     },
     [applySearchResult, entry, offerEnabled, isOnboarding, proEntitled],

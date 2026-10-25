@@ -38,6 +38,8 @@ import { withAlpha } from '@/constants/gameThemes';
 import { PLANS, type PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { getSearchAnalyticsContext } from '@/services/moodSearchState';
+import { paywallMoodCore } from '@/utils/moodAnalytics';
 import {
   getOfferings,
   getTrialEligibility,
@@ -472,10 +474,14 @@ export default function PaywallBase({
         source: variant.name,
         // Secimden sonra ekranda deneme vaadi gorunuyor mu (buildOffer ile ayni kaynak).
         trial_shown: offers[id].kind === 'trial',
+        ...paywallMoodCore(variant.trigger, {
+          isPro: premiumStatus === 'premium',
+          consent: getSearchAnalyticsContext().consent,
+        }),
       });
     }
     setSelectedPlan(id);
-  }, [selectedPlan, variant.name, offers]);
+  }, [selectedPlan, variant.name, variant.trigger, offers, premiumStatus]);
 
   // ─── Sabit satın alma alanı ───────────────────────────────────────────────
 

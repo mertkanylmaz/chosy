@@ -10,7 +10,10 @@
 import React, { useEffect } from 'react';
 
 import type { PlanId } from '@/constants/subscriptionPlans';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { getSearchAnalyticsContext } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
+import { paywallMoodCore } from '@/utils/moodAnalytics';
 import type { PaywallVariant } from '@/services/conversion';
 
 import PaywallQuotaExhausted from './PaywallQuotaExhausted';
@@ -43,9 +46,17 @@ export default function ContextualPaywall({
   onConvert,
   onDismiss,
 }: ContextualPaywallProps) {
+  const { premiumStatus } = useSubscription();
   useEffect(() => {
     if (visible) {
-      posthogAnalytics.track('paywall_viewed', { variant: variant.name });
+      // MONEY-1C: mood_offer varyantinda ortak cekirdek (diger varyantlarda sekil ayni).
+      posthogAnalytics.track('paywall_viewed', {
+        variant: variant.name,
+        ...paywallMoodCore(variant.trigger, {
+          isPro: premiumStatus === 'premium',
+          consent: getSearchAnalyticsContext().consent,
+        }),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, variant.name]);

@@ -21,6 +21,7 @@ import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { Film } from '@/types/film';
+import type { MoodEventCore } from '@/utils/moodAnalytics';
 
 import styles from './styles';
 
@@ -49,6 +50,8 @@ interface MoodDeckSummaryProps {
   onGoWatchlist: () => void;
   /** Üstteki kapat (X) — Home'a döner, mood'u temizlemez */
   onClose: () => void;
+  /** Ortak analitik cekirdegi (search_id, entry_point, is_pro, consent) — discover verir. */
+  analyticsCore?: Partial<MoodEventCore>;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -63,6 +66,7 @@ export default function MoodDeckSummary({
   onNewMood,
   onGoWatchlist,
   onClose,
+  analyticsCore,
 }: MoodDeckSummaryProps) {
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
@@ -75,6 +79,7 @@ export default function MoodDeckSummary({
       disliked_count: dislikedFilms.length,
       deck_size: deckSize,
       reranked,
+      ...analyticsCore,
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

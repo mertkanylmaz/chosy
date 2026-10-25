@@ -133,3 +133,22 @@ export function setSearchModeState(mode: SearchMode): void {
 export function getSearchModeState(): SearchMode {
   return _searchMode;
 }
+
+// ─── Search Analytics Context ──────────────────────────────────────────────
+
+/**
+ * Analitik çekirdeği için aramanın giriş yüzeyi ve AI rızası (MONEY-1C). Servis/bileşen
+ * katmanı (paywall olayları) React state'ine erişemez; searchId gibi module-level tutulur.
+ * Her arama başında yazılır. Kullanıcı metni BURADA TUTULMAZ.
+ */
+let _searchEntryPoint: string | null = null;
+let _searchConsent: boolean | null = null;
+
+export function setSearchAnalyticsContext(ctx: { entryPoint: string; consent: boolean }): void {
+  _searchEntryPoint = ctx.entryPoint;
+  _searchConsent = ctx.consent;
+}
+
+export function getSearchAnalyticsContext(): { entryPoint: string | null; consent: boolean | null } {
+  return { entryPoint: _searchEntryPoint, consent: _searchConsent };
+}

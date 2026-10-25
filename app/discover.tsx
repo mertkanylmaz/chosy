@@ -49,11 +49,13 @@ import { checkAndConsumeQuota } from '@/services/quotaEngine';
 import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
+import { getSearchAnalyticsContext } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
+import { deckStartedProps, moodEventCore, shouldEmitDeckUnlocked } from '@/utils/moodAnalytics';
 import { buildDeckItems, deriveLockState, hidesBeyondFree, progressCounter } from '@/utils/moodLock';
 import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
 
@@ -61,6 +63,12 @@ import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT;
+
+/**
+ * `mood_deck_unlocked` zaten yayinlanan aramalar. Modul seviyesinde: ekran yeniden mount
+ * olsa da `search_id` basina en fazla bir kez (analitik defteri, bayrak degeri DEGIL).
+ */
+const unlockedDeckKeys = new Set<string>();
 
 const DEFAULT_FILTERS: FilmFilters = {
   yearRange: null,
@@ -89,6 +97,10 @@ export default function DiscoverScreen() {
   const offerEnabled = useMoodOfferEnabled();
   const slotExemptFreeDeck = isFreeSearchDeckSlotExempt({ offerEnabled, isOnboarding });
   const freeVisible = useFreeVisibleCount();
+  /** Ortak analitik cekirdegi — her cagrida guncel degerleri okur (ref: efekt bagimliligi yaratmaz). */
+  const analyticsCoreRef = useRef<() => ReturnType<typeof moodEventCore>>(() =>
+    moodEventCore({ searchId: null, entryPoint: null, isPro: false, consent: null }),
+  );
   /** Gizli posterler yetki okunurken de indirilmez: sinir `entitled` kesinlesene kadar uygulanir. */
   const prefetchCap = hidesBeyondFree({ offerEnabled, isOnboarding, entitled: proEntitled })
     ? freeVisible
@@ -157,8 +169,10 @@ export default function DiscoverScreen() {
       deckSnapshotTaken.current = true;
       setDeck(managerFilms);
       posthogAnalytics.track('mood_deck_started', {
-        deck_size: managerFilms.length,
+        // Siralı film id'leri (ilk 8) + deste boyutu; kullanici metni YOK.
+        ...deckStartedProps(managerFilms),
         search_mode: searchMode,
+        ...analyticsCoreRef.current(),
       });
     }
   }, [managerFilms, searchMode]);
@@ -196,6 +210,15 @@ export default function DiscoverScreen() {
     freeVisible,
   });
   const deckItems = buildDeckItems(deck, lock);
+  analyticsCoreRef.current = () => {
+    const ctx = getSearchAnalyticsContext();
+    return moodEventCore({
+      searchId: lastSearchId,
+      entryPoint: ctx.entryPoint,
+      isPro: proEntitled,
+      consent: ctx.consent,
+    });
+  };
   const progress = progressCounter({ currentIndex, total: deckSize, lock });
   /** Yigin: [ust, alttaki]. Son kartta alttaki yoktur. */
   const currentItem = deckItems[currentIndex] ?? null;
@@ -284,8 +307,56 @@ export default function DiscoverScreen() {
   // Paywall kapaninca kilit kartinda KALINIR (paywallProps.onDismiss cikis yapmaz) —
   // deste kaybolmaz. Satin alma premiumStatus'u degistirince kilit kendiliginden acilir.
   const handleLockCta = useCallback(() => {
+    posthogAnalytics.track('mood_lock_tapped', {
+      ...moodEventCore({ searchId: lastSearchId, entryPoint: 'lock_card', isPro: proEntitled, consent: getSearchAnalyticsContext().consent }),
+      visible_count: freeVisible,
+      total: deckSize,
+    });
     void triggerPaywall({ type: 'mood_offer', entry: 'lock_card', searchId: lastSearchId });
-  }, [triggerPaywall, lastSearchId]);
+  }, [triggerPaywall, lastSearchId, proEntitled, freeVisible, deckSize]);
+
+  // ── Kilit analitigi ────────────────────────────────────────────────────────
+  const instanceId = useRef(String(Date.now())).current;
+  const unlockKey = lastSearchId ?? `deck-${instanceId}`;
+
+  /** Kilit karti ekranin ustune geldiginde bir kez. */
+  const lockShown = currentItem?.kind === 'lock';
+  useEffect(() => {
+    if (!lockShown) return;
+    posthogAnalytics.track('mood_lock_viewed', {
+      ...analyticsCoreRef.current(),
+      entry_point: 'lock_card',
+      visible_count: freeVisible,
+      total: deckSize,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockShown]);
+
+  /**
+   * Kilitli deste premiumStatus gecisiyle (restore dahil) acildiginda, search_id basina bir kez.
+   * Turetilmis kilit degerinin `locked` → `open` gecisi; baska nedenle (bayrak, onboarding) acilmaz.
+   */
+  const prevLockKind = useRef<typeof lock.kind | null>(null);
+  useEffect(() => {
+    if (
+      shouldEmitDeckUnlocked({
+        prevKind: prevLockKind.current,
+        kind: lock.kind,
+        entitled: proEntitled,
+        key: unlockKey,
+        emitted: unlockedDeckKeys,
+      })
+    ) {
+      unlockedDeckKeys.add(unlockKey);
+      posthogAnalytics.track('mood_deck_unlocked', {
+        ...analyticsCoreRef.current(),
+        entry_point: 'lock_card',
+        visible_count: freeVisible,
+        total: deckSize,
+      });
+    }
+    prevLockKind.current = lock.kind;
+  }, [lock.kind, proEntitled, unlockKey, freeVisible, deckSize]);
 
   // ── Navigation helpers ──────────────────────────────────────────────────────
 
@@ -319,6 +390,7 @@ export default function DiscoverScreen() {
           likedFilms={likedFilms}
           dislikedFilms={dislikedFilms}
           deckSize={deckSize}
+          analyticsCore={analyticsCoreRef.current()}
           insufficientResults={insufficientResults || deckSize < 8}
           reranked={deckReranked}
           onNewMood={handleNewMood}
