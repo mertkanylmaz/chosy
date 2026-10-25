@@ -1465,7 +1465,6 @@ export async function getRecommendations(
       isExpired: preSession?.expires_at != null
         ? preSession.expires_at < Math.floor(Date.now() / 1000)
         : null,
-      authUid: preSession?.user?.id ?? null,
     };
 
     const { data: updateData, error: updateError } = await supabase

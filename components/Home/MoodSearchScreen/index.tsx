@@ -687,9 +687,9 @@ export default function MoodSearchScreen() {
    * MoodCardGrid'den gelen text zaten localized prompt.
    */
   const handleMoodCardSelect = useCallback(
-    (text: string) => {
+    (text: string, cardId: string) => {
       hapticSelection();
-      posthogAnalytics.track('mood_card_tapped', { mood_text: text.slice(0, 40) });
+      posthogAnalytics.track('mood_card_tapped', { mood_card_id: cardId });
       setMoodText(text);
       // Opacity: dim → spring geri
       findBtnFlash.value = withSequence(

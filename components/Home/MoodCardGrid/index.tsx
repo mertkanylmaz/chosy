@@ -115,7 +115,7 @@ interface MoodCardGridProps {
   /** Currently active mood text — used for visual highlight */
   activeMoodText: string;
   /** Called with the localized search query text when a card is tapped */
-  onSelect: (searchQuery: string) => void;
+  onSelect: (searchQuery: string, cardId: string) => void;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -129,9 +129,9 @@ export default function MoodCardGrid({ activeMoodText, onSelect }: MoodCardGridP
   const cardWidth = (screenWidth - 40 - CARD_GAP) / 2;
 
   const handlePress = useCallback(
-    (queryKey: string) => {
+    (queryKey: string, cardId: string) => {
       hapticLight();
-      onSelect(t(queryKey));
+      onSelect(t(queryKey), cardId);
     },
     [onSelect, t],
   );
@@ -157,7 +157,7 @@ export default function MoodCardGrid({ activeMoodText, onSelect }: MoodCardGridP
                   : grad.accent + '40',
               },
             ]}
-            onPress={() => handlePress(card.searchQuery)}
+            onPress={() => handlePress(card.searchQuery, card.id)}
             activeOpacity={0.85}
           >
             <LinearGradient

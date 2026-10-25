@@ -23,6 +23,14 @@ Deno.test('keyword_boost_active anahtar kelime METNİ taşımaz; auth uid debug 
   assert(!/authUid:\s*fbSession/.test(r))
 })
 
+Deno.test('mood_card_tapped yalnız kartın sabit kimliğini taşır (metin yok); preSessionInfo authUid içermez', () => {
+  const m = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(m, /track\('mood_card_tapped', \{ mood_card_id: cardId \}\)/)
+  assert(!/track\('mood_card_tapped', \{ mood_text:/.test(m))
+  const r = read('services/recommendations.ts')
+  assert(!/authUid:/.test(r))
+})
+
 Deno.test('analytics.ts yardımcıları kullanıcı metni / profil adı taşımaz', () => {
   const a = read('services/analytics.ts')
   assert(!/mood_text_preview|profile_name|profileName/.test(a))
