@@ -57,7 +57,10 @@ Deno.test('kaynak: olaylar bağlı; kullanıcı metni hiçbirine girmez', () => 
   }
   assertMatch(d, /\.\.\.deckStartedProps\(managerFilms\)/)
   assertMatch(d, /analyticsCore=\{analyticsCoreRef\.current\(\)\}/)
-  assert(!/moodText|mood_text/.test(d))
+  // Hiçbir track() çağrısı kullanıcı metnini taşımaz (metin yalnız yerel kurtarma deposuna yazılır).
+  for (const call of d.match(/posthogAnalytics\.track\([\s\S]*?\n\s*\}\);/g) ?? []) {
+    assert(!/moodText|mood_text|lastMoodText/.test(call), call.slice(0, 60))
+  }
   assertMatch(read('components/paywalls/ContextualPaywall.tsx'), /\.\.\.paywallMoodCore\(variant\.trigger/)
   assertMatch(read('components/paywalls/PaywallBase/index.tsx'), /\.\.\.paywallMoodCore\(variant\.trigger/)
   assertMatch(read('components/MoodDeckSummary/index.tsx'), /\.\.\.analyticsCore,/)

@@ -86,7 +86,10 @@ import {
   setSearchModeState,
   setSearchAnalyticsContext,
 } from '@/services/moodSearchState';
-import { startPreload } from '@/services/recommendationPreload';
+import { seedPreload, startPreload } from '@/services/recommendationPreload';
+import { loadTodayDeck } from '@/services/todayDeckStore';
+import TodaySearchCard from '@/components/Home/TodaySearchCard';
+import { isSameSearchText, localDateKey, type TodayDeckSnapshot } from '@/utils/todayDeck';
 import { getMoodHistory } from '@/services/profileService';
 import { parseMood } from '@/services/tasteParser';
 import { hasAiConsent, recordAiConsent } from '@/services/aiConsent';
@@ -181,6 +184,8 @@ export default function MoodSearchScreen() {
 
   /** Son mood aramalari — discover tab content section */
   const [recentSearches, setRecentSearches] = useState<MoodHistoryItem[]>([]);
+  /** Bugunku deste anlik goruntusu (yalniz cihazda; bayrak acikken okunur). */
+  const [todayDeck, setTodayDeck] = useState<TodayDeckSnapshot | null>(null);
 
   const pendingFilters = useRef<FilmFilters | null>(null);
   // Ekran acildiginda kota bilgisini yenile
@@ -208,6 +213,26 @@ export default function MoodSearchScreen() {
         }
       })();
     }, []),
+  );
+
+  // MONEY-1C P0: bugunku deste kurtarma — her odakta cihazdan okunur (bayrak kapaliysa hic okunmaz).
+  useFocusEffect(
+    useCallback(() => {
+      if (!offerEnabled || isOnboarding) {
+        setTodayDeck(null);
+        return;
+      }
+      let active = true;
+      void (async () => {
+        const ownerId = await readAppUserId();
+        if (!ownerId) return;
+        const snapshot = await loadTodayDeck(ownerId);
+        if (active) setTodayDeck(snapshot);
+      })();
+      return () => {
+        active = false;
+      };
+    }, [offerEnabled, isOnboarding]),
   );
 
   // Rıza durumu her odakta okunur: Ayarlar'dan açılıp/kapatılıp dönüldüğünde güncel kalır.
@@ -602,9 +627,38 @@ export default function MoodSearchScreen() {
     [],
   );
 
+  /**
+   * Bugunku desteyi cihazdaki anlik goruntuden acar: parse-mood / match_films / rerank CAGRISI YOK.
+   * Profil + filtre MoodContext'e, film listesi preload olarak yerlestirilir; siralama korunur.
+   */
+  const openTodayDeck = useCallback(() => {
+    if (!todayDeck) return;
+    hapticLight();
+    posthogAnalytics.track('mood_today_deck_reopened', {
+      search_id: todayDeck.searchId,
+      deck_size: todayDeck.films.length,
+    });
+    setSearchModeState('ai');
+    setSearchMode('ai');
+    setLastSearchId(todayDeck.searchId);
+    setLastMoodText(todayDeck.moodText);
+    setMoodResult(todayDeck.profile, todayDeck.filters);
+    seedPreload(todayDeck.films);
+    router.push('/discover');
+  }, [todayDeck, setSearchMode, setLastSearchId, setLastMoodText, setMoodResult, router]);
+
   /** Recent search tap — text'i set et + submit */
   const handleRecentTap = useCallback((item: MoodHistoryItem) => {
     hapticLight();
+    // Bugunku arama: yeni arama baslatma, mevcut desteyi ac.
+    if (
+      todayDeck &&
+      localDateKey(new Date(item.created_at)) === todayDeck.localDate &&
+      isSameSearchText(todayDeck, item.mood_text)
+    ) {
+      openTodayDeck();
+      return;
+    }
     posthogAnalytics.track('discover_recent_search_tapped', { mood_text_length: item.mood_text.length });
     setMoodText(item.mood_text);
     // Kisa gecikme — state'in yerlesip handleFindMovies'in guncel moodText'i görmesi icin
@@ -612,7 +666,7 @@ export default function MoodSearchScreen() {
       // handleFindMovies moodText ref'ini kullanir, setState async oldugu icin
       // dogrudan text'i kullanmak yerine state'in settle etmesini bekliyoruz
     }, 100);
-  }, []);
+  }, [todayDeck, openTodayDeck]);
 
   // ── MoodProfileResult asamasi ──────────────────────────────────────────────
   if (phase === 'result' && tasteProfile) {
@@ -750,6 +804,15 @@ export default function MoodSearchScreen() {
               activeMoodText={moodText}
               onSelect={handleMoodCardSelect}
             />
+
+            {/* ── Bugunku arama (MONEY-1C P0, bayrak arkasinda) ───── */}
+            {todayDeck && (
+              <TodaySearchCard
+                moodText={todayDeck.moodText}
+                count={todayDeck.films.length}
+                onPress={openTodayDeck}
+              />
+            )}
 
             {/* ── Son Aramalar (conditional) ─────────────────────── */}
             {recentSearches.length > 0 && (

@@ -616,7 +616,9 @@
     "paywallBenefit2": "İstediğin zaman yeniden ara",
     "paywallBenefit3": "Her ruh hali için film keşfet",
     "paywallNightly": "Gecelik 4 filmin ücretsiz kalır.",
-    "freeSearchHint": "Bugünün ücretsiz araması · %{count} öneri dahil"
+    "freeSearchHint": "Bugünün ücretsiz araması · %{count} öneri dahil",
+    "todayCardTitle": "Bugünün araması",
+    "todayCardCount": "%{count} öneri"
   },
   "moodLock": {
     "title": "Bu ruh halinde daha fazlası var.",

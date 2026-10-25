@@ -616,7 +616,9 @@
     "paywallBenefit2": "Search again, whenever you want",
     "paywallBenefit3": "Explore films for any mood",
     "paywallNightly": "Your nightly 4 films stay free.",
-    "freeSearchHint": "Today's free search · %{count} picks included"
+    "freeSearchHint": "Today's free search · %{count} picks included",
+    "todayCardTitle": "Today's search",
+    "todayCardCount": "%{count} picks"
   },
   "moodLock": {
     "title": "There's more to this mood.",

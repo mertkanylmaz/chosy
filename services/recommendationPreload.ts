@@ -140,6 +140,17 @@ export function startPreload(
 }
 
 /**
+ * Hazir bir desteyi preload olarak yerlestirir (bugunku deste kurtarma, MONEY-1C).
+ * `useFeedManager` ilk batch'te bunu tuketir: parse-mood / match_films / rerank CAGRISI YOK.
+ */
+export function seedPreload(films: RecommendationResult['films']): void {
+  const result: RecommendationResult = { films, source: 'supabase', reranked: false };
+  _preloadProfileKey = 'seeded';
+  _preloadResult = result;
+  _preloadPromise = Promise.resolve(result);
+}
+
+/**
  * Preload sonucunu consume eder (bir kez okunur, cache temizlenir).
  *
  * 3 durum:

@@ -49,7 +49,9 @@ import { checkAndConsumeQuota } from '@/services/quotaEngine';
 import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
+import { readAppUserId } from '@/services/auth-utils';
 import { getSearchAnalyticsContext } from '@/services/moodSearchState';
+import { saveTodayDeck } from '@/services/todayDeckStore';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
@@ -58,6 +60,7 @@ import { logger } from '@/utils/logger';
 import { deckStartedProps, moodEventCore, shouldEmitDeckUnlocked } from '@/utils/moodAnalytics';
 import { buildDeckItems, deriveLockState, hidesBeyondFree, progressCounter } from '@/utils/moodLock';
 import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
+import { createTodayDeckSnapshot } from '@/utils/todayDeck';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -88,7 +91,7 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId, lastMoodText } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
@@ -176,6 +179,34 @@ export default function DiscoverScreen() {
       });
     }
   }, [managerFilms, searchMode]);
+
+  // ── MONEY-1C P0: bugunku deste kurtarma — YALNIZ cihaza yazilir (bayrak arkasinda) ──
+  // Deste snapshot'i sabit (bir kez alinir): burada da bir kez kaydedilir. Mood metni
+  // yalniz yerel depoda kalir; sunucuya ve analitige gitmez.
+  useEffect(() => {
+    if (!offerEnabled || isOnboarding || searchMode !== 'ai') return;
+    if (!lastSearchId || !lastMoodText || !currentProfile || deck.length === 0) return;
+    let active = true;
+    void (async () => {
+      const ownerId = await readAppUserId();
+      if (!ownerId || !active) return;
+      await saveTodayDeck(
+        createTodayDeckSnapshot({
+          now: new Date(),
+          ownerId,
+          searchId: lastSearchId,
+          moodText: lastMoodText,
+          profile: currentProfile,
+          filters: effectiveFilters,
+          films: deck,
+        }),
+      );
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deck, offerEnabled]);
 
   // ── Kullanıcı vektörü: kuyruğa alınan sağ kaydırmalar tek seferde yazılır (PERF-1) ──
   // Çıkış yolları: deste bitti · ekran odağı kaybı/unmount (geri, sekme, yeni mood,
