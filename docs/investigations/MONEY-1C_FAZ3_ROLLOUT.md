@@ -73,3 +73,16 @@ Her adımdan sonra bölüm 5 panelleri 30 dk izlenir; eşik aşılırsa bölüm 
 ## 6. Bu belgenin DIŞINDA kalanlar
 
 Fiyatlandırma/trial süresi, hard paywall tasarımı (31 Eki kapısının girdisi), Android, App Store metinleri.
+
+## 7. Refine etkisi (Faz 3'te search 3 → 1)
+
+**Soru:** `subscription_limits.free` = `daily_search_limit 3`, `daily_refine_limit 1`. Search 1'e inince refine arama kotasından mı sayılır, ayrı mı? Ücretsiz kullanıcı günde kaç arama yapar?
+
+**Cevap (kod + canlı veri, 25 Eki):**
+- **Ayrı sayaç.** `check_and_consume_quota(p_quota_type)` (021/115/136): `'search'` → `user_daily_quotas.searches_used` (limit `daily_search_limit`); `'refine'` → `refines_used` (limit `daily_refine_limit`). Biri diğerini düşmez/artırmaz. `bonus_searches_*` yalnız `'search'` dalında.
+- **parse-mood yalnız `'search'` tüketir.** Doğrudan (`p_quota_type: 'search'`, `index.ts:313`) ve 139 sonrası `claim_mood_search` içinden (`check_and_consume_quota(p_user_id, 'search')`, migration satır 219). Refine çağrısı yok.
+- **Refine'ı tüketen hiçbir yol yok.** İstemcide `consumeQuota('search')` dışında çağrı yok (`MoodSearchScreen`); `check-quota` Edge Function'ı `'refine'` kabul eder ama hiçbir istemci çağırmaz; `parse-taste` `'search'` tüketir ama istemci çağıranı yok (eski). `daily_refine_limit` bugün **ölü bir limit**: UI'da refine özelliği yok.
+- **Faz 3 sonrası fiili günlük arama:** ücretsiz kullanıcı = **1 arama** (+ varsa `bonus_searches` kadar ekstra). Refine bunu 2'ye çıkarmaz çünkü erişilemiyor. Gelecekte refine özelliği eklenirse ayrı sayaçtan 1 hak daha verir (1 arama + 1 refine); bu bilinçli bir ürün kararı olmalı, bugün öyle değil.
+- **Sayaç etkilemeyenler:** rerank-films günlük limit (free 15, ayrı `api_rate_limits` sayacı), slot (free 100), oyunlar — hepsi search'ten bağımsız.
+- **Eski istemci notu (bayrak-öncesi sürümler):** 2.1.2 ve altı kendi AsyncStorage sayacıyla (`FREE_DAILY_LIMIT` = 3) kapı kurar; sunucu limiti 1 olunca 2. aramada sunucudan `QUOTA_EXCEEDED` alır ve eski kota duvarını gösterir. Hak daha erken biter ama yanlış sayım olmaz; bu kullanıcılar yeni arayüzü (kilit kartı, bugünkü deste) görmez. Faz 3'ten önce eski sürüm payı Sentry/PostHog release dağılımından ölçülmeli.
+- **Not:** `weekly_legacy` (search 14) satırı ve `legacy_mood_access` muafiyeti (115) bu değişiklikten etkilenmez; limit yalnız `free` satırında değişir.
