@@ -50,7 +50,7 @@ import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 import { readAppUserId } from '@/services/auth-utils';
-import { getSearchAnalyticsContext, setPendingMoodText } from '@/services/moodSearchState';
+import { getLastFullPrompt, getSearchAnalyticsContext, setPendingMoodText } from '@/services/moodSearchState';
 import { saveTodayDeck } from '@/services/todayDeckStore';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
@@ -175,10 +175,12 @@ export default function DiscoverScreen() {
     if (managerFilms.length > 0 && !deckSnapshotTaken.current) {
       deckSnapshotTaken.current = true;
       setDeck(managerFilms);
+      const { submittedAt } = getSearchAnalyticsContext();
       posthogAnalytics.track(deckViewEventName(getSearchAnalyticsContext().resumed), {
         // Siralı film id'leri (ilk 8) + deste boyutu; kullanici metni YOK.
         ...deckStartedProps(managerFilms),
         search_mode: searchMode,
+        ...(submittedAt != null ? { ms_since_submit: Date.now() - submittedAt } : {}),
         ...analyticsCoreRef.current(),
       });
     }
@@ -421,7 +423,9 @@ export default function DiscoverScreen() {
       filter_min_rating: effectiveFilters.minRating ?? null,
       filter_era: effectiveFilters.yearRange ?? null,
     });
-    if (lastMoodText) setPendingMoodText(lastMoodText);
+    // Rerank tam prompt'la calisir; etiket (lastMoodText) yalniz ekranda gorunen metindir.
+    const rerankText = getLastFullPrompt() ?? lastMoodText;
+    if (rerankText) setPendingMoodText(rerankText);
     setMoodResult(currentProfile, DEFAULT_FILTERS);
     deckSnapshotTaken.current = false;
     setDeck([]);

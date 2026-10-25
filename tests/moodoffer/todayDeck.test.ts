@@ -65,7 +65,7 @@ Deno.test('kapsam: sunucu çağrısı yok, bayrak arkasında, mood metni yalnız
   // olay yükünde mood metni yok
   assert(!/mood_text|moodText/.test(open.slice(open.indexOf('track('), open.indexOf('track(') + 160)))
   // son aramalardan bugünkü aramaya dokunmak deste açar
-  assertMatch(m, /isSameSearchText\(todayDeck, item\.mood_text\)\s*\) \{\s*openTodayDeck\(\);\s*return;/)
+  assertMatch(m, /isSameSearchText\(todayDeck, item\.mood_text\) \|\| isSameSearchText\(todayDeck, label\)\)\s*\) \{\s*openTodayDeck\(\);\s*return;/)
 })
 
 Deno.test('locales: todayCard anahtarları en/tr parite', () => {

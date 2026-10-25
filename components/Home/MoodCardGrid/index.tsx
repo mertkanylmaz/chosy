@@ -112,7 +112,7 @@ export const MOOD_CARDS: MoodCardDef[] = [
 // ─── Props ──────────────────────────────────────────────────────────────────
 
 interface MoodCardGridProps {
-  /** Currently active mood text — used for visual highlight */
+  /** Currently active mood text (card TITLE, not the full prompt) — used for visual highlight */
   activeMoodText: string;
   /** Called with the localized search query text when a card is tapped */
   onSelect: (searchQuery: string, cardId: string) => void;
@@ -142,7 +142,7 @@ export default function MoodCardGrid({ activeMoodText, onSelect }: MoodCardGridP
       MOOD_CARDS.map((card) => {
         const grad = MoodCardGradients[card.gradientKey];
         if (!grad) return null;
-        const isActive = activeMoodText === t(card.searchQuery);
+        const isActive = activeMoodText === t(card.titleKey);
 
         return (
           <TouchableOpacity
