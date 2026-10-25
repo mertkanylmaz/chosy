@@ -86,3 +86,23 @@ Fiyatlandırma/trial süresi, hard paywall tasarımı (31 Eki kapısının girdi
 - **Sayaç etkilemeyenler:** rerank-films günlük limit (free 15, ayrı `api_rate_limits` sayacı), slot (free 100), oyunlar — hepsi search'ten bağımsız.
 - **Eski istemci notu (bayrak-öncesi sürümler):** 2.1.2 ve altı kendi AsyncStorage sayacıyla (`FREE_DAILY_LIMIT` = 3) kapı kurar; sunucu limiti 1 olunca 2. aramada sunucudan `QUOTA_EXCEEDED` alır ve eski kota duvarını gösterir. Hak daha erken biter ama yanlış sayım olmaz; bu kullanıcılar yeni arayüzü (kilit kartı, bugünkü deste) görmez. Faz 3'ten önce eski sürüm payı Sentry/PostHog release dağılımından ölçülmeli.
 - **Not:** `weekly_legacy` (search 14) satırı ve `legacy_mood_access` muafiyeti (115) bu değişiklikten etkilenmez; limit yalnız `free` satırında değişir.
+
+## 8. Faz 3 öncesi uygulama sürümü payı (app_version) ölçümü
+
+**Karar notu (25 Eki):** 2.1.2 ve sonrası ücretsiz kullanıcı Pro Mode'a girmeye çalışınca **hard paywall** görüyor; yeni
+"kilit kartı / bugünkü ücretsiz arama" deneyimi yalnız `mood_offer` bayrağı açıkken, yeni istemcide çalışır. **Etkilenen grup 2.1.0 ve
+2.1.1** (eski kota duvarı, yerel AsyncStorage sayacı — bkz. §7 "eski istemci notu").
+
+**Faz 3 kararından ÖNCE ölç (PostHog, çalıştırılmadı):**
+```sql
+-- son 14 gün, benzersiz kullanıcı payı: sürüm dağılımı
+SELECT properties.$app_version AS app_version, count(DISTINCT person_id) AS users
+FROM events
+WHERE timestamp > now() - INTERVAL 14 DAY
+GROUP BY app_version ORDER BY users DESC
+```
+- Ücretsiz kullanıcıya daraltılmış payı ayrıca çıkar (aynı sorguya `is_pro`/`tier` kişi özelliği süzgeci; özellik adı PostHog'da doğrulanmalı).
+- Eşik önerisi (karar sizin): 2.1.0/2.1.1'in ücretsiz aktif kullanıcılar içindeki payı **> %20** ise Faz 3 hak değişikliğinden önce zorunlu
+  güncelleme/uyarı (ya da bu grubun hakkını ayrıca değerlendir) planı yapılır; çünkü bu grup arama hakkı 3→1 olduğunda 2. aramada sunucudan
+  `QUOTA_EXCEEDED` alır ve yeni teklifi hiç görmez.
+- Sonuç bu bölüme yazılır: `____ % (tarih ____)`. 31 Eki karar kapısının (bölüm 0) girdilerinden biridir.

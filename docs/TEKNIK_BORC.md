@@ -4347,3 +4347,33 @@ BİLİNÇLİ olarak açık bırakıldı.
     analitik paydası (arama başına doluluk, orphan oranı) bozuluyor. Çözüm: test hesaplarını
     işaretle (örn. `app_metadata.is_test`) veya test sonunda sil; analytics paydasından çıkar.
     Kod değişikliği yok, mimari karar gerektirir (işaret alanı).
+
+## MONEY-1C yetki taraması sonrası ertelenenler — 25 Ekim 2026 (migration 139/140/141 hazırlığı)
+
+Kaynak: `docs/investigations/MONEY-1C_GRANTS_AUDIT.md`. Kapsam kararı (25 Eki 11:25): 141 yalnız (a) tüm public tablolarda
+`anon/authenticated` `TRUNCATE, REFERENCES, TRIGGER` ve (b) `app_config, subscription_limits, promo_codes, lifetime_sales` yazma
+yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
+
+1. **(c) `anon` yazma yetkilerinin tek tek kaldırılması.** Diğer ~45 tabloda `anon` hâlâ `INSERT/UPDATE` (çoğunda `DELETE`) taşıyor;
+   yalnız RLS koruyor (`watchlist` 099/100 olayı bu sınıftandı). Her tablo için 2.1.0–2.1.3 istemcilerinin yazdığı kolon/rol seti çıkarılıp
+   (139'daki `mood_searches` analiz kalıbı) ayrı migration'larla daraltılmalı; anonim oturum `authenticated` rolüyle geldiği için `anon`
+   yazması büyük olasılıkla hiçbir yerde gerekmiyor. Tahmin 0,5–1 gün. **Neden şimdi değil:** her tablo ayrı istemci taraması ister, Faz 2b
+   kapsamı dışı.
+2. **(d) `supabase_admin` varsayılan ACL hizalaması.** `pg_default_acl`: `postgres` rolüyle oluşan tablolar artık yalnız `postgres + service_role`
+   alıyor, ama `supabase_admin` rolüyle oluşanlar (Dashboard/uzantı) hâlâ `arwdDxtm` ile `anon/authenticated`'a açılıyor. `ALTER DEFAULT PRIVILEGES FOR
+   ROLE supabase_admin IN SCHEMA public REVOKE ... FROM anon, authenticated` platform tarafında kısıtlı olabilir — Supabase doküman/destek
+   teyidi gerekir. Yeni tablo migration'ları `postgres` ile çalıştığı sürece risk düşük; "tablo oluşturunca açıkça `REVOKE`" kuralı
+   migration-guard'a eklenebilir.
+3. **`daily_refine_limit` ölü limit.** `subscription_limits.free.daily_refine_limit = 1` (diğer ücretli tier'larda -1) ama refine özelliği
+   uygulamada YOK ve **eklenmeyecek** (karar 25 Eki). `check_and_consume_quota('refine')` ve `check-quota` Edge Function'ının `'refine'` dalı,
+   `user_daily_quotas.refines_used` kolonu ve istemci `consumeQuota('refine')` tipi kullanılmayan koddur; `PaywallQuotaExhausted`
+   yorumunda "refine" geçer. Faz 3'te arama hakkı 3→1 olunca refine, aramadan AYRI sayaç olduğu için fiili hakkı artırmaz
+   (bkz. `MONEY-1C_FAZ3_ROLLOUT.md` §7). Temizlik ayrı iş: kolon/dal/tip silmek migration ve istemci değişikliği gerektirir.
+4. **Bu taramada çıkan ek bulgular (karar bekler):**
+   - `increment_promo_usage(p_code text)` SECURITY DEFINER ve `authenticated`'a EXECUTE açık: oturum açmış herhangi bir kullanıcı
+     herhangi bir promo kodunun `current_uses` sayacını artırabilir (kodları tüketme/DoS). Doğrulama (sahiplik/geçerli satın alma) yok.
+     Çözüm: `REVOKE EXECUTE ... FROM authenticated` (yalnız service_role çağırmalı) — çağıran kod yolu önce doğrulanmalı.
+   - `claim_lifetime_spot` SECURITY DEFINER ama `search_path` sabitlenmemiş (`SET search_path` yok). `authenticated` EXECUTE'u kapalı
+     (yalnız service_role), bu yüzden risk düşük; yine de 109 deseniyle (`SET search_path = ''`) hizalanmalı.
+   - 8 görünüm (view) bu taramaya dahil edilmedi; `anon/authenticated` yetkileri ayrıca bakılmalı. `mood_searches` ve diğer tablolarda
+     `MAINTAIN` (PG17 `m`) yetkisi de taranmadı.

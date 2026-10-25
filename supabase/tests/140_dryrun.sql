@@ -2,7 +2,7 @@
 -- 140 DRY-RUN (MONEY-1C) — mood_searches gereksiz tablo yetkileri
 -- TEK islem: BEGIN; <140 tam metni>; <testler>; RAISE EXCEPTION 'DRYRUN_RESULTS ...'; ROLLBACK. Kalici degisiklik birakmaz.
 -- 139dan bagimsiz: 139 uygulanmamisken de uygulanmisken de gecmeli (SELECT/INSERT/UPDATE yetkileri 140 oncesi/sonrasi AYNI olmali).
--- DURUM: HAZIRLANDI, CANLI DBye KARSI CALISTIRILMADI (acik onay ister).
+-- DURUM: canli DBye karsi BEGIN..RAISE dry-run olarak kosuldu (25 Eki): 4/4 PASS; apply YOK.
 -- ============================================================
 BEGIN;
 SET LOCAL lock_timeout = '5s';
