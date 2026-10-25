@@ -272,3 +272,20 @@ Ters sıra (önce fonksiyon) çalışmaz: claim RPC yok → fail-closed 503, ama
 | D-4 — rollback BEGIN/COMMIT | `db push` ile uygulanacaksa BEGIN/COMMIT satırları çıkarılmalı (not). |
 | Ek: `CHECK (claim_attempts >= 0)` | **Eklendi** (T14). |
 | Deploy öncesi `pg_dump` (`mood_searches`, `user_daily_quotas`, `\dp`) | Deploy planına eklendi. |
+
+## 15. Onaylı kararlar (25 Eki 10:20) ve doğrulama sonuçları
+
+**K-1 (kapandı).** 2.1.0/2.1.1/2.1.2/2.1.3 (tag `v2.1.1-ota-final`, `89bde78` = 2.1.2, `release/2.1.0`, `release/2.1.1`, `build/preview-2.1.3`) `mood_searches`'e yalnız
+`insert({user_id})` (quotaEngine) ve `update({recommended_film_ids, rpc_version[, error_code]}).eq('id').select('id')` (recommendations, 2 çağrı) yazar; upsert yok.
+Yeni yetkiler (INSERT: `user_id`; UPDATE: 3 kolon) bunların üst kümesi → 139'a işlendi. Rollback dosyası güncellendi.
+
+**Canlı dry-run (chosy ai, `supabase db query --linked`, BEGIN…RAISE EXCEPTION; apply YOK):** 15/15 PASS (T15 canlı RLS ile: JWT sub = users.auth_id).
+İlk koşuda T15 FAIL verdi: canlıda RLS (`user_id = auth_user_id()`) var, stub'da yok → test JWT claim'i kurar hale getirildi (testin eksiği, migration'ın değil).
+Rollback kanıtı: koşu sonrası `mood_searches` 121 satır, md5 aynı (`923ac0b9…`), 18 kolon, 3 fonksiyon YOK, `authenticated` INSERT kolonu 18, son migration 138.
+Ön durum kaydı: `C:\Users\mertk\moodflix-rollback\139_pre_state_snapshot.txt`. **Gerçek `pg_dump` alınamadı** (pg_dump/psql/Docker yok) — apply öncesi Dashboard yedeği/PITR ya da `pg_dump` kurulu bir makine gerekir.
+
+**Eşzamanlılık.** Supabase branch açılamadı: `PaymentRequiredException: Branching is supported only on the Pro plan or above`. Yerine gerçek Postgres 18.4 (embedded-postgres, scratchpad, repo bağımlılığı DEĞİL, stub şema + 139) üzerinde **10 ayrı bağlantı** ile:
+S1 aynı id → 1 claimed/9 in_progress, kota 1, tek satır · S2 completed sonrası → 10 replay, kota 1 · S3 bayat pending ×3 tur → her turda tek sahiplenen, ilk 2 bedava, 3. tüketir (used 1,1,2) ·
+S4 10 farklı id, limit 3 → 3 claimed/7 quota_denied, kota 3 · S5 10 paralel finish(refund) → tek sonuçlandırma, tek iade. **5/5 PASS.** Şema stub (gerçek kolon/RLS farkı canlı dry-run ile kapatıldı).
+
+**Ek bulgu (kapsam dışı, karar bekler):** canlıda `anon` ve `authenticated` `mood_searches` üzerinde `DELETE, TRUNCATE, REFERENCES, TRIGGER` tablo yetkisine sahip (RLS yalnız DELETE'i kapatır; TRUNCATE RLS'i atlar, PostgREST'ten çağrılamaz ama yetki gereksiz). 139 yalnız INSERT/UPDATE'i daraltır.

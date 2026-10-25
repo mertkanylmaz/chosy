@@ -33,10 +33,9 @@
 --   failed           → claimed + yeniden tüketir (satın alma sonrası bekleyen arama)
 --
 -- YETKİ DARALTMA (onaylı): istemci UPDATE yetkisi yalnız recommended_film_ids,
---   rpc_version, error_code kolonlarına iner (recommendations.ts'in yazdığı tek
---   kolonlar). Yeni durum kolonları istemciden yazılamaz. INSERT yetkisine DOKUNULMADI
---   (onay kapsamı dışı; bkz. belge): istemci kendi adına satır ekleyebilir ama bu
---   yalnız kendi arama kimliğini etkiler, kota ayrı tabloda ve 137 ile kilitli.
+--   rpc_version, error_code kolonlarına, istemci INSERT yetkisi yalnız user_id kolonuna
+--   iner (2.1.0–2.1.3 istemcilerinin yazdığı tek kolonlar; upsert yok). Yeni durum
+--   kolonları istemciden yazılamaz (migration-guard K-1: bayat-pending ile kota atlatma).
 --
 -- BİLİNEN SINIRLAR
 --   · PARSE_FAILED iade edilmez (refundPolicy); failed + yeniden sahiplenme yeniden tüketir.

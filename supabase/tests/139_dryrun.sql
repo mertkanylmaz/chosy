@@ -5,11 +5,13 @@
 -- Sonuclar TEMP TABLE dryrun_results'a yazilir. Son satir: test='zz_summary', result='ALL PASS' | 'FAILURES'.
 -- Sonuclar ayrica DRYRUN_RESULTS hata mesaji olarak doner (beklenen: hata ile biter, islem geri alinir).
 -- Kaynak: supabase/migrations/139_mood_search_idempotency.sql (asagiya AYNEN gomulu; fark kontrolu: bkz. rapor).
--- DURUM: HAZIRLANDI, CANLI DB'YE KARSI CALISTIRILMADI. Calistirmak acik onay ister.
+-- DURUM: canli DB'ye karsi calistirma icin hazir (BEGIN..RAISE EXCEPTION; kalici degisiklik birakmaz). Sonuc: bkz. tasarim belgesi bolum 15 (canli: 15/15 PASS, 25 Eki).
 --   Yerelde gercek Postgres motoru (pglite) uzerinde stub sema ile calistirildi; bkz. tasarim belgesi bolum 12.
 -- Test edilemeyen: gercek eszamanlilik (tek islem) -> supabase/functions/_shared/moodClaim.concurrency.test.ts
 -- ============================================================
 BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
 
 -- ===================== 139 TAM METNI (baslangic) =====================
 -- ============================================================================
@@ -47,10 +49,9 @@ BEGIN;
 --   failed           → claimed + yeniden tüketir (satın alma sonrası bekleyen arama)
 --
 -- YETKİ DARALTMA (onaylı): istemci UPDATE yetkisi yalnız recommended_film_ids,
---   rpc_version, error_code kolonlarına iner (recommendations.ts'in yazdığı tek
---   kolonlar). Yeni durum kolonları istemciden yazılamaz. INSERT yetkisine DOKUNULMADI
---   (onay kapsamı dışı; bkz. belge): istemci kendi adına satır ekleyebilir ama bu
---   yalnız kendi arama kimliğini etkiler, kota ayrı tabloda ve 137 ile kilitli.
+--   rpc_version, error_code kolonlarına, istemci INSERT yetkisi yalnız user_id kolonuna
+--   iner (2.1.0–2.1.3 istemcilerinin yazdığı tek kolonlar; upsert yok). Yeni durum
+--   kolonları istemciden yazılamaz (migration-guard K-1: bayat-pending ile kota atlatma).
 --
 -- BİLİNEN SINIRLAR
 --   · PARSE_FAILED iade edilmez (refundPolicy); failed + yeniden sahiplenme yeniden tüketir.
@@ -795,6 +796,9 @@ DECLARE
   v_id uuid; v_n int; v_fail text := '';
   c text;
 BEGIN
+  -- Canli RLS (user_id = auth_user_id()) icin istemci kimligi: JWT sub = users.auth_id (stub semada RLS yok, zararsiz).
+  PERFORM set_config('request.jwt.claims',
+    json_build_object('sub', (SELECT auth_id FROM public.users WHERE id = u), 'role', 'authenticated')::text, true);
   SET LOCAL ROLE authenticated;
   -- eski INSERT sekli
   BEGIN
