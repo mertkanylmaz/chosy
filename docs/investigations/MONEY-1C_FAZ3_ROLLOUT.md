@@ -105,4 +105,32 @@ GROUP BY app_version ORDER BY users DESC
 - Eşik önerisi (karar sizin): 2.1.0/2.1.1'in ücretsiz aktif kullanıcılar içindeki payı **> %20** ise Faz 3 hak değişikliğinden önce zorunlu
   güncelleme/uyarı (ya da bu grubun hakkını ayrıca değerlendir) planı yapılır; çünkü bu grup arama hakkı 3→1 olduğunda 2. aramada sunucudan
   `QUOTA_EXCEEDED` alır ve yeni teklifi hiç görmez.
-- Sonuç bu bölüme yazılır: `____ % (tarih ____)`. 31 Eki karar kapısının (bölüm 0) girdilerinden biridir.
+- Sonuç bu bölüme yazılır. 31 Eki karar kapısının (bölüm 0) girdilerinden biridir.
+
+### 8.1 Ölçüm sonucu (25 Eki 2026, PostHog, son 14 gün)
+
+Aktif = `app_launched` / `Application Opened` / `Application Became Active` olayı atan benzersiz kişi. OTA = `ota_update_found` / `ota_update_fetched`.
+
+| app_version / runtime | aktif | OTA found | OTA fetched | son görülme |
+|---|---|---|---|---|
+| 2.1.1 / 2.1.1 | 25 | 19 | 19 | 24 Eki |
+| 2.1.0 / 2.1.0 | 12 | 2 | 2 | 20 Eki |
+| 2.1.2 / 2.1.2 | 5 | 2 | 2 | 25 Eki |
+| 2.1.3 / 2.1.3 | 2 | 0 | 0 | — |
+| 2.1.1 / (runtime boş) | 1 | 0 | 0 | — |
+
+- **Etkilenen grup (2.1.0 + 2.1.1): 38 / 45 aktif kişi ≈ %84** (2.1.1 = 25+1 runtime'ı boş satır, 2.1.0 = 12). Runtime'ı boş satır hariç tutulursa 37/44 ≈ %84. Eşiğin (%20) çok üstünde.
+- **Sınır 1 — ücretsiz süzgeci yapılamadı:** PostHog kişi özelliklerinde tier/is_pro alanı YOK (yalnız `app_user_id` ve `$` özellikleri). Ücretsiz payı için `app_user_id` → Supabase `users.subscription_tier` birleştirmesi gerekir (PostHog dışı, ayrı ölçüm). Ücretli kullanıcı payı küçük olduğundan ücretsiz payın da benzer yüksek olması beklenir ama KANITLANMADI.
+- **Sınır 2 — örneklem küçük:** toplam 45 aktif kişi. Yüzdeler yön gösterir, kesin değil.
+- **OTA erişimi:** 2.1.1'de 19/25 (%76) OTA'yı bulup indirmiş (13'ü `embedded` kaynaklı başlangıç kaydı, 14 ayrı `ota` update_id). **2.1.0'da yalnız 2/12 (%17)** güncelleme bulmuş; OTA olayı atan 2.1.0 kullanıcılarının son güncellemesi 9 Eki. 2.1.0 grubunun çoğu OTA ile yeni istemci koduna ULAŞMIYOR görünüyor (kanal/runtime farkı ya da olay hiç atılmıyor — hangisi olduğu doğrulanmadı).
+
+### 8.2 KURAL — OTA erişimi doğrulanmadan açma
+
+Etkilenen grup (2.1.0/2.1.1) aktif kullanıcıların **> %20**'sidir (ölçülen ≈ %84). Bu yüzden:
+
+1. **Faz 3 hak değişikliği (`free` search 3 → 1) ve `mood_offer` bayrağı, aşağıdakiler doğrulanmadan AÇILMAZ:**
+   - (a) 2.1.0 ve 2.1.1 runtime'ına yayımlanmış OTA'nın bu sürümlerde gerçekten indirildiği gösterilmeli: test cihazında 2.1.0 ve 2.1.1 ile `ota_update_fetched` + yeni `update_id` ile açılış; PostHog'da bu iki sürüm için son 7 günde `found ≥ %70` ve `fetched ≥ %70` (aktife göre).
+   - (b) OTA ile gelen kodun yeni kota/paywall akışını gerçekten çalıştırdığı doğrulanmalı (`mood_deck_*` / `mood_offer_*` olayları o sürümlerde görülmeli).
+2. (a) sağlanamıyorsa seçenekler (karar sizin): zorunlu güncelleme/uyarı, ya da bu grubun hakkını ayrıca değerlendirme. Sağlanmadan hak 3→1 yapılırsa grup 2. aramada sunucudan `QUOTA_EXCEEDED` alır ve yeni teklifi hiç görmez (§7).
+3. Ücretsiz payı, `app_user_id` ↔ `users.subscription_tier` birleştirmesiyle ayrıca ölçülür; sonuç ve tarih bu bölüme eklenir. Birleştirme yapılmadan kural, tüm aktif kullanıcı payına göre uygulanır.
+4. Bu ölçüm 31 Eki karar kapısında (bölüm 0) yeniden alınır; sayılar 25 Eki anlık görüntüsüdür.

@@ -1,10 +1,23 @@
-# MONEY-1C — 26 Ekim sabahı uygulama runbook'u (HAZIRLANDI — HİÇBİR ADIM ÇALIŞTIRILMADI)
+# MONEY-1C — iki günlük uygulama runbook'u: 26 Eki (139, 140, parse-mood v43) + 27 Eki (141, 142) (HAZIRLANDI — HİÇBİR ADIM ÇALIŞTIRILMADI)
 
-Durum: yazıldı 25 Eki 2026. **Her adım ayrı onay ister; sonraki adıma geçmeden önce doğrulama sorguları yeşil olmalı.**
+Durum: yazıldı 25 Eki 2026, 12:05 kararına göre iki güne bölündü. **Her adım ayrı onay ister; sonraki adıma geçmeden önce doğrulama sorguları yeşil olmalı.**
 Proje: `chosy ai` (`xpcwihldlnlmyopjubdc`). Diğer proje (`shit`) ile ilgisi yok. Komutlar PowerShell; sorgular `supabase db query --linked` ya da Dashboard SQL editor (SADECE salt-okunur doğrulama — migration'lar yalnız `supabase db push`, CLAUDE.md kural 3).
 
-Kapsam: **139** (idempotency + istemci INSERT/UPDATE daraltma) → **140** (mood_searches 4 yetki) → **parse-mood deploy** → (sonra, AYRI) istemci build → (sonra, AYRI) **141**.
+**Pencere:** TR **12:00–14:00** (ABD sabahı; Türkiye öğlen). Bu saatler Sentry/PostHog akışının izlenebildiği ve ABD trafiğinin henüz tepede olmadığı aralıktır. (Önceki taslaktaki "04:00–08:00" ifadesi GEÇERSİZDİR.) Pencere dışında uygulama yapılmaz.
+
+| Gün | Kapsam | Koşul |
+|---|---|---|
+| **26 Eki** | **139** (idempotency + istemci INSERT/UPDATE daraltma) → **140** (mood_searches 4 yetki) → **parse-mood v43 deploy** → smoke test **A** | Bölüm 0 ön kontrolleri yeşil |
+| **27 Eki** | **141** (tüm tablolarda 3 yetki + 4 tabloda yazma) → **142** (`increment_promo_usage` EXECUTE daraltma + `claim_lifetime_spot` `search_path`) | **26 Eki doğrulaması temiz** (Bölüm B ön koşulu) |
+| build sonrası (29–30 Eki preview build + cihaz testi) | istemci build + bayrak + smoke test **B** (claim-first) | Bu runbook'un dışında, ayrı onay |
+
 Beklenen ürün etkisi: yeni istemci yok iken kullanıcıya görünür değişiklik YOK (eski istemciler `client_search_id` göndermez → eski akış).
+
+**Bölüm A = 26 Eki** (aşağıda Bölüm 0, Adım 1–3, A geri alma tetikleyicileri). **Bölüm B = 27 Eki** (Adım 5, B geri alma tetikleyicileri). Her bölümün kendi doğrulaması ve geri alma tetikleyicisi vardır.
+
+---
+
+# BÖLÜM A — 26 EKİ (139, 140, parse-mood v43)
 
 ---
 
@@ -14,9 +27,9 @@ Beklenen ürün etkisi: yeni istemci yok iken kullanıcıya görünür değişik
 |---|---|---|---|
 | 0.1 | Yedek tarihi | Dashboard → Database → Backups | Son yedek < 24 sa. (CLI tarihi göstermiyor: `WALG=true`, `PITR=false`). Tarihi not et: `____` |
 | 0.2 | Dal ve temizlik | `git switch feat/money-1c; git status --short; git rev-parse HEAD` | dal `feat/money-1c`, çıktı BOŞ. **Kirli/yanlış dal → DUR.** SHA'yı kaydet: `____` (bu belgeyi içeren commit: `git log -1 -- docs/investigations/MONEY-1C_DEPLOY_RUNBOOK.md`) |
-| 0.3 | Migration durumu | `supabase migration list` | Local 139, 140, 141 — Remote en yüksek **138**. Remote'ta 138'den büyük bir sürüm varsa DUR (CLAUDE.md "migration numaralandırma") |
+| 0.3 | Migration durumu | `supabase migration list` | Local 139, 140, 141, 142 — Remote en yüksek **138**. Remote'ta 138'den büyük bir sürüm varsa DUR (CLAUDE.md "migration numaralandırma") |
 | 0.4 | Ön durum kaydı | aşağıdaki sorgu P0 | `rows=121`, `md5=923ac0b9cc5ffabc4fa62e1f5056e657`, `legacy_md5=dee4b541c8401acc4553fa4a56f72935` (created_at ≤ 2026-10-25 03:56:25.671135+00), `acl_md5=7547c9658ede91689da90ed8bc374d4f`, son migration `138`. **Yeni satır girmişse** (rows>121) yalnız `legacy_md5` (≤ sınır) ve `acl_md5` karşılaştırılır; `md5` (tüm satır) 139'dan sonra kolon eklendiği için ZATEN değişir |
-| 0.5 | Dosya kayıtları | `Test-Path C:\Users\mertk\moodflix-rollback\139_rollback.sql, ...\140_rollback.sql, ...\141_rollback.sql, ...\139_pre_state_snapshot.txt, ...\141_pre_state.txt` | hepsi `True` |
+| 0.5 | Dosya kayıtları | `Test-Path C:\Users\mertk\moodflix-rollback\139_rollback.sql, ...\140_rollback.sql, ...\141_rollback.sql, ...\142_rollback.sql, ...\139_pre_state_snapshot.txt, ...\141_pre_state.txt, ...\142_pre_state.txt` | hepsi `True` |
 | 0.6 | parse-mood canlı sürüm | `supabase functions list` | `parse-mood` VERSION **42**, UPDATED 2026-10-24 19:30 UTC |
 | 0.7 | Canlı = depodaki önceki kaynak | boş bir geçici proje dizininde (`mkdir $env:TEMP\pm42; cd $env:TEMP\pm42; supabase init; supabase link --project-ref xpcwihldlnlmyopjubdc; supabase functions download parse-mood --use-api`) indir; `git worktree add $env:TEMP\pm-prev 71d32e0` ile aynı commit'in `supabase/functions/parse-mood` + `_shared` dizinleriyle `git diff --no-index` karşılaştır. (Çalışma kopyasını bozmamak için ana depoda indirme YAPMA.) | fark yok. Fark varsa DUR (geri alma hedefi belirsiz — `project_deploy_durumu_bibledan_okunmaz`) |
 | 0.8 | Testler | `npm run typecheck` (baseline 14), `npm run test:mood-offer` (94), `npm run test:mood-claim` (9) | yeşil |
@@ -42,10 +55,10 @@ select
 
 ```powershell
 New-Item -ItemType Directory -Force $env:TEMP\mig-hold | Out-Null
-Move-Item supabase\migrations\140_*.sql, supabase\migrations\141_*.sql $env:TEMP\mig-hold\
+Move-Item supabase\migrations\140_*.sql, supabase\migrations\141_*.sql, supabase\migrations\142_*.sql $env:TEMP\mig-hold\
 supabase db push --dry-run          # YALNIZ 139 listelenmeli; başka dosya varsa DUR
 supabase db push                    # onay: y
-Move-Item $env:TEMP\mig-hold\140_*.sql, $env:TEMP\mig-hold\141_*.sql supabase\migrations\
+Move-Item $env:TEMP\mig-hold\140_*.sql, $env:TEMP\mig-hold\141_*.sql, $env:TEMP\mig-hold\142_*.sql supabase\migrations\
 git status --short                  # BOŞ olmalı
 ```
 
@@ -88,10 +101,10 @@ select count(*) as n, md5(string_agg(concat_ws('|', id, user_id, search_date, se
 ## Adım 2 — 140 (mood_searches DELETE/TRUNCATE/REFERENCES/TRIGGER)
 
 ```powershell
-Move-Item supabase\migrations\141_*.sql $env:TEMP\mig-hold\
+Move-Item supabase\migrations\141_*.sql, supabase\migrations\142_*.sql $env:TEMP\mig-hold\
 supabase db push --dry-run          # YALNIZ 140
 supabase db push
-Move-Item $env:TEMP\mig-hold\141_*.sql supabase\migrations\
+Move-Item $env:TEMP\mig-hold\141_*.sql, $env:TEMP\mig-hold\142_*.sql supabase\migrations\
 git status --short                  # BOŞ
 ```
 **Doğrulama:**
@@ -141,9 +154,13 @@ select count(*) filter (where client_search_id is null and status is not null) a
 - Sentry (org `chosy`, ortam production), son 1 sa: `function:parse-mood` etiketli hatalar; özellikle **`MOOD_FINISH_FAILED`, `QUOTA_CLAIM_FAILED`, `QUOTA_REFUND_FAILED`, `PARSE_FAILED`**; ayrıca 2.1.x istemcilerinde `QUOTA_SEARCH_RECORD_FAILED` ve "`mood_searches UPDATE failed`" (izin hatası 42501 = R1).
 - Edge log: Dashboard → Edge Functions → parse-mood → Logs (5xx oranı, `BOOT_ERROR`, süre). Beklenen: deploy öncesiyle aynı hata oranı.
 
-## Adım 4 — (AYRI GÜN/ONAY) istemci build + bayrak + smoke test B (claim yolu)
+**26 Eki sonu — 27 Eki kapısı (24 sa):** 26 Eki Adım 3'ten itibaren 24 saat boyunca R1–R7 tetikleyicilerinden hiçbiri çalışmamış, Sentry'de `parse-mood` / `42501` / `QUOTA_*` yeni hata yok, eski istemci invaryantı sorgusu (yukarıda) hâlâ 0/0 ise kapı "temiz"dir. Kapı temiz değilse Bölüm B yapılmaz; 141/142 ertelenir.
 
-Bu runbook'un kapsamı dışında kalan adım; kayıt amaçlı. Build, `2e4314b` ve sonrasını içeren commit'ten alınır. Bayrak yalnız `mood_offer_testers`.
+---
+
+## Adım 4 — smoke test B (claim yolu) — **BUILD SONRASI** (29–30 Eki preview build + cihaz testi; 26 Eki'de YAPILMAZ)
+
+Bu runbook'un 26/27 Eki kapsamı dışında kalan adım; kayıt amaçlı. 2.1.3 build'inde `client_search_id` yoktur (claim-first istemci içinde değil), bu yüzden claim imzası (`status=completed`, `quota_consumed=true`) ancak yeni build ile görülür. Build, `2e4314b` ve sonrasını içeren commit'ten alınır. Bayrak yalnız `mood_offer_testers`.
 **Smoke test B — yeni istemci (tester):** bir arama yap → 
 ```sql
 select client_search_id is not null as has_id, status, quota_consumed, claim_attempts,
@@ -153,29 +170,11 @@ select client_search_id is not null as has_id, status, quota_consumed, claim_att
 ```
 Aynı aramayı ağı keserek tekrar dene → ikinci satır OLUŞMAZ, `searches_used` artmaz (idempotency).
 
-## Adım 5 — (AYRI, EN SON) 141 (tüm tablolarda TRUNCATE/REFERENCES/TRIGGER + 4 tabloda yazma)
+## Geri alma tetikleyicileri — BÖLÜM A (26 Eki: R1–R7)
 
-Ön koşul: Adım 1–3 en az 24 sa sorunsuz; Sentry'de yeni 42501 / RLS hatası yok. `app_config` okuma (uygulama açılışında `remoteConfig`) etkilenmemeli.
-```powershell
-supabase db push --dry-run          # YALNIZ 141
-supabase db push
-```
-```sql
-select max(version) from supabase_migrations.schema_migrations;   -- 141
--- bütün public tablolarda anon/authenticated için TRUNCATE/REFERENCES/TRIGGER = 0
-select count(*) from pg_class c, (values ('anon'),('authenticated')) a(r), (values ('TRUNCATE'),('REFERENCES'),('TRIGGER')) b(p)
- where c.relnamespace='public'::regnamespace and c.relkind in ('r','p') and has_table_privilege(r, c.oid, p);   -- 0
--- 4 tabloda yazma yok
-select c.relname, r, p from pg_class c, (values ('anon'),('authenticated')) a(r), (values ('INSERT'),('UPDATE'),('DELETE')) b(p)
- where c.relnamespace='public'::regnamespace and c.relname in ('app_config','subscription_limits','promo_codes','lifetime_sales') and has_table_privilege(r, c.oid, p);   -- 0 satır
-```
-Smoke: uygulamayı soğuk aç (remoteConfig `app_config` SELECT), bir satın alma ekranı aç (limits/promo okuma), bir arama.
+Rollback dosyaları repo dışı: `C:\Users\mertk\moodflix-rollback\`. Veritabanı geri alması da `supabase db push` ile **yeni numaralı migration** olarak uygulanır (numara: `supabase migration list` Local+Remote'un en yükseğinden +1; 142 dosyası depoda olduğu için ilk boş numara **143**, örn. `143_rollback_139.sql`; dosyadaki `BEGIN/COMMIT` satırları çıkarılır). Önce fonksiyon, sonra şema geri alınır (139'u geri almadan önce parse-mood eski sürüme dönmeli).
 
----
-
-## Geri alma tetikleyicileri
-
-Rollback dosyaları repo dışı: `C:\Users\mertk\moodflix-rollback\`. Veritabanı geri alması da `supabase db push` ile **yeni numaralı migration** olarak uygulanır (örn. `142_rollback_139.sql`; dosyadaki `BEGIN/COMMIT` satırları çıkarılır). Önce fonksiyon, sonra şema geri alınır (139'u geri almadan önce parse-mood eski sürüme dönmeli).
+R1–R7 aşağıdadır; R8 ve R9 Bölüm B'dedir.
 
 | # | Belirti | Tetik eşiği | Geri alma |
 |---|---|---|---|
@@ -186,15 +185,102 @@ Rollback dosyaları repo dışı: `C:\Users\mertk\moodflix-rollback\`. Veritaban
 | R5 | `claim_mood_search` çağrılabilir (anon/auth `EXECUTE`) görünüyor ya da V1.3 sonuçları beklenenden farklı | herhangi biri | DUR; `REVOKE EXECUTE ... FROM PUBLIC, anon, authenticated` (migration olarak) — güvenlik kaçağı olarak ele al |
 | R6 | 139 doğrulamalarından biri (V1.1–V1.5) kırmızı | herhangi biri | Adım 2/3'e GEÇME. Tam geri alma: `139_rollback.sql` (kolonlar düşer; 139 sonrası oluşan idempotency verisi kaybolur — henüz istemci yok, kayıp ≈ 0) |
 | R7 | 140 sonrası `delete-account` ya da başka service_role akışı `mood_searches` silemiyor | herhangi biri | `140_rollback.sql` (4 yetkiyi geri verir; veri etkisi yok) |
-| R8 | 141 sonrası uygulama açılışında `app_config` okunamıyor / satın alma ekranı limitleri okuyamıyor / Sentry `permission denied for table` | herhangi biri | `141_rollback.sql` (yalnız 141 öncesi durumu birebir kurar; ön durum `141_pre_state.txt`) |
 
-## Kayıt tablosu (uygularken doldur)
+### Kayıt tablosu — Bölüm A (26 Eki, uygularken doldur)
 | Adım | Zaman (UTC) | Sonuç | Doğrulama | Notlar |
 |---|---|---|---|---|
 | 0 ön kontroller | | | | yedek tarihi, SHA |
 | 1 — 139 | | | V1.1–V1.5 | |
 | 2 — 140 | | | | |
 | 3 — parse-mood v43 | | | smoke A, Sentry | |
-| 5 — 141 | | | | |
+| 24 sa kapısı | | temiz / değil | R1–R7 + invaryant sorgusu | Bölüm B'ye geçiş kararı |
+
+---
+
+# BÖLÜM B — 27 EKİ (141 + 142) — YALNIZ "26 Eki doğrulaması temiz" ise
+
+**Ön koşul (hepsi):**
+1. 26 Eki doğrulaması temiz: Bölüm A kayıt tablosunda "24 sa kapısı = temiz"; R1–R7 tetiklenmedi; Sentry'de 26 Eki 12:00'den beri `42501` / RLS / `permission denied` / `QUOTA_*` yeni hata yok.
+2. Aynı pencere: TR 12:00–14:00. Bölüm A'dan en az 24 sa geçmiş.
+3. Dal/temizlik (0.2) tekrar: `feat/money-1c`, `git status --short` BOŞ.
+4. `supabase migration list` → Remote en yüksek **140**, Local 141 ve 142 bekliyor. Başka sürüm varsa DUR.
+5. Canlı dry-run'lar yeşil (bugün tekrar): `supabase db query --linked -f supabase\tests\141_dryrun.sql` (5/5) ve `...\142_dryrun.sql` (5/5), `zz_summary | ALL PASS`.
+6. 142 ön durumu `C:\Users\mertk\moodflix-rollback\142_pre_state.txt` ile aynı (aşağıdaki P1 sorgusu): `increment_promo_usage` ACL'sinde `anon`/`authenticated` var (daraltılacak), `claim_lifetime_spot` `proconfig` boş (`search_path` yok), `lifetime_sale_number` last_value 4, `lifetime_sales` 0 satır. **Farklıysa DUR** (biri arada satış yapmış / ACL değişmiş olabilir; yeniden değerlendir).
+7. Rollback dosyaları var: `141_rollback.sql`, `142_rollback.sql`, `141_pre_state.txt`, `142_pre_state.txt`.
+
+**P1 — 142 ön durum sorgusu (salt-okunur):**
+```sql
+select p.proname, p.prosecdef, p.proacl::text as acl, p.proconfig::text as cfg, md5(p.prosrc) as src_md5, pg_get_userbyid(p.proowner) as owner
+  from pg_proc p where p.pronamespace='public'::regnamespace and p.proname in ('increment_promo_usage','claim_lifetime_spot') order by 1;
+select (select last_value from public.lifetime_sale_number) as seq_last, (select count(*) from public.lifetime_sales) as sales;
+```
+
+## Adım 5 — 141 (tüm tablolarda TRUNCATE/REFERENCES/TRIGGER + 4 tabloda yazma)
+
+`app_config` okuma (uygulama açılışında `remoteConfig`) etkilenmemeli.
+```powershell
+New-Item -ItemType Directory -Force $env:TEMP\mig-hold | Out-Null
+Move-Item supabase\migrations\142_*.sql $env:TEMP\mig-hold\
+supabase db push --dry-run          # YALNIZ 141 listelenmeli; başka dosya varsa DUR
+supabase db push                    # onay: y
+Move-Item $env:TEMP\mig-hold\142_*.sql supabase\migrations\
+git status --short                  # BOŞ
+```
+**Doğrulama (141):**
+```sql
+select max(version) from supabase_migrations.schema_migrations;   -- 141
+-- bütün public tablolarda anon/authenticated için TRUNCATE/REFERENCES/TRIGGER = 0
+select count(*) from pg_class c, (values ('anon'),('authenticated')) a(r), (values ('TRUNCATE'),('REFERENCES'),('TRIGGER')) b(p)
+ where c.relnamespace='public'::regnamespace and c.relkind in ('r','p') and has_table_privilege(r, c.oid, p);   -- 0
+-- 4 tabloda yazma yok
+select c.relname, r, p from pg_class c, (values ('anon'),('authenticated')) a(r), (values ('INSERT'),('UPDATE'),('DELETE')) b(p)
+ where c.relnamespace='public'::regnamespace and c.relname in ('app_config','subscription_limits','promo_codes','lifetime_sales') and has_table_privilege(r, c.oid, p);   -- 0 satır
+```
+Smoke: uygulamayı soğuk aç (remoteConfig `app_config` SELECT), bir satın alma ekranı aç (limits/promo okuma), bir arama (eski akış, A imzası).
+
+## Adım 6 — 142 (`increment_promo_usage` EXECUTE daraltma + `claim_lifetime_spot` `search_path=''`)
+
+141 doğrulaması yeşil olmadan başlama. Önkoşul taraması (25 Eki): `increment_promo_usage` için istemci/edge çağrısı YOK; `claim_lifetime_spot` yalnız service_role istemcili `process-lifetime-purchase`, `revenuecat-webhook` ve DB fonksiyonu `activate_referral` (DEFINER, owner postgres) tarafından çağrılıyor — authenticated JWT'li çağıran yok.
+```powershell
+supabase db push --dry-run          # YALNIZ 142 listelenmeli
+supabase db push
+git status --short                  # BOŞ
+```
+**Doğrulama (142):**
+```sql
+select max(version) from supabase_migrations.schema_migrations;   -- 142
+-- V6.1 ACL: PUBLIC/anon/authenticated EXECUTE yok, service_role var — iki fonksiyonda da
+select p.proname,
+       exists (select 1 from aclexplode(p.proacl) a where a.grantee = 0 and a.privilege_type='EXECUTE') as public_x,
+       has_function_privilege('anon', p.oid, 'EXECUTE') as anon_x,
+       has_function_privilege('authenticated', p.oid, 'EXECUTE') as auth_x,
+       has_function_privilege('service_role', p.oid, 'EXECUTE') as svc_x
+  from pg_proc p where p.pronamespace='public'::regnamespace and p.proname in ('increment_promo_usage','claim_lifetime_spot') order by 1;
+-- beklenen: ikisinde de public_x=false, anon_x=false, auth_x=false, svc_x=true
+-- V6.2 claim_lifetime_spot: DEFINER + search_path=""
+select proname, prosecdef, proconfig, pg_get_userbyid(proowner) as owner from pg_proc
+ where pronamespace='public'::regnamespace and proname='claim_lifetime_spot';   -- prosecdef=true, proconfig={search_path=""}, owner=postgres
+-- V6.3 gerçek veri ve sayaç dokunulmadı
+select (select last_value from public.lifetime_sale_number) as seq_last, (select count(*) from public.lifetime_sales) as sales;   -- P1 ile aynı (4, 0)
+```
+Smoke 142: canlı satış akışı (`process-lifetime-purchase` / `revenuecat-webhook` → `claim_lifetime_spot`) bu pencerede gerçek satın alma gerektirir; **gerçek satış tetiklenmez**. Bunun yerine: Sentry'de `process-lifetime-purchase` / `revenuecat-webhook` edge hatalarını izle (bir sonraki gerçek satın almada `permission denied for function` veya `relation ... does not exist` çıkmamalı) ve dry-run T4'ün (tam yol, geçici sequence) canlıda 5/5 geçtiğini referans al.
+
+**Sentry / edge log (ilk 30 dk, sonra 2 sa):** `permission denied for function`, `increment_promo_usage`, `claim_lifetime_spot`, `process-lifetime-purchase`, `revenuecat-webhook`; 42501 sayısı 141 öncesine göre artmamalı.
+
+## Geri alma tetikleyicileri — BÖLÜM B (27 Eki: R8–R9)
+
+Numara kuralı Bölüm A ile aynı: DB geri alması yeni numaralı migration olarak (ilk boş numara **143**; `BEGIN/COMMIT` satırlarını çıkar).
+
+| # | Belirti | Tetik eşiği | Geri alma |
+|---|---|---|---|
+| R8 | 141 sonrası uygulama açılışında `app_config` okunamıyor / satın alma ekranı limitleri okuyamıyor / Sentry `permission denied for table` | herhangi biri | `141_rollback.sql` (yalnız 141 öncesi durumu birebir kurar; ön durum `141_pre_state.txt`). 142 de uygulandıysa 142'yi ayrıca geri alma gerekmez |
+| R9 | 142 sonrası V6.1–V6.3'ten biri kırmızı; ya da `process-lifetime-purchase` / `revenuecat-webhook` / `activate_referral` `permission denied for function` ya da `claim_lifetime_spot` hata veriyor; ya da bir kod yolunun `increment_promo_usage`'ı authenticated/anon ile çağırdığı ortaya çıkıyor | herhangi biri | `142_rollback.sql` (EXECUTE'u eski haline getirir ve eski gövdeyi `search_path`'siz geri koyar; ön durum `142_pre_state.txt`). Satış/sayaç verisi etkilenmez. Geri almadan sonra nedeni bulunana kadar 142'yi yeniden uygulama |
+
+### Kayıt tablosu — Bölüm B (27 Eki, uygularken doldur)
+| Adım | Zaman (UTC) | Sonuç | Doğrulama | Notlar |
+|---|---|---|---|---|
+| B0 ön koşullar | | | P1, dry-run 141/142 | 26 Eki kapısı temiz mi: ____ |
+| 5 — 141 | | | 141 doğrulaması, smoke | |
+| 6 — 142 | | | V6.1–V6.3, Sentry | |
 
 > **Not (eski istemci):** `client_search_id` göndermeyen çağrılar `claim_mood_search`'e HİÇ girmez; `check_and_consume_quota` + `logMoodSearch` ile mevcut davranışla çalışır. Tek davranış farkı Anthropic isteğinin `timeout 25 sn, maxRetries 0` olmasıdır (bu eski yolu da etkiler; onaylı karar).

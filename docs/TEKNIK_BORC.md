@@ -4370,7 +4370,10 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
    yorumunda "refine" geçer. Faz 3'te arama hakkı 3→1 olunca refine, aramadan AYRI sayaç olduğu için fiili hakkı artırmaz
    (bkz. `MONEY-1C_FAZ3_ROLLOUT.md` §7). Temizlik ayrı iş: kolon/dal/tip silmek migration ve istemci değişikliği gerektirir.
 4. **Bu taramada çıkan ek bulgular (karar bekler):**
-   - `increment_promo_usage(p_code text)` SECURITY DEFINER ve `authenticated`'a EXECUTE açık: oturum açmış herhangi bir kullanıcı
+   - **[Hazırlandı, uygulanmadı — migration 142, 27 Eki planı]** Aşağıdaki iki madde (`increment_promo_usage`, `claim_lifetime_spot`)
+     142 ile kapatılıyor: çağıran taraması temiz (istemci/edge'de `increment_promo_usage` çağıranı yok; `claim_lifetime_spot` yalnız
+     service_role). Canlı dry-run 5/5. Uygulanana kadar bulgu açık sayılır; bkz. `MONEY-1C_DEPLOY_RUNBOOK.md` Bölüm B.
+   - `increment_promo_usage(p_code text)` SECURITY DEFINER ve `authenticated`'a EXECUTE açık (canlıda `anon`'a da açıktı): oturum açmış herhangi bir kullanıcı
      herhangi bir promo kodunun `current_uses` sayacını artırabilir (kodları tüketme/DoS). Doğrulama (sahiplik/geçerli satın alma) yok.
      Çözüm: `REVOKE EXECUTE ... FROM authenticated` (yalnız service_role çağırmalı) — çağıran kod yolu önce doğrulanmalı.
    - `claim_lifetime_spot` SECURITY DEFINER ama `search_path` sabitlenmemiş (`SET search_path` yok). `authenticated` EXECUTE'u kapalı
