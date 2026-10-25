@@ -1169,7 +1169,7 @@ export async function getRecommendations(
   const searchKeywords = getSearchKeywords();
   if (searchKeywords.length > 0) {
     posthogAnalytics.track('keyword_boost_active', {
-      search_keywords: searchKeywords.join(', '),
+      // Anahtar kelimeler kullanici metninden turetilir — metin olarak gonderilmez (yalniz sayi).
       keyword_count: searchKeywords.length,
     });
   }
@@ -1399,7 +1399,6 @@ export async function getRecommendations(
         searchId,
         hasSession: !!fbSession,
         isExpiring: fbIsExpiring,
-        authUid: fbSession?.user?.id ?? null,
         updateError: fbUpdateError?.message ?? null,
         updateErrorCode: fbUpdateError?.code ?? null,
         rowsAffected: fbRowsAffected,
@@ -1502,7 +1501,6 @@ export async function getRecommendations(
       searchId,
       hasSession: preSessionInfo.hasSession,
       isExpired: preSessionInfo.isExpired,
-      authUid: preSessionInfo.authUid,
       expiresAt: preSessionInfo.expiresAt,
       nowSec: preSessionInfo.nowSec,
       updateError: updateError?.message ?? null,

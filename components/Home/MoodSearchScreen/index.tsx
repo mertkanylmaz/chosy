@@ -599,7 +599,7 @@ export default function MoodSearchScreen() {
   /** Recent search tap — text'i set et + submit */
   const handleRecentTap = useCallback((item: MoodHistoryItem) => {
     hapticLight();
-    posthogAnalytics.track('discover_recent_search_tapped', { mood_text: item.mood_text });
+    posthogAnalytics.track('discover_recent_search_tapped', { mood_text_length: item.mood_text.length });
     setMoodText(item.mood_text);
     // Kisa gecikme — state'in yerlesip handleFindMovies'in guncel moodText'i görmesi icin
     setTimeout(() => {
