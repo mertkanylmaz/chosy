@@ -8,11 +8,14 @@ davranışsal doğrulama yalnız cihazda yapılır (testler kaynak-regresyon dü
 ### 0.1 Build
 - **Profil:** `preview-store` (kanal `preview`, dağıtım store → TestFlight internal). Production
   kanalına/branch'ine hiçbir şey gitmez; OTA gerekmez (build JS'i içinde taşır).
-- **ÖNCE `eas.json` düzeltmesi gerekir:** `preview-store` / `preview` profillerinde `autoIncrement`
-  yok. `appVersionSource: remote` olduğundan sayaç tek ve ortak: şu an iOS buildNumber **912**
-  (production 2.1.2'nin son gönderilen numarası). Düzeltme yapılmadan alınan build 912'yi yeniden
-  kullanır ve App Store Connect yüklemeyi reddeder. Öneri: `preview-store` bloğuna
-  `"autoIncrement": true` (sonraki numara 913). `preview-e2e` kendi `autoIncrement: false`'ını korur.
+- **`eas.json` (güncel, 25 Eki):** `preview-store` `autoIncrement: true` taşıyor (71f592f ile geldi; bu dalda da var).
+  `appVersionSource: remote` olduğundan sayaç tek ve ortak: uzaktaki son iOS buildNumber **914**
+  (`eas build:version:get -p ios -e preview-store`), sonraki build **915** olur. `preview-e2e` kendi `autoIncrement: false`'ını korur.
+- **SÜRÜM SORUNU (karar bekler):** bu dalın `app.json` sürümü **2.1.2**; 2.1.2 App Store'a çıktı (production #912), bu yüzden
+  aynı sürüm için TestFlight build'i reddedilir (kapanmış train). 24 Eki'de bu yüzden #913 (2.1.2 preview-store) sonrası geçici
+  **2.1.3** (#914, `build/preview-2.1.3`, `44849a9`) alındı; o commit bu dalın atası DEĞİL. Build'den önce sürüm 2.1.3 (veya üstü)
+  olmalı — bkz. `MONEY-1C_BUILD_PREP.md` §3. runtimeVersion politikası `appVersion` → runtime = sürüm; 2.1.3 için hiçbir kanalda OTA yok,
+  yani build kendi gömülü JS'ini çalıştırır (istenen durum).
 - **Aynı uygulama:** bundle id `com.chosy.ai`, ASC uygulaması 6761782987 — production ile aynı. TestFlight
   build'i cihazdaki App Store sürümünün yerine geçer (build numarası daha yüksek olduğu için).
 - **Aynı backend ve servisler:** EAS `preview` ortamındaki tüm `EXPO_PUBLIC_*` değerleri (Supabase URL/anon
@@ -39,18 +42,25 @@ eşittir; anonim hesapta rastgele PostHog id'sidir — güvenilir yol değil.
 Anonim hesapla test etme: yeniden kurulumda kimlik değişir (D8).
 
 ### 0.3 Bayrağı yalnız kimliğin için açmak
-- Bu dalda `mood_offer_enabled` satırı `app_config`'te YOKTUR → kapalı; `mood_offer_testers` de yoktur.
-  İki satır bayrak değil veri: SQL editor / service role ile (migration DEĞİL):
+- **Güncel canlı durum (25 Eki export'u):** `mood_offer_enabled = false` ve `mood_offer_testers = ["a25917c2-7476-41ea-a7fb-3ffecccf03e6"]`
+  satırları ZATEN VAR (bu belgenin önceki hali "satır yok" diyordu — eskimiş). Aşağıdaki `ON CONFLICT … SET value = EXCLUDED.value`
+  mevcut listeyi EZER; önce mevcut değeri oku, kimliğini EKLE:
+  ```sql
+  select value from app_config where key = 'mood_offer_testers';
+  UPDATE app_config SET value = value || '["<AUTH_USER_ID>"]'::jsonb WHERE key = 'mood_offer_testers';  -- ekleme; yinelenen kimlik zararsız
+  ```
+  Satır silinmişse (nadir) şu form: 
   ```sql
   INSERT INTO app_config (key, value, description)
   VALUES ('mood_offer_testers', '["<AUTH_USER_ID>"]'::jsonb, 'MONEY-1C test kimlikleri')
-  ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
+  ON CONFLICT (key) DO NOTHING;
   ```
 - Değer en geç 5 dk'da yansır; hızlandırmak için uygulamayı tamamen kapatıp aç. Aynı cihazda iki test
   hesabı kullanacaksan ikisini de listeye koy (dizi).
 - **Genel açma YAPMA:** `mood_offer_enabled` satırını `true` yapmak production'daki herkese açar.
   Bu test için dokunulmaz.
-- Geri alma: `UPDATE app_config SET value = '[]'::jsonb WHERE key = 'mood_offer_testers';`
+- Geri alma: yalnız EKLEDİĞİN kimliği çıkar: `UPDATE app_config SET value = value - '<AUTH_USER_ID>' WHERE key = 'mood_offer_testers';`
+  (`'[]'` ile sıfırlama başka testerın kimliğini de siler — `a25917c2-…` mevcut girdidir, dokunma.)
 
 ### 0.4 Hesap durumları ve gözlem
 - **Hesaplar:** (a) ücretsiz gerçek hesap, (b) Pro/premium hesap, (c) `legacy_mood_access` hesabı,
@@ -177,6 +187,49 @@ kimlikten yeniye TRANSFER eder. Sandbox'ta webhook "TRANSFER hedefi çözülemed
 ### B4. Bayrak geri kapatma
 - [ ] Listeden kimliği çıkar, uygulamayı kapat-aç (5 dk bekle ya da yeniden başlat): tüm yüzeyler
       kaybolur, bölüm A'daki davranışa dönülür.
+
+## C. ESKİ İSTEMCİ (2.1.2 App Store / 2.1.3 TestFlight) + sunucu 139–142 sonrası regresyon
+
+Sunucu değişiklikleri (139 şema/yetki, 140, parse-mood v43, 141, 142) eski istemciyi bozmamalı. **Sıra önemli:** bu bölüm yeni
+TestFlight build'ini kurmadan ÖNCE, cihazda hâlâ eski sürüm varken koşulur (TestFlight build'i App Store sürümünün yerine geçer, geri
+dönüş zor). 26 Eki smoke A (Bölüm A, runbook) bunun ilk ayağıdır; aşağıdakiler cihazda tamamlayıcıdır. Her madde için `<users.id>` =
+test hesabının `public.users.id`'si.
+
+### C1. Arama (parse-mood v43, 139/140) — eski akış imzası
+- [ ] Ücretsiz hesapla bir mood araması yap: sonuç gelir, deste açılır, hata yok.
+- [ ] `mood_searches` en yeni satırı: `client_search_id` NULL, `status` NULL, `quota_consumed` false, `claim_attempts` 0, öneri listesi dolu
+      (runbook smoke A.1). Eski istemci yeni kolonları DOLDURMAZ.
+- [ ] `user_daily_quotas.searches_used` tam **+1** (A.2). 0 ya da +2 görülürse R3: DUR.
+- [ ] Aynı aramayı hemen tekrar yap: ikinci ayrı satır + searches_used +1 daha (eski istemcide idempotency YOK, beklenen davranış; çift düşmeyi hata sayma).
+- [ ] Sonuç satırı UPDATE'i yazıldı (`recommended_film_ids`, `rpc_version` dolu): istemcinin `mood_searches` INSERT'i yalnız `{user_id}`,
+      UPDATE'i `{recommended_film_ids, rpc_version[, error_code]}` — K-1 ile daraltılmış kolon yetkisinin içinde. Sentry'de
+      `QUOTA_SEARCH_RECORD_FAILED` / "mood_searches UPDATE failed" / 42501 **çıkmamalı** (R1).
+- [ ] Anthropic zaman aşımı: yavaş ağda arama 25 sn civarında "tekrar dene" mesajıyla biter (maxRetries 0, onaylı davranış değişikliği); takılı kalmaz.
+- [ ] Ücretsiz hak (eski istemci yerel sayacı, 3) bitince eski kota duvarı; 2.1.2'de ücretsiz hesap Pro Mode'a girince **hard paywall** (bilinen, FAZ3 §8).
+
+### C2. Sunucu kotası ile uyum (bayrak KAPALI iken sunucu limiti hâlâ 3)
+- [ ] `subscription_limits.free.daily_search_limit` hâlâ **3** (Faz 3 öncesi): eski istemci 3 arama yapabilir; 4.'de sunucudan `QUOTA_EXCEEDED` / istemci duvarı.
+      (Limit 1'e inmişse C2 koşulmaz — Faz 3 başlamıştır; bkz. FAZ3_ROLLOUT §7.)
+- [ ] Kota satırı gece yarısı (UTC) sıfırlanır; cihaz saati değiştirilince sunucu günü değişmez.
+
+### C3. 141 sonrası (tablo yetkileri) — okuma yolları sağlam
+- [ ] Soğuk açılış: `app_config` okunur (bayrak/`remoteConfig` hydrate; Sentry `REMOTE_CONFIG_HYDRATE_FAILED` YOK).
+- [ ] Paywall/abonelik ekranı: planlar ve limitler yüklenir (`subscription_limits`, `promo_codes` SELECT), "permission denied" yok.
+- [ ] Profil → Pro durumu, ücretli (premium) hesapta doğru; satın alma/Restore (sandbox) hâlâ çalışır (istemci `subscriptions`/`lifetime_sales`'e yazmıyor).
+- [ ] Gauntlet, watchlist ekleme/çıkarma, izlendi işareti: hata yok (141 yalnız TRUNCATE/REFERENCES/TRIGGER'ı kaldırır; DML etkilenmez).
+
+### C4. 142 sonrası (promo/lifetime fonksiyonları)
+- [ ] Promo kodu girme/uygulama akışı (varsa ekran): eski istemci `increment_promo_usage`'ı doğrudan ÇAĞIRMAZ (tarama: çağıran yok); kod uygulanır, hata yok.
+- [ ] `paywall_lifetime_enabled` kapalı olduğundan lifetime satın alma yüzeyi görünmez; görünüyorsa DUR (142 `claim_lifetime_spot`'ı yalnız service_role çağırır).
+- [ ] Sentry'de `permission denied for function` YOK.
+
+### C5. Hesap silme (R7: 140 sonrası service_role DELETE)
+- [ ] Test hesabıyla hesabı sil (Ayarlar): işlem tamamlanır; `mood_searches`/`user_daily_quotas`/`watchlist` o kullanıcının satırları kalkar
+      (`select count(*) from mood_searches where user_id='<users.id>'` → 0). `delete-account` edge log'unda hata YOK.
+
+### C6. OTA'lı eski çalışma zamanları (2.1.0 / 2.1.1)
+- [ ] (Cihaz varsa) 2.1.1 App Store build'i: açılışta OTA bulunur/indirilir (`ota_update_found`/`ota_update_fetched`), ikinci soğuk açılışta uygulanır;
+      arama eski akışla çalışır. 2.1.0 için aynı. (Bkz. `MONEY-1C_BUILD_PREP.md` §5; OTA ilk açılışta uygulanmaz.)
 
 ## Sonuç notları
 
