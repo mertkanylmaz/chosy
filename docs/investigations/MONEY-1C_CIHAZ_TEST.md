@@ -147,6 +147,30 @@ Deste sonu ve çıkış teklifi artık YOK: × / geri / yeni mood / özet kapat 
 - [ ] Kurtarılan destede kilit durumu premiumStatus'a göre yeniden hesaplanıyor (ücretsiz: kilit; premium: açık).
 - [ ] Bayrak KAPALI: kart HİÇ görünmez, AsyncStorage'a deste yazılmaz.
 
+### B3c. Aynı arama kimliği ve satın alma sonrası arama (Faz 2b-g; sunucu 139 + parse-mood DEPLOY EDİLMİŞ olmalı)
+> Sunucu tarafı deploy edilmeden bu bölüm koşulmaz: eski parse-mood `client_search_id`'yi yok sayar (kota her istekte düşer).
+- [ ] Aynı metni art arda 2 kez ara (ilk arama başarılı bitsin): iki arama da ayrı hak sayılır (yeni kimlik). Kota `get_quota_status` ile 2 düşer.
+- [ ] Ağı kes, ara (timeout/ağ hatası), ağı aç, AYNI metinle tekrar ara: hak yalnız 1 düşer (`mood_searches` tek satır, `status=completed`).
+- [ ] Hızlı çift dokun / iki cihaz: ikinci istek "Aramanın hazırlanması sürüyor" (409 IN_PROGRESS) görür ya da otomatik beklenip aynı sonucu alır; ikinci hak düşmez.
+- [ ] Ücretsiz hak bitince ara: Pro teklifi açılır (`mood_offer_shown`, entry `quota_exhausted`). Satın al → arama **otomatik** çalışır,
+      "Pro etkinleştiriliyor…" görünür (en çok ~30 sn), sonuç gelir; teklif ikinci kez AÇILMAZ.
+- [ ] Hız sınırı (1 dk içinde 10+ istek) ve rerank günlük sınırı: paywall AÇILMAZ; hız sınırında "bekle" mesajı, rerank sınırında deste rerank'siz gelir.
+- [ ] Satın alma ekranında Apple "zaten satın alınmış" derse: hata gösterilmez, otomatik restore çalışır, "Purchases restored" görünür.
+- [ ] Satın alma sırasında Sentry'de `REACT-NATIVE-C` / `REACT-NATIVE-16` türü hata ÇIKMAZ (istemci tabloya yazmaz; 2.1.3 ve sonrası).
+- [ ] `paywall_plan_selected.source`: Mood Search kilit ekranından açılan paywall'da `pro_mode_locked`, Profil sekmesinden `profile_tab`,
+      kilit kartından `lock_card`, hak duvarından `quota_exhausted`.
+
+### B3d. Sil-yeniden-kur + Restore (g3; yalnız TestFlight/Sandbox hesabıyla)
+Risk: trial/abone kullanıcı uygulamayı siler, yeniden kurar → yeni anonim Supabase kimliği → Restore → RevenueCat aboneliği eski
+kimlikten yeniye TRANSFER eder. Sandbox'ta webhook "TRANSFER hedefi çözülemedi (rc_anonymous)" görüldü (CHOSY-EDGE-FUNCTIONS-14).
+- [ ] Sandbox hesabıyla trial başlat → uygulamayı SİL → yeniden kur → onboarding/anonim giriş → paywall → **Restore**.
+- [ ] Beklenen: "Purchases restored"; birkaç sn içinde Mood Search açık (Pro). Supabase'de YENİ kimliğin `users.subscription_tier` ve `subscriptions`
+      satırı dolu (sync-entitlement yazar; webhook'a bağlı DEĞİL).
+- [ ] Restore'u kimlik hazır olmadan çok erken bas: "Account not ready" mesajı (anonim RC kimliğinde restore ÇALIŞMAZ); biraz bekleyip tekrar → başarılı.
+- [ ] RevenueCat dashboard → Project settings → **"Restore behavior / transfer"**: "Transfer to new App User ID" olmalı. "Keep with original" ise
+      yeni kimlik aboneliği ALAMAZ ("restoreEmpty") — kodla çözülemez, ayar değişmeli.
+- [ ] Sentry'de bu testte `RC_ACTIVE_DB_MISSING` / `ENTITLEMENT_SYNC_*` çıkarsa not al.
+
 ### B4. Bayrak geri kapatma
 - [ ] Listeden kimliği çıkar, uygulamayı kapat-aç (5 dk bekle ya da yeniden başlat): tüm yüzeyler
       kaybolur, bölüm A'daki davranışa dönülür.
