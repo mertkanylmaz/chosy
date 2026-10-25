@@ -32,6 +32,7 @@ import { getFreshUserVector, calculateBlendWeights } from './userVectorRefresh';
 import { tasteProfileToVector } from './vectorEncoder';
 import { getWatchedFilmIds, getWatchlistFilmIds } from './watchlist';
 import { hasAiConsent } from './aiConsent';
+import { applyQualityGate, FINAL_CAP } from '../utils/moodQualityGate';
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants/config';
 
@@ -1314,15 +1315,12 @@ export async function getRecommendations(
   // ── Adım 4.8: Quality gate — relative score filter + cap at 8 ─────────────
   // Remove films whose similarity is below 55% of the best match.
   // Then cap at 8 films max. This prevents low-quality tail from reaching UI.
-  const FINAL_CAP = 8;
-  const RELATIVE_QUALITY_FLOOR = 0.55;
-
+  // Taban adayların GERÇEK max benzerliğinden (rerank sonrası data[0] düşük olabilir).
   if (data.length > 0) {
-    const bestScore = data[0]?.similarity ?? 0;
-    const qualityFloor = bestScore * RELATIVE_QUALITY_FLOOR;
-
     const beforeCount = data.length;
-    data = data.filter((row) => row.similarity >= qualityFloor);
+    const gate = applyQualityGate(data);
+    const { bestScore, qualityFloor } = gate;
+    data = gate.rows;
 
     if (__DEV__ && data.length < beforeCount) {
       // eslint-disable-next-line no-console
@@ -1330,11 +1328,6 @@ export async function getRecommendations(
         `[recommendations] Quality gate: ${beforeCount} → ${data.length} films`,
         `| floor: ${(qualityFloor * 100).toFixed(0)}% (best: ${(bestScore * 100).toFixed(0)}%)`,
       );
-    }
-
-    // Cap at FINAL_CAP
-    if (data.length > FINAL_CAP) {
-      data = data.slice(0, FINAL_CAP);
     }
 
     posthogAnalytics.track('quality_gate_applied', {
