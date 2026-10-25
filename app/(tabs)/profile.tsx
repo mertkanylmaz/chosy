@@ -1230,7 +1230,7 @@ function ProfileScreenContent() {
    * acilmaz `router.back()` yapar — olu bir fallback olurdu.
    */
   async function handleUpgradePress(): Promise<void> {
-    const shown = await triggerPaywall({ type: 'profile_upgrade' });
+    const shown = await triggerPaywall({ type: 'profile_upgrade', entry: 'profile_tab' });
     if (!shown) {
       Sentry.captureMessage('[Profile] profile_upgrade paywall acilmadi', {
         level: 'warning',

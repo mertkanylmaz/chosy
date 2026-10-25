@@ -39,7 +39,7 @@ import { PLANS, type PlanId } from '@/constants/subscriptionPlans';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { getSearchAnalyticsContext } from '@/services/moodSearchState';
-import { paywallMoodCore } from '@/utils/moodAnalytics';
+import { paywallMoodCore, paywallSource } from '@/utils/moodAnalytics';
 import {
   getOfferings,
   getTrialEligibility,
@@ -314,6 +314,47 @@ export default function PaywallBase({
     }
   }, [visible, premiumStatus, onDismiss]);
 
+  /**
+   * Restore gövdesi (kilitsiz): `handleRestore` ve PRODUCT_ALREADY_PURCHASED otomatik
+   * restore'u çağırır. Çağıran kilidi tutar. `true` → abonelik geri yüklendi.
+   */
+  const performRestore = useCallback(async (): Promise<boolean> => {
+    try {
+      const result = await restorePurchases();
+      if (result.success) {
+        hapticSuccess();
+
+        // Restore sonrasi tier/subscriptions'i SUNUCU yazar (sync-entitlement).
+        // Basarisizlik restore'u bozmaz; hata servis icinde Sentry'ye gider.
+        const userId = await getAppUserId();
+        if (userId) {
+          await syncEntitlement('restore');
+          // Client-side quota cache temizle
+          await clearQuotaCache(userId);
+        }
+
+        await refreshSubscription();
+        await refreshQuota();
+        Alert.alert(t('paywall.restoreSuccess'));
+        onDismiss();
+        return true;
+      } else if (result.errorKind === 'no_data') {
+        // Sorgu basarili, gercekten geri yuklenecek abonelik yok.
+        Alert.alert(t('paywall.restoreEmpty'));
+      } else if (result.errorKind === 'not_ready') {
+        // RC/kimlik hazır değil: restore çağrılmadı, "aboneliğin yok" DEME.
+        Alert.alert(t('errors.accountNotReady'));
+      } else {
+        // Ag/SDK hatasi — "aboneligin yok" DEME. App Store zorunlu akisi.
+        Alert.alert(t('errors.restoreFailed'));
+      }
+    } catch (err) {
+      logger.error('[paywall-base] Restore hatasi:', err);
+      Alert.alert(t('errors.restoreFailed'));
+    }
+    return false;
+  }, [t, refreshSubscription, refreshQuota, onDismiss]);
+
   /** Satin alma */
   const handlePurchase = useCallback(async () => {
     if (!acquireLock('purchase')) return;
@@ -383,6 +424,11 @@ export default function PaywallBase({
         // RC/kimlik henüz hazır değil: ödeme BAŞLAMADI, tekrar denemek güvenli.
         trackPurchaseFailed('not_ready');
         Alert.alert(t('errors.accountNotReady'));
+      } else if (result.errorKind === 'already_purchased') {
+        // Apple: urun bu hesapta zaten satin alinmis. Ek odeme yok; abonelik RESTORE ile gelir.
+        // Kullaniciya hata gosterilmez — restore sonucu (basari/bos/hata) kendi mesajini verir.
+        trackPurchaseFailed('already_purchased');
+        await performRestore();
       } else {
         // K-43: ham RC metni ekrana gitmez; servis katmani Sentry'ye yazdi.
         trackPurchaseFailed(result.errorKind ?? 'unknown');
@@ -395,7 +441,7 @@ export default function PaywallBase({
     } finally {
       releaseLock();
     }
-  }, [selectedPlan, selectedOffer.kind, packages, acquireLock, releaseLock, t, refreshSubscription, refreshQuota, onConvert, variant]);
+  }, [selectedPlan, selectedOffer.kind, packages, acquireLock, releaseLock, t, refreshSubscription, refreshQuota, onConvert, variant, performRestore]);
 
   /**
    * Terms/Privacy linki. Acilmazsa Sentry'ye error + kullaniciya mevcut hata
@@ -417,40 +463,11 @@ export default function PaywallBase({
   const handleRestore = useCallback(async () => {
     if (!acquireLock('restore')) return;
     try {
-      const result = await restorePurchases();
-      if (result.success) {
-        hapticSuccess();
-
-        // Restore sonrasi tier/subscriptions'i SUNUCU yazar (sync-entitlement).
-        // Basarisizlik restore'u bozmaz; hata servis icinde Sentry'ye gider.
-        const userId = await getAppUserId();
-        if (userId) {
-          await syncEntitlement('restore');
-          // Client-side quota cache temizle
-          await clearQuotaCache(userId);
-        }
-
-        await refreshSubscription();
-        await refreshQuota();
-        Alert.alert(t('paywall.restoreSuccess'));
-        onDismiss();
-      } else if (result.errorKind === 'no_data') {
-        // Sorgu basarili, gercekten geri yuklenecek abonelik yok.
-        Alert.alert(t('paywall.restoreEmpty'));
-      } else if (result.errorKind === 'not_ready') {
-        // RC/kimlik hazır değil: restore çağrılmadı, "aboneliğin yok" DEME.
-        Alert.alert(t('errors.accountNotReady'));
-      } else {
-        // Ag/SDK hatasi — "aboneligin yok" DEME. App Store zorunlu akisi.
-        Alert.alert(t('errors.restoreFailed'));
-      }
-    } catch (err) {
-      logger.error('[paywall-base] Restore hatasi:', err);
-      Alert.alert(t('errors.restoreFailed'));
+      await performRestore();
     } finally {
       releaseLock();
     }
-  }, [t, acquireLock, releaseLock, refreshSubscription, refreshQuota, onDismiss]);
+  }, [acquireLock, releaseLock, performRestore]);
 
   /**
    * Dismiss + tracking.
@@ -471,7 +488,7 @@ export default function PaywallBase({
     if (id !== selectedPlan) {
       posthogAnalytics.track('paywall_plan_selected', {
         plan: id,
-        source: variant.name,
+        source: paywallSource(variant.trigger, variant.name),
         // Secimden sonra ekranda deneme vaadi gorunuyor mu (buildOffer ile ayni kaynak).
         trial_shown: offers[id].kind === 'trial',
         ...paywallMoodCore(variant.trigger, {

@@ -60,6 +60,21 @@ export function paywallMoodCore(
 }
 
 /**
+ * `paywall_plan_selected.source`: paywall'ın GERÇEK girişi. `mood_offer` → `entry`
+ * (ortak çekirdekteki `entry_point` ile aynı değer); `profile_upgrade` → çağıranın verdiği
+ * giriş (`profile_tab` | `pro_mode_locked`), yoksa varyant adı; diğerleri varyant adı.
+ */
+export function paywallSource(
+  trigger: { type: string; entry?: string },
+  variantName: string,
+): string {
+  if ((trigger.type === 'mood_offer' || trigger.type === 'profile_upgrade') && trigger.entry) {
+    return trigger.entry
+  }
+  return variantName
+}
+
+/**
  * `mood_deck_unlocked` kararı: yalnız GERÇEKTEN kilitli bir deste, yetki geçişiyle açıldığında
  * ve bu `key` (search_id ya da yedek anahtar) için daha önce yayınlanmadıysa.
  */

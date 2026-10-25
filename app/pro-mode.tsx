@@ -115,7 +115,7 @@ export default function ProModeScreen(): React.JSX.Element {
     void hapticLight();
     posthogAnalytics.track('pro_mode_paywall_shown', { source: 'pro_mode_locked' });
 
-    const shown = await triggerPaywall({ type: 'profile_upgrade' });
+    const shown = await triggerPaywall({ type: 'profile_upgrade', entry: 'pro_mode_locked' });
     if (!shown) {
       Sentry.captureMessage('[ProMode] profile_upgrade paywall acilmadi', {
         level: 'warning',

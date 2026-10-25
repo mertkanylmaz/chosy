@@ -355,7 +355,7 @@ function trackFunnel(
     ab_test_group: variant.abTestGroup,
     missed_day_count:
       'missedDayCount' in variant.trigger ? variant.trigger.missedDayCount : null,
-    entry_point: 'entry' in variant.trigger ? variant.trigger.entry : null,
+    entry_point: 'entry' in variant.trigger ? (variant.trigger.entry ?? null) : null,
     ...extra,
   });
 }
@@ -406,7 +406,9 @@ async function recordEvent(
     // MONEY-1C: giris noktasi + arama baglantisi (jsonb; sema/CHECK degismez).
     if ('entry' in variant.trigger) {
       triggerContext.entry_point = variant.trigger.entry;
-      if (variant.trigger.searchId) triggerContext.search_id = variant.trigger.searchId;
+      if ('searchId' in variant.trigger && variant.trigger.searchId) {
+        triggerContext.search_id = variant.trigger.searchId;
+      }
     }
 
     const row: PaywallEventInsert = {

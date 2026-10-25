@@ -7,6 +7,7 @@ import {
   deckStartedProps,
   moodEventCore,
   paywallMoodCore,
+  paywallSource,
   shouldEmitDeckUnlocked,
 } from '../../utils/moodAnalytics.ts'
 
@@ -64,4 +65,21 @@ Deno.test('kaynak: olaylar bağlı; kullanıcı metni hiçbirine girmez', () => 
   assertMatch(read('components/paywalls/ContextualPaywall.tsx'), /\.\.\.paywallMoodCore\(variant\.trigger/)
   assertMatch(read('components/paywalls/PaywallBase/index.tsx'), /\.\.\.paywallMoodCore\(variant\.trigger/)
   assertMatch(read('components/MoodDeckSummary/index.tsx'), /\.\.\.analyticsCore,/)
+})
+
+Deno.test('paywall_plan_selected.source: gerçek giriş; mood_offer entry_point ile aynı', () => {
+  assertEquals(paywallSource({ type: 'mood_offer', entry: 'lock_card' }, 'mood_offer'), 'lock_card')
+  assertEquals(paywallSource({ type: 'profile_upgrade', entry: 'pro_mode_locked' }, 'profile_upgrade'), 'pro_mode_locked')
+  assertEquals(paywallSource({ type: 'profile_upgrade', entry: 'profile_tab' }, 'profile_upgrade'), 'profile_tab')
+  // giriş verilmemişse varyant adı (eski davranış); diğer tetikleyiciler değişmez
+  assertEquals(paywallSource({ type: 'profile_upgrade' }, 'profile_upgrade'), 'profile_upgrade')
+  assertEquals(paywallSource({ type: 'roulette_limit' }, 'roulette_limit'), 'roulette_limit')
+  const mood = paywallMoodCore({ type: 'mood_offer', entry: 'quota_exhausted', searchId: 's' }, { isPro: false, consent: true })
+  assertEquals(paywallSource({ type: 'mood_offer', entry: 'quota_exhausted' }, 'mood_offer'), mood.entry_point)
+})
+
+Deno.test('kaynak: pro-mode ve profil sekmesi paywall girişini bildirir; PaywallBase paywallSource kullanır', () => {
+  assertMatch(read('app/pro-mode.tsx'), /type: 'profile_upgrade', entry: 'pro_mode_locked'/)
+  assertMatch(read('app/(tabs)/profile.tsx'), /type: 'profile_upgrade', entry: 'profile_tab'/)
+  assertMatch(read('components/paywalls/PaywallBase/index.tsx'), /source: paywallSource\(variant\.trigger, variant\.name\)/)
 })

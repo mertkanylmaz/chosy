@@ -34,6 +34,9 @@ export type TriggerType =
  * MONEY-1C: teklifin açıldığı giriş noktası. `paywall_events.trigger_context.entry_point`
  * ve PostHog olaylarında aynı değer taşınır.
  */
+/** `profile_upgrade` paywall'ının girişi (analitik `source`). */
+export type ProfileUpgradeEntry = 'profile_tab' | 'pro_mode_locked';
+
 export type MoodOfferEntry =
   | 'champion_card'
   | 'spotlight_card'
@@ -48,7 +51,8 @@ export type TriggerEvent =
   | { type: 'mood_history_tap' }
   | { type: 'streaming_link_tap'; filmId: number }
   | { type: 'share_card_generated'; count: number }
-  | { type: 'profile_upgrade' }
+  /** `entry`: paywall'in GERCEK girisi (analitik `source`); yoksa 'profile_upgrade'. */
+  | { type: 'profile_upgrade'; entry?: ProfileUpgradeEntry }
   | { type: 'roulette_limit' }
   | { type: 'lifetime_soldout' }
   /**
