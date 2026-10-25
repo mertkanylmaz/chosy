@@ -31,6 +31,11 @@ export function moodEventCore(input: {
   }
 }
 
+/** Deste gorunumu olayi: kurtarilan deste yeni arama sayilmaz (`mood_deck_started` sisirilmez). */
+export function deckViewEventName(resumed: boolean): 'mood_deck_started' | 'mood_deck_resumed' {
+  return resumed ? 'mood_deck_resumed' : 'mood_deck_started'
+}
+
 /** mood_deck_started'a giren sıralı film kimlikleri üst sınırı. */
 export const DECK_STARTED_ID_LIMIT = 8
 

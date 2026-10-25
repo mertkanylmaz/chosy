@@ -60,6 +60,15 @@ export function interpretParseMoodQuota(body: unknown): SearchQuota {
     : { kind: 'exhausted', resetsAt: asIso(resetsAt) };
 }
 
+/**
+ * "Bugünün ücretsiz araması" ipucu: YALNIZ sunucudan okunmuş, en az 1 kalan hak varsa.
+ * 0, sınırsız (`remaining: null`), okunuyor, okunamadı (`unknown`) veya hiç okunmadı (`null`) → gizli:
+ * hakkı olmayan kullanıcıya hak vaadi verilmez.
+ */
+export function hasFreeSearchLeft(quota: SearchQuota | 'checking' | null): boolean {
+  return quota !== null && quota !== 'checking' && quota.kind === 'available' && quota.remaining !== null && quota.remaining >= 1;
+}
+
 export type ProModeGate =
   /** Pro Mode ekranı açılır */
   | 'enter'

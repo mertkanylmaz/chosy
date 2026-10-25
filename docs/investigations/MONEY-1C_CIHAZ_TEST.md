@@ -146,6 +146,9 @@ Deste sonu ve çıkış teklifi artık YOK: × / geri / yeni mood / özet kapat 
 - [ ] Gün değişimi (cihaz saatini ertesi güne al) veya hesap değişimi: kart görünmez, eski deste açılmaz.
 - [ ] Kurtarılan destede kilit durumu premiumStatus'a göre yeniden hesaplanıyor (ücretsiz: kilit; premium: açık).
 - [ ] Bayrak KAPALI: kart HİÇ görünmez, AsyncStorage'a deste yazılmaz.
+- [ ] Karta dokunup deste açılınca PostHog'da **`mood_deck_resumed`** (search_id, entry_point=`today_deck`, deck_size) atılır; **`mood_deck_started` ATILMAZ**. Yeni arama yapınca `mood_deck_started` yine atılır.
+- [ ] **"Today's free search" ipucu** yalnız kalan hak ≥ 1 iken görünür: ücretsiz hak kullanıldıktan sonra Mood Search'e dönünce ipucu KAYBOLUR (hak 0); ağ yokken / hak okunamazken görünmez.
+- [ ] Hak bitince Pro kilit ekranında "Unlimited with Pro" yalnız bayrak AÇIKKEN; bayrak KAPALIYKEN eski "Chosy Pro" düğmesi aynen durur.
 
 ### B3c. Aynı arama kimliği ve satın alma sonrası arama (Faz 2b-g; sunucu 139 + parse-mood DEPLOY EDİLMİŞ olmalı)
 > Sunucu tarafı deploy edilmeden bu bölüm koşulmaz: eski parse-mood `client_search_id`'yi yok sayar (kota her istekte düşer).

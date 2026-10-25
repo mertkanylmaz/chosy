@@ -100,3 +100,47 @@ Deno.test('locales: yeni anahtarlar en/tr parite', () => {
     assert(typeof tr[k] === 'string' && tr[k].length > 0, `tr.${k}`)
   }
 })
+
+// ── MONEY-1C Faz 2b-4: küçük işler ──────────────────────────────────────────
+
+import { hasFreeSearchLeft } from '../../utils/searchQuota.ts'
+import { deckViewEventName } from '../../utils/moodAnalytics.ts'
+
+Deno.test('4b ücretsiz arama ipucu: yalnız kalan >= 1; 0 / sınırsız / bilinmiyor / okunuyor / yok → gizli', () => {
+  assertEquals(hasFreeSearchLeft({ kind: 'available', remaining: 1, resetsAt: null }), true)
+  assertEquals(hasFreeSearchLeft({ kind: 'available', remaining: 3, resetsAt: null }), true)
+  assertEquals(hasFreeSearchLeft({ kind: 'available', remaining: 0, resetsAt: null }), false)
+  assertEquals(hasFreeSearchLeft({ kind: 'available', remaining: null, resetsAt: null }), false)
+  assertEquals(hasFreeSearchLeft({ kind: 'exhausted', resetsAt: null }), false)
+  assertEquals(hasFreeSearchLeft({ kind: 'unknown' }), false)
+  assertEquals(hasFreeSearchLeft('checking'), false)
+  assertEquals(hasFreeSearchLeft(null), false)
+})
+
+Deno.test('4b kaynak: ipucu isOfferEligible VE hasFreeSearchLeft ile; kalan hak her odakta tazelenir', () => {
+  const screen = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(screen, /isOfferEligible\(\{[\s\S]{0,200}\}\) &&\s*hasFreeSearchLeft\(searchQuota\)/)
+  assertMatch(screen, /useProModeAccess\(\{ withQuota: true \}\)/)
+  assertMatch(screen, /refreshSearchQuota\(\);/)
+})
+
+Deno.test('4c kurtarılan deste: mood_deck_resumed (started DEĞİL); yeni arama bayrağı sıfırlar', () => {
+  assertEquals(deckViewEventName(true), 'mood_deck_resumed')
+  assertEquals(deckViewEventName(false), 'mood_deck_started')
+  const state = read('services/moodSearchState.ts')
+  assertMatch(state, /_deckResumed = false;\n\}\n\n\/\*\* `setSearchAnalyticsContext`ten SONRA/)
+  const screen = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(screen, /setSearchAnalyticsContext\(\{ entryPoint: 'today_deck', consent: true \}\);\n\s*setDeckResumed\(true\);/)
+  assertMatch(read('app/discover.tsx'), /deckViewEventName\(getSearchAnalyticsContext\(\)\.resumed\)/)
+})
+
+Deno.test('4a "Unlimited with Pro" yalnız bayrak açıkken: offerCta sadece gate==="offer" dalında; locked dalı eski metin', () => {
+  const pm = read('app/pro-mode.tsx')
+  assertEquals(pm.split("moodOffer.offerCta").length - 1, 1)
+  assert(pm.indexOf("moodOffer.offerCta") > pm.indexOf("gate === 'offer'"))
+  assert(pm.indexOf("moodOffer.offerCta") < pm.indexOf("gate === 'locked'"))
+  assertMatch(pm, /gate === 'locked'[\s\S]*t\('profile\.chosyPro'\)/)
+  // 'offer' kapısı YALNIZ bayrak açıkken üretilir (decideProModeGate: !offerEnabled → locked)
+  assertMatch(read('hooks/useProModeAccess.ts'), /offerEnabled: withQuota && offerEnabled/)
+  assertMatch(read('utils/searchQuota.ts'), /if \(!input\.offerEnabled\) return 'locked'/)
+})

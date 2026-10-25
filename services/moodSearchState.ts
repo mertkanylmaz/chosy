@@ -143,12 +143,20 @@ export function getSearchModeState(): SearchMode {
  */
 let _searchEntryPoint: string | null = null;
 let _searchConsent: boolean | null = null;
+/** Deste "bugunku deste kurtarma"yla acildi (yeni arama degil). Her yeni aramada sifirlanir. */
+let _deckResumed = false;
 
 export function setSearchAnalyticsContext(ctx: { entryPoint: string; consent: boolean }): void {
   _searchEntryPoint = ctx.entryPoint;
   _searchConsent = ctx.consent;
+  _deckResumed = false;
 }
 
-export function getSearchAnalyticsContext(): { entryPoint: string | null; consent: boolean | null } {
-  return { entryPoint: _searchEntryPoint, consent: _searchConsent };
+/** `setSearchAnalyticsContext`ten SONRA cagrilir (o sifirlar). */
+export function setDeckResumed(resumed: boolean): void {
+  _deckResumed = resumed;
+}
+
+export function getSearchAnalyticsContext(): { entryPoint: string | null; consent: boolean | null; resumed: boolean } {
+  return { entryPoint: _searchEntryPoint, consent: _searchConsent, resumed: _deckResumed };
 }

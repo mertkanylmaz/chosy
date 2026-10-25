@@ -57,7 +57,7 @@ import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
-import { deckStartedProps, moodEventCore, shouldEmitDeckUnlocked } from '@/utils/moodAnalytics';
+import { deckStartedProps, deckViewEventName, moodEventCore, shouldEmitDeckUnlocked } from '@/utils/moodAnalytics';
 import { buildDeckItems, deriveLockState, hidesBeyondFree, progressCounter } from '@/utils/moodLock';
 import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
 import { createTodayDeckSnapshot } from '@/utils/todayDeck';
@@ -171,7 +171,7 @@ export default function DiscoverScreen() {
     if (managerFilms.length > 0 && !deckSnapshotTaken.current) {
       deckSnapshotTaken.current = true;
       setDeck(managerFilms);
-      posthogAnalytics.track('mood_deck_started', {
+      posthogAnalytics.track(deckViewEventName(getSearchAnalyticsContext().resumed), {
         // Siralı film id'leri (ilk 8) + deste boyutu; kullanici metni YOK.
         ...deckStartedProps(managerFilms),
         search_mode: searchMode,

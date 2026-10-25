@@ -85,10 +85,12 @@ import {
   setPendingMoodText,
   setSearchModeState,
   setSearchAnalyticsContext,
+  setDeckResumed,
 } from '@/services/moodSearchState';
 import { seedPreload, startPreload } from '@/services/recommendationPreload';
 import { loadTodayDeck } from '@/services/todayDeckStore';
 import TodaySearchCard from '@/components/Home/TodaySearchCard';
+import { hasFreeSearchLeft } from '@/utils/searchQuota';
 import { isSameSearchText, localDateKey, type TodayDeckSnapshot } from '@/utils/todayDeck';
 import { getMoodHistory } from '@/services/profileService';
 import * as ExpoCrypto from 'expo-crypto';
@@ -150,7 +152,7 @@ export default function MoodSearchScreen() {
   } = useMood();
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading, searchQuota, refreshSearchQuota } = useProModeAccess({ withQuota: true });
   /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
   const offerEnabled = useMoodOfferEnabled();
   const freeVisibleCount = useFreeVisibleCount();
@@ -226,6 +228,13 @@ export default function MoodSearchScreen() {
         }
       })();
     }, []),
+  );
+
+  // MONEY-1C: kalan hak her odakta sunucudan tazelenir (arama sonrasi donuste "ucretsiz arama" ipucu kapanir).
+  useFocusEffect(
+    useCallback(() => {
+      refreshSearchQuota();
+    }, [refreshSearchQuota]),
   );
 
   // MONEY-1C P0: bugunku deste kurtarma — her odakta cihazdan okunur (bayrak kapaliysa hic okunmaz).
@@ -711,6 +720,9 @@ export default function MoodSearchScreen() {
     });
     setSearchModeState('ai');
     setSearchMode('ai');
+    // Kurtarilan deste yeni arama degil: discover `mood_deck_resumed` atar (`mood_deck_started` degil).
+    setSearchAnalyticsContext({ entryPoint: 'today_deck', consent: true });
+    setDeckResumed(true);
     setLastSearchId(todayDeck.searchId);
     setLastMoodText(todayDeck.moodText);
     setMoodResult(todayDeck.profile, todayDeck.filters);
@@ -781,7 +793,8 @@ export default function MoodSearchScreen() {
       isOnboarding,
       accessLoading: proAccessLoading,
       entitled: proEntitled,
-    });
+    }) &&
+    hasFreeSearchLeft(searchQuota);
 
   // ── Input asamasi ──────────────────────────────────────────────────────────
   return (
