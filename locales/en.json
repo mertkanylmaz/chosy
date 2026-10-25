@@ -610,8 +610,12 @@
     "errorQuotaUnavailable": "Search is temporarily unavailable. You haven't used a search — try again in a moment.",
     "errorInvalidInput": "Add a few more words — at least 2 characters — and try again.",
     "inviteTitle": "Want a pick that matches your mood?",
-    "paywallKickerQuota": "Unlimited with Pro",
-    "paywallKickerDeck": "Like these picks? Search any mood, any time.",
+    "paywallTitleDeck": "Keep exploring this mood.",
+    "paywallTitleQuota": "Ready for another search?",
+    "paywallBenefit1": "Every pick in every search",
+    "paywallBenefit2": "Search again, whenever you want",
+    "paywallBenefit3": "Explore films for any mood",
+    "paywallNightly": "Your nightly 4 films stay free.",
     "freeSearchHint": "Today's free search · %{count} picks included"
   },
   "moodLock": {

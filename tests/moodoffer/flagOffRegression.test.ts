@@ -75,7 +75,7 @@ Deno.test('adım 5: mood_offer tetikleyici/varyant, IMMEDIATE, kill-switch ve ro
   const paywall = read('components/paywalls/PaywallMoodOffer/index.tsx')
   assert(!/trial|7 days|7 gün/i.test(paywall.replace(/trialShown/g, '').replace(/[^\n]*\*[^\n]*/g, '')))
   const loc = JSON.parse(read('locales/en.json')).moodOffer
-  assert(!/free trial|7 days|7-day/i.test(`${loc.paywallKickerQuota} ${loc.paywallKickerDeck}`))
+  assert(!/free trial|7 days|7-day/i.test(`${loc.paywallTitleQuota} ${loc.paywallTitleDeck} ${loc.paywallBenefit1} ${loc.paywallBenefit2} ${loc.paywallBenefit3} ${loc.paywallNightly}`))
 })
 
 Deno.test('adım 6: deste sonu/çıkış teklifi KALDIRILDI; slot muafiyeti bayrak arkasında', () => {

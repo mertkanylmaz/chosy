@@ -610,8 +610,12 @@
     "errorQuotaUnavailable": "Arama geçici olarak kullanılamıyor. Arama hakkın harcanmadı — birazdan tekrar dene.",
     "errorInvalidInput": "Biraz daha yaz — en az 2 karakter — ve tekrar dene.",
     "inviteTitle": "Mood'una uyan bir film ister misin?",
-    "paywallKickerQuota": "Pro ile sınırsız",
-    "paywallKickerDeck": "Seçimleri sevdin mi? İstediğin mood'u istediğin zaman ara.",
+    "paywallTitleDeck": "Bu ruh halini keşfetmeye devam et.",
+    "paywallTitleQuota": "Bir arama daha ister misin?",
+    "paywallBenefit1": "Her aramada tüm öneriler",
+    "paywallBenefit2": "İstediğin zaman yeniden ara",
+    "paywallBenefit3": "Her ruh hali için film keşfet",
+    "paywallNightly": "Gecelik 4 filmin ücretsiz kalır.",
     "freeSearchHint": "Bugünün ücretsiz araması · %{count} öneri dahil"
   },
   "moodLock": {
