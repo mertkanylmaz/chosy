@@ -50,7 +50,7 @@ import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
 import { readAppUserId } from '@/services/auth-utils';
-import { getSearchAnalyticsContext } from '@/services/moodSearchState';
+import { getSearchAnalyticsContext, setPendingMoodText } from '@/services/moodSearchState';
 import { saveTodayDeck } from '@/services/todayDeckStore';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
@@ -91,7 +91,7 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId, lastMoodText } = useMood();
+  const { currentProfile, currentFilters, setMoodResult, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId, lastMoodText } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
   const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
@@ -143,8 +143,12 @@ export default function DiscoverScreen() {
     hasError,
     errorType,
     retryLoad,
+    resetFeed,
     onSwipeFilm,
   } = useFeedManager(currentProfile, effectiveFilters, prefetchCap);
+
+  /** Kullanıcı puan ve/veya dönem filtresi seçti mi (boş durum + bilgi satırı) */
+  const filtersActive = effectiveFilters.yearRange !== null || effectiveFilters.minRating !== null;
 
   // ── Deck state ─────────────────────────────────────────────────────────────
 
@@ -407,6 +411,27 @@ export default function DiscoverScreen() {
     router.dismissTo('/(tabs)');
   }, [router]);
 
+  /**
+   * "Filtreleri kaldır": KOTA HARCAMAZ — parse-mood çağrılmaz. Mevcut profil filtresiz
+   * `getRecommendations` ile yeniden aranır; rerank için son mood metni geri konur.
+   */
+  const handleRemoveFilters = useCallback(() => {
+    if (!currentProfile) return;
+    posthogAnalytics.track('mood_filters_removed', {
+      filter_min_rating: effectiveFilters.minRating ?? null,
+      filter_era: effectiveFilters.yearRange ?? null,
+    });
+    if (lastMoodText) setPendingMoodText(lastMoodText);
+    setMoodResult(currentProfile, DEFAULT_FILTERS);
+    deckSnapshotTaken.current = false;
+    setDeck([]);
+    setCurrentIndex(0);
+    setLikedFilms([]);
+    setDislikedFilms([]);
+    setDeckComplete(false);
+    resetFeed(currentProfile, DEFAULT_FILTERS);
+  }, [currentProfile, effectiveFilters, lastMoodText, setMoodResult, resetFeed]);
+
   const handleGoWatchlist = useCallback(() => {
     router.navigate('/(tabs)/profile' as never);
   }, [router]);
@@ -447,6 +472,22 @@ export default function DiscoverScreen() {
           </View>
         </View>
       </View>
+    );
+  }
+
+  // ── Filtreyle 0 sonuç: boş durum + filtresiz yeniden arama ──────────────────
+
+  if (hasError && errorType === 'empty' && deck.length === 0 && filtersActive) {
+    return (
+      <>
+        <StatusBar style="light" backgroundColor={Colors.background} />
+        <EmptyState
+          lumiMood="searching"
+          title={t('discover.noFilterMatchTitle')}
+          actionLabel={t('discover.removeFilters')}
+          onAction={handleRemoveFilters}
+        />
+      </>
     );
   }
 
@@ -545,6 +586,11 @@ export default function DiscoverScreen() {
             ]}
           />
         </View>
+        {filtersActive && deckSize > 0 && deckSize < 8 && (
+          <Text style={[styles.progressText, styles.filterInfoText]}>
+            {t('discover.filterMatchCount', { count: deckSize })}
+          </Text>
+        )}
       </Animated.View>
 
       {/* New mood button — top right */}
@@ -623,6 +669,13 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  // progressText ile birlikte kullanılır (renk + gölge oradan gelir)
+  filterInfoText: {
+    fontSize: 13,
+    fontWeight: '400',
+    marginTop: 8,
+    marginBottom: 0,
   },
   progressTrack: {
     height: 5,

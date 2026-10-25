@@ -4389,3 +4389,13 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
 - **Pro geçiş tetikleyicisi:** ilk ücretli dönüşüm **veya** > 100 gerçek aktif kullanıcı (hangisi önce). Karar kurucuya aittir; tetikleyici görüldüğünde bu madde hatırlatılır.
 - **Pro'ya geçince:** 139 eşzamanlılık testi gerçek branch şemasında tekrarlanacak (şu an embedded Postgres 18.4, stub şema, 10 bağlantı, 5/5 — canlı şemayla birebir değil); backup/PITR'in açık olduğu ve son yedek tarihi runbook 0.1'e geri eklenecek.
 - **Export sınırı — `auth.users` dışarıda (25 Eki):** `scripts/backup/export-logical.ps1` yalnız `public` şemasındaki 10 tabloyu alır; `auth.users`/`auth.identities`/oturumlar YOK. Hesap/kimlik felaketinde `public.users` satırları geri yüklense bile kullanıcıların girişleri dönmez (`users.auth_id` eşleşmesi yetim kalır). Free planda auth için kurtarma yolu yok; Pro geçişinin (yedek/PITR) gerekçelerinden biri. Geri yükleme `scripts/backup/restore-rows.ps1` (UPSERT; `users` DELETE edilmez — `ON DELETE CASCADE` çocuk tabloları siler), gömülü PG'de 10/10 test edildi, canlıda denenmedi.
+
+## PRO-0 Faz 0 — ertelenenler ve ölü kod (25 Eki 2026)
+
+- **Filtre/kart puanı IMDb değil TMDB (MOOD-VEC-1'e, sunucu işi):** `match_films_v3` (migration 133) `f.vote_average >= min_rating` ile filtreler ve dönüş tablosunda `imdb_rating` yok. Faz 0'da filtre ve kart dürüstçe TMDB'yi gösterir (başlık RATING/PUAN, çipler 7+/8+/8.5+, kart `★ 6.8`). Filtrenin `imdb_rating`'e taşınması (RPC dönüşüne `imdb_rating` eklenmesi dahil) ayrı migration + deploy gerektirir. Çipin `top250` kimliği 8.5 eşiğine eşleniyor; kimlik adı IMDb Top 250 anlamını artık taşımıyor (kod adı değişmedi).
+- **JS fallback ölü kod (F0-1/F0-2):** `getFallbackFromSupabase` çağrısı `getRecommendations`tan kalktı. Artık referanssız: `getFallbackFromSupabase`, `scoreFilm`, `scoredRowToFilm`, `applyFilters` (utils/filmFilters), `FilmTableRow`. Silme kararı ayrı (Kural: davranış silme değil çağrı kaldırma).
+- **`hooks/useFeedState.ts` ölü:** yalnız `hooks/index.ts` yeniden dışa aktarıyor, çağıranı yok; `resetFeed`i dahil. Silinmedi.
+- **`recommendations.ts` `.catch(() => {})` (başarı yolu, `tasteSignals.recordMoodSearchCompleted`):** F0-1'in dokunduğu yolda değil, Kural 2'ye uymuyor. Sentry'ye yazan bir işleyiciyle değiştirilmeli.
+- **`discover.tsx` `tasteSignals.recordSwipeRight/Left(...).catch(() => {})`:** aynı sınıf; dokunulmadı.
+- **Preload erken dönüşü:** `mood_preload_skipped` olayı B1/B6 teşhisi için eklendi; kök neden #915'te `mood_relaxation_timing.origin/min_rating` ile doğrulanacak.
+- **Faz 2'ye (dokunulmadı):** `AIProcessingOverlay` adım zamanlayıcısı (gerçek aşamaya bağlı değil), Watchlist dışındaki yüzde kalıntıları.

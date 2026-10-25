@@ -14,6 +14,7 @@ import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
 import { logger } from '../utils/logger';
 import { normalizePosterUrl } from '../utils/posterUrl';
+import { buildRelaxationSteps } from '../utils/relaxationChain';
 
 import { getAppUserId } from './auth-utils';
 import { ensureAuthSession, getFreshSession } from './authSession';
@@ -673,7 +674,12 @@ interface RelaxationTrace {
   attemptMs: number[];
   /** v3 hata verip v2/v1'e düşüldü mü */
   v3FellBack: boolean;
+  /** Her denemede RPC'ye GERÇEKTEN gönderilen min_rating (null = gönderilmedi) */
+  sentMinRatings: (number | null)[];
 }
+
+/** getRecommendations çağrısının kaynağı — `mood_relaxation_timing.origin`. */
+export type RecommendationOrigin = 'preload' | 'discover' | 'retry' | 'filter_reset';
 
 /**
  * v2 veya v1 RPC'yi feature flag'e göre çağırır.
@@ -885,18 +891,14 @@ function reorderByRerankedIds(rows: MatchFilmRow[], rerankedIds: string[]): Matc
 // ─── Progressive Filter Relaxation ───────────────────────────────────────────
 
 /**
- * match_films RPC'yi 4 aşamalı filtre gevşetme ile çalıştırır.
+ * match_films RPC'yi 4 aşamalı gevşetme zinciriyle çalıştırır (`utils/relaxationChain`).
  *
- * Deneme 1: tam filtreler (yıl + puan)
- * Deneme 2: puan -1 (yıl korunur)
- * Deneme 3: puan -1 + yıl filtresi kaldırıldı
- * Deneme 4: sadece vektör similarity (min 0.2)
+ * Yalnız `min_similarity` gevşer. Kullanıcının seçtiği puan ve dönem HİÇBİR denemede
+ * gevşetilmez; filtre seçilmediyse zincir eski değerlerle aynıdır (puan 6.5 → 6.0 →
+ * 5.5 → yok, dönem 3. denemede düşer).
  *
- * ≥5 film gelince o denemedeki sonuç döndürülür.
- * Tüm denemeler boş kalırsa son denemenin sonucu (boş dizi veya null) döner.
- *
- * Uses v2 (per-director cap + NULL exclusion) when useMatchFilmsV2() is true,
- * with automatic fallback to v1 on error.
+ * İlk ≥8 sonuç veren deneme döner. Hiçbiri yoksa son denemenin sonucu (boş dizi);
+ * son deneme hata verirse null.
  */
 async function getFilmsWithRelaxation(
   vectorString: string,
@@ -911,25 +913,19 @@ async function getFilmsWithRelaxation(
   trace?: RelaxationTrace,
   matchCount: number = DEFAULT_MATCH_COUNT,
 ): Promise<MatchFilmRow[] | null> {
-  const baseRating = ratingMin ?? 6.5;
-
-  // ── Quality-first relaxation (migration 050) ──────────────────────────────
   // Target: 8 high-quality films. matchCount (12; ilk batch'te 30 — rerank adayı)
   // gives buffer for director cap. Zincir ve eşikler matchCount'tan bağımsız.
   // Never pad with junk — return whatever passes the threshold.
   const TARGET_COUNT = 8;
-  const MATCH_COUNT = matchCount;
+  const steps = buildRelaxationSteps(ratingMin, era);
 
   // Telemetri: her denemenin süresi. Ağ hatası fırlatırsa da kaydedilir (finally).
-  const attempt = async (
-    minSimilarity: number,
-    minRating: number | null,
-    attemptEra: { from: number; to: number } | null,
-  ) => {
+  const attempt = async (step: (typeof steps)[number]) => {
     const t0 = Date.now();
+    trace?.sentMinRatings.push(step.minRating);
     try {
       return await callMatchFilms(
-        vectorString, MATCH_COUNT, minSimilarity, minRating, attemptEra, excludeIds,
+        vectorString, matchCount, step.minSimilarity, step.minRating, step.era, excludeIds,
         userVectorString, moodWeight, userWeight, searchKeywords, trace,
       );
     } finally {
@@ -937,44 +933,25 @@ async function getFilmsWithRelaxation(
     }
   };
 
-  // Deneme 1: strict thresholds
-  let res = await attempt(0.45, baseRating, era);
+  let res = await attempt(steps[0]);
 
   // Ilk RPC'de network hatasi → diger denemeleri atlayip hemen throw et (BUG-004)
   if (res.error && isNetworkLikeError(res.error)) {
     throw new TypeError(`Network request failed: ${res.error.message}`);
   }
 
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
-    return res.data as MatchFilmRow[];
+  for (let i = 0; ; i++) {
+    if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
+      return res.data as MatchFilmRow[];
+    }
+    if (i === steps.length - 1) break;
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.log(`[recommendations] Retry #${i + 1}: similarity ${steps[i + 1].minSimilarity}, rating ${steps[i + 1].minRating ?? 'yok'}`);
+    }
+    res = await attempt(steps[i + 1]);
   }
 
-  // Deneme 2: similarity ve rating biraz gevset
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #1: threshold gevsetildi (0.42, rating 6.0)');
-  }
-  res = await attempt(0.42, 6.0, era);
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
-    return res.data as MatchFilmRow[];
-  }
-
-  // Deneme 3: year filtrelerini kaldir, similarity biraz daha gevset
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #2: year kaldirildi (0.40, rating 5.5)');
-  }
-  res = await attempt(0.40, 5.5, null);
-  if (!res.error && res.data && (res.data as MatchFilmRow[]).length >= TARGET_COUNT) {
-    return res.data as MatchFilmRow[];
-  }
-
-  // Deneme 4 (son): minimum viable threshold — copi doldurma YOK
-  if (__DEV__) {
-    // eslint-disable-next-line no-console
-    console.log('[recommendations] Retry #3: son sans (0.38, rating yok, year yok)');
-  }
-  res = await attempt(0.38, null, null);
   if (res.error) return null;
   // Return whatever we found — even if < TARGET_COUNT. Never pad with junk.
   return (res.data as MatchFilmRow[]) ?? [];
@@ -1016,6 +993,20 @@ async function buildFirstBatchExclusions(
   return { hard, soft };
 }
 
+/**
+ * Promise'i hemen başlatılmış hâlde tutar; sonucu (ya da hatayı) + süreyi, beklenene kadar
+ * "yakalanmamış reddetme" üretmeden taşır. Hata, bekleyen yerde yeniden fırlatılır.
+ */
+type SettledTimed<T> = { ok: true; value: T; ms: number } | { ok: false; error: unknown; ms: number };
+
+function settleTimed<T>(promise: Promise<T>): Promise<SettledTimed<T>> {
+  const t0 = Date.now();
+  return promise.then(
+    (value): SettledTimed<T> => ({ ok: true, value, ms: Date.now() - t0 }),
+    (error: unknown): SettledTimed<T> => ({ ok: false, error, ms: Date.now() - t0 }),
+  );
+}
+
 /** soft önce (kesilmesin), sonra hard; üst sınır MAX_EXCLUDE_IDS. */
 function composeExclusions(hard: string[], soft: string[]): string[] {
   return [...new Set([...soft, ...hard])].slice(0, MAX_EXCLUDE_IDS);
@@ -1046,7 +1037,12 @@ export async function getRecommendations(
   filters?: FilmFilters,
   searchId?: string | null,
   isFirstBatch = false,
+  origin: RecommendationOrigin = 'discover',
 ): Promise<RecommendationResult> {
+  const callStart = Date.now();
+  // İlk batch dışlama okumaları kullanıcı vektörü / AI tercihleri ile PARALEL başlar
+  // (birbirine bağımlı değiller); sonuç Adım 3.8'de beklenir. Hata orada fırlatılır.
+  const exclusionsTask = isFirstBatch ? settleTimed(buildFirstBatchExclusions(excludeIds)) : null;
   // ── DEBUG: koşulsuz entry telemetri — searchId gerçekten geliyor mu? ────
   posthogAnalytics.track('mood_search_debug_entry', {
     receivedSearchId: searchId ?? null,
@@ -1061,7 +1057,7 @@ export async function getRecommendations(
   // Sonraki batch'lerde ve surprise fallback'te null beklenen davranıştır.
   // 'basic' modda (rıza reddi, parse-mood hiç çağrılmaz) searchId yokluğu
   // beklenir — yalnız o modda bastırılır; AI yolunda uyarı aynen çalışır.
-  if (!searchId && isFirstBatch && getSearchModeState() !== 'basic') {
+  if (!searchId && isFirstBatch && origin !== 'retry' && origin !== 'filter_reset' && getSearchModeState() !== 'basic') {
     const pendingMoodTextLength = peekPendingMoodText()?.length ?? null;
     reportMoodSearchWriteIssue({
       step: 'search_id_missing',
@@ -1177,17 +1173,20 @@ export async function getRecommendations(
   // ── Adım 3.8: İlk batch dışlaması (watchlist + izlenmiş + son 3 deste) ────
   let hardExcludeIds = excludeIds;
   let softExcludeIds: string[] = [];
-  if (isFirstBatch) {
-    const exclusions = await buildFirstBatchExclusions(excludeIds);
-    hardExcludeIds = exclusions.hard;
-    softExcludeIds = exclusions.soft;
+  let msExclusions = 0;
+  if (exclusionsTask) {
+    const settled = await exclusionsTask;
+    if (!settled.ok) throw settled.error;
+    hardExcludeIds = settled.value.hard;
+    softExcludeIds = settled.value.soft;
+    msExclusions = settled.ms;
   }
   const matchCount = isFirstBatch ? FIRST_BATCH_MATCH_COUNT : DEFAULT_MATCH_COUNT;
 
   // ── Adım 4: Aşamalı filtre gevşetme ile RPC ───────────────────────────────
-  const relaxationTrace: RelaxationTrace = { attemptMs: [], v3FellBack: false };
+  const relaxationTrace: RelaxationTrace = { attemptMs: [], v3FellBack: false, sentMinRatings: [] };
   const relaxationStart = Date.now();
-  let rawResult: MatchFilmRow[] | null;
+  let rawResult: MatchFilmRow[] | null = null;
   try {
     rawResult = await getFilmsWithRelaxation(
       vectorString, limit, ratingMin, era, composeExclusions(hardExcludeIds, softExcludeIds),
@@ -1216,6 +1215,15 @@ export async function getRecommendations(
       v3_fell_back: relaxationTrace.v3FellBack,
       is_first_batch: isFirstBatch,
       keyword_count: searchKeywords.length,
+      // B1/B6 teşhisi (PRO-0): RPC'ye GERÇEKTEN giden filtre + çağrı kaynağı + süre dökümü.
+      origin,
+      min_rating: relaxationTrace.sentMinRatings[0] ?? null,
+      min_ratings_sent: relaxationTrace.sentMinRatings.map((r) => r ?? 'none').join(','),
+      era_from: era?.from ?? null,
+      era_to: era?.to ?? null,
+      result_count: rawResult?.length ?? null,
+      ms_exclusions: msExclusions,
+      ms_to_chain_start: relaxationStart - callStart,
     });
   }
   let data: MatchFilmRow[] = rawResult ?? [];
@@ -1339,50 +1347,39 @@ export async function getRecommendations(
     });
   }
 
-  // ── Adım 5: Hata / boş sonuç → JS fallback ───────────────────────────────
+  // ── Adım 5: Hata / boş sonuç ─────────────────────────────────────────────
+  // PRO-0 F0-2: JS fallback kullanıcı yolundan çıkarıldı (uydurma eşleşme üretiyordu).
+  //   · RPC zinciri hatayla tükendi → Sentry + fırlat (istemci hata durumu + "Tekrar dene").
+  //   · Geçerli ama 0 sonuç → boş liste (çağıran boş durum gösterir).
+  // `getFallbackFromSupabase` silinmedi, çağrısı kalktı (TEKNIK_BORC).
   if (rpcFailed || data.length === 0) {
-    const reason = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log(`[recommendations] ${reason} — JS fallback deneniyor`);
-    }
+    const errorCode = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
+    const rpcVersion = useHybridRecommendation()
+      ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
+      : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
 
-    // Sentry breadcrumb — production'da RPC fail path'i izle (Sprint 3 #3)
-    try {
-      const Sentry = await import('@sentry/react-native');
-      Sentry.addBreadcrumb({
-        category: 'recommendations',
-        message: `RPC fallback: ${reason}`,
-        level: 'warning',
-        data: {
-          version: useHybridRecommendation()
-            ? (userWeight > 0 ? 'v3_hybrid' : 'v3_cold_start')
-            : (useMatchFilmsV2() ? 'v2' : 'v1'),
-          moodWeight,
-          userWeight,
-          hasUserVector: !!userVectorString,
-          dataLength: data.length,
-        },
-      });
-    } catch {
-      // Sentry unavailable — devam et
-    }
+    Sentry.addBreadcrumb({
+      category: 'recommendations',
+      message: `RPC sonucu yok: ${errorCode}`,
+      level: 'warning',
+      data: {
+        version: rpcVersion,
+        origin,
+        moodWeight,
+        userWeight,
+        hasUserVector: !!userVectorString,
+        dataLength: data.length,
+      },
+    });
 
-    const fallbackFilms = await getFallbackFromSupabase(effectiveProfile, limit, excludeIds, filters);
-
-    // Sprint 2 fix: fallback path'te de observability garantisi.
-    // rpc_version: hangi flag aktifti, error_code: neden fallback'e düştük.
+    // Gözlemlenebilirlik: hangi RPC sürümü, neden sonuç yok (mood_searches satırı).
     if (searchId) {
-      const rpcVersion = useHybridRecommendation()
-        ? (userWeight > 0 ? 'match_films_v3' : 'match_films_v3_cold_start')
-        : useMatchFilmsV2() ? 'match_films_v2' : 'match_films';
-      const errorCode = rpcFailed ? 'RPC_FAILED' : 'EMPTY_RESULT';
       await ensureAuthSession();
       const { data: fbUpdateData, error: fbUpdateError } = await supabase
         .from('mood_searches')
         .update({
           rpc_version: rpcVersion,
-          recommended_film_ids: fallbackFilms?.map((f) => f.id) ?? [],
+          recommended_film_ids: [],
           error_code: errorCode,
         })
         .eq('id', searchId)
@@ -1404,7 +1401,7 @@ export async function getRecommendations(
         rowsAffected: fbRowsAffected,
         rpcVersion,
         errorCode,
-        filmCount: fallbackFilms?.length ?? 0,
+        filmCount: 0,
       });
 
       if (fbUpdateError || fbRowsAffected === 0) {
@@ -1423,16 +1420,23 @@ export async function getRecommendations(
       }
     }
 
-    if (fallbackFilms) {
-      if (isFirstBatch) await recordShownDeck(fallbackFilms.map((f) => f.id));
-      return { films: fallbackFilms, source: 'fallback', insufficient_results: fallbackFilms.length < limit || undefined };
+    if (rpcFailed) {
+      const chainError = Object.assign(new Error('match_films zinciri hatayla tükendi'), {
+        code: 'RPC_CHAIN_FAILED',
+      });
+      Sentry.captureException(chainError, {
+        tags: { service: 'recommendations', error_code: 'RPC_CHAIN_FAILED', origin },
+        extra: {
+          rpcVersion,
+          isFirstBatch,
+          hasUserFilter: ratingMin != null || era != null,
+          attempts: relaxationTrace.attemptMs.length,
+        },
+      });
+      throw chainError;
     }
 
-    if (__DEV__) {
-      // eslint-disable-next-line no-console
-      console.log('[recommendations] films tablosu da boş — öneri listesi boş döndürülüyor');
-    }
-    return { films: [], source: 'fallback', insufficient_results: true };
+    return { films: [], source: 'supabase', insufficient_results: true };
   }
 
   // ── Adım 6: Başarılı — SQL zaten filtredi, dönüştür + unexpected inject ──

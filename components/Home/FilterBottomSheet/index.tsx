@@ -61,7 +61,13 @@ export default function FilterBottomSheet({
   const [draftYear, setDraftYear] = useState<YearChipId>(yearChip);
   const [draftRating, setDraftRating] = useState<RatingChipId>(ratingChip);
 
-  const activeCount = (yearChip !== '' ? 1 : 0) + (ratingChip !== '' ? 1 : 0);
+  // Etiket aktif filtre özetini taşır: "Filter · ★ 8+ · 2010s" (filtre yoksa yalnız "Filter").
+  const summaryParts: string[] = [];
+  const activeRating = RATING_CHIPS.find((chip) => chip.id === ratingChip && chip.id !== '');
+  const activeYear = YEAR_CHIPS.find((chip) => chip.id === yearChip && chip.id !== '');
+  if (activeRating) summaryParts.push(`★ ${t(activeRating.labelKey)}`);
+  if (activeYear) summaryParts.push(t(activeYear.labelKey));
+  const triggerLabel = [t('mood.filterTrigger'), ...summaryParts].join(' · ');
 
   const open = useCallback(() => {
     setDraftYear(yearChip);
@@ -87,14 +93,7 @@ export default function FilterBottomSheet({
       {/* ── Trigger ─────────────────────────────────────────────── */}
       <TouchableOpacity style={styles.triggerRow} onPress={open} activeOpacity={0.7}>
         <Ionicons name="options-outline" size={16} color={Colors.textSecondary} />
-        <Text style={styles.triggerText}>{t('mood.filterTrigger')}</Text>
-        {activeCount > 0 && (
-          <View style={styles.triggerBadge}>
-            <Text style={styles.triggerBadgeText}>
-              {t('mood.filterActiveCount', { count: activeCount })}
-            </Text>
-          </View>
-        )}
+        <Text style={styles.triggerText}>{triggerLabel}</Text>
       </TouchableOpacity>
 
       {/* ── Bottom Sheet Modal ──────────────────────────────────── */}

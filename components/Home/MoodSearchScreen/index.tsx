@@ -101,7 +101,7 @@ import { readAppUserId } from '@/services/auth-utils';
 import { FilmFilters, TasteProfile } from '@/types';
 import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
-import { yearRangeToEra } from '@/utils/filmFilters';
+import { minRatingThreshold, yearRangeToEra } from '@/utils/filmFilters';
 import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
 import { isOfferEligible } from '@/utils/moodOfferTiming';
 import { hidesBeyondFree } from '@/utils/moodLock';
@@ -457,7 +457,6 @@ export default function MoodSearchScreen() {
     // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
     hapticLight();
     Keyboard.dismiss();
-    posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
     // MONEY-1C: ucretsiz hak yoluyla baslayan arama (bayrak acik, yetkisiz, onboarding disi).
     // Erisim OKUNURKEN `allowed` false gorunur; o anda karar verilmez (premium/legacy
     // kullanici ucretsiz arama olarak sayilmasin) — olay atilmaz, huni kirlenmez.
@@ -499,6 +498,11 @@ export default function MoodSearchScreen() {
     const filters: FilmFilters = { yearRange, minRating, regions: [], directors: [] };
 
     pendingFilters.current = filters;
+    posthogAnalytics.track('mood_searched', {
+      mood_text_length: trimmed.length,
+      filter_min_rating: minRatingThreshold(minRating),
+      filter_era: yearRange,
+    });
 
     // `mood_search_free_started` RIZA dogrulandiktan SONRA: rizayi taze okuyoruz (cagirani
     // ne varsayiyoruz ne de rizanin arada geri cekilmedigini). Riza yoksa olay atilmaz;

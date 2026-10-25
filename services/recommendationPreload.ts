@@ -20,6 +20,7 @@ import type { FilmFilters, TasteProfile } from '@/types';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 import type { RecommendationResult } from './recommendations';
 import { getRecommendations } from './recommendations';
+import { posthogAnalytics } from './posthog';
 import {
   consumePendingSearchId,
   getSearchModeState,
@@ -48,11 +49,14 @@ function profileKey(
   moodText: string,
   mode: SearchMode,
   searchId: string | null,
+  filters: FilmFilters,
 ): string {
   // 3 boyut tek başına yetmez: farklı metin / mod / arama aynı boyutlara düşebilir
-  // ve eski aramanın sonucu yeni aramaya taşınırdı.
+  // ve eski aramanın sonucu yeni aramaya taşınırdı. Filtreler de anahtarın parçası:
+  // aynı metinle farklı filtre (PRO-0 B1) eski filtresiz sonucu yutmasın.
   const dims = `${profile.energy_level}_${profile.thematic_depth}_${profile.ending_preference}`;
-  return [dims, mode, searchId ?? '', moodText.trim().toLowerCase()].join('|');
+  const filterKey = `${filters.yearRange ?? ''}:${filters.minRating ?? ''}`;
+  return [dims, mode, searchId ?? '', moodText.trim().toLowerCase(), filterKey].join('|');
 }
 
 /**
@@ -95,10 +99,19 @@ export function startPreload(
   moodText: string,
   prefetchLimit?: number,
 ): void {
-  const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId());
+  const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId(), filters);
 
-  // Ayni arama (metin + mod + searchId + boyutlar) icin zaten preload varsa tekrar baslatma
-  if (_preloadProfileKey === key && _preloadPromise) return;
+  // Ayni arama (metin + mod + searchId + boyutlar + filtre) icin zaten preload varsa tekrar baslatma
+  if (_preloadProfileKey === key && _preloadPromise) {
+    // B1/B6 teşhisi: erken dönüş yeni aramanın RPC'sini başlatmaz — görünür olsun.
+    posthogAnalytics.track('mood_preload_skipped', {
+      reason: 'same_key',
+      has_search_id: peekPendingSearchId() !== null,
+      filter_min_rating: filters.minRating ?? null,
+      filter_era: filters.yearRange ?? null,
+    });
+    return;
+  }
 
   _preloadProfileKey = key;
   _preloadResult = null;
@@ -115,6 +128,7 @@ export function startPreload(
     filters,
     searchId,
     true, // isFirstBatch — LLM reranker aktif
+    'preload',
   )
     .then((result) => {
       // Arada yeni bir preload basladiysa (anahtar degisti) eski sonuc yenisini ezmesin
@@ -137,6 +151,17 @@ export function startPreload(
       throw err;
     });
   _preloadPromise = promise;
+  // Preload henüz tüketilmeden reddedilirse "yakalanmamış reddetme" olmasın: hata
+  // tüketicide (useFeedManager) yeniden gözlenir; RPC zinciri hatası kaynakta zaten
+  // Sentry'ye yazıldı (RPC_CHAIN_FAILED), burada yalnız iz bırakılır.
+  promise.catch((err: unknown) => {
+    Sentry.addBreadcrumb({
+      category: 'recommendation_preload',
+      level: 'warning',
+      message: 'preload reddedildi (tuketicide yeniden gozlenecek)',
+      data: { error: err instanceof Error ? err.message : String(err) },
+    });
+  });
 }
 
 /**
