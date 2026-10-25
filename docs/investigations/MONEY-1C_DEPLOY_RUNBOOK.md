@@ -25,7 +25,7 @@ Beklenen ürün etkisi: yeni istemci yok iken kullanıcıya görünür değişik
 
 | # | Kontrol | Nasıl | Beklenen |
 |---|---|---|---|
-| 0.1 | Yedek tarihi | Dashboard → Database → Backups | Son yedek < 24 sa. (CLI tarihi göstermiyor: `WALG=true`, `PITR=false`). Tarihi not et: `____` |
+| 0.1 | **Mantıksal export kapısı** (Supabase Free: yedek/PITR YOK — karar 25 Eki 12:20) | `powershell -NoProfile -File scripts\backup\export-logical.ps1 -OutDir C:\Users\mertk\moodflix-rollback\backup-2026-10-26` (salt-okunur; mevcut CLI oturumu, anahtar gerekmez; klasör repo dışı, git'e EKLENMEZ — kişisel veri) | `MANIFEST.txt` son satırı `SONUC: TUM TABLOLAR TAMAM`; 10 tablonun hepsi `OK`; md5'ler ve satır sayıları kayıt tablosuna yazılır. **Export yok / eksik / MANIFEST kırmızı → apply YOK.** Beklenen sayılar (25 Eki ölçümü): mood_searches 121, users 337, subscriptions 8, user_daily_quotas 81, watchlist 360, app_config 30, subscription_limits 5, promo_codes 1, lifetime_sales 0, deletion_requests 0. Büyük sapma (örn. users azalmış) → DUR, nedenini bul. **Bölüm B (27 Eki) öncesi export yeniden alınır** (`-OutDir ...\backup-2026-10-27`). |
 | 0.2 | Dal ve temizlik | `git switch feat/money-1c; git status --short; git rev-parse HEAD` | dal `feat/money-1c`, çıktı BOŞ. **Kirli/yanlış dal → DUR.** SHA'yı kaydet: `____` (bu belgeyi içeren commit: `git log -1 -- docs/investigations/MONEY-1C_DEPLOY_RUNBOOK.md`) |
 | 0.3 | Migration durumu | `supabase migration list` | Local 139, 140, 141, 142 — Remote en yüksek **138**. Remote'ta 138'den büyük bir sürüm varsa DUR (CLAUDE.md "migration numaralandırma") |
 | 0.4 | Ön durum kaydı | aşağıdaki sorgu P0 | `rows=121`, `md5=923ac0b9cc5ffabc4fa62e1f5056e657`, `legacy_md5=dee4b541c8401acc4553fa4a56f72935` (created_at ≤ 2026-10-25 03:56:25.671135+00), `acl_md5=7547c9658ede91689da90ed8bc374d4f`, son migration `138`. **Yeni satır girmişse** (rows>121) yalnız `legacy_md5` (≤ sınır) ve `acl_md5` karşılaştırılır; `md5` (tüm satır) 139'dan sonra kolon eklendiği için ZATEN değişir |
@@ -176,6 +176,30 @@ Rollback dosyaları repo dışı: `C:\Users\mertk\moodflix-rollback\`. Veritaban
 
 R1–R7 aşağıdadır; R8 ve R9 Bölüm B'dedir.
 
+### Veri bozulursa: mantıksal export'tan geri yükleme (yedek yok — Supabase Free)
+
+Export klasörü: `C:\Users\mertk\moodflix-rollback\backup-2026-10-26\` (`<tablo>.jsonl`, satır başına bir `to_jsonb(satır)`; `schema-2026-10-26.sql.txt` yalnız karşılaştırma/yeniden kurma referansı, doğrudan çalıştırılmaz). **Önce şemayı geri al** (ilgili `*_rollback.sql`), çünkü JSONL kolonları export anındaki şemaya aittir; 139 sonrası eklenen kolonlar eski şemada yoktur. Geri yükleme **önce bozulan satırların hangileri olduğunu** karşılaştırarak yapılır (tüm tabloyu körlemesine ezme):
+```powershell
+# Örnek: bozulan satırları (id listesi) export'tan geri yükle = o id'leri sil + export'taki halini ekle (tek işlem).
+# `supabase db query --linked` Management API üzerinden postgres olarak çalışır; service_role anahtarı GEREKMEZ, kullanılmaz, yazılmaz.
+$t   = 'mood_searches'
+$ids = @('<uuid-1>', '<uuid-2>')                       # etkilenen satırlar (önce SELECT ile karşılaştırarak belirle)
+$f   = "C:\Users\mertk\moodflix-rollback\backup-2026-10-26\$t.jsonl"
+$json = '[' + ((Get-Content $f -Encoding UTF8) -join ',') + ']'
+$idl  = ($ids | ForEach-Object { "'$_'" }) -join ','
+$sql  = "begin; delete from public.$t where id in ($idl); " +
+        "insert into public.$t select * from jsonb_populate_recordset(null::public.$t, `$bk`$$json`$bk`$::jsonb) r where r.id in ($idl); commit;"
+Set-Content "$env:TEMP\restore_$t.sql" $sql -Encoding UTF8   # önce dosyayı gözle kontrol et
+supabase db query --linked -f "$env:TEMP\restore_$t.sql"
+```
+(`id` birincil anahtarı olmayan bir tabloda — örn. `app_config` `key` — `id` yerine ilgili anahtar sütunu kullanılır.)
+Kurallar:
+- **FK sırası:** `users` → `subscriptions`, `user_daily_quotas`, `watchlist`, `mood_searches`, `deletion_requests`, `lifetime_sales` → `app_config`, `subscription_limits`, `promo_codes` (bağımsız). Silme ters sırada.
+- Küçük sapma için yalnız etkilenen satırlar (`id` listesiyle) geri yüklenir; tüm tablo yalnız tablo boşaldıysa.
+- `lifetime_sales` ve sequence: `lifetime_sale_number` export'ta `last_value` olarak kayıtlı (`schema-*.sql.txt` "sequence durumu"); satış verisi geri yüklenirse `setval` ile sayaç manuel hizalanır — **DUR ve sor** (sayaç ve fiyat/limit kararı kurucuya aittir).
+- Geri yükleme sonrası MANIFEST'teki satır sayıları ve (değişmemiş tablolar için) md5'ler yeniden alınan export ile karşılaştırılır.
+- Gizli veri: bu klasör kişisel veri içerir; repo dışında kalır, paylaşılmaz, işi bitince saklama süresine karar verilir (öneri: 30 gün, sonra güvenli sil).
+
 | # | Belirti | Tetik eşiği | Geri alma |
 |---|---|---|---|
 | R1 | Eski (2.1.x) istemciler `mood_searches` yazamıyor: Sentry `QUOTA_SEARCH_RECORD_FAILED` / "`mood_searches UPDATE failed`" `42501` | ≥ 3 olay / 10 dk ya da tester aramasının sonuç satırı yazılmaması | **Dar geri alma:** `GRANT INSERT, UPDATE ON public.mood_searches TO anon, authenticated;` (139_rollback.sql'in yetki kısmı). Fonksiyonlar/kolonlar kalır |
@@ -189,7 +213,7 @@ R1–R7 aşağıdadır; R8 ve R9 Bölüm B'dedir.
 ### Kayıt tablosu — Bölüm A (26 Eki, uygularken doldur)
 | Adım | Zaman (UTC) | Sonuç | Doğrulama | Notlar |
 |---|---|---|---|---|
-| 0 ön kontroller | | | | yedek tarihi, SHA |
+| 0 ön kontroller | | | | export MANIFEST md5'leri (25 Eki 09:09 UTC denemesi: mood_searches `dfb14062…`, users `b2aa7762…`; apply günü export YENİDEN alınır), SHA |
 | 1 — 139 | | | V1.1–V1.5 | |
 | 2 — 140 | | | | |
 | 3 — parse-mood v43 | | | smoke A, Sentry | |
@@ -202,7 +226,7 @@ R1–R7 aşağıdadır; R8 ve R9 Bölüm B'dedir.
 **Ön koşul (hepsi):**
 1. 26 Eki doğrulaması temiz: Bölüm A kayıt tablosunda "24 sa kapısı = temiz"; R1–R7 tetiklenmedi; Sentry'de 26 Eki 12:00'den beri `42501` / RLS / `permission denied` / `QUOTA_*` yeni hata yok.
 2. Aynı pencere: TR 12:00–14:00. Bölüm A'dan en az 24 sa geçmiş.
-3. Dal/temizlik (0.2) tekrar: `feat/money-1c`, `git status --short` BOŞ.
+3. Dal/temizlik (0.2) tekrar: `feat/money-1c`, `git status --short` BOŞ. **Taze mantıksal export** (0.1, `-OutDir ...\backup-2026-10-27`) alınmış ve MANIFEST `TUM TABLOLAR TAMAM`; yoksa apply YOK.
 4. `supabase migration list` → Remote en yüksek **140**, Local 141 ve 142 bekliyor. Başka sürüm varsa DUR.
 5. Canlı dry-run'lar yeşil (bugün tekrar): `supabase db query --linked -f supabase\tests\141_dryrun.sql` (5/5) ve `...\142_dryrun.sql` (5/5), `zz_summary | ALL PASS`.
 6. 142 ön durumu `C:\Users\mertk\moodflix-rollback\142_pre_state.txt` ile aynı (aşağıdaki P1 sorgusu): `increment_promo_usage` ACL'sinde `anon`/`authenticated` var (daraltılacak), `claim_lifetime_spot` `proconfig` boş (`search_path` yok), `lifetime_sale_number` last_value 4, `lifetime_sales` 0 satır. **Farklıysa DUR** (biri arada satış yapmış / ACL değişmiş olabilir; yeniden değerlendir).

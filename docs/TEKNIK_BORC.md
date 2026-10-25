@@ -4380,3 +4380,11 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
      (yalnız service_role), bu yüzden risk düşük; yine de 109 deseniyle (`SET search_path = ''`) hizalanmalı.
    - 8 görünüm (view) bu taramaya dahil edilmedi; `anon/authenticated` yetkileri ayrıca bakılmalı. `mood_searches` ve diğer tablolarda
      `MAINTAIN` (PG17 `m`) yetkisi de taranmadı.
+
+## Supabase Free planı: yedek/PITR yok — Pro geçiş tetikleyicisi (25 Eki 2026)
+
+- **Durum:** `chosy ai` projesi Supabase Free planında. Otomatik yedek ve PITR YOK (CLI'daki `WALG=true` bir yedek tarihi göstermez). Plan kısıtı: `create_branch` de `PaymentRequiredException` verdi (branching yalnız Pro+).
+- **Geçici önlem:** her riskli apply öncesi mantıksal export — `scripts/backup/export-logical.ps1` (10 tablo JSONL + şema referansı + MANIFEST satır sayısı/md5; yalnız okuma, mevcut CLI oturumu, anahtar yok; çıktı repo dışı `C:\Users\mertk\moodflix-rollback\backup-<tarih>\`, kişisel veri). Geri yükleme adımları: `MONEY-1C_DEPLOY_RUNBOOK.md` "Veri bozulursa".
+- **Sınırlar:** anlık görüntü yalnız o 10 tabloyu kapsar (film verisi, `film_profiles`, auth şeması, storage, cron/vault yok); export anı ile bozulma anı arasındaki yazmalar kaybolur; eşzamanlı yazma sırasında tutarlı kesit (snapshot) garantisi yok (tablolar sırayla okunur).
+- **Pro geçiş tetikleyicisi:** ilk ücretli dönüşüm **veya** > 100 gerçek aktif kullanıcı (hangisi önce). Karar kurucuya aittir; tetikleyici görüldüğünde bu madde hatırlatılır.
+- **Pro'ya geçince:** 139 eşzamanlılık testi gerçek branch şemasında tekrarlanacak (şu an embedded Postgres 18.4, stub şema, 10 bağlantı, 5/5 — canlı şemayla birebir değil); backup/PITR'in açık olduğu ve son yedek tarihi runbook 0.1'e geri eklenecek.
