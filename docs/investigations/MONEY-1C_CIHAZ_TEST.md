@@ -70,13 +70,16 @@ Hiçbir MONEY-1C yüzeyi görünmemeli, eski davranış aynen sürmeli.
 - [ ] Deste özeti → kapat: teklif YOK.
 - [ ] Deste özeti → "yeni mood": teklif YOK.
 - [ ] Sistem geri tuşu (Android) / iOS kenar kaydırma: teklif YOK, çıkış normal.
+- [ ] **Kilit kartı YOK:** 8 filmlik deste tamamen açık, sayaç "n / 8" normal ilerler; 4.–8. poster önceden yüklenir.
+- [ ] **"Today's search" kartı ve "Today's free search · N picks" satırı YOK.**
+- [ ] Görünen metinde "Pro Mode" yerine "Mood Search" (profil/pro-mode başlığı); rota ve davranış aynı.
 - [ ] Pro Mode girişi: ücretsiz hesapta eski kilitli ekran; premium/legacy hesapta doğrudan giriş.
 - [ ] Mood arama: ücretsiz sayaç eski AsyncStorage kotasıyla çalışıyor; hak bitince eski kota duvarı.
 - [ ] Mood arama: **1 karakter** yazınca gönder pasif (bayraktan bağımsız yeni kural, bilinçli).
 - [ ] Profil ekranı açılıyor, Pro durumu doğru, "Chosy Pro" CTA'sı eskisi gibi.
 - [ ] Uçak modu + soğuk açılış: gauntlet/profil takılmıyor; Sentry'de `REMOTE_CONFIG_HYDRATE_FAILED`
       mount başına DEĞİL, en fazla birkaç kez (geri çekilme: 30 sn → 5 dk).
-- [ ] PostHog: hiçbir `mood_invite_*`, `mood_offer_*`, `mood_search_free_*` olayı YOK.
+- [ ] PostHog: hiçbir `mood_invite_*`, `mood_offer_*`, `mood_search_free_*`, `mood_lock_*`, `mood_deck_unlocked` olayı YOK.
 
 ## B. Bayrak AÇIK (kimliğin tester listesinde)
 
@@ -96,8 +99,8 @@ Hiçbir MONEY-1C yüzeyi görünmemeli, eski davranış aynen sürmeli.
 - [ ] Ücretsiz arama başarılı: sonuç gelir, deste açılır.
 - [ ] Hak bitince: Pro Mode "Bugünlük ücretsiz aramaların bitti" ekranı; süre biliniyorsa
       "… sonra yeniden ücretsiz arama" metni; limit sayısı metinde YOK.
-- [ ] Hak bittikten sonra aramada `mood_offer` paywall'ı (entry `quota_exhausted`) açılır; deneme vaadi
-      yalnız uygun kullanıcıda ("7 gün ücretsiz"), değilse fiyatlı teklif.
+- [ ] Hak bittikten sonra aramada `mood_offer` paywall'ı (entry `quota_exhausted`, başlık "Ready for another
+      search?") açılır; deneme vaadi yalnız uygun kullanıcıda ("7 gün ücretsiz"), değilse fiyatlı teklif.
 - [ ] **503** (kota servisi): çevrilmiş "tekrar dene" mesajı, paywall YOK, hak harcanmadı.
 - [ ] **400** (geçersiz girdi): çevrilmiş mesaj.
 - [ ] **429**: teklif açılır; premium kullanıcıda açılmazsa eski kota duvarı.
@@ -105,23 +108,44 @@ Hiçbir MONEY-1C yüzeyi görünmemeli, eski davranış aynen sürmeli.
 - [ ] Erişim yüklenirken (uygulamayı yeni açıp hemen ara) premium/legacy hesapta `mood_search_free_*` ATILMAZ (B-3).
 - [ ] Onboarding aramasında teklif/ücretsiz arama olayı yok.
 
-### B3. Teklif zamanlaması (deste)
-- [ ] **Deste sonu:** son kart kaydırılınca ~700 ms sonra teklif açılır (`deck_end`).
-- [ ] **Deste ortası ×:** teklif açılır (`deck_exit`), kapatınca çıkış devam eder, ekran takılı kalmaz.
-- [ ] Deste sonunda teklif görüldüyse sonra çıkışta **ikinci teklif YOK**; aynı arama için tek teklif.
-- [ ] Teklifi kapat → çıkış sürer. Teklif üzerinden satın alma → çıkış sürer (premium).
-- [ ] **Çift dokunuş (B-2):** teklif açılırken × / geri tuşuna hızlıca ikinci kez bas — ikinci çıkış yok
-      sayılır, çift pop/çift `dismissTo` olmaz, ekran açıldıktan sonra beklenmedik geri gitme olmaz.
-- [ ] **Sistem geri / iOS kenar kaydırma:** tek teklif, çift pop yok. `beforeRemove` + `dismissTo`
-      cihazda DOĞRULANMADI — özellikle bu yolu dikkatle izle.
-- [ ] **Yükleniyor / hata / boş deste (B-1):** iskelet ekranda, hata ekranında ve boş sonuçta geri/× →
-      çıkış NORMAL geçer, teklif açılmaz ve harcanmaz; sonra aynı aramanın gerçek destesinde teklif hâlâ çıkar.
-- [ ] **Yeni mood (B-4):** teklif açıkken arka planda ek yükleme/hata/titreşim olmuyor; teklif kapanınca
-      yeni mood ekranına geçiliyor.
+### B3. Deste kilidi ve kilit kartı (Faz 2b — deste sonu/çıkış teklifi KALDIRILDI)
+Deste sonu ve çıkış teklifi artık YOK: × / geri / yeni mood / özet kapat hiçbir koşulda teklif açmaz.
+
+- [ ] Ücretsiz hesap, `free_visible_count` = 3 (varsayılan), 8 filmlik deste: ilk 3 kart normal kaydırılır;
+      3. karttan sonra **kilit kartı** ("There's more to this mood." · "3 of 8" ·
+      "See all 8 with Chosy Pro" · "Your first 3 are yours to keep.").
+- [ ] Sayaç kilitte **"3 / 8" olarak donar**; kilit kartında kaydırma yok (swipe tepki vermez).
+- [ ] **Gizli poster YOK:** kilit kartında gerçek poster görünmüyor, yalnız stilize silüetler; arkadaki
+      katmanda 4. filmin posteri sızmıyor (kilide yaklaşırken, hızlı kaydırınca da).
+      Ağ izleme (Charles/Proxyman) mümkünse: 4.–8. filmin poster URL'leri **indirilmedi**.
+- [ ] `free_visible_count` = 1 ve = 7 dene (app_config; ≤5 dk gecikme): 1 → 1 kart + kilit; 7 (hidden 1) →
+      **kilit YOK**, deste tamamen açık. Geçersiz değer (`"x"`, 0, 99) → güvenli aralığa çekilir.
+- [ ] Kalite süzgeci 8'den az film bıraktığında (ör. 6): `hidden = 6 − 3 = 3 ≥ 2` → kilit, metin "6" der;
+      5 filmde `hidden = 2` → kilit; 4 filmde `hidden = 1` → kilit yok.
+- [ ] Kilit CTA → `mood_offer` paywall'ı (başlık "Keep exploring this mood."); kapatınca **kilit kartına
+      dönülür**, deste kaybolmaz, ekran çıkışı yok.
+- [ ] Paywall metni: "Every pick in every search" / "Search again, whenever you want" / "Explore films for any
+      mood" / "Your nightly 4 films stay free."; **sabit "8" ve "Unlimited" yok**; deneme vaadi yalnız uygun hesapta.
+- [ ] Satın alma (sandbox) veya **Restore** sonrası kilit **kendiliğinden** açılır (4. kart kaydırılabilir);
+      `mood_deck_unlocked` search_id başına **bir kez** (kapat-aç, tekrar restore → ikinci olay YOK).
+- [ ] Yetki okunurken (uygulamayı yeni açıp hemen desteye gir): kilit yerinde kısa **iskelet**, kilit kartı
+      yanlış çakmıyor; premium hesapta kilit hiç görünmüyor.
+- [ ] Premium/legacy hesap: kilit YOK, tüm deste açık (bayrak açık olsa da).
+- [ ] Mood arama girişinde ücretsiz hesapta: "Today's free search · 3 picks included" satırı; premiumda yok.
 - [ ] Deste kaydetme: ücretsiz arama destesinde sağa kaydırma slot kotası duvarına takılmaz (C8).
-- [ ] PostHog: `mood_offer_shown`/`mood_offer_dismissed` teklif başına **bir** çift; `mood_offer_cta`
-      yalnız satın alma dokunuşunda (hata sonrası tekrar denemede tekrar atılır — B-8, bilinen).
-      `paywall_shown` çift gelirse not et (B-7).
+- [ ] PostHog: `mood_lock_viewed` (kilit ekrana gelince), `mood_lock_tapped` (CTA), `mood_deck_unlocked`;
+      hepsinde `search_id`, `entry_point`, `is_pro`, `consent`. `mood_deck_started`'ta `film_ids` (≤8, sıralı) +
+      `deck_size`. Hiçbir olayda **mood metni / anahtar kelime metni** yok.
+
+### B3b. Bugünkü deste kurtarma (P0, yalnız cihaz)
+- [ ] Başarılı aramadan sonra Mood Search'e dön (× ile çıkış): üstte **"Today's search"** kartı (metin + film sayısı).
+- [ ] Karta dokun: deste **aynı sırayla** açılır, yükleme/AI işlemi ekranı YOK; hesabı etkileyen yeni arama
+      sayılmaz (kota düşmez — `get_quota_status` ile doğrula; PostHog/Supabase'de yeni `mood_searches` satırı YOK).
+- [ ] Uygulamayı **tamamen kapat-aç**: aynı gün kart hâlâ orada.
+- [ ] "Son aramalar"da bugünkü aramaya dokun: **yeni arama başlamaz**, aynı deste açılır.
+- [ ] Gün değişimi (cihaz saatini ertesi güne al) veya hesap değişimi: kart görünmez, eski deste açılmaz.
+- [ ] Kurtarılan destede kilit durumu premiumStatus'a göre yeniden hesaplanıyor (ücretsiz: kilit; premium: açık).
+- [ ] Bayrak KAPALI: kart HİÇ görünmez, AsyncStorage'a deste yazılmaz.
 
 ### B4. Bayrak geri kapatma
 - [ ] Listeden kimliği çıkar, uygulamayı kapat-aç (5 dk bekle ya da yeniden başlat): tüm yüzeyler
