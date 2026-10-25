@@ -590,12 +590,12 @@
     "proSection": "Üyelik",
     "chosyPro": "Chosy Pro",
     "chosyProSubtitle": "Bulunduğun ruh haline uygun bir film bul",
-    "proMode": "Mood Search",
+    "proMode": "Pro Mode",
     "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul"
   },
   "proMode": {
-    "title": "Mood Search",
-    "lockedTitle": "Mood Search, Chosy Pro'nun parçası",
+    "title": "Pro Mode",
+    "lockedTitle": "Pro Mode, Chosy Pro'nun parçası",
     "lockedBody": "Nasıl hissettiğini anlat, mood'una uyan filmi bul — bu akşamın dört filminin ötesinde.",
     "errorTitle": "Erişimini kontrol edemedik",
     "errorBody": "Planını doğrulayamadan bağlantı koptu. Birazdan tekrar dene."
