@@ -5,7 +5,7 @@
 import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 import { moodOfferKickerKey } from '../../utils/moodOfferCopy'
 
-const entries = ['champion_card', 'spotlight_card', 'quota_exhausted', 'deck_end', 'deck_exit'] as const
+const entries = ['champion_card', 'spotlight_card', 'quota_exhausted', 'lock_card'] as const
 
 Deno.test('her giriş noktası bir kopya anahtarına eşlenir; quota ayrı', () => {
   assertEquals(moodOfferKickerKey('quota_exhausted'), 'moodOffer.paywallKickerQuota')

@@ -10,8 +10,7 @@ export function moodOfferKickerKey(entry: MoodOfferEntry): string {
   switch (entry) {
     case 'quota_exhausted':
       return 'moodOffer.paywallKickerQuota';
-    case 'deck_end':
-    case 'deck_exit':
+    case 'lock_card':
     case 'champion_card':
     case 'spotlight_card':
       return 'moodOffer.paywallKickerDeck';

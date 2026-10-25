@@ -78,16 +78,13 @@ Deno.test('adım 5: mood_offer tetikleyici/varyant, IMMEDIATE, kill-switch ve ro
   assert(!/free trial|7 days|7-day/i.test(`${loc.paywallKickerQuota} ${loc.paywallKickerDeck}`))
 })
 
-Deno.test('adım 6: deste/çıkış teklifi eligible kapısında; slot muafiyeti bayrak arkasında; askDecision dokunulmadı', () => {
+Deno.test('adım 6: deste sonu/çıkış teklifi KALDIRILDI; slot muafiyeti bayrak arkasında', () => {
   const d = read('app/discover.tsx')
-  assertMatch(d, /offerLedger\.claim\(\{ eligible: true, moment: 'exit'/)
-  assertMatch(d, /addListener\('beforeRemove'/)
+  assert(!/offerLedger|beforeRemove|exitGuard|moodExitGuard|deck_end|deck_exit/.test(d))
   // x / özet kapat işleyicileri DEĞİŞMEDİ (test:deck-summary aynı kalıbı pinler)
   assertMatch(d, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\('\/\(tabs\)'\)/)
-  assertMatch(d, /if \(!deckComplete \|\| !offerEligible\) return;/) // bayrak kapaliyken 700 ms zamanlayici kurulmaz
-  assertMatch(d, /offerLedger\.claim\(\{ eligible: offerEligible, moment: 'deck_end'/)
   assertMatch(d, /premiumStatus !== 'premium' && !quotaExempt && !slotExemptFreeDeck/)
-  assertMatch(d, /isOfferEligible\(\{\s*offerEnabled,/)
+  assertMatch(d, /isFreeSearchDeckSlotExempt\(\{ offerEnabled, isOnboarding \}\)/)
   const m = read('components/Home/MoodSearchScreen/index.tsx')
   assertMatch(m, /if \(offerEnabled\) \{[\s\S]*?entry: 'quota_exhausted'[\s\S]*?\} else \{\s*await showQuotaWall\(\);/)
 })

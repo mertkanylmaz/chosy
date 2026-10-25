@@ -38,8 +38,7 @@ export type MoodOfferEntry =
   | 'champion_card'
   | 'spotlight_card'
   | 'quota_exhausted'
-  | 'deck_end'
-  | 'deck_exit';
+  | 'lock_card';
 
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =

@@ -26,7 +26,7 @@ import { useScalePress } from '@/hooks/useScalePress';
 
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams, useFocusEffect, useNavigation } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
@@ -52,13 +52,7 @@ import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
-import {
-  createOfferLedger,
-  isFreeSearchDeckSlotExempt,
-  isOfferEligible,
-  offerKey,
-} from '@/utils/moodOfferTiming';
-import { createExitGuard, isOfferSurfaceMounted } from '@/utils/moodExitGuard';
+import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
@@ -72,15 +66,6 @@ const DEFAULT_FILTERS: FilmFilters = {
   directors: [],
 };
 
-/**
- * MONEY-1C: hangi aramalar icin teklif gosterildi. Modul seviyesinde (ekran yeniden
- * mount olsa da `search_id` basina bir kez); bayrak degeri DEGIL, sayac defteri.
- */
-const offerLedger = createOfferLedger();
-
-/** Deste bitiminden teklife kadar bekleme — son kartin kaydet toast'i gorunsun. */
-const DECK_END_OFFER_DELAY_MS = 700;
-
 // ── Ana Ekran ────────────────────────────────────────────────────────────────
 
 /**
@@ -92,30 +77,14 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
+  const { quotaExempt } = useProModeAccess();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
-  const navigation = useNavigation();
   const offerEnabled = useMoodOfferEnabled();
-  /** `search_id` yoksa bu ekran ornegine ozgu yedek defter anahtari */
-  const instanceId = useRef(String(Date.now())).current;
-  const offerSearchKey = offerKey(lastSearchId, instanceId);
-  const offerEligible = isOfferEligible({
-    offerEnabled,
-    isOnboarding,
-    accessLoading: proAccessLoading,
-    entitled: proEntitled,
-  });
   const slotExemptFreeDeck = isFreeSearchDeckSlotExempt({ offerEnabled, isOnboarding });
-  /** Teklif acilmadan once duraklatilan cikis; paywall kapaninca surdurulur (bir kez, unmount sonrasi degil). */
-  const exitGuard = useRef(createExitGuard()).current;
-  useEffect(() => {
-    exitGuard.mount();
-    return () => exitGuard.unmount();
-  }, [exitGuard]);
 
   const navigateAfterOnboarding = useCallback(() => {
     if (isOnboarding) router.replace('/(tabs)' as never);
@@ -128,8 +97,6 @@ export default function DiscoverScreen() {
     ...rawPaywallProps,
     onDismiss: () => {
       rawPaywallProps.onDismiss();
-      // MONEY-1C: teklif cikis yolunda acildiysa, kapaninca cikis SURDURULUR.
-      if (exitGuard.release()) return;
       // Slot quota tükendiyse veya onboarding'deyse: discover'dan çık
       if (deckFrozen || isOnboarding) {
         clearMood();
@@ -140,12 +107,9 @@ export default function DiscoverScreen() {
     // kaydırılabilir (aksi halde kalıcı donmuş kalırdı).
     onConvert: (plan: Parameters<typeof rawPaywallProps.onConvert>[0]) => {
       rawPaywallProps.onConvert(plan);
-      // MONEY-1C: satin alma sonrasi kullanici zaten cikiyordu — cikis surdurulur
-      // (x/yeni mood `clearMood()` ile baslamisti; yarim durumda deste birakilmaz).
-      exitGuard.release();
       setDeckFrozen(false);
     },
-  }), [rawPaywallProps, isOnboarding, deckFrozen, clearMood, router, exitGuard]);
+  }), [rawPaywallProps, isOnboarding, deckFrozen, clearMood, router]);
 
   const effectiveFilters = currentFilters ?? DEFAULT_FILTERS;
 
@@ -316,51 +280,6 @@ export default function DiscoverScreen() {
   const handleGoWatchlist = useCallback(() => {
     router.navigate('/(tabs)/profile' as never);
   }, [router]);
-
-  // ── MONEY-1C: teklif zamanlamasi ───────────────────────────────────────────
-  // Deste bitimi: ozet acildiktan kisa sure sonra. Hangisi ONCE gelirse (bitim ya da
-  // cikis) `offerLedger` kazanani belirler; ikincisi bastirilir.
-  useEffect(() => {
-    // Uygun degilse (bayrak kapali dahil) zamanlayici HIC kurulmaz.
-    if (!deckComplete || !offerEligible) return;
-    const timer = setTimeout(() => {
-      const entry = offerLedger.claim({ eligible: offerEligible, moment: 'deck_end', key: offerSearchKey });
-      if (entry) void triggerPaywall({ type: 'mood_offer', entry, searchId: lastSearchId });
-    }, DECK_END_OFFER_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [deckComplete, offerEligible, offerSearchKey, triggerPaywall, lastSearchId]);
-
-  // DESTEDEN CIKIS (x, ozet kapat, yeni mood, sistem geri, iOS kenar kaydirmasi): tek
-  // nokta. Ekran kaldirilmadan once teklif; paywall kapaninca/donusunce cikis ayni
-  // eylemle SURDURULUR. Mevcut x/kapat isleyicileri DEGISMEDI (yalnız eylemi duraklatiriz).
-  // Yalniz ContextualPaywall'in CIZILEBILDIGI dallarda (ozet + ana deste) teklif harcanir:
-  // yukleniyor/hata/bos dallarinda cikis normal gecer, defter tuketilmez.
-  const offerSurfaceMounted = isOfferSurfaceMounted({ deckComplete, deckLength: deck.length });
-  useEffect(() => {
-    if (!offerEligible || !offerSurfaceMounted) return;
-    return navigation.addListener('beforeRemove', (e) => {
-      // Teklif acilirken gelen ikinci cikis yok sayilir (ilk cikis zaten duraklatildi).
-      if (exitGuard.isPending()) {
-        e.preventDefault();
-        return;
-      }
-      const entry = offerLedger.claim({ eligible: true, moment: 'exit', key: offerSearchKey });
-      if (!entry) return;
-      e.preventDefault();
-      exitGuard.begin(() => navigation.dispatch(e.data.action));
-      triggerPaywall({ type: 'mood_offer', entry, searchId: lastSearchId }).then(
-        (shown) => {
-          // Teklif acilmadiysa cikis hemen surer; `release` idempotent ve unmount-guvenli.
-          if (!shown) exitGuard.release();
-        },
-        (err: unknown) => {
-          // triggerPaywall hatayi kendi icinde yutar; yine de cikis ASLA asili kalmaz.
-          Sentry.captureException(err, { tags: { action: 'mood_offer_exit_trigger' } });
-          exitGuard.release();
-        },
-      );
-    });
-  }, [navigation, offerEligible, offerSurfaceMounted, offerSearchKey, triggerPaywall, lastSearchId, exitGuard]);
 
   // ── Deck summary ────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@
  * PaywallMoodOffer — Pro Mode teklifi (MONEY-1C).
  *
  * Trigger: mood_offer (`entry`: champion_card | spotlight_card | quota_exhausted |
- * deck_end | deck_exit). Şablon PaywallProfileUpgrade: PaywallBase + ProHero +
+ * lock_card). Şablon PaywallProfileUpgrade: PaywallBase + ProHero +
  * ProBenefits; üstte giriş noktasına göre tek satır. "7 gün ücretsiz" kopyası
  * BURADA yoktur — deneme yalnız PaywallBase'in `buildOffer` çıktısıyla ve
  * `getTrialEligibility === 'eligible'` ise görünür; uygun olmayan kullanıcı
@@ -29,7 +29,7 @@ interface Props {
 
 export default function PaywallMoodOffer({ visible, variant, onConvert, onDismiss }: Props) {
   const { t } = useLanguage();
-  const entry = variant.trigger.type === 'mood_offer' ? variant.trigger.entry : 'deck_end';
+  const entry = variant.trigger.type === 'mood_offer' ? variant.trigger.entry : 'lock_card';
 
   const renderHeader = useCallback(
     (_pricing: unknown, ctx: PaywallHeaderContext) => (
