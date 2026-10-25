@@ -1,6 +1,6 @@
 # MONEY-1C — parse-mood idempotency tasarımı (migration 139) — TASARIM, KOD YOK
 
-Durum: **onay bekliyor.** Yazıldı 25 Eki 2026. Bu belge kod, migration veya deploy içermez.
+Durum: **onaylandı (25 Eki 2026), uygulandı (kod + migration dosyası; APPLY/DEPLOY YOK).** Tasarım bölümleri 1–10 onay öncesi metindir; uygulama notları 11–13'te.
 
 ## 1. Sorun
 
@@ -202,3 +202,73 @@ Apply/deploy bu tahmine dahil değil (talimat: APPLY/DEPLOY YOK).
 3. İstemci UPDATE yetkisini üç kolona daraltma (6. madde) — onay.
 4. Anthropic istemcisine `timeout: 25_000, maxRetries: 0` — onay.
 5. Gerçek eşzamanlılık testinin hangi ortamda koşacağı (yerel `supabase start` mı, canlıda geçici kullanıcıyla mı).
+
+## 11. Onaylanan kararlar ve uygulama notları (25 Eki 2026)
+
+1. `claim_attempts` kolonu: **eklendi.** Bayat-pending için 2 ücretsiz yeniden sahiplenme, üçüncüde normal tüketim.
+2. PARSE_FAILED iadesiz: **onaylandı**, `refundPolicy` değişmedi. İzleme: aşağıdaki sorgu + Sentry etiketi `error_code:PARSE_FAILED`.
+3. İstemci UPDATE yetkisi: **`recommended_film_ids, rpc_version, error_code`** (139 sonunda REVOKE + sütun GRANT).
+   **INSERT yetkisi bilerek açık bırakıldı** (onay kapsamı dışı): istemci kendi adına satır ekleyebilir. Bir
+   kullanıcı kendine `completed` + uydurma profilli bir satır yazıp aynı `client_search_id` ile claim ederse
+   `replay` ile kendi uydurduğu profili geri alır — LLM çağrısı ve kota olmadan; ama profili istemci tarafında
+   zaten üretebilir (eşleştirme RPC'leri kotasız), yani kazanç yok. Kota tablosu 137 ile kilitli. Kapatmak
+   istenirse INSERT'i de `(user_id, mood_text)` sütunlarına daraltmak ayrı bir onay ister.
+4. Anthropic istemcisi `timeout: 25_000, maxRetries: 0`: **uygulandı.** Not: `maxRetries: 0` `client_search_id`'siz
+   (legacy) isteklerin davranışını da değiştirir (SDK varsayılanı 2 yeniden denemeydi). Bayat eşiği (45 sn)
+   bu değere dayanır, parse-mood deploy'u migration ile birlikte gitmeli.
+5. Eşzamanlılık: yerel `supabase start` gerekir. **Bu makinede Docker yok** (`docker` bulunamadı, Docker Desktop
+   kurulu değil) → gerçek eşzamanlılık testi YAZILDI ama KOŞMADI. Canlıda koşturulmadı.
+
+### İzleme sorgusu: PARSE_FAILED oranı
+
+PARSE_FAILED hakkı yakar (iade yok); oran yükselirse prompt/regresyon ya da kötüye kullanım göstergesidir.
+Salt okuma; haftalık veya deploy sonrası:
+
+```sql
+select date_trunc('day', searched_at) as gun,
+       count(*) filter (where status in ('completed','failed'))              as biten,
+       count(*) filter (where error_code = 'PARSE_FAILED')                  as parse_failed,
+       round(100.0 * count(*) filter (where error_code = 'PARSE_FAILED')
+             / nullif(count(*) filter (where status in ('completed','failed')), 0), 1) as parse_failed_pct,
+       count(*) filter (where status = 'pending' and claimed_at < now() - interval '45 seconds') as takili_pending
+from public.mood_searches
+where client_search_id is not null and searched_at >= now() - interval '14 days'
+group by 1 order by 1 desc;
+```
+
+Eşik önerisi (karar sizin): `parse_failed_pct` > %3 iki gün üst üste → inceleme. `takili_pending` sürekli > 0 ise
+`finish_mood_search` yazılamıyor demektir (Sentry `MOOD_FINISH_FAILED`).
+
+## 12. Doğrulama durumu
+
+| Kontrol | Sonuç |
+|---|---|
+| Migration 139 gerçek Postgres motoruna (pglite) uygulanır, 115/136 fonksiyonlarıyla | geçti |
+| `supabase/tests/139_dryrun.sql` (14 test + K1_open bilgi satırı: 10 ardışık claim, replay, bayat, quota_denied→yeniden sahiplen, zombi finish, iade/PARSE_FAILED, NULL satırlar, 42501, sütun yetkisi, katalog) | 14/14 geçti — **stub şemada**, canlı DB'de koşmadı |
+| `npm run test:mood-claim` (saf yardımcılar + index.ts sözleşmesi) | 9/9 geçti |
+| `npm run test:mood-claim-concurrency` (10 paralel, gerçek) | yazıldı, **koşmadı** (Docker yok); env yoksa ATLANIR |
+| `npm run typecheck:functions` | 29 hata (baseline 32), parse-mood / _shared altında yeni hata yok |
+
+Stub şemanın sınırı: `users`, `subscription_limits`, `user_daily_quotas`, `mood_searches` sadeleştirilmiş; 135 yazma
+koruyucusu, RLS ve `auth_user_id()` yok. Canlıdaki gerçek şemayla ilk koşu dry-run betiğiyle yapılmalı
+(onay gerekir).
+
+## 13. Dağıtım sırası (apply/deploy talimatı DEĞİL — plan)
+
+1. `supabase db push` (139) — eski parse-mood ile uyumlu: yeni kolonlar nullable/default'lu, eski satır akışı değişmez.
+   Yetki daraltması da bu adımda devreye girer: eski istemci build'leri yalnız üç kolonu UPDATE ediyor (doğrulandı).
+2. `supabase functions deploy parse-mood --no-verify-jwt` — `client_search_id` yoksa eski akış.
+3. İstemci (g) `client_search_id` gönderir.
+Ters sıra (önce fonksiyon) çalışmaz: claim RPC yok → fail-closed 503, ama yalnız `client_search_id` gönderen istemcilerde.
+
+## 14. migration-guard bulguları (25 Eki 2026) ve durum
+
+| Bulgu | Durum |
+|---|---|
+| **K-1 KRİTİK** — istemci INSERT yetkisi açık: kullanıcı `status='pending', claimed_at='2000-01-01', quota_consumed=true` ile satır ekleyip parse-mood'u çağırırsa bayat-pending yolu hakkı TÜKETMEDEN ücretli LLM çağırır (ve LLM 5xx'te var olmayan hakkı iade ettirir). §11.3'teki "kazanç yok" değerlendirmem yalnız `completed`/replay yolunu kapsıyordu; **yanlıştı**. | **AÇIK — onay bekliyor.** Öneri: `REVOKE INSERT ... FROM anon, authenticated; GRANT INSERT (user_id) ... TO authenticated` (istemci yalnız `user_id` ekliyor: `services/quotaEngine.ts:464`). Dry-run `K1_open` satırı bunu gösterir. **Bu çözüm uygulanmadan 139 deploy EDİLMEMELİ.** |
+| O-1 — iade sahiplik doğrulamasından önce, çift iade mümkün | **Düzeltildi.** İade `finish_mood_search` içinde, sahiplik doğrulanınca aynı işlemde; zombi iade edemez (T13). `p_refunded` → `p_refund`, dönüş jsonb `{finished, refunded}`. |
+| O-2 — `quota_consumed` hak sayısı değil | **Belgelendi** (kolon COMMENT'i): "en son deneme hak tutuyor mu". Karar mantığı bayrağa tek başına dayanmıyor. |
+| D-1..D-3 | D-1 kabul. D-2 (farklı metinle aynı id → eski profil): istemci her yeni aramada yeni id üretir, (g) bunu yapar; sunucu karşılaştırması eklenmedi. D-3 K-1 ile kapanır. |
+| D-4 — rollback BEGIN/COMMIT | `db push` ile uygulanacaksa BEGIN/COMMIT satırları çıkarılmalı (not). |
+| Ek: `CHECK (claim_attempts >= 0)` | **Eklendi** (T14). |
+| Deploy öncesi `pg_dump` (`mood_searches`, `user_daily_quotas`, `\dp`) | Deploy planına eklendi. |
