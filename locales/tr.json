@@ -185,15 +185,18 @@
     "seeAll": "Tumunu Gor"
   },
   "deckSummary": {
-    "title": "%{count} film watchlist'e eklendi",
+    "pickTitle": "Bu akşamın filmi",
+    "pickSubtitle": {
+      "one": "Beğendiğin tek film arasından.",
+      "other": "Beğendiğin %{count} film arasından."
+    },
+    "watchNow": "Şimdi izle",
+    "whereToWatch": "Nerede izlenir",
     "noLikesTitle": "Bu sefer tutmadi",
-    "subtitle": "Watchlist'in guclenmeye devam ediyor. Bu aksam icin birini sec!",
     "noLikesSubtitle": "Farkli bir mood dene — sana gore filmler mutlaka var.",
     "liked": "Begendim",
     "passed": "Gectim",
     "total": "Toplam",
-    "tonightsPick": "BU AKSAMIN ONERISI",
-    "topMatch": "EN IYI ESLESME",
     "addedToWatchlist": "WATCHLIST'E EKLENENLER",
     "insufficientNote": "Bu mood icin sinirli sayida guclu eslesme bulduk.",
     "newMood": "Yeni Mood Ara",

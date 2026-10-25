@@ -3,12 +3,14 @@
  *
  * 8 filmlik deste bittikten sonra gosterilir:
  *   - Begeni istatistikleri (liked / disliked)
- *   - Hero kart: en yuksek matchScore'lu begenilen film (veya en iyi genel)
+ *   - "Bu aksamin filmi": begenilenler arasindan en yuksek matchScore'lu film (siralama
+ *     verisi; yuzde gosterilmez). Birincil "Watch now" → film detayi, ikincil
+ *     "Where to watch" → uygulama ici saglayici listesi. Begeni yoksa hero YOK.
  *   - Begenilen filmlerin mini poster strip'i
  *   - "Yeni Mood Ara" + "Watchlist'e Git" aksiyon butonlari
  *   - insufficient_results notu (< 8 film geldiyse)
  */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +19,8 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Ionicons } from '@expo/vector-icons';
 import { hapticSuccess } from '@/utils/haptics';
+import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
+import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { Colors } from '@/constants/Colors';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
@@ -48,10 +52,22 @@ interface MoodDeckSummaryProps {
   onNewMood: () => void;
   /** "Watchlist'e Git" butonu */
   onGoWatchlist: () => void;
+  /** "Watch now" — secilen filmin uygulama ici detayina gider */
+  onWatchNow: (film: Film) => void;
   /** Üstteki kapat (X) — Home'a döner, mood'u temizlemez */
   onClose: () => void;
   /** Ortak analitik cekirdegi (search_id, entry_point, is_pro, consent) — discover verir. */
   analyticsCore?: Partial<MoodEventCore>;
+}
+
+/**
+ * "Where to watch" acildiginda baglanir (veri YALNIZ dokunulunca cekilir).
+ * Gauntlet saglayici bileseni degistirilmeden kullanilir.
+ */
+function PickProviders({ filmId }: { filmId: string }): React.JSX.Element {
+  const { region } = useLanguage();
+  const { state, providers, retry } = useWatchProviders(filmId, region);
+  return <WatchProvidersRow state={state} providers={providers} onRetry={retry} filmId={filmId} />;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -65,11 +81,13 @@ export default function MoodDeckSummary({
   reranked = false,
   onNewMood,
   onGoWatchlist,
+  onWatchNow,
   onClose,
   analyticsCore,
 }: MoodDeckSummaryProps) {
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
+  const [showProviders, setShowProviders] = useState(false);
 
   // Haptic + analytics on mount
   useEffect(() => {
@@ -83,21 +101,40 @@ export default function MoodDeckSummary({
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Hero: en yuksek matchScore'lu begenilen film, yoksa genel en iyi
-  const allFilms = [...likedFilms, ...dislikedFilms];
-  const heroFilm = likedFilms.length > 0
-    ? likedFilms.reduce((best, f) => (f.matchScore > best.matchScore ? f : best), likedFilms[0])
-    : allFilms.length > 0
-      ? allFilms.reduce((best, f) => (f.matchScore > best.matchScore ? f : best), allFilms[0])
-      : null;
-
+  // Bu aksamin filmi: begenilenler arasindan en yuksek matchScore (yalniz siralama; gosterilmez).
+  // Begeni yoksa secilecek film yok: "TOP MATCH" gibi sahte bir oneri gosterilmez.
   const hasLiked = likedFilms.length > 0;
+  const heroFilm = hasLiked
+    ? likedFilms.reduce((best, f) => (f.matchScore > best.matchScore ? f : best), likedFilms[0])
+    : null;
 
   // ── Render helpers ────────────────────────────────────────────────────────
 
+  const trackPickAction = (action: 'watch_now' | 'where_to_watch' | 'new_mood' | 'watchlist') => {
+    posthogAnalytics.track('tonight_pick_action', {
+      action,
+      film_id: heroFilm?.id ?? null,
+      has_liked: hasLiked,
+      ...analyticsCore,
+    });
+  };
+
   const handleNewMood = () => {
     posthogAnalytics.track('mood_deck_summary_action', { action: 'new_mood' });
+    trackPickAction('new_mood');
     onNewMood();
+  };
+
+  const handleWatchNow = () => {
+    if (!heroFilm) return;
+    trackPickAction('watch_now');
+    onWatchNow(heroFilm);
+  };
+
+  const handleWhereToWatch = () => {
+    if (!heroFilm) return;
+    if (!showProviders) trackPickAction('where_to_watch');
+    setShowProviders((open) => !open);
   };
 
   const handleClose = () => {
@@ -107,6 +144,7 @@ export default function MoodDeckSummary({
 
   const handleGoWatchlist = () => {
     posthogAnalytics.track('mood_deck_summary_action', { action: 'watchlist' });
+    trackPickAction('watchlist');
     onGoWatchlist();
   };
 
@@ -131,13 +169,11 @@ export default function MoodDeckSummary({
             />
           </View>
           <Text style={styles.title}>
-            {hasLiked
-              ? t('deckSummary.title', { count: likedFilms.length })
-              : t('deckSummary.noLikesTitle')}
+            {hasLiked ? t('deckSummary.pickTitle') : t('deckSummary.noLikesTitle')}
           </Text>
           <Text style={styles.subtitle}>
             {hasLiked
-              ? t('deckSummary.subtitle')
+              ? t('deckSummary.pickSubtitle', { count: likedFilms.length })
               : t('deckSummary.noLikesSubtitle')}
           </Text>
         </Animated.View>
@@ -169,9 +205,6 @@ export default function MoodDeckSummary({
                 transition={200}
               />
               <View style={styles.heroInfo}>
-                <Text style={styles.heroBadge}>
-                  {hasLiked ? t('deckSummary.tonightsPick') : t('deckSummary.topMatch')}
-                </Text>
                 <Text style={styles.heroTitle} numberOfLines={2}>{heroFilm.title}</Text>
                 <Text style={styles.heroYear}>{heroFilm.year}</Text>
                 {(heroFilm.voteAverage ?? 0) > 0 && (
@@ -182,6 +215,23 @@ export default function MoodDeckSummary({
                 )}
               </View>
             </View>
+          </Animated.View>
+        )}
+
+        {/* Bu aksamin filmi eylemleri: birincil Watch now, ikincil Where to watch */}
+        {heroFilm && (
+          <Animated.View entering={enter(75)} style={styles.pickActions}>
+            <TouchableOpacity style={styles.watchBtn} onPress={handleWatchNow} activeOpacity={0.8}>
+              <Text style={styles.watchBtnText}>{t('deckSummary.watchNow')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.whereBtn} onPress={handleWhereToWatch} activeOpacity={0.8}>
+              <Text style={styles.whereBtnText}>{t('deckSummary.whereToWatch')}</Text>
+            </TouchableOpacity>
+            {showProviders && (
+              <View style={styles.providersWrap}>
+                <PickProviders filmId={heroFilm.id} />
+              </View>
+            )}
           </Animated.View>
         )}
 
@@ -237,11 +287,11 @@ export default function MoodDeckSummary({
         style={[styles.footer, { paddingBottom: FOOTER_PADDING_BOTTOM }]}
       >
         <TouchableOpacity
-          style={styles.primaryBtn}
+          style={hasLiked ? styles.secondaryBtn : styles.primaryBtn}
           onPress={handleNewMood}
           activeOpacity={0.8}
         >
-          <Text style={styles.primaryBtnText}>{t('deckSummary.newMood')}</Text>
+          <Text style={hasLiked ? styles.secondaryBtnText : styles.primaryBtnText}>{t('deckSummary.newMood')}</Text>
         </TouchableOpacity>
 
         {hasLiked && (

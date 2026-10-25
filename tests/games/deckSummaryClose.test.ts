@@ -25,9 +25,36 @@ Deno.test('X düğmesi onClose tetikler, etiketi i18n anahtarından gelir', () =
   assertMatch(summary, /styles\.closeBtn[\s\S]*?onPress=\{handleClose\}[\s\S]*?deckSummary\.close/)
 })
 
-Deno.test('discover: onClose Home köküne dismissTo ile döner (handleNewMood değil)', () => {
+Deno.test('discover: onClose ve Try New Mood Pro Mode girdisine dismissTo ile döner (Home değil)', () => {
   assertMatch(discover, /onClose=\{handleClose\}/)
-  assertMatch(discover, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\('\/\(tabs\)'\)/)
+  assertMatch(discover, /const inputRoute = isOnboarding \? '\/\(tabs\)' : '\/pro-mode'/)
+  assertMatch(discover, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\(inputRoute as never\)/)
+  assertMatch(discover, /handleNewMood = useCallback\(\(\) => \{\s*clearMood\(\);\s*router\.dismissTo\(inputRoute as never\)/)
+})
+
+Deno.test('bu akşamın filmi: yalnız beğeni varken hero + Watch now / Where to watch; yüzde ve TOP MATCH yok', () => {
+  assertMatch(summary, /const heroFilm = hasLiked\s*\?/)
+  assertMatch(summary, /\{heroFilm && \(\s*<Animated\.View entering=\{enter\(75\)\} style=\{styles\.pickActions\}>/)
+  assertMatch(summary, /onPress=\{handleWatchNow\}/)
+  assertMatch(summary, /onPress=\{handleWhereToWatch\}/)
+  assertMatch(summary, /components\/gauntlet\/WatchProviders/)
+  assert(!/matchScore\}%|% match|topMatch|tonightsPick/.test(summary))
+  for (const a of ['watch_now', 'where_to_watch', 'new_mood', 'watchlist']) assert(summary.includes(`'${a}'`), a)
+  assertMatch(discover, /onWatchNow=\{handleWatchNow\}/)
+  assertMatch(discover, /router\.push\(`\/film\/\$\{film\.id\}`\)/)
+})
+
+Deno.test('B10: slot paywall açılmazsa deste donmaz; Sentry yazılır', () => {
+  assertMatch(discover, /const shown = await triggerPaywall\(\{ type: 'quota_exhausted', quota: 'slot' \}\);\s*if \(shown\) \{\s*setDeckFrozen\(true\);/)
+  assertMatch(discover, /SLOT_PAYWALL_NOT_SHOWN/)
+})
+
+Deno.test('deckSummary yeni anahtarlar en + tr parite (tekil/çoğul dahil)', () => {
+  for (const l of ['en', 'tr']) {
+    const d = JSON.parse(read(`locales/${l}.json`)).deckSummary
+    for (const k of ['pickTitle', 'watchNow', 'whereToWatch']) assert(typeof d[k] === 'string' && d[k].length > 0, `${l}.${k}`)
+    assert(d.pickSubtitle.one.length > 0 && d.pickSubtitle.other.includes('%{count}'), `${l}.pickSubtitle`)
+  }
 })
 
 Deno.test('footer payı tab bar payı içermez (+16)', () => {

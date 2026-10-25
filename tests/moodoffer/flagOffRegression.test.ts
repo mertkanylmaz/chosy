@@ -82,7 +82,7 @@ Deno.test('adım 6: deste sonu/çıkış teklifi KALDIRILDI; slot muafiyeti bayr
   const d = read('app/discover.tsx')
   assert(!/offerLedger|beforeRemove|exitGuard|moodExitGuard|deck_end|deck_exit/.test(d))
   // x / özet kapat işleyicileri DEĞİŞMEDİ (test:deck-summary aynı kalıbı pinler)
-  assertMatch(d, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\('\/\(tabs\)'\)/)
+  assertMatch(d, /handleClose = useCallback\(\(\) => \{\s*router\.dismissTo\(inputRoute as never\)/)
   assertMatch(d, /premiumStatus !== 'premium' && !quotaExempt && !slotExemptFreeDeck/)
   assertMatch(d, /isFreeSearchDeckSlotExempt\(\{ offerEnabled, isOnboarding \}\)/)
   const m = read('components/Home/MoodSearchScreen/index.tsx')

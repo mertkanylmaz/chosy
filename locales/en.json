@@ -185,15 +185,18 @@
     "seeAll": "See All"
   },
   "deckSummary": {
-    "title": "%{count} films added to watchlist",
+    "pickTitle": "Tonight's pick",
+    "pickSubtitle": {
+      "one": "From the one you liked.",
+      "other": "From the %{count} you liked."
+    },
+    "watchNow": "Watch now",
+    "whereToWatch": "Where to watch",
     "noLikesTitle": "No matches this time",
-    "subtitle": "Your watchlist just got better. Time to pick one for tonight!",
     "noLikesSubtitle": "Try a different mood — your perfect film is out there.",
     "liked": "Liked",
     "passed": "Passed",
     "total": "Total",
-    "tonightsPick": "TONIGHT'S PICK",
-    "topMatch": "TOP MATCH",
     "addedToWatchlist": "ADDED TO WATCHLIST",
     "insufficientNote": "We found fewer strong matches for this mood.",
     "newMood": "Try New Mood",

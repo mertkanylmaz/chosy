@@ -88,14 +88,6 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  heroBadge: {
-    color: Colors.accentPrimary,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
   heroTitle: {
     color: Colors.textWhite,
     fontSize: 18,
@@ -122,6 +114,39 @@ export default StyleSheet.create({
     color: Colors.accentPrimary,
     fontSize: 13,
     fontWeight: '700',
+  },
+
+  // ── Bu aksamin filmi eylemleri ──────────────────────────────────────────────
+  pickActions: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  watchBtn: {
+    backgroundColor: Colors.accentPrimary,
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  watchBtnText: {
+    color: Colors.textOnAccent,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  whereBtn: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+  },
+  whereBtnText: {
+    color: Colors.textWhite,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  providersWrap: {
+    paddingTop: 4,
   },
 
   // ── Liked poster strip ──────────────────────────────────────────────────────

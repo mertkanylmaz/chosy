@@ -292,11 +292,19 @@ export default function DiscoverScreen() {
           if (uid) {
             const quota = await checkAndConsumeQuota(uid, 'slot');
             if (!quota.allowed) {
-              // Kota tükendi — deck'i dondur, paywall göster
+              // Kota tükendi — paywall AÇILIRSA deck donar. Açılmazsa (orkestrator
+              // bastirdi / hata) kullaniciyi kilitleme: Sentry'ye yaz, kaydetme surer.
               tasteSignals.recordSwipeRight(film.id).catch(() => {});
-              setDeckFrozen(true);
-              triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
-              return; // Kart ilerlemez, watchlist'e yazılmaz
+              const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
+              if (shown) {
+                setDeckFrozen(true);
+                return; // Kart ilerlemez, watchlist'e yazılmaz
+              }
+              Sentry.captureMessage('slot quota exhausted but paywall not shown', {
+                level: 'warning',
+                tags: { action: 'swipe_right_quota_check', error_code: 'SLOT_PAYWALL_NOT_SHOWN' },
+                extra: { filmId: film.id },
+              });
             }
           }
         } catch (err) {
@@ -400,17 +408,27 @@ export default function DiscoverScreen() {
   const { animatedStyle: newMoodAnimStyle, onPressIn: newMoodPressIn, onPressOut: newMoodPressOut } =
     useScalePress(0.95);
 
+  /**
+   * X ve "Try New Mood": Pro Mode girdi ekranina doner (Home'a degil). Filtre ve metin
+   * MoodSearchScreen state'inde kalir; onboarding akisi eski kokune doner.
+   */
+  const inputRoute = isOnboarding ? '/(tabs)' : '/pro-mode';
   const handleNewMood = useCallback(() => {
     clearMood();
-    router.navigate('/(tabs)');
-  }, [clearMood, router]);
+    router.dismissTo(inputRoute as never);
+  }, [clearMood, router, inputRoute]);
 
   /**
-   * Yığın [(tabs), discover]: dismissTo mevcut (tabs) kaydına geri çeker, ikinci
-   * bir (tabs) örneği açmaz. Mood temizlenmez (handleNewMood'dan farkı bu).
+   * Yığın [(tabs), pro-mode, discover]: dismissTo mevcut pro-mode kaydına geri çeker, ikinci
+   * bir örnek açmaz. Mood temizlenmez (handleNewMood'dan farkı bu).
    */
   const handleClose = useCallback(() => {
-    router.dismissTo('/(tabs)');
+    router.dismissTo(inputRoute as never);
+  }, [router, inputRoute]);
+
+  /** "Watch now": uygulama ici film detayi (saglayici listesi orada ve ozet ekraninda). */
+  const handleWatchNow = useCallback((film: Film) => {
+    router.push(`/film/${film.id}`);
   }, [router]);
 
   /**
@@ -455,6 +473,7 @@ export default function DiscoverScreen() {
           reranked={deckReranked}
           onNewMood={handleNewMood}
           onGoWatchlist={handleGoWatchlist}
+          onWatchNow={handleWatchNow}
           onClose={handleClose}
         />
         <ContextualPaywall {...paywallProps} />
