@@ -26,7 +26,7 @@ Beklenen ürün etkisi: yeni istemci yok iken kullanıcıya görünür değişik
 | # | Kontrol | Nasıl | Beklenen |
 |---|---|---|---|
 | 0.1 | **Mantıksal export kapısı** (Supabase Free: yedek/PITR YOK — karar 25 Eki 12:20) | `powershell -NoProfile -File scripts\backup\export-logical.ps1 -OutDir C:\Users\mertk\moodflix-rollback\backup-2026-10-26` (salt-okunur; mevcut CLI oturumu, anahtar gerekmez; klasör repo dışı, git'e EKLENMEZ — kişisel veri) | `MANIFEST.txt` son satırı `SONUC: TUM TABLOLAR TAMAM`; 10 tablonun hepsi `OK`; md5'ler ve satır sayıları kayıt tablosuna yazılır. **Export yok / eksik / MANIFEST kırmızı → apply YOK.** Beklenen sayılar (25 Eki ölçümü): mood_searches 121, users 337, subscriptions 8, user_daily_quotas 81, watchlist 360, app_config 30, subscription_limits 5, promo_codes 1, lifetime_sales 0, deletion_requests 0. Büyük sapma (örn. users azalmış) → DUR, nedenini bul. **Bölüm B (27 Eki) öncesi export yeniden alınır** (`-OutDir ...\backup-2026-10-27`). |
-| 0.2 | Dal ve temizlik | `git switch feat/money-1c; git status --short; git rev-parse HEAD` | dal `feat/money-1c`, çıktı BOŞ. **Kirli/yanlış dal → DUR.** SHA'yı kaydet: `____` (bu belgeyi içeren commit: `git log -1 -- docs/investigations/MONEY-1C_DEPLOY_RUNBOOK.md`) |
+| 0.2 | Dal ve temizlik | `git switch feat/money-1c; git status --short; git rev-parse HEAD` | dal `feat/money-1c`, çıktı BOŞ. **Kirli/yanlış dal → DUR.** SHA'yı kaydet (apply günü doldurulur, önceden yazılmaz): `____________` (bu belgeyi içeren commit: `git log -1 -- docs/investigations/MONEY-1C_DEPLOY_RUNBOOK.md`) |
 | 0.3 | Migration durumu | `supabase migration list` | Local 139, 140, 141, 142 — Remote en yüksek **138**. Remote'ta 138'den büyük bir sürüm varsa DUR (CLAUDE.md "migration numaralandırma") |
 | 0.4 | Ön durum kaydı | aşağıdaki sorgu P0 | `rows=121`, `md5=923ac0b9cc5ffabc4fa62e1f5056e657`, `legacy_md5=dee4b541c8401acc4553fa4a56f72935` (created_at ≤ 2026-10-25 03:56:25.671135+00), `acl_md5=7547c9658ede91689da90ed8bc374d4f`, son migration `138`. **Yeni satır girmişse** (rows>121) yalnız `legacy_md5` (≤ sınır) ve `acl_md5` karşılaştırılır; `md5` (tüm satır) 139'dan sonra kolon eklendiği için ZATEN değişir |
 | 0.5 | Dosya kayıtları | `Test-Path C:\Users\mertk\moodflix-rollback\139_rollback.sql, ...\140_rollback.sql, ...\141_rollback.sql, ...\142_rollback.sql, ...\139_pre_state_snapshot.txt, ...\141_pre_state.txt, ...\142_pre_state.txt` | hepsi `True` |
@@ -34,6 +34,17 @@ Beklenen ürün etkisi: yeni istemci yok iken kullanıcıya görünür değişik
 | 0.7 | Canlı = depodaki önceki kaynak | boş bir geçici proje dizininde (`mkdir $env:TEMP\pm42; cd $env:TEMP\pm42; supabase init; supabase link --project-ref xpcwihldlnlmyopjubdc; supabase functions download parse-mood --use-api`) indir; `git worktree add $env:TEMP\pm-prev 71d32e0` ile aynı commit'in `supabase/functions/parse-mood` + `_shared` dizinleriyle `git diff --no-index` karşılaştır. (Çalışma kopyasını bozmamak için ana depoda indirme YAPMA.) | fark yok. Fark varsa DUR (geri alma hedefi belirsiz — `project_deploy_durumu_bibledan_okunmaz`) |
 | 0.8 | Testler | `npm run typecheck` (baseline 14), `npm run test:mood-offer` (94), `npm run test:mood-claim` (9) | yeşil |
 | 0.9 | Dry-run'lar canlıda yeşil | `supabase db query --linked -f supabase\tests\139_dryrun.sql` ve `...\140_dryrun.sql` (BEGIN…RAISE, kalıcı değişiklik yok) | `zz_summary \| ALL PASS` (139: 15/15, 140: 4/4) |
+
+**0.1 — 26 Eki 11:30 export tekrarı (tek satır, salt-okunur):**
+```powershell
+powershell -NoProfile -File scripts\backup\export-logical.ps1 -OutDir C:\Users\mertk\moodflix-rollback\backup-2026-10-26-1130; powershell -NoProfile -File scripts\backup\verify-export.ps1 -BackupDir C:\Users\mertk\moodflix-rollback\backup-2026-10-26-1130
+```
+(25 Eki'de alınan `backup-2026-10-26` klasörü ilk denemedir; üstüne yazılmaz, 11:30 export'u ayrı klasöre gider. Pencere TR 12:00–14:00, export bir saat öncesi.)
+`verify-export.ps1` şunları yapar ve **kırmızı varsa çıkış kodu 1 (apply YOK)**:
+1. **Bulut senkronu kapısı (OneDrive vb.):** klasör yolu `%OneDrive%` (bu makinede `C:\Users\mertk\OneDrive`) ya da `OneDrive/Dropbox/Google Drive/iCloud/Box/pCloud/MEGA` adlı bir üst klasörün altındaysa, yol üzerinde yeniden-ayrisim noktası (junction/symlink) ya da dosyalarda bulut öznitelikleri (RECALL/PINNED/UNPINNED) varsa KIRMIZI. Beklenen: `C:\Users\mertk\moodflix-rollback\…` OneDrive altında değil (25 Eki'de doğrulandı: OK). Kişisel veri bulutta olmamalı.
+2. **MANIFEST karşılaştırması:** her tablo için dosya satır sayısı = MANIFEST satır sayısı ve dosya md5 = MANIFEST md5 (dosya export'tan sonra değişmedi).
+3. **Canlı kıyas:** dosya satır sayısı ile **canlı `count(*)`**. Fark `SAPMA(±n)` olarak yazılır; export ile kontrol arasında yazma olabileceğinden hata değil, bilgidir (yeni mood_searches/users satırı normaldir). Beklenmedik azalma (örn. users düşmüş) → DUR, nedenini bul.
+Yarınki sayılar bugünküyle (121/337/8/81/360/30/5/1/0/0) birebir aynı olmak zorunda DEĞİL; kapı MANIFEST'in dosyayla tutarlılığı + canlıyla makul kıyastır.
 
 **P0 — ön durum sorgusu (salt-okunur):**
 ```sql
@@ -179,23 +190,38 @@ R1–R7 aşağıdadır; R8 ve R9 Bölüm B'dedir.
 ### Veri bozulursa: mantıksal export'tan geri yükleme (yedek yok — Supabase Free)
 
 Export klasörü: `C:\Users\mertk\moodflix-rollback\backup-2026-10-26\` (`<tablo>.jsonl`, satır başına bir `to_jsonb(satır)`; `schema-2026-10-26.sql.txt` yalnız karşılaştırma/yeniden kurma referansı, doğrudan çalıştırılmaz). **Önce şemayı geri al** (ilgili `*_rollback.sql`), çünkü JSONL kolonları export anındaki şemaya aittir; 139 sonrası eklenen kolonlar eski şemada yoktur. Geri yükleme **önce bozulan satırların hangileri olduğunu** karşılaştırarak yapılır (tüm tabloyu körlemesine ezme):
+Geri yükleme SQL'i `scripts\backup\restore-rows.ps1` ile ÜRETİLİR (çalıştırmaz); SQL dosyası gözle kontrol edilip `supabase db query --linked -f` ile çalıştırılır. `db query --linked` Management API üzerinden postgres olarak çalışır; service_role anahtarı GEREKMEZ, kullanılmaz, yazılmaz.
 ```powershell
-# Örnek: bozulan satırları (id listesi) export'tan geri yükle = o id'leri sil + export'taki halini ekle (tek işlem).
-# `supabase db query --linked` Management API üzerinden postgres olarak çalışır; service_role anahtarı GEREKMEZ, kullanılmaz, yazılmaz.
-$t   = 'mood_searches'
-$ids = @('<uuid-1>', '<uuid-2>')                       # etkilenen satırlar (önce SELECT ile karşılaştırarak belirle)
-$f   = "C:\Users\mertk\moodflix-rollback\backup-2026-10-26\$t.jsonl"
-$json = '[' + ((Get-Content $f -Encoding UTF8) -join ',') + ']'
-$idl  = ($ids | ForEach-Object { "'$_'" }) -join ','
-$sql  = "begin; delete from public.$t where id in ($idl); " +
-        "insert into public.$t select * from jsonb_populate_recordset(null::public.$t, `$bk`$$json`$bk`$::jsonb) r where r.id in ($idl); commit;"
-Set-Content "$env:TEMP\restore_$t.sql" $sql -Encoding UTF8   # önce dosyayı gözle kontrol et
-supabase db query --linked -f "$env:TEMP\restore_$t.sql"
+# tek anahtar:
+powershell -NoProfile -File scripts\backup\restore-rows.ps1 -BackupDir C:\Users\mertk\moodflix-rollback\backup-2026-10-26 `
+  -Table mood_searches -KeyColumns id -Keys '<uuid-1>','<uuid-2>' -OutFile $env:TEMP\restore_mood_searches.sql
+# bileşik anahtar (user_daily_quotas: user_id + date):  -KeyColumns user_id,date -Keys '<uuid>|2026-10-25'
+# anahtar kolonları: app_config=key, subscription_limits=tier, deletion_requests=auth_uid, diğerleri=id (user_daily_quotas=user_id,date)
+Get-Content $env:TEMP\restore_mood_searches.sql -TotalCount 12      # gözle kontrol
+supabase db query --linked -f $env:TEMP\restore_mood_searches.sql
 ```
-(`id` birincil anahtarı olmayan bir tabloda — örn. `app_config` `key` — `id` yerine ilgili anahtar sütunu kullanılır.)
+- **Semantik UPSERT'tir (`INSERT … ON CONFLICT (anahtar) DO UPDATE`), DELETE+INSERT DEĞİL.** Neden: `users` silinirse `ON DELETE CASCADE` ile `subscriptions`, `mood_searches`, `watchlist`, `user_daily_quotas`, `lifetime_sales` satırları da silinir (test S5 kanıtladı). Bu yüzden `users` satırı asla silinerek geri yüklenmez.
+- Betik tek işlemde çalışır; sonunda hedef anahtarların hepsinin tabloda olduğunu doğrular, değilse `RAISE` ile işlemi geri alır. Export'ta olmayan anahtar verilirse SQL üretmez.
+- Geri yükleme kapsamı yalnız bozulan satırlar; export'tan sonra eklenen satırlara dokunmaz.
+- **Restore testi (25 Eki 12:40, gömülü PostgreSQL 18.4, canlı şemayla birebir DEĞİL — aşağıdaki "kanıt" bölümüne bak):** 10/10 geçti.
+
+**Kanıt (restore testi, `restore.mjs`, scratchpad; çalıştırıldı, canlıya dokunmadı):**
+
+| Test | Senaryo | Sonuç |
+|---|---|---|
+| R0 | Şemayı kur (canlı kolon tipleri), 10 JSONL'yi yükle | satır sayısı + md5 MANIFEST ile aynı (10 tablo) |
+| S1 | `mood_searches`'ten rastgele 3 satır sil + 2 satırın `recommended_film_ids` bozulur → `restore-rows.ps1` → çalıştır | 121 satır, 10 tablo md5 MANIFEST ile aynı |
+| S2 | `users` satırı bozulur (`display_name`) + `user_daily_quotas` bileşik anahtar (`user_id\|date`) bozulur → geri yükle | 10 tablo md5 MANIFEST ile aynı |
+| S3 | Export'ta olmayan anahtar | betik hata verir, SQL üretmez |
+| S4 | Doğrulama bloğuna yanlış sayı | `RAISE` eder, işlem geri alınır, veri bozulmaz |
+| S5 | `users` satırını silmek | `mood_searches` 2 → 0 (CASCADE) — DELETE+INSERT yöntemi bu yüzden yasak |
+
+Testte bulunup düzeltilen hata: `powershell -File` ile `-Keys 'a','b'` dizi olarak değil virgüllü tek dize gelir; betik artık virgülden böler (ilk koşuda 5 anahtarın hepsi "export'ta yok" dedi).
+Testin sınırları: md5 karşılaştırması dosya sırasıyla yeniden kurulmuş satır metni üzerinden yapılır (canlı sıralama collation'ı gömülü `--locale=C` ile farklı); `users.preferences_vector` gömülü PG'de `text` (pgvector yok, `to_jsonb` çıktısı aynı dizge); `films`/`sessions` FK'leri ve RLS/trigger yok; canlıya karşı çalıştırılmadı.
 Kurallar:
 - **FK sırası:** `users` → `subscriptions`, `user_daily_quotas`, `watchlist`, `mood_searches`, `deletion_requests`, `lifetime_sales` → `app_config`, `subscription_limits`, `promo_codes` (bağımsız). Silme ters sırada.
-- Küçük sapma için yalnız etkilenen satırlar (`id` listesiyle) geri yüklenir; tüm tablo yalnız tablo boşaldıysa.
+- Küçük sapma için yalnız etkilenen satırlar (anahtar listesiyle) geri yüklenir; tüm tablo yalnız tablo boşaldıysa (o durumda tüm anahtarlar `-Keys` ile verilir).
+- **Bilinen sınır — `auth.users` export DIŞI:** Kimlik/oturum verisi (`auth.users`, `auth.identities`, parola/OAuth bağları, oturumlar) bu export'ta YOK. Hesap/kimlik felaketinde `public.users` satırları geri dönse bile kullanıcıların **girişleri dönmez** (`users.auth_id` ile eşleşen auth kaydı yoksa satır yetim kalır). Auth tarafı için Free planda kurtarma yolu yoktur; bu risk Pro geçişinin (yedek/PITR) gerekçelerinden biridir.
 - `lifetime_sales` ve sequence: `lifetime_sale_number` export'ta `last_value` olarak kayıtlı (`schema-*.sql.txt` "sequence durumu"); satış verisi geri yüklenirse `setval` ile sayaç manuel hizalanır — **DUR ve sor** (sayaç ve fiyat/limit kararı kurucuya aittir).
 - Geri yükleme sonrası MANIFEST'teki satır sayıları ve (değişmemiş tablolar için) md5'ler yeniden alınan export ile karşılaştırılır.
 - Gizli veri: bu klasör kişisel veri içerir; repo dışında kalır, paylaşılmaz, işi bitince saklama süresine karar verilir (öneri: 30 gün, sonra güvenli sil).
