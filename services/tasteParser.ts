@@ -26,6 +26,7 @@ import {
 } from '../types';
 import { logger } from '../utils/logger';
 import { interpretParseMoodQuota, type SearchQuota } from '../utils/searchQuota';
+import { IN_PROGRESS_MAX_RETRIES, inProgressWaitMs } from '../utils/moodSearchRetry';
 
 // ─── MoodParseError ──────────────────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export interface ParseMoodResult {
   quota: SearchQuota;
 }
 
-async function callEdgeFunction(input: string): Promise<EdgeResponse> {
+async function callEdgeFunction(input: string, clientSearchId?: string): Promise<EdgeResponse> {
   // ── AI rızası (R-1) ───────────────────────────────────────────────────────
   // Sheet'i çağıran taraf açar (`ensureAiConsent`, kota tüketilmeden ÖNCE);
   // burası sessiz son kapıdır: rıza yoksa metin Edge Function'a gitmez.
@@ -126,7 +127,8 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
         Authorization: `Bearer ${token}`,
         apikey: SUPABASE_ANON_KEY,
       },
-      body: JSON.stringify({ raw_input: input }),
+      // `client_search_id` (MONEY-1C idempotency): yalniz verildiginde; eski sunucu bilinmeyen alani yok sayar.
+      body: JSON.stringify(clientSearchId ? { raw_input: input, client_search_id: clientSearchId } : { raw_input: input }),
       signal: controller.signal,
     });
   } catch (networkError) {
@@ -150,6 +152,10 @@ async function callEdgeFunction(input: string): Promise<EdgeResponse> {
     }
     if (code === 'INVALID_INPUT') {
       throw new MoodParseError('INVALID_INPUT', errorData.error ?? 'Please describe your mood in more detail.', errorData);
+    }
+    // 409 — ayni client_search_id baska istekte calisiyor (hak harcanmadi, harcanmayacak).
+    if (code === 'IN_PROGRESS') {
+      throw new MoodParseError('IN_PROGRESS', 'This search is still being prepared.', errorData);
     }
     if (code === 'RATE_LIMIT_EXCEEDED') {
       throw new MoodParseError('RATE_LIMIT_EXCEEDED', 'Too many requests. Please wait a moment.', errorData);
@@ -1445,11 +1451,43 @@ function ruleBased(rawInput: string): TasteProfile {
  * @param input - Kullanıcının yazdığı ham mood metni (TR veya EN)
  * @throws {MoodParseError} - API/network/quota/parse hatalari icin
  */
-export async function parseMood(input: string): Promise<ParseMoodResult> {
-  await checkRateLimit();
+/** `retry_after` (sn) MoodParseError.originalError govdesinde gelir. */
+function retryAfterOf(err: MoodParseError): unknown {
+  return (err.originalError as { retry_after?: unknown } | undefined)?.retry_after;
+}
+
+/** 409 IN_PROGRESS: ayni kimlikle, sunucunun dedigi sure sonra en cok 3 kez yeniden dener. */
+async function callWithInProgressRetry(input: string, clientSearchId?: string): Promise<EdgeResponse> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await callEdgeFunction(input, clientSearchId);
+    } catch (err) {
+      if (
+        clientSearchId &&
+        err instanceof MoodParseError &&
+        err.code === 'IN_PROGRESS' &&
+        attempt < IN_PROGRESS_MAX_RETRIES
+      ) {
+        await new Promise<void>((resolve) => setTimeout(resolve, inProgressWaitMs(retryAfterOf(err))));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
+export interface ParseMoodOptions {
+  /** Idempotency kimligi (MONEY-1C); yoksa eski davranis. */
+  clientSearchId?: string;
+  /** Ayni kimlikle YENIDEN deneme: istemci ici dakikalik hiz siniri sayilmaz (yeni arama degil). */
+  isRetry?: boolean;
+}
+
+export async function parseMood(input: string, opts: ParseMoodOptions = {}): Promise<ParseMoodResult> {
+  if (!(opts.isRetry && opts.clientSearchId)) await checkRateLimit();
 
   try {
-    const raw = await callEdgeFunction(input);
+    const raw = await callWithInProgressRetry(input, opts.clientSearchId);
     const searchId = raw.search_id ?? null;
     const searchKeywords = Array.isArray(raw.search_keywords) ? raw.search_keywords : [];
     return {

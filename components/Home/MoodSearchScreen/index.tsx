@@ -91,6 +91,7 @@ import { loadTodayDeck } from '@/services/todayDeckStore';
 import TodaySearchCard from '@/components/Home/TodaySearchCard';
 import { isSameSearchText, localDateKey, type TodayDeckSnapshot } from '@/utils/todayDeck';
 import { getMoodHistory } from '@/services/profileService';
+import * as ExpoCrypto from 'expo-crypto';
 import { parseMood } from '@/services/tasteParser';
 import { hasAiConsent, recordAiConsent } from '@/services/aiConsent';
 import { saveSession } from '@/services/watchlist';
@@ -102,6 +103,11 @@ import { yearRangeToEra } from '@/utils/filmFilters';
 import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
 import { isOfferEligible } from '@/utils/moodOfferTiming';
 import { hidesBeyondFree } from '@/utils/moodLock';
+import {
+  classifyMoodSearchError,
+  createSearchAttempts,
+  nextActivationStep,
+} from '@/utils/moodSearchRetry';
 import { getFreeVisibleCount } from '@/services/appConfigFlags';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
@@ -188,6 +194,13 @@ export default function MoodSearchScreen() {
   const [todayDeck, setTodayDeck] = useState<TodayDeckSnapshot | null>(null);
 
   const pendingFilters = useRef<FilmFilters | null>(null);
+  /** MONEY-1C: ayni metinle bitmemis denemeler ayni client_search_id'yi tasir (sunucu hakki bir kez dusurur). */
+  const attempts = useRef(createSearchAttempts(() => ExpoCrypto.randomUUID()));
+  /** Hak duvarinda kalan arama (metin): satin alma sonrasi AYNI kimlikle otomatik yeniden calisir. */
+  const pendingActivation = useRef<string | null>(null);
+  /** Satin alma sonrasi "Pro etkinlestiriliyor" dongusu calisiyor mu (cift calismayi onler). */
+  const activationRunning = useRef(false);
+  const prevEntitled = useRef(proEntitled);
   // Ekran acildiginda kota bilgisini yenile
   useEffect(() => {
     checkQuota();
@@ -361,8 +374,10 @@ export default function MoodSearchScreen() {
   /** AI yolu: parse-mood + (varsa) rerank. Hata çağırana fırlatılır. */
   const runAiSearch = useCallback(
     async (trimmed: string, filters: FilmFilters, freeSearch: boolean) => {
+      // Bayrak acikken (idempotency) kimlik gonderilir; kapaliyken eski govde.
+      const attempt = offerEnabled ? attempts.current.idFor(trimmed) : null;
       const [parseResult] = await Promise.all([
-        parseMood(trimmed),
+        parseMood(trimmed, attempt ? { clientSearchId: attempt.id, isRetry: attempt.isRetry } : undefined),
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
       ]);
 
@@ -390,6 +405,8 @@ export default function MoodSearchScreen() {
         trimmed, filters, profile, searchId, searchKeywords, prefetchLimit,
         entryPoint: entry ?? 'direct',
       });
+      // Arama basariyla bitti: kimlik birakilir, sonraki arama yeni kimlik alir.
+      attempts.current.succeeded();
     },
     [applySearchResult, entry, offerEnabled, isOnboarding, proEntitled],
   );
@@ -423,10 +440,10 @@ export default function MoodSearchScreen() {
    *
    * Çağıran rıza aldığını varsayar (parseMood ayrıca `hasAiConsent` ile son kapıyı tutar).
    */
-  const runSearch = useCallback(async () => {
+  const runSearch = useCallback(async (opts?: { activation?: boolean }): Promise<string | null> => {
     const trimmed = moodText.trim();
     // Sunucuyla ayni 2 karakter siniri (bayraktan bagimsiz; sunucu 1 karakteri 400'ler).
-    if (!isMoodInputSubmittable(trimmed) || phase === 'processing') return;
+    if (!isMoodInputSubmittable(trimmed) || phase === 'processing') return null;
 
     // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
     hapticLight();
@@ -460,7 +477,7 @@ export default function MoodSearchScreen() {
         posthogAnalytics.track('quota_exhausted', { quota_type: 'search' });
         // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
         await showQuotaWall();
-        return;
+        return null;
       }
     }
 
@@ -490,6 +507,8 @@ export default function MoodSearchScreen() {
       setPipelineStage('parsing');
       setPhase('processing');
       await runAiSearch(trimmed, filters, freeSearch);
+      pendingActivation.current = null;
+      return null;
     } catch (err) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
@@ -503,7 +522,15 @@ export default function MoodSearchScreen() {
       if (errorCode === 'AI_CONSENT_REQUIRED') {
         setConsented(false);
         setPhase('input');
-        return;
+        return null;
+      }
+
+      // Satin alma sonrasi etkinlesme penceresi: hak duvari / hiz siniri / IN_PROGRESS geldiyse
+      // (sunucu tier'i henuz gormedi) sessizce bekle — hata/paywall gosterme, cagiran dongu AYNI
+      // kimlikle yeniden dener (`nextActivationStep`).
+      if (opts?.activation && nextActivationStep(errorCode, 1).kind !== 'proceed') {
+        setPhase('input');
+        return errorCode;
       }
 
       posthogAnalytics.track('mood_search_failed', {
@@ -525,9 +552,11 @@ export default function MoodSearchScreen() {
       setMoodError({ type: userError.type, message });
       setPhase('input');
 
-      // Quota exceeded from edge function — show paywall
-      if (userError.type === 'quota') {
+      // Paywall YALNIZ gunluk kota kodunda (429 QUOTA_EXCEEDED). Hiz siniri / IN_PROGRESS /
+      // servis hatalari hata mesaji gosterir, paywall acmaz.
+      if (classifyMoodSearchError(errorCode) === 'paywall') {
         if (offerEnabled) {
+          pendingActivation.current = trimmed;
           // MONEY-1C: gunun hakki bittikten sonra ikinci deneme → Pro teklifi
           // ("Unlimited with Pro"). Teklif acilamazsa (premium, orchestrator) eski duvar.
           const shown = await triggerPaywall({ type: 'mood_offer', entry: 'quota_exhausted' });
@@ -536,8 +565,50 @@ export default function MoodSearchScreen() {
           await showQuotaWall();
         }
       }
+      return errorCode;
     }
   }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, proEntitled, proAccessLoading, entry, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+
+  /** Her render'da guncel `runSearch` — etkinlesme dongusu eski kapanisi kullanmasin. */
+  const runSearchRef = useRef(runSearch);
+  runSearchRef.current = runSearch;
+
+  /**
+   * Satin alma sonrasi bekleyen arama (MONEY-1C g): hak duvarinda kalan arama, yetki
+   * false → true gecince AYNI client_search_id ile otomatik yeniden calisir. Sunucu tier'i
+   * webhook/sync gecikmesiyle gec gorebilir: duvar kodu gelirse ~30 sn boyunca 3 sn arayla
+   * "Pro etkinlestiriliyor" mesajiyla yeniden denenir; paywall YENIDEN acilmaz.
+   */
+  useEffect(() => {
+    const became = !prevEntitled.current && proEntitled;
+    prevEntitled.current = proEntitled;
+    if (!became || !offerEnabled || activationRunning.current) return;
+    const pending = pendingActivation.current;
+    if (!pending || pending !== moodText.trim()) return;
+
+    activationRunning.current = true;
+    void (async () => {
+      try {
+        for (let attempt = 1; ; attempt++) {
+          setMoodError({ type: 'server', message: t('moodOffer.activating') });
+          const code = await runSearchRef.current({ activation: true });
+          const step = nextActivationStep(code, attempt);
+          if (step.kind === 'retry') {
+            await new Promise<void>((resolve) => setTimeout(resolve, step.waitMs));
+            continue;
+          }
+          if (step.kind === 'give_up') {
+            posthogAnalytics.track('mood_activation_timeout', { attempts: attempt });
+            setMoodError({ type: 'server', message: t('moodOffer.activatingTimeout') });
+          }
+          break;
+        }
+      } finally {
+        pendingActivation.current = null;
+        activationRunning.current = false;
+      }
+    })();
+  }, [proEntitled, offerEnabled, moodText, t]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:

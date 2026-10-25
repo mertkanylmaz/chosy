@@ -26,6 +26,8 @@ export function moodErrorMessageKey(code: string, offerEnabled: boolean): string
       return 'moodOffer.errorQuotaUnavailable';
     case 'INVALID_INPUT':
       return 'moodOffer.errorInvalidInput';
+    case 'IN_PROGRESS':
+      return 'moodOffer.errorInProgress';
     default:
       return null;
   }
