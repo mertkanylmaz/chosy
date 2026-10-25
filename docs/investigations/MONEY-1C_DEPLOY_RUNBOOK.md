@@ -240,7 +240,7 @@ Kurallar:
 | Adım | Zaman (UTC) | Sonuç | Doğrulama | Notlar |
 |---|---|---|---|---|
 | 0 ön kontroller | | | | export MANIFEST md5'leri (25 Eki 09:09 UTC denemesi: mood_searches `dfb14062…`, users `b2aa7762…`; apply günü export YENİDEN alınır), SHA |
-| 1 — 139 | | | V1.1–V1.5 | |
+| 1 — 139 | 2026-10-25 ~10:00 UTC (TR ~13:00) | UYGULANDI (`supabase db push`, dry-run yalnız 139) | V1.1–V1.5 yeşil; legacy_md5 `dee4b541…` ve 121 satır aynı; yeni kolonlar eski satırlarda boş (0/121); simülasyon (insert user_id, update 3 kolon, status/client_search_id 42501) 4/4; Sentry son 24 sa: ilgili hata yok | rollback `139_rollback.sql` hazır; 140/141/142 uygulanmadı |
 | 2 — 140 | | | | |
 | 3 — parse-mood v43 | | | smoke A, Sentry | |
 | 24 sa kapısı | | temiz / değil | R1–R7 + invaryant sorgusu | Bölüm B'ye geçiş kararı |
