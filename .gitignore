@@ -74,3 +74,6 @@ tests/founder-acceptance/baselines/
 
 
 hook-last.log
+
+# MOOD-VEC-1: kalici anonim eval oturumu (refresh token) repoya girmez
+scripts/mood-eval/.session.json
