@@ -4341,3 +4341,9 @@ BİLİNÇLİ olarak açık bırakıldı.
     düzeyinde tutar (`testerAuthId`); hesap değişirse bir sonraki `isMoodOfferEnabled()` çağrısına
     kadar paywall orkestratörünün senkron kararı eski kimliği görebilir. UX bayrağı, yetki
     değil; hesap değiştirme akışı `sessionReset`'te sıfırlamayı ekleyebilir.
+11. **Smoke test kirliliği (MONEY-1C_RECOMMENDED_IDS):** `tests/founder-acceptance/runner.ts`
+    gibi sunucu smoke testleri anon sign-in + gerçek parse-mood ile canlıda `users` /
+    `mood_searches` satırı bırakıyor; hesaplar sonradan silinince cascade ile iz de gidiyor ve
+    analitik paydası (arama başına doluluk, orphan oranı) bozuluyor. Çözüm: test hesaplarını
+    işaretle (örn. `app_metadata.is_test`) veya test sonunda sil; analytics paydasından çıkar.
+    Kod değişikliği yok, mimari karar gerektirir (işaret alanı).
