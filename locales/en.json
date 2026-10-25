@@ -590,12 +590,12 @@
     "proSection": "Membership",
     "chosyPro": "Chosy Pro",
     "chosyProSubtitle": "Find a film for the mood you're in",
-    "proMode": "Pro Mode",
+    "proMode": "Mood Search",
     "proModeSubtitle": "Describe a mood, get a matching film"
   },
   "proMode": {
-    "title": "Pro Mode",
-    "lockedTitle": "Pro Mode is part of Chosy Pro",
+    "title": "Mood Search",
+    "lockedTitle": "Mood Search is part of Chosy Pro",
     "lockedBody": "Describe how you feel and get a film matched to your mood — beyond tonight's four.",
     "errorTitle": "We couldn't check your access",
     "errorBody": "The connection dropped before we could confirm your plan. Try again in a moment."
