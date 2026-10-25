@@ -38,6 +38,8 @@ const SAFE_DEFAULTS = {
   mood_offer_enabled: false,
   // MONEY-1C: bayrak kapaliyken bile acilacak kimlikler (auth.users.id dizisi). Bos = kimse.
   mood_offer_testers: [] as readonly string[],
+  // MONEY-1C: kilit oncesi ucretsiz gorunen film sayisi (clamp: utils/moodLock.ts).
+  free_visible_count: 3,
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;

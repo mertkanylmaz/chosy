@@ -64,6 +64,7 @@ import QuotaExhausted from '@/components/QuotaExhausted';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
+import { useFreeVisibleCount } from '@/hooks/useFreeVisibleCount';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
 import MoodCardGrid from '@/components/Home/MoodCardGrid';
@@ -96,6 +97,8 @@ import { type ErrorType, toUserError } from '@/utils/errorHelpers';
 import { yearRangeToEra } from '@/utils/filmFilters';
 import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
 import { isOfferEligible } from '@/utils/moodOfferTiming';
+import { hidesBeyondFree } from '@/utils/moodLock';
+import { getFreeVisibleCount } from '@/services/appConfigFlags';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 
@@ -140,6 +143,7 @@ export default function MoodSearchScreen() {
   const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
   /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
   const offerEnabled = useMoodOfferEnabled();
+  const freeVisibleCount = useFreeVisibleCount();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [phase, setPhase] = useState<Phase>('input');
@@ -279,8 +283,10 @@ export default function MoodSearchScreen() {
       profile: TasteProfile;
       searchId: string | null;
       searchKeywords: string[];
+      /** Kilitli destede ucretsiz sinirin otesindeki posterler indirilmez (yoksa hepsi). */
+      prefetchLimit?: number;
     }) => {
-      const { trimmed, filters, profile, searchId, searchKeywords } = params;
+      const { trimmed, filters, profile, searchId, searchKeywords, prefetchLimit } = params;
 
       if (filters.yearRange !== null) {
         profile.era_preference = yearRangeToEra(filters.yearRange);
@@ -304,7 +310,7 @@ export default function MoodSearchScreen() {
       // Recommendations preload — animasyonu beklemeden hemen baslat
       // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
       // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
-      startPreload(profile, filters, trimmed);
+      startPreload(profile, filters, trimmed, prefetchLimit);
 
       // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
       await new Promise<void>((resolve) => setTimeout(resolve, 350));
@@ -345,11 +351,16 @@ export default function MoodSearchScreen() {
       // parseMood bitti — overlay'e sinyal gönder
       setPipelineStage('done');
 
+      // Yetkisiz kullanicida (yetki okunurken dahil) gizli poster indirilmez.
+      const prefetchLimit = hidesBeyondFree({ offerEnabled, isOnboarding, entitled: proEntitled })
+        ? await getFreeVisibleCount()
+        : undefined;
+
       await applySearchResult({
-        trimmed, filters, profile, searchId, searchKeywords,
+        trimmed, filters, profile, searchId, searchKeywords, prefetchLimit,
       });
     },
-    [applySearchResult, entry],
+    [applySearchResult, entry, offerEnabled, isOnboarding, proEntitled],
   );
 
   /**
@@ -631,6 +642,15 @@ export default function MoodSearchScreen() {
   }
 
   const canSubmit = isMoodInputSubmittable(moodText) && phase !== 'processing';
+  /** MONEY-1C: ucretsiz yol beklentisi — yalniz teklif akisi acik ve kullanici yetkisizken. */
+  const showFreeHint =
+    consented !== false &&
+    isOfferEligible({
+      offerEnabled,
+      isOnboarding,
+      accessLoading: proAccessLoading,
+      entitled: proEntitled,
+    });
 
   // ── Input asamasi ──────────────────────────────────────────────────────────
   return (
@@ -754,6 +774,9 @@ export default function MoodSearchScreen() {
                 reddet butonu yok, çıkış sistem geri hareketi (ai_consent_dismissed). */}
             {consented === false && (
               <Text style={styles.inlineConsentBody}>{t('aiConsent.inlineBody')}</Text>
+            )}
+            {showFreeHint && (
+              <Text style={styles.freeHint}>{t('moodOffer.freeSearchHint', { count: freeVisibleCount })}</Text>
             )}
             <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
               <TouchableOpacity
@@ -962,6 +985,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.3)',
   },
   inlineConsentBody: {
+    color: Colors.textSecondary,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
+    textAlign: 'center',
+  },
+  freeHint: {
     color: Colors.textSecondary,
     fontSize: Theme.typography.caption.fontSize,
     lineHeight: Theme.typography.caption.lineHeight,

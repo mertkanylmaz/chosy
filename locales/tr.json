@@ -611,7 +611,15 @@
     "errorInvalidInput": "Biraz daha yaz — en az 2 karakter — ve tekrar dene.",
     "inviteTitle": "Mood'una uyan bir film ister misin?",
     "paywallKickerQuota": "Pro ile sınırsız",
-    "paywallKickerDeck": "Seçimleri sevdin mi? İstediğin mood'u istediğin zaman ara."
+    "paywallKickerDeck": "Seçimleri sevdin mi? İstediğin mood'u istediğin zaman ara.",
+    "freeSearchHint": "Bugünün ücretsiz araması · %{count} öneri dahil"
+  },
+  "moodLock": {
+    "title": "Bu ruh halinde daha fazlası var.",
+    "counter": "%{total} filmden %{visible}",
+    "cta": "Chosy Pro ile %{total} filmin hepsini gör",
+    "keep": "İlk %{visible} öneri senin, kalıcı.",
+    "a11yLocked": "Kilitli öneriler. Chosy Pro ile hepsini görmek için çift dokun."
   },
   "auth": {
     "welcomeTitle": "Mood'un. Filmlerin.",

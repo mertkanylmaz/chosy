@@ -253,10 +253,13 @@ export interface FeedManager {
  *
  * @param moodProfile - AI tarafından ayrıştırılmış 12 boyutlu tat profili; null ise yükleme beklenir
  * @param filters     - Kullanıcının seçtiği isteğe bağlı filtreler
+ * @param prefetchCap - Poster önceden yüklemenin (dışlayıcı) üst indeksi. Kilitli destede
+ *                      gizli filmlerin posteri indirilmesin diye verilir; yoksa sınırsız.
  */
 export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
+  prefetchCap?: number,
 ): FeedManager {
   const [state, dispatch] = useReducer(feedReducer, initialState);
   const [deckReranked, setDeckReranked] = useState(false);
@@ -570,7 +573,7 @@ export function useFeedManager(
     // currentIndex dahil: ilk kart (index 0) da önceden yüklenir
     const upcoming = state.films.slice(
       state.currentIndex,
-      state.currentIndex + 3,
+      Math.min(state.currentIndex + 3, prefetchCap ?? Number.POSITIVE_INFINITY),
     );
     upcoming.forEach((f) => {
       // Kartla AYNI fonksiyon ve boyut (SwipeableCard) — aksi halde önbellek ıskalar.
@@ -579,7 +582,7 @@ export function useFeedManager(
         Image.prefetch(uri, 'memory-disk');
       }
     });
-  }, [state.currentIndex, state.films]);
+  }, [state.currentIndex, state.films, prefetchCap]);
 
   // ─── Swipe Handler ───────────────────────────────────────────────────────
 

@@ -31,12 +31,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
 import MoodDeckSummary from '@/components/MoodDeckSummary';
+import MoodLockCard from '@/components/MoodLockCard';
 import { Colors } from '@/constants/Colors';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useFreeVisibleCount } from '@/hooks/useFreeVisibleCount';
 import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -52,6 +54,7 @@ import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
+import { buildDeckItems, deriveLockState, hidesBeyondFree, progressCounter } from '@/utils/moodLock';
 import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
@@ -77,14 +80,19 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode } = useMood();
+  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
   const offerEnabled = useMoodOfferEnabled();
   const slotExemptFreeDeck = isFreeSearchDeckSlotExempt({ offerEnabled, isOnboarding });
+  const freeVisible = useFreeVisibleCount();
+  /** Gizli posterler yetki okunurken de indirilmez: sinir `entitled` kesinlesene kadar uygulanir. */
+  const prefetchCap = hidesBeyondFree({ offerEnabled, isOnboarding, entitled: proEntitled })
+    ? freeVisible
+    : undefined;
 
   const navigateAfterOnboarding = useCallback(() => {
     if (isOnboarding) router.replace('/(tabs)' as never);
@@ -121,7 +129,7 @@ export default function DiscoverScreen() {
     errorType,
     retryLoad,
     onSwipeFilm,
-  } = useFeedManager(currentProfile, effectiveFilters);
+  } = useFeedManager(currentProfile, effectiveFilters, prefetchCap);
 
   // ── Deck state ─────────────────────────────────────────────────────────────
 
@@ -176,22 +184,35 @@ export default function DiscoverScreen() {
 
   // ── Current film ────────────────────────────────────────────────────────────
 
-  const currentFilm = deck[currentIndex] ?? null;
   const deckSize = deck.length;
+  // MONEY-1C kilit: TURETILMIS deger (dinleyici yok) — premiumStatus/yetki degisince
+  // kendiliginden acilir. `total` kalite suzgecinden sonraki GERCEK deste uzunlugu.
+  const lock = deriveLockState({
+    offerEnabled,
+    isOnboarding,
+    accessLoading: premiumStatus === 'loading' || proAccessLoading,
+    entitled: proEntitled,
+    total: deckSize,
+    freeVisible,
+  });
+  const deckItems = buildDeckItems(deck, lock);
+  const progress = progressCounter({ currentIndex, total: deckSize, lock });
   /** Yigin: [ust, alttaki]. Son kartta alttaki yoktur. */
-  const nextFilm = deck[currentIndex + 1] ?? null;
-  const stackFilms = currentFilm ? (nextFilm ? [currentFilm, nextFilm] : [currentFilm]) : [];
+  const currentItem = deckItems[currentIndex] ?? null;
+  const nextItem = deckItems[currentIndex + 1] ?? null;
+  const stackItems = currentItem ? (nextItem ? [currentItem, nextItem] : [currentItem]) : [];
 
   // ── Advance to next card ────────────────────────────────────────────────────
 
   const advanceToNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex >= deckSize) {
+    // Kilitli destede son ucretsiz kartin ardindan kilit karti gelir: deste BITMEZ.
+    if (nextIndex >= deckItems.length) {
       setDeckComplete(true);
     } else {
       setCurrentIndex(nextIndex);
     }
-  }, [currentIndex, deckSize]);
+  }, [currentIndex, deckItems.length]);
 
   // ── Swipe handlers ──────────────────────────────────────────────────────────
 
@@ -258,6 +279,13 @@ export default function DiscoverScreen() {
     },
     [onSwipeFilm, advanceToNext],
   );
+
+  // ── Kilit karti CTA'si ─────────────────────────────────────────────────────
+  // Paywall kapaninca kilit kartinda KALINIR (paywallProps.onDismiss cikis yapmaz) —
+  // deste kaybolmaz. Satin alma premiumStatus'u degistirince kilit kendiliginden acilir.
+  const handleLockCta = useCallback(() => {
+    void triggerPaywall({ type: 'mood_offer', entry: 'lock_card', searchId: lastSearchId });
+  }, [triggerPaywall, lastSearchId]);
 
   // ── Navigation helpers ──────────────────────────────────────────────────────
 
@@ -358,25 +386,37 @@ export default function DiscoverScreen() {
           kartin katmani ayni key ile uste gecer — React ayni ornegi tasir, remount
           yok (poster yuklu, shared value'lar yerinde). deckFrozen olunca gesture
           bloklanir. */}
-      {currentFilm && (
+      {currentItem && (
         <View
           style={{ height: CARD_HEIGHT }}
           pointerEvents={deckFrozen ? 'none' : 'auto'}
         >
-          {stackFilms.map((stackFilm, i) => (
+          {stackItems.map((item, i) => (
             <View
               key={`deck-${currentIndex + i}`}
               style={[styles.deckLayer, i === 0 ? styles.deckLayerFront : styles.deckLayerBack]}
             >
-              <SwipeableCard
-                film={stackFilm}
-                height={CARD_HEIGHT}
-                bottomOffset={insets.bottom + 80}
-                onSwipeRight={handleSwipeRight}
-                onSwipeLeft={handleSwipeLeft}
-                interactive={i === 0}
-                frozen={deckFrozen}
-              />
+              {item.kind === 'film' ? (
+                <SwipeableCard
+                  film={item.film}
+                  height={CARD_HEIGHT}
+                  bottomOffset={insets.bottom + 80}
+                  onSwipeRight={handleSwipeRight}
+                  onSwipeLeft={handleSwipeLeft}
+                  interactive={i === 0}
+                  frozen={deckFrozen}
+                />
+              ) : (
+                <MoodLockCard
+                  variant={item.kind === 'lock' ? 'lock' : 'skeleton'}
+                  visible={item.kind === 'lock' ? item.visible : freeVisible}
+                  total={item.kind === 'lock' ? item.total : deckSize}
+                  height={CARD_HEIGHT}
+                  bottomOffset={insets.bottom + 80}
+                  interactive={i === 0}
+                  onPressCta={handleLockCta}
+                />
+              )}
             </View>
           ))}
         </View>
@@ -390,15 +430,15 @@ export default function DiscoverScreen() {
       >
         <Text style={styles.progressText}>
           {t('deckSummary.deckProgress', {
-            current: currentIndex + 1,
-            total: deckSize,
+            current: progress.current,
+            total: progress.total,
           })}
         </Text>
         <View style={styles.progressTrack}>
           <View
             style={[
               styles.progressFill,
-              { width: `${((currentIndex + 1) / deckSize) * 100}%` },
+              { width: `${(progress.current / progress.total) * 100}%` },
             ]}
           />
         </View>

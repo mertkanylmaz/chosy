@@ -109,3 +109,18 @@ Deno.test('hak bitti metni limit sayısından bağımsız (rakam yok; 1 ve 3 iç
     for (const k of ['offerTitle', 'offerBody', 'offerBodyTime']) assert(!/\d/.test(m[k]), `${l}:${k}`)
   }
 })
+
+Deno.test('adım 9: deste kilidi bayrak kapalıyken kurulmaz; prefetch sınırı ve ücretsiz ipucu da bayrak arkasında', () => {
+  const lock = read('utils/moodLock.ts')
+  assertMatch(lock, /if \(!offerEnabled \|\| isOnboarding\) return \{ kind: 'open' \}/)
+  assertMatch(lock, /return input\.offerEnabled && !input\.isOnboarding && !input\.entitled/)
+  const d = read('app/discover.tsx')
+  assertMatch(d, /hidesBeyondFree\(\{ offerEnabled, isOnboarding, entitled: proEntitled \}\)\s*\? freeVisible\s*: undefined/)
+  assertMatch(d, /useFeedManager\(currentProfile, effectiveFilters, prefetchCap\)/)
+  const m = read('components/Home/MoodSearchScreen/index.tsx')
+  assertMatch(m, /hidesBeyondFree\(\{ offerEnabled, isOnboarding, entitled: proEntitled \}\)\s*\? await getFreeVisibleCount\(\)\s*: undefined/)
+  assertMatch(m, /const showFreeHint =\s*consented !== false &&\s*isOfferEligible\(/)
+  // free_visible_count: güvenli varsayılan + lazy getter (modül seviyesi sabit yok)
+  assertMatch(read('services/remoteConfig.ts'), /free_visible_count: 3,/)
+  assertMatch(read('services/appConfigFlags.ts'), /export async function getFreeVisibleCount\(\): Promise<number> \{\s*await remoteConfig\.hydrate\(\);\s*return clampFreeVisibleCount/)
+})

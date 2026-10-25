@@ -611,7 +611,15 @@
     "errorInvalidInput": "Add a few more words — at least 2 characters — and try again.",
     "inviteTitle": "Want a pick that matches your mood?",
     "paywallKickerQuota": "Unlimited with Pro",
-    "paywallKickerDeck": "Like these picks? Search any mood, any time."
+    "paywallKickerDeck": "Like these picks? Search any mood, any time.",
+    "freeSearchHint": "Today's free search · %{count} picks included"
+  },
+  "moodLock": {
+    "title": "There's more to this mood.",
+    "counter": "%{visible} of %{total}",
+    "cta": "See all %{total} with Chosy Pro",
+    "keep": "Your first %{visible} are yours to keep.",
+    "a11yLocked": "Locked picks. Double tap to see all with Chosy Pro."
   },
   "auth": {
     "welcomeTitle": "Your mood. Your movies.",

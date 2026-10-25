@@ -59,9 +59,10 @@ function profileKey(
  * Destedeki tum filmlerin (en fazla 8) posterini onceden yukler — deste acildiginda iskelet beklenmesin.
  * Kozmetik: hata akisi durdurmaz, yalnizca Sentry breadcrumb birakir.
  */
-function prefetchPosters(result: RecommendationResult): void {
+function prefetchPosters(result: RecommendationResult, limit?: number): void {
   // Ilk 3 ve 4..8 ayni yol: hicbiri await edilmez (fire-and-forget), gecikme eklemez.
-  for (const film of result.films) {
+  // `limit` (MONEY-1C kilit): ucretsiz sinirin otesindeki posterler HIC indirilmez.
+  for (const film of limit === undefined ? result.films : result.films.slice(0, limit)) {
     // Kartla AYNI fonksiyon ve boyut: farklı URL önbelleği ıskalatır.
     const uri = normalizePosterUrl(film.posterUrl);
     if (!uri) continue;
@@ -86,11 +87,13 @@ function prefetchPosters(result: RecommendationResult): void {
  * @param profile  - AI tarafindan ayristirilmis TasteProfile
  * @param filters  - Kullanicinin sectigi filtreler
  * @param moodText - Kullanicinin yazdigi metin (yalniz dedupe anahtari icin; AI'ya gitmez)
+ * @param prefetchLimit - Verilirse yalniz ilk N posteri onceden yukler (kilitli deste); yoksa hepsi
  */
 export function startPreload(
   profile: TasteProfile,
   filters: FilmFilters,
   moodText: string,
+  prefetchLimit?: number,
 ): void {
   const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId());
 
@@ -116,7 +119,7 @@ export function startPreload(
     .then((result) => {
       // Arada yeni bir preload basladiysa (anahtar degisti) eski sonuc yenisini ezmesin
       if (_preloadPromise === promise) _preloadResult = result;
-      prefetchPosters(result);
+      prefetchPosters(result, prefetchLimit);
       return result;
     })
     .catch((err) => {

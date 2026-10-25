@@ -12,6 +12,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { readLocalAuthUid } from './auth-utils';
 import { remoteConfig } from './remoteConfig';
+import { clampFreeVisibleCount } from '@/utils/moodLock';
 import { evaluateMoodOfferEnabled, hasTesterEntries } from '@/utils/moodOfferTesters';
 
 /**
@@ -102,4 +103,15 @@ export function isMoodOfferEnabledCached(): boolean {
     testers: remoteConfig.get('mood_offer_testers'),
     userId: testerAuthId,
   });
+}
+
+/**
+ * Kilit oncesi ucretsiz gorunen film sayisi (app_config: free_visible_count).
+ *
+ * MONEY-1C. Sayi disi / sinir disi deger guvenli tam sayiya cekilir (1..8, varsayilan 3);
+ * satir yok / okuma hatasi → varsayilan. Lazy getter — modul seviyesi sabit yasak (kural 5).
+ */
+export async function getFreeVisibleCount(): Promise<number> {
+  await remoteConfig.hydrate();
+  return clampFreeVisibleCount(remoteConfig.get('free_visible_count'));
 }
