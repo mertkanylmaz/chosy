@@ -137,6 +137,13 @@ supabase functions list                      # parse-mood VERSION 43, UPDATED_AT
 - Kimliksiz çağrı canlı mı: `Invoke-WebRequest -Method Post https://xpcwihldlnlmyopjubdc.supabase.co/functions/v1/parse-mood -Body '{}' -ContentType 'application/json'` → **401** (fonksiyon ayakta ve auth istiyor; 5xx/boot hatası olmamalı).
 
 **Smoke test A — eski istemci yolu (2.1.3 cihazı, `client_search_id` GÖNDERMEZ):**
+> **Hesap türü uyarısı (25 Eki 13:10 kararı):** Kurucu/tester hesabı (`a25917c2-…` → `users.id 0694d435-…`) **premium (lifetime, SANDBOX)**tir; premium hesapta kota sayacı ARTMAZ. Bu hesapla yalnız **arama imzası** (A.1: `client_search_id` NULL, `status` NULL, `quota_consumed` false, `claim_attempts` 0) ve **`recommended_film_ids` dolu** (UPDATE yazıldı) kontrol edilir; **A.2 "kota +1" bu hesapta DOĞRULANAMAZ** (artmaması beklenen davranıştır, hata sayma).
+> **Kota +1 için ÜCRETSİZ hesap gerekir.** Alternatifler (öneri sırasıyla):
+> 1. **Yeni geçici anonim hesap:** uygulamayı sil → yeniden kur → onboarding (yeni anonim kimlik, ücretsiz). Hesabı bul: `select u.id, u.auth_id, u.created_at, u.subscription_tier from public.users u order by u.created_at desc limit 3;` (`subscription_tier = free`, son birkaç dakika). Bu kimlik `mood_offer_testers`'te değildir → bayrak kapalı, eski akış (istenen). Silinen premium hesaba (eski kimlik) geri dönüş YOK (Restore ile aynı sandbox aboneliği yeni kimliğe taşınabilir → önce kotayı ölç, sonra Restore ETME).
+> 2. İkinci cihaz/simülatör (varsa) ile ücretsiz anonim hesap.
+> 3. Yalnız imza kontrolü yeterli sayılırsa A.2 "atlandı: premium hesap" diye kayda geçirilir; kota +1 kanıtı C-I (cihaz testi) ücretsiz hesapla tamamlanır.
+> Smoke sorgularında `<users.id>` = SEÇİLEN hesabın `public.users.id`'si (premium için A.2 beklentisi: sayaç DEĞİŞMEZ).
+
 Önce tester'ın bugünkü sayacını kaydet:
 ```sql
 select searches_used, bonus_searches_used from public.user_daily_quotas
@@ -241,7 +248,7 @@ Kurallar:
 |---|---|---|---|---|
 | 0 ön kontroller | | | | export MANIFEST md5'leri (25 Eki 09:09 UTC denemesi: mood_searches `dfb14062…`, users `b2aa7762…`; apply günü export YENİDEN alınır), SHA |
 | 1 — 139 | 2026-10-25 ~10:00 UTC (TR ~13:00) | UYGULANDI (`supabase db push`, dry-run yalnız 139) | V1.1–V1.5 yeşil; legacy_md5 `dee4b541…` ve 121 satır aynı; yeni kolonlar eski satırlarda boş (0/121); simülasyon (insert user_id, update 3 kolon, status/client_search_id 42501) 4/4; Sentry son 24 sa: ilgili hata yok | rollback `139_rollback.sql` hazır; 140/141/142 uygulanmadı |
-| 2 — 140 | | | | |
+| 2 — 140 | 2026-10-25 ~10:07 UTC (TR ~13:07) | UYGULANDI (`supabase db push`, dry-run yalnız 140) | migration 140; anon/auth DELETE/TRUNCATE/REFERENCES/TRIGGER yok; SELECT + kolon INSERT/UPDATE (139) aynı; legacy_md5 `dee4b541…`, 121 satır; service_role delete + FK cascade 1/0/0 PASS, istemci DELETE/TRUNCATE 42501 (BEGIN…RAISE, kalıntı yok); Sentry 09:55–10:10 UTC: hata yok | rollback `140_rollback.sql` hazır |
 | 3 — parse-mood v43 | | | smoke A, Sentry | |
 | 24 sa kapısı | | temiz / değil | R1–R7 + invaryant sorgusu | Bölüm B'ye geçiş kararı |
 
