@@ -1,0 +1,598 @@
+{
+  "mood_id": "ft_nostalgia_80s",
+  "variant": "V2",
+  "rpc": {
+    "rows": [
+      {
+        "id": "7eab97d1-1707-4777-b3a3-1a394b63b742",
+        "tmdb_id": 562,
+        "title": "Die Hard",
+        "year": 1988,
+        "overview": "High above the city of L.A. a team of terrorists has seized a building, taken hostages, and declared war. One man has manages to escape... An off-duty cop hiding somewhere inside. He's alone, tired... and the only chance anyone has got.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.811,
+        "director": "John McTiernan",
+        "similarity": 1.21031005922119,
+        "curation_tier": "core",
+        "match_reason": "Matches: action, 1980s"
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 1.1840426742456,
+        "curation_tier": "core",
+        "match_reason": "Matches: action, quest, heroic journey"
+      },
+      {
+        "id": "69fbe583-7af4-420e-8a6f-67946715fcbb",
+        "tmdb_id": 44896,
+        "title": "Rango",
+        "year": 2011,
+        "overview": "When Rango, a lost family pet, accidentally winds up in the gritty, gun-slinging Western town of Dirt, the theater-loving lizard suddenly finds himself the newly appointed sheriff. Welcomed as the last hope the town has been waiting for, Rango is forced to play his new role to the hilt and uncover the truth behind a looming water crisis—before his act catches up with him.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Western",
+          "Adventure"
+        ],
+        "runtime": 107,
+        "vote_average": 6.896,
+        "director": "Gore Verbinski",
+        "similarity": 1.14939015826212,
+        "curation_tier": "core",
+        "match_reason": "Matches: heroic journey"
+      },
+      {
+        "id": "6425c973-9d85-4f0e-bb06-e48b4180e777",
+        "tmdb_id": 726759,
+        "title": "Tetris",
+        "year": 2023,
+        "overview": "In 1988, American video game salesman Henk Rogers discovers the video game Tetris. When he sets out to bring the game to the world, he enters a dangerous web of lies and corruption behind the Iron Curtain.",
+        "genres": [
+          "Thriller",
+          "History",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.674,
+        "director": "Jon S. Baird",
+        "similarity": 1.14049318043015,
+        "curation_tier": "core",
+        "match_reason": "Matches: 1980s"
+      },
+      {
+        "id": "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+        "tmdb_id": 85,
+        "title": "Raiders of the Lost Ark",
+        "year": 1981,
+        "overview": "When Dr. Indiana Jones – the tweed-suited professor who just happens to be a celebrated archaeologist – is hired by the government to locate the legendary Ark of the Covenant, he finds himself up against the entire Nazi regime.",
+        "genres": [
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 115,
+        "vote_average": 7.923,
+        "director": "Steven Spielberg",
+        "similarity": 1.11521232974389,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure, treasure hunt"
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 1.08020282218102,
+        "curation_tier": "core",
+        "match_reason": "airplane, based on novel or book, england"
+      },
+      {
+        "id": "75ec31c2-5bf3-43c9-903d-7dcf4a251a92",
+        "tmdb_id": 1726,
+        "title": "Iron Man",
+        "year": 2008,
+        "overview": "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique weaponized suit of armor to fight evil.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 126,
+        "vote_average": 7.659,
+        "director": "Jon Favreau",
+        "similarity": 1.07803977063122,
+        "curation_tier": "core",
+        "match_reason": "middle east, kidnapping, superhero"
+      },
+      {
+        "id": "9214c910-2689-4374-a54a-c156a59b7e5c",
+        "tmdb_id": 557,
+        "title": "Spider-Man",
+        "year": 2002,
+        "overview": "After being bitten by a genetically altered spider at Oscorp, nerdy but endearing high school student Peter Parker is endowed with amazing powers to become the superhero known as Spider-Man.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 7.329,
+        "director": "Sam Raimi",
+        "similarity": 1.0780186749619,
+        "curation_tier": "core",
+        "match_reason": "new york city, adolescence, photographer"
+      },
+      {
+        "id": "e8dd7d11-f3de-49ea-ad23-704d3b1d5f38",
+        "tmdb_id": 273481,
+        "title": "Sicario",
+        "year": 2015,
+        "overview": "An idealistic FBI agent is enlisted by a government task force to aid in the escalating war against drugs at the border area between the U.S. and Mexico.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 122,
+        "vote_average": 7.419,
+        "director": "Denis Villeneuve",
+        "similarity": 1.0758855395838,
+        "curation_tier": "core",
+        "match_reason": "mission, assassin, central intelligence agency (cia)"
+      },
+      {
+        "id": "0d7dc607-2a39-4f28-9ad8-3d583f827cef",
+        "tmdb_id": 515042,
+        "title": "Free Solo",
+        "year": 2018,
+        "overview": "Follow Alex Honnold as he attempts to become the first person to ever free solo climb Yosemite's 3,000 foot high El Capitan wall. With no ropes or safety gear, this would arguably be the greatest feat in rock climbing history.",
+        "genres": [
+          "Documentary",
+          "Adventure"
+        ],
+        "runtime": 100,
+        "vote_average": 7.895,
+        "director": "Jimmy Chin",
+        "similarity": 1.07362696556818,
+        "curation_tier": "core",
+        "match_reason": "california, extreme sports, mountain"
+      },
+      {
+        "id": "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+        "tmdb_id": 286217,
+        "title": "The Martian",
+        "year": 2015,
+        "overview": "During a manned mission to Mars, Astronaut Mark Watney is presumed dead after a fierce storm and left behind by his crew. But Watney has survived and finds himself stranded and alone on the hostile planet. With only meager supplies, he must draw upon his ingenuity, wit and spirit to subsist and find a way to signal to Earth that he is alive.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 141,
+        "vote_average": 7.698,
+        "director": "Ridley Scott",
+        "similarity": 1.07058134681541,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, planet mars, based on novel or book"
+      },
+      {
+        "id": "1b59913e-d925-45b8-9434-16ccbef847f9",
+        "tmdb_id": 1930,
+        "title": "The Amazing Spider-Man",
+        "year": 2012,
+        "overview": "Peter Parker is an outcast high schooler abandoned by his parents as a boy, leaving him to be raised by his Uncle Ben and Aunt May. Like most teenagers, Peter is trying to figure out who he is and how he got to be the person he is today. As Peter discovers a mysterious briefcase that belonged to his father, he begins a quest to understand his parents' disappearance – leading him directly to Oscorp and the lab of Dr. Curt Connors, his father's former partner. As Spider-Man is set on a collision course with Connors' alter ego, The Lizard, Peter will make life-altering choices to use his powers and shape his destiny to become a hero.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 6.736,
+        "director": "Marc Webb",
+        "similarity": 1.06684234120935,
+        "curation_tier": "core",
+        "match_reason": "experiment, loss of loved one, superhero"
+      },
+      {
+        "id": "ee1d7ea0-3828-49a3-b264-ab6bc2378058",
+        "tmdb_id": 68721,
+        "title": "Iron Man 3",
+        "year": 2013,
+        "overview": "When Tony Stark's world is torn apart by a formidable terrorist called the Mandarin, he starts an odyssey of rebuilding and retribution.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 6.933,
+        "director": "Shane Black",
+        "similarity": 1.06287360559626,
+        "curation_tier": "core",
+        "match_reason": "california, war on terror, superhero"
+      },
+      {
+        "id": "f50b7d4b-0281-4d25-bdb5-3ed09405776a",
+        "tmdb_id": 9806,
+        "title": "The Incredibles",
+        "year": 2004,
+        "overview": "Bob Parr has given up his superhero days to log in time as an insurance adjuster and raise his three children with his formerly heroic wife in suburbia. But when he receives a mysterious assignment, it's time to get back into costume.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 115,
+        "vote_average": 7.724,
+        "director": "Brad Bird",
+        "similarity": 1.04544747740214,
+        "curation_tier": "core",
+        "match_reason": "Matches: heroic journey"
+      },
+      {
+        "id": "ba5164cf-875a-418c-9ad1-efe5170ca08d",
+        "tmdb_id": 830,
+        "title": "Forbidden Planet",
+        "year": 1956,
+        "overview": "Starship C57D travels to planet Altair 4 in search of the crew of spaceship \"Bellerophon,\" a scientific expedition that has been missing for twenty years. They find themselves unwelcome by the expedition's lone survivor and warned of destruction by an invisible force if they don't turn back immediately.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 98,
+        "vote_average": 7.244,
+        "director": "Fred M. Wilcox",
+        "similarity": 0.917805273752575,
+        "curation_tier": "extended",
+        "match_reason": "flying saucer, rescue mission, space"
+      },
+      {
+        "id": "dc7de8c8-4e20-431f-90ce-249f1638f1cb",
+        "tmdb_id": 505262,
+        "title": "My Hero Academia: Two Heroes",
+        "year": 2018,
+        "overview": "All Might and Deku accept an invitation to go abroad to a floating and mobile manmade city, called 'I-Island', where they research quirks as well as hero supplemental items at the special 'I-Expo' convention that is currently being held on the island. During that time, suddenly, despite an iron wall of security surrounding the island, the system is breached by a villain, and the only ones able to stop him are the students of Class 1-A.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 96,
+        "vote_average": 7.882,
+        "director": "Kenji Nagasaki",
+        "similarity": 0.910539934004616,
+        "curation_tier": "extended",
+        "match_reason": "Matches: heroic journey"
+      },
+      {
+        "id": "ac4fc94e-cecb-4c3e-ba32-b6f2b14beadb",
+        "tmdb_id": 213,
+        "title": "North by Northwest",
+        "year": 1959,
+        "overview": "Advertising man Roger Thornhill is mistaken for a spy, triggering a deadly cross-country chase.",
+        "genres": [
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 137,
+        "vote_average": 7.966,
+        "director": "Alfred Hitchcock",
+        "similarity": 1.03134314900886,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure"
+      },
+      {
+        "id": "d746a9c0-bc0c-43d8-b079-afce42a8b38b",
+        "tmdb_id": 1022787,
+        "title": "Elio",
+        "year": 2025,
+        "overview": "Elio, a space fanatic with an active imagination, finds himself on a cosmic misadventure where he must form new bonds with eccentric alien lifeforms, navigate a crisis of intergalactic proportions and somehow discover who he is truly meant to be.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 6.907,
+        "director": "Domee Shi",
+        "similarity": 0.90884643029366,
+        "curation_tier": "extended",
+        "match_reason": "Matches: adventure"
+      },
+      {
+        "id": "ce94a844-67c2-4c3b-adbf-1242ce07da3c",
+        "tmdb_id": 39513,
+        "title": "Paul",
+        "year": 2011,
+        "overview": "For the past 60 years, a space-traveling smart-ass named Paul has been locked up in a top-secret military base, advising world leaders about his kind. But when he worries he’s outlived his usefulness and the dissection table is drawing uncomfortably close, Paul escapes on the first RV that passes by his compound in Area 51. Fortunately, it contains the two earthlings who are most likely to rescue and harbor an alien on the run.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Science Fiction"
+        ],
+        "runtime": 104,
+        "vote_average": 6.738,
+        "director": "Greg Mottola",
+        "similarity": 1.02915937727643,
+        "curation_tier": "core",
+        "match_reason": "Matches: 1980s"
+      },
+      {
+        "id": "14644090-ff36-4f77-8ec8-2327baa4163f",
+        "tmdb_id": 244786,
+        "title": "Whiplash",
+        "year": 2014,
+        "overview": "Under the direction of a ruthless instructor, a talented young drummer begins to pursue perfection at any cost, even his humanity.",
+        "genres": [
+          "Drama",
+          "Music",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 8.4,
+        "director": "Damien Chazelle",
+        "similarity": 1.02842776104818,
+        "curation_tier": "core",
+        "match_reason": "new york city, jazz, musician"
+      },
+      {
+        "id": "cb6039a0-58e3-4eaf-bd48-210c1ebb095a",
+        "tmdb_id": 678512,
+        "title": "Sound of Freedom",
+        "year": 2023,
+        "overview": "The story of Tim Ballard, a former US government agent, who quits his job in order to devote his life to rescuing children from global sex traffickers.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 131,
+        "vote_average": 7.96,
+        "director": "Alejandro Monteverde",
+        "similarity": 1.02338965685356,
+        "curation_tier": "core",
+        "match_reason": "kidnapping, human trafficking, based on true story"
+      },
+      {
+        "id": "72ffc387-a5b1-4397-9313-046f218d366e",
+        "tmdb_id": 2059,
+        "title": "National Treasure",
+        "year": 2004,
+        "overview": "Modern treasure hunters, led by archaeologist Ben Gates, search for a chest of riches rumored to have been stashed away by George Washington, Thomas Jefferson and Benjamin Franklin during the Revolutionary War. The chest's whereabouts may lie in secret clues embedded in the Constitution and the Declaration of Independence, and Gates is in a race to find the gold before his enemies do.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Mystery"
+        ],
+        "runtime": 131,
+        "vote_average": 6.653,
+        "director": "Jon Turteltaub",
+        "similarity": 0.903817924099635,
+        "curation_tier": "extended",
+        "match_reason": "Matches: treasure hunt"
+      },
+      {
+        "id": "462bbac3-1e2f-452d-98d0-1c879dfc4ce7",
+        "tmdb_id": 570661,
+        "title": "The Collini Case",
+        "year": 2019,
+        "overview": "A young lawyer stumbles upon a vast conspiracy while investigating a brutal murder case.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.385,
+        "director": "Marco Kreuzpaintner",
+        "similarity": 0.903287251377919,
+        "curation_tier": "extended",
+        "match_reason": "affectation, disturbed, legal drama"
+      },
+      {
+        "id": "2b078038-b6b8-44be-9dcd-4eafdddcf6a1",
+        "tmdb_id": 110415,
+        "title": "Snowpiercer",
+        "year": 2013,
+        "overview": "In a future where a failed global-warming experiment kills off most life on the planet, a class system evolves aboard the Snowpiercer; a train that travels around the globe via a perpetual-motion engine.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 6.908,
+        "director": "Bong Joon Ho",
+        "similarity": 1.02174850813859,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, rebellion, cold"
+      },
+      {
+        "id": "f202e46a-c522-457b-ba53-b12122800bcb",
+        "tmdb_id": 995,
+        "title": "Stagecoach",
+        "year": 1939,
+        "overview": "A group of people traveling on a stagecoach find their journey complicated by the threat of Geronimo, and learn something about each other in the process.",
+        "genres": [
+          "Western",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.61,
+        "director": "John Ford",
+        "similarity": 0.901911993091198,
+        "curation_tier": "extended",
+        "match_reason": "marriage proposal, prostitute, new mexico"
+      },
+      {
+        "id": "b1002efc-3fa2-43da-b620-93faea8dbab6",
+        "tmdb_id": 9056,
+        "title": "Police Story",
+        "year": 1985,
+        "overview": "Officer Chan Ka Kui manages to put a major Hong Kong drug dealer behind the bars practically alone, after a shooting and an impressive chase inside a slum. Now, he must protect the boss' secretary, Selina, who will testify against the gangster in court.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.529,
+        "director": "Jackie Chan",
+        "similarity": 0.901375513484933,
+        "curation_tier": "extended",
+        "match_reason": "Matches: action"
+      },
+      {
+        "id": "5b090ca7-4bf6-43c4-a71f-41aa1fb6595d",
+        "tmdb_id": 791373,
+        "title": "Zack Snyder's Justice League",
+        "year": 2021,
+        "overview": "Determined to ensure Superman's ultimate sacrifice was not in vain, Bruce Wayne aligns forces with Diana Prince with plans to recruit a team of metahumans to protect the world from an approaching threat of catastrophic proportions.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 242,
+        "vote_average": 8.09,
+        "director": "Zack Snyder",
+        "similarity": 1.01732910186487,
+        "curation_tier": "core",
+        "match_reason": "Matches: action"
+      },
+      {
+        "id": "757f4746-5d31-4862-ab13-1db1d3062ebc",
+        "tmdb_id": 9802,
+        "title": "The Rock",
+        "year": 1996,
+        "overview": "When vengeful General Francis X. Hummel seizes control of Alcatraz Island and threatens to launch missiles loaded with deadly chemical weapons into San Francisco, only a young FBI chemical weapons expert and notorious Federal prisoner have the skills to penetrate the impregnable island fortress and take him down.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Thriller"
+        ],
+        "runtime": 137,
+        "vote_average": 7.157,
+        "director": "Michael Bay",
+        "similarity": 0.897731435906485,
+        "curation_tier": "extended",
+        "match_reason": "Matches: action"
+      },
+      {
+        "id": "49e3a532-c932-4fae-b5f2-75e71bf8a432",
+        "tmdb_id": 23518,
+        "title": "Seven Days in May",
+        "year": 1964,
+        "overview": "A U.S. Marine Corps colonel alerts the president of a planned military coup against him.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.339,
+        "director": "John Frankenheimer",
+        "similarity": 0.897033063058327,
+        "curation_tier": "extended",
+        "match_reason": "the white house, based on novel or book, general"
+      },
+      {
+        "id": "c1844641-d198-422d-83fe-917fe09d96cf",
+        "tmdb_id": 679,
+        "title": "Aliens",
+        "year": 1986,
+        "overview": "Ripley, the sole survivor of the Nostromo's deadly encounter with the monstrous Alien, returns to Earth after drifting through space in hypersleep for 57 years. Although her story is initially met with skepticism, she agrees to accompany a team of Colonial Marines back to LV-426.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Science Fiction"
+        ],
+        "runtime": 137,
+        "vote_average": 7.962,
+        "director": "James Cameron",
+        "similarity": 1.01059633995865,
+        "curation_tier": "core",
+        "match_reason": "Matches: action"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1129,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1129,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "adventure",
+        "action",
+        "1980s",
+        "practical effects",
+        "exotic locations",
+        "treasure hunt",
+        "quest",
+        "heroic journey"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "fc95fd5cce98ca20",
+    "cached": false,
+    "candidates_sent": 20,
+    "overview_max": 100,
+    "count": 8,
+    "ms": 2552,
+    "http_status": 200,
+    "reranked_ids": [
+      "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+      "7eab97d1-1707-4777-b3a3-1a394b63b742",
+      "ba5164cf-875a-418c-9ad1-efe5170ca08d",
+      "ac4fc94e-cecb-4c3e-ba32-b6f2b14beadb",
+      "75ec31c2-5bf3-43c9-903d-7dcf4a251a92",
+      "69fbe583-7af4-420e-8a6f-67946715fcbb",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+      "ce94a844-67c2-4c3b-adbf-1242ce07da3c"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "mood_id": "ft_sad_cry",
+  "text": "I want a good cry",
+  "ms": 4404,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "fear": 0.1,
+      "anger": 0.05,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "trust": 0.4,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cathartic Release",
+    "profile_description": "You need an emotionally resonant film with depth and vulnerability that allows you to process sadness through compelling human connection and meaningful loss.",
+    "search_keywords": [],
+    "search_id": "6c281279-d824-4d17-9456-2c086993ddd3",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "anger": 0.05,
+      "fear": 0.1,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "anticipation": 0.3,
+      "trust": 0.4
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "6c281279-d824-4d17-9456-2c086993ddd3",
+  "search_keywords": [],
+  "limit": null,
+  "remaining": null
+}

@@ -1,0 +1,91 @@
+{
+  "mood_id": "ft_date_first",
+  "text": "First date at home, something romantic but not cheesy",
+  "ms": 4037,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.2,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.8,
+      "anticipation": 0.6
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "saccharine",
+      "over-the-top romance",
+      "predictable love story"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": false,
+    "profile_name": "Intimate Connection",
+    "profile_description": "A thoughtfully crafted romance that balances genuine emotion with sophistication, ideal for two people discovering each other without artificial sentimentality.",
+    "search_keywords": [
+      "romantic drama",
+      "contemporary romance",
+      "intimate",
+      "character-driven",
+      "subtle tension",
+      "emotional authenticity"
+    ],
+    "search_id": "6dadf0a3-cdbb-40ac-b1f9-5a73d9fe244f",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.2,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.6,
+      "trust": 0.8
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "saccharine",
+      "over-the-top romance",
+      "predictable love story"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": false
+  },
+  "search_id": "6dadf0a3-cdbb-40ac-b1f9-5a73d9fe244f",
+  "search_keywords": [
+    "romantic drama",
+    "contemporary romance",
+    "intimate",
+    "character-driven",
+    "subtle tension",
+    "emotional authenticity"
+  ],
+  "limit": null,
+  "remaining": null
+}

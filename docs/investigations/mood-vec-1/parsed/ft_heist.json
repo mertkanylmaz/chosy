@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_heist",
+  "text": "A clever heist movie with a twist",
+  "ms": 4353,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.1,
+      "fear": 0.4,
+      "anger": 0.2,
+      "surprise": 0.85,
+      "disgust": 0.1,
+      "trust": 0.5,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.8,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.7,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cunning Heist Seeker",
+    "profile_description": "You want an intelligent, adrenaline-fueled heist with layers of deception and an unexpected payoff that rewards close attention and clever plotting.",
+    "search_keywords": [
+      "heist",
+      "crime",
+      "twist ending",
+      "clever protagonist",
+      "robbery",
+      "plan",
+      "deception",
+      "clever plot"
+    ],
+    "search_id": "a94353fb-0239-4bcd-acdf-afe8f81e9edb",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.1,
+      "anger": 0.2,
+      "fear": 0.4,
+      "surprise": 0.85,
+      "disgust": 0.1,
+      "anticipation": 0.85,
+      "trust": 0.5
+    },
+    "energy_level": 0.8,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.7,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "a94353fb-0239-4bcd-acdf-afe8f81e9edb",
+  "search_keywords": [
+    "heist",
+    "crime",
+    "twist ending",
+    "clever protagonist",
+    "robbery",
+    "plan",
+    "deception",
+    "clever plot"
+  ],
+  "limit": null,
+  "remaining": null
+}

@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_nostalgia_80s",
+  "text": "80s adventure vibes",
+  "ms": 4261,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.3,
+      "anger": 0.2,
+      "surprise": 0.75,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1980,
+      "to": 1989
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Retro Adventurer",
+    "profile_description": "Seeking the spirit of 80s action-adventure cinema with high-octane thrills, practical stunts, and a sense of optimistic escapism.",
+    "search_keywords": [
+      "adventure",
+      "action",
+      "1980s",
+      "practical effects",
+      "exotic locations",
+      "treasure hunt",
+      "quest",
+      "heroic journey"
+    ],
+    "search_id": "b75aa3a5-2a02-496e-800e-00a9306dc8d8",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.2,
+      "fear": 0.3,
+      "surprise": 0.75,
+      "disgust": 0.05,
+      "anticipation": 0.85,
+      "trust": 0.6
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1980,
+      "to": 1989
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "b75aa3a5-2a02-496e-800e-00a9306dc8d8",
+  "search_keywords": [
+    "adventure",
+    "action",
+    "1980s",
+    "practical effects",
+    "exotic locations",
+    "treasure hunt",
+    "quest",
+    "heroic journey"
+  ],
+  "limit": null,
+  "remaining": null
+}

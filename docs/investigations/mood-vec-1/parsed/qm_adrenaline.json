@@ -1,0 +1,99 @@
+{
+  "mood_id": "qm_adrenaline",
+  "text": "Adrenaline-fueled action, thrilling and exciting, fast-paced and intense, not comedy, not drama",
+  "ms": 4547,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.05,
+      "fear": 0.6,
+      "anger": 0.4,
+      "surprise": 0.75,
+      "disgust": 0.1,
+      "trust": 0.4,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.9,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.3,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "drama",
+      "slow-paced",
+      "romantic focus",
+      "emotional introspection"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Pure Adrenaline Rush",
+    "profile_description": "High-octane action seeker craving intense, fast-paced thrills with explosive sequences and zero downtime for reflection.",
+    "search_keywords": [
+      "action",
+      "thriller",
+      "adventure",
+      "high-speed chase",
+      "combat",
+      "espionage",
+      "explosive",
+      "survival"
+    ],
+    "search_id": "1293cd13-64a5-427f-8b59-20bca2f55e5a",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.05,
+      "anger": 0.4,
+      "fear": 0.6,
+      "surprise": 0.75,
+      "disgust": 0.1,
+      "anticipation": 0.85,
+      "trust": 0.4
+    },
+    "energy_level": 0.9,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.3,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "drama",
+      "slow-paced",
+      "romantic focus",
+      "emotional introspection"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "1293cd13-64a5-427f-8b59-20bca2f55e5a",
+  "search_keywords": [
+    "action",
+    "thriller",
+    "adventure",
+    "high-speed chase",
+    "combat",
+    "espionage",
+    "explosive",
+    "survival"
+  ],
+  "limit": null,
+  "remaining": null
+}

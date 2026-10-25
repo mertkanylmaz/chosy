@@ -1,0 +1,99 @@
+{
+  "mood_id": "qm_cozy",
+  "text": "Light, fun and entertaining, relaxing and easy, chill and cozy, no heavy thinking, not scary, not sad",
+  "ms": 4598,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.75,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "heavy drama",
+      "tragedy",
+      "horror",
+      "violence",
+      "dark themes",
+      "emotional distress"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cozy Comfort",
+    "profile_description": "You need a lighthearted, feel-good escape that's easy to follow and doesn't demand emotional investment—pure entertainment with warmth and charm.",
+    "search_keywords": [
+      "comedy",
+      "feel-good",
+      "humor",
+      "romance",
+      "family-friendly",
+      "heartwarming",
+      "adventure"
+    ],
+    "search_id": "84671f75-e141-413c-af0b-68cf1bfe55ff",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.75
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "heavy drama",
+      "tragedy",
+      "horror",
+      "violence",
+      "dark themes",
+      "emotional distress"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "84671f75-e141-413c-af0b-68cf1bfe55ff",
+  "search_keywords": [
+    "comedy",
+    "feel-good",
+    "humor",
+    "romance",
+    "family-friendly",
+    "heartwarming",
+    "adventure"
+  ],
+  "limit": null,
+  "remaining": null
+}

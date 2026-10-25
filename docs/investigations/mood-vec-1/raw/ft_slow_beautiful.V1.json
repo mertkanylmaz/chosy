@@ -1,0 +1,555 @@
+{
+  "mood_id": "ft_slow_beautiful",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "d726800b-1771-458b-a5e6-9cf207b2270f",
+        "tmdb_id": 11035,
+        "title": "Roma",
+        "year": 1972,
+        "overview": "A virtually plotless, gaudy, impressionistic portrait of Rome through the eyes of one of its most famous citizens.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.226,
+        "director": "Federico Fellini",
+        "similarity": 0.873082074039143,
+        "curation_tier": "extended",
+        "match_reason": "rome, italy, subway, illegal prostitution"
+      },
+      {
+        "id": "9284792c-9e1d-4068-b639-2cf26987af92",
+        "tmdb_id": 9305,
+        "title": "Microcosmos",
+        "year": 1996,
+        "overview": "A documentary of insect life in meadows and ponds, using incredible close-ups, slow motion, and time-lapse photography. It includes bees collecting nectar, ladybugs eating mites, snails mating, spiders wrapping their catch, a scarab beetle relentlessly pushing its ball of dung uphill, endless lines of caterpillars, an underwater spider creating an air bubble to live in, and a mosquito hatching.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 80,
+        "vote_average": 7.59,
+        "director": "Claude Nuridsany",
+        "similarity": 0.822762602364842,
+        "curation_tier": "extended",
+        "match_reason": "Matches: nature"
+      },
+      {
+        "id": "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+        "tmdb_id": 62,
+        "title": "2001: A Space Odyssey",
+        "year": 1968,
+        "overview": "Humanity finds a mysterious object buried beneath the lunar surface and sets off to find its origins with the help of HAL 9000, the world's most advanced super computer.",
+        "genres": [
+          "Science Fiction",
+          "Mystery",
+          "Adventure"
+        ],
+        "runtime": 149,
+        "vote_average": 8.1,
+        "director": "Stanley Kubrick",
+        "similarity": 0.875932620012736,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, moon, jupiter"
+      },
+      {
+        "id": "22576ed0-e27c-44b5-b338-d492f81af2ce",
+        "tmdb_id": 491584,
+        "title": "Burning",
+        "year": 2018,
+        "overview": "Deliveryman Jong-su is out on a job when he runs into Hae-mi, a girl who once lived in his neighborhood. She asks if he'd mind looking after her cat while she's away on a trip to Africa. On her return, she introduces to Jong-su an enigmatic young man named Ben, who she met during her trip. One day Ben tells Jong-su about his most unusual hobby.",
+        "genres": [
+          "Mystery",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 148,
+        "vote_average": 7.375,
+        "director": "Lee Chang-dong",
+        "similarity": 0.861755790332768,
+        "curation_tier": "core",
+        "match_reason": "Matches: meditative"
+      },
+      {
+        "id": "fd07090b-6c2e-43b2-b0c5-830e27df8656",
+        "tmdb_id": 108,
+        "title": "Three Colors: Blue",
+        "year": 1993,
+        "overview": "The wife of a famous composer survives a car accident that kills her husband and daughter. Now alone, she shakes off her old identity and explores her newfound freedom but finds that she is unbreakably bound to other humans, including her husband’s mistress, whose existence she never suspected.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 98,
+        "vote_average": 7.6,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.854500172847531,
+        "curation_tier": "core",
+        "match_reason": "france, paris, france, composer"
+      },
+      {
+        "id": "7d0aff11-157e-4d39-b282-5c65b6522406",
+        "tmdb_id": 171274,
+        "title": "Inherent Vice",
+        "year": 2014,
+        "overview": "In Los Angeles at the turn of the 1970s, drug-fueled detective Larry \"Doc\" Sportello investigates the disappearance of an ex-girlfriend.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Comedy"
+        ],
+        "runtime": 149,
+        "vote_average": 6.544,
+        "director": "Paul Thomas Anderson",
+        "similarity": 0.85194295441502,
+        "curation_tier": "core",
+        "match_reason": "california, based on novel or book, boat"
+      },
+      {
+        "id": "898de97f-4f4d-4478-ae28-d196ac8a49e7",
+        "tmdb_id": 242828,
+        "title": "When Marnie Was There",
+        "year": 2014,
+        "overview": "Upon being sent to live with relatives in the countryside due to an illness, an emotionally distant adolescent girl becomes obsessed with an abandoned mansion and infatuated with a girl who lives there - a girl who may or may not be real.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 103,
+        "vote_average": 7.936,
+        "director": "Hiromasa Yonebayashi",
+        "similarity": 0.845213299754177,
+        "curation_tier": "core",
+        "match_reason": "friendship, based on novel or book, imaginary friend"
+      },
+      {
+        "id": "2fa90fb5-20e4-4d28-b78b-18f07ff9c17e",
+        "tmdb_id": 15080,
+        "title": "Only Yesterday",
+        "year": 1991,
+        "overview": "In lyrical switches between the present and the past, Taeko contemplates the arc of her life, and wonders if she has been true to the dreams of her childhood self.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.391,
+        "director": "Isao Takahata",
+        "similarity": 0.765434216169341,
+        "curation_tier": "extended",
+        "match_reason": "countryside, country life, marriage"
+      },
+      {
+        "id": "b14f0b69-8992-416a-bc21-f485253100bc",
+        "tmdb_id": 25771,
+        "title": "Pink Floyd: Live at Pompeii",
+        "year": 1972,
+        "overview": "British progressive rock band Pink Floyd perform at the ancient Roman Amphitheatre in the ruins of Pompeii, Italy in 1971. Although the band perform a typical live set from the era, there is no audience beyond the basic film crew.",
+        "genres": [
+          "Music",
+          "Documentary"
+        ],
+        "runtime": 62,
+        "vote_average": 8.043,
+        "director": "Adrian Maben",
+        "similarity": 0.765407949129998,
+        "curation_tier": "extended",
+        "match_reason": "concert, rock 'n' roll, concert film"
+      },
+      {
+        "id": "e1cdccc3-37a8-49a9-be9b-08de3b5a820e",
+        "tmdb_id": 1563,
+        "title": "Sans Soleil",
+        "year": 1983,
+        "overview": "A woman narrates the thoughts of a world traveler, meditations on time and memory expressed in words and images from places as far-flung as Japan, Guinea-Bissau, Iceland, and San Francisco.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 100,
+        "vote_average": 7.461,
+        "director": "Chris Marker",
+        "similarity": 0.764522109065068,
+        "curation_tier": "extended",
+        "match_reason": "travelogue, ethnography, poetic documentary"
+      },
+      {
+        "id": "ca396867-78da-4b59-be0d-d8ef71bfab96",
+        "tmdb_id": 519010,
+        "title": "Pain and Glory",
+        "year": 2019,
+        "overview": "Salvador Mallo, a filmmaker in the twilight of his career, remembers his life: his mother, his lovers, the actors he worked with. The sixties in a small village in Valencia, the eighties in Madrid, the present, when he feels an immeasurable emptiness, facing his mortality, the incapability of continuing filming, the impossibility of separating creation from his own life. The need of narrating his past can be his salvation.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.374,
+        "director": "Pedro Almodóvar",
+        "similarity": 0.837550753268517,
+        "curation_tier": "core",
+        "match_reason": "drug abuse, madrid, spain, cinema on cinema"
+      },
+      {
+        "id": "f995a0e0-ca65-4036-a590-fbc15974496d",
+        "tmdb_id": 179144,
+        "title": "The Great Beauty",
+        "year": 2013,
+        "overview": "Jep Gambardella has seduced his way through the lavish nightlife of Rome for decades, but after his 65th birthday and a shock from the past, Jep looks past the nightclubs and parties to find a timeless landscape of absurd, exquisite beauty.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 142,
+        "vote_average": 7.511,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.836245681552282,
+        "curation_tier": "core",
+        "match_reason": "journalist, based on novel or book, rome, italy"
+      },
+      {
+        "id": "b979827a-ad05-47fa-829f-ce145e87cbde",
+        "tmdb_id": 1396,
+        "title": "Mirror",
+        "year": 1975,
+        "overview": "A dying man in his forties recalls his childhood, his mother, the war and personal moments that tell of and juxtapose pivotal moments in Soviet history with daily life.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.762043325808419,
+        "curation_tier": "extended",
+        "match_reason": "dreams, wind, poetry"
+      },
+      {
+        "id": "5656036c-0b1a-4fbf-9388-90a01ce7ba88",
+        "tmdb_id": 339877,
+        "title": "Loving Vincent",
+        "year": 2017,
+        "overview": "A young man arrives at the last hometown of painter Vincent van Gogh to deliver the troubled artist's final letter and ends up investigating his final days there.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "History"
+        ],
+        "runtime": 95,
+        "vote_average": 7.985,
+        "director": "DK Welchman",
+        "similarity": 0.832826517903588,
+        "curation_tier": "core",
+        "match_reason": "artist, investigation, grave"
+      },
+      {
+        "id": "db47de14-5fde-4d63-8928-f14f9704b934",
+        "tmdb_id": 26638,
+        "title": "Red Desert",
+        "year": 1964,
+        "overview": "In an industrializing Italian town, a married woman, rendered mentally unstable after a traffic accident, drifts into an affair with a friend of her husband.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 117,
+        "vote_average": 7.3,
+        "director": "Michelangelo Antonioni",
+        "similarity": 0.751727120432106,
+        "curation_tier": "extended",
+        "match_reason": "adultery, depression, factory"
+      },
+      {
+        "id": "f5239306-7ffc-4713-a702-442b46c72141",
+        "tmdb_id": 12573,
+        "title": "A Serious Man",
+        "year": 2009,
+        "overview": "It is 1967, and Larry Gopnik, a physics professor at a quiet Midwestern university, has just been informed by his wife Judith that she is leaving him. She has fallen in love with one of his more pompous acquaintances Sy Ableman.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 106,
+        "vote_average": 6.701,
+        "director": "Ethan Coen",
+        "similarity": 0.816434407182747,
+        "curation_tier": "core",
+        "match_reason": "dreams, midlife crisis, professor"
+      },
+      {
+        "id": "2f95e47c-17f7-40a4-93ea-39355d9a05a7",
+        "tmdb_id": 14784,
+        "title": "The Fall",
+        "year": 2006,
+        "overview": "In a hospital on the outskirts of 1920s Los Angeles, an injured stuntman begins to tell a fellow patient, a little girl with a broken arm, a fantastic story about 5 mythical heroes. Thanks to his fractured state of mind and her vivid imagination, the line between fiction and reality starts to blur as the tale advances.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 117,
+        "vote_average": 7.627,
+        "director": "Tarsem Singh",
+        "similarity": 0.806564980585917,
+        "curation_tier": "core",
+        "match_reason": "Matches: visual storytelling"
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.796144574814743,
+        "curation_tier": "core",
+        "match_reason": "Matches: nature"
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.731151889826978,
+        "curation_tier": "extended",
+        "match_reason": "drug dealer, high school, florida"
+      },
+      {
+        "id": "8448a543-f2f9-4156-ae1f-7e6146562e33",
+        "tmdb_id": 746,
+        "title": "The Last Emperor",
+        "year": 1987,
+        "overview": "A dramatic history of Pu Yi, the last of the Emperors of China, from his lofty birth and brief reign in the Forbidden City, the object of worship by half a billion people; through his abdication, his decline and dissolute lifestyle; his exploitation by the invading Japanese, and finally to his obscure existence as just another peasant worker in the People's Republic.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 163,
+        "vote_average": 7.581,
+        "director": "Bernardo Bertolucci",
+        "similarity": 0.728790986513159,
+        "curation_tier": "extended",
+        "match_reason": "suicide, experiment, china"
+      },
+      {
+        "id": "4d4ccb92-ec08-4124-ba97-5522de293229",
+        "tmdb_id": 8327,
+        "title": "The Holy Mountain",
+        "year": 1973,
+        "overview": "The Alchemist assembles together a group of people from all walks of life to represent the planets in the solar system. The occult adept's intention is to put his recruits through strange mystical rites and divest them of their worldly baggage before embarking on a trip to Lotus Island. There they ascend the Holy Mountain to displace the immortal gods who secretly rule the universe.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.533,
+        "director": "Alejandro Jodorowsky",
+        "similarity": 0.725398963563492,
+        "curation_tier": "extended",
+        "match_reason": "mexico, paraplegic, symbolism"
+      },
+      {
+        "id": "a2b0dbb2-ac6d-443c-a356-5f269e824b38",
+        "tmdb_id": 181886,
+        "title": "Enemy",
+        "year": 2014,
+        "overview": "A mild-mannered college professor discovers a look-alike actor and delves into the other man's private affairs.",
+        "genres": [
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 91,
+        "vote_average": 6.845,
+        "director": "Denis Villeneuve",
+        "similarity": 0.780983039803272,
+        "curation_tier": "core",
+        "match_reason": "infidelity, based on novel or book, nightmare"
+      },
+      {
+        "id": "824e52ba-0b07-4429-a883-9dc814c948af",
+        "tmdb_id": 19223,
+        "title": "A Pure Formality",
+        "year": 1994,
+        "overview": "Famous writer Onoff is now a recluse. The Inspector is suspicious when Onoff is brought into the station one night, disoriented and suffering a kind of amnesia. In an isolated, rural police station, the Inspector tries to establish the events surrounding a killing, to reach a startling resolution.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 111,
+        "vote_average": 7.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.715858385226619,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "6d9bcb13-0959-4f1e-a850-5c57ceb1e717",
+        "tmdb_id": 62320,
+        "title": "Home",
+        "year": 2009,
+        "overview": "In 200,000 years of existence, man has upset the balance on which the Earth had lived for 4 billion years. Global warming, resource depletion, species extinction: man has endangered his own home. But it is too late to be pessimistic: humanity has barely ten years left to reverse the trend, become aware of its excessive exploitation of the Earth's riches, and change its consumption pattern.",
+        "genres": [
+          "Documentary",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 95,
+        "vote_average": 7.814,
+        "director": "Yann Arthus-Bertrand",
+        "similarity": 0.766062534067497,
+        "curation_tier": "core",
+        "match_reason": "Matches: nature"
+      },
+      {
+        "id": "ec6b90cc-b840-48c4-a2f7-437491b5bc04",
+        "tmdb_id": 311,
+        "title": "Once Upon a Time in America",
+        "year": 1984,
+        "overview": "A former Prohibition-era Jewish gangster returns to the Lower East Side of Manhattan over thirty years later, where he once again must confront the ghosts and regrets of his old life.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 229,
+        "vote_average": 8.382,
+        "director": "Sergio Leone",
+        "similarity": 0.756114266624661,
+        "curation_tier": "core",
+        "match_reason": "new york city, regret, lovesickness"
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 0.750042560862969,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession"
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.745978492199622,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian"
+      },
+      {
+        "id": "06bc91b4-67b7-439a-ac22-cd39164d2be5",
+        "tmdb_id": 36095,
+        "title": "Cure",
+        "year": 1997,
+        "overview": "A frustrated detective deals with the case of several gruesome murders committed by people who have no recollection of what they've done.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Horror",
+          "Mystery"
+        ],
+        "runtime": 111,
+        "vote_average": 7.549,
+        "director": "Kiyoshi Kurosawa",
+        "similarity": 0.693013277629853,
+        "curation_tier": "extended",
+        "match_reason": "hotel, prostitute, amnesia"
+      },
+      {
+        "id": "be5e0f88-d945-460e-9bfe-14060044d431",
+        "tmdb_id": 548,
+        "title": "Rashomon",
+        "year": 1950,
+        "overview": "Four people recount different versions of the story of a man's murder and the rape of his wife.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 88,
+        "vote_average": 8.038,
+        "director": "Akira Kurosawa",
+        "similarity": 0.692717764153811,
+        "curation_tier": "extended",
+        "match_reason": "Matches: nature"
+      },
+      {
+        "id": "2774846f-3ae4-4b8e-8fe3-93d4993c73a7",
+        "tmdb_id": 2013,
+        "title": "The Diving Bell and the Butterfly",
+        "year": 2007,
+        "overview": "Jean-Dominique Bauby, editor-in-chief of French fashion bible Elle magazine, has a devastating stroke at age 43. The damage to his brain stem results in locked-in syndrome, with which he is almost completely paralyzed and only able to communicate by blinking an eye. Bauby painstakingly dictates his memoir via the only means of expression left to him.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 112,
+        "vote_average": 7.575,
+        "director": "Julian Schnabel",
+        "similarity": 0.738999503007804,
+        "curation_tier": "core",
+        "match_reason": "dying and death, based on novel or book, writing"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 976,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 976,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "minimalist",
+        "visual storytelling",
+        "atmospheric",
+        "meditative",
+        "silent narrative",
+        "cinematography",
+        "nature",
+        "introspection"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

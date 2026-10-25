@@ -1,0 +1,93 @@
+{
+  "mood_id": "qm_rainy",
+  "text": "A cozy, warm and peaceful evening, calm and contemplative, slow-paced and quiet, not action, not thriller",
+  "ms": 5367,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.2,
+      "fear": 0.05,
+      "anger": 0,
+      "surprise": 0.1,
+      "disgust": 0,
+      "trust": 0.8,
+      "anticipation": 0.15
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "high stakes conflict",
+      "thriller elements",
+      "violence"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Quiet Comfort",
+    "profile_description": "A peaceful, introspective evening calling for slow-paced, visually rich cinema that soothes the mind and invites gentle contemplation without tension or urgency.",
+    "search_keywords": [
+      "coming of age",
+      "slice of life",
+      "nature",
+      "relationships",
+      "minimalist",
+      "introspective"
+    ],
+    "search_id": "c2b55ac1-ccbe-499f-b44e-d51a552d2370",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.2,
+      "anger": 0,
+      "fear": 0.05,
+      "surprise": 0.1,
+      "disgust": 0,
+      "anticipation": 0.15,
+      "trust": 0.8
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "high stakes conflict",
+      "thriller elements",
+      "violence"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "c2b55ac1-ccbe-499f-b44e-d51a552d2370",
+  "search_keywords": [
+    "coming of age",
+    "slice of life",
+    "nature",
+    "relationships",
+    "minimalist",
+    "introspective"
+  ],
+  "limit": null,
+  "remaining": null
+}

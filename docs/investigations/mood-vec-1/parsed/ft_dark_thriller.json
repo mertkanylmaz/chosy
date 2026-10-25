@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_dark_thriller",
+  "text": "Dark psychological thriller that keeps me guessing",
+  "ms": 4263,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.35,
+      "fear": 0.75,
+      "anger": 0.25,
+      "surprise": 0.85,
+      "disgust": 0.4,
+      "trust": 0.2,
+      "anticipation": 0.9
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Twisted Mind Games",
+    "profile_description": "You crave cerebral tension and narrative surprises—a dark psychological thriller that challenges your perception and keeps you mentally engaged with unreliable realities and shocking reversals.",
+    "search_keywords": [
+      "psychological thriller",
+      "mind games",
+      "unreliable narrator",
+      "twist ending",
+      "dark mystery",
+      "psychological suspense",
+      "mental breakdown",
+      "deception"
+    ],
+    "search_id": "5fe810ab-7cec-4a97-8f5c-0ac2fb45da0e",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.35,
+      "anger": 0.25,
+      "fear": 0.75,
+      "surprise": 0.85,
+      "disgust": 0.4,
+      "anticipation": 0.9,
+      "trust": 0.2
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "5fe810ab-7cec-4a97-8f5c-0ac2fb45da0e",
+  "search_keywords": [
+    "psychological thriller",
+    "mind games",
+    "unreliable narrator",
+    "twist ending",
+    "dark mystery",
+    "psychological suspense",
+    "mental breakdown",
+    "deception"
+  ],
+  "limit": null,
+  "remaining": null
+}

@@ -1,0 +1,563 @@
+{
+  "mood_id": "ft_family_kids",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "ccc1d981-6160-4b14-86e8-a385d88391ce",
+        "tmdb_id": 1585,
+        "title": "It's a Wonderful Life",
+        "year": 1946,
+        "overview": "George Bailey has spent his entire life giving to the people of Bedford Falls.  All that prevents rich skinflint Mr. Potter from taking over the entire town is George's modest building and loan company.  But on Christmas Eve the business's $8,000 is lost and George's troubles begin.",
+        "genres": [
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 131,
+        "vote_average": 8.3,
+        "director": "Frank Capra",
+        "similarity": 1.07828011558813,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "b720a08f-1fb8-43b6-9e1a-a1faf3223d99",
+        "tmdb_id": 369557,
+        "title": "Sing Street",
+        "year": 2016,
+        "overview": "A boy growing up in Dublin during the 1980s escapes his strained family life by starting a band to impress the mysterious girl he likes.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Music",
+          "Comedy"
+        ],
+        "runtime": 105,
+        "vote_average": 7.859,
+        "director": "John Carney",
+        "similarity": 0.989430212121988,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship"
+      },
+      {
+        "id": "3e3633f4-3782-4d80-b474-2b58d0e3b38c",
+        "tmdb_id": 19460,
+        "title": "Son of the Bride",
+        "year": 2001,
+        "overview": "At age 42, Rafael Belvedere is having a crisis. He lives in the shadow of his father, he feels guilty about rarely visiting his aging mother, his ex-wife says he doesn't spend enough time with their daughter and he has yet to make a commitment to his girlfriend. At his lowest point, a minor heart attack reunites him with Juan Carlos, a childhood friend, who helps Rafael to reconstruct his past.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.475,
+        "director": "Juan José Campanella",
+        "similarity": 0.877324591865724,
+        "curation_tier": "extended",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "e4e0de36-83ae-4615-8b35-d170453e5f3f",
+        "tmdb_id": 671,
+        "title": "Harry Potter and the Philosopher's Stone",
+        "year": 2001,
+        "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard—with a place waiting for him at the Hogwarts School of Witchcraft and Wizardry. As he learns to harness his newfound powers with the help of the school's kindly headmaster, Harry uncovers the truth about his parents' deaths—and about the villain who's to blame.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 152,
+        "vote_average": 7.899,
+        "director": "Chris Columbus",
+        "similarity": 0.981636528693947,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, adventure, friendship, fantasy"
+      },
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 0.978952541551267,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age"
+      },
+      {
+        "id": "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+        "tmdb_id": 823219,
+        "title": "Flow",
+        "year": 2024,
+        "overview": "A solitary cat, displaced by a great flood, finds refuge on a boat with various species and must navigate the challenges of adapting to a transformed world together.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 85,
+        "vote_average": 8.085,
+        "director": "Gints Zilbalodis",
+        "similarity": 0.963562163998677,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure, fantasy"
+      },
+      {
+        "id": "c9b67167-4164-4ccc-a54f-4343d6e2a48e",
+        "tmdb_id": 776503,
+        "title": "CODA",
+        "year": 2021,
+        "overview": "As a CODA (Child of Deaf Adults), Ruby is the only hearing person in her deaf family. When the family's fishing business is threatened, Ruby finds herself torn between pursuing her love of music and her fear of abandoning her parents.",
+        "genres": [
+          "Drama",
+          "Music",
+          "Romance"
+        ],
+        "runtime": 112,
+        "vote_average": 7.889,
+        "director": "Sian Heder",
+        "similarity": 0.960581649298134,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.950612087459695,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship, fantasy"
+      },
+      {
+        "id": "1b9065b7-bcd3-4a6d-9bed-606d4a9e5be5",
+        "tmdb_id": 760774,
+        "title": "One Life",
+        "year": 2023,
+        "overview": "British stockbroker Nicholas Winton visits Czechoslovakia in the 1930s and forms plans to assist in the rescue of Jewish children before the onset of World War II, in an operation that came to be known as the Kindertransport.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 109,
+        "vote_average": 7.761,
+        "director": "James Hawes",
+        "similarity": 0.84871014705602,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "a89bc750-72c7-4e85-8507-31e20542de3a",
+        "tmdb_id": 16859,
+        "title": "Kiki's Delivery Service",
+        "year": 1989,
+        "overview": "A young witch, on her mandatory year of independent life, finds fitting into a new community difficult while she supports herself by running an air courier service.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.836,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.830144586638511,
+        "curation_tier": "extended",
+        "match_reason": "Matches: adventure, friendship, coming of age"
+      },
+      {
+        "id": "9a1182d0-b1ce-44a7-878c-03ce2cc1d404",
+        "tmdb_id": 400928,
+        "title": "Gifted",
+        "year": 2017,
+        "overview": "Frank, a single man raising his child prodigy niece Mary, is drawn into a custody battle with his mother.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.998,
+        "director": "Marc Webb",
+        "similarity": 0.92113771826439,
+        "curation_tier": "core",
+        "match_reason": "cat, mathematics, intellectually gifted"
+      },
+      {
+        "id": "c65717fb-907e-42a5-a6ae-e0ed7fdceb0c",
+        "tmdb_id": 921,
+        "title": "Cinderella Man",
+        "year": 2005,
+        "overview": "The true story of boxer Jim Braddock who, following his retirement in the 1930s, makes a surprise comeback in order to lift his family out of poverty.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.6,
+        "director": "Ron Howard",
+        "similarity": 0.908500589772428,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 0.905249234911886,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "03d50fc2-f896-46e9-a62d-6f2b47660dfa",
+        "tmdb_id": 19404,
+        "title": "Dilwale Dulhania Le Jayenge",
+        "year": 1995,
+        "overview": "Raj is a rich, carefree, happy-go-lucky second generation NRI. Simran is the daughter of Chaudhary Baldev Singh, who in spite of being an NRI is very strict about adherence to Indian values. Simran has left for India to be married to her childhood fiancé. Raj leaves for India with a mission at his hands, to claim his lady love under the noses of her whole family. Thus begins a saga.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 190,
+        "vote_average": 8.512,
+        "director": "Aditya Chopra",
+        "similarity": 0.812662127915679,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "6b65d1f9-8dee-4290-9db3-c2426499f7ad",
+        "tmdb_id": 3543,
+        "title": "Bagdad Cafe",
+        "year": 1987,
+        "overview": "A German woman named Jasmin stumbles upon a dilapidated motel/diner in the middle of nowhere. Her unusual appearance and demeanor are at first suspicious to Brenda, the exasperated owner who has difficulty making ends meet. But when an unlikely magic sparks between the two women, this lonely desert outpost is transformed into a thriving and popular oasis.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.215,
+        "director": "Percy Adlon",
+        "similarity": 0.810497729240242,
+        "curation_tier": "extended",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "2e811fbd-d246-433b-ba90-43f0647b65ab",
+        "tmdb_id": 77338,
+        "title": "The Intouchables",
+        "year": 2011,
+        "overview": "A true story of two men who should never have met – a quadriplegic aristocrat who was injured in a paragliding accident and a young man from the projects.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 113,
+        "vote_average": 8.269,
+        "director": "Éric Toledano",
+        "similarity": 0.898371449596947,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.898006418498284,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship"
+      },
+      {
+        "id": "127baf12-46a0-4043-b342-c4761e3b62ec",
+        "tmdb_id": 265177,
+        "title": "Mommy",
+        "year": 2014,
+        "overview": "A peculiar neighbor offers hope to a recent widow who is struggling to raise a teenager who is unpredictable and, sometimes, violent.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 138,
+        "vote_average": 8.206,
+        "director": "Xavier Dolan",
+        "similarity": 0.896957279852666,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age"
+      },
+      {
+        "id": "8ae58c2d-c254-44a1-854a-9801feb7cd6f",
+        "tmdb_id": 11293,
+        "title": "Paper Moon",
+        "year": 1973,
+        "overview": "During the Great Depression, a con man finds himself saddled with a young girl who may or may not be his daughter, and the two forge an unlikely partnership.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 102,
+        "vote_average": 7.876,
+        "director": "Peter Bogdanovich",
+        "similarity": 0.808583100194729,
+        "curation_tier": "extended",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "8ac349e2-cf6b-4e8d-b71c-0593a7118538",
+        "tmdb_id": 50014,
+        "title": "The Help",
+        "year": 2011,
+        "overview": "Aibileen Clark is a middle-aged African-American maid who has spent her life raising white children and has recently lost her only son; Minny Jackson is an African-American maid who has often offended her employers despite her family's struggles with money and her desperate need for jobs; and Eugenia \"Skeeter\" Phelan is a young white woman who has recently moved back home after graduating college to find out her childhood maid has mysteriously disappeared. These three stories intertwine to explain how life in Jackson, Mississippi revolves around \"the help\"; yet they are always kept at a certain distance because of racial lines.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 146,
+        "vote_average": 8.2,
+        "director": "Tate Taylor",
+        "similarity": 0.896439974805684,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, mississippi river, exploitation"
+      },
+      {
+        "id": "f3c487db-4df4-48ba-aa2b-50dd5e582e0e",
+        "tmdb_id": 8587,
+        "title": "The Lion King",
+        "year": 1994,
+        "overview": "Young lion prince Simba, eager to one day become king of the Pride Lands, grows up under the watchful eye of his father Mufasa; all the while his villainous uncle Scar conspires to take the throne for himself. Amid betrayal and tragedy, Simba must confront his past and find his rightful place in the Circle of Life.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.254,
+        "director": "Roger Allers",
+        "similarity": 0.894768228993709,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "d74ad4ff-6908-4e55-a971-5a160ca4f935",
+        "tmdb_id": 406997,
+        "title": "Wonder",
+        "year": 2017,
+        "overview": "The story of August Pullman – a boy with facial differences – who enters fifth grade, attending a mainstream elementary school for the first time.",
+        "genres": [
+          "Family",
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 8.107,
+        "director": "Stephen Chbosky",
+        "similarity": 0.893730602260793,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "4f07a453-5643-4e78-bc45-b702b043e3bd",
+        "tmdb_id": 705861,
+        "title": "Hustle",
+        "year": 2022,
+        "overview": "After discovering a once-in-a-lifetime player with a rocky past abroad, a down on his luck basketball scout takes it upon himself to bring the phenom to the States without his team's approval. Against the odds, they have one final shot to prove they have what it takes to make it in the NBA.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 117,
+        "vote_average": 7.702,
+        "director": "Jeremiah Zagar",
+        "similarity": 0.892470363849902,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.892359126649832,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "fda166dd-b750-407e-b15d-ae78aed3df68",
+        "tmdb_id": 490132,
+        "title": "Green Book",
+        "year": 2018,
+        "overview": "Tony Lip, a bouncer in 1962, is hired to drive pianist Don Shirley on a tour through the Deep South in the days when African Americans, forced to find alternate accommodations and services due to segregation laws below the Mason-Dixon Line, relied on a guide called The Negro Motorist Green Book.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "History"
+        ],
+        "runtime": 130,
+        "vote_average": 8.224,
+        "director": "Peter Farrelly",
+        "similarity": 0.889628428001163,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 0.889402851378205,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "c0e13d5d-5beb-487b-a9c7-a9b87c453c49",
+        "tmdb_id": 40085,
+        "title": "The Long, Hot Summer",
+        "year": 1958,
+        "overview": "Accused barn burner and conman Ben Quick arrives in a small Mississippi town and quickly ingratiates himself with its richest family, the Varners.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 115,
+        "vote_average": 7.06,
+        "director": "Martin Ritt",
+        "similarity": 0.799834486926652,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "57103696-ff1e-4391-93c1-39515e56ee85",
+        "tmdb_id": 614917,
+        "title": "King Richard",
+        "year": 2021,
+        "overview": "The story of how Richard Williams served as a coach to his daughters Venus and Serena, who will soon become two of the most legendary tennis players in history.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.596,
+        "director": "Reinaldo Marcus Green",
+        "similarity": 0.881906616329835,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "20498895-6a00-4a45-af63-32f52e80d927",
+        "tmdb_id": 14,
+        "title": "American Beauty",
+        "year": 1999,
+        "overview": "Lester Burnham, a depressed suburban father in a mid-life crisis, decides to turn his hectic life around after developing an infatuation with his daughter's attractive friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8,
+        "director": "Sam Mendes",
+        "similarity": 0.879662270186407,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age, fantasy"
+      },
+      {
+        "id": "9136561e-ded1-4825-a47b-c32a1ff115f6",
+        "tmdb_id": 12501,
+        "title": "The Big Country",
+        "year": 1958,
+        "overview": "Retired wealthy sea captain Jim McKay arrives in the Old West, where he becomes embroiled in a feud between his future father-in-law, Major Terrill, and the rough and lawless Hannasseys over a valuable patch of land.",
+        "genres": [
+          "Drama",
+          "Western",
+          "Romance"
+        ],
+        "runtime": 167,
+        "vote_average": 7.588,
+        "director": "William Wyler",
+        "similarity": 0.794981017634522,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 991,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 991,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "family",
+        "adventure",
+        "humor",
+        "friendship",
+        "coming of age",
+        "fantasy",
+        "wholesome"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

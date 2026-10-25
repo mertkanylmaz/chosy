@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_physics",
+  "text": "Physics",
+  "ms": 3980,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "fear": 0.3,
+      "anger": 0.1,
+      "surprise": 0.7,
+      "disgust": 0,
+      "trust": 0.7,
+      "anticipation": 0.8
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Curious Explorer",
+    "profile_description": "You want to be intellectually stimulated and amazed by the universe—seeking films that unveil mysteries, reveal profound truths, and celebrate human ingenuity and discovery.",
+    "search_keywords": [
+      "physics",
+      "science",
+      "discovery",
+      "innovation",
+      "space",
+      "time",
+      "universe",
+      "wonder"
+    ],
+    "search_id": "e60f06ba-bd4d-4517-8b9f-cf3bf9a62af3",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "anger": 0.1,
+      "fear": 0.3,
+      "surprise": 0.7,
+      "disgust": 0,
+      "anticipation": 0.8,
+      "trust": 0.7
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e60f06ba-bd4d-4517-8b9f-cf3bf9a62af3",
+  "search_keywords": [
+    "physics",
+    "science",
+    "discovery",
+    "innovation",
+    "space",
+    "time",
+    "universe",
+    "wonder"
+  ],
+  "limit": null,
+  "remaining": null
+}

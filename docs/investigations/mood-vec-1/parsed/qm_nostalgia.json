@@ -1,0 +1,97 @@
+{
+  "mood_id": "qm_nostalgia",
+  "text": "Nostalgic and sentimental, like a warm childhood memory, cozy and bittersweet, not scary, not intense",
+  "ms": 4297,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.5,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.2,
+      "disgust": 0,
+      "trust": 0.8,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "intense violence",
+      "scary",
+      "high tension thriller"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Nostalgic Comfort",
+    "profile_description": "A gentle journey through cherished memories—seeking warmth, safety, and the bittersweet beauty of time passed, without intensity or fear.",
+    "search_keywords": [
+      "childhood",
+      "nostalgia",
+      "coming of age",
+      "family",
+      "small town",
+      "memory",
+      "innocent",
+      "warm"
+    ],
+    "search_id": "c3b08708-537f-466c-8254-a17aba749879",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.5,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.2,
+      "disgust": 0,
+      "anticipation": 0.3,
+      "trust": 0.8
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "intense violence",
+      "scary",
+      "high tension thriller"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "c3b08708-537f-466c-8254-a17aba749879",
+  "search_keywords": [
+    "childhood",
+    "nostalgia",
+    "coming of age",
+    "family",
+    "small town",
+    "memory",
+    "innocent",
+    "warm"
+  ],
+  "limit": null,
+  "remaining": null
+}

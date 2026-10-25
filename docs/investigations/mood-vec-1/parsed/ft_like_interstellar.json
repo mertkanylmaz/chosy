@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_like_interstellar",
+  "text": "Something like Interstellar",
+  "ms": 4534,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.5,
+      "fear": 0.4,
+      "anger": 0.1,
+      "surprise": 0.7,
+      "disgust": 0,
+      "trust": 0.7,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 2009,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cosmic Wonder",
+    "profile_description": "You want to experience awe-inspiring spectacle combined with emotional depth—vast, intelligent sci-fi that balances mind-bending concepts with intimate human stakes and ultimately affirms hope.",
+    "search_keywords": [
+      "space exploration",
+      "theoretical physics",
+      "family relationships",
+      "time dilation",
+      "humanity's future",
+      "epic scale",
+      "emotional sci-fi",
+      "alternate dimensions"
+    ],
+    "search_id": "67d08329-8154-4a80-be79-911cf5449f13",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.5,
+      "anger": 0.1,
+      "fear": 0.4,
+      "surprise": 0.7,
+      "disgust": 0,
+      "anticipation": 0.85,
+      "trust": 0.7
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 2009,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "67d08329-8154-4a80-be79-911cf5449f13",
+  "search_keywords": [
+    "space exploration",
+    "theoretical physics",
+    "family relationships",
+    "time dilation",
+    "humanity's future",
+    "epic scale",
+    "emotional sci-fi",
+    "alternate dimensions"
+  ],
+  "limit": null,
+  "remaining": null
+}

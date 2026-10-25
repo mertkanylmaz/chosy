@@ -1,0 +1,566 @@
+{
+  "mood_id": "ft_date_first",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c268c65d-959b-4679-8270-2c081f8c4e02",
+        "tmdb_id": 290,
+        "title": "Barton Fink",
+        "year": 1991,
+        "overview": "A renowned New York playwright is enticed to California to write for the movies and discovers the hellish truth of Hollywood.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 117,
+        "vote_average": 7.464,
+        "director": "Joel Coen",
+        "similarity": 0.935254090954321,
+        "curation_tier": "core",
+        "match_reason": "hotel, screenplay, mass murder"
+      },
+      {
+        "id": "3396dd09-2867-4b73-8b83-2452f4e969fb",
+        "tmdb_id": 86000,
+        "title": "Always",
+        "year": 2011,
+        "overview": "A former boxer turned parking lot attendant finds hope in the love of the blind telemarketer who walks into his booth one day.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.818,
+        "director": "Song Il-gon",
+        "similarity": 0.772129393195341,
+        "curation_tier": "extended",
+        "match_reason": "attraction, blind woman, dramatic"
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.843744349348723,
+        "curation_tier": "core",
+        "match_reason": "Matches: romantic drama"
+      },
+      {
+        "id": "2e811fbd-d246-433b-ba90-43f0647b65ab",
+        "tmdb_id": 77338,
+        "title": "The Intouchables",
+        "year": 2011,
+        "overview": "A true story of two men who should never have met – a quadriplegic aristocrat who was injured in a paragliding accident and a young man from the projects.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 113,
+        "vote_average": 8.269,
+        "director": "Éric Toledano",
+        "similarity": 0.837265139963669,
+        "curation_tier": "core",
+        "match_reason": "Matches: emotional authenticity"
+      },
+      {
+        "id": "ccc1d981-6160-4b14-86e8-a385d88391ce",
+        "tmdb_id": 1585,
+        "title": "It's a Wonderful Life",
+        "year": 1946,
+        "overview": "George Bailey has spent his entire life giving to the people of Bedford Falls.  All that prevents rich skinflint Mr. Potter from taking over the entire town is George's modest building and loan company.  But on Christmas Eve the business's $8,000 is lost and George's troubles begin.",
+        "genres": [
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 131,
+        "vote_average": 8.3,
+        "director": "Frank Capra",
+        "similarity": 0.827785652482878,
+        "curation_tier": "core",
+        "match_reason": "small town, angel, suicide attempt"
+      },
+      {
+        "id": "2838ecc3-7733-4bb9-a486-b222bf3711d0",
+        "tmdb_id": 3082,
+        "title": "Modern Times",
+        "year": 1936,
+        "overview": "A bumbling tramp desires to build a home with a young woman, yet is thwarted time and time again by his lack of experience and habit of being in the wrong place at the wrong time..",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.278,
+        "director": "Charlie Chaplin",
+        "similarity": 0.798948729053491,
+        "curation_tier": "core",
+        "match_reason": "factory, ambulance, invention"
+      },
+      {
+        "id": "a617c6d5-24e6-454c-8c43-391deea39978",
+        "tmdb_id": 222935,
+        "title": "The Fault in Our Stars",
+        "year": 2014,
+        "overview": "Despite the tumor-shrinking medical miracle that has bought her a few years, Hazel has never been anything but terminal, her final chapter inscribed upon diagnosis. But when a patient named Augustus Waters suddenly appears at Cancer Kid Support Group, Hazel's story is about to be completely rewritten.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.592,
+        "director": "Josh Boone",
+        "similarity": 0.78970190493356,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, support group, amsterdam, netherlands"
+      },
+      {
+        "id": "ac4c8787-aee7-487b-9307-6b94f5e08565",
+        "tmdb_id": 11005,
+        "title": "Awakenings",
+        "year": 1990,
+        "overview": "Dr. Malcolm Sayer, a shy research physician, uses an experimental drug to \"awaken\" the catatonic victims of a rare disease. Leonard is the first patient to receive the controversial treatment. His awakening, filled with awe and enthusiasm, proves a rebirth for Sayer too, as the exuberant patient reveals life's simple but unutterably sweet pleasures to the introverted doctor.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.773,
+        "director": "Penny Marshall",
+        "similarity": 0.789283303883104,
+        "curation_tier": "core",
+        "match_reason": "coma, experiment, based on novel or book"
+      },
+      {
+        "id": "4b603686-2cce-4f1f-8138-e277e4f139d0",
+        "tmdb_id": 652837,
+        "title": "Josee, the Tiger and the Fish",
+        "year": 2020,
+        "overview": "With dreams of diving abroad, Tsuneo gets a job assisting Josee, an artist whose imagination takes her far beyond her wheelchair. But when the tide turns against them, they push each other to places they never thought possible, and inspire a love fit for a storybook.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 98,
+        "vote_average": 8.267,
+        "director": "Kotaro Tamura",
+        "similarity": 0.727194176484011,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romantic drama"
+      },
+      {
+        "id": "22a64f00-e5f6-4814-9639-273f22a0a41f",
+        "tmdb_id": 698508,
+        "title": "Redeeming Love",
+        "year": 2022,
+        "overview": "A young couple's relationship clashes with the harsh realities of the California Gold Rush of 1850. Angel, experiencing love for the first time and facing demons unsurmountable, runs from the new life she doesn't believe she deserves. When Michael sets out to find her, Angel discovers that she indeed has the power to choose the life she wants.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 134,
+        "vote_average": 7.8,
+        "director": "D.J. Caruso",
+        "similarity": 0.726290521753936,
+        "curation_tier": "extended",
+        "match_reason": "pedophilia, child abuse, california"
+      },
+      {
+        "id": "9dc80692-e997-46c7-8e8a-38f66e12ecf1",
+        "tmdb_id": 718032,
+        "title": "Licorice Pizza",
+        "year": 2021,
+        "overview": "The story of Gary Valentine and Alana Kane growing up, running around and going through the treacherous navigation of first love in the San Fernando Valley, 1973.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 133,
+        "vote_average": 6.956,
+        "director": "Paul Thomas Anderson",
+        "similarity": 0.782425295520629,
+        "curation_tier": "core",
+        "match_reason": "high school, california, jealousy"
+      },
+      {
+        "id": "b720a08f-1fb8-43b6-9e1a-a1faf3223d99",
+        "tmdb_id": 369557,
+        "title": "Sing Street",
+        "year": 2016,
+        "overview": "A boy growing up in Dublin during the 1980s escapes his strained family life by starting a band to impress the mysterious girl he likes.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Music",
+          "Comedy"
+        ],
+        "runtime": 105,
+        "vote_average": 7.859,
+        "director": "John Carney",
+        "similarity": 0.779781154691093,
+        "curation_tier": "core",
+        "match_reason": "friendship, london, england, sibling relationship"
+      },
+      {
+        "id": "0f3d1f9d-b9de-411d-b8ec-46a5c07c8602",
+        "tmdb_id": 10843,
+        "title": "After Hours",
+        "year": 1985,
+        "overview": "Desperate to escape his mind-numbing routine, uptown Manhattan office worker Paul Hackett ventures downtown for a hookup with a mystery woman.",
+        "genres": [
+          "Comedy",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 7.497,
+        "director": "Martin Scorsese",
+        "similarity": 0.716832502420609,
+        "curation_tier": "extended",
+        "match_reason": "new york city, suicide, date"
+      },
+      {
+        "id": "422c986c-e309-4ce9-b63d-21c8e69eb0da",
+        "tmdb_id": 18438,
+        "title": "Castaway on the Moon",
+        "year": 2009,
+        "overview": "Mr. Kim is jobless, lost in debt and has been dumped by his girlfriend. He decides to end it all by jumping into the Han River – only to find himself washed up on a small, mid-river island. He soon abandons thoughts of suicide or rescue and begins a new life as a castaway. His antics catch the attention of a young woman whose apartment overlooks the river. Her discovery changes both their lives.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.913,
+        "director": "Lee Hae-jun",
+        "similarity": 0.772104886787974,
+        "curation_tier": "core",
+        "match_reason": "isolation, suicide attempt, loneliness"
+      },
+      {
+        "id": "2f3b2f03-c7a0-4e3c-8825-e3e21be1403f",
+        "tmdb_id": 166428,
+        "title": "How to Train Your Dragon: The Hidden World",
+        "year": 2019,
+        "overview": "As Hiccup fulfills his dream of creating a peaceful dragon utopia, Toothless’ discovery of an untamed, elusive mate draws the Night Fury away. When danger mounts at home and Hiccup’s reign as village chief is tested, both dragon and rider must make impossible decisions to save their kind.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 104,
+        "vote_average": 7.751,
+        "director": "Dean DeBlois",
+        "similarity": 0.771383183689893,
+        "curation_tier": "core",
+        "match_reason": "Matches: romantic drama, intimate"
+      },
+      {
+        "id": "625c6e23-9faf-4b27-bc53-2b223c072a92",
+        "tmdb_id": 5528,
+        "title": "The Chorus",
+        "year": 2004,
+        "overview": "In 1940s France, a new teacher at a school for disruptive boys gives hope and inspiration.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Music"
+        ],
+        "runtime": 97,
+        "vote_average": 7.74,
+        "director": "Christophe Barratier",
+        "similarity": 0.768122319345536,
+        "curation_tier": "core",
+        "match_reason": "penalty, boarding school, choir"
+      },
+      {
+        "id": "05a27e0d-6585-4b42-86d5-cfcf7dfbe8d4",
+        "tmdb_id": 74643,
+        "title": "The Artist",
+        "year": 2011,
+        "overview": "Hollywood, 1927: As silent movie star George Valentin wonders if the arrival of talking pictures will cause him to fade into oblivion, he sparks with Peppy Miller, a young dancer set for a big break.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 100,
+        "vote_average": 7.441,
+        "director": "Michel Hazanavicius",
+        "similarity": 0.765288162023759,
+        "curation_tier": "core",
+        "match_reason": "movie business, hollywood, black and white"
+      },
+      {
+        "id": "314aaf3e-f298-4824-a6fb-ff0dcdd396f1",
+        "tmdb_id": 11013,
+        "title": "Secretary",
+        "year": 2002,
+        "overview": "A young woman, recently released from a mental hospital, gets a job as a secretary to a demanding lawyer, where their employer-employee relationship turns into a sexual, sadomasochistic one.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 111,
+        "vote_average": 6.8,
+        "director": "Steven Shainberg",
+        "similarity": 0.764918412777398,
+        "curation_tier": "core",
+        "match_reason": "suicide, clerk, fetish"
+      },
+      {
+        "id": "fda166dd-b750-407e-b15d-ae78aed3df68",
+        "tmdb_id": 490132,
+        "title": "Green Book",
+        "year": 2018,
+        "overview": "Tony Lip, a bouncer in 1962, is hired to drive pianist Don Shirley on a tour through the Deep South in the days when African Americans, forced to find alternate accommodations and services due to segregation laws below the Mason-Dixon Line, relied on a guide called The Negro Motorist Green Book.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "History"
+        ],
+        "runtime": 130,
+        "vote_average": 8.224,
+        "director": "Peter Farrelly",
+        "similarity": 0.764856948400037,
+        "curation_tier": "core",
+        "match_reason": "friendship, southern usa, based on true story"
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.763302488251912,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality"
+      },
+      {
+        "id": "56a5460f-aaad-4513-a886-3d1db2d1270d",
+        "tmdb_id": 83666,
+        "title": "Moonrise Kingdom",
+        "year": 2012,
+        "overview": "Set on an island off the coast of New England in the summer of 1965, Moonrise Kingdom tells the story of two twelve-year-olds who fall in love, make a secret pact, and run away together into the wilderness. As various authorities try to hunt them down, a violent storm is brewing off-shore – and the peaceful island community is turned upside down in more ways than anyone can handle.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.676,
+        "director": "Wes Anderson",
+        "similarity": 0.762283185917961,
+        "curation_tier": "core",
+        "match_reason": "camping, hurricane, pen pals"
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 0.754630658415945,
+        "curation_tier": "core",
+        "match_reason": "self-discovery, tokyo, japan, candid"
+      },
+      {
+        "id": "2d157d4b-87f5-4c0c-a989-e040de97e9b6",
+        "tmdb_id": 515001,
+        "title": "Jojo Rabbit",
+        "year": 2019,
+        "overview": "Jojo, a lonely German boy during World War II has his world shaken when he learns that his single mother is hiding a Jewish girl in their home. Influenced by a buffoonish imaginary version of Adolf Hitler, he begins to question his beliefs and confront the conflict between propaganda and his own humanity.",
+        "genres": [
+          "Comedy",
+          "War",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.986,
+        "director": "Taika Waititi",
+        "similarity": 0.752627191936488,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, world war ii, jew persecution"
+      },
+      {
+        "id": "45d72f5a-3a41-489f-ae3d-16d528914bb1",
+        "tmdb_id": 585244,
+        "title": "I Still Believe",
+        "year": 2020,
+        "overview": "The true-life story of Christian music star Jeremy Camp and his journey of love and loss that looks to prove there is always hope.",
+        "genres": [
+          "Music",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 115,
+        "vote_average": 7.568,
+        "director": "Andrew Erwin",
+        "similarity": 0.69859562423884,
+        "curation_tier": "extended",
+        "match_reason": "Matches: contemporary romance"
+      },
+      {
+        "id": "5350cac7-0d11-4461-9289-1e609045961c",
+        "tmdb_id": 234200,
+        "title": "Pride",
+        "year": 2014,
+        "overview": "In 1984, a group of LGBT activists decide to raise money to support the National Union of Mineworkers during their lengthy strike. There is only one problem: the Union seems embarrassed to receive their support.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 120,
+        "vote_average": 7.68,
+        "director": "Matthew Warchus",
+        "similarity": 0.751272159188998,
+        "curation_tier": "core",
+        "match_reason": "wales, london, england, based on true story"
+      },
+      {
+        "id": "50e88ba5-259f-4daa-bfdf-1d16c49eb98a",
+        "tmdb_id": 343,
+        "title": "Harold and Maude",
+        "year": 1971,
+        "overview": "A deadpan young man obsessed with death meets an eccentric septuagenarian who teaches him to live life to the fullest.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 92,
+        "vote_average": 7.601,
+        "director": "Hal Ashby",
+        "similarity": 0.695286554195012,
+        "curation_tier": "extended",
+        "match_reason": "dying and death, depression, suicide"
+      },
+      {
+        "id": "9a1182d0-b1ce-44a7-878c-03ce2cc1d404",
+        "tmdb_id": 400928,
+        "title": "Gifted",
+        "year": 2017,
+        "overview": "Frank, a single man raising his child prodigy niece Mary, is drawn into a custody battle with his mother.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.998,
+        "director": "Marc Webb",
+        "similarity": 0.746005863343024,
+        "curation_tier": "core",
+        "match_reason": "cat, mathematics, intellectually gifted"
+      },
+      {
+        "id": "5132f1c7-1fa5-403b-b445-31bfa1b33771",
+        "tmdb_id": 31139,
+        "title": "Office Romance",
+        "year": 1977,
+        "overview": "Anatoly Novoseltsev is a mousy single father and office stumblebum working at a statistics bureau in Moscow. In the hopes of being promoted, he is coaxed into charming his disagreeable and seemingly unfeeling boss, Ludmila Kalugina, or \"Meany\" as she's otherwise known by her subordinates. Helped by his colleagues Olya and Yura, Anatoly attempts to ease the yoke of Ms. Kalugina, and what follows in the wake of his graceless manoeuvres is completely unforeseen, as he awakens a side to her not yet known, even to herself..",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 159,
+        "vote_average": 7.9,
+        "director": "Eldar Ryazanov",
+        "similarity": 0.692740513082682,
+        "curation_tier": "extended",
+        "match_reason": "1970s"
+      },
+      {
+        "id": "58539589-4d8f-4efa-879a-7329f4e37ad1",
+        "tmdb_id": 37797,
+        "title": "Whisper of the Heart",
+        "year": 1995,
+        "overview": "Shizuku lives a simple life, dominated by her love for stories and writing. One day she notices that all the library books she has have been previously checked out by the same person: \"Seiji Amasawa.\"",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 111,
+        "vote_average": 7.9,
+        "director": "Yoshifumi Kondo",
+        "similarity": 0.691688148891629,
+        "curation_tier": "extended",
+        "match_reason": "dreams, library, italy"
+      },
+      {
+        "id": "b1c6aa42-8aa2-4f4d-aaf3-ee2efa7b44ca",
+        "tmdb_id": 25934,
+        "title": "To Sir, with Love",
+        "year": 1967,
+        "overview": "A British Guianese engineer starts a job as a high school teacher in London’s East End, where his uninterested and delinquent pupils are in desperate need of attention and care.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 105,
+        "vote_average": 7.49,
+        "director": "James Clavell",
+        "similarity": 0.690589200085537,
+        "curation_tier": "extended",
+        "match_reason": "london, england, education, respect"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 835,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 835,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "romantic drama",
+        "contemporary romance",
+        "intimate",
+        "character-driven",
+        "subtle tension",
+        "emotional authenticity"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

@@ -1,0 +1,579 @@
+{
+  "mood_id": "qm_nostalgia",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "fc8ee875-9934-4b6e-834f-aff0cb526231",
+        "tmdb_id": 398818,
+        "title": "Call Me by Your Name",
+        "year": 2017,
+        "overview": "In the summer of 1983, a 17-year-old Elio spends his days in his family's villa in Italy. One day Oliver, a graduate student, arrives to assist Elio's father, a professor of Greco-Roman culture. Soon, Elio and Oliver discover a summer that will alter their lives forever.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 8.1,
+        "director": "Luca Guadagnino",
+        "similarity": 1.04648380279614,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age, family"
+      },
+      {
+        "id": "cc0baaa8-5c3f-4913-bde2-db8a110984bd",
+        "tmdb_id": 476292,
+        "title": "Maquia: When the Promised Flower Blooms",
+        "year": 2018,
+        "overview": "Fleeing the war, the immortal Machia, graced with eternal youth, finds a baby abandoned in the forest and decides to raise it as her own child, sparking a moving story between a mortal and a being who does not age.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 115,
+        "vote_average": 8.1,
+        "director": "Mari Okada",
+        "similarity": 0.916481821749656,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age, family"
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 1.01580247493919,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life"
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 1.01522457844735,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence"
+      },
+      {
+        "id": "dd233972-4b0b-4daf-b7b5-48f274f30835",
+        "tmdb_id": 177945,
+        "title": "Like Father, Like Son",
+        "year": 2013,
+        "overview": "Ryota Nonomiya is a successful businessman driven by money. He learns that his biological son was switched with another child after birth. He must make a life-changing decision and choose his true son or the boy he raised as his own.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.698,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 1.00804875560467,
+        "curation_tier": "core",
+        "match_reason": "Matches: childhood, family, warm"
+      },
+      {
+        "id": "119a37e8-be86-43f1-9a15-eb13ac06c4a3",
+        "tmdb_id": 804095,
+        "title": "The Fabelmans",
+        "year": 2022,
+        "overview": "Growing up in post-World War II era Arizona, young Sammy Fabelman aspires to become a filmmaker as he reaches adolescence, but soon discovers a shattering family secret and explores how the power of films can help him see the truth.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 151,
+        "vote_average": 7.57,
+        "director": "Steven Spielberg",
+        "similarity": 0.998047862796961,
+        "curation_tier": "core",
+        "match_reason": "Matches: childhood, coming of age, family"
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.881660591082856,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service"
+      },
+      {
+        "id": "0e6971a5-cede-4fe4-aa54-d4410af2e5b7",
+        "tmdb_id": 1923,
+        "title": "Twin Peaks: Fire Walk with Me",
+        "year": 1992,
+        "overview": "In the questionable town of Deer Meadow, Washington, FBI Agent Desmond inexplicably disappears while hunting for the man who murdered a teen girl. The killer is never apprehended, and, after experiencing dark visions and supernatural encounters, Agent Dale Cooper chillingly predicts that the culprit will claim another life. Meanwhile, in the more cozy town of Twin Peaks, hedonistic beauty Laura Palmer hangs with lowlifes and seems destined for a grisly fate.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Horror"
+        ],
+        "runtime": 135,
+        "vote_average": 7.418,
+        "director": "David Lynch",
+        "similarity": 0.978948700418006,
+        "curation_tier": "core",
+        "match_reason": "Matches: small town"
+      },
+      {
+        "id": "f43567c8-978f-468b-a5cc-a40d1d1de9a3",
+        "tmdb_id": 4922,
+        "title": "The Curious Case of Benjamin Button",
+        "year": 2008,
+        "overview": "Born under unusual circumstances, Benjamin Button springs into being as an elderly man in a New Orleans nursing home and ages in reverse. Twelve years after his birth, he meets Daisy, a child who flits in and out of his life as she grows up to be a dancer. Though he has all sorts of unusual adventures over the course of his life, it is his relationship with Daisy, and the hope that they will come together at the right time, that drives Benjamin forward.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 166,
+        "vote_average": 7.6,
+        "director": "David Fincher",
+        "similarity": 0.970692521364209,
+        "curation_tier": "core",
+        "match_reason": "Matches: warm"
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.862573111313156,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "918e15f9-28d5-47b2-bf92-e424dc74690e",
+        "tmdb_id": 378064,
+        "title": "A Silent Voice: The Movie",
+        "year": 2016,
+        "overview": "Shouya Ishida starts bullying the new girl in class, Shouko Nishimiya, because she is deaf. But as the teasing continues, the rest of the class starts to turn on Shouya for his lack of compassion. When they leave elementary school, Shouko and Shouya do not speak to each other again... until an older, wiser Shouya, tormented by his past behaviour, decides he must see Shouko once more. He wants to atone for his sins, but is it already too late...?",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 129,
+        "vote_average": 8.386,
+        "director": "Naoko Yamada",
+        "similarity": 0.967757215591513,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "1b164a05-bb92-49ff-9b08-d3711fdf7edc",
+        "tmdb_id": 84892,
+        "title": "The Perks of Being a Wallflower",
+        "year": 2012,
+        "overview": "Pittsburgh, Pennsylvania, 1991. High school freshman Charlie is a wallflower, always watching life from the sidelines, until two senior students, Sam and her stepbrother Patrick, become his mentors, helping him discover the joys of friendship, music and love.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.804,
+        "director": "Stephen Chbosky",
+        "similarity": 0.966222581669552,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.965746614887238,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute"
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.959232939616632,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian"
+      },
+      {
+        "id": "b594aac3-ca53-4995-9add-75ce9d15cefa",
+        "tmdb_id": 378108,
+        "title": "In This Corner of the World",
+        "year": 2016,
+        "overview": "Japan, 1943, during World War II. Young Suzu leaves her village near Hiroshima to marry and live with her in-laws in Kure, a military harbor. Her creativity to overcome deprivation quickly makes her indispensable at home. Inhabited by an ancestral wisdom, Suzu impregnates the simple gestures of everyday life with poetry and beauty. The many hardships, the loss of loved ones, the frequent air raids of the enemy, nothing alters her enthusiasm…",
+        "genres": [
+          "Drama",
+          "Animation",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 130,
+        "vote_average": 7.914,
+        "director": "Sunao Katabuchi",
+        "similarity": 0.848935365154871,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "e45d40d4-0ed7-4c7b-aeb1-027ea6bc6806",
+        "tmdb_id": 13384,
+        "title": "Kes",
+        "year": 1970,
+        "overview": "Bullied at school and ignored and abused at home by his indifferent mother and older brother, Billy Casper, a 15-year-old working-class Yorkshire boy, tames and trains his pet kestrel falcon whom he names Kes. Helped and encouraged by his English teacher and his fellow students, Billy finally finds a positive purpose to his unhappy existence.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 111,
+        "vote_average": 7.439,
+        "director": "Ken Loach",
+        "similarity": 0.846785302121374,
+        "curation_tier": "extended",
+        "match_reason": "Matches: childhood, coming of age, family, small town"
+      },
+      {
+        "id": "2f6a38c8-2189-404c-8ba5-8f89164c55b0",
+        "tmdb_id": 65229,
+        "title": "Tomboy",
+        "year": 2011,
+        "overview": "Ten-year-old Laure isn't like most girls. She prefers football to dolls and sweaters to dresses. When Laure and her family move to a new neighbourhood, local girl Lisa mistakes Laure for a boy. Indulging in this exciting new identity, Laure becomes Mickaël, and so begins a summer of long sunny afternoons, playground games and first kisses. Yet with the school term fast approaching, and with suspicions arising amongst friends and family, Laure must face up to an uncertain future.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 82,
+        "vote_average": 7.296,
+        "director": "Céline Sciamma",
+        "similarity": 0.846120471886041,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "773a626c-6e44-477a-9f20-f95a7fbda8a6",
+        "tmdb_id": 722778,
+        "title": "The Hand of God",
+        "year": 2021,
+        "overview": "In 1980s Naples, an awkward teen struggling to find his place experiences heartbreak and liberation after he's inadvertently saved from a freak accident by football legend Diego Maradona.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.531,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.943320533061967,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age, family"
+      },
+      {
+        "id": "4026bb62-26ce-45cf-b17e-d1894271c106",
+        "tmdb_id": 130739,
+        "title": "A Coffee in Berlin",
+        "year": 2012,
+        "overview": "Niko, a twenty-something college dropout, lives for the moment as he drifts through the streets of Berlin, curiously observing everyone around him and oblivious to his growing status as an outsider. Then on one fateful day, through a series of absurdly amusing encounters, everything changes.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 7.19,
+        "director": "Jan Ole Gerster",
+        "similarity": 0.837871670183791,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+        "tmdb_id": 976893,
+        "title": "Perfect Days",
+        "year": 2023,
+        "overview": "Hirayama is content with his life as a toilet cleaner in Tokyo. Outside of his structured routine, he cherishes music on cassette tapes, books, and taking photos of trees. Through unexpected encounters, he reflects on finding beauty in the world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.795,
+        "director": "Wim Wenders",
+        "similarity": 0.935282975921952,
+        "curation_tier": "core",
+        "match_reason": "tree, routine, slice of life"
+      },
+      {
+        "id": "7fc6ba60-adef-4a58-b4be-3f4e9523542b",
+        "tmdb_id": 152584,
+        "title": "Blue Is the Warmest Color",
+        "year": 2013,
+        "overview": "Adèle's life is changed when she meets Emma, a young woman with blue hair, who will allow her to discover desire, to assert herself as a woman and as an adult. In front of others, Adele grows, seeks herself, loses herself, finds herself.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 180,
+        "vote_average": 7.076,
+        "director": "Abdellatif Kechiche",
+        "similarity": 0.83373784187837,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "ed52ab25-9690-4a3a-b26e-98b536d9853c",
+        "tmdb_id": 635302,
+        "title": "Demon Slayer -Kimetsu no Yaiba- The Movie: Mugen Train",
+        "year": 2020,
+        "overview": "Tanjiro Kamado, joined with Inosuke Hashibira, a boy raised by boars who wears a boar's head, and Zenitsu Agatsuma, a scared boy who reveals his true power when he sleeps, boards the Infinity Train on a new mission with the Fire Hashira, Kyojuro Rengoku, to defeat a demon who has been tormenting the people and killing the demon slayers who oppose it!",
+        "genres": [
+          "Animation",
+          "Action",
+          "Fantasy"
+        ],
+        "runtime": 117,
+        "vote_average": 8.205,
+        "director": "Haruo Sotozaki",
+        "similarity": 0.927962219494904,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age, family"
+      },
+      {
+        "id": "acd79642-a022-44e9-a346-e43a7aea330e",
+        "tmdb_id": 9343,
+        "title": "Fitzcarraldo",
+        "year": 1982,
+        "overview": "Fitzcarraldo is a dreamer who plans to build an opera house in Iquitos, in the Peruvian Amazon, so, in order to finance his project, he embarks on an epic adventure to collect rubber, a very profitable product, in a remote and unexplored region of the rainforest.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.623,
+        "director": "Werner Herzog",
+        "similarity": 0.831427115133405,
+        "curation_tier": "extended",
+        "match_reason": "peru, plantation, ambition"
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.828941604986285,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "a4eec4f7-ed75-4535-a9e6-64cb680d1d7d",
+        "tmdb_id": 162,
+        "title": "Edward Scissorhands",
+        "year": 1990,
+        "overview": "A small suburban town receives a visit from a castaway unfinished science experiment named Edward.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 105,
+        "vote_average": 7.7,
+        "director": "Tim Burton",
+        "similarity": 0.923008616900349,
+        "curation_tier": "core",
+        "match_reason": "Matches: small town"
+      },
+      {
+        "id": "8f3bc9fd-9304-4518-94c6-1adc82b5b56d",
+        "tmdb_id": 110160,
+        "title": "Laurence Anyways",
+        "year": 2012,
+        "overview": "The story of an impossible love between a woman named Fred and a transgender woman named Laurence who reveals her inner desire to become her true self.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 168,
+        "vote_average": 7.626,
+        "director": "Xavier Dolan",
+        "similarity": 0.82612097418567,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "041e28fa-f48d-4570-9dd0-e05f1bc1c9ca",
+        "tmdb_id": 508883,
+        "title": "The Boy and the Heron",
+        "year": 2023,
+        "overview": "While the Second World War rages, the teenage Mahito, haunted by his mother's tragic death, is relocated from Tokyo to the serene rural home of his new stepmother Natsuko, a woman who bears a striking resemblance to the boy's mother.  As he tries to adjust, this strange new world grows even stranger following the appearance of a persistent gray heron, who perplexes and bedevils Mahito, dubbing him the \"long-awaited one.\"",
+        "genres": [
+          "Animation",
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.402,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.918083172351124,
+        "curation_tier": "core",
+        "match_reason": "Matches: childhood, coming of age"
+      },
+      {
+        "id": "0479ff90-20b4-4c31-8e27-b4bf33a1a282",
+        "tmdb_id": 335,
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "overview": "As the railroad builders advance unstoppably through the Arizona desert on their way to the sea, Jill arrives in the small town of Flagstone with the intention of starting a new life.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 166,
+        "vote_average": 8.274,
+        "director": "Sergio Leone",
+        "similarity": 0.917831625413789,
+        "curation_tier": "core",
+        "match_reason": "Matches: small town"
+      },
+      {
+        "id": "4e034c19-a1c9-45e2-a1a1-d022a971f6f2",
+        "tmdb_id": 10867,
+        "title": "Malena",
+        "year": 2000,
+        "overview": "12-year-old Renato experiences three significant events on the same day: the beginning of the Second World War, getting a bike, and witnessing the arrival of the gorgeous Malèna. Through his eyes, we see the curse of beauty and loneliness of Malena, whose husband is presumed dead, and, through his soul, we see his love for her.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.468,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.916713716127414,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "6d9bcb13-0959-4f1e-a850-5c57ceb1e717",
+        "tmdb_id": 62320,
+        "title": "Home",
+        "year": 2009,
+        "overview": "In 200,000 years of existence, man has upset the balance on which the Earth had lived for 4 billion years. Global warming, resource depletion, species extinction: man has endangered his own home. But it is too late to be pessimistic: humanity has barely ten years left to reverse the trend, become aware of its excessive exploitation of the Earth's riches, and change its consumption pattern.",
+        "genres": [
+          "Documentary",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 95,
+        "vote_average": 7.814,
+        "director": "Yann Arthus-Bertrand",
+        "similarity": 0.913821841770926,
+        "curation_tier": "core",
+        "match_reason": "Matches: warm"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1158,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1158,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "childhood",
+        "nostalgia",
+        "coming of age",
+        "family",
+        "small town",
+        "memory",
+        "innocent",
+        "warm"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "945868a1ce67c7c7",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 3480,
+    "http_status": 200,
+    "reranked_ids": [
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "119a37e8-be86-43f1-9a15-eb13ac06c4a3",
+      "1b164a05-bb92-49ff-9b08-d3711fdf7edc",
+      "cc0baaa8-5c3f-4913-bde2-db8a110984bd",
+      "c63a51f3-231b-4712-a1b1-ea41844557a8",
+      "dd233972-4b0b-4daf-b7b5-48f274f30835",
+      "b594aac3-ca53-4995-9add-75ce9d15cefa",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

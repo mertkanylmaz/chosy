@@ -1,0 +1,598 @@
+{
+  "mood_id": "ft_tr_gerilim",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 1.15312533861221,
+        "curation_tier": "core",
+        "match_reason": "Matches: suspense, mystery"
+      },
+      {
+        "id": "7343961d-f70b-4361-888e-c77394fefd26",
+        "tmdb_id": 1368166,
+        "title": "The Housemaid",
+        "year": 2025,
+        "overview": "Trying to escape her past, Millie Calloway accepts a job as a live-in housemaid for the wealthy Nina and Andrew Winchester. But what begins as a dream job quickly unravels into something far more dangerous—a sexy, seductive game of secrets, scandal, and power.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 131,
+        "vote_average": 7.248,
+        "director": "Paul Feig",
+        "similarity": 1.14830716854789,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense, mystery, psychological"
+      },
+      {
+        "id": "1639b400-38f6-46c2-8677-877848d40631",
+        "tmdb_id": 411088,
+        "title": "The Invisible Guest",
+        "year": 2017,
+        "overview": "Barcelona, Spain. Adrián Doria, a young and successful businessman accused of murder, meets one night with Virginia Goodman, an expert interrogation lawyer, in order to devise a defense strategy.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 8.079,
+        "director": "Oriol Paulo",
+        "similarity": 1.13127208715476,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery, tension, psychological"
+      },
+      {
+        "id": "89c802ae-8a56-4389-a004-212eaee0f829",
+        "tmdb_id": 820,
+        "title": "JFK",
+        "year": 1991,
+        "overview": "Follows the investigation into the assassination of President John F. Kennedy led by New Orleans district attorney Jim Garrison.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "History"
+        ],
+        "runtime": 189,
+        "vote_average": 7.6,
+        "director": "Oliver Stone",
+        "similarity": 1.06202484715416,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller"
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 1.06191240105301,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "e3dafe24-b3c1-4ff5-bf0e-9d08e8e0773a",
+        "tmdb_id": 180,
+        "title": "Minority Report",
+        "year": 2002,
+        "overview": "John Anderton is a top 'Precrime' cop in the late-21st century, when technology can predict crimes before they're committed. But Anderton becomes the quarry when another investigator targets him for a murder charge.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 145,
+        "vote_average": 7.355,
+        "director": "Steven Spielberg",
+        "similarity": 0.918301132685383,
+        "curation_tier": "extended",
+        "match_reason": "Matches: thriller, suspense"
+      },
+      {
+        "id": "812d4cf3-cde8-4de1-be68-d84149f0a9c3",
+        "tmdb_id": 2832,
+        "title": "Identity",
+        "year": 2003,
+        "overview": "Complete strangers stranded at a remote desert motel during a raging storm soon find themselves the target of a deranged murderer. As their numbers thin out, the travelers begin to turn on each other, as each tries to figure out who the killer is.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 90,
+        "vote_average": 7.189,
+        "director": "James Mangold",
+        "similarity": 1.03839611404492,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, mystery, psychological"
+      },
+      {
+        "id": "c08e8fe5-512d-4d90-a1ae-bc9e50ebc074",
+        "tmdb_id": 530254,
+        "title": "The Witch: Part 1. The Subversion",
+        "year": 2018,
+        "overview": "Ja-yoon is a high school student who struggles with memory loss after she endured some unknown trauma during her childhood. While trying to uncover the truth, she is unwittingly dragged into a world of crime and finds herself on a journey that will awaken many secrets hidden deep within.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 126,
+        "vote_average": 7.917,
+        "director": "Park Hoon-jung",
+        "similarity": 0.91527502083756,
+        "curation_tier": "extended",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 1.03790240802051,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping"
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 1.0295566660245,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense, mystery, psychological"
+      },
+      {
+        "id": "2831f834-425b-4fc4-9fdc-3bc22575cadf",
+        "tmdb_id": 539,
+        "title": "Psycho",
+        "year": 1960,
+        "overview": "When larcenous real estate clerk Marion Crane goes on the lam with a wad of cash and hopes of starting a new life, she ends up at the notorious Bates Motel, where manager Norman Bates cares for his housebound mother.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 109,
+        "vote_average": 8.414,
+        "director": "Alfred Hitchcock",
+        "similarity": 1.02881997928412,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "30ee71fd-754e-4f12-9b0c-3a2fc895dd55",
+        "tmdb_id": 745,
+        "title": "The Sixth Sense",
+        "year": 1999,
+        "overview": "Following an unexpected tragedy, child psychologist Malcolm Crowe meets a nine year old boy named Cole Sear, who is hiding a dark secret.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "M. Night Shyamalan",
+        "similarity": 1.0120628604986,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense, psychological"
+      },
+      {
+        "id": "89e6dc5f-f316-4ea7-8fee-172022768fbe",
+        "tmdb_id": 10494,
+        "title": "Perfect Blue",
+        "year": 1998,
+        "overview": "Rising pop star Mima quits singing to pursue a career as an actress. After she takes up a role on a popular detective show, her handlers and collaborators begin turning up murdered. Harboring feelings of guilt and haunted by visions of her former self, Mima's reality and fantasy meld into a frenzied paranoia.",
+        "genres": [
+          "Animation",
+          "Thriller"
+        ],
+        "runtime": 82,
+        "vote_average": 8.301,
+        "director": "Satoshi Kon",
+        "similarity": 0.998343935814151,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense, psychological"
+      },
+      {
+        "id": "944fe979-432f-45fe-b0d9-86fad63973f7",
+        "tmdb_id": 2501,
+        "title": "The Bourne Identity",
+        "year": 2002,
+        "overview": "Wounded to the brink of death and suffering from amnesia, Jason Bourne is rescued at sea by a fisherman. With nothing to go on but a Swiss bank account number, he starts to reconstruct his life, but finds that many people he encounters want him dead. However, Bourne realizes that he has the combat and mental skills of a world-class spy—but who does he work for?",
+        "genres": [
+          "Action",
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 119,
+        "vote_average": 7.477,
+        "director": "Doug Liman",
+        "similarity": 0.996827961682186,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller"
+      },
+      {
+        "id": "2b078038-b6b8-44be-9dcd-4eafdddcf6a1",
+        "tmdb_id": 110415,
+        "title": "Snowpiercer",
+        "year": 2013,
+        "overview": "In a future where a failed global-warming experiment kills off most life on the planet, a class system evolves aboard the Snowpiercer; a train that travels around the globe via a perpetual-motion engine.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 6.908,
+        "director": "Bong Joon Ho",
+        "similarity": 0.989271425253881,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense"
+      },
+      {
+        "id": "798a524a-e52d-4b66-9812-f2cf2111a3da",
+        "tmdb_id": 210577,
+        "title": "Gone Girl",
+        "year": 2014,
+        "overview": "With his wife's disappearance having become the focus of an intense media circus, a man sees the spotlight turned on him when it's suspected that he may not be innocent.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 149,
+        "vote_average": 7.89,
+        "director": "David Fincher",
+        "similarity": 0.952755986620771,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9",
+        "tmdb_id": 44214,
+        "title": "Black Swan",
+        "year": 2010,
+        "overview": "A committed dancer struggles to maintain her sanity after winning the lead role in a production of Tchaikovsky's \"Swan Lake.\"",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Horror"
+        ],
+        "runtime": 108,
+        "vote_average": 7.686,
+        "director": "Darren Aronofsky",
+        "similarity": 0.952681673695442,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "16e53bb1-0c38-46c2-aa70-5bffa1849229",
+        "tmdb_id": 1902,
+        "title": "Open Your Eyes",
+        "year": 1997,
+        "overview": "Handsome 25-year-old Cesar had it all -- a successful career, expensive cars, a swank bachelor's pad, and an endless string of beautiful and willing women -- until he is thrown into a strange psychological mystery after a car accident scars his face and lands him in prison.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Science Fiction"
+        ],
+        "runtime": 117,
+        "vote_average": 7.447,
+        "director": "Alejandro Amenábar",
+        "similarity": 0.848983067936913,
+        "curation_tier": "extended",
+        "match_reason": "Matches: tension"
+      },
+      {
+        "id": "58d4c849-3b64-48b0-9c11-f023f23027ec",
+        "tmdb_id": 1592,
+        "title": "Primal Fear",
+        "year": 1996,
+        "overview": "Defense attorney Martin Vail takes on jobs for money and prestige rather than any sense of the greater good. His latest case involves an altar boy, accused of brutally murdering the archbishop of Chicago. Vail finds himself up against his ex-pupil and ex-lover, but as the case progresses and the Church's dark secrets are revealed, Vail finds that what appeared a simple case takes on a darker, more dangerous aspect.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 130,
+        "vote_average": 7.657,
+        "director": "Gregory Hoblit",
+        "similarity": 0.944008109648921,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, suspense"
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.94190635763588,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu"
+      },
+      {
+        "id": "ac6c2730-4e84-42fe-adee-2af938779580",
+        "tmdb_id": 546554,
+        "title": "Knives Out",
+        "year": 2019,
+        "overview": "When renowned crime novelist Harlan Thrombey is found dead at his estate just after his 85th birthday, the inquisitive and debonair Detective Benoit Blanc is mysteriously enlisted to investigate. From Harlan's dysfunctional family to his devoted staff, Blanc sifts through a web of red herrings and self-serving lies to uncover the truth behind Harlan's untimely death.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Mystery"
+        ],
+        "runtime": 131,
+        "vote_average": 7.84,
+        "director": "Rian Johnson",
+        "similarity": 0.940773708752345,
+        "curation_tier": "core",
+        "match_reason": "Matches: suspense, mystery"
+      },
+      {
+        "id": "043911e2-307b-4092-b4df-8f062b5df800",
+        "tmdb_id": 2503,
+        "title": "The Bourne Ultimatum",
+        "year": 2007,
+        "overview": "Bourne is brought out of hiding once again by reporter Simon Ross who is trying to unveil Operation Blackbriar, an upgrade to Project Treadstone, in a series of newspaper columns. Information from the reporter stirs a new set of memories, and Bourne must finally uncover his dark past while dodging The Company's best efforts to eradicate him.",
+        "genres": [
+          "Aksiyon",
+          "Drama",
+          "Gizem",
+          "Gerilim"
+        ],
+        "runtime": 115,
+        "vote_average": 7.435,
+        "director": "Paul Greengrass",
+        "similarity": 0.926295960713742,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "d66b7fe7-6d51-4669-95fe-91560ca73188",
+        "tmdb_id": 1084199,
+        "title": "Companion",
+        "year": 2025,
+        "overview": "During a weekend getaway at a secluded lakeside estate, a group of friends finds themselves entangled in a web of secrets, deception, and advanced technology. As tensions rise and loyalties are tested, they uncover unsettling truths about themselves and the world around them.",
+        "genres": [
+          "Horror",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 97,
+        "vote_average": 7,
+        "director": "Drew Hancock",
+        "similarity": 0.924979238061753,
+        "curation_tier": "core",
+        "match_reason": "android, artificial intelligence (a.i.), cabin"
+      },
+      {
+        "id": "e3025879-0be7-4e35-af6b-bae8d686f8d8",
+        "tmdb_id": 1538,
+        "title": "Collateral",
+        "year": 2004,
+        "overview": "Cab driver Max picks up a man who offers him $600 to drive him around. But the promise of easy money sours when Max realizes his fare is an assassin.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 120,
+        "vote_average": 7.2,
+        "director": "Michael Mann",
+        "similarity": 0.825791497317519,
+        "curation_tier": "extended",
+        "match_reason": "Matches: thriller, suspense"
+      },
+      {
+        "id": "14644090-ff36-4f77-8ec8-2327baa4163f",
+        "tmdb_id": 244786,
+        "title": "Whiplash",
+        "year": 2014,
+        "overview": "Under the direction of a ruthless instructor, a talented young drummer begins to pursue perfection at any cost, even his humanity.",
+        "genres": [
+          "Drama",
+          "Music",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 8.4,
+        "director": "Damien Chazelle",
+        "similarity": 0.919056648657265,
+        "curation_tier": "core",
+        "match_reason": "Matches: suspense, psychological"
+      },
+      {
+        "id": "c69ae96b-e7dc-4949-8eeb-fe0f875be784",
+        "tmdb_id": 954,
+        "title": "Mission: Impossible",
+        "year": 1996,
+        "overview": "When Ethan Hunt, the leader of a crack espionage team whose perilous operation has gone awry with no explanation, discovers that a mole has penetrated the CIA, he's surprised to learn that he's the prime suspect. To clear his name, Hunt now must ferret out the real double agent and, in the process, even the score.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 111,
+        "vote_average": 7.025,
+        "director": "Brian De Palma",
+        "similarity": 0.915920360856556,
+        "curation_tier": "core",
+        "match_reason": "mask, mission, london, england"
+      },
+      {
+        "id": "9f5a58f2-29df-4eb2-b658-99fcfba56217",
+        "tmdb_id": 10775,
+        "title": "Infernal Affairs",
+        "year": 2002,
+        "overview": "Chan Wing Yan, a young police officer, has been sent undercover as a mole in the local mafia. Lau Kin Ming, a young mafia member, infiltrates the police force. Years later, their older counterparts, Chen Wing Yan and Inspector Lau Kin Ming, respectively, race against time to expose the mole within their midst.",
+        "genres": [
+          "Drama",
+          "Action",
+          "Thriller",
+          "Crime",
+          "Mystery"
+        ],
+        "runtime": 101,
+        "vote_average": 7.8,
+        "director": "Alan Mak Siu-Fai",
+        "similarity": 0.915343024213278,
+        "curation_tier": "core",
+        "match_reason": "undercover agent, undercover, hong kong"
+      },
+      {
+        "id": "9ad3b731-bcd4-4c8b-91e9-ed65fd03ebf6",
+        "tmdb_id": 1359,
+        "title": "American Psycho",
+        "year": 2000,
+        "overview": "A wealthy New York investment banking executive hides his alternate psychopathic ego from his co-workers and friends as he escalates deeper into his illogical, gratuitous fantasies.",
+        "genres": [
+          "Thriller",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 102,
+        "vote_average": 7.406,
+        "director": "Mary Harron",
+        "similarity": 0.914865351319076,
+        "curation_tier": "core",
+        "match_reason": "Matches: thriller, psychological"
+      },
+      {
+        "id": "930b5f82-0ed8-4aa0-bf7c-3dc7aaaa7a20",
+        "tmdb_id": 24,
+        "title": "Kill Bill: Vol. 1",
+        "year": 2003,
+        "overview": "An assassin is shot by her ruthless employer, Bill, and other members of their assassination circle – but she lives to plot her vengeance.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 111,
+        "vote_average": 7.972,
+        "director": "Quentin Tarantino",
+        "similarity": 0.909022202105585,
+        "curation_tier": "core",
+        "match_reason": "martial arts, japan, kung fu"
+      },
+      {
+        "id": "39d09ad9-d132-4cb5-9199-0a4fe93aa4a2",
+        "tmdb_id": 687163,
+        "title": "Project Hail Mary",
+        "year": 2026,
+        "overview": "Science teacher Ryland Grace wakes up on a spaceship light years from home with no recollection of who he is or how he got there. As his memory returns, he begins to uncover his mission: solve the riddle of the mysterious substance causing the sun to die out. He must call on his scientific knowledge and unorthodox ideas to save everything on Earth from extinction.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 8.622,
+        "director": "Phil Lord",
+        "similarity": 0.908605143512512,
+        "curation_tier": "core",
+        "match_reason": "friendship, coma, based on novel or book"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1112,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1112,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "thriller",
+        "suspense",
+        "plot twist",
+        "mystery",
+        "unexpected ending",
+        "tension",
+        "psychological"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "72e064ef09b2051c",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2127,
+    "http_status": 200,
+    "reranked_ids": [
+      "90b19326-b1f7-491f-a4ac-c8fd387addad",
+      "1639b400-38f6-46c2-8677-877848d40631",
+      "798a524a-e52d-4b66-9812-f2cf2111a3da",
+      "785e8d55-410b-48c9-b895-0623159cac82",
+      "812d4cf3-cde8-4de1-be68-d84149f0a9c3",
+      "7343961d-f70b-4361-888e-c77394fefd26",
+      "58d4c849-3b64-48b0-9c11-f023f23027ec",
+      "16e53bb1-0c38-46c2-aa70-5bffa1849229"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

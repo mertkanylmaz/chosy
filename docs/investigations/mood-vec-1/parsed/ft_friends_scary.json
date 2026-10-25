@@ -1,0 +1,85 @@
+{
+  "mood_id": "ft_friends_scary",
+  "text": "Friends over, we want to be scared but have fun",
+  "ms": 4317,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.75,
+      "anger": 0.05,
+      "surprise": 0.8,
+      "disgust": 0.3,
+      "trust": 0.6,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "friends",
+    "rewatch_tolerance": true,
+    "profile_name": "Thrilled Together",
+    "profile_description": "A group seeking the adrenaline rush and communal scares of horror that doesn't take itself too seriously—fun frights designed for shared laughter and gasps.",
+    "search_keywords": [
+      "horror comedy",
+      "group survival",
+      "supernatural",
+      "jump scares",
+      "monster",
+      "suspense",
+      "creature feature"
+    ],
+    "search_id": "5d34dcd8-b987-406d-804a-0b21f2628fdb",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.75,
+      "surprise": 0.8,
+      "disgust": 0.3,
+      "anticipation": 0.85,
+      "trust": 0.6
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "friends",
+    "rewatch_tolerance": true
+  },
+  "search_id": "5d34dcd8-b987-406d-804a-0b21f2628fdb",
+  "search_keywords": [
+    "horror comedy",
+    "group survival",
+    "supernatural",
+    "jump scares",
+    "monster",
+    "suspense",
+    "creature feature"
+  ],
+  "limit": null,
+  "remaining": null
+}

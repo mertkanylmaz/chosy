@@ -1,0 +1,551 @@
+{
+  "mood_id": "ft_breakup",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "0479ff90-20b4-4c31-8e27-b4bf33a1a282",
+        "tmdb_id": 335,
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "overview": "As the railroad builders advance unstoppably through the Arizona desert on their way to the sea, Jill arrives in the small town of Flagstone with the intention of starting a new life.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 166,
+        "vote_average": 8.274,
+        "director": "Sergio Leone",
+        "similarity": 1.02151307477757,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss, love"
+      },
+      {
+        "id": "e541b56f-c164-4c79-bb1d-a6bf194ea120",
+        "tmdb_id": 897,
+        "title": "Aparajito",
+        "year": 1956,
+        "overview": "Apu and his family have moved away from the country to live in the bustling holy city of Benares. As he progresses from wide-eyed child to intellectually curious teenager, eventually studying in Kolkata, we witness his academic and moral education, as well as the growing complexity of his relationship with his mother.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.866,
+        "director": "Satyajit Ray",
+        "similarity": 0.884657381283458,
+        "curation_tier": "extended",
+        "match_reason": "Matches: loss, love"
+      },
+      {
+        "id": "fdb688d4-dc9e-4d3e-ac7c-c9e51a9b1690",
+        "tmdb_id": 505192,
+        "title": "Shoplifters",
+        "year": 2018,
+        "overview": "In the outskirts of Tokyo, a poor but close-knit group living on the fringes of society survives through shoplifting and odd jobs. When Osamu and his son take in a neglected young girl, their already fragile existence begins to unravel. As the family grows attached to her, buried secrets surface, forcing them to confront the true meaning of love, belonging, and what makes a family.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 120,
+        "vote_average": 7.836,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 0.979159470508762,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak, relationships"
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.976576768274454,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss, love"
+      },
+      {
+        "id": "fe579d97-13f1-4345-9f4f-c0aa6bf4d4d6",
+        "tmdb_id": 102,
+        "title": "Open Hearts",
+        "year": 2002,
+        "overview": "Cecilie and Joachim are about to get married when a freak car accident leaves Joachim disabled, throwing their lives into a spin. The driver of the other car, Marie, and her family don’t get off lightly, either. Her husband Niels works in the hospital where he meets Cecilie and falls madly in love with her.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 113,
+        "vote_average": 7.124,
+        "director": "Susanne Bier",
+        "similarity": 0.864177122291175,
+        "curation_tier": "extended",
+        "match_reason": "Matches: relationships, love"
+      },
+      {
+        "id": "7d7496cd-b07e-48d8-94d6-019bdc02ed6c",
+        "tmdb_id": 10747,
+        "title": "The Outlaw Josey Wales",
+        "year": 1976,
+        "overview": "After avenging his family's brutal murder, Wales is pursued by a pack of soldiers. He prefers to travel alone, but ragtag outcasts are drawn to him - and Wales can't bring himself to leave them unprotected.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 135,
+        "vote_average": 7.443,
+        "director": "Clint Eastwood",
+        "similarity": 0.86402555046028,
+        "curation_tier": "extended",
+        "match_reason": "Matches: loss, love"
+      },
+      {
+        "id": "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+        "tmdb_id": 152601,
+        "title": "Her",
+        "year": 2013,
+        "overview": "In the not so distant future, Theodore, a lonely writer, purchases a newly developed operating system designed to meet the user's every need. To Theodore's surprise, a romantic relationship develops between him and his operating system. This unconventional love story blends science fiction and romance in a sweet tale that explores the nature of love and the ways that technology isolates and connects us all.",
+        "genres": [
+          "Romance",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.838,
+        "director": "Spike Jonze",
+        "similarity": 0.969207024421753,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak, love"
+      },
+      {
+        "id": "f67e320d-8892-443a-9377-3ec81beb34c8",
+        "tmdb_id": 898,
+        "title": "Birdman of Alcatraz",
+        "year": 1962,
+        "overview": "After killing a prison guard, convict Robert Stroud faces life imprisonment in solitary confinement. Driven nearly mad by loneliness and despair, Stroud's life gains new meaning when he happens upon a helpless baby sparrow in the exercise yard and nurses it back to health. Despite having only a third grade education, Stroud goes on to become a renowned ornithologist and achieves a greater sense of freedom and purpose behind bars than most people find in the outside world.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "History"
+        ],
+        "runtime": 147,
+        "vote_average": 7.5,
+        "director": "John Frankenheimer",
+        "similarity": 0.861904230503803,
+        "curation_tier": "extended",
+        "match_reason": "prison, prisoner, rebel"
+      },
+      {
+        "id": "2885eada-1f72-40d4-be0e-04ef7eb5a81d",
+        "tmdb_id": 31413,
+        "title": "Innocence",
+        "year": 1997,
+        "overview": "Yusuf is released from prison after serving a ten year sentence. Because of unexpected problems at his sister’s house, he finds himself in a cheap hotel where he meets a man, a woman, and a child who will change his life in unexpected ways…",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.673,
+        "director": "Zeki Demirkubuz",
+        "similarity": 0.858928186351022,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+        "tmdb_id": 840430,
+        "title": "The Holdovers",
+        "year": 2023,
+        "overview": "A curmudgeonly instructor at a New England prep school is forced to remain on campus during Christmas break to babysit the handful of students with nowhere to go. Eventually, he forms an unlikely bond with one of them — a damaged, brainy troublemaker — and with the school’s head cook, who has just lost a son in Vietnam.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 133,
+        "vote_average": 7.646,
+        "director": "Alexander Payne",
+        "similarity": 0.959617825150203,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss, melancholy"
+      },
+      {
+        "id": "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+        "tmdb_id": 24238,
+        "title": "Mary and Max",
+        "year": 2009,
+        "overview": "A tale of friendship between two unlikely pen pals: Mary, a lonely, eight-year-old girl living in the suburbs of Melbourne, and Max, a forty-four-year old, severely obese man living in New York.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 92,
+        "vote_average": 7.873,
+        "director": "Adam Elliot",
+        "similarity": 0.947829186792566,
+        "curation_tier": "core",
+        "match_reason": "australia, chocolate, suicide attempt"
+      },
+      {
+        "id": "7a442851-aafe-4ade-a400-fba6f7f32a33",
+        "tmdb_id": 937278,
+        "title": "A Man Called Otto",
+        "year": 2022,
+        "overview": "When a lively young family moves in next door, grumpy widower Otto Anderson meets his match in a quick-witted, pregnant woman named Marisol, leading to an unlikely friendship that turns his world upside down.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.752,
+        "director": "Marc Forster",
+        "similarity": 0.947584251450458,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss, melancholy"
+      },
+      {
+        "id": "88abfc4e-e9e7-48dd-b817-1afbb584eb93",
+        "tmdb_id": 428493,
+        "title": "God's Own Country",
+        "year": 2017,
+        "overview": "A young farmer in rural Yorkshire numbs his daily frustrations with binge drinking and casual sex, until the arrival of a Romanian migrant worker.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 104,
+        "vote_average": 7.7,
+        "director": "Francis Lee",
+        "similarity": 0.838265028984543,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, love"
+      },
+      {
+        "id": "fbbc55d9-ac4c-4dc9-b46c-02fac0d0889a",
+        "tmdb_id": 5991,
+        "title": "The Last Laugh",
+        "year": 1924,
+        "overview": "An aging doorman, after being fired from his prestigious job at a luxurious hotel, is forced to face the scorn of his friends, neighbours and society.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.761,
+        "director": "F. W. Murnau",
+        "similarity": 0.83714671233101,
+        "curation_tier": "extended",
+        "match_reason": "Matches: loss"
+      },
+      {
+        "id": "2e3cac90-2ab1-4288-b0d5-072b02c0ca8f",
+        "tmdb_id": 21575,
+        "title": "A Prophet",
+        "year": 2009,
+        "overview": "Sentenced to six years in prison, Malik El Djebena is alone in the world and can neither read nor write. On his arrival at the prison, he seems younger and more brittle than the others detained there. At once he falls under the sway of a group of Corsicans who enforce their rule in the prison. As the 'missions' go by, he toughens himself and wins the confidence of the Corsican group.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 155,
+        "vote_average": 7.569,
+        "director": "Jacques Audiard",
+        "similarity": 0.930028138537468,
+        "curation_tier": "core",
+        "match_reason": "prison, muslim, gangster"
+      },
+      {
+        "id": "a4e670a1-36f5-4c68-b6f3-64fe778d2ba3",
+        "tmdb_id": 345,
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "overview": "After Dr. Bill Harford's wife, Alice, admits to having sexual fantasies about a man she met, Bill becomes obsessed with having a sexual encounter. He discovers an underground sexual group and attends one of their meetings -- and quickly discovers that he is in over his head.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 160,
+        "vote_average": 7.485,
+        "director": "Stanley Kubrick",
+        "similarity": 0.929688813225547,
+        "curation_tier": "core",
+        "match_reason": "Matches: relationships"
+      },
+      {
+        "id": "a4eec4f7-ed75-4535-a9e6-64cb680d1d7d",
+        "tmdb_id": 162,
+        "title": "Edward Scissorhands",
+        "year": 1990,
+        "overview": "A small suburban town receives a visit from a castaway unfinished science experiment named Edward.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 105,
+        "vote_average": 7.7,
+        "director": "Tim Burton",
+        "similarity": 0.92860297177218,
+        "curation_tier": "core",
+        "match_reason": "Matches: love"
+      },
+      {
+        "id": "2980ac01-1680-4ecb-8800-c2038f60b479",
+        "tmdb_id": 359784,
+        "title": "Maudie",
+        "year": 2016,
+        "overview": "Canadian folk artist Maud Lewis falls in love with a fishmonger while working for him as a live-in housekeeper.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 115,
+        "vote_average": 7.745,
+        "director": "Aisling Walsh",
+        "similarity": 0.826240712460329,
+        "curation_tier": "extended",
+        "match_reason": "Matches: heartbreak, romance"
+      },
+      {
+        "id": "3888d58d-fe3e-42a4-b470-d5bc7962b534",
+        "tmdb_id": 414906,
+        "title": "The Batman",
+        "year": 2022,
+        "overview": "In his second year of fighting crime, Batman uncovers corruption in Gotham City that connects to his own family while facing a serial killer known as the Riddler.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 177,
+        "vote_average": 7.661,
+        "director": "Matt Reeves",
+        "similarity": 0.916886168313494,
+        "curation_tier": "core",
+        "match_reason": "police, psychopath, secret identity"
+      },
+      {
+        "id": "bcad4a8f-256b-4ec8-9e11-0abe141a4261",
+        "tmdb_id": 785534,
+        "title": "Paper Lives",
+        "year": 2021,
+        "overview": "In the streets of Istanbul, ailing waste warehouse worker Mehmet takes a small boy under his wing and must soon confront his own traumatic childhood.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.955,
+        "director": "Can Ulkay",
+        "similarity": 0.823383061399051,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "b93686f9-6466-45c8-82ee-e3dbe0c33372",
+        "tmdb_id": 25188,
+        "title": "The Last Picture Show",
+        "year": 1971,
+        "overview": "High school seniors and best friends, Sonny and Duane, live in a dying Texas town. The handsome Duane is dating a local beauty, while Sonny is having an affair with the coach's wife. As graduation nears and both boys contemplate their futures, Duane eyes the army and Sonny takes over a local business. Each struggles to figure out if he can escape this dead-end town and build a better life somewhere else.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.626,
+        "director": "Peter Bogdanovich",
+        "similarity": 0.823217392336462,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love"
+      },
+      {
+        "id": "dbaea249-6333-42c8-9462-fe5f51cba11f",
+        "tmdb_id": 86829,
+        "title": "Inside Llewyn Davis",
+        "year": 2013,
+        "overview": "In Greenwich Village in the early 1960s, gifted but volatile folk musician Llewyn Davis struggles with money, relationships, and his uncertain future.",
+        "genres": [
+          "Drama",
+          "Music"
+        ],
+        "runtime": 105,
+        "vote_average": 7.182,
+        "director": "Ethan Coen",
+        "similarity": 0.915481772086902,
+        "curation_tier": "core",
+        "match_reason": "Matches: melancholy"
+      },
+      {
+        "id": "ebd28989-008d-4224-8213-a843e384c862",
+        "tmdb_id": 582,
+        "title": "The Lives of Others",
+        "year": 2006,
+        "overview": "In 1984 East Berlin, dedicated Stasi officer Gerd Wiesler begins spying on a famous playwright and his actress-lover Christa-Maria. Wiesler becomes unexpectedly sympathetic to the couple, and faces conflicting loyalties when his superior takes a liking to Christa-Maria.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 137,
+        "vote_average": 8.039,
+        "director": "Florian Henckel von Donnersmarck",
+        "similarity": 0.913414253282723,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak"
+      },
+      {
+        "id": "a2615b0b-4003-4a17-a4bf-583850418dd6",
+        "tmdb_id": 335578,
+        "title": "Land of Mine",
+        "year": 2015,
+        "overview": "In the days following the surrender of Germany in May 1945, a group of young German prisoners of war is handed over to the Danish authorities and subsequently sent to the West Coast, where they are ordered to remove the more than two million mines that the Germans had placed in the sand along the coast. With their bare hands, crawling around in the sand, the boys are forced to perform the dangerous work under the leadership of a Danish sergeant.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 100,
+        "vote_average": 7.808,
+        "director": "Martin Zandvliet",
+        "similarity": 0.816736469482296,
+        "curation_tier": "extended",
+        "match_reason": "beach, prisoner of war, post world war ii"
+      },
+      {
+        "id": "3f0a33d4-284c-48a9-aab1-90f0579ee8b1",
+        "tmdb_id": 11051,
+        "title": "The Last Temptation of Christ",
+        "year": 1988,
+        "overview": "Jesus, a humble Judean carpenter beginning to see that he is the son of God, is drawn into revolutionary action against the Roman occupiers by Judas -- despite his protestations that love, not violence, is the path to salvation. The burden of being the savior of mankind torments Jesus throughout his life, leading him to doubt.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 164,
+        "vote_average": 7.209,
+        "director": "Martin Scorsese",
+        "similarity": 0.815155954439453,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance"
+      },
+      {
+        "id": "366f7e6f-2ede-4a71-9b25-3bec3f56b504",
+        "tmdb_id": 33665,
+        "title": "Opening Night",
+        "year": 1977,
+        "overview": "Actress Myrtle Gordon is a functioning alcoholic who is a few days from the opening night of her latest play, concerning a woman distraught about aging. One night a car kills one of Myrtle's fans who is chasing her limousine in an attempt to get the star's attention. Myrtle internalizes the accident and goes on a spiritual quest, but fails to finds the answers she is after. As opening night inches closer and closer, fragile Myrtle must find a way to make the show go on.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 144,
+        "vote_average": 7.579,
+        "director": "John Cassavetes",
+        "similarity": 0.812332582156921,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love"
+      },
+      {
+        "id": "a0b74d68-cc8b-43d7-bc60-34e6db86534b",
+        "tmdb_id": 426426,
+        "title": "Roma",
+        "year": 2018,
+        "overview": "In 1970s Mexico City, two domestic workers help a mother of four while her husband is away for an extended period of time.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.622,
+        "director": "Alfonso Cuarón",
+        "similarity": 0.899916837879838,
+        "curation_tier": "core",
+        "match_reason": "Matches: relationships"
+      },
+      {
+        "id": "aa1715cf-f021-43bd-b012-7a68d5f88071",
+        "tmdb_id": 962,
+        "title": "The Gold Rush",
+        "year": 1925,
+        "overview": "A gold prospector in Alaska struggles to survive the elements and win the heart of a dance hall girl.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 95,
+        "vote_average": 7.968,
+        "director": "Charlie Chaplin",
+        "similarity": 0.810809796758611,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love"
+      },
+      {
+        "id": "009e8450-e186-4e16-99c4-506fd981cda3",
+        "tmdb_id": 334541,
+        "title": "Manchester by the Sea",
+        "year": 2016,
+        "overview": "After his older brother passes away, Lee Chandler is forced to return home to care for his 16-year-old nephew. There he is compelled to deal with a tragic past that separated him from his family and the community where he was born and raised.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 138,
+        "vote_average": 7.553,
+        "director": "Kenneth Lonergan",
+        "similarity": 0.893032551939367,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss, melancholy"
+      },
+      {
+        "id": "b72f066c-4511-4e94-8e00-dc240ffeaf51",
+        "tmdb_id": 31056,
+        "title": "A Short Film About Love",
+        "year": 1988,
+        "overview": "19-year-old Tomek whiles away his lonely life by spying on his opposite neighbour Magda through binoculars. She's an artist in her mid-thirties, and appears to have everything - not least a constant stream of men at her beck and call. But when the two finally meet, they discover that they have a lot more in common than appeared at first sight...",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 7.8,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.79977112287691,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1062,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1062,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "heartbreak",
+        "breakup",
+        "romance",
+        "loss",
+        "relationships",
+        "melancholy",
+        "healing",
+        "love"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

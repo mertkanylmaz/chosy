@@ -1,0 +1,582 @@
+{
+  "mood_id": "ft_tr_aile",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 1.08580564579834,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age"
+      },
+      {
+        "id": "a89bc750-72c7-4e85-8507-31e20542de3a",
+        "tmdb_id": 16859,
+        "title": "Kiki's Delivery Service",
+        "year": 1989,
+        "overview": "A young witch, on her mandatory year of independent life, finds fitting into a new community difficult while she supports herself by running an air courier service.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.836,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.924682232900058,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age, adventure, friendship"
+      },
+      {
+        "id": "e4e0de36-83ae-4615-8b35-d170453e5f3f",
+        "tmdb_id": 671,
+        "title": "Harry Potter and the Philosopher's Stone",
+        "year": 2001,
+        "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard—with a place waiting for him at the Hogwarts School of Witchcraft and Wizardry. As he learns to harness his newfound powers with the help of the school's kindly headmaster, Harry uncovers the truth about his parents' deaths—and about the villain who's to blame.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 152,
+        "vote_average": 7.899,
+        "director": "Chris Columbus",
+        "similarity": 1.04773074973008,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, adventure, friendship"
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 1.03263378121549,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.876933733910934,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "d3caadbd-ef1d-40d1-b660-f6b506c5816d",
+        "tmdb_id": 420814,
+        "title": "Christopher Robin",
+        "year": 2018,
+        "overview": "Christopher Robin, the boy who had countless adventures in the Hundred Acre Wood, has grown up and lost his way. Now it’s up to his spirited and loveable stuffed animals, Winnie The Pooh, Tigger, Piglet, and the rest of the gang, to rekindle their friendship and remind him of endless days of childlike wonder and make-believe, when doing nothing was the very best something.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.295,
+        "director": "Marc Forster",
+        "similarity": 0.867931441658159,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.972524470487883,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship"
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 0.95900989768776,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain"
+      },
+      {
+        "id": "ccc1d981-6160-4b14-86e8-a385d88391ce",
+        "tmdb_id": 1585,
+        "title": "It's a Wonderful Life",
+        "year": 1946,
+        "overview": "George Bailey has spent his entire life giving to the people of Bedford Falls.  All that prevents rich skinflint Mr. Potter from taking over the entire town is George's modest building and loan company.  But on Christmas Eve the business's $8,000 is lost and George's troubles begin.",
+        "genres": [
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 131,
+        "vote_average": 8.3,
+        "director": "Frank Capra",
+        "similarity": 0.958117351151878,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "3e1a4ba4-d150-4350-b186-9e2e96e1e7cd",
+        "tmdb_id": 315465,
+        "title": "The Boy and the Beast",
+        "year": 2015,
+        "overview": "Kyuta, a boy living in Shibuya, and Kumatetsu, a lonesome beast from Jutengai, an imaginary world. One day, Kyuta forays into the imaginary world and, as he's looking for his way back, meets Kumatetsu who becomes his spirit guide. That encounter leads them to many adventures.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 119,
+        "vote_average": 7.911,
+        "director": "Mamoru Hosoda",
+        "similarity": 0.849418940653931,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age, adventure"
+      },
+      {
+        "id": "33949e33-3a3d-4407-9871-48dba6a651ef",
+        "tmdb_id": 552524,
+        "title": "Lilo & Stitch",
+        "year": 2025,
+        "overview": "The wildly funny and touching story of a lonely Hawaiian girl and the fugitive alien who helps to mend her broken family.",
+        "genres": [
+          "Family",
+          "Science Fiction",
+          "Comedy"
+        ],
+        "runtime": 108,
+        "vote_average": 7.204,
+        "director": "Dean Fleischer Camp",
+        "similarity": 0.841063805151111,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family, friendship"
+      },
+      {
+        "id": "b6c7a045-1ce4-4454-b6f6-945e70b2f0da",
+        "tmdb_id": 1184918,
+        "title": "The Wild Robot",
+        "year": 2024,
+        "overview": "After a shipwreck, an intelligent robot called Roz is stranded on an uninhabited island. To survive the harsh environment, Roz bonds with the island's animals and cares for an orphaned baby goose.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 102,
+        "vote_average": 8.307,
+        "director": "Chris Sanders",
+        "similarity": 0.939238938821236,
+        "curation_tier": "core",
+        "match_reason": "island, parent child relationship, robot"
+      },
+      {
+        "id": "19b99cc2-4d8f-410b-a9bc-b2394b46ebd9",
+        "tmdb_id": 9325,
+        "title": "The Jungle Book",
+        "year": 1967,
+        "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 78,
+        "vote_average": 7.3,
+        "director": "Wolfgang Reitherman",
+        "similarity": 0.93917442944668,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age"
+      },
+      {
+        "id": "1870075c-5206-4214-bc41-b6044555f9ae",
+        "tmdb_id": 433,
+        "title": "Mary Poppins",
+        "year": 1964,
+        "overview": "In turn of the century London, a magical nanny employs music and adventure to help two neglected children become closer to their father.",
+        "genres": [
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 139,
+        "vote_average": 7.543,
+        "director": "Robert Stevenson",
+        "similarity": 0.828847808603963,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "27374ecc-7748-4ca6-9e98-1bf5a305e06c",
+        "tmdb_id": 10757,
+        "title": "Kabhi Khushi Kabhie Gham",
+        "year": 2001,
+        "overview": "Years after his father disowns his adopted brother for marrying a woman of lower social standing, a young man goes on a mission to reunite his family.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 209,
+        "vote_average": 7.659,
+        "director": "Karan Johar",
+        "similarity": 0.906436276543098,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "50e6ed63-5d0f-442d-b696-2706f49372dd",
+        "tmdb_id": 4348,
+        "title": "Pride & Prejudice",
+        "year": 2005,
+        "overview": "A story of love and life among the landed English gentry during the Georgian era. Mr. Bennet is a gentleman living in Hertfordshire with his overbearing wife and five daughters, but if he dies their house will be inherited by a distant cousin whom they have never met, so the family's future happiness and security is dependent on the daughters making good marriages.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 128,
+        "vote_average": 8.052,
+        "director": "Joe Wright",
+        "similarity": 0.904160222058976,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "d1877eba-ab49-423f-9255-f1d68cd78d6c",
+        "tmdb_id": 301528,
+        "title": "Toy Story 4",
+        "year": 2019,
+        "overview": "Woody has always been confident about his place in the world, devoted to taking care of his kid—whether that's Andy or Bonnie. But after Bonnie creates a reluctant new toy called \"Forky\", a road trip adventure alongside old and new friends challenges everything Woody believes about loyalty, purpose, and what it truly means to be a toy.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 100,
+        "vote_average": 7.467,
+        "director": "Josh Cooley",
+        "similarity": 0.900053368897567,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "20498895-6a00-4a45-af63-32f52e80d927",
+        "tmdb_id": 14,
+        "title": "American Beauty",
+        "year": 1999,
+        "overview": "Lester Burnham, a depressed suburban father in a mid-life crisis, decides to turn his hectic life around after developing an infatuation with his daughter's attractive friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8,
+        "director": "Sam Mendes",
+        "similarity": 0.900035751133439,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age"
+      },
+      {
+        "id": "d296d000-6276-4650-8e6b-bd28cbf587a5",
+        "tmdb_id": 404,
+        "title": "The Straight Story",
+        "year": 1999,
+        "overview": "Retired farmer and widower Alvin Straight learns one day that his distant brother Lyle has suffered a stroke and may not recover. Alvin is determined to make things right with Lyle while he still can, but his brother lives in Wisconsin, while Alvin is stuck in Iowa with no car and no driver's license. He then has the idea of making the trip on his old lawnmower, thus beginning a picturesque and at times deeply spiritual odyssey.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.7,
+        "director": "David Lynch",
+        "similarity": 0.887929539182308,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.800668697869748,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "18035914-aa4e-4880-8213-703a2373e208",
+        "tmdb_id": 122906,
+        "title": "About Time",
+        "year": 2013,
+        "overview": "The night after another unsatisfactory New Year's party, Tim's father reveals to him that the men in their family have the ability to travel through time. They can't change history, but they can change what happens and has happened in their own lives. Thus begins the start of a lesson in learning to appreciate life itself as it is, as it comes, and most importantly, the people living alongside us.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Fantasy"
+        ],
+        "runtime": 123,
+        "vote_average": 7.906,
+        "director": "Richard Curtis",
+        "similarity": 0.886331375195576,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+        "tmdb_id": 823219,
+        "title": "Flow",
+        "year": 2024,
+        "overview": "A solitary cat, displaced by a great flood, finds refuge on a boat with various species and must navigate the challenges of adapting to a transformed world together.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 85,
+        "vote_average": 8.085,
+        "director": "Gints Zilbalodis",
+        "similarity": 0.883068533011743,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure"
+      },
+      {
+        "id": "ac4d3ac4-0224-4937-aee0-803602381e38",
+        "tmdb_id": 116149,
+        "title": "Paddington",
+        "year": 2014,
+        "overview": "A young Peruvian bear travels to London in search of a home. Finding himself lost and alone at Paddington Station, he meets the kindly Brown family, who offer him a temporary haven.",
+        "genres": [
+          "Comedy",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 95,
+        "vote_average": 7.126,
+        "director": "Paul King",
+        "similarity": 0.797528802774653,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "5f906203-8e6e-4029-bec9-e4fcb2132f0f",
+        "tmdb_id": 15121,
+        "title": "The Sound of Music",
+        "year": 1965,
+        "overview": "In the years before World War II, a tomboyish postulant at an Austrian abbey is hired as a governess in the home of a widowed naval captain with seven children and brings a new love of life and music into the home.",
+        "genres": [
+          "Drama",
+          "Family",
+          "Music",
+          "Romance"
+        ],
+        "runtime": 174,
+        "vote_average": 7.732,
+        "director": "Robert Wise",
+        "similarity": 0.87767913549884,
+        "curation_tier": "core",
+        "match_reason": "resistance, world war ii, musical"
+      },
+      {
+        "id": "3a75b8b2-d7ca-44dc-a2f0-7a152bfb2d6c",
+        "tmdb_id": 34152,
+        "title": "Crooklyn",
+        "year": 1994,
+        "overview": "From Spike Lee comes this vibrant semi-autobiographical portrait of a school-teacher, her stubborn jazz-musician husband and their five kids living in '70s Brooklyn.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 6.8,
+        "director": "Spike Lee",
+        "similarity": 0.787588772139126,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "b720a08f-1fb8-43b6-9e1a-a1faf3223d99",
+        "tmdb_id": 369557,
+        "title": "Sing Street",
+        "year": 2016,
+        "overview": "A boy growing up in Dublin during the 1980s escapes his strained family life by starting a band to impress the mysterious girl he likes.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Music",
+          "Comedy"
+        ],
+        "runtime": 105,
+        "vote_average": 7.859,
+        "director": "John Carney",
+        "similarity": 0.86818372876518,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship"
+      },
+      {
+        "id": "34d989b0-6e83-4507-af1d-961240dd21c0",
+        "tmdb_id": 126319,
+        "title": "Ernest & Celestine",
+        "year": 2012,
+        "overview": "Celestine is a little mouse trying to avoid a dental career while Ernest is a big bear craving an artistic outlet. When Celestine meets Ernest, they overcome their natural enmity by forging a life of crime together.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.731,
+        "director": "Stéphane Aubier",
+        "similarity": 0.786227574692963,
+        "curation_tier": "extended",
+        "match_reason": "Matches: friendship"
+      },
+      {
+        "id": "72af140a-c8ec-4fea-bb24-082e3184155d",
+        "tmdb_id": 334533,
+        "title": "Captain Fantastic",
+        "year": 2016,
+        "overview": "Deep in the forests of the Pacific Northwest, a father devoted to raising his six kids with a rigorous physical and intellectual education is forced to leave his paradise and enter the world, beginning a journey that challenges his idea of what it means to be a parent.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 7.889,
+        "director": "Matt Ross",
+        "similarity": 0.86189957189769,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      },
+      {
+        "id": "03b083bb-acb3-44ac-ad70-bb1a8ed70b9c",
+        "tmdb_id": 252,
+        "title": "Willy Wonka & the Chocolate Factory",
+        "year": 1971,
+        "overview": "When eccentric candy man Willy Wonka promises a lifetime supply of sweets and a tour of his chocolate factory to five lucky kids, penniless Charlie Bucket seeks the golden ticket that will make him a winner.",
+        "genres": [
+          "Family",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 100,
+        "vote_average": 7.484,
+        "director": "Mel Stuart",
+        "similarity": 0.860653745086934,
+        "curation_tier": "core",
+        "match_reason": "factory worker, factory, based on novel or book"
+      },
+      {
+        "id": "1b54c68b-5d23-4412-8830-3cc289188fbe",
+        "tmdb_id": 420818,
+        "title": "The Lion King",
+        "year": 2019,
+        "overview": "Simba idolizes his father, King Mufasa, and takes to heart his own royal destiny. But not everyone in the kingdom celebrates the new cub's arrival. Scar, Mufasa's brother—and former heir to the throne—has plans of his own. The battle for Pride Rock is ravaged with betrayal, tragedy and drama, ultimately resulting in Simba's exile. With help from a curious pair of newfound friends, Simba will have to figure out how to grow up and take back what is rightfully his.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Family",
+          "Animation"
+        ],
+        "runtime": 118,
+        "vote_average": 7.098,
+        "director": "Jon Favreau",
+        "similarity": 0.857513305961053,
+        "curation_tier": "core",
+        "match_reason": "Matches: family"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1013,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1013,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "family",
+        "heartwarming",
+        "feel-good",
+        "coming of age",
+        "adventure",
+        "friendship",
+        "humor"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

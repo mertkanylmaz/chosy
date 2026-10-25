@@ -1,0 +1,93 @@
+{
+  "mood_id": "ft_tr_hafif",
+  "text": "Hafif bir şey olsun, kafa yormayayım",
+  "ms": 4248,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "trust": 0.65,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "heavy drama",
+      "philosophical complexity",
+      "intense conflict"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Hafif Rahatlama",
+    "profile_description": "Keyifli ve kolay bir film deneyimi arayan birisi için — hiç düşünmeye gerek yok, sadece eğlenip rahatlama zamanı.",
+    "search_keywords": [
+      "comedy",
+      "feel-good",
+      "lighthearted",
+      "humor",
+      "easy watching",
+      "entertainment",
+      "uplifting"
+    ],
+    "search_id": "aafbc857-82b6-4e82-a15b-9fb1b97de6a8",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "anticipation": 0.3,
+      "trust": 0.65
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "heavy drama",
+      "philosophical complexity",
+      "intense conflict"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "aafbc857-82b6-4e82-a15b-9fb1b97de6a8",
+  "search_keywords": [
+    "comedy",
+    "feel-good",
+    "lighthearted",
+    "humor",
+    "easy watching",
+    "entertainment",
+    "uplifting"
+  ],
+  "limit": null,
+  "remaining": null
+}
