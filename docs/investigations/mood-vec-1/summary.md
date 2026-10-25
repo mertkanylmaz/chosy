@@ -182,3 +182,5 @@ Not: `imdb_votes` kolonu kirlidir (OMDb ve TMDb karışık); `0` değeri NULL sa
 | V2 (ms) | 2788 | 3997 | 3008 |
 | V0 − V2 (ms, mood başına) | -4 | 546 | -85 |
 
+
+> **V1 rerank koşusu iptal (CTO, 25 Eki):** RPC sonucu yeterli — era sıfırlanınca ilk 4'te 1970 öncesi film sayısı 5'ten 20'ye çıktı; era varsayılanı korunuyor.
