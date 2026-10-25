@@ -346,10 +346,22 @@ GRANT EXECUTE ON FUNCTION public.finish_mood_search(uuid, timestamptz, text, jso
 
 -- ----------------------------------------------------------------------------
 -- İstemci UPDATE yetkisi: tüm kolonlar → üç kolon (recommendations.ts yalnız bunları yazar).
--- RLS UPDATE policy'si (032) DEĞİŞMEZ; SELECT/INSERT yetkileri DEĞİŞMEZ.
+-- RLS UPDATE policy'si (032) DEĞİŞMEZ; SELECT yetkisi DEĞİŞMEZ.
 -- ----------------------------------------------------------------------------
 REVOKE UPDATE ON public.mood_searches FROM anon, authenticated;
 GRANT UPDATE (recommended_film_ids, rpc_version, error_code) ON public.mood_searches TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- İstemci INSERT yetkisi (migration-guard K-1): tüm kolonlar → yalnız user_id.
+-- Aksi halde istemci status/claimed_at/quota_consumed ile bayat bir `pending` satır ekleyip
+-- kota düşmeden ücretli LLM çağrısı alabilir (claim_mood_search "serbest yeniden sahiplenme").
+-- Doğrulama (25 Eki): 2.1.0 / 2.1.1 / 2.1.2 / 2.1.3 istemcileri mood_searches'e YALNIZ
+--   insert({ user_id })  — services/quotaEngine.ts recordMoodSearch
+--   update({ recommended_film_ids, rpc_version [, error_code] }).eq('id').select('id') — services/recommendations.ts
+-- yazar; upsert yok → yeni yetkiler eski istemcilerin yazdığı kolonların üst kümesidir.
+-- ----------------------------------------------------------------------------
+REVOKE INSERT ON public.mood_searches FROM anon, authenticated;
+GRANT INSERT (user_id) ON public.mood_searches TO authenticated;
 
 -- ===================== 139 TAM METNI (bitis) =====================
 
@@ -693,8 +705,10 @@ BEGIN
   END;
   IF bad = '' AND NOT v_anon AND v_upd_status AND v_upd_ok
      AND has_table_privilege('authenticated', 'public.mood_searches', 'SELECT')
-     AND has_table_privilege('authenticated', 'public.mood_searches', 'INSERT') THEN
-    INSERT INTO dryrun_results VALUES ('T11', 'PASS', 'UPDATE 3 kolon; status UPDATE 42501; anon yok; SELECT/INSERT duruyor');
+     AND has_column_privilege('authenticated', 'public.mood_searches', 'user_id', 'INSERT')
+     AND NOT has_column_privilege('authenticated', 'public.mood_searches', 'status', 'INSERT')
+     AND NOT has_column_privilege('anon', 'public.mood_searches', 'user_id', 'INSERT') THEN
+    INSERT INTO dryrun_results VALUES ('T11', 'PASS', 'UPDATE 3 kolon; status UPDATE 42501; anon yok; SELECT duruyor; INSERT yalniz user_id (anon yok)');
   ELSE
     INSERT INTO dryrun_results VALUES ('T11', 'FAIL', 'bad=' || bad || ' anon=' || v_anon || ' upd_status_denied=' || v_upd_status || ' upd_ok=' || v_upd_ok);
   END IF;
@@ -773,29 +787,60 @@ EXCEPTION WHEN OTHERS THEN
 END
 $t$;
 
--- -- K1_open (guard K-1, ACIK): istemci INSERT yetkisi acikken status/claimed_at/quota_consumed yazabilir.
--- INSERT daraltmasi ONAYLANANA KADAR bilgi satiri (INFO, FAIL sayilmaz); daraltma uygulaninca PASS beklenir.
+-- -- T15 (guard K-1): istemci yetkileri — eski istemci sekilleri GECMELI, yeni kolonlar yazilamamali.
+-- Eski istemci (2.1.0-2.1.3): insert({user_id}); update({recommended_film_ids, rpc_version[, error_code]}).eq('id').select('id')
 DO $t$
 DECLARE
-  u uuid := current_setting('dryrun.u3')::uuid; v_ok boolean := false;
+  u uuid := current_setting('dryrun.u3')::uuid;
+  v_id uuid; v_n int; v_fail text := '';
+  c text;
 BEGIN
+  SET LOCAL ROLE authenticated;
+  -- eski INSERT sekli
   BEGIN
-    SET LOCAL ROLE authenticated;
-    INSERT INTO public.mood_searches (user_id, client_search_id, status, claimed_at, quota_consumed)
-      VALUES (u, gen_random_uuid(), 'pending', '2000-01-01', true);
-    RESET ROLE;
-    v_ok := true;
-  EXCEPTION WHEN insufficient_privilege THEN
-    RESET ROLE;
+    INSERT INTO public.mood_searches (user_id) VALUES (u) RETURNING id INTO v_id;
+  EXCEPTION WHEN OTHERS THEN
+    v_fail := v_fail || ' old_insert:' || SQLERRM;
   END;
-  IF v_ok THEN
-    INSERT INTO dryrun_results VALUES ('K1_open', 'INFO', 'ACIK: istemci status/claimed_at/quota_consumed ile satir ekleyebiliyor (INSERT daraltmasi onay bekliyor)');
+  -- eski UPDATE sekilleri (2 ve 3 kolon, WHERE id)
+  BEGIN
+    UPDATE public.mood_searches SET recommended_film_ids = ARRAY[]::uuid[], rpc_version = 'v1' WHERE id = v_id;
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    IF v_n <> 1 THEN v_fail := v_fail || ' old_update2_rows=' || v_n; END IF;
+    UPDATE public.mood_searches SET recommended_film_ids = ARRAY[]::uuid[], rpc_version = 'v1', error_code = 'X' WHERE id = v_id;
+    GET DIAGNOSTICS v_n = ROW_COUNT;
+    IF v_n <> 1 THEN v_fail := v_fail || ' old_update3_rows=' || v_n; END IF;
+  EXCEPTION WHEN OTHERS THEN
+    v_fail := v_fail || ' old_update:' || SQLERRM;
+  END;
+  -- yeni kolonlarla INSERT reddedilmeli
+  FOREACH c IN ARRAY ARRAY['client_search_id','status','claimed_at','quota_consumed','claim_attempts'] LOOP
+    BEGIN
+      EXECUTE format('INSERT INTO public.mood_searches (user_id, %I) VALUES ($1, %s)', c,
+        CASE c WHEN 'client_search_id' THEN 'gen_random_uuid()' WHEN 'status' THEN '''pending''' WHEN 'claimed_at' THEN 'now()' WHEN 'quota_consumed' THEN 'true' ELSE '0' END) USING u;
+      v_fail := v_fail || ' insert_' || c || '_ALLOWED';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+    END;
+  END LOOP;
+  -- yeni kolonlarla UPDATE reddedilmeli
+  FOREACH c IN ARRAY ARRAY['client_search_id','status','claimed_at','quota_consumed','claim_attempts','user_id'] LOOP
+    BEGIN
+      EXECUTE format('UPDATE public.mood_searches SET %I = %s WHERE id = $1', c,
+        CASE c WHEN 'client_search_id' THEN 'gen_random_uuid()' WHEN 'status' THEN '''completed''' WHEN 'claimed_at' THEN 'now()' WHEN 'quota_consumed' THEN 'false' WHEN 'user_id' THEN '$1' ELSE '0' END) USING v_id;
+      v_fail := v_fail || ' update_' || c || '_ALLOWED';
+    EXCEPTION WHEN insufficient_privilege THEN NULL;
+              WHEN datatype_mismatch OR undefined_column THEN NULL;
+    END;
+  END LOOP;
+  RESET ROLE;
+  IF v_fail = '' THEN
+    INSERT INTO dryrun_results VALUES ('T15', 'PASS', 'eski istemci insert/update sekilleri gecti; status/claimed_at/quota_consumed/claim_attempts/client_search_id/user_id istemciden yazilamaz');
   ELSE
-    INSERT INTO dryrun_results VALUES ('K1_open', 'PASS', 'istemci bu kolonlarla INSERT yapamiyor');
+    INSERT INTO dryrun_results VALUES ('T15', 'FAIL', v_fail);
   END IF;
 EXCEPTION WHEN OTHERS THEN
   RESET ROLE;
-  INSERT INTO dryrun_results VALUES ('K1_open', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
+  INSERT INTO dryrun_results VALUES ('T15', 'FAIL', 'beklenmeyen hata: ' || SQLERRM || ' (' || SQLSTATE || ')');
 END
 $t$;
 

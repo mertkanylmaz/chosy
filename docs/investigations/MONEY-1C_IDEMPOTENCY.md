@@ -244,7 +244,7 @@ Eşik önerisi (karar sizin): `parse_failed_pct` > %3 iki gün üst üste → in
 | Kontrol | Sonuç |
 |---|---|
 | Migration 139 gerçek Postgres motoruna (pglite) uygulanır, 115/136 fonksiyonlarıyla | geçti |
-| `supabase/tests/139_dryrun.sql` (14 test + K1_open bilgi satırı: 10 ardışık claim, replay, bayat, quota_denied→yeniden sahiplen, zombi finish, iade/PARSE_FAILED, NULL satırlar, 42501, sütun yetkisi, katalog) | 14/14 geçti — **stub şemada**, canlı DB'de koşmadı |
+| `supabase/tests/139_dryrun.sql` (15 test; T15 = K-1 istemci yetkileri, eski istemci insert/update şekilleri: 10 ardışık claim, replay, bayat, quota_denied→yeniden sahiplen, zombi finish, iade/PARSE_FAILED, NULL satırlar, 42501, sütun yetkisi, katalog) | 15/15 geçti — **stub şemada**, canlı DB'de koşmadı |
 | `npm run test:mood-claim` (saf yardımcılar + index.ts sözleşmesi) | 9/9 geçti |
 | `npm run test:mood-claim-concurrency` (10 paralel, gerçek) | yazıldı, **koşmadı** (Docker yok); env yoksa ATLANIR |
 | `npm run typecheck:functions` | 29 hata (baseline 32), parse-mood / _shared altında yeni hata yok |
@@ -265,7 +265,7 @@ Ters sıra (önce fonksiyon) çalışmaz: claim RPC yok → fail-closed 503, ama
 
 | Bulgu | Durum |
 |---|---|
-| **K-1 KRİTİK** — istemci INSERT yetkisi açık: kullanıcı `status='pending', claimed_at='2000-01-01', quota_consumed=true` ile satır ekleyip parse-mood'u çağırırsa bayat-pending yolu hakkı TÜKETMEDEN ücretli LLM çağırır (ve LLM 5xx'te var olmayan hakkı iade ettirir). §11.3'teki "kazanç yok" değerlendirmem yalnız `completed`/replay yolunu kapsıyordu; **yanlıştı**. | **AÇIK — onay bekliyor.** Öneri: `REVOKE INSERT ... FROM anon, authenticated; GRANT INSERT (user_id) ... TO authenticated` (istemci yalnız `user_id` ekliyor: `services/quotaEngine.ts:464`). Dry-run `K1_open` satırı bunu gösterir. **Bu çözüm uygulanmadan 139 deploy EDİLMEMELİ.** |
+| **K-1 KRİTİK** — istemci INSERT yetkisi açık: kullanıcı `status='pending', claimed_at='2000-01-01', quota_consumed=true` ile satır ekleyip parse-mood'u çağırırsa bayat-pending yolu hakkı TÜKETMEDEN ücretli LLM çağırır (ve LLM 5xx'te var olmayan hakkı iade ettirir). §11.3'teki "kazanç yok" değerlendirmem yalnız `completed`/replay yolunu kapsıyordu; **yanlıştı**. | **KAPANDI (26 Eki onay, 139'a işlendi).** Ön koşul doğrulaması: 2.1.0/2.1.1/2.1.2/2.1.3 istemcileri `mood_searches`'e yalnız `insert({user_id})` ve `update({recommended_film_ids, rpc_version[, error_code]}).eq('id').select('id')` yazar, **upsert yok** → yeni yetkiler üst küme. Dry-run T15 eski şekilleri geçirir, yeni kolon yazımını reddeder. Uygulanan: `REVOKE INSERT ... FROM anon, authenticated; GRANT INSERT (user_id) ... TO authenticated` (istemci yalnız `user_id` ekliyor: `services/quotaEngine.ts:464`). |
 | O-1 — iade sahiplik doğrulamasından önce, çift iade mümkün | **Düzeltildi.** İade `finish_mood_search` içinde, sahiplik doğrulanınca aynı işlemde; zombi iade edemez (T13). `p_refunded` → `p_refund`, dönüş jsonb `{finished, refunded}`. |
 | O-2 — `quota_consumed` hak sayısı değil | **Belgelendi** (kolon COMMENT'i): "en son deneme hak tutuyor mu". Karar mantığı bayrağa tek başına dayanmıyor. |
 | D-1..D-3 | D-1 kabul. D-2 (farklı metinle aynı id → eski profil): istemci her yeni aramada yeni id üretir, (g) bunu yapar; sunucu karşılaştırması eklenmedi. D-3 K-1 ile kapanır. |

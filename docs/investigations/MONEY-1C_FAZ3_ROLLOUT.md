@@ -20,7 +20,7 @@ Faz 3 (ücretsiz hak 3 → 1, Mood Search kilidi herkese) bir tarihe bağlı de�
 ## 1. Ön koşullar (hepsi yeşil olmadan Faz 3 konuşulmaz)
 
 1. `MONEY-1C_CIHAZ_TEST.md` bölüm A (bayrak kapalı regresyon) ve B (açık) cihazda geçmiş.
-2. **migration-guard K-1 çözülmüş** (`mood_searches` INSERT yetkisi daraltması onaylı ve 139'a işlenmiş) — bkz. `MONEY-1C_IDEMPOTENCY.md` §14.
+2. ~~migration-guard K-1~~ **ÇÖZÜLDÜ** (INSERT yetkisi yalnız `user_id`, 139'a işlendi; 26 Eki) — bkz. `MONEY-1C_IDEMPOTENCY.md` §14.
 3. 139 dry-run **canlı şemaya karşı** (onayla) ALL PASS; gerçek eşzamanlılık testi yerel `supabase start` ile geçmiş (Docker gerekir).
 4. `pg_dump` yedeği: `public.mood_searches`, `public.user_daily_quotas` + `\dp public.mood_searches` çıktısı.
 5. Sentry/PostHog alarm panelleri hazır (bölüm 5).

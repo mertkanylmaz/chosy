@@ -332,7 +332,19 @@ GRANT EXECUTE ON FUNCTION public.finish_mood_search(uuid, timestamptz, text, jso
 
 -- ----------------------------------------------------------------------------
 -- İstemci UPDATE yetkisi: tüm kolonlar → üç kolon (recommendations.ts yalnız bunları yazar).
--- RLS UPDATE policy'si (032) DEĞİŞMEZ; SELECT/INSERT yetkileri DEĞİŞMEZ.
+-- RLS UPDATE policy'si (032) DEĞİŞMEZ; SELECT yetkisi DEĞİŞMEZ.
 -- ----------------------------------------------------------------------------
 REVOKE UPDATE ON public.mood_searches FROM anon, authenticated;
 GRANT UPDATE (recommended_film_ids, rpc_version, error_code) ON public.mood_searches TO authenticated;
+
+-- ----------------------------------------------------------------------------
+-- İstemci INSERT yetkisi (migration-guard K-1): tüm kolonlar → yalnız user_id.
+-- Aksi halde istemci status/claimed_at/quota_consumed ile bayat bir `pending` satır ekleyip
+-- kota düşmeden ücretli LLM çağrısı alabilir (claim_mood_search "serbest yeniden sahiplenme").
+-- Doğrulama (25 Eki): 2.1.0 / 2.1.1 / 2.1.2 / 2.1.3 istemcileri mood_searches'e YALNIZ
+--   insert({ user_id })  — services/quotaEngine.ts recordMoodSearch
+--   update({ recommended_film_ids, rpc_version [, error_code] }).eq('id').select('id') — services/recommendations.ts
+-- yazar; upsert yok → yeni yetkiler eski istemcilerin yazdığı kolonların üst kümesidir.
+-- ----------------------------------------------------------------------------
+REVOKE INSERT ON public.mood_searches FROM anon, authenticated;
+GRANT INSERT (user_id) ON public.mood_searches TO authenticated;
