@@ -77,3 +77,6 @@ hook-last.log
 
 # MOOD-VEC-1: kalici anonim eval oturumu (refresh token) repoya girmez
 scripts/mood-eval/.session.json
+
+# MOOD-VEC-2: IMDb resmi veri dosyasi (yerel indirme, repoya girmez)
+data/imdb/
