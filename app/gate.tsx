@@ -276,8 +276,18 @@ export default function Gate() {
           return;
         }
 
-        // public.users satırını garantile
-        await getAppUserId();
+        // public.users satırını garantile — gate'i BLOKE ETMEZ (COLD-START-3).
+        // Sonuç kullanılmıyordu; yan etkisi (satır açma + identityCache ısıtma)
+        // arka planda sürer. Sonraki getAppUserId() çağrıları (aşağıdaki DB
+        // kontrolü dahil) aynı 'get' tek-uçuşunu paylaşır, ikinci istek atmaz.
+        // Not: boot_ready_ms bu değişiklikten sonra gate'i erken geçer; önceki
+        // sürümlerle karşılaştırılırken bu kayma hesaba katılmalı.
+        void getAppUserId().catch((err: unknown) => {
+          Sentry.captureException(err, {
+            level: 'warning',
+            tags: { flow: 'gate', error_code: 'GATE_APP_USER_WARM_FAILED' },
+          });
+        });
 
         // Onboarding kontrolü — AsyncStorage cache + DB source of truth
         const userId = session.user.id;

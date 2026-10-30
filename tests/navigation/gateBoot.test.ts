@@ -165,6 +165,36 @@ Deno.test('gate.tsx: boş catch yok, catch dalı failGate çağırıyor, sessiz 
   assert(/catch \(err\) \{[\s\S]{0,400}failGate\('gate_decision_error', err\)/.test(src))
 })
 
+Deno.test('COLD-START-3: gate getAppUserId\'yi beklemez, hata Sentry\'ye gider', async () => {
+  const src = await Deno.readTextFile(new URL('../../app/gate.tsx', import.meta.url))
+  // Karar akışında `await getAppUserId()` yalnız AsyncStorage-miss DB kontrolünde kalır
+  // (appUserId'yi kullanan ikinci çağrı); ilk çağrı beklenmez.
+  const awaited = src.match(/await getAppUserId\(\)/g) ?? []
+  assertEquals(awaited.length, 1, 'yalnız onboarding DB kontrolündeki çağrı beklenir')
+  assert(/const appUserId = await getAppUserId\(\)/.test(src), 'kalan await sonucu kullanan çağrı olmalı')
+
+  const m = src.match(/void getAppUserId\(\)\.catch\(\(err: unknown\) => \{([\s\S]*?)\n\s*\}\);/)
+  assert(m, 'fire-and-forget çağrı void getAppUserId().catch(...) biçiminde olmalı')
+  assert(/Sentry\.captureException\(err/.test(m[1]), 'catch hatayı Sentry\'ye göndermeli (yutmamalı)')
+})
+
+Deno.test('COLD-START-3: aynı authUid+mode için uçuştaki çözüm paylaşılır (fire-and-forget ikinci istek atmaz)', async () => {
+  const { createIdentityCache } = await import('../../utils/identityCache.ts')
+  const cache = createIdentityCache()
+  let fetches = 0
+  const d = deferred<string | null>()
+  const fetcher = () => {
+    fetches++
+    return d.promise
+  }
+  const first = cache.resolve('auth-1', 'get', fetcher) // gate: beklenmeyen çağrı
+  const second = cache.resolve('auth-1', 'get', fetcher) // gate DB kontrolü / sonraki ekran
+  d.resolve('app-1')
+  assertEquals(await first, 'app-1')
+  assertEquals(await second, 'app-1')
+  assertEquals(fetches, 1)
+})
+
 Deno.test('locales: gate bloğu en/tr parite, anahtarlar dolu', async () => {
   const read = async (l: string) =>
     JSON.parse(await Deno.readTextFile(new URL(`../../locales/${l}.json`, import.meta.url)))
