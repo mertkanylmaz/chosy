@@ -48,8 +48,10 @@ import { color } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { markGateDone } from '@/services/gateState';
 import { markSplashGateSettled, markSplashMarkLoaded } from '@/services/splashGate';
+import { posthogAnalytics } from '@/services/posthog';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
+import { bootClock } from '@/utils/bootClock';
 import { isGateReadyToNavigate } from '@/utils/gateDecision';
 import {
   GATE_SESSION_TIMEOUT_MS,
@@ -83,6 +85,11 @@ const localStyles = StyleSheet.create({
 
 /** Sessiz değil: zaman aşımı uyarı, karar hatası exception olarak Sentry'ye gider. */
 function reportGateFailure(failure: GateFailure): void {
+  // PII yok: yalnız sabit neden etiketi ve süre. Her gösterimde bir olay.
+  posthogAnalytics.track('boot_failed', {
+    reason: failure.reason,
+    elapsed_ms: bootClock.elapsedMs(),
+  });
   if (failure.reason === 'auth_timeout') {
     Sentry.captureMessage('gate: getSession zaman eşiğini aştı — hata durumu gösterildi', {
       level: 'warning',
@@ -105,6 +112,8 @@ export default function Gate() {
   /** Her `decide()` koşusu bir numara alır; eski koşunun geç sonucu yenisini ezmez. */
   const runId = useRef(0);
   const mountedAt = useRef(Date.now());
+  /** Hata görünümü bu açılışta en az bir kez gösterildi mi (boot_recovered için). */
+  const hadFailure = useRef(false);
   /** Yönlendirme bir kez yapılır (zamanlayıcı ve karar aynı anda hazır olabilir). */
   const navigated = useRef(false);
   const targetRoute = useRef<string | null>(null);
@@ -129,6 +138,10 @@ export default function Gate() {
     if (failsafeTimer.current !== null) {
       clearTimeout(failsafeTimer.current);
       failsafeTimer.current = null;
+    }
+    posthogAnalytics.track('boot_ready_ms', { ms: bootClock.elapsedMs() });
+    if (hadFailure.current) {
+      posthogAnalytics.track('boot_recovered', { elapsed_ms: bootClock.elapsedMs() });
     }
     // Karar verildi: (tabs) koruması (app/(tabs)/_layout.tsx) artık geçirir.
     markGateDone();
@@ -205,6 +218,7 @@ export default function Gate() {
   const isCurrentRun = useCallback((id: number) => runId.current === id && !navigated.current, []);
 
   const failGate = useCallback((reason: GateFailureReason, error?: unknown) => {
+    hadFailure.current = true;
     handleGateFailure(
       { reason, elapsedMs: Date.now() - mountedAt.current, error },
       { report: reportGateFailure, showError: setFailure },

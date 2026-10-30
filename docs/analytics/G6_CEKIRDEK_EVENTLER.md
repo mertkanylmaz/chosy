@@ -51,6 +51,11 @@ listeye girdi.
 | 4 | `gauntlet_completed` | `GauntletShell:681` | **North Star'ın kendisi** |
 | 5 | `choice_rejected` | `GauntletShell:745` | K-28 candidate quality teşhisi (R-02) |
 
+> **`gauntlet_viewed` = "kabuk mount oldu", kartların görünmesi DEĞİL.** Olay
+> `GauntletShell` mount'unda ateşlenir; o anda gauntlet henüz yüklenmemiş,
+> iskelet görünüyor olabilir. Kartların görünmesi için `first_cards_visible`
+> (§3.2). Ayrıntı: §3.1 ve §3.2.
+
 `champion_revealed` (`GauntletShell:686`) bilinçli olarak listede DEĞİL:
 `gauntlet_completed` ile aynı anda ve aynı koşulda ateşleniyor, ikisini birden
 kapıya koymak 20 kontenjanının birini boşa harcardı. Event kodda kalıyor.
@@ -275,6 +280,50 @@ ve **M1'in kapsamıdır** — C.9b-UI'da yapılmaz.
 `NativeTabs` `GauntletShell`'i gerçekten unmount ediyor mu?
 **Unmount etmiyorsa hiçbir değişiklik yapılmaz** — sorun yoktur, bu bölüm
 yalnız sözlük netleştirmesi olarak kalır.
+
+---
+
+## 3.2 Açılış sağlığı olayları (COLD-START-1)
+
+**Tarih:** 30 Ekim 2026 · **Kaynak:** build 914 soğuk açılış gözlemi · **Statü:**
+çekirdek 20'ye GİRMEZ (§2'deki "çekirdek dışı" grubundadır; G-6 kapsamı değişmez).
+
+**Neden:** `getSession()` token refresh'ine takılınca kullanıcı sonsuz splash
+görüyordu ve `gauntlet_viewed` hiç gelmediği için bu açılışlar ölçümde
+**görünmüyordu** (`app_launched` vardı, kabuk mount olmadığı için
+`gauntlet_viewed` yoktu). Aşağıdaki olaylar açılışın sağlığını tek başına ölçer.
+
+> ⚠️ **Sıfır noktası:** `boot_*` ve `auth_refresh_ms` ölçümleri **JS
+> başlangıcından** (`utils/bootClock.ts` modülünün değerlendirildiği an)
+> itibaren sayılır; **native splash süresi dahil değildir.** Kullanıcının algıladığı
+> toplam açılış bu değerlerden uzundur.
+
+PII yok: yalnız süre (ms) ve sabit etiketler.
+
+| Event | Nerede | Alanlar |
+|---|---|---|
+| `app_boot_started` | `app/_layout.tsx` kök mount (`app_launched` ile birlikte) | — |
+| `auth_refresh_ms` | `app/_layout.tsx` `onAuthStateChange` `INITIAL_SESSION` (süreç başına bir kez) | `ms`, `had_session` |
+| `boot_ready_ms` | `app/gate.tsx` `finishExit` (gate yönlendirme kararını verdi) | `ms` |
+| `boot_failed` | gate hata görünümü (her gösterimde) / `GauntletShell` `showLoadError` (yalnız kartlar hiç görünmediyse) | `reason`, `elapsed_ms` |
+| `boot_recovered` | `app/gate.tsx` `finishExit`, hata görünümü gösterilmişse (otomatik devam ya da "tekrar dene") | `elapsed_ms` |
+| `first_cards_visible` | `GauntletShell` — ilk poster çifti (ya da biten günde şampiyon) render edilince, süreç başına bir kez | `ms_since_boot_start`, `state` |
+
+`boot_failed.reason`: `auth_timeout` (gate, `getSession` 6 sn içinde dönmedi),
+`gate_decision_error` (gate karar akışı hata verdi), `shell_load_failed`
+(`GauntletShell` bugünün gauntlet'ini yükleyemedi).
+
+Notlar:
+- `auth_refresh_ms` refresh olmayan açılışta da gelir (küçük değer); takılan
+  refresh büyük değer üretir. `had_session` oturumsuz ilk kurulumu ayırır.
+- `auth_timeout` yalnız bir **UI eşiğidir** (6 sn): refresh isteği iptal edilmez,
+  geç çözülürse gate otomatik devam eder ve `boot_recovered` gelir.
+- `first_cards_visible` bileşenin render'ını ölçer; poster görselinin ağdan
+  inmesi beklenmez. `state` = `ready` | `in_progress` | `completed_today`.
+  Gauntlet'i olmayan/boş gün ekranı bu olayı üretmez.
+- `gauntlet_viewed`'a dokunulmadı: anlamı "kabuk mount oldu" (§1.1, §3.1).
+- Takılan açılış sayısı = `app_boot_started` olup `boot_ready_ms` gelmeyen
+  oturumlar; `boot_failed` bunların görünür hata verenlerini ayırır.
 
 ---
 
