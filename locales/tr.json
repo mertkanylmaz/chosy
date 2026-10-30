@@ -1691,5 +1691,9 @@
     "close": "Kapat",
     "filmMeta": "%{year} · %{runtime} dk",
     "entry": "Kaçırdığın günler (%{count})"
+  },
+  "gate": {
+    "loadError": "Bağlanamadı. Bağlantını kontrol edip tekrar dene.",
+    "retry": "Tekrar dene"
   }
 }
