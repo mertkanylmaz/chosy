@@ -1678,5 +1678,9 @@
     "close": "Close",
     "filmMeta": "%{year} · %{runtime} min",
     "entry": "Missed days (%{count})"
+  },
+  "gate": {
+    "loadError": "Couldn't connect. Check your connection and try again.",
+    "retry": "Try again"
   }
 }
