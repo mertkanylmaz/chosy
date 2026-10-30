@@ -88,6 +88,7 @@ import {
 import { subscribeToReconnect } from '@/services/networkStatus';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
+import { bootClock } from '@/utils/bootClock';
 import { trackFirstSessionEventOnce } from '@/services/firstSessionFunnel';
 import { getPermissionState } from '@/services/pushNotifications';
 import { maybeRequestReview } from '@/services/reviewPrompt';
@@ -486,6 +487,13 @@ function GauntletShellContent(): React.JSX.Element {
           error_message: err instanceof Error ? err.message.slice(0, 200) : null,
         },
       });
+      // COLD-START-1: kartlar bu süreçte hiç görünmediyse bu bir AÇILIŞ başarısızlığıdır.
+      if (bootClock.isBooting()) {
+        posthogAnalytics.track('boot_failed', {
+          reason: 'shell_load_failed',
+          elapsed_ms: bootClock.elapsedMs(),
+        });
+      }
       setLoadError(text);
     },
     [t],
@@ -501,6 +509,20 @@ function GauntletShellContent(): React.JSX.Element {
   useEffect(() => {
     pairShownAtRef.current = Date.now();
   }, [pair]);
+
+  // COLD-START-1: açılıştan ilk kart (ya da biten günde şampiyon) render'ına kadar;
+  // süreç başına bir kez. Bileşenin render edilmesi sayılır, görselin inmesi beklenmez.
+  useEffect(() => {
+    const cardsShown =
+      shellState === 'ready' || shellState === 'in_progress'
+        ? pair !== null
+        : shellState === 'completed_today' && champion !== null;
+    if (!cardsShown) return;
+    const ms = bootClock.markFirstCardsVisible();
+    if (ms !== null) {
+      posthogAnalytics.track('first_cards_visible', { ms_since_boot_start: ms, state: shellState });
+    }
+  }, [shellState, pair, champion]);
 
   const measuredLatencyMs = (): number =>
     Math.max(0, Math.round(Date.now() - pairShownAtRef.current));
