@@ -40,6 +40,7 @@
     "test:gate": "deno test tests/navigation/gateDecision.test.ts",
     "test:mood-offer": "deno test --allow-read --unstable-sloppy-imports tests/moodoffer/",
     "test:gate-boot": "deno test --allow-read tests/navigation/gateBoot.test.ts",
+    "test:boot-clock": "deno test --allow-read tests/navigation/bootClock.test.ts",
     "test:deck-summary": "deno test --allow-read tests/games/deckSummaryClose.test.ts",
     "test:fetch-policy": "deno test tests/net/fetchPolicy.test.ts",
     "test:config-store": "deno test tests/config/configStore.test.ts",

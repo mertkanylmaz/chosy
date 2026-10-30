@@ -1,4 +1,5 @@
 import '@/utils/cryptoPolyfill';   // WebCrypto polyfill — ilk satır, sırası kritik
+import { bootClock } from '@/utils/bootClock'; // açılış ölçümü sıfır noktası: mümkün olduğunca erken
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { useEffect, useRef } from 'react';
@@ -401,6 +402,8 @@ export default function RootLayout() {
 
   // ── PostHog: app_launched event ───────────────────────────────────────────
   useEffect(() => {
+    // COLD-START-1: sıfır noktası bootClock (JS başlangıcı; native splash dahil değil).
+    posthogAnalytics.track('app_boot_started');
     posthogAnalytics.track('app_launched');
     // Kurulum başına bir kez; gömülü ilk açılışta da çalışır (auth beklemez).
     void trackFirstOpenOnce();
@@ -543,6 +546,10 @@ export default function RootLayout() {
     // Saat sapması telemetrisi (AUTH-LOOP): oturum (süreç) başına en fazla bir.
     let clockSkewReported = false;
 
+    // COLD-START-1: auth başlatma (diskten oturum + gerekirse token refresh) süresi.
+    // Süreç başına bir kez; refresh yoksa küçük, takılırsa büyük değer.
+    let authInitReported = false;
+
     // Auth state değişiklik dinleyicisi
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -561,6 +568,14 @@ export default function RootLayout() {
               expires_in: skew.expiresIn,
             });
           }
+        }
+
+        if (event === 'INITIAL_SESSION' && !authInitReported) {
+          authInitReported = true;
+          posthogAnalytics.track('auth_refresh_ms', {
+            ms: bootClock.elapsedMs(),
+            had_session: session !== null,
+          });
         }
 
         // Kimlik sıfırlaması tespiti için son bilinen auth id'yi taze tut.
