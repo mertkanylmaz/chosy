@@ -115,8 +115,11 @@ yüzdeliği ~%1–4'e gömülü 42 tanınmış film bandın içine taşındı.
 - Aktif tier'larda NULL = **8 film** (beklenen 8). 7'si vizyon öncesi (`releasedBy` eler),
   1'i (The Mongoose) yayınlanmış ama `vote_average` de yok → 2A `recognition_missing` eler. Hiçbiri havuza girmez.
 - ⚠️ 1.057 archive film NULL votes taşıyor. Normalde `archive` havuz dışı (migration 050),
-  ama `RELAXED_TIERS` son çare gevşetmesinde dahil olur ve `vote_average > 0` olan 1.032'si
-  `vote_average` fallback yüzdeliğiyle bandda skorlanabilir. Bu backfill'in kapsamı değil, ama bilinmesi gereken artık risk.
+  ama `RELAXED_TIERS` son çare gevşetmesinde dahil olur. Gevşetmede seçilebilir olan,
+  `vote_average > 0` olan YAYINLANMIŞ archive film sayısı **81**'dir (yukarıdaki tablo); bunlar
+  `vote_average` fallback yüzdeliğiyle bandda skorlanabilir. Kalan 951'i `release_date` NULL
+  olduğu için sunucuda elenir (önceki "1.032" ifadesi bu eleme düşülmeden yazılmıştı).
+  Bu backfill'in kapsamı değil, ama bilinmesi gereken artık risk.
 
 ## 4. `assign-tiers` simülasyonu (çalıştırılmadı, SQL ile hesaplandı)
 
