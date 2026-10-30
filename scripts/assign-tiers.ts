@@ -3,7 +3,7 @@
  *
  * Determines quality tier for each film:
  *   - core: Top ~15-20% — auteur directors, high IMDb, Oscar winners, Criterion-adjacent
- *   - archive: Low engagement or niche — few votes or low rating
+ *   - archive: Low engagement or niche — few votes or low rating (tier-dependent thresholds)
  *   - extended: Everything else (solid middle ground)
  *
  * Usage: import { determineCurationTier } from './assign-tiers'
@@ -21,6 +21,12 @@ export interface FilmForTier {
   oscar_wins: number;
   oscar_nominations: number;
   keywords: string[];
+  /**
+   * Filmin şu anki tier'ı (opsiyonel). Yalnız arşiv eşiğini seçmek için okunur:
+   * `'trending'` ise TRENDING eşikleri, diğer her durumda (yok dahil) core/extended
+   * eşikleri uygulanır. Fonksiyon hiçbir zaman `'trending'` DÖNDÜRMEZ.
+   */
+  current_tier?: string | null;
 }
 
 export type CurationTier = 'core' | 'extended' | 'archive';
@@ -133,6 +139,26 @@ const CRITERION_KEYWORDS: ReadonlySet<string> = new Set([
   'nordic noir',
 ]);
 
+/**
+ * Arşive düşme eşikleri — kural B (30 Eki 2026, CTO + kurucu onayı).
+ * Arşiv eşiklerinin TEK kaynağı burasıdır; başka yerde sabit tutulmaz.
+ * Bir film `rating < minRating` VEYA `votes < minVotes` ise arşive düşer.
+ *
+ *   trending        : rating < 5.5  veya votes < 300
+ *   core + extended : rating < 5.8  veya votes < 5000
+ *
+ * Eski kural (tüm tier'larda votes < 5000 veya rating < 6.5) kaldırıldı.
+ * `imdb_votes` NULL olan canlı filmler (yayınlanmamış) bu kuralla ellenmez;
+ * fonksiyonun NULL → 0 davranışı (aşağıda) değiştirilmedi.
+ */
+interface ArchiveThresholds {
+  readonly minRating: number;
+  readonly minVotes: number;
+}
+
+const ARCHIVE_THRESHOLDS_TRENDING: ArchiveThresholds = { minRating: 5.5, minVotes: 300 };
+const ARCHIVE_THRESHOLDS_STANDARD: ArchiveThresholds = { minRating: 5.8, minVotes: 5000 };
+
 // ---------------------------------------------------------------------------
 // Main function
 // ---------------------------------------------------------------------------
@@ -147,9 +173,9 @@ const CRITERION_KEYWORDS: ReadonlySet<string> = new Set([
  *   4. Metascore >= 85 + IMDb votes >= 50,000
  *   5. Has a Criterion/arthouse keyword
  *
- * ARCHIVE criteria (any one):
- *   1. IMDb votes < 5,000
- *   2. IMDb rating < 6.5
+ * ARCHIVE criteria (rule B, tier-dependent — see ARCHIVE_THRESHOLDS_*):
+ *   trending:        IMDb rating < 5.5 or votes < 300
+ *   core / extended: IMDb rating < 5.8 or votes < 5,000
  *
  * Everything else: EXTENDED
  */
@@ -182,11 +208,14 @@ export function determineCurationTier(film: FilmForTier): CurationTier {
   }
 
   // --- ARCHIVE checks ---
-  if (votes < 5000) {
+  const limits =
+    film.current_tier === 'trending' ? ARCHIVE_THRESHOLDS_TRENDING : ARCHIVE_THRESHOLDS_STANDARD;
+
+  if (votes < limits.minVotes) {
     return 'archive';
   }
 
-  if (rating < 6.5) {
+  if (rating < limits.minRating) {
     return 'archive';
   }
 
