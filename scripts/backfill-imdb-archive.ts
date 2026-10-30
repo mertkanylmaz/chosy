@@ -85,10 +85,16 @@ interface Candidate {
   votes: number | null;
 }
 
-type Severity = 'KESIN' | 'ELLE';
+/**
+ * Hariç tutma nedeni kodları, CTO filtre sırası (Adım 1b): 1 oy, 2 içerik, 3 konser, 4 079, 5 oy tabanı.
+ * 'imdbid' TMDb'den tamamlanan imdb_id'nin doğrulama hatası (içerikten sonra).
+ */
+type ReasonCode = 'votes' | 'inconsistent' | 'content' | 'imdbid' | 'concert' | 'trending079' | 'tierfloor';
+
+const REASON_ORDER: ReasonCode[] = ['votes', 'inconsistent', 'content', 'imdbid', 'concert', 'trending079', 'tierfloor'];
 
 interface Flag {
-  severity: Severity;
+  code: ReasonCode;
   reason: string;
 }
 
@@ -256,40 +262,68 @@ async function readBasics(
   return { rows, keyCounts };
 }
 
-// ── İçerik taraması ─────────────────────────────────────────────────────────
+// ── Filtreler (Adım 1b) ─────────────────────────────────────────────────────
 
-const SOFT_GENRES = ['Documentary', 'Music', 'Talk-Show', 'Reality-TV'];
-const SOFT_TYPES = ['tvMovie', 'video', 'tvSpecial'];
-const TITLE_WORDS = /\b(live|tour|concert|special|stand[- ]?up)\b/i;
+/** Filtre 1: DB/IMDb oy tabanı (Adım 1b: kural B'nin 5.000'inden yüksek). */
+const MIN_VOTES_PHASE1 = 10000;
 
-function screen(film: FilmRow, basics: BasicsRow | undefined): Flag[] {
+/** Filtre 2: izin verilen titleType. tvMovie/video yalnız ALLOW_NON_MOVIE_TITLES ile geçer. */
+const SOFT_TYPES = ['tvMovie', 'video'];
+const ALLOW_NON_MOVIE_TITLES = ["angel's egg"];
+const EXCLUDED_GENRES = ['Documentary', 'Talk-Show', 'Reality-TV'];
+
+/** Filtre 3: konser/performans (başlık öneki, küçük harf). Her biri tam bir filme denk gelmeli (rapor doğrular). */
+const CONCERT_PREFIXES = [
+  'bts world tour',
+  'blackpink: light up the sky',
+  'burn the stage',
+  'bring the soul',
+  'history on film, volume ii',
+  "avicii - i'm tim",
+];
+
+/** Filtre 4: 079 trending-restore ile arşive düşen filmler (başlık, küçük harf). */
+const TRENDING_079_TITLES = [
+  'hoppers',
+  'ready or not: here i come',
+  'the drama',
+  'neon genesis evangelion: death and rebirth',
+];
+
+function titleStartsWith(title: string, prefixes: string[]): string | null {
+  const t = title.trim().toLowerCase();
+  return prefixes.find((p) => t.startsWith(p)) ?? null;
+}
+
+function titleEquals(title: string, titles: string[]): string | null {
+  const t = title.trim().toLowerCase();
+  return titles.find((x) => t === x) ?? null;
+}
+
+/** Filtre 2: içerik. Her bayrak SQL'den dışlar. */
+function screenContent(film: FilmRow, basics: BasicsRow | undefined): Flag[] {
   const flags: Flag[] = [];
-  if (film.runtime !== null && film.runtime < MIN_RUNTIME) {
-    flags.push({ severity: 'KESIN', reason: `DB runtime ${film.runtime} < ${MIN_RUNTIME}` });
-  }
+  const add = (reason: string): void => {
+    flags.push({ code: 'content', reason });
+  };
+  if (film.runtime !== null && film.runtime < MIN_RUNTIME) add(`DB runtime ${film.runtime} < ${MIN_RUNTIME}`);
   if (!basics) {
-    flags.push({ severity: 'ELLE', reason: "title.basics'te movie/video/tvMovie dışı veya satır yok" });
+    add('title.basics satırı yok');
     return flags;
   }
   if (basics.titleType !== 'movie') {
-    flags.push({
-      severity: SOFT_TYPES.includes(basics.titleType) ? 'ELLE' : 'KESIN',
-      reason: `titleType=${basics.titleType}`,
-    });
+    const allowed =
+      SOFT_TYPES.includes(basics.titleType) && ALLOW_NON_MOVIE_TITLES.includes(film.title.trim().toLowerCase());
+    if (!allowed) add(`titleType=${basics.titleType}`);
   }
-  if (basics.isAdult) flags.push({ severity: 'KESIN', reason: 'isAdult=1' });
-  if (basics.genres.includes('Adult')) flags.push({ severity: 'KESIN', reason: "genres 'Adult'" });
-  if (basics.runtimeMinutes === null) {
-    flags.push({ severity: 'ELLE', reason: 'basics runtime yok' });
-  } else if (basics.runtimeMinutes < MIN_RUNTIME) {
-    flags.push({ severity: 'KESIN', reason: `basics runtime ${basics.runtimeMinutes} < ${MIN_RUNTIME}` });
-  }
-  const soft = basics.genres.filter((g) => SOFT_GENRES.includes(g));
-  if (soft.length > 0) flags.push({ severity: 'ELLE', reason: `genres ${soft.join('/')}` });
-  const word = TITLE_WORDS.exec(film.title);
-  if (word) flags.push({ severity: 'ELLE', reason: `başlıkta '${word[0]}'` });
+  if (basics.isAdult) add('isAdult=1');
+  if (basics.genres.includes('Adult')) add("genres 'Adult'");
+  if (basics.runtimeMinutes === null) add('basics runtime yok');
+  else if (basics.runtimeMinutes < MIN_RUNTIME) add(`basics runtime ${basics.runtimeMinutes} < ${MIN_RUNTIME}`);
+  const excluded = basics.genres.filter((g) => EXCLUDED_GENRES.includes(g));
+  if (excluded.length > 0) add(`genres ${excluded.join('/')}`);
   if (film.year !== null && basics.startYear !== null && Math.abs(basics.startYear - film.year) > 1) {
-    flags.push({ severity: 'ELLE', reason: `imdb_id yıl uyumsuz (DB ${film.year} / IMDb ${basics.startYear})` });
+    add(`imdb_id yıl uyumsuz (DB ${film.year} / IMDb ${basics.startYear})`);
   }
   return flags;
 }
@@ -393,7 +427,7 @@ async function main(): Promise<void> {
   const { rows: basics, keyCounts } = await readBasics(wanted, wantedKeys);
   const ratings = await readRatings(wanted);
 
-  const flagged: { c: Candidate; flags: Flag[] }[] = [];
+  const flagged: { c: Candidate; tier: string; flags: Flag[] }[] = [];
   const kept: { c: Candidate; tier: string }[] = [];
   const notInFile: Candidate[] = [];
   const stayArchive: Candidate[] = [];
@@ -401,31 +435,15 @@ async function main(): Promise<void> {
   for (const c of candidates) {
     const f = c.film;
     const b = c.imdbId ? basics.get(c.imdbId) : undefined;
+    const fileRow = c.imdbId ? ratings.get(c.imdbId) : undefined;
 
     if (c.phase === 'B') {
-      const r = c.imdbId ? ratings.get(c.imdbId) : undefined;
-      if (!r) {
+      if (!fileRow) {
         notInFile.push(c);
         continue;
       }
-      c.rating = r.rating;
-      c.votes = r.votes;
-    }
-
-    const flags = screen(f, b);
-
-    // TMDb'den gelen imdb_id'nin doğrulaması: tam yıl + runtime ±5 + (başlık,yıl) tekil
-    if (c.imdbIdNew) {
-      if (!b || b.titleType !== 'movie') {
-        flags.push({ severity: 'ELLE', reason: `TMDb imdb_id doğrulanamadı: basics movie değil (${b?.titleType ?? 'satır yok'})` });
-      } else {
-        if (b.startYear !== f.year) flags.push({ severity: 'ELLE', reason: `TMDb imdb_id: yıl tam uyuşmuyor (DB ${f.year} / IMDb ${b.startYear})` });
-        if (b.runtimeMinutes === null || f.runtime === null || Math.abs(b.runtimeMinutes - f.runtime) > RUNTIME_TOLERANCE) {
-          flags.push({ severity: 'ELLE', reason: `TMDb imdb_id: runtime ±${RUNTIME_TOLERANCE} dışı (DB ${f.runtime} / IMDb ${b.runtimeMinutes})` });
-        }
-        const n = keyCounts.get(`${normTitle(f.title)}|${f.year}`) ?? 0;
-        if (n !== 1) flags.push({ severity: 'ELLE', reason: `TMDb imdb_id: (başlık,yıl) tekil değil (${n} movie)` });
-      }
+      c.rating = fileRow.rating;
+      c.votes = fileRow.votes;
     }
 
     const tier = newTier(f, c.rating, c.votes);
@@ -433,16 +451,52 @@ async function main(): Promise<void> {
       stayArchive.push(c);
       continue;
     }
-    // determineCurationTier core kurallarını (rating >= 8, auteur+7.0, oscar >= 2, ...) oy
-    // tabanından ÖNCE uygular; oy tabanının (kural B, ARCHIVE_THRESHOLDS_STANDARD) altındaki film
-    // yine de core/extended dönebilir. Bu SQL'e girmez, elle bakılır.
-    if ((c.votes ?? 0) < ARCHIVE_THRESHOLDS_STANDARD.minVotes) {
+
+    const flags: Flag[] = [];
+    // 1) oy tabanı: karar verilen değer (A: DB, B: IMDb dosyası) >= 10.000; DB ve dosya eşiğin
+    //    iki ayrı yanındaysa (tutarsız) film atlanır ve listelenir.
+    const used = c.votes ?? 0;
+    const dbVotes = f.imdb_votes;
+    const fileVotes = fileRow ? fileRow.votes : null;
+    const other = c.phase === 'A' ? fileVotes : dbVotes;
+    const where = `DB ${dbVotes ?? 'NULL'} / dosya ${fileVotes ?? 'yok'}`;
+    if (other !== null && used >= MIN_VOTES_PHASE1 !== other >= MIN_VOTES_PHASE1) {
       flags.push({
-        severity: 'ELLE',
-        reason: `oy tabanı altı: votes ${c.votes} < ${ARCHIVE_THRESHOLDS_STANDARD.minVotes} ama determineCurationTier ${tier} döndürdü`,
+        code: 'inconsistent',
+        reason: `oy tutarsız: kullanılan ${used} (${used >= MIN_VOTES_PHASE1 ? '>=' : '<'} ${MIN_VOTES_PHASE1}), diğer kaynak ${other} (${where})`,
+      });
+    } else if (used < MIN_VOTES_PHASE1) {
+      flags.push({ code: 'votes', reason: `votes ${used} < ${MIN_VOTES_PHASE1} (${where})` });
+    }
+    // 2) içerik
+    flags.push(...screenContent(f, b));
+    // TMDb'den gelen imdb_id'nin doğrulaması: tam yıl + runtime ±5 + (başlık,yıl) tekil
+    if (c.imdbIdNew) {
+      if (!b || b.titleType !== 'movie') {
+        flags.push({ code: 'imdbid', reason: `TMDb imdb_id doğrulanamadı: basics movie değil (${b?.titleType ?? 'satır yok'})` });
+      } else {
+        if (b.startYear !== f.year) flags.push({ code: 'imdbid', reason: `TMDb imdb_id: yıl tam uyuşmuyor (DB ${f.year} / IMDb ${b.startYear})` });
+        if (b.runtimeMinutes === null || f.runtime === null || Math.abs(b.runtimeMinutes - f.runtime) > RUNTIME_TOLERANCE) {
+          flags.push({ code: 'imdbid', reason: `TMDb imdb_id: runtime ±${RUNTIME_TOLERANCE} dışı (DB ${f.runtime} / IMDb ${b.runtimeMinutes})` });
+        }
+        const n = keyCounts.get(`${normTitle(f.title)}|${f.year}`) ?? 0;
+        if (n !== 1) flags.push({ code: 'imdbid', reason: `TMDb imdb_id: (başlık,yıl) tekil değil (${n} movie)` });
+      }
+    }
+    // 3) konser/performans, 4) 079 trending-restore
+    const concert = titleStartsWith(f.title, CONCERT_PREFIXES);
+    if (concert) flags.push({ code: 'concert', reason: `konser/performans listesi ('${concert}')` });
+    const t079 = titleEquals(f.title, TRENDING_079_TITLES);
+    if (t079) flags.push({ code: 'trending079', reason: `079 trending-restore ile düşen ('${t079}')` });
+    // 5) determineCurationTier core kurallarını oy tabanından ÖNCE uygular (fonksiyon değişmedi):
+    //    kural B oy tabanının altındaki film core/extended dönebilir → SQL'e girmez.
+    if (used < ARCHIVE_THRESHOLDS_STANDARD.minVotes) {
+      flags.push({
+        code: 'tierfloor',
+        reason: `oy tabanı altı: votes ${used} < ${ARCHIVE_THRESHOLDS_STANDARD.minVotes} ama determineCurationTier ${tier} döndürdü`,
       });
     }
-    if (flags.length > 0) flagged.push({ c, flags });
+    if (flags.length > 0) flagged.push({ c, tier, flags });
     else kept.push({ c, tier });
   }
 
@@ -514,7 +568,7 @@ async function main(): Promise<void> {
   const csv: string[] = ['id,title,year,votes,rating,sebep'];
   const sortedFlagged = [...flagged].sort((x, y) => x.c.film.id.localeCompare(y.c.film.id));
   for (const { c, flags } of sortedFlagged) {
-    const reason = flags.map((fl) => `${fl.severity}: ${fl.reason}`).join(' | ');
+    const reason = flags.map((fl) => `[${fl.code}] ${fl.reason}`).join(' | ');
     csv.push([c.film.id, c.film.title, c.film.year, c.votes, c.rating, reason].map(csvCell).join(','));
   }
 
@@ -544,11 +598,14 @@ async function main(): Promise<void> {
     ) + '\n',
   );
 
-  const count = (xs: { severity: Severity }[], s: Severity): number => xs.filter((x) => x.severity === s).length;
   const allFlags = flagged.flatMap((x) => x.flags);
+  const primary = (flags: Flag[]): ReasonCode => REASON_ORDER.find((code) => flags.some((fl) => fl.code === code)) as ReasonCode;
+  const primaryCount = new Map<ReasonCode, number>();
+  for (const x of flagged) primaryCount.set(primary(x.flags), (primaryCount.get(primary(x.flags)) ?? 0) + 1);
+  const anyCount = (code: ReasonCode): number => flagged.filter((x) => x.flags.some((fl) => fl.code === code)).length;
   const byReason = new Map<string, number>();
   for (const fl of allFlags) {
-    const key = `${fl.severity}: ${fl.reason.replace(/[0-9]+/g, 'N').replace(/'[^']*'/g, "'…'")}`;
+    const key = `[${fl.code}] ${fl.reason.replace(/[0-9]+/g, 'N').replace(/'[^']*'/g, "'…'").replace(/((DB|dosya)[^)]*)/g, '(…)')}`;
     byReason.set(key, (byReason.get(key) ?? 0) + 1);
   }
   const tierCount = (rows: { tier: string }[], t: string): number => rows.filter((r) => r.tier === t).length;
@@ -560,14 +617,14 @@ async function main(): Promise<void> {
     `- rating dolu ama votes NULL (kapsam dışı): ${partial}`,
     `- B: veri dosyasında yok: ${notInFile.length}`,
     `- Tier'ı arşivde KALAN (kural B): ${stayArchive.length} (A ${stayArchive.filter((c) => c.phase === 'A').length}, B ${stayArchive.filter((c) => c.phase === 'B').length})`,
-    `- İçerik bayraklı: A ${flagged.filter((x) => x.c.phase === 'A').length}, B ${flagged.filter((x) => x.c.phase === 'B').length}`,
-    `- İçerik taramasına takılan (tier'ı archive'dan çıkacaktı, SQL'e GİRMEDİ): ${flagged.length} (KESIN ${flagged.filter((x) => x.flags.some((f) => f.severity === 'KESIN')).length}, yalnız ELLE ${flagged.filter((x) => x.flags.every((f) => f.severity === 'ELLE')).length})`,
+    `- Tier'ı arşivden ÇIKACAK adaylar (tier != archive): ${kept.length + flagged.length} → SQL'e giren ${kept.length}, hariç tutulan ${flagged.length} (A ${flagged.filter((x) => x.c.phase === 'A').length}, B ${flagged.filter((x) => x.c.phase === 'B').length})`,
+    '- Hariç tutulanların BİRİNCİL nedeni (CTO filtre sırası; bir film birden çok bayrak taşıyabilir):',
+    ...REASON_ORDER.map((code) => `  - ${code}: ${primaryCount.get(code) ?? 0} (bu bayrağı taşıyan toplam ${anyCount(code)})`),
     `- **Faz 1A SQL: ${keptA.length} film** (core ${tierCount(keptA.map((k) => ({ tier: k.tier })), 'core')}, extended ${tierCount(keptA.map((k) => ({ tier: k.tier })), 'extended')})`,
     `- **Faz 1B SQL: ${keptB.length} film** (core ${tierCount(keptB.map((k) => ({ tier: k.tier })), 'core')}, extended ${tierCount(keptB.map((k) => ({ tier: k.tier })), 'extended')}; imdb_id yazılan ${keptB.filter((k) => k.c.imdbIdNew).length})`,
     '',
-    '## Bayrak dağılımı (film başına birden çok bayrak olabilir)',
+    '## Bayrak dağılımı (film başına birden çok bayrak olabilir; sayılar bayrak adedi)',
     ...[...byReason.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `- ${k}: ${n}`),
-    `- toplam bayrak: KESIN ${count(allFlags, 'KESIN')}, ELLE ${count(allFlags, 'ELLE')}`,
     '',
     '## B — veri dosyasında bulunamayan',
     notInFile.length === 0 ? '_yok_' : notInFile.map((c) => `- ${c.film.title} (${c.imdbId})`).join('\n'),

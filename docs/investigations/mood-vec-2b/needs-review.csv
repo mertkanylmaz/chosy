@@ -1,51 +1,338 @@
 id,title,year,votes,rating,sebep
-061b7816-c2fb-47ea-9c61-67256b927f87,Possible Love,2026,783,8.1,ELLE: oy tabanı altı: votes 783 < 5000 ama determineCurationTier core döndürdü
-06ac4812-7254-4910-85a1-a7a3014764a9,The Wizards Return: Alex vs. Alex,2013,7432,6.3,ELLE: titleType=tvMovie
-06d23d8e-ee5f-4f1b-9f85-4d68dbf1466e,Dear You,2026,2929,8.2,ELLE: oy tabanı altı: votes 2929 < 5000 ama determineCurationTier core döndürdü
-0977bad2-ea1c-4907-b7f6-46395ff9b968,Hidden Kisses,2016,5385,7.3,ELLE: titleType=tvMovie
-13db7df1-9376-4154-8a80-83538824190f,Variety Lights,1950,3995,7.1,ELLE: genres Music | ELLE: oy tabanı altı: votes 3995 < 5000 ama determineCurationTier core döndürdü
-15670d99-5b09-4672-882e-a9098fc644fa,All Wishes Come True!,2026,1298,8,ELLE: oy tabanı altı: votes 1298 < 5000 ama determineCurationTier core döndürdü
-1d291035-c220-448f-882c-5cbdd9e9c3c8,The Gleaners and I,2000,9944,7.7,ELLE: genres Documentary
-1e697277-049a-4846-81b2-aedc7789a977,The Great War,1959,4693,8.1,ELLE: oy tabanı altı: votes 4693 < 5000 ama determineCurationTier core döndürdü
-21de6f0c-ca65-466c-a98b-4509ff69b6f4,V.I.P.,2017,3370,6.6,ELLE: oy tabanı altı: votes 3370 < 5000 ama determineCurationTier core döndürdü
-289cab7d-e354-472d-8fc5-d0d2e8303afc,Tuner,2026,37829,7.2,ELLE: genres Music
-351af0b9-536c-4ae1-a081-3aa01983ef69,The Mole Agent,2020,9975,7.5,ELLE: genres Documentary
-366e2c45-06ea-4f47-ae3d-d8d4ad2f824f,The Three Deaths of Marisela Escobedo,2020,2190,8.1,ELLE: genres Documentary | ELLE: oy tabanı altı: votes 2190 < 5000 ama determineCurationTier core döndürdü
-394da2fb-6e9a-4f3c-8652-c0d71a976ed9,Ghost in the Shell: Stand Alone Complex - Solid State Society,2007,7907,7.8,ELLE: titleType=tvMovie
-46ce46f2-7e36-4c19-bb77-25e97de04efd,Tel chi el telùn,1999,1174,8.1,KESIN: titleType=tvMiniSeries | ELLE: basics runtime yok | ELLE: oy tabanı altı: votes 1174 < 5000 ama determineCurationTier core döndürdü
-55604db2-7088-4fcb-a960-832aefa16e89,Fate/stay night: Heaven's Feel III. Spring Song,2020,3518,8,ELLE: oy tabanı altı: votes 3518 < 5000 ama determineCurationTier core döndürdü
-567f39a6-df26-4ca4-9193-d8b4188314ff,Fast,2026,8,8.2,ELLE: oy tabanı altı: votes 8 < 5000 ama determineCurationTier core döndürdü
-5af200a3-4b80-4033-ac93-b8e91da8aad5,Hadestown: The Musical,2026,3751,8.4,ELLE: genres Music | ELLE: oy tabanı altı: votes 3751 < 5000 ama determineCurationTier core döndürdü
-70a3cbee-e513-4770-a55b-1b7dba317b00,Look Back,2026,785,7.5,ELLE: oy tabanı altı: votes 785 < 5000 ama determineCurationTier core döndürdü
-79b16e59-2483-48c1-97bf-c1eb500c08d6,Macario,1960,4542,8.3,ELLE: oy tabanı altı: votes 4542 < 5000 ama determineCurationTier core döndürdü
-7cdb2fc9-ccda-4e93-8a4d-e43eb2ca1871,Secret,2007,9636,7.5,ELLE: genres Music
-7ce6f1ad-74c1-4c29-8f5b-9ace91cd717c,Ennio,2022,6315,8.2,ELLE: genres Documentary/Music
-7f5add77-ae0c-46c6-ae07-cea9dc8094e2,The Magic Flute,1975,5403,7.4,ELLE: genres Music
-7f6f735b-7f48-4584-b1a1-cd31fd8ed4ce,Angel's Egg,1985,7817,7.7,ELLE: titleType=video
-822441f1-a4b0-4738-8343-5df2f232d64a,The Terror Live,2013,8292,7.1,ELLE: başlıkta 'Live'
-839123ed-1ed2-4bce-ba70-2ba8cdbcc820,The Idea of You,2024,82785,6.3,ELLE: genres Music
-88fa0cc2-412e-4bb5-8e03-83bb5b9a0997,I'm No Longer Here,2019,9619,7.3,ELLE: genres Music
-8a6379ec-ec1f-4ca0-bf4c-5aeb05b117cd,BTS World Tour: Love Yourself in Seoul,2019,2284,8.9,ELLE: genres Documentary/Music | ELLE: başlıkta 'Tour' | ELLE: oy tabanı altı: votes 2284 < 5000 ama determineCurationTier core döndürdü
-8c00516b-c162-4ac5-ad72-d189b9ebdeff,A Beautiful Life,2023,8911,6.4,ELLE: genres Music
-901be397-7e84-49f6-8a45-bd5bd4bab29c,I Live in Fear,1955,5991,7.3,ELLE: başlıkta 'Live'
-902fc4de-d438-45b7-889c-de595f0b2907,"Live Twice, Love Once",2019,7636,7.2,ELLE: başlıkta 'Live'
-9067dede-08a1-4b9b-90d9-3c4dd39a3657,Avicii - I'm Tim,2024,5717,7.8,ELLE: genres Documentary/Music
-93943fad-ec69-4c0a-9fe1-5f9537680807,Package Tour,1980,9242,7.2,ELLE: başlıkta 'Tour'
-96b99fde-a133-40dd-9730-3406d71d4772,BLACKPINK: Light Up the Sky,2020,7775,7.3,ELLE: genres Documentary/Music
-97288fc3-36d1-4bd2-b25b-d22e7e457fbf,Once Upon a Time in the Middle East,2026,2401,8.3,ELLE: oy tabanı altı: votes 2401 < 5000 ama determineCurationTier core döndürdü
-9aa7a003-b4db-4fbf-80d6-1ad21480958e,Burn the Stage: The Movie,2018,4447,8.4,ELLE: genres Documentary/Music | ELLE: oy tabanı altı: votes 4447 < 5000 ama determineCurationTier core döndürdü
-9c1791bb-b2cd-4e70-b9fc-61b13267f946,The Devil's Eye,1960,4697,7.1,ELLE: oy tabanı altı: votes 4697 < 5000 ama determineCurationTier core döndürdü
-a0028aa9-8a23-4d02-bf25-3d59e73c3392,NAZA,2026,5689,8.3,ELLE: genres Documentary
-b0dac9d2-c414-484f-9cd2-3b0d55139427,Mixed by Erry,2023,6018,7.1,ELLE: genres Music
-c3e42e25-b15f-45b5-b5a8-68c854765178,Orchestra Rehearsal,1979,5231,7.1,ELLE: genres Music
-c6c37f8a-51b0-450d-b623-d8a26b18cec6,Hot Girls Wanted,2015,18873,6.1,ELLE: genres Documentary
-c91a4015-65c4-4ae4-9a4e-84023fa74163,Rolling Thunder Revue: A Bob Dylan Story by Martin Scorsese,2019,8499,7.5,ELLE: genres Documentary
-c91d49f3-b48f-4f86-a3b4-799c0546ab9c,Human,2015,8944,8.6,ELLE: genres Documentary
-cefd09cb-0ba1-445d-9bb2-052a178dc3ab,Saraband,2003,8687,7.5,ELLE: titleType=tvMovie | ELLE: genres Music
-d7736332-85d7-4622-88dc-103fc42f67fb,The Five Obstructions,2003,9360,7.4,ELLE: genres Documentary
-dad92a50-73ca-4adb-990f-d91fc6ef28c1,"HIStory on Film, Volume II",1997,1822,8.5,ELLE: titleType=video | ELLE: genres Music | ELLE: oy tabanı altı: votes 1822 < 5000 ama determineCurationTier core döndürdü
-e0fa9e7b-9d6f-4098-bc94-c673dcbcc289,Jackass: Best and Last,2026,14712,6.2,ELLE: genres Documentary
-e42a6bf8-1430-4d62-a577-cb03e75a3f5b,And the Ship Sails On,1983,6914,7.5,ELLE: genres Music
-e5b08be0-d3e3-48e6-8042-5fd8845421b9,Power Ballad,2026,9607,6.7,ELLE: genres Music
-ed79299f-6777-4143-a3ad-4f63c00b8397,Twin Peaks,1989,2521,8.9,ELLE: titleType=video | ELLE: oy tabanı altı: votes 2521 < 5000 ama determineCurationTier core döndürdü
-ffdda875-5270-42cc-88c3-3f057d327cb7,Bring the Soul: The Movie,2019,2943,8.4,ELLE: genres Documentary/Music | ELLE: oy tabanı altı: votes 2943 < 5000 ama determineCurationTier core döndürdü
+01cdb17a-57c5-4ba3-84b4-5dcb0b54c902,Innocent Voices,2005,8319,7.8,[votes] votes 8319 < 10000 (DB 8319 / dosya 8721)
+034e4624-dc92-4df0-a98c-664548b9ac7f,Montage,2013,9025,7.4,[votes] votes 9025 < 10000 (DB 9025 / dosya 9342)
+03eeb7df-d422-492d-a78b-24f762cc7b06,Animal World,2018,5324,6.4,[votes] votes 5324 < 10000 (DB 5324 / dosya 5528)
+043506fc-4347-4f56-a43a-8a6452a4719a,All Your Faces,2023,5115,7.5,[votes] votes 5115 < 10000 (DB 5115 / dosya 5583)
+061b7816-c2fb-47ea-9c61-67256b927f87,Possible Love,2026,783,8.1,[votes] votes 783 < 10000 (DB NULL / dosya 783) | [tierfloor] oy tabanı altı: votes 783 < 5000 ama determineCurationTier core döndürdü
+06547dd2-1910-48aa-821c-81b6c9462ca1,Secret Agent,1936,9469,6.4,[votes] votes 9469 < 10000 (DB 9469 / dosya 9837)
+06ac4812-7254-4910-85a1-a7a3014764a9,The Wizards Return: Alex vs. Alex,2013,7432,6.3,[votes] votes 7432 < 10000 (DB 7432 / dosya 8028) | [content] titleType=tvMovie
+06d23d8e-ee5f-4f1b-9f85-4d68dbf1466e,Dear You,2026,2929,8.2,[votes] votes 2929 < 10000 (DB NULL / dosya 2929) | [tierfloor] oy tabanı altı: votes 2929 < 5000 ama determineCurationTier core döndürdü
+06dce849-bb32-46c2-abb8-1f363a5ecb6a,The Peasants,2023,9057,7.6,[votes] votes 9057 < 10000 (DB 9057 / dosya 9654)
+0977bad2-ea1c-4907-b7f6-46395ff9b968,Hidden Kisses,2016,5385,7.3,[votes] votes 5385 < 10000 (DB 5385 / dosya 6054) | [content] titleType=tvMovie
+09d7864e-2b87-44a0-ba59-3e5dda5c78a1,The Keeper,2018,7239,7.3,[votes] votes 7239 < 10000 (DB 7239 / dosya 7883)
+0ad988cd-0575-44d5-8862-7e4c6e72ea68,Bleeder,1999,9890,6.8,"[inconsistent] oy tutarsız: kullanılan 9890 (< 10000), diğer kaynak 11822 (DB 9890 / dosya 11822)"
+0b219ade-d398-4aad-9daf-386ebba9d905,Heartstopper Forever,2026,9153,6.9,[votes] votes 9153 < 10000 (DB 95 / dosya 9153)
+0b58e47d-764c-4b5c-a028-6ae8039237fd,The New Land,1972,5451,8,[votes] votes 5451 < 10000 (DB 5451 / dosya 5990)
+0b930836-7430-471d-a943-8720cc57581d,Fellini's Casanova,1976,9315,7,[votes] votes 9315 < 10000 (DB 9315 / dosya 9712)
+0da5b546-6328-42c2-97a6-1443fe11afe0,Green Border,2023,7524,6.4,[votes] votes 7524 < 10000 (DB 7524 / dosya 7961)
+0e473037-fc51-4739-bbe1-b87633f17871,Water and Fire,2013,5080,6.1,[votes] votes 5080 < 10000 (DB 5080 / dosya 5366)
+0ea92565-a76b-43d7-8edf-77fd5674d951,Hatred,2016,7484,7.6,[votes] votes 7484 < 10000 (DB 7484 / dosya 7734)
+10176d4c-ff86-4442-82bb-67e653996e83,Vabank,1981,5105,7.9,[votes] votes 5105 < 10000 (DB 5105 / dosya 5713)
+1196693e-a4d3-4e60-a78c-6547336ed805,Boccaccio '70,1962,5568,7,[votes] votes 5568 < 10000 (DB 5568 / dosya 5744)
+11d0cbb5-59a3-424d-a1d8-14bee3b889cb,The Anthem of the Heart,2015,6982,7.3,[votes] votes 6982 < 10000 (DB 6982 / dosya 7185)
+11db55c2-63e2-4524-9baf-ba1e822ab5d2,A Swedish Love Story,1970,7731,7.3,[votes] votes 7731 < 10000 (DB 7731 / dosya 8339)
+12d76355-63ea-43b0-bcd7-7c9bda36ac02,Fists in the Pocket,1965,5358,7.6,[votes] votes 5358 < 10000 (DB 5358 / dosya 5807)
+131f4df3-d55d-4263-90de-12df4aaeb559,Shoeshine,1946,8540,8,[votes] votes 8540 < 10000 (DB 8540 / dosya 9196)
+13cf685a-f9f1-4203-88fa-be26425ea7b8,A Bag of Marbles,2017,6813,7.3,[votes] votes 6813 < 10000 (DB 6813 / dosya 7170)
+13db7df1-9376-4154-8a80-83538824190f,Variety Lights,1950,3995,7.1,[votes] votes 3995 < 10000 (DB 3995 / dosya 4435) | [tierfloor] oy tabanı altı: votes 3995 < 5000 ama determineCurationTier core döndürdü
+13e91e46-87c4-4635-aa56-4793d48a43c1,The Ballad of Narayama,1983,9789,7.8,"[inconsistent] oy tutarsız: kullanılan 9789 (< 10000), diğer kaynak 10140 (DB 9789 / dosya 10140)"
+15670d99-5b09-4672-882e-a9098fc644fa,All Wishes Come True!,2026,1298,8,[votes] votes 1298 < 10000 (DB NULL / dosya 1298) | [tierfloor] oy tabanı altı: votes 1298 < 5000 ama determineCurationTier core döndürdü
+1567d06b-a490-4d14-9915-f13407b7f0b8,Mr & Mme Adelman,2017,6188,7.3,[votes] votes 6188 < 10000 (DB 6188 / dosya 6335)
+1732bea6-ac67-451a-a0b9-b42281912400,Drishyam: The Conclusion,2026,7412,7.7,[votes] votes 7412 < 10000 (DB NULL / dosya 7412)
+1ae97a48-994d-41ec-8259-984f39346ec4,Delusions of Grandeur,1971,8415,7.1,[votes] votes 8415 < 10000 (DB 8415 / dosya 9030)
+1b7fb381-6f4c-4875-8d3a-8b6d36f73d2c,Face to Face,1976,6619,7.5,[votes] votes 6619 < 10000 (DB 6619 / dosya 6756)
+1ca18070-bab9-4e70-a912-f605bb777cfe,Cold Eyes,2013,9101,7.1,[votes] votes 9101 < 10000 (DB 9101 / dosya 9387)
+1cf69374-a9e1-4588-90c1-bd8f968d3b90,Flavors of Youth,2018,9344,6.6,[votes] votes 9344 < 10000 (DB 9344 / dosya 9850)
+1d291035-c220-448f-882c-5cbdd9e9c3c8,The Gleaners and I,2000,9944,7.7,"[inconsistent] oy tutarsız: kullanılan 9944 (< 10000), diğer kaynak 10433 (DB 9944 / dosya 10433) | [content] genres Documentary"
+1dde7817-37ae-4d56-ac3b-d5ecfe4cb8f9,R,2010,5585,7.1,[votes] votes 5585 < 10000 (DB 5585 / dosya 5664)
+1e697277-049a-4846-81b2-aedc7789a977,The Great War,1959,4693,8.1,[votes] votes 4693 < 10000 (DB 4693 / dosya 5140) | [tierfloor] oy tabanı altı: votes 4693 < 5000 ama determineCurationTier core döndürdü
+1e78b1d8-b260-4ea2-bb62-bfa259b3afdc,The Eight Hundred,2020,8239,6.7,[votes] votes 8239 < 10000 (DB 8239 / dosya 8638)
+1eeecdd0-a477-472c-875e-526fe40966e6,Kanal,1957,8202,7.9,[votes] votes 8202 < 10000 (DB 8202 / dosya 9059)
+1f36b8b7-ac62-48be-acbd-17bef716b3bb,"Dr. Mabuse, the Gambler",1922,9645,7.8,"[inconsistent] oy tutarsız: kullanılan 9645 (< 10000), diğer kaynak 10117 (DB 9645 / dosya 10117)"
+1f4ed9a3-d2ec-4e76-b2cf-6739f4cda218,For Love and Gold,1966,5440,7.7,[votes] votes 5440 < 10000 (DB 5440 / dosya 5964)
+1fe7934b-04d2-493d-af25-a009bd86157a,Rabid Dogs,1973,5462,7.4,[votes] votes 5462 < 10000 (DB 5462 / dosya 6017)
+206b3509-a1d9-4c55-a269-ce9f87cccc1c,On the Silver Globe,1989,5048,7.2,[votes] votes 5048 < 10000 (DB 5048 / dosya 6676)
+2185f720-5a8a-453c-9810-ba23a7491858,The Old Gun,1975,5024,7.5,[votes] votes 5024 < 10000 (DB 5024 / dosya 6031)
+21b5214e-6055-465f-b053-3542bd7fe8cd,One Piece: Stampede,2019,9548,7.5,"[inconsistent] oy tutarsız: kullanılan 9548 (< 10000), diğer kaynak 10206 (DB 9548 / dosya 10206)"
+21de6f0c-ca65-466c-a98b-4509ff69b6f4,V.I.P.,2017,3370,6.6,[votes] votes 3370 < 10000 (DB 3370 / dosya 3871) | [tierfloor] oy tabanı altı: votes 3370 < 5000 ama determineCurationTier core döndürdü
+227632a7-9936-4fdf-a42f-d86f453fa16b,Nothing Left to Do But Cry,1984,7310,7.6,[votes] votes 7310 < 10000 (DB 7310 / dosya 8159)
+2281c3a5-1f86-4293-b7d2-7d0bdf4b9a3e,Camino,2008,5376,7.4,[votes] votes 5376 < 10000 (DB 5376 / dosya 5607)
+239caf7c-a7b4-4d1b-8aa5-ba7c5f5cfc5b,Help! I'm a Fish,2000,7523,6,[votes] votes 7523 < 10000 (DB 7523 / dosya 8353)
+251b49c2-bef5-4ba6-a673-0cf19ff7f4fd,No Mercy,2010,9896,7.4,"[inconsistent] oy tutarsız: kullanılan 9896 (< 10000), diğer kaynak 11205 (DB 9896 / dosya 11205)"
+26b94fcf-4aff-44ff-9f68-d23d1bee9132,It Ends with Us,2024,106254,6.3,"[inconsistent] oy tutarsız: kullanılan 106254 (>= 10000), diğer kaynak 1965 (DB 1965 / dosya 106254)"
+289cab7d-e354-472d-8fc5-d0d2e8303afc,Tuner,2026,37829,7.2,"[inconsistent] oy tutarsız: kullanılan 37829 (>= 10000), diğer kaynak 78 (DB 78 / dosya 37829)"
+2b25e9be-ffa4-4e3a-a7a9-23ad21e1def0,The Social Reckoning,2026,9297,6.7,[votes] votes 9297 < 10000 (DB NULL / dosya 9297)
+2cea9ff1-1a57-4bc6-89b0-e77f5da023de,Pandora,2016,8873,6.7,[votes] votes 8873 < 10000 (DB 8873 / dosya 9791)
+2d890ab0-9535-4b46-947d-ff27ddd8deb4,Marry My Dead Body,2023,7268,7,[votes] votes 7268 < 10000 (DB 7268 / dosya 8008)
+2e2087d9-5726-4ac4-ac44-921a623638b3,100 Meters,2016,7138,7.5,[votes] votes 7138 < 10000 (DB 7138 / dosya 7584)
+2ed8bcd2-11a4-40c4-99ca-ffbcbf6fe8ad,"The Tunnel to Summer, the Exit of Goodbyes",2022,6110,7.1,[votes] votes 6110 < 10000 (DB 6110 / dosya 8315)
+2ee4fbd3-df0e-4c67-b71c-5e28a2d29876,Dying to Survive,2018,9024,7.8,[votes] votes 9024 < 10000 (DB 9024 / dosya 9336)
+2fade49f-c99e-4b51-ba44-3eb8ed5928d1,Floating Weeds,1959,9697,7.9,[votes] votes 9697 < 10000 (DB 9697 / dosya 9927)
+31b9a72f-4123-495b-9d59-78148eb8cf68,Warsaw 44,2014,7180,6.6,[votes] votes 7180 < 10000 (DB 7180 / dosya 7465)
+31d43963-4e9a-4bf0-af98-1c7e03be69b0,The Hourglass Sanatorium,1973,5614,7.4,[votes] votes 5614 < 10000 (DB 5614 / dosya 6438)
+325b7736-a409-44e7-a980-8ae937347b45,Le Deuxième Souffle,1966,7129,7.9,[votes] votes 7129 < 10000 (DB 7129 / dosya 7580)
+33043831-132c-45d1-a340-6e4a2f53e631,The Roundup: No Way Out,2023,8307,6.6,[votes] votes 8307 < 10000 (DB 8307 / dosya 9033)
+3308961b-d138-4a46-853e-c32190bc4069,Swept Away,1974,7325,7.5,[votes] votes 7325 < 10000 (DB 7325 / dosya 7639)
+33cb1a29-7c4f-4dc8-b13e-42f5f2bd2233,Daybreak,1939,8488,7.7,[votes] votes 8488 < 10000 (DB 8488 / dosya 9006)
+340be1ee-6e12-4713-873a-9e43bb85b7e4,The Drama,2026,26572,7.5,[trending079] 079 trending-restore ile düşen ('the drama')
+351af0b9-536c-4ae1-a081-3aa01983ef69,The Mole Agent,2020,9975,7.5,"[inconsistent] oy tutarsız: kullanılan 9975 (< 10000), diğer kaynak 10384 (DB 9975 / dosya 10384) | [content] genres Documentary"
+363e0143-a063-412a-8cc6-6bdc3a0fd7fd,Officer Black Belt,2024,9895,6.9,"[inconsistent] oy tutarsız: kullanılan 9895 (< 10000), diğer kaynak 11178 (DB 9895 / dosya 11178)"
+366e2c45-06ea-4f47-ae3d-d8d4ad2f824f,The Three Deaths of Marisela Escobedo,2020,2190,8.1,[votes] votes 2190 < 10000 (DB 2190 / dosya 2305) | [content] genres Documentary | [tierfloor] oy tabanı altı: votes 2190 < 5000 ama determineCurationTier core döndürdü
+36d84ff7-717d-4f55-8788-1958c2310607,The Small Town,1997,7030,7,[votes] votes 7030 < 10000 (DB 7030 / dosya 7366)
+36ddb864-8233-4c68-9e82-6c65768d363b,Mulan: Rise of a Warrior,2009,7140,6.6,[votes] votes 7140 < 10000 (DB 7140 / dosya 7247)
+38eb4d5b-00b7-433b-b642-9cb67cb1495f,The Human Condition II: Road to Eternity,1959,8444,8.5,[votes] votes 8444 < 10000 (DB 8444 / dosya 9459)
+394da2fb-6e9a-4f3c-8652-c0d71a976ed9,Ghost in the Shell: Stand Alone Complex - Solid State Society,2007,7907,7.8,[votes] votes 7907 < 10000 (DB 7907 / dosya 8075) | [content] titleType=tvMovie
+39e94ac2-ec88-48b5-89b9-deb994da1de5,"Ugly, Dirty and Bad",1976,9294,7.7,[votes] votes 9294 < 10000 (DB 9294 / dosya 9967)
+3c3dec29-f881-4d47-8908-b4c126faa6d0,Gertrud,1964,6939,7.3,[votes] votes 6939 < 10000 (DB 6939 / dosya 7462)
+3e09ef5f-1aac-4802-a70b-a816721452a4,Elisa & Marcela,2019,6067,6.6,[votes] votes 6067 < 10000 (DB 6067 / dosya 6778)
+3efe73f1-c2df-4494-adc3-de157d8fc37d,Sawdust and Tinsel,1953,7548,7.4,[votes] votes 7548 < 10000 (DB 7548 / dosya 8187)
+3f06d748-214f-4aeb-8049-7d35bb24d1db,"Night Is Short, Walk On Girl",2017,7232,7.5,[votes] votes 7232 < 10000 (DB 7232 / dosya 7639)
+3f8b189a-6c42-4f4c-84e0-c48056c0ed77,Creation of the Gods I: Kingdom of Storms,2023,6419,6.7,[votes] votes 6419 < 10000 (DB 6419 / dosya 6845)
+3fab178d-ec74-42ca-b90e-bc2ba784e6ae,Gods,2014,7875,7.6,[votes] votes 7875 < 10000 (DB 7875 / dosya 8423)
+3fe2daec-c25a-4094-af04-e685d3e92300,Ride On,2023,7346,6.3,[votes] votes 7346 < 10000 (DB 7346 / dosya 7959)
+3ff8668c-271b-4721-bf87-f2232f014dc3,The Idiot,1951,5828,7.1,[votes] votes 5828 < 10000 (DB 5828 / dosya 6347)
+423b2b6c-a071-484b-8076-d32575e5cf03,Camera Buff,1979,8595,7.8,[votes] votes 8595 < 10000 (DB 8595 / dosya 9290)
+439648cf-3cdc-41cf-af7b-abe74c3c51da,Belladonna of Sadness,1973,9279,7.3,[votes] votes 9279 < 10000 (DB 9279 / dosya 9757)
+448ac33b-af43-48cf-8ba8-882aaebc4e71,Fabricated City,2017,6938,6.8,[votes] votes 6938 < 10000 (DB 6938 / dosya 7697)
+45ef5c1e-bdd1-4d5b-8cc1-131247893268,The Secret Woman,2026,7487,6,[votes] votes 7487 < 10000 (DB NULL / dosya 7487)
+46ce46f2-7e36-4c19-bb77-25e97de04efd,Tel chi el telùn,1999,1174,8.1,[votes] votes 1174 < 10000 (DB 1174 / dosya 1262) | [content] titleType=tvMiniSeries | [content] basics runtime yok | [tierfloor] oy tabanı altı: votes 1174 < 5000 ama determineCurationTier core döndürdü
+46dfe99d-e448-44e9-9c11-4ea02a162221,Mad Detective,2007,8274,7.1,[votes] votes 8274 < 10000 (DB 8274 / dosya 8731)
+47292992-af1b-4e47-a193-3e2e09534c16,Dance of the Forty One,2020,5847,6.8,[votes] votes 5847 < 10000 (DB 5847 / dosya 6164)
+479f4368-baeb-4cdf-8af6-1122ecda4d07,The Sheep Detectives,2026,123542,7.4,"[inconsistent] oy tutarsız: kullanılan 123542 (>= 10000), diğer kaynak 185 (DB 185 / dosya 123542)"
+4bf342e3-a060-4d45-a074-374a14c22759,The Tiger,2015,7416,7.2,[votes] votes 7416 < 10000 (DB 7416 / dosya 7583)
+4d48ec5c-aa25-457e-b924-f1b878bb7d66,Checkered Ninja,2018,6636,7.1,[votes] votes 6636 < 10000 (DB 6636 / dosya 7830)
+4efba55a-cc49-4baf-81a2-c5d6ebf22c15,They Will Kill You,2026,8025,6.5,"[inconsistent] oy tutarsız: kullanılan 8025 (< 10000), diğer kaynak 55202 (DB 8025 / dosya 55202)"
+4f09e39f-f9b6-4514-9f89-1ff35090ddf2,An Elephant Sitting Still,2018,9155,7.8,[votes] votes 9155 < 10000 (DB 9155 / dosya 9550)
+5004246c-99a0-4289-8d68-b8259bd88d2e,Operation Red Sea,2018,8539,6.6,[votes] votes 8539 < 10000 (DB 8539 / dosya 8778)
+50baa1d3-ee40-4657-8699-7bad58d45cde,It Ends,2026,9852,5.8,[votes] votes 9852 < 10000 (DB NULL / dosya 9852)
+51634919-cb7d-4489-8dd4-e2b148a811ee,Boys Don't Cry,2000,7652,7.6,[votes] votes 7652 < 10000 (DB 7652 / dosya 8238)
+52ab300b-ead5-45c9-b84b-7f389ff566d5,My Friends,1975,8338,7.9,[votes] votes 8338 < 10000 (DB 8338 / dosya 8868)
+53d95dda-5da5-4cc5-8c7b-aa50fcaca2d4,Don't Blame the Kid,2016,5770,6.6,[votes] votes 5770 < 10000 (DB 5770 / dosya 6044)
+540baafe-09d0-4e4e-b1e8-12a2d1ba462f,The Magic Faraway Tree,2026,6464,6.2,[votes] votes 6464 < 10000 (DB NULL / dosya 6464)
+55604db2-7088-4fcb-a960-832aefa16e89,Fate/stay night: Heaven's Feel III. Spring Song,2020,3518,8,[votes] votes 3518 < 10000 (DB 3518 / dosya 3927) | [tierfloor] oy tabanı altı: votes 3518 < 5000 ama determineCurationTier core döndürdü
+56094c0d-c1ad-415d-9f57-46c94d8d2ed2,Humanist Vampire Seeking Consenting Suicidal Person,2023,8736,7,"[inconsistent] oy tutarsız: kullanılan 8736 (< 10000), diğer kaynak 13035 (DB 8736 / dosya 13035)"
+567f39a6-df26-4ca4-9193-d8b4188314ff,Fast,2026,8,8.2,[votes] votes 8 < 10000 (DB 0 / dosya 8) | [tierfloor] oy tabanı altı: votes 8 < 5000 ama determineCurationTier core döndürdü
+574665b0-e192-4152-a61b-bbef026047ab,Welcome to Dongmakgol,2005,7659,7.6,[votes] votes 7659 < 10000 (DB 7659 / dosya 7971)
+59c77758-5e6e-47b4-8ddd-3d5ff6203a61,Italian Race,2016,5753,7.2,[votes] votes 5753 < 10000 (DB 5753 / dosya 6046)
+5af200a3-4b80-4033-ac93-b8e91da8aad5,Hadestown: The Musical,2026,3751,8.4,[votes] votes 3751 < 10000 (DB NULL / dosya 3751) | [tierfloor] oy tabanı altı: votes 3751 < 5000 ama determineCurationTier core döndürdü
+5b937f7a-f68a-40f3-8481-371c538f69e1,Pirates,1986,9984,6,"[inconsistent] oy tutarsız: kullanılan 9984 (< 10000), diğer kaynak 10309 (DB 9984 / dosya 10309)"
+5cef67b3-6a5c-499a-a12b-1abe5d955c7a,Finding Emily,2026,6928,6.9,[votes] votes 6928 < 10000 (DB NULL / dosya 6928)
+5f99756e-d93c-4c31-ba5c-73534a1b6f73,Pippi in the South Seas,1970,5990,6.9,[votes] votes 5990 < 10000 (DB 5990 / dosya 6136)
+600783fc-7908-42d3-afa7-4a1a01ce14a8,The Lower Depths,1957,6244,7.2,[votes] votes 6244 < 10000 (DB 6244 / dosya 6541)
+617a44ee-e88e-4afb-8396-2d5af3c7af3e,Satluj,2026,106958,8.8,"[inconsistent] oy tutarsız: kullanılan 106958 (>= 10000), diğer kaynak 8 (DB 8 / dosya 106958)"
+61ed41ea-7f39-4519-a196-0474ce90c33b,Fantozzi: White Collar Blues,1975,7159,7.8,[votes] votes 7159 < 10000 (DB 7159 / dosya 8126)
+634fec75-7e9d-4c85-b501-5b38bf711f4a,The Summit of the Gods,2021,9339,7.5,"[inconsistent] oy tutarsız: kullanılan 9339 (< 10000), diğer kaynak 11923 (DB 9339 / dosya 11923)"
+63a7355b-3f9a-441b-baa4-32107ada8c11,Letters to Santa,2011,5024,7.2,[votes] votes 5024 < 10000 (DB 5024 / dosya 5248)
+63d9c9b3-b1a6-42a1-8f57-aaa4de3c86a9,The Serpent's Egg,1977,6864,6.6,[votes] votes 6864 < 10000 (DB 6864 / dosya 6966)
+65c8ae38-b7b3-42da-8a1b-0d910a18dc7c,How I Became a Gangster,2019,5506,6.9,[votes] votes 5506 < 10000 (DB 5506 / dosya 5752)
+6664bbd8-32e6-474b-afc3-de96e34c3dec,Souleymane's Story,2024,6945,7.6,[votes] votes 6945 < 10000 (DB 6945 / dosya 8065)
+66bc13f9-b1f6-4088-aa20-134a25bcf696,Bad Cat,2016,9183,7,[votes] votes 9183 < 10000 (DB 9183 / dosya 9675)
+670e0ae6-d340-4b36-b0e1-51ba97803d6d,Be With You,2018,8076,7.7,[votes] votes 8076 < 10000 (DB 8076 / dosya 8664)
+68435bdd-498f-4339-8320-b4d2c8623dc5,Violet Evergarden: Eternity and the Auto Memory Doll,2019,7479,7.5,[votes] votes 7479 < 10000 (DB 7479 / dosya 9106)
+6a360aaf-8089-4b03-809a-82b000d6b1b1,DC,2026,9770,7.8,[votes] votes 9770 < 10000 (DB NULL / dosya 9770)
+6b1ac344-5857-4a5a-851b-d4f68deb053e,Unstoppable,2018,6637,6.6,[votes] votes 6637 < 10000 (DB 6637 / dosya 7285)
+6b85228f-bb02-4e6c-a065-5180bc1953a7,Becoming Astrid,2018,7466,7.1,[votes] votes 7466 < 10000 (DB 7466 / dosya 7921)
+6c2fe8ed-61fd-4761-bd0a-2083c6784919,The Sucker,1965,8596,7.3,[votes] votes 8596 < 10000 (DB 8596 / dosya 9167)
+6db5a6cc-56d3-4978-b0b2-51b49910bfab,The Yin-Yang Master: Dream of Eternity,2020,5770,6.4,[votes] votes 5770 < 10000 (DB 5770 / dosya 5881)
+6dc8d982-a1a8-4a9a-8ef7-e18d6f46dceb,Radical,2023,7330,7.8,[votes] votes 7330 < 10000 (DB 7330 / dosya 8124)
+705b691c-1e4f-45ff-9da7-ccfce2fce23d,Lone Wolf and Cub: Sword of Vengeance,1972,9100,7.7,[votes] votes 9100 < 10000 (DB 9100 / dosya 9993)
+7098fbaa-7eb4-42c4-a69a-81ab8cde0381,Fuze,2026,19848,6.3,"[inconsistent] oy tutarsız: kullanılan 19848 (>= 10000), diğer kaynak 166 (DB 166 / dosya 19848)"
+70a3cbee-e513-4770-a55b-1b7dba317b00,Look Back,2026,785,7.5,[votes] votes 785 < 10000 (DB NULL / dosya 785) | [tierfloor] oy tabanı altı: votes 785 < 5000 ama determineCurationTier core döndürdü
+71c28f3b-7375-4353-99c9-df0957a1e034,The Swindle,1955,7484,7.5,[votes] votes 7484 < 10000 (DB 7484 / dosya 7922)
+746c36d4-da4f-4231-92f0-803dedda19a0,Godland,2022,8775,7.1,[votes] votes 8775 < 10000 (DB 8775 / dosya 9990)
+7558f34a-eca9-4e8d-9191-a664519f9fa6,Your Name Engraved Herein,2020,8433,7.3,"[inconsistent] oy tutarsız: kullanılan 8433 (< 10000), diğer kaynak 10293 (DB 8433 / dosya 10293)"
+76029869-eb49-40a9-9d6e-5de8e054c294,Godzilla vs. Biollante,1989,7827,6.5,[votes] votes 7827 < 10000 (DB 7827 / dosya 8752)
+7805287d-0bca-4877-acc5-771819ca1e2c,Samurai I: Musashi Miyamoto,1954,9728,7.4,"[inconsistent] oy tutarsız: kullanılan 9728 (< 10000), diğer kaynak 10521 (DB 9728 / dosya 10521)"
+78631283-1fcd-437a-955e-9d4dd97c19ae,One Piece Film: Strong World,2009,8082,7.4,[votes] votes 8082 < 10000 (DB 8082 / dosya 8814)
+788eda87-9875-417c-a7be-65e5d2d52e51,The Human Condition III: A Soldier's Prayer,1961,8466,8.8,[votes] votes 8466 < 10000 (DB 8466 / dosya 9227)
+789fe274-70c1-49f8-9dc3-bbcb91c02228,My Blind Date with Life,2017,5874,7.1,[votes] votes 5874 < 10000 (DB 5874 / dosya 6223)
+79b16e59-2483-48c1-97bf-c1eb500c08d6,Macario,1960,4542,8.3,[votes] votes 4542 < 10000 (DB 4542 / dosya 5439) | [tierfloor] oy tabanı altı: votes 4542 < 5000 ama determineCurationTier core döndürdü
+79e8c8b2-ac6d-462a-accf-9c63c23c80ec,Aarya,2004,9370,7.8,[votes] votes 9370 < 10000 (DB 51 / dosya 9370)
+7a188483-e5e7-4fa7-ae2f-e51998460fb3,Dodes'ka-den,1970,8176,7.3,[votes] votes 8176 < 10000 (DB 8176 / dosya 8514)
+7b24bc29-97e9-440f-9287-e6c78b1cf697,I Want Your Sex,2026,8503,5.8,[votes] votes 8503 < 10000 (DB 0 / dosya 8503)
+7c1d6129-e523-40a4-9b9c-be06e1a7f9be,Sissi: The Young Empress,1956,7967,6.7,[votes] votes 7967 < 10000 (DB 7967 / dosya 8174)
+7c7a0e6d-dbd1-43b8-ac51-f834d948833e,Sami Blood,2017,8595,7.3,[votes] votes 8595 < 10000 (DB 8595 / dosya 8834)
+7c9e8338-e918-4355-98ba-f991f8c4a1e6,French Fried Vacation 2,1979,9323,7.4,"[inconsistent] oy tutarsız: kullanılan 9323 (< 10000), diğer kaynak 10380 (DB 9323 / dosya 10380)"
+7cdb2fc9-ccda-4e93-8a4d-e43eb2ca1871,Secret,2007,9636,7.5,"[inconsistent] oy tutarsız: kullanılan 9636 (< 10000), diğer kaynak 10015 (DB 9636 / dosya 10015)"
+7ce6f1ad-74c1-4c29-8f5b-9ace91cd717c,Ennio,2022,6315,8.2,[votes] votes 6315 < 10000 (DB 6315 / dosya 7781) | [content] genres Documentary
+7dc18fc7-27ab-4dcc-a4c2-a4339cfd4915,The Inquisitor,1981,6405,7.6,[votes] votes 6405 < 10000 (DB 6405 / dosya 6609)
+7e400d42-cebc-4554-b708-b6f1dbfbdb56,One Hundred Steps,2000,6631,7.5,[votes] votes 6631 < 10000 (DB 6631 / dosya 7281)
+7f5add77-ae0c-46c6-ae07-cea9dc8094e2,The Magic Flute,1975,5403,7.4,[votes] votes 5403 < 10000 (DB 5403 / dosya 5843)
+7f6f735b-7f48-4584-b1a1-cd31fd8ed4ce,Angel's Egg,1985,7817,7.7,"[inconsistent] oy tutarsız: kullanılan 7817 (< 10000), diğer kaynak 18380 (DB 7817 / dosya 18380)"
+801dff16-4f26-4952-9664-57d606e26797,Touchez Pas au Grisbi,1954,9292,7.7,[votes] votes 9292 < 10000 (DB 9292 / dosya 9823)
+806c845d-a95f-4b83-8b56-b6b3e0c1c832,Paisan,1946,9963,7.6,"[inconsistent] oy tutarsız: kullanılan 9963 (< 10000), diğer kaynak 10916 (DB 9963 / dosya 10916)"
+81a3af96-bb75-4f12-9143-d39c2ac0275e,The House with Laughing Windows,1976,6457,7,[votes] votes 6457 < 10000 (DB 6457 / dosya 7417)
+822441f1-a4b0-4738-8343-5df2f232d64a,The Terror Live,2013,8292,7.1,[votes] votes 8292 < 10000 (DB 8292 / dosya 9012)
+837397a9-e4bf-4755-a462-9e7455fd0563,Black Clover: Sword of the Wizard King,2023,9611,7.4,"[inconsistent] oy tutarsız: kullanılan 9611 (< 10000), diğer kaynak 10616 (DB 9611 / dosya 10616)"
+837fc5de-577d-48a6-b190-8675518d72ff,"Godzilla, Mothra and King Ghidorah: Giant Monsters All-Out Attack",2001,7832,7,[votes] votes 7832 < 10000 (DB 7832 / dosya 8387)
+85b3834d-ddd1-4dc7-a1e0-f51c6be29d26,We All Loved Each Other So Much,1974,7829,8,[votes] votes 7829 < 10000 (DB 7829 / dosya 9134)
+8633326f-b88a-4d67-aa69-cb2a46d9bb42,Napoleon,1927,9108,8.2,[votes] votes 9108 < 10000 (DB 9108 / dosya 9947)
+86d33516-6d93-4444-89f2-a1536cd62e82,Ask Me If I'm Happy,2000,9114,7.1,[votes] votes 9114 < 10000 (DB 9114 / dosya 9856)
+8846082b-127c-4e5a-b604-3c8493d23fd5,Play,2011,6915,7.1,[votes] votes 6915 < 10000 (DB 6915 / dosya 7113)
+8846ea90-ecc7-4e49-af0e-b1a97b43f245,Ginger and Fred,1986,5724,7.2,[votes] votes 5724 < 10000 (DB 5724 / dosya 5968)
+88fa0cc2-412e-4bb5-8e03-83bb5b9a0997,I'm No Longer Here,2019,9619,7.3,"[inconsistent] oy tutarsız: kullanılan 9619 (< 10000), diğer kaynak 10643 (DB 9619 / dosya 10643)"
+8a6379ec-ec1f-4ca0-bf4c-5aeb05b117cd,BTS World Tour: Love Yourself in Seoul,2019,2284,8.9,[votes] votes 2284 < 10000 (DB 2284 / dosya 2380) | [content] genres Documentary | [concert] konser/performans listesi ('bts world tour') | [tierfloor] oy tabanı altı: votes 2284 < 5000 ama determineCurationTier core döndürdü
+8a69d803-c409-4ad1-a325-0495564d6005,Godzilla vs. Destoroyah,1995,7978,6.9,[votes] votes 7978 < 10000 (DB 7978 / dosya 8905)
+8aa76c9d-2df4-4132-a614-3e77e1aa7b35,Batman: Knightfall Part 1: Knightfall,2026,9781,7.8,[votes] votes 9781 < 10000 (DB NULL / dosya 9781)
+8ac2a36e-13e9-42ca-b60d-f06279e761c3,The Beauty Inside,2015,8636,7.3,[votes] votes 8636 < 10000 (DB 8636 / dosya 9214)
+8c00516b-c162-4ac5-ad72-d189b9ebdeff,A Beautiful Life,2023,8911,6.4,[votes] votes 8911 < 10000 (DB 8911 / dosya 9761)
+8d2811e8-b8a3-4431-935b-b224d6ba829f,I Am a Hero,2016,8501,6.7,[votes] votes 8501 < 10000 (DB 8501 / dosya 9050)
+8f860992-c53f-4390-8088-e063bc4465b3,Escape Plan,2013,273173,6.7,"[inconsistent] oy tutarsız: kullanılan 273173 (>= 10000), diğer kaynak 5606 (DB 5606 / dosya 273173)"
+8fc5012d-f837-4110-95f6-2603bc8b1229,Your Fault: London,2026,5913,6,[votes] votes 5913 < 10000 (DB 101 / dosya 5913)
+901be397-7e84-49f6-8a45-bd5bd4bab29c,I Live in Fear,1955,5991,7.3,[votes] votes 5991 < 10000 (DB 5991 / dosya 6278)
+902fc4de-d438-45b7-889c-de595f0b2907,"Live Twice, Love Once",2019,7636,7.2,[votes] votes 7636 < 10000 (DB 7636 / dosya 7772)
+9067dede-08a1-4b9b-90d9-3c4dd39a3657,Avicii - I'm Tim,2024,5717,7.8,[votes] votes 5717 < 10000 (DB 5717 / dosya 8708) | [content] genres Documentary | [concert] konser/performans listesi ('avicii - i'm tim')
+90a32829-c7fe-474d-8391-3823cb42d0de,The Last Family,2016,5216,7.4,[votes] votes 5216 < 10000 (DB 5216 / dosya 5278)
+90a41f20-5448-4542-89fd-2209644a2a0d,Under the Same Moon,2007,7801,7.3,[votes] votes 7801 < 10000 (DB 7801 / dosya 8041)
+9194bc94-32f1-42d0-a95f-b1416837289b,The Truth,1960,5369,7.6,[votes] votes 5369 < 10000 (DB 5369 / dosya 5650)
+919fc483-8cd8-43c8-ad7c-727cddd8cc75,No Game No Life: Zero,2017,5305,7.3,[votes] votes 5305 < 10000 (DB 5305 / dosya 5566)
+91bf3a6f-2f96-4f4d-9f6c-84e14d029cc3,Made in Abyss: Dawn of the Deep Soul,2020,7227,8,[votes] votes 7227 < 10000 (DB 7227 / dosya 7960)
+926c0560-62c4-4bb7-a6d0-8318ba08c532,The King and the Mockingbird,1980,5936,7.7,[votes] votes 5936 < 10000 (DB 5936 / dosya 6178)
+93943fad-ec69-4c0a-9fe1-5f9537680807,Package Tour,1980,9242,7.2,"[inconsistent] oy tutarsız: kullanılan 9242 (< 10000), diğer kaynak 10080 (DB 9242 / dosya 10080)"
+94260daf-36be-4e59-8f19-d5fea3c2bf28,Crooks in Clover,1963,6946,7.7,[votes] votes 6946 < 10000 (DB 6946 / dosya 7287)
+94e19d34-73ff-42fa-afc1-730c28e243b2,EXIT,2019,8401,7,[votes] votes 8401 < 10000 (DB 8401 / dosya 9265)
+94e8c5cc-2f73-4fb5-a497-6c4be8da12d9,"The Pig, the Snake and the Pigeon",2023,8391,7.3,[votes] votes 8391 < 10000 (DB 8391 / dosya 8844)
+95bd27a2-6650-4964-8b69-c6447d6576ca,Millennium Mambo,2001,8297,7,[votes] votes 8297 < 10000 (DB 8297 / dosya 8869)
+96274104-3278-4a0d-ab7a-4ae6816fc335,Satantango,1994,14693,8.2,"[inconsistent] oy tutarsız: kullanılan 14693 (>= 10000), diğer kaynak 309 (DB 309 / dosya 14693)"
+96b99fde-a133-40dd-9730-3406d71d4772,BLACKPINK: Light Up the Sky,2020,7775,7.3,[votes] votes 7775 < 10000 (DB 7775 / dosya 7977) | [content] genres Documentary | [concert] konser/performans listesi ('blackpink: light up the sky')
+97288fc3-36d1-4bd2-b25b-d22e7e457fbf,Once Upon a Time in the Middle East,2026,2401,8.3,[votes] votes 2401 < 10000 (DB NULL / dosya 2401) | [tierfloor] oy tabanı altı: votes 2401 < 5000 ama determineCurationTier core döndürdü
+97912570-8927-4a21-b8f1-121026d5cf5a,The Killer,2022,5362,6.7,[votes] votes 5362 < 10000 (DB 5362 / dosya 6203)
+9910804b-8e7e-4da4-bdf6-55fd28d58d59,Sniper: The White Raven,2022,7730,6.4,[votes] votes 7730 < 10000 (DB 7730 / dosya 8690)
+99fcf6c8-b173-43b5-9da5-ab1cfc900b3d,The Seven Deadly Sins: Prisoners of the Sky,2018,5966,7,[votes] votes 5966 < 10000 (DB 5966 / dosya 6524)
+9aa7a003-b4db-4fbf-80d6-1ad21480958e,Burn the Stage: The Movie,2018,4447,8.4,[votes] votes 4447 < 10000 (DB 4447 / dosya 4583) | [content] genres Documentary | [concert] konser/performans listesi ('burn the stage') | [tierfloor] oy tabanı altı: votes 4447 < 5000 ama determineCurationTier core döndürdü
+9c1791bb-b2cd-4e70-b9fc-61b13267f946,The Devil's Eye,1960,4697,7.1,[votes] votes 4697 < 10000 (DB 4697 / dosya 5192) | [tierfloor] oy tabanı altı: votes 4697 < 5000 ama determineCurationTier core döndürdü
+9c983c98-1419-43d5-9b16-74a1b7588dfe,Late Shift,2025,8557,7.7,"[inconsistent] oy tutarsız: kullanılan 8557 (< 10000), diğer kaynak 11872 (DB 8557 / dosya 11872)"
+9d2a1457-39bf-4454-85d0-ac82e05c9127,No End,1985,6146,7.3,[votes] votes 6146 < 10000 (DB 6146 / dosya 6339)
+9e3f2256-5ce9-4a2d-aafc-5ebfa87168f4,Big Fish & Begonia,2016,7430,7,[votes] votes 7430 < 10000 (DB 7430 / dosya 7665)
+9fb78847-79a5-4342-9b76-2945ecc7cd28,The Round Up,2010,9559,7,"[inconsistent] oy tutarsız: kullanılan 9559 (< 10000), diğer kaynak 10057 (DB 9559 / dosya 10057)"
+9fe39854-4a0c-4398-95c4-abec922e1335,Early Summer,1951,9910,8.1,"[inconsistent] oy tutarsız: kullanılan 9910 (< 10000), diğer kaynak 10947 (DB 9910 / dosya 10947)"
+a0028aa9-8a23-4d02-bf25-3d59e73c3392,NAZA,2026,5689,8.3,[votes] votes 5689 < 10000 (DB NULL / dosya 5689) | [content] genres Documentary
+a056fc8c-4a52-486c-8409-b3099c2aa53c,The Tree of Wooden Clogs,1978,7136,7.8,[votes] votes 7136 < 10000 (DB 7136 / dosya 9573)
+a0b32c7e-3344-4961-aca7-cf3d4bf4a2da,The Spy Gone North,2018,7213,7.4,[votes] votes 7213 < 10000 (DB 7213 / dosya 7549)
+a0ef0ce9-95fe-44b9-8a09-adccf1a1dad3,Black Adam,2022,310189,6.1,"[inconsistent] oy tutarsız: kullanılan 310189 (>= 10000), diğer kaynak 7046 (DB 7046 / dosya 310189)"
+a123410d-e0fb-48c6-a4ee-a5a715a13cf1,My Hero Academia: World Heroes' Mission,2021,7254,7,[votes] votes 7254 < 10000 (DB 7254 / dosya 8175)
+a14861e1-4635-4e9f-89a9-ecd515dfcc09,I Can Quit Whenever I Want,2014,9764,7,"[inconsistent] oy tutarsız: kullanılan 9764 (< 10000), diğer kaynak 10447 (DB 9764 / dosya 10447)"
+a299bf4e-7dc6-4af3-8979-f602ebc9289c,Summer Interlude,1951,7113,7.5,[votes] votes 7113 < 10000 (DB 7113 / dosya 7445)
+a521ad34-9fb2-4d7d-89c5-40259b937bd5,The Children's Train,2024,8916,7.4,"[inconsistent] oy tutarsız: kullanılan 8916 (< 10000), diğer kaynak 10564 (DB 8916 / dosya 10564)"
+a5f05571-7b76-4188-91ee-8d00b2336bf0,To Each His Own Cinema,2007,5580,6.7,[votes] votes 5580 < 10000 (DB 5580 / dosya 5887)
+a76f8bfe-9254-49c8-be3a-1165a605adfc,Operation Mekong,2016,5663,6.5,[votes] votes 5663 < 10000 (DB 5663 / dosya 5773)
+a7f601ea-635b-458f-bff7-d26641508cad,The White Sheik,1952,7087,7.2,[votes] votes 7087 < 10000 (DB 7087 / dosya 7651)
+a834e817-5a12-4cb4-a44a-8f19ebe967b1,The Bible: In the Beginning...,1966,6623,6.2,[votes] votes 6623 < 10000 (DB 6623 / dosya 7043)
+a8edc36c-8004-4600-882f-6411e613fdea,Minions: The Rise of Gru,2022,110037,6.5,"[inconsistent] oy tutarsız: kullanılan 110037 (>= 10000), diğer kaynak 4025 (DB 4025 / dosya 110037)"
+a9c6ed4b-aa2f-4453-880f-ffda4688a99f,Under Capricorn,1949,8561,6.2,[votes] votes 8561 < 10000 (DB 8561 / dosya 9143)
+a9d8e55d-2586-4d60-bd1e-96907e9fa758,Ready or Not: Here I Come,2026,30168,6.6,[trending079] 079 trending-restore ile düşen ('ready or not: here i come')
+aa65ce56-3919-4c8a-a610-bab71a188a94,Forgotten Island,2026,7573,7.7,[votes] votes 7573 < 10000 (DB NULL / dosya 7573)
+ab7c342e-00c6-4fb4-8e2e-0fad7ccbd2e8,Pressure,2026,40947,7.3,"[inconsistent] oy tutarsız: kullanılan 40947 (>= 10000), diğer kaynak 84 (DB 84 / dosya 40947)"
+ab941b87-649f-49d1-9779-a17c1c55dd3b,April 9th,2015,6624,6.6,[votes] votes 6624 < 10000 (DB 6624 / dosya 7322)
+ac0f6c20-c4ab-436d-af4f-94016f84a42a,The Disappearance of Haruhi Suzumiya,2010,8722,8,[votes] votes 8722 < 10000 (DB 8722 / dosya 9101)
+acfa8601-1b9b-497d-87f1-fc2598761826,Red Shoes and the Seven Dwarfs,2019,6372,6.5,[votes] votes 6372 < 10000 (DB 6372 / dosya 6693)
+adf9adf2-2723-441b-818a-b4a76fd70cce,Sanshiro Sugata,1943,6102,6.7,[votes] votes 6102 < 10000 (DB 6102 / dosya 6379)
+af3bc99e-4aab-4797-b597-60fdec3e62c7,Bitter Rice,1949,5496,7.6,[votes] votes 5496 < 10000 (DB 5496 / dosya 5750)
+b0dac9d2-c414-484f-9cd2-3b0d55139427,Mixed by Erry,2023,6018,7.1,[votes] votes 6018 < 10000 (DB 6018 / dosya 6864)
+b1337879-10dd-46e0-95a5-4de16a9e5597,The Roundup: Punishment,2024,6461,6.6,[votes] votes 6461 < 10000 (DB 6461 / dosya 7339)
+b1d84ddf-e137-4fc8-be2c-d4142f826e5e,A Werewolf Boy,2012,9690,7.2,[votes] votes 9690 < 10000 (DB 9690 / dosya 9893)
+b21671eb-f596-4480-8981-0be6043cf51b,A Fortunate Man,2018,7805,7.2,[votes] votes 7805 < 10000 (DB 7805 / dosya 8865)
+b569053a-f837-44a0-a1e8-435786b41dcb,That's Life,1998,5640,7,[votes] votes 5640 < 10000 (DB 5640 / dosya 6288)
+b6b8df2a-9e00-4c86-8a9c-f2e522788fb7,Rhapsody in August,1991,8083,7.2,[votes] votes 8083 < 10000 (DB 8083 / dosya 8405)
+b753c7fb-687e-4136-b1ba-685bb5d1614e,Twisters,2024,201771,6.5,"[inconsistent] oy tutarsız: kullanılan 201771 (>= 10000), diğer kaynak 3011 (DB 3011 / dosya 201771)"
+b8edbb8d-a66e-42d1-872c-f24b47b39076,Sense and Sensibility,2026,5520,7.4,[votes] votes 5520 < 10000 (DB NULL / dosya 5520)
+b979604c-f128-4efb-83d9-46e20a0f2d73,Last Train from Gun Hill,1959,9071,7.3,"[inconsistent] oy tutarsız: kullanılan 9071 (< 10000), diğer kaynak 10004 (DB 9071 / dosya 10004)"
+b9a28006-7759-49ac-80cc-23db121f3218,Don't Say Good Luck,2026,9310,6.8,[votes] votes 9310 < 10000 (DB NULL / dosya 9310)
+b9e76f3b-0e3a-4bde-ac62-f57050fe436d,Uncharted,2022,309869,6.3,"[inconsistent] oy tutarsız: kullanılan 309869 (>= 10000), diğer kaynak 6903 (DB 6903 / dosya 309869)"
+ba2ce628-aa9f-4bac-aa19-d94fade0752f,Maelström,2000,7502,6.7,[votes] votes 7502 < 10000 (DB 7502 / dosya 8201)
+ba4aa167-c547-4140-8bc4-572df332f977,Honey,2010,7688,7.1,[votes] votes 7688 < 10000 (DB 7688 / dosya 7852)
+bad75619-777e-42be-a91d-0c6b51c300c6,From the Life of the Marionettes,1980,5046,7.2,[votes] votes 5046 < 10000 (DB 5046 / dosya 5314)
+bca12e40-1646-49df-8a5a-ed3ec89ce1d3,Sissi: The Fateful Years of an Empress,1957,6354,6.6,[votes] votes 6354 < 10000 (DB 6354 / dosya 6707)
+bdb0eb6e-0811-4422-a801-7f04603a3922,Magical Girl,2014,7754,7.2,[votes] votes 7754 < 10000 (DB 7754 / dosya 8001)
+be8a8274-06f8-467a-a2d2-db098bb7c577,Neon Genesis Evangelion: Death and Rebirth,1997,16346,7.2,[trending079] 079 trending-restore ile düşen ('neon genesis evangelion: death and rebirth')
+bf2504a7-4310-4012-9df2-cfc82391370d,71: Into the Fire,2010,6092,7.3,[votes] votes 6092 < 10000 (DB 6092 / dosya 6190)
+c05e141f-c1eb-4273-b8b8-5a5e50eb7562,The Emigrants,1971,7892,8,[votes] votes 7892 < 10000 (DB 7892 / dosya 8454)
+c097be44-8a9a-4d7a-a75a-091f0412ef7f,Madadayo,1993,6317,7.3,[votes] votes 6317 < 10000 (DB 6317 / dosya 6869)
+c0ae5161-7861-4263-9b0b-5750a6ee86ba,Where Hands Touch,2018,6216,6.6,[votes] votes 6216 < 10000 (DB 6216 / dosya 6444)
+c0e34762-8d7d-4f3b-a51d-9081c0437ec1,Obsession,1944,8457,7.6,[votes] votes 8457 < 10000 (DB 8457 / dosya 9172)
+c11b222b-fac5-410a-baf8-08fab6ebed3d,Black Dog,2024,5685,7.2,[votes] votes 5685 < 10000 (DB 5685 / dosya 6121)
+c234693e-98aa-473c-9f5f-60f6376dc8f4,Miracle in Milan,1951,8854,7.6,[votes] votes 8854 < 10000 (DB 8854 / dosya 9575)
+c24791be-05f1-48d8-bfa7-a2e2263a341c,Oscar,1967,8267,7.5,[votes] votes 8267 < 10000 (DB 8267 / dosya 8644)
+c3e42e25-b15f-45b5-b5a8-68c854765178,Orchestra Rehearsal,1979,5231,7.1,[votes] votes 5231 < 10000 (DB 5231 / dosya 5602)
+c43862f3-4a9d-44c0-8fed-2ed51484c5b4,Mountains May Depart,2015,6975,6.9,[votes] votes 6975 < 10000 (DB 6975 / dosya 7137)
+c473662c-8e7f-426c-a00f-25fa482e650f,White Snake,2019,6307,7,[votes] votes 6307 < 10000 (DB 6307 / dosya 6572)
+c519ef4c-6301-45c1-8bc3-012f8c4fbe76,The Wonderful Story of Henry Sugar and Three More,2024,8675,7.1,"[inconsistent] oy tutarsız: kullanılan 8675 (< 10000), diğer kaynak 13762 (DB 8675 / dosya 13762)"
+c53664d2-7fa8-480d-9957-73c305ea4276,Scenes from a Marriage,1974,9576,8.3,"[inconsistent] oy tutarsız: kullanılan 9576 (< 10000), diğer kaynak 10743 (DB 9576 / dosya 10743)"
+c599c165-1f31-414c-8dbd-ac280420e67a,Spirits of the Dead,1968,7122,6.4,[votes] votes 7122 < 10000 (DB 7122 / dosya 7910)
+c6c37f8a-51b0-450d-b623-d8a26b18cec6,Hot Girls Wanted,2015,18873,6.1,[content] genres Documentary
+c6c5fb21-50ff-40d5-873e-302eab18bae4,No Tears for the Dead,2014,7761,6.7,[votes] votes 7761 < 10000 (DB 7761 / dosya 8017)
+c7329bf7-925f-46f0-bb0a-dad21061d52b,Assassination,2015,8447,7.2,[votes] votes 8447 < 10000 (DB 8447 / dosya 8965)
+c91a4015-65c4-4ae4-9a4e-84023fa74163,Rolling Thunder Revue: A Bob Dylan Story by Martin Scorsese,2019,8499,7.5,[votes] votes 8499 < 10000 (DB 8499 / dosya 8786) | [content] genres Documentary
+c91d49f3-b48f-4f86-a3b4-799c0546ab9c,Human,2015,8944,8.6,[votes] votes 8944 < 10000 (DB 8944 / dosya 9305) | [content] genres Documentary
+cb5c6eb1-04d7-46e2-a95e-addd78a251cd,Senso,1954,9511,7.4,"[inconsistent] oy tutarsız: kullanılan 9511 (< 10000), diğer kaynak 10214 (DB 9511 / dosya 10214)"
+cd5d8659-d54e-47d8-941d-9c34f5a51415,HAIKYU!! The Dumpster Battle,2024,6882,7.7,[votes] votes 6882 < 10000 (DB 6882 / dosya 8797)
+cd8ef8a3-e7f1-4c96-a6a3-124d7933484a,Demon Slayer: Kimetsu no Yaiba - Sibling's Bond,2019,5335,8.4,[votes] votes 5335 < 10000 (DB 4619 / dosya 5335)
+cdd0eeb8-fc83-48a9-8475-6ed46894c05c,Maborosi,1995,7954,7.5,[votes] votes 7954 < 10000 (DB 7954 / dosya 8807)
+ce80b119-3efd-4172-8684-cdc16955e50c,Monkey King: Hero Is Back,2015,5069,6.7,[votes] votes 5069 < 10000 (DB 5069 / dosya 5194)
+ceb691a1-18de-4732-be1b-1065541fadbc,undertone,2026,36970,5.9,"[inconsistent] oy tutarsız: kullanılan 36970 (>= 10000), diğer kaynak 270 (DB 270 / dosya 36970)"
+cebb3fab-8f9d-4046-9ead-e03a4d0d4209,Le Notti Bianche,1957,9351,7.8,"[inconsistent] oy tutarsız: kullanılan 9351 (< 10000), diğer kaynak 10580 (DB 9351 / dosya 10580)"
+cefd09cb-0ba1-445d-9bb2-052a178dc3ab,Saraband,2003,8687,7.5,[votes] votes 8687 < 10000 (DB 8687 / dosya 9190) | [content] titleType=tvMovie
+cf0c6e0e-f3dc-4f52-9e77-f1bda57f0b67,Reign of Assassins,2010,9504,6.8,[votes] votes 9504 < 10000 (DB 9504 / dosya 9683)
+cfbd3eb4-a80c-4b4b-9740-51b21a5d97cd,The Attorney,2013,8421,7.7,[votes] votes 8421 < 10000 (DB 8421 / dosya 8628)
+d03ed8d5-21d3-4a8d-96d4-52fc476738e8,The Master and Margarita,2024,7482,7.1,[votes] votes 7482 < 10000 (DB NULL / dosya 7482)
+d0c00c91-6e92-4f0d-8120-c98869601d73,No Time to Die,2021,496644,7.3,"[inconsistent] oy tutarsız: kullanılan 496644 (>= 10000), diğer kaynak 7147 (DB 7147 / dosya 496644)"
+d290289f-a9f5-4811-aa0d-8739ab57399d,The Battleship Island,2017,9214,7.1,[votes] votes 9214 < 10000 (DB 9214 / dosya 9685)
+d2983991-79b5-4ea0-aafe-dd71265d1576,Only You,2014,6657,7.3,[votes] votes 6657 < 10000 (DB 6657 / dosya 7227)
+d38ee4d1-02b6-42bb-83bd-9a83999c2585,Young Washington,2026,14809,6.8,"[inconsistent] oy tutarsız: kullanılan 14809 (>= 10000), diğer kaynak 0 (DB 0 / dosya 14809)"
+d3b2de76-f579-4de1-b275-b0b59beca885,All My Life,2020,6964,6.3,[votes] votes 6964 < 10000 (DB 6964 / dosya 7188)
+d5dad7d7-e1c1-4b4e-a088-61a0a4679195,"So Long, My Son",2019,5907,7.7,[votes] votes 5907 < 10000 (DB 5907 / dosya 6222)
+d5f468ac-bf0e-475a-affc-92e419bb5502,Normal,2026,38151,6.3,"[inconsistent] oy tutarsız: kullanılan 38151 (>= 10000), diğer kaynak 281 (DB 281 / dosya 38151)"
+d73783f8-fec8-465c-91c5-915cfd9d40ca,Coming Home,2014,7035,7.2,[votes] votes 7035 < 10000 (DB 7035 / dosya 7230)
+d7736332-85d7-4622-88dc-103fc42f67fb,The Five Obstructions,2003,9360,7.4,[votes] votes 9360 < 10000 (DB 9360 / dosya 9783) | [content] genres Documentary
+d7e06127-f8e0-419a-b7b3-aed90b37ceaa,Barefoot Gen,1983,9988,8,"[inconsistent] oy tutarsız: kullanılan 9988 (< 10000), diğer kaynak 10685 (DB 9988 / dosya 10685)"
+da6eb4dd-b0e8-4871-86e6-b2fb04e586fd,Murder She Said,1961,8830,7.3,[votes] votes 8830 < 10000 (DB 8830 / dosya 9846)
+dad92a50-73ca-4adb-990f-d91fc6ef28c1,"HIStory on Film, Volume II",1997,1822,8.5,"[votes] votes 1822 < 10000 (DB 1822 / dosya 2074) | [content] titleType=video | [concert] konser/performans listesi ('history on film, volume ii') | [tierfloor] oy tabanı altı: votes 1822 < 5000 ama determineCurationTier core döndürdü"
+db12370a-d35f-4cf1-b77b-6609bd90da4a,That Man from Rio,1964,6797,7,[votes] votes 6797 < 10000 (DB 6797 / dosya 7207)
+db45f6d9-5f69-4fde-abda-812fd006f8cc,Carolina Caroline,2026,7724,6.6,[votes] votes 7724 < 10000 (DB 6 / dosya 7724)
+db75c56b-f627-47e1-96db-866f506e9af1,Lee Cronin's The Mummy,2026,76670,6.1,"[inconsistent] oy tutarsız: kullanılan 76670 (>= 10000), diğer kaynak 2103 (DB 2103 / dosya 76670)"
+df45d89f-f299-487d-b70f-a68c536f5016,KONOSUBA – God's blessing on this wonderful world! Legend of Crimson,2019,6988,7.8,[votes] votes 6988 < 10000 (DB 6988 / dosya 7709)
+df8e75ee-1fb0-4f88-9978-fd62d8a59320,A Town Called Panic,2009,9187,7.4,[votes] votes 9187 < 10000 (DB 9187 / dosya 9361)
+e0fa9e7b-9d6f-4098-bc94-c673dcbcc289,Jackass: Best and Last,2026,14712,6.2,[content] genres Documentary
+e1920050-fd1f-44a8-a790-ecc931e24cd4,Voicemails for Isabelle,2026,58367,7.2,"[inconsistent] oy tutarsız: kullanılan 58367 (>= 10000), diğer kaynak 165 (DB 165 / dosya 58367)"
+e28ddb48-2732-4598-8a29-a2157a68be11,Killer,1997,8646,7.5,[votes] votes 8646 < 10000 (DB 8646 / dosya 8873)
+e2f1bd3d-a52d-41ed-b82d-8de5e2b3debf,Othello,1951,9676,7.5,"[inconsistent] oy tutarsız: kullanılan 9676 (< 10000), diğer kaynak 10343 (DB 9676 / dosya 10343)"
+e329469f-4a60-4177-87dc-cf546267e317,Don't Be Bad,2015,5203,7.1,[votes] votes 5203 < 10000 (DB 5203 / dosya 5853)
+e34d532e-cc6e-4470-a4fa-1e2a07c8589e,The Perfect Dictatorship,2014,6315,7.2,[votes] votes 6315 < 10000 (DB 6315 / dosya 6827)
+e414bbb7-6311-4fa5-9fd6-1f328e37415d,"Miraculous: Ladybug & Cat Noir, The Movie",2023,8084,6.1,[votes] votes 8084 < 10000 (DB 8084 / dosya 8587)
+e41ed28b-15e4-4687-854d-353f5d0ee736,Colors of Evil: Red,2024,7707,6.4,"[inconsistent] oy tutarsız: kullanılan 7707 (< 10000), diğer kaynak 11064 (DB 7707 / dosya 11064)"
+e42a6bf8-1430-4d62-a577-cb03e75a3f5b,And the Ship Sails On,1983,6914,7.5,[votes] votes 6914 < 10000 (DB 6914 / dosya 7507)
+e42bccfb-078a-49b3-a75a-93c4325e66a1,Teddy Bear,1981,6846,8.2,[votes] votes 6846 < 10000 (DB 6846 / dosya 7284)
+e5a3c4dd-0abf-45c5-8035-60ef554f7b8e,Stromboli,1950,8233,7.2,[votes] votes 8233 < 10000 (DB 8233 / dosya 9137)
+e5b08be0-d3e3-48e6-8042-5fd8845421b9,Power Ballad,2026,9607,6.7,[votes] votes 9607 < 10000 (DB 23 / dosya 9607)
+e73feb4f-7dbd-480b-ad22-2a416eb60fe5,Herod's Law,1999,7295,7.8,[votes] votes 7295 < 10000 (DB 7295 / dosya 8041)
+e81567ac-cde0-4c0b-be29-2c76507277d7,The Swordsman,2020,6302,6.8,[votes] votes 6302 < 10000 (DB 6302 / dosya 6613)
+e8b6fa8a-99ea-487b-a382-9ef33b9936bb,Ant-Man and the Wasp: Quantumania,2023,281719,6,"[inconsistent] oy tutarsız: kullanılan 281719 (>= 10000), diğer kaynak 5866 (DB 5866 / dosya 281719)"
+e8d34f4e-42c2-4c1f-9f55-f35d601d7c47,Superman Returns,2006,305461,6.1,"[inconsistent] oy tutarsız: kullanılan 305461 (>= 10000), diğer kaynak 4590 (DB 4590 / dosya 305461)"
+e952464c-1e4d-4451-90a4-dfd757414a25,Bellissima,1952,5518,7.7,[votes] votes 5518 < 10000 (DB 5518 / dosya 6182)
+e9ebe147-2b31-4e80-9d8a-d8454dcbd5d5,The Silent Revolution,2018,6394,7.4,[votes] votes 6394 < 10000 (DB 6394 / dosya 6624)
+ea6c3a14-68bf-4a53-8afe-e356e5008ea1,Tune in for Love,2019,6535,7.1,[votes] votes 6535 < 10000 (DB 6535 / dosya 7815)
+ec585efd-cbbe-4dac-a6b3-d2ba3976002f,The Shadow's Edge,2025,8806,7.1,"[inconsistent] oy tutarsız: kullanılan 8806 (< 10000), diğer kaynak 15211 (DB 8806 / dosya 15211)"
+ed108e6b-1626-47b7-bfd1-cbb399ca01d5,Arco,2025,7143,7.3,[votes] votes 7143 < 10000 (DB 7143 / dosya 9632)
+ed756f87-3d74-4c3f-a603-7acc801589d7,Sword Art Online the Movie: Ordinal Scale,2017,9966,7.3,"[inconsistent] oy tutarsız: kullanılan 9966 (< 10000), diğer kaynak 10362 (DB 9966 / dosya 10362)"
+ed79299f-6777-4143-a3ad-4f63c00b8397,Twin Peaks,1989,2521,8.9,[votes] votes 2521 < 10000 (DB 2521 / dosya 3988) | [content] titleType=video | [tierfloor] oy tabanı altı: votes 2521 < 5000 ama determineCurationTier core döndürdü
+ee664375-0df5-4b5e-a6d0-aa04bc73495a,I Love Boosters,2026,9561,6.6,[votes] votes 9561 < 10000 (DB 37 / dosya 9561)
+ee79942f-a0b8-4a98-af96-6aa72330444c,Naruto Shippuden the Movie,2007,5447,6.7,[votes] votes 5447 < 10000 (DB 5447 / dosya 5810)
+eed542f8-994a-46df-a615-5a5207ae5ee6,The Way Home,2002,6220,7.7,[votes] votes 6220 < 10000 (DB 6220 / dosya 6410)
+ef5599f9-bd6f-4612-8bd7-38f75d1fb07f,Stand by Me Doraemon 2,2020,5631,7.5,[votes] votes 5631 < 10000 (DB 5631 / dosya 6363)
+efae869a-f06c-4a26-86b9-ee54e5d640c3,Pippi Longstocking,1969,5698,7,[votes] votes 5698 < 10000 (DB 5698 / dosya 6060)
+efe2aa91-f6c3-4970-a7eb-8adccf169037,Ranabaali,2026,5787,7.6,[votes] votes 5787 < 10000 (DB NULL / dosya 5787)
+f01f0f9d-3764-4497-9119-2001890e9d41,Casque d'Or,1952,6491,7.6,[votes] votes 6491 < 10000 (DB 6491 / dosya 6736)
+f02867f3-6675-433c-95f2-7d1a6eec0093,Fantastic Beasts: The Secrets of Dumbledore,2022,196505,6.2,"[inconsistent] oy tutarsız: kullanılan 196505 (>= 10000), diğer kaynak 5118 (DB 5118 / dosya 196505)"
+f209fb28-7ec7-4fa1-8d07-14a4a755334a,Facing El Chapo,2026,9653,6.7,[votes] votes 9653 < 10000 (DB NULL / dosya 9653)
+f21b8b56-61f5-4f15-a712-b9d3b8efe8b9,Bad Seeds,2018,6721,7.2,[votes] votes 6721 < 10000 (DB 6721 / dosya 6859)
+f2cff521-349b-4712-b5c9-541b5a50ec93,Counterattack,2025,5794,6,[votes] votes 5794 < 10000 (DB 5794 / dosya 6466)
+f4a7b9c0-f617-4a43-9625-7819d3e01df0,Scent of a Woman,1974,5485,7.5,[votes] votes 5485 < 10000 (DB 5485 / dosya 5852)
+f5c7e338-e656-41a5-9901-5ea1665e4d57,The Little Mermaid,2023,180872,7.2,"[inconsistent] oy tutarsız: kullanılan 180872 (>= 10000), diğer kaynak 3330 (DB 3330 / dosya 180872)"
+f6b353bf-b61d-4eac-be05-a05ab9a45258,The Witch: Part 2 - The Other One,2022,9285,6.3,"[inconsistent] oy tutarsız: kullanılan 9285 (< 10000), diğer kaynak 10083 (DB 9285 / dosya 10083)"
+f76c6fa2-d04c-419c-bae7-5cd8d472e223,With Fire and Sword,1999,5521,7,[votes] votes 5521 < 10000 (DB 5521 / dosya 6102)
+f78c275d-4869-4c2f-9415-170ad247c02d,A Scene at the Sea,1991,7069,7.5,[votes] votes 7069 < 10000 (DB 7069 / dosya 7602)
+f78de828-e62e-4cec-a23e-f3e67087dd5e,Heidi,2015,8220,7.4,[votes] votes 8220 < 10000 (DB 8220 / dosya 8619)
+f7d4c3e7-7362-4118-bde8-797274c40127,Kuroneko,1968,9798,7.7,"[inconsistent] oy tutarsız: kullanılan 9798 (< 10000), diğer kaynak 10163 (DB 9798 / dosya 10163)"
+f8dc6190-af74-4f1f-8065-9ba1ebf0b1fb,The Saragossa Manuscript,1966,6042,7.8,[votes] votes 6042 < 10000 (DB 6042 / dosya 6664)
+f8f6d81e-f691-4723-a4d5-0d630fb97f36,Godzilla Against MechaGodzilla,2002,6205,6.6,[votes] votes 6205 < 10000 (DB 6205 / dosya 6434)
+f93374e9-ea5a-4a52-8dbb-5b55d2da06a5,The Rivals of Amziah King,2026,8450,6.6,[votes] votes 8450 < 10000 (DB 0 / dosya 8450)
+fa061b3a-09f1-4a7d-acf4-2eb2fde576b5,Hoppers,2026,37622,7.4,[trending079] 079 trending-restore ile düşen ('hoppers')
+fa3b7914-9b27-4cd1-a596-51e623a78523,City of Women,1980,8513,6.9,[votes] votes 8513 < 10000 (DB 8513 / dosya 8971)
+fb564a0e-f666-43f5-aa77-188a8724cfb9,Is God Is,2026,7994,6.5,[votes] votes 7994 < 10000 (DB 69 / dosya 7994)
+fba61561-3903-4d1b-827f-d3d476207d2b,Head Full of Honey,2014,7572,6.6,[votes] votes 7572 < 10000 (DB 7572 / dosya 7789)
+fbcf31d8-8c0b-4fc4-b5ab-3908963e002c,The Adventures of Prince Achmed,1926,7520,7.8,[votes] votes 7520 < 10000 (DB 7520 / dosya 7935)
+fce4490a-640a-4c88-8cd3-57b531043d81,Let Go,2024,6785,7,[votes] votes 6785 < 10000 (DB 6785 / dosya 7643)
+fe43f9f6-ad68-4e2e-8fee-a3951819e8fe,Hwayi: A Monster Boy,2013,5646,7,[votes] votes 5646 < 10000 (DB 5646 / dosya 6008)
+ff5b4b7c-e79e-4ea2-9eb1-7e9baf4d79a2,A Touch of Zen,1970,8143,7.5,[votes] votes 8143 < 10000 (DB 8143 / dosya 8423)
+ff86498c-c399-4190-955c-ea4ccea91eb5,Funeral Parade of Roses,1969,7587,7.7,[votes] votes 7587 < 10000 (DB 7587 / dosya 8654)
+ffdda875-5270-42cc-88c3-3f057d327cb7,Bring the Soul: The Movie,2019,2943,8.4,[votes] votes 2943 < 10000 (DB 2943 / dosya 3188) | [content] genres Documentary | [concert] konser/performans listesi ('bring the soul') | [tierfloor] oy tabanı altı: votes 2943 < 5000 ama determineCurationTier core döndürdü

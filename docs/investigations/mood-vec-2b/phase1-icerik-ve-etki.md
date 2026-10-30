@@ -1,3 +1,5 @@
+> **Geçersiz kılındı (Adım 1b):** kapsam daraltıldı, güncel sayılar için `phase1-daraltma.md`. Bu belge Adım 1 çıktısının (364 film) kaydıdır.
+
 # MOOD-VEC-2b Faz 1 — arşiv nedeni, içerik taraması, etki ölçümü
 
 31 Eki 2026 · dal `feat/mood-vec-2b` · **yalnız hazırlık**: canlıya yazılmadı, SQL'i CTO MCP ile uygular.

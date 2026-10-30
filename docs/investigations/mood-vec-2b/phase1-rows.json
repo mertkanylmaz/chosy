@@ -1,16 +1,5 @@
 [
   {
-    "id": "01cdb17a-57c5-4ba3-84b4-5dcb0b54c902",
-    "title": "Innocent Voices",
-    "year": 2005,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 8319,
-    "imdb_id": "tt0387914",
-    "imdb_id_new": false
-  },
-  {
     "id": "024e64eb-7cb2-4076-8729-b73b147263a8",
     "title": "In the Grey",
     "year": 2026,
@@ -33,17 +22,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "034e4624-dc92-4df0-a98c-664548b9ac7f",
-    "title": "Montage",
-    "year": 2013,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9025,
-    "imdb_id": "tt2969522",
-    "imdb_id_new": false
-  },
-  {
     "id": "03d5611a-ca7a-4224-bdcc-5934bfc0ac22",
     "title": "New York Stories",
     "year": 1989,
@@ -52,28 +30,6 @@
     "rating": 6.4,
     "votes": 20904,
     "imdb_id": "tt0097965",
-    "imdb_id_new": false
-  },
-  {
-    "id": "03eeb7df-d422-492d-a78b-24f762cc7b06",
-    "title": "Animal World",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 5324,
-    "imdb_id": "tt7946836",
-    "imdb_id_new": false
-  },
-  {
-    "id": "043506fc-4347-4f56-a43a-8a6452a4719a",
-    "title": "All Your Faces",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 5115,
-    "imdb_id": "tt24070754",
     "imdb_id_new": false
   },
   {
@@ -88,28 +44,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "06547dd2-1910-48aa-821c-81b6c9462ca1",
-    "title": "Secret Agent",
-    "year": 1936,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 9469,
-    "imdb_id": "tt0028231",
-    "imdb_id_new": false
-  },
-  {
-    "id": "06dce849-bb32-46c2-abb8-1f363a5ecb6a",
-    "title": "The Peasants",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 9057,
-    "imdb_id": "tt10651230",
-    "imdb_id_new": false
-  },
-  {
     "id": "0703aa6c-28ba-4c1a-bc8a-0838a79ce4a3",
     "title": "TRON: Ares",
     "year": 2025,
@@ -118,226 +52,6 @@
     "rating": 6.2,
     "votes": 78081,
     "imdb_id": "tt6604188",
-    "imdb_id_new": false
-  },
-  {
-    "id": "09d7864e-2b87-44a0-ba59-3e5dda5c78a1",
-    "title": "The Keeper",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 7239,
-    "imdb_id": "tt4642192",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0ad988cd-0575-44d5-8862-7e4c6e72ea68",
-    "title": "Bleeder",
-    "year": 1999,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 9890,
-    "imdb_id": "tt0161292",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0b219ade-d398-4aad-9daf-386ebba9d905",
-    "title": "Heartstopper Forever",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 9153,
-    "imdb_id": "tt36619926",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0b58e47d-764c-4b5c-a028-6ae8039237fd",
-    "title": "The New Land",
-    "year": 1972,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 5451,
-    "imdb_id": "tt0069035",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0b930836-7430-471d-a943-8720cc57581d",
-    "title": "Fellini's Casanova",
-    "year": 1976,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7,
-    "votes": 9315,
-    "imdb_id": "tt0074291",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0da5b546-6328-42c2-97a6-1443fe11afe0",
-    "title": "Green Border",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 7524,
-    "imdb_id": "tt27722543",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0e473037-fc51-4739-bbe1-b87633f17871",
-    "title": "Water and Fire",
-    "year": 2013,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.1,
-    "votes": 5080,
-    "imdb_id": "tt3142958",
-    "imdb_id_new": false
-  },
-  {
-    "id": "0ea92565-a76b-43d7-8edf-77fd5674d951",
-    "title": "Hatred",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 7484,
-    "imdb_id": "tt6068960",
-    "imdb_id_new": false
-  },
-  {
-    "id": "10176d4c-ff86-4442-82bb-67e653996e83",
-    "title": "Vabank",
-    "year": 1981,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.9,
-    "votes": 5105,
-    "imdb_id": "tt0083271",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1196693e-a4d3-4e60-a78c-6547336ed805",
-    "title": "Boccaccio '70",
-    "year": 1962,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5568,
-    "imdb_id": "tt0055805",
-    "imdb_id_new": false
-  },
-  {
-    "id": "11d0cbb5-59a3-424d-a1d8-14bee3b889cb",
-    "title": "The Anthem of the Heart",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6982,
-    "imdb_id": "tt4489416",
-    "imdb_id_new": false
-  },
-  {
-    "id": "11db55c2-63e2-4524-9baf-ba1e822ab5d2",
-    "title": "A Swedish Love Story",
-    "year": 1970,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 7731,
-    "imdb_id": "tt0065955",
-    "imdb_id_new": false
-  },
-  {
-    "id": "12d76355-63ea-43b0-bcd7-7c9bda36ac02",
-    "title": "Fists in the Pocket",
-    "year": 1965,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 5358,
-    "imdb_id": "tt0059619",
-    "imdb_id_new": false
-  },
-  {
-    "id": "131f4df3-d55d-4263-90de-12df4aaeb559",
-    "title": "Shoeshine",
-    "year": 1946,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 8540,
-    "imdb_id": "tt0038913",
-    "imdb_id_new": false
-  },
-  {
-    "id": "13cf685a-f9f1-4203-88fa-be26425ea7b8",
-    "title": "A Bag of Marbles",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6813,
-    "imdb_id": "tt5091612",
-    "imdb_id_new": false
-  },
-  {
-    "id": "13e91e46-87c4-4635-aa56-4793d48a43c1",
-    "title": "The Ballad of Narayama",
-    "year": 1983,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9789,
-    "imdb_id": "tt0084390",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1567d06b-a490-4d14-9915-f13407b7f0b8",
-    "title": "Mr & Mme Adelman",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6188,
-    "imdb_id": "tt6095616",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1732bea6-ac67-451a-a0b9-b42281912400",
-    "title": "Drishyam: The Conclusion",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 7412,
-    "imdb_id": "tt27050858",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1ae97a48-994d-41ec-8259-984f39346ec4",
-    "title": "Delusions of Grandeur",
-    "year": 1971,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 8415,
-    "imdb_id": "tt0067108",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1b7fb381-6f4c-4875-8d3a-8b6d36f73d2c",
-    "title": "Face to Face",
-    "year": 1976,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.5,
-    "votes": 6619,
-    "imdb_id": "tt0074147",
     "imdb_id_new": false
   },
   {
@@ -352,28 +66,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "1ca18070-bab9-4e70-a912-f605bb777cfe",
-    "title": "Cold Eyes",
-    "year": 2013,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 9101,
-    "imdb_id": "tt2969656",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1cf69374-a9e1-4588-90c1-bd8f968d3b90",
-    "title": "Flavors of Youth",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 9344,
-    "imdb_id": "tt8176578",
-    "imdb_id_new": false
-  },
-  {
     "id": "1d623f94-8769-473c-b74c-b6f71daec231",
     "title": "Leviticus",
     "year": 2026,
@@ -382,28 +74,6 @@
     "rating": 6.4,
     "votes": 20399,
     "imdb_id": "tt39143902",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1dde7817-37ae-4d56-ac3b-d5ecfe4cb8f9",
-    "title": "R",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 5585,
-    "imdb_id": "tt1434443",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1e78b1d8-b260-4ea2-bb62-bfa259b3afdc",
-    "title": "The Eight Hundred",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 8239,
-    "imdb_id": "tt7294150",
     "imdb_id_new": false
   },
   {
@@ -418,127 +88,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "1eeecdd0-a477-472c-875e-526fe40966e6",
-    "title": "Kanal",
-    "year": 1957,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.9,
-    "votes": 8202,
-    "imdb_id": "tt0050585",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1f36b8b7-ac62-48be-acbd-17bef716b3bb",
-    "title": "Dr. Mabuse, the Gambler",
-    "year": 1922,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.8,
-    "votes": 9645,
-    "imdb_id": "tt0013086",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1f4ed9a3-d2ec-4e76-b2cf-6739f4cda218",
-    "title": "For Love and Gold",
-    "year": 1966,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 5440,
-    "imdb_id": "tt0060125",
-    "imdb_id_new": false
-  },
-  {
-    "id": "1fe7934b-04d2-493d-af25-a009bd86157a",
-    "title": "Rabid Dogs",
-    "year": 1973,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 5462,
-    "imdb_id": "tt0071275",
-    "imdb_id_new": false
-  },
-  {
-    "id": "206b3509-a1d9-4c55-a269-ce9f87cccc1c",
-    "title": "On the Silver Globe",
-    "year": 1989,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 5048,
-    "imdb_id": "tt0093593",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2185f720-5a8a-453c-9810-ba23a7491858",
-    "title": "The Old Gun",
-    "year": 1975,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 5024,
-    "imdb_id": "tt0073864",
-    "imdb_id_new": false
-  },
-  {
-    "id": "21b5214e-6055-465f-b053-3542bd7fe8cd",
-    "title": "One Piece: Stampede",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 9548,
-    "imdb_id": "tt9430698",
-    "imdb_id_new": false
-  },
-  {
-    "id": "227632a7-9936-4fdf-a42f-d86f453fa16b",
-    "title": "Nothing Left to Do But Cry",
-    "year": 1984,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 7310,
-    "imdb_id": "tt0087814",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2281c3a5-1f86-4293-b7d2-7d0bdf4b9a3e",
-    "title": "Camino",
-    "year": 2008,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 5376,
-    "imdb_id": "tt1206285",
-    "imdb_id_new": false
-  },
-  {
-    "id": "239caf7c-a7b4-4d1b-8aa5-ba7c5f5cfc5b",
-    "title": "Help! I'm a Fish",
-    "year": 2000,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 7523,
-    "imdb_id": "tt0168856",
-    "imdb_id_new": false
-  },
-  {
-    "id": "251b49c2-bef5-4ba6-a673-0cf19ff7f4fd",
-    "title": "No Mercy",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9896,
-    "imdb_id": "tt1662557",
-    "imdb_id_new": false
-  },
-  {
     "id": "258ac055-79e6-4dd0-9221-76f330abb047",
     "title": "Breakthrough",
     "year": 2019,
@@ -547,17 +96,6 @@
     "rating": 6.3,
     "votes": 11613,
     "imdb_id": "tt7083526",
-    "imdb_id_new": false
-  },
-  {
-    "id": "26b94fcf-4aff-44ff-9f68-d23d1bee9132",
-    "title": "It Ends with Us",
-    "year": 2024,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 106254,
-    "imdb_id": "tt10655524",
     "imdb_id_new": false
   },
   {
@@ -572,28 +110,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "2b25e9be-ffa4-4e3a-a7a9-23ad21e1def0",
-    "title": "The Social Reckoning",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 9297,
-    "imdb_id": "tt37510326",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2cea9ff1-1a57-4bc6-89b0-e77f5da023de",
-    "title": "Pandora",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 8873,
-    "imdb_id": "tt6302160",
-    "imdb_id_new": false
-  },
-  {
     "id": "2d636056-f749-4909-b04a-812d2d7aaebb",
     "title": "Kung Fu Panda 4",
     "year": 2024,
@@ -602,17 +118,6 @@
     "rating": 6.3,
     "votes": 78494,
     "imdb_id": "tt21692408",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2d890ab0-9535-4b46-947d-ff27ddd8deb4",
-    "title": "Marry My Dead Body",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 7268,
-    "imdb_id": "tt22742964",
     "imdb_id_new": false
   },
   {
@@ -627,105 +132,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "2e2087d9-5726-4ac4-ac44-921a623638b3",
-    "title": "100 Meters",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 7138,
-    "imdb_id": "tt5089786",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2ed8bcd2-11a4-40c4-99ca-ffbcbf6fe8ad",
-    "title": "The Tunnel to Summer, the Exit of Goodbyes",
-    "year": 2022,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 6110,
-    "imdb_id": "tt17382524",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2ee4fbd3-df0e-4c67-b71c-5e28a2d29876",
-    "title": "Dying to Survive",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9024,
-    "imdb_id": "tt7362036",
-    "imdb_id_new": false
-  },
-  {
-    "id": "2fade49f-c99e-4b51-ba44-3eb8ed5928d1",
-    "title": "Floating Weeds",
-    "year": 1959,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.9,
-    "votes": 9697,
-    "imdb_id": "tt0053390",
-    "imdb_id_new": false
-  },
-  {
-    "id": "31b9a72f-4123-495b-9d59-78148eb8cf68",
-    "title": "Warsaw 44",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 7180,
-    "imdb_id": "tt3765326",
-    "imdb_id_new": false
-  },
-  {
-    "id": "31d43963-4e9a-4bf0-af98-1c7e03be69b0",
-    "title": "The Hourglass Sanatorium",
-    "year": 1973,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 5614,
-    "imdb_id": "tt0070628",
-    "imdb_id_new": false
-  },
-  {
-    "id": "325b7736-a409-44e7-a980-8ae937347b45",
-    "title": "Le Deuxième Souffle",
-    "year": 1966,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.9,
-    "votes": 7129,
-    "imdb_id": "tt0060305",
-    "imdb_id_new": false
-  },
-  {
-    "id": "33043831-132c-45d1-a340-6e4a2f53e631",
-    "title": "The Roundup: No Way Out",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 8307,
-    "imdb_id": "tt21364552",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3308961b-d138-4a46-853e-c32190bc4069",
-    "title": "Swept Away",
-    "year": 1974,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 7325,
-    "imdb_id": "tt0073817",
-    "imdb_id_new": false
-  },
-  {
     "id": "33bac263-99cc-48a0-a0ef-c4477f50449a",
     "title": "Heart of the Beast",
     "year": 2026,
@@ -734,28 +140,6 @@
     "rating": 7.2,
     "votes": 31095,
     "imdb_id": "tt7526136",
-    "imdb_id_new": false
-  },
-  {
-    "id": "33cb1a29-7c4f-4dc8-b13e-42f5f2bd2233",
-    "title": "Daybreak",
-    "year": 1939,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.7,
-    "votes": 8488,
-    "imdb_id": "tt0031514",
-    "imdb_id_new": false
-  },
-  {
-    "id": "340be1ee-6e12-4713-873a-9e43bb85b7e4",
-    "title": "The Drama",
-    "year": 2026,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 26572,
-    "imdb_id": "tt33071426",
     "imdb_id_new": false
   },
   {
@@ -781,39 +165,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "363e0143-a063-412a-8cc6-6bdc3a0fd7fd",
-    "title": "Officer Black Belt",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 9895,
-    "imdb_id": "tt28494829",
-    "imdb_id_new": false
-  },
-  {
-    "id": "36d84ff7-717d-4f55-8788-1958c2310607",
-    "title": "The Small Town",
-    "year": 1997,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7,
-    "votes": 7030,
-    "imdb_id": "tt0143334",
-    "imdb_id_new": false
-  },
-  {
-    "id": "36ddb864-8233-4c68-9e82-6c65768d363b",
-    "title": "Mulan: Rise of a Warrior",
-    "year": 2009,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 7140,
-    "imdb_id": "tt1308138",
-    "imdb_id_new": false
-  },
-  {
     "id": "38198cf8-4c06-4ff9-9711-e0e6f595eedb",
     "title": "Love",
     "year": 2015,
@@ -822,127 +173,6 @@
     "rating": 6.1,
     "votes": 73447,
     "imdb_id": "tt3774694",
-    "imdb_id_new": false
-  },
-  {
-    "id": "38eb4d5b-00b7-433b-b642-9cb67cb1495f",
-    "title": "The Human Condition II: Road to Eternity",
-    "year": 1959,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.5,
-    "votes": 8444,
-    "imdb_id": "tt0053115",
-    "imdb_id_new": false
-  },
-  {
-    "id": "39e94ac2-ec88-48b5-89b9-deb994da1de5",
-    "title": "Ugly, Dirty and Bad",
-    "year": 1976,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 9294,
-    "imdb_id": "tt0074252",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3c3dec29-f881-4d47-8908-b4c126faa6d0",
-    "title": "Gertrud",
-    "year": 1964,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.3,
-    "votes": 6939,
-    "imdb_id": "tt0058138",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3e09ef5f-1aac-4802-a70b-a816721452a4",
-    "title": "Elisa & Marcela",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6067,
-    "imdb_id": "tt6704898",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3efe73f1-c2df-4494-adc3-de157d8fc37d",
-    "title": "Sawdust and Tinsel",
-    "year": 1953,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.4,
-    "votes": 7548,
-    "imdb_id": "tt0045848",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3f06d748-214f-4aeb-8049-7d35bb24d1db",
-    "title": "Night Is Short, Walk On Girl",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 7232,
-    "imdb_id": "tt6335734",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3f8b189a-6c42-4f4c-84e0-c48056c0ed77",
-    "title": "Creation of the Gods I: Kingdom of Storms",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 6419,
-    "imdb_id": "tt6979756",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3fab178d-ec74-42ca-b90e-bc2ba784e6ae",
-    "title": "Gods",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 7875,
-    "imdb_id": "tt3745620",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3fe2daec-c25a-4094-af04-e685d3e92300",
-    "title": "Ride On",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 7346,
-    "imdb_id": "tt15430628",
-    "imdb_id_new": false
-  },
-  {
-    "id": "3ff8668c-271b-4721-bf87-f2232f014dc3",
-    "title": "The Idiot",
-    "year": 1951,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.1,
-    "votes": 5828,
-    "imdb_id": "tt0043614",
-    "imdb_id_new": false
-  },
-  {
-    "id": "423b2b6c-a071-484b-8076-d32575e5cf03",
-    "title": "Camera Buff",
-    "year": 1979,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 8595,
-    "imdb_id": "tt0078763",
     "imdb_id_new": false
   },
   {
@@ -957,17 +187,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "439648cf-3cdc-41cf-af7b-abe74c3c51da",
-    "title": "Belladonna of Sadness",
-    "year": 1973,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 9279,
-    "imdb_id": "tt0071203",
-    "imdb_id_new": false
-  },
-  {
     "id": "43cde8b8-7a60-43d3-9237-e0231da2eb65",
     "title": "Avatar Aang: The Last Airbender",
     "year": 2026,
@@ -976,17 +195,6 @@
     "rating": 7.7,
     "votes": 31566,
     "imdb_id": "tt18259538",
-    "imdb_id_new": false
-  },
-  {
-    "id": "448ac33b-af43-48cf-8ba8-882aaebc4e71",
-    "title": "Fabricated City",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 6938,
-    "imdb_id": "tt6399158",
     "imdb_id_new": false
   },
   {
@@ -1023,50 +231,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "45ef5c1e-bdd1-4d5b-8cc1-131247893268",
-    "title": "The Secret Woman",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 7487,
-    "imdb_id": "tt37275992",
-    "imdb_id_new": false
-  },
-  {
-    "id": "46dfe99d-e448-44e9-9c11-4ea02a162221",
-    "title": "Mad Detective",
-    "year": 2007,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 8274,
-    "imdb_id": "tt0969269",
-    "imdb_id_new": false
-  },
-  {
-    "id": "47292992-af1b-4e47-a193-3e2e09534c16",
-    "title": "Dance of the Forty One",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 5847,
-    "imdb_id": "tt11525022",
-    "imdb_id_new": false
-  },
-  {
-    "id": "479f4368-baeb-4cdf-8af6-1122ecda4d07",
-    "title": "The Sheep Detectives",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 123542,
-    "imdb_id": "tt32565993",
-    "imdb_id_new": false
-  },
-  {
     "id": "4a7a6058-1286-4ccc-8e59-664428beb693",
     "title": "Girl in the Basement",
     "year": 2021,
@@ -1089,17 +253,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "4bf342e3-a060-4d45-a074-374a14c22759",
-    "title": "The Tiger",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 7416,
-    "imdb_id": "tt5066556",
-    "imdb_id_new": false
-  },
-  {
     "id": "4c5db4ec-e6c0-49e9-9ef7-496509e516fc",
     "title": "Pet Sematary",
     "year": 1989,
@@ -1108,17 +261,6 @@
     "rating": 6.5,
     "votes": 126403,
     "imdb_id": "tt0098084",
-    "imdb_id_new": false
-  },
-  {
-    "id": "4d48ec5c-aa25-457e-b924-f1b878bb7d66",
-    "title": "Checkered Ninja",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 6636,
-    "imdb_id": "tt7367960",
     "imdb_id_new": false
   },
   {
@@ -1133,105 +275,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "4efba55a-cc49-4baf-81a2-c5d6ebf22c15",
-    "title": "They Will Kill You",
-    "year": 2026,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 8025,
-    "imdb_id": "tt31728330",
-    "imdb_id_new": false
-  },
-  {
-    "id": "4f09e39f-f9b6-4514-9f89-1ff35090ddf2",
-    "title": "An Elephant Sitting Still",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9155,
-    "imdb_id": "tt8020896",
-    "imdb_id_new": false
-  },
-  {
-    "id": "5004246c-99a0-4289-8d68-b8259bd88d2e",
-    "title": "Operation Red Sea",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 8539,
-    "imdb_id": "tt6878882",
-    "imdb_id_new": false
-  },
-  {
-    "id": "50baa1d3-ee40-4657-8699-7bad58d45cde",
-    "title": "It Ends",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 5.8,
-    "votes": 9852,
-    "imdb_id": "tt35519455",
-    "imdb_id_new": false
-  },
-  {
-    "id": "51634919-cb7d-4489-8dd4-e2b148a811ee",
-    "title": "Boys Don't Cry",
-    "year": 2000,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 7652,
-    "imdb_id": "tt0238119",
-    "imdb_id_new": false
-  },
-  {
-    "id": "52ab300b-ead5-45c9-b84b-7f389ff566d5",
-    "title": "My Friends",
-    "year": 1975,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.9,
-    "votes": 8338,
-    "imdb_id": "tt0072637",
-    "imdb_id_new": false
-  },
-  {
-    "id": "53d95dda-5da5-4cc5-8c7b-aa50fcaca2d4",
-    "title": "Don't Blame the Kid",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 5770,
-    "imdb_id": "tt5538800",
-    "imdb_id_new": false
-  },
-  {
-    "id": "540baafe-09d0-4e4e-b1e8-12a2d1ba462f",
-    "title": "The Magic Faraway Tree",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.2,
-    "votes": 6464,
-    "imdb_id": "tt7734244",
-    "imdb_id_new": false
-  },
-  {
-    "id": "56094c0d-c1ad-415d-9f57-46c94d8d2ed2",
-    "title": "Humanist Vampire Seeking Consenting Suicidal Person",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 8736,
-    "imdb_id": "tt24216998",
-    "imdb_id_new": false
-  },
-  {
     "id": "56438f31-e5c3-4268-857f-5033ec1e6958",
     "title": "Black Phone 2",
     "year": 2025,
@@ -1240,28 +283,6 @@
     "rating": 6.1,
     "votes": 58077,
     "imdb_id": "tt29644189",
-    "imdb_id_new": false
-  },
-  {
-    "id": "574665b0-e192-4152-a61b-bbef026047ab",
-    "title": "Welcome to Dongmakgol",
-    "year": 2005,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 7659,
-    "imdb_id": "tt0475783",
-    "imdb_id_new": false
-  },
-  {
-    "id": "59c77758-5e6e-47b4-8ddd-3d5ff6203a61",
-    "title": "Italian Race",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 5753,
-    "imdb_id": "tt4300480",
     "imdb_id_new": false
   },
   {
@@ -1276,72 +297,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "5b937f7a-f68a-40f3-8481-371c538f69e1",
-    "title": "Pirates",
-    "year": 1986,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 9984,
-    "imdb_id": "tt0091757",
-    "imdb_id_new": false
-  },
-  {
-    "id": "5cef67b3-6a5c-499a-a12b-1abe5d955c7a",
-    "title": "Finding Emily",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 6928,
-    "imdb_id": "tt32499466",
-    "imdb_id_new": false
-  },
-  {
-    "id": "5f99756e-d93c-4c31-ba5c-73534a1b6f73",
-    "title": "Pippi in the South Seas",
-    "year": 1970,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 5990,
-    "imdb_id": "tt0066227",
-    "imdb_id_new": false
-  },
-  {
-    "id": "600783fc-7908-42d3-afa7-4a1a01ce14a8",
-    "title": "The Lower Depths",
-    "year": 1957,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.2,
-    "votes": 6244,
-    "imdb_id": "tt0050330",
-    "imdb_id_new": false
-  },
-  {
-    "id": "617a44ee-e88e-4afb-8396-2d5af3c7af3e",
-    "title": "Satluj",
-    "year": 2026,
-    "phase": "B",
-    "tier": "core",
-    "rating": 8.8,
-    "votes": 106958,
-    "imdb_id": "tt28089784",
-    "imdb_id_new": false
-  },
-  {
-    "id": "61ed41ea-7f39-4519-a196-0474ce90c33b",
-    "title": "Fantozzi: White Collar Blues",
-    "year": 1975,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 7159,
-    "imdb_id": "tt0071486",
-    "imdb_id_new": false
-  },
-  {
     "id": "6243e1b9-0a2a-4a75-8965-9b2cb00828a2",
     "title": "Topaz",
     "year": 1969,
@@ -1353,83 +308,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "634fec75-7e9d-4c85-b501-5b38bf711f4a",
-    "title": "The Summit of the Gods",
-    "year": 2021,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 9339,
-    "imdb_id": "tt7014378",
-    "imdb_id_new": false
-  },
-  {
-    "id": "63a7355b-3f9a-441b-baa4-32107ada8c11",
-    "title": "Letters to Santa",
-    "year": 2011,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 5024,
-    "imdb_id": "tt1927077",
-    "imdb_id_new": false
-  },
-  {
-    "id": "63d9c9b3-b1a6-42a1-8f57-aaa4de3c86a9",
-    "title": "The Serpent's Egg",
-    "year": 1977,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6864,
-    "imdb_id": "tt0076686",
-    "imdb_id_new": false
-  },
-  {
-    "id": "65c8ae38-b7b3-42da-8a1b-0d910a18dc7c",
-    "title": "How I Became a Gangster",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 5506,
-    "imdb_id": "tt10804178",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6664bbd8-32e6-474b-afc3-de96e34c3dec",
-    "title": "Souleymane's Story",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 6945,
-    "imdb_id": "tt32086046",
-    "imdb_id_new": false
-  },
-  {
-    "id": "66bc13f9-b1f6-4088-aa20-134a25bcf696",
-    "title": "Bad Cat",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 9183,
-    "imdb_id": "tt4695548",
-    "imdb_id_new": false
-  },
-  {
-    "id": "670e0ae6-d340-4b36-b0e1-51ba97803d6d",
-    "title": "Be With You",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 8076,
-    "imdb_id": "tt8092252",
-    "imdb_id_new": false
-  },
-  {
     "id": "681551fe-6bcf-4533-ac44-e5c8c8dcf3cf",
     "title": "Moonwalker",
     "year": 1988,
@@ -1438,17 +316,6 @@
     "rating": 6.1,
     "votes": 19527,
     "imdb_id": "tt0095655",
-    "imdb_id_new": false
-  },
-  {
-    "id": "68435bdd-498f-4339-8320-b4d2c8623dc5",
-    "title": "Violet Evergarden: Eternity and the Auto Memory Doll",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 7479,
-    "imdb_id": "tt10477558",
     "imdb_id_new": false
   },
   {
@@ -1485,94 +352,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "6a360aaf-8089-4b03-809a-82b000d6b1b1",
-    "title": "DC",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9770,
-    "imdb_id": "tt37501035",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6b1ac344-5857-4a5a-851b-d4f68deb053e",
-    "title": "Unstoppable",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6637,
-    "imdb_id": "tt9225192",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6b85228f-bb02-4e6c-a065-5180bc1953a7",
-    "title": "Becoming Astrid",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 7466,
-    "imdb_id": "tt6433456",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6c2fe8ed-61fd-4761-bd0a-2083c6784919",
-    "title": "The Sucker",
-    "year": 1965,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8596,
-    "imdb_id": "tt0057967",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6db5a6cc-56d3-4978-b0b2-51b49910bfab",
-    "title": "The Yin-Yang Master: Dream of Eternity",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 5770,
-    "imdb_id": "tt11454718",
-    "imdb_id_new": false
-  },
-  {
-    "id": "6dc8d982-a1a8-4a9a-8ef7-e18d6f46dceb",
-    "title": "Radical",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 7330,
-    "imdb_id": "tt14570440",
-    "imdb_id_new": false
-  },
-  {
-    "id": "705b691c-1e4f-45ff-9da7-ccfce2fce23d",
-    "title": "Lone Wolf and Cub: Sword of Vengeance",
-    "year": 1972,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 9100,
-    "imdb_id": "tt0068815",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7098fbaa-7eb4-42c4-a69a-81ab8cde0381",
-    "title": "Fuze",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 19848,
-    "imdb_id": "tt31189814",
-    "imdb_id_new": false
-  },
-  {
     "id": "70ae93d3-166a-4239-aff3-c10dfe0bc243",
     "title": "#Alive",
     "year": 2020,
@@ -1581,50 +360,6 @@
     "rating": 6.3,
     "votes": 52542,
     "imdb_id": "tt10620868",
-    "imdb_id_new": false
-  },
-  {
-    "id": "71c28f3b-7375-4353-99c9-df0957a1e034",
-    "title": "The Swindle",
-    "year": 1955,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.5,
-    "votes": 7484,
-    "imdb_id": "tt0047876",
-    "imdb_id_new": false
-  },
-  {
-    "id": "746c36d4-da4f-4231-92f0-803dedda19a0",
-    "title": "Godland",
-    "year": 2022,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 8775,
-    "imdb_id": "tt19623228",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7558f34a-eca9-4e8d-9191-a664519f9fa6",
-    "title": "Your Name Engraved Herein",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8433,
-    "imdb_id": "tt10329134",
-    "imdb_id_new": false
-  },
-  {
-    "id": "76029869-eb49-40a9-9d6e-5de8e054c294",
-    "title": "Godzilla vs. Biollante",
-    "year": 1989,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 7827,
-    "imdb_id": "tt0097444",
     "imdb_id_new": false
   },
   {
@@ -1650,50 +385,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "7805287d-0bca-4877-acc5-771819ca1e2c",
-    "title": "Samurai I: Musashi Miyamoto",
-    "year": 1954,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9728,
-    "imdb_id": "tt0047444",
-    "imdb_id_new": false
-  },
-  {
-    "id": "78631283-1fcd-437a-955e-9d4dd97c19ae",
-    "title": "One Piece Film: Strong World",
-    "year": 2009,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 8082,
-    "imdb_id": "tt1485763",
-    "imdb_id_new": false
-  },
-  {
-    "id": "788eda87-9875-417c-a7be-65e5d2d52e51",
-    "title": "The Human Condition III: A Soldier's Prayer",
-    "year": 1961,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.8,
-    "votes": 8466,
-    "imdb_id": "tt0055233",
-    "imdb_id_new": false
-  },
-  {
-    "id": "789fe274-70c1-49f8-9dc3-bbcb91c02228",
-    "title": "My Blind Date with Life",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 5874,
-    "imdb_id": "tt4299300",
-    "imdb_id_new": false
-  },
-  {
     "id": "78d1ea94-efd7-41fc-9c87-d9ee32b726d9",
     "title": "Venom: Let There Be Carnage",
     "year": 2021,
@@ -1702,39 +393,6 @@
     "rating": 5.9,
     "votes": 313417,
     "imdb_id": "tt7097896",
-    "imdb_id_new": false
-  },
-  {
-    "id": "79e8c8b2-ac6d-462a-accf-9c63c23c80ec",
-    "title": "Aarya",
-    "year": 2004,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9370,
-    "imdb_id": "tt0431619",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7a188483-e5e7-4fa7-ae2f-e51998460fb3",
-    "title": "Dodes'ka-den",
-    "year": 1970,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.3,
-    "votes": 8176,
-    "imdb_id": "tt0065649",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7b24bc29-97e9-440f-9287-e6c78b1cf697",
-    "title": "I Want Your Sex",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 5.8,
-    "votes": 8503,
-    "imdb_id": "tt32332915",
     "imdb_id_new": false
   },
   {
@@ -1749,17 +407,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "7c1d6129-e523-40a4-9b9c-be06e1a7f9be",
-    "title": "Sissi: The Young Empress",
-    "year": 1956,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 7967,
-    "imdb_id": "tt0049762",
-    "imdb_id_new": false
-  },
-  {
     "id": "7c1f2ec5-a3d9-4972-9393-ecb65f97a2d1",
     "title": "The Super Mario Galaxy Movie",
     "year": 2026,
@@ -1768,28 +415,6 @@
     "rating": 6.4,
     "votes": 33056,
     "imdb_id": "tt28650488",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7c7a0e6d-dbd1-43b8-ac51-f834d948833e",
-    "title": "Sami Blood",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8595,
-    "imdb_id": "tt5287168",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7c9e8338-e918-4355-98ba-f991f8c4a1e6",
-    "title": "French Fried Vacation 2",
-    "year": 1979,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9323,
-    "imdb_id": "tt0078907",
     "imdb_id_new": false
   },
   {
@@ -1804,28 +429,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "7dc18fc7-27ab-4dcc-a4c2-a4339cfd4915",
-    "title": "The Inquisitor",
-    "year": 1981,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 6405,
-    "imdb_id": "tt0082436",
-    "imdb_id_new": false
-  },
-  {
-    "id": "7e400d42-cebc-4554-b708-b6f1dbfbdb56",
-    "title": "One Hundred Steps",
-    "year": 2000,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 6631,
-    "imdb_id": "tt0238891",
-    "imdb_id_new": false
-  },
-  {
     "id": "7e7d0c51-5894-451a-aaef-790f7a055a08",
     "title": "Insidious: Out of the Further",
     "year": 2026,
@@ -1834,39 +437,6 @@
     "rating": 6,
     "votes": 27819,
     "imdb_id": "tt32393988",
-    "imdb_id_new": false
-  },
-  {
-    "id": "801dff16-4f26-4952-9664-57d606e26797",
-    "title": "Touchez Pas au Grisbi",
-    "year": 1954,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.7,
-    "votes": 9292,
-    "imdb_id": "tt0046451",
-    "imdb_id_new": false
-  },
-  {
-    "id": "806c845d-a95f-4b83-8b56-b6b3e0c1c832",
-    "title": "Paisan",
-    "year": 1946,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 9963,
-    "imdb_id": "tt0038823",
-    "imdb_id_new": false
-  },
-  {
-    "id": "81a3af96-bb75-4f12-9143-d39c2ac0275e",
-    "title": "The House with Laughing Windows",
-    "year": 1976,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 6457,
-    "imdb_id": "tt0074287",
     "imdb_id_new": false
   },
   {
@@ -1903,47 +473,14 @@
     "imdb_id_new": false
   },
   {
-    "id": "837397a9-e4bf-4755-a462-9e7455fd0563",
-    "title": "Black Clover: Sword of the Wizard King",
-    "year": 2023,
+    "id": "839123ed-1ed2-4bce-ba70-2ba8cdbcc820",
+    "title": "The Idea of You",
+    "year": 2024,
     "phase": "A",
     "tier": "extended",
-    "rating": 7.4,
-    "votes": 9611,
-    "imdb_id": "tt22868844",
-    "imdb_id_new": false
-  },
-  {
-    "id": "837fc5de-577d-48a6-b190-8675518d72ff",
-    "title": "Godzilla, Mothra and King Ghidorah: Giant Monsters All-Out Attack",
-    "year": 2001,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 7832,
-    "imdb_id": "tt0279112",
-    "imdb_id_new": false
-  },
-  {
-    "id": "85b3834d-ddd1-4dc7-a1e0-f51c6be29d26",
-    "title": "We All Loved Each Other So Much",
-    "year": 1974,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 7829,
-    "imdb_id": "tt0075793",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8633326f-b88a-4d67-aa69-cb2a46d9bb42",
-    "title": "Napoleon",
-    "year": 1927,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.2,
-    "votes": 9108,
-    "imdb_id": "tt0018192",
+    "rating": 6.3,
+    "votes": 82785,
+    "imdb_id": "tt9466114",
     "imdb_id_new": false
   },
   {
@@ -1958,17 +495,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "86d33516-6d93-4444-89f2-a1536cd62e82",
-    "title": "Ask Me If I'm Happy",
-    "year": 2000,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 9114,
-    "imdb_id": "tt0252985",
-    "imdb_id_new": false
-  },
-  {
     "id": "87f5d122-208a-496b-b904-87eaaa809619",
     "title": "The Invite",
     "year": 2026,
@@ -1977,61 +503,6 @@
     "rating": 7.4,
     "votes": 91139,
     "imdb_id": "tt14173636",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8846082b-127c-4e5a-b604-3c8493d23fd5",
-    "title": "Play",
-    "year": 2011,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 6915,
-    "imdb_id": "tt1376717",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8846ea90-ecc7-4e49-af0e-b1a97b43f245",
-    "title": "Ginger and Fred",
-    "year": 1986,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.2,
-    "votes": 5724,
-    "imdb_id": "tt0091113",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8a69d803-c409-4ad1-a325-0495564d6005",
-    "title": "Godzilla vs. Destoroyah",
-    "year": 1995,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 7978,
-    "imdb_id": "tt0113187",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8aa76c9d-2df4-4132-a614-3e77e1aa7b35",
-    "title": "Batman: Knightfall Part 1: Knightfall",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9781,
-    "imdb_id": "tt32333324",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8ac2a36e-13e9-42ca-b60d-f06279e761c3",
-    "title": "The Beauty Inside",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8636,
-    "imdb_id": "tt4273886",
     "imdb_id_new": false
   },
   {
@@ -2046,39 +517,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "8d2811e8-b8a3-4431-935b-b224d6ba829f",
-    "title": "I Am a Hero",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 8501,
-    "imdb_id": "tt3775202",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8f860992-c53f-4390-8088-e063bc4465b3",
-    "title": "Escape Plan",
-    "year": 2013,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 273173,
-    "imdb_id": "tt1211956",
-    "imdb_id_new": false
-  },
-  {
-    "id": "8fc5012d-f837-4110-95f6-2603bc8b1229",
-    "title": "Your Fault: London",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 5913,
-    "imdb_id": "tt36958376",
-    "imdb_id_new": false
-  },
-  {
     "id": "9050bdf5-48fc-4434-87b8-198839fe006a",
     "title": "Miracle at St. Anna",
     "year": 2008,
@@ -2087,28 +525,6 @@
     "rating": 6.1,
     "votes": 19697,
     "imdb_id": "tt1046997",
-    "imdb_id_new": false
-  },
-  {
-    "id": "90a32829-c7fe-474d-8391-3823cb42d0de",
-    "title": "The Last Family",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 5216,
-    "imdb_id": "tt5936692",
-    "imdb_id_new": false
-  },
-  {
-    "id": "90a41f20-5448-4542-89fd-2209644a2a0d",
-    "title": "Under the Same Moon",
-    "year": 2007,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 7801,
-    "imdb_id": "tt0796307",
     "imdb_id_new": false
   },
   {
@@ -2145,50 +561,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "9194bc94-32f1-42d0-a95f-b1416837289b",
-    "title": "The Truth",
-    "year": 1960,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 5369,
-    "imdb_id": "tt0054452",
-    "imdb_id_new": false
-  },
-  {
-    "id": "919fc483-8cd8-43c8-ad7c-727cddd8cc75",
-    "title": "No Game No Life: Zero",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 5305,
-    "imdb_id": "tt5914996",
-    "imdb_id_new": false
-  },
-  {
-    "id": "91bf3a6f-2f96-4f4d-9f6c-84e14d029cc3",
-    "title": "Made in Abyss: Dawn of the Deep Soul",
-    "year": 2020,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 7227,
-    "imdb_id": "tt10068916",
-    "imdb_id_new": false
-  },
-  {
-    "id": "926c0560-62c4-4bb7-a6d0-8318ba08c532",
-    "title": "The King and the Mockingbird",
-    "year": 1980,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 5936,
-    "imdb_id": "tt0079820",
-    "imdb_id_new": false
-  },
-  {
     "id": "92c61fd6-bedb-46dc-9fbc-81496f3d856e",
     "title": "I Spit on Your Grave",
     "year": 2010,
@@ -2197,72 +569,6 @@
     "rating": 6.2,
     "votes": 99752,
     "imdb_id": "tt1242432",
-    "imdb_id_new": false
-  },
-  {
-    "id": "94260daf-36be-4e59-8f19-d5fea3c2bf28",
-    "title": "Crooks in Clover",
-    "year": 1963,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 6946,
-    "imdb_id": "tt0057591",
-    "imdb_id_new": false
-  },
-  {
-    "id": "94e19d34-73ff-42fa-afc1-730c28e243b2",
-    "title": "EXIT",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 8401,
-    "imdb_id": "tt10648440",
-    "imdb_id_new": false
-  },
-  {
-    "id": "94e8c5cc-2f73-4fb5-a497-6c4be8da12d9",
-    "title": "The Pig, the Snake and the Pigeon",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8391,
-    "imdb_id": "tt29319990",
-    "imdb_id_new": false
-  },
-  {
-    "id": "95bd27a2-6650-4964-8b69-c6447d6576ca",
-    "title": "Millennium Mambo",
-    "year": 2001,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7,
-    "votes": 8297,
-    "imdb_id": "tt0283283",
-    "imdb_id_new": false
-  },
-  {
-    "id": "96274104-3278-4a0d-ab7a-4ae6816fc335",
-    "title": "Satantango",
-    "year": 1994,
-    "phase": "B",
-    "tier": "core",
-    "rating": 8.2,
-    "votes": 14693,
-    "imdb_id": "tt0111341",
-    "imdb_id_new": false
-  },
-  {
-    "id": "97912570-8927-4a21-b8f1-121026d5cf5a",
-    "title": "The Killer",
-    "year": 2022,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 5362,
-    "imdb_id": "tt19713090",
     "imdb_id_new": false
   },
   {
@@ -2277,28 +583,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "9910804b-8e7e-4da4-bdf6-55fd28d58d59",
-    "title": "Sniper: The White Raven",
-    "year": 2022,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 7730,
-    "imdb_id": "tt19465630",
-    "imdb_id_new": false
-  },
-  {
-    "id": "99fcf6c8-b173-43b5-9da5-ab1cfc900b3d",
-    "title": "The Seven Deadly Sins: Prisoners of the Sky",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5966,
-    "imdb_id": "tt9089294",
-    "imdb_id_new": false
-  },
-  {
     "id": "9c15981f-7f81-4daf-9cfb-9041b392480a",
     "title": "Dracula",
     "year": 2025,
@@ -2307,28 +591,6 @@
     "rating": 6.2,
     "votes": 34913,
     "imdb_id": "tt31434030",
-    "imdb_id_new": false
-  },
-  {
-    "id": "9c983c98-1419-43d5-9b16-74a1b7588dfe",
-    "title": "Late Shift",
-    "year": 2025,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 8557,
-    "imdb_id": "tt32204858",
-    "imdb_id_new": false
-  },
-  {
-    "id": "9d2a1457-39bf-4454-85d0-ac82e05c9127",
-    "title": "No End",
-    "year": 1985,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6146,
-    "imdb_id": "tt0086961",
     "imdb_id_new": false
   },
   {
@@ -2343,127 +605,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "9e3f2256-5ce9-4a2d-aafc-5ebfa87168f4",
-    "title": "Big Fish & Begonia",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 7430,
-    "imdb_id": "tt1920885",
-    "imdb_id_new": false
-  },
-  {
-    "id": "9fb78847-79a5-4342-9b76-2945ecc7cd28",
-    "title": "The Round Up",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 9559,
-    "imdb_id": "tt1382725",
-    "imdb_id_new": false
-  },
-  {
-    "id": "9fe39854-4a0c-4398-95c4-abec922e1335",
-    "title": "Early Summer",
-    "year": 1951,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.1,
-    "votes": 9910,
-    "imdb_id": "tt0043313",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a056fc8c-4a52-486c-8409-b3099c2aa53c",
-    "title": "The Tree of Wooden Clogs",
-    "year": 1978,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 7136,
-    "imdb_id": "tt0077138",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a0b32c7e-3344-4961-aca7-cf3d4bf4a2da",
-    "title": "The Spy Gone North",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 7213,
-    "imdb_id": "tt8290698",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a0ef0ce9-95fe-44b9-8a09-adccf1a1dad3",
-    "title": "Black Adam",
-    "year": 2022,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.1,
-    "votes": 310189,
-    "imdb_id": "tt6443346",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a123410d-e0fb-48c6-a4ee-a5a715a13cf1",
-    "title": "My Hero Academia: World Heroes' Mission",
-    "year": 2021,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 7254,
-    "imdb_id": "tt13544716",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a14861e1-4635-4e9f-89a9-ecd515dfcc09",
-    "title": "I Can Quit Whenever I Want",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 9764,
-    "imdb_id": "tt3438354",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a299bf4e-7dc6-4af3-8979-f602ebc9289c",
-    "title": "Summer Interlude",
-    "year": 1951,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.5,
-    "votes": 7113,
-    "imdb_id": "tt0044060",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a521ad34-9fb2-4d7d-89c5-40259b937bd5",
-    "title": "The Children's Train",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 8916,
-    "imdb_id": "tt29242846",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a5f05571-7b76-4188-91ee-8d00b2336bf0",
-    "title": "To Each His Own Cinema",
-    "year": 2007,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 5580,
-    "imdb_id": "tt0973844",
-    "imdb_id_new": false
-  },
-  {
     "id": "a6bd4cd7-461b-4e44-9c79-16c68480cf07",
     "title": "Wet Hot American Summer",
     "year": 2001,
@@ -2472,39 +613,6 @@
     "rating": 6.5,
     "votes": 65083,
     "imdb_id": "tt0243655",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a76f8bfe-9254-49c8-be3a-1165a605adfc",
-    "title": "Operation Mekong",
-    "year": 2016,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 5663,
-    "imdb_id": "tt6044910",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a7f601ea-635b-458f-bff7-d26641508cad",
-    "title": "The White Sheik",
-    "year": 1952,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.2,
-    "votes": 7087,
-    "imdb_id": "tt0044000",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a834e817-5a12-4cb4-a44a-8f19ebe967b1",
-    "title": "The Bible: In the Beginning...",
-    "year": 1966,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.2,
-    "votes": 6623,
-    "imdb_id": "tt0060164",
     "imdb_id_new": false
   },
   {
@@ -2519,50 +627,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "a8edc36c-8004-4600-882f-6411e613fdea",
-    "title": "Minions: The Rise of Gru",
-    "year": 2022,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 110037,
-    "imdb_id": "tt5113044",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a9c6ed4b-aa2f-4453-880f-ffda4688a99f",
-    "title": "Under Capricorn",
-    "year": 1949,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.2,
-    "votes": 8561,
-    "imdb_id": "tt0042004",
-    "imdb_id_new": false
-  },
-  {
-    "id": "a9d8e55d-2586-4d60-bd1e-96907e9fa758",
-    "title": "Ready or Not: Here I Come",
-    "year": 2026,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 30168,
-    "imdb_id": "tt33978029",
-    "imdb_id_new": false
-  },
-  {
-    "id": "aa65ce56-3919-4c8a-a610-bab71a188a94",
-    "title": "Forgotten Island",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 7573,
-    "imdb_id": "tt36583977",
-    "imdb_id_new": false
-  },
-  {
     "id": "aaa0987f-db4c-4c7e-bbc5-2326032f9d64",
     "title": "Mortal Kombat II",
     "year": 2026,
@@ -2571,72 +635,6 @@
     "rating": 6.3,
     "votes": 95569,
     "imdb_id": "tt17490712",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ab7c342e-00c6-4fb4-8e2e-0fad7ccbd2e8",
-    "title": "Pressure",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 40947,
-    "imdb_id": "tt32547691",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ab941b87-649f-49d1-9779-a17c1c55dd3b",
-    "title": "April 9th",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6624,
-    "imdb_id": "tt3542188",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ac0f6c20-c4ab-436d-af4f-94016f84a42a",
-    "title": "The Disappearance of Haruhi Suzumiya",
-    "year": 2010,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 8722,
-    "imdb_id": "tt1572781",
-    "imdb_id_new": false
-  },
-  {
-    "id": "acfa8601-1b9b-497d-87f1-fc2598761826",
-    "title": "Red Shoes and the Seven Dwarfs",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 6372,
-    "imdb_id": "tt4429160",
-    "imdb_id_new": false
-  },
-  {
-    "id": "adf9adf2-2723-441b-818a-b4a76fd70cce",
-    "title": "Sanshiro Sugata",
-    "year": 1943,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 6102,
-    "imdb_id": "tt0036400",
-    "imdb_id_new": false
-  },
-  {
-    "id": "af3bc99e-4aab-4797-b597-60fdec3e62c7",
-    "title": "Bitter Rice",
-    "year": 1949,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 5496,
-    "imdb_id": "tt0040737",
     "imdb_id_new": false
   },
   {
@@ -2662,72 +660,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "b1337879-10dd-46e0-95a5-4de16a9e5597",
-    "title": "The Roundup: Punishment",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6461,
-    "imdb_id": "tt27811040",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b1d84ddf-e137-4fc8-be2c-d4142f826e5e",
-    "title": "A Werewolf Boy",
-    "year": 2012,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 9690,
-    "imdb_id": "tt2315152",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b21671eb-f596-4480-8981-0be6043cf51b",
-    "title": "A Fortunate Man",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 7805,
-    "imdb_id": "tt8436026",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b569053a-f837-44a0-a1e8-435786b41dcb",
-    "title": "That's Life",
-    "year": 1998,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5640,
-    "imdb_id": "tt0166556",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b6b8df2a-9e00-4c86-8a9c-f2e522788fb7",
-    "title": "Rhapsody in August",
-    "year": 1991,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.2,
-    "votes": 8083,
-    "imdb_id": "tt0101991",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b753c7fb-687e-4136-b1ba-685bb5d1614e",
-    "title": "Twisters",
-    "year": 2024,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 201771,
-    "imdb_id": "tt12584954",
-    "imdb_id_new": false
-  },
-  {
     "id": "b7d90e62-415c-4b8a-8d30-69ec5388efb9",
     "title": "The Furious",
     "year": 2026,
@@ -2750,94 +682,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "b8edbb8d-a66e-42d1-872c-f24b47b39076",
-    "title": "Sense and Sensibility",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 5520,
-    "imdb_id": "tt13609648",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b979604c-f128-4efb-83d9-46e20a0f2d73",
-    "title": "Last Train from Gun Hill",
-    "year": 1959,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 9071,
-    "imdb_id": "tt0052993",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b9a28006-7759-49ac-80cc-23db121f3218",
-    "title": "Don't Say Good Luck",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 9310,
-    "imdb_id": "tt36590417",
-    "imdb_id_new": false
-  },
-  {
-    "id": "b9e76f3b-0e3a-4bde-ac62-f57050fe436d",
-    "title": "Uncharted",
-    "year": 2022,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 309869,
-    "imdb_id": "tt1464335",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ba2ce628-aa9f-4bac-aa19-d94fade0752f",
-    "title": "Maelström",
-    "year": 2000,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 7502,
-    "imdb_id": "tt0220627",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ba4aa167-c547-4140-8bc4-572df332f977",
-    "title": "Honey",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 7688,
-    "imdb_id": "tt1571724",
-    "imdb_id_new": false
-  },
-  {
-    "id": "bad75619-777e-42be-a91d-0c6b51c300c6",
-    "title": "From the Life of the Marionettes",
-    "year": 1980,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.2,
-    "votes": 5046,
-    "imdb_id": "tt0080397",
-    "imdb_id_new": false
-  },
-  {
-    "id": "bca12e40-1646-49df-8a5a-ed3ec89ce1d3",
-    "title": "Sissi: The Fateful Years of an Empress",
-    "year": 1957,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6354,
-    "imdb_id": "tt0050974",
-    "imdb_id_new": false
-  },
-  {
     "id": "bd993b34-72bc-4606-a404-13df728229ef",
     "title": "The Dog Stars",
     "year": 2026,
@@ -2846,39 +690,6 @@
     "rating": 6.4,
     "votes": 18083,
     "imdb_id": "tt21285562",
-    "imdb_id_new": false
-  },
-  {
-    "id": "bdb0eb6e-0811-4422-a801-7f04603a3922",
-    "title": "Magical Girl",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 7754,
-    "imdb_id": "tt3089326",
-    "imdb_id_new": false
-  },
-  {
-    "id": "be8a8274-06f8-467a-a2d2-db098bb7c577",
-    "title": "Neon Genesis Evangelion: Death and Rebirth",
-    "year": 1997,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 16346,
-    "imdb_id": "tt0169880",
-    "imdb_id_new": false
-  },
-  {
-    "id": "bf2504a7-4310-4012-9df2-cfc82391370d",
-    "title": "71: Into the Fire",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6092,
-    "imdb_id": "tt1587729",
     "imdb_id_new": false
   },
   {
@@ -2893,160 +704,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "c05e141f-c1eb-4273-b8b8-5a5e50eb7562",
-    "title": "The Emigrants",
-    "year": 1971,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 7892,
-    "imdb_id": "tt0067919",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c097be44-8a9a-4d7a-a75a-091f0412ef7f",
-    "title": "Madadayo",
-    "year": 1993,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.3,
-    "votes": 6317,
-    "imdb_id": "tt0107474",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c0ae5161-7861-4263-9b0b-5750a6ee86ba",
-    "title": "Where Hands Touch",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6216,
-    "imdb_id": "tt1235187",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c0e34762-8d7d-4f3b-a51d-9081c0437ec1",
-    "title": "Obsession",
-    "year": 1944,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 8457,
-    "imdb_id": "tt0035160",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c11b222b-fac5-410a-baf8-08fab6ebed3d",
-    "title": "Black Dog",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 5685,
-    "imdb_id": "tt28131427",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c234693e-98aa-473c-9f5f-60f6376dc8f4",
-    "title": "Miracle in Milan",
-    "year": 1951,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 8854,
-    "imdb_id": "tt0043809",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c24791be-05f1-48d8-bfa7-a2e2263a341c",
-    "title": "Oscar",
-    "year": 1967,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 8267,
-    "imdb_id": "tt0062083",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c43862f3-4a9d-44c0-8fed-2ed51484c5b4",
-    "title": "Mountains May Depart",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 6975,
-    "imdb_id": "tt3740778",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c473662c-8e7f-426c-a00f-25fa482e650f",
-    "title": "White Snake",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 6307,
-    "imdb_id": "tt9288776",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c519ef4c-6301-45c1-8bc3-012f8c4fbe76",
-    "title": "The Wonderful Story of Henry Sugar and Three More",
-    "year": 2024,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.1,
-    "votes": 8675,
-    "imdb_id": "tt31800329",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c53664d2-7fa8-480d-9957-73c305ea4276",
-    "title": "Scenes from a Marriage",
-    "year": 1974,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.3,
-    "votes": 9576,
-    "imdb_id": "tt6725014",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c599c165-1f31-414c-8dbd-ac280420e67a",
-    "title": "Spirits of the Dead",
-    "year": 1968,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 7122,
-    "imdb_id": "tt0063715",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c6c5fb21-50ff-40d5-873e-302eab18bae4",
-    "title": "No Tears for the Dead",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 7761,
-    "imdb_id": "tt3697566",
-    "imdb_id_new": false
-  },
-  {
-    "id": "c7329bf7-925f-46f0-bb0a-dad21061d52b",
-    "title": "Assassination",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 8447,
-    "imdb_id": "tt3501416",
-    "imdb_id_new": false
-  },
-  {
     "id": "cb235f44-6062-43db-8396-cbe61db95f0f",
     "title": "Nobody 2",
     "year": 2025,
@@ -3055,127 +712,6 @@
     "rating": 6.3,
     "votes": 89019,
     "imdb_id": "tt28996126",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cb5c6eb1-04d7-46e2-a95e-addd78a251cd",
-    "title": "Senso",
-    "year": 1954,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9511,
-    "imdb_id": "tt0047469",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cd5d8659-d54e-47d8-941d-9c34f5a51415",
-    "title": "HAIKYU!! The Dumpster Battle",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 6882,
-    "imdb_id": "tt30476486",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cd8ef8a3-e7f1-4c96-a6a3-124d7933484a",
-    "title": "Demon Slayer: Kimetsu no Yaiba - Sibling's Bond",
-    "year": 2019,
-    "phase": "B",
-    "tier": "core",
-    "rating": 8.4,
-    "votes": 5335,
-    "imdb_id": "tt14888860",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cdd0eeb8-fc83-48a9-8475-6ed46894c05c",
-    "title": "Maborosi",
-    "year": 1995,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.5,
-    "votes": 7954,
-    "imdb_id": "tt0113725",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ce80b119-3efd-4172-8684-cdc16955e50c",
-    "title": "Monkey King: Hero Is Back",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 5069,
-    "imdb_id": "tt4644382",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ceb691a1-18de-4732-be1b-1065541fadbc",
-    "title": "undertone",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 5.9,
-    "votes": 36970,
-    "imdb_id": "tt35892608",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cebb3fab-8f9d-4046-9ead-e03a4d0d4209",
-    "title": "Le Notti Bianche",
-    "year": 1957,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 9351,
-    "imdb_id": "tt0050782",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cf0c6e0e-f3dc-4f52-9e77-f1bda57f0b67",
-    "title": "Reign of Assassins",
-    "year": 2010,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 9504,
-    "imdb_id": "tt1460743",
-    "imdb_id_new": false
-  },
-  {
-    "id": "cfbd3eb4-a80c-4b4b-9740-51b21a5d97cd",
-    "title": "The Attorney",
-    "year": 2013,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 8421,
-    "imdb_id": "tt3404140",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d03ed8d5-21d3-4a8d-96d4-52fc476738e8",
-    "title": "The Master and Margarita",
-    "year": 2024,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 7482,
-    "imdb_id": "tt14536120",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d0c00c91-6e92-4f0d-8120-c98869601d73",
-    "title": "No Time to Die",
-    "year": 2021,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 496644,
-    "imdb_id": "tt2382320",
     "imdb_id_new": false
   },
   {
@@ -3201,72 +737,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "d290289f-a9f5-4811-aa0d-8739ab57399d",
-    "title": "The Battleship Island",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 9214,
-    "imdb_id": "tt5969696",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d2983991-79b5-4ea0-aafe-dd71265d1576",
-    "title": "Only You",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 6657,
-    "imdb_id": "tt3477480",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d38ee4d1-02b6-42bb-83bd-9a83999c2585",
-    "title": "Young Washington",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 14809,
-    "imdb_id": "tt32104007",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d3b2de76-f579-4de1-b275-b0b59beca885",
-    "title": "All My Life",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 6964,
-    "imdb_id": "tt8305852",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d5dad7d7-e1c1-4b4e-a088-61a0a4679195",
-    "title": "So Long, My Son",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 5907,
-    "imdb_id": "tt9581076",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d5f468ac-bf0e-475a-affc-92e419bb5502",
-    "title": "Normal",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 38151,
-    "imdb_id": "tt31195136",
-    "imdb_id_new": false
-  },
-  {
     "id": "d6aac9ab-f2b3-4136-93f1-dd407b7e7d3a",
     "title": "Hokum",
     "year": 2026,
@@ -3289,28 +759,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "d73783f8-fec8-465c-91c5-915cfd9d40ca",
-    "title": "Coming Home",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 7035,
-    "imdb_id": "tt3125472",
-    "imdb_id_new": false
-  },
-  {
-    "id": "d7e06127-f8e0-419a-b7b3-aed90b37ceaa",
-    "title": "Barefoot Gen",
-    "year": 1983,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8,
-    "votes": 9988,
-    "imdb_id": "tt0085218",
-    "imdb_id_new": false
-  },
-  {
     "id": "d8b36078-715a-4837-bd12-9055a9e6e11b",
     "title": "Freakier Friday",
     "year": 2025,
@@ -3319,50 +767,6 @@
     "rating": 6.2,
     "votes": 38258,
     "imdb_id": "tt31956415",
-    "imdb_id_new": false
-  },
-  {
-    "id": "da6eb4dd-b0e8-4871-86e6-b2fb04e586fd",
-    "title": "Murder She Said",
-    "year": 1961,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 8830,
-    "imdb_id": "tt0055205",
-    "imdb_id_new": false
-  },
-  {
-    "id": "db12370a-d35f-4cf1-b77b-6609bd90da4a",
-    "title": "That Man from Rio",
-    "year": 1964,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 6797,
-    "imdb_id": "tt0058203",
-    "imdb_id_new": false
-  },
-  {
-    "id": "db45f6d9-5f69-4fde-abda-812fd006f8cc",
-    "title": "Carolina Caroline",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 7724,
-    "imdb_id": "tt33365126",
-    "imdb_id_new": false
-  },
-  {
-    "id": "db75c56b-f627-47e1-96db-866f506e9af1",
-    "title": "Lee Cronin's The Mummy",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.1,
-    "votes": 76670,
-    "imdb_id": "tt32612507",
     "imdb_id_new": false
   },
   {
@@ -3377,28 +781,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "df45d89f-f299-487d-b70f-a68c536f5016",
-    "title": "KONOSUBA – God's blessing on this wonderful world! Legend of Crimson",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 6988,
-    "imdb_id": "tt9239552",
-    "imdb_id_new": false
-  },
-  {
-    "id": "df8e75ee-1fb0-4f88-9978-fd62d8a59320",
-    "title": "A Town Called Panic",
-    "year": 2009,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 9187,
-    "imdb_id": "tt1433540",
-    "imdb_id_new": false
-  },
-  {
     "id": "dfc688d6-10b9-4e70-b6fe-5c373c0221e9",
     "title": "Comidark Films: In Between",
     "year": 2019,
@@ -3407,116 +789,6 @@
     "rating": 6.4,
     "votes": 13837,
     "imdb_id": "tt8456098",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e1920050-fd1f-44a8-a790-ecc931e24cd4",
-    "title": "Voicemails for Isabelle",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 58367,
-    "imdb_id": "tt10375624",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e28ddb48-2732-4598-8a29-a2157a68be11",
-    "title": "Killer",
-    "year": 1997,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 8646,
-    "imdb_id": "tt0127626",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e2f1bd3d-a52d-41ed-b82d-8de5e2b3debf",
-    "title": "Othello",
-    "year": 1951,
-    "phase": "A",
-    "tier": "core",
-    "rating": 7.5,
-    "votes": 9676,
-    "imdb_id": "tt0045251",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e329469f-4a60-4177-87dc-cf546267e317",
-    "title": "Don't Be Bad",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 5203,
-    "imdb_id": "tt1167611",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e34d532e-cc6e-4470-a4fa-1e2a07c8589e",
-    "title": "The Perfect Dictatorship",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 6315,
-    "imdb_id": "tt3970854",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e414bbb7-6311-4fa5-9fd6-1f328e37415d",
-    "title": "Miraculous: Ladybug & Cat Noir, The Movie",
-    "year": 2023,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.1,
-    "votes": 8084,
-    "imdb_id": "tt10364034",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e41ed28b-15e4-4687-854d-353f5d0ee736",
-    "title": "Colors of Evil: Red",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.4,
-    "votes": 7707,
-    "imdb_id": "tt27578157",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e42bccfb-078a-49b3-a75a-93c4325e66a1",
-    "title": "Teddy Bear",
-    "year": 1981,
-    "phase": "A",
-    "tier": "core",
-    "rating": 8.2,
-    "votes": 6846,
-    "imdb_id": "tt0082755",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e5a3c4dd-0abf-45c5-8035-60ef554f7b8e",
-    "title": "Stromboli",
-    "year": 1950,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 8233,
-    "imdb_id": "tt0041931",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e73feb4f-7dbd-480b-ad22-2a416eb60fe5",
-    "title": "Herod's Law",
-    "year": 1999,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 7295,
-    "imdb_id": "tt0221344",
     "imdb_id_new": false
   },
   {
@@ -3542,193 +814,6 @@
     "imdb_id_new": false
   },
   {
-    "id": "e81567ac-cde0-4c0b-be29-2c76507277d7",
-    "title": "The Swordsman",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.8,
-    "votes": 6302,
-    "imdb_id": "tt7035004",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e8b6fa8a-99ea-487b-a382-9ef33b9936bb",
-    "title": "Ant-Man and the Wasp: Quantumania",
-    "year": 2023,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 281719,
-    "imdb_id": "tt10954600",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e8d34f4e-42c2-4c1f-9f55-f35d601d7c47",
-    "title": "Superman Returns",
-    "year": 2006,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.1,
-    "votes": 305461,
-    "imdb_id": "tt0348150",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e952464c-1e4d-4451-90a4-dfd757414a25",
-    "title": "Bellissima",
-    "year": 1952,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 5518,
-    "imdb_id": "tt0043332",
-    "imdb_id_new": false
-  },
-  {
-    "id": "e9ebe147-2b31-4e80-9d8a-d8454dcbd5d5",
-    "title": "The Silent Revolution",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 6394,
-    "imdb_id": "tt6576556",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ea6c3a14-68bf-4a53-8afe-e356e5008ea1",
-    "title": "Tune in for Love",
-    "year": 2019,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 6535,
-    "imdb_id": "tt10763618",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ec585efd-cbbe-4dac-a6b3-d2ba3976002f",
-    "title": "The Shadow's Edge",
-    "year": 2025,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.1,
-    "votes": 8806,
-    "imdb_id": "tt34610311",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ed108e6b-1626-47b7-bfd1-cbb399ca01d5",
-    "title": "Arco",
-    "year": 2025,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 7143,
-    "imdb_id": "tt14883538",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ed756f87-3d74-4c3f-a603-7acc801589d7",
-    "title": "Sword Art Online the Movie: Ordinal Scale",
-    "year": 2017,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.3,
-    "votes": 9966,
-    "imdb_id": "tt5544384",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ee664375-0df5-4b5e-a6d0-aa04bc73495a",
-    "title": "I Love Boosters",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 9561,
-    "imdb_id": "tt30827810",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ee79942f-a0b8-4a98-af96-6aa72330444c",
-    "title": "Naruto Shippuden the Movie",
-    "year": 2007,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 5447,
-    "imdb_id": "tt0988982",
-    "imdb_id_new": false
-  },
-  {
-    "id": "eed542f8-994a-46df-a615-5a5207ae5ee6",
-    "title": "The Way Home",
-    "year": 2002,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 6220,
-    "imdb_id": "tt0312841",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ef5599f9-bd6f-4612-8bd7-38f75d1fb07f",
-    "title": "Stand by Me Doraemon 2",
-    "year": 2020,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 5631,
-    "imdb_id": "tt13428402",
-    "imdb_id_new": false
-  },
-  {
-    "id": "efae869a-f06c-4a26-86b9-ee54e5d640c3",
-    "title": "Pippi Longstocking",
-    "year": 1969,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5698,
-    "imdb_id": "tt0366905",
-    "imdb_id_new": false
-  },
-  {
-    "id": "efe2aa91-f6c3-4970-a7eb-8adccf169037",
-    "title": "Ranabaali",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 5787,
-    "imdb_id": "tt32324552",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f01f0f9d-3764-4497-9119-2001890e9d41",
-    "title": "Casque d'Or",
-    "year": 1952,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.6,
-    "votes": 6491,
-    "imdb_id": "tt0043386",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f02867f3-6675-433c-95f2-7d1a6eec0093",
-    "title": "Fantastic Beasts: The Secrets of Dumbledore",
-    "year": 2022,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.2,
-    "votes": 196505,
-    "imdb_id": "tt4123432",
-    "imdb_id_new": false
-  },
-  {
     "id": "f1b48d8c-8d91-44ec-9ca1-836b2e1551a4",
     "title": "Apex",
     "year": 2026,
@@ -3737,72 +822,6 @@
     "rating": 6.1,
     "votes": 112763,
     "imdb_id": "tt16431404",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f209fb28-7ec7-4fa1-8d07-14a4a755334a",
-    "title": "Facing El Chapo",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.7,
-    "votes": 9653,
-    "imdb_id": "tt39390497",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f21b8b56-61f5-4f15-a712-b9d3b8efe8b9",
-    "title": "Bad Seeds",
-    "year": 2018,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 6721,
-    "imdb_id": "tt6708116",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f2cff521-349b-4712-b5c9-541b5a50ec93",
-    "title": "Counterattack",
-    "year": 2025,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6,
-    "votes": 5794,
-    "imdb_id": "tt23648788",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f4a7b9c0-f617-4a43-9625-7819d3e01df0",
-    "title": "Scent of a Woman",
-    "year": 1974,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 5485,
-    "imdb_id": "tt0072037",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f5c7e338-e656-41a5-9901-5ea1665e4d57",
-    "title": "The Little Mermaid",
-    "year": 2023,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 7.2,
-    "votes": 180872,
-    "imdb_id": "tt5971474",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f6b353bf-b61d-4eac-be05-a05ab9a45258",
-    "title": "The Witch: Part 2 - The Other One",
-    "year": 2022,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.3,
-    "votes": 9285,
-    "imdb_id": "tt13721828",
     "imdb_id_new": false
   },
   {
@@ -3825,182 +844,6 @@
     "rating": 6.4,
     "votes": 22391,
     "imdb_id": "tt22890246",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f76c6fa2-d04c-419c-bae7-5cd8d472e223",
-    "title": "With Fire and Sword",
-    "year": 1999,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5521,
-    "imdb_id": "tt0128378",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f78c275d-4869-4c2f-9415-170ad247c02d",
-    "title": "A Scene at the Sea",
-    "year": 1991,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 7069,
-    "imdb_id": "tt0103704",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f78de828-e62e-4cec-a23e-f3e67087dd5e",
-    "title": "Heidi",
-    "year": 2015,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 8220,
-    "imdb_id": "tt3700392",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f7d4c3e7-7362-4118-bde8-797274c40127",
-    "title": "Kuroneko",
-    "year": 1968,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 9798,
-    "imdb_id": "tt0122136",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f8dc6190-af74-4f1f-8065-9ba1ebf0b1fb",
-    "title": "The Saragossa Manuscript",
-    "year": 1966,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 6042,
-    "imdb_id": "tt0059643",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f8f6d81e-f691-4723-a4d5-0d630fb97f36",
-    "title": "Godzilla Against MechaGodzilla",
-    "year": 2002,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 6205,
-    "imdb_id": "tt0314111",
-    "imdb_id_new": false
-  },
-  {
-    "id": "f93374e9-ea5a-4a52-8dbb-5b55d2da06a5",
-    "title": "The Rivals of Amziah King",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 8450,
-    "imdb_id": "tt27706593",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fa061b3a-09f1-4a7d-acf4-2eb2fde576b5",
-    "title": "Hoppers",
-    "year": 2026,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.4,
-    "votes": 37622,
-    "imdb_id": "tt26443616",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fa3b7914-9b27-4cd1-a596-51e623a78523",
-    "title": "City of Women",
-    "year": 1980,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.9,
-    "votes": 8513,
-    "imdb_id": "tt0080539",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fb564a0e-f666-43f5-aa77-188a8724cfb9",
-    "title": "Is God Is",
-    "year": 2026,
-    "phase": "B",
-    "tier": "extended",
-    "rating": 6.5,
-    "votes": 7994,
-    "imdb_id": "tt34379307",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fba61561-3903-4d1b-827f-d3d476207d2b",
-    "title": "Head Full of Honey",
-    "year": 2014,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 6.6,
-    "votes": 7572,
-    "imdb_id": "tt3488462",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fbcf31d8-8c0b-4fc4-b5ab-3908963e002c",
-    "title": "The Adventures of Prince Achmed",
-    "year": 1926,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.8,
-    "votes": 7520,
-    "imdb_id": "tt0015532",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fce4490a-640a-4c88-8cd3-57b531043d81",
-    "title": "Let Go",
-    "year": 2024,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 6785,
-    "imdb_id": "tt27410895",
-    "imdb_id_new": false
-  },
-  {
-    "id": "fe43f9f6-ad68-4e2e-8fee-a3951819e8fe",
-    "title": "Hwayi: A Monster Boy",
-    "year": 2013,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7,
-    "votes": 5646,
-    "imdb_id": "tt2972362",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ff5b4b7c-e79e-4ea2-9eb1-7e9baf4d79a2",
-    "title": "A Touch of Zen",
-    "year": 1970,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.5,
-    "votes": 8143,
-    "imdb_id": "tt0064451",
-    "imdb_id_new": false
-  },
-  {
-    "id": "ff86498c-c399-4190-955c-ea4ccea91eb5",
-    "title": "Funeral Parade of Roses",
-    "year": 1969,
-    "phase": "A",
-    "tier": "extended",
-    "rating": 7.7,
-    "votes": 7587,
-    "imdb_id": "tt0064068",
     "imdb_id_new": false
   }
 ]
