@@ -13,6 +13,10 @@
  *  2. Session sayısını artır
  *  3. → /(tabs)
  *
+ * COLD-START-1: `getSession()` 6 sn içinde dönmezse (token refresh takılması)
+ * görünür "Bağlanamadı" durumu açılır; istek İPTAL EDİLMEZ, geç çözülürse karar
+ * otomatik yeniden çalışır. Karar hatası artık sessizce /(tabs)'a düşmez.
+ *
  * E-05 köprü ekranı (/relaunch-intro) yönlendirmesi R-19 ile kaldırıldı.
  *
  * K-12 (R-A-1): auth gating KALDIRILDI. Anonim kullanıcı uygulamanın tam
@@ -21,7 +25,8 @@
  * `resetToFreshSession` ile onboarding'e döner, giriş Profil'den yapılır.
  */
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
@@ -36,12 +41,23 @@ import {
   withTiming,
 } from 'react-native-reanimated';
 
+import { QuietAction } from '@/components/gauntlet/QuietAction';
+import { styles as shellStyles } from '@/components/gauntlet/GauntletShell/styles';
 import { SplashMark } from '@/components/SplashMark';
+import { color } from '@/constants/design/semantic';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { markGateDone } from '@/services/gateState';
 import { markSplashGateSettled, markSplashMarkLoaded } from '@/services/splashGate';
 import { supabase } from '@/services/supabase';
 import { getAppUserId } from '@/services/watchlist';
 import { isGateReadyToNavigate } from '@/utils/gateDecision';
+import {
+  GATE_SESSION_TIMEOUT_MS,
+  handleGateFailure,
+  raceWithTimeout,
+  type GateFailure,
+  type GateFailureReason,
+} from '@/utils/gateBoot';
 import { incrementSessionCount } from '../services/entryService';
 
 /** Minimum splash display time (ms) — 0: native splash zaten gösterildi, ek bekleme yok. */
@@ -57,7 +73,38 @@ const EXIT_FADE_MS = 200;
  */
 const EXIT_FAILSAFE_MS = 400;
 
+/** Hata görünümü: zemin splash/gate ile aynı ink; içerik GauntletShell hata görünümüyle ortak. */
+const localStyles = StyleSheet.create({
+  errorScreen: {
+    flex: 1,
+    backgroundColor: color.surface.base,
+  },
+});
+
+/** Sessiz değil: zaman aşımı uyarı, karar hatası exception olarak Sentry'ye gider. */
+function reportGateFailure(failure: GateFailure): void {
+  if (failure.reason === 'auth_timeout') {
+    Sentry.captureMessage('gate: getSession zaman eşiğini aştı — hata durumu gösterildi', {
+      level: 'warning',
+      tags: { flow: 'gate', error_code: 'GATE_AUTH_TIMEOUT' },
+      extra: { gate_elapsed_ms: failure.elapsedMs, threshold_ms: GATE_SESSION_TIMEOUT_MS },
+    });
+    return;
+  }
+  Sentry.captureException(failure.error ?? new Error('gate decision error (hata nesnesi yok)'), {
+    level: 'error',
+    tags: { flow: 'gate', error_code: 'GATE_DECISION_ERROR' },
+    extra: { gate_elapsed_ms: failure.elapsedMs },
+  });
+}
+
 export default function Gate() {
+  const { t } = useLanguage();
+  /** Açıksa gate yönlendirmez; hata görünümü + "tekrar dene" gösterilir. */
+  const [failure, setFailure] = useState<GateFailureReason | null>(null);
+  /** Her `decide()` koşusu bir numara alır; eski koşunun geç sonucu yenisini ezmez. */
+  const runId = useRef(0);
+  const mountedAt = useRef(Date.now());
   /** Yönlendirme bir kez yapılır (zamanlayıcı ve karar aynı anda hazır olabilir). */
   const navigated = useRef(false);
   const targetRoute = useRef<string | null>(null);
@@ -154,6 +201,23 @@ export default function Gate() {
     }) as never);
   }, [navigation]);
 
+  /** Bu koşu hâlâ güncel mi (yeni koşu başlamadı, yönlendirme yapılmadı). */
+  const isCurrentRun = useCallback((id: number) => runId.current === id && !navigated.current, []);
+
+  const failGate = useCallback((reason: GateFailureReason, error?: unknown) => {
+    handleGateFailure(
+      { reason, elapsedMs: Date.now() - mountedAt.current, error },
+      { report: reportGateFailure, showError: setFailure },
+    );
+  }, []);
+
+  /** "Tekrar dene" effect içindeki `decide`yi yeniden çalıştırır. */
+  const decideRef = useRef<(() => Promise<void>) | null>(null);
+  const retry = useCallback(() => {
+    setFailure(null);
+    void decideRef.current?.();
+  }, []);
+
   useEffect(() => {
     // Minimum display timer
     const timer = setTimeout(() => {
@@ -163,8 +227,29 @@ export default function Gate() {
 
     // Routing decision
     async function decide() {
+      runId.current += 1;
+      const id = runId.current;
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // getSession auth-js initializePromise'ini (token refresh) bekler. Süre dolarsa
+        // istek iptal edilmez: görünür hata açılır, çözülünce karar yeniden çalışır.
+        const race = await raceWithTimeout(supabase.auth.getSession(), GATE_SESSION_TIMEOUT_MS);
+        if (!isCurrentRun(id)) return;
+
+        if (race.status === 'timeout') {
+          failGate('auth_timeout');
+          race.late.then(
+            () => {
+              if (!isCurrentRun(id)) return;
+              setFailure(null);
+              void decide();
+            },
+            (err: unknown) => {
+              if (isCurrentRun(id)) failGate('gate_decision_error', err);
+            },
+          );
+          return;
+        }
+        const { data: { session } } = race.value;
 
         // Oturum henüz açılmamış olabilir (_layout.tsx signInAnonymously()
         // yarışı). Kimlik yoksa onboarding'e gidilir — anonim oturum orada
@@ -239,17 +324,30 @@ export default function Gate() {
         skipMinSplash.current = true;
         decisionReady.current = true;
         tryNavigate();
-      } catch {
-        targetRoute.current = '/(tabs)';
-        decisionReady.current = true;
-        tryNavigate();
+      } catch (err) {
+        // Eskiden burada sessizce /(tabs)'a gidiliyordu (kural 1/2). Artık: Sentry +
+        // görünür hata durumu; kullanıcı "tekrar dene" ile kararı yeniden çalıştırır.
+        if (isCurrentRun(id)) failGate('gate_decision_error', err);
       }
     }
 
-    decide();
+    decideRef.current = decide;
+    void decide();
 
     return () => clearTimeout(timer);
-  }, [tryNavigate]);
+  }, [tryNavigate, failGate, isCurrentRun]);
+
+  if (failure !== null) {
+    return (
+      <View style={localStyles.errorScreen}>
+        <StatusBar style="light" />
+        <View style={shellStyles.centerContent}>
+          <Text style={shellStyles.stateText}>{t('gate.loadError')}</Text>
+          <QuietAction label={t('gate.retry')} onPress={retry} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <SplashMark markStyle={markStyle} onLoad={markSplashMarkLoaded}>
