@@ -151,13 +151,13 @@ const CRITERION_KEYWORDS: ReadonlySet<string> = new Set([
  * `imdb_votes` NULL olan canlı filmler (yayınlanmamış) bu kuralla ellenmez;
  * fonksiyonun NULL → 0 davranışı (aşağıda) değiştirilmedi.
  */
-interface ArchiveThresholds {
+export interface ArchiveThresholds {
   readonly minRating: number;
   readonly minVotes: number;
 }
 
 const ARCHIVE_THRESHOLDS_TRENDING: ArchiveThresholds = { minRating: 5.5, minVotes: 300 };
-const ARCHIVE_THRESHOLDS_STANDARD: ArchiveThresholds = { minRating: 5.8, minVotes: 5000 };
+export const ARCHIVE_THRESHOLDS_STANDARD: ArchiveThresholds = { minRating: 5.8, minVotes: 5000 };
 
 // ---------------------------------------------------------------------------
 // Main function
