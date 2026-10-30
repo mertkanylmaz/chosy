@@ -59,6 +59,7 @@ interface FilmRow {
   title: string;
   director: string | null;
   original_language: string | null;
+  imdb_rating: number | null;
   imdb_votes: number | null;
   curation_tier: string | null;
 }
@@ -273,9 +274,9 @@ async function getFilmsNeedingBackfill(
   for (;;) {
     const { data, error } = await sb
       .from('films')
-      .select('id, tmdb_id, imdb_id, title, director, original_language, imdb_votes, curation_tier')
+      .select('id, tmdb_id, imdb_id, title, director, original_language, imdb_rating, imdb_votes, curation_tier')
       .in('curation_tier', tiers)
-      .or('director.is.null,original_language.is.null,imdb_votes.is.null')
+      .or('director.is.null,original_language.is.null,imdb_rating.is.null,imdb_votes.is.null')
       .order('id', { ascending: true })
       .range(from, from + PAGE - 1);
 
