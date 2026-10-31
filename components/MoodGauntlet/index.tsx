@@ -49,12 +49,14 @@ export function MoodGauntletShell(): React.JSX.Element {
       </View>
 
       {g.stage === 'entry' && <EntryStage onStart={(input) => void g.startFromEntry(input)} />}
-      {g.stage === 'loading' && <LoadingStage text={g.loadingText} />}
+      {g.stage === 'loading' && <LoadingStage label={g.moodLabel} phase={g.loadingPhase} />}
       {g.stage === 'gauntlet' && g.set && g.flow && (
         <GauntletStage
           set={g.set}
+          reasons={g.reasons}
           flow={g.flow}
           notices={g.notices}
+          moodLabel={g.moodLabel}
           onChoose={g.chooseFilm}
           onNone={g.noneOfThese}
         />
@@ -62,10 +64,13 @@ export function MoodGauntletShell(): React.JSX.Element {
       {g.stage === 'result' && g.champion && g.set && (
         <ResultStage
           champion={g.champion}
-          set={g.set}
+          backups={g.set.backups}
+          reasons={g.reasons}
           notices={g.notices}
+          canLighter={g.canLighter}
+          canStronger={g.canStronger}
           onAnotherFour={g.anotherFour}
-          onIntensify={g.intensify}
+          onIntensify={(d) => void g.intensify(d)}
         />
       )}
       {g.stage === 'error' && <ErrorStage kind={g.errorKind} onRetry={g.retry} onNewSearch={g.reset} />}

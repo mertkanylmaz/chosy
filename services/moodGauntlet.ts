@@ -3,8 +3,9 @@
  * bağımlılıklar `MoodGauntletDeps` ile enjekte edilir (gerçek bağlama
  * `services/moodGauntletDeps.ts`). Böylece yedek yolları deno ile test edilir.
  *
- * Hat: parse-mood {schema_version:2} → match_films_v4 → rerank-films {count:4, reason:true}
- *   → { four[], reasons{}, backups[≤3], searchId }.
+ * Hat: parse-mood {schema_version:2} → match_films_v4 → rerank-films {count:4, reason:false}
+ *   → dörtlü HEMEN (gerekçesiz). Gerekçe AYRI, paralel bir çağrıdır (`fetchReasons`: yalnız bu 4
+ *   film, reason:true); gelirse UI'a solarak girer, gelmezse satır yok.
  *
  * Kurallar:
  *  - exclude_ids = watchlist + izlenenler + parse.exclude_recent_ids + bu oturumda gösterilenler.
@@ -17,6 +18,7 @@
  *    Aday biterse `exhausted` döner (UI yeni arama önerir).
  *  - Ham mood metni analitiğe gitmez (bu dosya analitik atmaz).
  */
+import { applyIntensity, clampIntensityStep, MAX_INTENSITY_STEPS } from '../utils/moodIntensity';
 import { buildRelaxationSteps } from '../utils/relaxationChain';
 
 export const FOUR = 4;
@@ -25,6 +27,8 @@ export const MAX_BACKUPS = 3;
 export const RERANK_CANDIDATES = 20;
 /** v4 aday sayısı. */
 export const V4_MATCH_COUNT = 40;
+/** v4 döner dönmez ön-yüklenen poster sayısı (rerank beklenirken). */
+export const PREFETCH_POOL = 8;
 /** exclude_ids üst sınırı (RPC gövdesi; recommendations.ts ile aynı). */
 export const MAX_EXCLUDE_IDS = 500;
 
@@ -82,6 +86,7 @@ export interface MatchV4Args {
   matchCount: number;
 }
 
+/** Rerank çağrısı: `withReasons:false` → yalnız sıralı id'ler (hızlı); `true` → id + gerekçe. */
 export type RerankOutcome =
   | { ok: true; ids: string[]; reasons: Record<string, string> }
   | { ok: false; failure: string };
@@ -91,18 +96,28 @@ export type FallbackStage =
   | 'genres_relaxed'
   | 'similarity_relaxed'
   | 'max_runtime_dropped'
-  | 'record_ids';
+  | 'record_ids'
+  | 'reasons';
 
 export interface MoodGauntletDeps {
   parse(input: { text: string; quickMoodId?: string; clientSearchId: string }): Promise<ParsedMoodV2>;
   /** Hata → throw (sessiz boş dönüş yok). */
   matchV4(args: MatchV4Args): Promise<MatchRow[]>;
-  rerank(input: { moodText: string; candidates: MatchRow[]; count: number }): Promise<RerankOutcome>;
+  rerank(input: {
+    moodText: string;
+    candidates: MatchRow[];
+    count: number;
+    withReasons: boolean;
+  }): Promise<RerankOutcome>;
   /** watchlist + izlenen film kimlikleri. */
   loadExclusions(): Promise<string[]>;
   /** mood_searches.recommended_film_ids (four + backups, gösterim sırası). */
   recordRecommended(searchId: string, ids: string[]): Promise<void>;
   newId(): string;
+  /** Aşama süresi ölçümü için saat; yoksa Date.now (testte enjekte edilir). */
+  now?(): number;
+  /** Poster ön-yükleme (en iyi çaba, bloklamaz). */
+  prefetch?(rows: readonly MatchRow[]): void;
   /** Telemetri: bir yedek yola düşüldü (ham metin taşımaz). */
   onFallback(stage: FallbackStage): void;
   /** Yutulan (hattı durdurmayan) hata — gerçek bağlama Sentry'ye yazar. */
@@ -114,6 +129,10 @@ export type MoodNotice = 'max_runtime_dropped';
 export interface MoodSession {
   moodText: string;
   parsed: ParsedMoodV2;
+  /** Sorgu profili: başta parse'ınki; yoğunluk kaydırılınca kaydırılmış kopya (parsed.profile özgün kalır). */
+  profile: unknown;
+  /** Özgün profile uygulanan yoğunluk adımı (−MAX..+MAX); 0 = parse'ın kendisi. */
+  intensityStep: number;
   /** Son v4 sonucu (tüm adaylar, kanal önceliği sırasıyla). */
   pool: MatchRow[];
   /** Oturumda gösterilen film kimlikleri (dörtlüler + görülen yedekler + önceki oturumlardan taşınanlar). */
@@ -129,7 +148,7 @@ export interface MoodSet {
   setId: string;
   setIndex: number;
   four: MatchRow[];
-  /** film id → tek cümle gerekçe; boş/yok → gerekçe gösterilmez. */
+  /** film id → gerekçe. Dörtlü gösterilirken BOŞ başlar; `fetchReasons` ayrıca doldurur. */
   reasons: Record<string, string>;
   backups: MatchRow[];
   /** Rerank sonuç verdi mi (false = v4 sırası, gerekçesiz). */
@@ -279,6 +298,9 @@ async function recordIds(deps: MoodGauntletDeps, session: MoodSession, set: Mood
   return next;
 }
 
+/**
+ * Dörtlü seçimi: reason:false (yalnız id) — hızlı yol. Başarısızsa v4 sırası (`onFallback('rerank')`).
+ */
 async function rerankOrNull(
   deps: MoodGauntletDeps,
   moodText: string,
@@ -286,7 +308,7 @@ async function rerankOrNull(
 ): Promise<RerankOutcome | null> {
   const candidates = pool.slice(0, RERANK_CANDIDATES) as MatchRow[];
   try {
-    const out = await deps.rerank({ moodText, candidates, count: FOUR });
+    const out = await deps.rerank({ moodText, candidates, count: FOUR, withReasons: false });
     if (!out.ok || out.ids.length === 0) {
       deps.onFallback('rerank');
       return null;
@@ -300,36 +322,60 @@ async function rerankOrNull(
   }
 }
 
-/** Yeni arama: parse → v4 (gevşetme zinciri) → rerank → dörtlü. `carryShown` önceki aramalardan taşınan dışlamadır. */
+/**
+ * Gerekçeler: dörtlü ekrandayken ARKADA çalışır; yalnız gösterilen 4 film gönderilir
+ * (reason:true). Başarısızsa `{}` döner — UI satırı hiç çizmez; hata Sentry/PostHog'a gider.
+ * Rerank zaten v4 sırasına düştüyse (rerank-films kapalı/limitte) tekrar denenmez.
+ */
+export async function fetchReasons(
+  deps: MoodGauntletDeps,
+  session: Pick<MoodSession, 'moodText'>,
+  set: Pick<MoodSet, 'four' | 'reranked'>,
+): Promise<Record<string, string>> {
+  if (!set.reranked) return {};
+  try {
+    const out = await deps.rerank({ moodText: session.moodText, candidates: set.four, count: FOUR, withReasons: true });
+    if (!out.ok) {
+      deps.onFallback('reasons');
+      return {};
+    }
+    const reasons: Record<string, string> = {};
+    for (const f of set.four) {
+      const r = reasonFor(out.reasons, f.id);
+      if (r) reasons[f.id] = r;
+    }
+    return reasons;
+  } catch (err) {
+    deps.onError('reasons', err);
+    deps.onFallback('reasons');
+    return {};
+  }
+}
+
 export type StageEvent = { stage: 'parsed'; profileName: string | null } | { stage: 'picking' };
 
-export async function startMoodGauntlet(
-  deps: MoodGauntletDeps,
-  input: {
-    text: string;
-    quickMoodId?: string;
-    carryShown?: readonly string[];
-    /** Yükleme ekranı için aşama bildirimi (profile_name geldiğinde 'parsed'). */
-    onStage?: (e: StageEvent) => void;
-  },
-): Promise<StartResult> {
-  const parsed = await deps.parse({
-    text: input.text,
-    quickMoodId: input.quickMoodId,
-    clientSearchId: deps.newId(),
-  });
-  input.onStage?.({ stage: 'parsed', profileName: parsed.profileName });
-  const library = await deps.loadExclusions();
-  const shown = [...(input.carryShown ?? [])];
-  const excludeIds = mergeExclusions({ shown, recent: parsed.excludeRecentIds, library });
+export type PipelineStageName = 'parse' | 'v4' | 'pick';
+export type TimingEvent = (stage: PipelineStageName, ms: number) => void;
 
+const clock = (deps: MoodGauntletDeps): number => (deps.now ? deps.now() : Date.now());
+
+/**
+ * v4 çağrısı + gevşetme zinciri. `profile` mevcut (kaydırılmış olabilir) sorgu profilidir;
+ * genres_exclude her basamakta korunur, max_runtime yalnız en son basamakta düşer (görünür not).
+ */
+async function fetchPool(
+  deps: MoodGauntletDeps,
+  parsed: ParsedMoodV2,
+  profile: unknown,
+  excludeIds: string[],
+): Promise<{ pool: MatchRow[]; notices: MoodNotice[] }> {
   const attempts = buildV4Attempts(parsed.genresInclude.length > 0, parsed.maxRuntime != null);
   let pool: MatchRow[] = [];
   const notices: MoodNotice[] = [];
   for (let i = 0; i < attempts.length; i++) {
     const a = attempts[i];
     const rows = await deps.matchV4({
-      profile: parsed.profile,
+      profile,
       excludeIds,
       searchKeywords: parsed.searchKeywords,
       genresInclude: a.includeGenres ? parsed.genresInclude : [],
@@ -354,10 +400,43 @@ export async function startMoodGauntlet(
       break;
     }
   }
+  return { pool, notices };
+}
+
+/** Yeni arama: parse → v4 (gevşetme zinciri) → id-rerank → dörtlü. `carryShown` önceki aramalardan taşınan dışlamadır. */
+export async function startMoodGauntlet(
+  deps: MoodGauntletDeps,
+  input: {
+    text: string;
+    quickMoodId?: string;
+    carryShown?: readonly string[];
+    /** Yükleme ekranı için aşama bildirimi (profile_name geldiğinde 'parsed'). */
+    onStage?: (e: StageEvent) => void;
+    /** Aşama süreleri (parse, v4, pick) — metin taşımaz. */
+    onTiming?: TimingEvent;
+  },
+): Promise<StartResult> {
+  let t0 = clock(deps);
+  const parsed = await deps.parse({
+    text: input.text,
+    quickMoodId: input.quickMoodId,
+    clientSearchId: deps.newId(),
+  });
+  input.onTiming?.('parse', clock(deps) - t0);
+  input.onStage?.({ stage: 'parsed', profileName: parsed.profileName });
+  const library = await deps.loadExclusions();
+  const shown = [...(input.carryShown ?? [])];
+  const excludeIds = mergeExclusions({ shown, recent: parsed.excludeRecentIds, library });
+
+  t0 = clock(deps);
+  const { pool, notices } = await fetchPool(deps, parsed, parsed.profile, excludeIds);
+  input.onTiming?.('v4', clock(deps) - t0);
 
   const session: MoodSession = {
     moodText: input.text,
     parsed,
+    profile: parsed.profile,
+    intensityStep: 0,
     pool,
     shown,
     setCount: 0,
@@ -365,8 +444,11 @@ export async function startMoodGauntlet(
     recorded: [],
   };
   if (pool.length < FOUR) return { status: 'insufficient', session };
+  deps.prefetch?.(pool.slice(0, PREFETCH_POOL));
   input.onStage?.({ stage: 'picking' });
+  t0 = clock(deps);
   const built = await buildSet(deps, session);
+  input.onTiming?.('pick', clock(deps) - t0);
   // Taşınan dışlamalar havuzu 4'ün altına indirdiyse: yeni aramada da yeterli aday yok demektir.
   return built.status === 'ok' ? built : { status: 'insufficient', session: built.session };
 }
@@ -380,10 +462,11 @@ async function buildSet(deps: MoodGauntletDeps, session: MoodSession): Promise<N
     setId: deps.newId(),
     setIndex: session.setCount,
     four: picked.four,
-    reasons: picked.reasons,
+    reasons: {},
     backups: picked.backups,
     reranked: picked.reranked,
   };
+  deps.prefetch?.([...set.four, ...set.backups]);
   const shown = [...session.shown];
   for (const r of set.four) if (!shown.includes(r.id)) shown.push(r.id);
   let next: MoodSession = { ...session, shown, setCount: session.setCount + 1 };
@@ -396,17 +479,53 @@ export async function nextFour(deps: MoodGauntletDeps, session: MoodSession): Pr
   return buildSet(deps, session);
 }
 
+export type IntensityDirection = 'lighter' | 'stronger';
+
+/** Özgün profile göre yeni toplam adım: hafif −1, yoğun +1 (±MAX ile sınırlı). */
+export function nextIntensityStep(current: number, direction: IntensityDirection): number {
+  return clampIntensityStep(current + (direction === 'stronger' ? 1 : -1));
+}
+
+export function canShiftIntensity(current: number, direction: IntensityDirection): boolean {
+  return direction === 'stronger' ? current < MAX_INTENSITY_STEPS : current > -MAX_INTENSITY_STEPS;
+}
+
+/**
+ * "Daha hafif / Daha yoğun": parse TEKRARLANMAZ (kota düşmez, ~4 sn tasarruf). Özgün profilin
+ * energy / thematic_depth / pace boyutları kaydırılır, vektör yeniden üretilir, v4 + rerank
+ * yeniden çalışır. genres_include/exclude, max_runtime, referanslar, dışlamalar aynen taşınır.
+ * Aynı mood_search_id: seçim kayıtları ve recommended_film_ids aynı aramaya yazılmaya devam eder.
+ */
+export async function intensifyMoodGauntlet(
+  deps: MoodGauntletDeps,
+  session: MoodSession,
+  direction: IntensityDirection,
+  hooks?: { onStage?: (e: StageEvent) => void; onTiming?: TimingEvent },
+): Promise<StartResult> {
+  const step = nextIntensityStep(session.intensityStep, direction);
+  const profile = applyIntensity(session.parsed.profile, step);
+  if (profile === null) {
+    // Beklenmeyen profil biçimi: sessiz geçiş yok → çağıran hata durumuna düşer ve Sentry'ye yazar.
+    throw new Error('intensity: profil yogunluk boyutlarini tasimiyor');
+  }
+  const library = await deps.loadExclusions();
+  const excludeIds = mergeExclusions({ shown: session.shown, recent: session.parsed.excludeRecentIds, library });
+  let t0 = clock(deps);
+  const { pool, notices } = await fetchPool(deps, session.parsed, profile, excludeIds);
+  hooks?.onTiming?.('v4', clock(deps) - t0);
+  const next: MoodSession = { ...session, profile, intensityStep: step, pool, notices };
+  if (pool.length < FOUR) return { status: 'insufficient', session: next };
+  deps.prefetch?.(pool.slice(0, PREFETCH_POOL));
+  hooks?.onStage?.({ stage: 'picking' });
+  t0 = clock(deps);
+  const built = await buildSet(deps, next);
+  hooks?.onTiming?.('pick', clock(deps) - t0);
+  return built.status === 'ok' ? built : { status: 'insufficient', session: built.session };
+}
+
 /** Sonuç ekranında yedekler görüldü: sonraki dörtlülerde tekrar çıkmasın. */
 export function noteBackupsShown(session: MoodSession, backups: readonly MatchRow[]): MoodSession {
   const shown = [...session.shown];
   for (const b of backups) if (!shown.includes(b.id)) shown.push(b.id);
   return { ...session, shown };
-}
-
-/** "Daha hafif / Daha yoğun": mood metnine TEK modifier eklenir (öncekiler birikmez). */
-export function withModifier(baseText: string, modifier: string): string {
-  const base = baseText.trim();
-  const mod = modifier.trim();
-  if (mod.length === 0) return base;
-  return `${base}. ${mod}`;
 }

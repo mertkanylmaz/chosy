@@ -1,24 +1,34 @@
 /**
- * useMoodGauntlet — Mood Gauntlet ekran durumu (Faz 2-1). Servis (`services/moodGauntlet`) +
+ * useMoodGauntlet — Mood Gauntlet ekran durumu (Faz 2-1 / 2-1b). Servis (`services/moodGauntlet`) +
  * turnuva mantığı (`utils/moodGauntletFlow`) + analitik arasındaki yapıştırıcı.
  *
  * Durumlar: entry → loading → gauntlet → result (+ error / exhausted).
  * X her durumdan Giriş'e döner (`reset`); Giriş'te router.back() kabuğun işidir.
  * Ham mood metni hiçbir olaya girmez (utils/moodGauntletAnalytics).
+ *
+ * HIZ (2-1b): dörtlü gerekçesiz gelir ve HEMEN gösterilir; gerekçeler ayrı çağrıyla arkadan
+ * dolar (`reasons`). Dörtlü gelince 4 filmin "nerede izlenir" verisi ön-çekilir.
+ * YOĞUNLUK (2-1b): Daha hafif / Daha yoğun parse'ı tekrarlamaz (kota düşmez).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { recordMoodChoice } from '@/services/moodChoiceApi';
 import {
+  canShiftIntensity,
+  fetchReasons,
+  intensifyMoodGauntlet,
   nextFour,
   noteBackupsShown,
   startMoodGauntlet,
-  withModifier,
+  type IntensityDirection,
   type MoodGauntletDeps,
   type MoodNotice,
   type MoodSession,
   type MoodSet,
+  type PipelineStageName,
+  type StageEvent,
 } from '@/services/moodGauntlet';
 import { createMoodGauntletDeps } from '@/services/moodGauntletDeps';
 import { posthogAnalytics } from '@/services/posthog';
@@ -32,21 +42,25 @@ import {
   intensityEvent,
   matchChosenEvent,
   noneOfTheseEvent,
+  pipelineTimingEvent,
   startedEvent,
   type MoodEvent,
   type MoodEntryKind,
-  type MoodIntensity,
 } from '@/utils/moodGauntletAnalytics';
 import { choose, currentPair, elapsedMs, initFlow, isComplete, type MoodFlow } from '@/utils/moodGauntletFlow';
 import { classifyMoodSearchError } from '@/utils/moodSearchRetry';
 
 export type MoodStage = 'entry' | 'loading' | 'gauntlet' | 'result' | 'error' | 'exhausted';
 export type MoodErrorKind = 'quota' | 'busy' | 'unavailable' | 'network' | 'insufficient' | 'generic';
+/** Yükleme ekranındaki üç aşama: Reading → Matching → Picking. */
+export type MoodLoadingPhase = 'reading' | 'matching' | 'picking';
 
 export interface StartInput {
   text: string;
   quickMoodId?: string;
   entry: MoodEntryKind;
+  /** Yükleme ekranında gösterilen ad: hızlı mood başlığı ya da kullanıcının kendi metni (ekranda kalır, olaya girmez). */
+  label?: string;
 }
 
 function errorKindOf(err: unknown): MoodErrorKind {
@@ -74,23 +88,24 @@ export function trackMoodEvent(ev: MoodEvent): void {
 }
 
 export function useMoodGauntlet() {
-  const { t } = useLanguage();
+  const { region } = useLanguage();
   const depsRef = useRef<MoodGauntletDeps | null>(null);
   if (depsRef.current === null) depsRef.current = createMoodGauntletDeps();
   const deps = depsRef.current;
 
   const [stage, setStage] = useState<MoodStage>('entry');
   const [errorKind, setErrorKind] = useState<MoodErrorKind>('generic');
-  const [loadingText, setLoadingText] = useState<string>('');
+  const [loadingPhase, setLoadingPhase] = useState<MoodLoadingPhase>('reading');
+  const [moodLabel, setMoodLabel] = useState<string | null>(null);
   const [session, setSession] = useState<MoodSession | null>(null);
   const [set, setSet] = useState<MoodSet | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
   const [flow, setFlow] = useState<MoodFlow | null>(null);
   const [notices, setNotices] = useState<MoodNotice[]>([]);
 
   const runId = useRef(0);
+  const reasonsRun = useRef(0);
   const mounted = useRef(true);
-  /** Özgün mood metni — "Daha hafif/yoğun" her seferinde ÖZGÜNE tek modifier ekler. */
-  const baseText = useRef('');
   const lastStart = useRef<StartInput | null>(null);
   const startedAt = useRef(0);
   const gauntletStartedAt = useRef(0);
@@ -100,15 +115,64 @@ export function useMoodGauntlet() {
     return () => {
       mounted.current = false;
       runId.current += 1;
+      reasonsRun.current += 1;
     };
   }, []);
 
-  const applySet = useCallback((sess: MoodSession, nextSet: MoodSet) => {
-    setSession(sess);
-    setSet(nextSet);
-    setFlow(initFlow(nextSet.four.map((f) => f.id)));
-    setNotices(sess.notices);
-    setStage('gauntlet');
+  const onTiming = useCallback((s: PipelineStageName, ms: number) => {
+    trackMoodEvent(pipelineTimingEvent(s, ms));
+  }, []);
+
+  /** Gerekçeler: dörtlü ekrandayken arkadan; gelmezse (boş) satır çizilmez. Hata servis içinde Sentry'ye gider. */
+  const loadReasons = useCallback(
+    (sess: MoodSession, nextSet: MoodSet) => {
+      const rid = ++reasonsRun.current;
+      const t0 = Date.now();
+      void fetchReasons(deps, sess, nextSet).then((r) => {
+        if (rid !== reasonsRun.current || !mounted.current) return;
+        trackMoodEvent(pipelineTimingEvent('reasons', Date.now() - t0));
+        setReasons(r);
+      });
+    },
+    [deps],
+  );
+
+  const applySet = useCallback(
+    (sess: MoodSession, nextSet: MoodSet) => {
+      setSession(sess);
+      setSet(nextSet);
+      setReasons({});
+      setFlow(initFlow(nextSet.four.map((f) => f.id)));
+      setNotices(sess.notices);
+      setStage('gauntlet');
+      // Gauntlet sürerken 4 filmin sağlayıcı verisi hazır olsun (sonuç ekranında yer tutucu beklemesin).
+      for (const f of nextSet.four) void prefetchWatchProviders(f.id, region);
+      loadReasons(sess, nextSet);
+    },
+    [loadReasons, region],
+  );
+
+  const onStage = useCallback(
+    (id: number) => (e: StageEvent) => {
+      if (id !== runId.current || !mounted.current) return;
+      if (e.stage === 'parsed') {
+        setLoadingPhase('matching');
+        if (e.profileName) setMoodLabel(e.profileName);
+      } else {
+        setLoadingPhase('picking');
+      }
+    },
+    [],
+  );
+
+  const fail = useCallback((err: unknown, code: string) => {
+    const kind = errorKindOf(err);
+    // Beklenen kullanıcı durumları (kota, hız sınırı, ağ) Sentry gürültüsü değildir; gerisi hatadır.
+    if (kind === 'generic' || kind === 'unavailable') {
+      logger.error('[moodGauntlet] islem basarisiz', err, { code });
+    }
+    setErrorKind(kind);
+    setStage('error');
   }, []);
 
   const start = useCallback(
@@ -116,7 +180,8 @@ export function useMoodGauntlet() {
       const id = ++runId.current;
       lastStart.current = input;
       startedAt.current = Date.now();
-      setLoadingText(t('moodGauntlet.loadingDefault'));
+      setLoadingPhase('reading');
+      setMoodLabel(input.label ?? null);
       setStage('loading');
       trackMoodEvent(startedEvent(input.entry, input.quickMoodId));
       try {
@@ -124,14 +189,8 @@ export function useMoodGauntlet() {
           text: input.text,
           quickMoodId: input.quickMoodId,
           carryShown,
-          onStage: (e) => {
-            if (id !== runId.current || !mounted.current) return;
-            if (e.stage === 'parsed' && e.profileName) {
-              setLoadingText(t('moodGauntlet.loadingNamed', { name: e.profileName }));
-            } else if (e.stage === 'picking') {
-              setLoadingText(t('moodGauntlet.loadingPicking'));
-            }
-          },
+          onStage: onStage(id),
+          onTiming,
         });
         if (id !== runId.current || !mounted.current) return;
         if (res.status === 'insufficient') {
@@ -145,30 +204,18 @@ export function useMoodGauntlet() {
         applySet(res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
-        const kind = errorKindOf(err);
-        // Beklenen kullanıcı durumları (kota, hız sınırı, ağ) Sentry gürültüsü değildir; gerisi hatadır.
-        if (kind === 'generic' || kind === 'unavailable') {
-          logger.error('[moodGauntlet] baslatma basarisiz', err, { code: 'MOOD_GAUNTLET_START_FAILED' });
-        }
-        setErrorKind(kind);
-        setStage('error');
+        fail(err, 'MOOD_GAUNTLET_START_FAILED');
       }
     },
-    [deps, t, applySet],
+    [deps, applySet, onStage, onTiming, fail],
   );
 
-  const startFromEntry = useCallback(
-    (input: StartInput) => {
-      baseText.current = input.text;
-      return start(input, []);
-    },
-    [start],
-  );
+  const startFromEntry = useCallback((input: StartInput) => start(input, []), [start]);
 
   const loadAnother = useCallback(async () => {
     if (!session) return;
     const id = ++runId.current;
-    setLoadingText(t('moodGauntlet.loadingPicking'));
+    setLoadingPhase('picking');
     setStage('loading');
     try {
       const res = await nextFour(deps, session);
@@ -178,14 +225,13 @@ export function useMoodGauntlet() {
         setStage('exhausted');
         return;
       }
+      gauntletStartedAt.current = Date.now();
       applySet(res.session, res.set);
     } catch (err) {
       if (id !== runId.current || !mounted.current) return;
-      logger.error('[moodGauntlet] yeni dortlu basarisiz', err, { code: 'MOOD_GAUNTLET_NEXT_FAILED' });
-      setErrorKind(errorKindOf(err));
-      setStage('error');
+      fail(err, 'MOOD_GAUNTLET_NEXT_FAILED');
     }
-  }, [deps, session, t, applySet]);
+  }, [deps, session, applySet, fail]);
 
   const record = useCallback(
     (round: 1 | 2 | 3, a: string, b: string, winner: string | null, outcome: 'choice' | 'neither') => {
@@ -237,16 +283,37 @@ export function useMoodGauntlet() {
     void loadAnother();
   }, [loadAnother]);
 
+  /**
+   * Daha hafif / Daha yoğun: parse YOK, kota düşmez. Profilin yoğunluk boyutları kaydırılır,
+   * v4 + rerank yeniden. Kullanıcının genres_exclude / max_runtime kısıtları korunur.
+   */
   const intensify = useCallback(
-    (direction: MoodIntensity) => {
+    async (direction: IntensityDirection) => {
+      if (!session || !canShiftIntensity(session.intensityStep, direction)) return;
       trackMoodEvent(intensityEvent(direction));
-      const modifier = t(direction === 'lighter' ? 'moodGauntlet.modLighter' : 'moodGauntlet.modStronger');
-      void start(
-        { text: withModifier(baseText.current, modifier), entry: 'free_text' },
-        session?.shown ?? [],
-      );
+      const id = ++runId.current;
+      startedAt.current = Date.now();
+      setLoadingPhase('matching');
+      setStage('loading');
+      try {
+        const res = await intensifyMoodGauntlet(deps, session, direction, {
+          onStage: onStage(id),
+          onTiming,
+        });
+        if (id !== runId.current || !mounted.current) return;
+        if (res.status === 'insufficient') {
+          setSession(res.session);
+          setStage('exhausted');
+          return;
+        }
+        gauntletStartedAt.current = Date.now();
+        applySet(res.session, res.set);
+      } catch (err) {
+        if (id !== runId.current || !mounted.current) return;
+        fail(err, 'MOOD_GAUNTLET_INTENSITY_FAILED');
+      }
     },
-    [session, start, t],
+    [deps, session, applySet, onStage, onTiming, fail],
   );
 
   const retry = useCallback(() => {
@@ -257,21 +324,28 @@ export function useMoodGauntlet() {
   /** X / yeni arama: uçuştaki isteği bırakır ve Giriş'e döner. */
   const reset = useCallback(() => {
     runId.current += 1;
+    reasonsRun.current += 1;
     setSession(null);
     setSet(null);
+    setReasons({});
     setFlow(null);
     setNotices([]);
+    setMoodLabel(null);
     setStage('entry');
   }, []);
 
   return {
     stage,
     errorKind,
-    loadingText,
+    loadingPhase,
+    moodLabel,
     session,
     set,
+    reasons,
     flow,
     notices,
+    canLighter: session ? canShiftIntensity(session.intensityStep, 'lighter') : false,
+    canStronger: session ? canShiftIntensity(session.intensityStep, 'stronger') : false,
     champion: flow?.champion ? set?.four.find((f) => f.id === flow.champion) ?? null : null,
     startFromEntry,
     chooseFilm,

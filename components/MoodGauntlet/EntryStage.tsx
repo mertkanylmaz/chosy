@@ -9,7 +9,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, ScrollView, TextInput, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 
-import MoodCardGrid from '@/components/Home/MoodCardGrid';
+import MoodCardGrid, { MOOD_CARDS } from '@/components/Home/MoodCardGrid';
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { hasAiConsent, recordAiConsent } from '@/services/aiConsent';
@@ -57,7 +57,7 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
     const trimmed = text.trim();
     if (!isMoodInputSubmittable(trimmed)) return;
     if (!(await ensureConsent())) return;
-    onStart({ text: trimmed, entry: 'free_text' });
+    onStart({ text: trimmed, entry: 'free_text', label: trimmed });
   }, [text, ensureConsent, onStart]);
 
   const handleQuick = useCallback(
@@ -69,9 +69,10 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
         return;
       }
       setConsented(true);
-      onStart({ text: prompt, quickMoodId: cardId, entry: 'quick' });
+      const card = MOOD_CARDS.find((c) => c.id === cardId);
+      onStart({ text: prompt, quickMoodId: cardId, entry: 'quick', label: card ? t(card.titleKey) : undefined });
     },
-    [consented, onStart],
+    [consented, onStart, t],
   );
 
   const canSubmit = isMoodInputSubmittable(text.trim());
@@ -99,16 +100,20 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
         {consented === false && <Text style={styles.consentBody}>{t('aiConsent.inlineBody')}</Text>}
 
         <View style={styles.ctaSlot}>
+          {/* Metin varken altın/aktif, boşken pasif (yerinde kalır, yalnız söner). */}
           <PrimaryAction
             label={consented === false ? t('aiConsent.inlineEnableAndFind') : t('moodGauntlet.startCta')}
             onPress={() => void submitFreeText()}
             disabled={!canSubmit}
+            variant={canSubmit ? 'gold' : 'default'}
           />
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.caption}>{t('moodGauntlet.quickLabel')}</Text>
-          <MoodCardGrid activeMoodText="" onSelect={(prompt, id) => void handleQuick(prompt, id)} />
+          <Text style={styles.gridCaption}>{t('moodGauntlet.quickLabel')}</Text>
+          <View style={styles.gridBleed}>
+            <MoodCardGrid activeMoodText="" onSelect={(prompt, id) => void handleQuick(prompt, id)} />
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

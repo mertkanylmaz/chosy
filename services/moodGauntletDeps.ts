@@ -7,10 +7,12 @@
  */
 import * as Sentry from '@sentry/react-native';
 import * as ExpoCrypto from 'expo-crypto';
+import { Image } from 'expo-image';
 
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants/config';
 import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 import { logger } from '../utils/logger';
+import { normalizePosterUrl } from '../utils/posterUrl';
 import { hasAiConsent } from './aiConsent';
 import { ensureAuthSession, getFreshSession } from './authSession';
 import {
@@ -29,7 +31,8 @@ import { tasteProfileToVector } from './vectorEncoder';
 import { getWatchedFilmIds, getWatchlistFilmIds } from './watchlist';
 
 const PARSE_TIMEOUT_MS = 15_000;
-const RERANK_TIMEOUT_MS = 8_000;
+const RERANK_IDS_TIMEOUT_MS = 8_000;
+const RERANK_REASONS_TIMEOUT_MS = 10_000;
 const RERANK_OVERVIEW_MAX = 120;
 
 type V2Response = EdgeResponse & {
@@ -155,14 +158,19 @@ async function rerank(input: {
   moodText: string;
   candidates: MatchRow[];
   count: number;
+  withReasons: boolean;
 }): Promise<RerankOutcome> {
   if (!(await hasAiConsent())) return { ok: false, failure: 'no_consent' };
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), RERANK_TIMEOUT_MS);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    input.withReasons ? RERANK_REASONS_TIMEOUT_MS : RERANK_IDS_TIMEOUT_MS,
+  );
   try {
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/rerank-films`, {
+    // Uygulama modu: parse-mood ile aynı bölge sabitleme (başlık + forceFunctionRegion sorgusu).
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/rerank-films?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
       method: 'POST',
-      headers: await authHeaders(),
+      headers: { ...(await authHeaders()), 'x-region': GAUNTLET_EDGE_REGION },
       body: JSON.stringify({
         mood_text: input.moodText,
         candidates: input.candidates.map((c) => ({
@@ -174,7 +182,7 @@ async function rerank(input: {
           similarity: c.similarity,
         })),
         count: input.count,
-        reason: true,
+        reason: input.withReasons,
       }),
       signal: controller.signal,
     });
@@ -211,6 +219,22 @@ async function recordRecommended(searchId: string, ids: string[]): Promise<void>
   if (error) throw new Error(`mood_searches update: ${error.message}`);
 }
 
+/** Poster ön-yükleme: en iyi çaba. Başarısızlık akışı bozmaz ama iz bırakır (breadcrumb). */
+function prefetchPosters(rows: readonly MatchRow[]): void {
+  const urls = rows
+    .map((r) => normalizePosterUrl(r.poster_url))
+    .filter((u): u is string => u !== null && u.length > 0);
+  if (urls.length === 0) return;
+  void Image.prefetch(urls).catch((err: unknown) => {
+    Sentry.addBreadcrumb({
+      category: 'mood_gauntlet',
+      level: 'info',
+      message: 'poster prefetch basarisiz',
+      data: { count: urls.length, error: err instanceof Error ? err.message : String(err) },
+    });
+  });
+}
+
 /** Üretim bağlaması. Ham mood metni hiçbir olaya girmez. */
 export function createMoodGauntletDeps(): MoodGauntletDeps {
   return {
@@ -220,6 +244,8 @@ export function createMoodGauntletDeps(): MoodGauntletDeps {
     loadExclusions,
     recordRecommended,
     newId: () => ExpoCrypto.randomUUID(),
+    now: () => Date.now(),
+    prefetch: prefetchPosters,
     onFallback: (stage: FallbackStage) => {
       posthogAnalytics.track('mood_pipeline_fallback', { stage });
     },

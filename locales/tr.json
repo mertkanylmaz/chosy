@@ -600,7 +600,8 @@
     "chosyPro": "Chosy Pro",
     "chosyProSubtitle": "Bulunduğun ruh haline uygun bir film bul",
     "proMode": "Pro Mode",
-    "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul"
+    "proModeSubtitle": "Bir mood anlat, sana uyan filmi bul",
+    "proModeSubtitleGauntlet": "Bir ruh hali seç — dört film, üç seçim, tek film"
   },
   "proMode": {
     "title": "Pro Mode",
@@ -679,9 +680,10 @@
     "inputPlaceholder": "Bu akşamı birkaç kelimeyle anlat",
     "startCta": "Dörtlümü bul",
     "quickLabel": "Hızlı ruh halleri",
-    "loadingDefault": "Ruh halin okunuyor…",
-    "loadingNamed": "%{name} filmleri aranıyor…",
-    "loadingPicking": "Dörtlün seçiliyor…",
+    "phaseReading": "Okunuyor",
+    "phaseMatching": "Eşleşiyor",
+    "phasePicking": "Seçiliyor",
+    "moodChipLabel": "Bu akşamın ruh hali: %{name}",
     "question": "Bu akşam hangisi?",
     "noneCta": "Hiçbiri",
     "resultKicker": "BU AKŞAMIN FİLMİ",
@@ -697,8 +699,7 @@
     "anotherFour": "Başka bir dörtlü",
     "lighter": "Daha hafif",
     "stronger": "Daha yoğun",
-    "modLighter": "daha hafif ve izlemesi kolay",
-    "modStronger": "daha yoğun ve sürükleyici",
+    "adjustTitle": "Tam tutmadı mı?",
     "noticeRuntime": "Süre sınırına uyan yeterli film çıkmadı, bazıları daha uzun.",
     "close": "Kapat",
     "errorTitle": "Olmadı",

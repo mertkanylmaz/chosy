@@ -30,6 +30,7 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_another_four_tapped',
   'mood_intensity_tapped',
   'mood_pipeline_fallback',
+  'mood_pipeline_timing',
 ] as const;
 
 export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null): MoodEvent {
@@ -71,10 +72,17 @@ export function pipelineFallbackEvent(stage: string): MoodEvent {
   return { name: 'mood_pipeline_fallback', props: { stage } };
 }
 
+/** Aşama süresi (parse | v4 | pick | reasons) — yalnız sabit etiket + ms, metin yok. */
+export type MoodTimingStage = 'parse' | 'v4' | 'pick' | 'reasons';
+export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEvent {
+  return { name: 'mood_pipeline_timing', props: { stage, ms: Math.max(0, Math.round(ms)) } };
+}
+
 /** İzin verilen string değerler (serbest metin değil, sabit etiketler). */
 const ALLOWED_STRINGS = new Set<string>([
   'quick', 'free_text', 'watch_now', 'where', 'later', 'share', 'lighter', 'stronger',
-  'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids',
+  'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons',
+  'parse', 'v4', 'pick',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
 ]);

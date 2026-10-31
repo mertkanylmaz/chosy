@@ -600,7 +600,8 @@
     "chosyPro": "Chosy Pro",
     "chosyProSubtitle": "Find a film for the mood you're in",
     "proMode": "Pro Mode",
-    "proModeSubtitle": "Describe a mood, get a matching film"
+    "proModeSubtitle": "Describe a mood, get a matching film",
+    "proModeSubtitleGauntlet": "Pick a mood — four films, three choices, one pick"
   },
   "proMode": {
     "title": "Pro Mode",
@@ -679,9 +680,10 @@
     "inputPlaceholder": "Describe tonight in a few words",
     "startCta": "Find my four",
     "quickLabel": "Quick moods",
-    "loadingDefault": "Reading your mood…",
-    "loadingNamed": "Looking for %{name} films…",
-    "loadingPicking": "Picking your four…",
+    "phaseReading": "Reading",
+    "phaseMatching": "Matching",
+    "phasePicking": "Picking",
+    "moodChipLabel": "Tonight's mood: %{name}",
     "question": "Which one tonight?",
     "noneCta": "None of these",
     "resultKicker": "TONIGHT'S FILM",
@@ -697,8 +699,7 @@
     "anotherFour": "Another four",
     "lighter": "Lighter",
     "stronger": "More intense",
-    "modLighter": "lighter and easier to watch",
-    "modStronger": "more intense and gripping",
+    "adjustTitle": "Not quite right?",
     "noticeRuntime": "Not enough films fit your time limit, so some run longer.",
     "close": "Close",
     "errorTitle": "That didn't work",

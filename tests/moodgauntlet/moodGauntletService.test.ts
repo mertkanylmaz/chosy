@@ -7,14 +7,17 @@ import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.t
 
 import {
   buildV4Attempts,
+  canShiftIntensity,
+  fetchReasons,
+  intensifyMoodGauntlet,
   MAX_EXCLUDE_IDS,
   mergeExclusions,
   nextFour,
+  nextIntensityStep,
   noteBackupsShown,
   pickFour,
   reasonFor,
   startMoodGauntlet,
-  withModifier,
   type FallbackStage,
   type MatchRow,
   type MatchV4Args,
@@ -39,6 +42,12 @@ interface Calls {
   parse: number
   match: MatchV4Args[]
   rerank: number
+  /** Her rerank çağrısının withReasons bayrağı (sırayla). */
+  rerankFlags: boolean[]
+  /** Her rerank çağrısına giden aday id'leri. */
+  rerankCandidates: string[][]
+  prefetched: string[][]
+  timings: Array<[string, number]>
   recorded: string[][]
   fallbacks: FallbackStage[]
   errors: FallbackStage[]
@@ -47,12 +56,16 @@ interface Calls {
 function makeDeps(opts: {
   parsed?: ParsedMoodV2
   matchResults?: MatchRow[][] // her matchV4 çağrısı sırayla
-  rerank?: (c: MatchRow[]) => RerankOutcome | Promise<RerankOutcome>
+  rerank?: (c: MatchRow[], withReasons: boolean) => RerankOutcome | Promise<RerankOutcome>
   library?: string[]
   recordThrows?: boolean
 }): { deps: MoodGauntletDeps; calls: Calls } {
-  const calls: Calls = { parse: 0, match: [], rerank: 0, recorded: [], fallbacks: [], errors: [] }
+  const calls: Calls = {
+    parse: 0, match: [], rerank: 0, rerankFlags: [], rerankCandidates: [], prefetched: [], timings: [],
+    recorded: [], fallbacks: [], errors: [],
+  }
   let id = 0
+  let tick = 0
   let m = 0
   const deps: MoodGauntletDeps = {
     parse: () => {
@@ -65,9 +78,15 @@ function makeDeps(opts: {
       m++
       return Promise.resolve(r)
     },
-    rerank: async ({ candidates }) => {
+    rerank: async ({ candidates, withReasons }) => {
       calls.rerank++
-      return opts.rerank ? await opts.rerank(candidates) : { ok: false, failure: 'http_error' }
+      calls.rerankFlags.push(withReasons)
+      calls.rerankCandidates.push(candidates.map((c) => c.id))
+      return opts.rerank ? await opts.rerank(candidates, withReasons) : { ok: false, failure: 'http_error' }
+    },
+    now: () => (tick += 100),
+    prefetch: (rs) => {
+      calls.prefetched.push(rs.map((r) => r.id))
     },
     loadExclusions: () => Promise.resolve(opts.library ?? []),
     recordRecommended: (_s, ids) => {
@@ -96,7 +115,8 @@ Deno.test('mutlu yol: rerank sirasi + gerekce + 3 yedek (v4 listesinin sonraki a
   assertEquals(r.status, 'ok')
   if (r.status !== 'ok') return
   assertEquals(r.set.four.map((f) => f.id), ['f5', 'f2', 'f9', 'f1'])
-  assertEquals(r.set.reasons.f5, 'bir')
+  assertEquals(r.set.reasons, {}) // dortlu gerekcesiz gelir; gerekce ayri cagri (fetchReasons)
+  assertEquals(calls.rerankFlags, [false]) // ilk cagri YALNIZ id (reason:false)
   assertEquals(r.set.backups.map((f) => f.id), ['f3', 'f4', 'f6']) // v4 sirasi, dortlu disi ilk 3
   assertEquals(r.set.reranked, true)
   assertEquals(calls.parse, 1)
@@ -135,21 +155,24 @@ Deno.test('rerank kismi id dondurur: eksikler v4 sirasiyla tamamlanir, gecersiz 
   assert(r.status === 'ok')
   if (r.status !== 'ok') return
   assertEquals(r.set.four.map((f) => f.id), ['f7', 'f3', 'f1', 'f2'])
-  assertEquals(r.set.reasons, { f7: 'a' })
+  assertEquals(r.set.reasons, {})
 })
 
-Deno.test('gerekce "" veya bosluk: reasonFor null, set.reasons icine girmez', async () => {
+Deno.test('gerekce "" veya bosluk: reasonFor null; fetchReasons bos/bosluk gerekceleri almaz', async () => {
   assertEquals(reasonFor({ a: '' }, 'a'), null)
   assertEquals(reasonFor({ a: '   ' }, 'a'), null)
   assertEquals(reasonFor({ a: ' iyi ' }, 'a'), 'iyi')
   assertEquals(reasonFor(undefined, 'a'), null)
   assertEquals(reasonFor({}, 'a'), null)
   const { deps } = makeDeps({
-    rerank: () => ({ ok: true, ids: ['f1', 'f2', 'f3', 'f4'], reasons: { f1: '', f2: '  ', f3: 'var' } }),
+    rerank: (c, withReasons) =>
+      withReasons
+        ? { ok: true, ids: ['f1', 'f2', 'f3', 'f4'], reasons: { f1: '', f2: '  ', f3: 'var' } }
+        : topFour(c),
   })
   const r = await startMoodGauntlet(deps, { text: 'x' })
   if (r.status !== 'ok') throw new Error('ok bekleniyordu')
-  assertEquals(r.set.reasons, { f3: 'var' })
+  assertEquals(await fetchReasons(deps, r.session, r.set), { f3: 'var' })
 })
 
 Deno.test('v4 <4: once genres_include duser, sonra min_similarity zinciri; genres_exclude ASLA duser', async () => {
@@ -268,11 +291,6 @@ Deno.test('pickFour: rerank null → havuz sirasi', () => {
   assertEquals(p.reranked, false)
 })
 
-Deno.test('withModifier: tek modifier eklenir, bos modifier metni degistirmez', () => {
-  assertEquals(withModifier('  yagmurlu bir aksam ', 'daha hafif'), 'yagmurlu bir aksam. daha hafif')
-  assertEquals(withModifier('x', '  '), 'x')
-})
-
 Deno.test('v4 deneme plani: kisit yoksa 4 basamak; genres/runtime varsa ek basamaklar', () => {
   assertEquals(buildV4Attempts(false, false).length, 4)
   assertEquals(buildV4Attempts(true, false).length, 5)
@@ -291,4 +309,154 @@ Deno.test('onStage: parse sonrasi profileName ile parsed, rerank oncesi picking 
     },
   })
   assertEquals(seen, ['parsed:Cozy Night', 'picking'])
+})
+
+// ─── Faz 2-1b: hiz (rerank bolme, prefetch, olcum) ───────────────────────────
+
+Deno.test('hiz: dortlu reason:false ile gelir; gerekce AYRI cagri, YALNIZ bu 4 film, reason:true', async () => {
+  const { deps, calls } = makeDeps({
+    rerank: (c, withReasons) =>
+      withReasons
+        ? { ok: true, ids: c.map((x) => x.id), reasons: Object.fromEntries(c.map((x) => [x.id, `neden ${x.id}`])) }
+        : { ok: true, ids: ['f6', 'f2', 'f9', 'f1'], reasons: {} },
+  })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(calls.rerank, 1) // dortlu gosterilirken gerekce cagrisi HENUZ yok
+  assertEquals(r.set.reasons, {})
+  const reasons = await fetchReasons(deps, r.session, r.set)
+  assertEquals(calls.rerankFlags, [false, true])
+  assertEquals(calls.rerankCandidates[1], ['f6', 'f2', 'f9', 'f1']) // yalniz dortlu
+  assertEquals(Object.keys(reasons).sort(), ['f1', 'f2', 'f6', 'f9'])
+  assertEquals(reasons.f6, 'neden f6')
+})
+
+Deno.test('hiz: ilk (id) rerank en cok 20 aday alir', async () => {
+  const { deps, calls } = makeDeps({ matchResults: [rows(40)], rerank: topFour })
+  await startMoodGauntlet(deps, { text: 'x' })
+  assertEquals(calls.rerankCandidates[0].length, 20)
+})
+
+Deno.test('gerekce basarisiz: bos doner (satir yok), fallback isaretlenir; throw → onError', async () => {
+  const fail = makeDeps({
+    rerank: (c, withReasons) => (withReasons ? { ok: false, failure: 'timeout' } : topFour(c)),
+  })
+  const r1 = await startMoodGauntlet(fail.deps, { text: 'x' })
+  if (r1.status !== 'ok') throw new Error('ok')
+  assertEquals(await fetchReasons(fail.deps, r1.session, r1.set), {})
+  assertEquals(fail.calls.fallbacks, ['reasons'])
+
+  const boom = makeDeps({
+    rerank: (c, withReasons) => {
+      if (withReasons) throw new Error('net')
+      return topFour(c)
+    },
+  })
+  const r2 = await startMoodGauntlet(boom.deps, { text: 'x' })
+  if (r2.status !== 'ok') throw new Error('ok')
+  assertEquals(await fetchReasons(boom.deps, r2.session, r2.set), {})
+  assertEquals(boom.calls.errors, ['reasons'])
+  assertEquals(boom.calls.fallbacks, ['reasons'])
+})
+
+Deno.test('id-rerank zaten dustuyse gerekce cagrisi ATILMAZ (limitte ikinci istek yakilmaz)', async () => {
+  const { deps, calls } = makeDeps({ rerank: () => ({ ok: false, failure: 'http_429' }) })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(await fetchReasons(deps, r.session, r.set), {})
+  assertEquals(calls.rerank, 1)
+})
+
+Deno.test('prefetch: v4 doner donmez ilk 8 aday, dortlu belli olunca dortlu + yedekler', async () => {
+  const { deps, calls } = makeDeps({ rerank: topFour })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(calls.prefetched[0], ['f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8'])
+  assertEquals(calls.prefetched[1], [...r.set.four, ...r.set.backups].map((f) => f.id))
+})
+
+Deno.test('olcum: parse / v4 / pick sureleri sirayla bildirilir (metin yok)', async () => {
+  const { deps } = makeDeps({ rerank: topFour })
+  const seen: Array<[string, number]> = []
+  await startMoodGauntlet(deps, { text: 'gizli metin', onTiming: (s, ms) => seen.push([s, ms]) })
+  assertEquals(seen.map(([s]) => s), ['parse', 'v4', 'pick'])
+  assert(seen.every(([, ms]) => ms > 0))
+})
+
+// ─── Faz 2-1b: yogunluk (parse tekrarlanmaz) ─────────────────────────────────
+
+const profile = (over: Record<string, unknown> = {}) => ({
+  energy_level: 0.5, thematic_depth: 0.5, pace_preference: 'medium', visual_style: 'cinematic', ...over,
+})
+
+Deno.test('yogunluk: PARSE YOK, kota dusmez; v4 + rerank yeniden; kisitlar korunur; ayni mood_search_id', async () => {
+  const p = parsed({ profile: profile(), genresExclude: ['Thriller'], maxRuntime: 120, searchId: 'S1' })
+  const { deps, calls } = makeDeps({ parsed: p, matchResults: [rows(30), rows(30, 100)], rerank: topFour })
+  const first = await startMoodGauntlet(deps, { text: 'rainy', quickMoodId: 'rainy' })
+  if (first.status !== 'ok') throw new Error('ok')
+  const hot = await intensifyMoodGauntlet(deps, first.session, 'stronger')
+  if (hot.status !== 'ok') throw new Error('ok')
+  assertEquals(calls.parse, 1) // YENI PARSE YOK
+  assertEquals(calls.match.length, 2)
+  const m = calls.match[1]
+  assertEquals(m.genresExclude, ['Thriller']) // kullanicinin kisiti korunur
+  assertEquals(m.maxRuntime, 120)
+  const prof = m.profile as { energy_level: number; thematic_depth: number; pace_preference: string }
+  assertEquals(prof.energy_level, 0.7)
+  assertEquals(prof.thematic_depth, 0.7)
+  assertEquals(prof.pace_preference, 'fast')
+  assertEquals(hot.session.parsed.searchId, 'S1') // ayni arama
+  assertEquals(hot.session.intensityStep, 1)
+  assertEquals(hot.set.setIndex, 1)
+  assertEquals(hot.session.parsed.profile, p.profile) // ozgun profil bozulmaz
+  // onceki dortlu yeni aramadan dislanir
+  const exclude = m.excludeIds
+  for (const f of first.set.four) assert(exclude.includes(f.id))
+})
+
+Deno.test('yogunluk: lighter ters yone gider, adimlar OZGUNE gore birikir (modifier birikmesi yok), sinirli', async () => {
+  const p = parsed({ profile: profile(), searchId: 'S2' })
+  const { deps, calls } = makeDeps({ parsed: p, matchResults: [rows(40)], rerank: topFour })
+  const first = await startMoodGauntlet(deps, { text: 'x' })
+  if (first.status !== 'ok') throw new Error('ok')
+  const l1 = await intensifyMoodGauntlet(deps, first.session, 'lighter')
+  if (l1.status !== 'ok') throw new Error('ok')
+  const l2 = await intensifyMoodGauntlet(deps, l1.session, 'lighter')
+  if (l2.status !== 'ok') throw new Error('ok')
+  const e = (n: number) => (calls.match[n].profile as { energy_level: number }).energy_level
+  assertEquals([e(1), e(2)], [0.3, 0.1])
+  assertEquals((calls.match[1].profile as { pace_preference: string }).pace_preference, 'slow')
+  assertEquals(l2.session.intensityStep, -2)
+  assertEquals(nextIntensityStep(3, 'stronger'), 3) // sinir
+  assert(!canShiftIntensity(3, 'stronger') && canShiftIntensity(3, 'lighter'))
+  assert(!canShiftIntensity(-3, 'lighter') && canShiftIntensity(-3, 'stronger'))
+  assertEquals(calls.parse, 1)
+})
+
+Deno.test('yogunluk: kaydirilmis aday <4 → insufficient (sahte dolgu yok); profil bozuksa hata firlatir', async () => {
+  const thin = makeDeps({ parsed: parsed({ profile: profile() }), matchResults: [rows(30), rows(2)], rerank: topFour })
+  const first = await startMoodGauntlet(thin.deps, { text: 'x' })
+  if (first.status !== 'ok') throw new Error('ok')
+  assertEquals((await intensifyMoodGauntlet(thin.deps, first.session, 'stronger')).status, 'insufficient')
+
+  const bad = makeDeps({ parsed: parsed({ profile: { p: 1 } }), rerank: topFour })
+  const f2 = await startMoodGauntlet(bad.deps, { text: 'x' })
+  if (f2.status !== 'ok') throw new Error('ok')
+  let threw = false
+  try {
+    await intensifyMoodGauntlet(bad.deps, f2.session, 'lighter')
+  } catch {
+    threw = true
+  }
+  assert(threw, 'bozuk profil sessizce gecilmemeli')
+})
+
+Deno.test('yogunluk: v4 gevsetme zinciri kaydirilmis profille de calisir; genres_exclude ASLA duser', async () => {
+  const p = parsed({ profile: profile(), genresInclude: ['Drama'], genresExclude: ['Horror'], maxRuntime: 90 })
+  const { deps, calls } = makeDeps({ parsed: p, matchResults: [rows(30), rows(2), rows(6, 100)], rerank: topFour })
+  const first = await startMoodGauntlet(deps, { text: 'x' })
+  if (first.status !== 'ok') throw new Error('ok')
+  const hot = await intensifyMoodGauntlet(deps, first.session, 'stronger')
+  assertEquals(hot.status, 'ok')
+  for (const c of calls.match.slice(1)) assertEquals(c.genresExclude, ['Horror'])
 })

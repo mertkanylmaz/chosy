@@ -79,6 +79,7 @@ import { color, radius, size, space, type } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
 import { readStoredAvatar, writeStoredAvatar } from '@/utils/avatarStorage';
 import { useStaggeredEntry } from '@/hooks/useStaggeredEntry';
+import { useMoodGauntletEnabled } from '@/hooks/useMoodGauntletEnabled';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useReduceTransparency } from '@/hooks/useReduceTransparency';
 import { TabBarInsetProvider, useTabBarInset } from '@/hooks/useTabBarInset';
@@ -779,6 +780,8 @@ function ProfileScreenContent() {
   const { triggerPaywall, paywallProps } = useContextualPaywall();
   /** Pro Mode satirindaki kilit ikonu — yetki kontrolu ekranin kendisinde */
   const proAccess = useProModeAccess();
+  // Faz 2-1b: Pro Mode satırının alt metni yalnız Mood Gauntlet bayrağı AÇIKKEN yeni; kapalıyken eski.
+  const moodGauntletOn = useMoodGauntletEnabled();
 
   // ── Plan bilgisi (B-1 / Fix 7) ──
   // Rozet entitlement'tan (`premiumStatus`), plan adi `tier`'dan gelir.
@@ -2032,7 +2035,9 @@ function ProfileScreenContent() {
               <MagicWand size={18} color={color.text.secondary} />
               <View style={styles.proModeTextBlock}>
                 <Text style={styles.proModeTitle}>{t('profile.proMode')}</Text>
-                <Text style={styles.proModeSubtitle}>{t('profile.proModeSubtitle')}</Text>
+                <Text style={styles.proModeSubtitle}>
+                  {t(moodGauntletOn ? 'profile.proModeSubtitleGauntlet' : 'profile.proModeSubtitle')}
+                </Text>
               </View>
               <Ionicons
                 name={proAccess.allowed ? 'chevron-forward' : 'lock-closed'}

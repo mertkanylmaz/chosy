@@ -1,20 +1,38 @@
 /**
  * Sonuç: "Bu akşamın filmi". ChampionReveal KULLANILMAZ (sunucu sahipli günlük gauntletId /
- * tarihe bağlı). Burada: Watch now, Nerede izlenir, Sonraya bırak (MANUEL watchlist),
- * paylaşım (mood'a özel metin), 3 yedek, Başka bir dörtlü, Daha hafif / Daha yoğun.
+ * tarihe bağlı) — yalnız hareket dili ödünç alınır: poster belirir → başlık → meta, aynı
+ * `BLACKOUT_SEQUENCE` gecikmeleri (kara boşluk YOK, kısa reveal). Watch now altın birincil;
+ * Sonraya bırak (MANUEL watchlist) ve Paylaş (mood'a özel metin) ikincil; 3 yedek;
+ * Başka bir dörtlü; Daha hafif / Daha yoğun belirgin çipler.
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { Lightning, Wind } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
+import Animated, {
+  FadeIn,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
+
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
-import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
+import { color, size } from '@/constants/design/semantic';
+import {
+  BLACKOUT_SEQUENCE,
+  DISSOLVE_DURATION,
+  EASE_OUT_QUART,
+  REDUCED_MOTION_DURATION,
+} from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { reasonFor, type MatchRow, type MoodNotice, type MoodSet } from '@/services/moodGauntlet';
+import { reasonFor, type IntensityDirection, type MatchRow, type MoodNotice } from '@/services/moodGauntlet';
 import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
@@ -22,21 +40,61 @@ import { pickActionEvent, type MoodPickAction } from '@/utils/moodGauntletAnalyt
 import { normalizePosterUrl } from '@/utils/posterUrl';
 
 import { styles } from './styles';
-import { trackMoodEvent, type MoodStage } from './useMoodGauntlet';
+import { trackMoodEvent } from './useMoodGauntlet';
 
 type SaveState = 'idle' | 'saving' | 'saved';
 
 interface ResultStageProps {
   champion: MatchRow;
-  set: MoodSet;
+  backups: MatchRow[];
+  /** film id → gerekçe (arkadan dolar; yoksa satır çizilmez). */
+  reasons: Record<string, string>;
   notices: MoodNotice[];
+  canLighter: boolean;
+  canStronger: boolean;
   onAnotherFour: () => void;
-  onIntensify: (direction: 'lighter' | 'stronger') => void;
+  onIntensify: (direction: IntensityDirection) => void;
 }
 
-export function ResultStage({ champion, set, notices, onAnotherFour, onIntensify }: ResultStageProps): React.JSX.Element {
+interface ChipProps {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+}
+
+function IntensityChip({ label, disabled, onPress, children }: ChipProps): React.JSX.Element {
+  return (
+    <TouchableOpacity
+      style={[styles.chip, disabled && styles.chipDisabled]}
+      onPress={onPress}
+      disabled={disabled}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+    >
+      {children}
+      <Text style={styles.chipText} numberOfLines={1}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+export function ResultStage({
+  champion,
+  backups,
+  reasons,
+  notices,
+  canLighter,
+  canStronger,
+  onAnotherFour,
+  onIntensify,
+}: ResultStageProps): React.JSX.Element {
   const { t, region } = useLanguage();
   const router = useRouter();
+  const reduced = useReducedMotion();
   const providers = useWatchProviders(champion.id, region);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<string | null>(null);
@@ -48,9 +106,40 @@ export function ResultStage({ champion, set, notices, onAnotherFour, onIntensify
     };
   }, []);
 
+  // Reveal: poster belirir (hafif ölçek oturması) → başlık → meta. Reduce Motion: kısa çapraz geçiş.
+  const posterOpacity = useSharedValue(0);
+  const posterScale = useSharedValue(reduced ? 1 : 1.04);
+  const titleOpacity = useSharedValue(0);
+  const metaOpacity = useSharedValue(0);
+  useEffect(() => {
+    if (reduced) {
+      const fade = { duration: REDUCED_MOTION_DURATION.crossFade };
+      posterOpacity.value = withTiming(1, fade);
+      titleOpacity.value = withTiming(1, fade);
+      metaOpacity.value = withTiming(1, fade);
+      return;
+    }
+    const fade = { duration: DISSOLVE_DURATION.newContender, easing: EASE_OUT_QUART };
+    posterOpacity.value = 0;
+    titleOpacity.value = 0;
+    metaOpacity.value = 0;
+    posterScale.value = 1.04;
+    posterOpacity.value = withTiming(1, fade);
+    posterScale.value = withTiming(1, fade);
+    titleOpacity.value = withDelay(BLACKOUT_SEQUENCE.titleDelay, withTiming(1, fade));
+    metaOpacity.value = withDelay(BLACKOUT_SEQUENCE.titleDelay + BLACKOUT_SEQUENCE.metaDelay, withTiming(1, fade));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [champion.id, reduced]);
+  const posterStyle = useAnimatedStyle(() => ({
+    opacity: posterOpacity.value,
+    transform: [{ scale: posterScale.value }],
+  }));
+  const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
+  const metaStyle = useAnimatedStyle(() => ({ opacity: metaOpacity.value }));
+
   const track = useCallback((a: MoodPickAction) => trackMoodEvent(pickActionEvent(a)), []);
   const poster = normalizePosterUrl(champion.poster_url);
-  const reason = reasonFor(set.reasons, champion.id);
+  const reason = reasonFor(reasons, champion.id);
   const year = champion.year ?? 0;
   const meta = [year > 0 ? String(year) : null, champion.runtime ? `${champion.runtime} min` : null]
     .filter((x): x is string => x !== null)
@@ -112,29 +201,39 @@ export function ResultStage({ champion, set, notices, onAnotherFour, onIntensify
   }, [champion.title, year, t, track]);
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll}>
+    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Text style={styles.kicker}>{t('moodGauntlet.resultKicker')}</Text>
-      <View style={styles.hero}>
+      <Animated.View style={[styles.hero, posterStyle]}>
         {poster !== null && <Image source={{ uri: poster }} style={styles.heroImage} contentFit="cover" />}
-      </View>
-      <Text style={styles.resultTitle} accessibilityRole="header">
+      </Animated.View>
+      <Animated.Text style={[styles.resultTitle, titleStyle]} accessibilityRole="header">
         {champion.title}
-      </Text>
-      {meta.length > 0 && <Text style={styles.resultMeta}>{meta}</Text>}
-      {reason !== null && <Text style={styles.resultReason}>{reason}</Text>}
+      </Animated.Text>
+      {meta.length > 0 && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}
+      {reason !== null && (
+        <Animated.Text
+          key={reason}
+          style={styles.resultReason}
+          entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
+        >
+          {reason}
+        </Animated.Text>
+      )}
       {notices.includes('max_runtime_dropped') && (
-        <Text style={styles.notice}>{t('moodGauntlet.noticeRuntime')}</Text>
+        <Text style={[styles.notice, styles.actions]}>{t('moodGauntlet.noticeRuntime')}</Text>
       )}
 
       <View style={styles.actions}>
-        <WatchProvidersRow
-          state={providers.state}
-          providers={providers.providers}
-          onRetry={providers.retry}
-          filmId={champion.id}
-          onSeeAll={() => track('where')}
-        />
-        <PrimaryAction label={t('moodGauntlet.watchNow')} onPress={handleWatchNow} />
+        <View style={styles.providersSlot}>
+          <WatchProvidersRow
+            state={providers.state}
+            providers={providers.providers}
+            onRetry={providers.retry}
+            filmId={champion.id}
+            onSeeAll={() => track('where')}
+          />
+        </View>
+        <PrimaryAction label={t('moodGauntlet.watchNow')} onPress={handleWatchNow} variant="gold" />
         <View style={styles.actionRow}>
           <OutlineAction
             label={saveState === 'saved' ? t('moodGauntlet.saved') : t('moodGauntlet.saveForLater')}
@@ -146,11 +245,21 @@ export function ResultStage({ champion, set, notices, onAnotherFour, onIntensify
         {notice !== null && <Text style={styles.shareNotice}>{notice}</Text>}
       </View>
 
-      {set.backups.length > 0 && (
+      <Text style={styles.adjustTitle}>{t('moodGauntlet.adjustTitle')}</Text>
+      <View style={styles.chipRow}>
+        <IntensityChip label={t('moodGauntlet.lighter')} disabled={!canLighter} onPress={() => onIntensify('lighter')}>
+          <Wind size={size.iconInline} color={color.text.primary} />
+        </IntensityChip>
+        <IntensityChip label={t('moodGauntlet.stronger')} disabled={!canStronger} onPress={() => onIntensify('stronger')}>
+          <Lightning size={size.iconInline} color={color.text.primary} />
+        </IntensityChip>
+      </View>
+
+      {backups.length > 0 && (
         <>
           <Text style={styles.sectionTitle}>{t('moodGauntlet.backupsTitle')}</Text>
           <View style={styles.backupRow}>
-            {set.backups.map((b) => {
+            {backups.map((b) => {
               const uri = normalizePosterUrl(b.poster_url);
               return (
                 <TouchableOpacity
@@ -175,13 +284,7 @@ export function ResultStage({ champion, set, notices, onAnotherFour, onIntensify
 
       <View style={styles.actions}>
         <OutlineAction label={t('moodGauntlet.anotherFour')} onPress={onAnotherFour} />
-        <View style={styles.actionRow}>
-          <QuietAction label={t('moodGauntlet.lighter')} onPress={() => onIntensify('lighter')} />
-          <QuietAction label={t('moodGauntlet.stronger')} onPress={() => onIntensify('stronger')} />
-        </View>
       </View>
     </ScrollView>
   );
 }
-
-export type { MoodStage };

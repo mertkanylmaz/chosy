@@ -17,6 +17,7 @@ import {
   noneOfTheseEvent,
   pickActionEvent,
   pipelineFallbackEvent,
+  pipelineTimingEvent,
   startedEvent,
   anotherFourEvent,
 } from '../../utils/moodGauntletAnalytics.ts'
@@ -99,8 +100,8 @@ Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon deg
   }
 })
 
-Deno.test('analitik: dokuz olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
-  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 9)
+Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
+  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 10)
   const evs = [
     startedEvent('quick', 'cozy'),
     startedEvent('free_text', 'cozy'), // free_text'te quick_mood_id girmez
@@ -112,6 +113,9 @@ Deno.test('analitik: dokuz olay adi, hicbiri ham metin tasimaz, serbest metin gu
     anotherFourEvent(),
     intensityEvent('lighter'),
     pipelineFallbackEvent('rerank'),
+    pipelineFallbackEvent('reasons'),
+    pipelineTimingEvent('parse', 4012.4),
+    pipelineTimingEvent('reasons', 0),
   ]
   for (const e of evs) {
     assert((MOOD_GAUNTLET_EVENT_NAMES as readonly string[]).includes(e.name), e.name)
@@ -169,4 +173,73 @@ Deno.test('types/gauntlet.ts bu is icin degismedi: mood kodu kilitli sozlesmeyi 
   for (const f of ['utils/moodGauntletFilm.ts']) {
     assertMatch(read(f), /import type \{ GauntletFilm \} from '\.\.\/types\/gauntlet'/)
   }
+})
+
+// ─── Faz 2-1b ────────────────────────────────────────────────────────────────
+
+Deno.test('profil satiri: yeni alt metin YALNIZ bayrak aciksa; kapaliyken eski anahtar aynen', () => {
+  const profile = read('app/(tabs)/profile.tsx')
+  assertMatch(profile, /import \{ useMoodGauntletEnabled \} from '@\/hooks\/useMoodGauntletEnabled'/)
+  assertMatch(profile, /t\(moodGauntletOn \? 'profile\.proModeSubtitleGauntlet' : 'profile\.proModeSubtitle'\)/)
+  const en = JSON.parse(read('locales/en.json')).profile
+  const tr = JSON.parse(read('locales/tr.json')).profile
+  assertEquals(en.proModeSubtitle, 'Describe a mood, get a matching film') // eski metin degismedi
+  assertEquals(en.proModeSubtitleGauntlet, 'Pick a mood — four films, three choices, one pick')
+  assert(tr.proModeSubtitle.length > 0 && tr.proModeSubtitleGauntlet.length > 0)
+})
+
+Deno.test('rerank cagrisi uygulama modunda: bolge sabitleme + reason bayragi parametreden', () => {
+  const deps = read('services/moodGauntletDeps.ts')
+  assertMatch(deps, /rerank-films\?forceFunctionRegion=\$\{GAUNTLET_EDGE_REGION\}/)
+  assertMatch(deps, /'x-region': GAUNTLET_EDGE_REGION/)
+  assertMatch(deps, /reason: input\.withReasons,/)
+  // parse-mood zaten uygulama modundaydi: client_search_id + bolge
+  assertMatch(deps, /parse-mood\?forceFunctionRegion=\$\{GAUNTLET_EDGE_REGION\}/)
+  assertMatch(deps, /client_search_id: input\.clientSearchId/)
+  // poster prefetch hata yutmaz: breadcrumb
+  assertMatch(deps, /Image\.prefetch\(urls\)\.catch\(/)
+  assertMatch(deps, /Sentry\.addBreadcrumb\(/)
+})
+
+Deno.test('yogunluk: parse CAGRILMAZ (kaynak), eski metin-modifier yolu kalmadi', () => {
+  const svc = read('services/moodGauntlet.ts')
+  const body = svc.slice(svc.indexOf('export async function intensifyMoodGauntlet'))
+  assert(!/deps\.parse/.test(body.slice(0, body.indexOf('\n}\n'))), 'intensify parse cagirmamali')
+  assert(!/withModifier/.test(svc))
+  const hook = read('components/MoodGauntlet/useMoodGauntlet.ts')
+  assert(!/withModifier|modLighter|modStronger/.test(hook))
+  assertMatch(hook, /intensifyMoodGauntlet\(deps, session, direction/)
+  assertMatch(hook, /trackMoodEvent\(intensityEvent\(direction\)\)/)
+  for (const l of ['en', 'tr']) {
+    const blk = JSON.parse(read(`locales/${l}.json`)).moodGauntlet
+    assert(!('modLighter' in blk) && !('modStronger' in blk))
+  }
+})
+
+Deno.test('hiz: dortlu gosterilince 4 filmin nerede-izlenir verisi on-cekilir, gerekce arkadan', () => {
+  const hook = read('components/MoodGauntlet/useMoodGauntlet.ts')
+  assertMatch(hook, /prefetchWatchProviders\(f\.id, region\)/)
+  assertMatch(hook, /void fetchReasons\(deps, sess, nextSet\)\.then\(/)
+  assertMatch(hook, /pipelineTimingEvent\('reasons'/)
+})
+
+Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinnersiz; sonuc altin + sabit slot + cipler', () => {
+  const entry = read('components/MoodGauntlet/EntryStage.tsx')
+  assertMatch(entry, /<View style=\{styles\.gridBleed\}>/)
+  assertMatch(entry, /variant=\{canSubmit \? 'gold' : 'default'\}/)
+  const st = read('components/MoodGauntlet/styles.ts')
+  assertMatch(st, /gridBleed: \{ marginHorizontal: -space\.base \}/)
+  assertMatch(st, /providersSlot: \{ minHeight: 56/)
+  const status = read('components/MoodGauntlet/StatusStage.tsx')
+  assert(!/ActivityIndicator/.test(status), 'minik spinner kalkti')
+  assertMatch(status, /PHASE_KEYS/)
+  const result = read('components/MoodGauntlet/ResultStage.tsx')
+  assertMatch(result, /label=\{t\('moodGauntlet\.watchNow'\)\} onPress=\{handleWatchNow\} variant="gold"/)
+  assertMatch(result, /disabled=\{!canLighter\}/)
+  assertMatch(result, /disabled=\{!canStronger\}/)
+  assertMatch(result, /<View style=\{styles\.providersSlot\}>/)
+  const gauntlet = read('components/MoodGauntlet/GauntletStage.tsx')
+  assertMatch(gauntlet, /id === picked \? 'remaining' : 'eliminated'/)
+  assertMatch(gauntlet, /<OutlineAction label=\{t\('moodGauntlet\.noneCta'\)\}/)
+  assertMatch(gauntlet, /moodChip/)
 })
