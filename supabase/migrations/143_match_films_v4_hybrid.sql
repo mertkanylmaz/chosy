@@ -16,7 +16,8 @@
 --
 -- Başlık normalizasyonu: unaccent uzantısı KURULU DEĞİL (list_extensions, 31 Eki 2026);
 --   uzantı eklenmedi. Yerine yerleşik translate() ile Latin aksan katlama + noktalama
---   boşluğa indirgenir ("Spider-Man: Far From Home" == "spider man far from home").
+--   boşluğa indirgenir ("Spider-Man: Far From Home" == "spider man far from home") ve baştaki
+--   "the " / "a " / "an " atılır ("Prestige" == "The Prestige"); katalog ve öneri tarafında aynı.
 --   Uzantı istenirse: CREATE EXTENSION unaccent WITH SCHEMA extensions (onay gerekir).
 --
 -- Çıktı: v3 sütunları + channels text[] ('v','a','c'; çoklu olabilir).
@@ -84,10 +85,10 @@ AS $function$
   WITH
   -- Başlık listeleri: yalnız dizi kabul edilir, en çok 20 öğe, normalize edilmiş başlık.
   refs AS (
-    SELECT btrim(regexp_replace(lower(translate(r.title,
+    SELECT regexp_replace(btrim(regexp_replace(lower(translate(r.title,
              'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
              'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-             '[^a-z0-9]+', ' ', 'g')) AS nt,
+             '[^a-z0-9]+', ' ', 'g')), '^(the|an|a) ', '') AS nt,
            r.year AS ry
     FROM jsonb_to_recordset(
            CASE WHEN jsonb_typeof(reference_titles) = 'array'
@@ -98,10 +99,10 @@ AS $function$
     WHERE r.title IS NOT NULL
   ),
   sugg AS (
-    SELECT btrim(regexp_replace(lower(translate(s.title,
+    SELECT regexp_replace(btrim(regexp_replace(lower(translate(s.title,
              'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
              'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-             '[^a-z0-9]+', ' ', 'g')) AS nt,
+             '[^a-z0-9]+', ' ', 'g')), '^(the|an|a) ', '') AS nt,
            s.year AS sy
     FROM jsonb_to_recordset(
            CASE WHEN jsonb_typeof(suggested_titles) = 'array'
@@ -129,16 +130,16 @@ AS $function$
       f.director AS film_director,
       -- Başlık normalizasyonu yalnız refs/sugg doluysa (aksi halde ~7K translate/regexp atlanır).
       CASE WHEN (SELECT has_titles FROM title_flag) THEN
-        btrim(regexp_replace(lower(translate(f.title,
+        regexp_replace(btrim(regexp_replace(lower(translate(f.title,
           'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
           'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-          '[^a-z0-9]+', ' ', 'g'))
+          '[^a-z0-9]+', ' ', 'g')), '^(the|an|a) ', '')
       END AS nt,
       CASE WHEN (SELECT has_titles FROM title_flag) THEN
-        btrim(regexp_replace(lower(translate(COALESCE(f.original_title, ''),
+        regexp_replace(btrim(regexp_replace(lower(translate(COALESCE(f.original_title, ''),
           'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
           'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-          '[^a-z0-9]+', ' ', 'g'))
+          '[^a-z0-9]+', ' ', 'g')), '^(the|an|a) ', '')
       END AS nt_orig,
       (mood_weight * (1 - (fp.profile_vector <=> query_vector)))
         + (user_weight * CASE
