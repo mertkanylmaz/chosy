@@ -1,0 +1,941 @@
+{
+  "mood_id": "ft_dark_thriller",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c1b42f15-b09f-44f2-b339-73fc0e9f5338",
+        "tmdb_id": 77,
+        "title": "Memento",
+        "year": 2000,
+        "overview": "Leonard Shelby is tracking down the man who raped and murdered his wife. The difficulty of locating his wife's killer, however, is compounded by the fact that he suffers from a rare, untreatable form of short-term memory loss. Although he can recall details of life before his accident, Leonard cannot remember what happened fifteen minutes ago, where he's going, or why.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 8.177,
+        "director": "Christopher Nolan",
+        "similarity": 1.12476474379347,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller, mystery",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9",
+        "tmdb_id": 44214,
+        "title": "Black Swan",
+        "year": 2010,
+        "overview": "A committed dancer struggles to maintain her sanity after winning the lead role in a production of Tchaikovsky's \"Swan Lake.\"",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Horror"
+        ],
+        "runtime": 108,
+        "vote_average": 7.686,
+        "director": "Darren Aronofsky",
+        "similarity": 0.963317249020992,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.860168507927977,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "3df241d4-9c12-4cb9-9ccf-e54732840eda",
+        "tmdb_id": 4553,
+        "title": "The Machinist",
+        "year": 2004,
+        "overview": "Trevor, an insomniac lathe operator, experiences unusual occurrences at work and home. A strange man follows him everywhere, but no one else seems to notice him.",
+        "genres": [
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 102,
+        "vote_average": 7.523,
+        "director": "Brad Anderson",
+        "similarity": 0.835107966572155,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "798a524a-e52d-4b66-9812-f2cf2111a3da",
+        "tmdb_id": 210577,
+        "title": "Gone Girl",
+        "year": 2014,
+        "overview": "With his wife's disappearance having become the focus of an intense media circus, a man sees the spotlight turned on him when it's suspected that he may not be innocent.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 149,
+        "vote_average": 7.89,
+        "director": "David Fincher",
+        "similarity": 0.694562077552397,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+        "tmdb_id": 1018,
+        "title": "Mulholland Drive",
+        "year": 2001,
+        "overview": "Blonde Betty Elms has only just arrived in Hollywood to become a movie star when she meets an enigmatic brunette with amnesia. Meanwhile, as the two set off to solve the second woman's identity, filmmaker Adam Kesher runs into ominous trouble while casting his latest project.",
+        "genres": [
+          "Thriller",
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 147,
+        "vote_average": 7.8,
+        "director": "David Lynch",
+        "similarity": 0.68012436746244,
+        "curation_tier": "core",
+        "match_reason": "amnesia, loss of sense of reality, schizophrenia",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "30ee71fd-754e-4f12-9b0c-3a2fc895dd55",
+        "tmdb_id": 745,
+        "title": "The Sixth Sense",
+        "year": 1999,
+        "overview": "Following an unexpected tragedy, child psychologist Malcolm Crowe meets a nine year old boy named Cole Sear, who is hiding a dark secret.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "M. Night Shyamalan",
+        "similarity": 0.679093693215842,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.675418551719445,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller, mystery",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f2d8346c-45ae-4c0b-93ff-494c62b7e3ed",
+        "tmdb_id": 1949,
+        "title": "Zodiac",
+        "year": 2007,
+        "overview": "Over the course of a decade, editors of the San Francisco Chronicle entice themselves in the murders of the Zodiac Killer. However, as time runs its course, interest in the case dwindles in the eyes of the professionals. The Killer stops interacting with the public. However, believing he has the answers, an amateur cartoonist from the initial sightings races against time to prevent what he believes is another murder.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 157,
+        "vote_average": 7.529,
+        "director": "David Fincher",
+        "similarity": 0.672013504463859,
+        "curation_tier": "core",
+        "match_reason": "newspaper, journalist, california",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f17a43d4-09c7-496a-b4e7-91d32013fa69",
+        "tmdb_id": 146233,
+        "title": "Prisoners",
+        "year": 2013,
+        "overview": "Keller Dover is facing every parent’s worst nightmare. His six-year-old daughter, Anna, is missing, together with her young friend, Joy, and as minutes turn to hours, panic sets in. The only lead is a dilapidated RV that had earlier been parked on their street.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 153,
+        "vote_average": 8.104,
+        "director": "Denis Villeneuve",
+        "similarity": 0.637195207692349,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "812d4cf3-cde8-4de1-be68-d84149f0a9c3",
+        "tmdb_id": 2832,
+        "title": "Identity",
+        "year": 2003,
+        "overview": "Complete strangers stranded at a remote desert motel during a raging storm soon find themselves the target of a deranged murderer. As their numbers thin out, the travelers begin to turn on each other, as each tries to figure out who the killer is.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 90,
+        "vote_average": 7.189,
+        "director": "James Mangold",
+        "similarity": 1.14552952293873,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller, mystery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 1.11463456060422,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery, mind game",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "944fe979-432f-45fe-b0d9-86fad63973f7",
+        "tmdb_id": 2501,
+        "title": "The Bourne Identity",
+        "year": 2002,
+        "overview": "Wounded to the brink of death and suffering from amnesia, Jason Bourne is rescued at sea by a fisherman. With nothing to go on but a Swiss bank account number, he starts to reconstruct his life, but finds that many people he encounters want him dead. However, Bourne realizes that he has the combat and mental skills of a world-class spy—but who does he work for?",
+        "genres": [
+          "Action",
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 119,
+        "vote_average": 7.477,
+        "director": "Doug Liman",
+        "similarity": 1.09536653403273,
+        "curation_tier": "core",
+        "match_reason": "assassin, amnesia, paris, france",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7343961d-f70b-4361-888e-c77394fefd26",
+        "tmdb_id": 1368166,
+        "title": "The Housemaid",
+        "year": 2025,
+        "overview": "Trying to escape her past, Millie Calloway accepts a job as a live-in housemaid for the wealthy Nina and Andrew Winchester. But what begins as a dream job quickly unravels into something far more dangerous—a sexy, seductive game of secrets, scandal, and power.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 131,
+        "vote_average": 7.248,
+        "director": "Paul Feig",
+        "similarity": 1.09126175130946,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller, mystery, dark secrets",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "220f6a00-f702-4363-94c8-f01999a26449",
+        "tmdb_id": 1430,
+        "title": "Bowling for Columbine",
+        "year": 2002,
+        "overview": "This is not a film about gun control. It is a film about the fearful heart and soul of the United States, and the 280 million Americans lucky enough to have the right to a constitutionally protected Uzi. From a look at the Columbine High School security camera tapes to the home of Oscar-winning NRA President Charlton Heston, from a young man who makes homemade napalm with The Anarchist's Cookbook to the murder of a six-year-old girl by another six-year-old. Bowling for Columbine is a journey through the US, through our past, hoping to discover why our pursuit of happiness is so riddled with violence.",
+        "genres": [
+          "Documentary",
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.513,
+        "director": "Michael Moore",
+        "similarity": 1.07873922780486,
+        "curation_tier": "core",
+        "match_reason": "canada, gun, homicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1639b400-38f6-46c2-8677-877848d40631",
+        "tmdb_id": 411088,
+        "title": "The Invisible Guest",
+        "year": 2017,
+        "overview": "Barcelona, Spain. Adrián Doria, a young and successful businessman accused of murder, meets one night with Virginia Goodman, an expert interrogation lawyer, in order to devise a defense strategy.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 8.079,
+        "director": "Oriol Paulo",
+        "similarity": 1.04047866013722,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery, unreliable narrator",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c08e8fe5-512d-4d90-a1ae-bc9e50ebc074",
+        "tmdb_id": 530254,
+        "title": "The Witch: Part 1. The Subversion",
+        "year": 2018,
+        "overview": "Ja-yoon is a high school student who struggles with memory loss after she endured some unknown trauma during her childhood. While trying to uncover the truth, she is unwittingly dragged into a world of crime and finds herself on a journey that will awaken many secrets hidden deep within.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 126,
+        "vote_average": 7.917,
+        "director": "Park Hoon-jung",
+        "similarity": 1.00054588462409,
+        "curation_tier": "extended",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c341c8d6-035e-4547-b124-7ca7991ceef8",
+        "tmdb_id": 575604,
+        "title": "The Call",
+        "year": 2020,
+        "overview": "Connected by phone in the same home but 20 years apart, a caller puts a woman’s past — and life — on the line to change her own fate.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 112,
+        "vote_average": 7.483,
+        "director": "Lee Chung-hyun",
+        "similarity": 0.979225112259513,
+        "curation_tier": "core",
+        "match_reason": "psychopath, borderline personality disorder, remake",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "89c802ae-8a56-4389-a004-212eaee0f829",
+        "tmdb_id": 820,
+        "title": "JFK",
+        "year": 1991,
+        "overview": "Follows the investigation into the assassination of President John F. Kennedy led by New Orleans district attorney Jim Garrison.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "History"
+        ],
+        "runtime": 189,
+        "vote_average": 7.6,
+        "director": "Oliver Stone",
+        "similarity": 0.968889028592336,
+        "curation_tier": "core",
+        "match_reason": "vietnam war, central intelligence agency (cia), assassination",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c151fa09-c735-4d67-a1cd-8da1eae5b29a",
+        "tmdb_id": 2502,
+        "title": "The Bourne Supremacy",
+        "year": 2004,
+        "overview": "A CIA operation to purchase classified Russian documents is blown by a rival agent, who then shows up in the sleepy seaside village where Bourne and Marie have been living. The pair run for their lives and Bourne, who promised retaliation should anyone from his former life attempt contact, is forced to once again take up his life as a trained assassin to survive.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 108,
+        "vote_average": 7.331,
+        "director": "Paul Greengrass",
+        "similarity": 0.966809692985581,
+        "curation_tier": "core",
+        "match_reason": "sniper, assassin, berlin, germany",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e30a45d8-c248-433e-a712-d6ed065b1127",
+        "tmdb_id": 1078605,
+        "title": "Weapons",
+        "year": 2025,
+        "overview": "When all but one child from the same class mysteriously vanish on the same night at exactly the same time, a community is left questioning who or what is behind their disappearance.",
+        "genres": [
+          "Horror",
+          "Mystery"
+        ],
+        "runtime": 129,
+        "vote_average": 7.255,
+        "director": "Zach Cregger",
+        "similarity": 0.965932679570272,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a6fe14d7-99d6-4893-ab67-1e7f2c21dd61",
+        "tmdb_id": 55,
+        "title": "Amores Perros",
+        "year": 2000,
+        "overview": "A fatalistic car crash in Mexico city sets off a chain of events in the lives of three people: a supermodel, a young man wanting to run off with his sister-in-law, and a homeless man.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 154,
+        "vote_average": 7.6,
+        "director": "Alejandro G. Iñárritu",
+        "similarity": 0.965426112427326,
+        "curation_tier": "core",
+        "match_reason": "daughter, secret love, homeless person",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6b7a96ee-7101-42b8-95b5-833951e368a2",
+        "tmdb_id": 637649,
+        "title": "Wrath of Man",
+        "year": 2021,
+        "overview": "A cold and mysterious new security guard for a Los Angeles cash truck company surprises his co-workers when he unleashes precision skills during a heist. The crew is left wondering who he is and where he came from. Soon, the marksman's ultimate motive becomes clear as he takes dramatic and irrevocable steps to settle a score.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 7.574,
+        "director": "Guy Ritchie",
+        "similarity": 0.963085473393825,
+        "curation_tier": "core",
+        "match_reason": "robbery, affectation, crime boss",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f5239306-7ffc-4713-a702-442b46c72141",
+        "tmdb_id": 12573,
+        "title": "A Serious Man",
+        "year": 2009,
+        "overview": "It is 1967, and Larry Gopnik, a physics professor at a quiet Midwestern university, has just been informed by his wife Judith that she is leaving him. She has fallen in love with one of his more pompous acquaintances Sy Ableman.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 106,
+        "vote_average": 6.701,
+        "director": "Ethan Coen",
+        "similarity": 0.961558881863346,
+        "curation_tier": "core",
+        "match_reason": "dreams, midlife crisis, professor",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b60ace5f-ee1c-4ad9-8f4a-5a2a671a6b1e",
+        "tmdb_id": 915935,
+        "title": "Anatomy of a Fall",
+        "year": 2023,
+        "overview": "A woman is suspected of her husband's murder, and their blind son faces a moral dilemma as the sole witness.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 151,
+        "vote_average": 7.518,
+        "director": "Justine Triet",
+        "similarity": 0.961012096815497,
+        "curation_tier": "core",
+        "match_reason": "Matches: mystery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6ecbdf49-6c04-44bb-b650-6d2b2e9b1b00",
+        "tmdb_id": 18079,
+        "title": "Nine Queens",
+        "year": 2000,
+        "overview": "Two con artists try to swindle a stamp collector by selling him a sheet of counterfeit rare stamps, the \"nine queens\".",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.766,
+        "director": "Fabián Bielinsky",
+        "similarity": 0.950605418315758,
+        "curation_tier": "core",
+        "match_reason": "Matches: twist ending",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b1e37481-1f30-4703-a23e-d0860873b7f8",
+        "tmdb_id": 1700,
+        "title": "Misery",
+        "year": 1990,
+        "overview": "After an accident, acclaimed novelist Paul Sheldon is rescued by a nurse who claims to be his biggest fan.  Her obsession takes a dark turn when she holds him captive in her remote Colorado home and forces him to write back to life the popular literary character he killed off.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 7.747,
+        "director": "Rob Reiner",
+        "similarity": 0.94722218362819,
+        "curation_tier": "core",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "47cdeced-fd81-4185-a693-a0be789cf506",
+        "tmdb_id": 1083381,
+        "title": "Backrooms",
+        "year": 2026,
+        "overview": "A strange doorway appears in the basement of a furniture showroom.",
+        "genres": [
+          "Horror",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 111,
+        "vote_average": 6.869,
+        "director": "Kane Parsons",
+        "similarity": 0.902451512275957,
+        "curation_tier": "trending",
+        "match_reason": "Matches: psychological thriller",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d64834e4-a798-4c03-835e-12d0d98fe1f4",
+        "tmdb_id": 54186,
+        "title": "Confessions",
+        "year": 2010,
+        "overview": "Devastated at the death of her four-year-old daughter, a grieving middle school teacher is horrified to discover that her students aren't as innocent as she thinks.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 107,
+        "vote_average": 7.58,
+        "director": "Tetsuya Nakashima",
+        "similarity": 0.889843555189516,
+        "curation_tier": "extended",
+        "match_reason": "Matches: psychological thriller, mystery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "947f095b-1c5f-4c7d-9b15-ab519acb67b0",
+        "tmdb_id": 176,
+        "title": "Saw",
+        "year": 2004,
+        "overview": "Two men wake up to find themselves shackled in a grimy, abandoned bathroom. As they struggle to comprehend their predicament, they discover a disturbing tape left behind by the sadistic mastermind known as Jigsaw. With a chilling voice and cryptic instructions, Jigsaw informs them that they must partake in a gruesome game in order to secure their freedom.",
+        "genres": [
+          "Horror",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 103,
+        "vote_average": 7.419,
+        "director": "James Wan",
+        "similarity": 0.85977214114307,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2c2883e5-5691-40ce-bdaa-cd4538e2f745",
+        "tmdb_id": 1381027,
+        "title": "The Good Boy",
+        "year": 2026,
+        "overview": "Tommy, a volatile 19-year-old, revels in drugs, parties and violence. After getting separated from his friends on a drunken bender, he is abducted by a shadowy figure. He wakes to find himself imprisoned in the basement of a remote Yorkshire house, inhabited by a very strange family. But what unfolds is not what he could possibly expect.",
+        "genres": [
+          "Thriller",
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 110,
+        "vote_average": 7.729,
+        "director": "Jan Komasa",
+        "similarity": 0.853691524284059,
+        "curation_tier": "extended",
+        "match_reason": "kidnapping, paranoid, family life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c1ad63f5-17dc-41de-acd2-dde9448b0c44",
+        "tmdb_id": 75656,
+        "title": "Now You See Me",
+        "year": 2013,
+        "overview": "An FBI agent and an Interpol detective track a team of illusionists who pull off bank heists during their performances and reward their audiences with the money.",
+        "genres": [
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 116,
+        "vote_average": 7.332,
+        "director": "Louis Leterrier",
+        "similarity": 0.852121386388549,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "16e53bb1-0c38-46c2-aa70-5bffa1849229",
+        "tmdb_id": 1902,
+        "title": "Open Your Eyes",
+        "year": 1997,
+        "overview": "Handsome 25-year-old Cesar had it all -- a successful career, expensive cars, a swank bachelor's pad, and an endless string of beautiful and willing women -- until he is thrown into a strange psychological mystery after a car accident scars his face and lands him in prison.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Science Fiction"
+        ],
+        "runtime": 117,
+        "vote_average": 7.447,
+        "director": "Alejandro Amenábar",
+        "similarity": 0.85210378686099,
+        "curation_tier": "extended",
+        "match_reason": "loss of sense of reality, love of one's life, love triangle",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e5b48c97-a614-45d7-9fd7-1d4b66abec40",
+        "tmdb_id": 155,
+        "title": "The Dark Knight",
+        "year": 2008,
+        "overview": "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets. The partnership proves to be effective, but they soon find themselves prey to a reign of chaos unleashed by a rising criminal mastermind known to the terrified citizens of Gotham as the Joker.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 152,
+        "vote_average": 8.531,
+        "director": "Christopher Nolan",
+        "similarity": 0.769180194308588,
+        "curation_tier": "core",
+        "match_reason": "sadism, chaos, secret identity",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.768072943943771,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "66631a31-b05b-45c7-91f8-ab4c5a6dfb1c",
+        "tmdb_id": 680,
+        "title": "Pulp Fiction",
+        "year": 1994,
+        "overview": "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper. Their adventures unfurl in three stories that ingeniously trip back and forth in time.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Comedy"
+        ],
+        "runtime": 154,
+        "vote_average": 8.484,
+        "director": "Quentin Tarantino",
+        "similarity": 0.654902040771825,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, drug crime, dark comedy",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bd2bb802-caa2-4a30-99bf-aa7cd8578443",
+        "tmdb_id": 807,
+        "title": "Se7en",
+        "year": 1995,
+        "overview": "Two homicide detectives are on a desperate hunt for a serial killer whose crimes are based on the \"seven deadly sins\" in this dark and haunting film that takes viewers from the tortured remains of one victim to the next. The seasoned Det. Somerset researches each sin in an effort to get inside the killer's mind, while his novice partner, Mills, scoffs at his efforts to unravel the case.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 127,
+        "vote_average": 8.381,
+        "director": "David Fincher",
+        "similarity": 0.606735178518519,
+        "curation_tier": "core",
+        "match_reason": "rage and hate, police, s.w.a.t.",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.56787695694738,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.505793939172338,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.458183054392768,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 840,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 840,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "psychological thriller",
+        "mystery",
+        "twist ending",
+        "unreliable narrator",
+        "mind game",
+        "dark secrets"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Thriller",
+        "Mystery",
+        "Drama"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Shutter Island",
+          "year": 2010
+        },
+        {
+          "title": "Inception",
+          "year": 2010
+        },
+        {
+          "title": "Gone Girl",
+          "year": 2014
+        },
+        {
+          "title": "The Sixth Sense",
+          "year": 1999
+        },
+        {
+          "title": "Memento",
+          "year": 2000
+        },
+        {
+          "title": "Prisoners",
+          "year": 2013
+        },
+        {
+          "title": "Mulholland Drive",
+          "year": 2001
+        },
+        {
+          "title": "The Machinist",
+          "year": 2004
+        },
+        {
+          "title": "Zodiac",
+          "year": 2007
+        },
+        {
+          "title": "Black Swan",
+          "year": 2010
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "f904dbdbe99bbdb6",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3892,
+    "http_status": 200,
+    "reranked_ids": [
+      "c1b42f15-b09f-44f2-b339-73fc0e9f5338",
+      "785e8d55-410b-48c9-b895-0623159cac82",
+      "798a524a-e52d-4b66-9812-f2cf2111a3da",
+      "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "c1b42f15-b09f-44f2-b339-73fc0e9f5338": "Reverse narrative structure keeps you guessing about truth while investigating psychological mystery.",
+      "785e8d55-410b-48c9-b895-0623159cac82": "Unreliable protagonist questions reality in isolated setting with shocking psychological twist ending.",
+      "798a524a-e52d-4b66-9812-f2cf2111a3da": "Masterfully misleading narrative makes you second-guess every character and plot revelation.",
+      "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9": "Psychological descent into madness blurs reality and delusion in dark, twisted narrative."
+    }
+  }
+}

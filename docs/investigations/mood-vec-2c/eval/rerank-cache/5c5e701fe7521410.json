@@ -1,0 +1,24 @@
+{
+  "payload_hash": "5c5e701fe7521410",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3876,
+  "http_status": 200,
+  "reranked_ids": [
+    "29537a74-92e4-43b3-8605-2db82b11c894",
+    "de28cf5c-001c-4844-b591-4f2f29c7079d",
+    "e472a8d4-f98d-437b-ab07-320fbeb07517",
+    "c42c718b-ecc0-418b-9cce-1102a9a1ec15"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "29537a74-92e4-43b3-8605-2db82b11c894": "Dialogue-free film following a castaway's life stages with visual storytelling and minimal sound.",
+    "de28cf5c-001c-4844-b591-4f2f29c7079d": "Angels observe Berlin silently, emphasizing visual poetry and contemplative pacing over dialogue.",
+    "e472a8d4-f98d-437b-ab07-320fbeb07517": "Meditative sci-fi with long takes, sparse dialogue, and philosophical exploration of desire and mystery.",
+    "c42c718b-ecc0-418b-9cce-1102a9a1ec15": "Visually stunning cinematography with minimal dialogue, focusing on atmosphere and slow-burn narrative tension."
+  }
+}

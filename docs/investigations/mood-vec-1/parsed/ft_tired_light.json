@@ -1,0 +1,83 @@
+{
+  "mood_id": "ft_tired_light",
+  "text": "I'm exhausted after work, want something light and short",
+  "ms": 4075,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "trust": 0.75,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.3,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Gentle Escape",
+    "profile_description": "After a draining day, this person needs a warm, uncomplicated escape with minimal cognitive load—something that soothes rather than stimulates.",
+    "search_keywords": [
+      "comfort",
+      "slice of life",
+      "feel-good",
+      "wholesome",
+      "light-hearted",
+      "cozy"
+    ],
+    "search_id": "82aa21fe-a412-41e0-8afa-db38d1e8d87c",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "anticipation": 0.2,
+      "trust": 0.75
+    },
+    "energy_level": 0.3,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "82aa21fe-a412-41e0-8afa-db38d1e8d87c",
+  "search_keywords": [
+    "comfort",
+    "slice of life",
+    "feel-good",
+    "wholesome",
+    "light-hearted",
+    "cozy"
+  ],
+  "limit": null,
+  "remaining": null
+}

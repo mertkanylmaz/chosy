@@ -1,0 +1,95 @@
+{
+  "mood_id": "qm_comedy",
+  "text": "Something genuinely funny and lighthearted, a comedy to lift my spirits, not action, not thriller",
+  "ms": 4278,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.15
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "thriller elements",
+      "violence",
+      "high stakes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Spirited Laughter",
+    "profile_description": "You need pure comedy and warmth—witty, heartfelt humor that lifts your mood without tension, drama, or adrenaline.",
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "lighthearted",
+      "funny",
+      "witty",
+      "feel-good",
+      "satire"
+    ],
+    "search_id": "02a0a9ba-1e31-48ab-b4f1-876a8bed4f58",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.15,
+      "trust": 0.7
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "thriller elements",
+      "violence",
+      "high stakes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "02a0a9ba-1e31-48ab-b4f1-876a8bed4f58",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "lighthearted",
+    "funny",
+    "witty",
+    "feel-good",
+    "satire"
+  ],
+  "limit": null,
+  "remaining": null
+}

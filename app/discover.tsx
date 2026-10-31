@@ -31,12 +31,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SwipeableCard } from '@/components/SwipeCard/SwipeableCard';
 import MoodDeckSummary from '@/components/MoodDeckSummary';
+import MoodLockCard from '@/components/MoodLockCard';
 import { Colors } from '@/constants/Colors';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import ErrorState from '@/components/ErrorState';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useFreeVisibleCount } from '@/hooks/useFreeVisibleCount';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useMood } from '@/contexts/MoodContext';
@@ -46,16 +49,29 @@ import { checkAndConsumeQuota } from '@/services/quotaEngine';
 import { addToWatchlist, getAppUserId } from '@/services/watchlist';
 import { Film } from '@/types/film';
 import { FilmFilters } from '@/types';
+import { readAppUserId } from '@/services/auth-utils';
+import { getLastFullPrompt, getSearchAnalyticsContext, setPendingMoodText } from '@/services/moodSearchState';
+import { saveTodayDeck } from '@/services/todayDeckStore';
 import { posthogAnalytics } from '@/services/posthog';
 import { tasteSignals } from '@/services/tasteSignalService';
 import { flushUserVectorUpdates } from '@/services/userProfile';
 import * as Sentry from '@sentry/react-native';
 import { logger } from '@/utils/logger';
+import { deckStartedProps, deckViewEventName, moodEventCore, shouldEmitDeckUnlocked } from '@/utils/moodAnalytics';
+import { buildDeckItems, deriveLockState, hidesBeyondFree, progressCounter } from '@/utils/moodLock';
+import { isFreeSearchDeckSlotExempt } from '@/utils/moodOfferTiming';
+import { createTodayDeckSnapshot } from '@/utils/todayDeck';
 
 // ── Sabitler ──────────────────────────────────────────────────────────────────
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const CARD_HEIGHT = SCREEN_HEIGHT;
+
+/**
+ * `mood_deck_unlocked` zaten yayinlanan aramalar. Modul seviyesinde: ekran yeniden mount
+ * olsa da `search_id` basina en fazla bir kez (analitik defteri, bayrak degeri DEGIL).
+ */
+const unlockedDeckKeys = new Set<string>();
 
 const DEFAULT_FILTERS: FilmFilters = {
   yearRange: null,
@@ -75,12 +91,23 @@ export default function DiscoverScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { t } = useLanguage();
-  const { currentProfile, currentFilters, clearMood, addLastSessionFilm, currentSessionId, searchMode } = useMood();
+  const { currentProfile, currentFilters, setMoodResult, clearMood, addLastSessionFilm, currentSessionId, searchMode, lastSearchId, lastMoodText } = useMood();
   const { premiumStatus } = useSubscription();
   /** Grandfathered kohort slot kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading } = useProModeAccess();
   const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
   const isOnboarding = onboarding === '1';
+  const offerEnabled = useMoodOfferEnabled();
+  const slotExemptFreeDeck = isFreeSearchDeckSlotExempt({ offerEnabled, isOnboarding });
+  const freeVisible = useFreeVisibleCount();
+  /** Ortak analitik cekirdegi — her cagrida guncel degerleri okur (ref: efekt bagimliligi yaratmaz). */
+  const analyticsCoreRef = useRef<() => ReturnType<typeof moodEventCore>>(() =>
+    moodEventCore({ searchId: null, entryPoint: null, isPro: false, consent: null }),
+  );
+  /** Gizli posterler yetki okunurken de indirilmez: sinir `entitled` kesinlesene kadar uygulanir. */
+  const prefetchCap = hidesBeyondFree({ offerEnabled, isOnboarding, entitled: proEntitled })
+    ? freeVisible
+    : undefined;
 
   const navigateAfterOnboarding = useCallback(() => {
     if (isOnboarding) router.replace('/(tabs)' as never);
@@ -116,8 +143,12 @@ export default function DiscoverScreen() {
     hasError,
     errorType,
     retryLoad,
+    resetFeed,
     onSwipeFilm,
-  } = useFeedManager(currentProfile, effectiveFilters);
+  } = useFeedManager(currentProfile, effectiveFilters, prefetchCap);
+
+  /** Kullanıcı puan ve/veya dönem filtresi seçti mi (boş durum + bilgi satırı) */
+  const filtersActive = effectiveFilters.yearRange !== null || effectiveFilters.minRating !== null;
 
   // ── Deck state ─────────────────────────────────────────────────────────────
 
@@ -144,12 +175,44 @@ export default function DiscoverScreen() {
     if (managerFilms.length > 0 && !deckSnapshotTaken.current) {
       deckSnapshotTaken.current = true;
       setDeck(managerFilms);
-      posthogAnalytics.track('mood_deck_started', {
-        deck_size: managerFilms.length,
+      const { submittedAt } = getSearchAnalyticsContext();
+      posthogAnalytics.track(deckViewEventName(getSearchAnalyticsContext().resumed), {
+        // Siralı film id'leri (ilk 8) + deste boyutu; kullanici metni YOK.
+        ...deckStartedProps(managerFilms),
         search_mode: searchMode,
+        ...(submittedAt != null ? { ms_since_submit: Date.now() - submittedAt } : {}),
+        ...analyticsCoreRef.current(),
       });
     }
   }, [managerFilms, searchMode]);
+
+  // ── MONEY-1C P0: bugunku deste kurtarma — YALNIZ cihaza yazilir (bayrak arkasinda) ──
+  // Deste snapshot'i sabit (bir kez alinir): burada da bir kez kaydedilir. Mood metni
+  // yalniz yerel depoda kalir; sunucuya ve analitige gitmez.
+  useEffect(() => {
+    if (!offerEnabled || isOnboarding || searchMode !== 'ai') return;
+    if (!lastSearchId || !lastMoodText || !currentProfile || deck.length === 0) return;
+    let active = true;
+    void (async () => {
+      const ownerId = await readAppUserId();
+      if (!ownerId || !active) return;
+      await saveTodayDeck(
+        createTodayDeckSnapshot({
+          now: new Date(),
+          ownerId,
+          searchId: lastSearchId,
+          moodText: lastMoodText,
+          profile: currentProfile,
+          filters: effectiveFilters,
+          films: deck,
+        }),
+      );
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deck, offerEnabled]);
 
   // ── Kullanıcı vektörü: kuyruğa alınan sağ kaydırmalar tek seferde yazılır (PERF-1) ──
   // Çıkış yolları: deste bitti · ekran odağı kaybı/unmount (geri, sekme, yeni mood,
@@ -172,22 +235,44 @@ export default function DiscoverScreen() {
 
   // ── Current film ────────────────────────────────────────────────────────────
 
-  const currentFilm = deck[currentIndex] ?? null;
   const deckSize = deck.length;
+  // MONEY-1C kilit: TURETILMIS deger (dinleyici yok) — premiumStatus/yetki degisince
+  // kendiliginden acilir. `total` kalite suzgecinden sonraki GERCEK deste uzunlugu.
+  const lock = deriveLockState({
+    offerEnabled,
+    isOnboarding,
+    accessLoading: premiumStatus === 'loading' || proAccessLoading,
+    entitled: proEntitled,
+    total: deckSize,
+    freeVisible,
+  });
+  const deckItems = buildDeckItems(deck, lock);
+  analyticsCoreRef.current = () => {
+    const ctx = getSearchAnalyticsContext();
+    return moodEventCore({
+      searchId: lastSearchId,
+      entryPoint: ctx.entryPoint,
+      isPro: proEntitled,
+      consent: ctx.consent,
+    });
+  };
+  const progress = progressCounter({ currentIndex, total: deckSize, lock });
   /** Yigin: [ust, alttaki]. Son kartta alttaki yoktur. */
-  const nextFilm = deck[currentIndex + 1] ?? null;
-  const stackFilms = currentFilm ? (nextFilm ? [currentFilm, nextFilm] : [currentFilm]) : [];
+  const currentItem = deckItems[currentIndex] ?? null;
+  const nextItem = deckItems[currentIndex + 1] ?? null;
+  const stackItems = currentItem ? (nextItem ? [currentItem, nextItem] : [currentItem]) : [];
 
   // ── Advance to next card ────────────────────────────────────────────────────
 
   const advanceToNext = useCallback(() => {
     const nextIndex = currentIndex + 1;
-    if (nextIndex >= deckSize) {
+    // Kilitli destede son ucretsiz kartin ardindan kilit karti gelir: deste BITMEZ.
+    if (nextIndex >= deckItems.length) {
       setDeckComplete(true);
     } else {
       setCurrentIndex(nextIndex);
     }
-  }, [currentIndex, deckSize]);
+  }, [currentIndex, deckItems.length]);
 
   // ── Swipe handlers ──────────────────────────────────────────────────────────
 
@@ -199,17 +284,27 @@ export default function DiscoverScreen() {
       // atlamak gercekten sinirsiz slot demektir (CTO karari 24 Eyl 2026).
       // `loading` premium SAYILMAZ: slot kotasi yalniz istemcide zorlaniyor,
       // abonelik cozulmeden atlamak bedava slot demek (fail-closed, V-1 Tur 1).
-      if (premiumStatus !== 'premium' && !quotaExempt) {
+      // MONEY-1C (C8): ucretsiz arama destesinde slot kotasi MUAF — kaydetme kesilmez
+      // (bayrak kapaliyken `slotExemptFreeDeck` false → eski davranis).
+      if (premiumStatus !== 'premium' && !quotaExempt && !slotExemptFreeDeck) {
         try {
           const uid = await getAppUserId();
           if (uid) {
             const quota = await checkAndConsumeQuota(uid, 'slot');
             if (!quota.allowed) {
-              // Kota tükendi — deck'i dondur, paywall göster
+              // Kota tükendi — paywall AÇILIRSA deck donar. Açılmazsa (orkestrator
+              // bastirdi / hata) kullaniciyi kilitleme: Sentry'ye yaz, kaydetme surer.
               tasteSignals.recordSwipeRight(film.id).catch(() => {});
-              setDeckFrozen(true);
-              triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
-              return; // Kart ilerlemez, watchlist'e yazılmaz
+              const shown = await triggerPaywall({ type: 'quota_exhausted', quota: 'slot' });
+              if (shown) {
+                setDeckFrozen(true);
+                return; // Kart ilerlemez, watchlist'e yazılmaz
+              }
+              Sentry.captureMessage('slot quota exhausted but paywall not shown', {
+                level: 'warning',
+                tags: { action: 'swipe_right_quota_check', error_code: 'SLOT_PAYWALL_NOT_SHOWN' },
+                extra: { filmId: film.id },
+              });
             }
           }
         } catch (err) {
@@ -239,7 +334,7 @@ export default function DiscoverScreen() {
         logger.warn('[discover] watchlist yazma basarisiz:', err);
       });
     },
-    [premiumStatus, quotaExempt, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
+    [premiumStatus, quotaExempt, slotExemptFreeDeck, onSwipeFilm, addLastSessionFilm, triggerPaywall, advanceToNext, currentSessionId],
   );
 
   const handleSwipeLeft = useCallback(
@@ -253,23 +348,111 @@ export default function DiscoverScreen() {
     [onSwipeFilm, advanceToNext],
   );
 
+  // ── Kilit karti CTA'si ─────────────────────────────────────────────────────
+  // Paywall kapaninca kilit kartinda KALINIR (paywallProps.onDismiss cikis yapmaz) —
+  // deste kaybolmaz. Satin alma premiumStatus'u degistirince kilit kendiliginden acilir.
+  const handleLockCta = useCallback(() => {
+    posthogAnalytics.track('mood_lock_tapped', {
+      ...moodEventCore({ searchId: lastSearchId, entryPoint: 'lock_card', isPro: proEntitled, consent: getSearchAnalyticsContext().consent }),
+      visible_count: freeVisible,
+      total: deckSize,
+    });
+    void triggerPaywall({ type: 'mood_offer', entry: 'lock_card', searchId: lastSearchId });
+  }, [triggerPaywall, lastSearchId, proEntitled, freeVisible, deckSize]);
+
+  // ── Kilit analitigi ────────────────────────────────────────────────────────
+  const instanceId = useRef(String(Date.now())).current;
+  const unlockKey = lastSearchId ?? `deck-${instanceId}`;
+
+  /** Kilit karti ekranin ustune geldiginde bir kez. */
+  const lockShown = currentItem?.kind === 'lock';
+  useEffect(() => {
+    if (!lockShown) return;
+    posthogAnalytics.track('mood_lock_viewed', {
+      ...analyticsCoreRef.current(),
+      entry_point: 'lock_card',
+      visible_count: freeVisible,
+      total: deckSize,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockShown]);
+
+  /**
+   * Kilitli deste premiumStatus gecisiyle (restore dahil) acildiginda, search_id basina bir kez.
+   * Turetilmis kilit degerinin `locked` → `open` gecisi; baska nedenle (bayrak, onboarding) acilmaz.
+   */
+  const prevLockKind = useRef<typeof lock.kind | null>(null);
+  useEffect(() => {
+    if (
+      shouldEmitDeckUnlocked({
+        prevKind: prevLockKind.current,
+        kind: lock.kind,
+        entitled: proEntitled,
+        key: unlockKey,
+        emitted: unlockedDeckKeys,
+      })
+    ) {
+      unlockedDeckKeys.add(unlockKey);
+      posthogAnalytics.track('mood_deck_unlocked', {
+        ...analyticsCoreRef.current(),
+        entry_point: 'lock_card',
+        visible_count: freeVisible,
+        total: deckSize,
+      });
+    }
+    prevLockKind.current = lock.kind;
+  }, [lock.kind, proEntitled, unlockKey, freeVisible, deckSize]);
+
   // ── Navigation helpers ──────────────────────────────────────────────────────
 
   const { animatedStyle: newMoodAnimStyle, onPressIn: newMoodPressIn, onPressOut: newMoodPressOut } =
     useScalePress(0.95);
 
+  /**
+   * X ve "Try New Mood": Pro Mode girdi ekranina doner (Home'a degil). Filtre ve metin
+   * MoodSearchScreen state'inde kalir; onboarding akisi eski kokune doner.
+   */
+  const inputRoute = isOnboarding ? '/(tabs)' : '/pro-mode';
   const handleNewMood = useCallback(() => {
     clearMood();
-    router.navigate('/(tabs)');
-  }, [clearMood, router]);
+    router.dismissTo(inputRoute as never);
+  }, [clearMood, router, inputRoute]);
 
   /**
-   * Yığın [(tabs), discover]: dismissTo mevcut (tabs) kaydına geri çeker, ikinci
-   * bir (tabs) örneği açmaz. Mood temizlenmez (handleNewMood'dan farkı bu).
+   * Yığın [(tabs), pro-mode, discover]: dismissTo mevcut pro-mode kaydına geri çeker, ikinci
+   * bir örnek açmaz. Mood temizlenmez (handleNewMood'dan farkı bu).
    */
   const handleClose = useCallback(() => {
-    router.dismissTo('/(tabs)');
+    router.dismissTo(inputRoute as never);
+  }, [router, inputRoute]);
+
+  /** "Watch now": uygulama ici film detayi (saglayici listesi orada ve ozet ekraninda). */
+  const handleWatchNow = useCallback((film: Film) => {
+    router.push(`/film/${film.id}`);
   }, [router]);
+
+  /**
+   * "Filtreleri kaldır": KOTA HARCAMAZ — parse-mood çağrılmaz. Mevcut profil filtresiz
+   * `getRecommendations` ile yeniden aranır; rerank için son mood metni geri konur.
+   */
+  const handleRemoveFilters = useCallback(() => {
+    if (!currentProfile) return;
+    posthogAnalytics.track('mood_filters_removed', {
+      filter_min_rating: effectiveFilters.minRating ?? null,
+      filter_era: effectiveFilters.yearRange ?? null,
+    });
+    // Rerank tam prompt'la calisir; etiket (lastMoodText) yalniz ekranda gorunen metindir.
+    const rerankText = getLastFullPrompt() ?? lastMoodText;
+    if (rerankText) setPendingMoodText(rerankText);
+    setMoodResult(currentProfile, DEFAULT_FILTERS);
+    deckSnapshotTaken.current = false;
+    setDeck([]);
+    setCurrentIndex(0);
+    setLikedFilms([]);
+    setDislikedFilms([]);
+    setDeckComplete(false);
+    resetFeed(currentProfile, DEFAULT_FILTERS);
+  }, [currentProfile, effectiveFilters, lastMoodText, setMoodResult, resetFeed]);
 
   const handleGoWatchlist = useCallback(() => {
     router.navigate('/(tabs)/profile' as never);
@@ -285,10 +468,12 @@ export default function DiscoverScreen() {
           likedFilms={likedFilms}
           dislikedFilms={dislikedFilms}
           deckSize={deckSize}
+          analyticsCore={analyticsCoreRef.current()}
           insufficientResults={insufficientResults || deckSize < 8}
           reranked={deckReranked}
           onNewMood={handleNewMood}
           onGoWatchlist={handleGoWatchlist}
+          onWatchNow={handleWatchNow}
           onClose={handleClose}
         />
         <ContextualPaywall {...paywallProps} />
@@ -310,6 +495,22 @@ export default function DiscoverScreen() {
           </View>
         </View>
       </View>
+    );
+  }
+
+  // ── Filtreyle 0 sonuç: boş durum + filtresiz yeniden arama ──────────────────
+
+  if (hasError && errorType === 'empty' && deck.length === 0 && filtersActive) {
+    return (
+      <>
+        <StatusBar style="light" backgroundColor={Colors.background} />
+        <EmptyState
+          lumiMood="searching"
+          title={t('discover.noFilterMatchTitle')}
+          actionLabel={t('discover.removeFilters')}
+          onAction={handleRemoveFilters}
+        />
+      </>
     );
   }
 
@@ -352,25 +553,37 @@ export default function DiscoverScreen() {
           kartin katmani ayni key ile uste gecer — React ayni ornegi tasir, remount
           yok (poster yuklu, shared value'lar yerinde). deckFrozen olunca gesture
           bloklanir. */}
-      {currentFilm && (
+      {currentItem && (
         <View
           style={{ height: CARD_HEIGHT }}
           pointerEvents={deckFrozen ? 'none' : 'auto'}
         >
-          {stackFilms.map((stackFilm, i) => (
+          {stackItems.map((item, i) => (
             <View
               key={`deck-${currentIndex + i}`}
               style={[styles.deckLayer, i === 0 ? styles.deckLayerFront : styles.deckLayerBack]}
             >
-              <SwipeableCard
-                film={stackFilm}
-                height={CARD_HEIGHT}
-                bottomOffset={insets.bottom + 80}
-                onSwipeRight={handleSwipeRight}
-                onSwipeLeft={handleSwipeLeft}
-                interactive={i === 0}
-                frozen={deckFrozen}
-              />
+              {item.kind === 'film' ? (
+                <SwipeableCard
+                  film={item.film}
+                  height={CARD_HEIGHT}
+                  bottomOffset={insets.bottom + 80}
+                  onSwipeRight={handleSwipeRight}
+                  onSwipeLeft={handleSwipeLeft}
+                  interactive={i === 0}
+                  frozen={deckFrozen}
+                />
+              ) : (
+                <MoodLockCard
+                  variant={item.kind === 'lock' ? 'lock' : 'skeleton'}
+                  visible={item.kind === 'lock' ? item.visible : freeVisible}
+                  total={item.kind === 'lock' ? item.total : deckSize}
+                  height={CARD_HEIGHT}
+                  bottomOffset={insets.bottom + 80}
+                  interactive={i === 0}
+                  onPressCta={handleLockCta}
+                />
+              )}
             </View>
           ))}
         </View>
@@ -384,18 +597,23 @@ export default function DiscoverScreen() {
       >
         <Text style={styles.progressText}>
           {t('deckSummary.deckProgress', {
-            current: currentIndex + 1,
-            total: deckSize,
+            current: progress.current,
+            total: progress.total,
           })}
         </Text>
         <View style={styles.progressTrack}>
           <View
             style={[
               styles.progressFill,
-              { width: `${((currentIndex + 1) / deckSize) * 100}%` },
+              { width: `${(progress.current / progress.total) * 100}%` },
             ]}
           />
         </View>
+        {filtersActive && deckSize > 0 && deckSize < 8 && (
+          <Text style={[styles.progressText, styles.filterInfoText]}>
+            {t('discover.filterMatchCount', { count: deckSize })}
+          </Text>
+        )}
       </Animated.View>
 
       {/* New mood button — top right */}
@@ -474,6 +692,13 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
+  },
+  // progressText ile birlikte kullanılır (renk + gölge oradan gelir)
+  filterInfoText: {
+    fontSize: 13,
+    fontWeight: '400',
+    marginTop: 8,
+    marginBottom: 0,
   },
   progressTrack: {
     height: 5,

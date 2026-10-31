@@ -1,0 +1,24 @@
+{
+  "payload_hash": "a8158cd4558d8fd0",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4325,
+  "http_status": 200,
+  "reranked_ids": [
+    "b9b92a5a-b426-4ca7-ab18-baf6ed4e938a",
+    "beba7a17-264c-4138-86e4-95aa0ce96f60",
+    "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+    "b508e4d1-af21-430d-b1bb-a2b34ad1039f"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "b9b92a5a-b426-4ca7-ab18-baf6ed4e938a": "Perfect blend of horror scares and slapstick comedy for group fun and laughs.",
+    "beba7a17-264c-4138-86e4-95aa0ce96f60": "Vampire mockumentary delivers genuine scares wrapped in hilarious character moments.",
+    "b32c5ccc-3684-4cbc-8cbf-fc85107d5075": "Thrilling shark attack adventure provides edge-of-seat suspense without being psychologically dark.",
+    "b508e4d1-af21-430d-b1bb-a2b34ad1039f": "Action-comedy on a train offers witty banter, laughs, and exciting thriller moments together."
+  }
+}

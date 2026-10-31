@@ -1,0 +1,97 @@
+{
+  "mood_id": "qm_date",
+  "text": "Romantic and heartfelt, a tender love story for a couple, intimate and warm, not horror, not scary",
+  "ms": 4357,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "trust": 0.85,
+      "anticipation": 0.4
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "violence",
+      "scary",
+      "gore",
+      "supernatural threats"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true,
+    "profile_name": "Intimate Romance",
+    "profile_description": "A tender, heartfelt love story with emotional depth and warmth — perfect for couples seeking connection through cinema without tension or fear.",
+    "search_keywords": [
+      "romance",
+      "love story",
+      "relationships",
+      "intimacy",
+      "heartfelt",
+      "emotional connection",
+      "tender moments"
+    ],
+    "search_id": "15b41a8e-5d9f-4984-9083-b9678b9ed30c",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "anticipation": 0.4,
+      "trust": 0.85
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "violence",
+      "scary",
+      "gore",
+      "supernatural threats"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true
+  },
+  "search_id": "15b41a8e-5d9f-4984-9083-b9678b9ed30c",
+  "search_keywords": [
+    "romance",
+    "love story",
+    "relationships",
+    "intimacy",
+    "heartfelt",
+    "emotional connection",
+    "tender moments"
+  ],
+  "limit": null,
+  "remaining": null
+}

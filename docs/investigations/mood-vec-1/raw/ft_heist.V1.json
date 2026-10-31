@@ -1,0 +1,577 @@
+{
+  "mood_id": "ft_heist",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 1.03910965978624,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice"
+      },
+      {
+        "id": "043911e2-307b-4092-b4df-8f062b5df800",
+        "tmdb_id": 2503,
+        "title": "The Bourne Ultimatum",
+        "year": 2007,
+        "overview": "Bourne is brought out of hiding once again by reporter Simon Ross who is trying to unveil Operation Blackbriar, an upgrade to Project Treadstone, in a series of newspaper columns. Information from the reporter stirs a new set of memories, and Bourne must finally uncover his dark past while dodging The Company's best efforts to eradicate him.",
+        "genres": [
+          "Aksiyon",
+          "Drama",
+          "Gizem",
+          "Gerilim"
+        ],
+        "runtime": 115,
+        "vote_average": 7.435,
+        "director": "Paul Greengrass",
+        "similarity": 1.02824218256538,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 1.02085743243376,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, robbery"
+      },
+      {
+        "id": "c69ae96b-e7dc-4949-8eeb-fe0f875be784",
+        "tmdb_id": 954,
+        "title": "Mission: Impossible",
+        "year": 1996,
+        "overview": "When Ethan Hunt, the leader of a crack espionage team whose perilous operation has gone awry with no explanation, discovers that a mole has penetrated the CIA, he's surprised to learn that he's the prime suspect. To clear his name, Hunt now must ferret out the real double agent and, in the process, even the score.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 111,
+        "vote_average": 7.025,
+        "director": "Brian De Palma",
+        "similarity": 1.01662149613769,
+        "curation_tier": "core",
+        "match_reason": "mask, mission, london, england"
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 1.00166799845932,
+        "curation_tier": "core",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "426992d1-4970-4076-ac0f-614085908df3",
+        "tmdb_id": 9277,
+        "title": "The Sting",
+        "year": 1973,
+        "overview": "A novice con man teams up with an acknowledged master to avenge the murder of a mutual friend by pulling off the ultimate big con and swindling a fortune from a big-time mobster.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 8.014,
+        "director": "George Roy Hill",
+        "similarity": 0.999375569538261,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist"
+      },
+      {
+        "id": "7eab97d1-1707-4777-b3a3-1a394b63b742",
+        "tmdb_id": 562,
+        "title": "Die Hard",
+        "year": 1988,
+        "overview": "High above the city of L.A. a team of terrorists has seized a building, taken hostages, and declared war. One man has manages to escape... An off-duty cop hiding somewhere inside. He's alone, tired... and the only chance anyone has got.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.811,
+        "director": "John McTiernan",
+        "similarity": 0.988149487675924,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist"
+      },
+      {
+        "id": "1bf8311e-7290-4f63-b5c1-b9392134d1ee",
+        "tmdb_id": 116745,
+        "title": "The Secret Life of Walter Mitty",
+        "year": 2013,
+        "overview": "A timid magazine photo manager who lives life vicariously through daydreams embarks on a true-life adventure when a negative goes missing.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 114,
+        "vote_average": 7.23,
+        "director": "Ben Stiller",
+        "similarity": 0.872483002304011,
+        "curation_tier": "extended",
+        "match_reason": "himalaya mountain range, photographer, iceland"
+      },
+      {
+        "id": "ba5164cf-875a-418c-9ad1-efe5170ca08d",
+        "tmdb_id": 830,
+        "title": "Forbidden Planet",
+        "year": 1956,
+        "overview": "Starship C57D travels to planet Altair 4 in search of the crew of spaceship \"Bellerophon,\" a scientific expedition that has been missing for twenty years. They find themselves unwelcome by the expedition's lone survivor and warned of destruction by an invisible force if they don't turn back immediately.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 98,
+        "vote_average": 7.244,
+        "director": "Fred M. Wilcox",
+        "similarity": 0.868952224001006,
+        "curation_tier": "extended",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "6b7a96ee-7101-42b8-95b5-833951e368a2",
+        "tmdb_id": 637649,
+        "title": "Wrath of Man",
+        "year": 2021,
+        "overview": "A cold and mysterious new security guard for a Los Angeles cash truck company surprises his co-workers when he unleashes precision skills during a heist. The crew is left wondering who he is and where he came from. Soon, the marksman's ultimate motive becomes clear as he takes dramatic and irrevocable steps to settle a score.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 7.574,
+        "director": "Guy Ritchie",
+        "similarity": 0.973253180433124,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime, robbery"
+      },
+      {
+        "id": "7d44ef5e-9917-4369-87a8-bca4b10772d7",
+        "tmdb_id": 949,
+        "title": "Heat",
+        "year": 1995,
+        "overview": "Obsessive master thief Neil McCauley leads a top-notch crew on various daring heists throughout Los Angeles while determined detective Vincent Hanna pursues him without rest. Each man recognizes and respects the ability and the dedication of the other even though they are aware their cat-and-mouse game may end in violence.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 170,
+        "vote_average": 7.934,
+        "director": "Michael Mann",
+        "similarity": 0.971638641924721,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, crime, robbery"
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.965107255219761,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist"
+      },
+      {
+        "id": "48e22cab-ae9d-4b99-ac91-0b3f7bebc665",
+        "tmdb_id": 379170,
+        "title": "Sherlock: The Abominable Bride",
+        "year": 2016,
+        "overview": "Sherlock Holmes and Dr. Watson find themselves in 1890s London in this holiday special.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Mystery",
+          "Thriller",
+          "TV Movie"
+        ],
+        "runtime": 90,
+        "vote_average": 7.834,
+        "director": "Douglas Mackinnon",
+        "similarity": 0.963980870103868,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime"
+      },
+      {
+        "id": "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+        "tmdb_id": 286217,
+        "title": "The Martian",
+        "year": 2015,
+        "overview": "During a manned mission to Mars, Astronaut Mark Watney is presumed dead after a fierce storm and left behind by his crew. But Watney has survived and finds himself stranded and alone on the hostile planet. With only meager supplies, he must draw upon his ingenuity, wit and spirit to subsist and find a way to signal to Earth that he is alive.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 141,
+        "vote_average": 7.698,
+        "director": "Ridley Scott",
+        "similarity": 0.949542414155153,
+        "curation_tier": "core",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "ebb029c3-bf0f-40de-b29e-59b11ec8a56c",
+        "tmdb_id": 696506,
+        "title": "Mickey 17",
+        "year": 2025,
+        "overview": "Unlikely hero Mickey Barnes finds himself in the extraordinary circumstance of working for an employer who demands the ultimate commitment to the job… to die, for a living.",
+        "genres": [
+          "Science Fiction",
+          "Comedy",
+          "Adventure"
+        ],
+        "runtime": 137,
+        "vote_average": 6.832,
+        "director": "Bong Joon Ho",
+        "similarity": 0.947148250501965,
+        "curation_tier": "core",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "c44e21c8-5e36-454a-9500-ccf1d9a2a9b8",
+        "tmdb_id": 769,
+        "title": "GoodFellas",
+        "year": 1990,
+        "overview": "The true story of Henry Hill, a half-Irish, half-Sicilian Brooklyn kid who is adopted by neighbourhood gangsters at an early age and climbs the ranks of a Mafia family under the guidance of Jimmy Conway.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 145,
+        "vote_average": 8.453,
+        "director": "Martin Scorsese",
+        "similarity": 0.943814525637561,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime"
+      },
+      {
+        "id": "39d09ad9-d132-4cb5-9199-0a4fe93aa4a2",
+        "tmdb_id": 687163,
+        "title": "Project Hail Mary",
+        "year": 2026,
+        "overview": "Science teacher Ryland Grace wakes up on a spaceship light years from home with no recollection of who he is or how he got there. As his memory returns, he begins to uncover his mission: solve the riddle of the mysterious substance causing the sun to die out. He must call on his scientific knowledge and unorthodox ideas to save everything on Earth from extinction.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 8.622,
+        "director": "Phil Lord",
+        "similarity": 0.935608554102097,
+        "curation_tier": "core",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "c5d5e777-0e4a-4d31-8ab1-249807ee8fb0",
+        "tmdb_id": 11934,
+        "title": "The Hudsucker Proxy",
+        "year": 1994,
+        "overview": "A naive business graduate is installed as president of a manufacturing company as part of a stock scam.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 111,
+        "vote_average": 7.073,
+        "director": "Joel Coen",
+        "similarity": 0.834547289211335,
+        "curation_tier": "extended",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "bc76f9c7-1d5a-49cf-9d43-4c1ee62fb07f",
+        "tmdb_id": 165,
+        "title": "Back to the Future Part II",
+        "year": 1989,
+        "overview": "Marty and Doc are at it again as the time-traveling duo head to 2015 to nip some McFly family woes in the bud. But things go awry thanks to bully Biff Tannen and a pesky sports almanac. In a last-ditch attempt to set things straight, Marty finds himself bound for 1955 and face to face with his teenage parents -- again.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Science Fiction"
+        ],
+        "runtime": 108,
+        "vote_average": 7.781,
+        "director": "Robert Zemeckis",
+        "similarity": 0.922684470404395,
+        "curation_tier": "core",
+        "match_reason": "flying car, skateboarding, car race"
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.917423815809792,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu"
+      },
+      {
+        "id": "2831f834-425b-4fc4-9fdc-3bc22575cadf",
+        "tmdb_id": 539,
+        "title": "Psycho",
+        "year": 1960,
+        "overview": "When larcenous real estate clerk Marion Crane goes on the lam with a wad of cash and hopes of starting a new life, she ends up at the notorious Bates Motel, where manager Norman Bates cares for his housebound mother.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 109,
+        "vote_average": 8.414,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.907949760756137,
+        "curation_tier": "core",
+        "match_reason": "hotel, clerk, detective"
+      },
+      {
+        "id": "20472c96-c5b7-4497-b52c-65451f3a08ba",
+        "tmdb_id": 5506,
+        "title": "The Ladykillers",
+        "year": 1955,
+        "overview": "Five oddball criminals planning a bank robbery rent rooms on a cul-de-sac from an octogenarian widow under the pretext that they are classical musicians.",
+        "genres": [
+          "Comedy",
+          "Crime"
+        ],
+        "runtime": 91,
+        "vote_average": 7.286,
+        "director": "Alexander Mackendrick",
+        "similarity": 0.813905162462763,
+        "curation_tier": "extended",
+        "match_reason": "Matches: robbery, plan"
+      },
+      {
+        "id": "b11c44d8-9513-4385-83d7-3fc3e217cee8",
+        "tmdb_id": 11,
+        "title": "Star Wars",
+        "year": 1977,
+        "overview": "Princess Leia is captured and held hostage by the evil Imperial forces in their effort to take over the galactic Empire. Venturesome Luke Skywalker and dashing captain Han Solo team together with the loveable robot duo R2-D2 and C-3PO to rescue the beautiful princess and restore peace and justice in the Empire.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 8.205,
+        "director": "George Lucas",
+        "similarity": 0.899105838246911,
+        "curation_tier": "core",
+        "match_reason": "Matches: plan"
+      },
+      {
+        "id": "d409361b-d4c9-4789-8544-0e3f614f5732",
+        "tmdb_id": 239,
+        "title": "Some Like It Hot",
+        "year": 1959,
+        "overview": "In Prohibition-era Chicago, musicians Joe and Jerry witness a mob hit, and flee the state in an all-female band disguised as Josephine and Daphne, but further complications set in.",
+        "genres": [
+          "Comedy",
+          "Romance",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 8.079,
+        "director": "Billy Wilder",
+        "similarity": 0.898608780504688,
+        "curation_tier": "core",
+        "match_reason": "Matches: deception"
+      },
+      {
+        "id": "42ad695a-61cd-4c74-b433-6e0a735cef04",
+        "tmdb_id": 4977,
+        "title": "Paprika",
+        "year": 2006,
+        "overview": "When a machine that allows therapists to enter their patient's dreams is stolen, all hell breaks loose. Only a young female therapist can stop it and recover it before damage is done: Paprika.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Animation"
+        ],
+        "runtime": 90,
+        "vote_average": 7.812,
+        "director": "Satoshi Kon",
+        "similarity": 0.896571881397116,
+        "curation_tier": "core",
+        "match_reason": "research, japan, dreams"
+      },
+      {
+        "id": "a81e3622-6aaf-4202-a7e7-ebbe377fecbd",
+        "tmdb_id": 754,
+        "title": "Face/Off",
+        "year": 1997,
+        "overview": "In order to foil a terrorist plot, an FBI agent undergoes facial transplant surgery and assumes the identity of a criminal mastermind. The plan turns sour when the criminal wakes up prematurely and seeks revenge.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Science Fiction"
+        ],
+        "runtime": 139,
+        "vote_average": 7.061,
+        "director": "John Woo",
+        "similarity": 0.807785463567198,
+        "curation_tier": "extended",
+        "match_reason": "Matches: crime, plan"
+      },
+      {
+        "id": "9214c910-2689-4374-a54a-c156a59b7e5c",
+        "tmdb_id": 557,
+        "title": "Spider-Man",
+        "year": 2002,
+        "overview": "After being bitten by a genetically altered spider at Oscorp, nerdy but endearing high school student Peter Parker is endowed with amazing powers to become the superhero known as Spider-Man.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 7.329,
+        "director": "Sam Raimi",
+        "similarity": 0.895510439024627,
+        "curation_tier": "core",
+        "match_reason": "new york city, adolescence, photographer"
+      },
+      {
+        "id": "f202e46a-c522-457b-ba53-b12122800bcb",
+        "tmdb_id": 995,
+        "title": "Stagecoach",
+        "year": 1939,
+        "overview": "A group of people traveling on a stagecoach find their journey complicated by the threat of Geronimo, and learn something about each other in the process.",
+        "genres": [
+          "Western",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.61,
+        "director": "John Ford",
+        "similarity": 0.806958818524652,
+        "curation_tier": "extended",
+        "match_reason": "marriage proposal, prostitute, new mexico"
+      },
+      {
+        "id": "69fbe583-7af4-420e-8a6f-67946715fcbb",
+        "tmdb_id": 44896,
+        "title": "Rango",
+        "year": 2011,
+        "overview": "When Rango, a lost family pet, accidentally winds up in the gritty, gun-slinging Western town of Dirt, the theater-loving lizard suddenly finds himself the newly appointed sheriff. Welcomed as the last hope the town has been waiting for, Rango is forced to play his new role to the hilt and uncover the truth behind a looming water crisis—before his act catches up with him.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Western",
+          "Adventure"
+        ],
+        "runtime": 107,
+        "vote_average": 6.896,
+        "director": "Gore Verbinski",
+        "similarity": 0.893903977552173,
+        "curation_tier": "core",
+        "match_reason": "hero, gunslinger, sheriff"
+      },
+      {
+        "id": "431ea1fc-ef0f-4eb4-b198-a31891fd6f7f",
+        "tmdb_id": 13188,
+        "title": "Scrooge",
+        "year": 1951,
+        "overview": "Ebenezer Scrooge malcontentedly shuffles through life as a cruel, miserly businessman, until he is visited by three spirits on Christmas Eve who show him how his unhappy childhood and adult behavior has left him a selfish, lonely old man.",
+        "genres": [
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 86,
+        "vote_average": 7.439,
+        "director": "Brian Desmond Hurst",
+        "similarity": 0.803595028331697,
+        "curation_tier": "extended",
+        "match_reason": "london, england, based on novel or book, businessman"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1153,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1153,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "heist",
+        "crime",
+        "twist ending",
+        "clever protagonist",
+        "robbery",
+        "plan",
+        "deception",
+        "clever plot"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "payload_hash": "2b8a3f04e0724e0c",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4923,
+  "http_status": 200,
+  "reranked_ids": [
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+    "483e86b9-6eec-4053-b68c-9970b3576e4b",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+    "d4ee2252-84bf-47f4-b125-c51b51b8290b"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe": "Paddington'un ailecek keyifle izlenebilecek sıcak ve sevgi dolu hikayesi mükemmel.",
+    "483e86b9-6eec-4053-b68c-9970b3576e4b": "Encanto, aile bağlarını ve birliği merkeze alan neşeli ve kıcık bir animasyon filmi.",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e": "Klaus, dostluk ve sevginin sıcaklığını hissettiren duygusal bir aile filmi.",
+    "d4ee2252-84bf-47f4-b125-c51b51b8290b": "Onward, kardeş bağına ve ailevi değerlere odaklanmış eğlenceli ve sıcak bir macera."
+  }
+}

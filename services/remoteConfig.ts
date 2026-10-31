@@ -33,11 +33,23 @@ const SAFE_DEFAULTS = {
   // D-08 korunuyor: Lifetime kartı paywall'da GÖSTERİLMEZ. Flag yalnız
   // geri dönüş yolunu açık tutar (R-E'de değerlendirilecek).
   paywall_lifetime_enabled: false,
+  // MONEY-1C: Pro Mode daveti + ucretsiz arama teklif akisi. Yalniz UX kill-switch
+  // (yetki sunucuda: parse-mood kotayi zorlar). Kapaliyken uygulama eskisi gibi.
+  mood_offer_enabled: false,
+  // MONEY-1C: bayrak kapaliyken bile acilacak kimlikler (auth.users.id dizisi). Bos = kimse.
+  mood_offer_testers: [] as readonly string[],
+  // MONEY-1C: kilit oncesi ucretsiz gorunen film sayisi (clamp: utils/moodLock.ts).
+  free_visible_count: 3,
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;
 
-const store = createConfigStore({ ttlMs: CACHE_TTL_MS });
+// Başarısız yükleme (çevrimdışı + boş önbellek) sonrası 30 sn → 5 dk üstel geri çekilme:
+// her mount'ta ağ isteği ve REMOTE_CONFIG_HYDRATE_FAILED Sentry olayı üretilmez.
+const store = createConfigStore({
+  ttlMs: CACHE_TTL_MS,
+  failureBackoff: { baseMs: 30 * 1000, maxMs: CACHE_TTL_MS },
+});
 
 /** Kalıcı önbellek süreç başına BİR kez geri yüklenir (eşzamanlı çağrılar paylaşır). */
 let restorePromise: Promise<void> | null = null;

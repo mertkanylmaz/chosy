@@ -1,0 +1,568 @@
+{
+  "mood_id": "ft_like_interstellar",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "422c986c-e309-4ce9-b63d-21c8e69eb0da",
+        "tmdb_id": 18438,
+        "title": "Castaway on the Moon",
+        "year": 2009,
+        "overview": "Mr. Kim is jobless, lost in debt and has been dumped by his girlfriend. He decides to end it all by jumping into the Han River – only to find himself washed up on a small, mid-river island. He soon abandons thoughts of suicide or rescue and begins a new life as a castaway. His antics catch the attention of a young woman whose apartment overlooks the river. Her discovery changes both their lives.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.913,
+        "director": "Lee Hae-jun",
+        "similarity": 1.01248827900978,
+        "curation_tier": "core",
+        "match_reason": "isolation, suicide attempt, loneliness"
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 1.00769993150739,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel"
+      },
+      {
+        "id": "71161415-4341-4462-8a18-432aa53fb0e7",
+        "tmdb_id": 914,
+        "title": "The Great Dictator",
+        "year": 1940,
+        "overview": "Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel's regime.",
+        "genres": [
+          "Comedy",
+          "War"
+        ],
+        "runtime": 125,
+        "vote_average": 8.3,
+        "director": "Charlie Chaplin",
+        "similarity": 1.00430573169099,
+        "curation_tier": "core",
+        "match_reason": "amnesia, nazi, hairdresser"
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 0.984691562980504,
+        "curation_tier": "core",
+        "match_reason": "self-discovery, tokyo, japan, candid"
+      },
+      {
+        "id": "b720a08f-1fb8-43b6-9e1a-a1faf3223d99",
+        "tmdb_id": 369557,
+        "title": "Sing Street",
+        "year": 2016,
+        "overview": "A boy growing up in Dublin during the 1980s escapes his strained family life by starting a band to impress the mysterious girl he likes.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Music",
+          "Comedy"
+        ],
+        "runtime": 105,
+        "vote_average": 7.859,
+        "director": "John Carney",
+        "similarity": 0.971872932573567,
+        "curation_tier": "core",
+        "match_reason": "Matches: family relationships"
+      },
+      {
+        "id": "ccc1d981-6160-4b14-86e8-a385d88391ce",
+        "tmdb_id": 1585,
+        "title": "It's a Wonderful Life",
+        "year": 1946,
+        "overview": "George Bailey has spent his entire life giving to the people of Bedford Falls.  All that prevents rich skinflint Mr. Potter from taking over the entire town is George's modest building and loan company.  But on Christmas Eve the business's $8,000 is lost and George's troubles begin.",
+        "genres": [
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 131,
+        "vote_average": 8.3,
+        "director": "Frank Capra",
+        "similarity": 0.966441743447109,
+        "curation_tier": "core",
+        "match_reason": "small town, angel, suicide attempt"
+      },
+      {
+        "id": "2e811fbd-d246-433b-ba90-43f0647b65ab",
+        "tmdb_id": 77338,
+        "title": "The Intouchables",
+        "year": 2011,
+        "overview": "A true story of two men who should never have met – a quadriplegic aristocrat who was injured in a paragliding accident and a young man from the projects.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 113,
+        "vote_average": 8.269,
+        "director": "Éric Toledano",
+        "similarity": 0.944108246625757,
+        "curation_tier": "core",
+        "match_reason": "Matches: emotional sci-fi"
+      },
+      {
+        "id": "2daade33-adef-476c-9456-e6a0379d10cb",
+        "tmdb_id": 497,
+        "title": "The Green Mile",
+        "year": 1999,
+        "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 189,
+        "vote_average": 8.506,
+        "director": "Frank Darabont",
+        "similarity": 0.941622328420805,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, death penalty, based on novel or book"
+      },
+      {
+        "id": "5c37028c-d2f0-46a4-91b5-648599b0724d",
+        "tmdb_id": 840,
+        "title": "Close Encounters of the Third Kind",
+        "year": 1977,
+        "overview": "After an encounter with UFOs, an electricity linesman feels undeniably drawn to an isolated area in the wilderness where something spectacular is about to happen.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.349,
+        "director": "Steven Spielberg",
+        "similarity": 0.941050516037934,
+        "curation_tier": "core",
+        "match_reason": "wyoming, usa, indiana, usa, flying saucer"
+      },
+      {
+        "id": "c268c65d-959b-4679-8270-2c081f8c4e02",
+        "tmdb_id": 290,
+        "title": "Barton Fink",
+        "year": 1991,
+        "overview": "A renowned New York playwright is enticed to California to write for the movies and discovers the hellish truth of Hollywood.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 117,
+        "vote_average": 7.464,
+        "director": "Joel Coen",
+        "similarity": 0.935224996847096,
+        "curation_tier": "core",
+        "match_reason": "hotel, screenplay, mass murder"
+      },
+      {
+        "id": "22caba6c-df42-49fc-a6c0-6ebc21dc7f05",
+        "tmdb_id": 567,
+        "title": "Rear Window",
+        "year": 1954,
+        "overview": "A wheelchair-bound photographer spies on his neighbors from his apartment window and becomes convinced one of them has committed murder.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 8.339,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.932277080757635,
+        "curation_tier": "core",
+        "match_reason": "nurse, isolation, photographer"
+      },
+      {
+        "id": "4dcda5f2-e9f4-4528-8926-ab3be87b095d",
+        "tmdb_id": 346,
+        "title": "Seven Samurai",
+        "year": 1954,
+        "overview": "A samurai answers a village's request for protection after he falls on hard times. The town needs protection from bandits, so the samurai gathers six others to help him teach the people how to defend themselves, and the villagers provide the soldiers with food.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 207,
+        "vote_average": 8.452,
+        "director": "Akira Kurosawa",
+        "similarity": 0.927720063789181,
+        "curation_tier": "core",
+        "match_reason": "martial arts, japan, samurai"
+      },
+      {
+        "id": "0c750f1b-425a-4da5-b2cd-b0482e9ddc36",
+        "tmdb_id": 284,
+        "title": "The Apartment",
+        "year": 1960,
+        "overview": "Bud Baxter is a minor clerk in a huge New York insurance company, until he discovers a quick way to climb the corporate ladder. He lends out his apartment to the executives as a place to take their mistresses. Although he often has to deal with the aftermath of their visits, one night he's left with a major problem to solve.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 126,
+        "vote_average": 8.189,
+        "director": "Billy Wilder",
+        "similarity": 0.925249976281514,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, new york city, lovesickness"
+      },
+      {
+        "id": "69b6960d-88f0-44b5-83c5-0ae728893849",
+        "tmdb_id": 389,
+        "title": "12 Angry Men",
+        "year": 1957,
+        "overview": "The defense and the prosecution have rested and the jury is filing into the jury room to decide if a young Spanish-American is guilty or innocent of murdering his father. What begins as an open and shut case soon becomes a mini-drama of each of the jurors' prejudices and preconceptions about the trial, the accused, and each other.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 8.561,
+        "director": "Sidney Lumet",
+        "similarity": 0.922972020943111,
+        "curation_tier": "core",
+        "match_reason": "death penalty, anonymity, court case"
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 0.914494186212954,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia"
+      },
+      {
+        "id": "13e5c91c-2b27-41a1-a47b-06d924b898eb",
+        "tmdb_id": 37247,
+        "title": "The Graduate",
+        "year": 1967,
+        "overview": "A disillusioned college graduate finds himself torn between his older lover and her daughter.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Comedy"
+        ],
+        "runtime": 106,
+        "vote_average": 7.6,
+        "director": "Mike Nichols",
+        "similarity": 0.904300383159847,
+        "curation_tier": "core",
+        "match_reason": "love triangle, seduction, college"
+      },
+      {
+        "id": "5447d4a9-21e1-4ae0-9fbd-1c7560984876",
+        "tmdb_id": 4982,
+        "title": "American Gangster",
+        "year": 2007,
+        "overview": "Loosely based on the criminal career of Frank Lucas, a gangster from La Grange, North Carolina, who smuggled heroin into the United States on American service planes returning from the Vietnam War, before being detained by a task force led by Newark Detective Richie Roberts.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 157,
+        "vote_average": 7.592,
+        "director": "Ridley Scott",
+        "similarity": 0.903473397676787,
+        "curation_tier": "core",
+        "match_reason": "Matches: family relationships"
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.903260045196407,
+        "curation_tier": "core",
+        "match_reason": "Matches: space exploration, family relationships, humanity's future"
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 0.902280484592659,
+        "curation_tier": "core",
+        "match_reason": "utah, new zealand, based on true story"
+      },
+      {
+        "id": "07cd985a-cbf8-4b44-bcca-1b1abe6921d9",
+        "tmdb_id": 429,
+        "title": "The Good, the Bad and the Ugly",
+        "year": 1966,
+        "overview": "While the Civil War rages on between the Union and the Confederacy, three men – a quiet loner, a ruthless hitman, and a Mexican bandit – comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 161,
+        "vote_average": 8.47,
+        "director": "Sergio Leone",
+        "similarity": 0.901746178915644,
+        "curation_tier": "core",
+        "match_reason": "gold, army, bounty hunter"
+      },
+      {
+        "id": "2d1fed55-94e0-43c0-8400-29691a352f89",
+        "tmdb_id": 26030,
+        "title": "Bob le Flambeur",
+        "year": 1956,
+        "overview": "In Paris, Bob Montagne is practically synonymous with gambling -- and winning. He is kind, classy and well-liked by virtually everyone in town, including police inspector Ledru. However, when Bob's luck turns sour, he begins to lose friends and makes the most desperate gamble of his life: to rob the Deauville casino during Grand Prix weekend, when the vaults are full. Unfortunately, Bob soon learns that the game is rigged and the cops are on to him.",
+        "genres": [
+          "Drama",
+          "Action",
+          "Crime"
+        ],
+        "runtime": 103,
+        "vote_average": 7.253,
+        "director": "Jean-Pierre Melville",
+        "similarity": 0.807531359876435,
+        "curation_tier": "extended",
+        "match_reason": "robbery, casino, paris, france"
+      },
+      {
+        "id": "a4e670a1-36f5-4c68-b6f3-64fe778d2ba3",
+        "tmdb_id": 345,
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "overview": "After Dr. Bill Harford's wife, Alice, admits to having sexual fantasies about a man she met, Bill becomes obsessed with having a sexual encounter. He discovers an underground sexual group and attends one of their meetings -- and quickly discovers that he is in over his head.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 160,
+        "vote_average": 7.485,
+        "director": "Stanley Kubrick",
+        "similarity": 0.891228842217267,
+        "curation_tier": "core",
+        "match_reason": "Matches: family relationships"
+      },
+      {
+        "id": "625c6e23-9faf-4b27-bc53-2b223c072a92",
+        "tmdb_id": 5528,
+        "title": "The Chorus",
+        "year": 2004,
+        "overview": "In 1940s France, a new teacher at a school for disruptive boys gives hope and inspiration.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Music"
+        ],
+        "runtime": 97,
+        "vote_average": 7.74,
+        "director": "Christophe Barratier",
+        "similarity": 0.890585482546782,
+        "curation_tier": "core",
+        "match_reason": "penalty, boarding school, choir"
+      },
+      {
+        "id": "f1bac13b-09a5-4c8b-95bb-a6d102df4903",
+        "tmdb_id": 4935,
+        "title": "Howl's Moving Castle",
+        "year": 2004,
+        "overview": "Sophie, a young milliner, is turned into an elderly woman by a witch who enters her shop and curses her. She encounters a wizard named Howl and gets caught up in his resistance to fighting for the king.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 119,
+        "vote_average": 8.387,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.890496186839721,
+        "curation_tier": "core",
+        "match_reason": "witch, flying, rain"
+      },
+      {
+        "id": "2d157d4b-87f5-4c0c-a989-e040de97e9b6",
+        "tmdb_id": 515001,
+        "title": "Jojo Rabbit",
+        "year": 2019,
+        "overview": "Jojo, a lonely German boy during World War II has his world shaken when he learns that his single mother is hiding a Jewish girl in their home. Influenced by a buffoonish imaginary version of Adolf Hitler, he begins to question his beliefs and confront the conflict between propaganda and his own humanity.",
+        "genres": [
+          "Comedy",
+          "War",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.986,
+        "director": "Taika Waititi",
+        "similarity": 0.883011717937304,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, world war ii, jew persecution"
+      },
+      {
+        "id": "fda166dd-b750-407e-b15d-ae78aed3df68",
+        "tmdb_id": 490132,
+        "title": "Green Book",
+        "year": 2018,
+        "overview": "Tony Lip, a bouncer in 1962, is hired to drive pianist Don Shirley on a tour through the Deep South in the days when African Americans, forced to find alternate accommodations and services due to segregation laws below the Mason-Dixon Line, relied on a guide called The Negro Motorist Green Book.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "History"
+        ],
+        "runtime": 130,
+        "vote_average": 8.224,
+        "director": "Peter Farrelly",
+        "similarity": 0.881964092819069,
+        "curation_tier": "core",
+        "match_reason": "friendship, southern usa, based on true story"
+      },
+      {
+        "id": "f719ad81-e751-49dc-b37b-ed7827c61142",
+        "tmdb_id": 8358,
+        "title": "Cast Away",
+        "year": 2000,
+        "overview": "Chuck Noland, a top international manager for FedEx, and Kelly, a Ph.D. student, are in love and heading towards marriage. Then Chuck's plane to Malaysia crashes at sea during a terrible storm. He's the only survivor, and finds himself marooned on a desolate island. With no way to escape, Chuck must find ways to survive in his new home.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 7.661,
+        "director": "Robert Zemeckis",
+        "similarity": 0.88111178296356,
+        "curation_tier": "core",
+        "match_reason": "exotic island, suicide attempt, volleyball"
+      },
+      {
+        "id": "557927ac-eae4-4614-aa7c-8f0a7e7e0b36",
+        "tmdb_id": 510,
+        "title": "One Flew Over the Cuckoo's Nest",
+        "year": 1975,
+        "overview": "A petty criminal fakes insanity to serve his sentence in a mental ward rather than prison. He soon finds himself as a leader to the other patients—and an enemy to the cruel, domineering nurse who runs the ward.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 8.4,
+        "director": "Miloš Forman",
+        "similarity": 0.87970094576145,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, friendship, based on novel or book"
+      },
+      {
+        "id": "18bb4233-f4a5-4eb6-ab93-8eeb0a4209d6",
+        "tmdb_id": 11943,
+        "title": "Jeremiah Johnson",
+        "year": 1972,
+        "overview": "A mountain man who wishes to live the life of a hermit becomes the unwilling object of a long vendetta by Indians when he proves to be the match of their warriors in one-on-one combat on the early frontier.",
+        "genres": [
+          "Adventure",
+          "Western",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 108,
+        "vote_average": 7.3,
+        "director": "Sydney Pollack",
+        "similarity": 0.794339974490341,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, loss of loved one, rocky mountains"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.873938889291706,
+        "curation_tier": "core",
+        "match_reason": "Matches: family relationships"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1204,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1204,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "space exploration",
+        "theoretical physics",
+        "family relationships",
+        "time dilation",
+        "humanity's future",
+        "epic scale",
+        "emotional sci-fi",
+        "alternate dimensions"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

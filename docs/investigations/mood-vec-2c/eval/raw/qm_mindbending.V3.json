@@ -1,0 +1,945 @@
+{
+  "mood_id": "qm_mindbending",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 1.00139326706915,
+        "curation_tier": "core",
+        "match_reason": "Matches: intellectual",
+        "channels": [
+          "a",
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "aa02f15c-94df-4213-a625-946ed17ed06a",
+        "tmdb_id": 329865,
+        "title": "Arrival",
+        "year": 2016,
+        "overview": "Taking place after alien crafts land around the world, an expert linguist is recruited by the military to determine whether they come in peace or are a threat.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 7.626,
+        "director": "Denis Villeneuve",
+        "similarity": 0.878717218959005,
+        "curation_tier": "core",
+        "match_reason": "Matches: complex narrative",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.721104359770992,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.708198827430789,
+        "curation_tier": "core",
+        "match_reason": "Matches: reality versus illusion",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+        "tmdb_id": 62,
+        "title": "2001: A Space Odyssey",
+        "year": 1968,
+        "overview": "Humanity finds a mysterious object buried beneath the lunar surface and sets off to find its origins with the help of HAL 9000, the world's most advanced super computer.",
+        "genres": [
+          "Science Fiction",
+          "Mystery",
+          "Adventure"
+        ],
+        "runtime": 149,
+        "vote_average": 8.1,
+        "director": "Stanley Kubrick",
+        "similarity": 0.689417248867871,
+        "curation_tier": "core",
+        "match_reason": "Matches: philosophical",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+        "tmdb_id": 1018,
+        "title": "Mulholland Drive",
+        "year": 2001,
+        "overview": "Blonde Betty Elms has only just arrived in Hollywood to become a movie star when she meets an enigmatic brunette with amnesia. Meanwhile, as the two set off to solve the second woman's identity, filmmaker Adam Kesher runs into ominous trouble while casting his latest project.",
+        "genres": [
+          "Thriller",
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 147,
+        "vote_average": 7.8,
+        "director": "David Lynch",
+        "similarity": 0.612732644497711,
+        "curation_tier": "core",
+        "match_reason": "amnesia, loss of sense of reality, schizophrenia",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c1b42f15-b09f-44f2-b339-73fc0e9f5338",
+        "tmdb_id": 77,
+        "title": "Memento",
+        "year": 2000,
+        "overview": "Leonard Shelby is tracking down the man who raped and murdered his wife. The difficulty of locating his wife's killer, however, is compounded by the fact that he suffers from a rare, untreatable form of short-term memory loss. Although he can recall details of life before his accident, Leonard cannot remember what happened fifteen minutes ago, where he's going, or why.",
+        "genres": [
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 8.177,
+        "director": "Christopher Nolan",
+        "similarity": 0.612289760856273,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, amnesia, insulin",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b25a220d-5204-4542-99cc-cc7c159a02d6",
+        "tmdb_id": 264660,
+        "title": "Ex Machina",
+        "year": 2015,
+        "overview": "Caleb, a coder at the world's largest internet company, wins a competition to spend a week at a private mountain retreat belonging to Nathan, the reclusive CEO of the company. But when Caleb arrives at the remote location he finds that he will have to participate in a strange and fascinating experiment in which he must interact with the world's first true artificial intelligence, housed in the body of a beautiful robot girl.",
+        "genres": [
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 108,
+        "vote_average": 7.573,
+        "director": "Alex Garland",
+        "similarity": 0.61088924134405,
+        "curation_tier": "core",
+        "match_reason": "Matches: existential",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "39c22f17-6098-4c9e-a396-bde2585dad83",
+        "tmdb_id": 593,
+        "title": "Solaris",
+        "year": 1972,
+        "overview": "A psychologist is sent to a space station orbiting a planet called Solaris to investigate the death of a doctor and the mental problems of cosmonauts on the station. He soon discovers that the water on the planet is a type of brain which brings out repressed memories and obsessions.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 167,
+        "vote_average": 7.766,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.575494921347161,
+        "curation_tier": "extended",
+        "match_reason": "loss of sense of reality, based on novel or book, extraterrestrial technology",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b643db72-26cd-40c4-81c7-dff0f02749e1",
+        "tmdb_id": 38,
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004,
+        "overview": "Joel Barish, heartbroken that his girlfriend underwent a procedure to erase him from her memory, decides to do the same. However, as he watches his memories of her fade away, he realises that he still loves her, and may be too late to correct his mistake.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 108,
+        "vote_average": 8.1,
+        "director": "Michel Gondry",
+        "similarity": 0.511178979987096,
+        "curation_tier": "core",
+        "match_reason": "new york city, regret, jealousy",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 1.05939611641766,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "97559e06-c950-4407-9be0-d19f2d7780e7",
+        "tmdb_id": 283566,
+        "title": "Evangelion: 3.0+1.0 Thrice Upon a Time",
+        "year": 2021,
+        "overview": "In the aftermath of the Fourth Impact, stranded without their Evangelions, Shinji, Asuka and Rei find refuge in one of the rare pockets of humanity that still exist on the ruined planet Earth. There, each lives a life far different from their days as an Evangelion pilot. However, the danger to the world is far from over. A new impact is looming on the horizon—one that will prove to be the true end of Evangelion.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 155,
+        "vote_average": 8.204,
+        "director": "Kazuya Tsurumaki",
+        "similarity": 0.941437632011631,
+        "curation_tier": "core",
+        "match_reason": "Matches: philosophical, complex narrative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "da994f75-5fe7-432b-9cc1-cbc894d1720d",
+        "tmdb_id": 10778,
+        "title": "The Man Who Wasn't There",
+        "year": 2001,
+        "overview": "A tale of murder, crime and punishment set in the summer of 1949. Ed Crane, a barber in a small California town, is dissatisfied with his life, but his wife Doris' infidelity and a mysterious opportunity presents him with a chance to change it.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.506,
+        "director": "Joel Coen",
+        "similarity": 0.938249975876849,
+        "curation_tier": "core",
+        "match_reason": "small town, california, hairdresser",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "14ed0ce6-d01a-4f8a-990d-9fabd78f755a",
+        "tmdb_id": 419430,
+        "title": "Get Out",
+        "year": 2017,
+        "overview": "Chris and his girlfriend Rose go upstate to visit her parents for the weekend. At first, Chris reads the family's overly accommodating behavior as nervous attempts to deal with their daughter's interracial relationship, but as the weekend progresses, a series of increasingly disturbing discoveries lead him to a truth that he never could have imagined.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Horror"
+        ],
+        "runtime": 104,
+        "vote_average": 7.621,
+        "director": "Jordan Peele",
+        "similarity": 0.931039986271835,
+        "curation_tier": "core",
+        "match_reason": "kidnapping, externally controlled action, manipulation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+        "tmdb_id": 1954,
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "overview": "A young man struggles to access sublimated childhood memories. He finds a technique that allows him to travel back into the past, to occupy his childhood body and change history. However, he soon finds that every change he makes has unexpected consequences.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.571,
+        "director": "J. Mackye Gruber",
+        "similarity": 0.924579587095546,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2756dbd0-b2b0-4fc5-bd11-7b1838451e7e",
+        "tmdb_id": 9323,
+        "title": "Ghost in the Shell",
+        "year": 1995,
+        "overview": "In the year 2029, the barriers of our world have been broken down by the net and by cybernetics, but this brings new vulnerability to humans in the form of brain-hacking. When a highly-wanted hacker known as 'The Puppetmaster' begins involving them in politics, Section 9, a group of cybernetically enhanced cops, are called in to investigate and stop the Puppetmaster.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Science Fiction"
+        ],
+        "runtime": 83,
+        "vote_average": 7.92,
+        "director": "Mamoru Oshii",
+        "similarity": 0.920438077988297,
+        "curation_tier": "core",
+        "match_reason": "android, man vs machine, artificial intelligence (a.i.)",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.920419570745219,
+        "curation_tier": "core",
+        "match_reason": "island, based on novel or book, concentration camp",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "30ee71fd-754e-4f12-9b0c-3a2fc895dd55",
+        "tmdb_id": 745,
+        "title": "The Sixth Sense",
+        "year": 1999,
+        "overview": "Following an unexpected tragedy, child psychologist Malcolm Crowe meets a nine year old boy named Cole Sear, who is hiding a dark secret.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "M. Night Shyamalan",
+        "similarity": 0.913942581335036,
+        "curation_tier": "core",
+        "match_reason": "dying and death, child abuse, philadelphia, pennsylvania",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "56278680-d606-4787-aa61-0240eceb76c7",
+        "tmdb_id": 2440,
+        "title": "Joint Security Area",
+        "year": 2000,
+        "overview": "Two North Korean soldiers are killed in the border area between North and South Korea, prompting an investigation by a neutral body. The sergeant is the shooter, but the lead investigator, a Swiss-Korean woman, receives differing accounts from the two sides.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Action"
+        ],
+        "runtime": 108,
+        "vote_average": 7.8,
+        "director": "Park Chan-wook",
+        "similarity": 0.902111702516697,
+        "curation_tier": "core",
+        "match_reason": "border, korean war (1950-53), soldier",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 0.897069954276876,
+        "curation_tier": "core",
+        "match_reason": "new york city, robbery, relatives",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3a82caca-8c28-44d1-a8ba-4b137e60d8f6",
+        "tmdb_id": 599,
+        "title": "Sunset Boulevard",
+        "year": 1950,
+        "overview": "A hack screenwriter writes a screenplay for a former silent film star who has faded into Hollywood obscurity.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 8.278,
+        "director": "Billy Wilder",
+        "similarity": 0.895711076862228,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, jealousy, loss of sense of reality",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f62efabd-9b01-4237-bb06-0082bc9d1db0",
+        "tmdb_id": 8832,
+        "title": "Il Divo",
+        "year": 2008,
+        "overview": "Italy, early '90s. Calm, clever and inscrutable, politician Giulio Andreotti has been synonymous with power for decades. He has survived everything: electoral battles, terrorist massacres, loss of friends, slanderous accusations; but now certain repentant mobsters implicate him in the crimes of Cosa Nostra.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.623,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.884413285646324,
+        "curation_tier": "core",
+        "match_reason": "politics, italy, vatican (holy see)",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b60ace5f-ee1c-4ad9-8f4a-5a2a671a6b1e",
+        "tmdb_id": 915935,
+        "title": "Anatomy of a Fall",
+        "year": 2023,
+        "overview": "A woman is suspected of her husband's murder, and their blind son faces a moral dilemma as the sole witness.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 151,
+        "vote_average": 7.518,
+        "director": "Justine Triet",
+        "similarity": 0.880585733818446,
+        "curation_tier": "core",
+        "match_reason": "Matches: complex narrative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9d38c70d-d098-48c2-9f86-11416c23ca0f",
+        "tmdb_id": 68722,
+        "title": "The Master",
+        "year": 2012,
+        "overview": "Freddie, a volatile, heavy-drinking veteran who suffers from post-traumatic stress disorder, finds some semblance of a family when he stumbles onto the ship of Lancaster Dodd, the charismatic leader of a new \"religion\" he forms after World War II.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.098,
+        "director": "Paul Thomas Anderson",
+        "similarity": 0.878563042757219,
+        "curation_tier": "core",
+        "match_reason": "post-traumatic stress disorder (ptsd), sexual obsession, religion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "89c802ae-8a56-4389-a004-212eaee0f829",
+        "tmdb_id": 820,
+        "title": "JFK",
+        "year": 1991,
+        "overview": "Follows the investigation into the assassination of President John F. Kennedy led by New Orleans district attorney Jim Garrison.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "History"
+        ],
+        "runtime": 189,
+        "vote_average": 7.6,
+        "director": "Oliver Stone",
+        "similarity": 0.875523833903865,
+        "curation_tier": "core",
+        "match_reason": "vietnam war, central intelligence agency (cia), assassination",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "be5e0f88-d945-460e-9bfe-14060044d431",
+        "tmdb_id": 548,
+        "title": "Rashomon",
+        "year": 1950,
+        "overview": "Four people recount different versions of the story of a man's murder and the rape of his wife.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 88,
+        "vote_average": 8.038,
+        "director": "Akira Kurosawa",
+        "similarity": 0.831266262696128,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "523c4862-e8f8-4f4b-856d-18a6c507610e",
+        "tmdb_id": 206487,
+        "title": "Predestination",
+        "year": 2014,
+        "overview": "Predestination chronicles the life of a Temporal Agent sent on an intricate series of time-travel journeys designed to prevent future killers from committing their crimes. Now, on his final assignment, the Agent must stop the one criminal that has eluded him throughout time and prevent a devastating attack in which thousands of lives will be lost.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 98,
+        "vote_average": 7.416,
+        "director": "Michael Spierig",
+        "similarity": 0.820468100823726,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4fb54caa-bf89-4891-a9aa-5283ced5f7a7",
+        "tmdb_id": 22843,
+        "title": "Evangelion: 2.0 You Can (Not) Advance",
+        "year": 2009,
+        "overview": "Under constant attack by monstrous creatures called Angels that seek to eradicate humankind, U.N. Special Agency NERV introduces two new EVA pilots to help defend the city of Tokyo-3: the mysterious Makinami Mari Illustrous and the intense Asuka Langley Shikinami. Meanwhile, Gendo Ikari and SEELE proceed with a secret project that involves both Rei and Shinji.",
+        "genres": [
+          "Animation",
+          "Science Fiction",
+          "Action",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.802,
+        "director": "Masayuki",
+        "similarity": 0.817165980637182,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, complex narrative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "78490b9d-f178-43f2-b9b2-7433e67590ee",
+        "tmdb_id": 14537,
+        "title": "Harakiri",
+        "year": 1962,
+        "overview": "Down-on-his-luck veteran Tsugumo Hanshirō enters the courtyard of the prosperous House of Iyi. Unemployed, and with no family, he hopes to find a place to commit seppuku—and a worthy second to deliver the coup de grâce in his suicide ritual. The senior counselor for the Iyi clan questions the ronin’s resolve and integrity, suspecting Hanshirō of seeking charity rather than an honorable end. What follows is a pair of interlocking stories which lay bare the difference between honor and respect, and promises to examine the legendary foundations of the Samurai code.",
+        "genres": [
+          "Action",
+          "Drama",
+          "History"
+        ],
+        "runtime": 135,
+        "vote_average": 8.43,
+        "director": "Masaki Kobayashi",
+        "similarity": 0.798656930255901,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, complex narrative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "634fec75-7e9d-4c85-b501-5b38bf711f4a",
+        "tmdb_id": 712454,
+        "title": "The Summit of the Gods",
+        "year": 2021,
+        "overview": "A photojournalist's obsessive quest for the truth about the first expedition to Mt. Everest leads him to search for an esteemed climber who went missing.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Mystery"
+        ],
+        "runtime": 95,
+        "vote_average": 7.754,
+        "director": "Patrick Imbert",
+        "similarity": 0.793973787996918,
+        "curation_tier": "extended",
+        "match_reason": "based on manga, mount everest, missing body",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "759d68c6-5cde-4eab-b9f7-87b0b27cb1aa",
+        "tmdb_id": 127,
+        "title": "Blind Chance",
+        "year": 1987,
+        "overview": "Witek runs after a train. Three variations follow on how such a seemingly banal incident could influence the rest of Witek's life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 123,
+        "vote_average": 7.5,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.78964604214625,
+        "curation_tier": "extended",
+        "match_reason": "airplane, chance, political party",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "534e8a17-ac0f-4284-9cdf-e79479c452a3",
+        "tmdb_id": 1058424,
+        "title": "Hope",
+        "year": 2026,
+        "overview": "In the remote South Korean village of Hope Harbor, police chief Bum-seok and officer Sung-ae are called to investigate a mysterious creature wreaking havoc on the community. But all is not as it seems, and perceptions can be misleading. What begins as ignorance plants the seed of disaster, escalating through human conflict into a tragedy of cosmic proportions.",
+        "genres": [
+          "Science Fiction",
+          "Mystery",
+          "Action"
+        ],
+        "runtime": 157,
+        "vote_average": 8,
+        "director": "Na Hong-jin",
+        "similarity": 0.789323984605247,
+        "curation_tier": "trending",
+        "match_reason": "hunted, remote village, 20th century",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f6b353bf-b61d-4eac-be05-a05ab9a45258",
+        "tmdb_id": 615173,
+        "title": "The Witch: Part 2 - The Other One",
+        "year": 2022,
+        "overview": "A girl wakes up in a huge secret laboratory, then accidentally meets another girl who is trying to protect her house from a gang. The mystery girl overthrows the gang with her unexpected powers, and laboratory staff set out to find her.",
+        "genres": [
+          "Action",
+          "Mystery",
+          "Thriller",
+          "Science Fiction"
+        ],
+        "runtime": 137,
+        "vote_average": 7.398,
+        "director": "Park Hoon-jung",
+        "similarity": 0.788447246776131,
+        "curation_tier": "extended",
+        "match_reason": "witch, supernatural, sequel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.71644458015759,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.69977221815092,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.69958351687549,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.586982712652677,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.58033412251436,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bd2bb802-caa2-4a30-99bf-aa7cd8578443",
+        "tmdb_id": 807,
+        "title": "Se7en",
+        "year": 1995,
+        "overview": "Two homicide detectives are on a desperate hunt for a serial killer whose crimes are based on the \"seven deadly sins\" in this dark and haunting film that takes viewers from the tortured remains of one victim to the next. The seasoned Det. Somerset researches each sin in an effort to get inside the killer's mind, while his novice partner, Mills, scoffs at his efforts to unravel the case.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 127,
+        "vote_average": 8.381,
+        "director": "David Fincher",
+        "similarity": 0.52719095121171,
+        "curation_tier": "core",
+        "match_reason": "rage and hate, police, s.w.a.t.",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.521690185892882,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 858,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 858,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "philosophical",
+        "mind-bending",
+        "existential",
+        "complex narrative",
+        "metaphysical",
+        "intellectual",
+        "reality versus illusion"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama",
+        "Science Fiction",
+        "Mystery"
+      ],
+      "genres_exclude": [
+        "Comedy"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Inception",
+          "year": 2010
+        },
+        {
+          "title": "Mulholland Drive",
+          "year": 2001
+        },
+        {
+          "title": "Arrival",
+          "year": 2016
+        },
+        {
+          "title": "2001: A Space Odyssey",
+          "year": 1968
+        },
+        {
+          "title": "Eternal Sunshine of the Spotless Mind",
+          "year": 2004
+        },
+        {
+          "title": "Memento",
+          "year": 2000
+        },
+        {
+          "title": "Solaris",
+          "year": 1972
+        },
+        {
+          "title": "The Prestige",
+          "year": 2006
+        },
+        {
+          "title": "Interstellar",
+          "year": 2014
+        },
+        {
+          "title": "Ex Machina",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "2d6991c9b786f206",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4309,
+    "http_status": 200,
+    "reranked_ids": [
+      "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "39c22f17-6098-4c9e-a396-bde2585dad83",
+      "877a88f1-69c0-4f7d-aae1-2076cc06269d"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "9ee7f6ee-051c-4f8e-856a-2805d949e7fe": "Mind-bending exploration of dreams and reality with layered complexity and philosophical depth.",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64": "Profound meditation on consciousness, existence, and humanity's place in the cosmos.",
+      "39c22f17-6098-4c9e-a396-bde2585dad83": "Deeply philosophical exploration of identity and consciousness through alien encounter.",
+      "877a88f1-69c0-4f7d-aae1-2076cc06269d": "Complex narrative about obsession and reality with intricate philosophical questioning."
+    }
+  }
+}

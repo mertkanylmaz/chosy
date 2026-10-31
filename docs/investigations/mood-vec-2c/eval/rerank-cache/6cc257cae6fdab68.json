@@ -1,0 +1,24 @@
+{
+  "payload_hash": "6cc257cae6fdab68",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4087,
+  "http_status": 200,
+  "reranked_ids": [
+    "0e53f958-2581-46d0-a5db-51ae0c81542b",
+    "e105ec3e-5661-432b-9f2c-2914bb0d8863",
+    "3cad714d-b789-4eba-91b2-502c4931bd86",
+    "227fb216-197d-4f9b-ac81-3442afcf4541"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "0e53f958-2581-46d0-a5db-51ae0c81542b": "Relentless high-octane chase across wasteland with non-stop vehicular action and zero dramatic filler.",
+    "e105ec3e-5661-432b-9f2c-2914bb0d8863": "Intense martial arts combat with criminal underworld battles delivering sustained adrenaline throughout.",
+    "3cad714d-b789-4eba-91b2-502c4931bd86": "Revenge-driven action with explosive sequences and relentless pacing focused on thrilling combat.",
+    "227fb216-197d-4f9b-ac81-3442afcf4541": "Real-time bomb thriller with constant tension and fast-paced cat-and-mouse suspense on moving bus."
+  }
+}

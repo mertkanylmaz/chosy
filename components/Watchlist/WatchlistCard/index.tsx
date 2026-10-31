@@ -120,13 +120,6 @@ const WatchlistCard = React.memo(function WatchlistCard({
               <FilmStrip size={32} color={color.text.secondary} />
             </View>
           )}
-
-          {/* Match Score Rozeti — glassmorphism, sağ alt köşe */}
-          {film.matchScore > 0 && (
-            <View style={styles.matchBadge}>
-              <Text style={styles.matchBadgeText}>{film.matchScore}%</Text>
-            </View>
-          )}
         </View>
 
         {/* Yıl · Tür — film adı kaldırıldı */}

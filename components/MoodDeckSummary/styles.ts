@@ -1,6 +1,7 @@
 import { Dimensions, StyleSheet } from 'react-native';
 
 import { Colors } from '@/constants/Colors';
+import { withAlpha } from '@/constants/gameThemes';
 import { Theme } from '@/constants/theme';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -87,14 +88,6 @@ export default StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
-  heroBadge: {
-    color: Colors.accentPrimary,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-  },
   heroTitle: {
     color: Colors.textWhite,
     fontSize: 18,
@@ -110,7 +103,7 @@ export default StyleSheet.create({
   heroMatchBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(232,168,56,0.12)',
+    backgroundColor: withAlpha(Colors.accentPrimary, 0.12),
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
@@ -121,6 +114,39 @@ export default StyleSheet.create({
     color: Colors.accentPrimary,
     fontSize: 13,
     fontWeight: '700',
+  },
+
+  // ── Bu aksamin filmi eylemleri ──────────────────────────────────────────────
+  pickActions: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  watchBtn: {
+    backgroundColor: Colors.accentPrimary,
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  watchBtnText: {
+    color: Colors.textOnAccent,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  whereBtn: {
+    backgroundColor: Colors.bgElevated,
+    borderRadius: Theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.borderSubtle,
+  },
+  whereBtnText: {
+    color: Colors.textWhite,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  providersWrap: {
+    paddingTop: 4,
   },
 
   // ── Liked poster strip ──────────────────────────────────────────────────────

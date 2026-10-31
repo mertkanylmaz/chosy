@@ -1,0 +1,85 @@
+{
+  "mood_id": "ft_tr_gerilim",
+  "text": "Sürükleyici bir gerilim, sonu şaşırtsın",
+  "ms": 4340,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.25,
+      "sadness": 0.15,
+      "fear": 0.75,
+      "anger": 0.35,
+      "surprise": 0.85,
+      "disgust": 0.2,
+      "trust": 0.3,
+      "anticipation": 0.9
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": false,
+    "profile_name": "Sürprizli Gerilim",
+    "profile_description": "Intense, edge-of-seat thriller experience with an unexpected twist ending that challenges expectations and leaves room for interpretation.",
+    "search_keywords": [
+      "thriller",
+      "suspense",
+      "plot twist",
+      "mystery",
+      "unexpected ending",
+      "tension",
+      "psychological"
+    ],
+    "search_id": "8660a12b-185f-4af1-a123-ee97d9373bab",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.25,
+      "sadness": 0.15,
+      "anger": 0.35,
+      "fear": 0.75,
+      "surprise": 0.85,
+      "disgust": 0.2,
+      "anticipation": 0.9,
+      "trust": 0.3
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": false
+  },
+  "search_id": "8660a12b-185f-4af1-a123-ee97d9373bab",
+  "search_keywords": [
+    "thriller",
+    "suspense",
+    "plot twist",
+    "mystery",
+    "unexpected ending",
+    "tension",
+    "psychological"
+  ],
+  "limit": null,
+  "remaining": null
+}

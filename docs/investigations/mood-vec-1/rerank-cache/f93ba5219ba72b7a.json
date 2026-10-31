@@ -1,0 +1,22 @@
+{
+  "payload_hash": "f93ba5219ba72b7a",
+  "cached": false,
+  "candidates_sent": 20,
+  "overview_max": 100,
+  "count": 8,
+  "ms": 2458,
+  "http_status": 200,
+  "reranked_ids": [
+    "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+    "7d44ef5e-9917-4369-87a8-bca4b10772d7",
+    "90b19326-b1f7-491f-a4ac-c8fd387addad",
+    "426992d1-4970-4076-ac0f-614085908df3",
+    "c69ae96b-e7dc-4949-8eeb-fe0f875be784",
+    "6b7a96ee-7101-42b8-95b5-833951e368a2",
+    "043911e2-307b-4092-b4df-8f062b5df800",
+    "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false
+}

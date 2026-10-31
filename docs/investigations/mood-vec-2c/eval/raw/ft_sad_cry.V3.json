@@ -1,0 +1,890 @@
+{
+  "mood_id": "ft_sad_cry",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "dc7bd17f-80a2-4f43-bad3-17657e4ce894",
+        "tmdb_id": 284293,
+        "title": "Still Alice",
+        "year": 2014,
+        "overview": "Alice Howland, happily married with three grown children, is a renowned linguistics professor who starts to forget words. When she receives a devastating diagnosis, Alice and her family find their bonds tested.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.467,
+        "director": "Wash Westmoreland",
+        "similarity": 0.856378879313478,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.83418940540619,
+        "curation_tier": "extended",
+        "match_reason": "drug dealer, high school, florida",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "dfcd6ef3-d036-4569-a409-0f62945482b9",
+        "tmdb_id": 499,
+        "title": "Cléo from 5 to 7",
+        "year": 1962,
+        "overview": "Agnès Varda eloquently captures Paris in the sixties with this real-time portrait of a singer set adrift in the city as she awaits test results of a biopsy. A chronicle of the minutes of one woman’s life, Cléo from 5 to 7 is a spirited mix of vivid vérité and melodrama, featuring a score by Michel Legrand and cameos by Jean-Luc Godard and Anna Karina.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Agnès Varda",
+        "similarity": 0.786039474672522,
+        "curation_tier": "extended",
+        "match_reason": "individual, paris, france, singer",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "9d3ae03e-99de-482c-b560-29558cd76c1f",
+        "tmdb_id": 424,
+        "title": "Schindler's List",
+        "year": 1993,
+        "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 195,
+        "vote_average": 8.569,
+        "director": "Steven Spielberg",
+        "similarity": 0.727258063941896,
+        "curation_tier": "core",
+        "match_reason": "factory, hero, nazi",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "18035914-aa4e-4880-8213-703a2373e208",
+        "tmdb_id": 122906,
+        "title": "About Time",
+        "year": 2013,
+        "overview": "The night after another unsatisfactory New Year's party, Tim's father reveals to him that the men in their family have the ability to travel through time. They can't change history, but they can change what happens and has happened in their own lives. Thus begins the start of a lesson in learning to appreciate life itself as it is, as it comes, and most importantly, the people living alongside us.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Fantasy"
+        ],
+        "runtime": 123,
+        "vote_average": 7.906,
+        "director": "Richard Curtis",
+        "similarity": 0.709015190709903,
+        "curation_tier": "core",
+        "match_reason": "london, england, soulmates, parent child relationship",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "009e8450-e186-4e16-99c4-506fd981cda3",
+        "tmdb_id": 334541,
+        "title": "Manchester by the Sea",
+        "year": 2016,
+        "overview": "After his older brother passes away, Lee Chandler is forced to return home to care for his 16-year-old nephew. There he is compelled to deal with a tragic past that separated him from his family and the community where he was born and raised.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 138,
+        "vote_average": 7.553,
+        "director": "Kenneth Lonergan",
+        "similarity": 0.664198263741117,
+        "curation_tier": "core",
+        "match_reason": "funeral, boston, massachusetts, brother",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "fe874575-d0b5-4d33-b4b9-0eae60119f10",
+        "tmdb_id": 12477,
+        "title": "Grave of the Fireflies",
+        "year": 1988,
+        "overview": "In the final months of World War II, 14-year-old Seita and his sister Setsuko are orphaned when their mother is killed during an air raid in Kobe, Japan. After a falling out with their aunt, they move into an abandoned bomb shelter. With no surviving relatives and their emergency rations depleted, Seita and Setsuko struggle to survive.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "War"
+        ],
+        "runtime": 89,
+        "vote_average": 8.441,
+        "director": "Isao Takahata",
+        "similarity": 0.555239672749716,
+        "curation_tier": "core",
+        "match_reason": "sibling relationship, hunger, world war ii",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f806fed3-4e69-47d7-a2bf-f1d75d16420f",
+        "tmdb_id": 565310,
+        "title": "The Farewell",
+        "year": 2019,
+        "overview": "A headstrong Chinese-American woman returns to China when her beloved grandmother is given a terminal diagnosis. Billi struggles with her family's decision to keep grandma in the dark about her own illness as they all stage an impromptu wedding to see grandma one last time.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 100,
+        "vote_average": 7.417,
+        "director": "Lulu Wang",
+        "similarity": 0.510719931381849,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "d468e576-e349-4296-bad1-a1ede1f84132",
+        "tmdb_id": 600354,
+        "title": "The Father",
+        "year": 2020,
+        "overview": "A man refuses all assistance from his daughter as he ages and, as he tries to make sense of his changing circumstances, he begins to doubt his loved ones, his own mind and even the fabric of his reality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 8.093,
+        "director": "Florian Zeller",
+        "similarity": 0.448020120370436,
+        "curation_tier": "core",
+        "match_reason": "london, england, loss of sense of reality, flat",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "7d225503-76ce-43cc-985e-2cdaff0d1e08",
+        "tmdb_id": 641,
+        "title": "Requiem for a Dream",
+        "year": 2000,
+        "overview": "The drug-induced utopias of four Coney Island residents are shattered when their addictions run deep.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 102,
+        "vote_average": 8.012,
+        "director": "Darren Aronofsky",
+        "similarity": 0.434640560672055,
+        "curation_tier": "core",
+        "match_reason": "isolation, drug addiction, hallucination",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 1.07745858700276,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 1.04484307170082,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 1.02648675426731,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 1.01820544527461,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 0.994508911993629,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.99074188441478,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.987768369637607,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f187fd0b-0cc6-4686-bd81-be4cf9c47ad1",
+        "tmdb_id": 12498,
+        "title": "Sling Blade",
+        "year": 1996,
+        "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.544,
+        "director": "Billy Bob Thornton",
+        "similarity": 0.976992330673372,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "918e15f9-28d5-47b2-bf92-e424dc74690e",
+        "tmdb_id": 378064,
+        "title": "A Silent Voice: The Movie",
+        "year": 2016,
+        "overview": "Shouya Ishida starts bullying the new girl in class, Shouko Nishimiya, because she is deaf. But as the teasing continues, the rest of the class starts to turn on Shouya for his lack of compassion. When they leave elementary school, Shouko and Shouya do not speak to each other again... until an older, wiser Shouya, tormented by his past behaviour, decides he must see Shouko once more. He wants to atone for his sins, but is it already too late...?",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 129,
+        "vote_average": 8.386,
+        "director": "Naoko Yamada",
+        "similarity": 0.975212390307621,
+        "curation_tier": "core",
+        "match_reason": "high school, friendship, suicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.895339788644246,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "acd79642-a022-44e9-a346-e43a7aea330e",
+        "tmdb_id": 9343,
+        "title": "Fitzcarraldo",
+        "year": 1982,
+        "overview": "Fitzcarraldo is a dreamer who plans to build an opera house in Iquitos, in the Peruvian Amazon, so, in order to finance his project, he embarks on an epic adventure to collect rubber, a very profitable product, in a remote and unexplored region of the rainforest.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.623,
+        "director": "Werner Herzog",
+        "similarity": 0.888675374600634,
+        "curation_tier": "extended",
+        "match_reason": "peru, plantation, ambition",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "613dce9d-5d27-4675-9ee3-17494477ffe7",
+        "tmdb_id": 795514,
+        "title": "The Fallout",
+        "year": 2021,
+        "overview": "In the wake of a school tragedy, Vada, Mia and Quinton form a unique and dynamic bond as they navigate the never linear, often confusing journey to heal in a world that feels forever changed.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.514,
+        "director": "Megan Park",
+        "similarity": 0.864091286368881,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4c2f8484-cd01-4c02-900c-5e63881abb39",
+        "tmdb_id": 974036,
+        "title": "Ordinary Angels",
+        "year": 2024,
+        "overview": "Inspired by the incredible true story of a hairdresser who single-handedly rallies an entire community to help a widowed father save the life of his critically ill young daughter.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.67,
+        "director": "Jon Gunn",
+        "similarity": 0.861917123312648,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "158a5e5d-7888-44ba-b343-8e95fd931666",
+        "tmdb_id": 5708,
+        "title": "Control",
+        "year": 2007,
+        "overview": "The story of Joy Division’s lead singer Ian Curtis, from his schoolboy days in 1973 to his suicide on the eve of the band's first American tour in 1980.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.515,
+        "director": "Anton Corbijn",
+        "similarity": 0.861269116480124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "889d8584-ae01-49dc-94cb-fdd01c697a1a",
+        "tmdb_id": 11978,
+        "title": "Men of Honor",
+        "year": 2000,
+        "overview": "Against formidable odds -- and an old-school diving instructor embittered by the U.S. Navy's new, less prejudicial policies -- Carl Brashear sets his sights on becoming the Navy's first African-American master diver in this uplifting true story. Their relationship starts out on the rocks, but fate ultimately conspires to bring the men together into a setting of mutual respect, triumph and honor.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.48,
+        "director": "George Tillman Jr.",
+        "similarity": 0.861269116480124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "28ccb5e3-c702-4cf2-8363-9441a62b4c2e",
+        "tmdb_id": 2009,
+        "title": "4 Months, 3 Weeks and 2 Days",
+        "year": 2007,
+        "overview": "Two college roommates have 24 hours to make the ultimate choice as they finalize arrangements for a black market abortion.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.5,
+        "director": "Cristian Mungiu",
+        "similarity": 0.861269116480124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1dff175f-021f-4861-93e4-3aaaa7fbfc33",
+        "tmdb_id": 33997,
+        "title": "Desert Flower",
+        "year": 2009,
+        "overview": "The autobiography of a Somalian nomad who was sold in marriage at 13, fled from Africa a while later to become finally an American supermodel and is now at the age of 38, the UN spokeswoman against female genital mutilation.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.582,
+        "director": "Sherry Hormann",
+        "similarity": 0.861269116480124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "360ebec4-e484-4a7b-90f5-650c9ae97ea0",
+        "tmdb_id": 615,
+        "title": "The Passion of the Christ",
+        "year": 2004,
+        "overview": "A graphic portrayal of the last twelve hours of Jesus of Nazareth's life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.523,
+        "director": "Mel Gibson",
+        "similarity": 0.861269116480124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "83709df2-318b-4e6b-9123-4c64c5c328a5",
+        "tmdb_id": 81401,
+        "title": "The Turin Horse",
+        "year": 2011,
+        "overview": "A monumental windstorm and an abused horse's refusal to work or eat signal the beginning of the end for a poor farmer and his daughter.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 155,
+        "vote_average": 7.584,
+        "director": "Béla Tarr",
+        "similarity": 0.86076149075019,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "60f37326-65f0-44f6-b215-b72cbf26cd01",
+        "tmdb_id": 312221,
+        "title": "Creed",
+        "year": 2015,
+        "overview": "The former World Heavyweight Champion Rocky Balboa serves as a trainer and mentor to Adonis Johnson, the son of his late friend and former rival Apollo Creed.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.404,
+        "director": "Ryan Coogler",
+        "similarity": 0.86076149075019,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "58103526-9821-49a1-b62f-945eae0d7e1e",
+        "tmdb_id": 292011,
+        "title": "Richard Jewell",
+        "year": 2019,
+        "overview": "Richard Jewell thinks quick, works fast, and saves hundreds, perhaps thousands, of lives after a domestic terrorist plants several pipe bombs and they explode during a concert, only to be falsely suspected of the crime by sloppy FBI work and sensational media coverage.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 131,
+        "vote_average": 7.417,
+        "director": "Clint Eastwood",
+        "similarity": 0.859679720733929,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "04061131-d663-4abb-8102-e3967f556bfe",
+        "tmdb_id": 285700,
+        "title": "The Fool",
+        "year": 2014,
+        "overview": "The Fool is a movie about a simple plumber. An honest man, he is up against an entire system of corrupted bureaucrats. At stake are the lives of 800 inhabitants of an old dorm that is at risk of collapsing within the span of the night.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.799,
+        "director": "Yury Bykov",
+        "similarity": 0.859500140498511,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "76203667-9cc3-45e2-aeb7-87b95575c81f",
+        "tmdb_id": 203833,
+        "title": "The Book Thief",
+        "year": 2013,
+        "overview": "While subjected to the horrors of WWII Germany, young Liesel finds solace by stealing books and sharing them with others. Under the stairs in her home, a Jewish refugee is being sheltered by her adoptive parents.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 131,
+        "vote_average": 7.488,
+        "director": "Brian Percival",
+        "similarity": 0.859500140498511,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a8e3c9f8-345c-4ce9-9b93-8c3563d59f9c",
+        "tmdb_id": 1523,
+        "title": "The Last King of Scotland",
+        "year": 2006,
+        "overview": "Young Scottish doctor, Nicholas Garrigan decides it's time for an adventure after he finishes his formal education, so he decides to try his luck in Uganda, and arrives during the downfall of President Obote. General Idi Amin comes to power and asks Garrigan to become his personal doctor.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 123,
+        "vote_average": 7.415,
+        "director": "Kevin Macdonald",
+        "similarity": 0.858955956919782,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "78942796-d7f9-4ee5-a47f-27f8f8285cd0",
+        "tmdb_id": 774531,
+        "title": "Young Woman and the Sea",
+        "year": 2024,
+        "overview": "This is the extraordinary true story of Trudy Ederle, the first woman to successfully swim the English Channel. Through the steadfast support of her older sister and supportive trainers, she overcame adversity and the animosity of a patriarchal society to rise through the ranks of the Olympic swimming team and complete the 21-mile trek from France to England.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.863,
+        "director": "Joachim Rønning",
+        "similarity": 0.858430333078197,
+        "curation_tier": "extended",
+        "match_reason": "english channel, biography, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.531703040695084,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.502248134160527,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.494974244617302,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.490246394153467,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.489237936186577,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 565,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 565,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Manchester by the Sea",
+          "year": 2016
+        },
+        {
+          "title": "The Farewell",
+          "year": 2019
+        },
+        {
+          "title": "Moonlight",
+          "year": 2016
+        },
+        {
+          "title": "Schindler's List",
+          "year": 1993
+        },
+        {
+          "title": "About Time",
+          "year": 2013
+        },
+        {
+          "title": "Grave of the Fireflies",
+          "year": 1988
+        },
+        {
+          "title": "The Father",
+          "year": 2020
+        },
+        {
+          "title": "Cleo from 5 to 7",
+          "year": 1962
+        },
+        {
+          "title": "Requiem for a Dream",
+          "year": 2000
+        },
+        {
+          "title": "Still Alice",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "a9e841ce28df47fa",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4673,
+    "http_status": 200,
+    "reranked_ids": [
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "009e8450-e186-4e16-99c4-506fd981cda3",
+      "c63a51f3-231b-4712-a1b1-ea41844557a8",
+      "fe874575-d0b5-4d33-b4b9-0eae60119f10"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "9d3ae03e-99de-482c-b560-29558cd76c1f": "Historically devastating true story of genocide with profound emotional weight and moral devastation.",
+      "009e8450-e186-4e16-99c4-506fd981cda3": "Gut-wrenching portrait of grief and family loss that builds to devastating emotional catharsis.",
+      "c63a51f3-231b-4712-a1b1-ea41844557a8": "Tender, heartbreaking coming-of-age narrative about identity struggle and emotional vulnerability across three pivotal moments.",
+      "fe874575-d0b5-4d33-b4b9-0eae60119f10": "Animated wartime tragedy about orphaned children facing unspeakable loss and inevitable death with devastating impact."
+    }
+  }
+}

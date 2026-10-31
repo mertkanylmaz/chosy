@@ -1,0 +1,24 @@
+{
+  "payload_hash": "9d35f433fda15337",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3791,
+  "http_status": 200,
+  "reranked_ids": [
+    "b1e6b75b-b955-44fe-ac0b-c85eaea6c858",
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+    "24c35e04-5730-4562-aa3d-3281d27254bf",
+    "e17982bc-5158-498e-bdb5-8352ff8a65b8"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "b1e6b75b-b955-44fe-ac0b-c85eaea6c858": "A romantic tale of two artists supporting each other's dreams with warmth and genuine connection.",
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Intimate conversation-driven romance where two strangers share a tender evening in Vienna.",
+    "24c35e04-5730-4562-aa3d-3281d27254bf": "Nine years later, Jesse and Celine's enduring love story continues with emotional depth and tenderness.",
+    "e17982bc-5158-498e-bdb5-8352ff8a65b8": "Epic, heartfelt love story where devotion transcends memory loss and time."
+  }
+}

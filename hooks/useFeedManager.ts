@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { Image } from 'expo-image';
+import * as Sentry from '@sentry/react-native';
 
 import { FilmFilters, TasteProfile } from '@/types';
 import { Film } from '@/types/film';
@@ -18,7 +19,7 @@ import { recordActivity } from '@/services/gamification';
 import { touchActivity } from '@/services/pushNotifications';
 import { consumePendingSearchId, getSearchModeState, peekPendingSearchId } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
-import { getRecommendations, getSurprisePicks } from '@/services/recommendations';
+import { getRecommendations, getSurprisePicks, type RecommendationOrigin } from '@/services/recommendations';
 import { consumePreloadedRecommendations } from '@/services/recommendationPreload';
 import { queueUserVectorUpdate } from '@/services/userProfile';
 import { getAppUserId, getWatchlist, getWatchedFilmIds } from '@/services/watchlist';
@@ -125,6 +126,11 @@ function markSurpriseCards(films: Film[], startIndex: number): Film[] {
     }
     return film;
   });
+}
+
+/** `getRecommendations`ın RPC zinciri tükenince fırlattığı hata (recommendations.ts). */
+function isRpcChainFailure(err: unknown): boolean {
+  return err instanceof Error && (err as Error & { code?: string }).code === 'RPC_CHAIN_FAILED';
 }
 
 /**
@@ -253,10 +259,13 @@ export interface FeedManager {
  *
  * @param moodProfile - AI tarafından ayrıştırılmış 12 boyutlu tat profili; null ise yükleme beklenir
  * @param filters     - Kullanıcının seçtiği isteğe bağlı filtreler
+ * @param prefetchCap - Poster önceden yüklemenin (dışlayıcı) üst indeksi. Kilitli destede
+ *                      gizli filmlerin posteri indirilmesin diye verilir; yoksa sınırsız.
  */
 export function useFeedManager(
   moodProfile: TasteProfile | null,
   filters: FilmFilters,
+  prefetchCap?: number,
 ): FeedManager {
   const [state, dispatch] = useReducer(feedReducer, initialState);
   const [deckReranked, setDeckReranked] = useState(false);
@@ -270,6 +279,8 @@ export function useFeedManager(
    */
   const profileRef = useRef(moodProfile);
   const filtersRef = useRef(filters);
+  /** `resetFeed` sonrası ilk yüklemenin kaynağı (`mood_relaxation_timing.origin`) */
+  const nextOriginRef = useRef<RecommendationOrigin | null>(null);
 
   // searchId artık module-level store'dan okunuyor (consumePendingSearchId).
   // React state/ref/effect zinciri kaldırıldı — race condition fix.
@@ -356,6 +367,12 @@ export function useFeedManager(
     // Set ile duplicate'leri temizle — Supabase max 500 ID kabul eder
     const allExcludeIds = [...new Set([...preExistingWatchlistRef.current, ...excludeIds])];
 
+    // Çağrı kaynağı: retry > reset sonrası ilk yükleme > normal deste yüklemesi
+    const origin: RecommendationOrigin = callSource === 'retry'
+      ? 'retry'
+      : (loadedCount === 0 && nextOriginRef.current) || 'discover';
+    if (loadedCount === 0) nextOriginRef.current = null;
+
     if (__DEV__) {
       // eslint-disable-next-line no-console
       console.log('[useFeedManager] Next batch loading... profile:', profileRef.current ? 'set' : 'null');
@@ -411,6 +428,8 @@ export function useFeedManager(
             allExcludeIds,
             filtersRef.current,
             null, // searchId — surprise fallback, logging unnecessary
+            false,
+            origin,
           );
           dispatch({ type: 'ADD_FILMS', films: fallback.films });
         }
@@ -461,12 +480,17 @@ export function useFeedManager(
               setDeckReranked(result.reranked === true);
               dispatch({ type: 'ADD_FILMS', films: result.films });
               return;
-            } catch {
-              // Preload basarisiz — asagida normal fetch devam edecek
-              if (__DEV__) {
-                // eslint-disable-next-line no-console
-                console.warn('[useFeedManager] Preload failed, falling back to normal fetch');
-              }
+            } catch (preloadErr) {
+              // RPC zinciri tükendi: aynı zinciri ikinci kez koşturmak anlamsız —
+              // dış catch hata durumunu + "Tekrar dene"yi gösterir (Sentry kaynakta yazıldı).
+              if (isRpcChainFailure(preloadErr)) throw preloadErr;
+              // Diğer preload hataları: normal fetch aşağıda devam eder.
+              Sentry.addBreadcrumb({
+                category: 'feed_preload',
+                level: 'warning',
+                message: 'preload basarisiz, normal fetch deneniyor',
+                data: { error: preloadErr instanceof Error ? preloadErr.message : String(preloadErr) },
+              });
             }
           }
         }
@@ -496,6 +520,7 @@ export function useFeedManager(
           filtersRef.current,
           effectiveSearchId,
           loadedCount === 0, // isFirstBatch — LLM reranker sadece ilk batch'te
+          origin,
         );
 
         if (result.films.length === 0 && loadedCount === 0) {
@@ -570,7 +595,7 @@ export function useFeedManager(
     // currentIndex dahil: ilk kart (index 0) da önceden yüklenir
     const upcoming = state.films.slice(
       state.currentIndex,
-      state.currentIndex + 3,
+      Math.min(state.currentIndex + 3, prefetchCap ?? Number.POSITIVE_INFINITY),
     );
     upcoming.forEach((f) => {
       // Kartla AYNI fonksiyon ve boyut (SwipeableCard) — aksi halde önbellek ıskalar.
@@ -579,7 +604,7 @@ export function useFeedManager(
         Image.prefetch(uri, 'memory-disk');
       }
     });
-  }, [state.currentIndex, state.films]);
+  }, [state.currentIndex, state.films, prefetchCap]);
 
   // ─── Swipe Handler ───────────────────────────────────────────────────────
 
@@ -624,6 +649,7 @@ export function useFeedManager(
     (newProfile: TasteProfile, newFilters?: FilmFilters) => {
       profileRef.current = newProfile;
       if (newFilters) filtersRef.current = newFilters;
+      nextOriginRef.current = 'filter_reset';
       isLoadingRef.current = false;
       dispatch({ type: 'RESET', sessionId: generateSessionId() });
     },

@@ -26,7 +26,22 @@ export type TriggerType =
   | 'roulette_limit'
   | 'lifetime_soldout'
   /** K-46: 2. kaçırılan gün → arşiv. v1'in TEK gauntlet tetikleyicisi. */
-  | 'missed_day_archive';
+  | 'missed_day_archive'
+  /** MONEY-1C: Pro Mode teklifi (ücretsiz arama sonrası / hak bitince). */
+  | 'mood_offer';
+
+/**
+ * MONEY-1C: teklifin açıldığı giriş noktası. `paywall_events.trigger_context.entry_point`
+ * ve PostHog olaylarında aynı değer taşınır.
+ */
+/** `profile_upgrade` paywall'ının girişi (analitik `source`). */
+export type ProfileUpgradeEntry = 'profile_tab' | 'pro_mode_locked';
+
+export type MoodOfferEntry =
+  | 'champion_card'
+  | 'spotlight_card'
+  | 'quota_exhausted'
+  | 'lock_card';
 
 /** Paywall gosterimini tetikleyen olay */
 export type TriggerEvent =
@@ -36,7 +51,8 @@ export type TriggerEvent =
   | { type: 'mood_history_tap' }
   | { type: 'streaming_link_tap'; filmId: number }
   | { type: 'share_card_generated'; count: number }
-  | { type: 'profile_upgrade' }
+  /** `entry`: paywall'in GERCEK girisi (analitik `source`); yoksa 'profile_upgrade'. */
+  | { type: 'profile_upgrade'; entry?: ProfileUpgradeEntry }
   | { type: 'roulette_limit' }
   | { type: 'lifetime_soldout' }
   /**
@@ -44,7 +60,9 @@ export type TriggerEvent =
    * saymaz. Uygunluk kararı da sunucuda: `archiveEligible` false ise bu olay
    * hiç gönderilmez.
    */
-  | { type: 'missed_day_archive'; missedDayCount: number };
+  | { type: 'missed_day_archive'; missedDayCount: number }
+  /** MONEY-1C. `searchId`: teklifi doğuran aramanın `search_id`'si (varsa). */
+  | { type: 'mood_offer'; entry: MoodOfferEntry; searchId?: string | null };
 
 // ─── Paywall Variants ────────────────────────────────────────────────────────
 
@@ -55,7 +73,8 @@ export type PaywallVariantName =
   | 'streaming_link'
   | 'profile_upgrade'
   | 'lifetime_soldout'
-  | 'missed_day_archive';
+  | 'missed_day_archive'
+  | 'mood_offer';
 
 /** Paywall gosterim kararinin sonucu */
 export interface PaywallVariant {

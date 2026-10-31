@@ -22,6 +22,7 @@
     "tests/game-system",
     "tests/games",
     "tests/identity",
+    "tests/moodoffer",
     "tests/navigation",
     "tests/net",
     "tests/gauntlet",

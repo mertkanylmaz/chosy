@@ -68,7 +68,12 @@ export type PurchaseErrorKind =
    * İşlem BAŞLATILMADI — anonim RC kimliğinde satın alma/restore yapılmaz.
    * Retry anlamlı ("biraz bekle, tekrar dene").
    */
-  | 'not_ready';
+  | 'not_ready'
+  /**
+   * Apple: bu urun bu hesapta ZATEN satin alinmis (PRODUCT_ALREADY_PURCHASED). Odeme alinmaz;
+   * dogru cevap "tekrar dene" degil RESTORE'dur (abonelik zaten var).
+   */
+  | 'already_purchased';
 
 /**
  * RC hatasını PurchaseErrorKind'a çevirir.
@@ -85,6 +90,8 @@ function classifyPurchaseError(err: unknown): PurchaseErrorKind {
       return 'network';
     case PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR:
       return 'entitlement_pending';
+    case PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR:
+      return 'already_purchased';
     default:
       return 'sdk_error';
   }

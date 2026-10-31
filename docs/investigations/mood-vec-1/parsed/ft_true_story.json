@@ -1,0 +1,87 @@
+{
+  "mood_id": "ft_true_story",
+  "text": "Inspiring true story",
+  "ms": 4139,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.2,
+      "fear": 0.15,
+      "anger": 0.1,
+      "surprise": 0.5,
+      "disgust": 0.05,
+      "trust": 0.8,
+      "anticipation": 0.75
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Triumphant Spirit",
+    "profile_description": "You seek an uplifting true story that celebrates human resilience, personal transformation, and real-world achievement to feel empowered and reminded of possibility.",
+    "search_keywords": [
+      "true story",
+      "biography",
+      "overcoming adversity",
+      "achievement",
+      "real events",
+      "personal triumph",
+      "human resilience",
+      "inspiration"
+    ],
+    "search_id": "e0bc59a5-b5f1-4e87-922c-4ddb76166cf5",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.2,
+      "anger": 0.1,
+      "fear": 0.15,
+      "surprise": 0.5,
+      "disgust": 0.05,
+      "anticipation": 0.75,
+      "trust": 0.8
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e0bc59a5-b5f1-4e87-922c-4ddb76166cf5",
+  "search_keywords": [
+    "true story",
+    "biography",
+    "overcoming adversity",
+    "achievement",
+    "real events",
+    "personal triumph",
+    "human resilience",
+    "inspiration"
+  ],
+  "limit": null,
+  "remaining": null
+}

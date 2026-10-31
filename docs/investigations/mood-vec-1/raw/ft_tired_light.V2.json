@@ -1,0 +1,592 @@
+{
+  "mood_id": "ft_tired_light",
+  "variant": "V2",
+  "rpc": {
+    "rows": [
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.97330423841681,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.935434530972691,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence"
+      },
+      {
+        "id": "4b603686-2cce-4f1f-8138-e277e4f139d0",
+        "tmdb_id": 652837,
+        "title": "Josee, the Tiger and the Fish",
+        "year": 2020,
+        "overview": "With dreams of diving abroad, Tsuneo gets a job assisting Josee, an artist whose imagination takes her far beyond her wheelchair. But when the tide turns against them, they push each other to places they never thought possible, and inspire a love fit for a storybook.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 98,
+        "vote_average": 8.267,
+        "director": "Kotaro Tamura",
+        "similarity": 0.833764691365947,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comfort, slice of life"
+      },
+      {
+        "id": "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+        "tmdb_id": 348678,
+        "title": "A Man Called Ove",
+        "year": 2015,
+        "overview": "Despite being deposed as president of his condominium association, grumpy 59-year-old Ove continues to watch over his neighbourhood with an iron fist. When pregnant Parvaneh and her family move into the terraced house opposite Ove and she accidentally back into Ove’s mailbox, it sets off a series of unexpected changes in his life.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.605,
+        "director": "Hannes Holm",
+        "similarity": 0.927643243980493,
+        "curation_tier": "core",
+        "match_reason": "friendship, dark comedy, black humor"
+      },
+      {
+        "id": "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+        "tmdb_id": 8392,
+        "title": "My Neighbor Totoro",
+        "year": 1988,
+        "overview": "Two sisters move to the country with their father in order to be closer to their hospitalized mother, and discover the surrounding trees are inhabited by Totoros, magical spirits of the forest. When the youngest runs away from home, the older sister seeks help from the spirits to find her.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 8.061,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.926954260255634,
+        "curation_tier": "core",
+        "match_reason": "mother, sibling relationship, village"
+      },
+      {
+        "id": "d296d000-6276-4650-8e6b-bd28cbf587a5",
+        "tmdb_id": 404,
+        "title": "The Straight Story",
+        "year": 1999,
+        "overview": "Retired farmer and widower Alvin Straight learns one day that his distant brother Lyle has suffered a stroke and may not recover. Alvin is determined to make things right with Lyle while he still can, but his brother lives in Wisconsin, while Alvin is stuck in Iowa with no car and no driver's license. He then has the idea of making the trip on his old lawnmower, thus beginning a picturesque and at times deeply spiritual odyssey.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.7,
+        "director": "David Lynch",
+        "similarity": 0.916523817746057,
+        "curation_tier": "core",
+        "match_reason": "sibling relationship, mississippi river, wisconsin"
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.812258875139398,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide"
+      },
+      {
+        "id": "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+        "tmdb_id": 976893,
+        "title": "Perfect Days",
+        "year": 2023,
+        "overview": "Hirayama is content with his life as a toilet cleaner in Tokyo. Outside of his structured routine, he cherishes music on cassette tapes, books, and taking photos of trees. Through unexpected encounters, he reflects on finding beauty in the world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.795,
+        "director": "Wim Wenders",
+        "similarity": 0.898839688440882,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "a3f257ae-d7b2-40eb-8138-1ed1c4262ca9",
+        "tmdb_id": 1330021,
+        "title": "Remarkably Bright Creatures",
+        "year": 2026,
+        "overview": "Through unlikely bonds formed during night shifts at a local aquarium, Tova, an elderly widow, learns of a life-changing discovery that may bring her joy and wonder once again.",
+        "genres": [
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 114,
+        "vote_average": 8.517,
+        "director": "Olivia Newman",
+        "similarity": 0.803864277546855,
+        "curation_tier": "extended",
+        "match_reason": "aquarium, octopus, british columbia"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.882343392936562,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "36273fde-6384-4581-9658-22b0de69ab51",
+        "tmdb_id": 76696,
+        "title": "Sidewalls",
+        "year": 2011,
+        "overview": "Martin is a neurotic web designer taking baby steps out of the isolation of his one-room apartment and his virtual reality. Mariana is an artist fresh out of a long relationship. They are perfect for each other, live on the same street, in opposite buildings, but they never meet. Can the movement of a modern city of three million people bring them together?",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.491,
+        "director": "Gustavo Taretto",
+        "similarity": 0.79606683657417,
+        "curation_tier": "extended",
+        "match_reason": "dogsitter, architecture, apartment building"
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.795453908080573,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service"
+      },
+      {
+        "id": "d771d0ec-47cd-4077-9d2f-8f16cabc39a8",
+        "tmdb_id": 315846,
+        "title": "Our Little Sister",
+        "year": 2015,
+        "overview": "After the death of their estranged father, 3 adult sisters invite their teenaged half-sister to live with them.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.573,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 0.873540284033239,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "0d664fbf-a7ad-4432-82c3-5b5913832360",
+        "tmdb_id": 281957,
+        "title": "The Revenant",
+        "year": 2015,
+        "overview": "In the 1820s, a frontiersman, Hugh Glass, sets out on a path of vengeance against those who left him for dead after a bear mauling.",
+        "genres": [
+          "Western",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.541,
+        "director": "Alejandro G. Iñárritu",
+        "similarity": 0.785071639136082,
+        "curation_tier": "extended",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.86168189340048,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute"
+      },
+      {
+        "id": "0d5d066d-db6c-41fc-93a8-3e914e42e68d",
+        "tmdb_id": 9023,
+        "title": "Spirit: Stallion of the Cimarron",
+        "year": 2002,
+        "overview": "A captured mustang remains determined to return to his herd no matter what.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 83,
+        "vote_average": 7.69,
+        "director": "Kelly Asbury",
+        "similarity": 0.85574529635192,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+        "tmdb_id": 152601,
+        "title": "Her",
+        "year": 2013,
+        "overview": "In the not so distant future, Theodore, a lonely writer, purchases a newly developed operating system designed to meet the user's every need. To Theodore's surprise, a romantic relationship develops between him and his operating system. This unconventional love story blends science fiction and romance in a sweet tale that explores the nature of love and the ways that technology isolates and connects us all.",
+        "genres": [
+          "Romance",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.838,
+        "director": "Spike Jonze",
+        "similarity": 0.855357027022735,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 0.84592028671109,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, island"
+      },
+      {
+        "id": "4e034c19-a1c9-45e2-a1a1-d022a971f6f2",
+        "tmdb_id": 10867,
+        "title": "Malena",
+        "year": 2000,
+        "overview": "12-year-old Renato experiences three significant events on the same day: the beginning of the Second World War, getting a bike, and witnessing the arrival of the gorgeous Malèna. Through his eyes, we see the curse of beauty and loneliness of Malena, whose husband is presumed dead, and, through his soul, we see his love for her.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.468,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.842368857649301,
+        "curation_tier": "core",
+        "match_reason": "prostitute, jealousy, sicily, italy"
+      },
+      {
+        "id": "d746a9c0-bc0c-43d8-b079-afce42a8b38b",
+        "tmdb_id": 1022787,
+        "title": "Elio",
+        "year": 2025,
+        "overview": "Elio, a space fanatic with an active imagination, finds himself on a cosmic misadventure where he must form new bonds with eccentric alien lifeforms, navigate a crisis of intergalactic proportions and somehow discover who he is truly meant to be.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 6.907,
+        "director": "Domee Shi",
+        "similarity": 0.767034618283603,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.839795208400712,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian"
+      },
+      {
+        "id": "f995a0e0-ca65-4036-a590-fbc15974496d",
+        "tmdb_id": 179144,
+        "title": "The Great Beauty",
+        "year": 2013,
+        "overview": "Jep Gambardella has seduced his way through the lavish nightlife of Rome for decades, but after his 65th birthday and a shock from the past, Jep looks past the nightclubs and parties to find a timeless landscape of absurd, exquisite beauty.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 142,
+        "vote_average": 7.511,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.835817560132656,
+        "curation_tier": "core",
+        "match_reason": "Matches: light-hearted"
+      },
+      {
+        "id": "b6c7a045-1ce4-4454-b6f6-945e70b2f0da",
+        "tmdb_id": 1184918,
+        "title": "The Wild Robot",
+        "year": 2024,
+        "overview": "After a shipwreck, an intelligent robot called Roz is stranded on an uninhabited island. To survive the harsh environment, Roz bonds with the island's animals and cares for an orphaned baby goose.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 102,
+        "vote_average": 8.307,
+        "director": "Chris Sanders",
+        "similarity": 0.835042970236911,
+        "curation_tier": "core",
+        "match_reason": "island, parent child relationship, robot"
+      },
+      {
+        "id": "71be062c-5a82-47fb-950f-ba0cede9169d",
+        "tmdb_id": 3175,
+        "title": "Barry Lyndon",
+        "year": 1975,
+        "overview": "An Irish rogue uses his cunning and wit to work his way up the social classes of 18th century England, transforming himself from the humble Redmond Barry into the noble Barry Lyndon.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 188,
+        "vote_average": 8,
+        "director": "Stanley Kubrick",
+        "similarity": 0.833493751407656,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, gambling, desertion"
+      },
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 0.829778434561238,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts"
+      },
+      {
+        "id": "358f5325-68c6-4e8d-ad97-fa39e0df8028",
+        "tmdb_id": 568160,
+        "title": "Weathering with You",
+        "year": 2019,
+        "overview": "The summer of his high school freshman year, Hodaka runs away from his remote island home to Tokyo, and quickly finds himself pushed to his financial and personal limits. The weather is unusually gloomy and rainy every day, as if taking its cue from his life. After many days of solitude, he finally finds work as a freelance writer for a mysterious occult magazine. Then, one day, Hodaka meets Hina on a busy street corner. This bright and strong-willed girl possesses a strange and wonderful ability: the power to stop the rain and clear the sky.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 112,
+        "vote_average": 7.978,
+        "director": "Makoto Shinkai",
+        "similarity": 0.827864667885194,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort, slice of life"
+      },
+      {
+        "id": "3926a1ff-f7e4-438b-89aa-5977ab08a575",
+        "tmdb_id": 315162,
+        "title": "Puss in Boots: The Last Wish",
+        "year": 2022,
+        "overview": "Puss in Boots discovers that his passion for adventure has taken its toll: He has burned through eight of his nine lives, leaving him with only one life left. Puss sets out on an epic journey to find the mythical Last Wish and restore his nine lives.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Fantasy",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 103,
+        "vote_average": 8.205,
+        "director": "Joel Crawford",
+        "similarity": 0.824373992678967,
+        "curation_tier": "core",
+        "match_reason": "fairy tale, sequel, talking dog"
+      },
+      {
+        "id": "29c350d9-c668-4f38-8839-441be685f82d",
+        "tmdb_id": 26371,
+        "title": "Maurice",
+        "year": 1987,
+        "overview": "After his lover rejects him, Maurice attempts to come to terms with his sexuality within the restrictiveness of Edwardian society.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 7.603,
+        "director": "James Ivory",
+        "similarity": 0.753505124650291,
+        "curation_tier": "extended",
+        "match_reason": "coming out, secret love, based on novel or book"
+      },
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 0.821096409346333,
+        "curation_tier": "core",
+        "match_reason": "countryside, based on novel or book, wild boar"
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 0.817267858083524,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 962,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 962,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comfort",
+        "slice of life",
+        "feel-good",
+        "wholesome",
+        "light-hearted",
+        "cozy"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "355512949d92803f",
+    "cached": false,
+    "candidates_sent": 20,
+    "overview_max": 100,
+    "count": 8,
+    "ms": 2507,
+    "http_status": 200,
+    "reranked_ids": [
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+      "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+      "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

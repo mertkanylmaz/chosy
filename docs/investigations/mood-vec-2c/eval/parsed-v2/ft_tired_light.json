@@ -1,0 +1,130 @@
+{
+  "mood_id": "ft_tired_light",
+  "text": "I'm exhausted after work, want something light and short",
+  "ms": 5512,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "trust": 0.8,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.3,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Tired & Cozy",
+    "profile_description": "After a draining day, this person needs a gentle, undemanding film that soothes rather than stimulates—something warm, easy to follow, and wrapped up quickly.",
+    "search_keywords": [
+      "comfort",
+      "feel-good",
+      "slice of life",
+      "lighthearted",
+      "wholesome"
+    ],
+    "genres_include": [
+      "Comedy",
+      "Family"
+    ],
+    "genres_exclude": [],
+    "max_runtime": 90,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Paddington 2",
+        "year": 2017
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "Wes Anderson's Moonrise Kingdom",
+        "year": 2012
+      },
+      {
+        "title": "A Fish Called Wanda",
+        "year": 1988
+      },
+      {
+        "title": "Spirited Away",
+        "year": 2001
+      },
+      {
+        "title": "Heathen McDougal",
+        "year": 2020
+      },
+      {
+        "title": "Legally Blonde",
+        "year": 2001
+      },
+      {
+        "title": "Chef",
+        "year": 2014
+      }
+    ],
+    "search_id": "0a7f5928-bbe0-40ea-8fd6-14bc2c67b756",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "anticipation": 0.2,
+      "trust": 0.8
+    },
+    "energy_level": 0.3,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "0a7f5928-bbe0-40ea-8fd6-14bc2c67b756",
+  "search_keywords": [
+    "comfort",
+    "feel-good",
+    "slice of life",
+    "lighthearted",
+    "wholesome"
+  ],
+  "limit": null,
+  "remaining": null
+}

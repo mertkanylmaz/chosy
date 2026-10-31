@@ -1,0 +1,24 @@
+{
+  "payload_hash": "1d6100cb751f6615",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3821,
+  "http_status": 200,
+  "reranked_ids": [
+    "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+    "1bcffd15-5987-43b5-822f-393ec803a8a0",
+    "8184a0d8-6d19-4802-97db-759b97838773",
+    "6a39f080-c163-4ca1-aa86-91f7fa6d16fb"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9faf30ea-f8fd-4b64-a008-b986d1d284d3": "Quintessential 80s adventure with archaeologist hero, exotic locations, and practical action stunts.",
+    "1bcffd15-5987-43b5-822f-393ec803a8a0": "Iconic 1985 film capturing 80s teen culture and time-travel adventure escapism perfectly.",
+    "8184a0d8-6d19-4802-97db-759b97838773": "1984 fantasy adventure with imaginative world-building and classic 80s adventure tone throughout.",
+    "6a39f080-c163-4ca1-aa86-91f7fa6d16fb": "1980 space adventure sequel with epic action, iconic setting, and adventurous spirit of the era."
+  }
+}

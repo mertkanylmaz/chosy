@@ -1,0 +1,24 @@
+{
+  "payload_hash": "a9e841ce28df47fa",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4673,
+  "http_status": 200,
+  "reranked_ids": [
+    "9d3ae03e-99de-482c-b560-29558cd76c1f",
+    "009e8450-e186-4e16-99c4-506fd981cda3",
+    "c63a51f3-231b-4712-a1b1-ea41844557a8",
+    "fe874575-d0b5-4d33-b4b9-0eae60119f10"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9d3ae03e-99de-482c-b560-29558cd76c1f": "Historically devastating true story of genocide with profound emotional weight and moral devastation.",
+    "009e8450-e186-4e16-99c4-506fd981cda3": "Gut-wrenching portrait of grief and family loss that builds to devastating emotional catharsis.",
+    "c63a51f3-231b-4712-a1b1-ea41844557a8": "Tender, heartbreaking coming-of-age narrative about identity struggle and emotional vulnerability across three pivotal moments.",
+    "fe874575-d0b5-4d33-b4b9-0eae60119f10": "Animated wartime tragedy about orphaned children facing unspeakable loss and inevitable death with devastating impact."
+  }
+}

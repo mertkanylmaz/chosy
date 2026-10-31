@@ -27,6 +27,7 @@ import type {
 } from './types';
 import { logger } from '@/utils/logger';
 import { remoteConfig } from '@/services/remoteConfig';
+import { isMoodOfferEnabledCached } from '@/services/appConfigFlags';
 import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Storage Keys ────────────────────────────────────────────────────────────
@@ -78,6 +79,8 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
       return 'lifetime_soldout';
     case 'missed_day_archive':
       return 'missed_day_archive';
+    case 'mood_offer':
+      return 'mood_offer';
     default:
       return null;
   }
@@ -90,6 +93,11 @@ function triggerToVariant(event: TriggerEvent): PaywallVariantName | null {
 const IMMEDIATE_TRIGGERS: ReadonlySet<TriggerType> = new Set([
   'profile_upgrade',
   'lifetime_soldout',
+  // MONEY-1C: teklif zamanlamasi (deste bitimi/cikisi, hak bitti) cagiran tarafta
+  // `search_id` basina bir kez kurulur (utils/moodOfferTiming). Yeni kullanicinin
+  // ilk 24 saatinde de gorunmeli — ilk sampiyon cogunlukla ilk 24 saatte —, bu yuzden
+  // 24 sa kapisi ve 24 sa cooldown'u atlanir. Bayrak kapaliysa varyant uretilmez.
+  'mood_offer',
 ]);
 
 /** Trigger icin ilgili A/B test ID'si */
@@ -119,6 +127,8 @@ function triggerToExperiment(triggerType: TriggerType): string | null {
 const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
   streaming_link: 'paywall_streaming_link',
   lifetime_soldout: 'paywall_lifetime_soldout',
+  // `mood_offer` BURADA DEGIL: karari bayrak VEYA tester listesi verir
+  // (`isMoodOfferEnabledCached`, asagida isVariantEnabled'da).
 };
 
 /**
@@ -127,6 +137,8 @@ const VARIANT_CONFIG_KEYS: Partial<Record<PaywallVariantName, string>> = {
  * SAFE_DEFAULTS'ta false → deaktif. DB'de true yapilirsa → aktif.
  */
 function isVariantEnabled(variantName: PaywallVariantName): boolean {
+  // MONEY-1C kill-switch: bayrak kapali VE kimlik tester listesinde degilse teklif HIC uretilmez.
+  if (variantName === 'mood_offer') return isMoodOfferEnabledCached();
   const configKey = VARIANT_CONFIG_KEYS[variantName];
   if (!configKey) return true;
   // remoteConfig.get strict typed — cast ile dynamic key okuma
@@ -294,6 +306,7 @@ export async function shouldShowPaywall(
 export async function recordPaywallShown(variant: PaywallVariant): Promise<void> {
   await setCooldown(variant.trigger.type);
   trackFunnel('paywall_shown', variant);
+  trackMoodOffer('mood_offer_shown', variant);
   await recordEvent(variant, 'shown');
 }
 
@@ -310,6 +323,7 @@ export async function recordPaywallDismissed(
 ): Promise<void> {
   await incrementDismissal(variant.trigger.type);
   trackFunnel('paywall_dismissed', variant, { dismiss_method: method ?? null });
+  trackMoodOffer('mood_offer_dismissed', variant, { dismiss_method: method ?? null });
   await recordEvent(variant, 'dismissed');
 }
 
@@ -341,6 +355,25 @@ function trackFunnel(
     ab_test_group: variant.abTestGroup,
     missed_day_count:
       'missedDayCount' in variant.trigger ? variant.trigger.missedDayCount : null,
+    entry_point: 'entry' in variant.trigger ? (variant.trigger.entry ?? null) : null,
+    ...extra,
+  });
+}
+
+/**
+ * MONEY-1C teklif olaylari (`mood_offer_shown` / `_cta` / `_dismissed`): giris noktasi
+ * (`entry_point`) ve ilgili arama (`search_id`) ile. Yalniz `mood_offer` varyantinda;
+ * digerlerinde no-op. `paywall_*` olaylari ayrica entry_point tasir.
+ */
+export function trackMoodOffer(
+  event: 'mood_offer_shown' | 'mood_offer_cta' | 'mood_offer_dismissed',
+  variant: PaywallVariant,
+  extra: Record<string, string | number | boolean | null> = {},
+): void {
+  if (variant.trigger.type !== 'mood_offer') return;
+  posthogAnalytics.track(event, {
+    entry_point: variant.trigger.entry,
+    search_id: variant.trigger.searchId ?? null,
     ...extra,
   });
 }
@@ -369,6 +402,13 @@ async function recordEvent(
     if ('filmId' in variant.trigger) triggerContext.filmId = variant.trigger.filmId;
     if ('missedDayCount' in variant.trigger) {
       triggerContext.missedDayCount = variant.trigger.missedDayCount;
+    }
+    // MONEY-1C: giris noktasi + arama baglantisi (jsonb; sema/CHECK degismez).
+    if ('entry' in variant.trigger) {
+      triggerContext.entry_point = variant.trigger.entry;
+      if ('searchId' in variant.trigger && variant.trigger.searchId) {
+        triggerContext.search_id = variant.trigger.searchId;
+      }
     }
 
     const row: PaywallEventInsert = {

@@ -1,0 +1,135 @@
+{
+  "mood_id": "ft_tr_gerilim",
+  "text": "Sürükleyici bir gerilim, sonu şaşırtsın",
+  "ms": 5468,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.3,
+      "sadness": 0.2,
+      "fear": 0.7,
+      "anger": 0.4,
+      "surprise": 0.85,
+      "disgust": 0.3,
+      "trust": 0.4,
+      "anticipation": 0.9
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Şaşırtıcı Gerilim",
+    "profile_description": "Sizi oturağından kaldıracak, tahmin edilemez bir sona sahip yoğun gerilim filmi arıyorsunuz—beklenmedik dönüşler ve twist sonuçlar içeren.",
+    "search_keywords": [
+      "thriller",
+      "plot twist",
+      "suspense",
+      "unexpected ending",
+      "psychological tension",
+      "mystery",
+      "crime"
+    ],
+    "genres_include": [
+      "Thriller",
+      "Mystery",
+      "Crime"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "The Prestige",
+        "year": 2006
+      },
+      {
+        "title": "Parasite",
+        "year": 2019
+      },
+      {
+        "title": "Se7en",
+        "year": 1995
+      },
+      {
+        "title": "The Usual Suspects",
+        "year": 1995
+      },
+      {
+        "title": "Gone Girl",
+        "year": 2014
+      },
+      {
+        "title": "Shutter Island",
+        "year": 2010
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "The Game",
+        "year": 1997
+      },
+      {
+        "title": "Memento",
+        "year": 2000
+      }
+    ],
+    "search_id": "219a1614-7908-4d7d-9269-2e89a3a8fbbb",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.3,
+      "sadness": 0.2,
+      "anger": 0.4,
+      "fear": 0.7,
+      "surprise": 0.85,
+      "disgust": 0.3,
+      "anticipation": 0.9,
+      "trust": 0.4
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "219a1614-7908-4d7d-9269-2e89a3a8fbbb",
+  "search_keywords": [
+    "thriller",
+    "plot twist",
+    "suspense",
+    "unexpected ending",
+    "psychological tension",
+    "mystery",
+    "crime"
+  ],
+  "limit": null,
+  "remaining": null
+}

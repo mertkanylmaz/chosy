@@ -1,0 +1,24 @@
+{
+  "payload_hash": "efa31425b6462dc9",
+  "cached": false,
+  "candidates_sent": 25,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4376,
+  "http_status": 200,
+  "reranked_ids": [
+    "523c4862-e8f8-4f4b-856d-18a6c507610e",
+    "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+    "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+    "ea4ad9a0-7cba-47f8-8305-9600c03e79e4"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "523c4862-e8f8-4f4b-856d-18a6c507610e": "Time-travel narrative directly explores temporal mechanics and causality principles.",
+    "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb": "Complex time-travel plot examining paradoxes and the physics of temporal manipulation.",
+    "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb": "Explores butterfly effect and consequences of altering physical events across time.",
+    "ea4ad9a0-7cba-47f8-8305-9600c03e79e4": "Science fiction mystery investigating origins and fundamental questions about existence and reality."
+  }
+}

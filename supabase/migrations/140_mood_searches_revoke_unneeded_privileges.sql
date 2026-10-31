@@ -1,0 +1,21 @@
+-- ============================================================================
+-- 140 — mood_searches: istemci rollerinden gereksiz tablo yetkileri (MONEY-1C)
+--
+-- BULGU (25 Eki, canlı): `anon` ve `authenticated` public tablolarda Supabase varsayılan
+-- yetkileriyle DELETE, TRUNCATE, REFERENCES, TRIGGER taşıyor. RLS yalnız satır erişimini
+-- (SELECT/INSERT/UPDATE/DELETE) süzer; TRUNCATE RLS'i ATLAR. PostgREST TRUNCATE sunmaz, yani
+-- bugün istismar yolu yok — ama yetki hiçbir istemciye gerekmiyor (derinlemesine savunma).
+--
+-- KAPSAM: yalnız public.mood_searches. Diğer tablolar için öneri raporu:
+--   docs/investigations/MONEY-1C_GRANTS_AUDIT.md (karar bekler; bu migration onlara DOKUNMAZ).
+--
+-- DOĞRULAMA: 2.1.0–2.1.3 istemcileri mood_searches'te yalnız SELECT/INSERT/UPDATE kullanır
+-- (delete yok). Hesap silme (delete-account) service_role ile çalışır; service_role ve postgres
+-- yetkileri DEĞİŞMEZ. users → mood_searches FK'sinin ON DELETE CASCADE'i tablo sahibi
+-- yetkisiyle çalışır, etkilenmez.
+--
+-- 139'dan BAĞIMSIZ: INSERT/UPDATE/SELECT yetkilerine dokunmaz (139 onları daraltır).
+-- GERİ ALMA: repo dışı kopya (140_rollback.sql) — dört yetkiyi geri verir; veri etkisi yok.
+-- ============================================================================
+
+REVOKE DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.mood_searches FROM anon, authenticated;

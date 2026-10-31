@@ -137,7 +137,6 @@ export function trackMoodSearchCompleted(params: {
   searchId: string | null;
   resultCount: number;
   rpcVersion: string;
-  profileName?: string;
 }): void {
   trackEvent({
     event: 'mood_search_completed',
@@ -145,7 +144,6 @@ export function trackMoodSearchCompleted(params: {
       search_id: params.searchId,
       result_count: params.resultCount,
       rpc_version: params.rpcVersion,
-      profile_name: params.profileName,
     },
   });
 }
@@ -159,12 +157,12 @@ export function trackMoodSearchFailed(errorCode: string, moodLength: number): vo
 }
 
 /** Mood arama sonuc donmedi (anomali) */
-export function trackMoodSearchZeroResults(searchId: string | null, moodTextPreview: string): void {
+export function trackMoodSearchZeroResults(searchId: string | null, moodTextLength: number): void {
   trackEvent({
     event: 'mood_search_zero_results',
     metadata: {
       search_id: searchId,
-      mood_text_preview: moodTextPreview.slice(0, 50),
+      mood_text_length: moodTextLength,
     },
   });
 }

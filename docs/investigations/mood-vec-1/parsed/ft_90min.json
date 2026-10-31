@@ -1,0 +1,83 @@
+{
+  "mood_id": "ft_90min",
+  "text": "Under 90 minutes, funny",
+  "ms": 4092,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Quick Laughs",
+    "profile_description": "A person seeking lighthearted entertainment that delivers consistent humor in a compact runtime—perfect for a fast laugh without heavy themes.",
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "funny",
+      "witty",
+      "lighthearted",
+      "short film"
+    ],
+    "search_id": "77d51f0a-5efe-473f-8fd1-dbac7c450354",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.6
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "77d51f0a-5efe-473f-8fd1-dbac7c450354",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "funny",
+    "witty",
+    "lighthearted",
+    "short film"
+  ],
+  "limit": null,
+  "remaining": null
+}

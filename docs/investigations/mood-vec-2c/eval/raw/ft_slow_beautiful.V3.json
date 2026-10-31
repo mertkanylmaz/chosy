@@ -1,0 +1,928 @@
+{
+  "mood_id": "ft_slow_beautiful",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "aa02f15c-94df-4213-a625-946ed17ed06a",
+        "tmdb_id": 329865,
+        "title": "Arrival",
+        "year": 2016,
+        "overview": "Taking place after alien crafts land around the world, an expert linguist is recruited by the military to determine whether they come in peace or are a threat.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 7.626,
+        "director": "Denis Villeneuve",
+        "similarity": 0.936160889830932,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, extraterrestrial technology, loss",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "de28cf5c-001c-4844-b591-4f2f29c7079d",
+        "tmdb_id": 144,
+        "title": "Wings of Desire",
+        "year": 1987,
+        "overview": "Two angels, Damiel and Cassiel, glide through the streets of Berlin, observing the bustling population, providing invisible rays of hope to the distressed but never interacting with them. When Damiel falls in love with lonely trapeze artist Marion, the angel longs to experience life in the physical world, and finds — with some words of wisdom from actor Peter Falk — that it might be possible for him to take human form.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 128,
+        "vote_average": 7.8,
+        "director": "Wim Wenders",
+        "similarity": 0.715971695329963,
+        "curation_tier": "extended",
+        "match_reason": "berlin, germany, dreams, library",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c42c718b-ecc0-418b-9cce-1102a9a1ec15",
+        "tmdb_id": 335984,
+        "title": "Blade Runner 2049",
+        "year": 2017,
+        "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 164,
+        "vote_average": 7.594,
+        "director": "Denis Villeneuve",
+        "similarity": 0.705535508369417,
+        "curation_tier": "core",
+        "match_reason": "future, android, bounty hunter",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "e472a8d4-f98d-437b-ab07-320fbeb07517",
+        "tmdb_id": 1398,
+        "title": "Stalker",
+        "year": 1979,
+        "overview": "Near a gray and unnamed city is the Zone, a place guarded by barbed wire and soldiers, and where the normal laws of physics are victim to frequent anomalies. A stalker guides two men into the Zone, specifically to an area in which deep-seated desires are granted.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 162,
+        "vote_average": 8.094,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.693959648068549,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, guard, wish",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c294c9b2-7bbb-4d1e-b806-ecf5fb70311f",
+        "tmdb_id": 85350,
+        "title": "Boyhood",
+        "year": 2014,
+        "overview": "The film tells a story of a divorced couple trying to raise their young son. The story follows the boy for twelve years, from first grade at age 6 through 12th grade at age 17-18, and examines his relationship with his parents as he grows.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 165,
+        "vote_average": 7.492,
+        "director": "Richard Linklater",
+        "similarity": 0.656040713781559,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.636589325870401,
+        "curation_tier": "extended",
+        "match_reason": "coming of age, survival, loneliness",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "337234a3-a00b-4649-89d8-578aeb71cef5",
+        "tmdb_id": 531428,
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019,
+        "overview": "On an isolated island in Brittany at the end of the eighteenth century, a female painter is obliged to paint a wedding portrait of a young woman.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 121,
+        "vote_average": 8.095,
+        "director": "Céline Sciamma",
+        "similarity": 0.539083278261564,
+        "curation_tier": "core",
+        "match_reason": "island, fire, beach",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "83d8bd1c-ee98-4559-b0f1-98175126d0a8",
+        "tmdb_id": 399055,
+        "title": "The Shape of Water",
+        "year": 2017,
+        "overview": "An other-worldly story, set against the backdrop of Cold War era America circa 1962, where a mute janitor working at a lab falls in love with an amphibious man being held captive there and devises a plan to help him escape.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.231,
+        "director": "Guillermo del Toro",
+        "similarity": 0.430642113284843,
+        "curation_tier": "extended",
+        "match_reason": "government, fairy tale, cold war",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "7d0aff11-157e-4d39-b282-5c65b6522406",
+        "tmdb_id": 171274,
+        "title": "Inherent Vice",
+        "year": 2014,
+        "overview": "In Los Angeles at the turn of the 1970s, drug-fueled detective Larry \"Doc\" Sportello investigates the disappearance of an ex-girlfriend.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Comedy"
+        ],
+        "runtime": 149,
+        "vote_average": 6.544,
+        "director": "Paul Thomas Anderson",
+        "similarity": 1.05280258117047,
+        "curation_tier": "core",
+        "match_reason": "california, based on novel or book, boat",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f62efabd-9b01-4237-bb06-0082bc9d1db0",
+        "tmdb_id": 8832,
+        "title": "Il Divo",
+        "year": 2008,
+        "overview": "Italy, early '90s. Calm, clever and inscrutable, politician Giulio Andreotti has been synonymous with power for decades. He has survived everything: electoral battles, terrorist massacres, loss of friends, slanderous accusations; but now certain repentant mobsters implicate him in the crimes of Cosa Nostra.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.623,
+        "director": "Paolo Sorrentino",
+        "similarity": 1.01820536613982,
+        "curation_tier": "core",
+        "match_reason": "politics, italy, vatican (holy see)",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bc518ff2-a633-4366-aae4-7786773b3b44",
+        "tmdb_id": 11216,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "overview": "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 8.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.967095859766658,
+        "curation_tier": "core",
+        "match_reason": "parent child relationship, sicily, italy, movie business",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e9182f2e-2ac8-49fb-ad18-e21be885e2ba",
+        "tmdb_id": 466420,
+        "title": "Killers of the Flower Moon",
+        "year": 2023,
+        "overview": "When oil is discovered in 1920s Oklahoma under Osage Nation land, the Osage people are murdered one by one—until the FBI steps in to unravel the mystery.",
+        "genres": [
+          "Crime",
+          "History",
+          "Drama"
+        ],
+        "runtime": 206,
+        "vote_average": 7.4,
+        "director": "Martin Scorsese",
+        "similarity": 0.964268741437037,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, based on novel or book, war veteran",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "64b63a2a-09a3-45c0-9e5f-a49357b80672",
+        "tmdb_id": 352173,
+        "title": "Drishyam",
+        "year": 2015,
+        "overview": "A simple street-smart man tries to protect his family from a cop looking for her missing son who was accidently killed by his daughter.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 163,
+        "vote_average": 7.5,
+        "director": "Nishikant Kamat",
+        "similarity": 0.958458441054832,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 0.937369287542626,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "fd07090b-6c2e-43b2-b0c5-830e27df8656",
+        "tmdb_id": 108,
+        "title": "Three Colors: Blue",
+        "year": 1993,
+        "overview": "The wife of a famous composer survives a car accident that kills her husband and daughter. Now alone, she shakes off her old identity and explores her newfound freedom but finds that she is unbreakably bound to other humans, including her husband’s mistress, whose existence she never suspected.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 98,
+        "vote_average": 7.6,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.934337436040821,
+        "curation_tier": "core",
+        "match_reason": "france, paris, france, composer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f2d8346c-45ae-4c0b-93ff-494c62b7e3ed",
+        "tmdb_id": 1949,
+        "title": "Zodiac",
+        "year": 2007,
+        "overview": "Over the course of a decade, editors of the San Francisco Chronicle entice themselves in the murders of the Zodiac Killer. However, as time runs its course, interest in the case dwindles in the eyes of the professionals. The Killer stops interacting with the public. However, believing he has the answers, an amateur cartoonist from the initial sightings races against time to prevent what he believes is another murder.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 157,
+        "vote_average": 7.529,
+        "director": "David Fincher",
+        "similarity": 0.933964369293853,
+        "curation_tier": "core",
+        "match_reason": "newspaper, journalist, california",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.920099433801027,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec6b90cc-b840-48c4-a2f7-437491b5bc04",
+        "tmdb_id": 311,
+        "title": "Once Upon a Time in America",
+        "year": 1984,
+        "overview": "A former Prohibition-era Jewish gangster returns to the Lower East Side of Manhattan over thirty years later, where he once again must confront the ghosts and regrets of his old life.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 229,
+        "vote_average": 8.382,
+        "director": "Sergio Leone",
+        "similarity": 0.913870134613949,
+        "curation_tier": "core",
+        "match_reason": "new york city, regret, lovesickness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f5239306-7ffc-4713-a702-442b46c72141",
+        "tmdb_id": 12573,
+        "title": "A Serious Man",
+        "year": 2009,
+        "overview": "It is 1967, and Larry Gopnik, a physics professor at a quiet Midwestern university, has just been informed by his wife Judith that she is leaving him. She has fallen in love with one of his more pompous acquaintances Sy Ableman.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 106,
+        "vote_average": 6.701,
+        "director": "Ethan Coen",
+        "similarity": 0.910355718793619,
+        "curation_tier": "core",
+        "match_reason": "dreams, midlife crisis, professor",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+        "tmdb_id": 62,
+        "title": "2001: A Space Odyssey",
+        "year": 1968,
+        "overview": "Humanity finds a mysterious object buried beneath the lunar surface and sets off to find its origins with the help of HAL 9000, the world's most advanced super computer.",
+        "genres": [
+          "Science Fiction",
+          "Mystery",
+          "Adventure"
+        ],
+        "runtime": 149,
+        "vote_average": 8.1,
+        "director": "Stanley Kubrick",
+        "similarity": 0.909589526897745,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, moon, jupiter",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f39baccf-178a-478c-8ff0-fadf8b6b6ff5",
+        "tmdb_id": 265297,
+        "title": "The Salt of the Earth",
+        "year": 2014,
+        "overview": "During the last forty years, the photographer Sebastião Salgado has been travelling through the continents, in the footsteps of an ever-changing humanity. He has witnessed the major events of our recent history: international conflicts, starvations and exodus… He is now embarking on the discovery of pristine territories, of the wild fauna and flora, of grandiose landscapes: a huge photographic project which is a tribute to the planet's beauty. Salgado's life and work are revealed to us by his son, Juliano, who went with him during his last journeys, and by Wim Wenders, a photographer himself.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 110,
+        "vote_average": 8.11,
+        "director": "Juliano Ribeiro Salgado",
+        "similarity": 0.904657632944335,
+        "curation_tier": "core",
+        "match_reason": "Matches: nature",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f779894b-2ec0-4282-9eaa-31cb786580aa",
+        "tmdb_id": 78,
+        "title": "Blade Runner",
+        "year": 1982,
+        "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.937,
+        "director": "Ridley Scott",
+        "similarity": 0.900200774893695,
+        "curation_tier": "core",
+        "match_reason": "android, flying car, bounty hunter",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "22576ed0-e27c-44b5-b338-d492f81af2ce",
+        "tmdb_id": 491584,
+        "title": "Burning",
+        "year": 2018,
+        "overview": "Deliveryman Jong-su is out on a job when he runs into Hae-mi, a girl who once lived in his neighborhood. She asks if he'd mind looking after her cat while she's away on a trip to Africa. On her return, she introduces to Jong-su an enigmatic young man named Ben, who she met during her trip. One day Ben tells Jong-su about his most unusual hobby.",
+        "genres": [
+          "Mystery",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 148,
+        "vote_average": 7.375,
+        "director": "Lee Chang-dong",
+        "similarity": 0.890900461937564,
+        "curation_tier": "core",
+        "match_reason": "fire, jealousy, dreams",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d6c574db-fe23-4ad7-ba6e-0433b1875fbf",
+        "tmdb_id": 28,
+        "title": "Apocalypse Now",
+        "year": 1979,
+        "overview": "At the height of the Vietnam war, Captain Benjamin Willard is sent on a dangerous mission that, officially, \"does not exist, nor will it ever exist.\" His goal is to locate - and eliminate - a mysterious Green Beret Colonel named Walter Kurtz, who has been leading his personal army on illegal guerrilla missions into enemy territory.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 147,
+        "vote_average": 8.3,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.882971367580102,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, vietnam war, journalist",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e1cdccc3-37a8-49a9-be9b-08de3b5a820e",
+        "tmdb_id": 1563,
+        "title": "Sans Soleil",
+        "year": 1983,
+        "overview": "A woman narrates the thoughts of a world traveler, meditations on time and memory expressed in words and images from places as far-flung as Japan, Guinea-Bissau, Iceland, and San Francisco.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 100,
+        "vote_average": 7.461,
+        "director": "Chris Marker",
+        "similarity": 0.876431993562893,
+        "curation_tier": "extended",
+        "match_reason": "Matches: poetic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9284792c-9e1d-4068-b639-2cf26987af92",
+        "tmdb_id": 9305,
+        "title": "Microcosmos",
+        "year": 1996,
+        "overview": "A documentary of insect life in meadows and ponds, using incredible close-ups, slow motion, and time-lapse photography. It includes bees collecting nectar, ladybugs eating mites, snails mating, spiders wrapping their catch, a scarab beetle relentlessly pushing its ball of dung uphill, endless lines of caterpillars, an underwater spider creating an air bubble to live in, and a mosquito hatching.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 80,
+        "vote_average": 7.59,
+        "director": "Claude Nuridsany",
+        "similarity": 0.835713188209503,
+        "curation_tier": "extended",
+        "match_reason": "Matches: nature, poetic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+        "tmdb_id": 1954,
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "overview": "A young man struggles to access sublimated childhood memories. He finds a technique that allows him to travel back into the past, to occupy his childhood body and change history. However, he soon finds that every change he makes has unexpected consequences.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.571,
+        "director": "J. Mackye Gruber",
+        "similarity": 0.820587431590272,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "af0d8e6d-b3a5-4804-941f-5665bc1a5359",
+        "tmdb_id": 47002,
+        "title": "Love Letter",
+        "year": 1995,
+        "overview": "Hiroko attends the memorial service of her fiancé, Itsuki Fujii, who died in a mountain-climbing incident. Although Itsuki's mother says that their old house is gone, Hiroko records the address listed under his name in his yearbook and sends him a letter. Surprisingly, she receives a reply, and discovers it came from his old classmate, a girl who also happens to be called Itsuki Fujii.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 117,
+        "vote_average": 7.819,
+        "director": "Shunji Iwai",
+        "similarity": 0.815793593658068,
+        "curation_tier": "extended",
+        "match_reason": "love letter, nostalgic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "78490b9d-f178-43f2-b9b2-7433e67590ee",
+        "tmdb_id": 14537,
+        "title": "Harakiri",
+        "year": 1962,
+        "overview": "Down-on-his-luck veteran Tsugumo Hanshirō enters the courtyard of the prosperous House of Iyi. Unemployed, and with no family, he hopes to find a place to commit seppuku—and a worthy second to deliver the coup de grâce in his suicide ritual. The senior counselor for the Iyi clan questions the ronin’s resolve and integrity, suspecting Hanshirō of seeking charity rather than an honorable end. What follows is a pair of interlocking stories which lay bare the difference between honor and respect, and promises to examine the legendary foundations of the Samurai code.",
+        "genres": [
+          "Action",
+          "Drama",
+          "History"
+        ],
+        "runtime": 135,
+        "vote_average": 8.43,
+        "director": "Masaki Kobayashi",
+        "similarity": 0.809809814948709,
+        "curation_tier": "extended",
+        "match_reason": "suicide, japan, samurai",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b979827a-ad05-47fa-829f-ce145e87cbde",
+        "tmdb_id": 1396,
+        "title": "Mirror",
+        "year": 1975,
+        "overview": "A dying man in his forties recalls his childhood, his mother, the war and personal moments that tell of and juxtapose pivotal moments in Soviet history with daily life.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.809087349577293,
+        "curation_tier": "extended",
+        "match_reason": "dreams, wind, poetry",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e54f0242-8521-4637-bd61-81805baa48a2",
+        "tmdb_id": 18311,
+        "title": "Days of Being Wild",
+        "year": 1990,
+        "overview": "Yuddy, a Hong Kong playboy known for breaking girls' hearts, tries to find solace and truth after discovering the woman who raised him isn't his mother.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.3,
+        "director": "Wong Kar-Wai",
+        "similarity": 0.801003056067397,
+        "curation_tier": "extended",
+        "match_reason": "fight, underwear, rain",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b14f0b69-8992-416a-bc21-f485253100bc",
+        "tmdb_id": 25771,
+        "title": "Pink Floyd: Live at Pompeii",
+        "year": 1972,
+        "overview": "British progressive rock band Pink Floyd perform at the ancient Roman Amphitheatre in the ruins of Pompeii, Italy in 1971. Although the band perform a typical live set from the era, there is no audience beyond the basic film crew.",
+        "genres": [
+          "Music",
+          "Documentary"
+        ],
+        "runtime": 62,
+        "vote_average": 8.043,
+        "director": "Adrian Maben",
+        "similarity": 0.797853664570424,
+        "curation_tier": "extended",
+        "match_reason": "concert, rock 'n' roll, concert film",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.675894583173707,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.63104464282491,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.618080732163474,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.590333122273546,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 0.526660127118103,
+        "curation_tier": "core",
+        "match_reason": "army, based on novel or book, elves",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c4cabd1-5d84-4be5-9610-ab4e26956b28",
+        "tmdb_id": 120,
+        "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "year": 2001,
+        "overview": "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator. Along the way, a fellowship is formed to protect the ringbearer and make sure that the ring arrives at its final destination: Mt. Doom, the only place where it can be destroyed.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 179,
+        "vote_average": 8.434,
+        "director": "Peter Jackson",
+        "similarity": 0.522599395682479,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, elves, dwarf",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.496815157787945,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.468939913548946,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 849,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 849,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "minimalist",
+        "visual storytelling",
+        "nature",
+        "solitude",
+        "poetic",
+        "atmospheric",
+        "wordless"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama",
+        "Fantasy"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Stalker",
+          "year": 1979
+        },
+        {
+          "title": "The Shape of Water",
+          "year": 2017
+        },
+        {
+          "title": "Blade Runner 2049",
+          "year": 2017
+        },
+        {
+          "title": "A Ghost Story",
+          "year": 2017
+        },
+        {
+          "title": "The Secret of Kells",
+          "year": 2009
+        },
+        {
+          "title": "Arrival",
+          "year": 2016
+        },
+        {
+          "title": "The Red Turtle",
+          "year": 2016
+        },
+        {
+          "title": "Portrait of a Lady on Fire",
+          "year": 2019
+        },
+        {
+          "title": "Wings of Desire",
+          "year": 1987
+        },
+        {
+          "title": "Boyhood",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "5c5e701fe7521410",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3876,
+    "http_status": 200,
+    "reranked_ids": [
+      "29537a74-92e4-43b3-8605-2db82b11c894",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d",
+      "e472a8d4-f98d-437b-ab07-320fbeb07517",
+      "c42c718b-ecc0-418b-9cce-1102a9a1ec15"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "29537a74-92e4-43b3-8605-2db82b11c894": "Dialogue-free film following a castaway's life stages with visual storytelling and minimal sound.",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d": "Angels observe Berlin silently, emphasizing visual poetry and contemplative pacing over dialogue.",
+      "e472a8d4-f98d-437b-ab07-320fbeb07517": "Meditative sci-fi with long takes, sparse dialogue, and philosophical exploration of desire and mystery.",
+      "c42c718b-ecc0-418b-9cce-1102a9a1ec15": "Visually stunning cinematography with minimal dialogue, focusing on atmosphere and slow-burn narrative tension."
+    }
+  }
+}

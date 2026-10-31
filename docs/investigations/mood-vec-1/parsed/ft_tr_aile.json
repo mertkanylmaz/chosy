@@ -1,0 +1,95 @@
+{
+  "mood_id": "ft_tr_aile",
+  "text": "Ailecek izleyebileceğimiz sıcak bir film",
+  "ms": 4407,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "trust": 0.8,
+      "anticipation": 0.5
+    },
+    "energy_level": 0.6,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.5,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "violence",
+      "horror",
+      "adult content",
+      "heavy tragedy"
+    ],
+    "narrative_style": "linear",
+    "social_context": "family",
+    "rewatch_tolerance": true,
+    "profile_name": "Warm Family Time",
+    "profile_description": "A heartwarming, feel-good film that brings families together with genuine emotions, humor, and connection—no dark themes, just quality time and togetherness.",
+    "search_keywords": [
+      "family",
+      "heartwarming",
+      "feel-good",
+      "coming of age",
+      "adventure",
+      "friendship",
+      "humor"
+    ],
+    "search_id": "29c36d44-f7ef-4809-9372-063d09568c23",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "anticipation": 0.5,
+      "trust": 0.8
+    },
+    "energy_level": 0.6,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.5,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "violence",
+      "horror",
+      "adult content",
+      "heavy tragedy"
+    ],
+    "narrative_style": "linear",
+    "social_context": "family",
+    "rewatch_tolerance": true
+  },
+  "search_id": "29c36d44-f7ef-4809-9372-063d09568c23",
+  "search_keywords": [
+    "family",
+    "heartwarming",
+    "feel-good",
+    "coming of age",
+    "adventure",
+    "friendship",
+    "humor"
+  ],
+  "limit": null,
+  "remaining": null
+}

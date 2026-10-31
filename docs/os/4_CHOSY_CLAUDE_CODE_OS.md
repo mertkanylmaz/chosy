@@ -86,7 +86,7 @@ Yeni migration **082**'den başlar. Yine de eklemeden önce klasörü listele.
 
 ```powershell
 npm run typecheck            # → tam 14 hata, hepsi scripts/ altında
-npm run typecheck:functions  # → 32 hata (deno check, düşüş hedefli değil)
+npm run typecheck:functions  # → 29 hata (deno check, düşüş hedefli değil; 24 Eki 2026'da 32'den güncellendi)
 ```
 
 > **13 Ağustos 2026 senkronu: ~~42~~ → 32.** Bu düşüş bu turda olmadı — daha
@@ -336,7 +336,7 @@ Keşif işleri için subagent kullan — kendi context'inde okur, sana özet dö
 ```powershell
 npm run test:founder
 npm run typecheck            # → 14
-npm run typecheck:functions  # → 32   (13 Ağu 2026'da ~~45~~'ten güncellendi)
+npm run typecheck:functions  # → 29   (24 Eki 2026'da 32'den, 13 Ağu'da ~~45~~'ten güncellendi)
 git status                   # → temiz
 ```
 
@@ -699,7 +699,7 @@ archive (1528) migration 050 ile zaten dışlanıyor.
 
 ## DOĞRULAMA
 supabase functions deploy generate-gauntlet     ← DEPLOY İÇİN ONAY İSTE
-npm run typecheck:functions → 32'yi geçmemeli   (~~45~~, 13 Ağu 2026)
+npm run typecheck:functions → 29'u geçmemeli   (~~45~~ → ~~32~~, 24 Eki 2026)
 
 10 test çağrısı (3 farklı bağlam):
 → 4 film · 4 farklı yönetmen · ≥1 film <110dk · ≥1 film >130dk
@@ -709,7 +709,7 @@ npm run typecheck:functions → 32'yi geçmemeli   (~~45~~, 13 Ağu 2026)
 - 10 çağrıda çeşitlilik kuralları kaç kez gevşetildi
 - Ortalama aday havuzu (filtre sonrası)
 - En sık ihlal edilen kural
-- typecheck:functions kaç (32'den artmamalı — ~~45~~, 13 Ağu 2026)
+- typecheck:functions kaç (29'dan artmamalı — ~~45~~ → ~~32~~, 24 Eki 2026)
 ```
 
 **🚦 GATE B.3:** 10 test çağrısı CTO incelemesinden geçmeden B.4'e geçilmez.
@@ -727,7 +727,7 @@ Mevcut submit-guess'i desen olarak oku (jsr değil esm.sh kullanıyor —
 YENİ fonksiyon jsr kullanacak).
 
 ## GÖREV
-0. Önce baseline doğrula: npm run typecheck:functions çalıştır, 32 olduğunu
+0. Önce baseline doğrula: npm run typecheck:functions çalıştır, 29 olduğunu
    teyit et ve raporla. types/gauntlet.ts import'unu eklemeden ÖNCE.
    (baseline ~~45~~ → 32, 13 Ağu 2026'da güncellendi)
    Bu Edge Function'ların types/ klasöründen ilk import'u — precedent kırıyor.

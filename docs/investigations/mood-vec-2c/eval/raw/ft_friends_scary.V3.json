@@ -1,0 +1,950 @@
+{
+  "mood_id": "ft_friends_scary",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "b9b92a5a-b426-4ca7-ab18-baf6ed4e938a",
+        "tmdb_id": 765,
+        "title": "Evil Dead II",
+        "year": 1987,
+        "overview": "Ash Williams and his girlfriend Linda find a log cabin in the woods with a voice recording from an archeologist who had recorded himself reciting ancient chants from \"The Book of the Dead.\" As they play the recording an evil power is unleashed taking over Linda's body.",
+        "genres": [
+          "Horror",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 84,
+        "vote_average": 7.542,
+        "director": "Sam Raimi",
+        "similarity": 0.764447467775604,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "beba7a17-264c-4138-86e4-95aa0ce96f60",
+        "tmdb_id": 246741,
+        "title": "What We Do in the Shadows",
+        "year": 2014,
+        "overview": "Vampire housemates try to cope with the complexities of modern life and show a newly turned hipster some of the perks of being undead.",
+        "genres": [
+          "Comedy",
+          "Horror"
+        ],
+        "runtime": 86,
+        "vote_average": 7.55,
+        "director": "Jemaine Clement",
+        "similarity": 0.682111871106166,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f67272ce-73de-434d-be99-8306f71dcb9b",
+        "tmdb_id": 503919,
+        "title": "The Lighthouse",
+        "year": 2019,
+        "overview": "Two lighthouse keepers try to maintain their sanity while living on a remote and mysterious New England island in the 1890s.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Thriller"
+        ],
+        "runtime": 109,
+        "vote_average": 7.481,
+        "director": "Robert Eggers",
+        "similarity": 0.573352888984805,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+        "tmdb_id": 578,
+        "title": "Jaws",
+        "year": 1975,
+        "overview": "When the seaside community of Amity finds itself under attack by a dangerous great white shark, the town's chief of police, a young marine biologist, and a grizzled shark hunter embark on a desperate quest to kill the beast before it strikes again.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 124,
+        "vote_average": 7.682,
+        "director": "Steven Spielberg",
+        "similarity": 1.1269668937745,
+        "curation_tier": "core",
+        "match_reason": "Matches: creature feature",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1cf0dfa0-d44e-4895-b3f2-7c0a34766798",
+        "tmdb_id": 1357633,
+        "title": "Solo Leveling -ReAwakening-",
+        "year": 2024,
+        "overview": "Over a decade after 'gates' connecting worlds appeared, awakening 'hunters' with superpowers, weakest hunter Sung Jinwoo encounters a double dungeon and accepts a mysterious quest, becoming the only one able to level up, changing his fate. A catch-up recap of the first season coupled with an exclusive sneak peek of the first two episodes of the highly anticipated second season in one momentous theatrical fan experience.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 116,
+        "vote_average": 7.101,
+        "director": "Shunsuke Nakashige",
+        "similarity": 1.08471518189033,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, based on comic, compilation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "65ccbf40-4ab2-4c3b-8879-24630be7cb9f",
+        "tmdb_id": 24428,
+        "title": "The Avengers",
+        "year": 2012,
+        "overview": "When an unexpected enemy emerges and threatens global safety and security, Nick Fury, director of the international peacekeeping agency known as S.H.I.E.L.D., finds himself in need of a team to pull the world back from the brink of disaster. Spanning the globe, a daring recruitment effort begins!",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 143,
+        "vote_average": 8.03,
+        "director": "Joss Whedon",
+        "similarity": 1.07843908413773,
+        "curation_tier": "core",
+        "match_reason": "new york city, superhero, shield",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 1.07716576518902,
+        "curation_tier": "core",
+        "match_reason": "army, based on novel or book, elves",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5da1968e-40b4-44df-a537-d158d6db3f35",
+        "tmdb_id": 315635,
+        "title": "Spider-Man: Homecoming",
+        "year": 2017,
+        "overview": "Following the events of Captain America: Civil War, Peter Parker, with the help of his mentor Tony Stark, tries to balance his life as an ordinary high school student in Queens, New York City, with fighting crime as his superhero alter ego Spider-Man as a new threat, the Vulture, emerges.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 133,
+        "vote_average": 7.33,
+        "director": "Jon Watts",
+        "similarity": 1.07245475196005,
+        "curation_tier": "core",
+        "match_reason": "high school, new york city, washington dc, usa",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4c7a7f1d-0029-4b4d-a2d1-5170f709a871",
+        "tmdb_id": 980489,
+        "title": "Gran Turismo",
+        "year": 2023,
+        "overview": "The ultimate wish-fulfillment tale of a teenage Gran Turismo player whose gaming skills won him a series of Nissan competitions to become an actual professional racecar driver.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 135,
+        "vote_average": 7.708,
+        "director": "Neill Blomkamp",
+        "similarity": 1.06706804319011,
+        "curation_tier": "core",
+        "match_reason": "sports, based on true story, racing",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f71c0200-d25a-44ef-b3c9-fdd212bc3a5d",
+        "tmdb_id": 1892,
+        "title": "Return of the Jedi",
+        "year": 1983,
+        "overview": "Luke Skywalker leads a mission to rescue his friend Han Solo from the clutches of Jabba the Hutt, the Emperor prepares to crush the Rebellion with a more powerful Death Star, and the Rebel fleet mounts a massive attack on the space station. Luke Skywalker confronts Darth Vader in a final climactic duel before the evil Emperor.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 7.908,
+        "director": "Richard Marquand",
+        "similarity": 1.06648838314122,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, sibling relationship, rebel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f400d8f6-4c15-42ef-bebc-ac473c52db8f",
+        "tmdb_id": 911430,
+        "title": "F1",
+        "year": 2025,
+        "overview": "Racing legend Sonny Hayes is coaxed out of retirement to lead a struggling Formula 1 team—and mentor a young hotshot driver—while chasing one more chance at glory.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 156,
+        "vote_average": 7.771,
+        "director": "Joseph Kosinski",
+        "similarity": 1.06643234207583,
+        "curation_tier": "core",
+        "match_reason": "sports, comeback, racing",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "85be610a-bdb3-4952-ba0e-c7ef1c1c8c01",
+        "tmdb_id": 575265,
+        "title": "Mission: Impossible - The Final Reckoning",
+        "year": 2025,
+        "overview": "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — which has infiltrated intelligence networks all over the globe — with the world's governments and a mysterious ghost from Hunt's past on their trail. Joined by new allies and armed with the means to shut the Entity down for good, Hunt is in a race against time to prevent the world as we know it from changing forever.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 170,
+        "vote_average": 7.16,
+        "director": "Christopher McQuarrie",
+        "similarity": 1.06538325016914,
+        "curation_tier": "core",
+        "match_reason": "mask, artificial intelligence (a.i.), diving",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "84e3455f-5034-453b-b7a4-553917c01988",
+        "tmdb_id": 783675,
+        "title": "The First Slam Dunk",
+        "year": 2022,
+        "overview": "Shohoku's “speedster” and point guard, Ryota Miyagi, always plays with brains and lightning speed, running circles around his opponents while feigning composure. In his second year of high school, Ryota plays with the Shohoku High School basketball team along with Sakuragi, Rukawa, Akagi, and Mitsui as they take the stage at the Inter-High School National Championship. And now, they are on the brink of challenging the reigning champions, Sannoh Kogyo High School.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 125,
+        "vote_average": 7.8,
+        "director": "Takehiko Inoue",
+        "similarity": 1.06123849655314,
+        "curation_tier": "core",
+        "match_reason": "high school, competition, basketball",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9343c672-62a8-497c-807b-9aaeacc96aa3",
+        "tmdb_id": 9421,
+        "title": "The Dinner Game",
+        "year": 1998,
+        "overview": "For Pierre Brochant and his friends, Wednesday is “Idiots' Day”. The idea is simple: each person has to bring along an idiot. The one who brings the most spectacular idiot wins the prize. Tonight, Brochant is ecstatic. He has found a gem. The ultimate idiot, “A world champion idiot!”. What Brochant doesn’t know is that Pignon is a real jinx, a past master in the art of bringing on catastrophes...",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.8,
+        "director": "Francis Veber",
+        "similarity": 0.985018078743013,
+        "curation_tier": "extended",
+        "match_reason": "Matches: horror comedy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1c0776ce-7ae0-49c0-a92d-40fd0896eeaa",
+        "tmdb_id": 56292,
+        "title": "Mission: Impossible - Ghost Protocol",
+        "year": 2011,
+        "overview": "Ethan Hunt and his team are racing against time to track down a dangerous terrorist named Hendricks, who has gained access to Russian nuclear launch codes and is planning a strike on the United States. An attempt to stop him ends in an explosion causing severe destruction to the Kremlin and the IMF to be implicated in the bombing, forcing the President to disavow them. No longer being aided by the government, Ethan and his team chase Hendricks around the globe, although they might still be too late to stop a disaster.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 133,
+        "vote_average": 7.1,
+        "director": "Brad Bird",
+        "similarity": 0.953840817102134,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6ce86f8f-0199-46e1-8c80-7728de9a226d",
+        "tmdb_id": 154,
+        "title": "Star Trek II: The Wrath of Khan",
+        "year": 1982,
+        "overview": "The starship Enterprise and its crew is pulled back into action when old nemesis, Khan, steals a top secret device called Project Genesis.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.448,
+        "director": "Nicholas Meyer",
+        "similarity": 0.95130998562752,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b508e4d1-af21-430d-b1bb-a2b34ad1039f",
+        "tmdb_id": 718930,
+        "title": "Bullet Train",
+        "year": 2022,
+        "overview": "Unlucky assassin Ladybug is determined to do his job peacefully after one too many gigs gone off the rails. Fate, however, may have other plans, as Ladybug's latest mission puts him on a collision course with lethal adversaries from around the globe—all with connected, yet conflicting, objectives—on the world's fastest train.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Thriller"
+        ],
+        "runtime": 126,
+        "vote_average": 7.414,
+        "director": "David Leitch",
+        "similarity": 0.951095684925902,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "98a56260-86b7-4e54-9fa0-de07bcea47b2",
+        "tmdb_id": 1071585,
+        "title": "M3GAN 2.0",
+        "year": 2025,
+        "overview": "After the underlying tech for M3GAN is stolen and misused by a powerful defense contractor to create a military-grade weapon known as Amelia, M3GAN's creator Gemma realizes that the only option is to resurrect M3GAN and give her a few upgrades, making her faster, stronger, and more lethal.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 120,
+        "vote_average": 7.251,
+        "director": "Gerard Johnstone",
+        "similarity": 0.948465193354175,
+        "curation_tier": "extended",
+        "match_reason": "android, artificial intelligence (a.i.), fight",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "58e965db-c419-4a90-a183-7496ffe5e292",
+        "tmdb_id": 127585,
+        "title": "X-Men: Days of Future Past",
+        "year": 2014,
+        "overview": "The ultimate X-Men ensemble fights a war for the survival of the species across two time periods as they join forces with their younger selves in an epic battle that must change the past – to save our future.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 7.529,
+        "director": "Bryan Singer",
+        "similarity": 0.947171277898143,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f6bb549c-fddc-4755-8e90-f6611972c85a",
+        "tmdb_id": 399566,
+        "title": "Godzilla vs. Kong",
+        "year": 2021,
+        "overview": "In a time when monsters walk the Earth, humanity’s fight for its future sets Godzilla and Kong on a collision course that will see the two most powerful forces of nature on the planet collide in a spectacular battle for the ages.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 114,
+        "vote_average": 7.541,
+        "director": "Adam Wingard",
+        "similarity": 0.946615419761347,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ab54bd73-7bd9-4ac9-918b-04b771b16687",
+        "tmdb_id": 845781,
+        "title": "Red One",
+        "year": 2024,
+        "overview": "After Santa Claus (codename: Red One) is kidnapped, the North Pole's Head of Security must team up with the world's most infamous tracker in a globe-trotting, action-packed mission to save Christmas.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 124,
+        "vote_average": 6.995,
+        "director": "Jake Kasdan",
+        "similarity": 0.945551551589835,
+        "curation_tier": "extended",
+        "match_reason": "rescue, bounty hunter, holiday",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "efbadd0e-ee8e-488f-b39e-160e782fe41d",
+        "tmdb_id": 454626,
+        "title": "Sonic the Hedgehog",
+        "year": 2020,
+        "overview": "Powered with incredible speed, Sonic The Hedgehog embraces his new home on Earth. That is, until Sonic sparks the attention of super-uncool evil genius Dr. Robotnik. Now it’s super-villain vs. super-sonic in an all-out race across the globe to stop Robotnik from using Sonic’s unique power for world domination.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 99,
+        "vote_average": 7.288,
+        "director": "Jeff Fowler",
+        "similarity": 0.941247554118503,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b1076760-4ff5-47bb-ab7b-74b719f727bc",
+        "tmdb_id": 1669,
+        "title": "The Hunt for Red October",
+        "year": 1990,
+        "overview": "A new technologically-superior Soviet nuclear sub, the Red October, is heading for the U.S. coast under the command of Captain Marko Ramius. The American government thinks Ramius is planning to attack. Lone CIA analyst Jack Ryan has a different idea: he thinks Ramius is planning to defect, but he has only a few hours to find him and prove it - because the entire Russian naval and air commands are trying to find Ramius, too. The hunt is on!",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 135,
+        "vote_average": 7.4,
+        "director": "John McTiernan",
+        "similarity": 0.938139643663342,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3de85234-93fd-40e9-9cee-d29e42e98762",
+        "tmdb_id": 1011477,
+        "title": "Karate Kid: Legends",
+        "year": 2025,
+        "overview": "After a family tragedy, kung fu prodigy Li Fong is uprooted from his home in Beijing and forced to move to New York City with his mother. When a new friend needs his help, Li enters a karate competition – but his skills alone aren't enough. Li's kung fu teacher Mr. Han enlists original Karate Kid Daniel LaRusso for help, and Li learns a new way to fight, merging their two styles into one for the ultimate martial arts showdown.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 94,
+        "vote_average": 7.017,
+        "director": "Jonathan Entwistle",
+        "similarity": 0.937728531880089,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7e7bac90-e401-401b-9c3e-3e6e0875207a",
+        "tmdb_id": 8681,
+        "title": "Taken",
+        "year": 2008,
+        "overview": "Bryan Mills, a former government operative, is trying to reconnect with his teenage daughter Kim. After reluctantly agreeing with his ex-wife to let Kim go to Paris on vacation with a friend, his worst nightmare comes true. While on the phone with his daughter shortly after she arrives in Paris, she and her friend are abducted by a gang of human traffickers. Working against the clock, Bryan relies on his extensive training and skills to track down the ruthless gang that abducted her and launch a one-man war to rescue his daughter.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 94,
+        "vote_average": 7.402,
+        "director": "Pierre Morel",
+        "similarity": 0.937495750747273,
+        "curation_tier": "extended",
+        "match_reason": "rescue, paris, france, kidnapping",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f8a49ceb-dc82-4bd9-8b05-ac47c277b771",
+        "tmdb_id": 453127,
+        "title": "Midnight Runners",
+        "year": 2017,
+        "overview": "Two apathetic police academy recruits who become best buddies through the tough training together witness a woman being abducted right before their very eyes. As they were taught in the academy, they quickly report the incident to the police, but the police are in no hurry to jump on the case. So the duo decide to take the matter into their own hands and rescue the woman.",
+        "genres": [
+          "Comedy",
+          "Action",
+          "Crime"
+        ],
+        "runtime": 109,
+        "vote_average": 7.5,
+        "director": "Jason Kim",
+        "similarity": 0.937222598908103,
+        "curation_tier": "extended",
+        "match_reason": "police, bromance, korean chinese",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9e76f3b-0e3a-4bde-ac62-f57050fe436d",
+        "tmdb_id": 335787,
+        "title": "Uncharted",
+        "year": 2022,
+        "overview": "A young street-smart, Nathan Drake and his wisecracking partner Victor “Sully” Sullivan embark on a dangerous pursuit of “the greatest treasure never found” while also tracking clues that may lead to Nathan’s long-lost brother.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 6.885,
+        "director": "Ruben Fleischer",
+        "similarity": 0.936096004276866,
+        "curation_tier": "extended",
+        "match_reason": "lighter, treasure hunt, treasure map",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3b7eba47-3876-4dcb-a4a1-10ebf104444e",
+        "tmdb_id": 1368,
+        "title": "First Blood",
+        "year": 1982,
+        "overview": "When former Green Beret John Rambo is harassed by local law enforcement and arrested for vagrancy, he is forced to flee into the mountains and wage an escalating one-man war against his pursuers.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 93,
+        "vote_average": 7.502,
+        "director": "Ted Kotcheff",
+        "similarity": 0.935074336372672,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.703210544178481,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ce27faee-2d2a-4c93-becb-ea6b0579a101",
+        "tmdb_id": 106646,
+        "title": "The Wolf of Wall Street",
+        "year": 2013,
+        "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 180,
+        "vote_average": 8.028,
+        "director": "Martin Scorsese",
+        "similarity": 0.653497868668736,
+        "curation_tier": "core",
+        "match_reason": "corruption, based on novel or book, drug addiction",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "69055b3d-9bd2-4841-a52a-613fd016a109",
+        "tmdb_id": 1422,
+        "title": "The Departed",
+        "year": 2006,
+        "overview": "To take down South Boston's Irish Mafia, the police send in one of their own to infiltrate the underworld, not realizing the syndicate has done likewise. While an undercover cop curries favor with the mob kingpin, a career criminal rises through the police ranks. But both sides soon discover there's a mole among them.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 151,
+        "vote_average": 8.16,
+        "director": "Martin Scorsese",
+        "similarity": 0.643521031656274,
+        "curation_tier": "core",
+        "match_reason": "police, undercover, boston, massachusetts",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "66631a31-b05b-45c7-91f8-ab4c5a6dfb1c",
+        "tmdb_id": 680,
+        "title": "Pulp Fiction",
+        "year": 1994,
+        "overview": "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper. Their adventures unfurl in three stories that ingeniously trip back and forth in time.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Comedy"
+        ],
+        "runtime": 154,
+        "vote_average": 8.484,
+        "director": "Quentin Tarantino",
+        "similarity": 0.639399766980572,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, drug crime, dark comedy",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.638059071201684,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e5b48c97-a614-45d7-9fd7-1d4b66abec40",
+        "tmdb_id": 155,
+        "title": "The Dark Knight",
+        "year": 2008,
+        "overview": "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets. The partnership proves to be effective, but they soon find themselves prey to a reign of chaos unleashed by a rising criminal mastermind known to the terrified citizens of Gotham as the Joker.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 152,
+        "vote_average": 8.531,
+        "director": "Christopher Nolan",
+        "similarity": 0.635352684267232,
+        "curation_tier": "core",
+        "match_reason": "sadism, chaos, secret identity",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bd2bb802-caa2-4a30-99bf-aa7cd8578443",
+        "tmdb_id": 807,
+        "title": "Se7en",
+        "year": 1995,
+        "overview": "Two homicide detectives are on a desperate hunt for a serial killer whose crimes are based on the \"seven deadly sins\" in this dark and haunting film that takes viewers from the tortured remains of one victim to the next. The seasoned Det. Somerset researches each sin in an effort to get inside the killer's mind, while his novice partner, Mills, scoffs at his efforts to unravel the case.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 127,
+        "vote_average": 8.381,
+        "director": "David Fincher",
+        "similarity": 0.634019776630469,
+        "curation_tier": "core",
+        "match_reason": "rage and hate, police, s.w.a.t.",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.631059139653039,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.615846589209015,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.538676830291377,
+        "curation_tier": "core",
+        "match_reason": "island, based on novel or book, concentration camp",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.517171752154528,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "70b9c9c2-dea1-4ed5-b9cf-cccc73197ec8",
+        "tmdb_id": 475557,
+        "title": "Joker",
+        "year": 2019,
+        "overview": "During the 1980s, a failed stand-up comedian is driven insane and turns to a life of crime and chaos in Gotham City while becoming an infamous psychopathic crime figure.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8.125,
+        "director": "Todd Phillips",
+        "similarity": 0.460313096650653,
+        "curation_tier": "core",
+        "match_reason": "society, based on comic, social commentary",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 817,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 817,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "horror comedy",
+        "fun scares",
+        "creature feature",
+        "supernatural",
+        "jump scares",
+        "group viewing",
+        "dark humor"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Horror",
+        "Comedy",
+        "Thriller"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Evil Dead II",
+          "year": 1987
+        },
+        {
+          "title": "Tucker and Dale vs. Evil",
+          "year": 2010
+        },
+        {
+          "title": "Gremlins",
+          "year": 1984
+        },
+        {
+          "title": "Cabin in the Woods",
+          "year": 2012
+        },
+        {
+          "title": "What We Do in the Shadows",
+          "year": 2014
+        },
+        {
+          "title": "Happy Death Day",
+          "year": 2017
+        },
+        {
+          "title": "Freaky",
+          "year": 2020
+        },
+        {
+          "title": "Scary Stories to Tell in the Dark",
+          "year": 2019
+        },
+        {
+          "title": "The Lighthouse",
+          "year": 2019
+        },
+        {
+          "title": "Drag Me to Hell",
+          "year": 2009
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "a8158cd4558d8fd0",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4325,
+    "http_status": 200,
+    "reranked_ids": [
+      "b9b92a5a-b426-4ca7-ab18-baf6ed4e938a",
+      "beba7a17-264c-4138-86e4-95aa0ce96f60",
+      "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+      "b508e4d1-af21-430d-b1bb-a2b34ad1039f"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "b9b92a5a-b426-4ca7-ab18-baf6ed4e938a": "Perfect blend of horror scares and slapstick comedy for group fun and laughs.",
+      "beba7a17-264c-4138-86e4-95aa0ce96f60": "Vampire mockumentary delivers genuine scares wrapped in hilarious character moments.",
+      "b32c5ccc-3684-4cbc-8cbf-fc85107d5075": "Thrilling shark attack adventure provides edge-of-seat suspense without being psychologically dark.",
+      "b508e4d1-af21-430d-b1bb-a2b34ad1039f": "Action-comedy on a train offers witty banter, laughs, and exciting thriller moments together."
+    }
+  }
+}

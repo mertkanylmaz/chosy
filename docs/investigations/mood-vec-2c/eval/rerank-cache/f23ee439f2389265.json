@@ -1,0 +1,24 @@
+{
+  "payload_hash": "f23ee439f2389265",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3552,
+  "http_status": 200,
+  "reranked_ids": [
+    "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+    "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+    "efb640cc-ed0a-43c5-a951-88eb612c9880",
+    "57103696-ff1e-4391-93c1-39515e56ee85"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a": "Celebrates brilliant African-American women overcoming systemic racism in space race.",
+    "c2dc7858-3ae7-4f06-ad73-c84357810ee4": "True story of coal miner's son inspired by Sputnik to build rockets.",
+    "efb640cc-ed0a-43c5-a951-88eb612c9880": "WWII medic's true story of moral courage and refusing to compromise principles.",
+    "57103696-ff1e-4391-93c1-39515e56ee85": "True story of Richard Williams coaching his daughters to tennis greatness."
+  }
+}

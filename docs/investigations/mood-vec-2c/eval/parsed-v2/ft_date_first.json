@@ -1,0 +1,142 @@
+{
+  "mood_id": "ft_date_first",
+  "text": "First date at home, something romantic but not cheesy",
+  "ms": 6894,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.3,
+      "anger": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "trust": 0.85,
+      "anticipation": 0.75
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "overly sentimental",
+      "predictable plot",
+      "heavy melodrama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": false,
+    "profile_name": "Intimate Connection",
+    "profile_description": "A couple seeking authentic romantic chemistry without saccharine sentiment—something that builds tension and trust while sparking genuine conversation.",
+    "genres_include": [
+      "Romance",
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Before Sunrise",
+        "year": 1995
+      },
+      {
+        "title": "Lost in Translation",
+        "year": 2003
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Call Me by Your Name",
+        "year": 2017
+      },
+      {
+        "title": "The Before Trilogy: Before Sunset",
+        "year": 2004
+      },
+      {
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019
+      },
+      {
+        "title": "Aftersun",
+        "year": 2022
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "Boyhood",
+        "year": 2014
+      },
+      {
+        "title": "Her",
+        "year": 2013
+      }
+    ],
+    "search_keywords": [
+      "romance",
+      "intimate conversation",
+      "character-driven",
+      "emotional connection",
+      "subtle tension",
+      "genuine chemistry",
+      "quiet moments"
+    ],
+    "search_id": "f584daff-58cd-4df6-b472-a69dcb8d595a",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.3,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "anticipation": 0.75,
+      "trust": 0.85
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "overly sentimental",
+      "predictable plot",
+      "heavy melodrama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": false
+  },
+  "search_id": "f584daff-58cd-4df6-b472-a69dcb8d595a",
+  "search_keywords": [
+    "romance",
+    "intimate conversation",
+    "character-driven",
+    "emotional connection",
+    "subtle tension",
+    "genuine chemistry",
+    "quiet moments"
+  ],
+  "limit": null,
+  "remaining": null
+}

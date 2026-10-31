@@ -1,0 +1,147 @@
+{
+  "mood_id": "qm_mindbending",
+  "text": "A deep and thought-provoking philosophical film, mind-bending and complex, not comedy, not lighthearted",
+  "ms": 6606,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.4,
+      "fear": 0.3,
+      "anger": 0.2,
+      "surprise": 0.7,
+      "disgust": 0.1,
+      "trust": 0.4,
+      "anticipation": 0.6
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.95,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "lighthearted humor",
+      "slapstick",
+      "feel-good simplicity"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Philosophical Enigma",
+    "profile_description": "You seek intellectually challenging cinema that explores big existential questions through complex, layered storytelling that demands active engagement and rewards contemplation.",
+    "genres_include": [
+      "Drama",
+      "Science Fiction",
+      "Mystery"
+    ],
+    "genres_exclude": [
+      "Comedy"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "Mulholland Drive",
+        "year": 2001
+      },
+      {
+        "title": "Arrival",
+        "year": 2016
+      },
+      {
+        "title": "2001: A Space Odyssey",
+        "year": 1968
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "Memento",
+        "year": 2000
+      },
+      {
+        "title": "Solaris",
+        "year": 1972
+      },
+      {
+        "title": "The Prestige",
+        "year": 2006
+      },
+      {
+        "title": "Interstellar",
+        "year": 2014
+      },
+      {
+        "title": "Ex Machina",
+        "year": 2014
+      }
+    ],
+    "search_keywords": [
+      "philosophical",
+      "mind-bending",
+      "existential",
+      "complex narrative",
+      "metaphysical",
+      "intellectual",
+      "reality versus illusion"
+    ],
+    "search_id": "19258a58-f8fc-4ce0-a960-315979bef778",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.4,
+      "anger": 0.2,
+      "fear": 0.3,
+      "surprise": 0.7,
+      "disgust": 0.1,
+      "anticipation": 0.6,
+      "trust": 0.4
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.95,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "lighthearted humor",
+      "slapstick",
+      "feel-good simplicity"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "19258a58-f8fc-4ce0-a960-315979bef778",
+  "search_keywords": [
+    "philosophical",
+    "mind-bending",
+    "existential",
+    "complex narrative",
+    "metaphysical",
+    "intellectual",
+    "reality versus illusion"
+  ],
+  "limit": null,
+  "remaining": null
+}

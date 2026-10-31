@@ -1,5 +1,5 @@
 /**
- * Mood search ekrani — duygu giris akisi + AI Processing + Mood Profile Result.
+ * Mood search ekrani — duygu giris akisi + AI Processing → dogrudan film destesi.
  *
  * ⚠️ C.9b (19.08.2026): Bu dosya `app/(tabs)/index.tsx`'ten BURAYA TASINDI.
  * Home route'u artik gunluk gauntlet ritueline ait (GauntletShell). Kod
@@ -23,7 +23,8 @@
  *   input      — Ekran basligi + Era/Quality chip filtreleri + metin girisi
  *                + Quick Moods + sabit alt "Find Movies" butonu
  *   processing — AIProcessingOverlay (modal overlay)
- *   result     — MoodProfileResult; "Browse Movies" → discover stack'e gecer
+ *   (sonuc)    — PRO-0 F0-3: profil/paylasim ekrani yok; arama bitince dogrudan
+ *                 discover destesine gecilir (dosyalar duruyor, rota yok)
  *
  * UX Kararlari:
  *   - Logo hero kaldirildi → sade baslik + subtitle
@@ -59,17 +60,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 
 import AIProcessingOverlay from '@/components/AIProcessingOverlay';
-import MoodProfileResult from '@/components/MoodProfileResult';
 import QuotaExhausted from '@/components/QuotaExhausted';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
+import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
+import { useFreeVisibleCount } from '@/hooks/useFreeVisibleCount';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
-import { MoodShareCard, useShareCapture } from '@/components/ShareCards';
-import MoodCardGrid from '@/components/Home/MoodCardGrid';
+import MoodCardGrid, { MOOD_CARDS } from '@/components/Home/MoodCardGrid';
 import FilterBottomSheet from '@/components/Home/FilterBottomSheet';
 import { Colors } from '@/constants/Colors';
 import { color } from '@/constants/design/semantic';
 import { withAlpha } from '@/constants/gameThemes';
+import { i18n } from '@/constants/i18n';
 import { Theme } from '@/constants/theme';
 // DISCOVER_GAMES import removed — games section only in Discover tab
 import { useScalePress } from '@/hooks/useScalePress';
@@ -82,9 +84,17 @@ import {
   setSearchKeywords,
   setPendingMoodText,
   setSearchModeState,
+  setSearchAnalyticsContext,
+  setDeckResumed,
+  setLastFullPrompt,
 } from '@/services/moodSearchState';
-import { startPreload } from '@/services/recommendationPreload';
+import { seedPreload, startPreload } from '@/services/recommendationPreload';
+import { loadTodayDeck } from '@/services/todayDeckStore';
+import TodaySearchCard from '@/components/Home/TodaySearchCard';
+import { hasFreeSearchLeft } from '@/utils/searchQuota';
+import { isSameSearchText, localDateKey, type TodayDeckSnapshot } from '@/utils/todayDeck';
 import { getMoodHistory } from '@/services/profileService';
+import * as ExpoCrypto from 'expo-crypto';
 import { parseMood } from '@/services/tasteParser';
 import { hasAiConsent, recordAiConsent } from '@/services/aiConsent';
 import { saveSession } from '@/services/watchlist';
@@ -92,14 +102,23 @@ import { readAppUserId } from '@/services/auth-utils';
 import { FilmFilters, TasteProfile } from '@/types';
 import type { MoodHistoryItem } from '@/types/profile';
 import { type ErrorType, toUserError } from '@/utils/errorHelpers';
-import { yearRangeToEra } from '@/utils/filmFilters';
+import { minRatingThreshold, yearRangeToEra } from '@/utils/filmFilters';
+import { isMoodInputSubmittable, moodErrorMessageKey } from '@/utils/moodSearchInput';
+import { isOfferEligible } from '@/utils/moodOfferTiming';
+import { hidesBeyondFree } from '@/utils/moodLock';
+import {
+  classifyMoodSearchError,
+  createSearchAttempts,
+  nextActivationStep,
+} from '@/utils/moodSearchRetry';
+import { getFreeVisibleCount } from '@/services/appConfigFlags';
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
 /** Overlay asamalari */
-type Phase = 'input' | 'processing' | 'result';
+type Phase = 'input' | 'processing';
 
 /** Pipeline ilerleme sinyali — AIProcessingOverlay'e aktarilir */
 type PipelineStage = 'parsing' | 'done';
@@ -116,6 +135,21 @@ const MIN_PROCESSING_MS = 1500;
 // ─── Filter chip type aliases (used by FilterBottomSheet + handleFindMovies) ─
 
 
+/**
+ * Kayitli metni (kart basligi veya tam prompt, EN ya da TR) hizli mood kartina esler.
+ * Eslesme yoksa null: metin serbest yazimdir, etiket zaten prompt'tur.
+ */
+function findMoodCard(text: string) {
+  const stored = text.trim().toLocaleLowerCase();
+  return MOOD_CARDS.find((c) =>
+    (['en', 'tr'] as const).some(
+      (locale) =>
+        i18n.t(c.titleKey, { locale }).toLocaleLowerCase() === stored ||
+        i18n.t(c.searchQuery, { locale }).toLocaleLowerCase() === stored,
+    ),
+  ) ?? null;
+}
+
 // ─── Ana ekran ────────────────────────────────────────────────────────────────
 
 /**
@@ -126,7 +160,7 @@ export default function MoodSearchScreen() {
   const router = useRouter();
   const { t } = useLanguage();
   /** Onboarding akisi: ArchetypeReveal'den gelen param — mood → discover → paywall zinciri */
-  const { onboarding } = useLocalSearchParams<{ onboarding?: string }>();
+  const { onboarding, entry } = useLocalSearchParams<{ onboarding?: string; entry?: string }>();
   const isOnboarding = onboarding === '1';
   const {
     setMoodResult, setCurrentSessionId, setLastMoodText, setLastSearchId,
@@ -134,13 +168,14 @@ export default function MoodSearchScreen() {
   } = useMood();
   const { checkQuota, consumeQuota } = useSubscription();
   /** Grandfathered kohort istemci kota duvarina tabi degil — bkz. useProModeAccess */
-  const { quotaExempt } = useProModeAccess();
+  const { quotaExempt, allowed: proEntitled, loading: proAccessLoading, searchQuota, refreshSearchQuota } = useProModeAccess({ withQuota: true });
+  /** MONEY-1C: acikken arama hakki SADECE sunucuda sayilir (istemci AsyncStorage sayaci atlanir) */
+  const offerEnabled = useMoodOfferEnabled();
+  const freeVisibleCount = useFreeVisibleCount();
   const { triggerPaywall, paywallProps } = useContextualPaywall();
 
   const [phase, setPhase] = useState<Phase>('input');
   const [pipelineStage, setPipelineStage] = useState<PipelineStage>('parsing');
-  const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
-  const { cardRef: moodShareRef, share: shareMoodCard, isCapturing: isMoodShareCapturing } = useShareCapture();
   /** Metin giris state'i */
   const [moodText, setMoodText] = useState('');
   /** Secili yil filtresi */
@@ -171,8 +206,25 @@ export default function MoodSearchScreen() {
 
   /** Son mood aramalari — discover tab content section */
   const [recentSearches, setRecentSearches] = useState<MoodHistoryItem[]>([]);
+  /** Bugunku deste anlik goruntusu (yalniz cihazda; bayrak acikken okunur). */
+  const [todayDeck, setTodayDeck] = useState<TodayDeckSnapshot | null>(null);
 
-  const pendingFilters = useRef<FilmFilters | null>(null);
+  /**
+   * Hizli mood karti / Recent'ten gelen aramada ekranda ETIKET gorunur ("Rainy Night"),
+   * LLM'e TAM prompt gider. Kullanici metni duzenlerse etiket eslesmez, override devre disi kalir.
+   */
+  const promptOverride = useRef<{ label: string; prompt: string } | null>(null);
+  const promptFor = useCallback((label: string): string => {
+    const o = promptOverride.current;
+    return o && o.label === label ? o.prompt : label;
+  }, []);
+  /** MONEY-1C: ayni metinle bitmemis denemeler ayni client_search_id'yi tasir (sunucu hakki bir kez dusurur). */
+  const attempts = useRef(createSearchAttempts(() => ExpoCrypto.randomUUID()));
+  /** Hak duvarinda kalan arama (metin): satin alma sonrasi AYNI kimlikle otomatik yeniden calisir. */
+  const pendingActivation = useRef<string | null>(null);
+  /** Satin alma sonrasi "Pro etkinlestiriliyor" dongusu calisiyor mu (cift calismayi onler). */
+  const activationRunning = useRef(false);
+  const prevEntitled = useRef(proEntitled);
   // Ekran acildiginda kota bilgisini yenile
   useEffect(() => {
     checkQuota();
@@ -198,6 +250,33 @@ export default function MoodSearchScreen() {
         }
       })();
     }, []),
+  );
+
+  // MONEY-1C: kalan hak her odakta sunucudan tazelenir (arama sonrasi donuste "ucretsiz arama" ipucu kapanir).
+  useFocusEffect(
+    useCallback(() => {
+      refreshSearchQuota();
+    }, [refreshSearchQuota]),
+  );
+
+  // MONEY-1C P0: bugunku deste kurtarma — her odakta cihazdan okunur (bayrak kapaliysa hic okunmaz).
+  useFocusEffect(
+    useCallback(() => {
+      if (!offerEnabled || isOnboarding) {
+        setTodayDeck(null);
+        return;
+      }
+      let active = true;
+      void (async () => {
+        const ownerId = await readAppUserId();
+        if (!ownerId) return;
+        const snapshot = await loadTodayDeck(ownerId);
+        if (active) setTodayDeck(snapshot);
+      })();
+      return () => {
+        active = false;
+      };
+    }, [offerEnabled, isOnboarding]),
   );
 
   // Rıza durumu her odakta okunur: Ayarlar'dan açılıp/kapatılıp dönüldüğünde güncel kalır.
@@ -265,17 +344,27 @@ export default function MoodSearchScreen() {
   }, [triggerPaywall]);
 
   /**
-   * Arama sonrası ortak adım: store'ları yaz → preload başlat → sonuç aşaması.
+   * Arama sonrası ortak adım: store'ları yaz → preload başlat → doğrudan desteye geç.
+   * (PRO-0 F0-3: araya profil/paylaşım ekranı girmez; eski "Browse Movies" adımları burada.)
    */
   const applySearchResult = useCallback(
     async (params: {
+      /** LLM'e giden tam prompt */
       trimmed: string;
+      /** Ekranda ve oturum kaydında gorunen metin (serbest yazimda trimmed ile ayni) */
+      label: string;
       filters: FilmFilters;
       profile: TasteProfile;
       searchId: string | null;
       searchKeywords: string[];
+      /** Kilitli destede ucretsiz sinirin otesindeki posterler indirilmez (yoksa hepsi). */
+      prefetchLimit?: number;
+      /** Analitik cekirdegi icin aramanin giris yuzeyi (kullanici metni degil). */
+      entryPoint: string;
+      /** "Ara"ya basma ani (epoch ms) — mood_deck_started.ms_since_submit */
+      submittedAt: number;
     }) => {
-      const { trimmed, filters, profile, searchId, searchKeywords } = params;
+      const { trimmed, label, filters, profile, searchId, searchKeywords, prefetchLimit, entryPoint, submittedAt } = params;
 
       if (filters.yearRange !== null) {
         profile.era_preference = yearRangeToEra(filters.yearRange);
@@ -284,6 +373,8 @@ export default function MoodSearchScreen() {
       // Mod preload'dan ÖNCE yazılır: recommendations.ts aynı modu module-level okur.
       setSearchModeState('ai');
       setSearchMode('ai');
+      // AI yolu rizayla gelir (parseMood son kapiyi tutar): analitik cekirdegi consent=true.
+      setSearchAnalyticsContext({ entryPoint, consent: true, submittedAt });
 
       // Sprint 1 v4.0: searchId'yi MoodContext'e kaydet — recommendations.ts kullanacak
       setLastSearchId(searchId);
@@ -293,48 +384,80 @@ export default function MoodSearchScreen() {
       setSearchKeywords(searchKeywords);
       // Orijinal mood metni — yalnız LLM re-ranker icin
       setPendingMoodText(trimmed);
-
-      setTasteProfile(profile);
+      // "Filtreleri kaldir" ve rerank her zaman tam prompt'u kullanir; etiket yalniz gosterim icin.
+      setLastFullPrompt(trimmed);
 
       // Recommendations preload — animasyonu beklemeden hemen baslat
       // searchId zaten setPendingSearchId ile set edildi, startPreload consume edecek
       // 350ms erken baslatma: kullanici profili okurken pipeline daha fazla sure kazanir
-      startPreload(profile, filters, trimmed);
+      startPreload(profile, filters, trimmed, prefetchLimit);
 
-      // Kısa gecikme — overlay fade-out tamamlansın, result mount olsun
-      await new Promise<void>((resolve) => setTimeout(resolve, 350));
-      setPhase('result');
+      // LastSessionCard / bugunku deste icin gorunen metin; profil + filtre desteye taşınır.
+      setLastMoodText(label);
+      setMoodResult(profile, filters);
+      // Desteye gonder — kota bilgisini yenile (badge guncellensin)
+      checkQuota();
+      if (isOnboarding) {
+        // Onboarding akisi: 5 film limit + App Store review + paywall zinciri
+        router.push({ pathname: '/discover', params: { onboarding: '1' } } as never);
+      } else {
+        router.push('/discover');
+      }
 
-      // Session'i arka planda kaydet — hata akisini engellemez.
+      // Session'i arka planda kaydet — hata akisini engellemez. Etiket kaydedilir (Recent okunur kalir).
       readAppUserId().then((userId) => {
         if (userId) {
-          saveSession(userId, trimmed, profile).then((sessionId) => {
+          saveSession(userId, label, profile).then((sessionId) => {
             setCurrentSessionId(sessionId);
           });
         }
       });
+
+      // Deste ekrani uste binince arama ekrani girdi asamasina doner (geri donuste overlay kalmasin).
+      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      setPhase('input');
     },
-    [setSearchMode, setLastSearchId, setCurrentSessionId],
+    [setSearchMode, setLastSearchId, setCurrentSessionId, setLastMoodText, setMoodResult, checkQuota, isOnboarding, router],
   );
 
   /** AI yolu: parse-mood + (varsa) rerank. Hata çağırana fırlatılır. */
   const runAiSearch = useCallback(
-    async (trimmed: string, filters: FilmFilters) => {
+    async (trimmed: string, label: string, filters: FilmFilters, freeSearch: boolean, submittedAt: number) => {
+      // Bayrak acikken (idempotency) kimlik gonderilir; kapaliyken eski govde.
+      const attempt = offerEnabled ? attempts.current.idFor(trimmed) : null;
       const [parseResult] = await Promise.all([
-        parseMood(trimmed),
+        parseMood(trimmed, attempt ? { clientSearchId: attempt.id, isRetry: attempt.isRetry } : undefined),
         new Promise<void>((resolve) => setTimeout(resolve, MIN_PROCESSING_MS)),
       ]);
 
-      const { profile, searchId, searchKeywords } = parseResult;
+      const { profile, searchId, searchKeywords, quota } = parseResult;
+
+      // MONEY-1C: ucretsiz hakla yapilan arama basarili — `remaining` sunucudan
+      // (null = bilinmiyor). Kapaliyken / yetkili kullanicida olay yok.
+      if (freeSearch) {
+        posthogAnalytics.track('mood_search_free_completed', {
+          entry_point: entry ?? 'direct',
+          search_id: searchId,
+          remaining: quota.kind === 'available' ? quota.remaining : quota.kind === 'exhausted' ? 0 : null,
+        });
+      }
 
       // parseMood bitti — overlay'e sinyal gönder
       setPipelineStage('done');
 
+      // Yetkisiz kullanicida (yetki okunurken dahil) gizli poster indirilmez.
+      const prefetchLimit = hidesBeyondFree({ offerEnabled, isOnboarding, entitled: proEntitled })
+        ? await getFreeVisibleCount()
+        : undefined;
+
       await applySearchResult({
-        trimmed, filters, profile, searchId, searchKeywords,
+        trimmed, label, filters, profile, searchId, searchKeywords, prefetchLimit,
+        entryPoint: entry ?? 'direct', submittedAt,
       });
+      // Arama basariyla bitti: kimlik birakilir, sonraki arama yeni kimlik alir.
+      attempts.current.succeeded();
     },
-    [applySearchResult],
+    [applySearchResult, entry, offerEnabled, isOnboarding, proEntitled],
   );
 
   /**
@@ -366,14 +489,28 @@ export default function MoodSearchScreen() {
    *
    * Çağıran rıza aldığını varsayar (parseMood ayrıca `hasAiConsent` ile son kapıyı tutar).
    */
-  const runSearch = useCallback(async () => {
-    const trimmed = moodText.trim();
-    if (!trimmed || phase === 'processing') return;
+  const runSearch = useCallback(async (
+    opts?: { activation?: boolean; label?: string; prompt?: string },
+  ): Promise<string | null> => {
+    // Kart/Recent aramasi etiket + tam prompt'u ACIKCA verir (state henuz guncellenmemis olabilir).
+    const label = (opts?.label ?? moodText).trim();
+    const trimmed = (opts?.prompt ?? promptFor(label)).trim();
+    // Sunucuyla ayni 2 karakter siniri (bayraktan bagimsiz; sunucu 1 karakteri 400'ler).
+    if (!isMoodInputSubmittable(trimmed) || phase === 'processing') return null;
 
+    const submittedAt = Date.now();
     // CTA hafif haptik — DESIGN_OS §8 `impactLight` (V-1 Tur 7; önce Medium).
     hapticLight();
     Keyboard.dismiss();
-    posthogAnalytics.track('mood_searched', { mood_text_length: trimmed.length });
+    // MONEY-1C: ucretsiz hak yoluyla baslayan arama (bayrak acik, yetkisiz, onboarding disi).
+    // Erisim OKUNURKEN `allowed` false gorunur; o anda karar verilmez (premium/legacy
+    // kullanici ucretsiz arama olarak sayilmasin) — olay atilmaz, huni kirlenmez.
+    const freeSearch = isOfferEligible({
+      offerEnabled,
+      isOnboarding,
+      accessLoading: proAccessLoading,
+      entitled: proEntitled,
+    });
 
     // Mod HER aramanın başında açıkça yazılır (önceki aramadan kalan değer
     // recommendations.ts'teki search_id_missing bastırmasını etkilemesin).
@@ -384,14 +521,16 @@ export default function MoodSearchScreen() {
     // Onboarding'de kota tuketme (ilk arama bedava).
     // `quotaExempt`: grandfathered kohort (legacy_mood_access) istemci
     // duvarina tabi degil — CTO karari 24 Eyl 2026.
-    if (!isOnboarding && !quotaExempt) {
+    // MONEY-1C: `mood_offer_enabled` aciksa istemci sayaci (AsyncStorage) HIC
+    // tuketilmez — tek dogruluk kaynagi parse-mood (429 QUOTA_EXCEEDED).
+    if (!isOnboarding && !quotaExempt && !offerEnabled) {
       const quotaResult = await consumeQuota('search');
       setLastQuotaResult(quotaResult);
       if (!quotaResult.allowed) {
         posthogAnalytics.track('quota_exhausted', { quota_type: 'search' });
         // Contextual paywall dene — gosterilmezse fallback QuotaExhausted
         await showQuotaWall();
-        return;
+        return null;
       }
     }
 
@@ -403,14 +542,30 @@ export default function MoodSearchScreen() {
 
     const filters: FilmFilters = { yearRange, minRating, regions: [], directors: [] };
 
-    pendingFilters.current = filters;
+    posthogAnalytics.track('mood_searched', {
+      mood_text_length: trimmed.length,
+      filter_min_rating: minRatingThreshold(minRating),
+      filter_era: yearRange,
+    });
+
+    // `mood_search_free_started` RIZA dogrulandiktan SONRA: rizayi taze okuyoruz (cagirani
+    // ne varsayiyoruz ne de rizanin arada geri cekilmedigini). Riza yoksa olay atilmaz;
+    // parseMood'un son kapisi AI_CONSENT_REQUIRED'i zaten yonetir.
+    if (freeSearch && (await hasAiConsent())) {
+      posthogAnalytics.track('mood_search_free_started', {
+        entry_point: entry ?? 'direct',
+        mood_text_length: trimmed.length,
+      });
+    }
 
     try {
       setMoodError(null);
 
       setPipelineStage('parsing');
       setPhase('processing');
-      await runAiSearch(trimmed, filters);
+      await runAiSearch(trimmed, label, filters, freeSearch, submittedAt);
+      pendingActivation.current = null;
+      return null;
     } catch (err) {
       if (__DEV__) {
         // eslint-disable-next-line no-console
@@ -424,7 +579,15 @@ export default function MoodSearchScreen() {
       if (errorCode === 'AI_CONSENT_REQUIRED') {
         setConsented(false);
         setPhase('input');
-        return;
+        return null;
+      }
+
+      // Satin alma sonrasi etkinlesme penceresi: hak duvari / hiz siniri / IN_PROGRESS geldiyse
+      // (sunucu tier'i henuz gormedi) sessizce bekle — hata/paywall gosterme, cagiran dongu AYNI
+      // kimlikle yeniden dener (`nextActivationStep`).
+      if (opts?.activation && nextActivationStep(errorCode, 1).kind !== 'proceed') {
+        setPhase('input');
+        return errorCode;
       }
 
       posthogAnalytics.track('mood_search_failed', {
@@ -435,18 +598,74 @@ export default function MoodSearchScreen() {
 
       const userError = toUserError(err, 'mood');
       // APP_USER_MISSING metni Edge'den cevrilmemis gelir — t() ile degistir.
+      // MONEY-1C (bayrak acik): 503 kota servisi / 400 gecersiz girdi icin cevrilmis metin.
+      // 503'te paywall YOK ve hak harcanmadi — kullanici sadece tekrar dener.
+      const offerMessageKey = moodErrorMessageKey(errorCode, offerEnabled);
       const message = errorCode === 'APP_USER_MISSING'
         ? t('errors.accountSetupIncomplete')
-        : userError.message;
+        : offerMessageKey
+          ? t(offerMessageKey)
+          : userError.message;
       setMoodError({ type: userError.type, message });
       setPhase('input');
 
-      // Quota exceeded from edge function — show paywall
-      if (userError.type === 'quota') {
-        await showQuotaWall();
+      // Paywall YALNIZ gunluk kota kodunda (429 QUOTA_EXCEEDED). Hiz siniri / IN_PROGRESS /
+      // servis hatalari hata mesaji gosterir, paywall acmaz.
+      if (classifyMoodSearchError(errorCode) === 'paywall') {
+        if (offerEnabled) {
+          pendingActivation.current = trimmed;
+          // MONEY-1C: gunun hakki bittikten sonra ikinci deneme → Pro teklifi
+          // ("Unlimited with Pro"). Teklif acilamazsa (premium, orchestrator) eski duvar.
+          const shown = await triggerPaywall({ type: 'mood_offer', entry: 'quota_exhausted' });
+          if (!shown) await showQuotaWall();
+        } else {
+          await showQuotaWall();
+        }
       }
+      return errorCode;
     }
-  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, showQuotaWall, applySearchResult, runAiSearch, setSearchMode]);
+  }, [moodText, yearChip, ratingChip, phase, t, consumeQuota, isOnboarding, quotaExempt, proEntitled, proAccessLoading, entry, offerEnabled, triggerPaywall, showQuotaWall, applySearchResult, runAiSearch, setSearchMode, promptFor]);
+
+  /** Her render'da guncel `runSearch` — etkinlesme dongusu eski kapanisi kullanmasin. */
+  const runSearchRef = useRef(runSearch);
+  runSearchRef.current = runSearch;
+
+  /**
+   * Satin alma sonrasi bekleyen arama (MONEY-1C g): hak duvarinda kalan arama, yetki
+   * false → true gecince AYNI client_search_id ile otomatik yeniden calisir. Sunucu tier'i
+   * webhook/sync gecikmesiyle gec gorebilir: duvar kodu gelirse ~30 sn boyunca 3 sn arayla
+   * "Pro etkinlestiriliyor" mesajiyla yeniden denenir; paywall YENIDEN acilmaz.
+   */
+  useEffect(() => {
+    const became = !prevEntitled.current && proEntitled;
+    prevEntitled.current = proEntitled;
+    if (!became || !offerEnabled || activationRunning.current) return;
+    const pending = pendingActivation.current;
+    if (!pending || pending !== promptFor(moodText.trim())) return;
+
+    activationRunning.current = true;
+    void (async () => {
+      try {
+        for (let attempt = 1; ; attempt++) {
+          setMoodError({ type: 'server', message: t('moodOffer.activating') });
+          const code = await runSearchRef.current({ activation: true });
+          const step = nextActivationStep(code, attempt);
+          if (step.kind === 'retry') {
+            await new Promise<void>((resolve) => setTimeout(resolve, step.waitMs));
+            continue;
+          }
+          if (step.kind === 'give_up') {
+            posthogAnalytics.track('mood_activation_timeout', { attempts: attempt });
+            setMoodError({ type: 'server', message: t('moodOffer.activatingTimeout') });
+          }
+          break;
+        }
+      } finally {
+        pendingActivation.current = null;
+        activationRunning.current = false;
+      }
+    })();
+  }, [proEntitled, offerEnabled, moodText, t, promptFor]);
 
   /**
    * "Find Movies" / klavye oku / onSubmitEditing. Rıza yoksa HİÇBİR ŞEY yapmaz:
@@ -464,62 +683,38 @@ export default function MoodSearchScreen() {
 
   /** Birincil inline buton: önce rıza yazılır, başarılıysa AI arama. */
   const handleEnableAndFind = useCallback(async () => {
-    if (moodText.trim().length === 0 || phase === 'processing') return;
+    if (!isMoodInputSubmittable(moodText) || phase === 'processing') return;
     enableTapped.current = true;
     if (!(await grantInlineConsent())) return;
     await runSearch();
-  }, [moodText, phase, grantInlineConsent, runSearch]);
+  }, [moodText, phase, offerEnabled, grantInlineConsent, runSearch]);
 
   /**
-   * "Browse Movies" → MoodContext'e kaydet → film destesine gec
-   *
-   * ⚠️ İSİM ÇAKIŞMASI — silmeden once oku (C.9c, 19.08.2026):
-   * `app/discover.tsx` ile `app/(tabs)/mood.tsx` AYNI SEY DEGILDIR.
-   *   · `(tabs)/mood.tsx` = Discover TAB'i (trending/upcoming/games browse
-   *     hub'i). K-02 ile DONDURULDU, `discover_tab_enabled` flag'i false.
-   *   · `app/discover.tsx` = bu push'un hedefi. Mood search'un 8 filmlik
-   *     swipe destesi; stack route, flag YOK, CANLI.
-   * Asagidaki push donmus tab'a degil, canli desteye gider ve mood search'un
-   * TEK teslim kanalidir: `MoodProfileResult` yalnizca 4 boyut karti gosterir,
-   * hicbir film icermez. Bu push kalkarsa Pro Mode "mood yaz → kisilik okumasi
-   * → cikmaz sokak" olur ve `startPreload()` ciktisini kimse tuketmez.
-   *
-   * B hibrit paywall: Free kullanici ilk aramasini yaptiktan sonra
-   * desteye gonder, ama kota bittiyse sonraki "Find Movies"'te paywall goster.
-   * Su anki arama zaten basarili oldu — desteye gitmesini engelleme.
-   *
-   * Onboarding modu: `onboarding=1` param'i gecilir → 5 film limiti aktif.
+   * Etiket + tam prompt ile aramayi dogrudan baslatir (hizli mood karti, Recent).
+   * Riza yoksa arama BASLAMAZ: metin yazilir, inline riza blogu acilir ve
+   * "Enable and find" ayni etiket/prompt ciftiyle devam eder (`promptOverride`).
    */
-  const handleBrowseMovies = useCallback(() => {
-    if (!tasteProfile) return;
-    // P7.1: LastSessionCard icin son mood metnini sakla
-    const trimmedMood = moodText.trim();
-    if (trimmedMood) setLastMoodText(trimmedMood);
-    setMoodResult(
-      tasteProfile,
-      pendingFilters.current ?? { yearRange: null, minRating: null, regions: [], directors: [] },
-    );
-    setPhase('input');
-
-    // Desteye gonder — kota bilgisini yenile (badge guncellensin)
-    checkQuota();
-    if (isOnboarding) {
-      // Onboarding akisi: 5 film limit + App Store review + paywall zinciri
-      router.push({ pathname: '/discover', params: { onboarding: '1' } } as never);
-    } else {
-      router.push('/discover');
+  const startPicked = useCallback(async (label: string, prompt: string) => {
+    promptOverride.current = { label, prompt };
+    setMoodText(label);
+    if (!(await hasAiConsent())) {
+      setConsented(false);
+      return;
     }
-  }, [tasteProfile, moodText, setMoodResult, setLastMoodText, router, checkQuota, isOnboarding]);
+    setConsented(true);
+    await runSearchRef.current({ label, prompt });
+  }, []);
 
   /**
-   * Mood card secildiginde — metin doldur + haptik + buton flash + scale pulse.
-   * MoodCardGrid'den gelen text zaten localized prompt.
+   * Mood card secildiginde — haptik + buton flash + dogrudan arama.
+   * MoodCardGrid'den gelen text tam (yerellestirilmis) prompt; ekranda kart basligi gorunur.
    */
   const handleMoodCardSelect = useCallback(
-    (text: string) => {
+    (text: string, cardId: string) => {
       hapticSelection();
-      posthogAnalytics.track('mood_card_tapped', { mood_text: text.slice(0, 40) });
-      setMoodText(text);
+      posthogAnalytics.track('mood_card_tapped', { mood_card_id: cardId });
+      const card = MOOD_CARDS.find((c) => c.id === cardId);
+      void startPicked(card ? t(card.titleKey) : text, text);
       // Opacity: dim → spring geri
       findBtnFlash.value = withSequence(
         withTiming(0.6, { duration: 80 }),
@@ -533,55 +728,69 @@ export default function MoodSearchScreen() {
     },
     // findBtnFlash + findBtnScale stable SharedValue ref — ESLint uyarisi beklenmez
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [t, startPicked],
   );
 
-  /** Recent search tap — text'i set et + submit */
+  /**
+   * Bugunku desteyi cihazdaki anlik goruntuden acar: parse-mood / match_films / rerank CAGRISI YOK.
+   * Profil + filtre MoodContext'e, film listesi preload olarak yerlestirilir; siralama korunur.
+   */
+  const openTodayDeck = useCallback(() => {
+    if (!todayDeck) return;
+    hapticLight();
+    posthogAnalytics.track('mood_today_deck_reopened', {
+      search_id: todayDeck.searchId,
+      deck_size: todayDeck.films.length,
+    });
+    setSearchModeState('ai');
+    setSearchMode('ai');
+    // Kurtarilan deste yeni arama degil: discover `mood_deck_resumed` atar (`mood_deck_started` degil).
+    setSearchAnalyticsContext({ entryPoint: 'today_deck', consent: true });
+    setDeckResumed(true);
+    setLastSearchId(todayDeck.searchId);
+    setLastMoodText(todayDeck.moodText);
+    // Snapshot yalniz etiketi tutar: tam prompt etiketten cozulur (kart ise prompt, serbest metinde etiket).
+    const savedCard = findMoodCard(todayDeck.moodText);
+    setLastFullPrompt(savedCard ? t(savedCard.searchQuery) : todayDeck.moodText);
+    setMoodResult(todayDeck.profile, todayDeck.filters);
+    seedPreload(todayDeck.films);
+    router.push('/discover');
+  }, [todayDeck, setSearchMode, setLastSearchId, setLastMoodText, setMoodResult, router, t]);
+
+  /**
+   * Recent search tap: bugunku aramaysa mevcut desteyi ac, degilse aramayi baslat.
+   * Eski kayitlar tam (robotik) prompt olabilir: iki dilin kart baslik/prompt'lariyla
+   * eslestirilir; kart ise etiket + tam prompt, degilse metin ikisi icin de kullanilir.
+   */
   const handleRecentTap = useCallback((item: MoodHistoryItem) => {
     hapticLight();
-    posthogAnalytics.track('discover_recent_search_tapped', { mood_text: item.mood_text });
-    setMoodText(item.mood_text);
-    // Kisa gecikme — state'in yerlesip handleFindMovies'in guncel moodText'i görmesi icin
-    setTimeout(() => {
-      // handleFindMovies moodText ref'ini kullanir, setState async oldugu icin
-      // dogrudan text'i kullanmak yerine state'in settle etmesini bekliyoruz
-    }, 100);
-  }, []);
+    const card = findMoodCard(item.mood_text);
+    const label = card ? t(card.titleKey) : item.mood_text;
+    const prompt = card ? t(card.searchQuery) : item.mood_text;
+    // Bugunku arama: yeni arama baslatma, mevcut desteyi ac.
+    if (
+      todayDeck &&
+      localDateKey(new Date(item.created_at)) === todayDeck.localDate &&
+      (isSameSearchText(todayDeck, item.mood_text) || isSameSearchText(todayDeck, label))
+    ) {
+      openTodayDeck();
+      return;
+    }
+    posthogAnalytics.track('discover_recent_search_tapped', { mood_text_length: item.mood_text.length });
+    void startPicked(label, prompt);
+  }, [todayDeck, openTodayDeck, startPicked, t]);
 
-  // ── MoodProfileResult asamasi ──────────────────────────────────────────────
-  if (phase === 'result' && tasteProfile) {
-    return (
-      <>
-        <StatusBar style="light" backgroundColor={Colors.background} />
-        <QuotaExhausted
-          visible={showQuotaExhausted}
-          onClose={() => setShowQuotaExhausted(false)}
-          quotaStatus={lastQuotaResult}
-          onUpgrade={() => triggerPaywall({ type: 'quota_exhausted', quota: 'search' })}
-        />
-        <ContextualPaywall {...paywallProps} />
-        <MoodProfileResult
-          profile={tasteProfile}
-          onBack={() => setPhase('input')}
-          onBrowseMovies={handleBrowseMovies}
-          onShareMood={shareMoodCard}
-          isShareCapturing={isMoodShareCapturing}
-        />
-        {/* Offscreen mood share card — capture icin */}
-        <MoodShareCard
-          ref={moodShareRef}
-          moodText={moodText}
-          profile={{
-            energyLevel: tasteProfile.energy_level,
-            thematicDepth: tasteProfile.thematic_depth,
-            endingPreference: tasteProfile.ending_preference,
-          }}
-        />
-      </>
-    );
-  }
-
-  const canSubmit = moodText.trim().length > 0 && phase !== 'processing';
+  const canSubmit = isMoodInputSubmittable(moodText) && phase !== 'processing';
+  /** MONEY-1C: ucretsiz yol beklentisi — yalniz teklif akisi acik ve kullanici yetkisizken. */
+  const showFreeHint =
+    consented !== false &&
+    isOfferEligible({
+      offerEnabled,
+      isOnboarding,
+      accessLoading: proAccessLoading,
+      entitled: proEntitled,
+    }) &&
+    hasFreeSearchLeft(searchQuota);
 
   // ── Input asamasi ──────────────────────────────────────────────────────────
   return (
@@ -676,6 +885,15 @@ export default function MoodSearchScreen() {
               onSelect={handleMoodCardSelect}
             />
 
+            {/* ── Bugunku arama (MONEY-1C P0, bayrak arkasinda) ───── */}
+            {todayDeck && (
+              <TodaySearchCard
+                moodText={todayDeck.moodText}
+                count={todayDeck.films.length}
+                onPress={openTodayDeck}
+              />
+            )}
+
             {/* ── Son Aramalar (conditional) ─────────────────────── */}
             {recentSearches.length > 0 && (
               <View style={styles.discoverSection}>
@@ -705,6 +923,9 @@ export default function MoodSearchScreen() {
                 reddet butonu yok, çıkış sistem geri hareketi (ai_consent_dismissed). */}
             {consented === false && (
               <Text style={styles.inlineConsentBody}>{t('aiConsent.inlineBody')}</Text>
+            )}
+            {showFreeHint && (
+              <Text style={styles.freeHint}>{t('moodOffer.freeSearchHint', { count: freeVisibleCount })}</Text>
             )}
             <Animated.View style={[btnAnimStyle, findBtnFlashStyle]}>
               <TouchableOpacity
@@ -913,6 +1134,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(239,68,68,0.3)',
   },
   inlineConsentBody: {
+    color: Colors.textSecondary,
+    fontSize: Theme.typography.caption.fontSize,
+    lineHeight: Theme.typography.caption.lineHeight,
+    textAlign: 'center',
+  },
+  freeHint: {
     color: Colors.textSecondary,
     fontSize: Theme.typography.caption.fontSize,
     lineHeight: Theme.typography.caption.lineHeight,

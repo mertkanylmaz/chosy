@@ -1,0 +1,567 @@
+{
+  "mood_id": "qm_cozy",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+        "tmdb_id": 348678,
+        "title": "A Man Called Ove",
+        "year": 2015,
+        "overview": "Despite being deposed as president of his condominium association, grumpy 59-year-old Ove continues to watch over his neighbourhood with an iron fist. When pregnant Parvaneh and her family move into the terraced house opposite Ove and she accidentally back into Ove’s mailbox, it sets off a series of unexpected changes in his life.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.605,
+        "director": "Hannes Holm",
+        "similarity": 0.892756709072444,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, humor"
+      },
+      {
+        "id": "d296d000-6276-4650-8e6b-bd28cbf587a5",
+        "tmdb_id": 404,
+        "title": "The Straight Story",
+        "year": 1999,
+        "overview": "Retired farmer and widower Alvin Straight learns one day that his distant brother Lyle has suffered a stroke and may not recover. Alvin is determined to make things right with Lyle while he still can, but his brother lives in Wisconsin, while Alvin is stuck in Iowa with no car and no driver's license. He then has the idea of making the trip on his old lawnmower, thus beginning a picturesque and at times deeply spiritual odyssey.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.7,
+        "director": "David Lynch",
+        "similarity": 0.829789102120843,
+        "curation_tier": "core",
+        "match_reason": "Matches: family-friendly"
+      },
+      {
+        "id": "f1bac13b-09a5-4c8b-95bb-a6d102df4903",
+        "tmdb_id": 4935,
+        "title": "Howl's Moving Castle",
+        "year": 2004,
+        "overview": "Sophie, a young milliner, is turned into an elderly woman by a witch who enters her shop and curses her. She encounters a wizard named Howl and gets caught up in his resistance to fighting for the king.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 119,
+        "vote_average": 8.387,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.823161097314226,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure"
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.764422203303669,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence"
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.737199888947243,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian"
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.684187239555033,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide"
+      },
+      {
+        "id": "e4e0de36-83ae-4615-8b35-d170453e5f3f",
+        "tmdb_id": 671,
+        "title": "Harry Potter and the Philosopher's Stone",
+        "year": 2001,
+        "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard—with a place waiting for him at the Hogwarts School of Witchcraft and Wizardry. As he learns to harness his newfound powers with the help of the school's kindly headmaster, Harry uncovers the truth about his parents' deaths—and about the villain who's to blame.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 152,
+        "vote_average": 7.899,
+        "director": "Chris Columbus",
+        "similarity": 0.730004975383001,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure"
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.679337018719922,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.7194013925036,
+        "curation_tier": "core",
+        "match_reason": "Matches: family-friendly"
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.71824361116025,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life"
+      },
+      {
+        "id": "d7efacd2-8271-4774-a517-5f4091eb1175",
+        "tmdb_id": 10229,
+        "title": "A Walk to Remember",
+        "year": 2002,
+        "overview": "When the popular, restless Landon Carter is forced to participate in the school drama production, he falls in love with Jamie Sullivan, the daughter of the town's minister. Jamie has a \"to-do\" list for her life, as well as a very big secret she must keep from Landon.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.751,
+        "director": "Adam Shankman",
+        "similarity": 0.714792420339797,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance"
+      },
+      {
+        "id": "71be062c-5a82-47fb-950f-ba0cede9169d",
+        "tmdb_id": 3175,
+        "title": "Barry Lyndon",
+        "year": 1975,
+        "overview": "An Irish rogue uses his cunning and wit to work his way up the social classes of 18th century England, transforming himself from the humble Redmond Barry into the noble Barry Lyndon.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 188,
+        "vote_average": 8,
+        "director": "Stanley Kubrick",
+        "similarity": 0.70505315024788,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, gambling, desertion"
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.700740235227173,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute"
+      },
+      {
+        "id": "fb9bb83e-07d4-48bd-b3b3-d64f24a84f0f",
+        "tmdb_id": 4951,
+        "title": "10 Things I Hate About You",
+        "year": 1999,
+        "overview": "On the first day at his new school, Cameron instantly falls for Bianca, the gorgeous girl of his dreams. The only problem is that Bianca is forbidden to date until her ill-tempered, completely un-dateable older sister Kat goes out, too. In an attempt to solve his problem, Cameron singles out the only guy who could possibly be a match for Kat: a mysterious bad boy with a nasty reputation of his own.",
+        "genres": [
+          "Comedy",
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 7.592,
+        "director": "Gil Junger",
+        "similarity": 0.696458986042697,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, romance"
+      },
+      {
+        "id": "19b99cc2-4d8f-410b-a9bc-b2394b46ebd9",
+        "tmdb_id": 9325,
+        "title": "The Jungle Book",
+        "year": 1967,
+        "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 78,
+        "vote_average": 7.3,
+        "director": "Wolfgang Reitherman",
+        "similarity": 0.692052738394617,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, narration, human animal relationship"
+      },
+      {
+        "id": "36273fde-6384-4581-9658-22b0de69ab51",
+        "tmdb_id": 76696,
+        "title": "Sidewalls",
+        "year": 2011,
+        "overview": "Martin is a neurotic web designer taking baby steps out of the isolation of his one-room apartment and his virtual reality. Mariana is an artist fresh out of a long relationship. They are perfect for each other, live on the same street, in opposite buildings, but they never meet. Can the movement of a modern city of three million people bring them together?",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.491,
+        "director": "Gustavo Taretto",
+        "similarity": 0.652549604736725,
+        "curation_tier": "extended",
+        "match_reason": "dogsitter, architecture, apartment building"
+      },
+      {
+        "id": "f43567c8-978f-468b-a5cc-a40d1d1de9a3",
+        "tmdb_id": 4922,
+        "title": "The Curious Case of Benjamin Button",
+        "year": 2008,
+        "overview": "Born under unusual circumstances, Benjamin Button springs into being as an elderly man in a New Orleans nursing home and ages in reverse. Twelve years after his birth, he meets Daisy, a child who flits in and out of his life as she grows up to be a dancer. Though he has all sorts of unusual adventures over the course of his life, it is his relationship with Daisy, and the hope that they will come together at the right time, that drives Benjamin forward.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 166,
+        "vote_average": 7.6,
+        "director": "David Fincher",
+        "similarity": 0.69049353166987,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartwarming"
+      },
+      {
+        "id": "a3f257ae-d7b2-40eb-8138-1ed1c4262ca9",
+        "tmdb_id": 1330021,
+        "title": "Remarkably Bright Creatures",
+        "year": 2026,
+        "overview": "Through unlikely bonds formed during night shifts at a local aquarium, Tova, an elderly widow, learns of a life-changing discovery that may bring her joy and wonder once again.",
+        "genres": [
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 114,
+        "vote_average": 8.517,
+        "director": "Olivia Newman",
+        "similarity": 0.649398407042717,
+        "curation_tier": "extended",
+        "match_reason": "aquarium, octopus, british columbia"
+      },
+      {
+        "id": "4e034c19-a1c9-45e2-a1a1-d022a971f6f2",
+        "tmdb_id": 10867,
+        "title": "Malena",
+        "year": 2000,
+        "overview": "12-year-old Renato experiences three significant events on the same day: the beginning of the Second World War, getting a bike, and witnessing the arrival of the gorgeous Malèna. Through his eyes, we see the curse of beauty and loneliness of Malena, whose husband is presumed dead, and, through his soul, we see his love for her.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.468,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.686044604106498,
+        "curation_tier": "core",
+        "match_reason": "prostitute, jealousy, sicily, italy"
+      },
+      {
+        "id": "eabfedce-4720-44c0-a4ad-a51b7fa971da",
+        "tmdb_id": 569094,
+        "title": "Spider-Man: Across the Spider-Verse",
+        "year": 2023,
+        "overview": "After reuniting with Gwen Stacy, Brooklyn’s full-time, friendly neighborhood Spider-Man is catapulted across the Multiverse, where he encounters the Spider Society, a team of Spider-People charged with protecting the Multiverse's very existence. But when the heroes clash on how to handle a new threat, Miles finds himself pitted against the other Spiders and must set out on his own to save those he loves most.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 140,
+        "vote_average": 8.335,
+        "director": "Kemp Powers",
+        "similarity": 0.675614395038216,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance, family-friendly"
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 0.671237256758602,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, island"
+      },
+      {
+        "id": "f0ddfc37-3278-412c-86a6-8bbe2ba55504",
+        "tmdb_id": 581,
+        "title": "Dances with Wolves",
+        "year": 1990,
+        "overview": "Wounded Civil War soldier John Dunbar tries to commit suicide—and becomes a hero instead. As a reward, he's assigned to his dream post, a remote junction on the Western frontier, and soon makes unlikely friends with the local Sioux tribe.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 181,
+        "vote_average": 7.8,
+        "director": "Kevin Costner",
+        "similarity": 0.669099204891144,
+        "curation_tier": "core",
+        "match_reason": "friendship, mutiny, countryside"
+      },
+      {
+        "id": "d779b03c-2931-4d3c-900b-d9d3dbf03eaf",
+        "tmdb_id": 346698,
+        "title": "Barbie",
+        "year": 2023,
+        "overview": "Barbie and Ken are having the time of their lives in the colorful and seemingly perfect world of Barbie Land. However, when they get a chance to go to the real world, they soon discover the joys and perils of living among humans.",
+        "genres": [
+          "Comedy",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 114,
+        "vote_average": 6.924,
+        "director": "Greta Gerwig",
+        "similarity": 0.669004307284385,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, adventure"
+      },
+      {
+        "id": "f995a0e0-ca65-4036-a590-fbc15974496d",
+        "tmdb_id": 179144,
+        "title": "The Great Beauty",
+        "year": 2013,
+        "overview": "Jep Gambardella has seduced his way through the lavish nightlife of Rome for decades, but after his 65th birthday and a shock from the past, Jep looks past the nightclubs and parties to find a timeless landscape of absurd, exquisite beauty.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 142,
+        "vote_average": 7.511,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.667111133172511,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartwarming"
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 0.661938751230141,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain"
+      },
+      {
+        "id": "29c350d9-c668-4f38-8839-441be685f82d",
+        "tmdb_id": 26371,
+        "title": "Maurice",
+        "year": 1987,
+        "overview": "After his lover rejects him, Maurice attempts to come to terms with his sexuality within the restrictiveness of Edwardian society.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 7.603,
+        "director": "James Ivory",
+        "similarity": 0.63041060873903,
+        "curation_tier": "extended",
+        "match_reason": "coming out, secret love, based on novel or book"
+      },
+      {
+        "id": "a494e9ac-bde0-45d3-bb35-ff49747133f2",
+        "tmdb_id": 49051,
+        "title": "The Hobbit: An Unexpected Journey",
+        "year": 2012,
+        "overview": "Bilbo Baggins, a hobbit enjoying his quiet life, is swept into an epic quest by Gandalf the Grey and thirteen dwarves who seek to reclaim their mountain home from Smaug, the dragon.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 169,
+        "vote_average": 7.373,
+        "director": "Peter Jackson",
+        "similarity": 0.659989570534611,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, elves, dwarf"
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.629462249813494,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family-friendly"
+      },
+      {
+        "id": "acd79642-a022-44e9-a346-e43a7aea330e",
+        "tmdb_id": 9343,
+        "title": "Fitzcarraldo",
+        "year": 1982,
+        "overview": "Fitzcarraldo is a dreamer who plans to build an opera house in Iquitos, in the Peruvian Amazon, so, in order to finance his project, he embarks on an epic adventure to collect rubber, a very profitable product, in a remote and unexplored region of the rainforest.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.623,
+        "director": "Werner Herzog",
+        "similarity": 0.62903038965844,
+        "curation_tier": "extended",
+        "match_reason": "peru, plantation, ambition"
+      },
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 0.658453516998712,
+        "curation_tier": "core",
+        "match_reason": "countryside, based on novel or book, wild boar"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 980,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 980,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comedy",
+        "feel-good",
+        "humor",
+        "romance",
+        "family-friendly",
+        "heartwarming",
+        "adventure"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

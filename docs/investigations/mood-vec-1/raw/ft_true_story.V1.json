@@ -1,0 +1,553 @@
+{
+  "mood_id": "ft_true_story",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "a06c6a42-251b-4206-a5b5-33a142ea4100",
+        "tmdb_id": 399404,
+        "title": "Darkest Hour",
+        "year": 2017,
+        "overview": "In May 1940, the fate of World War II hangs on Winston Churchill, who must decide whether to negotiate with Adolf Hitler or fight on knowing that it could mean the end of the British Empire.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 125,
+        "vote_average": 7.4,
+        "director": "Joe Wright",
+        "similarity": 1.01087665248999,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography, inspiration"
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 1.08859145952392,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "5c37028c-d2f0-46a4-91b5-648599b0724d",
+        "tmdb_id": 840,
+        "title": "Close Encounters of the Third Kind",
+        "year": 1977,
+        "overview": "After an encounter with UFOs, an electricity linesman feels undeniably drawn to an isolated area in the wilderness where something spectacular is about to happen.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.349,
+        "director": "Steven Spielberg",
+        "similarity": 1.04457936186892,
+        "curation_tier": "core",
+        "match_reason": "wyoming, usa, indiana, usa, flying saucer"
+      },
+      {
+        "id": "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+        "tmdb_id": 13466,
+        "title": "October Sky",
+        "year": 1999,
+        "overview": "The true story of Homer Hickam, a coal miner's son who was inspired by the first Sputnik launch to take up rocketry against his father's wishes.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 107,
+        "vote_average": 7.671,
+        "director": "Joe Johnston",
+        "similarity": 1.03555586291255,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "ea35522f-6435-42f5-a74b-617af0ed73a0",
+        "tmdb_id": 3083,
+        "title": "Mr. Smith Goes to Washington",
+        "year": 1939,
+        "overview": "After the death of a United States Senator, idealistic Jefferson Smith is appointed as his replacement in Washington. Soon, the naive and earnest new senator has to battle political corruption.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.833,
+        "director": "Frank Capra",
+        "similarity": 0.912904515166406,
+        "curation_tier": "extended",
+        "match_reason": "governor, washington dc, usa, senate"
+      },
+      {
+        "id": "c65717fb-907e-42a5-a6ae-e0ed7fdceb0c",
+        "tmdb_id": 921,
+        "title": "Cinderella Man",
+        "year": 2005,
+        "overview": "The true story of boxer Jim Braddock who, following his retirement in the 1930s, makes a surprise comeback in order to lift his family out of poverty.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.6,
+        "director": "Ron Howard",
+        "similarity": 1.0311824728904,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "e740225a-0915-48b0-bfdf-e56a50de4254",
+        "tmdb_id": 1646,
+        "title": "Freedom Writers",
+        "year": 2007,
+        "overview": "A young teacher inspires her class of at-risk students to learn tolerance, apply themselves, and pursue education beyond high school.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 123,
+        "vote_average": 7.924,
+        "director": "Richard LaGravenese",
+        "similarity": 1.02019733242674,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "bfe72e23-e609-42e2-b897-9f8ecfdb6c40",
+        "tmdb_id": 45269,
+        "title": "The King's Speech",
+        "year": 2010,
+        "overview": "The King's Speech tells the story of the man who became King George VI, the father of Queen Elizabeth II. After his brother abdicates, George ('Bertie') reluctantly assumes the throne. Plagued by a dreaded stutter and considered unfit to be king, Bertie engages the help of an unorthodox speech therapist named Lionel Logue. Through a set of unexpected techniques, and as a result of an unlikely friendship, Bertie is able to find his voice and boldly lead the country into war.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 118,
+        "vote_average": 7.733,
+        "director": "Tom Hooper",
+        "similarity": 1.01852549210878,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "56317499-b40c-4e01-ac95-c8c25ba8fa03",
+        "tmdb_id": 22683,
+        "title": "Gifted Hands: The Ben Carson Story",
+        "year": 2009,
+        "overview": "Gifted Hands: The Ben Carson Story is a movie based on the life story of world-renowned neurosurgeon Ben Carson from 1961 to 1987.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 86,
+        "vote_average": 7.795,
+        "director": "Thomas Carter",
+        "similarity": 0.898619964965021,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "4e8b34a2-df06-4773-baca-3276b723f8e8",
+        "tmdb_id": 334543,
+        "title": "Lion",
+        "year": 2016,
+        "overview": "A five-year-old Indian boy gets lost on the streets of Calcutta, thousands of kilometers from home. He survives many challenges before being adopted by a couple in Australia; 25 years later, he sets out to find his lost family.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 8.04,
+        "director": "Garth Davis",
+        "similarity": 1.014034491694,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "a38ba7da-e721-44b1-b6f8-b02cdafe58db",
+        "tmdb_id": 938,
+        "title": "For a Few Dollars More",
+        "year": 1965,
+        "overview": "Two bounty hunters both pursue the brutal and sadistic bandit, El Indio, who has a large bounty on his head.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 132,
+        "vote_average": 8.022,
+        "director": "Sergio Leone",
+        "similarity": 1.00882794403169,
+        "curation_tier": "core",
+        "match_reason": "bounty hunter, pot smoking, rural area"
+      },
+      {
+        "id": "87c59208-fdd2-4d9c-a6e4-8a46dcdfefbe",
+        "tmdb_id": 22881,
+        "title": "The Blind Side",
+        "year": 2009,
+        "overview": "The story of Michael Oher, a homeless and traumatized boy who became an All American football player and first round NFL draft pick with the help of a caring woman and her family.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.666,
+        "director": "John Lee Hancock",
+        "similarity": 1.00734491980447,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, inspiration"
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 1.00147817957972,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia"
+      },
+      {
+        "id": "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+        "tmdb_id": 522212,
+        "title": "Just Mercy",
+        "year": 2019,
+        "overview": "The powerful true story of Harvard-educated lawyer Bryan Stevenson, who goes to Alabama to defend the disenfranchised and wrongly condemned — including Walter McMillian, a man sentenced to death despite evidence proving his innocence. Bryan fights tirelessly for Walter with the system stacked against them.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "History"
+        ],
+        "runtime": 137,
+        "vote_average": 7.853,
+        "director": "Destin Daniel Cretton",
+        "similarity": 1.00007474533398,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "e3f7fb5f-9764-43dc-957f-a04777769afa",
+        "tmdb_id": 537996,
+        "title": "The Ballad of Buster Scruggs",
+        "year": 2018,
+        "overview": "Vignettes weaving together the stories of six individuals in the old West at the end of the Civil War. Following the tales of a sharp-shooting songster, a wannabe bank robber, two weary traveling performers, a lone gold prospector, a woman traveling the West to an uncertain future, and a motley crew of strangers undertaking a carriage ride.",
+        "genres": [
+          "Western",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.133,
+        "director": "Joel Coen",
+        "similarity": 0.998981354423915,
+        "curation_tier": "core",
+        "match_reason": "prostitute, native american, parody"
+      },
+      {
+        "id": "61627320-6117-4ed2-aa88-4127a1d066f1",
+        "tmdb_id": 626332,
+        "title": "Flamin' Hot",
+        "year": 2023,
+        "overview": "The inspiring true story of Richard Montañez, the Frito Lay janitor who channeled his Mexican American heritage and upbringing to turn the iconic Flamin' Hot Cheetos into a snack that disrupted the food industry and became a global pop culture phenomenon.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 99,
+        "vote_average": 7.934,
+        "director": "Eva Longoria",
+        "similarity": 0.875926218469957,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "0043a4f9-f38d-4211-b444-e557698c99c6",
+        "tmdb_id": 15876,
+        "title": "The Enemy Below",
+        "year": 1957,
+        "overview": "The crew of the American destroyer escort, the USS Haynes, detects a German U-Boat—resulting in a prolonged, deadly battle of wits.",
+        "genres": [
+          "War"
+        ],
+        "runtime": 97,
+        "vote_average": 7.123,
+        "director": "Dick Powell",
+        "similarity": 0.871413879824759,
+        "curation_tier": "extended",
+        "match_reason": "submarine, world war ii, u.s. navy"
+      },
+      {
+        "id": "20884adc-fc02-464e-9e64-9c81a00694fd",
+        "tmdb_id": 1883,
+        "title": "Malcolm X",
+        "year": 1992,
+        "overview": "A tribute to the controversial black activist and leader of the struggle for black liberation. He hit bottom during his imprisonment in the '50s, he became a Black Muslim and then a leader in the Nation of Islam. His assassination in 1965 left a legacy of self-determination and racial pride.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 202,
+        "vote_average": 7.553,
+        "director": "Spike Lee",
+        "similarity": 0.977878623397702,
+        "curation_tier": "core",
+        "match_reason": "Matches: biography, inspiration"
+      },
+      {
+        "id": "de350477-83c7-4d2a-95b6-35866abea161",
+        "tmdb_id": 10637,
+        "title": "Remember the Titans",
+        "year": 2000,
+        "overview": "After leading his football team to 15 winning seasons, coach Bill Yoast is demoted and replaced by Herman Boone – tough, opinionated and as different from the beloved Yoast as he could be. The two men learn to overcome their differences and turn a group of hostile young men into champions.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.647,
+        "director": "Boaz Yakin",
+        "similarity": 0.957740317578595,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "f3c487db-4df4-48ba-aa2b-50dd5e582e0e",
+        "tmdb_id": 8587,
+        "title": "The Lion King",
+        "year": 1994,
+        "overview": "Young lion prince Simba, eager to one day become king of the Pride Lands, grows up under the watchful eye of his father Mufasa; all the while his villainous uncle Scar conspires to take the throne for himself. Amid betrayal and tragedy, Simba must confront his past and find his rightful place in the Circle of Life.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.254,
+        "director": "Roger Allers",
+        "similarity": 0.955149383786515,
+        "curation_tier": "core",
+        "match_reason": "Matches: inspiration"
+      },
+      {
+        "id": "d1a7a99f-89da-4412-b240-6ff8e1117eb1",
+        "tmdb_id": 549559,
+        "title": "Apollo 11",
+        "year": 2019,
+        "overview": "A look at the Apollo 11 mission to land on the moon led by commander Neil Armstrong and pilot Buzz Aldrin.",
+        "genres": [
+          "Documentary",
+          "History",
+          "Drama"
+        ],
+        "runtime": 93,
+        "vote_average": 7.866,
+        "director": "Todd Douglas Miller",
+        "similarity": 0.954847070000048,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "ee57cf3b-7394-42b6-86d9-c56312f185f8",
+        "tmdb_id": 33602,
+        "title": "Temple Grandin",
+        "year": 2010,
+        "overview": "A biopic of Temple Grandin, an autistic American who has become one of the leading scientists in humane livestock handling.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 108,
+        "vote_average": 7.856,
+        "director": "Mick Jackson",
+        "similarity": 0.954427659893591,
+        "curation_tier": "core",
+        "match_reason": "Matches: biography"
+      },
+      {
+        "id": "dce3d1f0-1ac8-4c58-ac22-e25b0b562fc5",
+        "tmdb_id": 901,
+        "title": "City Lights",
+        "year": 1931,
+        "overview": "A tramp falls in love with a beautiful blind flower girl. His on-and-off friendship with a wealthy man allows him to be the girl's benefactor and suitor.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.251,
+        "director": "Charlie Chaplin",
+        "similarity": 0.942687095123385,
+        "curation_tier": "core",
+        "match_reason": "blindness and impaired vision, eye operation, operation"
+      },
+      {
+        "id": "57103696-ff1e-4391-93c1-39515e56ee85",
+        "tmdb_id": 614917,
+        "title": "King Richard",
+        "year": 2021,
+        "overview": "The story of how Richard Williams served as a coach to his daughters Venus and Serena, who will soon become two of the most legendary tennis players in history.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.596,
+        "director": "Reinaldo Marcus Green",
+        "similarity": 0.93404152233316,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "6425c973-9d85-4f0e-bb06-e48b4180e777",
+        "tmdb_id": 726759,
+        "title": "Tetris",
+        "year": 2023,
+        "overview": "In 1988, American video game salesman Henk Rogers discovers the video game Tetris. When he sets out to bring the game to the world, he enters a dangerous web of lies and corruption behind the Iron Curtain.",
+        "genres": [
+          "Thriller",
+          "History",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.674,
+        "director": "Jon S. Baird",
+        "similarity": 0.925291784568515,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "aae26a80-74d4-45d9-a822-cd11131aa4ac",
+        "tmdb_id": 1002185,
+        "title": "A Million Miles Away",
+        "year": 2023,
+        "overview": "The life of engineer and former NASA astronaut José M. Hernández, the first migrant farmworker to go to space.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 122,
+        "vote_average": 7.7,
+        "director": "Alejandra Márquez Abella",
+        "similarity": 0.829826148868571,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story"
+      },
+      {
+        "id": "f329b2ba-307f-49b1-b63b-d1ad001cd799",
+        "tmdb_id": 783,
+        "title": "Gandhi",
+        "year": 1982,
+        "overview": "In the early years of the 20th century, Mohandas K. Gandhi, a British-trained lawyer, forsakes all worldly possessions to take up the cause of Indian independence. Faced with armed resistance from the British government, Gandhi adopts a policy of 'passive resistance', endeavouring to win freedom for his people without resorting to bloodshed.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 192,
+        "vote_average": 7.563,
+        "director": "Richard Attenborough",
+        "similarity": 0.921756183447709,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography"
+      },
+      {
+        "id": "2daade33-adef-476c-9456-e6a0379d10cb",
+        "tmdb_id": 497,
+        "title": "The Green Mile",
+        "year": 1999,
+        "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 189,
+        "vote_average": 8.506,
+        "director": "Frank Darabont",
+        "similarity": 0.918225835928478,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, death penalty, based on novel or book"
+      },
+      {
+        "id": "8fa8c45c-13a7-4633-aa4a-b4afbbcc056e",
+        "tmdb_id": 152532,
+        "title": "Dallas Buyers Club",
+        "year": 2013,
+        "overview": "Loosely based on the true-life tale of Ron Woodroof, a drug-taking, women-loving, homophobic man who in 1986 was diagnosed with HIV/AIDS and given thirty days to live.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 117,
+        "vote_average": 7.913,
+        "director": "Jean-Marc Vallée",
+        "similarity": 0.918085211802842,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography, inspiration"
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 0.91790385674357,
+        "curation_tier": "core",
+        "match_reason": "airplane, based on novel or book, england"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1152,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1152,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "true story",
+        "biography",
+        "overcoming adversity",
+        "achievement",
+        "real events",
+        "personal triumph",
+        "human resilience",
+        "inspiration"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

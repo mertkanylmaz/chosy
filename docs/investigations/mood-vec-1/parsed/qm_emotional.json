@@ -1,0 +1,99 @@
+{
+  "mood_id": "qm_emotional",
+  "text": "A sad and emotional tearjerker drama, melancholic and moving, heartbreaking and deep, not comedy, not action",
+  "ms": 4299,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "fear": 0.2,
+      "anger": 0.1,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "trust": 0.4,
+      "anticipation": 0.15
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "action",
+      "humor",
+      "lighthearted",
+      "slapstick"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Melancholic Catharsis",
+    "profile_description": "A deeply emotional journey through human suffering and resilience, seeking slow-burn drama with profound character exploration and the cathartic release of genuine tears.",
+    "search_keywords": [
+      "emotional drama",
+      "heartbreak",
+      "loss",
+      "grief",
+      "character study",
+      "melancholy",
+      "human connection",
+      "redemption"
+    ],
+    "search_id": "7f1d1961-4e1a-427f-b47f-00cf51e38693",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "anger": 0.1,
+      "fear": 0.2,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "anticipation": 0.15,
+      "trust": 0.4
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "action",
+      "humor",
+      "lighthearted",
+      "slapstick"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "7f1d1961-4e1a-427f-b47f-00cf51e38693",
+  "search_keywords": [
+    "emotional drama",
+    "heartbreak",
+    "loss",
+    "grief",
+    "character study",
+    "melancholy",
+    "human connection",
+    "redemption"
+  ],
+  "limit": null,
+  "remaining": null
+}

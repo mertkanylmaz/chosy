@@ -26,11 +26,15 @@ Dosyalar: `enrich-films.ts`, `seed-database.ts`, `ai-profile-films.ts`,
 değiştirebilir ve şu an o riski almaya değmez. supabase-js sürüm yükseltmesiyle
 birlikte ele alınacak.
 
-### `supabase/functions` — ~~42~~ → **32** hata
+### `supabase/functions` — ~~42~~ → ~~32~~ → **29** hata
 
 `npm run typecheck:functions` (Deno 2.9.4, `deno check **/index.ts`).
 
-> **Baseline geçmişi: 45 (5 Ağu) → 42 (8 Ağu) → 32 (13 Ağu 2026).**
+> **Baseline geçmişi: 45 (5 Ağu) → 42 (8 Ağu) → 32 (13 Ağu 2026) → 29 (24 Eki 2026).**
+> **32 → 29 (24 Eki 2026, MONEY-1C, CTO onaylı):** `parse-mood` `getAdmin()` tipi
+> `makeAdminClient` deseniyle düzeltildi; dosyadaki 4 `never` hatası kapandı
+> (yeni `refund_quota` çağrısı 5.'yi ekleyecekti), kalan 29'u başka dosyalar. Ham
+> çıktı `Found 29 errors.`
 > 45 → 42 adımı 8 Ağu'da ölçüldü, 9 Ağu C.0b kapanışında teyit edildi.
 > **42 → 32 adımı 13 Ağu 2026'da CTO onayıyla güncellendi**; ham çıktı
 > `Found 32 errors.`, iki bağımsız koşumda teyitli. Düşüş 13 Ağu turunda
@@ -197,7 +201,7 @@ adlandırılacak.
 | Komut | Beklenen | Durum |
 |---|---|---|
 | `npm run typecheck` | tam **14** hata, hepsi `scripts/` altında | ✅ |
-| `npm run typecheck:functions` | ~~**45**~~ → **32** — düşüş hedefli değil, regresyon bekçisi | ✅ |
+| `npm run typecheck:functions` | ~~**45**~~ → ~~**32**~~ → **29** — düşüş hedefli değil, regresyon bekçisi | ✅ |
 
 `typecheck` 14'ü aşarsa veya `scripts/` dışında hata çıkarsa **dur**.
 Sıfır hedefi bu sprintte yok.
@@ -4284,3 +4288,124 @@ yanıltıcı olacağından kasıtlı eklenmedi.
    doğrulanmadı — başka kullanıcının `p_user_id`'siyle tier okunabiliyorsa bilgi sızıntısı.
    Önce gövdede guard var mı bak (`pg_get_functiondef`), yoksa 109 deseniyle ekle ya da EXEC'i
    daralt.
+
+## MONEY-1C Faz 2 incelemesi sonrası — 25 Ekim 2026
+
+Bağımsız `a524bff..HEAD` incelemesinden (feat/money-1c) ve hook araştırmasından kalanlar.
+Düzeltilenler (B-1..B-6, K-1, K-2, min girdi, tester listesi) ilgili commit'lerde; aşağıdakiler
+BİLİNÇLİ olarak açık bırakıldı.
+
+1. **Pre-commit hook index'i değil çalışma ağacını typecheck ediyor.** `npm run typecheck`
+   çalışma ağacında koşar; commit'e giren içerik (index) ile farklı olabilir (kısmi stage,
+   `stash --keep-index` hunk-split'i). Hook "yeşil" der, commit'te başka içerik olabilir ya da
+   tersi. Çözüm: index'i geçici dizine export edip (`git checkout-index -a --prefix=…`) orada
+   typecheck. 24 Eki'de bir yanlış commit (26 hata) hook'tan geçti; kök neden kanıtlanamadı
+   (hook mantığı >14'te `exit 1` verir; `| head` boru senaryosu yeniden üretilemedi — SIGPIPE
+   141 verir ve commit'i reddeder). Artık her koşu worktree git dizinindeki `hook-last.log`'a
+   exit kodu + hata sayısı yazıyor; bir sonraki olayda teşhis mümkün.
+2. **pre-push / CI typecheck kapısı yok.** `.github/workflows` yok, `.eas/workflows` yalnız
+   `e2e-test.yml` (tetikleyicisiz). Hook `--no-verify` ile ya da yanlış `core.hooksPath` ile
+   atlanırsa uzak dala hiçbir şey engel olmaz. `core.hooksPath` paylaşılan `.git/config`'te
+   MUTLAK yol (`C:\Users\mertk\moodflix\.githooks`) — worktree'ler ana checkout'un hook'unu
+   kullanıyordu. Bu worktree için `extensions.worktreeConfig` + göreli `.githooks` ayarlandı;
+   ana checkout ve diğer worktree'ler hâlâ mutlak yolda. Kalıcı çözüm: tek göreli yol (ana
+   checkout'ta uygulanacak, ayrı karar) + pre-push typecheck.
+3. **K-2 — KAPANDI** (`app/discover.tsx`): bayrak kapalıyken deste sonunda 700 ms zamanlayıcı
+   kuruluyordu (UI etkisi yok, `claim` null). Artık yalnız teklife uygun kullanıcıda kurulur.
+4. **B-7 — `mood_offer_shown`/`paywall_shown` çift atış (düşük):** paywall görünürken
+   `deckComplete` değişirse `ContextualPaywall` `discover.tsx`'te iki ayrı dal arasında remount
+   olur ve `recordPaywallShown` yeniden tetiklenir (`PaywallBase/index.tsx:302-306`). Teklif
+   görünürken son kartın kaydırılabilirliği doğrulanmadı; pratikte nadir. Çözüm: paywall'ı dal
+   dışına (tek ortak yer) taşımak — gauntlet/deste mantığına dokunur, ayrı iş.
+5. **B-8 — `mood_offer_cta` tanımı belirsiz:** her satın alma dokunuşunda atılıyor, hata
+   sonrası tekrar deneme dahil (`PaywallBase/index.tsx:319`). "CTA tıklaması" mı "satın alma
+   denemesi" mi ürün/analitik kararı; huni raporu bu sayıyı "tıklama" diye okumamalı.
+6. **B-9 — `useProModeAccess` tek karelik eski kota (düşük):** `needsQuota` true→false→true
+   giderse efekt `'checking'`'e çekmeden önce bir karede eski `exhausted`/`available` görünebilir
+   (`hooks/useProModeAccess.ts:687-697`). `refreshSearchQuota` hiçbir yerde çağrılmıyor
+   (kullanılmayan API) — ya kullanılacak ya silinecek.
+7. **B-10 — `get_quota_status` okurken INSERT yapıyor:** bugünün `user_daily_quotas` satırını
+   oluşturur (109). Saf okuma değil; zararsız ama okuma-yazma ayrımını bozar ve MONEY-SEC-1
+   notundaki `search_path`/anon EXEC kalemleriyle aynı fonksiyon — birlikte ele alınmalı.
+8. **`paywall_events.action` CHECK genişlemesi (migration gerekir):** olay `action` değerleri
+   yalnız `shown/dismissed/converted/trial_started`. `mood_offer` şimdilik `trigger_context`
+   jsonb'sine (`entry_point`, `search_id`) yazıyor; ayrı `action` ayrımı (örn. CTA) için
+   migration + CTO onayı gerekir (MONEY-1C_KESIF D6).
+9. **D8 — anonim yeniden kurulum = yeni ücretsiz hak (açık):** `signInAnonymously` her
+   kurulumda yeni `public.users` satırı ve yeni günlük hak üretir; `users` içinde cihaz
+   kimliği/attestation yok. Ücretsiz arama hakkı bu yüzden kötüye kullanılabilir (günde N hak
+   × yeniden kurulum). DeviceCheck/App Attest yeni bağımlılık/mimari olduğundan karar bekliyor
+   (MONEY-1C_KESIF D8). Tester listesi (`mood_offer_testers`) da `auth.users.id` kullandığı için
+   anonim hesapta yeniden kurulumda kimlik değişir; tester gerçek (anonim olmayan) hesapla girmeli.
+10. **Tester kimliği önbelleği:** `appConfigFlags.ts` son çözülen `auth.users.id`'yi modül
+    düzeyinde tutar (`testerAuthId`); hesap değişirse bir sonraki `isMoodOfferEnabled()` çağrısına
+    kadar paywall orkestratörünün senkron kararı eski kimliği görebilir. UX bayrağı, yetki
+    değil; hesap değiştirme akışı `sessionReset`'te sıfırlamayı ekleyebilir.
+11. **Smoke test kirliliği (MONEY-1C_RECOMMENDED_IDS):** `tests/founder-acceptance/runner.ts`
+    gibi sunucu smoke testleri anon sign-in + gerçek parse-mood ile canlıda `users` /
+    `mood_searches` satırı bırakıyor; hesaplar sonradan silinince cascade ile iz de gidiyor ve
+    analitik paydası (arama başına doluluk, orphan oranı) bozuluyor. Çözüm: test hesaplarını
+    işaretle (örn. `app_metadata.is_test`) veya test sonunda sil; analytics paydasından çıkar.
+    Kod değişikliği yok, mimari karar gerektirir (işaret alanı).
+
+## MONEY-1C yetki taraması sonrası ertelenenler — 25 Ekim 2026 (migration 139/140/141 hazırlığı)
+
+Kaynak: `docs/investigations/MONEY-1C_GRANTS_AUDIT.md`. Kapsam kararı (25 Eki 11:25): 141 yalnız (a) tüm public tablolarda
+`anon/authenticated` `TRUNCATE, REFERENCES, TRIGGER` ve (b) `app_config, subscription_limits, promo_codes, lifetime_sales` yazma
+yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
+
+1. **(c) `anon` yazma yetkilerinin tek tek kaldırılması.** Diğer ~45 tabloda `anon` hâlâ `INSERT/UPDATE` (çoğunda `DELETE`) taşıyor;
+   yalnız RLS koruyor (`watchlist` 099/100 olayı bu sınıftandı). Her tablo için 2.1.0–2.1.3 istemcilerinin yazdığı kolon/rol seti çıkarılıp
+   (139'daki `mood_searches` analiz kalıbı) ayrı migration'larla daraltılmalı; anonim oturum `authenticated` rolüyle geldiği için `anon`
+   yazması büyük olasılıkla hiçbir yerde gerekmiyor. Tahmin 0,5–1 gün. **Neden şimdi değil:** her tablo ayrı istemci taraması ister, Faz 2b
+   kapsamı dışı.
+2. **(d) `supabase_admin` varsayılan ACL hizalaması.** `pg_default_acl`: `postgres` rolüyle oluşan tablolar artık yalnız `postgres + service_role`
+   alıyor, ama `supabase_admin` rolüyle oluşanlar (Dashboard/uzantı) hâlâ `arwdDxtm` ile `anon/authenticated`'a açılıyor. `ALTER DEFAULT PRIVILEGES FOR
+   ROLE supabase_admin IN SCHEMA public REVOKE ... FROM anon, authenticated` platform tarafında kısıtlı olabilir — Supabase doküman/destek
+   teyidi gerekir. Yeni tablo migration'ları `postgres` ile çalıştığı sürece risk düşük; "tablo oluşturunca açıkça `REVOKE`" kuralı
+   migration-guard'a eklenebilir.
+3. **`daily_refine_limit` ölü limit.** `subscription_limits.free.daily_refine_limit = 1` (diğer ücretli tier'larda -1) ama refine özelliği
+   uygulamada YOK ve **eklenmeyecek** (karar 25 Eki). `check_and_consume_quota('refine')` ve `check-quota` Edge Function'ının `'refine'` dalı,
+   `user_daily_quotas.refines_used` kolonu ve istemci `consumeQuota('refine')` tipi kullanılmayan koddur; `PaywallQuotaExhausted`
+   yorumunda "refine" geçer. Faz 3'te arama hakkı 3→1 olunca refine, aramadan AYRI sayaç olduğu için fiili hakkı artırmaz
+   (bkz. `MONEY-1C_FAZ3_ROLLOUT.md` §7). Temizlik ayrı iş: kolon/dal/tip silmek migration ve istemci değişikliği gerektirir.
+4. **Bu taramada çıkan ek bulgular (karar bekler):**
+   - **[Hazırlandı, uygulanmadı — migration 142, 27 Eki planı]** Aşağıdaki iki madde (`increment_promo_usage`, `claim_lifetime_spot`)
+     142 ile kapatılıyor: çağıran taraması temiz (istemci/edge'de `increment_promo_usage` çağıranı yok; `claim_lifetime_spot` yalnız
+     service_role). Canlı dry-run 5/5. Uygulanana kadar bulgu açık sayılır; bkz. `MONEY-1C_DEPLOY_RUNBOOK.md` Bölüm B.
+   - `increment_promo_usage(p_code text)` SECURITY DEFINER ve `authenticated`'a EXECUTE açık (canlıda `anon`'a da açıktı): oturum açmış herhangi bir kullanıcı
+     herhangi bir promo kodunun `current_uses` sayacını artırabilir (kodları tüketme/DoS). Doğrulama (sahiplik/geçerli satın alma) yok.
+     Çözüm: `REVOKE EXECUTE ... FROM authenticated` (yalnız service_role çağırmalı) — çağıran kod yolu önce doğrulanmalı.
+   - `claim_lifetime_spot` SECURITY DEFINER ama `search_path` sabitlenmemiş (`SET search_path` yok). `authenticated` EXECUTE'u kapalı
+     (yalnız service_role), bu yüzden risk düşük; yine de 109 deseniyle (`SET search_path = ''`) hizalanmalı.
+   - 8 görünüm (view) bu taramaya dahil edilmedi; `anon/authenticated` yetkileri ayrıca bakılmalı. `mood_searches` ve diğer tablolarda
+     `MAINTAIN` (PG17 `m`) yetkisi de taranmadı.
+
+## Supabase Free planı: yedek/PITR yok — Pro geçiş tetikleyicisi (25 Eki 2026)
+
+- **Durum:** `chosy ai` projesi Supabase Free planında. Otomatik yedek ve PITR YOK (CLI'daki `WALG=true` bir yedek tarihi göstermez). Plan kısıtı: `create_branch` de `PaymentRequiredException` verdi (branching yalnız Pro+).
+- **Geçici önlem:** her riskli apply öncesi mantıksal export — `scripts/backup/export-logical.ps1` (10 tablo JSONL + şema referansı + MANIFEST satır sayısı/md5; yalnız okuma, mevcut CLI oturumu, anahtar yok; çıktı repo dışı `C:\Users\mertk\moodflix-rollback\backup-<tarih>\`, kişisel veri). Geri yükleme adımları: `MONEY-1C_DEPLOY_RUNBOOK.md` "Veri bozulursa".
+- **Sınırlar:** anlık görüntü yalnız o 10 tabloyu kapsar (film verisi, `film_profiles`, auth şeması, storage, cron/vault yok); export anı ile bozulma anı arasındaki yazmalar kaybolur; eşzamanlı yazma sırasında tutarlı kesit (snapshot) garantisi yok (tablolar sırayla okunur).
+- **Pro geçiş tetikleyicisi:** ilk ücretli dönüşüm **veya** > 100 gerçek aktif kullanıcı (hangisi önce). Karar kurucuya aittir; tetikleyici görüldüğünde bu madde hatırlatılır.
+- **Pro'ya geçince:** 139 eşzamanlılık testi gerçek branch şemasında tekrarlanacak (şu an embedded Postgres 18.4, stub şema, 10 bağlantı, 5/5 — canlı şemayla birebir değil); backup/PITR'in açık olduğu ve son yedek tarihi runbook 0.1'e geri eklenecek.
+- **Export sınırı — `auth.users` dışarıda (25 Eki):** `scripts/backup/export-logical.ps1` yalnız `public` şemasındaki 10 tabloyu alır; `auth.users`/`auth.identities`/oturumlar YOK. Hesap/kimlik felaketinde `public.users` satırları geri yüklense bile kullanıcıların girişleri dönmez (`users.auth_id` eşleşmesi yetim kalır). Free planda auth için kurtarma yolu yok; Pro geçişinin (yedek/PITR) gerekçelerinden biri. Geri yükleme `scripts/backup/restore-rows.ps1` (UPSERT; `users` DELETE edilmez — `ON DELETE CASCADE` çocuk tabloları siler), gömülü PG'de 10/10 test edildi, canlıda denenmedi.
+
+## PRO-0 Faz 0 — ertelenenler ve ölü kod (25 Eki 2026)
+
+- **Filtre/kart puanı IMDb değil TMDB (MOOD-VEC-1'e, sunucu işi):** `match_films_v3` (migration 133) `f.vote_average >= min_rating` ile filtreler ve dönüş tablosunda `imdb_rating` yok. Faz 0'da filtre ve kart dürüstçe TMDB'yi gösterir (başlık RATING/PUAN, çipler 7+/8+/8.5+, kart `★ 6.8`). Filtrenin `imdb_rating`'e taşınması (RPC dönüşüne `imdb_rating` eklenmesi dahil) ayrı migration + deploy gerektirir. Çipin `top250` kimliği 8.5 eşiğine eşleniyor; kimlik adı IMDb Top 250 anlamını artık taşımıyor (kod adı değişmedi).
+- **JS fallback ölü kod (F0-1/F0-2):** `getFallbackFromSupabase` çağrısı `getRecommendations`tan kalktı. Artık referanssız: `getFallbackFromSupabase`, `scoreFilm`, `scoredRowToFilm`, `applyFilters` (utils/filmFilters), `FilmTableRow`. Silme kararı ayrı (Kural: davranış silme değil çağrı kaldırma).
+- **`hooks/useFeedState.ts` ölü:** yalnız `hooks/index.ts` yeniden dışa aktarıyor, çağıranı yok; `resetFeed`i dahil. Silinmedi.
+- **`recommendations.ts` `.catch(() => {})` (başarı yolu, `tasteSignals.recordMoodSearchCompleted`):** F0-1'in dokunduğu yolda değil, Kural 2'ye uymuyor. Sentry'ye yazan bir işleyiciyle değiştirilmeli.
+- **`discover.tsx` `tasteSignals.recordSwipeRight/Left(...).catch(() => {})`:** aynı sınıf; dokunulmadı.
+- **Preload erken dönüşü:** `mood_preload_skipped` olayı B1/B6 teşhisi için eklendi; kök neden #915'te `mood_relaxation_timing.origin/min_rating` ile doğrulanacak.
+- **Faz 2'ye (dokunulmadı):** `AIProcessingOverlay` adım zamanlayıcısı (gerçek aşamaya bağlı değil), Watchlist dışındaki yüzde kalıntıları.
+
+- **Kartta gösterilmeyen şablon metinleri (F0-2):** `SwipeableCard.getAIExplanation` ve `rowToFilm`in "Matches your mood: …" şablonu kullanıcıya gösterilmiyor (çıktı uydurmaydı). Kod yerinde; `getAIExplanation` artık referanssız (eslint uyarısı). `matchScore`, `pick_type`, `surpriseType` verisi akıyor (`watchlist-detail` sıralaması `matchScore` kullanıyor); rozet/kenarlık/6. kart haptic'i kaldırıldı.
+- **Eşleşme yüzdesi kalıntıları (F0-2 kapsamı dışı, dokunulmadı):** `components/Profile/DailyMatchCard` (`dailyMatch.matchScore`) ve `app/roulette.tsx` (`roulette.matchScore`) hâlâ benzerlikten türetilmiş yüzde gösteriyor; Pro Mode akışı dışında, Faz 2'de karar bekler.
+- **`heroMatchBadge` arka planı (F0-2'de token'a çekildi):** `withAlpha(Colors.accentPrimary, 0.12)` kullanıldı (opaklıklı semantic token yok, yeni token eklenmedi). Aynı dosyadaki ve ekran dışı diğer sabit `rgba` kalıntıları ayrıca taranmadı.
+
+- **F0-3: akıştan çıkan, referanssız bileşenler:** `components/MoodProfileResult` ve `components/ShareCards/MoodShareCard` Pro Mode akışından çıktı (`useShareCapture` ve `FilmShareCard` başka ekranlarda kullanımda); dosyalar duruyor, rota yok. Silme/yeniden kullanma kararı ayrı.
+- **F0-3: `pro_mode_opened` ikili tetiklenmesi (gözlem, düzeltme yok):** 25 Eki PostHog'da aynı oturumda iki kez, 3–7 sn arayla ve filtre eylemlerinden ÖNCE atılıyor (12:30:44/12:30:51, 12:52:16/12:52:19 UTC). `app/pro-mode.tsx` kapı durumu açılışta değişiyor olabilir (`useProModeAccess` `loading`/`allowed`). Filtre çiplerini sıfırladığına dair kanıt yok.
+- **F0-3: bugünkü deste snapshot'ı yalnız etiketi tutar:** tam prompt etiketten çözülür (kart → prompt, serbest metin → etiket). Etiket başka dile çevrilmiş bir kart başlığıyla çakışırsa `findMoodCard` ilk eşleşmeyi alır; serbest metinde sorun yok.
+- **C8 gözlemi (F0-4):** bayrak (`mood_offer_enabled`) kapalıyken Pro Mode destesine yalnız Pro kullanıcı ulaşır; slot kotası tükenince kaydetme ücretsiz-arama destesi dışında hâlâ paywall ile kesilir (mevcut tasarım). F0-4 yalnız paywall AÇILMAYINCA destenin donmasını kaldırdı (`SLOT_PAYWALL_NOT_SHOWN`).
+- **Faz 2'ye (dokunulmadı):** `AIProcessingOverlay` adımları zamanlayıcıya bağlı (`:172-188`), gerçek boru hattı aşamasını yansıtmıyor.

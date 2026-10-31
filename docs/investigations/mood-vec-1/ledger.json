@@ -1,0 +1,35 @@
+{
+  "parse_total": 25,
+  "rerank_total": 51,
+  "rerank_by_day": {
+    "2026-10-25": 51
+  },
+  "last_llm_at": 1792938964723,
+  "mood_searches_rows": [
+    "c2b55ac1-ccbe-499f-b44e-d51a552d2370",
+    "b82f0cfc-460e-4624-a99d-0413c0476e3c",
+    "15b41a8e-5d9f-4984-9083-b9678b9ed30c",
+    "1293cd13-64a5-427f-8b59-20bca2f55e5a",
+    "02a0a9ba-1e31-48ab-b4f1-876a8bed4f58",
+    "c3b08708-537f-466c-8254-a17aba749879",
+    "84671f75-e141-413c-af0b-68cf1bfe55ff",
+    "7f1d1961-4e1a-427f-b47f-00cf51e38693",
+    "e60f06ba-bd4d-4517-8b9f-cf3bf9a62af3",
+    "82aa21fe-a412-41e0-8afa-db38d1e8d87c",
+    "6dadf0a3-cdbb-40ac-b1f9-5a73d9fe244f",
+    "5d25fc82-6d4f-4e8e-a558-c6689f75c981",
+    "5d34dcd8-b987-406d-804a-0b21f2628fdb",
+    "67d08329-8154-4a80-be79-911cf5449f13",
+    "6c281279-d824-4d17-9456-2c086993ddd3",
+    "a94353fb-0239-4bcd-acdf-afe8f81e9edb",
+    "77d51f0a-5efe-473f-8fd1-dbac7c450354",
+    "ecc9aac6-e9e9-4256-8588-5a8c9d083d8a",
+    "e0bc59a5-b5f1-4e87-922c-4ddb76166cf5",
+    "0d4c3210-2068-49a7-a991-fe61fece77c6",
+    "b75aa3a5-2a02-496e-800e-00a9306dc8d8",
+    "5fe810ab-7cec-4a97-8f5c-0ac2fb45da0e",
+    "aafbc857-82b6-4e82-a15b-9fb1b97de6a8",
+    "29c36d44-f7ef-4809-9372-063d09568c23",
+    "8660a12b-185f-4af1-a123-ee97d9373bab"
+  ]
+}

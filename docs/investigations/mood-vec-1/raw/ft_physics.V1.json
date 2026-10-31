@@ -1,0 +1,567 @@
+{
+  "mood_id": "ft_physics",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "5c37028c-d2f0-46a4-91b5-648599b0724d",
+        "tmdb_id": 840,
+        "title": "Close Encounters of the Third Kind",
+        "year": 1977,
+        "overview": "After an encounter with UFOs, an electricity linesman feels undeniably drawn to an isolated area in the wilderness where something spectacular is about to happen.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.349,
+        "director": "Steven Spielberg",
+        "similarity": 1.18788086703671,
+        "curation_tier": "core",
+        "match_reason": "Matches: space, wonder"
+      },
+      {
+        "id": "ea35522f-6435-42f5-a74b-617af0ed73a0",
+        "tmdb_id": 3083,
+        "title": "Mr. Smith Goes to Washington",
+        "year": 1939,
+        "overview": "After the death of a United States Senator, idealistic Jefferson Smith is appointed as his replacement in Washington. Soon, the naive and earnest new senator has to battle political corruption.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.833,
+        "director": "Frank Capra",
+        "similarity": 0.908011330737314,
+        "curation_tier": "extended",
+        "match_reason": "governor, washington dc, usa, senate"
+      },
+      {
+        "id": "a38ba7da-e721-44b1-b6f8-b02cdafe58db",
+        "tmdb_id": 938,
+        "title": "For a Few Dollars More",
+        "year": 1965,
+        "overview": "Two bounty hunters both pursue the brutal and sadistic bandit, El Indio, who has a large bounty on his head.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 132,
+        "vote_average": 8.022,
+        "director": "Sergio Leone",
+        "similarity": 1.01860321981197,
+        "curation_tier": "core",
+        "match_reason": "bounty hunter, pot smoking, rural area"
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 1.01550300745505,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia"
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 1.0132005259544,
+        "curation_tier": "core",
+        "match_reason": "utah, new zealand, based on true story"
+      },
+      {
+        "id": "0043a4f9-f38d-4211-b444-e557698c99c6",
+        "tmdb_id": 15876,
+        "title": "The Enemy Below",
+        "year": 1957,
+        "overview": "The crew of the American destroyer escort, the USS Haynes, detects a German U-Boat—resulting in a prolonged, deadly battle of wits.",
+        "genres": [
+          "War"
+        ],
+        "runtime": 97,
+        "vote_average": 7.123,
+        "director": "Dick Powell",
+        "similarity": 0.884296413019159,
+        "curation_tier": "extended",
+        "match_reason": "submarine, world war ii, u.s. navy"
+      },
+      {
+        "id": "e3f7fb5f-9764-43dc-957f-a04777769afa",
+        "tmdb_id": 537996,
+        "title": "The Ballad of Buster Scruggs",
+        "year": 2018,
+        "overview": "Vignettes weaving together the stories of six individuals in the old West at the end of the Civil War. Following the tales of a sharp-shooting songster, a wannabe bank robber, two weary traveling performers, a lone gold prospector, a woman traveling the West to an uncertain future, and a motley crew of strangers undertaking a carriage ride.",
+        "genres": [
+          "Western",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.133,
+        "director": "Joel Coen",
+        "similarity": 0.994785844190505,
+        "curation_tier": "core",
+        "match_reason": "prostitute, native american, parody"
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.961340204771814,
+        "curation_tier": "core",
+        "match_reason": "Matches: space"
+      },
+      {
+        "id": "ba5164cf-875a-418c-9ad1-efe5170ca08d",
+        "tmdb_id": 830,
+        "title": "Forbidden Planet",
+        "year": 1956,
+        "overview": "Starship C57D travels to planet Altair 4 in search of the crew of spaceship \"Bellerophon,\" a scientific expedition that has been missing for twenty years. They find themselves unwelcome by the expedition's lone survivor and warned of destruction by an invisible force if they don't turn back immediately.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 98,
+        "vote_average": 7.244,
+        "director": "Fred M. Wilcox",
+        "similarity": 0.856160838700954,
+        "curation_tier": "extended",
+        "match_reason": "Matches: space"
+      },
+      {
+        "id": "d1a7a99f-89da-4412-b240-6ff8e1117eb1",
+        "tmdb_id": 549559,
+        "title": "Apollo 11",
+        "year": 2019,
+        "overview": "A look at the Apollo 11 mission to land on the moon led by commander Neil Armstrong and pilot Buzz Aldrin.",
+        "genres": [
+          "Documentary",
+          "History",
+          "Drama"
+        ],
+        "runtime": 93,
+        "vote_average": 7.866,
+        "director": "Todd Douglas Miller",
+        "similarity": 0.959478903912329,
+        "curation_tier": "core",
+        "match_reason": "Matches: space"
+      },
+      {
+        "id": "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+        "tmdb_id": 286217,
+        "title": "The Martian",
+        "year": 2015,
+        "overview": "During a manned mission to Mars, Astronaut Mark Watney is presumed dead after a fierce storm and left behind by his crew. But Watney has survived and finds himself stranded and alone on the hostile planet. With only meager supplies, he must draw upon his ingenuity, wit and spirit to subsist and find a way to signal to Earth that he is alive.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 141,
+        "vote_average": 7.698,
+        "director": "Ridley Scott",
+        "similarity": 0.956673764107044,
+        "curation_tier": "core",
+        "match_reason": "Matches: space"
+      },
+      {
+        "id": "75ec31c2-5bf3-43c9-903d-7dcf4a251a92",
+        "tmdb_id": 1726,
+        "title": "Iron Man",
+        "year": 2008,
+        "overview": "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique weaponized suit of armor to fight evil.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 126,
+        "vote_average": 7.659,
+        "director": "Jon Favreau",
+        "similarity": 0.949027318475209,
+        "curation_tier": "core",
+        "match_reason": "Matches: universe"
+      },
+      {
+        "id": "dce3d1f0-1ac8-4c58-ac22-e25b0b562fc5",
+        "tmdb_id": 901,
+        "title": "City Lights",
+        "year": 1931,
+        "overview": "A tramp falls in love with a beautiful blind flower girl. His on-and-off friendship with a wealthy man allows him to be the girl's benefactor and suitor.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.251,
+        "director": "Charlie Chaplin",
+        "similarity": 0.941683561025992,
+        "curation_tier": "core",
+        "match_reason": "blindness and impaired vision, eye operation, operation"
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 0.938164054343503,
+        "curation_tier": "core",
+        "match_reason": "Matches: discovery"
+      },
+      {
+        "id": "6425c973-9d85-4f0e-bb06-e48b4180e777",
+        "tmdb_id": 726759,
+        "title": "Tetris",
+        "year": 2023,
+        "overview": "In 1988, American video game salesman Henk Rogers discovers the video game Tetris. When he sets out to bring the game to the world, he enters a dangerous web of lies and corruption behind the Iron Curtain.",
+        "genres": [
+          "Thriller",
+          "History",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.674,
+        "director": "Jon S. Baird",
+        "similarity": 0.937540602875662,
+        "curation_tier": "core",
+        "match_reason": "Matches: time"
+      },
+      {
+        "id": "ee1d7ea0-3828-49a3-b264-ab6bc2378058",
+        "tmdb_id": 68721,
+        "title": "Iron Man 3",
+        "year": 2013,
+        "overview": "When Tony Stark's world is torn apart by a formidable terrorist called the Mandarin, he starts an odyssey of rebuilding and retribution.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 6.933,
+        "director": "Shane Black",
+        "similarity": 0.93475480228383,
+        "curation_tier": "core",
+        "match_reason": "Matches: universe"
+      },
+      {
+        "id": "fe21ad67-e7d7-4712-9d27-13c251f6e767",
+        "tmdb_id": 14836,
+        "title": "Coraline",
+        "year": 2009,
+        "overview": "Wandering her rambling old house in her boring new town, 11-year-old Coraline discovers a hidden door to a strangely idealized version of her life. In order to stay in the fantasy, she must make a frighteningly real sacrifice.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 100,
+        "vote_average": 7.905,
+        "director": "Henry Selick",
+        "similarity": 0.932985962137014,
+        "curation_tier": "core",
+        "match_reason": "Matches: universe"
+      },
+      {
+        "id": "a06c6a42-251b-4206-a5b5-33a142ea4100",
+        "tmdb_id": 399404,
+        "title": "Darkest Hour",
+        "year": 2017,
+        "overview": "In May 1940, the fate of World War II hangs on Winston Churchill, who must decide whether to negotiate with Adolf Hitler or fight on knowing that it could mean the end of the British Empire.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 125,
+        "vote_average": 7.4,
+        "director": "Joe Wright",
+        "similarity": 0.835210472415619,
+        "curation_tier": "extended",
+        "match_reason": "world war ii, biography, based on true story"
+      },
+      {
+        "id": "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+        "tmdb_id": 522212,
+        "title": "Just Mercy",
+        "year": 2019,
+        "overview": "The powerful true story of Harvard-educated lawyer Bryan Stevenson, who goes to Alabama to defend the disenfranchised and wrongly condemned — including Walter McMillian, a man sentenced to death despite evidence proving his innocence. Bryan fights tirelessly for Walter with the system stacked against them.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "History"
+        ],
+        "runtime": 137,
+        "vote_average": 7.853,
+        "director": "Destin Daniel Cretton",
+        "similarity": 0.9320351006599,
+        "curation_tier": "core",
+        "match_reason": "death penalty, judge, innocence"
+      },
+      {
+        "id": "22caba6c-df42-49fc-a6c0-6ebc21dc7f05",
+        "tmdb_id": 567,
+        "title": "Rear Window",
+        "year": 1954,
+        "overview": "A wheelchair-bound photographer spies on his neighbors from his apartment window and becomes convinced one of them has committed murder.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 8.339,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.926236798780613,
+        "curation_tier": "core",
+        "match_reason": "nurse, isolation, photographer"
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 0.924945904860106,
+        "curation_tier": "core",
+        "match_reason": "airplane, based on novel or book, england"
+      },
+      {
+        "id": "2daade33-adef-476c-9456-e6a0379d10cb",
+        "tmdb_id": 497,
+        "title": "The Green Mile",
+        "year": 1999,
+        "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 189,
+        "vote_average": 8.506,
+        "director": "Frank Darabont",
+        "similarity": 0.922440472884823,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, death penalty, based on novel or book"
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.919027130215421,
+        "curation_tier": "core",
+        "match_reason": "Matches: time"
+      },
+      {
+        "id": "0c750f1b-425a-4da5-b2cd-b0482e9ddc36",
+        "tmdb_id": 284,
+        "title": "The Apartment",
+        "year": 1960,
+        "overview": "Bud Baxter is a minor clerk in a huge New York insurance company, until he discovers a quick way to climb the corporate ladder. He lends out his apartment to the executives as a place to take their mistresses. Although he often has to deal with the aftermath of their visits, one night he's left with a major problem to solve.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 126,
+        "vote_average": 8.189,
+        "director": "Billy Wilder",
+        "similarity": 0.916672348051679,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, new york city, lovesickness"
+      },
+      {
+        "id": "4dcda5f2-e9f4-4528-8926-ab3be87b095d",
+        "tmdb_id": 346,
+        "title": "Seven Samurai",
+        "year": 1954,
+        "overview": "A samurai answers a village's request for protection after he falls on hard times. The town needs protection from bandits, so the samurai gathers six others to help him teach the people how to defend themselves, and the villagers provide the soldiers with food.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 207,
+        "vote_average": 8.452,
+        "director": "Akira Kurosawa",
+        "similarity": 0.913552819903968,
+        "curation_tier": "core",
+        "match_reason": "martial arts, japan, samurai"
+      },
+      {
+        "id": "4394cc07-5ed8-42dd-9ad0-a9d7bdcf40f4",
+        "tmdb_id": 871,
+        "title": "Planet of the Apes",
+        "year": 1968,
+        "overview": "Astronaut Taylor crash lands on a distant planet ruled by apes who use a primitive race of humans for experimentation and sport. Soon Taylor finds himself among the hunted, his life in the hands of a benevolent chimpanzee scientist.",
+        "genres": [
+          "Science Fiction",
+          "Adventure",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 112,
+        "vote_average": 7.651,
+        "director": "Franklin J. Schaffner",
+        "similarity": 0.9121421127826,
+        "curation_tier": "core",
+        "match_reason": "Matches: space, time"
+      },
+      {
+        "id": "0bfaceb2-ca78-4ec0-b40c-6df99b8e7a92",
+        "tmdb_id": 5996,
+        "title": "We're No Angels",
+        "year": 1955,
+        "overview": "Three convicts escape from prison on Devil's Island just before Christmas and arrive at a nearby French colonial town. They go to the store of the Ducotels, the only store that gives supplies on credit. They initially intend to take advantage of them but have a change of heart after they find the family is in financial troubles.",
+        "genres": [
+          "Comedy",
+          "Crime"
+        ],
+        "runtime": 106,
+        "vote_average": 7.222,
+        "director": "Michael Curtiz",
+        "similarity": 0.817228767493911,
+        "curation_tier": "extended",
+        "match_reason": "prison, prisoner, prison escape"
+      },
+      {
+        "id": "68415330-1d09-40a4-a184-78e2e7b801f5",
+        "tmdb_id": 10386,
+        "title": "The Iron Giant",
+        "year": 1999,
+        "overview": "In the small town of Rockwell, Maine in October 1957, a giant metal machine befriends a nine-year-old boy and ultimately finds its humanity by unselfishly saving people from their own fears and prejudices.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 86,
+        "vote_average": 7.954,
+        "director": "Brad Bird",
+        "similarity": 0.905112129893371,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, based on novel or book"
+      },
+      {
+        "id": "7eab97d1-1707-4777-b3a3-1a394b63b742",
+        "tmdb_id": 562,
+        "title": "Die Hard",
+        "year": 1988,
+        "overview": "High above the city of L.A. a team of terrorists has seized a building, taken hostages, and declared war. One man has manages to escape... An off-duty cop hiding somewhere inside. He's alone, tired... and the only chance anyone has got.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.811,
+        "director": "John McTiernan",
+        "similarity": 0.904366754089811,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, based on novel or book, s.w.a.t."
+      },
+      {
+        "id": "66c1d817-91b0-43a0-ab46-1bed47c49c09",
+        "tmdb_id": 9475,
+        "title": "Scent of a Woman",
+        "year": 1992,
+        "overview": "Charlie Simms is a student at a private preparatory school who comes from a poor family. To earn the money for his flight home to Gresham, Oregon for Christmas, Charlie takes a job over Thanksgiving looking after retired U.S. Army officer Lieutenant Colonel Frank Slade, a cantankerous middle-aged man who lives with his niece and her family.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 156,
+        "vote_average": 7.8,
+        "director": "Martin Brest",
+        "similarity": 0.903285390064863,
+        "curation_tier": "core",
+        "match_reason": "vietnam veteran, new york city, blindness and impaired vision"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1112,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1112,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "physics",
+        "science",
+        "discovery",
+        "innovation",
+        "space",
+        "time",
+        "universe",
+        "wonder"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

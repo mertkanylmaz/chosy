@@ -10,6 +10,27 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { shouldRefundOnError } from '../_shared/refundPolicy.ts'
+import { validateRawInput } from '../_shared/moodInput.ts'
+import { isSchemaV2, normalizeV2Fields } from '../_shared/moodV2.ts'
+import { limitWords, parseV2PromptFingerprint, runParseV2 } from '../_shared/moodParseTools.ts'
+import { createTiming, timingBreadcrumbs } from '../_shared/serverTiming.ts'
+import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
+import {
+  PARSE_CACHE_TTL_SECONDS,
+  parseCacheKey,
+  parseQuickMoodId,
+  promptVersionOf,
+  readCachedProfile,
+} from '../_shared/moodParseCache.ts'
+import { collectRecentShown, RECENT_SEARCHES } from '../_shared/moodRecentShown.ts'
+import {
+  ANTHROPIC_TIMEOUT_MS,
+  STALE_SECONDS,
+  interpretClaim,
+  parseClientSearchId,
+  type ClaimOutcome,
+} from '../_shared/moodClaim.ts'
 
 // ─── Shared Admin Client ──────────────────────────────────────────────────────
 
@@ -18,14 +39,22 @@ import { sentryCapture } from '../_shared/sentry.ts'
  * persistSession: false ZORUNLU — Deno Deploy'da storage yok,
  * default true client auth module'unu bozuyor (BUG: mood_searches INSERT sessiz fail).
  */
-let _admin: ReturnType<typeof createClient> | null = null
-function getAdmin(): ReturnType<typeof createClient> {
+// `ReturnType<typeof createClient>` jenerikleri varsayilanla orneklediginden
+// tablo/RPC tipleri `never`'a coker. Tip gercek bir cagri yerinden cikarilir
+// (winback-sequencer deseni, bkz. docs/TEKNIK_BORC.md).
+function makeAdminClient() {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  )
+}
+type AdminClient = ReturnType<typeof makeAdminClient>
+
+let _admin: AdminClient | null = null
+function getAdmin(): AdminClient {
   if (!_admin) {
-    _admin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    )
+    _admin = makeAdminClient()
   }
   return _admin
 }
@@ -76,6 +105,191 @@ async function logMoodSearch(params: {
   } catch (e) {
     console.error('[parse-mood] log failed:', e)
     return null
+  }
+}
+
+// ─── MOOD-VEC-2d: parse onbellegi + kisisel tekrar dislama (yalniz schema_version:2) ──
+
+/** Onbellek/kisisel-dislama hatasi arama akisini DUSURMEZ ama sessiz de kalmaz: Sentry warning. */
+async function reportV2Aux(
+  code: string,
+  detail: string,
+  userId?: string,
+  breadcrumbs?: Parameters<typeof sentryCapture>[0]['breadcrumbs'],
+): Promise<void> {
+  console.error(`[parse-mood] ${code}:`, detail)
+  await sentryCapture({
+    message: `parse-mood ${code}: ${detail}`,
+    level: 'warning',
+    tags: { function: 'parse-mood', error_code: code },
+    extra: userId ? { user_id: userId } : undefined,
+    breadcrumbs,
+  })
+}
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined
+
+/**
+ * Yanittan SONRA calisacak kritik olmayan is (yalniz v2). Supabase Edge'de EdgeRuntime.waitUntil
+ * isolate'i is bitene kadar canli tutar; yoksa (yerel) fire-and-forget. Gorevler kendi hatalarini
+ * raporlar; buradaki catch yalniz beklenmedik reddi loglar.
+ */
+function defer(task: Promise<unknown>): void {
+  const safe = task.catch((e: unknown) => console.error('[parse-mood] deferred task failed:', e))
+  if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime) EdgeRuntime.waitUntil(safe)
+}
+
+/** Isabet → parse ciktisi; iskalama (yok / TTL dolmus) → null. Hata/bozuk satir → Sentry + null (Haiku'ya duser). */
+async function readParseCache(key: string): Promise<Record<string, unknown> | null> {
+  try {
+    const { data, error } = await getAdmin().rpc('mood_parse_cache_get', {
+      p_key: key,
+      p_max_age_seconds: PARSE_CACHE_TTL_SECONDS,
+    })
+    if (error) throw new Error(`RPC hatasi: ${error.message}`)
+    if (data === null || data === undefined) return null
+    const profile = readCachedProfile(data)
+    if (!profile) throw new Error('onbellek satiri bozuk (beklenen sekil yok)')
+    return profile
+  } catch (err) {
+    await reportV2Aux('PARSE_CACHE_READ_FAILED', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
+/** Yalniz parse CIKTISI yazilir (kullanici kimligi/ham metin yok). Hicbir zaman firlatmaz. */
+async function writeParseCache(
+  key: string,
+  schemaVersion: number,
+  promptVersion: string,
+  result: Record<string, unknown>,
+): Promise<void> {
+  try {
+    // Yazma + suresi dolanlarin sinirli (100 satir) temizligi tek RPC'de (migration 144).
+    const { error } = await getAdmin().rpc('mood_parse_cache_put', {
+      p_key: key,
+      p_schema_version: schemaVersion,
+      p_prompt_version: promptVersion,
+      p_result: result,
+    })
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    await reportV2Aux('PARSE_CACHE_WRITE_FAILED', err instanceof Error ? err.message : String(err))
+  }
+}
+
+/** `finish_mood_search` cache_hit=false yazar; onbellek isabetinde satir sonradan duzeltilir. */
+async function markCacheHit(searchId: string, userId: string): Promise<void> {
+  try {
+    const { error } = await getAdmin().from('mood_searches').update({ cache_hit: true }).eq('id', searchId)
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    await reportV2Aux('CACHE_HIT_MARK_FAILED', err instanceof Error ? err.message : String(err), userId)
+  }
+}
+
+/**
+ * Kullanicinin son `RECENT_SEARCHES` mood aramasinda gosterilen ilk 4 filmin id'leri.
+ * Istemci bunu match_films_v4 `exclude_ids`ine ekler. Hata → Sentry + [] (dislama olmadan devam).
+ */
+async function fetchRecentShown(appUserId: string): Promise<string[]> {
+  try {
+    const { data, error } = await getAdmin()
+      .from('mood_searches')
+      .select('recommended_film_ids')
+      .eq('user_id', appUserId)
+      .not('recommended_film_ids', 'is', null)
+      .order('searched_at', { ascending: false })
+      .limit(RECENT_SEARCHES)
+    if (error) throw new Error(error.message)
+    return collectRecentShown(data ?? [])
+  } catch (err) {
+    await reportV2Aux('RECENT_SHOWN_READ_FAILED', err instanceof Error ? err.message : String(err), appUserId)
+    return []
+  }
+}
+
+// ─── Idempotent Claim (MONEY-1C, migration 139) ──────────────────────────────
+
+/**
+ * `client_search_id` ile gelen istek icin atomik sahiplenme. Kotayi (gerekirse) BU RPC
+ * tuketir; ayni (user, id) icin en fazla bir kez. RPC hatasi / anlasilmaz cevap
+ * `unavailable` doner — cagiran fail-closed 503 verir, hicbir sey tuketilmis sayilmaz.
+ */
+async function claimSearch(
+  appUserId: string,
+  clientSearchId: string,
+  rawInput: string,
+): Promise<ClaimOutcome> {
+  try {
+    const { data, error } = await getAdmin().rpc('claim_mood_search', {
+      p_user_id: appUserId,
+      p_client_search_id: clientSearchId,
+      p_mood_text: rawInput,
+      p_stale_seconds: STALE_SECONDS,
+    })
+    if (error) return { kind: 'unavailable', detail: `RPC hatasi: ${error.message}` }
+    return interpretClaim(data)
+  } catch (err) {
+    return { kind: 'unavailable', detail: err instanceof Error ? err.message : String(err) }
+  }
+}
+
+/**
+ * Sahiplenilmis satiri sonuclandirir. Hicbir zaman firlatmaz: finish basarisizligi LLM
+ * hatasi DEGILDIR (kullanici yanitini alir, iade tetiklenmez). Sahiplik kaybi (zombi
+ * istek) ve RPC hatasi Sentry'ye yazilir; satir `pending` kalirsa bayat yoluyla kurtarilir.
+ */
+async function finishSearch(params: {
+  userId: string
+  searchId: string
+  claimedAt: string
+  status: 'completed' | 'failed'
+  profile: Record<string, unknown> | null
+  errorCode: string | null
+  /** Yalniz `failed`: iade iste. Iade, sahiplik dogrulandiktan sonra RPC icinde yapilir. */
+  refund: boolean
+  latencyMs: number
+  tokensIn: number | null
+  tokensOut: number | null
+}): Promise<{ finished: boolean; refunded: boolean }> {
+  try {
+    const { data, error } = await getAdmin().rpc('finish_mood_search', {
+      p_search_id: params.searchId,
+      p_claimed_at: params.claimedAt,
+      p_status: params.status,
+      p_profile: params.profile,
+      p_error_code: params.errorCode,
+      p_refund: params.refund,
+      p_latency_ms: params.latencyMs,
+      p_tokens_in: params.tokensIn,
+      p_tokens_out: params.tokensOut,
+    })
+    if (error) throw new Error(`RPC hatasi: ${error.message}`)
+    const res = (data ?? {}) as { finished?: boolean; refunded?: boolean; refund?: unknown }
+    if (res.finished !== true) {
+      throw new Error('sahiplik kaybedildi: satir baska bir istek tarafindan yeniden sahiplenildi')
+    }
+    if (params.refund && res.refunded !== true) {
+      // Hak yandi ve iade edilemedi (ornegin gece yarisi siniri): kullanici hakkini kaybetti.
+      await sentryCapture({
+        message: `parse-mood kota iadesi basarisiz — kullanici hakkini kaybetti: ${JSON.stringify(res.refund)}`,
+        level: 'error',
+        tags: { function: 'parse-mood', error_code: 'QUOTA_REFUND_FAILED' },
+        extra: { user_id: params.userId, search_id: params.searchId },
+      })
+    }
+    return { finished: true, refunded: res.refunded === true }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[parse-mood] finish_mood_search failed:', msg)
+    await sentryCapture({
+      message: `parse-mood finish_mood_search basarisiz: ${msg}`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: 'MOOD_FINISH_FAILED' },
+      extra: { user_id: params.userId, search_id: params.searchId, status: params.status },
+    })
+    return { finished: false, refunded: false }
   }
 }
 
@@ -212,36 +426,150 @@ async function checkSearchQuota(
     })
 
     if (error) {
-      console.error('[parse-mood] Quota check error:', error.message)
-      // fail-open: kota altyapisi coktugunde gercek kullaniciyi kesmiyoruz.
-      // Maliyet tarafi artik rate limiter ile kapali (o FAIL-CLOSED).
-      // Sessiz gecis olmamasi icin Sentry'ye yaziliyor (proje kurali 1).
-      await sentryCapture({
-        message: `parse-mood kota kontrolu basarisiz — istek gecirildi: ${error.message}`,
-        level: 'error',
-        tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_FAILED' },
-        extra: { user_id: appUserId },
-      })
-      return { allowed: true, userId: appUserId }
+      return await failClosedQuota(appUserId, 'QUOTA_CHECK_FAILED', error.message)
     }
 
-    const result = data as Record<string, unknown>
-    return {
-      allowed: result.allowed as boolean,
-      userId: appUserId,
-      quotaResult: result,
-    }
+    return await quotaResultToCheck(appUserId, data as Record<string, unknown>)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[parse-mood] Quota check exception:', msg)
-    await sentryCapture({
-      message: `parse-mood kota kontrolu istisna firlatti — istek gecirildi: ${msg}`,
-      level: 'error',
-      tags: { function: 'parse-mood', error_code: 'QUOTA_CHECK_EXCEPTION' },
-      extra: { user_id: appUserId },
-    })
-    return { allowed: true, userId: appUserId } // fail-open
+    return await failClosedQuota(appUserId, 'QUOTA_CHECK_EXCEPTION', msg)
   }
+}
+
+/**
+ * Kota RPC sonucunu (`check_and_consume_quota` dondurusu — dogrudan ya da
+ * `claim_mood_search` icinden) izin/red kararina cevirir. Iki yol ayni kurallari paylasir.
+ */
+async function quotaResultToCheck(
+  appUserId: string,
+  result: Record<string, unknown>,
+): Promise<{
+  allowed: boolean
+  userId?: string
+  quotaResult?: Record<string, unknown>
+  reason?: string
+  error?: string
+}> {
+  const outcome = classifyQuotaResult(result)
+
+  if (outcome === 'tier_not_configured') {
+    // Yapilandirma hatasi: `subscription_limits`te bu tier'in satiri yok.
+    // 429 DEGIL — kullanici kotayi asmadi. Sentry'de gorunur olmali.
+    await sentryCapture({
+      message: `parse-mood: tier icin subscription_limits satiri yok — istek reddedildi (tier: ${String(result.tier)})`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: 'TIER_NOT_CONFIGURED' },
+      extra: { user_id: appUserId, tier: result.tier },
+    })
+    return { allowed: false, userId: appUserId, quotaResult: result, reason: 'TIER_NOT_CONFIGURED' }
+  }
+
+  if (outcome === 'unavailable') {
+    // allowed alani yok / bilinmeyen hata (USER_NOT_FOUND, INVALID_QUOTA_TYPE...)
+    return await failClosedQuota(appUserId, 'QUOTA_CHECK_UNEXPECTED', JSON.stringify(result))
+  }
+
+  return {
+    allowed: outcome === 'allowed',
+    userId: appUserId,
+    quotaResult: result,
+    reason: outcome === 'exceeded' ? 'QUOTA_EXCEEDED' : undefined,
+  }
+}
+
+/**
+ * Kota RPC'si cevap vermedi ya da anlasilmaz cevap verdi → istek REDDEDILIR
+ * (MONEY-1C; onceki hal fail-open'di). Gerekce: rate limiter ayni DB'de zaten
+ * fail-closed, yani fail-open yalniz "kota fonksiyonu bozuk, DB saglam"
+ * durumunda devreye giriyordu — 115 gibi bir migration hatasinda tum kullanim
+ * kotasiz ve ucretli akardi. Hicbir sey tuketilmedi, iade de gerekmez.
+ * Sessiz degil: Sentry `level: error`.
+ */
+async function failClosedQuota(
+  appUserId: string,
+  errorCode: string,
+  detail: string,
+): Promise<{ allowed: false; userId: string; reason: 'QUOTA_UNAVAILABLE' }> {
+  console.error(`[parse-mood] Quota ${errorCode}:`, detail)
+  await sentryCapture({
+    message: `parse-mood kota kontrolu basarisiz — istek reddedildi: ${detail}`,
+    level: 'error',
+    tags: { function: 'parse-mood', error_code: errorCode },
+    extra: { user_id: appUserId },
+  })
+  return { allowed: false, userId: appUserId, reason: 'QUOTA_UNAVAILABLE' }
+}
+
+// ─── Quota Refund + Response Fields (MONEY-1C) ────────────────────────────────
+
+/**
+ * Tuketilen aramayi geri verir (migration 136). parse-mood tukettikten sonra
+ * KENDI hatasiyla dustugunde cagrilir. Hicbir zaman firlatmaz: iade
+ * basarisizsa kullanici yine hata yanitini alir, ama hak kaybi Sentry'ye yazilir
+ * (sessiz fallback yasak). Tuketim basina en cok bir kez cagrilmalidir — RPC
+ * idempotent degil.
+ */
+async function refundSearchQuota(appUserId: string, cause: string): Promise<boolean> {
+  try {
+    const { data, error } = await getAdmin().rpc('refund_quota', {
+      p_user_id: appUserId,
+      p_quota_type: 'search',
+    })
+    if (error) throw new Error(`RPC hatasi: ${error.message}`)
+
+    const result = data as Record<string, unknown> | null
+    if (result?.refunded === true) return true
+
+    throw new Error(`iade edilmedi: ${JSON.stringify(result)}`)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('[parse-mood] Quota refund failed:', msg)
+    await sentryCapture({
+      message: `parse-mood kota iadesi basarisiz — kullanici hakkini kaybetti: ${msg}`,
+      level: 'error',
+      tags: { function: 'parse-mood', error_code: 'QUOTA_REFUND_FAILED' },
+      extra: { user_id: appUserId, cause },
+    })
+    return false
+  }
+}
+
+// ─── Input Validation ─────────────────────────────────────────────────────────
+
+/**
+ * Govdeyi okur ve `raw_input`u dogrular (kural: `_shared/moodInput.ts`). Kota
+ * TUKETMEZ — handler bunu kotadan once cagirir. Bozuk JSON da gecersiz girdidir.
+ */
+async function readRawInput(
+  req: Request,
+): Promise<
+  | { ok: true; rawInput: string; clientSearchId: string | null; schemaV2: boolean; quickMoodId: string | null }
+  | { ok: false }
+> {
+  let body: unknown
+  try {
+    body = await req.json()
+  } catch {
+    return { ok: false }
+  }
+
+  const rawInput = validateRawInput((body as { raw_input?: unknown } | null)?.raw_input)
+  if (rawInput === null) return { ok: false }
+
+  // `client_search_id` (MONEY-1C idempotency): yoksa eski istemci → bugunku akis;
+  // varsa UUID olmak zorunda, degilse kotadan ONCE reddedilir.
+  const clientSearchId = parseClientSearchId(
+    (body as { client_search_id?: unknown } | null)?.client_search_id,
+  )
+  return clientSearchId.ok
+    ? {
+        ok: true,
+        rawInput,
+        clientSearchId: clientSearchId.value,
+        schemaV2: isSchemaV2(body),
+        quickMoodId: parseQuickMoodId(body),
+      }
+    : { ok: false }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -262,21 +590,131 @@ serve(async (req: Request): Promise<Response> => {
   // Onceki hal: header yoksa kota da rate limit de fiilen atlaniyor, istek
   // dogrudan ucretli Claude'a gidiyordu. Reddedilen sey ANONIM KULLANICI DEGIL,
   // kimliksiz istektir — `signInAnonymously()` oturumu imzali ve gecerlidir.
-  const auth = await requireUser(req)
+  const t0 = performance.now()
+  const timing = createTiming()
+  const deferred = createTiming() // yanittan sonra biten asamalar (Server-Timing'e girmez)
+  const auth = await timing.measure('auth', () => requireUser(req))
   if (!auth.ok) {
     return unauthorizedResponse(auth, CORS_HEADERS)
   }
 
   try {
-    await checkRateLimit(auth.authUserId, 'parse-mood')
+    await timing.measure('ratelimit', () => checkRateLimit(auth.authUserId, 'parse-mood'))
   } catch (err) {
     return rateLimitResponse(err, CORS_HEADERS)
   }
 
   const startTime = Date.now()
 
-  // Quota check BEFORE parsing body — free user 4. aramada Claude API maliyeti olusturmaz
-  const quotaCheck = await checkSearchQuota(auth.appUserId)
+  // ── Girdi dogrulamasi KOTADAN ONCE (MONEY-1C) ─────────────────────────────
+  // Onceki sira: kota tuketilir, sonra govde dogrulanirdi — bos/gecersiz bir
+  // istek hakki yakardi. Ucretsiz hak gunde 1 oldugunda bu, tek bir hatali
+  // istekle hakkin kaybi demek. Gecersiz girdi LLM'e de kotaya da ulasmaz.
+  // Rate limit yukarida kalir: gecersiz istek spam'i yine sinirlanir.
+  const input = await timing.measure('input', () => readRawInput(req))
+  if (!input.ok) {
+    if (auth.appUserId) {
+      logMoodSearch({
+        userId: auth.appUserId,
+        parsedProfile: null,
+        latencyMs: Date.now() - startTime,
+        errorCode: 'INVALID_INPUT',
+      }).catch(() => {})
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'raw_input string is required', code: 'INVALID_INPUT' }),
+      { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
+  }
+  const rawInput = input.rawInput
+  const clientSearchId = input.clientSearchId
+  const schemaV2 = input.schemaV2
+  // Onbellek YALNIZ hizli mood karti istegi (v2 + gecerli quick_mood_id) icin; yoksa ne okuma ne yazma.
+  const quickMoodId = schemaV2 ? input.quickMoodId : null
+
+  // MOOD-VEC-2e-2 (yalniz v2 + quick_mood_id): onbellek okumasi kota/claim ile PARALEL baslar. Kota her durumda
+  // claim'de tuketilir (isabet de hak yer); reddedilen istek onbellek icerigini GORMEZ (sonuc kullanilmaz).
+  const cachePrefetch =
+    schemaV2 && quickMoodId
+      ? (async (): Promise<{ key: string; promptVersion: string; hit: Record<string, unknown> | null } | null> => {
+          try {
+            const pv = await promptVersionOf(parseV2PromptFingerprint(SYSTEM_PROMPT))
+            const key = await parseCacheKey(quickMoodId, rawInput, 2, pv)
+            const hit = await timing.measure('cache_get', () => readParseCache(key))
+            return { key, promptVersion: pv, hit }
+          } catch (err) {
+            await reportV2Aux('PARSE_CACHE_KEY_FAILED', err instanceof Error ? err.message : String(err))
+            return null
+          }
+        })()
+      : null
+
+  // MOOD-VEC-2d/2e (yalniz v2): kisisel dislama sorgusu kota/onbellek/LLM ile PARALEL, mumkun en erken baslar.
+  // Replay/kota reddi gibi erken donuslerde sonuc kullanilmaz; fetchRecentShown hic firlatmaz.
+  const recentShownTask =
+    schemaV2 && auth.appUserId ? timing.measure('recent', () => fetchRecentShown(auth.appUserId as string)) : null
+
+  // Sunucu yapilandirma hatasi kotadan ONCE: eksik anahtar yuzunden hak yanmasin.
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!apiKey) {
+    console.error('[parse-mood] ANTHROPIC_API_KEY is not set')
+    return new Response(
+      JSON.stringify({ error: 'Server configuration error', code: 'CONFIG_ERROR' }),
+      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    )
+  }
+
+  // Quota check — free user 4. aramada Claude API maliyeti olusturmaz.
+  //
+  // `client_search_id` varsa (MONEY-1C, migration 139) kota atomik sahiplenmeyle tuketilir:
+  // ayni (user, id) icin hak <= 1, LLM <= 1. Yoksa (eski istemci) bugunku akis DEGISMEDEN.
+  let claimed: { searchId: string; claimedAt: string } | null = null
+  let quotaCheck: Awaited<ReturnType<typeof checkSearchQuota>>
+  if (clientSearchId !== null && auth.appUserId) {
+    const claim = await timing.measure('claim', () => claimSearch(auth.appUserId as string, clientSearchId, rawInput))
+
+    if (claim.kind === 'replay') {
+      // Tamamlanmis arama: kayitli profil, kota ve LLM yok.
+      return new Response(
+        JSON.stringify({
+          ...claim.profile,
+          search_id: claim.searchId,
+          ...quotaFields(claim.quota ?? undefined),
+        }),
+        { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    if (claim.kind === 'in_progress') {
+      // Ayni kimlik baska istekte calisiyor. Istemci `retry_after` sonra AYNI id ile dener.
+      return new Response(
+        JSON.stringify({
+          error: 'This search is already in progress.',
+          code: 'IN_PROGRESS',
+          retry_after: claim.retryAfter,
+          search_id: claim.searchId,
+        }),
+        {
+          status: 409,
+          headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Retry-After': String(claim.retryAfter) },
+        },
+      )
+    }
+
+    if (claim.kind === 'claimed') {
+      quotaCheck = { allowed: true, userId: auth.appUserId, quotaResult: claim.quota }
+      claimed = { searchId: claim.searchId, claimedAt: claim.claimedAt }
+    } else if (claim.kind === 'quota_denied') {
+      quotaCheck = await quotaResultToCheck(auth.appUserId, claim.quota)
+    } else {
+      quotaCheck = await failClosedQuota(auth.appUserId, 'QUOTA_CLAIM_FAILED', claim.detail)
+    }
+  } else {
+    quotaCheck = await timing.measure('quota', () => checkSearchQuota(auth.appUserId))
+  }
+  // Sahiplenme satiri zaten yazildi (claim/finish); legacy log satiri YAZILMAZ.
+  const idempotent = clientSearchId !== null && !!auth.appUserId
 
   // `public.users` satiri yok → kota sayilamaz, istek burada BITER.
   // `logMoodSearch` cagrilmaz: `mood_searches.user_id` bir `public.users`
@@ -292,9 +730,34 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  // Kota okunamadi / tier yapilandirilmamis → 503 (429 degil: kullanici kotayi
+  // asmadi). Hicbir sey tuketilmedi. Log satiri yazilmaz: bu bir kullanici
+  // davranisi degil, altyapi durumu — Sentry kaydi zaten var.
+  if (!quotaCheck.allowed && quotaCheck.reason === 'TIER_NOT_CONFIGURED') {
+    return new Response(
+      JSON.stringify({
+        error: 'Plan configuration error. Please try again later.',
+        code: 'TIER_NOT_CONFIGURED',
+        retry_after: 60,
+      }),
+      { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Retry-After': '60' } },
+    )
+  }
+
+  if (!quotaCheck.allowed && quotaCheck.reason === 'QUOTA_UNAVAILABLE') {
+    return new Response(
+      JSON.stringify({
+        error: 'Search quota service is temporarily unavailable. Please try again shortly.',
+        code: 'QUOTA_UNAVAILABLE',
+        retry_after: 30,
+      }),
+      { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json', 'Retry-After': '30' } },
+    )
+  }
+
   if (!quotaCheck.allowed) {
     // Log quota exceeded (no mood_text available yet — body not parsed)
-    if (quotaCheck.userId) {
+    if (quotaCheck.userId && !idempotent) {
       logMoodSearch({
         userId: quotaCheck.userId,
         parsedProfile: null,
@@ -308,84 +771,151 @@ serve(async (req: Request): Promise<Response> => {
         error: 'Daily search quota exceeded',
         code: 'QUOTA_EXCEEDED',
         ...quotaCheck.quotaResult,
+        ...quotaFields(quotaCheck.quotaResult),
         upgrade_url: 'chosy://paywall',
       }),
       { status: 429, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }
 
-  let rawInput: string
-  try {
-    const body = await req.json()
-    rawInput = body?.raw_input
-    if (typeof rawInput !== 'string' || rawInput.trim().length === 0) {
-      throw new Error('missing raw_input')
-    }
-    if (rawInput.length > 500) {
-      throw new Error('raw_input too long')
-    }
-  } catch {
-    if (quotaCheck.userId) {
-      logMoodSearch({
-        userId: quotaCheck.userId,
-        parsedProfile: null,
-        latencyMs: Date.now() - startTime,
-        errorCode: 'INVALID_INPUT',
-      }).catch(() => {})
-    }
-
-    return new Response(
-      JSON.stringify({ error: 'raw_input string is required', code: 'INVALID_INPUT' }),
-      { status: 400, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
-
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
-  if (!apiKey) {
-    console.error('[parse-mood] ANTHROPIC_API_KEY is not set')
-    return new Response(
-      JSON.stringify({ error: 'Server configuration error', code: 'CONFIG_ERROR' }),
-      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
-  }
+  // Bu noktadan sonra kota TUKETILDI: kota RPC'si cevap verdi ve izin verdi.
+  // (Eskiden fail-open yolu `quotaResult` olmadan geciyordu; artik o yol yok.)
+  const quotaConsumed = quotaCheck.quotaResult !== undefined
 
   try {
-    const client = new Anthropic({ apiKey })
+    // MOOD-VEC-2d (yalniz v2): ayni metin + schema + prompt surumu icin Haiku bir kez cagrilir.
+    let cacheKey: string | null = null
+    let promptVersion = ''
+    let cachedParsed: Record<string, unknown> | null = null
+    if (cachePrefetch) {
+      const pf = await cachePrefetch
+      if (pf) {
+        cacheKey = pf.key
+        promptVersion = pf.promptVersion
+        cachedParsed = pf.hit
+      }
+    }
+    const cacheHit = cachedParsed !== null
 
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: rawInput }],
-    })
+    let parsed: Record<string, unknown>
+    let llmTokensIn = 0
+    let llmTokensOut = 0
+    let cacheWriteTask: Promise<void> | null = null
+    let v2Degraded = false // B basarisiz → bos v2 alanlari onbellege YAZILMAZ
 
-    // Token usage tracking
-    const llmTokensIn = message.usage?.input_tokens || 0
-    const llmTokensOut = message.usage?.output_tokens || 0
-
-    const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
-
-    // Markdown code block varsa temizle
-    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-    const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
-
-    const parsed = JSON.parse(jsonString)
-
-    // Normalize search_keywords: array of lowercase strings, max 8
-    if (!Array.isArray(parsed.search_keywords)) {
-      parsed.search_keywords = []
+    if (cachedParsed !== null) {
+      parsed = cachedParsed
     } else {
-      parsed.search_keywords = parsed.search_keywords
-        .filter((k: unknown) => typeof k === 'string' && k.trim().length > 0)
-        .map((k: string) => k.toLowerCase().trim())
-        .slice(0, 8)
+      const client = new Anthropic({ apiKey, timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: 0 })
+
+      let fresh: Record<string, unknown>
+      let v2Fields: Record<string, unknown> = {}
+      if (schemaV2) {
+        // MOOD-VEC-2e: iki paralel zorunlu tool_use cagrisi. A = v1 profil (hata = mevcut hata yolu),
+        // B = v2 ek alanlari (iki denemede de basarisizsa alanlar bos, akis v1 kalitesinde surer).
+        const r = await runParseV2(
+          (params, timeoutMs) =>
+            client.messages.create(params as unknown as Anthropic.MessageCreateParamsNonStreaming, { timeout: timeoutMs }),
+          SYSTEM_PROMPT,
+          rawInput,
+          ANTHROPIC_TIMEOUT_MS,
+        )
+        timing.add('llm_a', r.a.ms)
+        timing.add('llm_b', r.b.ms)
+        llmTokensIn = r.a.tokensIn + r.b.tokensIn
+        llmTokensOut = r.a.tokensOut + r.b.tokensOut
+        if (r.a.value === null) {
+          // Mesaj 'JSON' icerir → mevcut catch yolu PARSE_FAILED siniflar (iade yok, v1 ile ayni).
+          throw new Error('Profile JSON schema validation failed after retry (tool_use)')
+        }
+        fresh = { ...r.a.value }
+        if (typeof fresh.profile_name === 'string') fresh.profile_name = limitWords(fresh.profile_name, 4)
+        if (r.b.value !== null) {
+          v2Fields = r.b.value
+        } else {
+          v2Degraded = true
+          await reportV2Aux(
+            'V2_FIELDS_FAILED',
+            r.b.error ?? `v2 alanlari ${r.b.attempts} denemede sema dogrulamasini gecemedi`,
+            auth.appUserId ?? undefined,
+            timingBreadcrumbs(timing.entries()),
+          )
+        }
+      } else {
+        const message = await client.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: rawInput }],
+        })
+
+        // Token usage tracking
+        llmTokensIn = message.usage?.input_tokens || 0
+        llmTokensOut = message.usage?.output_tokens || 0
+
+        const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
+
+        // Markdown code block varsa temizle
+        const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+        const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
+
+        fresh = JSON.parse(jsonString)
+      }
+
+      // Normalize search_keywords: array of lowercase strings, max 8
+      if (!Array.isArray(fresh.search_keywords)) {
+        fresh.search_keywords = []
+      } else {
+        fresh.search_keywords = fresh.search_keywords
+          .filter((k: unknown) => typeof k === 'string' && k.trim().length > 0)
+          .map((k: string) => k.toLowerCase().trim())
+          .slice(0, 8)
+      }
+
+      if (schemaV2) Object.assign(fresh, normalizeV2Fields(v2Fields))
+      parsed = fresh
+
+      // Yalniz normalize edilmis parse ciktisi onbellege girer (kullanici kimligi yok).
+      if (cacheKey && !v2Degraded) {
+        const key = cacheKey
+        const pv = promptVersion
+        const out = parsed
+        cacheWriteTask = deferred.measure('cache_put', () => writeParseCache(key, 2, pv, out))
+      }
     }
 
     const latencyMs = Date.now() - startTime
 
     // Async log — response'u beklemez
     let searchId: string | null = null
-    if (quotaCheck.userId) {
+    const deferredTasks: Promise<unknown>[] = []
+    if (claimed && quotaCheck.userId) {
+      // Idempotent yol: sahiplenilmis satir sonuclandirilir (sahiplik dogrulamali).
+      // Basarisiz olsa da kullanici profilini alir; satir `pending` kalirsa bayat yoluyla kurtarilir.
+      // v2: arama sonucu yazimi yanittan SONRA (search_id zaten claim'den biliniyor); v1: eski sira, yanittan once.
+      const userId = quotaCheck.userId
+      const claimedRow = claimed
+      const finishTask = async (): Promise<void> => {
+        await deferred.measure('finish', () =>
+          finishSearch({
+            userId,
+            searchId: claimedRow.searchId,
+            claimedAt: claimedRow.claimedAt,
+            status: 'completed',
+            profile: parsed,
+            errorCode: null,
+            refund: false,
+            latencyMs,
+            tokensIn: llmTokensIn,
+            tokensOut: llmTokensOut,
+          }),
+        )
+        if (cacheHit) await deferred.measure('cache_hit_mark', () => markCacheHit(claimedRow.searchId, userId))
+      }
+      searchId = claimed.searchId
+      if (schemaV2) deferredTasks.push(finishTask())
+      else await finishTask()
+    } else if (quotaCheck.userId) {
       searchId = await logMoodSearch({
         userId: quotaCheck.userId,
         moodText: rawInput,
@@ -394,27 +924,97 @@ serve(async (req: Request): Promise<Response> => {
         llmTokensIn,
         llmTokensOut,
         tierUsed: 3, // Sprint 1.A: hepsi tier 3, 1.C'de degisecek
-        cacheHit: false, // Sprint 1.A: cache yok, 1.B'de eklenecek
+        cacheHit, // v1: hep false; v2: parse onbellegi isabeti (MOOD-VEC-2d)
       }).catch(() => null)
     }
 
+    // v2: onbellek yazimi yanittan SONRA (waitUntil); kisisel dislama okumasi yanitta oldugu icin ONCE beklenir.
+    if (cacheWriteTask) deferredTasks.push(cacheWriteTask)
+    const recentShownIds = recentShownTask ? await recentShownTask : []
+
+    // Asama sureleri (yalniz v2): Server-Timing basligi + log; yanittan sonra biten asamalar ayri log satiri.
+    const headers: Record<string, string> = { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    if (schemaV2) {
+      timing.add('total', performance.now() - t0)
+      headers['Server-Timing'] = timing.header()
+      headers['Access-Control-Expose-Headers'] = 'Server-Timing'
+      console.log(`[parse-mood] timing ${timing.header()}`)
+      if (deferredTasks.length > 0) {
+        defer(Promise.all(deferredTasks).then(() => console.log(`[parse-mood] deferred ${deferred.header()}`)))
+      }
+    }
+
+    // `remaining`/`limit` EN SONDA: LLM ciktisindaki ayni adli bir alan ezilir.
     return new Response(
-      JSON.stringify({ ...parsed, search_id: searchId }),
-      { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      JSON.stringify({
+        ...parsed,
+        search_id: searchId,
+        // Yalniz v2: istemci/eval onbellek isabetini ve dislanacak film id'lerini buradan okur.
+        ...(schemaV2 ? { cache_hit: cacheHit, exclude_recent_ids: recentShownIds } : {}),
+        ...quotaFields(quotaCheck.quotaResult),
+      }),
+      { status: 200, headers },
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     const latencyMs = Date.now() - startTime
 
-    // ── Sprint 1 v5.0: Anthropic credit/billing detection ─────────────
-    // 14 gun boyunca fark edilmeden kaldi — artik FATAL level log
+    // Iade YALNIZ LLM'den sonuc alinamayan hatalarda (5xx/529/429, ag, timeout,
+    // kredi) — bkz. `_shared/refundPolicy.ts`. PARSE_FAILED'de iade YOK: LLM
+    // cagrisi yapildi (ucret dogdu) ve girdi modeli JSON uretmemeye yonlendirebilir.
+    // Iade, hata kaydindan ONCE beklenir ki yanitla guncel `remaining` donebilsin.
+    const wantRefund = quotaConsumed && !!quotaCheck.userId && shouldRefundOnError(err)
+
+    // ── Sonuc kaydi + iade ───────────────────────────────────────────────
+    // Idempotent yol: iade `finish_mood_search` icinde, sahiplik dogrulandiktan sonra
+    // yapilir (zombi istek iade edemez). Legacy yol: eski sira (iade, sonra log).
     const isAnthropicCreditError =
       msg.includes('credit balance is too low') ||
       msg.includes('billing') ||
       msg.includes('insufficient_quota') ||
       msg.includes('rate_limit') ||
       (err instanceof Error && 'status' in err && (err as { status: number }).status === 529)
+    const failureCode = isAnthropicCreditError
+      ? 'ANTHROPIC_CREDIT_LOW'
+      : msg.includes('JSON') || msg.includes('Unexpected token')
+        ? 'PARSE_FAILED'
+        : 'UNKNOWN_ERROR'
 
+    let refunded = false
+    if (claimed && quotaCheck.userId) {
+      const fin = await finishSearch({
+        userId: quotaCheck.userId,
+        searchId: claimed.searchId,
+        claimedAt: claimed.claimedAt,
+        status: 'failed',
+        profile: null,
+        errorCode: failureCode,
+        refund: wantRefund,
+        latencyMs,
+        tokensIn: null,
+        tokensOut: null,
+      })
+      refunded = fin.refunded
+    } else if (wantRefund && quotaCheck.userId) {
+      refunded = await refundSearchQuota(quotaCheck.userId, msg)
+    }
+    const refundFields = quotaFields(quotaCheck.quotaResult, refunded)
+
+    // Legacy yolda hata satiri (idempotent yolda finish yukarida yazdi).
+    const recordFailure = (code: string): void => {
+      if (!claimed && quotaCheck.userId) {
+        logMoodSearch({
+          userId: quotaCheck.userId,
+          moodText: rawInput,
+          parsedProfile: null,
+          latencyMs,
+          errorCode: code,
+        }).catch(() => {})
+      }
+    }
+
+    // ── Sprint 1 v5.0: Anthropic credit/billing detection ─────────────
+    // 14 gun boyunca fark edilmeden kaldi — artik FATAL level log
     if (isAnthropicCreditError) {
       console.error('[parse-mood] FATAL: ANTHROPIC_CREDIT_LOW —', msg)
 
@@ -426,29 +1026,21 @@ serve(async (req: Request): Promise<Response> => {
         extra: { user_id: quotaCheck.userId, error_message: msg },
       })
 
-      if (quotaCheck.userId) {
-        logMoodSearch({
-          userId: quotaCheck.userId,
-          moodText: rawInput,
-          parsedProfile: null,
-          latencyMs,
-          errorCode: 'ANTHROPIC_CREDIT_LOW',
-        }).catch(() => {})
-      }
+      recordFailure('ANTHROPIC_CREDIT_LOW')
 
       return new Response(
         JSON.stringify({
           error: 'AI service is temporarily unavailable. Please try again later.',
           code: 'SERVICE_UNAVAILABLE',
           retry_after: 3600,
+          ...refundFields,
         }),
         { status: 503, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
       )
     }
 
     // ── JSON parse error (LLM returned invalid JSON) ──────────────────
-    const isJsonError = msg.includes('JSON') || msg.includes('Unexpected token')
-    const errorCode = isJsonError ? 'PARSE_FAILED' : 'UNKNOWN_ERROR'
+    const errorCode = failureCode
 
     console.error(`[parse-mood] Error [${errorCode}]:`, msg)
 
@@ -458,21 +1050,18 @@ serve(async (req: Request): Promise<Response> => {
       level: 'error',
       tags: { function: 'parse-mood', error_code: errorCode },
       extra: { mood_length: rawInput?.length, user_id: quotaCheck.userId },
+      breadcrumbs: timingBreadcrumbs(timing.entries()),
     })
 
     // Log parse failure
-    if (quotaCheck.userId) {
-      logMoodSearch({
-        userId: quotaCheck.userId,
-        moodText: rawInput,
-        parsedProfile: null,
-        latencyMs,
-        errorCode,
-      }).catch(() => {})
-    }
+    recordFailure(errorCode)
 
     return new Response(
-      JSON.stringify({ error: 'Failed to parse mood. Please try again.', code: errorCode }),
+      JSON.stringify({
+        error: 'Failed to parse mood. Please try again.',
+        code: errorCode,
+        ...refundFields,
+      }),
       { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
   }

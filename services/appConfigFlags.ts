@@ -8,7 +8,12 @@
  * burada fail-closed varsayılan (`false`) geçerlidir.
  */
 
+import * as Sentry from '@sentry/react-native';
+
+import { readLocalAuthUid } from './auth-utils';
 import { remoteConfig } from './remoteConfig';
+import { clampFreeVisibleCount } from '@/utils/moodLock';
+import { evaluateMoodOfferEnabled, hasTesterEntries } from '@/utils/moodOfferTesters';
 
 /**
  * Discover tab görünür mü (app_config: discover_tab_enabled).
@@ -46,4 +51,67 @@ export async function isGauntletContextBarEnabled(): Promise<boolean> {
 export async function isWatchedOtherEnabled(): Promise<boolean> {
   await remoteConfig.hydrate();
   return remoteConfig.getRaw('watch_feedback_watched_other_enabled') === true;
+}
+
+/**
+ * Son çözülen oturum kimliği (auth.users.id) — yalnız tester listesi için. Senkron
+ * okuyucuların (`triggerOrchestrator`) async oturum okumadan karar verebilmesi için
+ * `isMoodOfferEnabled()` her çağrıda günceller. Bayrak değeri DEĞİL, kimlik önbelleği.
+ */
+let testerAuthId: string | null = null;
+
+/**
+ * Pro Mode daveti + ücretsiz arama teklif akışı.
+ *
+ * MONEY-1C. Açık = `app_config.mood_offer_enabled === true` VEYA oturumdaki
+ * kimlik `app_config.mood_offer_testers` (jsonb dizi) içinde. Satır yoksa, dizi
+ * geçersiz/boşsa, okuma hatasında ve hiç önbellek yokken KAPALI. Bu bir UX
+ * bayrağıdır — kotayı sunucu zorlar. Kapalıyken uygulama MONEY-1C öncesi gibi davranır.
+ *
+ * Kimlik: `auth.users.id` (oturumdan YEREL okunur, ağ yok; `public.users.id` ek `users`
+ * sorgusu ister ve bootstrap bitmeden null olur). Oturum yalnız bayrak kapalı VE liste
+ * dolu iken okunur: tester olmayan kullanıcı için ek iş yok.
+ * Lazy getter — modül seviyesi sabit yasak (kural 5).
+ */
+export async function isMoodOfferEnabled(): Promise<boolean> {
+  await remoteConfig.hydrate();
+  const flag: unknown = remoteConfig.get('mood_offer_enabled');
+  const testers: unknown = remoteConfig.get('mood_offer_testers');
+  if (flag !== true && hasTesterEntries(testers)) {
+    try {
+      testerAuthId = await readLocalAuthUid();
+    } catch (err) {
+      testerAuthId = null;
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { flow: 'mood_offer', step: 'tester_identity' },
+      });
+    }
+  }
+  return evaluateMoodOfferEnabled({ flag, testers, userId: testerAuthId });
+}
+
+/**
+ * Senkron karar — ÖNBELLEKTEKİ config + son çözülen kimlik. Yalnız teklif zaten
+ * `isMoodOfferEnabled()` ile açılmış yüzeylerin ardından çağrılan yerler için
+ * (paywall orkestratörünün varyant kill-switch'i). Canlı config'i okur: bayrak/liste
+ * kapatılınca bir sonraki hydrate'ten itibaren varyant üretilmez.
+ */
+export function isMoodOfferEnabledCached(): boolean {
+  return evaluateMoodOfferEnabled({
+    flag: remoteConfig.get('mood_offer_enabled'),
+    testers: remoteConfig.get('mood_offer_testers'),
+    userId: testerAuthId,
+  });
+}
+
+/**
+ * Kilit oncesi ucretsiz gorunen film sayisi (app_config: free_visible_count).
+ *
+ * MONEY-1C. Sayi disi / sinir disi deger guvenli tam sayiya cekilir (1..8, varsayilan 3);
+ * satir yok / okuma hatasi → varsayilan. Lazy getter — modul seviyesi sabit yasak (kural 5).
+ */
+export async function getFreeVisibleCount(): Promise<number> {
+  await remoteConfig.hydrate();
+  return clampFreeVisibleCount(remoteConfig.get('free_visible_count'));
 }

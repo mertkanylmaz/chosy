@@ -1,0 +1,124 @@
+{
+  "summary": {
+    "tag": "before",
+    "uncached_p50_ms": 7548,
+    "cached_p50_ms": 2380,
+    "uncached_n": 10,
+    "cached_n": 4,
+    "failures": 0
+  },
+  "rows": [
+    {
+      "label": "cozy+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 3703,
+      "cache_hit": true,
+      "stages": {}
+    },
+    {
+      "label": "cozy+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 2380,
+      "cache_hit": true,
+      "stages": {}
+    },
+    {
+      "label": "cozy",
+      "run": 1,
+      "status": 200,
+      "client_ms": 7867,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "cozy",
+      "run": 2,
+      "status": 200,
+      "client_ms": 8430,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 1356,
+      "cache_hit": true,
+      "stages": {}
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 2839,
+      "cache_hit": true,
+      "stages": {}
+    },
+    {
+      "label": "adrenaline",
+      "run": 1,
+      "status": 200,
+      "client_ms": 7696,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "adrenaline",
+      "run": 2,
+      "status": 200,
+      "client_ms": 7354,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_90min",
+      "run": 1,
+      "status": 200,
+      "client_ms": 6859,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_90min",
+      "run": 2,
+      "status": 200,
+      "client_ms": 6205,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 1,
+      "status": 200,
+      "client_ms": 7650,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 2,
+      "status": 200,
+      "client_ms": 7703,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 1,
+      "status": 200,
+      "client_ms": 7548,
+      "cache_hit": false,
+      "stages": {}
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 2,
+      "status": 200,
+      "client_ms": 6649,
+      "cache_hit": false,
+      "stages": {}
+    }
+  ]
+}

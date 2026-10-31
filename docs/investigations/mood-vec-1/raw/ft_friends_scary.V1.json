@@ -1,0 +1,567 @@
+{
+  "mood_id": "ft_friends_scary",
+  "variant": "V1",
+  "rpc": {
+    "rows": [
+      {
+        "id": "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+        "tmdb_id": 578,
+        "title": "Jaws",
+        "year": 1975,
+        "overview": "When the seaside community of Amity finds itself under attack by a dangerous great white shark, the town's chief of police, a young marine biologist, and a grizzled shark hunter embark on a desperate quest to kill the beast before it strikes again.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 124,
+        "vote_average": 7.682,
+        "director": "Steven Spielberg",
+        "similarity": 1.0930132356756,
+        "curation_tier": "core",
+        "match_reason": "Matches: creature feature"
+      },
+      {
+        "id": "d1432789-e17b-4b3d-a0e2-866a21b4fa82",
+        "tmdb_id": 3034,
+        "title": "Young Frankenstein",
+        "year": 1974,
+        "overview": "A young neurosurgeon inherits the castle of his grandfather, the famous Dr. Victor von Frankenstein. In the castle he finds a funny hunchback, a pretty lab assistant and the elderly housekeeper. Young Frankenstein believes that the work of his grandfather was delusional, but when he discovers the book where the mad doctor described his reanimation experiment, he suddenly changes his mind.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 106,
+        "vote_average": 7.853,
+        "director": "Mel Brooks",
+        "similarity": 0.943574153322968,
+        "curation_tier": "extended",
+        "match_reason": "Matches: monster"
+      },
+      {
+        "id": "44097c7b-d993-4627-9615-0783cd92a687",
+        "tmdb_id": 9654,
+        "title": "The Italian Job",
+        "year": 2003,
+        "overview": "Charlie Croker pulled off the crime of a lifetime. The one thing that he didn't plan on was being double-crossed. Along with a drop-dead gorgeous safecracker, Croker and his team take off to re-steal the loot and end up in a pulse-pounding, pedal-to-the-metal chase that careens up, down, above and below the streets of Los Angeles.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 110,
+        "vote_average": 6.8,
+        "director": "F. Gary Gray",
+        "similarity": 0.931717352927945,
+        "curation_tier": "extended",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "f8a49ceb-dc82-4bd9-8b05-ac47c277b771",
+        "tmdb_id": 453127,
+        "title": "Midnight Runners",
+        "year": 2017,
+        "overview": "Two apathetic police academy recruits who become best buddies through the tough training together witness a woman being abducted right before their very eyes. As they were taught in the academy, they quickly report the incident to the police, but the police are in no hurry to jump on the case. So the duo decide to take the matter into their own hands and rescue the woman.",
+        "genres": [
+          "Comedy",
+          "Action",
+          "Crime"
+        ],
+        "runtime": 109,
+        "vote_average": 7.5,
+        "director": "Jason Kim",
+        "similarity": 0.930536665069817,
+        "curation_tier": "extended",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "9343c672-62a8-497c-807b-9aaeacc96aa3",
+        "tmdb_id": 9421,
+        "title": "The Dinner Game",
+        "year": 1998,
+        "overview": "For Pierre Brochant and his friends, Wednesday is “Idiots' Day”. The idea is simple: each person has to bring along an idiot. The one who brings the most spectacular idiot wins the prize. Tonight, Brochant is ecstatic. He has found a gem. The ultimate idiot, “A world champion idiot!”. What Brochant doesn’t know is that Pignon is a real jinx, a past master in the art of bringing on catastrophes...",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.8,
+        "director": "Francis Veber",
+        "similarity": 0.928068203978094,
+        "curation_tier": "extended",
+        "match_reason": "Matches: horror comedy"
+      },
+      {
+        "id": "d409361b-d4c9-4789-8544-0e3f614f5732",
+        "tmdb_id": 239,
+        "title": "Some Like It Hot",
+        "year": 1959,
+        "overview": "In Prohibition-era Chicago, musicians Joe and Jerry witness a mob hit, and flee the state in an all-female band disguised as Josephine and Daphne, but further complications set in.",
+        "genres": [
+          "Comedy",
+          "Romance",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 8.079,
+        "director": "Billy Wilder",
+        "similarity": 1.04928652655163,
+        "curation_tier": "core",
+        "match_reason": "chicago, illinois, florida, transvestism"
+      },
+      {
+        "id": "11efc789-981e-4892-9dba-5793ccdefea5",
+        "tmdb_id": 823464,
+        "title": "Godzilla x Kong: The New Empire",
+        "year": 2024,
+        "overview": "Following their explosive showdown, Godzilla and Kong must reunite against a colossal undiscovered threat hidden within our world, challenging their very existence – and our own.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 115,
+        "vote_average": 7.051,
+        "director": "Adam Wingard",
+        "similarity": 1.04102939349017,
+        "curation_tier": "core",
+        "match_reason": "Matches: monster"
+      },
+      {
+        "id": "f71c0200-d25a-44ef-b3c9-fdd212bc3a5d",
+        "tmdb_id": 1892,
+        "title": "Return of the Jedi",
+        "year": 1983,
+        "overview": "Luke Skywalker leads a mission to rescue his friend Han Solo from the clutches of Jabba the Hutt, the Emperor prepares to crush the Rebellion with a more powerful Death Star, and the Rebel fleet mounts a massive attack on the space station. Luke Skywalker confronts Darth Vader in a final climactic duel before the evil Emperor.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 7.908,
+        "director": "Richard Marquand",
+        "similarity": 1.032348754722,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, sibling relationship, rebel"
+      },
+      {
+        "id": "86dc9623-0da2-4782-b7f9-2ceb1b3290d9",
+        "tmdb_id": 32961,
+        "title": "The Lavender Hill Mob",
+        "year": 1951,
+        "overview": "A meek bank clerk who oversees the shipments of bullion joins with an eccentric neighbor to steal gold bars and smuggle them out of the country.",
+        "genres": [
+          "Comedy",
+          "Crime"
+        ],
+        "runtime": 78,
+        "vote_average": 7.206,
+        "director": "Charles Crichton",
+        "similarity": 0.908864663086328,
+        "curation_tier": "extended",
+        "match_reason": "gold, bank, souvenir"
+      },
+      {
+        "id": "5bdbecde-7dc8-4c70-bd16-5c054a88afed",
+        "tmdb_id": 106,
+        "title": "Predator",
+        "year": 1987,
+        "overview": "A team of elite commandos on a secret mission in a Central American jungle come to find themselves hunted by an extraterrestrial warrior.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 7.552,
+        "director": "John McTiernan",
+        "similarity": 1.02596905246675,
+        "curation_tier": "core",
+        "match_reason": "Matches: group survival, creature feature"
+      },
+      {
+        "id": "a013b4ae-6317-4362-9682-57fc9235919a",
+        "tmdb_id": 8290,
+        "title": "Don't Look Now... We're Being Shot At!",
+        "year": 1966,
+        "overview": "During World War II, two French civilians and a downed British Bomber Crew set out from Paris to cross the demarcation line between Nazi-occupied Northern France and the South. From there they will be able to escape to England. First, they must avoid German troops – and the consequences of their own blunders.",
+        "genres": [
+          "Comedy",
+          "War"
+        ],
+        "runtime": 132,
+        "vote_average": 7.9,
+        "director": "Gérard Oury",
+        "similarity": 0.906202476115417,
+        "curation_tier": "extended",
+        "match_reason": "opera, paris, france, general"
+      },
+      {
+        "id": "8bc44df1-377f-4ddd-9f7a-c7bed8ce822b",
+        "tmdb_id": 11046,
+        "title": "Where Eagles Dare",
+        "year": 1968,
+        "overview": "World War II is raging, and an American general has been captured and is being held hostage in the Schloss Adler, a Bavarian castle that's nearly impossible to breach. It's up to a group of skilled Allied soldiers to liberate the general before it's too late.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "War"
+        ],
+        "runtime": 155,
+        "vote_average": 7.509,
+        "director": "Brian G. Hutton",
+        "similarity": 0.901101188014568,
+        "curation_tier": "extended",
+        "match_reason": "undercover agent, nazi, germany"
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 1.01902636151634,
+        "curation_tier": "core",
+        "match_reason": "army, based on novel or book, elves"
+      },
+      {
+        "id": "5322f4cf-7330-4738-a72f-de74fce87686",
+        "tmdb_id": 10911,
+        "title": "The Guns of Navarone",
+        "year": 1961,
+        "overview": "A team of allied saboteurs are assigned an impossible mission: infiltrate an impregnable Nazi-held island and destroy the two enormous long-range field guns that prevent the rescue of 2,000 trapped British soldiers.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Drama",
+          "War"
+        ],
+        "runtime": 160,
+        "vote_average": 7.304,
+        "director": "J. Lee Thompson",
+        "similarity": 0.899909166536987,
+        "curation_tier": "extended",
+        "match_reason": "army, based on novel or book, fort"
+      },
+      {
+        "id": "ac4fc94e-cecb-4c3e-ba32-b6f2b14beadb",
+        "tmdb_id": 213,
+        "title": "North by Northwest",
+        "year": 1959,
+        "overview": "Advertising man Roger Thornhill is mistaken for a spy, triggering a deadly cross-country chase.",
+        "genres": [
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 137,
+        "vote_average": 7.966,
+        "director": "Alfred Hitchcock",
+        "similarity": 1.01416153993488,
+        "curation_tier": "core",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "f576f4d9-511e-4f82-8947-66d483412328",
+        "tmdb_id": 11829,
+        "title": "Trinity Is Still My Name",
+        "year": 1971,
+        "overview": "The two brothers Trinity and Bambino are exchanged by two federal agents and take advantage of the situation to steal a huge booty hidden in a monastery by a gang of outlaws.",
+        "genres": [
+          "Comedy",
+          "Western"
+        ],
+        "runtime": 117,
+        "vote_average": 7.4,
+        "director": "Enzo Barboni",
+        "similarity": 0.896065014791469,
+        "curation_tier": "extended",
+        "match_reason": "gunslinger, sibling relationship, brother"
+      },
+      {
+        "id": "7e6f8666-5522-44b3-9019-a7c00bcafdbe",
+        "tmdb_id": 961323,
+        "title": "Nimona",
+        "year": 2023,
+        "overview": "A knight framed for a tragic crime teams with a scrappy, shape-shifting teen to prove his innocence.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 99,
+        "vote_average": 7.85,
+        "director": "Nick Bruno",
+        "similarity": 1.0102742147016,
+        "curation_tier": "core",
+        "match_reason": "Matches: supernatural, monster"
+      },
+      {
+        "id": "20472c96-c5b7-4497-b52c-65451f3a08ba",
+        "tmdb_id": 5506,
+        "title": "The Ladykillers",
+        "year": 1955,
+        "overview": "Five oddball criminals planning a bank robbery rent rooms on a cul-de-sac from an octogenarian widow under the pretext that they are classical musicians.",
+        "genres": [
+          "Comedy",
+          "Crime"
+        ],
+        "runtime": 91,
+        "vote_average": 7.286,
+        "director": "Alexander Mackendrick",
+        "similarity": 0.893823945915174,
+        "curation_tier": "extended",
+        "match_reason": "widow, dark comedy, parrot"
+      },
+      {
+        "id": "f25f79c5-009a-431b-a4d0-1469d142f23e",
+        "tmdb_id": 9660,
+        "title": "Operation Petticoat",
+        "year": 1959,
+        "overview": "A World War II submarine commander finds himself stuck with a damaged sub, a con-man executive officer, and a group of army nurses.",
+        "genres": [
+          "Comedy",
+          "War",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 7.251,
+        "director": "Blake Edwards",
+        "similarity": 0.890583386506705,
+        "curation_tier": "extended",
+        "match_reason": "ship, navy, casino"
+      },
+      {
+        "id": "65ccbf40-4ab2-4c3b-8879-24630be7cb9f",
+        "tmdb_id": 24428,
+        "title": "The Avengers",
+        "year": 2012,
+        "overview": "When an unexpected enemy emerges and threatens global safety and security, Nick Fury, director of the international peacekeeping agency known as S.H.I.E.L.D., finds himself in need of a team to pull the world back from the brink of disaster. Spanning the globe, a daring recruitment effort begins!",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 143,
+        "vote_average": 8.03,
+        "director": "Joss Whedon",
+        "similarity": 1.00448173824239,
+        "curation_tier": "core",
+        "match_reason": "new york city, superhero, shield"
+      },
+      {
+        "id": "cda0a032-6a38-4a46-a2bf-babfa3f8576c",
+        "tmdb_id": 744,
+        "title": "Top Gun",
+        "year": 1986,
+        "overview": "For Lieutenant Pete 'Maverick' Mitchell and his friend and co-pilot Nick 'Goose' Bradshaw, being accepted into an elite training school for fighter pilots is a dream come true. But a tragedy, as well as personal demons, will threaten Pete's dreams of becoming an ace pilot.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 110,
+        "vote_average": 7.1,
+        "director": "Tony Scott",
+        "similarity": 0.999457156514512,
+        "curation_tier": "core",
+        "match_reason": "dying and death, secret love, lovesickness"
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 0.999267438628971,
+        "curation_tier": "core",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "0d143c50-df47-4c14-aa4f-5134ea9e658c",
+        "tmdb_id": 4232,
+        "title": "Scream",
+        "year": 1996,
+        "overview": "A year after the murder of her mother, a teenage girl is terrorized by a masked killer who targets her and her friends by using scary movies as part of a deadly game.",
+        "genres": [
+          "Crime",
+          "Horror",
+          "Mystery"
+        ],
+        "runtime": 112,
+        "vote_average": 7.429,
+        "director": "Wes Craven",
+        "similarity": 0.999137434836697,
+        "curation_tier": "core",
+        "match_reason": "high school, small town, riddle"
+      },
+      {
+        "id": "3e0b0e07-610f-4f17-90e2-99891243a6d6",
+        "tmdb_id": 1621,
+        "title": "Trading Places",
+        "year": 1983,
+        "overview": "A snobbish investor and a wily street con-artist find their positions reversed as part of a bet by two callous millionaires.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 116,
+        "vote_average": 7.228,
+        "director": "John Landis",
+        "similarity": 0.883905865835091,
+        "curation_tier": "extended",
+        "match_reason": "new year's eve, prostitute, philadelphia, pennsylvania"
+      },
+      {
+        "id": "45812748-e126-4f74-9a9d-f1bd050e7da9",
+        "tmdb_id": 31534,
+        "title": "The Chaos Class Failed the Class",
+        "year": 1975,
+        "overview": "A young and beautiful female teacher starts working in an all boys high school.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 91,
+        "vote_average": 7.713,
+        "director": "Ertem Eğilmez",
+        "similarity": 0.882845795799563,
+        "curation_tier": "extended",
+        "match_reason": "friendship, based on novel or book, love letter"
+      },
+      {
+        "id": "5da1968e-40b4-44df-a537-d158d6db3f35",
+        "tmdb_id": 315635,
+        "title": "Spider-Man: Homecoming",
+        "year": 2017,
+        "overview": "Following the events of Captain America: Civil War, Peter Parker, with the help of his mentor Tony Stark, tries to balance his life as an ordinary high school student in Queens, New York City, with fighting crime as his superhero alter ego Spider-Man as a new threat, the Vulture, emerges.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 133,
+        "vote_average": 7.33,
+        "director": "Jon Watts",
+        "similarity": 0.992171415351635,
+        "curation_tier": "core",
+        "match_reason": "high school, new york city, washington dc, usa"
+      },
+      {
+        "id": "766b09cc-d552-4934-8b17-969e68aba759",
+        "tmdb_id": 3482,
+        "title": "The Train",
+        "year": 1964,
+        "overview": "As the Allied forces approach Paris in August 1944, German Colonel Von Waldheim is desperate to take all of France's greatest paintings to Germany. He manages to secure a train to transport the valuable art works even as the chaos of retreat descends upon them. The French resistance however wants to stop them from stealing their national treasures but have received orders from London that they are not to be destroyed. The station master, Labiche, is tasked with scheduling the train and making it all happen smoothly but he is also part of a dwindling group of resistance fighters tasked with preventing the theft. He and others stage an elaborate ruse to keep the train from ever leaving French territory.",
+        "genres": [
+          "War",
+          "Thriller"
+        ],
+        "runtime": 133,
+        "vote_average": 7.6,
+        "director": "John Frankenheimer",
+        "similarity": 0.880423765358898,
+        "curation_tier": "extended",
+        "match_reason": "france, paris, france, nazi"
+      },
+      {
+        "id": "f4981c3b-a217-482c-b4c5-e6ee7dc220e8",
+        "tmdb_id": 11712,
+        "title": "Sanjuro",
+        "year": 1962,
+        "overview": "In this companion piece and sequel to \"Yojimbo,\" jaded samurai Sanjuro helps an idealistic group of young warriors weed out their clan's evil influences, and in the process turns their image of a proper samurai on its ear.",
+        "genres": [
+          "Drama",
+          "Action",
+          "Comedy"
+        ],
+        "runtime": 96,
+        "vote_average": 7.952,
+        "director": "Akira Kurosawa",
+        "similarity": 0.87875192840635,
+        "curation_tier": "extended",
+        "match_reason": "japan, samurai, corruption"
+      },
+      {
+        "id": "5f3f1739-ebe4-4b6d-843c-b34b6626de7c",
+        "tmdb_id": 12445,
+        "title": "Harry Potter and the Deathly Hallows: Part 2",
+        "year": 2011,
+        "overview": "Harry, Ron and Hermione continue their quest to vanquish the evil Voldemort once and for all. Just as things begin to look hopeless for the young wizards, Harry discovers a trio of magical objects that endow him with powers to rival Voldemort's formidable skills.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 130,
+        "vote_average": 8.079,
+        "director": "David Yates",
+        "similarity": 0.988338728839004,
+        "curation_tier": "core",
+        "match_reason": "witch, dying and death, saving the world"
+      },
+      {
+        "id": "39287721-db42-4bd5-bcad-2fdf42483cf1",
+        "tmdb_id": 1333100,
+        "title": "Attack on Titan: THE LAST ATTACK",
+        "year": 2024,
+        "overview": "A colossal-sized omnibus film bringing together the last two episodes of Attack on Titan in the franchise's first-ever theatrical experience. After venturing beyond the walls and separated from his comrades, Eren finds himself inspired by this new truth and plots the \"Rumbling,\" a terrifying plan to eradicate every living thing in the world. With the fate of the world hanging in the balance, a motley crew of Eren's former comrades and enemies scramble to halt his deadly mission. The only question is, can they stop him?",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 145,
+        "vote_average": 8.705,
+        "director": "Yuichiro Hayashi",
+        "similarity": 0.987739442285225,
+        "curation_tier": "core",
+        "match_reason": "Matches: monster, suspense"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1035,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1035,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "horror comedy",
+        "group survival",
+        "supernatural",
+        "jump scares",
+        "monster",
+        "suspense",
+        "creature feature"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  }
+}

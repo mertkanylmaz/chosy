@@ -1,0 +1,149 @@
+{
+  "mood_id": "qm_nostalgia",
+  "text": "Nostalgic and sentimental, like a warm childhood memory, cozy and bittersweet, not scary, not intense",
+  "ms": 4985,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.45,
+      "fear": 0.05,
+      "anger": 0,
+      "surprise": 0.2,
+      "disgust": 0,
+      "trust": 0.75,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "intense action",
+      "violence",
+      "jump scares"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Warm Nostalgia",
+    "profile_description": "A gentle journey through cherished memories and simpler times, seeking comfort in the bittersweet beauty of the past with a cozy, intimate atmosphere.",
+    "search_keywords": [
+      "coming of age",
+      "childhood",
+      "nostalgia",
+      "family",
+      "small town",
+      "growing up",
+      "memory",
+      "innocence"
+    ],
+    "genres_include": [
+      "Drama"
+    ],
+    "genres_exclude": [
+      "Horror",
+      "Action",
+      "Thriller"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Boyhood",
+        "year": 2014
+      },
+      {
+        "title": "The Farewell",
+        "year": 2019
+      },
+      {
+        "title": "Stand by Me",
+        "year": 1986
+      },
+      {
+        "title": "A Ghost Story",
+        "year": 2017
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Minari",
+        "year": 2020
+      },
+      {
+        "title": "The Secret of Kells",
+        "year": 2009
+      },
+      {
+        "title": "Coco",
+        "year": 2017
+      },
+      {
+        "title": "A Room with a View",
+        "year": 1985
+      },
+      {
+        "title": "Lost in Translation",
+        "year": 2003
+      }
+    ],
+    "search_id": "07878d13-9ced-4193-9164-e074f01d1adf",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.45,
+      "anger": 0,
+      "fear": 0.05,
+      "surprise": 0.2,
+      "disgust": 0,
+      "anticipation": 0.3,
+      "trust": 0.75
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "intense action",
+      "violence",
+      "jump scares"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "07878d13-9ced-4193-9164-e074f01d1adf",
+  "search_keywords": [
+    "coming of age",
+    "childhood",
+    "nostalgia",
+    "family",
+    "small town",
+    "growing up",
+    "memory",
+    "innocence"
+  ],
+  "limit": null,
+  "remaining": null
+}

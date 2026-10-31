@@ -1,0 +1,121 @@
+{
+  "mood_id": "ft_90min",
+  "text": "Under 90 minutes, funny",
+  "ms": 6114,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Quick Laugh",
+    "profile_description": "Looking for a short, lighthearted comedy that delivers consistent laughs without heavy themes or runtime commitment.",
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "funny",
+      "witty",
+      "lighthearted"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [],
+    "max_runtime": 90,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Superbad",
+        "year": 2007
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "Ghostbusters",
+        "year": 1984
+      },
+      {
+        "title": "Tropic Thunder",
+        "year": 2008
+      },
+      {
+        "title": "What We Do in the Shadows",
+        "year": 2014
+      },
+      {
+        "title": "The Other Guys",
+        "year": 2010
+      }
+    ],
+    "search_id": "e5b9c45a-f373-4045-bb0a-07a03f8e633c",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.6
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e5b9c45a-f373-4045-bb0a-07a03f8e633c",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "funny",
+    "witty",
+    "lighthearted"
+  ],
+  "limit": null,
+  "remaining": null
+}

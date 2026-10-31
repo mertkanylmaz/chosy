@@ -10,7 +10,7 @@
  * - Full-bleed poster, bottom %40 gradient overlay
  * - Swipe overlay: yeşil "+" (sağa), kırmızı "✕" (sola)
  * - 2 dairesel action button: Skip (✕), Save (♡)
- * - Sürpriz badge + match circle
+ * - Puan: yalnız gerçek TMDB vote_average (meta satırında); uydurma eşleşme sinyali yok
  */
 
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -26,12 +26,11 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { hapticLight, hapticMedium, hapticSuccess } from '@/utils/haptics';
+import { hapticLight, hapticMedium } from '@/utils/haptics';
 
 import Animated, {
   cancelAnimation,
   Extrapolation,
-  FadeInDown,
   interpolate,
   runOnJS,
   useAnimatedStyle,
@@ -140,20 +139,7 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
   // Prefetch (useFeedManager, recommendationPreload) ile AYNI fonksiyon ve boyut.
   const fullPosterUrl: string | null = normalizePosterUrl(film.posterUrl);
 
-  const matchPercent = film.matchScore ?? 0;
   const rating = film.voteAverage ?? 0;
-
-  /** pick_type önceliklidir; yoksa surpriseType kullanılır */
-  const effectiveType = film.pick_type ?? film.surpriseType ?? null;
-
-  const surpriseLabel: string | null =
-    effectiveType === 'hidden_gem'
-      ? '💎 Hidden Gem'
-      : effectiveType === 'ai_pick'
-        ? '⭐ AI Pick'
-        : effectiveType === 'unexpected'
-          ? '🎲 Unexpected'
-          : null;
 
   /**
    * isMounted guard — runOnJS callback'leri component unmount olduktan sonra
@@ -185,18 +171,6 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
     skipOpacity.value = withSpring(0, { damping: 20, stiffness: 200 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frozen]);
-
-  // Sürpriz kart ilk görününce notification haptic (bir kez). Alttaki kart
-  // (interactive=false) görünmez sayılır: haptic üste geçince ateşlenir.
-  const hapticFiredRef = useRef(false);
-  useEffect(() => {
-    if (!interactive) return;
-    if (effectiveType != null && !hapticFiredRef.current) {
-      hapticFiredRef.current = true;
-      hapticSuccess();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive]);
 
   // ── JS thread callback'ler ────────────────────────────────────────────────
 
@@ -365,21 +339,6 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
       <GestureDetector gesture={panGesture}>
         <Animated.View style={[styles.card, cardStyle]}>
 
-          {/* Sürpriz kart type bazlı border */}
-          {effectiveType != null && (
-            <View
-              style={[
-                styles.surpriseBorderBase,
-                effectiveType === 'ai_pick'
-                  ? styles.surpriseBorderWhite
-                  : effectiveType === 'unexpected'
-                    ? styles.surpriseBorderPurple
-                    : styles.surpriseBorderGold,
-              ]}
-              pointerEvents="none"
-            />
-          )}
-
           {/* Poster arka plan */}
           {fullPosterUrl != null ? (
             <Image
@@ -431,60 +390,17 @@ export const SwipeableCard: React.FC<SwipeableCardProps> = React.memo(({
             </View>
           </Animated.View>
 
-          {/* Sürpriz badge — tip bazlı renk + FadeInDown animasyon.
-              Outer View: entering animasyonu (transform yok)
-              Inner View: renk + konum stili
-              Bu ayrım Reanimated "transform overwrite by layout animation" uyarısını önler. */}
-          {surpriseLabel != null && interactive && (
-            <Animated.View
-              entering={FadeInDown.springify().damping(14).stiffness(160)}
-              style={styles.surpriseBadgeAnchor}
-            >
-              <View
-                style={[
-                  styles.surpriseBadge,
-                  effectiveType === 'ai_pick'
-                    ? styles.surpriseBadgeWhite
-                    : effectiveType === 'unexpected'
-                      ? styles.surpriseBadgePurple
-                      : styles.surpriseBadgeGold,
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.surpriseBadgeText,
-                    effectiveType === 'unexpected' && styles.surpriseBadgeTextLight,
-                  ]}
-                >
-                  {surpriseLabel}
-                </Text>
-              </View>
-            </Animated.View>
-          )}
-
           {/* ── Alt içerik ─────────────────────────────────────────────────── */}
           <View style={[styles.bottomContent, { bottom: 20 + bottomOffset }]} pointerEvents="box-none">
 
-            {/* Film adı + match dairesi */}
+            {/* Film adı */}
             <View style={styles.titleRow}>
               <View style={styles.titleBlock}>
                 <Text style={styles.title} numberOfLines={2}>
                   {film.title}
                 </Text>
               </View>
-
-              {matchPercent > 0 && (
-                <View style={styles.matchCircle}>
-                  <Text style={styles.matchPercent}>{matchPercent}%</Text>
-                  <Text style={styles.matchLabel}>match</Text>
-                </View>
-              )}
             </View>
-
-            {/* AI açıklama */}
-            <Text style={styles.aiText} numberOfLines={2}>
-              {getAIExplanation(film)}
-            </Text>
 
             {/* Meta: yıl · rating · genre */}
             {metaLine.length > 0 && (
@@ -541,28 +457,6 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
 
-  // ─── Sürpriz border (base + type varyantları) ──────────────────────────────
-  surpriseBorderBase: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 2,
-    zIndex: 30,
-    shadowOpacity: 0.85,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 0 },
-  },
-  surpriseBorderGold: {
-    borderColor: Colors.gold,
-    shadowColor: Colors.gold,
-  },
-  surpriseBorderWhite: {
-    borderColor: Colors.textOnAccent,
-    shadowColor: Colors.textOnAccent,
-  },
-  surpriseBorderPurple: {
-    borderColor: Colors.accentPrimary,
-    shadowColor: Colors.accentPrimary,
-  },
-
   // ─── Swipe overlay'ler — semantic renkler ──────────────────────────────────
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -585,38 +479,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: Colors.white10,
-  },
-
-  // ─── Sürpriz badge (base + type varyantları) ───────────────────────────────
-  /** Outer: konumlama + entering animasyonu — transform içermez */
-  surpriseBadgeAnchor: {
-    position: 'absolute',
-    top: 54,
-    right: 16,
-    zIndex: 20,
-  },
-  /** Inner: görsel stil — renk + padding + borderRadius */
-  surpriseBadge: {
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  surpriseBadgeGold: {
-    backgroundColor: Colors.gold,
-  },
-  surpriseBadgeWhite: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-  },
-  surpriseBadgePurple: {
-    backgroundColor: Colors.accentPrimary,
-  },
-  surpriseBadgeText: {
-    color: Colors.background,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  surpriseBadgeTextLight: {
-    color: Colors.textOnAccent,
   },
 
   // ─── Alt içerik ────────────────────────────────────────────────────────────
@@ -642,43 +504,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: Colors.textWhite,
     lineHeight: 34,
-  },
-  matchCircle: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    borderWidth: 2.5,
-    borderColor: Colors.accentPrimary,
-    backgroundColor: Colors.overlay,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: Colors.accentPrimary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 6,
-    flexShrink: 0,
-  },
-  matchPercent: {
-    color: Colors.textWhite,
-    fontSize: 16,
-    fontFamily: Theme.typography.rating.fontFamily,
-    fontWeight: Theme.typography.rating.fontWeight,
-    fontVariant: Theme.typography.rating.fontVariant,
-    letterSpacing: -0.3,
-  },
-  matchLabel: {
-    fontSize: 9,
-    color: Colors.textSecondary,
-    fontWeight: '600',
-    letterSpacing: 0.3,
-    marginTop: -2,
-  },
-  aiText: {
-    color: Colors.textTertiary,
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 6,
   },
   metaText: {
     fontSize: 12,

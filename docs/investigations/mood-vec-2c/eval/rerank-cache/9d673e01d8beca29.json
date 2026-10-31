@@ -1,0 +1,24 @@
+{
+  "payload_hash": "9d673e01d8beca29",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4251,
+  "http_status": 200,
+  "reranked_ids": [
+    "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+    "7fb1905c-676c-423f-887e-2ee9153494a2",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+    "3589d329-a771-4f99-99af-cb79300bb177"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9c977ddc-b554-4d49-85f5-31ffa35f9359": "Hafif, eğlenceli animasyon; kafa yormayan keyifli bir macera.",
+    "7fb1905c-676c-423f-887e-2ee9153494a2": "Klasik komedi; basit, neşeli ve düşündürtmeyen eğlence.",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e": "Sevimli animasyon; hafif, sıcak ve rahatlatan bir hikaye.",
+    "3589d329-a771-4f99-99af-cb79300bb177": "Zarif aile filmi; duygusal ama hafif, kafa yormayan bir macera."
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "mood_id": "ft_dark_thriller",
+  "text": "Dark psychological thriller that keeps me guessing",
+  "ms": 6716,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.35,
+      "fear": 0.75,
+      "anger": 0.4,
+      "surprise": 0.85,
+      "disgust": 0.5,
+      "trust": 0.2,
+      "anticipation": 0.88
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Twisted Enigma",
+    "profile_description": "You crave an intellectually challenging, darkly unsettling experience that subverts expectations and leaves you uncertain—a film that rewards close attention and invites second viewings to catch missed clues.",
+    "search_keywords": [
+      "psychological thriller",
+      "mystery",
+      "twist ending",
+      "unreliable narrator",
+      "mind game",
+      "dark secrets"
+    ],
+    "genres_include": [
+      "Thriller",
+      "Mystery",
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Shutter Island",
+        "year": 2010
+      },
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "Gone Girl",
+        "year": 2014
+      },
+      {
+        "title": "The Sixth Sense",
+        "year": 1999
+      },
+      {
+        "title": "Memento",
+        "year": 2000
+      },
+      {
+        "title": "Prisoners",
+        "year": 2013
+      },
+      {
+        "title": "Mulholland Drive",
+        "year": 2001
+      },
+      {
+        "title": "The Machinist",
+        "year": 2004
+      },
+      {
+        "title": "Zodiac",
+        "year": 2007
+      },
+      {
+        "title": "Black Swan",
+        "year": 2010
+      }
+    ],
+    "search_id": "483735eb-722f-4eb7-9098-387155ad298e",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.35,
+      "anger": 0.4,
+      "fear": 0.75,
+      "surprise": 0.85,
+      "disgust": 0.5,
+      "anticipation": 0.88,
+      "trust": 0.2
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "483735eb-722f-4eb7-9098-387155ad298e",
+  "search_keywords": [
+    "psychological thriller",
+    "mystery",
+    "twist ending",
+    "unreliable narrator",
+    "mind game",
+    "dark secrets"
+  ],
+  "limit": null,
+  "remaining": null
+}

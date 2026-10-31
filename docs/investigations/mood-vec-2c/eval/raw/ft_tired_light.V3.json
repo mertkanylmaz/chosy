@@ -1,0 +1,814 @@
+{
+  "mood_id": "ft_tired_light",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.935761746926636,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+        "tmdb_id": 8392,
+        "title": "My Neighbor Totoro",
+        "year": 1988,
+        "overview": "Two sisters move to the country with their father in order to be closer to their hospitalized mother, and discover the surrounding trees are inhabited by Totoros, magical spirits of the forest. When the youngest runs away from home, the older sister seeks help from the spirits to find her.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 8.061,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.927494434053294,
+        "curation_tier": "core",
+        "match_reason": "mother, sibling relationship, village",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "0d5d066d-db6c-41fc-93a8-3e914e42e68d",
+        "tmdb_id": 9023,
+        "title": "Spirit: Stallion of the Cimarron",
+        "year": 2002,
+        "overview": "A captured mustang remains determined to return to his herd no matter what.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 83,
+        "vote_average": 7.69,
+        "director": "Kelly Asbury",
+        "similarity": 0.8556320250313,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.822639390344752,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "19b99cc2-4d8f-410b-a9bc-b2394b46ebd9",
+        "tmdb_id": 9325,
+        "title": "The Jungle Book",
+        "year": 1967,
+        "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 78,
+        "vote_average": 7.3,
+        "director": "Wolfgang Reitherman",
+        "similarity": 0.789506593066416,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, narration, human animal relationship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1d6879d5-f75f-4587-ab39-49a412dcd812",
+        "tmdb_id": 11688,
+        "title": "The Emperor's New Groove",
+        "year": 2000,
+        "overview": "When the self‑absorbed Emperor Kuzco is accidentally transformed into a llama, he must rely on a humble villager to survive the jungle and reclaim his throne.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 78,
+        "vote_average": 7.56,
+        "director": "Mark Dindal",
+        "similarity": 0.766536029923857,
+        "curation_tier": "core",
+        "match_reason": "Matches: lighthearted",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "682860b5-c196-4fe0-a128-3b8c24787ab9",
+        "tmdb_id": 11544,
+        "title": "Lilo & Stitch",
+        "year": 2002,
+        "overview": "As Stitch, a runaway genetic experiment from a faraway planet, wreaks havoc on the Hawaiian Islands, he becomes the mischievous adopted alien \"puppy\" of an independent little girl named Lilo and learns about loyalty, friendship, and ʻohana, the Hawaiian tradition of family.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 85,
+        "vote_average": 7.561,
+        "director": "Chris Sanders",
+        "similarity": 0.750553486978006,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c312e0b5-2d3f-44e6-b9b3-2ff3d4ffab3c",
+        "tmdb_id": 11049,
+        "title": "Interstella 5555: The 5tory of the 5ecret 5tar 5ystem",
+        "year": 2003,
+        "overview": "Four talented alien musicians are kidnapped by a record producer who disguises them as humans. Shep, a space pilot in love with bass player Stella, follows them to Earth. Reprogrammed to forget their real identities and renamed The Crescendolls, the group quickly becomes a huge success playing soulless corporate pop. At a concert, Shep manages to free all the musicians except Stella, and the band sets out to rediscover who they really are — and to rescue Stella.",
+        "genres": [
+          "Animation",
+          "Science Fiction",
+          "Music",
+          "Adventure"
+        ],
+        "runtime": 65,
+        "vote_average": 7.775,
+        "director": "Kazuhisa Takenouchi",
+        "similarity": 0.740387319242399,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dceaf443-4052-4bc5-b986-5103425a4098",
+        "tmdb_id": 666243,
+        "title": "The Witcher: Nightmare of the Wolf",
+        "year": 2021,
+        "overview": "Escaping from poverty to become a witcher, Vesemir slays monsters for coin and glory, but when a new menace rises, he must face the demons of his past.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Fantasy"
+        ],
+        "runtime": 83,
+        "vote_average": 7.432,
+        "director": "Han Kwang Il",
+        "similarity": 0.731509767281035,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4eaeef89-556f-43ac-bc15-1d968b39ab50",
+        "tmdb_id": 10849,
+        "title": "The Purple Rose of Cairo",
+        "year": 1985,
+        "overview": "Cecilia is a waitress in New Jersey, living a dreary life during the Great Depression. Her only escape from her mundane reality is the movie theatre. After losing her job, Cecilia goes to see 'The Purple Rose of Cairo' in hopes of raising her spirits, where she watches dashing archaeologist Tom Baxter time and again.",
+        "genres": [
+          "Fantasy",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 82,
+        "vote_average": 7.399,
+        "director": "Woody Allen",
+        "similarity": 0.730380199003288,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "09168ccf-9afa-4fdd-a426-02adfb33191b",
+        "tmdb_id": 37135,
+        "title": "Tarzan",
+        "year": 1999,
+        "overview": "Tarzan was a small orphan who was raised by an ape named Kala since he was a child. He believed that this was his family, but on an expedition Jane Porter is rescued by Tarzan. He then finds out that he's human. Now Tarzan must make the decision as to which family he should belong to...",
+        "genres": [
+          "Family",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 88,
+        "vote_average": 7.395,
+        "director": "Chris Buck",
+        "similarity": 0.722205701665513,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.7111638239163,
+        "curation_tier": "extended",
+        "match_reason": "coming of age, survival, loneliness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "34d989b0-6e83-4507-af1d-961240dd21c0",
+        "tmdb_id": 126319,
+        "title": "Ernest & Celestine",
+        "year": 2012,
+        "overview": "Celestine is a little mouse trying to avoid a dental career while Ernest is a big bear craving an artistic outlet. When Celestine meets Ernest, they overcome their natural enmity by forging a life of crime together.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.731,
+        "director": "Stéphane Aubier",
+        "similarity": 0.71061368179424,
+        "curation_tier": "extended",
+        "match_reason": "friendship, underground world, musician",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9284792c-9e1d-4068-b639-2cf26987af92",
+        "tmdb_id": 9305,
+        "title": "Microcosmos",
+        "year": 1996,
+        "overview": "A documentary of insect life in meadows and ponds, using incredible close-ups, slow motion, and time-lapse photography. It includes bees collecting nectar, ladybugs eating mites, snails mating, spiders wrapping their catch, a scarab beetle relentlessly pushing its ball of dung uphill, endless lines of caterpillars, an underwater spider creating an air bubble to live in, and a mosquito hatching.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 80,
+        "vote_average": 7.59,
+        "director": "Claude Nuridsany",
+        "similarity": 0.709718127818013,
+        "curation_tier": "extended",
+        "match_reason": "insect, biology, narration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.708589378108088,
+        "curation_tier": "extended",
+        "match_reason": "based on comic, computer animation, red baron",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "25d60d82-4e17-4869-9661-e7105fd85a1f",
+        "tmdb_id": 49964,
+        "title": "Where Is The Friend's House?",
+        "year": 1987,
+        "overview": "An 8-year-old boy must return his friend's notebook he took by mistake, lest his friend be punished by expulsion from school.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 83,
+        "vote_average": 7.892,
+        "director": "Abbas Kiarostami",
+        "similarity": 0.69911074926533,
+        "curation_tier": "core",
+        "match_reason": "village life, village, notebook",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3b7f7c4c-2e77-4eae-b5d6-bf9d609a71b0",
+        "tmdb_id": 425,
+        "title": "Ice Age",
+        "year": 2002,
+        "overview": "Manny the mammoth, Sid the loquacious sloth, and Diego the sabre-toothed tiger go on a comical quest to return a human baby back to his father, across a world on the brink of an ice age.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 82,
+        "vote_average": 7.375,
+        "director": "Chris Wedge",
+        "similarity": 0.698288246224898,
+        "curation_tier": "core",
+        "match_reason": "dying and death, human evolution, parent child relationship",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "fffe070a-e3de-4f97-858e-2a5bd41c1e76",
+        "tmdb_id": 8703,
+        "title": "Three Wishes for Cinderella",
+        "year": 1973,
+        "overview": "Popelka, a resourceful and independent young girl, is a servant in her stepmother's house and confides in her closest friend the owl. When she comes across three magical acorns, she's granted a single wish for each one of them.",
+        "genres": [
+          "Fantasy",
+          "Family",
+          "Romance"
+        ],
+        "runtime": 82,
+        "vote_average": 7.464,
+        "director": "Václav Vorlíček",
+        "similarity": 0.698211794542061,
+        "curation_tier": "extended",
+        "match_reason": "new love, fairy tale, prince",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "fb1b9f27-1caa-4391-b77a-20eeda5367b1",
+        "tmdb_id": 9502,
+        "title": "Kung Fu Panda",
+        "year": 2008,
+        "overview": "Chosen by prophecy but doubted by all, Po is an unlikely choice for the mystical title of the Dragon Warrior—a clumsy panda thrust into the world of kung fu as a deadly enemy threatens the Valley of Peace. Under reluctant guidance by Master Shifu and the Furious Five, Po must embrace who he is to unlock the power that no scroll can teach.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.321,
+        "director": "Mark Osborne",
+        "similarity": 0.697219178142221,
+        "curation_tier": "core",
+        "match_reason": "martial arts, kung fu, strong woman",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "060ed67f-4fd2-4de1-96f5-a64c7920a853",
+        "tmdb_id": 808,
+        "title": "Shrek",
+        "year": 2001,
+        "overview": "It ain't easy bein' green -- especially if you're a likable (albeit smelly) ogre named Shrek. On a mission to retrieve a gorgeous princess from the clutches of a fire-breathing dragon, Shrek teams up with an unlikely compatriot -- a wisecracking donkey.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Fantasy",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.762,
+        "director": "Andrew Adamson",
+        "similarity": 0.696498059535354,
+        "curation_tier": "core",
+        "match_reason": "princess, based on novel or book, magic",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "a1c3e42f-bd3c-49b4-9b4e-b30348865c04",
+        "tmdb_id": 953,
+        "title": "Madagascar",
+        "year": 2005,
+        "overview": "Four animal friends get a taste of the wild life when they break out of captivity at the Central Park Zoo and wash ashore on the island of Madagascar.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 6.922,
+        "director": "Eric Darnell",
+        "similarity": 0.695535651805431,
+        "curation_tier": "core",
+        "match_reason": "friendship, island, escape",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+        "tmdb_id": 823219,
+        "title": "Flow",
+        "year": 2024,
+        "overview": "A solitary cat, displaced by a great flood, finds refuge on a boat with various species and must navigate the challenges of adapting to a transformed world together.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 85,
+        "vote_average": 8.085,
+        "director": "Gints Zilbalodis",
+        "similarity": 0.69551455436887,
+        "curation_tier": "core",
+        "match_reason": "ocean, cat, boat",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "40b7f12b-2535-41a8-b1e0-98132f4956ea",
+        "tmdb_id": 862,
+        "title": "Toy Story",
+        "year": 1995,
+        "overview": "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 81,
+        "vote_average": 7.974,
+        "director": "John Lasseter",
+        "similarity": 0.692244172205432,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, mission",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "2f6a38c8-2189-404c-8ba5-8f89164c55b0",
+        "tmdb_id": 65229,
+        "title": "Tomboy",
+        "year": 2011,
+        "overview": "Ten-year-old Laure isn't like most girls. She prefers football to dolls and sweaters to dresses. When Laure and her family move to a new neighbourhood, local girl Lisa mistakes Laure for a boy. Indulging in this exciting new identity, Laure becomes Mickaël, and so begins a summer of long sunny afternoons, playground games and first kisses. Yet with the school term fast approaching, and with suspicions arising amongst friends and family, Laure must face up to an uncertain future.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 82,
+        "vote_average": 7.296,
+        "director": "Céline Sciamma",
+        "similarity": 0.690703323971036,
+        "curation_tier": "extended",
+        "match_reason": "sexual identity, coming of age, gender roles",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4026bb62-26ce-45cf-b17e-d1894271c106",
+        "tmdb_id": 130739,
+        "title": "A Coffee in Berlin",
+        "year": 2012,
+        "overview": "Niko, a twenty-something college dropout, lives for the moment as he drifts through the streets of Berlin, curiously observing everyone around him and oblivious to his growing status as an outsider. Then on one fateful day, through a series of absurdly amusing encounters, everything changes.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 7.19,
+        "director": "Jan Ole Gerster",
+        "similarity": 0.690609041261763,
+        "curation_tier": "extended",
+        "match_reason": "berlin, germany, coffee, girlfriend",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "84d1b73b-9a2d-4a80-9eb4-761405951f70",
+        "tmdb_id": 10020,
+        "title": "Beauty and the Beast",
+        "year": 1991,
+        "overview": "Follow the adventures of Belle, a bright young woman who finds herself in the castle of a prince who's been turned into a mysterious beast. With the help of the castle's enchanted staff, Belle soon learns the most important lesson of all -- that true beauty comes from within.",
+        "genres": [
+          "Romance",
+          "Family",
+          "Animation",
+          "Fantasy"
+        ],
+        "runtime": 84,
+        "vote_average": 7.727,
+        "director": "Gary Trousdale",
+        "similarity": 0.597134509177765,
+        "curation_tier": "core",
+        "match_reason": "princess, france, prince",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "44553b03-ee48-4c89-8459-a06331aa7ed4",
+        "tmdb_id": 10674,
+        "title": "Mulan",
+        "year": 1998,
+        "overview": "When Imperial China calls one man from every family to defend the empire from invading Huns, a young woman disguises herself as a soldier to take her ailing father’s place. Facing ruthless invaders, brutal training, and the risk of execution if discovered, she must decide who she truly is— and what she’s willing to fight for.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 88,
+        "vote_average": 7.902,
+        "director": "Tony Bancroft",
+        "similarity": 0.587274304965027,
+        "curation_tier": "core",
+        "match_reason": "princess, daughter, china",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "d4ecf4c8-c80b-4de1-9aa0-3e5c47e60a7c",
+        "tmdb_id": 1624,
+        "title": "Liar Liar",
+        "year": 1997,
+        "overview": "Forced by his son's birthday wish, fast-talking attorney and habitual liar Fletcher Reede must tell the truth for the next 24 hours.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 86,
+        "vote_average": 6.705,
+        "director": "Tom Shadyac",
+        "similarity": 0.554598405440592,
+        "curation_tier": "extended",
+        "match_reason": "california, workaholic, truth",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "2838ecc3-7733-4bb9-a486-b222bf3711d0",
+        "tmdb_id": 3082,
+        "title": "Modern Times",
+        "year": 1936,
+        "overview": "A bumbling tramp desires to build a home with a young woman, yet is thwarted time and time again by his lack of experience and habit of being in the wrong place at the wrong time..",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.278,
+        "director": "Charlie Chaplin",
+        "similarity": 0.531466340610024,
+        "curation_tier": "core",
+        "match_reason": "factory, ambulance, invention",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "1b3d22ec-969c-45f9-a1ba-a5fdd7bc0269",
+        "tmdb_id": 9479,
+        "title": "The Nightmare Before Christmas",
+        "year": 1993,
+        "overview": "Tired of scaring humans every October 31 with the same old bag of tricks, Jack Skellington, the spindly king of Halloween Town, kidnaps Santa Claus and plans to deliver shrunken heads and other ghoulish gifts to children on Christmas morning. But as Christmas approaches, Jack's rag-doll girlfriend, Sally, tries to foil his misguided plans.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 76,
+        "vote_average": 7.831,
+        "director": "Henry Selick",
+        "similarity": 0.481608200014535,
+        "curation_tier": "core",
+        "match_reason": "skeleton, fire, magic",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f3c487db-4df4-48ba-aa2b-50dd5e582e0e",
+        "tmdb_id": 8587,
+        "title": "The Lion King",
+        "year": 1994,
+        "overview": "Young lion prince Simba, eager to one day become king of the Pride Lands, grows up under the watchful eye of his father Mufasa; all the while his villainous uncle Scar conspires to take the throne for himself. Amid betrayal and tragedy, Simba must confront his past and find his rightful place in the Circle of Life.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.254,
+        "director": "Roger Allers",
+        "similarity": 0.471138025017587,
+        "curation_tier": "core",
+        "match_reason": "father murder, loss of loved one, africa",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bb60df7d-8867-4efd-bc1c-f2890df557d1",
+        "tmdb_id": 4247,
+        "title": "Scary Movie",
+        "year": 2000,
+        "overview": "A familiar-looking group of teenagers find themselves being stalked by a more-than-vaguely recognizable masked killer! As the victims begin to pile up and the laughs pile on, none of your favorite scary movies escape the razor-sharp satire of this outrageously funny parody!",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 6.393,
+        "director": "Keenen Ivory Wayans",
+        "similarity": 0.470954721701362,
+        "curation_tier": "core",
+        "match_reason": "high school, psychopath, garage",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e2a8030c-9898-4e61-a74e-5d935e421f57",
+        "tmdb_id": 10315,
+        "title": "Fantastic Mr. Fox",
+        "year": 2009,
+        "overview": "The Fantastic Mr. Fox, bored with his current life, plans a heist against the three local farmers. The farmers, tired of sharing their chickens with the sly fox, seek revenge against him and his family.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 87,
+        "vote_average": 7.824,
+        "director": "Wes Anderson",
+        "similarity": 0.402565671641102,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, tree, peasant",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 552,
+        "n_rows": 33
+      }
+    ],
+    "total_ms": 552,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comfort",
+        "feel-good",
+        "slice of life",
+        "lighthearted",
+        "wholesome"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Comedy",
+        "Family"
+      ],
+      "genres_exclude": [],
+      "max_runtime": 90,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Paddington 2",
+          "year": 2017
+        },
+        {
+          "title": "The Grand Budapest Hotel",
+          "year": 2014
+        },
+        {
+          "title": "Amélie",
+          "year": 2001
+        },
+        {
+          "title": "Knives Out",
+          "year": 2019
+        },
+        {
+          "title": "Wes Anderson's Moonrise Kingdom",
+          "year": 2012
+        },
+        {
+          "title": "A Fish Called Wanda",
+          "year": 1988
+        },
+        {
+          "title": "Spirited Away",
+          "year": 2001
+        },
+        {
+          "title": "Heathen McDougal",
+          "year": 2020
+        },
+        {
+          "title": "Legally Blonde",
+          "year": 2001
+        },
+        {
+          "title": "Chef",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "89448c41066c2f94",
+    "cached": false,
+    "candidates_sent": 33,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3717,
+    "http_status": 200,
+    "reranked_ids": [
+      "1d6879d5-f75f-4587-ab39-49a412dcd812",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+      "34d989b0-6e83-4507-af1d-961240dd21c0"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "1d6879d5-f75f-4587-ab39-49a412dcd812": "Lighthearted comedy animation under 80 minutes, perfect for tired viewers seeking effortless entertainment.",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2": "Gentle fantasy animation with soothing visuals and calm pacing ideal for post-work relaxation.",
+      "bbc6b269-4131-45c0-b904-7a4ae4953d16": "Short, feel-good animated comedy that's wholesome and requires minimal mental effort.",
+      "34d989b0-6e83-4507-af1d-961240dd21c0": "Charming short animation about unlikely friendship, warm and comforting without demanding engagement."
+    }
+  }
+}

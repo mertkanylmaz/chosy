@@ -20,6 +20,7 @@ import type { FilmFilters, TasteProfile } from '@/types';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 import type { RecommendationResult } from './recommendations';
 import { getRecommendations } from './recommendations';
+import { posthogAnalytics } from './posthog';
 import {
   consumePendingSearchId,
   getSearchModeState,
@@ -48,20 +49,24 @@ function profileKey(
   moodText: string,
   mode: SearchMode,
   searchId: string | null,
+  filters: FilmFilters,
 ): string {
   // 3 boyut tek başına yetmez: farklı metin / mod / arama aynı boyutlara düşebilir
-  // ve eski aramanın sonucu yeni aramaya taşınırdı.
+  // ve eski aramanın sonucu yeni aramaya taşınırdı. Filtreler de anahtarın parçası:
+  // aynı metinle farklı filtre (PRO-0 B1) eski filtresiz sonucu yutmasın.
   const dims = `${profile.energy_level}_${profile.thematic_depth}_${profile.ending_preference}`;
-  return [dims, mode, searchId ?? '', moodText.trim().toLowerCase()].join('|');
+  const filterKey = `${filters.yearRange ?? ''}:${filters.minRating ?? ''}`;
+  return [dims, mode, searchId ?? '', moodText.trim().toLowerCase(), filterKey].join('|');
 }
 
 /**
  * Destedeki tum filmlerin (en fazla 8) posterini onceden yukler — deste acildiginda iskelet beklenmesin.
  * Kozmetik: hata akisi durdurmaz, yalnizca Sentry breadcrumb birakir.
  */
-function prefetchPosters(result: RecommendationResult): void {
+function prefetchPosters(result: RecommendationResult, limit?: number): void {
   // Ilk 3 ve 4..8 ayni yol: hicbiri await edilmez (fire-and-forget), gecikme eklemez.
-  for (const film of result.films) {
+  // `limit` (MONEY-1C kilit): ucretsiz sinirin otesindeki posterler HIC indirilmez.
+  for (const film of limit === undefined ? result.films : result.films.slice(0, limit)) {
     // Kartla AYNI fonksiyon ve boyut: farklı URL önbelleği ıskalatır.
     const uri = normalizePosterUrl(film.posterUrl);
     if (!uri) continue;
@@ -86,16 +91,27 @@ function prefetchPosters(result: RecommendationResult): void {
  * @param profile  - AI tarafindan ayristirilmis TasteProfile
  * @param filters  - Kullanicinin sectigi filtreler
  * @param moodText - Kullanicinin yazdigi metin (yalniz dedupe anahtari icin; AI'ya gitmez)
+ * @param prefetchLimit - Verilirse yalniz ilk N posteri onceden yukler (kilitli deste); yoksa hepsi
  */
 export function startPreload(
   profile: TasteProfile,
   filters: FilmFilters,
   moodText: string,
+  prefetchLimit?: number,
 ): void {
-  const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId());
+  const key = profileKey(profile, moodText, getSearchModeState(), peekPendingSearchId(), filters);
 
-  // Ayni arama (metin + mod + searchId + boyutlar) icin zaten preload varsa tekrar baslatma
-  if (_preloadProfileKey === key && _preloadPromise) return;
+  // Ayni arama (metin + mod + searchId + boyutlar + filtre) icin zaten preload varsa tekrar baslatma
+  if (_preloadProfileKey === key && _preloadPromise) {
+    // B1/B6 teşhisi: erken dönüş yeni aramanın RPC'sini başlatmaz — görünür olsun.
+    posthogAnalytics.track('mood_preload_skipped', {
+      reason: 'same_key',
+      has_search_id: peekPendingSearchId() !== null,
+      filter_min_rating: filters.minRating ?? null,
+      filter_era: filters.yearRange ?? null,
+    });
+    return;
+  }
 
   _preloadProfileKey = key;
   _preloadResult = null;
@@ -112,11 +128,12 @@ export function startPreload(
     filters,
     searchId,
     true, // isFirstBatch — LLM reranker aktif
+    'preload',
   )
     .then((result) => {
       // Arada yeni bir preload basladiysa (anahtar degisti) eski sonuc yenisini ezmesin
       if (_preloadPromise === promise) _preloadResult = result;
-      prefetchPosters(result);
+      prefetchPosters(result, prefetchLimit);
       return result;
     })
     .catch((err) => {
@@ -134,6 +151,28 @@ export function startPreload(
       throw err;
     });
   _preloadPromise = promise;
+  // Preload henüz tüketilmeden reddedilirse "yakalanmamış reddetme" olmasın: hata
+  // tüketicide (useFeedManager) yeniden gözlenir; RPC zinciri hatası kaynakta zaten
+  // Sentry'ye yazıldı (RPC_CHAIN_FAILED), burada yalnız iz bırakılır.
+  promise.catch((err: unknown) => {
+    Sentry.addBreadcrumb({
+      category: 'recommendation_preload',
+      level: 'warning',
+      message: 'preload reddedildi (tuketicide yeniden gozlenecek)',
+      data: { error: err instanceof Error ? err.message : String(err) },
+    });
+  });
+}
+
+/**
+ * Hazir bir desteyi preload olarak yerlestirir (bugunku deste kurtarma, MONEY-1C).
+ * `useFeedManager` ilk batch'te bunu tuketir: parse-mood / match_films / rerank CAGRISI YOK.
+ */
+export function seedPreload(films: RecommendationResult['films']): void {
+  const result: RecommendationResult = { films, source: 'supabase', reranked: false };
+  _preloadProfileKey = 'seeded';
+  _preloadResult = result;
+  _preloadPromise = Promise.resolve(result);
 }
 
 /**

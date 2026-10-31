@@ -1,0 +1,930 @@
+{
+  "mood_id": "qm_date",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "f806fed3-4e69-47d7-a2bf-f1d75d16420f",
+        "tmdb_id": 565310,
+        "title": "The Farewell",
+        "year": 2019,
+        "overview": "A headstrong Chinese-American woman returns to China when her beloved grandmother is given a terminal diagnosis. Billi struggles with her family's decision to keep grandma in the dark about her own illness as they all stage an impromptu wedding to see grandma one last time.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 100,
+        "vote_average": 7.417,
+        "director": "Lulu Wang",
+        "similarity": 0.730658194246361,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "fc8ee875-9934-4b6e-834f-aff0cb526231",
+        "tmdb_id": 398818,
+        "title": "Call Me by Your Name",
+        "year": 2017,
+        "overview": "In the summer of 1983, a 17-year-old Elio spends his days in his family's villa in Italy. One day Oliver, a graduate student, arrives to assist Elio's father, a professor of Greco-Roman culture. Soon, Elio and Oliver discover a summer that will alter their lives forever.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 8.1,
+        "director": "Luca Guadagnino",
+        "similarity": 0.690575928333922,
+        "curation_tier": "core",
+        "match_reason": "Matches: love story",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+        "tmdb_id": 76,
+        "title": "Before Sunrise",
+        "year": 1995,
+        "overview": "An unexpected meeting on a train leads two travelers to spend an evening wandering through Vienna. As the night unfolds, they share stories and conversations about life and love, exploring new ideas while a quiet intimacy grows between them, knowing it may be their only night together.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 101,
+        "vote_average": 7.973,
+        "director": "Richard Linklater",
+        "similarity": 0.603204632781816,
+        "curation_tier": "core",
+        "match_reason": "talking, soulmates, walking",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b1e6b75b-b955-44fe-ac0b-c85eaea6c858",
+        "tmdb_id": 313369,
+        "title": "La La Land",
+        "year": 2016,
+        "overview": "Mia, an aspiring actress, serves lattes to movie stars in between auditions and Sebastian, a jazz musician, scrapes by playing cocktail party gigs in dingy bars, but as success mounts they are faced with decisions that begin to fray the fragile fabric of their love affair, and the dreams they worked so hard to maintain in each other threaten to rip them apart.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 129,
+        "vote_average": 7.897,
+        "director": "Damien Chazelle",
+        "similarity": 0.595306462721817,
+        "curation_tier": "core",
+        "match_reason": "dancing, dance, jazz",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "e17982bc-5158-498e-bdb5-8352ff8a65b8",
+        "tmdb_id": 11036,
+        "title": "The Notebook",
+        "year": 2004,
+        "overview": "An epic love story centered around an older man who reads aloud to a woman with Alzheimer's. From a faded notebook, the old man's words bring to life the story about a couple who is separated by World War II, and is then passionately reunited, seven years later, after they have taken different paths.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 123,
+        "vote_average": 7.887,
+        "director": "Nick Cassavetes",
+        "similarity": 0.577073335974227,
+        "curation_tier": "core",
+        "match_reason": "secret love, soulmates, based on novel or book",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b643db72-26cd-40c4-81c7-dff0f02749e1",
+        "tmdb_id": 38,
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004,
+        "overview": "Joel Barish, heartbroken that his girlfriend underwent a procedure to erase him from her memory, decides to do the same. However, as he watches his memories of her fade away, he realises that he still loves her, and may be too late to correct his mistake.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 108,
+        "vote_average": 8.1,
+        "director": "Michel Gondry",
+        "similarity": 0.560408221503138,
+        "curation_tier": "core",
+        "match_reason": "Matches: love story, relationships",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "18035914-aa4e-4880-8213-703a2373e208",
+        "tmdb_id": 122906,
+        "title": "About Time",
+        "year": 2013,
+        "overview": "The night after another unsatisfactory New Year's party, Tim's father reveals to him that the men in their family have the ability to travel through time. They can't change history, but they can change what happens and has happened in their own lives. Thus begins the start of a lesson in learning to appreciate life itself as it is, as it comes, and most importantly, the people living alongside us.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Fantasy"
+        ],
+        "runtime": 123,
+        "vote_average": 7.906,
+        "director": "Richard Curtis",
+        "similarity": 0.513713758837901,
+        "curation_tier": "core",
+        "match_reason": "Matches: intimate",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.468902487614581,
+        "curation_tier": "extended",
+        "match_reason": "drug dealer, high school, florida",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "04e2b8f6-19a1-4429-b10e-19f730375c1d",
+        "tmdb_id": 194,
+        "title": "Amélie",
+        "year": 2001,
+        "overview": "At a tiny Parisian café, the adorable yet painfully shy Amélie accidentally discovers a gift for helping others. Soon Amelie is spending her days as a matchmaker, guardian angel, and all-around do-gooder. But when she bumps into a handsome stranger, will she find the courage to become the star of her very own love story?",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 122,
+        "vote_average": 7.92,
+        "director": "Jean-Pierre Jeunet",
+        "similarity": 0.427464207347431,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c284851d-5cb2-4605-aa87-1d0de6f326cd",
+        "tmdb_id": 137,
+        "title": "Groundhog Day",
+        "year": 1993,
+        "overview": "A cynical TV weatherman, along with his idealistic producer and his sardonic cameraman, is sent to report on Groundhog Day in the small town of Punxsutawney, where he finds himself repeating the same day over and over.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Harold Ramis",
+        "similarity": 1.05494913497283,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6023a6ab-b1a5-4524-ba32-caef8a603df6",
+        "tmdb_id": 1034716,
+        "title": "Tatilde Tanıştığımız İnsanlar",
+        "year": 2026,
+        "overview": "Özgür ruhlu Poppy ile planlama meraklısı Alex... Yıllarca yaz tatillerine beraber çıkan zıt karakterdeki bu iki arkadaşın birbirleri için ideal sevgili olmaları mümkün mü dersiniz?",
+        "genres": [
+          "Romance",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7,
+        "director": "Brett Haley",
+        "similarity": 0.977893689433279,
+        "curation_tier": "extended",
+        "match_reason": "Matches: heartfelt",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b5ed1c5f-ecdf-4da2-a694-b6dd79c73b6d",
+        "tmdb_id": 1327862,
+        "title": "Regretting You",
+        "year": 2025,
+        "overview": "Morgan Grant and her daughter Clara explore what's left behind after a devastating accident reveals a shocking betrayal and forces them to confront family secrets, redefine love, and rediscover each other.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 6.913,
+        "director": "Josh Boone",
+        "similarity": 0.936124620934618,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "24c35e04-5730-4562-aa3d-3281d27254bf",
+        "tmdb_id": 132344,
+        "title": "Before Midnight",
+        "year": 2013,
+        "overview": "It has been nine years since we last met Jesse and Celine, the French-American couple who once met on a train in Vienna. They now live in Paris with twin daughters but have spent a summer in Greece at the invitation of an author colleague of Jesse's. When the vacation is over and Jesse must send his teenage son off to the States, he begins to question his life decisions, and his relationship with Celine is at risk.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 109,
+        "vote_average": 7.498,
+        "director": "Richard Linklater",
+        "similarity": 0.926320460197792,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b94f1b33-2ae5-49a2-8551-b8c3cb3090ed",
+        "tmdb_id": 451480,
+        "title": "The Guernsey Literary & Potato Peel Pie Society",
+        "year": 2018,
+        "overview": "Free-spirited writer Juliet Ashton forms a life-changing bond with the delightful and eccentric Guernsey Literary and Potato Peel Pie Society, when she decides to write about the book club they formed during the occupation of Guernsey in WWII.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "History"
+        ],
+        "runtime": 124,
+        "vote_average": 7.404,
+        "director": "Mike Newell",
+        "similarity": 0.925161075123504,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "70d306c4-8bb3-4387-ad90-6536c1a53bc5",
+        "tmdb_id": 614409,
+        "title": "To All the Boys: Always and Forever",
+        "year": 2021,
+        "overview": "Senior year of high school takes center stage as Lara Jean returns from a family trip to Korea and considers her college plans — with and without Peter.",
+        "genres": [
+          "Romance",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.506,
+        "director": "Michael Fimognari",
+        "similarity": 0.923032639573635,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0c3b6122-6352-4948-b7fa-24ab921cead9",
+        "tmdb_id": 293863,
+        "title": "The Age of Adaline",
+        "year": 2015,
+        "overview": "After 29-year-old Adaline recovers from a nearly lethal accident, she inexplicably stops growing older. As the years stretch on and on, Adaline keeps her secret to herself  until she meets a man who changes her life.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.467,
+        "director": "Lee Toland Krieger",
+        "similarity": 0.917338357113778,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4ed0f20c-b4db-43d3-b028-fd67fb9feb7a",
+        "tmdb_id": 114,
+        "title": "Pretty Woman",
+        "year": 1990,
+        "overview": "Vivian is a carefree, streetwise diamond in the rough when she meets sophisticated billionaire Edward in a chance encounter that turns into a week-long business arrangement. But Vivian's energetic spirit challenges Edward's no-nonsense approach to life, and soon they are teaching each other – and falling in love!",
+        "genres": [
+          "Romance",
+          "Comedy"
+        ],
+        "runtime": 120,
+        "vote_average": 7.452,
+        "director": "Garry Marshall",
+        "similarity": 0.914344279260477,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "105b7ebe-7aef-4841-953e-313103e560a3",
+        "tmdb_id": 1103621,
+        "title": "How to Make Millions Before Grandma Dies",
+        "year": 2024,
+        "overview": "M, a university dropout low on money and luck, volunteers to take care of his terminally ill grandmother, in the hope of pocketing an inheritance.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 8.106,
+        "director": "Pat Boonnitipat",
+        "similarity": 0.904409728112895,
+        "curation_tier": "extended",
+        "match_reason": "Matches: intimate, relationships, heartfelt",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29bc311c-4948-431c-9071-2f398c61a210",
+        "tmdb_id": 42726,
+        "title": "A Man and a Woman",
+        "year": 1966,
+        "overview": "A man and a woman meet by accident on a Sunday evening at their childrens' boarding school. Slowly, they reveal themselves to each other, finding that they have something deeply in common.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.4,
+        "director": "Claude Lelouch",
+        "similarity": 0.902885529389413,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, love story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "643a1133-b4ac-4cb4-a912-a515fe4aa78d",
+        "tmdb_id": 16804,
+        "title": "Departures",
+        "year": 2008,
+        "overview": "Daigo, a cellist, is laid off from his orchestra and moves with his wife back to his small hometown where the living is cheaper. Thinking he’s applying for a job at a travel agency he finds he’s being interviewed for work with departures of a more permanent nature – as an undertaker’s assistant.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.9,
+        "director": "Yojiro Takita",
+        "similarity": 0.898464236131553,
+        "curation_tier": "core",
+        "match_reason": "dying and death, funeral, octopus",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+        "tmdb_id": 266856,
+        "title": "The Theory of Everything",
+        "year": 2014,
+        "overview": "The Theory of Everything is the extraordinary story of one of the world’s greatest living minds, the renowned astrophysicist Stephen Hawking, who falls deeply in love with fellow Cambridge student Jane Wilde.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.83,
+        "director": "James Marsh",
+        "similarity": 0.890803541637769,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, biography, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "406413b3-53c6-423a-b37e-59cd93652b83",
+        "tmdb_id": 854,
+        "title": "The Mask",
+        "year": 1994,
+        "overview": "Stanley Ipkiss, an insecure banker who has lost his zest for life stumbles upon an ancient mask, that turns him into a confident suave cartoon-like character who upsets his ordinary life.",
+        "genres": [
+          "Romance",
+          "Comedy",
+          "Crime",
+          "Fantasy"
+        ],
+        "runtime": 101,
+        "vote_average": 6.978,
+        "director": "Chuck Russell",
+        "similarity": 0.89053352164828,
+        "curation_tier": "extended",
+        "match_reason": "dual identity, bank, superhero",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2e811fbd-d246-433b-ba90-43f0647b65ab",
+        "tmdb_id": 77338,
+        "title": "The Intouchables",
+        "year": 2011,
+        "overview": "A true story of two men who should never have met – a quadriplegic aristocrat who was injured in a paragliding accident and a young man from the projects.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 113,
+        "vote_average": 8.269,
+        "director": "Éric Toledano",
+        "similarity": 0.888641843601743,
+        "curation_tier": "core",
+        "match_reason": "Matches: emotional connection",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0fae4218-edfc-4392-9113-0e5fd417050d",
+        "tmdb_id": 1367642,
+        "title": "Reminders of Him",
+        "year": 2026,
+        "overview": "When Diem's custodial grandparents adamantly refuse Kenna's attempts to see her daughter, Kenna discovers unexpected compassion, and then something truer and deeper, with former NFL player and local bar owner Ledger. As their secret romance develops, so do the dangers for both of them, leading Kenna toward heartbreak and, ultimately, the hope for a second chance.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.03,
+        "director": "Vanessa Caswill",
+        "similarity": 0.885814764845278,
+        "curation_tier": "extended",
+        "match_reason": "Matches: relationships",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b04cc5f7-84d6-4554-bcc0-847843b9ee32",
+        "tmdb_id": 1291335,
+        "title": "Solo Mio",
+        "year": 2026,
+        "overview": "After Matt's dreams of a picturesque Italian wedding are shattered when his fiancée leaves him at the altar, he embarks on his planned honeymoon across Italy alone, immersing himself in the country's vibrant culture, food, and beauty, meeting Gia along the way.",
+        "genres": [
+          "Romance",
+          "Comedy"
+        ],
+        "runtime": 96,
+        "vote_average": 6.993,
+        "director": "Charles Kinnane",
+        "similarity": 0.827615759824979,
+        "curation_tier": "extended",
+        "match_reason": "rome, italy, italy, sadness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4b603686-2cce-4f1f-8138-e277e4f139d0",
+        "tmdb_id": 652837,
+        "title": "Josee, the Tiger and the Fish",
+        "year": 2020,
+        "overview": "With dreams of diving abroad, Tsuneo gets a job assisting Josee, an artist whose imagination takes her far beyond her wheelchair. But when the tide turns against them, they push each other to places they never thought possible, and inspire a love fit for a storybook.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 98,
+        "vote_average": 8.267,
+        "director": "Kotaro Tamura",
+        "similarity": 0.827608538280159,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love story, relationships",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9e45da7f-e6b6-45cf-8494-58ac29216bbd",
+        "tmdb_id": 824,
+        "title": "Moulin Rouge!",
+        "year": 2001,
+        "overview": "A celebration of love and creative inspiration takes place in the infamous, gaudy and glamorous Parisian nightclub, at the cusp of the 20th century. A young poet, who is plunged into the heady world of Moulin Rouge, begins a passionate affair with the club's most notorious and beautiful star.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Music"
+        ],
+        "runtime": 128,
+        "vote_average": 7.534,
+        "director": "Baz Luhrmann",
+        "similarity": 0.826536933769446,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ee8b1e5b-4e5e-4cdb-8a9e-969b531cddd1",
+        "tmdb_id": 258480,
+        "title": "Carol",
+        "year": 2015,
+        "overview": "In 1950s New York, a department-store clerk who dreams of a better life falls for an older, married woman.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.498,
+        "director": "Todd Haynes",
+        "similarity": 0.826020406623923,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3a214e4e-9438-4e81-96c7-5ba990d06565",
+        "tmdb_id": 194662,
+        "title": "Birdman or (The Unexpected Virtue of Ignorance)",
+        "year": 2014,
+        "overview": "A fading actor best known for his portrayal of a popular superhero attempts to mount a comeback by appearing in a Broadway play. As opening night approaches, his attempts to become more altruistic, rebuild his career, and reconnect with friends and family prove more difficult than expected.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 120,
+        "vote_average": 7.444,
+        "director": "Alejandro G. Iñárritu",
+        "similarity": 0.82595544987193,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b2cca4ec-9871-4417-88ef-a6cd96512bb7",
+        "tmdb_id": 375262,
+        "title": "The Favourite",
+        "year": 2018,
+        "overview": "England, early 18th century. The close relationship between Queen Anne and Sarah Churchill is threatened by the arrival of Sarah's cousin, Abigail Hill, resulting in a bitter rivalry between the two cousins to be the Queen's favourite.",
+        "genres": [
+          "History",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.494,
+        "director": "Yorgos Lanthimos",
+        "similarity": 0.825217269737025,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2403581d-d8b8-4aa6-a306-42c948061e7e",
+        "tmdb_id": 153,
+        "title": "Lost in Translation",
+        "year": 2003,
+        "overview": "Two lost souls visiting Tokyo -- the young, neglected wife of a photographer and a washed-up movie star shooting a TV commercial -- find an odd solace and pensive freedom to be real in each other's company, away from their lives in America.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.384,
+        "director": "Sofia Coppola",
+        "similarity": 0.82235020971578,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7a2e5bc9-3693-4d0b-bab5-6ffe68aad3e4",
+        "tmdb_id": 3933,
+        "title": "Corpse Bride",
+        "year": 2005,
+        "overview": "In a 19th-century European village, a young man about to be married is whisked away to the underworld and wed to a mysterious corpse bride, while his real bride waits bereft in the land of the living.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 77,
+        "vote_average": 7.584,
+        "director": "Tim Burton",
+        "similarity": 0.819050693868486,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2980ac01-1680-4ecb-8800-c2038f60b479",
+        "tmdb_id": 359784,
+        "title": "Maudie",
+        "year": 2016,
+        "overview": "Canadian folk artist Maud Lewis falls in love with a fishmonger while working for him as a live-in housekeeper.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 115,
+        "vote_average": 7.745,
+        "director": "Aisling Walsh",
+        "similarity": 0.813637548394515,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, heartfelt",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7558f34a-eca9-4e8d-9191-a664519f9fa6",
+        "tmdb_id": 719410,
+        "title": "Your Name Engraved Herein",
+        "year": 2020,
+        "overview": "In 1987, as martial law ends in Taiwan, Jia-han and Birdy fall in love amid family pressure, homophobia and social stigma.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 115,
+        "vote_average": 7.875,
+        "director": "Liu Kuang-Hui",
+        "similarity": 0.801756855739736,
+        "curation_tier": "extended",
+        "match_reason": "Matches: love story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.667538743099894,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.540118209207258,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.524678437693933,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.506364808965474,
+        "curation_tier": "core",
+        "match_reason": "Matches: love story, relationships",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.500914128761959,
+        "curation_tier": "core",
+        "match_reason": "Matches: relationships",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.487325206757145,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 768,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 768,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "romance",
+        "love story",
+        "intimate",
+        "relationships",
+        "heartfelt",
+        "couple",
+        "emotional connection"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Romance",
+        "Drama"
+      ],
+      "genres_exclude": [
+        "Horror",
+        "Thriller"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Before Sunrise",
+          "year": 1995
+        },
+        {
+          "title": "Moonlight",
+          "year": 2016
+        },
+        {
+          "title": "Call Me By Your Name",
+          "year": 2017
+        },
+        {
+          "title": "The Farewell",
+          "year": 2019
+        },
+        {
+          "title": "About Time",
+          "year": 2013
+        },
+        {
+          "title": "Amélie",
+          "year": 2001
+        },
+        {
+          "title": "Pride and Prejudice",
+          "year": 2005
+        },
+        {
+          "title": "Eternal Sunshine of the Spotless Mind",
+          "year": 2004
+        },
+        {
+          "title": "The Notebook",
+          "year": 2004
+        },
+        {
+          "title": "La La Land",
+          "year": 2016
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "9d35f433fda15337",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3791,
+    "http_status": 200,
+    "reranked_ids": [
+      "b1e6b75b-b955-44fe-ac0b-c85eaea6c858",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "24c35e04-5730-4562-aa3d-3281d27254bf",
+      "e17982bc-5158-498e-bdb5-8352ff8a65b8"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "b1e6b75b-b955-44fe-ac0b-c85eaea6c858": "A romantic tale of two artists supporting each other's dreams with warmth and genuine connection.",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Intimate conversation-driven romance where two strangers share a tender evening in Vienna.",
+      "24c35e04-5730-4562-aa3d-3281d27254bf": "Nine years later, Jesse and Celine's enduring love story continues with emotional depth and tenderness.",
+      "e17982bc-5158-498e-bdb5-8352ff8a65b8": "Epic, heartfelt love story where devotion transcends memory loss and time."
+    }
+  }
+}

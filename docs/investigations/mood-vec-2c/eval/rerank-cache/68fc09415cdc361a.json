@@ -1,0 +1,24 @@
+{
+  "payload_hash": "68fc09415cdc361a",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4320,
+  "http_status": 200,
+  "reranked_ids": [
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+    "04e2b8f6-19a1-4429-b10e-19f730375c1d",
+    "180cd668-2832-414c-ae79-cde61a9a8f20",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe": "Charming family comedy with heartwarming humor and zero dark elements, perfect for lifting spirits.",
+    "04e2b8f6-19a1-4429-b10e-19f730375c1d": "Whimsical Parisian romance-comedy with gentle humor and delightful magical moments throughout.",
+    "180cd668-2832-414c-ae79-cde61a9a8f20": "Classic uplifting musical comedy with joyful dancing, singing, and lighthearted romance.",
+    "613e3659-1a59-46b1-b26e-d58da7c0fc0e": "Heartwarming animated comedy about unlikely friendship and spreading joy in a cold world."
+  }
+}

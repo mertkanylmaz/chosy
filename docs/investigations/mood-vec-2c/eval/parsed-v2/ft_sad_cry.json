@@ -1,0 +1,117 @@
+{
+  "mood_id": "ft_sad_cry",
+  "text": "I want a good cry",
+  "ms": 6116,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "fear": 0.2,
+      "anger": 0.1,
+      "surprise": 0.15,
+      "disgust": 0.1,
+      "trust": 0.4,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.15,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cathartic Release",
+    "profile_description": "A person seeking emotional catharsis through a deeply moving film that allows them to experience and process profound sadness in a safe, beautiful way.",
+    "search_keywords": [],
+    "genres_include": [
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Manchester by the Sea",
+        "year": 2016
+      },
+      {
+        "title": "The Farewell",
+        "year": 2019
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Schindler's List",
+        "year": 1993
+      },
+      {
+        "title": "About Time",
+        "year": 2013
+      },
+      {
+        "title": "Grave of the Fireflies",
+        "year": 1988
+      },
+      {
+        "title": "The Father",
+        "year": 2020
+      },
+      {
+        "title": "Cleo from 5 to 7",
+        "year": 1962
+      },
+      {
+        "title": "Requiem for a Dream",
+        "year": 2000
+      },
+      {
+        "title": "Still Alice",
+        "year": 2014
+      }
+    ],
+    "search_id": "b7a4fc5a-6932-4b9b-9019-545f4386fd9a",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "anger": 0.1,
+      "fear": 0.2,
+      "surprise": 0.15,
+      "disgust": 0.1,
+      "anticipation": 0.3,
+      "trust": 0.4
+    },
+    "energy_level": 0.15,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "b7a4fc5a-6932-4b9b-9019-545f4386fd9a",
+  "search_keywords": [],
+  "limit": null,
+  "remaining": null
+}

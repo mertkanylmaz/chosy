@@ -10,7 +10,10 @@
 import React, { useEffect } from 'react';
 
 import type { PlanId } from '@/constants/subscriptionPlans';
+import { useSubscription } from '@/contexts/SubscriptionContext';
+import { getSearchAnalyticsContext } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
+import { paywallMoodCore } from '@/utils/moodAnalytics';
 import type { PaywallVariant } from '@/services/conversion';
 
 import PaywallQuotaExhausted from './PaywallQuotaExhausted';
@@ -19,6 +22,7 @@ import PaywallStreamingLink from './PaywallStreamingLink';
 import PaywallProfileUpgrade from './PaywallProfileUpgrade';
 import PaywallLifetimeSoldout from './PaywallLifetimeSoldout';
 import PaywallMissedDayArchive from './PaywallMissedDayArchive';
+import PaywallMoodOffer from './PaywallMoodOffer';
 
 // ⚠️ `streak_milestone` · `watchlist_full` · `roulette_limit` bilesenleri
 // `_archive/` altina tasindi (olu varyant temizligi, 26 Eyl 2026). Bu isimlerle
@@ -42,9 +46,17 @@ export default function ContextualPaywall({
   onConvert,
   onDismiss,
 }: ContextualPaywallProps) {
+  const { premiumStatus } = useSubscription();
   useEffect(() => {
     if (visible) {
-      posthogAnalytics.track('paywall_viewed', { variant: variant.name });
+      // MONEY-1C: mood_offer varyantinda ortak cekirdek (diger varyantlarda sekil ayni).
+      posthogAnalytics.track('paywall_viewed', {
+        variant: variant.name,
+        ...paywallMoodCore(variant.trigger, {
+          isPro: premiumStatus === 'premium',
+          consent: getSearchAnalyticsContext().consent,
+        }),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible, variant.name]);
@@ -66,6 +78,8 @@ export default function ContextualPaywall({
       return <PaywallLifetimeSoldout {...commonProps} />;
     case 'missed_day_archive':
       return <PaywallMissedDayArchive {...commonProps} />;
+    case 'mood_offer':
+      return <PaywallMoodOffer {...commonProps} />;
     default:
       return null;
   }

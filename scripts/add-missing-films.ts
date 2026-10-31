@@ -96,7 +96,7 @@ export interface FilmInsertRow {
   tmdb_keywords: string[];
   imdb_id: string | null;
   imdb_rating: null; // intentionally NULL — we don't write TMDB score here
-  imdb_votes: number | null; // TMDB vote_count as proxy
+  imdb_votes: null; // daima NULL — TMDb vote_count metadata_json.vote_count'ta, OMDb doldurur
   metascore: null;
   oscar_wins: number;
   oscar_nominations: number;
@@ -129,6 +129,9 @@ function assignTier(voteCount: number, voteAverage: number): string {
  * EXPORT EDILDI (E-19, 19 Eyl 2026): scripts/ingest-editorial-films.ts ayni
  * donusumu kullanir. Kopyalanmadi -- iki kopyanin iraksamasi `imdb_votes`
  * kirliliginin dogus bicimiydi (kesif raporu S-11/S-13).
+ *
+ * `imdb_votes` ve `imdb_rating` daima NULL yazilir (sync-trending ile ayni
+ * sozlesme); TMDb vote_count'u `metadata_json.vote_count`'ta saklanir.
  *
  * NOT: `curation_tier` burada assignTier() ile atanir; editoryal yol bu
  * degeri cagri sonrasi GIRDIDEN gelenle ezer (S-12).
@@ -168,7 +171,10 @@ export function detailToRow(detail: TmdbMovieDetail): FilmInsertRow {
     tmdb_keywords: keywords,
     imdb_id: detail.external_ids?.imdb_id ?? null,
     imdb_rating: null, // intentionally NULL — not TMDB score
-    imdb_votes: detail.vote_count, // TMDB vote_count as proxy
+    // TMDb vote_count farkli bir metriktir; imdb_votes'a yazilirsa taninirlik
+    // yuzdeligi bozulur ve backfill (imdb_votes IS NULL) bu satirlari atlar.
+    // ham sayi metadata_json.vote_count'ta; imdb_votes'un tek kaynagi OMDb.
+    imdb_votes: null,
     metascore: null,
     oscar_wins: 0,
     oscar_nominations: 0,
@@ -312,6 +318,7 @@ async function fetchFilmDetails(tmdbIds: number[]): Promise<{
  */
 const PRESERVED_ON_UPDATE = [
   'imdb_rating',
+  'imdb_votes',
   'metascore',
   'content_rating',
   'oscar_wins',

@@ -1,0 +1,93 @@
+{
+  "mood_id": "ft_breakup",
+  "text": "Just went through a breakup",
+  "ms": 4212,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.85,
+      "fear": 0.3,
+      "anger": 0.4,
+      "surprise": 0.2,
+      "disgust": 0.15,
+      "trust": 0.2,
+      "anticipation": 0.25
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "extreme violence",
+      "graphic content"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Heartbroken Solace",
+    "profile_description": "A person navigating fresh heartbreak who needs emotionally resonant, introspective cinema that validates their pain while offering cathartic catharsis—comfort through stories that understand loss.",
+    "search_keywords": [
+      "heartbreak",
+      "breakup",
+      "romance",
+      "loss",
+      "relationships",
+      "melancholy",
+      "healing",
+      "love"
+    ],
+    "search_id": "0d4c3210-2068-49a7-a991-fe61fece77c6",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.85,
+      "anger": 0.4,
+      "fear": 0.3,
+      "surprise": 0.2,
+      "disgust": 0.15,
+      "anticipation": 0.25,
+      "trust": 0.2
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "extreme violence",
+      "graphic content"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "0d4c3210-2068-49a7-a991-fe61fece77c6",
+  "search_keywords": [
+    "heartbreak",
+    "breakup",
+    "romance",
+    "loss",
+    "relationships",
+    "melancholy",
+    "healing",
+    "love"
+  ],
+  "limit": null,
+  "remaining": null
+}

@@ -133,3 +133,62 @@ export function setSearchModeState(mode: SearchMode): void {
 export function getSearchModeState(): SearchMode {
   return _searchMode;
 }
+
+// ─── Search Analytics Context ──────────────────────────────────────────────
+
+/**
+ * Analitik çekirdeği için aramanın giriş yüzeyi ve AI rızası (MONEY-1C). Servis/bileşen
+ * katmanı (paywall olayları) React state'ine erişemez; searchId gibi module-level tutulur.
+ * Her arama başında yazılır. Kullanıcı metni BURADA TUTULMAZ.
+ */
+let _searchEntryPoint: string | null = null;
+let _searchConsent: boolean | null = null;
+/** Kullanicinin "ara"ya bastigi an (epoch ms) — mood_deck_started.ms_since_submit icin. */
+let _searchSubmittedAt: number | null = null;
+/** Deste "bugunku deste kurtarma"yla acildi (yeni arama degil). Her yeni aramada sifirlanir. */
+let _deckResumed = false;
+
+export function setSearchAnalyticsContext(
+  ctx: { entryPoint: string; consent: boolean; submittedAt?: number },
+): void {
+  _searchEntryPoint = ctx.entryPoint;
+  _searchConsent = ctx.consent;
+  _searchSubmittedAt = ctx.submittedAt ?? null;
+  _deckResumed = false;
+}
+
+/** `setSearchAnalyticsContext`ten SONRA cagrilir (o sifirlar). */
+export function setDeckResumed(resumed: boolean): void {
+  _deckResumed = resumed;
+}
+
+export function getSearchAnalyticsContext(): {
+  entryPoint: string | null;
+  consent: boolean | null;
+  resumed: boolean;
+  submittedAt: number | null;
+} {
+  return {
+    entryPoint: _searchEntryPoint,
+    consent: _searchConsent,
+    resumed: _deckResumed,
+    submittedAt: _searchSubmittedAt,
+  };
+}
+
+// ─── Last Full Prompt Store ────────────────────────────────────────────────
+
+/**
+ * Aramanin LLM'e giden TAM prompt'u (hizli mood kartinda `lastMoodText` yalniz
+ * ekranda gorunen etikettir). "Filtreleri kaldir" rerank metnini buradan okur.
+ * Consume edilmez; her aramada ustune yazilir. Kullanici metni analitige gitmez.
+ */
+let _lastFullPrompt: string | null = null;
+
+export function setLastFullPrompt(prompt: string | null): void {
+  _lastFullPrompt = prompt;
+}
+
+export function getLastFullPrompt(): string | null {
+  return _lastFullPrompt;
+}

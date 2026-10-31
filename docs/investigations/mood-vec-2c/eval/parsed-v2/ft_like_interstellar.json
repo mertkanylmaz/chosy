@@ -1,0 +1,140 @@
+{
+  "mood_id": "ft_like_interstellar",
+  "text": "Something like Interstellar",
+  "ms": 5493,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.5,
+      "fear": 0.4,
+      "anger": 0.1,
+      "surprise": 0.7,
+      "disgust": 0,
+      "trust": 0.7,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.7,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cosmic Wonder",
+    "profile_description": "You crave epic, emotionally resonant science fiction that combines breathtaking visuals with deep philosophical questions and human stakes, where exploration and sacrifice converge.",
+    "search_keywords": [
+      "space exploration",
+      "time travel",
+      "dimensional paradox",
+      "humanity survival",
+      "love across dimensions",
+      "futuristic science",
+      "existential mystery"
+    ],
+    "genres_include": [
+      "Science Fiction",
+      "Adventure",
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [
+      {
+        "title": "Interstellar",
+        "year": 2014
+      }
+    ],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "The Martian",
+        "year": 2015
+      },
+      {
+        "title": "Arrival",
+        "year": 2016
+      },
+      {
+        "title": "Tenet",
+        "year": 2020
+      },
+      {
+        "title": "Dune",
+        "year": 2021
+      },
+      {
+        "title": "Ad Astra",
+        "year": 2019
+      },
+      {
+        "title": "The Theory of Everything",
+        "year": 2014
+      },
+      {
+        "title": "Contact",
+        "year": 1997
+      },
+      {
+        "title": "Gravity",
+        "year": 2013
+      },
+      {
+        "title": "Oppenheimer",
+        "year": 2023
+      }
+    ],
+    "search_id": "0dbc4785-7598-4500-9098-d72dfb95fdb7",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.5,
+      "anger": 0.1,
+      "fear": 0.4,
+      "surprise": 0.7,
+      "disgust": 0,
+      "anticipation": 0.85,
+      "trust": 0.7
+    },
+    "energy_level": 0.7,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "0dbc4785-7598-4500-9098-d72dfb95fdb7",
+  "search_keywords": [
+    "space exploration",
+    "time travel",
+    "dimensional paradox",
+    "humanity survival",
+    "love across dimensions",
+    "futuristic science",
+    "existential mystery"
+  ],
+  "limit": null,
+  "remaining": null
+}

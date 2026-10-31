@@ -1,0 +1,147 @@
+{
+  "mood_id": "qm_comedy",
+  "text": "Something genuinely funny and lighthearted, a comedy to lift my spirits, not action, not thriller",
+  "ms": 6561,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "suspense",
+      "violence",
+      "dark themes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Mood Lift Comedy",
+    "profile_description": "You need pure, lighthearted humor with heart—a comedy that makes you laugh without tension, thrills, or heavy drama, perfect for resetting your mood.",
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "funny",
+      "lighthearted",
+      "witty",
+      "feel-good",
+      "entertainment"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [
+      "Action",
+      "Thriller",
+      "Horror"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Ghostbusters",
+        "year": 1984
+      },
+      {
+        "title": "What We Do in the Shadows",
+        "year": 2014
+      },
+      {
+        "title": "Paddington 2",
+        "year": 2017
+      },
+      {
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016
+      },
+      {
+        "title": "The Lobster",
+        "year": 2015
+      },
+      {
+        "title": "Singin' in the Rain",
+        "year": 1952
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "It's a Wonderful Life",
+        "year": 1946
+      }
+    ],
+    "search_id": "373244db-266f-4fec-a020-1e4cc1612f1a",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.9,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.7
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "suspense",
+      "violence",
+      "dark themes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "373244db-266f-4fec-a020-1e4cc1612f1a",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "funny",
+    "lighthearted",
+    "witty",
+    "feel-good",
+    "entertainment"
+  ],
+  "limit": null,
+  "remaining": null
+}

@@ -1,0 +1,134 @@
+{
+  "mood_id": "ft_slow_beautiful",
+  "text": "Slow, beautiful, almost no dialogue",
+  "ms": 6369,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.4,
+      "sadness": 0.5,
+      "fear": 0.1,
+      "anger": 0.05,
+      "surprise": 0.2,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Silent Contemplation",
+    "profile_description": "A viewer seeking visually stunning, dialogue-sparse cinema that prioritizes atmosphere, composition, and emotional resonance over exposition.",
+    "search_keywords": [
+      "minimalist",
+      "visual storytelling",
+      "nature",
+      "solitude",
+      "poetic",
+      "atmospheric",
+      "wordless"
+    ],
+    "genres_include": [
+      "Drama",
+      "Fantasy"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Stalker",
+        "year": 1979
+      },
+      {
+        "title": "The Shape of Water",
+        "year": 2017
+      },
+      {
+        "title": "Blade Runner 2049",
+        "year": 2017
+      },
+      {
+        "title": "A Ghost Story",
+        "year": 2017
+      },
+      {
+        "title": "The Secret of Kells",
+        "year": 2009
+      },
+      {
+        "title": "Arrival",
+        "year": 2016
+      },
+      {
+        "title": "The Red Turtle",
+        "year": 2016
+      },
+      {
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019
+      },
+      {
+        "title": "Wings of Desire",
+        "year": 1987
+      },
+      {
+        "title": "Boyhood",
+        "year": 2014
+      }
+    ],
+    "search_id": "e8e041b7-1a33-437e-b534-4db14072f1f1",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.4,
+      "sadness": 0.5,
+      "anger": 0.05,
+      "fear": 0.1,
+      "surprise": 0.2,
+      "disgust": 0.05,
+      "anticipation": 0.3,
+      "trust": 0.6
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.8,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e8e041b7-1a33-437e-b534-4db14072f1f1",
+  "search_keywords": [
+    "minimalist",
+    "visual storytelling",
+    "nature",
+    "solitude",
+    "poetic",
+    "atmospheric",
+    "wordless"
+  ],
+  "limit": null,
+  "remaining": null
+}

@@ -1,0 +1,567 @@
+{
+  "mood_id": "ft_sad_cry",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 1.11495201714211,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts"
+      },
+      {
+        "id": "633de787-0c66-45fd-aee9-f84c992b5ce0",
+        "tmdb_id": 379,
+        "title": "Miller's Crossing",
+        "year": 1990,
+        "overview": "Set in 1929, a political boss and his advisor have a parting of the ways when they both fall for the same woman.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 115,
+        "vote_average": 7.449,
+        "director": "Joel Coen",
+        "similarity": 1.07903939985427,
+        "curation_tier": "core",
+        "match_reason": "street gang, corruption, prohibition era"
+      },
+      {
+        "id": "a4e670a1-36f5-4c68-b6f3-64fe778d2ba3",
+        "tmdb_id": 345,
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "overview": "After Dr. Bill Harford's wife, Alice, admits to having sexual fantasies about a man she met, Bill becomes obsessed with having a sexual encounter. He discovers an underground sexual group and attends one of their meetings -- and quickly discovers that he is in over his head.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 160,
+        "vote_average": 7.485,
+        "director": "Stanley Kubrick",
+        "similarity": 1.06523583107363,
+        "curation_tier": "core",
+        "match_reason": "new york city, prostitute, based on novel or book"
+      },
+      {
+        "id": "0175de91-8c40-49a6-be5b-c543920415ae",
+        "tmdb_id": 3782,
+        "title": "Ikiru",
+        "year": 1952,
+        "overview": "Kanji Watanabe is a middle-aged man who has worked in the same monotonous bureaucratic position for decades. Learning he has cancer, he starts to look for the meaning of his life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 8.303,
+        "director": "Akira Kurosawa",
+        "similarity": 0.934839691074244,
+        "curation_tier": "extended",
+        "match_reason": "dying and death, japan, bureaucracy"
+      },
+      {
+        "id": "80bd9c83-7856-4b7f-96c2-395d7f8d4d55",
+        "tmdb_id": 638,
+        "title": "Lost Highway",
+        "year": 1997,
+        "overview": "A tormented jazz musician finds himself lost in an enigmatic story involving murder, surveillance, gangsters, doppelgängers, and an impossible transformation inside a prison cell.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 134,
+        "vote_average": 7.5,
+        "director": "David Lynch",
+        "similarity": 1.05908141625036,
+        "curation_tier": "core",
+        "match_reason": "prison, pornography, jealousy"
+      },
+      {
+        "id": "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+        "tmdb_id": 840430,
+        "title": "The Holdovers",
+        "year": 2023,
+        "overview": "A curmudgeonly instructor at a New England prep school is forced to remain on campus during Christmas break to babysit the handful of students with nowhere to go. Eventually, he forms an unlikely bond with one of them — a damaged, brainy troublemaker — and with the school’s head cook, who has just lost a son in Vietnam.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 133,
+        "vote_average": 7.646,
+        "director": "Alexander Payne",
+        "similarity": 1.05452158809687,
+        "curation_tier": "core",
+        "match_reason": "vietnam war, winter, boarding school"
+      },
+      {
+        "id": "c42c718b-ecc0-418b-9cce-1102a9a1ec15",
+        "tmdb_id": 335984,
+        "title": "Blade Runner 2049",
+        "year": 2017,
+        "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 164,
+        "vote_average": 7.594,
+        "director": "Denis Villeneuve",
+        "similarity": 1.05423215668601,
+        "curation_tier": "core",
+        "match_reason": "future, android, bounty hunter"
+      },
+      {
+        "id": "7a442851-aafe-4ade-a400-fba6f7f32a33",
+        "tmdb_id": 937278,
+        "title": "A Man Called Otto",
+        "year": 2022,
+        "overview": "When a lively young family moves in next door, grumpy widower Otto Anderson meets his match in a quick-witted, pregnant woman named Marisol, leading to an unlikely friendship that turns his world upside down.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.752,
+        "director": "Marc Forster",
+        "similarity": 1.04356909147059,
+        "curation_tier": "core",
+        "match_reason": "friendship, based on novel or book, suicide attempt"
+      },
+      {
+        "id": "0479ff90-20b4-4c31-8e27-b4bf33a1a282",
+        "tmdb_id": 335,
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "overview": "As the railroad builders advance unstoppably through the Arizona desert on their way to the sea, Jill arrives in the small town of Flagstone with the intention of starting a new life.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 166,
+        "vote_average": 8.274,
+        "director": "Sergio Leone",
+        "similarity": 1.04039277022802,
+        "curation_tier": "core",
+        "match_reason": "small town, loss of loved one, harmonica"
+      },
+      {
+        "id": "dfcd6ef3-d036-4569-a409-0f62945482b9",
+        "tmdb_id": 499,
+        "title": "Cléo from 5 to 7",
+        "year": 1962,
+        "overview": "Agnès Varda eloquently captures Paris in the sixties with this real-time portrait of a singer set adrift in the city as she awaits test results of a biopsy. A chronicle of the minutes of one woman’s life, Cléo from 5 to 7 is a spirited mix of vivid vérité and melodrama, featuring a score by Michel Legrand and cameos by Jean-Luc Godard and Anna Karina.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Agnès Varda",
+        "similarity": 0.881399945467135,
+        "curation_tier": "extended",
+        "match_reason": "individual, paris, france, singer"
+      },
+      {
+        "id": "e370a8ed-3026-4e27-b781-18a879b98571",
+        "tmdb_id": 423,
+        "title": "The Pianist",
+        "year": 2002,
+        "overview": "The true story of pianist Władysław Szpilman's experiences in Warsaw during the Nazi occupation. When the Jews of the city find themselves forced into a ghetto, Szpilman finds work playing in a café; and when his family is deported in 1942, he stays behind, works for a while as a laborer, and eventually goes into hiding in the ruins of the war-torn city.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 150,
+        "vote_average": 8.375,
+        "director": "Roman Polanski",
+        "similarity": 0.966325408209145,
+        "curation_tier": "core",
+        "match_reason": "concert, nazi, resistance"
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.962922808073775,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life"
+      },
+      {
+        "id": "e9182f2e-2ac8-49fb-ad18-e21be885e2ba",
+        "tmdb_id": 466420,
+        "title": "Killers of the Flower Moon",
+        "year": 2023,
+        "overview": "When oil is discovered in 1920s Oklahoma under Osage Nation land, the Osage people are murdered one by one—until the FBI steps in to unravel the mystery.",
+        "genres": [
+          "Crime",
+          "History",
+          "Drama"
+        ],
+        "runtime": 206,
+        "vote_average": 7.4,
+        "director": "Martin Scorsese",
+        "similarity": 0.9582049512818,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, based on novel or book, war veteran"
+      },
+      {
+        "id": "bc518ff2-a633-4366-aae4-7786773b3b44",
+        "tmdb_id": 11216,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "overview": "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 8.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.956017874435689,
+        "curation_tier": "core",
+        "match_reason": "parent child relationship, sicily, italy, movie business"
+      },
+      {
+        "id": "9d3ae03e-99de-482c-b560-29558cd76c1f",
+        "tmdb_id": 424,
+        "title": "Schindler's List",
+        "year": 1993,
+        "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 195,
+        "vote_average": 8.569,
+        "director": "Steven Spielberg",
+        "similarity": 0.951568296742584,
+        "curation_tier": "core",
+        "match_reason": "factory, hero, nazi"
+      },
+      {
+        "id": "e30854c4-bfbe-4ba1-8d26-c41652ff03e0",
+        "tmdb_id": 76203,
+        "title": "12 Years a Slave",
+        "year": 2013,
+        "overview": "In the pre-Civil War United States, Solomon Northup, a free black man from upstate New York, is abducted and sold into slavery. Facing cruelty as well as unexpected kindnesses Solomon struggles not only to stay alive, but to retain his dignity. In the twelfth year of his unforgettable odyssey, Solomon’s chance meeting with a Canadian abolitionist will forever alter his life.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 134,
+        "vote_average": 7.931,
+        "director": "Steve McQueen",
+        "similarity": 0.95030888845058,
+        "curation_tier": "core",
+        "match_reason": "slavery, louisiana, based on true story"
+      },
+      {
+        "id": "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+        "tmdb_id": 976893,
+        "title": "Perfect Days",
+        "year": 2023,
+        "overview": "Hirayama is content with his life as a toilet cleaner in Tokyo. Outside of his structured routine, he cherishes music on cassette tapes, books, and taking photos of trees. Through unexpected encounters, he reflects on finding beauty in the world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.795,
+        "director": "Wim Wenders",
+        "similarity": 0.948162144774775,
+        "curation_tier": "core",
+        "match_reason": "tree, routine, slice of life"
+      },
+      {
+        "id": "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+        "tmdb_id": 152601,
+        "title": "Her",
+        "year": 2013,
+        "overview": "In the not so distant future, Theodore, a lonely writer, purchases a newly developed operating system designed to meet the user's every need. To Theodore's surprise, a romantic relationship develops between him and his operating system. This unconventional love story blends science fiction and romance in a sweet tale that explores the nature of love and the ways that technology isolates and connects us all.",
+        "genres": [
+          "Romance",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.838,
+        "director": "Spike Jonze",
+        "similarity": 0.944044627008073,
+        "curation_tier": "core",
+        "match_reason": "future, artificial intelligence (a.i.), computer"
+      },
+      {
+        "id": "8fbe115b-2aea-4b89-8b92-5e25267b0289",
+        "tmdb_id": 522402,
+        "title": "Finch",
+        "year": 2021,
+        "overview": "On a post-apocalyptic Earth, a robot, built to protect the life of his dying creator's beloved dog, learns about life, love, friendship, and what it means to be human.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 116,
+        "vote_average": 7.806,
+        "director": "Miguel Sapochnik",
+        "similarity": 0.942276452594761,
+        "curation_tier": "core",
+        "match_reason": "post-apocalyptic future, survival, robot"
+      },
+      {
+        "id": "773a626c-6e44-477a-9f20-f95a7fbda8a6",
+        "tmdb_id": 722778,
+        "title": "The Hand of God",
+        "year": 2021,
+        "overview": "In 1980s Naples, an awkward teen struggling to find his place experiences heartbreak and liberation after he's inadvertently saved from a freak accident by football legend Diego Maradona.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.531,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.941822125157981,
+        "curation_tier": "core",
+        "match_reason": "italy, naples, italy, loss of virginity"
+      },
+      {
+        "id": "557927ac-eae4-4614-aa7c-8f0a7e7e0b36",
+        "tmdb_id": 510,
+        "title": "One Flew Over the Cuckoo's Nest",
+        "year": 1975,
+        "overview": "A petty criminal fakes insanity to serve his sentence in a mental ward rather than prison. He soon finds himself as a leader to the other patients—and an enemy to the cruel, domineering nurse who runs the ward.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 8.4,
+        "director": "Miloš Forman",
+        "similarity": 0.941210575100647,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, friendship, based on novel or book"
+      },
+      {
+        "id": "43ddfd4b-23b9-4b1e-9471-e7dc6943c01c",
+        "tmdb_id": 1913,
+        "title": "The Sea Inside",
+        "year": 2004,
+        "overview": "Ramón Sampedro is a ship mechanic and part-time poet left a quadriplegic following a diving accident. Ramón fought for 30 years for the legal right to end his own life. He develops close relationships with his long-term lawyer Julia and his friend Rosa, who tries to convince him that his life is worth living. Despite his situation, Ramón manages to inspire those around him to live life to the fullest.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.56,
+        "director": "Alejandro Amenábar",
+        "similarity": 0.940676239053747,
+        "curation_tier": "core",
+        "match_reason": "dying and death, sibling relationship, intensive care"
+      },
+      {
+        "id": "17d90501-0c44-4885-8ea1-f28147a11754",
+        "tmdb_id": 101,
+        "title": "Léon: The Professional",
+        "year": 1994,
+        "overview": "Léon, the top hit man in New York, has earned a rep as an effective \"cleaner\". But when his next-door neighbors are wiped out by a loose-cannon DEA agent, he becomes the unwilling custodian of 12-year-old Mathilda. Before long, Mathilda's thoughts turn to revenge, and she considers following in Léon's footsteps.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 111,
+        "vote_average": 8.295,
+        "director": "Luc Besson",
+        "similarity": 0.940601184333027,
+        "curation_tier": "core",
+        "match_reason": "hotel room, new york city, immigrant"
+      },
+      {
+        "id": "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+        "tmdb_id": 266856,
+        "title": "The Theory of Everything",
+        "year": 2014,
+        "overview": "The Theory of Everything is the extraordinary story of one of the world’s greatest living minds, the renowned astrophysicist Stephen Hawking, who falls deeply in love with fellow Cambridge student Jane Wilde.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.83,
+        "director": "James Marsh",
+        "similarity": 0.935136703609344,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, biography, based on true story"
+      },
+      {
+        "id": "9b5b7fc3-117d-4b27-a5b6-ab6897ab6cae",
+        "tmdb_id": 171160,
+        "title": "The Butterfly's Dream",
+        "year": 2013,
+        "overview": "In a small Turkish town, two young tuberculous poets try to survive while publishing their poems. As they both fall in love, their life would never be the same.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 138,
+        "vote_average": 7.171,
+        "director": "Yılmaz Erdoğan",
+        "similarity": 0.837195115817019,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+        "tmdb_id": 24238,
+        "title": "Mary and Max",
+        "year": 2009,
+        "overview": "A tale of friendship between two unlikely pen pals: Mary, a lonely, eight-year-old girl living in the suburbs of Melbourne, and Max, a forty-four-year old, severely obese man living in New York.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 92,
+        "vote_average": 7.873,
+        "director": "Adam Elliot",
+        "similarity": 0.933556800768783,
+        "curation_tier": "core",
+        "match_reason": "australia, chocolate, suicide attempt"
+      },
+      {
+        "id": "31543f18-8426-4ede-b10e-ce207a039e2c",
+        "tmdb_id": 1000837,
+        "title": "I'm Still Here",
+        "year": 2024,
+        "overview": "A woman married to a former politician during the 1971 military dictatorship in Brazil is forced to reinvent herself and chart a new course for her family after a violent and arbitrary act.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 138,
+        "vote_average": 7.901,
+        "director": "Walter Salles",
+        "similarity": 0.927120084456085,
+        "curation_tier": "core",
+        "match_reason": "mother, beach, husband wife relationship"
+      },
+      {
+        "id": "1c2485be-c846-4eb5-a65a-aa14d6c18935",
+        "tmdb_id": 4538,
+        "title": "The Darjeeling Limited",
+        "year": 2007,
+        "overview": "Three American brothers who have not spoken to each other in a year set off on a train voyage across India with a plan to find themselves and bond with each other -- to become brothers again like they used to be. Their \"spiritual quest\", however, veers rapidly off-course (due to events involving over-the-counter pain killers, Indian cough syrup, and pepper spray).",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 92,
+        "vote_average": 7.148,
+        "director": "Wes Anderson",
+        "similarity": 0.925837544243862,
+        "curation_tier": "core",
+        "match_reason": "sibling relationship, dysfunctional family, train"
+      },
+      {
+        "id": "f081add4-1f1c-4144-87a8-83c86f565da0",
+        "tmdb_id": 528372,
+        "title": "Muslum",
+        "year": 2018,
+        "overview": "A biopic about the Turkish vocal artist Müslüm Gürses. Born into a poor household, Muslum found his redemption in music from the initial trauma that lingered over his musical and personal life as internalizing the grief. He rose through his ashes of shattered dreams like a phoenix. He walked in darkness, sang songs filled with sorrow which stirred people's souls and created a cult following. They were calling him \"Baba\" (The Father).",
+        "genres": [
+          "Drama",
+          "Music"
+        ],
+        "runtime": 136,
+        "vote_average": 7.126,
+        "director": "Ketche",
+        "similarity": 0.829190970686452,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "a4eec4f7-ed75-4535-a9e6-64cb680d1d7d",
+        "tmdb_id": 162,
+        "title": "Edward Scissorhands",
+        "year": 1990,
+        "overview": "A small suburban town receives a visit from a castaway unfinished science experiment named Edward.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 105,
+        "vote_average": 7.7,
+        "director": "Tim Burton",
+        "similarity": 0.923920973920639,
+        "curation_tier": "core",
+        "match_reason": "underdog, small town, unsociability"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1449,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1449,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "8d864553f6c4ecd7",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 3797,
+    "http_status": 200,
+    "reranked_ids": [
+      "0175de91-8c40-49a6-be5b-c543920415ae",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "e370a8ed-3026-4e27-b781-18a879b98571",
+      "43ddfd4b-23b9-4b1e-9471-e7dc6943c01c",
+      "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+      "bc518ff2-a633-4366-aae4-7786773b3b44",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+      "31543f18-8426-4ede-b10e-ce207a039e2c"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}
