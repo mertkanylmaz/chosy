@@ -84,6 +84,8 @@ async function main(): Promise<void> {
         ...(res.status === 200 ? {} : { code: String(json.code) }),
       };
       rows.push(row);
+      // parse-mood rate limit: 10/dk → çağrılar arası ≥ 6,5 sn (önbellek isabetleri hızlı döner).
+      await new Promise((r) => setTimeout(r, Math.max(0, 6500 - row.client_ms)));
       console.log(`${c.label} #${run}: ${row.status} ${row.client_ms} ms hit=${String(row.cache_hit)} ${JSON.stringify(row.stages)}`);
     }
   }

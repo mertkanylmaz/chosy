@@ -1,0 +1,250 @@
+{
+  "summary": {
+    "tag": "after-bare",
+    "uncached_p50_ms": 6255,
+    "cached_p50_ms": 1269,
+    "uncached_n": 12,
+    "cached_n": 2,
+    "failures": 0
+  },
+  "rows": [
+    {
+      "label": "cozy+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 8102,
+      "cache_hit": false,
+      "stages": {
+        "auth": 982.9,
+        "ratelimit": 611.1,
+        "input": 0.2,
+        "recent": 346.5,
+        "quota": 602.5,
+        "cache_get": 665,
+        "llm_a": 4087,
+        "llm_b": 2142,
+        "total": 6581.8
+      }
+    },
+    {
+      "label": "cozy+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 2439,
+      "cache_hit": true,
+      "stages": {
+        "auth": 1112.3,
+        "ratelimit": 198.2,
+        "input": 0.2,
+        "recent": 543.1,
+        "cache_get": 557.5,
+        "quota": 565.2,
+        "total": 2094.1
+      }
+    },
+    {
+      "label": "cozy",
+      "run": 1,
+      "status": 200,
+      "client_ms": 7115,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1043.4,
+        "ratelimit": 193.5,
+        "input": 0.3,
+        "recent": 497.1,
+        "quota": 1181.7,
+        "llm_a": 4116,
+        "llm_b": 2277,
+        "total": 6734.9
+      }
+    },
+    {
+      "label": "cozy",
+      "run": 2,
+      "status": 200,
+      "client_ms": 6335,
+      "cache_hit": false,
+      "stages": {
+        "auth": 750.3,
+        "ratelimit": 503.5,
+        "input": 0.2,
+        "quota": 482.6,
+        "recent": 539.4,
+        "llm_a": 4088,
+        "llm_b": 2209,
+        "total": 6012.8
+      }
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 6674,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1044.7,
+        "ratelimit": 209.9,
+        "input": 0.2,
+        "quota": 193.2,
+        "recent": 210.3,
+        "cache_get": 526.2,
+        "llm_a": 4055,
+        "llm_b": 2152,
+        "total": 6358.4
+      }
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 1269,
+      "cache_hit": true,
+      "stages": {
+        "auth": 397.3,
+        "ratelimit": 188.9,
+        "input": 0.2,
+        "quota": 180.5,
+        "cache_get": 189,
+        "recent": 223.8,
+        "total": 959.9
+      }
+    },
+    {
+      "label": "adrenaline",
+      "run": 1,
+      "status": 200,
+      "client_ms": 6283,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1084.1,
+        "ratelimit": 206.1,
+        "input": 0.2,
+        "recent": 193.3,
+        "quota": 538.1,
+        "llm_a": 3890,
+        "llm_b": 2045,
+        "total": 5952.6
+      }
+    },
+    {
+      "label": "adrenaline",
+      "run": 2,
+      "status": 200,
+      "client_ms": 6916,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1856,
+        "ratelimit": 193.6,
+        "input": 0.3,
+        "quota": 186,
+        "recent": 541.5,
+        "llm_a": 4104,
+        "llm_b": 2092,
+        "total": 6547.8
+      }
+    },
+    {
+      "label": "ft_90min",
+      "run": 1,
+      "status": 200,
+      "client_ms": 6078,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1095.4,
+        "ratelimit": 200.4,
+        "input": 0.2,
+        "recent": 216,
+        "quota": 494.2,
+        "llm_a": 3786,
+        "llm_b": 1510,
+        "total": 5788.5
+      }
+    },
+    {
+      "label": "ft_90min",
+      "run": 2,
+      "status": 200,
+      "client_ms": 6255,
+      "cache_hit": false,
+      "stages": {
+        "auth": 1057.8,
+        "ratelimit": 208.1,
+        "input": 0.3,
+        "recent": 200.9,
+        "quota": 532.3,
+        "llm_a": 3825,
+        "llm_b": 1486,
+        "total": 5820.2
+      }
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 1,
+      "status": 200,
+      "client_ms": 5883,
+      "cache_hit": false,
+      "stages": {
+        "auth": 415.9,
+        "ratelimit": 528,
+        "input": 0.3,
+        "quota": 528.2,
+        "recent": 542.6,
+        "llm_a": 3834,
+        "llm_b": 2039,
+        "total": 5503.6
+      }
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 2,
+      "status": 200,
+      "client_ms": 5643,
+      "cache_hit": false,
+      "stages": {
+        "auth": 704.4,
+        "ratelimit": 186.8,
+        "input": 0.2,
+        "recent": 185.1,
+        "quota": 197.4,
+        "llm_a": 4065,
+        "llm_b": 2033,
+        "total": 5346.1
+      }
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 1,
+      "status": 200,
+      "client_ms": 5457,
+      "cache_hit": false,
+      "stages": {
+        "auth": 394.4,
+        "ratelimit": 189.9,
+        "input": 0.2,
+        "quota": 184.7,
+        "recent": 488.1,
+        "llm_a": 3865,
+        "llm_b": 2078,
+        "total": 5148
+      }
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 2,
+      "status": 200,
+      "client_ms": 5348,
+      "cache_hit": false,
+      "stages": {
+        "auth": 438.4,
+        "ratelimit": 237,
+        "input": 0.3,
+        "recent": 191.1,
+        "quota": 228.2,
+        "llm_a": 3853,
+        "llm_b": 2017,
+        "total": 4974.9
+      }
+    }
+  ]
+}

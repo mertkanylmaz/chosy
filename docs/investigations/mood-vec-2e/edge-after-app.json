@@ -1,0 +1,246 @@
+{
+  "summary": {
+    "tag": "after-app",
+    "uncached_p50_ms": 4453,
+    "cached_p50_ms": 594,
+    "uncached_n": 10,
+    "cached_n": 4,
+    "failures": 0
+  },
+  "rows": [
+    {
+      "label": "cozy+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 896,
+      "cache_hit": true,
+      "stages": {
+        "auth": 184.8,
+        "ratelimit": 82.1,
+        "input": 0.3,
+        "cache_get": 46.2,
+        "recent": 61.4,
+        "claim": 63.8,
+        "total": 335.5
+      }
+    },
+    {
+      "label": "cozy+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 625,
+      "cache_hit": true,
+      "stages": {
+        "auth": 94.8,
+        "ratelimit": 52.8,
+        "input": 0.2,
+        "claim": 37.1,
+        "cache_get": 40.1,
+        "recent": 66.3,
+        "total": 214.3
+      }
+    },
+    {
+      "label": "cozy",
+      "run": 1,
+      "status": 200,
+      "client_ms": 4373,
+      "cache_hit": false,
+      "stages": {
+        "auth": 86.4,
+        "ratelimit": 38,
+        "input": 0.1,
+        "claim": 46.7,
+        "recent": 58.3,
+        "llm_a": 3790,
+        "llm_b": 2140,
+        "total": 3964.9
+      }
+    },
+    {
+      "label": "cozy",
+      "run": 2,
+      "status": 200,
+      "client_ms": 4472,
+      "cache_hit": false,
+      "stages": {
+        "auth": 72.1,
+        "ratelimit": 33.7,
+        "input": 0.1,
+        "claim": 39.8,
+        "recent": 46.1,
+        "llm_a": 3954,
+        "llm_b": 2110,
+        "total": 4101.5
+      }
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 1,
+      "status": 200,
+      "client_ms": 567,
+      "cache_hit": true,
+      "stages": {
+        "auth": 79.9,
+        "ratelimit": 32.8,
+        "input": 0.1,
+        "recent": 55,
+        "claim": 54.9,
+        "cache_get": 76.5,
+        "total": 190.8
+      }
+    },
+    {
+      "label": "adrenaline+qid",
+      "run": 2,
+      "status": 200,
+      "client_ms": 594,
+      "cache_hit": true,
+      "stages": {
+        "auth": 76.9,
+        "ratelimit": 35.6,
+        "input": 0.1,
+        "recent": 37.7,
+        "claim": 44.7,
+        "cache_get": 84.3,
+        "total": 198.1
+      }
+    },
+    {
+      "label": "adrenaline",
+      "run": 1,
+      "status": 200,
+      "client_ms": 4453,
+      "cache_hit": false,
+      "stages": {
+        "auth": 71.9,
+        "ratelimit": 30.6,
+        "input": 0.1,
+        "claim": 34.3,
+        "recent": 37.4,
+        "llm_a": 3925,
+        "llm_b": 2015,
+        "total": 4061.9
+      }
+    },
+    {
+      "label": "adrenaline",
+      "run": 2,
+      "status": 200,
+      "client_ms": 4544,
+      "cache_hit": false,
+      "stages": {
+        "auth": 66.5,
+        "ratelimit": 43.9,
+        "input": 0.1,
+        "recent": 30.7,
+        "claim": 36.5,
+        "llm_a": 4006,
+        "llm_b": 1962,
+        "total": 4154.3
+      }
+    },
+    {
+      "label": "ft_90min",
+      "run": 1,
+      "status": 200,
+      "client_ms": 3503,
+      "cache_hit": false,
+      "stages": {
+        "auth": 53.3,
+        "ratelimit": 32.4,
+        "input": 0.1,
+        "recent": 24,
+        "claim": 31.3,
+        "llm_a": 3019,
+        "llm_b": 1449,
+        "total": 3136.2
+      }
+    },
+    {
+      "label": "ft_90min",
+      "run": 2,
+      "status": 200,
+      "client_ms": 4388,
+      "cache_hit": false,
+      "stages": {
+        "auth": 87.8,
+        "ratelimit": 44.6,
+        "input": 0.1,
+        "recent": 42.4,
+        "claim": 45.8,
+        "llm_a": 3332,
+        "llm_b": 1514,
+        "total": 3510.6
+      }
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 1,
+      "status": 200,
+      "client_ms": 4379,
+      "cache_hit": false,
+      "stages": {
+        "auth": 67.6,
+        "ratelimit": 31.6,
+        "input": 0,
+        "claim": 33.3,
+        "recent": 45.5,
+        "llm_a": 3847,
+        "llm_b": 1881,
+        "total": 3980.6
+      }
+    },
+    {
+      "label": "ft_like_interstellar",
+      "run": 2,
+      "status": 200,
+      "client_ms": 4524,
+      "cache_hit": false,
+      "stages": {
+        "auth": 81,
+        "ratelimit": 35.7,
+        "input": 0,
+        "claim": 42.2,
+        "recent": 45.2,
+        "llm_a": 3997,
+        "llm_b": 1856,
+        "total": 4156
+      }
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 1,
+      "status": 200,
+      "client_ms": 4657,
+      "cache_hit": false,
+      "stages": {
+        "auth": 127.1,
+        "ratelimit": 52.2,
+        "input": 0.3,
+        "recent": 52.3,
+        "claim": 50.7,
+        "llm_a": 3898,
+        "llm_b": 1998,
+        "total": 4135.6
+      }
+    },
+    {
+      "label": "ft_tr_gerilim",
+      "run": 2,
+      "status": 200,
+      "client_ms": 4501,
+      "cache_hit": false,
+      "stages": {
+        "auth": 95.7,
+        "ratelimit": 44.7,
+        "input": 0.2,
+        "recent": 44.8,
+        "claim": 54.4,
+        "llm_a": 3943,
+        "llm_b": 1868,
+        "total": 4138.9
+      }
+    }
+  ]
+}
