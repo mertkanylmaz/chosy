@@ -4,12 +4,13 @@
 --
 -- match_films_v3'e DOKUNULMAZ; eski istemci v3'ü çağırmaya devam eder.
 --
--- Kanallar (birleşim tekrarsız, en çok match_count=40):
+-- Kanallar (birleşim tekrarsız, en çok match_count=40; kesme ve dönüş sırası: önce kanal
+-- önceliği c > v > a, sonra similarity DESC):
 --   V  v3'ün vektör mantığı (tier çarpanı, trust, keyword boost, per_director_cap=1), ilk 25.
 --   A  genres_include ile kesişen, genres_exclude ile kesişmeyen aktif filmler,
 --      imdb_votes DESC, vektör benzerliği >= min_similarity - 0.05, ilk 15.
 --   C  suggested_titles katalog eşleşmesi (normalize başlık + |yıl farkı| <= 1), hepsi.
--- Hepsine: max_runtime varsa runtime <= max_runtime (SERT; runtime NULL film elenir),
+-- Hepsine: genres_exclude ile kesişen film DIŞLANIR (CTO kararı), max_runtime varsa runtime <= max_runtime (SERT; runtime NULL film elenir),
 --   reference_titles eşleşmeleri DIŞLANIR, exclude_ids, year <= bu yıl, release_date <= bugün.
 -- year_from/year_to/min_rating/countries/directors yalnız V kanalına uygulanır (v3 ile aynı).
 --
@@ -20,9 +21,16 @@
 --
 -- Çıktı: v3 sütunları + channels text[] ('v','a','c'; çoklu olabilir).
 --   similarity: V kanalındaysa v3 boosted_similarity, değilse karışık (mood/user) benzerlik.
+--   Dönüş sırası: c içeren, sonra v içeren, sonra yalnız a; her grupta similarity DESC.
+-- Performans: havuz CTE'si vektör/dimensions_json taşımaz (yalnız skaler blend); bunlar son
+--   SELECT'te yalnız seçilen ≤40 satır için film_profiles'tan okunur. refs/sugg boşsa başlık
+--   normalizasyonu çalışmaz.
 -- Güvenlik: SECURITY DEFINER + search_path=public + anon/authenticated/service_role
 --   EXECUTE; v3'ün canlı ACL'iyle aynı desen.
--- Geri alma: DROP FUNCTION public.match_films_v4(<imza>);
+-- Geri alma:
+--   DROP FUNCTION public.match_films_v4(vector, vector, double precision, double precision,
+--     integer, integer, integer, double precision, text[], text[], uuid[], double precision,
+--     integer, boolean, text[], boolean, text[], text[], integer, jsonb, jsonb);
 -- ============================================================
 
 CREATE OR REPLACE FUNCTION public.match_films_v4(
@@ -103,12 +111,13 @@ AS $function$
          ) AS s(title text, year integer)
     WHERE s.title IS NOT NULL
   ),
-  -- Ortak havuz: aktif film + vektör + "hepsine" filtreleri.
+  title_flag AS (
+    SELECT EXISTS (SELECT 1 FROM refs) OR EXISTS (SELECT 1 FROM sugg) AS has_titles
+  ),
+  -- Ortak havuz: aktif film + "hepsine" filtreleri. Vektör taşınmaz, yalnız blend skoru.
   pool AS (
     SELECT
       fp.film_id,
-      fp.profile_vector,
-      fp.dimensions_json,
       f.curation_tier AS tier,
       f.imdb_votes,
       f.imdb_rating,
@@ -118,14 +127,19 @@ AS $function$
       f.vote_average AS film_vote,
       f.country AS film_country,
       f.director AS film_director,
-      btrim(regexp_replace(lower(translate(f.title,
-        'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
-        'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-        '[^a-z0-9]+', ' ', 'g')) AS nt,
-      btrim(regexp_replace(lower(translate(COALESCE(f.original_title, ''),
-        'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
-        'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
-        '[^a-z0-9]+', ' ', 'g')) AS nt_orig,
+      -- Başlık normalizasyonu yalnız refs/sugg doluysa (aksi halde ~7K translate/regexp atlanır).
+      CASE WHEN (SELECT has_titles FROM title_flag) THEN
+        btrim(regexp_replace(lower(translate(f.title,
+          'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
+          'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
+          '[^a-z0-9]+', ' ', 'g'))
+      END AS nt,
+      CASE WHEN (SELECT has_titles FROM title_flag) THEN
+        btrim(regexp_replace(lower(translate(COALESCE(f.original_title, ''),
+          'ÀÁÂÃÄÅàáâãäåÈÉÊËèéêëÌÍÎÏìíîïÒÓÔÕÖØòóôõöøÙÚÛÜùúûüÝýÿÑñÇçŞşĞğİı',
+          'AAAAAAaaaaaaEEEEeeeeIIIIiiiiOOOOOOooooooUUUUuuuuYyyNnCcSsGgIi')),
+          '[^a-z0-9]+', ' ', 'g'))
+      END AS nt_orig,
       (mood_weight * (1 - (fp.profile_vector <=> query_vector)))
         + (user_weight * CASE
             WHEN user_vector IS NULL THEN 0.0
@@ -139,6 +153,11 @@ AS $function$
       AND (f.year IS NULL OR f.year <= EXTRACT(YEAR FROM CURRENT_DATE)::int)
       AND (f.release_date IS NULL OR f.release_date <= CURRENT_DATE)
       AND (max_runtime IS NULL OR (f.runtime IS NOT NULL AND f.runtime <= max_runtime))
+      AND (
+        genres_exclude IS NULL
+        OR cardinality(genres_exclude) = 0
+        OR NOT (f.genres && genres_exclude)
+      )
       AND (
         exclude_ids IS NULL
         OR cardinality(exclude_ids) = 0
@@ -244,8 +263,6 @@ AS $function$
     WHERE genres_include IS NOT NULL
       AND cardinality(genres_include) > 0
       AND a.film_genres && genres_include
-      AND NOT (genres_exclude IS NOT NULL AND cardinality(genres_exclude) > 0
-               AND a.film_genres && genres_exclude)
       AND (min_similarity IS NULL OR a.blend >= min_similarity - 0.05)
     ORDER BY a.imdb_votes DESC NULLS LAST, a.film_id
     LIMIT 15
@@ -285,6 +302,11 @@ AS $function$
   ),
   picked AS (
     SELECT * FROM merged ORDER BY ord LIMIT GREATEST(match_count, 1)
+  ),
+  vec AS (
+    SELECT fp.film_id, fp.profile_vector, fp.dimensions_json
+    FROM film_profiles fp
+    WHERE fp.film_id IN (SELECT film_id FROM picked)
   )
   SELECT
     f.id,
@@ -300,11 +322,11 @@ AS $function$
     f.director,
     f.country,
     k.sim AS similarity,
-    a.dimensions_json,
+    vec.dimensions_json,
     a.tier AS curation_tier,
-    (1 - (a.profile_vector <=> query_vector)) AS mood_similarity,
+    (1 - (vec.profile_vector <=> query_vector)) AS mood_similarity,
     CASE WHEN user_vector IS NULL THEN 0.0
-         ELSE (1 - (a.profile_vector <=> user_vector)) END AS user_similarity,
+         ELSE (1 - (vec.profile_vector <=> user_vector)) END AS user_similarity,
     CASE
       WHEN search_keywords IS NOT NULL AND cardinality(search_keywords) > 0
            AND a.tmdb_keywords IS NOT NULL AND EXISTS (
@@ -326,8 +348,10 @@ AS $function$
     k.chs AS channels
   FROM picked k
   JOIN allowed a ON a.film_id = k.film_id
+  JOIN vec ON vec.film_id = k.film_id
   JOIN films f ON f.id = k.film_id
-  ORDER BY k.sim DESC;
+  ORDER BY CASE WHEN 'c' = ANY(k.chs) THEN 0 WHEN 'v' = ANY(k.chs) THEN 1 ELSE 2 END,
+           k.sim DESC;
 $function$;
 
 GRANT EXECUTE ON FUNCTION public.match_films_v4(

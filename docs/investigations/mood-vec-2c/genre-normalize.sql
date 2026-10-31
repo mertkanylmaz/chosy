@@ -1,5 +1,7 @@
 -- MOOD-VEC-2c Adım 1: films.genres TR -> TMDb en-US (tüm tier'lar)
--- Uygulama: supabase db push (migration'a taşınırken). Tek transaction.
+-- applied by CTO 2026-10-31 (canlıya CTO uyguladı; 872 film etkilendi). Bu dosya referans kopyadır,
+-- migration'a çevrilmez. Geri alma: genre-normalize-rollback.sql (yedek films_genre_backup_20261031).
+-- Tek transaction.
 BEGIN;
 
 -- 1) Yedek (yalnız etkilenen satırlar)

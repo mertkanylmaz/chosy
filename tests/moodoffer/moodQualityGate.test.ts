@@ -50,3 +50,23 @@ Deno.test('fallback yolu: tüm benzerlikler 0 → taban 0, hepsi geçer (RPC dı
   const out = applyQualityGate([row('a', 0), row('b', 0)])
   assertEquals(ids(out.rows), ['a', 'b'])
 })
+
+Deno.test('v2: channels c içeren aday %55 kesmesinden muaf', () => {
+  const out = applyQualityGate([
+    { id: 'a', similarity: 0.9, channels: ['v'] },
+    { id: 'c1', similarity: 0.3, channels: ['c'] },
+    { id: 'ac', similarity: 0.2, channels: ['a', 'c'] },
+    { id: 'low', similarity: 0.3, channels: ['a'] },
+  ])
+  assertEquals(ids(out.rows), ['a', 'c1', 'ac'])
+})
+
+Deno.test('v1: channels yok → eski davranış (düşük aday elenir)', () => {
+  const out = applyQualityGate([row('a', 0.9), row('low', 0.3)])
+  assertEquals(ids(out.rows), ['a'])
+})
+
+Deno.test('v2: muaf aday da FINAL_CAP sınırına tabi', () => {
+  const rows = Array.from({ length: FINAL_CAP + 3 }, (_, i) => ({ id: `c${i}`, similarity: 0.1, channels: ['c'] }))
+  assertEquals(applyQualityGate([{ id: 'top', similarity: 0.9, channels: ['v'] }, ...rows]).rows.length, FINAL_CAP)
+})

@@ -12,6 +12,8 @@ export const OUT_DIR = process.env.MOOD_EVAL_OUT
   : path.resolve(__dirname, '../../docs/investigations/mood-vec-1');
 export const PARSED_DIR = path.join(OUT_DIR, 'parsed');
 /** V3: parse-mood schema_version:2 yanıtları (v1 parse dosyalarıyla karışmaz). */
+/** MOOD_EVAL_OUT başka klasördeyse V0 yeniden koşusu v1 parse'ı buradan okur (0 parse harcanır). */
+export const LEGACY_PARSED_DIR = path.resolve(__dirname, '../../docs/investigations/mood-vec-1/parsed');
 export const PARSED_V2_DIR = path.join(OUT_DIR, 'parsed-v2');
 export const RAW_DIR = path.join(OUT_DIR, 'raw');
 export const CACHE_DIR = path.join(OUT_DIR, 'rerank-cache');

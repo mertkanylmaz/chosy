@@ -4,6 +4,9 @@
  * Taban, adayların GERÇEK en yüksek benzerliğinin %55'idir. Eskiden `data[0]`
  * alınıyordu: LLM rerank düşük benzerlikli bir filmi başa koyunca taban aşağı
  * kayıyor, süzgeç gevşiyordu. Sıra korunur; süzgeç yalnız eler ve 8'e keser.
+ *
+ * MOOD-VEC-2c: `channels` (match_films_v4) 'c' içeriyorsa aday — LLM'in önerdiği, katalogda
+ * eşleşen tanınmış film — %55 kesmesinden MUAF. Alan yoksa (v1 yolu) davranış aynıdır.
  */
 
 export const FINAL_CAP = 8
@@ -15,7 +18,7 @@ export interface QualityGateResult<T> {
   qualityFloor: number
 }
 
-export function applyQualityGate<T extends { similarity: number }>(
+export function applyQualityGate<T extends { similarity: number; channels?: readonly string[] | null }>(
   rows: readonly T[],
 ): QualityGateResult<T> {
   if (rows.length === 0) return { rows: [], bestScore: 0, qualityFloor: 0 }
@@ -27,7 +30,9 @@ export function applyQualityGate<T extends { similarity: number }>(
   const qualityFloor = bestScore * RELATIVE_QUALITY_FLOOR
 
   return {
-    rows: rows.filter((row) => row.similarity >= qualityFloor).slice(0, FINAL_CAP),
+    rows: rows
+      .filter((row) => row.similarity >= qualityFloor || row.channels?.includes('c') === true)
+      .slice(0, FINAL_CAP),
     bestScore,
     qualityFloor,
   }

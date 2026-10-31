@@ -41,7 +41,7 @@ import { DEFAULT_BASE_RATING, buildRelaxationSteps } from '../../utils/relaxatio
 import { VECTOR_DIM, VECTOR_LAYOUT, tasteProfileToVector, type TasteProfile } from '../../services/vectorEncoder';
 
 import {
-  CACHE_DIR, LEDGER_FILE, PARSED_DIR, PARSED_V2_DIR, RAW_DIR, VARIANTS,
+  CACHE_DIR, LEDGER_FILE, LEGACY_PARSED_DIR, PARSED_DIR, PARSED_V2_DIR, RAW_DIR, VARIANTS,
   loadMoods, rawFile, readJson, writeJson,
   type Ledger, type Mood, type ParsedFile, type RawRecord, type RerankRecord, type Row, type Variant,
 } from './common';
@@ -64,7 +64,7 @@ const C = {
   MIN_LLM_GAP_MS: 6_500,
   RPC_GAP_MS: 1_500,
   CAP_PARSE_TOTAL: 25,
-  CAP_RERANK_TOTAL: 75,
+  CAP_RERANK_TOTAL: 50,
   CAP_RERANK_PER_UTC_DAY: 55,
   HTTP_TIMEOUT_MS: 40_000,
   TOKEN_MAX_AGE_MS: 40 * 60_000,
@@ -285,6 +285,8 @@ function validateAndNormalize(raw: Record<string, unknown>): TasteProfile {
 async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean, schemaV2 = false): Promise<ParsedFile> {
   const file = path.join(schemaV2 ? PARSED_V2_DIR : PARSED_DIR, `${mood.id}.json`);
   if (!force && fs.existsSync(file)) return readJson<ParsedFile>(file);
+  const legacy = path.join(LEGACY_PARSED_DIR, `${mood.id}.json`);
+  if (!schemaV2 && !force && fs.existsSync(legacy)) return readJson<ParsedFile>(legacy);
 
   if (ctx.ledger.parse_total + 1 > C.CAP_PARSE_TOTAL) {
     throw new StopError(`parse tavanı (${C.CAP_PARSE_TOTAL}) aşılacak; durduruldu.`);
