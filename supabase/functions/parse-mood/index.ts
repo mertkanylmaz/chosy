@@ -633,6 +633,23 @@ serve(async (req: Request): Promise<Response> => {
   // Onbellek YALNIZ hizli mood karti istegi (v2 + gecerli quick_mood_id) icin; yoksa ne okuma ne yazma.
   const quickMoodId = schemaV2 ? input.quickMoodId : null
 
+  // MOOD-VEC-2e-2 (yalniz v2 + quick_mood_id): onbellek okumasi kota/claim ile PARALEL baslar. Kota her durumda
+  // claim'de tuketilir (isabet de hak yer); reddedilen istek onbellek icerigini GORMEZ (sonuc kullanilmaz).
+  const cachePrefetch =
+    schemaV2 && quickMoodId
+      ? (async (): Promise<{ key: string; promptVersion: string; hit: Record<string, unknown> | null } | null> => {
+          try {
+            const pv = await promptVersionOf(parseV2PromptFingerprint(SYSTEM_PROMPT))
+            const key = await parseCacheKey(quickMoodId, rawInput, 2, pv)
+            const hit = await timing.measure('cache_get', () => readParseCache(key))
+            return { key, promptVersion: pv, hit }
+          } catch (err) {
+            await reportV2Aux('PARSE_CACHE_KEY_FAILED', err instanceof Error ? err.message : String(err))
+            return null
+          }
+        })()
+      : null
+
   // MOOD-VEC-2d/2e (yalniz v2): kisisel dislama sorgusu kota/onbellek/LLM ile PARALEL, mumkun en erken baslar.
   // Replay/kota reddi gibi erken donuslerde sonuc kullanilmaz; fetchRecentShown hic firlatmaz.
   const recentShownTask =
@@ -770,11 +787,13 @@ serve(async (req: Request): Promise<Response> => {
     let cacheKey: string | null = null
     let promptVersion = ''
     let cachedParsed: Record<string, unknown> | null = null
-    if (schemaV2 && quickMoodId) {
-      promptVersion = await promptVersionOf(parseV2PromptFingerprint(SYSTEM_PROMPT))
-      cacheKey = await parseCacheKey(quickMoodId, rawInput, 2, promptVersion)
-      const key = cacheKey
-      cachedParsed = await timing.measure('cache_get', () => readParseCache(key))
+    if (cachePrefetch) {
+      const pf = await cachePrefetch
+      if (pf) {
+        cacheKey = pf.key
+        promptVersion = pf.promptVersion
+        cachedParsed = pf.hit
+      }
     }
     const cacheHit = cachedParsed !== null
 

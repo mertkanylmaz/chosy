@@ -10,7 +10,11 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
+import { GAUNTLET_EDGE_REGION } from '../../constants/edgeRegion';
 import { envOrThrow, openEvalSession } from './session';
+
+// MEASURE_APP=1: uygulama gibi — x-region + forceFunctionRegion ve client_search_id (claim yolu). Yoksa çıplak çağrı.
+const APP_LIKE = process.env.MEASURE_APP === '1';
 
 const CASES: { label: string; mood: string; quick?: string }[] = [
   { label: 'cozy+qid', mood: 'qm_cozy', quick: 'cozy' },
@@ -58,11 +62,18 @@ async function main(): Promise<void> {
     const mood = moods.find((m) => m.id === c.mood);
     if (!mood) throw new Error(`mood yok: ${c.mood}`);
     for (let run = 1; run <= REPEATS; run++) {
-      const body = { raw_input: mood.text, schema_version: 2, ...(c.quick ? { quick_mood_id: c.quick } : {}) };
+      const body = {
+        raw_input: mood.text, schema_version: 2,
+        ...(c.quick ? { quick_mood_id: c.quick } : {}),
+        ...(APP_LIKE ? { client_search_id: crypto.randomUUID() } : {}),
+      };
       const t0 = Date.now();
-      const res = await fetch(`${url}/functions/v1/parse-mood`, {
+      const res = await fetch(`${url}/functions/v1/parse-mood${APP_LIKE ? `?forceFunctionRegion=${GAUNTLET_EDGE_REGION}` : ''}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.accessToken}`, apikey: anon },
+        headers: {
+          'Content-Type': 'application/json', Authorization: `Bearer ${session.accessToken}`, apikey: anon,
+          ...(APP_LIKE ? { 'x-region': GAUNTLET_EDGE_REGION } : {}),
+        },
         body: JSON.stringify(body),
       });
       const json = (await res.json()) as Record<string, unknown>;
