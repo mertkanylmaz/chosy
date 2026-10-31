@@ -22,12 +22,15 @@ import {
   lookupDailyLimit,
   rerankDailyLimitResponse,
 } from '../_shared/dailyLimit.ts'
-import { guardReasons } from '../_shared/reasonGuard.ts'
+import { guardReasons, looksTurkish } from '../_shared/reasonGuard.ts'
+import { sentryCapture } from '../_shared/sentry.ts'
 import {
   REASON_MAX_CANDIDATES,
   REASON_OVERVIEW_MAX,
   REASON_SYSTEM_PROMPT,
   dailyCounterKey,
+  enforceReasonLength,
+  reasonModelChain,
 } from '../_shared/rerankReason.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -174,30 +177,53 @@ Select the ${count} most relevant films from these candidates. Return their numb
 Candidate films:
 ${filmList}`
 
-  // ── Claude Haiku call ─────────────────────────────────────────────────────
+  // ── Claude call ───────────────────────────────────────────────────────────
+  // id-rerank ve EN gerekce: Haiku. TR gerekce (mood metni Turkce): once Sonnet, hata verirse
+  // Haiku; ikisi de olmazsa asagidaki catch gerekcesiz v4 sirasini doner (istemci satir cizmez).
   try {
     const client = new Anthropic({ apiKey })
+    const chain = reasonModelChain(withReason, looksTurkish(moodText))
 
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      // ${count} numara ~ 3 token/numara + koseli parantez payi.
-      // reason: ~15 TR kelime ≈ 40 token + {"n","r"} sarmali ≈ 10 → 50/film.
-      max_tokens: withReason ? 96 + count * 50 : 64 + count * 4,
-      system: withReason ? REASON_SYSTEM_PROMPT : SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userMessage }],
-    })
-
-    const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
-
-    // Parse JSON array from response (handle markdown code blocks)
-    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-    const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
-
-    const parsed = JSON.parse(jsonString)
-
-    if (!Array.isArray(parsed)) {
-      throw new Error('LLM returned non-array')
+    const generate = async (model: string): Promise<unknown[]> => {
+      const message = await client.messages.create({
+        model,
+        // ${count} numara ~ 3 token/numara + koseli parantez payi.
+        // reason: ~15 TR kelime ≈ 40 token + {"n","r"} sarmali ≈ 10 → 50/film.
+        max_tokens: withReason ? 96 + count * 50 : 64 + count * 4,
+        system: withReason ? REASON_SYSTEM_PROMPT : SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userMessage }],
+      })
+      const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
+      // Parse JSON array from response (handle markdown code blocks)
+      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+      const out = JSON.parse(jsonMatch ? jsonMatch[1] : rawText.trim())
+      if (!Array.isArray(out)) throw new Error('LLM returned non-array')
+      return out
     }
+
+    let parsed: unknown[] | null = null
+    let usedModel = chain[0]
+    let lastErr: unknown = null
+    for (const model of chain) {
+      try {
+        parsed = await generate(model)
+        usedModel = model
+        break
+      } catch (e) {
+        lastErr = e
+        const detail = e instanceof Error ? e.message : String(e)
+        console.error(`[rerank-films] model ${model} basarisiz: ${detail}`)
+        if (model !== chain[chain.length - 1]) {
+          await sentryCapture({
+            message: `rerank-films ${model} basarisiz, ${chain[chain.length - 1]}'e dusuldu: ${detail}`,
+            level: 'warning',
+            tags: { function: 'rerank-films', error_code: 'REASON_MODEL_FALLBACK' },
+            fingerprint: ['rerank-films', 'REASON_MODEL_FALLBACK'],
+          })
+        }
+      }
+    }
+    if (parsed === null) throw lastErr ?? new Error('LLM failed')
 
     // Numaralari (1..N) aday id'lerine cevir; aralik disi / tekrar eden / sayi
     // olmayan girdiler atilir. Yalniz aday listesindeki id'ler donebilir.
@@ -230,13 +256,24 @@ ${filmList}`
     if (guarded && guarded.dropped.length > 0) {
       console.warn(`[rerank-films] REASON_DROPPED: ${guarded.dropped.length}/${Object.keys(reasons).length} gerekce TR sizinti denetiminde bosaltildi`)
     }
+    // Uzunluk korumasi: >16 kelime '' olur (reasons_dropped artar); <=16 kabul. reasonGuard aynen kalir.
+    const lengthChecked = guarded ? enforceReasonLength(guarded.reasons) : null
+    if (lengthChecked && lengthChecked.dropped.length > 0) {
+      console.warn(`[rerank-films] REASON_TOO_LONG: ${lengthChecked.dropped.length} gerekce 16 kelimeyi astigi icin bosaltildi`)
+    }
 
     return new Response(
       JSON.stringify({
         reranked_ids: rerankedIds,
         original_count: pool.length,
         reranked_count: rerankedIds.length,
-        ...(guarded ? { reasons: guarded.reasons, reasons_dropped: guarded.dropped.length } : {}),
+        ...(guarded && lengthChecked
+          ? {
+            reasons: lengthChecked.reasons,
+            reasons_dropped: guarded.dropped.length + lengthChecked.dropped.length,
+            reason_model: usedModel,
+          }
+          : {}),
       }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )

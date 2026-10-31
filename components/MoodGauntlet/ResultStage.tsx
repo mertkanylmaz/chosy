@@ -238,6 +238,8 @@ export function ResultStage({
         <Animated.Text
           key={reason}
           style={styles.resultReason}
+          numberOfLines={2}
+          ellipsizeMode="tail"
           entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
         >
           {reason}

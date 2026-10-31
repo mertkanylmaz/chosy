@@ -5,6 +5,12 @@
 import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
+  REASON_DEFAULT_MODEL,
+  REASON_HARD_MAX_WORDS,
+  REASON_TR_MODEL,
+  countWords,
+  enforceReasonLength,
+  reasonModelChain,
   REASON_MAX_WORDS,
   REASON_SYSTEM_PROMPT,
   RERANK_IDS_DAILY_KEY,
@@ -77,5 +83,60 @@ Deno.test('limitler ayni (free 15 / premium+legacy 60) ve index.ts ayni lookupDa
   assert(src.indexOf('missing or empty candidates') < src.indexOf('dailyCounterKey(withReason)'))
   // reasonGuard aynen
   assertMatch(src, /guardReasons\(reasons, moodText, titlesById\)/)
-  assertMatch(src, /import \{ guardReasons \} from '\.\.\/_shared\/reasonGuard\.ts'/)
+  assertMatch(src, /import \{ guardReasons, looksTurkish \} from '\.\.\/_shared\/reasonGuard\.ts'/)
+})
+
+// ─── Uzunluk koruması ────────────────────────────────────────────────────────
+
+const nWords = (n: number): string => Array.from({ length: n }, (_, i) => `k${i}`).join(' ')
+
+Deno.test('uzunluk korumasi: >16 kelime "" olur (anahtar kalir), <=16 aynen kabul', () => {
+  assertEquals(REASON_HARD_MAX_WORDS, 16)
+  const r = enforceReasonLength({ a: nWords(16), b: nWords(17), c: nWords(12), d: nWords(40) })
+  assertEquals(r.reasons.a, nWords(16)) // sinir dahil kabul
+  assertEquals(r.reasons.b, '')
+  assertEquals(r.reasons.c, nWords(12))
+  assertEquals(r.reasons.d, '')
+  assertEquals(r.dropped.sort(), ['b', 'd'])
+})
+
+Deno.test('uzunluk korumasi: bos/bosluk dokunulmaz, sayim tek bosluga duyarsiz, TR 14 kelimelik ornek kabul', () => {
+  assertEquals(countWords('  iki   kelime \n'), 2)
+  assertEquals(countWords(''), 0)
+  assertEquals(enforceReasonLength({ a: '' }).dropped, [])
+  // smoke'ta cikan 14 kelimelik TR gerekce artik KABUL (12 prompt hedefi, 16 sert sinir)
+  const fourteen = "Yalnızlık ve sessizlik üzerine; Tokyo'nun ıslak sokaklarında iki kayıp ruh: tam bu akşam için."
+  assertEquals(countWords(fourteen), 14)
+  assertEquals(enforceReasonLength({ a: fourteen }).reasons.a, fourteen)
+})
+
+// ─── Model zinciri (TR gerekce: Sonnet → Haiku) ──────────────────────────────
+
+Deno.test('model zinciri: TR gerekce [Sonnet, Haiku]; EN gerekce ve id-rerank yalniz Haiku', () => {
+  assertEquals(REASON_TR_MODEL, 'claude-sonnet-4-20250514')
+  assertEquals(REASON_DEFAULT_MODEL, 'claude-haiku-4-5')
+  assertEquals(reasonModelChain(true, true), [REASON_TR_MODEL, REASON_DEFAULT_MODEL])
+  assertEquals(reasonModelChain(true, false), [REASON_DEFAULT_MODEL])
+  assertEquals(reasonModelChain(false, true), [REASON_DEFAULT_MODEL]) // id-rerank Turkce metinde de Haiku
+  assertEquals(reasonModelChain(false, false), [REASON_DEFAULT_MODEL])
+})
+
+Deno.test('TR prompt: gunluk konusma kurali vurgulu + iki kotu ornek (yatislayici, Parizyali cekintisizligi) nedenleriyle', () => {
+  assertMatch(REASON_SYSTEM_PROMPT, /plain spoken everyday Turkish \(günlük konuşma Türkçesi\)/)
+  assertMatch(REASON_SYSTEM_PROMPT, /BAD: "yatışlayıcı görüntüler" — "yatışlayıcı" is an invented word/)
+  assertMatch(REASON_SYSTEM_PROMPT, /BAD: "Parizyalı çekintisizliği" — a word-for-word calque/)
+  assertEquals((REASON_SYSTEM_PROMPT.match(/BAD:/g) ?? []).length, 2)
+})
+
+Deno.test('index.ts sozlesmesi: model zinciri, Haiku fallback + Sentry, guard sirasi, reasons_dropped toplami', () => {
+  const src = Deno.readTextFileSync(new URL('../rerank-films/index.ts', import.meta.url)).replaceAll('\r\n', '\n')
+  assertMatch(src, /const chain = reasonModelChain\(withReason, looksTurkish\(moodText\)\)/)
+  assertMatch(src, /for \(const model of chain\) \{/)
+  assertMatch(src, /REASON_MODEL_FALLBACK/)
+  assertMatch(src, /if \(parsed === null\) throw lastErr/)
+  // reasonGuard once, uzunluk korumasi sonra; sayac toplanir
+  assert(src.indexOf('guardReasons(reasons, moodText, titlesById)') < src.indexOf('enforceReasonLength(guarded.reasons)'))
+  assertMatch(src, /reasons_dropped: guarded\.dropped\.length \+ lengthChecked\.dropped\.length/)
+  // model adi sabit degil, zincirden gelir
+  assert(!/model: 'claude-haiku-4-5'/.test(src))
 })

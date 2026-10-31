@@ -243,3 +243,8 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
   assertMatch(gauntlet, /<OutlineAction label=\{t\('moodGauntlet\.noneCta'\)\}/)
   assertMatch(gauntlet, /moodChip/)
 })
+
+Deno.test('gerekce satiri en fazla 2 satir (gauntlet + sonuc)', () => {
+  assertMatch(read('components/MoodGauntlet/GauntletStage.tsx'), /style=\{styles\.reason\}\s+numberOfLines=\{2\}\s+ellipsizeMode="tail"/)
+  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /style=\{styles\.resultReason\}\s+numberOfLines=\{2\}\s+ellipsizeMode="tail"/)
+})

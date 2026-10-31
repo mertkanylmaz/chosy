@@ -12,6 +12,49 @@ export const REASON_MAX_CANDIDATES = 20
 export const REASON_OVERVIEW_MAX = 100
 export const REASON_MAX_WORDS = 12
 
+/** Sunucu tarafı sert sınır: prompt 12 ister, model aşarsa 16'ya kadar tolerans; üstü '' olur. */
+export const REASON_HARD_MAX_WORDS = 16
+
+/**
+ * TR gerekçe modeli: repoda halihazırda kullanılan en güncel Sonnet (slot-mood-filtered).
+ * EN gerekçe ve id-rerank Haiku'da kalır. Sonnet hata verirse Haiku'ya düşülür.
+ */
+export const REASON_TR_MODEL = 'claude-sonnet-4-20250514'
+export const REASON_DEFAULT_MODEL = 'claude-haiku-4-5'
+
+/** Deneme sırası: reason + Türkçe mood → [Sonnet, Haiku]; diğer her şey → [Haiku]. */
+export function reasonModelChain(withReason: boolean, moodIsTurkish: boolean): string[] {
+  return withReason && moodIsTurkish ? [REASON_TR_MODEL, REASON_DEFAULT_MODEL] : [REASON_DEFAULT_MODEL]
+}
+
+export function countWords(text: string): number {
+  return text.trim().split(/\s+/).filter((w) => w.length > 0).length
+}
+
+export interface LengthGuardResult {
+  reasons: Record<string, string>
+  /** Sınırı aştığı için boşaltılan film id'leri. */
+  dropped: string[]
+}
+
+/** >max kelimelik gerekçe '' olur (anahtar korunur, reasons_dropped artar); <=max aynen kabul. */
+export function enforceReasonLength(
+  reasons: Record<string, string>,
+  max: number = REASON_HARD_MAX_WORDS,
+): LengthGuardResult {
+  const out: Record<string, string> = {}
+  const dropped: string[] = []
+  for (const [id, text] of Object.entries(reasons)) {
+    if (countWords(text) > max) {
+      out[id] = ''
+      dropped.push(id)
+    } else {
+      out[id] = text
+    }
+  }
+  return { reasons: out, dropped }
+}
+
 /** id-rerank (reason:false) mevcut sayacı kullanır. */
 export const RERANK_IDS_DAILY_KEY = 'rerank-films-daily'
 /** Gerekçe çağrısı (reason:true) AYRI sayaç kullanır; limitler aynıdır (lookupDailyLimit). */
@@ -38,8 +81,12 @@ English reasons (good examples, for the mood "tired Friday, something warm and c
   "Gentle and funny, with a small twist that won't wear you out."
 
 Turkish reasons (when the mood text is Turkish):
+- Write plain spoken everyday Turkish (günlük konuşma Türkçesi), the way you would text a friend. Prefer short, common words over literary or invented ones. If a word or phrase sounds like a translation from English, rewrite the sentence with simpler words
 - Natural, everyday Turkish, like a friend recommending a film. No English words and no half-translations: say "son sürpriz" instead of "twist", "gerilim" instead of "thriller", "hikâye" instead of "plot", "rahatlatıcı" instead of "feel-good", "hava" instead of "vibe"
 - Do not invent Turkish words. If unsure how to say something, use a simpler word you are sure about
+- Bad examples (never write like this):
+  BAD: "yatışlayıcı görüntüler" — "yatışlayıcı" is an invented word, nobody says it. Say "sakin görüntüler" instead
+  BAD: "Parizyalı çekintisizliği" — a word-for-word calque of an English phrase, it sounds translated and means nothing in everyday Turkish. Say "Paris'te geçen hafif, rahat bir hikâye" instead
 - Do not mention the film title. Max ${REASON_MAX_WORDS} words, one sentence. Good examples:
   "Yorgun bir akşama göre: sıcak, hafif ve sonunda küçük bir sürpriz."
   "Yağmurlu bir akşam için yavaş, sakin ve içine çeken bir hikâye."
