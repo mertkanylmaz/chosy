@@ -4409,3 +4409,11 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
 - **F0-3: bugünkü deste snapshot'ı yalnız etiketi tutar:** tam prompt etiketten çözülür (kart → prompt, serbest metin → etiket). Etiket başka dile çevrilmiş bir kart başlığıyla çakışırsa `findMoodCard` ilk eşleşmeyi alır; serbest metinde sorun yok.
 - **C8 gözlemi (F0-4):** bayrak (`mood_offer_enabled`) kapalıyken Pro Mode destesine yalnız Pro kullanıcı ulaşır; slot kotası tükenince kaydetme ücretsiz-arama destesi dışında hâlâ paywall ile kesilir (mevcut tasarım). F0-4 yalnız paywall AÇILMAYINCA destenin donmasını kaldırdı (`SLOT_PAYWALL_NOT_SHOWN`).
 - **Faz 2'ye (dokunulmadı):** `AIProcessingOverlay` adımları zamanlayıcıya bağlı (`:172-188`), gerçek boru hattı aşamasını yansıtmıyor.
+
+---
+
+## Model denetimi — Anthropic model id'leri (1 Kas 2026)
+
+- **slot-mood-filtered:** `claude-sonnet-4-20250514` API'de 404 (`supabase/functions/slot-mood-filtered/index.ts:140`). Fonksiyon deploy'lu ama Roulette `app_config.games_enabled.roulette=false` ile kapalı, bu yüzden canlıda hata görünmüyor. Roulette açılmadan önce model id güncellenmeli.
+- **parse-taste ve recommend:** deploy'lu, repoda çağıranı yok (istemcideki `parseTaste` `parse-mood`a gider) → ölü kod adayı. Kaldırmadan önce 30 günlük edge log kontrolü.
+- **Model id'leri tek sabitte toplanmalı (`supabase/functions/_shared/models.ts`):** şu an 7 yerde iki farklı Haiku yazımı var (`claude-haiku-4-5` ve `claude-haiku-4-5-20251001`).
