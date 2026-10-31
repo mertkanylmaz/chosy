@@ -12,6 +12,7 @@ import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { shouldRefundOnError } from '../_shared/refundPolicy.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
+import { isSchemaV2, normalizeV2Fields, V2_PROMPT_ADDENDUM } from '../_shared/moodV2.ts'
 import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 import {
   ANTHROPIC_TIMEOUT_MS,
@@ -430,7 +431,9 @@ async function refundSearchQuota(appUserId: string, cause: string): Promise<bool
  */
 async function readRawInput(
   req: Request,
-): Promise<{ ok: true; rawInput: string; clientSearchId: string | null } | { ok: false }> {
+): Promise<
+  { ok: true; rawInput: string; clientSearchId: string | null; schemaV2: boolean } | { ok: false }
+> {
   let body: unknown
   try {
     body = await req.json()
@@ -446,7 +449,9 @@ async function readRawInput(
   const clientSearchId = parseClientSearchId(
     (body as { client_search_id?: unknown } | null)?.client_search_id,
   )
-  return clientSearchId.ok ? { ok: true, rawInput, clientSearchId: clientSearchId.value } : { ok: false }
+  return clientSearchId.ok
+    ? { ok: true, rawInput, clientSearchId: clientSearchId.value, schemaV2: isSchemaV2(body) }
+    : { ok: false }
 }
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
@@ -503,6 +508,7 @@ serve(async (req: Request): Promise<Response> => {
   }
   const rawInput = input.rawInput
   const clientSearchId = input.clientSearchId
+  const schemaV2 = input.schemaV2
 
   // Sunucu yapilandirma hatasi kotadan ONCE: eksik anahtar yuzunden hak yanmasin.
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
@@ -636,8 +642,9 @@ serve(async (req: Request): Promise<Response> => {
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      // schema_version:2 ek alanlari ~350 token ekler; v1 yolu degismez.
+      max_tokens: schemaV2 ? 1536 : 1024,
+      system: schemaV2 ? SYSTEM_PROMPT + V2_PROMPT_ADDENDUM : SYSTEM_PROMPT,
       messages: [{ role: 'user', content: rawInput }],
     })
 
@@ -662,6 +669,8 @@ serve(async (req: Request): Promise<Response> => {
         .map((k: string) => k.toLowerCase().trim())
         .slice(0, 8)
     }
+
+    if (schemaV2) Object.assign(parsed, normalizeV2Fields(parsed))
 
     const latencyMs = Date.now() - startTime
 

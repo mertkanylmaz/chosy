@@ -41,7 +41,7 @@ import { DEFAULT_BASE_RATING, buildRelaxationSteps } from '../../utils/relaxatio
 import { VECTOR_DIM, VECTOR_LAYOUT, tasteProfileToVector, type TasteProfile } from '../../services/vectorEncoder';
 
 import {
-  CACHE_DIR, LEDGER_FILE, PARSED_DIR, RAW_DIR, VARIANTS,
+  CACHE_DIR, LEDGER_FILE, PARSED_DIR, PARSED_V2_DIR, RAW_DIR, VARIANTS,
   loadMoods, rawFile, readJson, writeJson,
   type Ledger, type Mood, type ParsedFile, type RawRecord, type RerankRecord, type Row, type Variant,
 } from './common';
@@ -59,6 +59,8 @@ const C = {
   TARGET_COUNT: 8,
   V2_RERANK_CANDIDATES: 20,
   V2_OVERVIEW_MAX: 100,
+  V3_MATCH_COUNT: 40,
+  V3_RERANK_COUNT: 4,
   MIN_LLM_GAP_MS: 6_500,
   RPC_GAP_MS: 1_500,
   CAP_PARSE_TOTAL: 25,
@@ -280,8 +282,8 @@ function validateAndNormalize(raw: Record<string, unknown>): TasteProfile {
   };
 }
 
-async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean): Promise<ParsedFile> {
-  const file = path.join(PARSED_DIR, `${mood.id}.json`);
+async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean, schemaV2 = false): Promise<ParsedFile> {
+  const file = path.join(schemaV2 ? PARSED_V2_DIR : PARSED_DIR, `${mood.id}.json`);
   if (!force && fs.existsSync(file)) return readJson<ParsedFile>(file);
 
   if (ctx.ledger.parse_total + 1 > C.CAP_PARSE_TOTAL) {
@@ -307,7 +309,7 @@ async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean): Promise<Parse
         Authorization: `Bearer ${await token(ctx)}`,
         apikey: anon,
       },
-      body: JSON.stringify({ raw_input: mood.text }),
+      body: JSON.stringify(schemaV2 ? { raw_input: mood.text, schema_version: 2 } : { raw_input: mood.text }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -369,6 +371,7 @@ function trimRow(r: Record<string, unknown>): Row {
     similarity: r.similarity as number,
     curation_tier: (r.curation_tier as string | null) ?? null,
     match_reason: (r.match_reason as string | null) ?? null,
+    ...(Array.isArray(r.channels) ? { channels: r.channels as string[] } : {}),
   };
 }
 
@@ -420,19 +423,63 @@ async function runRpc(ctx: Ctx, parsed: ParsedFile, v: Variant): Promise<RawReco
   return { rows, attempts, total_ms: attempts.reduce((s, a) => s + a.ms, 0), params_first: paramsFirst };
 }
 
+/** V3: parse-mood v2 alanları + match_films_v4 (tek çağrı, 40 aday; gevşetme zinciri yok — ilk basamak). */
+async function runRpcV4(ctx: Ctx, parsed: ParsedFile): Promise<RawRecord['rpc']> {
+  const vectorString = `[${buildVector(parsed, 'V3').join(',')}]`;
+  const kw = parsed.search_keywords;
+  const step = buildRelaxationSteps(null, null)[0];
+  const r = parsed.response;
+  const args = {
+    query_vector: vectorString,
+    user_vector: null,
+    mood_weight: 1.0,
+    user_weight: 0.0,
+    match_count: C.V3_MATCH_COUNT,
+    min_similarity: step.minSimilarity,
+    ...(step.minRating != null ? { min_rating: step.minRating } : {}),
+    ...(kw.length > 0 ? { search_keywords: kw } : {}),
+    per_director_cap: C.PER_DIRECTOR_CAP,
+    tier_boost: true,
+    exclude_archive: true,
+    genres_include: Array.isArray(r.genres_include) ? r.genres_include : [],
+    genres_exclude: Array.isArray(r.genres_exclude) ? r.genres_exclude : [],
+    max_runtime: typeof r.max_runtime === 'number' ? r.max_runtime : null,
+    reference_titles: Array.isArray(r.reference_titles) ? r.reference_titles : [],
+    suggested_titles: Array.isArray(r.suggested_titles) ? r.suggested_titles : [],
+  };
+  const t0 = Date.now();
+  const { data, error } = await ctx.session.supabase.rpc('match_films_v4', args);
+  const ms = Date.now() - t0;
+  ctx.calls += 1;
+  if (error) {
+    noteFailure(ctx, `RPC v4 ${error.message}`);
+    throw new StopError(`match_films_v4 hatası: ${error.message}`);
+  }
+  const rows = ((data ?? []) as Record<string, unknown>[]).map(trimRow);
+  return {
+    rows,
+    attempts: [{ min_similarity: step.minSimilarity, min_rating: step.minRating, ms, n_rows: rows.length }],
+    total_ms: ms,
+    params_first: { ...args, query_vector: `[${VECTOR_DIM} boyut]` },
+  };
+}
+
 // ─── Rerank ──────────────────────────────────────────────────────────────────
 
 async function runRerank(ctx: Ctx, mood: Mood, v: Variant, rows: Row[]): Promise<RerankRecord | null> {
   if (rows.length === 0) return null;
+  const isV3 = v === 'V3';
   const sent = v === 'V2' ? rows.slice(0, C.V2_RERANK_CANDIDATES) : rows;
-  const overviewMax = v === 'V2' ? C.V2_OVERVIEW_MAX : C.RERANK_OVERVIEW_MAX;
+  const overviewMax = v === 'V2' || isV3 ? C.V2_OVERVIEW_MAX : C.RERANK_OVERVIEW_MAX;
+  const rerankCount = isV3 ? C.V3_RERANK_COUNT : C.RERANK_COUNT;
   const body = {
     mood_text: mood.text.trim(),
     candidates: sent.map((c) => ({
       id: c.id, title: c.title, overview: (c.overview ?? '').slice(0, overviewMax),
       genres: c.genres, year: c.year, similarity: c.similarity,
     })),
-    count: C.RERANK_COUNT,
+    count: rerankCount,
+    ...(isV3 ? { reason: true } : {}),
   };
   const hash = crypto.createHash('sha1').update(JSON.stringify(body)).digest('hex').slice(0, 16);
   const cacheFile = path.join(CACHE_DIR, `${hash}.json`);
@@ -485,13 +532,14 @@ async function runRerank(ctx: Ctx, mood: Mood, v: Variant, rows: Row[]): Promise
     cached: false,
     candidates_sent: sent.length,
     overview_max: overviewMax,
-    count: C.RERANK_COUNT,
+    count: rerankCount,
     ms,
     http_status: res.status,
     reranked_ids: json.reranked_ids as string[],
     server_fallback: json.fallback === true,
     error_detail: typeof json.error_detail === 'string' ? json.error_detail : null,
     exceeded_app_timeout: ms > C.APP_RERANK_TIMEOUT_MS,
+    ...(isV3 && json.reasons && typeof json.reasons === 'object' ? { reasons: json.reasons as Record<string, string> } : {}),
   };
   writeJson(cacheFile, rec);
   console.log(`  rerank ${mood.id}/${v}: HTTP ${res.status}, ${ms} ms, ${rec.reranked_ids.length} id, fallback=${rec.server_fallback}`);
@@ -525,14 +573,19 @@ async function main(): Promise<void> {
     for (const mood of moods) {
       console.log(`[${mood.id}]`);
       let parsed: ParsedFile | null = null;
+      let parsedV2: ParsedFile | null = null;
 
       for (const v of args.variants) {
         const f = rawFile(mood.id, v);
         let rec: RawRecord | null = fs.existsSync(f) ? readJson<RawRecord>(f) : null;
         if (doRpc && (!rec || args.reparse)) {
-          if (!parsed) parsed = await ensureParsed(ctx, mood, args.reparse);
+          if (v === 'V3') {
+            if (!parsedV2) parsedV2 = await ensureParsed(ctx, mood, args.reparse, true);
+          } else if (!parsed) {
+            parsed = await ensureParsed(ctx, mood, args.reparse);
+          }
           await sleep(C.RPC_GAP_MS);
-          const rpc = await runRpc(ctx, parsed, v);
+          const rpc = v === 'V3' && parsedV2 ? await runRpcV4(ctx, parsedV2) : await runRpc(ctx, parsed as ParsedFile, v);
           rec = { mood_id: mood.id, variant: v, rpc };
           writeJson(f, rec);
           console.log(`  rpc ${mood.id}/${v}: ${rpc.rows.length} satır, ${rpc.attempts.length} deneme, ${rpc.total_ms} ms`);

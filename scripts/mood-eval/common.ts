@@ -6,15 +6,20 @@ import * as path from 'path';
 
 import { applyQualityGate } from '../../utils/moodQualityGate';
 
-export const OUT_DIR = path.resolve(__dirname, '../../docs/investigations/mood-vec-1');
+// MOOD_EVAL_OUT: çıktı klasörünü değiştirir (2c: docs/investigations/mood-vec-2c/eval); varsayılan mood-vec-1.
+export const OUT_DIR = process.env.MOOD_EVAL_OUT
+  ? path.resolve(process.env.MOOD_EVAL_OUT)
+  : path.resolve(__dirname, '../../docs/investigations/mood-vec-1');
 export const PARSED_DIR = path.join(OUT_DIR, 'parsed');
+/** V3: parse-mood schema_version:2 yanıtları (v1 parse dosyalarıyla karışmaz). */
+export const PARSED_V2_DIR = path.join(OUT_DIR, 'parsed-v2');
 export const RAW_DIR = path.join(OUT_DIR, 'raw');
 export const CACHE_DIR = path.join(OUT_DIR, 'rerank-cache');
 export const LEDGER_FILE = path.join(OUT_DIR, 'ledger.json');
 export const META_FILE = path.join(OUT_DIR, 'films-meta.json');
 
-export type Variant = 'V0' | 'V1' | 'V2';
-export const VARIANTS: readonly Variant[] = ['V0', 'V1', 'V2'];
+export type Variant = 'V0' | 'V1' | 'V2' | 'V3';
+export const VARIANTS: readonly Variant[] = ['V0', 'V1', 'V2', 'V3'];
 
 export interface Mood {
   id: string;
@@ -37,6 +42,8 @@ export interface Row {
   similarity: number;
   curation_tier: string | null;
   match_reason: string | null;
+  /** match_films_v4 kanal etiketi ('v' | 'a' | 'c'); yalnız V3. */
+  channels?: string[];
 }
 
 export interface RpcAttempt {
@@ -67,6 +74,8 @@ export interface RerankRecord {
   error_detail: string | null;
   /** Uygulamanın 6 sn zaman aşımı aşıldı mı (uygulamada RPC sırasına dönülürdü). */
   exceeded_app_timeout: boolean;
+  /** reason:true istendiyse film id → tek cümle gerekçe (yalnız V3). */
+  reasons?: Record<string, string>;
 }
 
 export interface RawRecord {
