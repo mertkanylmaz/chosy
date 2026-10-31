@@ -24,10 +24,10 @@ export const CACHE_DIR = path.join(OUT_DIR, 'rerank-cache');
 export const LEDGER_FILE = path.join(OUT_DIR, 'ledger.json');
 export const META_FILE = path.join(OUT_DIR, 'films-meta.json');
 
-export type Variant = 'V0' | 'V1' | 'V2' | 'V3' | 'V4';
+export type Variant = 'V0' | 'V1' | 'V2' | 'V3' | 'V4' | 'V5';
 /** Varsayılan koşu/rapor kümesi (2c). V4 (2d) yalnız --variant V4 ile açıkça istenir. */
 export const VARIANTS: readonly Variant[] = ['V0', 'V1', 'V2', 'V3'];
-export const ALL_VARIANTS: readonly Variant[] = [...VARIANTS, 'V4'];
+export const ALL_VARIANTS: readonly Variant[] = [...VARIANTS, 'V4', 'V5'];
 
 export interface Mood {
   id: string;

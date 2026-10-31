@@ -15,7 +15,7 @@
  * Bayraklar: --reparse (parse'ı zorla), --limit N, --mood <id>, --variant, --stage rpc|rerank|all.
  *
  * 2d (V4 = V3 + önbellekli parse, 6 öneri, rerank 20 aday/15 kelime; DEPLOY SONRASI koşulur):
- *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/run.ts --variant V4
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2e/eval npx tsx scripts/mood-eval/run.ts --variant V5
  *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/run.ts --cached-pass
  *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/summary-2d.ts
  *   --cached-pass: yalnız 8 quick mood; parse-mood'u AYNI metinle ikinci kez çağırır (cache_hit şart),
@@ -500,8 +500,8 @@ async function runRerank(
   ctx: Ctx, mood: Mood, v: Variant, rows: Row[], bypassLocalCache = false,
 ): Promise<RerankRecord | null> {
   if (rows.length === 0) return null;
-  const isV3 = v === 'V3' || v === 'V4'; // reason:true yolu (V4 = V3 + 2d)
-  const sent = v === 'V2' || v === 'V4' ? rows.slice(0, C.V2_RERANK_CANDIDATES) : rows;
+  const isV3 = v === 'V3' || v === 'V4' || v === 'V5'; // reason:true yolu (V4 = V3 + 2d)
+  const sent = v === 'V2' || v === 'V4' || v === 'V5' ? rows.slice(0, C.V2_RERANK_CANDIDATES) : rows;
   const overviewMax = v === 'V2' || isV3 ? C.V2_OVERVIEW_MAX : C.RERANK_OVERVIEW_MAX;
   const rerankCount = isV3 ? C.V3_RERANK_COUNT : C.RERANK_COUNT;
   const body = {
@@ -641,7 +641,7 @@ async function runCachedPass(ctx: Ctx, quick: Mood[]): Promise<void> {
       continue;
     }
     if (!fs.existsSync(path.join(PARSED_V4_DIR, `${mood.id}.json`))) {
-      throw new StopError(`${mood.id}: önce --variant V4 koşulmalı (önbellek dolmadı).`);
+      throw new StopError(`${mood.id}: önce --variant V5 koşulmalı (önbellek dolmadı).`);
     }
     if ((ctx.ledger.parse_cached_total ?? 0) + 1 > C.CAP_PARSE_CACHED_TOTAL) {
       throw new StopError(`cached-pass parse tavanı (${C.CAP_PARSE_CACHED_TOTAL}) aşılacak; durduruldu.`);
@@ -718,7 +718,7 @@ async function main(): Promise<void> {
         if (doRpc && (!rec || args.reparse)) {
           if (v === 'V3') {
             if (!parsedV2) parsedV2 = await ensureParsed(ctx, mood, args.reparse, true);
-          } else if (v === 'V4') {
+          } else if (v === 'V4' || v === 'V5') {
             if (!parsedV4) parsedV4 = await ensureParsed(ctx, mood, args.reparse, true, PARSED_V4_DIR);
           } else if (!parsed) {
             parsed = await ensureParsed(ctx, mood, args.reparse);
@@ -726,7 +726,7 @@ async function main(): Promise<void> {
           await sleep(C.RPC_GAP_MS);
           const rpc = v === 'V3' && parsedV2
             ? await runRpcV4(ctx, parsedV2)
-            : v === 'V4' && parsedV4
+            : (v === 'V4' || v === 'V5') && parsedV4
               ? await runRpcV4(ctx, parsedV4)
               : await runRpc(ctx, parsed as ParsedFile, v);
           rec = { mood_id: mood.id, variant: v, rpc };

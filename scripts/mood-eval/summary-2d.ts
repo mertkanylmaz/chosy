@@ -1,8 +1,8 @@
 /**
- * MOOD-VEC-2d özet raporu: V3 (2c) ↔ V4 (V3 + önbellekli parse, 6 öneri, rerank 20 aday/15 kelime).
+ * MOOD-VEC-2d özet raporu: V3 (2c) ↔ V5 (V3 + önbellekli parse, 6 öneri, rerank 20 aday/15 kelime).
  * Yalnız ölçülen sayılar — puanlama YOK. Çıktı (OUT_DIR): summary-2d.md, changed-rows.csv, reasons-v4.csv.
  *
- * Kullanım (deploy + run.ts --variant V4 + run.ts --cached-pass sonrası):
+ * Kullanım (deploy + run.ts --variant V5 + run.ts --cached-pass sonrası):
  *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/summary-2d.ts
  * V3 verisi MOOD_EVAL_V3_DIR'den okunur (varsayılan docs/investigations/mood-vec-2c/eval).
  *
@@ -49,7 +49,7 @@ function table(headers: string[], rows: string[][]): string {
   return [line(headers), line(headers.map(() => '---')), ...rows.map(line)].join('\n');
 }
 
-function loadRaw(dir: string, moodId: string, v: 'V3' | 'V4'): RawRecord | null {
+function loadRaw(dir: string, moodId: string, v: 'V3' | 'V5'): RawRecord | null {
   const f = path.join(dir, 'raw', `${moodId}.${v}.json`);
   return fs.existsSync(f) ? readJson<RawRecord>(f) : null;
 }
@@ -97,7 +97,7 @@ function main(): void {
       topV3.set(mood.id, computeFinal(r3).top.slice(0, TOP_N));
       recV3.set(mood.id, r3);
     }
-    const r4 = loadRaw(OUT_DIR, mood.id, 'V4');
+    const r4 = loadRaw(OUT_DIR, mood.id, 'V5');
     const p4 = loadParseMs(OUT_DIR, path.relative(OUT_DIR, PARSED_V4_DIR), mood.id);
     if (r4 && p4 !== null) {
       v4.push(timedOf(mood, r4, p4));
@@ -127,16 +127,16 @@ function main(): void {
       timingRow('V3 tümü (2c)', v3, null),
       timingRow('V3 serbest', free(v3), null),
       timingRow('V3 quick', quick(v3), null),
-      timingRow('V4 tümü (ilk geçiş)', v4, null),
-      timingRow('V4 serbest (ilk geçiş)', free(v4), TARGETS.freeTotalP50),
-      timingRow('V4 quick (ilk geçiş, önbelleksiz)', quick(v4), null),
-      timingRow('V4 quick (ÖNBELLEKLİ ikinci geçiş)', cached, TARGETS.quickCachedTotalP50),
+      timingRow('V5 tümü (ilk geçiş)', v4, null),
+      timingRow('V5 serbest (ilk geçiş)', free(v4), TARGETS.freeTotalP50),
+      timingRow('V5 quick (ilk geçiş, önbelleksiz)', quick(v4), null),
+      timingRow('V5 quick (ÖNBELLEKLİ ikinci geçiş)', cached, TARGETS.quickCachedTotalP50),
     ],
   );
   const rerankVerdict = rerankP50V4 === null ? '—' : rerankP50V4 <= TARGETS.rerankP50 ? 'GEÇTİ' : 'GEÇMEDİ';
   const localCachedV4 = v4.filter((t) => t.rerankLocalCached).length;
 
-  // ── Kalite regresyonu: V3 ↔ V4 ilk 4 kesişimi ──
+  // ── Kalite regresyonu: V3 ↔ V5 ilk 4 kesişimi ──
   const qualityRows: string[][] = [];
   const changedCsv: string[] = [
     ['mood_id', 'mood_text', 'taraf', 'sıra', 'başlık', 'yıl', 'türler', 'V4_gerekçe', 'CTO_puan'].join(','),
@@ -194,21 +194,21 @@ function main(): void {
   const md = [
     '# MOOD-VEC-2d özet (ölçüm; puanlama yok)',
     '',
-    `V3 kaynağı: \`${path.relative(process.cwd(), V3_DIR)}\` · V4 kaynağı: \`${path.relative(process.cwd(), OUT_DIR)}\``,
-    `Örneklem: V3 ${v3.length} mood · V4 ${v4.length} mood · önbellekli geçiş ${cached.length} quick mood.`,
+    `V3 kaynağı: \`${path.relative(process.cwd(), V3_DIR)}\` · V5 kaynağı: \`${path.relative(process.cwd(), OUT_DIR)}\``,
+    `Örneklem: V3 ${v3.length} mood · V5 ${v4.length} mood · önbellekli geçiş ${cached.length} quick mood.`,
     '',
     '## Süre (ms, istemci-uç; toplam = parse + RPC + rerank)',
     '',
     timingTable,
     '',
-    `Rerank p50 (V4, ilk geçiş + önbellekli geçiş; yerel rerank önbelleğinden gelenler hariç): **${fmt(rerankP50V4)} ms** — hedef ≤ ${TARGETS.rerankP50} → **${rerankVerdict}** (V3: ${fmt(rerankP50V3)} ms).`,
-    localCachedV4 > 0 ? `\nUYARI: ${localCachedV4} V4 rerank kaydı yerel rerank önbelleğinden okundu (süre ilk çağrının süresi).` : '',
+    `Rerank p50 (V5, ilk geçiş + önbellekli geçiş; yerel rerank önbelleğinden gelenler hariç): **${fmt(rerankP50V4)} ms** — hedef ≤ ${TARGETS.rerankP50} → **${rerankVerdict}** (V3: ${fmt(rerankP50V3)} ms).`,
+    localCachedV4 > 0 ? `\nUYARI: ${localCachedV4} V5 rerank kaydı yerel rerank önbelleğinden okundu (süre ilk çağrının süresi).` : '',
     '',
-    '## Kalite regresyonu: V3 ↔ V4 ilk 4 kesişimi',
+    '## Kalite regresyonu: V3 ↔ V5 ilk 4 kesişimi',
     '',
     `Ortalama kesişim: **${compared === 0 ? '—' : (commonSum / compared).toFixed(2)} / ${TOP_N}** (${compared} mood) · birebir aynı küme: ${identical}/${compared}.`,
     '',
-    table(['mood', 'tür', 'dil', 'ortak', 'n (V3/V4)', 'durum'], qualityRows),
+    table(['mood', 'tür', 'dil', 'ortak', 'n (V3/V5)', 'durum'], qualityRows),
     '',
     `Değişen satırlar: \`changed-rows.csv\` (CTO yalnız bunları puanlar; \`CTO_puan\` sütunu boş).`,
     '',
