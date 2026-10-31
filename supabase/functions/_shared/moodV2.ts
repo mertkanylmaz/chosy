@@ -29,7 +29,7 @@ export interface MoodV2Fields {
 const GENRE_SET = new Set<string>(TMDB_GENRES)
 const MAX_GENRES = 4
 const MAX_REFERENCES = 5
-const MAX_SUGGESTED = 10
+const MAX_SUGGESTED = 6
 const MAX_TITLE_CHARS = 120
 
 /** Gövdede `schema_version` tam sayı 2 ise true; başka her şey v1. */
@@ -50,7 +50,7 @@ v2 field rules:
 - genres_include / genres_exclude: ONLY these exact names: ${TMDB_GENRES.join(', ')}. Max ${MAX_GENRES} each. Include a genre only when the mood clearly implies it ("need a laugh" → ["Comedy"]); otherwise []. Exclude only what the user clearly rejects ("no horror" → ["Horror"]). Never put the same genre in both.
 - max_runtime: integer minutes ONLY if the user states a time limit ("I have 90 minutes", "short film"). Otherwise null. Do not infer it from the mood.
 - reference_titles: films the user explicitly names as a reference ("like Inception"). Use the original release year. [] if none.
-- suggested_titles: 8-${MAX_SUGGESTED} real, well-known films that fit this mood, the kind an average US moviegoer would recognize. Do NOT include the films in reference_titles. Use exact English release titles and the release year.`
+- suggested_titles: 5-${MAX_SUGGESTED} real, well-known films that fit this mood, the kind an average US moviegoer would recognize. Do NOT include the films in reference_titles. Use exact English release titles and the release year.`
 
 function cleanTitles(value: unknown, max: number): TitleRef[] {
   if (!Array.isArray(value)) return []

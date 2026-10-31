@@ -14,6 +14,13 @@
  *   npx tsx scripts/mood-eval/run.ts --report                        (yalnız rapor)
  * Bayraklar: --reparse (parse'ı zorla), --limit N, --mood <id>, --variant, --stage rpc|rerank|all.
  *
+ * 2d (V4 = V3 + önbellekli parse, 6 öneri, rerank 20 aday/15 kelime; DEPLOY SONRASI koşulur):
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/run.ts --variant V4
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/run.ts --cached-pass
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/summary-2d.ts
+ *   --cached-pass: yalnız 8 quick mood; parse-mood'u AYNI metinle ikinci kez çağırır (cache_hit şart),
+ *   RPC + rerank'i (yerel rerank önbelleği KAPALI) yeniden ölçer. Her çağrı arama kotası tüketir.
+ *
  * Kimlik: kalıcı anonim eval hesabı (session.ts, .session.json — repoya girmez).
  * Gizli bilgi loglanmaz. Service role kullanılmaz.
  *
@@ -41,9 +48,11 @@ import { DEFAULT_BASE_RATING, buildRelaxationSteps } from '../../utils/relaxatio
 import { VECTOR_DIM, VECTOR_LAYOUT, tasteProfileToVector, type TasteProfile } from '../../services/vectorEncoder';
 
 import {
-  CACHE_DIR, LEDGER_FILE, LEGACY_PARSED_DIR, PARSED_DIR, PARSED_V2_DIR, RAW_DIR, VARIANTS,
+  ALL_VARIANTS, CACHED_PASS_DIR, CACHE_DIR, LEDGER_FILE, LEGACY_PARSED_DIR, PARSED_DIR, PARSED_V2_DIR,
+  PARSED_V4_DIR, RAW_DIR, VARIANTS,
   loadMoods, rawFile, readJson, writeJson,
-  type Ledger, type Mood, type ParsedFile, type RawRecord, type RerankRecord, type Row, type Variant,
+  type CachedPassRecord, type Ledger, type Mood, type ParsedFile, type RawRecord, type RerankRecord, type Row,
+  type Variant,
 } from './common';
 import { buildReports } from './report';
 import { envOrThrow, openEvalSession, type EvalSession } from './session';
@@ -64,6 +73,7 @@ const C = {
   MIN_LLM_GAP_MS: 6_500,
   RPC_GAP_MS: 1_500,
   CAP_PARSE_TOTAL: 25,
+  CAP_PARSE_CACHED_TOTAL: 10,
   CAP_RERANK_TOTAL: 50,
   CAP_RERANK_PER_UTC_DAY: 55,
   HTTP_TIMEOUT_MS: 40_000,
@@ -83,6 +93,7 @@ interface Args {
   stage: 'rpc' | 'rerank' | 'all';
   reparse: boolean;
   reportOnly: boolean;
+  cachedPass: boolean;
 }
 
 function parseArgs(argv: string[]): Args {
@@ -92,7 +103,7 @@ function parseArgs(argv: string[]): Args {
   };
   const vRaw = get('--variant');
   const variants = vRaw ? (vRaw.split(',') as Variant[]) : [...VARIANTS];
-  for (const v of variants) if (!VARIANTS.includes(v)) throw new Error(`Bilinmeyen varyant: ${v}`);
+  for (const v of variants) if (!ALL_VARIANTS.includes(v)) throw new Error(`Bilinmeyen varyant: ${v}`);
   const stage = (get('--stage') ?? 'all') as Args['stage'];
   if (!['rpc', 'rerank', 'all'].includes(stage)) throw new Error(`Bilinmeyen stage: ${stage}`);
   const limit = get('--limit');
@@ -103,6 +114,7 @@ function parseArgs(argv: string[]): Args {
     stage,
     reparse: argv.includes('--reparse'),
     reportOnly: argv.includes('--report'),
+    cachedPass: argv.includes('--cached-pass'),
   };
 }
 
@@ -157,7 +169,11 @@ async function parityCheck(moods: Mood[], session: EvalSession): Promise<void> {
   add('kalite süzgeci rerank SONRASI', 'doğru',
     rec.indexOf('await callRerankFilms(') > 0 && rec.indexOf('applyQualityGate(data)') > rec.indexOf('await callRerankFilms(') ? 'doğru' : 'YANLIŞ');
   add('rerank edge aday üst sınırı', 50, firstMatch(rerankFn, /body\.candidates\.slice\(0, (\d+)\)/));
-  add('rerank edge overview kırpma', C.RERANK_OVERVIEW_MAX, firstMatch(rerankFn, /\(c\.overview \?\? ''\)\.slice\(0, (\d+)\)/));
+  add('rerank edge overview kırpma (v1 yolu)', C.RERANK_OVERVIEW_MAX, firstMatch(rerankFn, /const overviewMax = withReason \? REASON_OVERVIEW_MAX : (\d+)/));
+  add('rerank edge overview kırpma (reason yolu)', C.V2_OVERVIEW_MAX, firstMatch(rerankFn, /const REASON_OVERVIEW_MAX = (\d+)/));
+  add('rerank edge reason aday sınırı', C.V2_RERANK_CANDIDATES, firstMatch(rerankFn, /const REASON_MAX_CANDIDATES = (\d+)/));
+  add('rerank edge reason kelime sınırı', 15, firstMatch(rerankFn, /const REASON_MAX_WORDS = (\d+)/));
+  add('parse-mood v2 MAX_SUGGESTED', 6, firstMatch(read('supabase/functions/_shared/moodV2.ts'), /const MAX_SUGGESTED = (\d+)/));
   add('era varsayılanı from', 1970, firstMatch(parser, /era_preference\?\.from === 'number'\s*\?\s*raw\.era_preference\.from\s*:\s*(\d+)/));
   add('era varsayılanı to', 2025, firstMatch(parser, /raw\.era_preference\.to\s*:\s*(\d+)/));
   add('parse gövdesi', 'var', /\{ raw_input: input \}/.test(parser) ? 'var' : 'YOK');
@@ -282,8 +298,10 @@ function validateAndNormalize(raw: Record<string, unknown>): TasteProfile {
   };
 }
 
-async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean, schemaV2 = false): Promise<ParsedFile> {
-  const file = path.join(schemaV2 ? PARSED_V2_DIR : PARSED_DIR, `${mood.id}.json`);
+async function ensureParsed(
+  ctx: Ctx, mood: Mood, force: boolean, schemaV2 = false, dir: string = schemaV2 ? PARSED_V2_DIR : PARSED_DIR,
+): Promise<ParsedFile> {
+  const file = path.join(dir, `${mood.id}.json`);
   if (!force && fs.existsSync(file)) return readJson<ParsedFile>(file);
   const legacy = path.join(LEGACY_PARSED_DIR, `${mood.id}.json`);
   if (!schemaV2 && !force && fs.existsSync(legacy)) return readJson<ParsedFile>(legacy);
@@ -341,6 +359,7 @@ async function ensureParsed(ctx: Ctx, mood: Mood, force: boolean, schemaV2 = fal
     search_keywords: Array.isArray(body.search_keywords) ? (body.search_keywords as string[]) : [],
     limit: typeof body.limit === 'number' ? body.limit : null,
     remaining: typeof body.remaining === 'number' ? body.remaining : null,
+    ...(typeof body.cache_hit === 'boolean' ? { cache_hit: body.cache_hit } : {}),
   };
   writeJson(file, parsed);
   writeJson(LEDGER_FILE, ctx.ledger);
@@ -448,6 +467,10 @@ async function runRpcV4(ctx: Ctx, parsed: ParsedFile): Promise<RawRecord['rpc']>
     max_runtime: typeof r.max_runtime === 'number' ? r.max_runtime : null,
     reference_titles: Array.isArray(r.reference_titles) ? r.reference_titles : [],
     suggested_titles: Array.isArray(r.suggested_titles) ? r.suggested_titles : [],
+    // 2d: parse-mood v2 yanıtındaki kişisel tekrar dışlama (soğuk eval hesabında boş → anahtar eklenmez).
+    ...(Array.isArray(r.exclude_recent_ids) && r.exclude_recent_ids.length > 0
+      ? { exclude_ids: r.exclude_recent_ids }
+      : {}),
   };
   const t0 = Date.now();
   const { data, error } = await ctx.session.supabase.rpc('match_films_v4', args);
@@ -468,10 +491,12 @@ async function runRpcV4(ctx: Ctx, parsed: ParsedFile): Promise<RawRecord['rpc']>
 
 // ─── Rerank ──────────────────────────────────────────────────────────────────
 
-async function runRerank(ctx: Ctx, mood: Mood, v: Variant, rows: Row[]): Promise<RerankRecord | null> {
+async function runRerank(
+  ctx: Ctx, mood: Mood, v: Variant, rows: Row[], bypassLocalCache = false,
+): Promise<RerankRecord | null> {
   if (rows.length === 0) return null;
-  const isV3 = v === 'V3';
-  const sent = v === 'V2' ? rows.slice(0, C.V2_RERANK_CANDIDATES) : rows;
+  const isV3 = v === 'V3' || v === 'V4'; // reason:true yolu (V4 = V3 + 2d)
+  const sent = v === 'V2' || v === 'V4' ? rows.slice(0, C.V2_RERANK_CANDIDATES) : rows;
   const overviewMax = v === 'V2' || isV3 ? C.V2_OVERVIEW_MAX : C.RERANK_OVERVIEW_MAX;
   const rerankCount = isV3 ? C.V3_RERANK_COUNT : C.RERANK_COUNT;
   const body = {
@@ -485,7 +510,7 @@ async function runRerank(ctx: Ctx, mood: Mood, v: Variant, rows: Row[]): Promise
   };
   const hash = crypto.createHash('sha1').update(JSON.stringify(body)).digest('hex').slice(0, 16);
   const cacheFile = path.join(CACHE_DIR, `${hash}.json`);
-  if (fs.existsSync(cacheFile)) {
+  if (!bypassLocalCache && fs.existsSync(cacheFile)) {
     const hit = readJson<RerankRecord>(cacheFile);
     console.log(`  rerank ${mood.id}/${v}: önbellek (${hash})`);
     return { ...hit, cached: true };
@@ -542,10 +567,98 @@ async function runRerank(ctx: Ctx, mood: Mood, v: Variant, rows: Row[]): Promise
     error_detail: typeof json.error_detail === 'string' ? json.error_detail : null,
     exceeded_app_timeout: ms > C.APP_RERANK_TIMEOUT_MS,
     ...(isV3 && json.reasons && typeof json.reasons === 'object' ? { reasons: json.reasons as Record<string, string> } : {}),
+    ...(isV3 && typeof json.reasons_dropped === 'number' ? { reasons_dropped: json.reasons_dropped } : {}),
   };
-  writeJson(cacheFile, rec);
+  if (!bypassLocalCache) writeJson(cacheFile, rec);
   console.log(`  rerank ${mood.id}/${v}: HTTP ${res.status}, ${ms} ms, ${rec.reranked_ids.length} id, fallback=${rec.server_fallback}`);
   return rec;
+}
+
+// ─── V4 önbellekli geçiş (2d) ────────────────────────────────────────────────
+
+/** parse-mood v2'yi bir kez çağırır; yanıt gövdesini ve süreyi döner (önbellek isabeti çağıranda denetlenir). */
+async function callParseV2(ctx: Ctx, mood: Mood): Promise<{ body: Record<string, unknown>; ms: number }> {
+  const url = envOrThrow('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
+  const anon = envOrThrow('SUPABASE_ANON_KEY', 'EXPO_PUBLIC_SUPABASE_ANON_KEY');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), C.HTTP_TIMEOUT_MS);
+  const t0 = Date.now();
+  let res: Response;
+  try {
+    res = await fetch(`${url}/functions/v1/parse-mood?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
+      method: 'POST',
+      headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${await token(ctx)}`,
+        apikey: anon,
+      },
+      body: JSON.stringify({ raw_input: mood.text, schema_version: 2 }),
+      signal: controller.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    noteFailure(ctx, `cached-pass parse ${mood.id}: ${String(e)}`);
+    throw new StopError(`cached-pass parse ${mood.id} ağ hatası: ${String(e)}`);
+  }
+  clearTimeout(timer);
+  const ms = Date.now() - t0;
+  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+  httpStop(res.status, `cached-pass parse ${mood.id}`);
+  if (!res.ok) {
+    noteFailure(ctx, `cached-pass parse ${mood.id}: HTTP ${res.status} ${JSON.stringify(body).slice(0, 200)}`);
+    throw new StopError(`cached-pass parse ${mood.id} başarısız (HTTP ${res.status}).`);
+  }
+  return { body, ms };
+}
+
+/**
+ * Quick mood'lar için ikinci geçiş: aynı metin → parse-mood önbellekten (0 Haiku), sonra RPC + rerank.
+ * Önbellek isabet ETMEZSE Haiku harcanmıştır: deftere işlenir ve koşu durur (sessiz devam yok).
+ */
+async function runCachedPass(ctx: Ctx, quick: Mood[]): Promise<void> {
+  for (const mood of quick) {
+    const out = path.join(CACHED_PASS_DIR, `${mood.id}.json`);
+    if (fs.existsSync(out)) {
+      console.log(`  ${mood.id}: cached-pass kaydı var, atlandı`);
+      continue;
+    }
+    if (!fs.existsSync(path.join(PARSED_V4_DIR, `${mood.id}.json`))) {
+      throw new StopError(`${mood.id}: önce --variant V4 koşulmalı (önbellek dolmadı).`);
+    }
+    if ((ctx.ledger.parse_cached_total ?? 0) + 1 > C.CAP_PARSE_CACHED_TOTAL) {
+      throw new StopError(`cached-pass parse tavanı (${C.CAP_PARSE_CACHED_TOTAL}) aşılacak; durduruldu.`);
+    }
+    await sleep(C.RPC_GAP_MS);
+    ctx.calls += 1;
+    ctx.ledger.parse_cached_total = (ctx.ledger.parse_cached_total ?? 0) + 1;
+    const { body, ms } = await callParseV2(ctx, mood);
+    const hit = body.cache_hit === true;
+    if (!hit) ctx.ledger.parse_total += 1; // Haiku çağrıldı
+    writeJson(LEDGER_FILE, ctx.ledger);
+    console.log(`  parse(2.) ${mood.id}: ${ms} ms, cache_hit=${String(body.cache_hit)}`);
+    if (!hit) {
+      throw new StopError(`${mood.id}: parse-mood önbellek isabet etmedi (cache_hit=${String(body.cache_hit)}); durduruldu.`);
+    }
+
+    const parsed: ParsedFile = {
+      mood_id: mood.id, text: mood.text, ms, http_status: 200, response: body,
+      profile: validateAndNormalize(body) as unknown as Record<string, unknown>,
+      search_id: typeof body.search_id === 'string' ? body.search_id : null,
+      search_keywords: Array.isArray(body.search_keywords) ? (body.search_keywords as string[]) : [],
+      limit: typeof body.limit === 'number' ? body.limit : null,
+      remaining: typeof body.remaining === 'number' ? body.remaining : null,
+      cache_hit: true,
+    };
+    if (parsed.search_id) ctx.ledger.mood_searches_rows.push(parsed.search_id);
+
+    await sleep(C.RPC_GAP_MS);
+    const rpc = await runRpcV4(ctx, parsed);
+    const rerank = await runRerank(ctx, mood, 'V4', rpc.rows, true);
+    const rec: CachedPassRecord = { mood_id: mood.id, parse_ms: ms, parse_cache_hit: true, rpc, rerank };
+    writeJson(out, rec);
+    console.log(`  cached-pass ${mood.id}: parse ${ms} + rpc ${rpc.total_ms} + rerank ${rerank?.ms ?? 'yok'} ms`);
+  }
 }
 
 // ─── Ana akış ────────────────────────────────────────────────────────────────
@@ -572,10 +685,15 @@ async function main(): Promise<void> {
   const t0 = Date.now();
 
   try {
+    if (args.cachedPass) {
+      await runCachedPass(ctx, moods.filter((m) => m.kind === 'quick'));
+      return;
+    }
     for (const mood of moods) {
       console.log(`[${mood.id}]`);
       let parsed: ParsedFile | null = null;
       let parsedV2: ParsedFile | null = null;
+      let parsedV4: ParsedFile | null = null;
 
       for (const v of args.variants) {
         const f = rawFile(mood.id, v);
@@ -583,11 +701,17 @@ async function main(): Promise<void> {
         if (doRpc && (!rec || args.reparse)) {
           if (v === 'V3') {
             if (!parsedV2) parsedV2 = await ensureParsed(ctx, mood, args.reparse, true);
+          } else if (v === 'V4') {
+            if (!parsedV4) parsedV4 = await ensureParsed(ctx, mood, args.reparse, true, PARSED_V4_DIR);
           } else if (!parsed) {
             parsed = await ensureParsed(ctx, mood, args.reparse);
           }
           await sleep(C.RPC_GAP_MS);
-          const rpc = v === 'V3' && parsedV2 ? await runRpcV4(ctx, parsedV2) : await runRpc(ctx, parsed as ParsedFile, v);
+          const rpc = v === 'V3' && parsedV2
+            ? await runRpcV4(ctx, parsedV2)
+            : v === 'V4' && parsedV4
+              ? await runRpcV4(ctx, parsedV4)
+              : await runRpc(ctx, parsed as ParsedFile, v);
           rec = { mood_id: mood.id, variant: v, rpc };
           writeJson(f, rec);
           console.log(`  rpc ${mood.id}/${v}: ${rpc.rows.length} satır, ${rpc.attempts.length} deneme, ${rpc.total_ms} ms`);

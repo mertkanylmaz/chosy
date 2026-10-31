@@ -15,13 +15,19 @@ export const PARSED_DIR = path.join(OUT_DIR, 'parsed');
 /** MOOD_EVAL_OUT başka klasördeyse V0 yeniden koşusu v1 parse'ı buradan okur (0 parse harcanır). */
 export const LEGACY_PARSED_DIR = path.resolve(__dirname, '../../docs/investigations/mood-vec-1/parsed');
 export const PARSED_V2_DIR = path.join(OUT_DIR, 'parsed-v2');
+/** V4 (2d): 6 öneri + önbellekli parse-mood v2; V3 parse'ıyla karışmaz (prompt farklı). */
+export const PARSED_V4_DIR = path.join(OUT_DIR, 'parsed-v4');
+/** V4 önbellekli ikinci geçiş (yalnız quick mood'lar): parse-mood önbellek isabeti + RPC + rerank. */
+export const CACHED_PASS_DIR = path.join(OUT_DIR, 'raw-v4-cached');
 export const RAW_DIR = path.join(OUT_DIR, 'raw');
 export const CACHE_DIR = path.join(OUT_DIR, 'rerank-cache');
 export const LEDGER_FILE = path.join(OUT_DIR, 'ledger.json');
 export const META_FILE = path.join(OUT_DIR, 'films-meta.json');
 
-export type Variant = 'V0' | 'V1' | 'V2' | 'V3';
+export type Variant = 'V0' | 'V1' | 'V2' | 'V3' | 'V4';
+/** Varsayılan koşu/rapor kümesi (2c). V4 (2d) yalnız --variant V4 ile açıkça istenir. */
 export const VARIANTS: readonly Variant[] = ['V0', 'V1', 'V2', 'V3'];
+export const ALL_VARIANTS: readonly Variant[] = [...VARIANTS, 'V4'];
 
 export interface Mood {
   id: string;
@@ -78,6 +84,18 @@ export interface RerankRecord {
   exceeded_app_timeout: boolean;
   /** reason:true istendiyse film id → tek cümle gerekçe (yalnız V3). */
   reasons?: Record<string, string>;
+  /** Sunucu TR sızıntı denetiminde boşaltılan gerekçe sayısı (yalnız V4). */
+  reasons_dropped?: number;
+}
+
+/** V4 önbellekli geçiş kaydı: tek mood için ikinci parse + RPC + rerank ölçümü. */
+export interface CachedPassRecord {
+  mood_id: string;
+  parse_ms: number;
+  /** parse-mood yanıtındaki cache_hit (true olmak zorunda; değilse koşu durur). */
+  parse_cache_hit: boolean;
+  rpc: RpcRecord;
+  rerank: RerankRecord | null;
 }
 
 export interface RawRecord {
@@ -98,12 +116,16 @@ export interface ParsedFile {
   search_keywords: string[];
   limit: number | null;
   remaining: number | null;
+  /** parse-mood v2 yanıtı: önbellek isabeti (V4). */
+  cache_hit?: boolean | null;
 }
 
 export interface Ledger {
   parse_total: number;
   rerank_total: number;
   rerank_by_day: Record<string, number>;
+  /** V4 önbellekli geçişte yapılan parse-mood HTTP çağrıları (Haiku harcamaz; isabet şartı). */
+  parse_cached_total?: number;
   last_llm_at: number;
   mood_searches_rows: string[];
 }

@@ -26,14 +26,14 @@ Deno.test('max_runtime: yalniz makul sayi, aksi null', () => {
   assertEquals(normalizeV2Fields({}).max_runtime, null)
 })
 
-Deno.test('titles: bozuk girdi atilir, tekrar silinir, referans onerilerden dusulur, max 10', () => {
+Deno.test('titles: bozuk girdi atilir, tekrar silinir, referans onerilerden dusulur, max 6', () => {
   const sug = Array.from({ length: 14 }, (_, i) => ({ title: `Film ${i}`, year: 2000 + i }))
   const r = normalizeV2Fields({
     reference_titles: [{ title: ' Inception ', year: 2010 }, { title: '', year: 1 }, 7, { title: 'Inception', year: 2010 }],
     suggested_titles: [{ title: 'inception', year: 2010 }, { title: 'X', year: 'bad' }, ...sug],
   })
   assertEquals(r.reference_titles, [{ title: 'Inception', year: 2010 }])
-  assertEquals(r.suggested_titles.length, 10)
+  assertEquals(r.suggested_titles.length, 6)
   assertEquals(r.suggested_titles[0], { title: 'X', year: null })
   assertEquals(r.suggested_titles.some((s) => s.title.toLowerCase() === 'inception'), false)
 })

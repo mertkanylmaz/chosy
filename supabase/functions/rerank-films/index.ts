@@ -22,6 +22,7 @@ import {
   lookupDailyLimit,
   rerankDailyLimitResponse,
 } from '../_shared/dailyLimit.ts'
+import { guardReasons } from '../_shared/reasonGuard.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -67,15 +68,29 @@ Rules:
 Return format (ONLY valid JSON, no explanation):
 [3, 12, 1, ...]`
 
+// MOOD-VEC-2d: reason yolunda aday ust siniri, overview kirpma ve gerekce uzunlugu (v1 yolu degismez).
+const REASON_MAX_CANDIDATES = 20
+const REASON_OVERVIEW_MAX = 100
+const REASON_MAX_WORDS = 15
+
 const REASON_SYSTEM_PROMPT = `You are a film recommendation re-ranker. Given a user's mood/intent description and a list of candidate films, select and rank the most relevant films, and give each a one-sentence reason.
 
 Rules:
 - Understand the user's INTENT, not just emotion. Eliminate films with ZERO thematic connection to it
 - Among relevant films, prefer higher original similarity scores
 - If no films are thematically connected, fall back to the best emotional matches (don't return empty)
-- Each reason: ONE short sentence (max 18 words) saying why this film fits THIS mood. Write it in the same language as the user's mood text (Turkish mood text → Turkish reason, otherwise English)
+- Each reason: ONE short sentence (max ${REASON_MAX_WORDS} words) saying why this film fits THIS mood. Write it in the same language as the user's mood text (Turkish mood text → Turkish reason, otherwise English)
 - Use only facts visible in the candidate line; never invent plot details
 - "n" is the integer before the film in the candidate list
+
+Turkish reasons (when the mood text is Turkish):
+- Natural, everyday Turkish, like a friend recommending a film. No English words and no half-translations: say "son sürpriz" instead of "twist", "gerilim" instead of "thriller", "hikâye" instead of "plot", "rahatlatıcı" instead of "feel-good", "hava" instead of "vibe"
+- Do not invent Turkish words. If unsure how to say something, use a simpler word you are sure about
+- Keep the film title in its original form, as given in the candidate line
+- Max ${REASON_MAX_WORDS} words, one sentence. Good examples:
+  "Amélie, küçük iyiliklerle dolu sıcak bir dünyada yağmurlu günün hüznünü hafifletir."
+  "Memento, olayları tersten anlatarak seni sonuna kadar düşündürür ve finalde şaşırtır."
+  "Superbad, arkadaşlarla birlikte izleyince kahkahayı garantileyen, hızlı ve rahat bir komedi."
 
 Return ONLY valid JSON, no explanation:
 [{"n": 3, "r": "reason"}, {"n": 12, "r": "reason"}]`
@@ -156,11 +171,14 @@ serve(async (req: Request): Promise<Response> => {
   const count = Math.min(Math.max(body.count ?? 10, 1), 30)
   const withReason = body.reason === true
   const candidates = body.candidates.slice(0, 50) // max 50 candidates
+  // reason yolu: v4 donus sirasiyla (kanal onceligi c>v>a) ilk 20 aday; digerleri LLM'e gitmez.
+  const pool = withReason ? candidates.slice(0, REASON_MAX_CANDIDATES) : candidates
+  const overviewMax = withReason ? REASON_OVERVIEW_MAX : 150
 
   // ── Build compact film list for LLM ───────────────────────────────────────
-  const filmList = candidates
+  const filmList = pool
     .map((c, i) => {
-      const overview = (c.overview ?? '').slice(0, 150)
+      const overview = (c.overview ?? '').slice(0, overviewMax)
       const genres = (c.genres ?? []).join(', ')
       return `${i + 1}. "${c.title}" (${c.year ?? '?'}) | ${genres} | ${overview}`
     })
@@ -179,8 +197,9 @@ ${filmList}`
 
     const message = await client.messages.create({
       model: 'claude-haiku-4-5',
-      // ${count} numara ~ 3 token/numara + koseli parantez payi
-      max_tokens: withReason ? 128 + count * 60 : 64 + count * 4,
+      // ${count} numara ~ 3 token/numara + koseli parantez payi.
+      // reason: ~15 TR kelime ≈ 40 token + {"n","r"} sarmali ≈ 10 → 50/film.
+      max_tokens: withReason ? 96 + count * 50 : 64 + count * 4,
       system: withReason ? REASON_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
     })
@@ -207,24 +226,30 @@ ${filmList}`
         ? (item as { n?: unknown }).n
         : item
       const idx = typeof n === 'number' ? n : typeof n === 'string' ? Number(n) : NaN
-      if (!Number.isInteger(idx) || idx < 1 || idx > candidates.length || seen.has(idx)) continue
+      if (!Number.isInteger(idx) || idx < 1 || idx > pool.length || seen.has(idx)) continue
       seen.add(idx)
-      rerankedIds.push(candidates[idx - 1].id)
+      rerankedIds.push(pool[idx - 1].id)
       if (withReason) {
         const r = (item as { r?: unknown } | null)?.r
         if (typeof r === 'string' && r.trim().length > 0) {
-          reasons[candidates[idx - 1].id] = r.trim().slice(0, 200)
+          reasons[pool[idx - 1].id] = r.trim().slice(0, 200)
         }
       }
       if (rerankedIds.length >= count) break
     }
 
+    // Turkce gerekcede bilinen Ingilizce sizinti / bozuk bicim varsa gerekce bos doner (UI gerekcesiz gosterir).
+    const guarded = withReason ? guardReasons(reasons, moodText) : null
+    if (guarded && guarded.dropped.length > 0) {
+      console.warn(`[rerank-films] REASON_DROPPED: ${guarded.dropped.length}/${Object.keys(reasons).length} gerekce TR sizinti denetiminde bosaltildi`)
+    }
+
     return new Response(
       JSON.stringify({
         reranked_ids: rerankedIds,
-        original_count: candidates.length,
+        original_count: pool.length,
         reranked_count: rerankedIds.length,
-        ...(withReason ? { reasons } : {}),
+        ...(guarded ? { reasons: guarded.reasons, reasons_dropped: guarded.dropped.length } : {}),
       }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
     )
@@ -233,12 +258,12 @@ ${filmList}`
     console.error('[rerank-films] Error:', msg)
 
     // Graceful degradation: return original order (first N IDs)
-    const fallbackIds = candidates.slice(0, count).map((c) => c.id)
+    const fallbackIds = pool.slice(0, count).map((c) => c.id)
 
     return new Response(
       JSON.stringify({
         reranked_ids: fallbackIds,
-        original_count: candidates.length,
+        original_count: pool.length,
         reranked_count: fallbackIds.length,
         fallback: true,
         error_detail: msg,

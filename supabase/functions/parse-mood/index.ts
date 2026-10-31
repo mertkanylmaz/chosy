@@ -15,6 +15,13 @@ import { validateRawInput } from '../_shared/moodInput.ts'
 import { isSchemaV2, normalizeV2Fields, V2_PROMPT_ADDENDUM } from '../_shared/moodV2.ts'
 import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 import {
+  PARSE_CACHE_TTL_SECONDS,
+  parseCacheKey,
+  promptVersionOf,
+  readCachedProfile,
+} from '../_shared/moodParseCache.ts'
+import { collectRecentShown, RECENT_SEARCHES } from '../_shared/moodRecentShown.ts'
+import {
   ANTHROPIC_TIMEOUT_MS,
   STALE_SECONDS,
   interpretClaim,
@@ -95,6 +102,95 @@ async function logMoodSearch(params: {
   } catch (e) {
     console.error('[parse-mood] log failed:', e)
     return null
+  }
+}
+
+// ─── MOOD-VEC-2d: parse onbellegi + kisisel tekrar dislama (yalniz schema_version:2) ──
+
+/** Onbellek/kisisel-dislama hatasi arama akisini DUSURMEZ ama sessiz de kalmaz: Sentry warning. */
+async function reportV2Aux(code: string, detail: string, userId?: string): Promise<void> {
+  console.error(`[parse-mood] ${code}:`, detail)
+  await sentryCapture({
+    message: `parse-mood ${code}: ${detail}`,
+    level: 'warning',
+    tags: { function: 'parse-mood', error_code: code },
+    extra: userId ? { user_id: userId } : undefined,
+  })
+}
+
+/** Isabet → parse ciktisi; iskalama (yok / TTL dolmus) → null. Hata/bozuk satir → Sentry + null (Haiku'ya duser). */
+async function readParseCache(key: string): Promise<Record<string, unknown> | null> {
+  try {
+    const { data, error } = await getAdmin().rpc('mood_parse_cache_get', {
+      p_key: key,
+      p_max_age_seconds: PARSE_CACHE_TTL_SECONDS,
+    })
+    if (error) throw new Error(`RPC hatasi: ${error.message}`)
+    if (data === null || data === undefined) return null
+    const profile = readCachedProfile(data)
+    if (!profile) throw new Error('onbellek satiri bozuk (beklenen sekil yok)')
+    return profile
+  } catch (err) {
+    await reportV2Aux('PARSE_CACHE_READ_FAILED', err instanceof Error ? err.message : String(err))
+    return null
+  }
+}
+
+/** Yalniz parse CIKTISI yazilir (kullanici kimligi/ham metin yok). Hicbir zaman firlatmaz. */
+async function writeParseCache(
+  key: string,
+  schemaVersion: number,
+  promptVersion: string,
+  result: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const { error } = await getAdmin()
+      .from('mood_parse_cache')
+      .upsert(
+        {
+          key,
+          schema_version: schemaVersion,
+          prompt_version: promptVersion,
+          result,
+          created_at: new Date().toISOString(),
+          hit_count: 0,
+        },
+        { onConflict: 'key' },
+      )
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    await reportV2Aux('PARSE_CACHE_WRITE_FAILED', err instanceof Error ? err.message : String(err))
+  }
+}
+
+/** `finish_mood_search` cache_hit=false yazar; onbellek isabetinde satir sonradan duzeltilir. */
+async function markCacheHit(searchId: string, userId: string): Promise<void> {
+  try {
+    const { error } = await getAdmin().from('mood_searches').update({ cache_hit: true }).eq('id', searchId)
+    if (error) throw new Error(error.message)
+  } catch (err) {
+    await reportV2Aux('CACHE_HIT_MARK_FAILED', err instanceof Error ? err.message : String(err), userId)
+  }
+}
+
+/**
+ * Kullanicinin son `RECENT_SEARCHES` mood aramasinda gosterilen ilk 4 filmin id'leri.
+ * Istemci bunu match_films_v4 `exclude_ids`ine ekler. Hata → Sentry + [] (dislama olmadan devam).
+ */
+async function fetchRecentShown(appUserId: string): Promise<string[]> {
+  try {
+    const { data, error } = await getAdmin()
+      .from('mood_searches')
+      .select('recommended_film_ids')
+      .eq('user_id', appUserId)
+      .not('recommended_film_ids', 'is', null)
+      .order('searched_at', { ascending: false })
+      .limit(RECENT_SEARCHES)
+    if (error) throw new Error(error.message)
+    return collectRecentShown(data ?? [])
+  } catch (err) {
+    await reportV2Aux('RECENT_SHOWN_READ_FAILED', err instanceof Error ? err.message : String(err), appUserId)
+    return []
   }
 }
 
@@ -638,39 +734,66 @@ serve(async (req: Request): Promise<Response> => {
   const quotaConsumed = quotaCheck.quotaResult !== undefined
 
   try {
-    const client = new Anthropic({ apiKey, timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: 0 })
+    // MOOD-VEC-2d (yalniz v2): kisisel dislama sorgusu onbellek/Haiku ile PARALEL baslar.
+    const recentShownTask = schemaV2 && auth.appUserId ? fetchRecentShown(auth.appUserId) : null
 
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      // schema_version:2 ek alanlari ~350 token ekler; v1 yolu degismez.
-      max_tokens: schemaV2 ? 1536 : 1024,
-      system: schemaV2 ? SYSTEM_PROMPT + V2_PROMPT_ADDENDUM : SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: rawInput }],
-    })
-
-    // Token usage tracking
-    const llmTokensIn = message.usage?.input_tokens || 0
-    const llmTokensOut = message.usage?.output_tokens || 0
-
-    const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
-
-    // Markdown code block varsa temizle
-    const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-    const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
-
-    const parsed = JSON.parse(jsonString)
-
-    // Normalize search_keywords: array of lowercase strings, max 8
-    if (!Array.isArray(parsed.search_keywords)) {
-      parsed.search_keywords = []
-    } else {
-      parsed.search_keywords = parsed.search_keywords
-        .filter((k: unknown) => typeof k === 'string' && k.trim().length > 0)
-        .map((k: string) => k.toLowerCase().trim())
-        .slice(0, 8)
+    // MOOD-VEC-2d (yalniz v2): ayni metin + schema + prompt surumu icin Haiku bir kez cagrilir.
+    let cacheKey: string | null = null
+    let promptVersion = ''
+    let cachedParsed: Record<string, unknown> | null = null
+    if (schemaV2) {
+      promptVersion = await promptVersionOf(SYSTEM_PROMPT + V2_PROMPT_ADDENDUM)
+      cacheKey = await parseCacheKey(rawInput, 2, promptVersion)
+      cachedParsed = await readParseCache(cacheKey)
     }
+    const cacheHit = cachedParsed !== null
 
-    if (schemaV2) Object.assign(parsed, normalizeV2Fields(parsed))
+    let parsed: Record<string, unknown>
+    let llmTokensIn = 0
+    let llmTokensOut = 0
+    let cacheWriteTask: Promise<void> | null = null
+
+    if (cachedParsed !== null) {
+      parsed = cachedParsed
+    } else {
+      const client = new Anthropic({ apiKey, timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: 0 })
+
+      const message = await client.messages.create({
+        model: 'claude-haiku-4-5',
+        // schema_version:2 ek alanlari (~250 token, 6 oneri) ekler; v1 yolu degismez.
+        max_tokens: schemaV2 ? 1280 : 1024,
+        system: schemaV2 ? SYSTEM_PROMPT + V2_PROMPT_ADDENDUM : SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: rawInput }],
+      })
+
+      // Token usage tracking
+      llmTokensIn = message.usage?.input_tokens || 0
+      llmTokensOut = message.usage?.output_tokens || 0
+
+      const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
+
+      // Markdown code block varsa temizle
+      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+      const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
+
+      const fresh = JSON.parse(jsonString)
+
+      // Normalize search_keywords: array of lowercase strings, max 8
+      if (!Array.isArray(fresh.search_keywords)) {
+        fresh.search_keywords = []
+      } else {
+        fresh.search_keywords = fresh.search_keywords
+          .filter((k: unknown) => typeof k === 'string' && k.trim().length > 0)
+          .map((k: string) => k.toLowerCase().trim())
+          .slice(0, 8)
+      }
+
+      if (schemaV2) Object.assign(fresh, normalizeV2Fields(fresh))
+      parsed = fresh
+
+      // Yalniz normalize edilmis parse ciktisi onbellege girer (kullanici kimligi yok).
+      if (schemaV2 && cacheKey) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
+    }
 
     const latencyMs = Date.now() - startTime
 
@@ -692,6 +815,7 @@ serve(async (req: Request): Promise<Response> => {
         tokensOut: llmTokensOut,
       })
       searchId = claimed.searchId
+      if (cacheHit) await markCacheHit(claimed.searchId, quotaCheck.userId)
     } else if (quotaCheck.userId) {
       searchId = await logMoodSearch({
         userId: quotaCheck.userId,
@@ -701,15 +825,21 @@ serve(async (req: Request): Promise<Response> => {
         llmTokensIn,
         llmTokensOut,
         tierUsed: 3, // Sprint 1.A: hepsi tier 3, 1.C'de degisecek
-        cacheHit: false, // Sprint 1.A: cache yok, 1.B'de eklenecek
+        cacheHit, // v1: hep false; v2: parse onbellegi isabeti (MOOD-VEC-2d)
       }).catch(() => null)
     }
+
+    // v2: onbellek yazimi ve kisisel dislama okumasi yanittan ONCE tamamlanir (isolate donmasin).
+    if (cacheWriteTask) await cacheWriteTask
+    const recentShownIds = recentShownTask ? await recentShownTask : []
 
     // `remaining`/`limit` EN SONDA: LLM ciktisindaki ayni adli bir alan ezilir.
     return new Response(
       JSON.stringify({
         ...parsed,
         search_id: searchId,
+        // Yalniz v2: istemci/eval onbellek isabetini ve dislanacak film id'lerini buradan okur.
+        ...(schemaV2 ? { cache_hit: cacheHit, exclude_recent_ids: recentShownIds } : {}),
         ...quotaFields(quotaCheck.quotaResult),
       }),
       { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
