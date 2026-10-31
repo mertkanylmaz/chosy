@@ -22,15 +22,14 @@ import {
   lookupDailyLimit,
   rerankDailyLimitResponse,
 } from '../_shared/dailyLimit.ts'
-import { guardReasons, looksTurkish } from '../_shared/reasonGuard.ts'
-import { sentryCapture } from '../_shared/sentry.ts'
+import { guardReasons } from '../_shared/reasonGuard.ts'
 import {
+  REASON_DEFAULT_MODEL,
   REASON_MAX_CANDIDATES,
   REASON_OVERVIEW_MAX,
   REASON_SYSTEM_PROMPT,
   dailyCounterKey,
   enforceReasonLength,
-  reasonModelChain,
 } from '../_shared/rerankReason.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
@@ -178,11 +177,10 @@ Candidate films:
 ${filmList}`
 
   // ── Claude call ───────────────────────────────────────────────────────────
-  // id-rerank ve EN gerekce: Haiku. TR gerekce (mood metni Turkce): once Sonnet, hata verirse
-  // Haiku; ikisi de olmazsa asagidaki catch gerekcesiz v4 sirasini doner (istemci satir cizmez).
+  // id-rerank ve gerekce (TR + EN): tek model, Haiku. Basarisiz olursa asagidaki catch
+  // gerekcesiz v4 sirasini doner (istemci satir cizmez).
   try {
     const client = new Anthropic({ apiKey })
-    const chain = reasonModelChain(withReason, looksTurkish(moodText))
 
     const generate = async (model: string): Promise<unknown[]> => {
       const message = await client.messages.create({
@@ -201,29 +199,8 @@ ${filmList}`
       return out
     }
 
-    let parsed: unknown[] | null = null
-    let usedModel = chain[0]
-    let lastErr: unknown = null
-    for (const model of chain) {
-      try {
-        parsed = await generate(model)
-        usedModel = model
-        break
-      } catch (e) {
-        lastErr = e
-        const detail = e instanceof Error ? e.message : String(e)
-        console.error(`[rerank-films] model ${model} basarisiz: ${detail}`)
-        if (model !== chain[chain.length - 1]) {
-          await sentryCapture({
-            message: `rerank-films ${model} basarisiz, ${chain[chain.length - 1]}'e dusuldu: ${detail}`,
-            level: 'warning',
-            tags: { function: 'rerank-films', error_code: 'REASON_MODEL_FALLBACK' },
-            fingerprint: ['rerank-films', 'REASON_MODEL_FALLBACK'],
-          })
-        }
-      }
-    }
-    if (parsed === null) throw lastErr ?? new Error('LLM failed')
+    const usedModel = REASON_DEFAULT_MODEL
+    const parsed = await generate(usedModel)
 
     // Numaralari (1..N) aday id'lerine cevir; aralik disi / tekrar eden / sayi
     // olmayan girdiler atilir. Yalniz aday listesindeki id'ler donebilir.

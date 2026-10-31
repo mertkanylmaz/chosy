@@ -16,16 +16,10 @@ export const REASON_MAX_WORDS = 12
 export const REASON_HARD_MAX_WORDS = 16
 
 /**
- * TR gerekçe modeli: repoda halihazırda kullanılan en güncel Sonnet (slot-mood-filtered).
- * EN gerekçe ve id-rerank Haiku'da kalır. Sonnet hata verirse Haiku'ya düşülür.
+ * id-rerank ve gerekçe (TR + EN) tek model: Haiku. (TR için denenen claude-sonnet-4-20250514
+ * Anthropic'te 404 verdi — emekli; Sonnet adımı kaldırıldı.)
  */
-export const REASON_TR_MODEL = 'claude-sonnet-4-20250514'
 export const REASON_DEFAULT_MODEL = 'claude-haiku-4-5'
-
-/** Deneme sırası: reason + Türkçe mood → [Sonnet, Haiku]; diğer her şey → [Haiku]. */
-export function reasonModelChain(withReason: boolean, moodIsTurkish: boolean): string[] {
-  return withReason && moodIsTurkish ? [REASON_TR_MODEL, REASON_DEFAULT_MODEL] : [REASON_DEFAULT_MODEL]
-}
 
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter((w) => w.length > 0).length

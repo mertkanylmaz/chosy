@@ -7,10 +7,8 @@ import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0
 import {
   REASON_DEFAULT_MODEL,
   REASON_HARD_MAX_WORDS,
-  REASON_TR_MODEL,
   countWords,
   enforceReasonLength,
-  reasonModelChain,
   REASON_MAX_WORDS,
   REASON_SYSTEM_PROMPT,
   RERANK_IDS_DAILY_KEY,
@@ -83,7 +81,7 @@ Deno.test('limitler ayni (free 15 / premium+legacy 60) ve index.ts ayni lookupDa
   assert(src.indexOf('missing or empty candidates') < src.indexOf('dailyCounterKey(withReason)'))
   // reasonGuard aynen
   assertMatch(src, /guardReasons\(reasons, moodText, titlesById\)/)
-  assertMatch(src, /import \{ guardReasons, looksTurkish \} from '\.\.\/_shared\/reasonGuard\.ts'/)
+  assertMatch(src, /import \{ guardReasons \} from '\.\.\/_shared\/reasonGuard\.ts'/)
 })
 
 // ─── Uzunluk koruması ────────────────────────────────────────────────────────
@@ -112,13 +110,10 @@ Deno.test('uzunluk korumasi: bos/bosluk dokunulmaz, sayim tek bosluga duyarsiz, 
 
 // ─── Model zinciri (TR gerekce: Sonnet → Haiku) ──────────────────────────────
 
-Deno.test('model zinciri: TR gerekce [Sonnet, Haiku]; EN gerekce ve id-rerank yalniz Haiku', () => {
-  assertEquals(REASON_TR_MODEL, 'claude-sonnet-4-20250514')
+Deno.test('tek model: Haiku; Sonnet adimi kaldirildi', () => {
   assertEquals(REASON_DEFAULT_MODEL, 'claude-haiku-4-5')
-  assertEquals(reasonModelChain(true, true), [REASON_TR_MODEL, REASON_DEFAULT_MODEL])
-  assertEquals(reasonModelChain(true, false), [REASON_DEFAULT_MODEL])
-  assertEquals(reasonModelChain(false, true), [REASON_DEFAULT_MODEL]) // id-rerank Turkce metinde de Haiku
-  assertEquals(reasonModelChain(false, false), [REASON_DEFAULT_MODEL])
+  const mod = Deno.readTextFileSync(new URL('./rerankReason.ts', import.meta.url))
+  assert(!/sonnet/i.test(mod.replace(/\/\*[\s\S]*?\*\//g, '')), 'kodda Sonnet kalmamali')
 })
 
 Deno.test('TR prompt: gunluk konusma kurali vurgulu + iki kotu ornek (yatislayici, Parizyali cekintisizligi) nedenleriyle', () => {
@@ -128,12 +123,11 @@ Deno.test('TR prompt: gunluk konusma kurali vurgulu + iki kotu ornek (yatislayic
   assertEquals((REASON_SYSTEM_PROMPT.match(/BAD:/g) ?? []).length, 2)
 })
 
-Deno.test('index.ts sozlesmesi: model zinciri, Haiku fallback + Sentry, guard sirasi, reasons_dropped toplami', () => {
+Deno.test('index.ts sozlesmesi: tek Haiku modeli, guard sirasi, reasons_dropped toplami', () => {
   const src = Deno.readTextFileSync(new URL('../rerank-films/index.ts', import.meta.url)).replaceAll('\r\n', '\n')
-  assertMatch(src, /const chain = reasonModelChain\(withReason, looksTurkish\(moodText\)\)/)
-  assertMatch(src, /for \(const model of chain\) \{/)
-  assertMatch(src, /REASON_MODEL_FALLBACK/)
-  assertMatch(src, /if \(parsed === null\) throw lastErr/)
+  assertMatch(src, /const usedModel = REASON_DEFAULT_MODEL/)
+  assertMatch(src, /const parsed = await generate\(usedModel\)/)
+  assert(!/reasonModelChain|REASON_MODEL_FALLBACK|sonnet/i.test(src))
   // reasonGuard once, uzunluk korumasi sonra; sayac toplanir
   assert(src.indexOf('guardReasons(reasons, moodText, titlesById)') < src.indexOf('enforceReasonLength(guarded.reasons)'))
   assertMatch(src, /reasons_dropped: guarded\.dropped\.length \+ lengthChecked\.dropped\.length/)
