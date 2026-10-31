@@ -60,6 +60,8 @@ interface WatchProvidersRowProps {
   onRetry: () => void;
   /** `providers_see_all_opened` event'i için. */
   filmId: string;
+  /** Opsiyonel: "See all" açıldığında çağrılır (Mood Gauntlet `mood_tonight_pick_action: where`). */
+  onSeeAll?: () => void;
 }
 
 export function WatchProvidersRow({
@@ -67,6 +69,7 @@ export function WatchProvidersRow({
   providers,
   onRetry,
   filmId,
+  onSeeAll,
 }: WatchProvidersRowProps): React.JSX.Element {
   const { t, region } = useLanguage();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -86,6 +89,7 @@ export function WatchProvidersRow({
   const openSheet = useCallback(() => {
     void hapticLight();
     setSheetOpen(true);
+    onSeeAll?.();
     posthogAnalytics.track('providers_see_all_opened', {
       film_id: filmId,
       region,

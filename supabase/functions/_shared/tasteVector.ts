@@ -109,6 +109,16 @@ export interface ChoiceEventRow {
   outcome: string
   low_confidence: boolean
   created_at: string
+  /**
+   * `choice_events.context` (JSONB). Yalnız `source` okunur: 'mood' = Mood
+   * Gauntlet seçimi (submit-mood-choice). Alan yok / source yok = günlük gauntlet.
+   */
+  context?: { source?: unknown } | null
+}
+
+/** Mood Gauntlet seçimi mi? `context.source === 'mood'`; başka her şey günlük sayılır. */
+export function isMoodSourceEvent(ev: Pick<ChoiceEventRow, 'context'>): boolean {
+  return ev.context != null && typeof ev.context === 'object' && ev.context.source === 'mood'
 }
 
 export interface WatchFeedbackRow {
@@ -123,6 +133,8 @@ export interface WatchFeedbackRow {
 export interface SkipCounts {
   /** outcome !== 'choice' (neither/seen/timeout zevk sinyali uretmez). */
   non_choice_outcome: number
+  /** context.source='mood' (Mood Gauntlet): anlık mood seçimi kalıcı zevk sinyali değildir. */
+  mood_source_event: number
   /** film_profiles.profile_vector yok ya da bozuk. */
   missing_film_vector: number
   /** watch_feedback.response taninmiyor ya da NULL. */
@@ -343,14 +355,25 @@ export interface ComputeInput {
  * 0 sinyalde w=0 olur ve sonuc SAF PRIOR'dur — bos/null vektor DONMEZ.
  */
 export function computeTasteVector(input: ComputeInput): TasteVectorResult {
-  const { events, feedback, filmVectors, userArchetypeId, config, centroids } = input
+  const { feedback, filmVectors, userArchetypeId, config, centroids } = input
 
   const skipped: SkipCounts = {
     non_choice_outcome: 0,
+    mood_source_event: 0,
     missing_film_vector: 0,
     unknown_feedback_response: 0,
     zero_weight_feedback: 0,
   }
+
+  // Mood Gauntlet seçimleri (context.source='mood') zevk vektörüne GİRMEZ ve
+  // low_intent serisini de bozmaz: filtre türetmelerden ÖNCE. Sayılır, yutulmaz.
+  const events = input.events.filter((ev) => {
+    if (isMoodSourceEvent(ev)) {
+      skipped.mood_source_event++
+      return false
+    }
+    return true
+  })
 
   const lowIntentIds = deriveLowIntentEventIds(events, config.low_intent_streak)
 

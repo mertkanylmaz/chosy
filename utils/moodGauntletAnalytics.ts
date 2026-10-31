@@ -1,0 +1,89 @@
+/**
+ * Mood Gauntlet PostHog olayları (Faz 2-1) — saf yapıcılar, RN/PostHog yok.
+ *
+ * KURAL: ham mood metni ve ondan türeyen serbest metin (profil adı, gerekçe, film başlığı)
+ * ASLA bir olaya girmez. Yalnız kimlikler, sayılar ve sabit etiketler. Gönderim anında
+ * `assertNoFreeText` ile de savunulur (tests/moodgauntlet/analyticsPrivacy.test.ts).
+ *
+ * NOT: `gauntlet_completed` (North Star, günlük ritüel) ile KARIŞMAMAK için mood olayları
+ * `mood_` önekini taşır.
+ */
+
+export type MoodEntryKind = 'quick' | 'free_text';
+export type MoodPickAction = 'watch_now' | 'where' | 'later' | 'share';
+export type MoodIntensity = 'lighter' | 'stronger';
+
+type Props = Record<string, string | number | boolean | null>;
+
+export interface MoodEvent {
+  name: string;
+  props: Props;
+}
+
+export const MOOD_GAUNTLET_EVENT_NAMES = [
+  'mood_gauntlet_started',
+  'mood_first_four_visible',
+  'mood_match_chosen',
+  'mood_none_of_these_tapped',
+  'mood_gauntlet_completed',
+  'mood_tonight_pick_action',
+  'mood_another_four_tapped',
+  'mood_intensity_tapped',
+  'mood_pipeline_fallback',
+] as const;
+
+export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null): MoodEvent {
+  return {
+    name: 'mood_gauntlet_started',
+    props: { entry, ...(entry === 'quick' && quickMoodId ? { quick_mood_id: quickMoodId } : {}) },
+  };
+}
+
+export function firstFourVisibleEvent(ms: number, cacheHit: boolean): MoodEvent {
+  return { name: 'mood_first_four_visible', props: { ms: Math.max(0, Math.round(ms)), cache_hit: cacheHit } };
+}
+
+export function matchChosenEvent(round: 1 | 2 | 3): MoodEvent {
+  return { name: 'mood_match_chosen', props: { round } };
+}
+
+export function noneOfTheseEvent(round: 1 | 2 | 3): MoodEvent {
+  return { name: 'mood_none_of_these_tapped', props: { round } };
+}
+
+export function completedEvent(msTotal: number): MoodEvent {
+  return { name: 'mood_gauntlet_completed', props: { ms_total: Math.max(0, Math.round(msTotal)) } };
+}
+
+export function pickActionEvent(action: MoodPickAction): MoodEvent {
+  return { name: 'mood_tonight_pick_action', props: { action } };
+}
+
+export function anotherFourEvent(): MoodEvent {
+  return { name: 'mood_another_four_tapped', props: {} };
+}
+
+export function intensityEvent(direction: MoodIntensity): MoodEvent {
+  return { name: 'mood_intensity_tapped', props: { direction } };
+}
+
+export function pipelineFallbackEvent(stage: string): MoodEvent {
+  return { name: 'mood_pipeline_fallback', props: { stage } };
+}
+
+/** İzin verilen string değerler (serbest metin değil, sabit etiketler). */
+const ALLOWED_STRINGS = new Set<string>([
+  'quick', 'free_text', 'watch_now', 'where', 'later', 'share', 'lighter', 'stronger',
+  'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids',
+  // quick_mood_id'ler (QUICK_MOOD_IDS)
+  'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
+]);
+
+/** Gönderim öncesi savunma: serbest metin taşıyan string prop varsa hata (olay atılmaz). */
+export function assertNoFreeText(ev: MoodEvent): void {
+  for (const [k, v] of Object.entries(ev.props)) {
+    if (typeof v === 'string' && !ALLOWED_STRINGS.has(v)) {
+      throw new Error(`mood olayi ${ev.name}.${k} serbest metin tasiyor`);
+    }
+  }
+}

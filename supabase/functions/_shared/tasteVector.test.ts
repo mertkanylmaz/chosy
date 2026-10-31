@@ -347,3 +347,65 @@ Deno.test('eksik/bozuk config SESSIZCE gecmez, throw eder', () => {
     assertThrows(() => validateTasteVectorConfig(cfg), 'taste_vector_config', label)
   }
 })
+
+// ─── Mood Gauntlet kaynağı (context.source='mood') ───────────────────────────
+
+import { isMoodSourceEvent } from './tasteVector.ts'
+
+function withMoodEvents(daily: ChoiceEventRow[], filmVectors: Map<string, number[]>) {
+  // Günlük olayların ARASINA ve SONUNA, farklı filmlerle mood satırları serpiştirir.
+  const mood: ChoiceEventRow[] = []
+  for (let i = 0; i < 6; i++) {
+    const a = `mood-a-${i}`
+    const b = `mood-b-${i}`
+    filmVectors.set(a, fakeFilmVector(900 + i * 2))
+    filmVectors.set(b, fakeFilmVector(901 + i * 2))
+    mood.push({
+      id: `mood-ev-${i}`,
+      user_id: 'u1',
+      session_id: `mood-set-${Math.floor(i / 3)}`,
+      round: (i % 3) + 1,
+      film_a: a,
+      film_b: b,
+      winner: b,
+      outcome: 'choice',
+      low_confidence: true, // low_intent serisini bozabilecek tür
+      context: { source: 'mood' },
+      created_at: new Date(Date.UTC(2026, 7, 1, 0, 2 * i + 1)).toISOString(),
+    })
+  }
+  return [...daily, ...mood]
+}
+
+Deno.test("mood satiri vektoru DEGISTIRMEZ; gunluk satirlar ayni sonucu verir (once/sonra)", () => {
+  const { events, filmVectors } = makeEvents(12)
+  const before = base({ events, filmVectors })
+  const mixed = base({ events: withMoodEvents(events, filmVectors), filmVectors })
+  assertEquals(formatPgVector(mixed.taste_vector), formatPgVector(before.taste_vector))
+  assertEquals(mixed.signal_count, before.signal_count)
+  assertEquals(mixed.nearest_archetype_id, before.nearest_archetype_id)
+  assertEquals(mixed.skipped.mood_source_event, 6)
+  assertEquals(before.skipped.mood_source_event, 0)
+})
+
+Deno.test("yalniz mood satiri olan kullanici: sinyal 0, saf prior", () => {
+  const { events, filmVectors } = makeEvents(0)
+  const r = base({ events: withMoodEvents(events, filmVectors), filmVectors })
+  assertEquals(r.signal_count, 0)
+  assertEquals(r.skipped.mood_source_event, 6)
+})
+
+Deno.test("context yok / source baska / null = gunluk sayilir", () => {
+  assertEquals(isMoodSourceEvent({}), false)
+  assertEquals(isMoodSourceEvent({ context: null }), false)
+  assertEquals(isMoodSourceEvent({ context: {} }), false)
+  assertEquals(isMoodSourceEvent({ context: { source: 'daily' } }), false)
+  assertEquals(isMoodSourceEvent({ context: { source: 'mood' } }), true)
+})
+
+Deno.test("mood olaylari low_intent serisini kesmez / baslatmaz (filtre turetmeden once)", () => {
+  const { events, filmVectors } = makeEvents(9, { lowConfidence: true })
+  const before = base({ events, filmVectors })
+  const mixed = base({ events: withMoodEvents(events, filmVectors), filmVectors })
+  assertEquals(formatPgVector(mixed.taste_vector), formatPgVector(before.taste_vector))
+})

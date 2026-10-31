@@ -127,6 +127,7 @@ import {
   styles,
 } from './styles';
 import { MoodInviteCard } from '@/components/gauntlet/MoodInviteCard';
+import { useMoodGauntletEnabled } from '@/hooks/useMoodGauntletEnabled';
 import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { championInviteFits } from '@/utils/moodInvite';
 import { useBelowHeight } from './useBelowHeight';
@@ -1567,7 +1568,11 @@ function GauntletShellContent(): React.JSX.Element {
   const below = useBelowHeight(BONUS_CARD_RESERVE_HEIGHT);
   // MONEY-1C: Pro Mode daveti, Spotlight kartinin ALTINDA. Bayrak kapaliyken
   // `showMoodInvite` daima false → hero hesabi ve duzen MONEY-1C oncesiyle ayni.
-  const moodOfferEnabled = useMoodOfferEnabled();
+  // Pro Mode Faz 2-1: mood_gauntlet_enabled aciksa peek daveti HIC gosterilmez (ayni slot);
+  // kapaliyken `moodGauntletOn` false → davranis release/2.2 ile ayni.
+  const peekOfferEnabled = useMoodOfferEnabled();
+  const moodGauntletOn = useMoodGauntletEnabled();
+  const moodOfferEnabled = peekOfferEnabled && !moodGauntletOn;
   const moodInviteBelowWithout = below.total({
     card: !spotlightUnavailable,
     cycle: true,

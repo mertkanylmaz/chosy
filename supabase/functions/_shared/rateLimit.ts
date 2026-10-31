@@ -50,6 +50,7 @@ const LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
   'recommend':     { maxRequests: 10, windowMs: 60_000 },  // 10/dakika
   'merge-anonymous-user': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
   'sync-entitlement': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
+  'submit-mood-choice': { maxRequests: 30, windowMs: 60_000 },  // 30/dakika
 }
 
 /** Limit aşıldı — istemci beklemeli (429) */

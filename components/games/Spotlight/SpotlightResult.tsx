@@ -25,6 +25,7 @@ import {
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
 import { MoodInviteCard } from '@/components/gauntlet/MoodInviteCard';
+import { useMoodGauntletEnabled } from '@/hooks/useMoodGauntletEnabled';
 import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { spotlightInviteFits } from '@/utils/moodInvite';
 import { logger } from '@/utils/logger';
@@ -219,7 +220,10 @@ export function SpotlightResult({
   const { fontScale, height: screenH } = useWindowDimensions();
   const sideBySide = fontScale <= SIDE_BY_SIDE_MAX_FONT_SCALE;
   // MONEY-1C: Pro Mode daveti — bayrak kapaliyken ve kucuk ekran / buyuk yazida cizilmez.
-  const moodOfferEnabled = useMoodOfferEnabled();
+  // Pro Mode Faz 2-1: Mood Gauntlet aciksa peek daveti hic gosterilmez (kapaliyken degisiklik yok).
+  const peekOfferEnabled = useMoodOfferEnabled();
+  const moodGauntletOn = useMoodGauntletEnabled();
+  const moodOfferEnabled = peekOfferEnabled && !moodGauntletOn;
   const showMoodInvite = moodOfferEnabled && spotlightInviteFits({ screenH, fontScale });
 
   const saveButton = filmId ? (

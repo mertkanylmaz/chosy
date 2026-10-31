@@ -92,6 +92,30 @@ export async function isMoodOfferEnabled(): Promise<boolean> {
 }
 
 /**
+ * Mood Gauntlet (Pro Mode Faz 2-1). Açık = `app_config.mood_gauntlet_enabled === true` VEYA
+ * oturumdaki `auth.users.id` `app_config.mood_gauntlet_testers` içinde. Her belirsizlik KAPALI.
+ * Karar mantığı mood_offer ile aynı saf fonksiyondur (utils/moodOfferTesters). Bu bir UX
+ * bayrağıdır; kota/yetki sunucuda. Lazy getter — modül seviyesi sabit yasak (kural 5).
+ */
+export async function isMoodGauntletEnabled(): Promise<boolean> {
+  await remoteConfig.hydrate();
+  const flag: unknown = remoteConfig.get('mood_gauntlet_enabled');
+  const testers: unknown = remoteConfig.get('mood_gauntlet_testers');
+  let userId: string | null = null;
+  if (flag !== true && hasTesterEntries(testers)) {
+    try {
+      userId = await readLocalAuthUid();
+    } catch (err) {
+      Sentry.captureException(err, {
+        level: 'warning',
+        tags: { flow: 'mood_gauntlet', step: 'tester_identity' },
+      });
+    }
+  }
+  return evaluateMoodOfferEnabled({ flag, testers, userId });
+}
+
+/**
  * Senkron karar — ÖNBELLEKTEKİ config + son çözülen kimlik. Yalnız teklif zaten
  * `isMoodOfferEnabled()` ile açılmış yüzeylerin ardından çağrılan yerler için
  * (paywall orkestratörünün varyant kill-switch'i). Canlı config'i okur: bayrak/liste

@@ -33,11 +33,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 
 import MoodSearchScreen from '@/components/Home/MoodSearchScreen';
+import { MoodGauntletShell } from '@/components/MoodGauntlet';
 import ContextualPaywall from '@/components/paywalls/ContextualPaywall';
 import { useContextualPaywall } from '@/components/paywalls/useContextualPaywall';
 import { Colors } from '@/constants/Colors';
 import { Theme } from '@/constants/theme';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useMoodGauntletFlag } from '@/hooks/useMoodGauntletEnabled';
 import { useProModeAccess } from '@/hooks/useProModeAccess';
 import { hapticLight } from '@/utils/haptics';
 import { resetsInLabel } from '@/utils/resetsInLabel';
@@ -88,6 +90,8 @@ export default function ProModeScreen(): React.JSX.Element {
   // `withQuota`: hak sunucudan yalniz bu ekranda okunur (mood_offer_enabled aciksa).
   const { allowed, reason, loading, error, gate, searchQuota } = useProModeAccess({ withQuota: true });
   const { triggerPaywall, paywallProps } = useContextualPaywall();
+  // Faz 2-1: yetki verilince hangi kabuk? Bayrak kapaliyken eski MoodSearchScreen (release/2.2 ile ayni).
+  const { enabled: gauntletEnabled, loading: gauntletFlagLoading } = useMoodGauntletFlag();
 
   // Ekran acilisi — yalnizca yetki VERILDIGINDE ve durum basina bir kez.
   // `reason === 'legacy'` grandfathering kohortunu isaretler; kohort davranisi
@@ -144,7 +148,7 @@ export default function ProModeScreen(): React.JSX.Element {
   }, [triggerPaywall]);
 
   // ── 1) Yetki / hak okunuyor ────────────────────────────────────────────
-  if (loading || gate === 'checking') {
+  if (loading || gate === 'checking' || gauntletFlagLoading) {
     return (
       <>
         <Stack.Screen options={{ headerShown: false, animation: 'slide_from_right' }} />
@@ -233,7 +237,14 @@ export default function ProModeScreen(): React.JSX.Element {
   return (
     <>
       <Stack.Screen options={{ headerShown: false, animation: 'slide_from_right' }} />
-      <MoodSearchScreen />
+      {gauntletEnabled ? (
+        <>
+          <StatusBar style="light" backgroundColor={Colors.background} />
+          <MoodGauntletShell />
+        </>
+      ) : (
+        <MoodSearchScreen />
+      )}
     </>
   );
 }

@@ -75,7 +75,7 @@ async function checkRateLimit(): Promise<void> {
 
 // ─── Edge Function ────────────────────────────────────────────────────────────
 
-type EdgeResponse = TasteProfile & {
+export type EdgeResponse = TasteProfile & {
   profile_name?: string;
   profile_description?: string;
   search_id?: string;
@@ -183,7 +183,7 @@ async function callEdgeFunction(input: string, clientSearchId?: string): Promise
 
 // ─── Validation ───────────────────────────────────────────────────────────────
 
-function validateAndNormalize(raw: EdgeResponse): TasteProfile {
+export function validateAndNormalize(raw: EdgeResponse): TasteProfile {
   const clamp = (v: unknown, fallback = 0.5): number => {
     const n = typeof v === 'number' ? v : fallback;
     return Math.min(1, Math.max(0, n));

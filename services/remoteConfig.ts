@@ -40,6 +40,11 @@ const SAFE_DEFAULTS = {
   mood_offer_testers: [] as readonly string[],
   // MONEY-1C: kilit oncesi ucretsiz gorunen film sayisi (clamp: utils/moodLock.ts).
   free_visible_count: 3,
+  // Pro Mode Faz 2-1: Mood Gauntlet (yeni Pro Mode kabuğu). UX bayrağı — yetki sunucuda.
+  // Kapaliyken Pro Mode eski MoodSearchScreen yolunda kalir (release/2.2 ile ayni).
+  mood_gauntlet_enabled: false,
+  // Bayrak kapaliyken bile acilacak kimlikler (auth.users.id dizisi). Bos = kimse.
+  mood_gauntlet_testers: [] as readonly string[],
 } as const;
 
 type ConfigKey = keyof typeof SAFE_DEFAULTS;

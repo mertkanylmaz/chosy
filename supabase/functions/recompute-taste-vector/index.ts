@@ -269,7 +269,7 @@ async function runSingleUser(
     () =>
       service
         .from('choice_events')
-        .select('id, user_id, session_id, round, film_a, film_b, winner, outcome, low_confidence, created_at')
+        .select('id, user_id, session_id, round, film_a, film_b, winner, outcome, low_confidence, created_at, context')
         .eq('user_id', userId)
         .order('created_at', { ascending: true })
         .order('id', { ascending: true }) as never,
@@ -395,7 +395,7 @@ async function runFull(
     () =>
       service
         .from('choice_events')
-        .select('id, user_id, session_id, round, film_a, film_b, winner, outcome, low_confidence, created_at')
+        .select('id, user_id, session_id, round, film_a, film_b, winner, outcome, low_confidence, created_at, context')
         .not('user_id', 'is', null)
         .order('created_at', { ascending: true })
         .order('id', { ascending: true }) as never,
