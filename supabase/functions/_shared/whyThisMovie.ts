@@ -23,6 +23,27 @@ interface FilmForWhy {
   metadata_json?: Record<string, unknown> | null
 }
 
+/** TMDb en-US tür adı → TR. Bilinmeyen etiket (Drama, Western, zaten TR) olduğu gibi kalır. */
+const GENRE_TR: Record<string, string> = {
+  Action: 'Aksiyon',
+  Adventure: 'Macera',
+  Animation: 'Animasyon',
+  Comedy: 'Komedi',
+  Crime: 'Suç',
+  Documentary: 'Belgesel',
+  Family: 'Aile',
+  Fantasy: 'Fantezi',
+  History: 'Tarih',
+  Horror: 'Korku',
+  Music: 'Müzik',
+  Mystery: 'Gizem',
+  Romance: 'Romantik',
+  'Science Fiction': 'Bilim Kurgu',
+  'TV Movie': 'TV Filmi',
+  Thriller: 'Gerilim',
+  War: 'Savaş',
+}
+
 /**
  * Çözüm filminden gerçek verilere dayalı bağlam metni üretir.
  *
@@ -41,7 +62,7 @@ export function buildWhyThisMovie(film: FilmForWhy, locale = 'en'): WhyThisMovie
   }
   const genres = (film.genres ?? []).slice(0, 2)
   if (genres.length > 0) {
-    parts.push(genres.join(', '))
+    parts.push((tr ? genres.map((g) => GENRE_TR[g] ?? g) : genres).join(', '))
   }
   if (film.runtime) {
     parts.push(tr ? `${film.runtime} dk` : `${film.runtime} min`)

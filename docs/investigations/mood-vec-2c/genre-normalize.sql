@@ -7,7 +7,8 @@ CREATE TABLE public.films_genre_backup_20261031 AS
 SELECT f.id, f.genres
 FROM public.films f
 WHERE f.genres && ARRAY['Komedi','Aksiyon','Gerilim','Macera','Romantik','Fantezi','Suç',
-  'Bilim Kurgu','Aile','Korku','Animasyon','Gizem','Tarih','Savaş','Müzik']::text[];
+  'Bilim Kurgu','Aile','Korku','Animasyon','Gizem','Tarih','Savaş','Müzik',
+  'Belgesel','TV Film']::text[];
 
 ALTER TABLE public.films_genre_backup_20261031 ADD PRIMARY KEY (id);
 ALTER TABLE public.films_genre_backup_20261031 ENABLE ROW LEVEL SECURITY;
@@ -18,7 +19,8 @@ WITH map(tr, en) AS (VALUES
   ('Bilim Kurgu','Science Fiction'), ('Romantik','Romance'), ('Fantezi','Fantasy'),
   ('Suç','Crime'), ('Aile','Family'), ('Korku','Horror'), ('Animasyon','Animation'),
   ('Gizem','Mystery'), ('Tarih','History'), ('Savaş','War'), ('Müzik','Music'),
-  ('Aksiyon','Action'), ('Komedi','Comedy'), ('Gerilim','Thriller'), ('Macera','Adventure')
+  ('Aksiyon','Action'), ('Komedi','Comedy'), ('Gerilim','Thriller'), ('Macera','Adventure'),
+  ('Belgesel','Documentary'), ('TV Film','TV Movie')
 ),
 mapped AS (
   SELECT f.id, COALESCE(m.en, x.g) AS g, x.o
@@ -44,7 +46,8 @@ DECLARE v_left int; v_dup int; v_bk int; v_len int;
 BEGIN
   SELECT count(*) INTO v_left FROM public.films
   WHERE genres && ARRAY['Komedi','Aksiyon','Gerilim','Macera','Romantik','Fantezi','Suç',
-    'Bilim Kurgu','Aile','Korku','Animasyon','Gizem','Tarih','Savaş','Müzik']::text[];
+    'Bilim Kurgu','Aile','Korku','Animasyon','Gizem','Tarih','Savaş','Müzik',
+  'Belgesel','TV Film']::text[];
   IF v_left <> 0 THEN RAISE EXCEPTION 'TR etiket kalan film: %', v_left; END IF;
 
   SELECT count(*) INTO v_dup FROM public.films f
