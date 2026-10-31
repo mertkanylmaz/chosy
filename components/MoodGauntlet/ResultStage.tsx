@@ -7,6 +7,7 @@
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Lightning, Wind } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -37,6 +38,7 @@ import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
+import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 
 import { styles } from './styles';
@@ -153,10 +155,32 @@ export function ResultStage({
     [router],
   );
 
-  const handleWatchNow = useCallback(() => {
-    track('watch_now');
-    openFilm(champion.id);
-  }, [champion.id, openFilm, track]);
+  /**
+   * Watch now: bölgedeki sağlayıcı bağlantısı (yoksa JustWatch araması) uygulama içi tarayıcıda;
+   * hiç sağlayıcı yoksa film detay ekranı. Olay provider_found taşır. Tarayıcı açılamazsa hata
+   * kaydedilir ve kullanıcı detay ekranına düşer (sessiz geçiş yok).
+   */
+  const handleWatchNow = useCallback(async () => {
+    const target = resolveWatchTarget({
+      filmId: champion.id,
+      title: champion.title,
+      region,
+      providersReady: providers.state === 'ok',
+      providers: providers.providers as Parameters<typeof resolveWatchTarget>[0]['providers'],
+    });
+    trackMoodEvent(pickActionEvent('watch_now', target.providerFound));
+    if (target.url === null) {
+      openFilm(champion.id);
+      return;
+    }
+    void hapticLight();
+    try {
+      await WebBrowser.openBrowserAsync(target.url);
+    } catch (err) {
+      logger.error('[moodGauntlet] watch now baglantisi acilamadi', err, { code: 'MOOD_GAUNTLET_WATCH_OPEN_FAILED' });
+      openFilm(champion.id);
+    }
+  }, [champion.id, champion.title, region, providers.state, providers.providers, openFilm]);
 
   /** MANUEL watchlist: yalnız bu dokunuşla yazılır (deste/swipe yolundaki otomatik yazım yok). */
   const handleSave = useCallback(async () => {
@@ -233,7 +257,13 @@ export function ResultStage({
             onSeeAll={() => track('where')}
           />
         </View>
-        <PrimaryAction label={t('moodGauntlet.watchNow')} onPress={handleWatchNow} variant="gold" />
+        <PrimaryAction
+          label={t('moodGauntlet.watchNow')}
+          onPress={() => void handleWatchNow()}
+          variant="gold"
+          disabled={providers.state === 'loading'}
+          busy={providers.state === 'loading'}
+        />
         <View style={styles.actionRow}>
           <OutlineAction
             label={saveState === 'saved' ? t('moodGauntlet.saved') : t('moodGauntlet.saveForLater')}

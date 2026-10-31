@@ -234,7 +234,7 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
   assert(!/ActivityIndicator/.test(status), 'minik spinner kalkti')
   assertMatch(status, /PHASE_KEYS/)
   const result = read('components/MoodGauntlet/ResultStage.tsx')
-  assertMatch(result, /label=\{t\('moodGauntlet\.watchNow'\)\} onPress=\{handleWatchNow\} variant="gold"/)
+  assertMatch(result, /label=\{t\('moodGauntlet\.watchNow'\)\}\s+onPress=\{\(\) => void handleWatchNow\(\)\}\s+variant="gold"/)
   assertMatch(result, /disabled=\{!canLighter\}/)
   assertMatch(result, /disabled=\{!canStronger\}/)
   assertMatch(result, /<View style=\{styles\.providersSlot\}>/)

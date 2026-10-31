@@ -46,6 +46,7 @@
     "test:config-store": "deno test tests/config/configStore.test.ts",
     "test:mood-v2": "cd supabase/functions && deno test --allow-read _shared/moodV2.test.ts",
     "test:mood-2d": "cd supabase/functions && deno test --allow-read _shared/moodV2.test.ts _shared/moodParseCache.test.ts _shared/moodRecentShown.test.ts _shared/reasonGuard.test.ts _shared/moodParseTools.test.ts _shared/serverTiming.test.ts",
+    "test:rerank-reason": "cd supabase/functions && deno test --allow-read --allow-env _shared/rerankReason.test.ts _shared/dailyLimit.test.ts _shared/reasonGuard.test.ts",
     "test:mood-choice": "cd supabase/functions && deno test --allow-read _shared/moodChoice.test.ts _shared/tasteVector.test.ts",
     "test:mood-gauntlet": "deno test --allow-read --unstable-sloppy-imports tests/moodgauntlet/",
     "test:mood-claim": "cd supabase/functions && deno test --allow-read _shared/moodClaim.test.ts",

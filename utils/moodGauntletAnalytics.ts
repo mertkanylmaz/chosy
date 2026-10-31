@@ -56,8 +56,12 @@ export function completedEvent(msTotal: number): MoodEvent {
   return { name: 'mood_gauntlet_completed', props: { ms_total: Math.max(0, Math.round(msTotal)) } };
 }
 
-export function pickActionEvent(action: MoodPickAction): MoodEvent {
-  return { name: 'mood_tonight_pick_action', props: { action } };
+/** `providerFound` yalnız watch_now için verilir: bölgede sağlayıcı bulundu mu. */
+export function pickActionEvent(action: MoodPickAction, providerFound?: boolean): MoodEvent {
+  return {
+    name: 'mood_tonight_pick_action',
+    props: { action, ...(providerFound === undefined ? {} : { provider_found: providerFound }) },
+  };
 }
 
 export function anotherFourEvent(): MoodEvent {

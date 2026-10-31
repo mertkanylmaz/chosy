@@ -23,6 +23,12 @@ import {
   rerankDailyLimitResponse,
 } from '../_shared/dailyLimit.ts'
 import { guardReasons } from '../_shared/reasonGuard.ts'
+import {
+  REASON_MAX_CANDIDATES,
+  REASON_OVERVIEW_MAX,
+  REASON_SYSTEM_PROMPT,
+  dailyCounterKey,
+} from '../_shared/rerankReason.ts'
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -69,33 +75,6 @@ Rules:
 
 Return format (ONLY valid JSON, no explanation):
 [3, 12, 1, ...]`
-
-// MOOD-VEC-2d: reason yolunda aday ust siniri, overview kirpma ve gerekce uzunlugu (v1 yolu degismez).
-const REASON_MAX_CANDIDATES = 20
-const REASON_OVERVIEW_MAX = 100
-const REASON_MAX_WORDS = 15
-
-const REASON_SYSTEM_PROMPT = `You are a film recommendation re-ranker. Given a user's mood/intent description and a list of candidate films, select and rank the most relevant films, and give each a one-sentence reason.
-
-Rules:
-- Understand the user's INTENT, not just emotion. Eliminate films with ZERO thematic connection to it
-- Among relevant films, prefer higher original similarity scores
-- If no films are thematically connected, fall back to the best emotional matches (don't return empty)
-- Each reason: ONE short sentence (max ${REASON_MAX_WORDS} words) saying why this film fits THIS mood. Write it in the same language as the user's mood text (Turkish mood text → Turkish reason, otherwise English)
-- Use only facts visible in the candidate line; never invent plot details
-- "n" is the integer before the film in the candidate list
-
-Turkish reasons (when the mood text is Turkish):
-- Natural, everyday Turkish, like a friend recommending a film. No English words and no half-translations: say "son sürpriz" instead of "twist", "gerilim" instead of "thriller", "hikâye" instead of "plot", "rahatlatıcı" instead of "feel-good", "hava" instead of "vibe"
-- Do not invent Turkish words. If unsure how to say something, use a simpler word you are sure about
-- Keep the film title in its original form, as given in the candidate line
-- Max ${REASON_MAX_WORDS} words, one sentence. Good examples:
-  "Amélie, küçük iyiliklerle dolu sıcak bir dünyada yağmurlu günün hüznünü hafifletir."
-  "Memento, olayları tersten anlatarak seni sonuna kadar düşündürür ve finalde şaşırtır."
-  "Superbad, arkadaşlarla birlikte izleyince kahkahayı garantileyen, hızlı ve rahat bir komedi."
-
-Return ONLY valid JSON, no explanation:
-[{"n": 3, "r": "reason"}, {"n": 12, "r": "reason"}]`
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 
@@ -154,14 +133,17 @@ serve(async (req: Request): Promise<Response> => {
     )
   }
 
+  const withReason = body.reason === true
+
   // ── Günlük limit (MONEY-1C) ───────────────────────────────────────────────
   // Geçersiz gövde sayacı yakmasın diye doğrulamadan SONRA. Free 15 / premium +
-  // legacy_mood_access 60, UTC gün. Aşılırsa 429 RERANK_DAILY_LIMIT — istemci
+  // legacy_mood_access 60, UTC gün. Gerekçe çağrısı (reason:true) AYRI sayaç
+  // ('rerank-films-reasons-daily', aynı limitler); id-rerank mevcut sayacı kullanır. Aşılırsa 429 RERANK_DAILY_LIMIT — istemci
   // bunu `http_error` sayıp RPC sırasıyla devam eder (deck gelmeye devam eder).
   // Sayaç/tier okunamazsa FAIL-CLOSED (503), rateLimit.ts ile aynı.
   try {
     const maxPerDay = await lookupDailyLimit(auth.appUserId)
-    await checkDailyLimit(auth.authUserId, 'rerank-films-daily', maxPerDay)
+    await checkDailyLimit(auth.authUserId, dailyCounterKey(withReason), maxPerDay)
   } catch (err) {
     if (err instanceof DailyLimitError) {
       return await rerankDailyLimitResponse(err, auth.authUserId, CORS_HEADERS)
@@ -171,7 +153,6 @@ serve(async (req: Request): Promise<Response> => {
 
   const moodText = body.mood_text.slice(0, 500)
   const count = Math.min(Math.max(body.count ?? 10, 1), 30)
-  const withReason = body.reason === true
   const candidates = body.candidates.slice(0, 50) // max 50 candidates
   // reason yolu: v4 donus sirasiyla (kanal onceligi c>v>a) ilk 20 aday; digerleri LLM'e gitmez.
   const pool = withReason ? candidates.slice(0, REASON_MAX_CANDIDATES) : candidates
