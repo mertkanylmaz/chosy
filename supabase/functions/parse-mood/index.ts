@@ -17,6 +17,7 @@ import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 import {
   PARSE_CACHE_TTL_SECONDS,
   parseCacheKey,
+  parseQuickMoodId,
   promptVersionOf,
   readCachedProfile,
 } from '../_shared/moodParseCache.ts'
@@ -144,19 +145,13 @@ async function writeParseCache(
   result: Record<string, unknown>,
 ): Promise<void> {
   try {
-    const { error } = await getAdmin()
-      .from('mood_parse_cache')
-      .upsert(
-        {
-          key,
-          schema_version: schemaVersion,
-          prompt_version: promptVersion,
-          result,
-          created_at: new Date().toISOString(),
-          hit_count: 0,
-        },
-        { onConflict: 'key' },
-      )
+    // Yazma + suresi dolanlarin sinirli (100 satir) temizligi tek RPC'de (migration 144).
+    const { error } = await getAdmin().rpc('mood_parse_cache_put', {
+      p_key: key,
+      p_schema_version: schemaVersion,
+      p_prompt_version: promptVersion,
+      p_result: result,
+    })
     if (error) throw new Error(error.message)
   } catch (err) {
     await reportV2Aux('PARSE_CACHE_WRITE_FAILED', err instanceof Error ? err.message : String(err))
@@ -528,7 +523,8 @@ async function refundSearchQuota(appUserId: string, cause: string): Promise<bool
 async function readRawInput(
   req: Request,
 ): Promise<
-  { ok: true; rawInput: string; clientSearchId: string | null; schemaV2: boolean } | { ok: false }
+  | { ok: true; rawInput: string; clientSearchId: string | null; schemaV2: boolean; quickMoodId: string | null }
+  | { ok: false }
 > {
   let body: unknown
   try {
@@ -546,7 +542,13 @@ async function readRawInput(
     (body as { client_search_id?: unknown } | null)?.client_search_id,
   )
   return clientSearchId.ok
-    ? { ok: true, rawInput, clientSearchId: clientSearchId.value, schemaV2: isSchemaV2(body) }
+    ? {
+        ok: true,
+        rawInput,
+        clientSearchId: clientSearchId.value,
+        schemaV2: isSchemaV2(body),
+        quickMoodId: parseQuickMoodId(body),
+      }
     : { ok: false }
 }
 
@@ -605,6 +607,8 @@ serve(async (req: Request): Promise<Response> => {
   const rawInput = input.rawInput
   const clientSearchId = input.clientSearchId
   const schemaV2 = input.schemaV2
+  // Onbellek YALNIZ hizli mood karti istegi (v2 + gecerli quick_mood_id) icin; yoksa ne okuma ne yazma.
+  const quickMoodId = schemaV2 ? input.quickMoodId : null
 
   // Sunucu yapilandirma hatasi kotadan ONCE: eksik anahtar yuzunden hak yanmasin.
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
@@ -741,9 +745,9 @@ serve(async (req: Request): Promise<Response> => {
     let cacheKey: string | null = null
     let promptVersion = ''
     let cachedParsed: Record<string, unknown> | null = null
-    if (schemaV2) {
+    if (schemaV2 && quickMoodId) {
       promptVersion = await promptVersionOf(SYSTEM_PROMPT + V2_PROMPT_ADDENDUM)
-      cacheKey = await parseCacheKey(rawInput, 2, promptVersion)
+      cacheKey = await parseCacheKey(quickMoodId, rawInput, 2, promptVersion)
       cachedParsed = await readParseCache(cacheKey)
     }
     const cacheHit = cachedParsed !== null
@@ -792,7 +796,7 @@ serve(async (req: Request): Promise<Response> => {
       parsed = fresh
 
       // Yalniz normalize edilmis parse ciktisi onbellege girer (kullanici kimligi yok).
-      if (schemaV2 && cacheKey) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
+      if (cacheKey) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
     }
 
     const latencyMs = Date.now() - startTime

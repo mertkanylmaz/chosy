@@ -52,6 +52,20 @@ export function findLeak(reason: string): string | null {
   return null
 }
 
+/**
+ * Denetimden önce filmin başlıkları (title, original_title) gerekçeden çıkarılır:
+ * "Twister" / "Mood Indigo" gibi adlar sızıntı sayılmasın. Büyük/küçük harf duyarsız.
+ */
+export function stripTitles(reason: string, titles: readonly string[]): string {
+  // Locale'siz küçültme: "TWISTER" ↔ "Twister" tr kuralında (I→ı) eşleşmezdi.
+  let text = reason.toLowerCase()
+  for (const title of titles) {
+    const t = title.toLowerCase().trim()
+    if (t.length >= 2) text = text.split(t).join(' ')
+  }
+  return text
+}
+
 export interface GuardResult {
   /** film id → gerekçe; denetimden geçmeyen TR gerekçe '' olur (anahtar korunur). */
   reasons: Record<string, string>
@@ -63,12 +77,17 @@ export interface GuardResult {
  * Türkçe mood metni (veya Türkçe görünen gerekçe) için sızıntı denetimi. İngilizce gerekçelere
  * dokunmaz.
  */
-export function guardReasons(reasons: Record<string, string>, moodText: string): GuardResult {
+export function guardReasons(
+  reasons: Record<string, string>,
+  moodText: string,
+  /** film id → [title, original_title]; yoksa başlık çıkarılmaz. */
+  titlesById: Record<string, readonly string[]> = {},
+): GuardResult {
   const moodTr = looksTurkish(moodText)
   const out: Record<string, string> = {}
   const dropped: string[] = []
   for (const [id, reason] of Object.entries(reasons)) {
-    if ((moodTr || looksTurkish(reason)) && findLeak(reason) !== null) {
+    if ((moodTr || looksTurkish(reason)) && findLeak(stripTitles(reason, titlesById[id] ?? [])) !== null) {
       out[id] = ''
       dropped.push(id)
     } else {

@@ -1,6 +1,8 @@
 import { assertEquals, assertNotEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
 import {
   normalizeMoodText,
+  parseQuickMoodId,
+  QUICK_MOOD_IDS,
   parseCacheKey,
   promptVersionOf,
   readCachedProfile,
@@ -17,21 +19,21 @@ Deno.test('sha256Hex: bilinen vektör', async () => {
 })
 
 Deno.test('key: 64 hane hex, biçim farkı aynı anahtarı verir', async () => {
-  const a = await parseCacheKey('Need a laugh', 2, 'abc123')
-  const b = await parseCacheKey('  need   a LAUGH\n', 2, 'abc123')
+  const a = await parseCacheKey('cozy', 'Need a laugh', 2, 'abc123')
+  const b = await parseCacheKey('cozy', '  need   a LAUGH\n', 2, 'abc123')
   assertEquals(a, b)
   assertEquals(/^[0-9a-f]{64}$/.test(a), true)
 })
 
 Deno.test('key: metin, schema_version ve prompt_version her biri anahtarı değiştirir', async () => {
-  const base = await parseCacheKey('need a laugh', 2, 'p1')
-  assertNotEquals(base, await parseCacheKey('need a cry', 2, 'p1'))
-  assertNotEquals(base, await parseCacheKey('need a laugh', 3, 'p1'))
-  assertNotEquals(base, await parseCacheKey('need a laugh', 2, 'p2'))
+  const base = await parseCacheKey('cozy', 'need a laugh', 2, 'p1')
+  assertNotEquals(base, await parseCacheKey('cozy', 'need a cry', 2, 'p1'))
+  assertNotEquals(base, await parseCacheKey('cozy', 'need a laugh', 3, 'p1'))
+  assertNotEquals(base, await parseCacheKey('cozy', 'need a laugh', 2, 'p2'))
 })
 
 Deno.test('key: alan sınırları kayamaz (metin sonu rakamı ≠ schema_version)', async () => {
-  assertNotEquals(await parseCacheKey('mood 2', 1, 'p'), await parseCacheKey('mood', 21, 'p'))
+  assertNotEquals(await parseCacheKey('cozy', 'mood 2', 1, 'p'), await parseCacheKey('cozy', 'mood', 21, 'p'))
 })
 
 Deno.test('promptVersion: 12 hane, prompt değişince değişir', async () => {
@@ -50,4 +52,21 @@ Deno.test('readCachedProfile: geçerli çıktı geçer, bozuk satır null', () =
   assertEquals(readCachedProfile({ search_keywords: [] }), null)
   assertEquals(readCachedProfile({ emotional_state: [], search_keywords: [] }), null)
   assertEquals(readCachedProfile({ emotional_state: {}, search_keywords: 'a' }), null)
+})
+
+Deno.test('key: quick_mood_id anahtarı değiştirir', async () => {
+  assertNotEquals(
+    await parseCacheKey('cozy', 'x', 2, 'p'),
+    await parseCacheKey('rainy', 'x', 2, 'p'),
+  )
+})
+
+Deno.test('parseQuickMoodId: yalnız listedeki string geçer; yoksa/yanlışsa null (önbellek kullanılmaz)', () => {
+  assertEquals(parseQuickMoodId({ quick_mood_id: 'cozy' }), 'cozy')
+  assertEquals(parseQuickMoodId({}), null)
+  assertEquals(parseQuickMoodId(null), null)
+  assertEquals(parseQuickMoodId({ quick_mood_id: 5 }), null)
+  assertEquals(parseQuickMoodId({ quick_mood_id: 'rastgele' }), null)
+  assertEquals(parseQuickMoodId({ quick_mood_id: '' }), null)
+  assertEquals(QUICK_MOOD_IDS.length, 8)
 })

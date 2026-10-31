@@ -27,15 +27,36 @@ export async function promptVersionOf(prompt: string): Promise<string> {
 }
 
 /**
- * key = sha256(normalize(metin) \n schema_version \n prompt_version).
- * Ayraç '\n': normalize sonrası metinde yeni satır kalmadığı için birleşim belirsiz olamaz.
+ * Önbelleğe girebilen hızlı mood kartı kimlikleri = istemci MOOD_CARDS id'leri
+ * (components/Home/MoodCardGrid/index.tsx). Beyaz liste: rastgele bir string önbellek
+ * satırı üretemez. Eval moods.json qm_* kimlikleri bunlarla eşlenir (scripts/mood-eval/run.ts).
+ */
+export const QUICK_MOOD_IDS: readonly string[] = [
+  'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
+]
+
+/**
+ * İstek gövdesindeki quick_mood_id. Yoksa, string değilse veya listede değilse null:
+ * önbellek hiç kullanılmaz (ne okuma ne yazma).
+ */
+export function parseQuickMoodId(body: unknown): string | null {
+  const v = (body as { quick_mood_id?: unknown } | null)?.quick_mood_id
+  return typeof v === 'string' && QUICK_MOOD_IDS.includes(v) ? v : null
+}
+
+/**
+ * key = sha256(quick_mood_id + "\n" + normalize(metin) + "\n" + schema_version + "\n" + prompt_version).
+ * Ayraç "\n": normalize sonrası metinde yeni satır kalmadığı için birleşim belirsiz olamaz.
  */
 export async function parseCacheKey(
+  quickMoodId: string,
   rawInput: string,
   schemaVersion: number,
   promptVersion: string,
 ): Promise<string> {
-  return await sha256Hex([normalizeMoodText(rawInput), String(schemaVersion), promptVersion].join('\n'))
+  return await sha256Hex(
+    [quickMoodId, normalizeMoodText(rawInput), String(schemaVersion), promptVersion].join('\n'),
+  )
 }
 
 /**

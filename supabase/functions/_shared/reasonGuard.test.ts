@@ -1,5 +1,5 @@
 import { assertEquals } from 'https://deno.land/std@0.168.0/testing/asserts.ts'
-import { findLeak, guardReasons, looksTurkish } from './reasonGuard.ts'
+import { findLeak, guardReasons, looksTurkish, stripTitles } from './reasonGuard.ts'
 
 Deno.test('findLeak: eval\'de gözlenen bozuk biçimler yakalanır', () => {
   assertEquals(findLeak('Bu film şaşırtmazlık hissi verir.'), 'şaşırtmazlık')
@@ -52,4 +52,31 @@ Deno.test('guardReasons: mood İngilizce ama gerekçe Türkçe görünüyorsa de
   const r = guardReasons({ a: 'Gerçek bir thriller deneyimi, çok gergin.' }, 'something tense')
   assertEquals(r.reasons, { a: '' })
   assertEquals(r.dropped, ['a'])
+})
+
+Deno.test('guardReasons: film başlığı sızıntı sayılmaz (Twister), gerçek sızıntı hâlâ düşer', () => {
+  const titles = { a: ['Twister'], b: ['Twister'], c: ['Mood Indigo', "L'Écume des jours"] }
+  const r = guardReasons(
+    {
+      a: 'Twister, kasırga avcılarının peşinden giden hızlı ve eğlenceli bir macera.',
+      b: 'Twister, sonunda plot twist ile şaşırtıyor.',
+      c: 'mood indigo, hüzünlü ve rüya gibi bir aşk hikâyesi.',
+    },
+    'Bugün hızlı bir macera istiyorum',
+    titles,
+  )
+  assertEquals(r.reasons.a !== '', true)
+  assertEquals(r.reasons.b, '')
+  assertEquals(r.reasons.c !== '', true)
+  assertEquals(r.dropped, ['b'])
+})
+
+Deno.test('guardReasons: başlık verilmezse eski davranış (Twister düşer)', () => {
+  const r = guardReasons({ a: 'Twister hızlı bir macera.' }, 'Bugün hızlı bir macera istiyorum')
+  assertEquals(r.reasons.a, '')
+})
+
+Deno.test('stripTitles: büyük/küçük harf duyarsız, kısa/boş başlık yok sayılır', () => {
+  assertEquals(stripTitles('TWISTER güzel', ['twister']).trim(), 'güzel')
+  assertEquals(stripTitles('a b', ['', 'x']), 'a b')
 })

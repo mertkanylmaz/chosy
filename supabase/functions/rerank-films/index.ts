@@ -37,6 +37,8 @@ const CORS_HEADERS = {
 interface CandidateFilm {
   id: string
   title: string
+  /** Opsiyonel: gerekce denetiminde (reasonGuard) basliktan gelen yanlis sizinti eslesmesini onler. */
+  original_title?: string | null
   overview: string | null
   genres: string[] | null
   year: number | null
@@ -239,7 +241,11 @@ ${filmList}`
     }
 
     // Turkce gerekcede bilinen Ingilizce sizinti / bozuk bicim varsa gerekce bos doner (UI gerekcesiz gosterir).
-    const guarded = withReason ? guardReasons(reasons, moodText) : null
+    const titlesById: Record<string, string[]> = {}
+    for (const c of pool) {
+      titlesById[c.id] = [c.title, c.original_title ?? ''].filter((t) => typeof t === 'string' && t.length > 0)
+    }
+    const guarded = withReason ? guardReasons(reasons, moodText, titlesById) : null
     if (guarded && guarded.dropped.length > 0) {
       console.warn(`[rerank-films] REASON_DROPPED: ${guarded.dropped.length}/${Object.keys(reasons).length} gerekce TR sizinti denetiminde bosaltildi`)
     }

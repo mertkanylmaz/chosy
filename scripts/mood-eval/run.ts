@@ -173,6 +173,11 @@ async function parityCheck(moods: Mood[], session: EvalSession): Promise<void> {
   add('rerank edge overview kırpma (reason yolu)', C.V2_OVERVIEW_MAX, firstMatch(rerankFn, /const REASON_OVERVIEW_MAX = (\d+)/));
   add('rerank edge reason aday sınırı', C.V2_RERANK_CANDIDATES, firstMatch(rerankFn, /const REASON_MAX_CANDIDATES = (\d+)/));
   add('rerank edge reason kelime sınırı', 15, firstMatch(rerankFn, /const REASON_MAX_WORDS = (\d+)/));
+  {
+    const idsSrc = firstMatch(read('supabase/functions/_shared/moodParseCache.ts'), /QUICK_MOOD_IDS[^=]*=\s*\[([^\]]*)\]/);
+    const ids = [...idsSrc.matchAll(/'([a-z]+)'/g)].map((m) => m[1]).sort().join(',');
+    add('sunucu QUICK_MOOD_IDS ↔ eval eşlemesi', Object.values(QUICK_MOOD_CLIENT_ID).sort().join(','), ids);
+  }
   add('parse-mood v2 MAX_SUGGESTED', 6, firstMatch(read('supabase/functions/_shared/moodV2.ts'), /const MAX_SUGGESTED = (\d+)/));
   add('era varsayılanı from', 1970, firstMatch(parser, /era_preference\?\.from === 'number'\s*\?\s*raw\.era_preference\.from\s*:\s*(\d+)/));
   add('era varsayılanı to', 2025, firstMatch(parser, /raw\.era_preference\.to\s*:\s*(\d+)/));
@@ -329,7 +334,7 @@ async function ensureParsed(
         Authorization: `Bearer ${await token(ctx)}`,
         apikey: anon,
       },
-      body: JSON.stringify(schemaV2 ? { raw_input: mood.text, schema_version: 2 } : { raw_input: mood.text }),
+      body: JSON.stringify(schemaV2 ? parseV2Body(mood) : { raw_input: mood.text }),
       signal: controller.signal,
     });
   } catch (e) {
@@ -577,6 +582,18 @@ async function runRerank(
 // ─── V4 önbellekli geçiş (2d) ────────────────────────────────────────────────
 
 /** parse-mood v2'yi bir kez çağırır; yanıt gövdesini ve süreyi döner (önbellek isabeti çağıranda denetlenir). */
+/** moods.json qm_* kimlikleri → istemci MOOD_CARDS id'leri (= sunucu QUICK_MOOD_IDS). */
+const QUICK_MOOD_CLIENT_ID: Record<string, string> = {
+  qm_rainy: 'rainy', qm_mindbending: 'mindbending', qm_date: 'datenight', qm_adrenaline: 'adrenaline',
+  qm_comedy: 'laugh', qm_nostalgia: 'nostalgia', qm_cozy: 'cozy', qm_emotional: 'emotional',
+};
+
+/** parse-mood v2 gövdesi; quick mood ise quick_mood_id eklenir (sunucu önbelleği yalnız bununla çalışır). */
+function parseV2Body(mood: Mood): Record<string, unknown> {
+  const quickId = mood.kind === 'quick' ? QUICK_MOOD_CLIENT_ID[mood.id] : undefined;
+  return { raw_input: mood.text, schema_version: 2, ...(quickId ? { quick_mood_id: quickId } : {}) };
+}
+
 async function callParseV2(ctx: Ctx, mood: Mood): Promise<{ body: Record<string, unknown>; ms: number }> {
   const url = envOrThrow('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
   const anon = envOrThrow('SUPABASE_ANON_KEY', 'EXPO_PUBLIC_SUPABASE_ANON_KEY');
@@ -593,7 +610,7 @@ async function callParseV2(ctx: Ctx, mood: Mood): Promise<{ body: Record<string,
         Authorization: `Bearer ${await token(ctx)}`,
         apikey: anon,
       },
-      body: JSON.stringify({ raw_input: mood.text, schema_version: 2 }),
+      body: JSON.stringify(parseV2Body(mood)),
       signal: controller.signal,
     });
   } catch (e) {
