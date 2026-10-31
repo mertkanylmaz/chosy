@@ -1,0 +1,63 @@
+-- MOOD-VEC-2b Faz 2C (parça 3/19): 21 arşiv filminin release_date[/imdb_id] + imdb_votes[/imdb_rating] + curation_tier'ı. HAZIRLANDI, ÇALIŞTIRILMADI.
+-- Kaynak: TMDb (release_date, imdb_id) + IMDb veri dosyası (oy/rating). Her UPDATE filmin hâlâ archive + release_date NULL + oyun eski değerde olduğunu doğrular.
+-- Beklenen: 21 UPDATE × 1 satır.
+
+BEGIN;
+
+CREATE TABLE films_phase2c_backup_20261031_3 AS
+  SELECT id, imdb_id, imdb_rating, imdb_votes, release_date, curation_tier FROM films WHERE id IN ('23f2260b-bcd7-488e-bec0-7673ab5c2dd1', '2403581d-d8b8-4aa6-a306-42c948061e7e', '24c35e04-5730-4562-aa3d-3281d27254bf', '2582db7e-429c-44cf-94a4-8a90c1f16585', '25d60d82-4e17-4869-9661-e7105fd85a1f', '284ad83a-abf8-4a64-bb2d-052ed5919a20', '28ccb5e3-c702-4cf2-8363-9441a62b4c2e', '28ccfff1-ead8-4b15-858e-1b2bd83c50f4', '2b8a20a7-a768-406b-a0d2-8664be127ba6', '2be92070-7483-41af-ae37-590fe94a4056', '2bfa498c-0c4d-420a-9dbb-fb36b5622922', '2c2883e5-5691-40ce-bdaa-cd4538e2f745', '2c5a608f-5cb1-45ba-94c6-dd9355337305', '2c9d1385-6f17-4696-aec0-263194d5a3dd', '2dbe2e78-4e6b-4d37-821e-95ddb3a93ebe', '2dfaf663-7489-4fac-9833-cff811bcf1b4', '3049e34e-d4f4-4298-92c2-578ae83c39ee', '319e50e9-3c86-4d17-bc84-8c90e3067fc7', '3228fe33-0219-4564-a5e9-79aa491368e5', '325a79a0-89fc-4385-bd86-a510791f4f2d', '33040d95-bee1-4286-9800-50bcdd4a0a88');
+ALTER TABLE films_phase2c_backup_20261031_3 ENABLE ROW LEVEL SECURITY;
+
+-- Aquaman (2018) 6.8/561603 → extended
+UPDATE films SET release_date = '2018-12-07', imdb_id = 'tt1477834', imdb_votes = 561603, imdb_rating = 6.8, curation_tier = 'extended' WHERE id = '23f2260b-bcd7-488e-bec0-7673ab5c2dd1' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Lost in Translation (2003) 7.7/536340 → extended
+UPDATE films SET release_date = '2003-09-18', imdb_id = 'tt0335266', imdb_votes = 536340, imdb_rating = 7.7, curation_tier = 'extended' WHERE id = '2403581d-d8b8-4aa6-a306-42c948061e7e' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Before Midnight (2013) 7.9/189017 → extended
+UPDATE films SET release_date = '2013-04-05', imdb_id = 'tt2209418', imdb_votes = 189017, imdb_rating = 7.9, curation_tier = 'extended' WHERE id = '24c35e04-5730-4562-aa3d-3281d27254bf' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Kubo and the Two Strings (2016) 7.7/149219 → extended
+UPDATE films SET release_date = '2016-08-18', imdb_id = 'tt4302938', imdb_votes = 149219, imdb_rating = 7.7, curation_tier = 'extended' WHERE id = '2582db7e-429c-44cf-94a4-8a90c1f16585' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Where Is The Friend's House? (1987) 8.1/23874 → core
+UPDATE films SET release_date = '1987-07-01', imdb_votes = 23874, imdb_rating = 8.1, curation_tier = 'core' WHERE id = '25d60d82-4e17-4869-9661-e7105fd85a1f' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- The Cure (1995) 7.7/12343 → extended
+UPDATE films SET release_date = '1995-04-21', imdb_votes = 12343, imdb_rating = 7.7, curation_tier = 'extended' WHERE id = '284ad83a-abf8-4a64-bb2d-052ed5919a20' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- 4 Months, 3 Weeks and 2 Days (2007) 7.9/66749 → extended
+UPDATE films SET release_date = '2007-08-24', imdb_id = 'tt1032846', imdb_votes = 66749, imdb_rating = 7.9, curation_tier = 'extended' WHERE id = '28ccb5e3-c702-4cf2-8363-9441a62b4c2e' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Abominable (2019) 7/47612 → extended
+UPDATE films SET release_date = '2019-09-19', imdb_id = 'tt6324278', imdb_votes = 47612, imdb_rating = 7, curation_tier = 'extended' WHERE id = '28ccfff1-ead8-4b15-858e-1b2bd83c50f4' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- He's Just Not That Into You (2009) 6.4/198559 → extended
+UPDATE films SET release_date = '2009-02-06', imdb_votes = 198559, imdb_rating = 6.4, curation_tier = 'extended' WHERE id = '2b8a20a7-a768-406b-a0d2-8664be127ba6' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- The Conjuring: The Devil Made Me Do It (2021) 6.2/174909 → extended
+UPDATE films SET release_date = '2021-05-25', imdb_id = 'tt7069210', imdb_votes = 174909, imdb_rating = 6.2, curation_tier = 'extended' WHERE id = '2be92070-7483-41af-ae37-590fe94a4056' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Ed Wood (1994) 7.8/191405 → extended
+UPDATE films SET release_date = '1994-09-28', imdb_id = 'tt0109707', imdb_votes = 191405, imdb_rating = 7.8, curation_tier = 'extended' WHERE id = '2bfa498c-0c4d-420a-9dbb-fb36b5622922' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- The Good Boy (2026) 6.8/19852 → extended
+UPDATE films SET release_date = '2026-03-05', imdb_votes = 19852, imdb_rating = 6.8, curation_tier = 'extended' WHERE id = '2c2883e5-5691-40ce-bdaa-cd4538e2f745' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- Mission: Impossible - Fallout (2018) 7.7/426408 → extended
+UPDATE films SET release_date = '2018-07-25', imdb_id = 'tt4912910', imdb_votes = 426408, imdb_rating = 7.7, curation_tier = 'extended' WHERE id = '2c5a608f-5cb1-45ba-94c6-dd9355337305' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Life of Pi (2012) 7.9/707606 → extended
+UPDATE films SET release_date = '2012-11-20', imdb_id = 'tt0454876', imdb_votes = 707606, imdb_rating = 7.9, curation_tier = 'extended' WHERE id = '2c9d1385-6f17-4696-aec0-263194d5a3dd' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Dünyanın Tarihi (1981) 6.8/59742 → extended
+UPDATE films SET release_date = '1981-06-12', imdb_votes = 59742, imdb_rating = 6.8, curation_tier = 'extended' WHERE id = '2dbe2e78-4e6b-4d37-821e-95ddb3a93ebe' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- The Best of Me (2014) 6.7/82076 → extended
+UPDATE films SET release_date = '2014-10-15', imdb_id = 'tt1972779', imdb_votes = 82076, imdb_rating = 6.7, curation_tier = 'extended' WHERE id = '2dfaf663-7489-4fac-9833-cff811bcf1b4' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- 21 Jump Street (2012) 7.2/658046 → extended
+UPDATE films SET release_date = '2012-03-14', imdb_id = 'tt1232829', imdb_votes = 658046, imdb_rating = 7.2, curation_tier = 'extended' WHERE id = '3049e34e-d4f4-4298-92c2-578ae83c39ee' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Damsel (2024) 6.1/123115 → extended
+UPDATE films SET release_date = '2024-03-07', imdb_id = 'tt13452446', imdb_votes = 123115, imdb_rating = 6.1, curation_tier = 'extended' WHERE id = '319e50e9-3c86-4d17-bc84-8c90e3067fc7' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Argo (2012) 7.7/675181 → extended
+UPDATE films SET release_date = '2012-10-11', imdb_id = 'tt1024648', imdb_votes = 675181, imdb_rating = 7.7, curation_tier = 'extended' WHERE id = '3228fe33-0219-4564-a5e9-79aa491368e5' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+-- Space Pirate Captain Harlock (2013) 6.4/13472 → extended
+UPDATE films SET release_date = '2013-09-07', imdb_votes = 13472, imdb_rating = 6.4, curation_tier = 'extended' WHERE id = '325a79a0-89fc-4385-bd86-a510791f4f2d' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_rating IS NULL;
+-- Moana (2016) 7.6/452413 → extended
+UPDATE films SET release_date = '2016-10-13', imdb_id = 'tt3521164', imdb_votes = 452413, imdb_rating = 7.6, curation_tier = 'extended' WHERE id = '33040d95-bee1-4286-9800-50bcdd4a0a88' AND curation_tier = 'archive' AND release_date IS NULL AND imdb_votes IS NOT DISTINCT FROM NULL AND imdb_id IS NULL AND imdb_rating IS NULL;
+
+DO $$
+DECLARE _backup INT; _unchanged INT;
+BEGIN
+  SELECT count(*) INTO _backup FROM films_phase2c_backup_20261031_3;
+  SELECT count(*) INTO _unchanged FROM films f JOIN films_phase2c_backup_20261031_3 b ON b.id = f.id WHERE f.curation_tier = b.curation_tier;
+  IF _backup <> 21 THEN RAISE EXCEPTION 'ABORT: yedek % satir (beklenen 21)', _backup; END IF;
+  IF _unchanged <> 0 THEN RAISE EXCEPTION 'ABORT: % film degismedi (UPDATE 0 satir etkiledi)', _unchanged; END IF;
+END $$;
+
+COMMIT;
