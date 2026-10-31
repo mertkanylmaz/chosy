@@ -1,0 +1,24 @@
+{
+  "payload_hash": "c5c2e84caa6d54a1",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4807,
+  "http_status": 200,
+  "reranked_ids": [
+    "de919d71-ae42-4755-b24b-0a5f8b856c80",
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+    "337234a3-a00b-4649-89d8-578aeb71cef5",
+    "2403581d-d8b8-4aa6-a306-42c948061e7e"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "de919d71-ae42-4755-b24b-0a5f8b856c80": "Intimate portrait of a poet's quiet daily life with his artist wife, perfectly capturing contemplative slowness.",
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Two strangers share a peaceful evening walk through Vienna, emphasizing gentle conversation over plot.",
+    "337234a3-a00b-4649-89d8-578aeb71cef5": "Isolated island setting with a female painter in serene, intimate creative work and budding romance.",
+    "2403581d-d8b8-4aa6-a306-42c948061e7e": "Two melancholic souls drift through Tokyo in quiet reflection, evoking calm introspection and emotional warmth."
+  }
+}

@@ -1,0 +1,910 @@
+{
+  "mood_id": "qm_rainy",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "337234a3-a00b-4649-89d8-578aeb71cef5",
+        "tmdb_id": 531428,
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019,
+        "overview": "On an isolated island in Brittany at the end of the eighteenth century, a female painter is obliged to paint a wedding portrait of a young woman.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 121,
+        "vote_average": 8.095,
+        "director": "Céline Sciamma",
+        "similarity": 0.674211640949025,
+        "curation_tier": "core",
+        "match_reason": "island, fire, beach",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "fc8ee875-9934-4b6e-834f-aff0cb526231",
+        "tmdb_id": 398818,
+        "title": "Call Me by Your Name",
+        "year": 2017,
+        "overview": "In the summer of 1983, a 17-year-old Elio spends his days in his family's villa in Italy. One day Oliver, a graduate student, arrives to assist Elio's father, a professor of Greco-Roman culture. Soon, Elio and Oliver discover a summer that will alter their lives forever.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 8.1,
+        "director": "Luca Guadagnino",
+        "similarity": 0.665109003054863,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, upper class, italy",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.651600979017715,
+        "curation_tier": "extended",
+        "match_reason": "drug dealer, high school, florida",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f806fed3-4e69-47d7-a2bf-f1d75d16420f",
+        "tmdb_id": 565310,
+        "title": "The Farewell",
+        "year": 2019,
+        "overview": "A headstrong Chinese-American woman returns to China when her beloved grandmother is given a terminal diagnosis. Billi struggles with her family's decision to keep grandma in the dark about her own illness as they all stage an impromptu wedding to see grandma one last time.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 100,
+        "vote_average": 7.417,
+        "director": "Lulu Wang",
+        "similarity": 0.604736856973698,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "2403581d-d8b8-4aa6-a306-42c948061e7e",
+        "tmdb_id": 153,
+        "title": "Lost in Translation",
+        "year": 2003,
+        "overview": "Two lost souls visiting Tokyo -- the young, neglected wife of a photographer and a washed-up movie star shooting a TV commercial -- find an odd solace and pensive freedom to be real in each other's company, away from their lives in America.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.384,
+        "director": "Sofia Coppola",
+        "similarity": 0.594431972468268,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "de919d71-ae42-4755-b24b-0a5f8b856c80",
+        "tmdb_id": 370755,
+        "title": "Paterson",
+        "year": 2016,
+        "overview": "A week in the life of Paterson, a poet bus driver, and his wife Laura, a very creative artist, who live in Paterson, New Jersey, hometown of many famous poets and artists.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 118,
+        "vote_average": 7.119,
+        "director": "Jim Jarmusch",
+        "similarity": 0.583711955280149,
+        "curation_tier": "extended",
+        "match_reason": "husband wife relationship, new jersey, poetry",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+        "tmdb_id": 76,
+        "title": "Before Sunrise",
+        "year": 1995,
+        "overview": "An unexpected meeting on a train leads two travelers to spend an evening wandering through Vienna. As the night unfolds, they share stories and conversations about life and love, exploring new ideas while a quiet intimacy grows between them, knowing it may be their only night together.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 101,
+        "vote_average": 7.973,
+        "director": "Richard Linklater",
+        "similarity": 0.475443788837371,
+        "curation_tier": "core",
+        "match_reason": "talking, soulmates, walking",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f41ac098-b659-4021-9861-895b0007464c",
+        "tmdb_id": 965150,
+        "title": "Aftersun",
+        "year": 2022,
+        "overview": "Sophie reflects on the shared joy and private melancholy of a holiday she took with her father twenty years earlier. Memories fill the gaps between camcorder footages as she tries to reconcile the father she knew with the troubled man she didn't.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.7,
+        "director": "Charlotte Wells",
+        "similarity": 0.466225555391903,
+        "curation_tier": "core",
+        "match_reason": "hotel, depression, karaoke",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+        "tmdb_id": 348678,
+        "title": "A Man Called Ove",
+        "year": 2015,
+        "overview": "Despite being deposed as president of his condominium association, grumpy 59-year-old Ove continues to watch over his neighbourhood with an iron fist. When pregnant Parvaneh and her family move into the terraced house opposite Ove and she accidentally back into Ove’s mailbox, it sets off a series of unexpected changes in his life.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.605,
+        "director": "Hannes Holm",
+        "similarity": 0.889040087292983,
+        "curation_tier": "core",
+        "match_reason": "friendship, dark comedy, black humor",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d296d000-6276-4650-8e6b-bd28cbf587a5",
+        "tmdb_id": 404,
+        "title": "The Straight Story",
+        "year": 1999,
+        "overview": "Retired farmer and widower Alvin Straight learns one day that his distant brother Lyle has suffered a stroke and may not recover. Alvin is determined to make things right with Lyle while he still can, but his brother lives in Wisconsin, while Alvin is stuck in Iowa with no car and no driver's license. He then has the idea of making the trip on his old lawnmower, thus beginning a picturesque and at times deeply spiritual odyssey.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.7,
+        "director": "David Lynch",
+        "similarity": 0.886680752366704,
+        "curation_tier": "core",
+        "match_reason": "sibling relationship, mississippi river, wisconsin",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.884214367276973,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f1bac13b-09a5-4c8b-95bb-a6d102df4903",
+        "tmdb_id": 4935,
+        "title": "Howl's Moving Castle",
+        "year": 2004,
+        "overview": "Sophie, a young milliner, is turned into an elderly woman by a witch who enters her shop and curses her. She encounters a wizard named Howl and gets caught up in his resistance to fighting for the king.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 119,
+        "vote_average": 8.387,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.883908967035964,
+        "curation_tier": "core",
+        "match_reason": "witch, flying, rain",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.876354683341199,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.832287326502209,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "71be062c-5a82-47fb-950f-ba0cede9169d",
+        "tmdb_id": 3175,
+        "title": "Barry Lyndon",
+        "year": 1975,
+        "overview": "An Irish rogue uses his cunning and wit to work his way up the social classes of 18th century England, transforming himself from the humble Redmond Barry into the noble Barry Lyndon.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 188,
+        "vote_average": 8,
+        "director": "Stanley Kubrick",
+        "similarity": 0.821794575372194,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, gambling, desertion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4e034c19-a1c9-45e2-a1a1-d022a971f6f2",
+        "tmdb_id": 10867,
+        "title": "Malena",
+        "year": 2000,
+        "overview": "12-year-old Renato experiences three significant events on the same day: the beginning of the Second World War, getting a bike, and witnessing the arrival of the gorgeous Malèna. Through his eyes, we see the curse of beauty and loneliness of Malena, whose husband is presumed dead, and, through his soul, we see his love for her.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.468,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.821516960003022,
+        "curation_tier": "core",
+        "match_reason": "prostitute, jealousy, sicily, italy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.817884958783362,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c0d68936-2bb8-4aef-80a3-addbbaeed656",
+        "tmdb_id": 72213,
+        "title": "Courageous",
+        "year": 2011,
+        "overview": "Law enforcement officers Adam Mitchell, Nathan Hayes, and their partners stand up to the worst the streets have to offer with confidence and focus. Yet at the end of the day, they face a challenge that none of them are truly prepared to tackle: fatherhood. They know that God desires to turn the hearts of fathers to their children, but their children are beginning to drift further and further away from them. When tragedy hits home, these men are left wrestling with their hopes, their fears, their faith, and their fathering. Can a newfound urgency help these dads draw closer to God... and to their children?",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.608,
+        "director": "Alex Kendrick",
+        "similarity": 0.814970457534426,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.812478399508947,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "105b7ebe-7aef-4841-953e-313103e560a3",
+        "tmdb_id": 1103621,
+        "title": "How to Make Millions Before Grandma Dies",
+        "year": 2024,
+        "overview": "M, a university dropout low on money and luck, volunteers to take care of his terminally ill grandmother, in the hope of pocketing an inheritance.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 8.106,
+        "director": "Pat Boonnitipat",
+        "similarity": 0.812248634375766,
+        "curation_tier": "extended",
+        "match_reason": "mother, father, family relationships",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8f71ca3e-f71f-4f20-a995-a208d504de71",
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value",
+        "year": 2025,
+        "overview": "Sisters Nora and Agnes reunite with their estranged father, the charismatic Gustav, a once-renowned director who offers stage actress Nora a role in what he hopes will be his comeback film. When Nora turns it down, she soon discovers he has given her part to an eager young Hollywood star.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.5,
+        "director": "Joachim Trier",
+        "similarity": 0.811643247200949,
+        "curation_tier": "extended",
+        "match_reason": "dysfunctional family, filmmaking, generational",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 0.809564874606353,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "51f59189-488e-4c26-a318-d9b5d09286a1",
+        "tmdb_id": 10161,
+        "title": "My Left Foot: The Story of Christy Brown",
+        "year": 1989,
+        "overview": "No one expects much from Christy Brown, a boy with cerebral palsy born into a working-class Irish family. Though Christy is a spastic quadriplegic and essentially paralyzed, a miraculous event occurs when, at the age of 5, he demonstrates control of his left foot by using chalk to scrawl a word on the floor. With the help of his steely mother — and no shortage of grit and determination — Christy overcomes his infirmity to become a painter, poet and author.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.524,
+        "director": "Jim Sheridan",
+        "similarity": 0.806249581089682,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f187fd0b-0cc6-4686-bd81-be4cf9c47ad1",
+        "tmdb_id": 12498,
+        "title": "Sling Blade",
+        "year": 1996,
+        "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.544,
+        "director": "Billy Bob Thornton",
+        "similarity": 0.804849576666726,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0b743437-b683-4e46-b9e7-85c1b1767b2e",
+        "tmdb_id": 29154,
+        "title": "Stand and Deliver",
+        "year": 1988,
+        "overview": "Jaime Escalante is a mathematics teacher in a school in a hispanic neighbourhood. Convinced that his students have potential, he adopts unconventional teaching methods to try and turn gang members and no-hopers into some of the country's top algebra and calculus students.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.638,
+        "director": "Ramón Menéndez",
+        "similarity": 0.799914568230183,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2c9d1385-6f17-4696-aec0-263194d5a3dd",
+        "tmdb_id": 87827,
+        "title": "Life of Pi",
+        "year": 2012,
+        "overview": "The story of an Indian boy named Pi, a zookeeper's son who finds himself in the company of a hyena, zebra, orangutan, and a Bengal tiger after a shipwreck sets them adrift in the Pacific Ocean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.407,
+        "director": "Ang Lee",
+        "similarity": 0.79905552290995,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "70e2f184-90b4-489f-bfd2-35752c9f52a5",
+        "tmdb_id": 618588,
+        "title": "Arthur the King",
+        "year": 2024,
+        "overview": "Over the course of ten days and 435 miles, an unbreakable bond is forged between pro adventure racer Michael Light and a scrappy street dog companion dubbed Arthur. As the team is pushed to their outer limits of endurance in the race, Arthur redefines what victory, loyalty and friendship truly mean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.553,
+        "director": "Simon Cellan Jones",
+        "similarity": 0.795245655121149,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ee6d3138-3887-4fb2-861f-d08a5e0d4277",
+        "tmdb_id": 10110,
+        "title": "Empire of the Sun",
+        "year": 1987,
+        "overview": "Jamie Graham, a privileged English boy, is living in Shanghai when the Japanese invade and force all foreigners into prison camps. Jamie is captured with an American sailor, who looks out for him while they are in the camp together. Even though he is separated from his parents and in a hostile environment, Jamie maintains his dignity and youthful spirit, providing a beacon of hope for the others held captive with him.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 7.503,
+        "director": "Steven Spielberg",
+        "similarity": 0.792218649653383,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e0a69f79-1fca-4d68-abba-574eb5df43fa",
+        "tmdb_id": 497582,
+        "title": "Enola Holmes",
+        "year": 2020,
+        "overview": "Nancy Springer’ın “The Enola Holmes Mysteries” adlı kitap serisinden uyarlanan film, ünlü dedektif Sherlock Holmes’un ergen kız kardeşi Enola’nın maceralarını konu ediniyor. 16. doğumgününün sabahında annesinin ortadan kaybolduğunu gören Enola, ağabeyleri Sherlock ve Mycroft’tan yardım ister. Ancak kardeşler onu ciddiye almaz ve yatılı okula göndermeyi planlar. Enola meseleyi kendi eline alır ve annesine ne olduğunu öğrenmek için Londra’ya gider.",
+        "genres": [
+          "Adventure",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 7.235,
+        "director": "Harry Bradbeer",
+        "similarity": 0.781088270337296,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, detective, child prodigy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a3f257ae-d7b2-40eb-8138-1ed1c4262ca9",
+        "tmdb_id": 1330021,
+        "title": "Remarkably Bright Creatures",
+        "year": 2026,
+        "overview": "Through unlikely bonds formed during night shifts at a local aquarium, Tova, an elderly widow, learns of a life-changing discovery that may bring her joy and wonder once again.",
+        "genres": [
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 114,
+        "vote_average": 8.517,
+        "director": "Olivia Newman",
+        "similarity": 0.765069653218108,
+        "curation_tier": "extended",
+        "match_reason": "aquarium, octopus, british columbia",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.76474014040792,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.760693191668203,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "36273fde-6384-4581-9658-22b0de69ab51",
+        "tmdb_id": 76696,
+        "title": "Sidewalls",
+        "year": 2011,
+        "overview": "Martin is a neurotic web designer taking baby steps out of the isolation of his one-room apartment and his virtual reality. Mariana is an artist fresh out of a long relationship. They are perfect for each other, live on the same street, in opposite buildings, but they never meet. Can the movement of a modern city of three million people bring them together?",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.491,
+        "director": "Gustavo Taretto",
+        "similarity": 0.752411105178004,
+        "curation_tier": "extended",
+        "match_reason": "dogsitter, architecture, apartment building",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.549010164110357,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "9d3ae03e-99de-482c-b560-29558cd76c1f",
+        "tmdb_id": 424,
+        "title": "Schindler's List",
+        "year": 1993,
+        "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 195,
+        "vote_average": 8.569,
+        "director": "Steven Spielberg",
+        "similarity": 0.51348958285232,
+        "curation_tier": "core",
+        "match_reason": "factory, hero, nazi",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "2daade33-adef-476c-9456-e6a0379d10cb",
+        "tmdb_id": 497,
+        "title": "The Green Mile",
+        "year": 1999,
+        "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 189,
+        "vote_average": 8.506,
+        "director": "Frank Darabont",
+        "similarity": 0.509533929387823,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, death penalty, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "59cc2a64-f674-4855-afc2-c999526a7983",
+        "tmdb_id": 857,
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "overview": "As U.S. troops storm the beaches of Normandy, three brothers lie dead on the battlefield, with a fourth trapped behind enemy lines. Ranger captain John Miller and seven men are tasked with penetrating German-held territory and bringing the boy home.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 169,
+        "vote_average": 8.224,
+        "director": "Steven Spielberg",
+        "similarity": 0.49148983134982,
+        "curation_tier": "core",
+        "match_reason": "dying and death, self sacrifice, bravery",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ce27faee-2d2a-4c93-becb-ea6b0579a101",
+        "tmdb_id": 106646,
+        "title": "The Wolf of Wall Street",
+        "year": 2013,
+        "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 180,
+        "vote_average": 8.028,
+        "director": "Martin Scorsese",
+        "similarity": 0.448036840179671,
+        "curation_tier": "core",
+        "match_reason": "corruption, based on novel or book, drug addiction",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.426207921477414,
+        "curation_tier": "core",
+        "match_reason": "dying and death, suicide, class society",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.405036194828859,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 731,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 731,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama",
+        "Romance"
+      ],
+      "genres_exclude": [
+        "Action",
+        "Thriller",
+        "Horror"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Lost in Translation",
+          "year": 2003
+        },
+        {
+          "title": "Before Sunrise",
+          "year": 1995
+        },
+        {
+          "title": "Moonlight",
+          "year": 2016
+        },
+        {
+          "title": "Call Me By Your Name",
+          "year": 2017
+        },
+        {
+          "title": "A Ghost Story",
+          "year": 2017
+        },
+        {
+          "title": "Paterson",
+          "year": 2016
+        },
+        {
+          "title": "Portrait of a Lady on Fire",
+          "year": 2019
+        },
+        {
+          "title": "My Father's House",
+          "year": 2023
+        },
+        {
+          "title": "Aftersun",
+          "year": 2022
+        },
+        {
+          "title": "The Farewell",
+          "year": 2019
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "c5c2e84caa6d54a1",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4807,
+    "http_status": 200,
+    "reranked_ids": [
+      "de919d71-ae42-4755-b24b-0a5f8b856c80",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "337234a3-a00b-4649-89d8-578aeb71cef5",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "de919d71-ae42-4755-b24b-0a5f8b856c80": "Intimate portrait of a poet's quiet daily life with his artist wife, perfectly capturing contemplative slowness.",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Two strangers share a peaceful evening walk through Vienna, emphasizing gentle conversation over plot.",
+      "337234a3-a00b-4649-89d8-578aeb71cef5": "Isolated island setting with a female painter in serene, intimate creative work and budding romance.",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e": "Two melancholic souls drift through Tokyo in quiet reflection, evoking calm introspection and emotional warmth."
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "payload_hash": "f904dbdbe99bbdb6",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3892,
+  "http_status": 200,
+  "reranked_ids": [
+    "c1b42f15-b09f-44f2-b339-73fc0e9f5338",
+    "785e8d55-410b-48c9-b895-0623159cac82",
+    "798a524a-e52d-4b66-9812-f2cf2111a3da",
+    "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "c1b42f15-b09f-44f2-b339-73fc0e9f5338": "Reverse narrative structure keeps you guessing about truth while investigating psychological mystery.",
+    "785e8d55-410b-48c9-b895-0623159cac82": "Unreliable protagonist questions reality in isolated setting with shocking psychological twist ending.",
+    "798a524a-e52d-4b66-9812-f2cf2111a3da": "Masterfully misleading narrative makes you second-guess every character and plot revelation.",
+    "f3eed324-6cf4-41a6-a4c0-ce9baa4500d9": "Psychological descent into madness blurs reality and delusion in dark, twisted narrative."
+  }
+}

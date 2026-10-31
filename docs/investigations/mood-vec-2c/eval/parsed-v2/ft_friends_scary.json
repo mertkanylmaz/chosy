@@ -1,0 +1,135 @@
+{
+  "mood_id": "ft_friends_scary",
+  "text": "Friends over, we want to be scared but have fun",
+  "ms": 5255,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.1,
+      "fear": 0.75,
+      "anger": 0.05,
+      "surprise": 0.8,
+      "disgust": 0.4,
+      "trust": 0.5,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "friends",
+    "rewatch_tolerance": true,
+    "profile_name": "Thrilling Scares",
+    "profile_description": "A group seeking the adrenaline rush of horror with humor and entertainment value—scares that don't take themselves too seriously, designed for shared laughter and gasps.",
+    "search_keywords": [
+      "horror comedy",
+      "fun scares",
+      "creature feature",
+      "supernatural",
+      "jump scares",
+      "group viewing",
+      "dark humor"
+    ],
+    "genres_include": [
+      "Horror",
+      "Comedy",
+      "Thriller"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Evil Dead II",
+        "year": 1987
+      },
+      {
+        "title": "Tucker and Dale vs. Evil",
+        "year": 2010
+      },
+      {
+        "title": "Gremlins",
+        "year": 1984
+      },
+      {
+        "title": "Cabin in the Woods",
+        "year": 2012
+      },
+      {
+        "title": "What We Do in the Shadows",
+        "year": 2014
+      },
+      {
+        "title": "Happy Death Day",
+        "year": 2017
+      },
+      {
+        "title": "Freaky",
+        "year": 2020
+      },
+      {
+        "title": "Scary Stories to Tell in the Dark",
+        "year": 2019
+      },
+      {
+        "title": "The Lighthouse",
+        "year": 2019
+      },
+      {
+        "title": "Drag Me to Hell",
+        "year": 2009
+      }
+    ],
+    "search_id": "75094e0f-a251-4d7f-bc79-c474352a7fa6",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.75,
+      "surprise": 0.8,
+      "disgust": 0.4,
+      "anticipation": 0.85,
+      "trust": 0.5
+    },
+    "energy_level": 0.7,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "friends",
+    "rewatch_tolerance": true
+  },
+  "search_id": "75094e0f-a251-4d7f-bc79-c474352a7fa6",
+  "search_keywords": [
+    "horror comedy",
+    "fun scares",
+    "creature feature",
+    "supernatural",
+    "jump scares",
+    "group viewing",
+    "dark humor"
+  ],
+  "limit": null,
+  "remaining": null
+}

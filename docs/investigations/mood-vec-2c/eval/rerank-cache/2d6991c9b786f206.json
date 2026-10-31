@@ -1,0 +1,24 @@
+{
+  "payload_hash": "2d6991c9b786f206",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4309,
+  "http_status": 200,
+  "reranked_ids": [
+    "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+    "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+    "39c22f17-6098-4c9e-a396-bde2585dad83",
+    "877a88f1-69c0-4f7d-aae1-2076cc06269d"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9ee7f6ee-051c-4f8e-856a-2805d949e7fe": "Mind-bending exploration of dreams and reality with layered complexity and philosophical depth.",
+    "eb3b9cd7-e354-4947-90d6-8553e1087a64": "Profound meditation on consciousness, existence, and humanity's place in the cosmos.",
+    "39c22f17-6098-4c9e-a396-bde2585dad83": "Deeply philosophical exploration of identity and consciousness through alien encounter.",
+    "877a88f1-69c0-4f7d-aae1-2076cc06269d": "Complex narrative about obsession and reality with intricate philosophical questioning."
+  }
+}

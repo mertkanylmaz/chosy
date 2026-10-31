@@ -1,0 +1,24 @@
+{
+  "payload_hash": "89448c41066c2f94",
+  "cached": false,
+  "candidates_sent": 33,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3717,
+  "http_status": 200,
+  "reranked_ids": [
+    "1d6879d5-f75f-4587-ab39-49a412dcd812",
+    "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+    "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+    "34d989b0-6e83-4507-af1d-961240dd21c0"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "1d6879d5-f75f-4587-ab39-49a412dcd812": "Lighthearted comedy animation under 80 minutes, perfect for tired viewers seeking effortless entertainment.",
+    "2edd4775-e05f-4c9e-a0a2-5631151801e2": "Gentle fantasy animation with soothing visuals and calm pacing ideal for post-work relaxation.",
+    "bbc6b269-4131-45c0-b904-7a4ae4953d16": "Short, feel-good animated comedy that's wholesome and requires minimal mental effort.",
+    "34d989b0-6e83-4507-af1d-961240dd21c0": "Charming short animation about unlikely friendship, warm and comforting without demanding engagement."
+  }
+}

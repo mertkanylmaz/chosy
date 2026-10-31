@@ -1,0 +1,24 @@
+{
+  "payload_hash": "e9c35b87253af9ab",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3375,
+  "http_status": 200,
+  "reranked_ids": [
+    "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+    "2cdcc9e2-acdf-4244-83e4-621e540a687d",
+    "3589d329-a771-4f99-99af-cb79300bb177",
+    "33040d95-bee1-4286-9800-50bcdd4a0a88"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9c977ddc-b554-4d49-85f5-31ffa35f9359": "Colorful animation and humor perfect for ages 8-11 enjoying family adventure.",
+    "2cdcc9e2-acdf-4244-83e4-621e540a687d": "Family-friendly fantasy adventure with themes of friendship and self-discovery kids love.",
+    "3589d329-a771-4f99-99af-cb79300bb177": "Heartwarming animated adventure balancing humor and emotion for mixed-age viewing.",
+    "33040d95-bee1-4286-9800-50bcdd4a0a88": "Engaging animated adventure with strong characters and cultural storytelling for young audiences."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "payload_hash": "7fa586b6494541d8",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3887,
+  "http_status": 200,
+  "reranked_ids": [
+    "ddf32d20-9c85-4f78-98db-ca0cfb417d8d",
+    "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+    "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+    "90b19326-b1f7-491f-a4ac-c8fd387addad"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "ddf32d20-9c85-4f78-98db-ca0cfb417d8d": "Classic heist with clever planning and a surprising double-cross ending.",
+    "9ee7f6ee-051c-4f8e-856a-2805d949e7fe": "Elaborate theft scheme with mind-bending twist on reality itself.",
+    "854765fc-8cde-4d81-a1e2-2887fcfb52f6": "Bank heist with detective cat-and-mouse game and clever misdirection.",
+    "90b19326-b1f7-491f-a4ac-c8fd387addad": "Crime story with shocking twist reveal about the mastermind's true identity."
+  }
+}

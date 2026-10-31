@@ -1,0 +1,149 @@
+{
+  "mood_id": "qm_emotional",
+  "text": "A sad and emotional tearjerker drama, melancholic and moving, heartbreaking and deep, not comedy, not action",
+  "ms": 7065,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "fear": 0.25,
+      "anger": 0.1,
+      "surprise": 0.15,
+      "disgust": 0.1,
+      "trust": 0.4,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "action sequences",
+      "slapstick",
+      "lighthearted humor"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Melancholic Catharsis",
+    "profile_description": "A viewer seeking profound emotional release through deeply moving drama—films that explore human suffering, loss, and resilience with quiet intensity and thematic depth.",
+    "search_keywords": [
+      "emotional drama",
+      "heartbreak",
+      "loss and grief",
+      "human relationships",
+      "coming of age",
+      "family conflict",
+      "melancholy",
+      "life struggles"
+    ],
+    "genres_include": [
+      "Drama"
+    ],
+    "genres_exclude": [
+      "Comedy",
+      "Action",
+      "Adventure"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "The Shawshank Redemption",
+        "year": 1994
+      },
+      {
+        "title": "Life is Beautiful",
+        "year": 1997
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Manchester by the Sea",
+        "year": 2016
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "The Father",
+        "year": 2020
+      },
+      {
+        "title": "Cleo from 5 to 7",
+        "year": 1962
+      },
+      {
+        "title": "Ordinary People",
+        "year": 1980
+      },
+      {
+        "title": "A Ghost Story",
+        "year": 2017
+      },
+      {
+        "title": "Still Alice",
+        "year": 2014
+      }
+    ],
+    "search_id": "ab419b1e-290a-4618-8168-540799590d05",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.85,
+      "anger": 0.1,
+      "fear": 0.25,
+      "surprise": 0.15,
+      "disgust": 0.1,
+      "anticipation": 0.3,
+      "trust": 0.4
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "action sequences",
+      "slapstick",
+      "lighthearted humor"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "ab419b1e-290a-4618-8168-540799590d05",
+  "search_keywords": [
+    "emotional drama",
+    "heartbreak",
+    "loss and grief",
+    "human relationships",
+    "coming of age",
+    "family conflict",
+    "melancholy",
+    "life struggles"
+  ],
+  "limit": null,
+  "remaining": null
+}

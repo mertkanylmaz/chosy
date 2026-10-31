@@ -1,0 +1,922 @@
+{
+  "mood_id": "qm_emotional",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "dfcd6ef3-d036-4569-a409-0f62945482b9",
+        "tmdb_id": 499,
+        "title": "Cléo from 5 to 7",
+        "year": 1962,
+        "overview": "Agnès Varda eloquently captures Paris in the sixties with this real-time portrait of a singer set adrift in the city as she awaits test results of a biopsy. A chronicle of the minutes of one woman’s life, Cléo from 5 to 7 is a spirited mix of vivid vérité and melodrama, featuring a score by Michel Legrand and cameos by Jean-Luc Godard and Anna Karina.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Agnès Varda",
+        "similarity": 0.846729983753098,
+        "curation_tier": "extended",
+        "match_reason": "individual, paris, france, singer",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "dc7bd17f-80a2-4f43-bad3-17657e4ce894",
+        "tmdb_id": 284293,
+        "title": "Still Alice",
+        "year": 2014,
+        "overview": "Alice Howland, happily married with three grown children, is a renowned linguistics professor who starts to forget words. When she receives a devastating diagnosis, Alice and her family find their bonds tested.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.467,
+        "director": "Wash Westmoreland",
+        "similarity": 0.813542240187613,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.699332569642764,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "009e8450-e186-4e16-99c4-506fd981cda3",
+        "tmdb_id": 334541,
+        "title": "Manchester by the Sea",
+        "year": 2016,
+        "overview": "After his older brother passes away, Lee Chandler is forced to return home to care for his 16-year-old nephew. There he is compelled to deal with a tragic past that separated him from his family and the community where he was born and raised.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 138,
+        "vote_average": 7.553,
+        "director": "Kenneth Lonergan",
+        "similarity": 0.631605183692153,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss and grief, melancholy",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b643db72-26cd-40c4-81c7-dff0f02749e1",
+        "tmdb_id": 38,
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004,
+        "overview": "Joel Barish, heartbroken that his girlfriend underwent a procedure to erase him from her memory, decides to do the same. However, as he watches his memories of her fade away, he realises that he still loves her, and may be too late to correct his mistake.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 108,
+        "vote_average": 8.1,
+        "director": "Michel Gondry",
+        "similarity": 0.594017945180338,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak, human relationships",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.582099179003335,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "d468e576-e349-4296-bad1-a1ede1f84132",
+        "tmdb_id": 600354,
+        "title": "The Father",
+        "year": 2020,
+        "overview": "A man refuses all assistance from his daughter as he ages and, as he tries to make sense of his changing circumstances, he begins to doubt his loved ones, his own mind and even the fabric of his reality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 8.093,
+        "director": "Florian Zeller",
+        "similarity": 0.429693492871729,
+        "curation_tier": "core",
+        "match_reason": "london, england, loss of sense of reality, flat",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "a4e670a1-36f5-4c68-b6f3-64fe778d2ba3",
+        "tmdb_id": 345,
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "overview": "After Dr. Bill Harford's wife, Alice, admits to having sexual fantasies about a man she met, Bill becomes obsessed with having a sexual encounter. He discovers an underground sexual group and attends one of their meetings -- and quickly discovers that he is in over his head.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 160,
+        "vote_average": 7.485,
+        "director": "Stanley Kubrick",
+        "similarity": 1.1026081303175,
+        "curation_tier": "core",
+        "match_reason": "Matches: human relationships",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 1.05950789351526,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "633de787-0c66-45fd-aee9-f84c992b5ce0",
+        "tmdb_id": 379,
+        "title": "Miller's Crossing",
+        "year": 1990,
+        "overview": "Set in 1929, a political boss and his advisor have a parting of the ways when they both fall for the same woman.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 115,
+        "vote_average": 7.449,
+        "director": "Joel Coen",
+        "similarity": 1.04691770739121,
+        "curation_tier": "core",
+        "match_reason": "street gang, corruption, prohibition era",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "aa02f15c-94df-4213-a625-946ed17ed06a",
+        "tmdb_id": 329865,
+        "title": "Arrival",
+        "year": 2016,
+        "overview": "Taking place after alien crafts land around the world, an expert linguist is recruited by the military to determine whether they come in peace or are a threat.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 7.626,
+        "director": "Denis Villeneuve",
+        "similarity": 1.03236833961498,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak, loss and grief",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "80bd9c83-7856-4b7f-96c2-395d7f8d4d55",
+        "tmdb_id": 638,
+        "title": "Lost Highway",
+        "year": 1997,
+        "overview": "A tormented jazz musician finds himself lost in an enigmatic story involving murder, surveillance, gangsters, doppelgängers, and an impossible transformation inside a prison cell.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 134,
+        "vote_average": 7.5,
+        "director": "David Lynch",
+        "similarity": 1.03163835975896,
+        "curation_tier": "core",
+        "match_reason": "prison, pornography, jealousy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0479ff90-20b4-4c31-8e27-b4bf33a1a282",
+        "tmdb_id": 335,
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "overview": "As the railroad builders advance unstoppably through the Arizona desert on their way to the sea, Jill arrives in the small town of Flagstone with the intention of starting a new life.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 166,
+        "vote_average": 8.274,
+        "director": "Sergio Leone",
+        "similarity": 0.996077371314288,
+        "curation_tier": "core",
+        "match_reason": "small town, loss of loved one, harmonica",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bc518ff2-a633-4366-aae4-7786773b3b44",
+        "tmdb_id": 11216,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "overview": "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 8.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.976273907937343,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "119a37e8-be86-43f1-9a15-eb13ac06c4a3",
+        "tmdb_id": 804095,
+        "title": "The Fabelmans",
+        "year": 2022,
+        "overview": "Growing up in post-World War II era Arizona, young Sammy Fabelman aspires to become a filmmaker as he reaches adolescence, but soon discovers a shattering family secret and explores how the power of films can help him see the truth.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 151,
+        "vote_average": 7.57,
+        "director": "Steven Spielberg",
+        "similarity": 0.972604130797136,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+        "tmdb_id": 152601,
+        "title": "Her",
+        "year": 2013,
+        "overview": "In the not so distant future, Theodore, a lonely writer, purchases a newly developed operating system designed to meet the user's every need. To Theodore's surprise, a romantic relationship develops between him and his operating system. This unconventional love story blends science fiction and romance in a sweet tale that explores the nature of love and the ways that technology isolates and connects us all.",
+        "genres": [
+          "Romance",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.838,
+        "director": "Spike Jonze",
+        "similarity": 0.971197106123627,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "773a626c-6e44-477a-9f20-f95a7fbda8a6",
+        "tmdb_id": 722778,
+        "title": "The Hand of God",
+        "year": 2021,
+        "overview": "In 1980s Naples, an awkward teen struggling to find his place experiences heartbreak and liberation after he's inadvertently saved from a freak accident by football legend Diego Maradona.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.531,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.971064449035215,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "31543f18-8426-4ede-b10e-ce207a039e2c",
+        "tmdb_id": 1000837,
+        "title": "I'm Still Here",
+        "year": 2024,
+        "overview": "A woman married to a former politician during the 1971 military dictatorship in Brazil is forced to reinvent herself and chart a new course for her family after a violent and arbitrary act.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 138,
+        "vote_average": 7.901,
+        "director": "Walter Salles",
+        "similarity": 0.964002959264277,
+        "curation_tier": "core",
+        "match_reason": "Matches: loss and grief",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ebd28989-008d-4224-8213-a843e384c862",
+        "tmdb_id": 582,
+        "title": "The Lives of Others",
+        "year": 2006,
+        "overview": "In 1984 East Berlin, dedicated Stasi officer Gerd Wiesler begins spying on a famous playwright and his actress-lover Christa-Maria. Wiesler becomes unexpectedly sympathetic to the couple, and faces conflicting loyalties when his superior takes a liking to Christa-Maria.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 137,
+        "vote_average": 8.039,
+        "director": "Florian Henckel von Donnersmarck",
+        "similarity": 0.959828238208097,
+        "curation_tier": "core",
+        "match_reason": "Matches: heartbreak",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6627b3b4-6e59-4c35-a824-6e6f2b5bdaee",
+        "tmdb_id": 11659,
+        "title": "The Best of Youth",
+        "year": 2003,
+        "overview": "After a fateful encounter in the summer of 1966, the lifepaths of two brothers from a middle-class Roman family diverge, intersecting with some of the most significant events of postwar Italian history in the following decades.",
+        "genres": [
+          "Drama",
+          "History",
+          "Romance"
+        ],
+        "runtime": 367,
+        "vote_average": 8,
+        "director": "Marco Tullio Giordana",
+        "similarity": 0.952238047174302,
+        "curation_tier": "core",
+        "match_reason": "Matches: family conflict",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f779894b-2ec0-4282-9eaa-31cb786580aa",
+        "tmdb_id": 78,
+        "title": "Blade Runner",
+        "year": 1982,
+        "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.937,
+        "director": "Ridley Scott",
+        "similarity": 0.946903379385113,
+        "curation_tier": "core",
+        "match_reason": "Matches: melancholy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.94282774090736,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "487ff4a6-eafa-41cd-a8c8-81d4d7b38a25",
+        "tmdb_id": 595,
+        "title": "To Kill a Mockingbird",
+        "year": 1962,
+        "overview": "Scout Finch, 6, and her older brother Jem live in sleepy Maycomb, Alabama, spending much of their time with their friend Dill and spying on their reclusive and mysterious neighbor, Boo Radley. When Atticus, their widowed father and a respected lawyer, defends a black man named Tom Robinson against fabricated rape charges, the trial and tangent events expose the children to evils of racism and stereotyping.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.998,
+        "director": "Robert Mulligan",
+        "similarity": 0.939189424409033,
+        "curation_tier": "core",
+        "match_reason": "Matches: melancholy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.938330991236637,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b6fe468f-5c98-40c6-9cff-0d301de894c8",
+        "tmdb_id": 850165,
+        "title": "The Iron Claw",
+        "year": 2023,
+        "overview": "The true story of the inseparable Von Erich brothers, who made history in the intensely competitive world of professional wrestling in the early 1980s. Through tragedy and triumph, under the shadow of their domineering father and coach, the brothers seek larger-than-life immortality on the biggest stage in sports.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.52,
+        "director": "Sean Durkin",
+        "similarity": 0.917170818966753,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "78942796-d7f9-4ee5-a47f-27f8f8285cd0",
+        "tmdb_id": 774531,
+        "title": "Young Woman and the Sea",
+        "year": 2024,
+        "overview": "This is the extraordinary true story of Trudy Ederle, the first woman to successfully swim the English Channel. Through the steadfast support of her older sister and supportive trainers, she overcame adversity and the animosity of a patriarchal society to rise through the ranks of the Olympic swimming team and complete the 21-mile trek from France to England.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.863,
+        "director": "Joachim Rønning",
+        "similarity": 0.917170818966753,
+        "curation_tier": "extended",
+        "match_reason": "english channel, biography, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0175de91-8c40-49a6-be5b-c543920415ae",
+        "tmdb_id": 3782,
+        "title": "Ikiru",
+        "year": 1952,
+        "overview": "Kanji Watanabe is a middle-aged man who has worked in the same monotonous bureaucratic position for decades. Learning he has cancer, he starts to look for the meaning of his life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 8.303,
+        "director": "Akira Kurosawa",
+        "similarity": 0.891587233302414,
+        "curation_tier": "extended",
+        "match_reason": "dying and death, japan, bureaucracy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "070df024-6b09-4caa-b444-381026025aa8",
+        "tmdb_id": 8741,
+        "title": "The Thin Red Line",
+        "year": 1998,
+        "overview": "The story of a group of men, an Army Rifle company called C-for-Charlie, who change, suffer, and ultimately make essential discoveries about themselves during the fierce World War II battle of Guadalcanal. It follows their journey, from the surprise of an unopposed landing, through the bloody and exhausting battles that follow, to the ultimate departure of those who survived.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 171,
+        "vote_average": 7.446,
+        "director": "Terrence Malick",
+        "similarity": 0.874812193224954,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.844172436005144,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a8695d6c-6ec4-4aae-9501-20ba36a5f10e",
+        "tmdb_id": 1401281,
+        "title": "The Testament of Ann Lee",
+        "year": 2025,
+        "overview": "Ann Lee, the founding leader of the Shaker Movement, proclaimed as the female Christ by her followers. Depicts her establishment of a utopian society and the Shakers’ worship through song and dance, based on real events.",
+        "genres": [
+          "History",
+          "Drama",
+          "Music"
+        ],
+        "runtime": 137,
+        "vote_average": 6.66,
+        "director": "Mona Fastvold",
+        "similarity": 0.844052976164735,
+        "curation_tier": "extended",
+        "match_reason": "new york city, christianity, celibacy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "14722f42-fffc-4846-9315-3b7558e897d2",
+        "tmdb_id": 31023,
+        "title": "Butterfly",
+        "year": 1999,
+        "overview": "The film centres on Moncho and his coming-of-age experience in Galicia in 1936. Moncho develops a close relationship with his teacher Don Gregorio who introduces the boy to different things in the world. While the story centres on Moncho's ordinary coming-of-age experiences, tensions related to the looming Spanish Civil War periodically interrupt Moncho's personal growth and daily life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.338,
+        "director": "José Luis Cuerda",
+        "similarity": 0.840349315183904,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.758425502541232,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "59cc2a64-f674-4855-afc2-c999526a7983",
+        "tmdb_id": 857,
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "overview": "As U.S. troops storm the beaches of Normandy, three brothers lie dead on the battlefield, with a fourth trapped behind enemy lines. Ranger captain John Miller and seven men are tasked with penetrating German-held territory and bringing the boy home.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 169,
+        "vote_average": 8.224,
+        "director": "Steven Spielberg",
+        "similarity": 0.751994728624904,
+        "curation_tier": "core",
+        "match_reason": "dying and death, self sacrifice, bravery",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "70b9c9c2-dea1-4ed5-b9cf-cccc73197ec8",
+        "tmdb_id": 475557,
+        "title": "Joker",
+        "year": 2019,
+        "overview": "During the 1980s, a failed stand-up comedian is driven insane and turns to a life of crime and chaos in Gotham City while becoming an infamous psychopathic crime figure.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8.125,
+        "director": "Todd Phillips",
+        "similarity": 0.60001349009106,
+        "curation_tier": "core",
+        "match_reason": "society, based on comic, social commentary",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.584667248109807,
+        "curation_tier": "core",
+        "match_reason": "island, based on novel or book, concentration camp",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.58073129850047,
+        "curation_tier": "core",
+        "match_reason": "dying and death, suicide, class society",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.568835724036797,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.563046030789832,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.522779798399459,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.470030313154304,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 841,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 841,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "emotional drama",
+        "heartbreak",
+        "loss and grief",
+        "human relationships",
+        "coming of age",
+        "family conflict",
+        "melancholy",
+        "life struggles"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama"
+      ],
+      "genres_exclude": [
+        "Comedy",
+        "Action",
+        "Adventure"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "The Shawshank Redemption",
+          "year": 1994
+        },
+        {
+          "title": "Life is Beautiful",
+          "year": 1997
+        },
+        {
+          "title": "Moonlight",
+          "year": 2016
+        },
+        {
+          "title": "Manchester by the Sea",
+          "year": 2016
+        },
+        {
+          "title": "Eternal Sunshine of the Spotless Mind",
+          "year": 2004
+        },
+        {
+          "title": "The Father",
+          "year": 2020
+        },
+        {
+          "title": "Cleo from 5 to 7",
+          "year": 1962
+        },
+        {
+          "title": "Ordinary People",
+          "year": 1980
+        },
+        {
+          "title": "A Ghost Story",
+          "year": 2017
+        },
+        {
+          "title": "Still Alice",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "af168e9ef42419b6",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4022,
+    "http_status": 200,
+    "reranked_ids": [
+      "009e8450-e186-4e16-99c4-506fd981cda3",
+      "c63a51f3-231b-4712-a1b1-ea41844557a8",
+      "dc7bd17f-80a2-4f43-bad3-17657e4ce894",
+      "0175de91-8c40-49a6-be5b-c543920415ae"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "009e8450-e186-4e16-99c4-506fd981cda3": "Devastating portrait of grief and familial responsibility after sudden loss, deeply moving and melancholic.",
+      "c63a51f3-231b-4712-a1b1-ea41844557a8": "Tender, heartbreaking coming-of-age story exploring identity and struggle across three defining life stages.",
+      "dc7bd17f-80a2-4f43-bad3-17657e4ce894": "Emotionally devastating drama about cognitive decline and family relationships, profoundly sad and touching.",
+      "0175de91-8c40-49a6-be5b-c543920415ae": "Melancholic reflection on mortality and finding meaning in a monotonous life, deeply philosophical and moving."
+    }
+  }
+}

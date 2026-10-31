@@ -1,0 +1,24 @@
+{
+  "payload_hash": "9cad42a65839136f",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4408,
+  "http_status": 200,
+  "reranked_ids": [
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+    "2403581d-d8b8-4aa6-a306-42c948061e7e",
+    "337234a3-a00b-4649-89d8-578aeb71cef5",
+    "c284851d-5cb2-4605-aa87-1d0de6f326cd"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Intimate conversation between two strangers creates genuine connection without forced romance.",
+    "2403581d-d8b8-4aa6-a306-42c948061e7e": "Quiet, understated romance between two people finding solace in each other's company.",
+    "337234a3-a00b-4649-89d8-578aeb71cef5": "Slow-burn romance with genuine emotional depth and authentic human connection.",
+    "c284851d-5cb2-4605-aa87-1d0de6f326cd": "Romantic comedy that develops real feelings through repeated, meaningful interactions."
+  }
+}

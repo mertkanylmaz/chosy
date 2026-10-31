@@ -1,0 +1,874 @@
+{
+  "mood_id": "ft_90min",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "beba7a17-264c-4138-86e4-95aa0ce96f60",
+        "tmdb_id": 246741,
+        "title": "What We Do in the Shadows",
+        "year": 2014,
+        "overview": "Vampire housemates try to cope with the complexities of modern life and show a newly turned hipster some of the perks of being undead.",
+        "genres": [
+          "Comedy",
+          "Horror"
+        ],
+        "runtime": 86,
+        "vote_average": 7.55,
+        "director": "Jemaine Clement",
+        "similarity": 0.617126892366775,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "dce3d1f0-1ac8-4c58-ac22-e25b0b562fc5",
+        "tmdb_id": 901,
+        "title": "City Lights",
+        "year": 1931,
+        "overview": "A tramp falls in love with a beautiful blind flower girl. His on-and-off friendship with a wealthy man allows him to be the girl's benefactor and suitor.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.251,
+        "director": "Charlie Chaplin",
+        "similarity": 0.864600790931564,
+        "curation_tier": "core",
+        "match_reason": "blindness and impaired vision, eye operation, operation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4b42f33e-44c6-41b6-8e62-09630142d9bd",
+        "tmdb_id": 10437,
+        "title": "The Muppet Christmas Carol",
+        "year": 1992,
+        "overview": "A retelling of the classic Dickens tale of Ebenezer Scrooge, miser extraordinaire. He is held accountable for his dastardly ways during night-time visitations by the Ghosts of Christmas Past, Present and Future.",
+        "genres": [
+          "Music",
+          "Comedy",
+          "Family",
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 86,
+        "vote_average": 7.442,
+        "director": "Brian Henson",
+        "similarity": 0.841811866433567,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b510857a-9d96-4a0a-a1b2-606f63e613a7",
+        "tmdb_id": 975,
+        "title": "Paths of Glory",
+        "year": 1957,
+        "overview": "A commanding officer defends three scapegoats on trial for a failed offensive that occurred within the French Army in 1916.",
+        "genres": [
+          "War",
+          "Drama"
+        ],
+        "runtime": 88,
+        "vote_average": 8.3,
+        "director": "Stanley Kubrick",
+        "similarity": 0.817043965063201,
+        "curation_tier": "core",
+        "match_reason": "army, france, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+        "tmdb_id": 823219,
+        "title": "Flow",
+        "year": 2024,
+        "overview": "A solitary cat, displaced by a great flood, finds refuge on a boat with various species and must navigate the challenges of adapting to a transformed world together.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 85,
+        "vote_average": 8.085,
+        "director": "Gints Zilbalodis",
+        "similarity": 0.804015005332859,
+        "curation_tier": "core",
+        "match_reason": "ocean, cat, boat",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "68415330-1d09-40a4-a184-78e2e7b801f5",
+        "tmdb_id": 10386,
+        "title": "The Iron Giant",
+        "year": 1999,
+        "overview": "In the small town of Rockwell, Maine in October 1957, a giant metal machine befriends a nine-year-old boy and ultimately finds its humanity by unselfishly saving people from their own fears and prejudices.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 86,
+        "vote_average": 7.954,
+        "director": "Brad Bird",
+        "similarity": 0.794753764372252,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "19b99cc2-4d8f-410b-a9bc-b2394b46ebd9",
+        "tmdb_id": 9325,
+        "title": "The Jungle Book",
+        "year": 1967,
+        "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 78,
+        "vote_average": 7.3,
+        "director": "Wolfgang Reitherman",
+        "similarity": 0.793387191324413,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, narration, human animal relationship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f3c487db-4df4-48ba-aa2b-50dd5e582e0e",
+        "tmdb_id": 8587,
+        "title": "The Lion King",
+        "year": 1994,
+        "overview": "Young lion prince Simba, eager to one day become king of the Pride Lands, grows up under the watchful eye of his father Mufasa; all the while his villainous uncle Scar conspires to take the throne for himself. Amid betrayal and tragedy, Simba must confront his past and find his rightful place in the Circle of Life.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.254,
+        "director": "Roger Allers",
+        "similarity": 0.782974705951455,
+        "curation_tier": "core",
+        "match_reason": "father murder, loss of loved one, africa",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "682860b5-c196-4fe0-a128-3b8c24787ab9",
+        "tmdb_id": 11544,
+        "title": "Lilo & Stitch",
+        "year": 2002,
+        "overview": "As Stitch, a runaway genetic experiment from a faraway planet, wreaks havoc on the Hawaiian Islands, he becomes the mischievous adopted alien \"puppy\" of an independent little girl named Lilo and learns about loyalty, friendship, and ʻohana, the Hawaiian tradition of family.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 85,
+        "vote_average": 7.561,
+        "director": "Chris Sanders",
+        "similarity": 0.753500575909664,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "7a2e5bc9-3693-4d0b-bab5-6ffe68aad3e4",
+        "tmdb_id": 3933,
+        "title": "Corpse Bride",
+        "year": 2005,
+        "overview": "In a 19th-century European village, a young man about to be married is whisked away to the underworld and wed to a mysterious corpse bride, while his real bride waits bereft in the land of the living.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 77,
+        "vote_average": 7.584,
+        "director": "Tim Burton",
+        "similarity": 0.738835255316118,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "59073e3c-4d8c-4de8-a207-2fd73956136d",
+        "tmdb_id": 123025,
+        "title": "Batman: The Dark Knight Returns, Part 1",
+        "year": 2012,
+        "overview": "Batman has not been seen for ten years. A new breed of criminal ravages Gotham City, forcing 55-year-old Bruce Wayne back into the cape and cowl. But, does he still have what it takes to fight crime in a new era?",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Animation",
+          "Mystery"
+        ],
+        "runtime": 76,
+        "vote_average": 7.734,
+        "director": "Jay Oliva",
+        "similarity": 0.728945458136087,
+        "curation_tier": "core",
+        "match_reason": "future, dystopia, based on graphic novel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1d6879d5-f75f-4587-ab39-49a412dcd812",
+        "tmdb_id": 11688,
+        "title": "The Emperor's New Groove",
+        "year": 2000,
+        "overview": "When the self‑absorbed Emperor Kuzco is accidentally transformed into a llama, he must rely on a humble villager to survive the jungle and reclaim his throne.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 78,
+        "vote_average": 7.56,
+        "director": "Mark Dindal",
+        "similarity": 0.727459339400203,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, lighthearted",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "17469e41-6994-4908-b4d5-27d00f5d3741",
+        "tmdb_id": 14919,
+        "title": "Batman: Mask of the Phantasm",
+        "year": 1993,
+        "overview": "Andrea Beaumont leaves her father to return to Gotham, rekindling an old romance with Bruce Wayne. At the same time, a mysterious figure begins to hunt down Gotham's criminals, wrongly implicating Batman in the murders. Now on the run from the law, Batman must find and stop the culprit, while also navigating his relationship with Andrea.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Crime",
+          "Mystery",
+          "Romance"
+        ],
+        "runtime": 76,
+        "vote_average": 7.495,
+        "director": "Bruce Timm",
+        "similarity": 0.726753693478404,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a1c3e42f-bd3c-49b4-9b4e-b30348865c04",
+        "tmdb_id": 953,
+        "title": "Madagascar",
+        "year": 2005,
+        "overview": "Four animal friends get a taste of the wild life when they break out of captivity at the Central Park Zoo and wash ashore on the island of Madagascar.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 6.922,
+        "director": "Eric Darnell",
+        "similarity": 0.722131130610152,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, witty",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "09168ccf-9afa-4fdd-a426-02adfb33191b",
+        "tmdb_id": 37135,
+        "title": "Tarzan",
+        "year": 1999,
+        "overview": "Tarzan was a small orphan who was raised by an ape named Kala since he was a child. He believed that this was his family, but on an expedition Jane Porter is rescued by Tarzan. He then finds out that he's human. Now Tarzan must make the decision as to which family he should belong to...",
+        "genres": [
+          "Family",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 88,
+        "vote_average": 7.395,
+        "director": "Chris Buck",
+        "similarity": 0.719898859663551,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8b1241f3-6071-4e09-9b1e-608b637f553a",
+        "tmdb_id": 235,
+        "title": "Stand by Me",
+        "year": 1986,
+        "overview": "After learning that a boy their age has been accidentally killed near their rural homes, four boys decide to go see the body. Gordie, Vern, Chris, and Teddy encounter a mean junk man and a marsh full of leeches, but they also learn more about one another and their very different home lives. Just a lark at first, the boys' adventure evolves into a defining event in their lives.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 7.836,
+        "director": "Rob Reiner",
+        "similarity": 0.719567098838532,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.710849135875614,
+        "curation_tier": "extended",
+        "match_reason": "based on comic, computer animation, red baron",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "34d989b0-6e83-4507-af1d-961240dd21c0",
+        "tmdb_id": 126319,
+        "title": "Ernest & Celestine",
+        "year": 2012,
+        "overview": "Celestine is a little mouse trying to avoid a dental career while Ernest is a big bear craving an artistic outlet. When Celestine meets Ernest, they overcome their natural enmity by forging a life of crime together.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.731,
+        "director": "Stéphane Aubier",
+        "similarity": 0.710558085743433,
+        "curation_tier": "extended",
+        "match_reason": "friendship, underground world, musician",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d1f47acb-529c-49df-a0bb-38c3f5dd49ab",
+        "tmdb_id": 393559,
+        "title": "My Life as a Zucchini",
+        "year": 2016,
+        "overview": "After his mother’s death, Zucchini is befriended by a kind police officer, Raymond, who accompanies him to his new foster home filled with other orphans his age. There, with the help of his newfound friends, Zucchini eventually learns to trust and love as he searches for a new family of his own.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 66,
+        "vote_average": 7.8,
+        "director": "Claude Barras",
+        "similarity": 0.705386564200369,
+        "curation_tier": "extended",
+        "match_reason": "orphanage, thief, stop motion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "cb235f44-6062-43db-8396-cbe61db95f0f",
+        "tmdb_id": 1007734,
+        "title": "Nobody 2",
+        "year": 2025,
+        "overview": "Former assassin Hutch Mansell takes his family on a nostalgic vacation to a small-town theme park, only to be pulled back into violence when they clash with a corrupt operator, a crooked sheriff, and a ruthless crime boss.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Comedy"
+        ],
+        "runtime": 89,
+        "vote_average": 6.93,
+        "director": "Timo Tjahjanto",
+        "similarity": 0.704675444977449,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comedy, humor",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "56317499-b40c-4e01-ac95-c8c25ba8fa03",
+        "tmdb_id": 22683,
+        "title": "Gifted Hands: The Ben Carson Story",
+        "year": 2009,
+        "overview": "Gifted Hands: The Ben Carson Story is a movie based on the life story of world-renowned neurosurgeon Ben Carson from 1961 to 1987.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 86,
+        "vote_average": 7.795,
+        "director": "Thomas Carter",
+        "similarity": 0.70120242675636,
+        "curation_tier": "extended",
+        "match_reason": "husband wife relationship, 1970s, surgeon",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "fffe070a-e3de-4f97-858e-2a5bd41c1e76",
+        "tmdb_id": 8703,
+        "title": "Three Wishes for Cinderella",
+        "year": 1973,
+        "overview": "Popelka, a resourceful and independent young girl, is a servant in her stepmother's house and confides in her closest friend the owl. When she comes across three magical acorns, she's granted a single wish for each one of them.",
+        "genres": [
+          "Fantasy",
+          "Family",
+          "Romance"
+        ],
+        "runtime": 82,
+        "vote_average": 7.464,
+        "director": "Václav Vorlíček",
+        "similarity": 0.698917837414088,
+        "curation_tier": "extended",
+        "match_reason": "new love, fairy tale, prince",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "690fee15-b0c0-4daf-9520-fc880c1aef3f",
+        "tmdb_id": 11610,
+        "title": "Play It Again, Sam",
+        "year": 1972,
+        "overview": "A neurotic film critic obsessed with the movie Casablanca attempts to get over his wife leaving him by dating again with the help of a married couple and his illusory idol, Humphrey Bogart.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 85,
+        "vote_average": 7.473,
+        "director": "Herbert Ross",
+        "similarity": 0.688463978189093,
+        "curation_tier": "extended",
+        "match_reason": "date, hallucination, make a match",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "cb5a4e3e-6d23-42b5-bb2a-bf2e3a4381f9",
+        "tmdb_id": 31682,
+        "title": "The Incredible Shrinking Man",
+        "year": 1957,
+        "overview": "A dangerous combination of radiation and insecticide causes the unfortunate Scott Carey to shrink, slowly but surely, until he is only a few inches tall. His home becomes a wilderness where he must survive everything from spiders living in the cellar to his beloved cat.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure",
+          "Horror"
+        ],
+        "runtime": 81,
+        "vote_average": 7.5,
+        "director": "Jack Arnold",
+        "similarity": 0.683302759164823,
+        "curation_tier": "extended",
+        "match_reason": "husband wife relationship, based on novel or book, radiation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d4ecf4c8-c80b-4de1-9aa0-3e5c47e60a7c",
+        "tmdb_id": 1624,
+        "title": "Liar Liar",
+        "year": 1997,
+        "overview": "Forced by his son's birthday wish, fast-talking attorney and habitual liar Fletcher Reede must tell the truth for the next 24 hours.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 86,
+        "vote_average": 6.705,
+        "director": "Tom Shadyac",
+        "similarity": 0.679842648530173,
+        "curation_tier": "extended",
+        "match_reason": "california, workaholic, truth",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "bced9b46-08c2-4990-94db-b84a0c11cd6a",
+        "tmdb_id": 255,
+        "title": "Stolen Kisses",
+        "year": 1968,
+        "overview": "The third in a series of films featuring François Truffaut's alter-ego, Antoine Doinel, the story resumes with Antoine being discharged from military service. His sweetheart Christine's father lands Antoine a job as a security guard, which he promptly loses. Stumbling into a position assisting a private detective, Antoine falls for his employers' seductive wife, Fabienne, and finds that he must choose between the older woman and Christine.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 90,
+        "vote_average": 7.287,
+        "director": "François Truffaut",
+        "similarity": 0.663515581662155,
+        "curation_tier": "extended",
+        "match_reason": "hotel, hotel room, adultery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "faf04bbd-fbdc-45ca-8d3e-4b02b0918a1b",
+        "tmdb_id": 10555,
+        "title": "Shark Tale",
+        "year": 2004,
+        "overview": "Oscar is a small fish whose big aspirations often get him into trouble. Meanwhile, Lenny is a great white shark with a surprising secret that no sea creature would guess: He's a vegetarian. When a lie turns Oscar into an improbable hero and Lenny becomes an outcast, the two form an unlikely friendship.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 6.031,
+        "director": "Vicky Jenson",
+        "similarity": 0.658384452250098,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "2838ecc3-7733-4bb9-a486-b222bf3711d0",
+        "tmdb_id": 3082,
+        "title": "Modern Times",
+        "year": 1936,
+        "overview": "A bumbling tramp desires to build a home with a young woman, yet is thwarted time and time again by his lack of experience and habit of being in the wrong place at the wrong time..",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.278,
+        "director": "Charlie Chaplin",
+        "similarity": 0.639365561827124,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "9c9ccbd2-e54e-4a87-b7f3-aeebd72b6098",
+        "tmdb_id": 223702,
+        "title": "Sosis Partisi",
+        "year": 2016,
+        "overview": "Bir sosisin kendi varlığı hakkındaki gerçekleri keşfetme hikayesi.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 89,
+        "vote_average": 5.75,
+        "director": "Greg Tiernan",
+        "similarity": 0.556025292427808,
+        "curation_tier": "extended",
+        "match_reason": "supermarket, orgy, parody",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "84387156-ccb0-4b82-80e0-abab1a7e11dc",
+        "tmdb_id": 7512,
+        "title": "Idiocracy",
+        "year": 2006,
+        "overview": "To test its top-secret Human Hibernation Project, the Pentagon picks the most average Americans it can find - an Army private and a prostitute - and sends them to the year 2505 after a series of freak events. But when they arrive, they find a civilization so dumbed-down that they're the smartest people around.",
+        "genres": [
+          "Comedy",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 84,
+        "vote_average": 6.365,
+        "director": "Mike Judge",
+        "similarity": 0.544611273625991,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb1b9f27-1caa-4391-b77a-20eeda5367b1",
+        "tmdb_id": 9502,
+        "title": "Kung Fu Panda",
+        "year": 2008,
+        "overview": "Chosen by prophecy but doubted by all, Po is an unlikely choice for the mystical title of the Dragon Warrior—a clumsy panda thrust into the world of kung fu as a deadly enemy threatens the Valley of Peace. Under reluctant guidance by Master Shifu and the Furious Five, Po must embrace who he is to unlock the power that no scroll can teach.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.321,
+        "director": "Mark Osborne",
+        "similarity": 0.512524676009352,
+        "curation_tier": "core",
+        "match_reason": "martial arts, kung fu, strong woman",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "060ed67f-4fd2-4de1-96f5-a64c7920a853",
+        "tmdb_id": 808,
+        "title": "Shrek",
+        "year": 2001,
+        "overview": "It ain't easy bein' green -- especially if you're a likable (albeit smelly) ogre named Shrek. On a mission to retrieve a gorgeous princess from the clutches of a fire-breathing dragon, Shrek teams up with an unlikely compatriot -- a wisecracking donkey.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Fantasy",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.762,
+        "director": "Andrew Adamson",
+        "similarity": 0.507926036783758,
+        "curation_tier": "core",
+        "match_reason": "Matches: witty",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e2a8030c-9898-4e61-a74e-5d935e421f57",
+        "tmdb_id": 10315,
+        "title": "Fantastic Mr. Fox",
+        "year": 2009,
+        "overview": "The Fantastic Mr. Fox, bored with his current life, plans a heist against the three local farmers. The farmers, tired of sharing their chickens with the sly fox, seek revenge against him and his family.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 87,
+        "vote_average": 7.824,
+        "director": "Wes Anderson",
+        "similarity": 0.507208513740376,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, tree, peasant",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "3b7f7c4c-2e77-4eae-b5d6-bf9d609a71b0",
+        "tmdb_id": 425,
+        "title": "Ice Age",
+        "year": 2002,
+        "overview": "Manny the mammoth, Sid the loquacious sloth, and Diego the sabre-toothed tiger go on a comical quest to return a human baby back to his father, across a world on the brink of an ice age.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 82,
+        "vote_average": 7.375,
+        "director": "Chris Wedge",
+        "similarity": 0.506561622002923,
+        "curation_tier": "core",
+        "match_reason": "dying and death, human evolution, parent child relationship",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "40b7f12b-2535-41a8-b1e0-98132f4956ea",
+        "tmdb_id": 862,
+        "title": "Toy Story",
+        "year": 1995,
+        "overview": "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 81,
+        "vote_average": 7.974,
+        "director": "John Lasseter",
+        "similarity": 0.503735196715448,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, mission",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bb60df7d-8867-4efd-bc1c-f2890df557d1",
+        "tmdb_id": 4247,
+        "title": "Scary Movie",
+        "year": 2000,
+        "overview": "A familiar-looking group of teenagers find themselves being stalked by a more-than-vaguely recognizable masked killer! As the victims begin to pile up and the laughs pile on, none of your favorite scary movies escape the razor-sharp satire of this outrageously funny parody!",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 6.393,
+        "director": "Keenen Ivory Wayans",
+        "similarity": 0.489411099356785,
+        "curation_tier": "core",
+        "match_reason": "Matches: humor",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 528,
+        "n_rows": 36
+      }
+    ],
+    "total_ms": 528,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comedy",
+        "humor",
+        "funny",
+        "witty",
+        "lighthearted"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Comedy"
+      ],
+      "genres_exclude": [],
+      "max_runtime": 90,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Superbad",
+          "year": 2007
+        },
+        {
+          "title": "The Grand Budapest Hotel",
+          "year": 2014
+        },
+        {
+          "title": "Hunt for the Wilderpeople",
+          "year": 2016
+        },
+        {
+          "title": "Knives Out",
+          "year": 2019
+        },
+        {
+          "title": "Ghostbusters",
+          "year": 1984
+        },
+        {
+          "title": "Tropic Thunder",
+          "year": 2008
+        },
+        {
+          "title": "What We Do in the Shadows",
+          "year": 2014
+        },
+        {
+          "title": "The Other Guys",
+          "year": 2010
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "ce9b5cc1d1ff6c2e",
+    "cached": false,
+    "candidates_sent": 36,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3734,
+    "http_status": 200,
+    "reranked_ids": [
+      "beba7a17-264c-4138-86e4-95aa0ce96f60",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812",
+      "060ed67f-4fd2-4de1-96f5-a64c7920a853",
+      "fb1b9f27-1caa-4391-b77a-20eeda5367b1"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "beba7a17-264c-4138-86e4-95aa0ce96f60": "Vampire comedy with modern humor and absurd situations under 90 minutes of pure comedy.",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812": "Hilarious adventure with a selfish emperor turned llama forced into comedic situations throughout.",
+      "060ed67f-4fd2-4de1-96f5-a64c7920a853": "Witty animated comedy about an ogre's reluctant quest filled with laughs and fantasy adventure.",
+      "fb1b9f27-1caa-4391-b77a-20eeda5367b1": "Action-comedy about an underdog panda discovering kung fu with humor and heart throughout."
+    }
+  }
+}

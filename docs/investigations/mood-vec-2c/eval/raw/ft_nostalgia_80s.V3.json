@@ -1,0 +1,957 @@
+{
+  "mood_id": "ft_nostalgia_80s",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+        "tmdb_id": 85,
+        "title": "Raiders of the Lost Ark",
+        "year": 1981,
+        "overview": "When Dr. Indiana Jones – the tweed-suited professor who just happens to be a celebrated archaeologist – is hired by the government to locate the legendary Ark of the Covenant, he finds himself up against the entire Nazi regime.",
+        "genres": [
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 115,
+        "vote_average": 7.923,
+        "director": "Steven Spielberg",
+        "similarity": 1.11772364986533,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure, treasure hunt",
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "1bcffd15-5987-43b5-822f-393ec803a8a0",
+        "tmdb_id": 105,
+        "title": "Back to the Future",
+        "year": 1985,
+        "overview": "Eighties teenager Marty McFly is accidentally sent back in time to 1955, inadvertently disrupting his parents' first meeting and attracting his mother's romantic interest. Marty must repair the damage to history by rekindling his parents' romance and - with the help of his eccentric inventor friend Doc Brown - return to 1985.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Science Fiction"
+        ],
+        "runtime": 116,
+        "vote_average": 8.326,
+        "director": "Robert Zemeckis",
+        "similarity": 0.851130587515532,
+        "curation_tier": "core",
+        "match_reason": "flying car, race against time, clock tower",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "5bdbecde-7dc8-4c70-bd16-5c054a88afed",
+        "tmdb_id": 106,
+        "title": "Predator",
+        "year": 1987,
+        "overview": "A team of elite commandos on a secret mission in a Central American jungle come to find themselves hunted by an extraterrestrial warrior.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 7.552,
+        "director": "John McTiernan",
+        "similarity": 0.724476815647462,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, central and south america, predator",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "8184a0d8-6d19-4802-97db-759b97838773",
+        "tmdb_id": 34584,
+        "title": "The NeverEnding Story",
+        "year": 1984,
+        "overview": "While hiding from bullies in his school's attic, a young boy discovers the extraordinary land of Fantasia, through a magical book called The Neverending Story. The book tells the tale of Atreyu, a young warrior who, with the help of a luck dragon named Falkor, must save Fantasia from the destruction of The Nothing.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 101,
+        "vote_average": 7.22,
+        "director": "Wolfgang Petersen",
+        "similarity": 0.561913343898457,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, wolf, magic",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "7eab97d1-1707-4777-b3a3-1a394b63b742",
+        "tmdb_id": 562,
+        "title": "Die Hard",
+        "year": 1988,
+        "overview": "High above the city of L.A. a team of terrorists has seized a building, taken hostages, and declared war. One man has manages to escape... An off-duty cop hiding somewhere inside. He's alone, tired... and the only chance anyone has got.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.811,
+        "director": "John McTiernan",
+        "similarity": 1.21393342728447,
+        "curation_tier": "core",
+        "match_reason": "Matches: 1980s, action",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "69fbe583-7af4-420e-8a6f-67946715fcbb",
+        "tmdb_id": 44896,
+        "title": "Rango",
+        "year": 2011,
+        "overview": "When Rango, a lost family pet, accidentally winds up in the gritty, gun-slinging Western town of Dirt, the theater-loving lizard suddenly finds himself the newly appointed sheriff. Welcomed as the last hope the town has been waiting for, Rango is forced to play his new role to the hilt and uncover the truth behind a looming water crisis—before his act catches up with him.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Western",
+          "Adventure"
+        ],
+        "runtime": 107,
+        "vote_average": 6.896,
+        "director": "Gore Verbinski",
+        "similarity": 1.14991812764842,
+        "curation_tier": "core",
+        "match_reason": "Matches: heroic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6425c973-9d85-4f0e-bb06-e48b4180e777",
+        "tmdb_id": 726759,
+        "title": "Tetris",
+        "year": 2023,
+        "overview": "In 1988, American video game salesman Henk Rogers discovers the video game Tetris. When he sets out to bring the game to the world, he enters a dangerous web of lies and corruption behind the Iron Curtain.",
+        "genres": [
+          "Thriller",
+          "History",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.674,
+        "director": "Jon S. Baird",
+        "similarity": 1.14358968114024,
+        "curation_tier": "core",
+        "match_reason": "Matches: 1980s",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "062a004d-18b1-4fa7-bfc4-6010d4dd3d8b",
+        "tmdb_id": 658,
+        "title": "Goldfinger",
+        "year": 1964,
+        "overview": "Special agent 007 comes face to face with one of the most notorious villains of all time, and now he must outwit and outgun the powerful tycoon to prevent him from cashing in on a devious scheme to raid Fort Knox -- and obliterate the world's economy.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 110,
+        "vote_average": 7.353,
+        "director": "Guy Hamilton",
+        "similarity": 1.08090231408511,
+        "curation_tier": "core",
+        "match_reason": "airplane, based on novel or book, england",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9214c910-2689-4374-a54a-c156a59b7e5c",
+        "tmdb_id": 557,
+        "title": "Spider-Man",
+        "year": 2002,
+        "overview": "After being bitten by a genetically altered spider at Oscorp, nerdy but endearing high school student Peter Parker is endowed with amazing powers to become the superhero known as Spider-Man.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 7.329,
+        "director": "Sam Raimi",
+        "similarity": 1.0786321008691,
+        "curation_tier": "core",
+        "match_reason": "new york city, adolescence, photographer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0d7dc607-2a39-4f28-9ad8-3d583f827cef",
+        "tmdb_id": 515042,
+        "title": "Free Solo",
+        "year": 2018,
+        "overview": "Follow Alex Honnold as he attempts to become the first person to ever free solo climb Yosemite's 3,000 foot high El Capitan wall. With no ropes or safety gear, this would arguably be the greatest feat in rock climbing history.",
+        "genres": [
+          "Documentary",
+          "Adventure"
+        ],
+        "runtime": 100,
+        "vote_average": 7.895,
+        "director": "Jimmy Chin",
+        "similarity": 1.07816485782569,
+        "curation_tier": "core",
+        "match_reason": "california, extreme sports, mountain",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e8dd7d11-f3de-49ea-ad23-704d3b1d5f38",
+        "tmdb_id": 273481,
+        "title": "Sicario",
+        "year": 2015,
+        "overview": "An idealistic FBI agent is enlisted by a government task force to aid in the escalating war against drugs at the border area between the U.S. and Mexico.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 122,
+        "vote_average": 7.419,
+        "director": "Denis Villeneuve",
+        "similarity": 1.07775016215548,
+        "curation_tier": "core",
+        "match_reason": "mission, assassin, central intelligence agency (cia)",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "75ec31c2-5bf3-43c9-903d-7dcf4a251a92",
+        "tmdb_id": 1726,
+        "title": "Iron Man",
+        "year": 2008,
+        "overview": "After being held captive in an Afghan cave, billionaire engineer Tony Stark creates a unique weaponized suit of armor to fight evil.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 126,
+        "vote_average": 7.659,
+        "director": "Jon Favreau",
+        "similarity": 1.0775928220915,
+        "curation_tier": "core",
+        "match_reason": "middle east, kidnapping, superhero",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+        "tmdb_id": 286217,
+        "title": "The Martian",
+        "year": 2015,
+        "overview": "During a manned mission to Mars, Astronaut Mark Watney is presumed dead after a fierce storm and left behind by his crew. But Watney has survived and finds himself stranded and alone on the hostile planet. With only meager supplies, he must draw upon his ingenuity, wit and spirit to subsist and find a way to signal to Earth that he is alive.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 141,
+        "vote_average": 7.698,
+        "director": "Ridley Scott",
+        "similarity": 1.07206613845659,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, planet mars, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1b59913e-d925-45b8-9434-16ccbef847f9",
+        "tmdb_id": 1930,
+        "title": "The Amazing Spider-Man",
+        "year": 2012,
+        "overview": "Peter Parker is an outcast high schooler abandoned by his parents as a boy, leaving him to be raised by his Uncle Ben and Aunt May. Like most teenagers, Peter is trying to figure out who he is and how he got to be the person he is today. As Peter discovers a mysterious briefcase that belonged to his father, he begins a quest to understand his parents' disappearance – leading him directly to Oscorp and the lab of Dr. Curt Connors, his father's former partner. As Spider-Man is set on a collision course with Connors' alter ego, The Lizard, Peter will make life-altering choices to use his powers and shape his destiny to become a hero.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 6.736,
+        "director": "Marc Webb",
+        "similarity": 1.06855612296363,
+        "curation_tier": "core",
+        "match_reason": "experiment, loss of loved one, superhero",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ee1d7ea0-3828-49a3-b264-ab6bc2378058",
+        "tmdb_id": 68721,
+        "title": "Iron Man 3",
+        "year": 2013,
+        "overview": "When Tony Stark's world is torn apart by a formidable terrorist called the Mandarin, he starts an odyssey of rebuilding and retribution.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 6.933,
+        "director": "Shane Black",
+        "similarity": 1.06450058518213,
+        "curation_tier": "core",
+        "match_reason": "california, war on terror, superhero",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 1.04990027233795,
+        "curation_tier": "core",
+        "match_reason": "Matches: action",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "f50b7d4b-0281-4d25-bdb5-3ed09405776a",
+        "tmdb_id": 9806,
+        "title": "The Incredibles",
+        "year": 2004,
+        "overview": "Bob Parr has given up his superhero days to log in time as an insurance adjuster and raise his three children with his formerly heroic wife in suburbia. But when he receives a mysterious assignment, it's time to get back into costume.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 115,
+        "vote_average": 7.724,
+        "director": "Brad Bird",
+        "similarity": 1.04625445496589,
+        "curation_tier": "core",
+        "match_reason": "Matches: heroic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec585efd-cbbe-4dac-a6b3-d2ba3976002f",
+        "tmdb_id": 1419406,
+        "title": "The Shadow's Edge",
+        "year": 2025,
+        "overview": "Macau Police brings the tracking expert police officer out of retirement to help catch a dangerous group of professional thieves.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 142,
+        "vote_average": 7.382,
+        "director": "Larry Yang",
+        "similarity": 0.976332597260239,
+        "curation_tier": "extended",
+        "match_reason": "Matches: action",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "17469e41-6994-4908-b4d5-27d00f5d3741",
+        "tmdb_id": 14919,
+        "title": "Batman: Mask of the Phantasm",
+        "year": 1993,
+        "overview": "Andrea Beaumont leaves her father to return to Gotham, rekindling an old romance with Bruce Wayne. At the same time, a mysterious figure begins to hunt down Gotham's criminals, wrongly implicating Batman in the murders. Now on the run from the law, Batman must find and stop the culprit, while also navigating his relationship with Andrea.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Crime",
+          "Mystery",
+          "Romance"
+        ],
+        "runtime": 76,
+        "vote_average": 7.495,
+        "director": "Bruce Timm",
+        "similarity": 0.952680249792813,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c604baf1-b034-4db4-920d-58bfd90fe6ff",
+        "tmdb_id": 11782,
+        "title": "Hard Boiled",
+        "year": 1992,
+        "overview": "A cop who loses his partner in a shoot-out with gun smugglers goes on a mission to catch them. In order to get closer to the leaders of the ring he joins forces with an undercover cop who's working as a gangster hitman. They use all means of excessive force to find them.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 126,
+        "vote_average": 7.529,
+        "director": "John Woo",
+        "similarity": 0.948496270275917,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "542925e1-ece4-40f6-95e7-d5acf43c832c",
+        "tmdb_id": 941,
+        "title": "Lethal Weapon",
+        "year": 1987,
+        "overview": "A veteran cop and an unstable detective become partners who must put their differences aside in order to bring down a heroin-smuggling ring run by ex-Special Forces.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 110,
+        "vote_average": 7.285,
+        "director": "Richard Donner",
+        "similarity": 0.945256378743145,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ed7e8abd-6a71-4d43-b01c-4d998e960860",
+        "tmdb_id": 458156,
+        "title": "John Wick: Chapter 3 - Parabellum",
+        "year": 2019,
+        "overview": "Super-assassin John Wick returns with a $14 million price tag on his head and an army of bounty-hunting killers on his trail. After killing a member of the shadowy international assassin’s guild, the High Table, John Wick is excommunicado, but the world’s most ruthless hit men and women await his every turn.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 131,
+        "vote_average": 7.44,
+        "director": "Chad Stahelski",
+        "similarity": 0.939565025282216,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "80f59a4d-3560-4363-82ce-53006befe6f9",
+        "tmdb_id": 339403,
+        "title": "Baby Driver",
+        "year": 2017,
+        "overview": "After being coerced into working for a crime boss, a young getaway driver finds himself taking part in a heist doomed to fail.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 113,
+        "vote_average": 7.443,
+        "director": "Edgar Wright",
+        "similarity": 0.936413713746792,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "57f9d029-4ff1-407b-86e1-43e8169034f8",
+        "tmdb_id": 109424,
+        "title": "Captain Phillips",
+        "year": 2013,
+        "overview": "The true story of Captain Richard Phillips and the 2009 hijacking by Somali pirates of the US-flagged MV Maersk Alabama, the first American cargo ship to be hijacked in two hundred years.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 134,
+        "vote_average": 7.538,
+        "director": "Paul Greengrass",
+        "similarity": 0.934233647760166,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ca143b9f-14d1-4050-8c5f-3733dc4dfd57",
+        "tmdb_id": 2034,
+        "title": "Training Day",
+        "year": 2001,
+        "overview": "On his first day on the job as a narcotics officer, a rookie cop works with a rogue detective who isn't what he appears.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 7.513,
+        "director": "Antoine Fuqua",
+        "similarity": 0.934016916974484,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9142ffe9-7684-46ea-af98-05f0770a2bb2",
+        "tmdb_id": 37472,
+        "title": "Ip Man 2",
+        "year": 2010,
+        "overview": "Having defeated the best fighters of the Imperial Japanese army in occupied Shanghai, Ip Man and his family settle in post-war Hong Kong. Struggling to make a living, Master Ip opens a kung fu school to bring his celebrated art of Wing Chun to the troubled youth of Hong Kong. His growing reputation soon brings challenges from powerful enemies, including pre-eminent Hung Gar master, Hung Quan.",
+        "genres": [
+          "Action",
+          "History",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.463,
+        "director": "Wilson Yip",
+        "similarity": 0.933645194689816,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ab54bd73-7bd9-4ac9-918b-04b771b16687",
+        "tmdb_id": 845781,
+        "title": "Red One",
+        "year": 2024,
+        "overview": "After Santa Claus (codename: Red One) is kidnapped, the North Pole's Head of Security must team up with the world's most infamous tracker in a globe-trotting, action-packed mission to save Christmas.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 124,
+        "vote_average": 6.995,
+        "director": "Jake Kasdan",
+        "similarity": 0.923365400086306,
+        "curation_tier": "extended",
+        "match_reason": "Matches: action",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "98a56260-86b7-4e54-9fa0-de07bcea47b2",
+        "tmdb_id": 1071585,
+        "title": "M3GAN 2.0",
+        "year": 2025,
+        "overview": "After the underlying tech for M3GAN is stolen and misused by a powerful defense contractor to create a military-grade weapon known as Amelia, M3GAN's creator Gemma realizes that the only option is to resurrect M3GAN and give her a few upgrades, making her faster, stronger, and more lethal.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 120,
+        "vote_average": 7.251,
+        "director": "Gerard Johnstone",
+        "similarity": 0.921266814765923,
+        "curation_tier": "extended",
+        "match_reason": "Matches: action",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b11c44d8-9513-4385-83d7-3fc3e217cee8",
+        "tmdb_id": 11,
+        "title": "Star Wars",
+        "year": 1977,
+        "overview": "Princess Leia is captured and held hostage by the evil Imperial forces in their effort to take over the galactic Empire. Venturesome Luke Skywalker and dashing captain Han Solo team together with the loveable robot duo R2-D2 and C-3PO to rescue the beautiful princess and restore peace and justice in the Empire.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 8.205,
+        "director": "George Lucas",
+        "similarity": 0.867834553428098,
+        "curation_tier": "core",
+        "match_reason": "empire, galaxy, rebellion",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "65ccbf40-4ab2-4c3b-8879-24630be7cb9f",
+        "tmdb_id": 24428,
+        "title": "The Avengers",
+        "year": 2012,
+        "overview": "When an unexpected enemy emerges and threatens global safety and security, Nick Fury, director of the international peacekeeping agency known as S.H.I.E.L.D., finds himself in need of a team to pull the world back from the brink of disaster. Spanning the globe, a daring recruitment effort begins!",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 143,
+        "vote_average": 8.03,
+        "director": "Joss Whedon",
+        "similarity": 0.857446624187074,
+        "curation_tier": "core",
+        "match_reason": "new york city, superhero, shield",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "6a39f080-c163-4ca1-aa86-91f7fa6d16fb",
+        "tmdb_id": 1891,
+        "title": "The Empire Strikes Back",
+        "year": 1980,
+        "overview": "The epic saga continues as Luke Skywalker, in hopes of defeating the evil Galactic Empire, learns the ways of the Jedi from aging master Yoda. But Darth Vader is more determined than ever to capture Luke. Meanwhile, rebel leader Princess Leia, cocky Han Solo, Chewbacca, and droids C-3PO and R2-D2 are thrown into various stages of capture, betrayal and despair.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 124,
+        "vote_average": 8.393,
+        "director": "Irvin Kershner",
+        "similarity": 0.841773013774536,
+        "curation_tier": "core",
+        "match_reason": "rebellion, android, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.797364173806607,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c4cabd1-5d84-4be5-9610-ab4e26956b28",
+        "tmdb_id": 120,
+        "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "year": 2001,
+        "overview": "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator. Along the way, a fellowship is formed to protect the ringbearer and make sure that the ring arrives at its final destination: Mt. Doom, the only place where it can be destroyed.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 179,
+        "vote_average": 8.434,
+        "director": "Peter Jackson",
+        "similarity": 0.769454975780058,
+        "curation_tier": "core",
+        "match_reason": "Matches: action",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "cbf72875-c81d-4625-b481-d11b6bc9895f",
+        "tmdb_id": 121,
+        "title": "The Lord of the Rings: The Two Towers",
+        "year": 2002,
+        "overview": "Frodo Baggins and the other members of the Fellowship continue on their sacred quest to destroy the One Ring--but on separate paths. Their destinies lie at two towers--Orthanc Tower in Isengard, where the corrupt wizard Saruman awaits, and Sauron's fortress at Barad-dur, deep within the dark lands of Mordor. Frodo and Sam are trekking to Mordor to destroy the One Ring of Power while Gimli, Legolas and Aragorn search for the orc-captured Merry and Pippin. All along, nefarious wizard Saruman awaits the Fellowship members at the Orthanc Tower in Isengard.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 179,
+        "vote_average": 8.418,
+        "director": "Peter Jackson",
+        "similarity": 0.762701898634964,
+        "curation_tier": "core",
+        "match_reason": "Matches: action",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.753257611862725,
+        "curation_tier": "core",
+        "match_reason": "Matches: action",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.741865157083438,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e5b48c97-a614-45d7-9fd7-1d4b66abec40",
+        "tmdb_id": 155,
+        "title": "The Dark Knight",
+        "year": 2008,
+        "overview": "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets. The partnership proves to be effective, but they soon find themselves prey to a reign of chaos unleashed by a rising criminal mastermind known to the terrified citizens of Gotham as the Joker.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 152,
+        "vote_average": 8.531,
+        "director": "Christopher Nolan",
+        "similarity": 0.716693728978451,
+        "curation_tier": "core",
+        "match_reason": "sadism, chaos, secret identity",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.714980493450431,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c8319a4-498b-4cc8-b040-e598753b95ba",
+        "tmdb_id": 272,
+        "title": "Batman Begins",
+        "year": 2005,
+        "overview": "Driven by tragedy, billionaire Bruce Wayne dedicates his life to uncovering and defeating the corruption that plagues his home, Gotham City.  Unable to work within the system, he instead creates a new identity, a symbol of fear for the criminal underworld - The Batman.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Action"
+        ],
+        "runtime": 140,
+        "vote_average": 7.725,
+        "director": "Christopher Nolan",
+        "similarity": 0.703716124106291,
+        "curation_tier": "core",
+        "match_reason": "martial arts, undercover, loss of loved one",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.557348825821719,
+        "curation_tier": "core",
+        "match_reason": "Matches: adventure",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 875,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 875,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "adventure",
+        "1980s",
+        "exotic location",
+        "treasure hunt",
+        "action",
+        "heroic",
+        "practical effects",
+        "globe-trotting"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Action",
+        "Adventure"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Raiders of the Lost Ark",
+          "year": 1981
+        },
+        {
+          "title": "Indiana Jones and the Temple of Doom",
+          "year": 1984
+        },
+        {
+          "title": "The Great Adventure",
+          "year": 1985
+        },
+        {
+          "title": "Back to the Future",
+          "year": 1985
+        },
+        {
+          "title": "Romancing the Stone",
+          "year": 1984
+        },
+        {
+          "title": "The NeverEnding Story",
+          "year": 1984
+        },
+        {
+          "title": "Commando",
+          "year": 1985
+        },
+        {
+          "title": "Big Trouble in Little China",
+          "year": 1986
+        },
+        {
+          "title": "Innerspace",
+          "year": 1987
+        },
+        {
+          "title": "Predator",
+          "year": 1987
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "1d6100cb751f6615",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3821,
+    "http_status": 200,
+    "reranked_ids": [
+      "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+      "1bcffd15-5987-43b5-822f-393ec803a8a0",
+      "8184a0d8-6d19-4802-97db-759b97838773",
+      "6a39f080-c163-4ca1-aa86-91f7fa6d16fb"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "9faf30ea-f8fd-4b64-a008-b986d1d284d3": "Quintessential 80s adventure with archaeologist hero, exotic locations, and practical action stunts.",
+      "1bcffd15-5987-43b5-822f-393ec803a8a0": "Iconic 1985 film capturing 80s teen culture and time-travel adventure escapism perfectly.",
+      "8184a0d8-6d19-4802-97db-759b97838773": "1984 fantasy adventure with imaginative world-building and classic 80s adventure tone throughout.",
+      "6a39f080-c163-4ca1-aa86-91f7fa6d16fb": "1980 space adventure sequel with epic action, iconic setting, and adventurous spirit of the era."
+    }
+  }
+}

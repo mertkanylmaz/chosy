@@ -1,0 +1,566 @@
+{
+  "mood_id": "ft_physics",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "557927ac-eae4-4614-aa7c-8f0a7e7e0b36",
+        "tmdb_id": 510,
+        "title": "One Flew Over the Cuckoo's Nest",
+        "year": 1975,
+        "overview": "A petty criminal fakes insanity to serve his sentence in a mental ward rather than prison. He soon finds himself as a leader to the other patients—and an enemy to the cruel, domineering nurse who runs the ward.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 8.4,
+        "director": "Miloš Forman",
+        "similarity": 0.861049572651327,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, friendship, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "523c4862-e8f8-4f4b-856d-18a6c507610e",
+        "tmdb_id": 206487,
+        "title": "Predestination",
+        "year": 2014,
+        "overview": "Predestination chronicles the life of a Temporal Agent sent on an intricate series of time-travel journeys designed to prevent future killers from committing their crimes. Now, on his final assignment, the Agent must stop the one criminal that has eluded him throughout time and prevent a devastating attack in which thousands of lives will be lost.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 98,
+        "vote_average": 7.416,
+        "director": "Michael Spierig",
+        "similarity": 0.859211844265781,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 0.847158559710545,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.841139643515921,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e3f7fb5f-9764-43dc-957f-a04777769afa",
+        "tmdb_id": 537996,
+        "title": "The Ballad of Buster Scruggs",
+        "year": 2018,
+        "overview": "Vignettes weaving together the stories of six individuals in the old West at the end of the Civil War. Following the tales of a sharp-shooting songster, a wannabe bank robber, two weary traveling performers, a lone gold prospector, a woman traveling the West to an uncertain future, and a motley crew of strangers undertaking a carriage ride.",
+        "genres": [
+          "Western",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.133,
+        "director": "Joel Coen",
+        "similarity": 0.838149471351482,
+        "curation_tier": "core",
+        "match_reason": "prostitute, native american, parody",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 0.836358673842177,
+        "curation_tier": "core",
+        "match_reason": "self-discovery, tokyo, japan, candid",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+        "tmdb_id": 63,
+        "title": "Twelve Monkeys",
+        "year": 1995,
+        "overview": "In the year 2035, convict James Cole reluctantly volunteers to be sent back in time to discover the origin of a deadly virus that wiped out nearly all of the earth's population and forced the survivors into underground communities. But when Cole is mistakenly sent to 1990 instead of 1996, he's arrested and locked up in a mental hospital. There he meets psychiatrist Dr. Kathryn Railly and the son of a famous virus expert who may hold the key to the Army of the 12 Monkeys; thought to be responsible for unleashing the killer disease.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 129,
+        "vote_average": 7.603,
+        "director": "Terry Gilliam",
+        "similarity": 0.834056295204646,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f719ad81-e751-49dc-b37b-ed7827c61142",
+        "tmdb_id": 8358,
+        "title": "Cast Away",
+        "year": 2000,
+        "overview": "Chuck Noland, a top international manager for FedEx, and Kelly, a Ph.D. student, are in love and heading towards marriage. Then Chuck's plane to Malaysia crashes at sea during a terrible storm. He's the only survivor, and finds himself marooned on a desolate island. With no way to escape, Chuck must find ways to survive in his new home.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 7.661,
+        "director": "Robert Zemeckis",
+        "similarity": 0.833757388553603,
+        "curation_tier": "core",
+        "match_reason": "exotic island, suicide attempt, volleyball",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "422c986c-e309-4ce9-b63d-21c8e69eb0da",
+        "tmdb_id": 18438,
+        "title": "Castaway on the Moon",
+        "year": 2009,
+        "overview": "Mr. Kim is jobless, lost in debt and has been dumped by his girlfriend. He decides to end it all by jumping into the Han River – only to find himself washed up on a small, mid-river island. He soon abandons thoughts of suicide or rescue and begins a new life as a castaway. His antics catch the attention of a young woman whose apartment overlooks the river. Her discovery changes both their lives.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.913,
+        "director": "Lee Hae-jun",
+        "similarity": 0.826375289863042,
+        "curation_tier": "core",
+        "match_reason": "isolation, suicide attempt, loneliness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4121315f-4704-43f5-8c15-b250cb9ef497",
+        "tmdb_id": 293310,
+        "title": "Citizenfour",
+        "year": 2014,
+        "overview": "In June 2013, Laura Poitras and reporter Glenn Greenwald flew to Hong Kong for the first of many meetings with Edward Snowden. She brought her camera with her.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 113,
+        "vote_average": 7.736,
+        "director": "Laura Poitras",
+        "similarity": 0.824875813213705,
+        "curation_tier": "core",
+        "match_reason": "biography, national security agency (nsa), woman director",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "22caba6c-df42-49fc-a6c0-6ebc21dc7f05",
+        "tmdb_id": 567,
+        "title": "Rear Window",
+        "year": 1954,
+        "overview": "A wheelchair-bound photographer spies on his neighbors from his apartment window and becomes convinced one of them has committed murder.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 8.339,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.824125732251717,
+        "curation_tier": "core",
+        "match_reason": "nurse, isolation, photographer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "165c61b7-ceb7-4a67-ba46-3fd8f610c8db",
+        "tmdb_id": 399121,
+        "title": "An Officer and a Spy",
+        "year": 2019,
+        "overview": "In 1894, French Captain Alfred Dreyfus is wrongfully convicted of treason and sentenced to life imprisonment at the Devil’s Island penal colony.",
+        "genres": [
+          "History",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.07,
+        "director": "Roman Polanski",
+        "similarity": 0.823938004638861,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, espionage, military officer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "68f2c6f4-a58e-45f7-b20a-ed4398a4d6c6",
+        "tmdb_id": 320,
+        "title": "Insomnia",
+        "year": 2002,
+        "overview": "Two Los Angeles homicide detectives are dispatched to a northern town where the sun doesn't set to investigate the methodical murder of a local teen.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 6.957,
+        "director": "Christopher Nolan",
+        "similarity": 0.822818742873599,
+        "curation_tier": "core",
+        "match_reason": "hotel, small town, homicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 0.821608595272693,
+        "curation_tier": "core",
+        "match_reason": "utah, new zealand, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "07cd985a-cbf8-4b44-bcca-1b1abe6921d9",
+        "tmdb_id": 429,
+        "title": "The Good, the Bad and the Ugly",
+        "year": 1966,
+        "overview": "While the Civil War rages on between the Union and the Confederacy, three men – a quiet loner, a ruthless hitman, and a Mexican bandit – comb the American Southwest in search of a strongbox containing $200,000 in stolen gold.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 161,
+        "vote_average": 8.47,
+        "director": "Sergio Leone",
+        "similarity": 0.821416251480638,
+        "curation_tier": "core",
+        "match_reason": "gold, army, bounty hunter",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 0.816704273614008,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4dcda5f2-e9f4-4528-8926-ab3be87b095d",
+        "tmdb_id": 346,
+        "title": "Seven Samurai",
+        "year": 1954,
+        "overview": "A samurai answers a village's request for protection after he falls on hard times. The town needs protection from bandits, so the samurai gathers six others to help him teach the people how to defend themselves, and the villagers provide the soldiers with food.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 207,
+        "vote_average": 8.452,
+        "director": "Akira Kurosawa",
+        "similarity": 0.816357790381046,
+        "curation_tier": "core",
+        "match_reason": "martial arts, japan, samurai",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+        "tmdb_id": 522212,
+        "title": "Just Mercy",
+        "year": 2019,
+        "overview": "The powerful true story of Harvard-educated lawyer Bryan Stevenson, who goes to Alabama to defend the disenfranchised and wrongly condemned — including Walter McMillian, a man sentenced to death despite evidence proving his innocence. Bryan fights tirelessly for Walter with the system stacked against them.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "History"
+        ],
+        "runtime": 137,
+        "vote_average": 7.853,
+        "director": "Destin Daniel Cretton",
+        "similarity": 0.815529126642525,
+        "curation_tier": "core",
+        "match_reason": "death penalty, judge, innocence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b510857a-9d96-4a0a-a1b2-606f63e613a7",
+        "tmdb_id": 975,
+        "title": "Paths of Glory",
+        "year": 1957,
+        "overview": "A commanding officer defends three scapegoats on trial for a failed offensive that occurred within the French Army in 1916.",
+        "genres": [
+          "War",
+          "Drama"
+        ],
+        "runtime": 88,
+        "vote_average": 8.3,
+        "director": "Stanley Kubrick",
+        "similarity": 0.815146181438343,
+        "curation_tier": "core",
+        "match_reason": "army, france, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.811906411504372,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dce3d1f0-1ac8-4c58-ac22-e25b0b562fc5",
+        "tmdb_id": 901,
+        "title": "City Lights",
+        "year": 1931,
+        "overview": "A tramp falls in love with a beautiful blind flower girl. His on-and-off friendship with a wealthy man allows him to be the girl's benefactor and suitor.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.251,
+        "director": "Charlie Chaplin",
+        "similarity": 0.810602918668229,
+        "curation_tier": "core",
+        "match_reason": "blindness and impaired vision, eye operation, operation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ea4ad9a0-7cba-47f8-8305-9600c03e79e4",
+        "tmdb_id": 70981,
+        "title": "Prometheus",
+        "year": 2012,
+        "overview": "A team of explorers discover a clue to the origins of mankind on Earth, leading them on a journey to the darkest corners of the universe. There, they must fight a terrifying battle to save the future of the human race.",
+        "genres": [
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 124,
+        "vote_average": 6.592,
+        "director": "Ridley Scott",
+        "similarity": 0.800202578920543,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0bba7a5f-db1e-4c07-8408-4ce63fe1e943",
+        "tmdb_id": 17654,
+        "title": "District 9",
+        "year": 2009,
+        "overview": "Thirty years ago, aliens arrive on Earth. Not to conquer or give aid, but to find refuge from their dying planet. Separated from humans in a South African area called District 9, the aliens are managed by Multi-National United, which is unconcerned with the aliens' welfare but will do anything to master their advanced technology. When a company field agent contracts a mysterious virus that begins to alter his DNA, there is only one place he can hide: District 9.",
+        "genres": [
+          "Science Fiction"
+        ],
+        "runtime": 112,
+        "vote_average": 7.462,
+        "director": "Neill Blomkamp",
+        "similarity": 0.763523716266886,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "39e89fac-6172-4826-80a6-4d2b2fcd08af",
+        "tmdb_id": 470878,
+        "title": "I Can Only Imagine",
+        "year": 2018,
+        "overview": "Growing up in Greenville, Texas, Bart Millard suffers physical and emotional abuse at the hands of his father, Arthur. When Arthur becomes terminally ill, he finds redemption by embracing his faith and rediscovering his love for his son. Years later, Bart's troubled childhood and mended relationship with his dad inspires him to write the hit song \"I Can Only Imagine\" as singer of the Christian band MercyMe.",
+        "genres": [
+          "Music",
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.526,
+        "director": "Jon Erwin",
+        "similarity": 0.741527574833766,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+        "tmdb_id": 1954,
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "overview": "A young man struggles to access sublimated childhood memories. He finds a technique that allows him to travel back into the past, to occupy his childhood body and change history. However, he soon finds that every change he makes has unexpected consequences.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.571,
+        "director": "J. Mackye Gruber",
+        "similarity": 0.741008710057562,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 340,
+        "n_rows": 25
+      }
+    ],
+    "total_ms": 340,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": []
+    }
+  },
+  "rerank": {
+    "payload_hash": "efa31425b6462dc9",
+    "cached": false,
+    "candidates_sent": 25,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4376,
+    "http_status": 200,
+    "reranked_ids": [
+      "523c4862-e8f8-4f4b-856d-18a6c507610e",
+      "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+      "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+      "ea4ad9a0-7cba-47f8-8305-9600c03e79e4"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "523c4862-e8f8-4f4b-856d-18a6c507610e": "Time-travel narrative directly explores temporal mechanics and causality principles.",
+      "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb": "Complex time-travel plot examining paradoxes and the physics of temporal manipulation.",
+      "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb": "Explores butterfly effect and consequences of altering physical events across time.",
+      "ea4ad9a0-7cba-47f8-8305-9600c03e79e4": "Science fiction mystery investigating origins and fundamental questions about existence and reality."
+    }
+  }
+}

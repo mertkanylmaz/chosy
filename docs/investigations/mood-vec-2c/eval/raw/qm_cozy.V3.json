@@ -1,0 +1,978 @@
+{
+  "mood_id": "qm_cozy",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+        "tmdb_id": 346648,
+        "title": "Paddington 2",
+        "year": 2017,
+        "overview": "Paddington, now happily settled with the Browns, picks up a series of odd jobs to buy the perfect present for his Aunt Lucy, but it is stolen.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 104,
+        "vote_average": 7.471,
+        "director": "Paul King",
+        "similarity": 0.706496504781037,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "6304ffc3-d437-4fda-9305-81b05f44cb79",
+        "tmdb_id": 335797,
+        "title": "Sing",
+        "year": 2016,
+        "overview": "A koala named Buster recruits his best friend to help him drum up business for his theater by hosting a singing competition.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Music",
+          "Animation"
+        ],
+        "runtime": 108,
+        "vote_average": 7.122,
+        "director": "Garth Jennings",
+        "similarity": 0.704268772594807,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+        "tmdb_id": 137106,
+        "title": "The Lego Movie",
+        "year": 2014,
+        "overview": "An ordinary Lego mini-figure, mistakenly thought to be the extraordinary MasterBuilder, is recruited to join a quest to stop an evil Lego tyrant from conquering the universe.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 100,
+        "vote_average": 7.422,
+        "director": "Phil Lord",
+        "similarity": 0.700839169288154,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "04e2b8f6-19a1-4429-b10e-19f730375c1d",
+        "tmdb_id": 194,
+        "title": "Amélie",
+        "year": 2001,
+        "overview": "At a tiny Parisian café, the adorable yet painfully shy Amélie accidentally discovers a gift for helping others. Soon Amelie is spending her days as a matchmaker, guardian angel, and all-around do-gooder. But when she bumps into a handsome stranger, will she find the courage to become the star of her very own love story?",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 122,
+        "vote_average": 7.92,
+        "director": "Jean-Pierre Jeunet",
+        "similarity": 0.568008887279538,
+        "curation_tier": "core",
+        "match_reason": "Matches: lighthearted",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "4ebd2e6d-960e-465f-b9c4-26656a3a7ef4",
+        "tmdb_id": 2493,
+        "title": "The Princess Bride",
+        "year": 1987,
+        "overview": "In this enchantingly cracked fairy tale, the beautiful Princess Buttercup and the dashing Westley must overcome staggering odds to find happiness amid six-fingered swordsmen, murderous princes, Sicilians and rodents of unusual size. But even death can't stop these true lovebirds from triumphing.",
+        "genres": [
+          "Adventure",
+          "Family",
+          "Fantasy",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 99,
+        "vote_average": 7.692,
+        "director": "Rob Reiner",
+        "similarity": 0.495587583271477,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "ac6c2730-4e84-42fe-adee-2af938779580",
+        "tmdb_id": 546554,
+        "title": "Knives Out",
+        "year": 2019,
+        "overview": "When renowned crime novelist Harlan Thrombey is found dead at his estate just after his 85th birthday, the inquisitive and debonair Detective Benoit Blanc is mysteriously enlisted to investigate. From Harlan's dysfunctional family to his devoted staff, Blanc sifts through a web of red herrings and self-serving lies to uncover the truth behind Harlan's untimely death.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Mystery"
+        ],
+        "runtime": 131,
+        "vote_average": 7.84,
+        "director": "Rian Johnson",
+        "similarity": 0.368242095320388,
+        "curation_tier": "core",
+        "match_reason": "immigrant, detective, massachusetts",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.899979324913018,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort, family-friendly",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.873277805115559,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a89bc750-72c7-4e85-8507-31e20542de3a",
+        "tmdb_id": 16859,
+        "title": "Kiki's Delivery Service",
+        "year": 1989,
+        "overview": "A young witch, on her mandatory year of independent life, finds fitting into a new community difficult while she supports herself by running an air courier service.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.836,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.815803918939613,
+        "curation_tier": "extended",
+        "match_reason": "Matches: lighthearted",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2cdcc9e2-acdf-4244-83e4-621e540a687d",
+        "tmdb_id": 10191,
+        "title": "How to Train Your Dragon",
+        "year": 2010,
+        "overview": "As the son of a Viking leader on the cusp of manhood, shy Hiccup Horrendous Haddock III faces a rite of passage: he must kill a dragon to prove his warrior mettle. But after downing a feared dragon, he realizes that he no longer wants to destroy it, and instead befriends the beast – which he names Toothless – much to the chagrin of his warrior father.",
+        "genres": [
+          "Fantasy",
+          "Adventure",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 98,
+        "vote_average": 7.859,
+        "director": "Chris Sanders",
+        "similarity": 0.803727224312462,
+        "curation_tier": "core",
+        "match_reason": "Matches: lighthearted, comfort",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "1d6879d5-f75f-4587-ab39-49a412dcd812",
+        "tmdb_id": 11688,
+        "title": "The Emperor's New Groove",
+        "year": 2000,
+        "overview": "When the self‑absorbed Emperor Kuzco is accidentally transformed into a llama, he must rely on a humble villager to survive the jungle and reclaim his throne.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 78,
+        "vote_average": 7.56,
+        "director": "Mark Dindal",
+        "similarity": 0.800983465815019,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, lighthearted",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c284851d-5cb2-4605-aa87-1d0de6f326cd",
+        "tmdb_id": 137,
+        "title": "Groundhog Day",
+        "year": 1993,
+        "overview": "A cynical TV weatherman, along with his idealistic producer and his sardonic cameraman, is sent to report on Groundhog Day in the small town of Punxsutawney, where he finds himself repeating the same day over and over.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Harold Ramis",
+        "similarity": 0.797944913055571,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 0.79346588103124,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, island",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.780616978126515,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6a9d16cf-3d35-45b2-af05-4acf9358b658",
+        "tmdb_id": 772,
+        "title": "Home Alone 2: Lost in New York",
+        "year": 1992,
+        "overview": "Instead of flying to Florida with his folks, Kevin ends up alone in New York, where he gets a hotel room with his dad's credit card—despite problems from a clerk and meddling bellboy. But when Kevin runs into his old nemeses, the Wet Bandits, he's determined to foil their plans to rob a toy store on Christmas Eve.",
+        "genres": [
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 120,
+        "vote_average": 6.785,
+        "director": "Chris Columbus",
+        "similarity": 0.774197774976904,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, family-friendly",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3926a1ff-f7e4-438b-89aa-5977ab08a575",
+        "tmdb_id": 315162,
+        "title": "Puss in Boots: The Last Wish",
+        "year": 2022,
+        "overview": "Puss in Boots discovers that his passion for adventure has taken its toll: He has burned through eight of his nine lives, leaving him with only one life left. Puss sets out on an epic journey to find the mythical Last Wish and restore his nine lives.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Fantasy",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 103,
+        "vote_average": 8.205,
+        "director": "Joel Crawford",
+        "similarity": 0.774195794413411,
+        "curation_tier": "core",
+        "match_reason": "fairy tale, sequel, talking dog",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e0a69f79-1fca-4d68-abba-574eb5df43fa",
+        "tmdb_id": 497582,
+        "title": "Enola Holmes",
+        "year": 2020,
+        "overview": "Nancy Springer’ın “The Enola Holmes Mysteries” adlı kitap serisinden uyarlanan film, ünlü dedektif Sherlock Holmes’un ergen kız kardeşi Enola’nın maceralarını konu ediniyor. 16. doğumgününün sabahında annesinin ortadan kaybolduğunu gören Enola, ağabeyleri Sherlock ve Mycroft’tan yardım ister. Ancak kardeşler onu ciddiye almaz ve yatılı okula göndermeyi planlar. Enola meseleyi kendi eline alır ve annesine ne olduğunu öğrenmek için Londra’ya gider.",
+        "genres": [
+          "Adventure",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 7.235,
+        "director": "Harry Bradbeer",
+        "similarity": 0.768388117008002,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, detective, child prodigy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 0.763569023632639,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.76039528241201,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b2abed8c-cf73-4950-aa27-d9b163a2b52e",
+        "tmdb_id": 57158,
+        "title": "The Hobbit: The Desolation of Smaug",
+        "year": 2013,
+        "overview": "The Dwarves, Bilbo and Gandalf have successfully escaped the Misty Mountains, and Bilbo has gained the One Ring. They all continue their journey to get their gold back from the Dragon, Smaug.",
+        "genres": [
+          "Fantasy",
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 161,
+        "vote_average": 7.576,
+        "director": "Peter Jackson",
+        "similarity": 0.747750494694508,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "406413b3-53c6-423a-b37e-59cd93652b83",
+        "tmdb_id": 854,
+        "title": "The Mask",
+        "year": 1994,
+        "overview": "Stanley Ipkiss, an insecure banker who has lost his zest for life stumbles upon an ancient mask, that turns him into a confident suave cartoon-like character who upsets his ordinary life.",
+        "genres": [
+          "Romance",
+          "Comedy",
+          "Crime",
+          "Fantasy"
+        ],
+        "runtime": 101,
+        "vote_average": 6.978,
+        "director": "Chuck Russell",
+        "similarity": 0.727036168746076,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comedy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.726583038905341,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family-friendly",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d746a9c0-bc0c-43d8-b079-afce42a8b38b",
+        "tmdb_id": 1022787,
+        "title": "Elio",
+        "year": 2025,
+        "overview": "Elio, a space fanatic with an active imagination, finds himself on a cosmic misadventure where he must form new bonds with eccentric alien lifeforms, navigate a crisis of intergalactic proportions and somehow discover who he is truly meant to be.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 6.907,
+        "director": "Domee Shi",
+        "similarity": 0.725223232277423,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comfort",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d3caadbd-ef1d-40d1-b660-f6b506c5816d",
+        "tmdb_id": 420814,
+        "title": "Christopher Robin",
+        "year": 2018,
+        "overview": "Christopher Robin, the boy who had countless adventures in the Hundred Acre Wood, has grown up and lost his way. Now it’s up to his spirited and loveable stuffed animals, Winnie The Pooh, Tigger, Piglet, and the rest of the gang, to rekindle their friendship and remind him of endless days of childlike wonder and make-believe, when doing nothing was the very best something.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.295,
+        "director": "Marc Forster",
+        "similarity": 0.723160270645453,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family-friendly",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c9bad052-079c-4196-b4ca-5fee393c9d11",
+        "tmdb_id": 228326,
+        "title": "The Book of Life",
+        "year": 2014,
+        "overview": "The journey of Manolo, a young man who is torn between fulfilling the expectations of his family and following his heart. Before choosing which path to follow, he embarks on an incredible adventure that spans fantastical worlds where he must face his greatest fears.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 95,
+        "vote_average": 7.5,
+        "director": "Jorge R. Gutierrez",
+        "similarity": 0.71403011696972,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "28ccfff1-ead8-4b15-858e-1b2bd83c50f4",
+        "tmdb_id": 431580,
+        "title": "Abominable",
+        "year": 2019,
+        "overview": "A group of misfits encounter a young Yeti named Everest, and they set off to reunite the magical creature with his family on the mountain of his namesake.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 97,
+        "vote_average": 7.45,
+        "director": "Jill Culton",
+        "similarity": 0.711346375876149,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5ba231a7-2b54-41db-9748-f423fd868ad6",
+        "tmdb_id": 335977,
+        "title": "Indiana Jones and the Dial of Destiny",
+        "year": 2023,
+        "overview": "Finding himself in a new era, and approaching retirement, Indy wrestles with fitting into a world that seems to have outgrown him. But as the tentacles of an all-too-familiar evil return in the form of an old rival, Indy must don his hat and pick up his whip once more to make sure an ancient and powerful artifact doesn't fall into the wrong hands.",
+        "genres": [
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 155,
+        "vote_average": 6.514,
+        "director": "James Mangold",
+        "similarity": 0.71091712825615,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "33040d95-bee1-4286-9800-50bcdd4a0a88",
+        "tmdb_id": 277834,
+        "title": "Moana",
+        "year": 2016,
+        "overview": "In Ancient Polynesia, when a terrible curse incurred by Maui reaches an impetuous Chieftain's daughter's island, she answers the Ocean's call to seek out the demigod to set things right.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Animation"
+        ],
+        "runtime": 107,
+        "vote_average": 7.565,
+        "director": "John Musker",
+        "similarity": 0.709002833658094,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2582db7e-429c-44cf-94a4-8a90c1f16585",
+        "tmdb_id": 313297,
+        "title": "Kubo and the Two Strings",
+        "year": 2016,
+        "overview": "Kubo mesmerizes the people in his village with his magical gift for spinning wild tales with origami. When he accidentally summons an evil spirit seeking vengeance, Kubo is forced to go on a quest to solve the mystery of his fallen samurai father and his mystical weaponry, as well as discover his own magical powers.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 102,
+        "vote_average": 7.631,
+        "director": "Travis Knight",
+        "similarity": 0.708479527364773,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "89d7cf26-1b41-441c-b726-2a683e7d69d3",
+        "tmdb_id": 59436,
+        "title": "Midnight in Paris",
+        "year": 2011,
+        "overview": "While on a trip to Paris with his fiancée's family, a nostalgic screenwriter finds himself mysteriously going back to the 1920s every day at midnight.",
+        "genres": [
+          "Fantasy",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.515,
+        "director": "Woody Allen",
+        "similarity": 0.707286599152596,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d92822cd-e809-4943-b1a1-9acd5aa796dd",
+        "tmdb_id": 420817,
+        "title": "Aladdin",
+        "year": 2019,
+        "overview": "A kindhearted street urchin named Aladdin embarks on a magical adventure after finding a lamp that releases a wisecracking genie while a power-hungry Grand Vizier vies for the same lamp that has the power to make their deepest wishes come true.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Romance",
+          "Family"
+        ],
+        "runtime": 127,
+        "vote_average": 7.087,
+        "director": "Guy Ritchie",
+        "similarity": 0.707169553768211,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.654142141148271,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "92a62a55-dbe5-4186-ab12-c06b6afe30c6",
+        "tmdb_id": 129,
+        "title": "Spirited Away",
+        "year": 2001,
+        "overview": "A young girl, Chihiro, becomes trapped in a strange new world of spirits. When her parents undergo a mysterious transformation, she must call upon the courage she never knew she had to free her family.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 125,
+        "vote_average": 8.534,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.624772356252964,
+        "curation_tier": "core",
+        "match_reason": "witch, parent child relationship, darkness",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "1cee6a64-c549-49f6-b21a-1c62fea70c1f",
+        "tmdb_id": 284053,
+        "title": "Thor: Ragnarok",
+        "year": 2017,
+        "overview": "Thor is imprisoned on the other side of the universe and finds himself in a race against time to get back to Asgard to stop Ragnarok, the destruction of his home-world and the end of Asgardian civilization, at the hands of a powerful new threat, the ruthless Hela.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Comedy"
+        ],
+        "runtime": 131,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 0.575299460017956,
+        "curation_tier": "core",
+        "match_reason": "superhero, death of father, based on comic",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "c99230d9-6fa6-4e1b-b09a-19a505a721ea",
+        "tmdb_id": 585,
+        "title": "Monsters, Inc.",
+        "year": 2001,
+        "overview": "Lovable Sulley and his wisecracking sidekick Mike Wazowski are the top scare team at Monsters, Inc., the scream-processing factory in Monstropolis. When a little girl named Boo wanders into their world, it's the monsters who are scared silly, and it's up to Sulley and Mike to keep her out of sight and get her back home.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 92,
+        "vote_average": 7.8,
+        "director": "Pete Docter",
+        "similarity": 0.571019892908261,
+        "curation_tier": "core",
+        "match_reason": "Matches: family-friendly",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f38b25e3-6d32-4316-8bc0-8c9266d27ea5",
+        "tmdb_id": 12,
+        "title": "Finding Nemo",
+        "year": 2003,
+        "overview": "Nemo, an adventurous young clownfish, is unexpectedly taken from his Great Barrier Reef home to a dentist's office aquarium. It's up to his worrisome father Marlin and a friendly but forgetful fish Dory to bring Nemo home -- meeting vegetarian sharks, surfer dude turtles, hypnotic jellyfish, hungry seagulls, and more along the way.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 100,
+        "vote_average": 7.818,
+        "director": "Andrew Stanton",
+        "similarity": 0.568657841319895,
+        "curation_tier": "core",
+        "match_reason": "fish, sydney, australia, parent child relationship",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "40b7f12b-2535-41a8-b1e0-98132f4956ea",
+        "tmdb_id": 862,
+        "title": "Toy Story",
+        "year": 1995,
+        "overview": "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 81,
+        "vote_average": 7.974,
+        "director": "John Lasseter",
+        "similarity": 0.568096247504978,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, mission",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "68cfa534-ce63-4e45-889a-81586fa73eeb",
+        "tmdb_id": 2062,
+        "title": "Ratatouille",
+        "year": 2007,
+        "overview": "Remy, a rat, possesses a palate far more refined than that of his fellow comrades. He dreams of becoming a chef, one who creates rather than scavenges. When fate deposits him in the sewers beneath one of Paris’s most famous restaurants, he finds himself ideally placed to fulfill his dream. Forming an unusual alliance with a hapless young kitchen worker, Remy begins a daring culinary double life.  As Remy pursues his vision, he must navigate the suspicions of the calculating Head Chef Skinner, the disapproval of Remy’s own colony, and the foreboding presence of renowned food critic Anton Ego, who strikes fear in the hearts of chefs all throughout France.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 111,
+        "vote_average": 7.841,
+        "director": "Brad Bird",
+        "similarity": 0.566872158238937,
+        "curation_tier": "core",
+        "match_reason": "work, sibling relationship, paris, france",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "95d01fbe-a432-48b2-8ae2-60fd8c73b508",
+        "tmdb_id": 10193,
+        "title": "Toy Story 3",
+        "year": 2010,
+        "overview": "Woody, Buzz, and the rest of Andy's toys haven't been played with in years. With Andy about to go to college, the gang find themselves accidentally left at a nefarious day care center. The toys must band together to escape and return home to Andy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 102,
+        "vote_average": 7.805,
+        "director": "Lee Unkrich",
+        "similarity": 0.557402695123708,
+        "curation_tier": "core",
+        "match_reason": "escape, hostage, college",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "1bcffd15-5987-43b5-822f-393ec803a8a0",
+        "tmdb_id": 105,
+        "title": "Back to the Future",
+        "year": 1985,
+        "overview": "Eighties teenager Marty McFly is accidentally sent back in time to 1955, inadvertently disrupting his parents' first meeting and attracting his mother's romantic interest. Marty must repair the damage to history by rekindling his parents' romance and - with the help of his eccentric inventor friend Doc Brown - return to 1985.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Science Fiction"
+        ],
+        "runtime": 116,
+        "vote_average": 8.326,
+        "director": "Robert Zemeckis",
+        "similarity": 0.454505046657003,
+        "curation_tier": "core",
+        "match_reason": "flying car, race against time, clock tower",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 686,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 686,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comedy",
+        "feel-good",
+        "lighthearted",
+        "comfort",
+        "humor",
+        "family-friendly",
+        "wholesome"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Comedy",
+        "Family"
+      ],
+      "genres_exclude": [
+        "Horror",
+        "Drama",
+        "Thriller"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Paddington 2",
+          "year": 2017
+        },
+        {
+          "title": "The Grand Budapest Hotel",
+          "year": 2014
+        },
+        {
+          "title": "Amélie",
+          "year": 2001
+        },
+        {
+          "title": "Knives Out",
+          "year": 2019
+        },
+        {
+          "title": "Wes Anderson's Moonrise Kingdom",
+          "year": 2012
+        },
+        {
+          "title": "Legally Blonde",
+          "year": 2001
+        },
+        {
+          "title": "The Princess Bride",
+          "year": 1987
+        },
+        {
+          "title": "Sing",
+          "year": 2016
+        },
+        {
+          "title": "Hocus Pocus",
+          "year": 1993
+        },
+        {
+          "title": "The Lego Movie",
+          "year": 2014
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "7f63b84a15f95d38",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3585,
+    "http_status": 200,
+    "reranked_ids": [
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79",
+      "40b7f12b-2535-41a8-b1e0-98132f4956ea"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe": "Heartwarming family adventure with gentle humor and cozy, feel-good storytelling throughout.",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812": "Lighthearted comedy with colorful animation, quirky characters, and effortless entertainment.",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79": "Uplifting animated musical about friendship and passion with joyful, energetic charm.",
+      "40b7f12b-2535-41a8-b1e0-98132f4956ea": "Classic animated adventure brimming with humor, warmth, and pure imaginative fun."
+    }
+  }
+}

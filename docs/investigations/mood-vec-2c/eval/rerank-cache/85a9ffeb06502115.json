@@ -1,0 +1,24 @@
+{
+  "payload_hash": "85a9ffeb06502115",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3262,
+  "http_status": 200,
+  "reranked_ids": [
+    "b643db72-26cd-40c4-81c7-dff0f02749e1",
+    "03ed440e-ccd5-4276-b620-b76324233fe4",
+    "fc8ee875-9934-4b6e-834f-aff0cb526231",
+    "dbaea249-6333-42c8-9462-fe5f51cba11f"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "b643db72-26cd-40c4-81c7-dff0f02749e1": "Directly explores heartbreak through a man trying to erase memories of his ex-girlfriend.",
+    "03ed440e-ccd5-4276-b620-b76324233fe4": "Poignant reunion of former lovers confronting their past connection and lost romance.",
+    "fc8ee875-9934-4b6e-834f-aff0cb526231": "Bittersweet summer romance capturing the intensity and pain of passionate first love.",
+    "dbaea249-6333-42c8-9462-fe5f51cba11f": "Melancholic portrait of a struggling musician dealing with loneliness and romantic disconnection."
+  }
+}

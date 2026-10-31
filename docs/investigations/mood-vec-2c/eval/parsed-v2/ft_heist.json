@@ -1,0 +1,137 @@
+{
+  "mood_id": "ft_heist",
+  "text": "A clever heist movie with a twist",
+  "ms": 6315,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.2,
+      "fear": 0.4,
+      "anger": 0.15,
+      "surprise": 0.85,
+      "disgust": 0.1,
+      "trust": 0.5,
+      "anticipation": 0.9
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Heist Twist",
+    "profile_description": "A viewer seeking intelligent, fast-paced crime narratives that subvert expectations with clever plot reversals and satisfy on multiple viewings.",
+    "search_keywords": [
+      "heist",
+      "crime",
+      "robbery",
+      "plotting",
+      "twist ending",
+      "clever protagonist",
+      "deception",
+      "scheme"
+    ],
+    "genres_include": [
+      "Crime",
+      "Thriller",
+      "Adventure"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "Ocean's Eleven",
+        "year": 2001
+      },
+      {
+        "title": "The Prestige",
+        "year": 2006
+      },
+      {
+        "title": "Inside Man",
+        "year": 2006
+      },
+      {
+        "title": "Heat",
+        "year": 1995
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "The Italian Job",
+        "year": 2003
+      },
+      {
+        "title": "Now You See Me",
+        "year": 2013
+      },
+      {
+        "title": "Reservoir Dogs",
+        "year": 1992
+      },
+      {
+        "title": "Baby Driver",
+        "year": 2017
+      }
+    ],
+    "search_id": "b522014b-c10d-4689-938d-fec7b6ee4175",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.2,
+      "anger": 0.15,
+      "fear": 0.4,
+      "surprise": 0.85,
+      "disgust": 0.1,
+      "anticipation": 0.9,
+      "trust": 0.5
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.75,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "b522014b-c10d-4689-938d-fec7b6ee4175",
+  "search_keywords": [
+    "heist",
+    "crime",
+    "robbery",
+    "plotting",
+    "twist ending",
+    "clever protagonist",
+    "deception",
+    "scheme"
+  ],
+  "limit": null,
+  "remaining": null
+}

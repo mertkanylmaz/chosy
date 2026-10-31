@@ -1,0 +1,24 @@
+{
+  "payload_hash": "ce9b5cc1d1ff6c2e",
+  "cached": false,
+  "candidates_sent": 36,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3734,
+  "http_status": 200,
+  "reranked_ids": [
+    "beba7a17-264c-4138-86e4-95aa0ce96f60",
+    "1d6879d5-f75f-4587-ab39-49a412dcd812",
+    "060ed67f-4fd2-4de1-96f5-a64c7920a853",
+    "fb1b9f27-1caa-4391-b77a-20eeda5367b1"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "beba7a17-264c-4138-86e4-95aa0ce96f60": "Vampire comedy with modern humor and absurd situations under 90 minutes of pure comedy.",
+    "1d6879d5-f75f-4587-ab39-49a412dcd812": "Hilarious adventure with a selfish emperor turned llama forced into comedic situations throughout.",
+    "060ed67f-4fd2-4de1-96f5-a64c7920a853": "Witty animated comedy about an ogre's reluctant quest filled with laughs and fantasy adventure.",
+    "fb1b9f27-1caa-4391-b77a-20eeda5367b1": "Action-comedy about an underdog panda discovering kung fu with humor and heart throughout."
+  }
+}

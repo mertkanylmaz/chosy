@@ -1,0 +1,136 @@
+{
+  "mood_id": "ft_nostalgia_80s",
+  "text": "80s adventure vibes",
+  "ms": 6728,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.4,
+      "anger": 0.2,
+      "surprise": 0.75,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1980,
+      "to": 1989
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Retro Adventure Rush",
+    "profile_description": "A viewer craving the optimistic, high-octane excitement of 1980s adventure cinema—expect exotic locations, practical stunts, charismatic heroes, and fun-first storytelling with genuine thrills.",
+    "search_keywords": [
+      "adventure",
+      "1980s",
+      "exotic location",
+      "treasure hunt",
+      "action",
+      "heroic",
+      "practical effects",
+      "globe-trotting"
+    ],
+    "genres_include": [
+      "Action",
+      "Adventure"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Raiders of the Lost Ark",
+        "year": 1981
+      },
+      {
+        "title": "Indiana Jones and the Temple of Doom",
+        "year": 1984
+      },
+      {
+        "title": "The Great Adventure",
+        "year": 1985
+      },
+      {
+        "title": "Back to the Future",
+        "year": 1985
+      },
+      {
+        "title": "Romancing the Stone",
+        "year": 1984
+      },
+      {
+        "title": "The NeverEnding Story",
+        "year": 1984
+      },
+      {
+        "title": "Commando",
+        "year": 1985
+      },
+      {
+        "title": "Big Trouble in Little China",
+        "year": 1986
+      },
+      {
+        "title": "Innerspace",
+        "year": 1987
+      },
+      {
+        "title": "Predator",
+        "year": 1987
+      }
+    ],
+    "search_id": "e267320c-0d9e-4daf-9a81-5b7ec8216fec",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.2,
+      "fear": 0.4,
+      "surprise": 0.75,
+      "disgust": 0.05,
+      "anticipation": 0.85,
+      "trust": 0.6
+    },
+    "energy_level": 0.85,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.5,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1980,
+      "to": 1989
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e267320c-0d9e-4daf-9a81-5b7ec8216fec",
+  "search_keywords": [
+    "adventure",
+    "1980s",
+    "exotic location",
+    "treasure hunt",
+    "action",
+    "heroic",
+    "practical effects",
+    "globe-trotting"
+  ],
+  "limit": null,
+  "remaining": null
+}

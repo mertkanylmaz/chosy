@@ -1,0 +1,551 @@
+{
+  "mood_id": "ft_sad_cry",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 1.11495201714211,
+        "curation_tier": "core",
+        "match_reason": "hacker, based on novel or book, boston, massachusetts"
+      },
+      {
+        "id": "b6fe468f-5c98-40c6-9cff-0d301de894c8",
+        "tmdb_id": 850165,
+        "title": "The Iron Claw",
+        "year": 2023,
+        "overview": "The true story of the inseparable Von Erich brothers, who made history in the intensely competitive world of professional wrestling in the early 1980s. Through tragedy and triumph, under the shadow of their domineering father and coach, the brothers seek larger-than-life immortality on the biggest stage in sports.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.52,
+        "director": "Sean Durkin",
+        "similarity": 0.965053553589861,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "78942796-d7f9-4ee5-a47f-27f8f8285cd0",
+        "tmdb_id": 774531,
+        "title": "Young Woman and the Sea",
+        "year": 2024,
+        "overview": "This is the extraordinary true story of Trudy Ederle, the first woman to successfully swim the English Channel. Through the steadfast support of her older sister and supportive trainers, she overcame adversity and the animosity of a patriarchal society to rise through the ranks of the Olympic swimming team and complete the 21-mile trek from France to England.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.863,
+        "director": "Joachim Rønning",
+        "similarity": 0.965053553589861,
+        "curation_tier": "extended",
+        "match_reason": "english channel, biography, based on true story"
+      },
+      {
+        "id": "633de787-0c66-45fd-aee9-f84c992b5ce0",
+        "tmdb_id": 379,
+        "title": "Miller's Crossing",
+        "year": 1990,
+        "overview": "Set in 1929, a political boss and his advisor have a parting of the ways when they both fall for the same woman.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 115,
+        "vote_average": 7.449,
+        "director": "Joel Coen",
+        "similarity": 1.07903939985427,
+        "curation_tier": "core",
+        "match_reason": "street gang, corruption, prohibition era"
+      },
+      {
+        "id": "f8dd0980-71d2-4797-a213-588445ed12fc",
+        "tmdb_id": 617653,
+        "title": "The Last Duel",
+        "year": 2021,
+        "overview": "King Charles VI declares that Knight Jean de Carrouges settle his dispute with his squire, Jacques Le Gris, by challenging him to a duel.",
+        "genres": [
+          "History",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 153,
+        "vote_average": 7.414,
+        "director": "Ridley Scott",
+        "similarity": 0.938459928320801,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "a4e670a1-36f5-4c68-b6f3-64fe778d2ba3",
+        "tmdb_id": 345,
+        "title": "Eyes Wide Shut",
+        "year": 1999,
+        "overview": "After Dr. Bill Harford's wife, Alice, admits to having sexual fantasies about a man she met, Bill becomes obsessed with having a sexual encounter. He discovers an underground sexual group and attends one of their meetings -- and quickly discovers that he is in over his head.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 160,
+        "vote_average": 7.485,
+        "director": "Stanley Kubrick",
+        "similarity": 1.06523583107363,
+        "curation_tier": "core",
+        "match_reason": "new york city, prostitute, based on novel or book"
+      },
+      {
+        "id": "0175de91-8c40-49a6-be5b-c543920415ae",
+        "tmdb_id": 3782,
+        "title": "Ikiru",
+        "year": 1952,
+        "overview": "Kanji Watanabe is a middle-aged man who has worked in the same monotonous bureaucratic position for decades. Learning he has cancer, he starts to look for the meaning of his life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 8.303,
+        "director": "Akira Kurosawa",
+        "similarity": 0.934839691074244,
+        "curation_tier": "extended",
+        "match_reason": "dying and death, japan, bureaucracy"
+      },
+      {
+        "id": "80bd9c83-7856-4b7f-96c2-395d7f8d4d55",
+        "tmdb_id": 638,
+        "title": "Lost Highway",
+        "year": 1997,
+        "overview": "A tormented jazz musician finds himself lost in an enigmatic story involving murder, surveillance, gangsters, doppelgängers, and an impossible transformation inside a prison cell.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 134,
+        "vote_average": 7.5,
+        "director": "David Lynch",
+        "similarity": 1.05908141625036,
+        "curation_tier": "core",
+        "match_reason": "prison, pornography, jealousy"
+      },
+      {
+        "id": "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+        "tmdb_id": 840430,
+        "title": "The Holdovers",
+        "year": 2023,
+        "overview": "A curmudgeonly instructor at a New England prep school is forced to remain on campus during Christmas break to babysit the handful of students with nowhere to go. Eventually, he forms an unlikely bond with one of them — a damaged, brainy troublemaker — and with the school’s head cook, who has just lost a son in Vietnam.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 133,
+        "vote_average": 7.646,
+        "director": "Alexander Payne",
+        "similarity": 1.05452158809687,
+        "curation_tier": "core",
+        "match_reason": "vietnam war, winter, boarding school"
+      },
+      {
+        "id": "c42c718b-ecc0-418b-9cce-1102a9a1ec15",
+        "tmdb_id": 335984,
+        "title": "Blade Runner 2049",
+        "year": 2017,
+        "overview": "Thirty years after the events of the first film, a new blade runner, LAPD Officer K, unearths a long-buried secret that has the potential to plunge what's left of society into chaos. K's discovery leads him on a quest to find Rick Deckard, a former LAPD blade runner who has been missing for 30 years.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 164,
+        "vote_average": 7.594,
+        "director": "Denis Villeneuve",
+        "similarity": 1.05423215668601,
+        "curation_tier": "core",
+        "match_reason": "future, android, bounty hunter"
+      },
+      {
+        "id": "7a442851-aafe-4ade-a400-fba6f7f32a33",
+        "tmdb_id": 937278,
+        "title": "A Man Called Otto",
+        "year": 2022,
+        "overview": "When a lively young family moves in next door, grumpy widower Otto Anderson meets his match in a quick-witted, pregnant woman named Marisol, leading to an unlikely friendship that turns his world upside down.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.752,
+        "director": "Marc Forster",
+        "similarity": 1.04356909147059,
+        "curation_tier": "core",
+        "match_reason": "friendship, based on novel or book, suicide attempt"
+      },
+      {
+        "id": "0479ff90-20b4-4c31-8e27-b4bf33a1a282",
+        "tmdb_id": 335,
+        "title": "Once Upon a Time in the West",
+        "year": 1968,
+        "overview": "As the railroad builders advance unstoppably through the Arizona desert on their way to the sea, Jill arrives in the small town of Flagstone with the intention of starting a new life.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 166,
+        "vote_average": 8.274,
+        "director": "Sergio Leone",
+        "similarity": 1.04039277022802,
+        "curation_tier": "core",
+        "match_reason": "small town, loss of loved one, harmonica"
+      },
+      {
+        "id": "070df024-6b09-4caa-b444-381026025aa8",
+        "tmdb_id": 8741,
+        "title": "The Thin Red Line",
+        "year": 1998,
+        "overview": "The story of a group of men, an Army Rifle company called C-for-Charlie, who change, suffer, and ultimately make essential discoveries about themselves during the fierce World War II battle of Guadalcanal. It follows their journey, from the surprise of an unopposed landing, through the bloody and exhausting battles that follow, to the ultimate departure of those who survived.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 171,
+        "vote_average": 7.446,
+        "director": "Terrence Malick",
+        "similarity": 0.89469820804437,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "a8695d6c-6ec4-4aae-9501-20ba36a5f10e",
+        "tmdb_id": 1401281,
+        "title": "The Testament of Ann Lee",
+        "year": 2025,
+        "overview": "Ann Lee, the founding leader of the Shaker Movement, proclaimed as the female Christ by her followers. Depicts her establishment of a utopian society and the Shakers’ worship through song and dance, based on real events.",
+        "genres": [
+          "History",
+          "Drama",
+          "Music"
+        ],
+        "runtime": 137,
+        "vote_average": 6.66,
+        "director": "Mona Fastvold",
+        "similarity": 0.887525561494564,
+        "curation_tier": "extended",
+        "match_reason": "new york city, christianity, celibacy"
+      },
+      {
+        "id": "dfcd6ef3-d036-4569-a409-0f62945482b9",
+        "tmdb_id": 499,
+        "title": "Cléo from 5 to 7",
+        "year": 1962,
+        "overview": "Agnès Varda eloquently captures Paris in the sixties with this real-time portrait of a singer set adrift in the city as she awaits test results of a biopsy. A chronicle of the minutes of one woman’s life, Cléo from 5 to 7 is a spirited mix of vivid vérité and melodrama, featuring a score by Michel Legrand and cameos by Jean-Luc Godard and Anna Karina.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Agnès Varda",
+        "similarity": 0.881399945467135,
+        "curation_tier": "extended",
+        "match_reason": "individual, paris, france, singer"
+      },
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.988481746706188,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes"
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.987279350262156,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography"
+      },
+      {
+        "id": "0a27ed0b-f9c5-41b5-a060-e215d5ee9443",
+        "tmdb_id": 878361,
+        "title": "Big George Foreman",
+        "year": 2023,
+        "overview": "Fueled by an impoverished childhood, George Foreman channeled his anger into becoming an Olympic Gold medalist and World Heavyweight Champion, followed by a near-death experience that took him from the boxing ring to the pulpit. But when he sees his community struggling spiritually and financially, Foreman returns to the ring and makes history by reclaiming his title, becoming the oldest and most improbable World Heavyweight Boxing Champion ever.",
+        "genres": [
+          "History",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.548,
+        "director": "George Tillman Jr.",
+        "similarity": 0.86924584670443,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "f187fd0b-0cc6-4686-bd81-be4cf9c47ad1",
+        "tmdb_id": 12498,
+        "title": "Sling Blade",
+        "year": 1996,
+        "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.544,
+        "director": "Billy Bob Thornton",
+        "similarity": 0.972931507782571,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "613dce9d-5d27-4675-9ee3-17494477ffe7",
+        "tmdb_id": 795514,
+        "title": "The Fallout",
+        "year": 2021,
+        "overview": "In the wake of a school tragedy, Vada, Mia and Quinton form a unique and dynamic bond as they navigate the never linear, often confusing journey to heal in a world that feels forever changed.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 96,
+        "vote_average": 7.514,
+        "director": "Megan Park",
+        "similarity": 0.863167439619221,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "e370a8ed-3026-4e27-b781-18a879b98571",
+        "tmdb_id": 423,
+        "title": "The Pianist",
+        "year": 2002,
+        "overview": "The true story of pianist Władysław Szpilman's experiences in Warsaw during the Nazi occupation. When the Jews of the city find themselves forced into a ghetto, Szpilman finds work playing in a café; and when his family is deported in 1942, he stays behind, works for a while as a laborer, and eventually goes into hiding in the ruins of the war-torn city.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 150,
+        "vote_average": 8.375,
+        "director": "Roman Polanski",
+        "similarity": 0.966325408209145,
+        "curation_tier": "core",
+        "match_reason": "concert, nazi, resistance"
+      },
+      {
+        "id": "4c2f8484-cd01-4c02-900c-5e63881abb39",
+        "tmdb_id": 974036,
+        "title": "Ordinary Angels",
+        "year": 2024,
+        "overview": "Inspired by the incredible true story of a hairdresser who single-handedly rallies an entire community to help a widowed father save the life of his critically ill young daughter.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.67,
+        "director": "Jon Gunn",
+        "similarity": 0.861016642390649,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "1dff175f-021f-4861-93e4-3aaaa7fbfc33",
+        "tmdb_id": 33997,
+        "title": "Desert Flower",
+        "year": 2009,
+        "overview": "The autobiography of a Somalian nomad who was sold in marriage at 13, fled from Africa a while later to become finally an American supermodel and is now at the age of 38, the UN spokeswoman against female genital mutilation.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.582,
+        "director": "Sherry Hormann",
+        "similarity": 0.860295018848136,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "158a5e5d-7888-44ba-b343-8e95fd931666",
+        "tmdb_id": 5708,
+        "title": "Control",
+        "year": 2007,
+        "overview": "The story of Joy Division’s lead singer Ian Curtis, from his schoolboy days in 1973 to his suicide on the eve of the band's first American tour in 1980.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.515,
+        "director": "Anton Corbijn",
+        "similarity": 0.860295018848136,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "28ccb5e3-c702-4cf2-8363-9441a62b4c2e",
+        "tmdb_id": 2009,
+        "title": "4 Months, 3 Weeks and 2 Days",
+        "year": 2007,
+        "overview": "Two college roommates have 24 hours to make the ultimate choice as they finalize arrangements for a black market abortion.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.5,
+        "director": "Cristian Mungiu",
+        "similarity": 0.860295018848136,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "360ebec4-e484-4a7b-90f5-650c9ae97ea0",
+        "tmdb_id": 615,
+        "title": "The Passion of the Christ",
+        "year": 2004,
+        "overview": "A graphic portrayal of the last twelve hours of Jesus of Nazareth's life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.523,
+        "director": "Mel Gibson",
+        "similarity": 0.860295018848136,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "60f37326-65f0-44f6-b215-b72cbf26cd01",
+        "tmdb_id": 312221,
+        "title": "Creed",
+        "year": 2015,
+        "overview": "The former World Heavyweight Champion Rocky Balboa serves as a trainer and mentor to Adonis Johnson, the son of his late friend and former rival Apollo Creed.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.404,
+        "director": "Ryan Coogler",
+        "similarity": 0.8598766428983,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "83709df2-318b-4e6b-9123-4c64c5c328a5",
+        "tmdb_id": 81401,
+        "title": "The Turin Horse",
+        "year": 2011,
+        "overview": "A monumental windstorm and an abused horse's refusal to work or eat signal the beginning of the end for a poor farmer and his daughter.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 155,
+        "vote_average": 7.584,
+        "director": "Béla Tarr",
+        "similarity": 0.8598766428983,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "76203667-9cc3-45e2-aeb7-87b95575c81f",
+        "tmdb_id": 203833,
+        "title": "The Book Thief",
+        "year": 2013,
+        "overview": "While subjected to the horrors of WWII Germany, young Liesel finds solace by stealing books and sharing them with others. Under the stairs in her home, a Jewish refugee is being sheltered by her adoptive parents.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 131,
+        "vote_average": 7.488,
+        "director": "Brian Percival",
+        "similarity": 0.859030437467752,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "04061131-d663-4abb-8102-e3967f556bfe",
+        "tmdb_id": 285700,
+        "title": "The Fool",
+        "year": 2014,
+        "overview": "The Fool is a movie about a simple plumber. An honest man, he is up against an entire system of corrupted bureaucrats. At stake are the lives of 800 inhabitants of an old dorm that is at risk of collapsing within the span of the night.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.799,
+        "director": "Yury Bykov",
+        "similarity": 0.859030437467752,
+        "curation_tier": "extended",
+        "match_reason": null
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 315,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 315,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "914469ccb9aaa320",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2957,
+    "http_status": 200,
+    "reranked_ids": [
+      "0175de91-8c40-49a6-be5b-c543920415ae",
+      "e370a8ed-3026-4e27-b781-18a879b98571",
+      "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+      "158a5e5d-7888-44ba-b343-8e95fd931666",
+      "dfcd6ef3-d036-4569-a409-0f62945482b9",
+      "b6fe468f-5c98-40c6-9cff-0d301de894c8",
+      "76203667-9cc3-45e2-aeb7-87b95575c81f",
+      "28ccb5e3-c702-4cf2-8363-9441a62b4c2e"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

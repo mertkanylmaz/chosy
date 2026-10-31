@@ -1,0 +1,619 @@
+{
+  "mood_id": "qm_comedy",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "a89bc750-72c7-4e85-8507-31e20542de3a",
+        "tmdb_id": 16859,
+        "title": "Kiki's Delivery Service",
+        "year": 1989,
+        "overview": "A young witch, on her mandatory year of independent life, finds fitting into a new community difficult while she supports herself by running an air courier service.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.836,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.926590211888261,
+        "curation_tier": "extended",
+        "match_reason": "Matches: lighthearted"
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.869136190306197,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide"
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 0.924756023499101,
+        "curation_tier": "core",
+        "match_reason": "friendship, small town, island"
+      },
+      {
+        "id": "c9bad052-079c-4196-b4ca-5fee393c9d11",
+        "tmdb_id": 228326,
+        "title": "The Book of Life",
+        "year": 2014,
+        "overview": "The journey of Manolo, a young man who is torn between fulfilling the expectations of his family and following his heart. Before choosing which path to follow, he embarks on an incredible adventure that spans fantastical worlds where he must face his greatest fears.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 95,
+        "vote_average": 7.5,
+        "director": "Jorge R. Gutierrez",
+        "similarity": 0.823749266696444,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "28ccfff1-ead8-4b15-858e-1b2bd83c50f4",
+        "tmdb_id": 431580,
+        "title": "Abominable",
+        "year": 2019,
+        "overview": "A group of misfits encounter a young Yeti named Everest, and they set off to reunite the magical creature with his family on the mountain of his namesake.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 97,
+        "vote_average": 7.45,
+        "director": "Jill Culton",
+        "similarity": 0.82230584319232,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "682860b5-c196-4fe0-a128-3b8c24787ab9",
+        "tmdb_id": 11544,
+        "title": "Lilo & Stitch",
+        "year": 2002,
+        "overview": "As Stitch, a runaway genetic experiment from a faraway planet, wreaks havoc on the Hawaiian Islands, he becomes the mischievous adopted alien \"puppy\" of an independent little girl named Lilo and learns about loyalty, friendship, and ʻohana, the Hawaiian tradition of family.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 85,
+        "vote_average": 7.561,
+        "director": "Chris Sanders",
+        "similarity": 0.821405903951463,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "46c8a971-b53e-487a-b536-42a177150d08",
+        "tmdb_id": 62211,
+        "title": "Monsters University",
+        "year": 2013,
+        "overview": "A look at the relationship between Mike and Sulley during their days at Monsters University — when they weren't necessarily the best of friends.",
+        "genres": [
+          "Animation",
+          "Family"
+        ],
+        "runtime": 104,
+        "vote_average": 7.046,
+        "director": "Dan Scanlon",
+        "similarity": 0.81998383503519,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "6304ffc3-d437-4fda-9305-81b05f44cb79",
+        "tmdb_id": 335797,
+        "title": "Sing",
+        "year": 2016,
+        "overview": "A koala named Buster recruits his best friend to help him drum up business for his theater by hosting a singing competition.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Music",
+          "Animation"
+        ],
+        "runtime": 108,
+        "vote_average": 7.122,
+        "director": "Garth Jennings",
+        "similarity": 0.818249309894779,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "89d7cf26-1b41-441c-b726-2a683e7d69d3",
+        "tmdb_id": 59436,
+        "title": "Midnight in Paris",
+        "year": 2011,
+        "overview": "While on a trip to Paris with his fiancée's family, a nostalgic screenwriter finds himself mysteriously going back to the 1920s every day at midnight.",
+        "genres": [
+          "Fantasy",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.515,
+        "director": "Woody Allen",
+        "similarity": 0.817656796061395,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "2582db7e-429c-44cf-94a4-8a90c1f16585",
+        "tmdb_id": 313297,
+        "title": "Kubo and the Two Strings",
+        "year": 2016,
+        "overview": "Kubo mesmerizes the people in his village with his magical gift for spinning wild tales with origami. When he accidentally summons an evil spirit seeking vengeance, Kubo is forced to go on a quest to solve the mystery of his fallen samurai father and his mystical weaponry, as well as discover his own magical powers.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 102,
+        "vote_average": 7.631,
+        "director": "Travis Knight",
+        "similarity": 0.817239563911164,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "ba08a4fb-409d-44b9-97c3-e49f2258b4f7",
+        "tmdb_id": 400160,
+        "title": "The SpongeBob Movie: Sponge on the Run",
+        "year": 2020,
+        "overview": "When his best friend Gary is suddenly snatched away, SpongeBob takes Patrick on a madcap mission far beyond Bikini Bottom to save their pink-shelled pal.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Adventure",
+          "Animation"
+        ],
+        "runtime": 95,
+        "vote_average": 7.411,
+        "director": "Tim Hill",
+        "similarity": 0.8168348940607,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "fd3b6d8d-4804-4f59-b88d-0f1aa5b4ea73",
+        "tmdb_id": 11970,
+        "title": "Hercules",
+        "year": 1997,
+        "overview": "Bestowed with superhuman strength, a young mortal named Hercules sets out to prove himself a hero in the eyes of his father, the great god Zeus. Along with his friends Pegasus, a flying horse, and Phil, a personal trainer, Hercules is tricked by the hilarious, hotheaded villain Hades, who's plotting to take over Mount Olympus!",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy",
+          "Adventure",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 93,
+        "vote_average": 7.5,
+        "director": "Ron Clements",
+        "similarity": 0.815242028208212,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+        "tmdb_id": 348678,
+        "title": "A Man Called Ove",
+        "year": 2015,
+        "overview": "Despite being deposed as president of his condominium association, grumpy 59-year-old Ove continues to watch over his neighbourhood with an iron fist. When pregnant Parvaneh and her family move into the terraced house opposite Ove and she accidentally back into Ove’s mailbox, it sets off a series of unexpected changes in his life.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.605,
+        "director": "Hannes Holm",
+        "similarity": 0.904961833252344,
+        "curation_tier": "core",
+        "match_reason": "Matches: comedy, humor"
+      },
+      {
+        "id": "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+        "tmdb_id": 137106,
+        "title": "The Lego Movie",
+        "year": 2014,
+        "overview": "An ordinary Lego mini-figure, mistakenly thought to be the extraordinary MasterBuilder, is recruited to join a quest to stop an evil Lego tyrant from conquering the universe.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 100,
+        "vote_average": 7.422,
+        "director": "Phil Lord",
+        "similarity": 0.813508289928218,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "6ea3796d-1f11-4ebb-b01a-b8170bf50b3a",
+        "tmdb_id": 629542,
+        "title": "The Bad Guys",
+        "year": 2022,
+        "overview": "When the Bad Guys, a crew of criminal animals, are finally caught after years of heists and being the world’s most-wanted villains, Mr. Wolf brokers a deal to save them all from prison.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Crime",
+          "Adventure",
+          "Animation",
+          "Action"
+        ],
+        "runtime": 100,
+        "vote_average": 7.5,
+        "director": "Pierre Perifel",
+        "similarity": 0.811610366173115,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "39e89fac-6172-4826-80a6-4d2b2fcd08af",
+        "tmdb_id": 470878,
+        "title": "I Can Only Imagine",
+        "year": 2018,
+        "overview": "Growing up in Greenville, Texas, Bart Millard suffers physical and emotional abuse at the hands of his father, Arthur. When Arthur becomes terminally ill, he finds redemption by embracing his faith and rediscovering his love for his son. Years later, Bart's troubled childhood and mended relationship with his dad inspires him to write the hit song \"I Can Only Imagine\" as singer of the Christian band MercyMe.",
+        "genres": [
+          "Music",
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.526,
+        "director": "Jon Erwin",
+        "similarity": 0.810108427236463,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "547b0218-3c24-41bb-b6d5-495adc39f851",
+        "tmdb_id": 529203,
+        "title": "The Croods: A New Age",
+        "year": 2020,
+        "overview": "Searching for a safer habitat, the prehistoric Crood family discovers an idyllic, walled-in paradise that meets all of its needs. Unfortunately, they must also learn to live with the Bettermans -- a family that's a couple of steps above the Croods on the evolutionary ladder. As tensions between the new neighbors start to rise, a new threat soon propels both clans on an epic adventure that forces them to embrace their differences, draw strength from one another, and survive together.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 95,
+        "vote_average": 7.448,
+        "director": "Joel Crawford",
+        "similarity": 0.808300440058101,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "6eaa39a8-1162-409b-aa3d-069d13e437a8",
+        "tmdb_id": 330457,
+        "title": "Frozen II",
+        "year": 2019,
+        "overview": "Elsa, Anna, Kristoff and Olaf head far into the forest to learn the truth about an ancient mystery of their kingdom.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.234,
+        "director": "Jennifer Lee",
+        "similarity": 0.80616508359878,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 0.892991095578635,
+        "curation_tier": "core",
+        "match_reason": "countryside, based on novel or book, wild boar"
+      },
+      {
+        "id": "bd2f5208-6c5a-4e1e-943e-dce150e47ceb",
+        "tmdb_id": 5123,
+        "title": "August Rush",
+        "year": 2007,
+        "overview": "Lyla and Louis, a singer and a musician, fall in love, but are soon compelled to separate. Lyla is forced to give up her newborn but unknown to her, he grows up to become a musical genius.",
+        "genres": [
+          "Family",
+          "Drama",
+          "Music"
+        ],
+        "runtime": 114,
+        "vote_average": 7.4,
+        "director": "Kirsten Sheridan",
+        "similarity": 0.805398994463436,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "2c9d1385-6f17-4696-aec0-263194d5a3dd",
+        "tmdb_id": 87827,
+        "title": "Life of Pi",
+        "year": 2012,
+        "overview": "The story of an Indian boy named Pi, a zookeeper's son who finds himself in the company of a hyena, zebra, orangutan, and a Bengal tiger after a shipwreck sets them adrift in the Pacific Ocean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.407,
+        "director": "Ang Lee",
+        "similarity": 0.804337421439079,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "44a6e7d4-4462-42f4-9cf7-75d1a0ed475c",
+        "tmdb_id": 538858,
+        "title": "Tumbbad",
+        "year": 2018,
+        "overview": "India, 1918. On the outskirts of Tumbbad, a cursed village where it always rains, Vinayak, along with his mother and his brother, care of a mysterious old woman who keeps the secret of an ancestral treasure that Vinayak gets obsessed with.",
+        "genres": [
+          "Fantasy",
+          "Horror"
+        ],
+        "runtime": 113,
+        "vote_average": 7.567,
+        "director": "Rahi Anil Barve",
+        "similarity": 0.890014612419659,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "74988b28-83d1-4f5a-bbb8-3303c840d5cd",
+        "tmdb_id": 431693,
+        "title": "Spies in Disguise",
+        "year": 2019,
+        "overview": "Super spy Lance Sterling and scientist Walter Beckett are almost exact opposites. Lance is smooth, suave and debonair. Walter is… not. But what Walter lacks in social skills he makes up for in smarts and invention, creating the awesome gadgets Lance uses on his epic missions. But when events take an unexpected turn, Walter and Lance suddenly have to rely on each other in a whole new way.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 102,
+        "vote_average": 7.558,
+        "director": "Nick Bruno",
+        "similarity": 0.802067176876931,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "09168ccf-9afa-4fdd-a426-02adfb33191b",
+        "tmdb_id": 37135,
+        "title": "Tarzan",
+        "year": 1999,
+        "overview": "Tarzan was a small orphan who was raised by an ape named Kala since he was a child. He believed that this was his family, but on an expedition Jane Porter is rescued by Tarzan. He then finds out that he's human. Now Tarzan must make the decision as to which family he should belong to...",
+        "genres": [
+          "Family",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 88,
+        "vote_average": 7.395,
+        "director": "Chris Buck",
+        "similarity": 0.799928380194919,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "70e2f184-90b4-489f-bfd2-35752c9f52a5",
+        "tmdb_id": 618588,
+        "title": "Arthur the King",
+        "year": 2024,
+        "overview": "Over the course of ten days and 435 miles, an unbreakable bond is forged between pro adventure racer Michael Light and a scrappy street dog companion dubbed Arthur. As the team is pushed to their outer limits of endurance in the race, Arthur redefines what victory, loyalty and friendship truly mean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.553,
+        "director": "Simon Cellan Jones",
+        "similarity": 0.798724040431998,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 0.88264298673689,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain"
+      },
+      {
+        "id": "107ccb84-9846-425c-a93c-c48f0c9d8c1c",
+        "tmdb_id": 82702,
+        "title": "How to Train Your Dragon 2",
+        "year": 2014,
+        "overview": "Five years after uniting the dragons and Vikings of Berk, Hiccup and Toothless soar beyond their homeland, charting the vast unknown. During one of their adventures, the pair discover a secret cave that houses hundreds of wild dragons -- and a mysterious dragon rider with a startling connection to Hiccup. And as the ruthless dragon conqueror Drago Bludvist rises to seize control of both dragons and people alike, Hiccup must step into his role as a true leader and, alongside his friends and Toothless, protect Berk from a devastating war.",
+        "genres": [
+          "Fantasy",
+          "Action",
+          "Adventure",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 102,
+        "vote_average": 7.68,
+        "director": "Dean DeBlois",
+        "similarity": 0.79743752336581,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.878351122614301,
+        "curation_tier": "core",
+        "match_reason": "friendship, wolf, magic"
+      },
+      {
+        "id": "a3bff360-e1c3-47c8-87b7-e12d11bb6095",
+        "tmdb_id": 8321,
+        "title": "In Bruges",
+        "year": 2008,
+        "overview": "Ray and Ken, two hit men, are in Bruges, Belgium, waiting for their next mission. While they are there they have time to think and discuss their previous assignment. When the mission is revealed to Ken, it is not what he expected.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 108,
+        "vote_average": 7.499,
+        "director": "Martin McDonagh",
+        "similarity": 0.794216745675194,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "e0a69f79-1fca-4d68-abba-574eb5df43fa",
+        "tmdb_id": 497582,
+        "title": "Enola Holmes",
+        "year": 2020,
+        "overview": "Nancy Springer’ın “The Enola Holmes Mysteries” adlı kitap serisinden uyarlanan film, ünlü dedektif Sherlock Holmes’un ergen kız kardeşi Enola’nın maceralarını konu ediniyor. 16. doğumgününün sabahında annesinin ortadan kaybolduğunu gören Enola, ağabeyleri Sherlock ve Mycroft’tan yardım ister. Ancak kardeşler onu ciddiye almaz ve yatılı okula göndermeyi planlar. Enola meseleyi kendi eline alır ve annesine ne olduğunu öğrenmek için Londra’ya gider.",
+        "genres": [
+          "Adventure",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 7.235,
+        "director": "Harry Bradbeer",
+        "similarity": 0.793689071859344,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, detective, child prodigy"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 951,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 951,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comedy",
+        "humor",
+        "lighthearted",
+        "funny",
+        "witty",
+        "feel-good",
+        "satire"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "990509c5f16c5521",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2101,
+    "http_status": 200,
+    "reranked_ids": [
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79",
+      "ba08a4fb-409d-44b9-97c3-e49f2258b4f7",
+      "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9",
+      "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+      "89d7cf26-1b41-441c-b726-2a683e7d69d3",
+      "547b0218-3c24-41bb-b6d5-495adc39f851"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "mood_id": "qm_cozy",
+  "text": "Light, fun and entertaining, relaxing and easy, chill and cozy, no heavy thinking, not scary, not sad",
+  "ms": 7090,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.75,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "tragedy",
+      "dark themes",
+      "intense conflict",
+      "heavy drama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Cozy Comfort",
+    "profile_description": "You want a feel-good escape that's effortless and warm—something entertaining but undemanding that lets your mind relax without tension or sadness.",
+    "search_keywords": [
+      "comedy",
+      "feel-good",
+      "lighthearted",
+      "comfort",
+      "humor",
+      "family-friendly",
+      "wholesome"
+    ],
+    "genres_include": [
+      "Comedy",
+      "Family"
+    ],
+    "genres_exclude": [
+      "Horror",
+      "Drama",
+      "Thriller"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Paddington 2",
+        "year": 2017
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "Wes Anderson's Moonrise Kingdom",
+        "year": 2012
+      },
+      {
+        "title": "Legally Blonde",
+        "year": 2001
+      },
+      {
+        "title": "The Princess Bride",
+        "year": 1987
+      },
+      {
+        "title": "Sing",
+        "year": 2016
+      },
+      {
+        "title": "Hocus Pocus",
+        "year": 1993
+      },
+      {
+        "title": "The Lego Movie",
+        "year": 2014
+      }
+    ],
+    "search_id": "dfaa41ad-21db-4f46-9eb4-38e1b596da0e",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.75
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "tragedy",
+      "dark themes",
+      "intense conflict",
+      "heavy drama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "dfaa41ad-21db-4f46-9eb4-38e1b596da0e",
+  "search_keywords": [
+    "comedy",
+    "feel-good",
+    "lighthearted",
+    "comfort",
+    "humor",
+    "family-friendly",
+    "wholesome"
+  ],
+  "limit": null,
+  "remaining": null
+}

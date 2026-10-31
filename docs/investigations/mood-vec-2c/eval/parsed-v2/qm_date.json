@@ -1,0 +1,147 @@
+{
+  "mood_id": "qm_date",
+  "text": "Romantic and heartfelt, a tender love story for a couple, intimate and warm, not horror, not scary",
+  "ms": 5128,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "trust": 0.85,
+      "anticipation": 0.4
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "scary elements",
+      "violence",
+      "tragedy"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true,
+    "profile_name": "Tender Romance",
+    "profile_description": "A couple seeking an intimate, warm love story with emotional depth and genuine connection — slow-paced, visually beautiful, and ultimately hopeful.",
+    "search_keywords": [
+      "romance",
+      "love story",
+      "intimate",
+      "relationships",
+      "heartfelt",
+      "couple",
+      "emotional connection"
+    ],
+    "genres_include": [
+      "Romance",
+      "Drama"
+    ],
+    "genres_exclude": [
+      "Horror",
+      "Thriller"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Before Sunrise",
+        "year": 1995
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Call Me By Your Name",
+        "year": 2017
+      },
+      {
+        "title": "The Farewell",
+        "year": 2019
+      },
+      {
+        "title": "About Time",
+        "year": 2013
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Pride and Prejudice",
+        "year": 2005
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "The Notebook",
+        "year": 2004
+      },
+      {
+        "title": "La La Land",
+        "year": 2016
+      }
+    ],
+    "search_id": "9b5c7621-df33-4fdc-b54a-d4fe7487cdc8",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "anticipation": 0.4,
+      "trust": 0.85
+    },
+    "energy_level": 0.4,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "scary elements",
+      "violence",
+      "tragedy"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true
+  },
+  "search_id": "9b5c7621-df33-4fdc-b54a-d4fe7487cdc8",
+  "search_keywords": [
+    "romance",
+    "love story",
+    "intimate",
+    "relationships",
+    "heartfelt",
+    "couple",
+    "emotional connection"
+  ],
+  "limit": null,
+  "remaining": null
+}

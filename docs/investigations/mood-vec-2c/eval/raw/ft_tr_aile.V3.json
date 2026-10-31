@@ -1,0 +1,989 @@
+{
+  "mood_id": "ft_tr_aile",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "6304ffc3-d437-4fda-9305-81b05f44cb79",
+        "tmdb_id": 335797,
+        "title": "Sing",
+        "year": 2016,
+        "overview": "A koala named Buster recruits his best friend to help him drum up business for his theater by hosting a singing competition.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Music",
+          "Animation"
+        ],
+        "runtime": 108,
+        "vote_average": 7.122,
+        "director": "Garth Jennings",
+        "similarity": 0.929793899450413,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c",
+          "v"
+        ]
+      },
+      {
+        "id": "7415f32f-4f8a-4845-94cc-f24c7f97eca7",
+        "tmdb_id": 354912,
+        "title": "Coco",
+        "year": 2017,
+        "overview": "Despite his family’s baffling generations-old ban on music, Miguel dreams of becoming an accomplished musician like his idol, Ernesto de la Cruz. Desperate to prove his talent, Miguel finds himself in the stunning and colorful Land of the Dead following a mysterious chain of events. Along the way, he meets charming trickster Hector, and together, they set off on an extraordinary journey to unlock the real story behind Miguel's family history.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Music",
+          "Adventure"
+        ],
+        "runtime": 105,
+        "vote_average": 8.197,
+        "director": "Lee Unkrich",
+        "similarity": 0.791051398112161,
+        "curation_tier": "core",
+        "match_reason": "skeleton, mexico, guitar",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "1b54c68b-5d23-4412-8830-3cc289188fbe",
+        "tmdb_id": 420818,
+        "title": "The Lion King",
+        "year": 2019,
+        "overview": "Simba idolizes his father, King Mufasa, and takes to heart his own royal destiny. But not everyone in the kingdom celebrates the new cub's arrival. Scar, Mufasa's brother—and former heir to the throne—has plans of his own. The battle for Pride Rock is ravaged with betrayal, tragedy and drama, ultimately resulting in Simba's exile. With help from a curious pair of newfound friends, Simba will have to figure out how to grow up and take back what is rightfully his.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Family",
+          "Animation"
+        ],
+        "runtime": 118,
+        "vote_average": 7.098,
+        "director": "Jon Favreau",
+        "similarity": 0.760660815014824,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+        "tmdb_id": 346648,
+        "title": "Paddington 2",
+        "year": 2017,
+        "overview": "Paddington, now happily settled with the Browns, picks up a series of odd jobs to buy the perfect present for his Aunt Lucy, but it is stolen.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 104,
+        "vote_average": 7.471,
+        "director": "Paul King",
+        "similarity": 0.735036720399377,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "2cdcc9e2-acdf-4244-83e4-621e540a687d",
+        "tmdb_id": 10191,
+        "title": "How to Train Your Dragon",
+        "year": 2010,
+        "overview": "As the son of a Viking leader on the cusp of manhood, shy Hiccup Horrendous Haddock III faces a rite of passage: he must kill a dragon to prove his warrior mettle. But after downing a feared dragon, he realizes that he no longer wants to destroy it, and instead befriends the beast – which he names Toothless – much to the chagrin of his warrior father.",
+        "genres": [
+          "Fantasy",
+          "Adventure",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 98,
+        "vote_average": 7.859,
+        "director": "Chris Sanders",
+        "similarity": 0.718605689793424,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "483e86b9-6eec-4053-b68c-9970b3576e4b",
+        "tmdb_id": 568124,
+        "title": "Encanto",
+        "year": 2021,
+        "overview": "The tale of an extraordinary family, the Madrigals, who live hidden in the mountains of Colombia, in a magical house, in a vibrant town, in a wondrous, charmed place called an Encanto. The magic of the Encanto has blessed every child in the family—every child except one, Mirabel. But when she discovers that the magic surrounding the Encanto is in danger, Mirabel decides that she, the only ordinary Madrigal, might just be her exceptional family's last hope.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 7.568,
+        "director": "Byron Howard",
+        "similarity": 0.697497644349081,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "45163902-037d-41ca-9f63-2894730624d3",
+        "tmdb_id": 177572,
+        "title": "Big Hero 6",
+        "year": 2014,
+        "overview": "A special bond develops between plus-sized inflatable robot Baymax, and prodigy Hiro Hamada, who team up with a group of friends to form a band of high-tech heroes.",
+        "genres": [
+          "Adventure",
+          "Family",
+          "Animation",
+          "Action",
+          "Comedy"
+        ],
+        "runtime": 102,
+        "vote_average": 7.724,
+        "director": "Chris Williams",
+        "similarity": 0.619224596972021,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship, coming of age",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "e751a4ba-bdc9-4cdb-a281-256c6ce99f7e",
+        "tmdb_id": 527774,
+        "title": "Raya and the Last Dragon",
+        "year": 2021,
+        "overview": "Long ago, in the fantasy world of Kumandra, humans and dragons lived together in harmony. But when an evil force threatened the land, the dragons sacrificed themselves to save humanity. Now, 500 years later, that same evil has returned and it’s up to a lone warrior, Raya, to track down the legendary last dragon to restore the fractured land and its divided people.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 107,
+        "vote_average": 7.803,
+        "director": "Don Hall",
+        "similarity": 0.609720623402338,
+        "curation_tier": "core",
+        "match_reason": "kung fu, sword, warrior woman",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "1bf8311e-7290-4f63-b5c1-b9392134d1ee",
+        "tmdb_id": 116745,
+        "title": "The Secret Life of Walter Mitty",
+        "year": 2013,
+        "overview": "A timid magazine photo manager who lives life vicariously through daydreams embarks on a true-life adventure when a negative goes missing.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 114,
+        "vote_average": 7.23,
+        "director": "Ben Stiller",
+        "similarity": 0.431451757518675,
+        "curation_tier": "extended",
+        "match_reason": "himalaya mountain range, photographer, iceland",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f7688a33-10c4-41fa-a898-8dce96009997",
+        "tmdb_id": 371645,
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016,
+        "overview": "Ricky is a defiant young city kid who finds himself on the run with his cantankerous foster uncle in the wild New Zealand bush. A national manhunt ensues, and the two are forced to put aside their differences and work together to survive.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Taika Waititi",
+        "similarity": 1.1674841115321,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+        "tmdb_id": 508965,
+        "title": "Klaus",
+        "year": 2019,
+        "overview": "A selfish postman and a reclusive toymaker form an unlikely friendship, delivering joy to a cold, dark town that desperately needs it.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 97,
+        "vote_average": 8.222,
+        "director": "Sergio Pablos",
+        "similarity": 1.12584958192305,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e4e0de36-83ae-4615-8b35-d170453e5f3f",
+        "tmdb_id": 671,
+        "title": "Harry Potter and the Philosopher's Stone",
+        "year": 2001,
+        "overview": "Harry Potter has lived under the stairs at his aunt and uncle's house his whole life. But on his 11th birthday, he learns he's a powerful wizard—with a place waiting for him at the Hogwarts School of Witchcraft and Wizardry. As he learns to harness his newfound powers with the help of the school's kindly headmaster, Harry uncovers the truth about his parents' deaths—and about the villain who's to blame.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 152,
+        "vote_average": 7.899,
+        "director": "Chris Columbus",
+        "similarity": 1.11566028962487,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, adventure, friendship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 1.06018283937961,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, friendship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3589d329-a771-4f99-99af-cb79300bb177",
+        "tmdb_id": 14160,
+        "title": "Up",
+        "year": 2009,
+        "overview": "Carl Fredricksen spent his entire life dreaming of exploring the globe and experiencing life to its fullest. But at age 78, life seems to have passed him by, until a twist of fate (and a persistent 8-year old Wilderness Explorer named Russell) gives him a new lease on life.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 96,
+        "vote_average": 7.96,
+        "director": "Pete Docter",
+        "similarity": 1.03257256598315,
+        "curation_tier": "core",
+        "match_reason": "central and south america, age difference, villain",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d1877eba-ab49-423f-9255-f1d68cd78d6c",
+        "tmdb_id": 301528,
+        "title": "Toy Story 4",
+        "year": 2019,
+        "overview": "Woody has always been confident about his place in the world, devoted to taking care of his kid—whether that's Andy or Bonnie. But after Bonnie creates a reluctant new toy called \"Forky\", a road trip adventure alongside old and new friends challenges everything Woody believes about loyalty, purpose, and what it truly means to be a toy.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 100,
+        "vote_average": 7.467,
+        "director": "Josh Cooley",
+        "similarity": 0.991729644512848,
+        "curation_tier": "core",
+        "match_reason": "Matches: friendship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a89bc750-72c7-4e85-8507-31e20542de3a",
+        "tmdb_id": 16859,
+        "title": "Kiki's Delivery Service",
+        "year": 1989,
+        "overview": "A young witch, on her mandatory year of independent life, finds fitting into a new community difficult while she supports herself by running an air courier service.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.836,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.977200871628107,
+        "curation_tier": "extended",
+        "match_reason": "Matches: adventure, friendship, coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bbc6b269-4131-45c0-b904-7a4ae4953d16",
+        "tmdb_id": 227973,
+        "title": "The Peanuts Movie",
+        "year": 2015,
+        "overview": "Born loser Charlie Brown’s ordinary winter is turned upside down when the Little Red-Haired Girl arrives at school. Determined to impress her, the insecure and accident-prone Charlie Brown tries to become a winner through a series of hilarious attempts. Meanwhile, his loyal dog Snoopy takes to the skies as he writes a larger-than life story about his arch-nemesis—The Red Baron.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 88,
+        "vote_average": 6.984,
+        "director": "Steve Martino",
+        "similarity": 0.949584431489495,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d3caadbd-ef1d-40d1-b660-f6b506c5816d",
+        "tmdb_id": 420814,
+        "title": "Christopher Robin",
+        "year": 2018,
+        "overview": "Christopher Robin, the boy who had countless adventures in the Hundred Acre Wood, has grown up and lost his way. Now it’s up to his spirited and loveable stuffed animals, Winnie The Pooh, Tigger, Piglet, and the rest of the gang, to rekindle their friendship and remind him of endless days of childlike wonder and make-believe, when doing nothing was the very best something.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.295,
+        "director": "Marc Forster",
+        "similarity": 0.946728940645912,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d4ee2252-84bf-47f4-b125-c51b51b8290b",
+        "tmdb_id": 508439,
+        "title": "Onward",
+        "year": 2020,
+        "overview": "In a suburban fantasy world, two teenage elf brothers embark on an extraordinary quest to discover if there is still a little magic left out there.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Adventure",
+          "Animation",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 7.6,
+        "director": "Dan Scanlon",
+        "similarity": 0.93467155823873,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2582db7e-429c-44cf-94a4-8a90c1f16585",
+        "tmdb_id": 313297,
+        "title": "Kubo and the Two Strings",
+        "year": 2016,
+        "overview": "Kubo mesmerizes the people in his village with his magical gift for spinning wild tales with origami. When he accidentally summons an evil spirit seeking vengeance, Kubo is forced to go on a quest to solve the mystery of his fallen samurai father and his mystical weaponry, as well as discover his own magical powers.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 102,
+        "vote_average": 7.631,
+        "director": "Travis Knight",
+        "similarity": 0.934492053234526,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c9bad052-079c-4196-b4ca-5fee393c9d11",
+        "tmdb_id": 228326,
+        "title": "The Book of Life",
+        "year": 2014,
+        "overview": "The journey of Manolo, a young man who is torn between fulfilling the expectations of his family and following his heart. Before choosing which path to follow, he embarks on an incredible adventure that spans fantastical worlds where he must face his greatest fears.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 95,
+        "vote_average": 7.5,
+        "director": "Jorge R. Gutierrez",
+        "similarity": 0.934459200000844,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "28ccfff1-ead8-4b15-858e-1b2bd83c50f4",
+        "tmdb_id": 431580,
+        "title": "Abominable",
+        "year": 2019,
+        "overview": "A group of misfits encounter a young Yeti named Everest, and they set off to reunite the magical creature with his family on the mountain of his namesake.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 97,
+        "vote_average": 7.45,
+        "director": "Jill Culton",
+        "similarity": 0.933574046047915,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "682860b5-c196-4fe0-a128-3b8c24787ab9",
+        "tmdb_id": 11544,
+        "title": "Lilo & Stitch",
+        "year": 2002,
+        "overview": "As Stitch, a runaway genetic experiment from a faraway planet, wreaks havoc on the Hawaiian Islands, he becomes the mischievous adopted alien \"puppy\" of an independent little girl named Lilo and learns about loyalty, friendship, and ʻohana, the Hawaiian tradition of family.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Comedy"
+        ],
+        "runtime": 85,
+        "vote_average": 7.561,
+        "director": "Chris Sanders",
+        "similarity": 0.932540997808599,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ba08a4fb-409d-44b9-97c3-e49f2258b4f7",
+        "tmdb_id": 400160,
+        "title": "The SpongeBob Movie: Sponge on the Run",
+        "year": 2020,
+        "overview": "When his best friend Gary is suddenly snatched away, SpongeBob takes Patrick on a madcap mission far beyond Bikini Bottom to save their pink-shelled pal.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Adventure",
+          "Animation"
+        ],
+        "runtime": 95,
+        "vote_average": 7.411,
+        "director": "Tim Hill",
+        "similarity": 0.931548288522445,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9c977ddc-b554-4d49-85f5-31ffa35f9359",
+        "tmdb_id": 137106,
+        "title": "The Lego Movie",
+        "year": 2014,
+        "overview": "An ordinary Lego mini-figure, mistakenly thought to be the extraordinary MasterBuilder, is recruited to join a quest to stop an evil Lego tyrant from conquering the universe.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 100,
+        "vote_average": 7.422,
+        "director": "Phil Lord",
+        "similarity": 0.930011844450491,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "547b0218-3c24-41bb-b6d5-495adc39f851",
+        "tmdb_id": 529203,
+        "title": "The Croods: A New Age",
+        "year": 2020,
+        "overview": "Searching for a safer habitat, the prehistoric Crood family discovers an idyllic, walled-in paradise that meets all of its needs. Unfortunately, they must also learn to live with the Bettermans -- a family that's a couple of steps above the Croods on the evolutionary ladder. As tensions between the new neighbors start to rise, a new threat soon propels both clans on an epic adventure that forces them to embrace their differences, draw strength from one another, and survive together.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 95,
+        "vote_average": 7.448,
+        "director": "Joel Crawford",
+        "similarity": 0.929743365784373,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6eaa39a8-1162-409b-aa3d-069d13e437a8",
+        "tmdb_id": 330457,
+        "title": "Frozen II",
+        "year": 2019,
+        "overview": "Elsa, Anna, Kristoff and Olaf head far into the forest to learn the truth about an ancient mystery of their kingdom.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 103,
+        "vote_average": 7.234,
+        "director": "Jennifer Lee",
+        "similarity": 0.929460112915746,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "33949e33-3a3d-4407-9871-48dba6a651ef",
+        "tmdb_id": 552524,
+        "title": "Lilo & Stitch",
+        "year": 2025,
+        "overview": "The wildly funny and touching story of a lonely Hawaiian girl and the fugitive alien who helps to mend her broken family.",
+        "genres": [
+          "Family",
+          "Science Fiction",
+          "Comedy"
+        ],
+        "runtime": 108,
+        "vote_average": 7.204,
+        "director": "Dean Fleischer Camp",
+        "similarity": 0.927302688816136,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family, friendship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bd2f5208-6c5a-4e1e-943e-dce150e47ceb",
+        "tmdb_id": 5123,
+        "title": "August Rush",
+        "year": 2007,
+        "overview": "Lyla and Louis, a singer and a musician, fall in love, but are soon compelled to separate. Lyla is forced to give up her newborn but unknown to her, he grows up to become a musical genius.",
+        "genres": [
+          "Family",
+          "Drama",
+          "Music"
+        ],
+        "runtime": 114,
+        "vote_average": 7.4,
+        "director": "Kirsten Sheridan",
+        "similarity": 0.925223469412754,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "3e1a4ba4-d150-4350-b186-9e2e96e1e7cd",
+        "tmdb_id": 315465,
+        "title": "The Boy and the Beast",
+        "year": 2015,
+        "overview": "Kyuta, a boy living in Shibuya, and Kumatetsu, a lonesome beast from Jutengai, an imaginary world. One day, Kyuta forays into the imaginary world and, as he's looking for his way back, meets Kumatetsu who becomes his spirit guide. That encounter leads them to many adventures.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 119,
+        "vote_average": 7.911,
+        "director": "Mamoru Hosoda",
+        "similarity": 0.923552266785729,
+        "curation_tier": "extended",
+        "match_reason": "Matches: adventure, coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "09168ccf-9afa-4fdd-a426-02adfb33191b",
+        "tmdb_id": 37135,
+        "title": "Tarzan",
+        "year": 1999,
+        "overview": "Tarzan was a small orphan who was raised by an ape named Kala since he was a child. He believed that this was his family, but on an expedition Jane Porter is rescued by Tarzan. He then finds out that he's human. Now Tarzan must make the decision as to which family he should belong to...",
+        "genres": [
+          "Family",
+          "Adventure",
+          "Animation",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 88,
+        "vote_average": 7.395,
+        "director": "Chris Buck",
+        "similarity": 0.905580835950423,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8f83dadf-cfdd-4c7f-8652-d4c9adb93307",
+        "tmdb_id": 76492,
+        "title": "Hotel Transylvania",
+        "year": 2012,
+        "overview": "Welcome to Hotel Transylvania, Dracula's lavish five-stake resort, where monsters and their families can live it up and no humans are allowed. One special weekend, Dracula has invited all his best friends to celebrate his beloved daughter Mavis's 118th birthday. For Dracula catering to all of these legendary monsters is no problem but the party really starts when one ordinary guy stumbles into the hotel and changes everything!",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 91,
+        "vote_average": 6.963,
+        "director": "Genndy Tartakovsky",
+        "similarity": 0.881241723565817,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "607b939b-69ed-4bda-90b6-9c7934b33dc7",
+        "tmdb_id": 93456,
+        "title": "Despicable Me 2",
+        "year": 2013,
+        "overview": "Gru is recruited by the Anti-Villain League to help deal with a powerful new super criminal.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 98,
+        "vote_average": 6.943,
+        "director": "Pierre Coffin",
+        "similarity": 0.875768744291109,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0c4cabd1-5d84-4be5-9610-ab4e26956b28",
+        "tmdb_id": 120,
+        "title": "The Lord of the Rings: The Fellowship of the Ring",
+        "year": 2001,
+        "overview": "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator. Along the way, a fellowship is formed to protect the ringbearer and make sure that the ring arrives at its final destination: Mt. Doom, the only place where it can be destroyed.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 179,
+        "vote_average": 8.434,
+        "director": "Peter Jackson",
+        "similarity": 0.614061779130777,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, elves, dwarf",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "b11c44d8-9513-4385-83d7-3fc3e217cee8",
+        "tmdb_id": 11,
+        "title": "Star Wars",
+        "year": 1977,
+        "overview": "Princess Leia is captured and held hostage by the evil Imperial forces in their effort to take over the galactic Empire. Venturesome Luke Skywalker and dashing captain Han Solo team together with the loveable robot duo R2-D2 and C-3PO to rescue the beautiful princess and restore peace and justice in the Empire.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 8.205,
+        "director": "George Lucas",
+        "similarity": 0.612451696519508,
+        "curation_tier": "core",
+        "match_reason": "empire, galaxy, rebellion",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.601913869429253,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, adventure",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.60109414324647,
+        "curation_tier": "core",
+        "match_reason": "Matches: family, feel-good, friendship",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 0.514817590704483,
+        "curation_tier": "core",
+        "match_reason": "Matches: warmth",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "cbf72875-c81d-4625-b481-d11b6bc9895f",
+        "tmdb_id": 121,
+        "title": "The Lord of the Rings: The Two Towers",
+        "year": 2002,
+        "overview": "Frodo Baggins and the other members of the Fellowship continue on their sacred quest to destroy the One Ring--but on separate paths. Their destinies lie at two towers--Orthanc Tower in Isengard, where the corrupt wizard Saruman awaits, and Sauron's fortress at Barad-dur, deep within the dark lands of Mordor. Frodo and Sam are trekking to Mordor to destroy the One Ring of Power while Gimli, Legolas and Aragorn search for the orc-captured Merry and Pippin. All along, nefarious wizard Saruman awaits the Fellowship members at the Orthanc Tower in Isengard.",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 179,
+        "vote_average": 8.418,
+        "director": "Peter Jackson",
+        "similarity": 0.510152111617306,
+        "curation_tier": "core",
+        "match_reason": "mission, army, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.444922869461408,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 771,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 771,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "family",
+        "warmth",
+        "togetherness",
+        "feel-good",
+        "adventure",
+        "friendship",
+        "coming of age"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Family",
+        "Adventure",
+        "Comedy"
+      ],
+      "genres_exclude": [
+        "Horror",
+        "War",
+        "Crime"
+      ],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Paddington 2",
+          "year": 2017
+        },
+        {
+          "title": "The Secret Life of Walter Mitty",
+          "year": 2013
+        },
+        {
+          "title": "Coco",
+          "year": 2017
+        },
+        {
+          "title": "Big Hero 6",
+          "year": 2014
+        },
+        {
+          "title": "Encanto",
+          "year": 2021
+        },
+        {
+          "title": "Bridge to Terabithia",
+          "year": 2007
+        },
+        {
+          "title": "How to Train Your Dragon",
+          "year": 2010
+        },
+        {
+          "title": "The Lion King",
+          "year": 2019
+        },
+        {
+          "title": "Sing",
+          "year": 2016
+        },
+        {
+          "title": "Raya and the Last Dragon",
+          "year": 2021
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "2b8a3f04e0724e0c",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 4923,
+    "http_status": 200,
+    "reranked_ids": [
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+      "483e86b9-6eec-4053-b68c-9970b3576e4b",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "d4ee2252-84bf-47f4-b125-c51b51b8290b"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe": "Paddington'un ailecek keyifle izlenebilecek sıcak ve sevgi dolu hikayesi mükemmel.",
+      "483e86b9-6eec-4053-b68c-9970b3576e4b": "Encanto, aile bağlarını ve birliği merkeze alan neşeli ve kıcık bir animasyon filmi.",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e": "Klaus, dostluk ve sevginin sıcaklığını hissettiren duygusal bir aile filmi.",
+      "d4ee2252-84bf-47f4-b125-c51b51b8290b": "Onward, kardeş bağına ve ailevi değerlere odaklanmış eğlenceli ve sıcak bir macera."
+    }
+  }
+}

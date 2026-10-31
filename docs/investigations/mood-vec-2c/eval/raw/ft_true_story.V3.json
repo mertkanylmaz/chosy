@@ -1,0 +1,916 @@
+{
+  "mood_id": "ft_true_story",
+  "variant": "V3",
+  "rpc": {
+    "rows": [
+      {
+        "id": "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+        "tmdb_id": 381284,
+        "title": "Hidden Figures",
+        "year": 2016,
+        "overview": "The untold story of Katherine G. Johnson, Dorothy Vaughan and Mary Jackson – brilliant African-American women working at NASA and serving as the brains behind one of the greatest operations in history – the launch of astronaut John Glenn into orbit. The visionary trio crossed all gender and race lines to inspire generations to dream big.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 8.043,
+        "director": "Theodore Melfi",
+        "similarity": 0.755199088903229,
+        "curation_tier": "core",
+        "match_reason": "Matches: biography",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "efb640cc-ed0a-43c5-a951-88eb612c9880",
+        "tmdb_id": 324786,
+        "title": "Hacksaw Ridge",
+        "year": 2016,
+        "overview": "WWII American Army Medic Desmond T. Doss, who served during the Battle of Okinawa, refuses to kill people and becomes the first Conscientious Objector in American history to receive the Congressional Medal of Honor.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 139,
+        "vote_average": 8.19,
+        "director": "Mel Gibson",
+        "similarity": 0.742119733904964,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b9489777-1c66-40fe-bf26-202cbde61e00",
+        "tmdb_id": 1402,
+        "title": "The Pursuit of Happyness",
+        "year": 2006,
+        "overview": "A struggling salesman takes custody of his son as he's poised to begin a life-changing professional career.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 117,
+        "vote_average": 7.886,
+        "director": "Gabriele Muccino",
+        "similarity": 0.740681182661084,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.722950456390862,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "146d1d49-4c22-4ea2-b89b-720df225d04e",
+        "tmdb_id": 227306,
+        "title": "Unbroken",
+        "year": 2014,
+        "overview": "A chronicle of the life of Louis Zamperini, an Olympic runner who was taken prisoner by Japanese forces during World War II.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 137,
+        "vote_average": 7.421,
+        "director": "Angelina Jolie",
+        "similarity": 0.661686208523966,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "21e72948-4046-4ee8-8959-f527ee1104f7",
+        "tmdb_id": 462,
+        "title": "Erin Brockovich",
+        "year": 2000,
+        "overview": "A twice-divorced mother of three who sees an injustice, takes on the bad guy and wins -- with a little help from her push-up bra. Erin goes to work for an attorney and comes across medical records describing illnesses clustered in one nearby town. She starts investigating and soon exposes a monumental cover-up.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 131,
+        "vote_average": 7.438,
+        "director": "Steven Soderbergh",
+        "similarity": 0.659038988555348,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+        "tmdb_id": 266856,
+        "title": "The Theory of Everything",
+        "year": 2014,
+        "overview": "The Theory of Everything is the extraordinary story of one of the world’s greatest living minds, the renowned astrophysicist Stephen Hawking, who falls deeply in love with fellow Cambridge student Jane Wilde.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.83,
+        "director": "James Marsh",
+        "similarity": 0.640094487301747,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography, inspiration",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "e30854c4-bfbe-4ba1-8d26-c41652ff03e0",
+        "tmdb_id": 76203,
+        "title": "12 Years a Slave",
+        "year": 2013,
+        "overview": "In the pre-Civil War United States, Solomon Northup, a free black man from upstate New York, is abducted and sold into slavery. Facing cruelty as well as unexpected kindnesses Solomon struggles not only to stay alive, but to retain his dignity. In the twelfth year of his unforgettable odyssey, Solomon’s chance meeting with a Canadian abolitionist will forever alter his life.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 134,
+        "vote_average": 7.931,
+        "director": "Steve McQueen",
+        "similarity": 0.629929998725124,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 1.15742804827641,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+        "tmdb_id": 13466,
+        "title": "October Sky",
+        "year": 1999,
+        "overview": "The true story of Homer Hickam, a coal miner's son who was inspired by the first Sputnik launch to take up rocketry against his father's wishes.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 107,
+        "vote_average": 7.671,
+        "director": "Joe Johnston",
+        "similarity": 1.11616897181109,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c65717fb-907e-42a5-a6ae-e0ed7fdceb0c",
+        "tmdb_id": 921,
+        "title": "Cinderella Man",
+        "year": 2005,
+        "overview": "The true story of boxer Jim Braddock who, following his retirement in the 1930s, makes a surprise comeback in order to lift his family out of poverty.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.6,
+        "director": "Ron Howard",
+        "similarity": 1.11241383012679,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e740225a-0915-48b0-bfdf-e56a50de4254",
+        "tmdb_id": 1646,
+        "title": "Freedom Writers",
+        "year": 2007,
+        "overview": "A young teacher inspires her class of at-risk students to learn tolerance, apply themselves, and pursue education beyond high school.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 123,
+        "vote_average": 7.924,
+        "director": "Richard LaGravenese",
+        "similarity": 1.11101737618521,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4e8b34a2-df06-4773-baca-3276b723f8e8",
+        "tmdb_id": 334543,
+        "title": "Lion",
+        "year": 2016,
+        "overview": "A five-year-old Indian boy gets lost on the streets of Calcutta, thousands of kilometers from home. He survives many challenges before being adopted by a couple in Australia; 25 years later, he sets out to find his lost family.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 8.04,
+        "director": "Garth Davis",
+        "similarity": 1.10696126006401,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bfe72e23-e609-42e2-b897-9f8ecfdb6c40",
+        "tmdb_id": 45269,
+        "title": "The King's Speech",
+        "year": 2010,
+        "overview": "The King's Speech tells the story of the man who became King George VI, the father of Queen Elizabeth II. After his brother abdicates, George ('Bertie') reluctantly assumes the throne. Plagued by a dreaded stutter and considered unfit to be king, Bertie engages the help of an unorthodox speech therapist named Lionel Logue. Through a set of unexpected techniques, and as a result of an unlikely friendship, Bertie is able to find his voice and boldly lead the country into war.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 118,
+        "vote_average": 7.733,
+        "director": "Tom Hooper",
+        "similarity": 1.10683539389789,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+        "tmdb_id": 522212,
+        "title": "Just Mercy",
+        "year": 2019,
+        "overview": "The powerful true story of Harvard-educated lawyer Bryan Stevenson, who goes to Alabama to defend the disenfranchised and wrongly condemned — including Walter McMillian, a man sentenced to death despite evidence proving his innocence. Bryan fights tirelessly for Walter with the system stacked against them.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "History"
+        ],
+        "runtime": 137,
+        "vote_average": 7.853,
+        "director": "Destin Daniel Cretton",
+        "similarity": 1.10326376164605,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e3f7fb5f-9764-43dc-957f-a04777769afa",
+        "tmdb_id": 537996,
+        "title": "The Ballad of Buster Scruggs",
+        "year": 2018,
+        "overview": "Vignettes weaving together the stories of six individuals in the old West at the end of the Civil War. Following the tales of a sharp-shooting songster, a wannabe bank robber, two weary traveling performers, a lone gold prospector, a woman traveling the West to an uncertain future, and a motley crew of strangers undertaking a carriage ride.",
+        "genres": [
+          "Western",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.133,
+        "director": "Joel Coen",
+        "similarity": 1.10039352165496,
+        "curation_tier": "core",
+        "match_reason": "prostitute, native american, parody",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "87c59208-fdd2-4d9c-a6e4-8a46dcdfefbe",
+        "tmdb_id": 22881,
+        "title": "The Blind Side",
+        "year": 2009,
+        "overview": "The story of Michael Oher, a homeless and traumatized boy who became an All American football player and first round NFL draft pick with the help of a caring woman and her family.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.666,
+        "director": "John Lee Hancock",
+        "similarity": 1.09833470879529,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story, inspiration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a06c6a42-251b-4206-a5b5-33a142ea4100",
+        "tmdb_id": 399404,
+        "title": "Darkest Hour",
+        "year": 2017,
+        "overview": "In May 1940, the fate of World War II hangs on Winston Churchill, who must decide whether to negotiate with Adolf Hitler or fight on knowing that it could mean the end of the British Empire.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 125,
+        "vote_average": 7.4,
+        "director": "Joe Wright",
+        "similarity": 1.09121187737452,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography, inspiration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5c37028c-d2f0-46a4-91b5-648599b0724d",
+        "tmdb_id": 840,
+        "title": "Close Encounters of the Third Kind",
+        "year": 1977,
+        "overview": "After an encounter with UFOs, an electricity linesman feels undeniably drawn to an isolated area in the wilderness where something spectacular is about to happen.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.349,
+        "director": "Steven Spielberg",
+        "similarity": 1.07398643775722,
+        "curation_tier": "core",
+        "match_reason": "wyoming, usa, indiana, usa, flying saucer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 1.06727311742723,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "20884adc-fc02-464e-9e64-9c81a00694fd",
+        "tmdb_id": 1883,
+        "title": "Malcolm X",
+        "year": 1992,
+        "overview": "A tribute to the controversial black activist and leader of the struggle for black liberation. He hit bottom during his imprisonment in the '50s, he became a Black Muslim and then a leader in the Nation of Islam. His assassination in 1965 left a legacy of self-determination and racial pride.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 202,
+        "vote_average": 7.553,
+        "director": "Spike Lee",
+        "similarity": 1.0571678100355,
+        "curation_tier": "core",
+        "match_reason": "Matches: biography, inspiration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ee57cf3b-7394-42b6-86d9-c56312f185f8",
+        "tmdb_id": 33602,
+        "title": "Temple Grandin",
+        "year": 2010,
+        "overview": "A biopic of Temple Grandin, an autistic American who has become one of the leading scientists in humane livestock handling.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 108,
+        "vote_average": 7.856,
+        "director": "Mick Jackson",
+        "similarity": 1.04034295938239,
+        "curation_tier": "core",
+        "match_reason": "Matches: biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a38ba7da-e721-44b1-b6f8-b02cdafe58db",
+        "tmdb_id": 938,
+        "title": "For a Few Dollars More",
+        "year": 1965,
+        "overview": "Two bounty hunters both pursue the brutal and sadistic bandit, El Indio, who has a large bounty on his head.",
+        "genres": [
+          "Western"
+        ],
+        "runtime": 132,
+        "vote_average": 8.022,
+        "director": "Sergio Leone",
+        "similarity": 1.03809362378315,
+        "curation_tier": "core",
+        "match_reason": "bounty hunter, pot smoking, rural area",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d1a7a99f-89da-4412-b240-6ff8e1117eb1",
+        "tmdb_id": 549559,
+        "title": "Apollo 11",
+        "year": 2019,
+        "overview": "A look at the Apollo 11 mission to land on the moon led by commander Neil Armstrong and pilot Buzz Aldrin.",
+        "genres": [
+          "Documentary",
+          "History",
+          "Drama"
+        ],
+        "runtime": 93,
+        "vote_average": 7.866,
+        "director": "Todd Douglas Miller",
+        "similarity": 1.03748671981947,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "de350477-83c7-4d2a-95b6-35866abea161",
+        "tmdb_id": 10637,
+        "title": "Remember the Titans",
+        "year": 2000,
+        "overview": "After leading his football team to 15 winning seasons, coach Bill Yoast is demoted and replaced by Herman Boone – tough, opinionated and as different from the beloved Yoast as he could be. The two men learn to overcome their differences and turn a group of hostile young men into champions.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.647,
+        "director": "Boaz Yakin",
+        "similarity": 1.03686580313727,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f3c487db-4df4-48ba-aa2b-50dd5e582e0e",
+        "tmdb_id": 8587,
+        "title": "The Lion King",
+        "year": 1994,
+        "overview": "Young lion prince Simba, eager to one day become king of the Pride Lands, grows up under the watchful eye of his father Mufasa; all the while his villainous uncle Scar conspires to take the throne for himself. Amid betrayal and tragedy, Simba must confront his past and find his rightful place in the Circle of Life.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.254,
+        "director": "Roger Allers",
+        "similarity": 1.03535197538579,
+        "curation_tier": "core",
+        "match_reason": "Matches: inspiration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "57103696-ff1e-4391-93c1-39515e56ee85",
+        "tmdb_id": 614917,
+        "title": "King Richard",
+        "year": 2021,
+        "overview": "The story of how Richard Williams served as a coach to his daughters Venus and Serena, who will soon become two of the most legendary tennis players in history.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 144,
+        "vote_average": 7.596,
+        "director": "Reinaldo Marcus Green",
+        "similarity": 1.03534353021714,
+        "curation_tier": "core",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e2b093ea-d1ff-47ba-af57-c562bf67f5f3",
+        "tmdb_id": 1288069,
+        "title": "Tenzing",
+        "year": 2026,
+        "overview": "A determined man embarks on a high-stakes quest—and defies seemingly impossible odds—to fulfill his dream of being the first to reach the summit of Mount Everest.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 126,
+        "vote_average": 8.174,
+        "director": "Jennifer Peedom",
+        "similarity": 0.993769652185404,
+        "curation_tier": "trending",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "56317499-b40c-4e01-ac95-c8c25ba8fa03",
+        "tmdb_id": 22683,
+        "title": "Gifted Hands: The Ben Carson Story",
+        "year": 2009,
+        "overview": "Gifted Hands: The Ben Carson Story is a movie based on the life story of world-renowned neurosurgeon Ben Carson from 1961 to 1987.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 86,
+        "vote_average": 7.795,
+        "director": "Thomas Carter",
+        "similarity": 0.972317396450189,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "61627320-6117-4ed2-aa88-4127a1d066f1",
+        "tmdb_id": 626332,
+        "title": "Flamin' Hot",
+        "year": 2023,
+        "overview": "The inspiring true story of Richard Montañez, the Frito Lay janitor who channeled his Mexican American heritage and upbringing to turn the iconic Flamin' Hot Cheetos into a snack that disrupted the food industry and became a global pop culture phenomenon.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 99,
+        "vote_average": 7.934,
+        "director": "Eva Longoria",
+        "similarity": 0.965141709698749,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "258ac055-79e6-4dd0-9221-76f330abb047",
+        "tmdb_id": 514439,
+        "title": "Breakthrough",
+        "year": 2019,
+        "overview": "Tragedy strikes when a woman named Joyce's son falls through the ice on a frozen lake and is trapped underwater for over 15 minutes. After being rushed to the hospital, the 14-year-old boy continues to fight for his life as Joyce, her husband and their pastor stay by his bedside and pray for a miracle.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.642,
+        "director": "Roxann Dawson",
+        "similarity": 0.931098361424142,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story, biography, inspiration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "aae26a80-74d4-45d9-a822-cd11131aa4ac",
+        "tmdb_id": 1002185,
+        "title": "A Million Miles Away",
+        "year": 2023,
+        "overview": "The life of engineer and former NASA astronaut José M. Hernández, the first migrant farmworker to go to space.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 122,
+        "vote_average": 7.7,
+        "director": "Alejandra Márquez Abella",
+        "similarity": 0.916965837731529,
+        "curation_tier": "extended",
+        "match_reason": "Matches: true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ea35522f-6435-42f5-a74b-617af0ed73a0",
+        "tmdb_id": 3083,
+        "title": "Mr. Smith Goes to Washington",
+        "year": 1939,
+        "overview": "After the death of a United States Senator, idealistic Jefferson Smith is appointed as his replacement in Washington. Soon, the naive and earnest new senator has to battle political corruption.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.833,
+        "director": "Frank Capra",
+        "similarity": 0.910403032185989,
+        "curation_tier": "extended",
+        "match_reason": "governor, washington dc, usa, senate",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.807059206814949,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.70976183157972,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.699772296404089,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.663893233826298,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.65570811492928,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.651402604185856,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.625488969690817,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 2370,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 2370,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 40,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "true story",
+        "biography",
+        "overcoming adversity",
+        "inspiration",
+        "perseverance",
+        "human achievement",
+        "resilience"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true,
+      "genres_include": [
+        "Drama",
+        "History"
+      ],
+      "genres_exclude": [],
+      "max_runtime": null,
+      "reference_titles": [],
+      "suggested_titles": [
+        {
+          "title": "Hidden Figures",
+          "year": 2016
+        },
+        {
+          "title": "The Shawshank Redemption",
+          "year": 1994
+        },
+        {
+          "title": "12 Years a Slave",
+          "year": 2013
+        },
+        {
+          "title": "Hacksaw Ridge",
+          "year": 2016
+        },
+        {
+          "title": "The Pursuit of Happyness",
+          "year": 2006
+        },
+        {
+          "title": "Erin Brockovich",
+          "year": 2000
+        },
+        {
+          "title": "Unbroken",
+          "year": 2014
+        },
+        {
+          "title": "Milk",
+          "year": 2008
+        },
+        {
+          "title": "The Theory of Everything",
+          "year": 2014
+        },
+        {
+          "title": "Apollo 13",
+          "year": 1995
+        }
+      ]
+    }
+  },
+  "rerank": {
+    "payload_hash": "f23ee439f2389265",
+    "cached": false,
+    "candidates_sent": 40,
+    "overview_max": 100,
+    "count": 4,
+    "ms": 3552,
+    "http_status": 200,
+    "reranked_ids": [
+      "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+      "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+      "efb640cc-ed0a-43c5-a951-88eb612c9880",
+      "57103696-ff1e-4391-93c1-39515e56ee85"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false,
+    "reasons": {
+      "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a": "Celebrates brilliant African-American women overcoming systemic racism in space race.",
+      "c2dc7858-3ae7-4f06-ad73-c84357810ee4": "True story of coal miner's son inspired by Sputnik to build rockets.",
+      "efb640cc-ed0a-43c5-a951-88eb612c9880": "WWII medic's true story of moral courage and refusing to compromise principles.",
+      "57103696-ff1e-4391-93c1-39515e56ee85": "True story of Richard Williams coaching his daughters to tennis greatness."
+    }
+  }
+}

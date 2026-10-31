@@ -1,0 +1,577 @@
+{
+  "mood_id": "ft_tired_light",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "105b7ebe-7aef-4841-953e-313103e560a3",
+        "tmdb_id": 1103621,
+        "title": "How to Make Millions Before Grandma Dies",
+        "year": 2024,
+        "overview": "M, a university dropout low on money and luck, volunteers to take care of his terminally ill grandmother, in the hope of pocketing an inheritance.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 8.106,
+        "director": "Pat Boonnitipat",
+        "similarity": 0.904986272797095,
+        "curation_tier": "extended",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.97330423841681,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "c0d68936-2bb8-4aef-80a3-addbbaeed656",
+        "tmdb_id": 72213,
+        "title": "Courageous",
+        "year": 2011,
+        "overview": "Law enforcement officers Adam Mitchell, Nathan Hayes, and their partners stand up to the worst the streets have to offer with confidence and focus. Yet at the end of the day, they face a challenge that none of them are truly prepared to tackle: fatherhood. They know that God desires to turn the hearts of fathers to their children, but their children are beginning to drift further and further away from them. When tragedy hits home, these men are left wrestling with their hopes, their fears, their faith, and their fathering. Can a newfound urgency help these dads draw closer to God... and to their children?",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.608,
+        "director": "Alex Kendrick",
+        "similarity": 0.852727812612003,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "2c9d1385-6f17-4696-aec0-263194d5a3dd",
+        "tmdb_id": 87827,
+        "title": "Life of Pi",
+        "year": 2012,
+        "overview": "The story of an Indian boy named Pi, a zookeeper's son who finds himself in the company of a hyena, zebra, orangutan, and a Bengal tiger after a shipwreck sets them adrift in the Pacific Ocean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.407,
+        "director": "Ang Lee",
+        "similarity": 0.848655499377244,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "70e2f184-90b4-489f-bfd2-35752c9f52a5",
+        "tmdb_id": 618588,
+        "title": "Arthur the King",
+        "year": 2024,
+        "overview": "Over the course of ten days and 435 miles, an unbreakable bond is forged between pro adventure racer Michael Light and a scrappy street dog companion dubbed Arthur. As the team is pushed to their outer limits of endurance in the race, Arthur redefines what victory, loyalty and friendship truly mean.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 107,
+        "vote_average": 7.553,
+        "director": "Simon Cellan Jones",
+        "similarity": 0.843614514087899,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "8f71ca3e-f71f-4f20-a995-a208d504de71",
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value",
+        "year": 2025,
+        "overview": "Sisters Nora and Agnes reunite with their estranged father, the charismatic Gustav, a once-renowned director who offers stage actress Nora a role in what he hopes will be his comeback film. When Nora turns it down, she soon discovers he has given her part to an eager young Hollywood star.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.5,
+        "director": "Joachim Trier",
+        "similarity": 0.842737460980918,
+        "curation_tier": "extended",
+        "match_reason": "dysfunctional family, filmmaking, generational"
+      },
+      {
+        "id": "51f59189-488e-4c26-a318-d9b5d09286a1",
+        "tmdb_id": 10161,
+        "title": "My Left Foot: The Story of Christy Brown",
+        "year": 1989,
+        "overview": "No one expects much from Christy Brown, a boy with cerebral palsy born into a working-class Irish family. Though Christy is a spastic quadriplegic and essentially paralyzed, a miraculous event occurs when, at the age of 5, he demonstrates control of his left foot by using chalk to scrawl a word on the floor. With the help of his steely mother — and no shortage of grit and determination — Christy overcomes his infirmity to become a painter, poet and author.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.524,
+        "director": "Jim Sheridan",
+        "similarity": 0.840136502290103,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.935434530972691,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence"
+      },
+      {
+        "id": "4b603686-2cce-4f1f-8138-e277e4f139d0",
+        "tmdb_id": 652837,
+        "title": "Josee, the Tiger and the Fish",
+        "year": 2020,
+        "overview": "With dreams of diving abroad, Tsuneo gets a job assisting Josee, an artist whose imagination takes her far beyond her wheelchair. But when the tide turns against them, they push each other to places they never thought possible, and inspire a love fit for a storybook.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 98,
+        "vote_average": 8.267,
+        "director": "Kotaro Tamura",
+        "similarity": 0.833764691365947,
+        "curation_tier": "extended",
+        "match_reason": "Matches: comfort, slice of life"
+      },
+      {
+        "id": "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+        "tmdb_id": 348678,
+        "title": "A Man Called Ove",
+        "year": 2015,
+        "overview": "Despite being deposed as president of his condominium association, grumpy 59-year-old Ove continues to watch over his neighbourhood with an iron fist. When pregnant Parvaneh and her family move into the terraced house opposite Ove and she accidentally back into Ove’s mailbox, it sets off a series of unexpected changes in his life.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 7.605,
+        "director": "Hannes Holm",
+        "similarity": 0.927643243980493,
+        "curation_tier": "core",
+        "match_reason": "friendship, dark comedy, black humor"
+      },
+      {
+        "id": "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+        "tmdb_id": 8392,
+        "title": "My Neighbor Totoro",
+        "year": 1988,
+        "overview": "Two sisters move to the country with their father in order to be closer to their hospitalized mother, and discover the surrounding trees are inhabited by Totoros, magical spirits of the forest. When the youngest runs away from home, the older sister seeks help from the spirits to find her.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 8.061,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.926954260255634,
+        "curation_tier": "core",
+        "match_reason": "mother, sibling relationship, village"
+      },
+      {
+        "id": "0b743437-b683-4e46-b9e7-85c1b1767b2e",
+        "tmdb_id": 29154,
+        "title": "Stand and Deliver",
+        "year": 1988,
+        "overview": "Jaime Escalante is a mathematics teacher in a school in a hispanic neighbourhood. Convinced that his students have potential, he adopts unconventional teaching methods to try and turn gang members and no-hopers into some of the country's top algebra and calculus students.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.638,
+        "director": "Ramón Menéndez",
+        "similarity": 0.829637566030525,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "10f3c8c0-c094-4c2a-bfb4-6f65587cd986",
+        "tmdb_id": 36557,
+        "title": "Casino Royale",
+        "year": 2006,
+        "overview": "Le Chiffre, a banker to the world's terrorists, is scheduled to participate in a high-stakes poker game in Montenegro, where he intends to use his winnings to establish his financial grip on the terrorist market. M sends Bond—on his maiden mission as a 00 Agent—to attend this game and prevent Le Chiffre from winning. With the help of Vesper Lynd and Felix Leiter, Bond enters the most important poker game in his already dangerous career.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 144,
+        "vote_average": 7.57,
+        "director": "Martin Campbell",
+        "similarity": 0.924036396873483,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "d296d000-6276-4650-8e6b-bd28cbf587a5",
+        "tmdb_id": 404,
+        "title": "The Straight Story",
+        "year": 1999,
+        "overview": "Retired farmer and widower Alvin Straight learns one day that his distant brother Lyle has suffered a stroke and may not recover. Alvin is determined to make things right with Lyle while he still can, but his brother lives in Wisconsin, while Alvin is stuck in Iowa with no car and no driver's license. He then has the idea of making the trip on his old lawnmower, thus beginning a picturesque and at times deeply spiritual odyssey.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.7,
+        "director": "David Lynch",
+        "similarity": 0.916523817746057,
+        "curation_tier": "core",
+        "match_reason": "sibling relationship, mississippi river, wisconsin"
+      },
+      {
+        "id": "e0a69f79-1fca-4d68-abba-574eb5df43fa",
+        "tmdb_id": 497582,
+        "title": "Enola Holmes",
+        "year": 2020,
+        "overview": "Nancy Springer’ın “The Enola Holmes Mysteries” adlı kitap serisinden uyarlanan film, ünlü dedektif Sherlock Holmes’un ergen kız kardeşi Enola’nın maceralarını konu ediniyor. 16. doğumgününün sabahında annesinin ortadan kaybolduğunu gören Enola, ağabeyleri Sherlock ve Mycroft’tan yardım ister. Ancak kardeşler onu ciddiye almaz ve yatılı okula göndermeyi planlar. Enola meseleyi kendi eline alır ve annesine ne olduğunu öğrenmek için Londra’ya gider.",
+        "genres": [
+          "Adventure",
+          "Mystery",
+          "Crime"
+        ],
+        "runtime": 123,
+        "vote_average": 7.235,
+        "director": "Harry Bradbeer",
+        "similarity": 0.821137433007779,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, detective, child prodigy"
+      },
+      {
+        "id": "ee6d3138-3887-4fb2-861f-d08a5e0d4277",
+        "tmdb_id": 10110,
+        "title": "Empire of the Sun",
+        "year": 1987,
+        "overview": "Jamie Graham, a privileged English boy, is living in Shanghai when the Japanese invade and force all foreigners into prison camps. Jamie is captured with an American sailor, who looks out for him while they are in the camp together. Even though he is separated from his parents and in a hostile environment, Jamie maintains his dignity and youthful spirit, providing a beacon of hope for the others held captive with him.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 7.503,
+        "director": "Steven Spielberg",
+        "similarity": 0.815607672056137,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.812258875139398,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide"
+      },
+      {
+        "id": "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+        "tmdb_id": 976893,
+        "title": "Perfect Days",
+        "year": 2023,
+        "overview": "Hirayama is content with his life as a toilet cleaner in Tokyo. Outside of his structured routine, he cherishes music on cassette tapes, books, and taking photos of trees. Through unexpected encounters, he reflects on finding beauty in the world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.795,
+        "director": "Wim Wenders",
+        "similarity": 0.898839688440882,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "a3f257ae-d7b2-40eb-8138-1ed1c4262ca9",
+        "tmdb_id": 1330021,
+        "title": "Remarkably Bright Creatures",
+        "year": 2026,
+        "overview": "Through unlikely bonds formed during night shifts at a local aquarium, Tova, an elderly widow, learns of a life-changing discovery that may bring her joy and wonder once again.",
+        "genres": [
+          "Drama",
+          "Mystery"
+        ],
+        "runtime": 114,
+        "vote_average": 8.517,
+        "director": "Olivia Newman",
+        "similarity": 0.803864277546855,
+        "curation_tier": "extended",
+        "match_reason": "aquarium, octopus, british columbia"
+      },
+      {
+        "id": "217e52df-90af-4764-8027-95b4c1ceb1b7",
+        "tmdb_id": 441130,
+        "title": "Wolfwalkers",
+        "year": 2020,
+        "overview": "In a time of superstition and magic, when wolves are seen as demonic and nature an evil to be tamed, a young apprentice hunter comes to Ireland with her father to wipe out the last pack. But when she saves a wild native girl, their friendship leads her to discover the world of the Wolfwalkers and transform her into the very thing her father is tasked to destroy.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 102,
+        "vote_average": 8.191,
+        "director": "Tomm Moore",
+        "similarity": 0.882343392936562,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "b2abed8c-cf73-4950-aa27-d9b163a2b52e",
+        "tmdb_id": 57158,
+        "title": "The Hobbit: The Desolation of Smaug",
+        "year": 2013,
+        "overview": "The Dwarves, Bilbo and Gandalf have successfully escaped the Misty Mountains, and Bilbo has gained the One Ring. They all continue their journey to get their gold back from the Dragon, Smaug.",
+        "genres": [
+          "Fantasy",
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 161,
+        "vote_average": 7.576,
+        "director": "Peter Jackson",
+        "similarity": 0.796757593665096,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "36273fde-6384-4581-9658-22b0de69ab51",
+        "tmdb_id": 76696,
+        "title": "Sidewalls",
+        "year": 2011,
+        "overview": "Martin is a neurotic web designer taking baby steps out of the isolation of his one-room apartment and his virtual reality. Mariana is an artist fresh out of a long relationship. They are perfect for each other, live on the same street, in opposite buildings, but they never meet. Can the movement of a modern city of three million people bring them together?",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 94,
+        "vote_average": 7.491,
+        "director": "Gustavo Taretto",
+        "similarity": 0.79606683657417,
+        "curation_tier": "extended",
+        "match_reason": "dogsitter, architecture, apartment building"
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.795453908080573,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service"
+      },
+      {
+        "id": "d771d0ec-47cd-4077-9d2f-8f16cabc39a8",
+        "tmdb_id": 315846,
+        "title": "Our Little Sister",
+        "year": 2015,
+        "overview": "After the death of their estranged father, 3 adult sisters invite their teenaged half-sister to live with them.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.573,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 0.873540284033239,
+        "curation_tier": "core",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "0d664fbf-a7ad-4432-82c3-5b5913832360",
+        "tmdb_id": 281957,
+        "title": "The Revenant",
+        "year": 2015,
+        "overview": "In the 1820s, a frontiersman, Hugh Glass, sets out on a path of vengeance against those who left him for dead after a bear mauling.",
+        "genres": [
+          "Western",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.541,
+        "director": "Alejandro G. Iñárritu",
+        "similarity": 0.785071639136082,
+        "curation_tier": "extended",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.86168189340048,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute"
+      },
+      {
+        "id": "950b6f4d-4b73-454f-a823-97a0f8cd1ee3",
+        "tmdb_id": 1241983,
+        "title": "Train Dreams",
+        "year": 2025,
+        "overview": "A logger leads a life of quiet grace as he experiences love and loss during an era of monumental change in early 20th-century America.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 102,
+        "vote_average": 7.3,
+        "director": "Clint Bentley",
+        "similarity": 0.778335234353318,
+        "curation_tier": "extended",
+        "match_reason": "Matches: slice of life"
+      },
+      {
+        "id": "0d5d066d-db6c-41fc-93a8-3e914e42e68d",
+        "tmdb_id": 9023,
+        "title": "Spirit: Stallion of the Cimarron",
+        "year": 2002,
+        "overview": "A captured mustang remains determined to return to his herd no matter what.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 83,
+        "vote_average": 7.69,
+        "director": "Kelly Asbury",
+        "similarity": 0.85574529635192,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+        "tmdb_id": 152601,
+        "title": "Her",
+        "year": 2013,
+        "overview": "In the not so distant future, Theodore, a lonely writer, purchases a newly developed operating system designed to meet the user's every need. To Theodore's surprise, a romantic relationship develops between him and his operating system. This unconventional love story blends science fiction and romance in a sweet tale that explores the nature of love and the ways that technology isolates and connects us all.",
+        "genres": [
+          "Romance",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 7.838,
+        "director": "Spike Jonze",
+        "similarity": 0.855357027022735,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort"
+      },
+      {
+        "id": "c284851d-5cb2-4605-aa87-1d0de6f326cd",
+        "tmdb_id": 137,
+        "title": "Groundhog Day",
+        "year": 1993,
+        "overview": "A cynical TV weatherman, along with his idealistic producer and his sardonic cameraman, is sent to report on Groundhog Day in the small town of Punxsutawney, where he finds himself repeating the same day over and over.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.6,
+        "director": "Harold Ramis",
+        "similarity": 0.848830923634423,
+        "curation_tier": "core",
+        "match_reason": null
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 955,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 955,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "comfort",
+        "slice of life",
+        "feel-good",
+        "wholesome",
+        "light-hearted",
+        "cozy"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "9c8a3badf3f3b994",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2696,
+    "http_status": 200,
+    "reranked_ids": [
+      "02666b7b-f897-4681-8b7a-737d8cf00b4c",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5",
+      "d771d0ec-47cd-4077-9d2f-8f16cabc39a8",
+      "36273fde-6384-4581-9658-22b0de69ab51"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

@@ -1,0 +1,585 @@
+{
+  "mood_id": "qm_mindbending",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "22576ed0-e27c-44b5-b338-d492f81af2ce",
+        "tmdb_id": 491584,
+        "title": "Burning",
+        "year": 2018,
+        "overview": "Deliveryman Jong-su is out on a job when he runs into Hae-mi, a girl who once lived in his neighborhood. She asks if he'd mind looking after her cat while she's away on a trip to Africa. On her return, she introduces to Jong-su an enigmatic young man named Ben, who she met during her trip. One day Ben tells Jong-su about his most unusual hobby.",
+        "genres": [
+          "Mystery",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 148,
+        "vote_average": 7.375,
+        "director": "Lee Chang-dong",
+        "similarity": 1.03283160703759,
+        "curation_tier": "core",
+        "match_reason": "Matches: philosophical, introspective"
+      },
+      {
+        "id": "7d0aff11-157e-4d39-b282-5c65b6522406",
+        "tmdb_id": 171274,
+        "title": "Inherent Vice",
+        "year": 2014,
+        "overview": "In Los Angeles at the turn of the 1970s, drug-fueled detective Larry \"Doc\" Sportello investigates the disappearance of an ex-girlfriend.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Comedy"
+        ],
+        "runtime": 149,
+        "vote_average": 6.544,
+        "director": "Paul Thomas Anderson",
+        "similarity": 1.00759617348504,
+        "curation_tier": "core",
+        "match_reason": "california, based on novel or book, boat"
+      },
+      {
+        "id": "78490b9d-f178-43f2-b9b2-7433e67590ee",
+        "tmdb_id": 14537,
+        "title": "Harakiri",
+        "year": 1962,
+        "overview": "Down-on-his-luck veteran Tsugumo Hanshirō enters the courtyard of the prosperous House of Iyi. Unemployed, and with no family, he hopes to find a place to commit seppuku—and a worthy second to deliver the coup de grâce in his suicide ritual. The senior counselor for the Iyi clan questions the ronin’s resolve and integrity, suspecting Hanshirō of seeking charity rather than an honorable end. What follows is a pair of interlocking stories which lay bare the difference between honor and respect, and promises to examine the legendary foundations of the Samurai code.",
+        "genres": [
+          "Action",
+          "Drama",
+          "History"
+        ],
+        "runtime": 135,
+        "vote_average": 8.43,
+        "director": "Masaki Kobayashi",
+        "similarity": 0.890716192445945,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, complex narrative"
+      },
+      {
+        "id": "e9182f2e-2ac8-49fb-ad18-e21be885e2ba",
+        "tmdb_id": 466420,
+        "title": "Killers of the Flower Moon",
+        "year": 2023,
+        "overview": "When oil is discovered in 1920s Oklahoma under Osage Nation land, the Osage people are murdered one by one—until the FBI steps in to unravel the mystery.",
+        "genres": [
+          "Crime",
+          "History",
+          "Drama"
+        ],
+        "runtime": 206,
+        "vote_average": 7.4,
+        "director": "Martin Scorsese",
+        "similarity": 0.994232911015891,
+        "curation_tier": "core",
+        "match_reason": "Matches: metaphysical"
+      },
+      {
+        "id": "f62efabd-9b01-4237-bb06-0082bc9d1db0",
+        "tmdb_id": 8832,
+        "title": "Il Divo",
+        "year": 2008,
+        "overview": "Italy, early '90s. Calm, clever and inscrutable, politician Giulio Andreotti has been synonymous with power for decades. He has survived everything: electoral battles, terrorist massacres, loss of friends, slanderous accusations; but now certain repentant mobsters implicate him in the crimes of Cosa Nostra.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.623,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.984529018149731,
+        "curation_tier": "core",
+        "match_reason": "politics, italy, vatican (holy see)"
+      },
+      {
+        "id": "aa02f15c-94df-4213-a625-946ed17ed06a",
+        "tmdb_id": 329865,
+        "title": "Arrival",
+        "year": 2016,
+        "overview": "Taking place after alien crafts land around the world, an expert linguist is recruited by the military to determine whether they come in peace or are a threat.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 7.626,
+        "director": "Denis Villeneuve",
+        "similarity": 0.969466533920736,
+        "curation_tier": "core",
+        "match_reason": "Matches: complex narrative"
+      },
+      {
+        "id": "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+        "tmdb_id": 62,
+        "title": "2001: A Space Odyssey",
+        "year": 1968,
+        "overview": "Humanity finds a mysterious object buried beneath the lunar surface and sets off to find its origins with the help of HAL 9000, the world's most advanced super computer.",
+        "genres": [
+          "Science Fiction",
+          "Mystery",
+          "Adventure"
+        ],
+        "runtime": 149,
+        "vote_average": 8.1,
+        "director": "Stanley Kubrick",
+        "similarity": 0.965982028724999,
+        "curation_tier": "core",
+        "match_reason": "Matches: philosophical"
+      },
+      {
+        "id": "95596467-ff82-4159-b9c1-8a64762e4fb4",
+        "tmdb_id": 591,
+        "title": "Da Vinci Şifresi",
+        "year": 2006,
+        "overview": "Simgebilimci Profesör Robert Langdon'a bir toplantı için Paris'tedir. Gece oteline gelen bir telefonla polis tarafından Louvre müzesine çağrılır. İsa'nın Son Yemeği'nin sergilendiği salonda bir cinayet işlenmiştir. Kanının son damlasıyla cinayet mahalline şifreli ipuçları bırakan kurban, Langdon'u aynı gün telefonla aramış bulunan Müze müdüründen başkası değildir.Polis müfettişi Bezou Fache için Langdon sadece şifreleri çözecek isim değil, potansiyel katilin ta kendisidir. Fransız polisinin şifre çözme uzmanı genç ve güzel Sophie Neveu olaya karıştığında, herşey, göründüğünden çok daha karmaşık ve tarihin akışını değiştirebilecek bir sırrın etrafında düğümlenmeye başlayacaktır.Dan Brown'un histeri derecesinde çok satan kitabından uyarlanan Ron Howard imzalı filmde Langdon'u Tom Hanks'in, Fransız Müfettiş Fache'ı ise Jean Reno'nun canlandıracak olması gibi sürprizler var.",
+        "genres": [
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 149,
+        "vote_average": 6.726,
+        "director": "Ron Howard",
+        "similarity": 0.85369884934674,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, introspective"
+      },
+      {
+        "id": "4a9b5c77-0ee4-4c03-9633-86de7abb434c",
+        "tmdb_id": 1408208,
+        "title": "Exit 8",
+        "year": 2025,
+        "overview": "A man trapped in an endless sterile subway passageway sets out to find Exit 8. The rules of his quest are simple: do not overlook anything out of the ordinary. If you discover an anomaly, turn back immediately. If you don’t, carry on. Then leave from Exit 8. But even a single oversight will send him back to the beginning. Will he ever reach his goal and escape this infinite corridor?",
+        "genres": [
+          "Horror",
+          "Mystery"
+        ],
+        "runtime": 95,
+        "vote_average": 6.736,
+        "director": "Genki Kawamura",
+        "similarity": 0.845632857582623,
+        "curation_tier": "extended",
+        "match_reason": "Matches: introspective"
+      },
+      {
+        "id": "4d4ccb92-ec08-4124-ba97-5522de293229",
+        "tmdb_id": 8327,
+        "title": "The Holy Mountain",
+        "year": 1973,
+        "overview": "The Alchemist assembles together a group of people from all walks of life to represent the planets in the solar system. The occult adept's intention is to put his recruits through strange mystical rites and divest them of their worldly baggage before embarking on a trip to Lotus Island. There they ascend the Holy Mountain to displace the immortal gods who secretly rule the universe.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 113,
+        "vote_average": 7.533,
+        "director": "Alejandro Jodorowsky",
+        "similarity": 0.830902510482528,
+        "curation_tier": "extended",
+        "match_reason": "Matches: complex narrative"
+      },
+      {
+        "id": "64b63a2a-09a3-45c0-9e5f-a49357b80672",
+        "tmdb_id": 352173,
+        "title": "Drishyam",
+        "year": 2015,
+        "overview": "A simple street-smart man tries to protect his family from a cop looking for her missing son who was accidently killed by his daughter.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 163,
+        "vote_average": 7.5,
+        "director": "Nishikant Kamat",
+        "similarity": 0.925767877202214,
+        "curation_tier": "core",
+        "match_reason": null
+      },
+      {
+        "id": "7838356e-20a3-4fd8-9282-14b7031043b2",
+        "tmdb_id": 422,
+        "title": "8½",
+        "year": 1963,
+        "overview": "Guido Anselmi, a film director, finds himself creatively barren at the peak of his career. Urged by his doctors to rest, Anselmi heads for a luxurious resort, but a sorry group gathers—his producer, staff, actors, wife, mistress, and relatives—each one begging him to get on with the show. In retreat from their dependency, he fantasizes about past women and dreams of his childhood.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 139,
+        "vote_average": 8.096,
+        "director": "Federico Fellini",
+        "similarity": 0.830108532882654,
+        "curation_tier": "extended",
+        "match_reason": "Matches: complex narrative"
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 0.923555335324754,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession"
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.921385685213454,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping"
+      },
+      {
+        "id": "f2d8346c-45ae-4c0b-93ff-494c62b7e3ed",
+        "tmdb_id": 1949,
+        "title": "Zodiac",
+        "year": 2007,
+        "overview": "Over the course of a decade, editors of the San Francisco Chronicle entice themselves in the murders of the Zodiac Killer. However, as time runs its course, interest in the case dwindles in the eyes of the professionals. The Killer stops interacting with the public. However, believing he has the answers, an amateur cartoonist from the initial sightings races against time to prevent what he believes is another murder.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 157,
+        "vote_average": 7.529,
+        "director": "David Fincher",
+        "similarity": 0.920940064065186,
+        "curation_tier": "core",
+        "match_reason": "newspaper, journalist, california"
+      },
+      {
+        "id": "cc7a2d19-85f2-4bdc-ba0c-3c957518ab48",
+        "tmdb_id": 10322,
+        "title": "Being There",
+        "year": 1979,
+        "overview": "A simple-minded gardener named Chance has spent all his life in the Washington D.C. house of an old man. When the man dies, Chance is put out on the street with no knowledge of the world except what he has learned from television.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 130,
+        "vote_average": 7.6,
+        "director": "Hal Ashby",
+        "similarity": 0.824208625853607,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical"
+      },
+      {
+        "id": "b979827a-ad05-47fa-829f-ce145e87cbde",
+        "tmdb_id": 1396,
+        "title": "Mirror",
+        "year": 1975,
+        "overview": "A dying man in his forties recalls his childhood, his mother, the war and personal moments that tell of and juxtapose pivotal moments in Soviet history with daily life.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 107,
+        "vote_average": 7.952,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.818431812894776,
+        "curation_tier": "extended",
+        "match_reason": "Matches: existential"
+      },
+      {
+        "id": "4fb54caa-bf89-4891-a9aa-5283ced5f7a7",
+        "tmdb_id": 22843,
+        "title": "Evangelion: 2.0 You Can (Not) Advance",
+        "year": 2009,
+        "overview": "Under constant attack by monstrous creatures called Angels that seek to eradicate humankind, U.N. Special Agency NERV introduces two new EVA pilots to help defend the city of Tokyo-3: the mysterious Makinami Mari Illustrous and the intense Asuka Langley Shikinami. Meanwhile, Gendo Ikari and SEELE proceed with a secret project that involves both Rei and Shinji.",
+        "genres": [
+          "Animation",
+          "Science Fiction",
+          "Action",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.802,
+        "director": "Masayuki",
+        "similarity": 0.812840396629642,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, complex narrative"
+      },
+      {
+        "id": "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+        "tmdb_id": 1954,
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "overview": "A young man struggles to access sublimated childhood memories. He finds a technique that allows him to travel back into the past, to occupy his childhood body and change history. However, he soon finds that every change he makes has unexpected consequences.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.571,
+        "director": "J. Mackye Gruber",
+        "similarity": 0.80872303039945,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "f5239306-7ffc-4713-a702-442b46c72141",
+        "tmdb_id": 12573,
+        "title": "A Serious Man",
+        "year": 2009,
+        "overview": "It is 1967, and Larry Gopnik, a physics professor at a quiet Midwestern university, has just been informed by his wife Judith that she is leaving him. She has fallen in love with one of his more pompous acquaintances Sy Ableman.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 106,
+        "vote_average": 6.701,
+        "director": "Ethan Coen",
+        "similarity": 0.893424421561359,
+        "curation_tier": "core",
+        "match_reason": "dreams, midlife crisis, professor"
+      },
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 0.890601174572644,
+        "curation_tier": "core",
+        "match_reason": "new york city, robbery, relatives"
+      },
+      {
+        "id": "bc518ff2-a633-4366-aae4-7786773b3b44",
+        "tmdb_id": 11216,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "overview": "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 8.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.887577671760558,
+        "curation_tier": "core",
+        "match_reason": "parent child relationship, sicily, italy, movie business"
+      },
+      {
+        "id": "f779894b-2ec0-4282-9eaa-31cb786580aa",
+        "tmdb_id": 78,
+        "title": "Blade Runner",
+        "year": 1982,
+        "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.937,
+        "director": "Ridley Scott",
+        "similarity": 0.886754339595894,
+        "curation_tier": "core",
+        "match_reason": "android, flying car, bounty hunter"
+      },
+      {
+        "id": "d6c574db-fe23-4ad7-ba6e-0433b1875fbf",
+        "tmdb_id": 28,
+        "title": "Apocalypse Now",
+        "year": 1979,
+        "overview": "At the height of the Vietnam war, Captain Benjamin Willard is sent on a dangerous mission that, officially, \"does not exist, nor will it ever exist.\" His goal is to locate - and eliminate - a mysterious Green Beret Colonel named Walter Kurtz, who has been leading his personal army on illegal guerrilla missions into enemy territory.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 147,
+        "vote_average": 8.3,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.885505221237952,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, vietnam war, journalist"
+      },
+      {
+        "id": "05ca31a0-19db-4a6e-b3fc-ccd461f93548",
+        "tmdb_id": 18491,
+        "title": "Neon Genesis Evangelion: The End of Evangelion",
+        "year": 1997,
+        "overview": "SEELE orders an all-out attack on NERV, aiming to destroy the Evas before Gendo can advance his own plans for the Human Instrumentality Project. Shinji is pushed to the limits of his sanity as he is forced to decide the fate of humanity.",
+        "genres": [
+          "Animation",
+          "Science Fiction",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 87,
+        "vote_average": 8.252,
+        "director": "Hideaki Anno",
+        "similarity": 0.798931847155358,
+        "curation_tier": "extended",
+        "match_reason": "Matches: philosophical, existential, complex narrative, introspective"
+      },
+      {
+        "id": "4a815b14-89c0-403b-900e-3304f29eb0d6",
+        "tmdb_id": 1050035,
+        "title": "Monster",
+        "year": 2023,
+        "overview": "After an outburst at school involving her son, a concerned single mother demands answers, triggering a sequence of deepening suspicion and turmoil.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 125,
+        "vote_average": 7.912,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 0.882887296881089,
+        "curation_tier": "core",
+        "match_reason": "Matches: complex narrative"
+      },
+      {
+        "id": "ec6b90cc-b840-48c4-a2f7-437491b5bc04",
+        "tmdb_id": 311,
+        "title": "Once Upon a Time in America",
+        "year": 1984,
+        "overview": "A former Prohibition-era Jewish gangster returns to the Lower East Side of Manhattan over thirty years later, where he once again must confront the ghosts and regrets of his old life.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 229,
+        "vote_average": 8.382,
+        "director": "Sergio Leone",
+        "similarity": 0.881742620011606,
+        "curation_tier": "core",
+        "match_reason": "new york city, regret, lovesickness"
+      },
+      {
+        "id": "3ed58a48-6899-4955-93cd-819254d91aae",
+        "tmdb_id": 426,
+        "title": "Vertigo",
+        "year": 1958,
+        "overview": "A retired San Francisco detective suffering from acrophobia investigates the strange activities of an old friend's wife, all the while becoming dangerously obsessed with her.",
+        "genres": [
+          "Mystery",
+          "Romance",
+          "Thriller"
+        ],
+        "runtime": 128,
+        "vote_average": 8.14,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.878197027452123,
+        "curation_tier": "core",
+        "match_reason": "plan, love of one's life, sense of guilt"
+      },
+      {
+        "id": "6e031051-835b-4ab8-9ebb-0ddc44e96717",
+        "tmdb_id": 17431,
+        "title": "Moon",
+        "year": 2009,
+        "overview": "With only three weeks left in his three-year contract, Sam Bell is eager to return to Earth. Stationed alone at a Moon-based facility with his computer assistant GERTY, an unexpected accident sets off a series of unsettling events that shake his isolation.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 97,
+        "vote_average": 7.565,
+        "director": "Duncan Jones",
+        "similarity": 0.876529240450541,
+        "curation_tier": "core",
+        "match_reason": "Matches: existential"
+      },
+      {
+        "id": "fd07090b-6c2e-43b2-b0c5-830e27df8656",
+        "tmdb_id": 108,
+        "title": "Three Colors: Blue",
+        "year": 1993,
+        "overview": "The wife of a famous composer survives a car accident that kills her husband and daughter. Now alone, she shakes off her old identity and explores her newfound freedom but finds that she is unbreakably bound to other humans, including her husband’s mistress, whose existence she never suspected.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 98,
+        "vote_average": 7.6,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.875870850621105,
+        "curation_tier": "core",
+        "match_reason": "france, paris, france, composer"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1300,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1300,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "philosophical",
+        "mind-bending",
+        "existential",
+        "metaphysical",
+        "complex narrative",
+        "introspective",
+        "thought-provoking",
+        "reality vs perception"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "f1ac72c1ab638de1",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2560,
+    "http_status": 200,
+    "reranked_ids": [
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "22576ed0-e27c-44b5-b338-d492f81af2ce",
+      "78490b9d-f178-43f2-b9b2-7433e67590ee",
+      "d6c574db-fe23-4ad7-ba6e-0433b1875fbf",
+      "c30e864f-5463-4902-9128-c772cbbc5ac5",
+      "b979827a-ad05-47fa-829f-ce145e87cbde",
+      "3ed58a48-6899-4955-93cd-819254d91aae",
+      "7838356e-20a3-4fd8-9282-14b7031043b2"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}

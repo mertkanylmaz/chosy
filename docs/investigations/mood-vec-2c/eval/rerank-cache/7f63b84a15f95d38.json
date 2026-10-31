@@ -1,0 +1,24 @@
+{
+  "payload_hash": "7f63b84a15f95d38",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3585,
+  "http_status": 200,
+  "reranked_ids": [
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+    "1d6879d5-f75f-4587-ab39-49a412dcd812",
+    "6304ffc3-d437-4fda-9305-81b05f44cb79",
+    "40b7f12b-2535-41a8-b1e0-98132f4956ea"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "9688fcab-7307-43e7-8c30-4a8d316b15fe": "Heartwarming family adventure with gentle humor and cozy, feel-good storytelling throughout.",
+    "1d6879d5-f75f-4587-ab39-49a412dcd812": "Lighthearted comedy with colorful animation, quirky characters, and effortless entertainment.",
+    "6304ffc3-d437-4fda-9305-81b05f44cb79": "Uplifting animated musical about friendship and passion with joyful, energetic charm.",
+    "40b7f12b-2535-41a8-b1e0-98132f4956ea": "Classic animated adventure brimming with humor, warmth, and pure imaginative fun."
+  }
+}

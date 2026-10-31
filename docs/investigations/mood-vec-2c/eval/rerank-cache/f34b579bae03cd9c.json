@@ -1,0 +1,24 @@
+{
+  "payload_hash": "f34b579bae03cd9c",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 3562,
+  "http_status": 200,
+  "reranked_ids": [
+    "8b1241f3-6071-4e09-9b1e-608b637f553a",
+    "119a37e8-be86-43f1-9a15-eb13ac06c4a3",
+    "d771d0ec-47cd-4077-9d2f-8f16cabc39a8",
+    "7415f32f-4f8a-4845-94cc-f24c7f97eca7"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "8b1241f3-6071-4e09-9b1e-608b637f553a": "Four boys' coming-of-age journey captures warm nostalgia and bittersweet childhood memories perfectly.",
+    "119a37e8-be86-43f1-9a15-eb13ac06c4a3": "Young filmmaker's formative post-war Arizona childhood evokes cozy, sentimental family moments and growth.",
+    "d771d0ec-47cd-4077-9d2f-8f16cabc39a8": "Sisters' reunion after father's death creates tender, warm family bonds with gentle bittersweet emotion.",
+    "7415f32f-4f8a-4845-94cc-f24c7f97eca7": "Family-centered animation about pursuing dreams celebrates cherished memories and connection across generations warmly."
+  }
+}

@@ -1,0 +1,134 @@
+{
+  "mood_id": "qm_rainy",
+  "text": "A cozy, warm and peaceful evening, calm and contemplative, slow-paced and quiet, not action, not thriller",
+  "ms": 8487,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "trust": 0.75,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "violence",
+      "suspense",
+      "jump scares",
+      "high stakes conflict"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Gentle Contemplation",
+    "profile_description": "You need a warm, intimate film experience that invites quiet reflection and emotional presence—something to settle into peacefully without tension or stimulation.",
+    "search_keywords": [],
+    "genres_include": [
+      "Drama",
+      "Romance"
+    ],
+    "genres_exclude": [
+      "Action",
+      "Thriller",
+      "Horror"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Lost in Translation",
+        "year": 2003
+      },
+      {
+        "title": "Before Sunrise",
+        "year": 1995
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "Call Me By Your Name",
+        "year": 2017
+      },
+      {
+        "title": "A Ghost Story",
+        "year": 2017
+      },
+      {
+        "title": "Paterson",
+        "year": 2016
+      },
+      {
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019
+      },
+      {
+        "title": "My Father's House",
+        "year": 2023
+      },
+      {
+        "title": "Aftersun",
+        "year": 2022
+      },
+      {
+        "title": "The Farewell",
+        "year": 2019
+      }
+    ],
+    "search_id": "60292787-0e01-4ab6-a67e-9e33c93d0399",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.75
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.6,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action sequences",
+      "violence",
+      "suspense",
+      "jump scares",
+      "high stakes conflict"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "60292787-0e01-4ab6-a67e-9e33c93d0399",
+  "search_keywords": [],
+  "limit": null,
+  "remaining": null
+}

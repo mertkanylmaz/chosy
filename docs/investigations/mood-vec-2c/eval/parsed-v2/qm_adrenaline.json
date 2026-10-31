@@ -1,0 +1,150 @@
+{
+  "mood_id": "qm_adrenaline",
+  "text": "Adrenaline-fueled action, thrilling and exciting, fast-paced and intense, not comedy, not drama",
+  "ms": 7436,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.1,
+      "fear": 0.6,
+      "anger": 0.4,
+      "surprise": 0.8,
+      "disgust": 0.1,
+      "trust": 0.4,
+      "anticipation": 0.9
+    },
+    "energy_level": 0.9,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.3,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "drama",
+      "slow pacing",
+      "emotional depth"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Adrenaline Rush",
+    "profile_description": "High-octane, pulse-pounding entertainment with relentless pacing, spectacular set pieces, and sustained tension — pure cinematic thrills without emotional weight or comedic breaks.",
+    "search_keywords": [
+      "action",
+      "thriller",
+      "high-speed pursuit",
+      "intense combat",
+      "explosive",
+      "suspense",
+      "adventure",
+      "danger"
+    ],
+    "genres_include": [
+      "Action",
+      "Thriller",
+      "Adventure"
+    ],
+    "genres_exclude": [
+      "Comedy",
+      "Drama"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Mad Max: Fury Road",
+        "year": 2015
+      },
+      {
+        "title": "Mission: Impossible - Fallout",
+        "year": 2018
+      },
+      {
+        "title": "John Wick",
+        "year": 2014
+      },
+      {
+        "title": "Top Gun: Maverick",
+        "year": 2022
+      },
+      {
+        "title": "The Dark Knight Rises",
+        "year": 2012
+      },
+      {
+        "title": "Atomic Blonde",
+        "year": 2017
+      },
+      {
+        "title": "Extraction",
+        "year": 2020
+      },
+      {
+        "title": "Baby Driver",
+        "year": 2017
+      },
+      {
+        "title": "The Raid 2",
+        "year": 2014
+      },
+      {
+        "title": "Speed",
+        "year": 1994
+      }
+    ],
+    "search_id": "e7076605-e5bc-4804-95e1-32f61d1388ce",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.5,
+      "sadness": 0.1,
+      "anger": 0.4,
+      "fear": 0.6,
+      "surprise": 0.8,
+      "disgust": 0.1,
+      "anticipation": 0.9,
+      "trust": 0.4
+    },
+    "energy_level": 0.9,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.3,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "drama",
+      "slow pacing",
+      "emotional depth"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e7076605-e5bc-4804-95e1-32f61d1388ce",
+  "search_keywords": [
+    "action",
+    "thriller",
+    "high-speed pursuit",
+    "intense combat",
+    "explosive",
+    "suspense",
+    "adventure",
+    "danger"
+  ],
+  "limit": null,
+  "remaining": null
+}

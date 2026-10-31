@@ -1,0 +1,24 @@
+{
+  "payload_hash": "e8c40e64fe10d1f0",
+  "cached": false,
+  "candidates_sent": 40,
+  "overview_max": 100,
+  "count": 4,
+  "ms": 4416,
+  "http_status": 200,
+  "reranked_ids": [
+    "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+    "aa02f15c-94df-4213-a625-946ed17ed06a",
+    "f8d6fa68-f2ce-411f-9338-a9ce2b426bc9",
+    "3e2949a5-ed35-4881-911e-764e61428537"
+  ],
+  "server_fallback": false,
+  "error_detail": null,
+  "exceeded_app_timeout": false,
+  "reasons": {
+    "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d": "Stranded astronaut survives on Mars through ingenuity and determination, mirroring Interstellar's space exploration and human resilience.",
+    "aa02f15c-94df-4213-a625-946ed17ed06a": "First contact with aliens and humanity's response echoes Interstellar's themes of cosmic mystery and scientific discovery.",
+    "f8d6fa68-f2ce-411f-9338-a9ce2b426bc9": "Radio astronomer receives alien signal, exploring humanity's place in universe like Interstellar's grand cosmic scope.",
+    "3e2949a5-ed35-4881-911e-764e61428537": "Survival drama in space with stunning visuals captures Interstellar's awe-inspiring depiction of the cosmos and isolation."
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "mood_id": "ft_tr_hafif",
+  "text": "Hafif bir şey olsun, kafa yormayayım",
+  "ms": 6728,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.4
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "complex plot",
+      "dark themes",
+      "heavy drama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "profile_name": "Lightweight Comfort",
+    "profile_description": "A person seeking effortless entertainment that doesn't demand cognitive effort—warm, accessible, and pleasurable without emotional weight.",
+    "genres_include": [
+      "Comedy",
+      "Family"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Paddington",
+        "year": 2014
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Jumanji: Welcome to the Jungle",
+        "year": 2017
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "The Lego Movie",
+        "year": 2014
+      },
+      {
+        "title": "Moonrise Kingdom",
+        "year": 2012
+      },
+      {
+        "title": "Ferris Bueller's Day Off",
+        "year": 1986
+      },
+      {
+        "title": "Mrs. Doubtfire",
+        "year": 1993
+      },
+      {
+        "title": "The Pursuit of Happyness",
+        "year": 2006
+      }
+    ],
+    "search_keywords": [],
+    "search_id": "660903d5-02a4-4a07-bc8e-4732bbc54f5d",
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.4,
+      "trust": 0.7
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "complex plot",
+      "dark themes",
+      "heavy drama"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "660903d5-02a4-4a07-bc8e-4732bbc54f5d",
+  "search_keywords": [],
+  "limit": null,
+  "remaining": null
+}

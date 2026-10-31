@@ -1,0 +1,601 @@
+{
+  "mood_id": "ft_friends_scary",
+  "variant": "V0",
+  "rpc": {
+    "rows": [
+      {
+        "id": "f8a49ceb-dc82-4bd9-8b05-ac47c277b771",
+        "tmdb_id": 453127,
+        "title": "Midnight Runners",
+        "year": 2017,
+        "overview": "Two apathetic police academy recruits who become best buddies through the tough training together witness a woman being abducted right before their very eyes. As they were taught in the academy, they quickly report the incident to the police, but the police are in no hurry to jump on the case. So the duo decide to take the matter into their own hands and rescue the woman.",
+        "genres": [
+          "Comedy",
+          "Action",
+          "Crime"
+        ],
+        "runtime": 109,
+        "vote_average": 7.5,
+        "director": "Jason Kim",
+        "similarity": 0.999164962518628,
+        "curation_tier": "extended",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "44097c7b-d993-4627-9615-0783cd92a687",
+        "tmdb_id": 9654,
+        "title": "The Italian Job",
+        "year": 2003,
+        "overview": "Charlie Croker pulled off the crime of a lifetime. The one thing that he didn't plan on was being double-crossed. Along with a drop-dead gorgeous safecracker, Croker and his team take off to re-steal the loot and end up in a pulse-pounding, pedal-to-the-metal chase that careens up, down, above and below the streets of Los Angeles.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 110,
+        "vote_average": 6.8,
+        "director": "F. Gary Gray",
+        "similarity": 0.989741875546991,
+        "curation_tier": "extended",
+        "match_reason": "Matches: suspense"
+      },
+      {
+        "id": "11efc789-981e-4892-9dba-5793ccdefea5",
+        "tmdb_id": 823464,
+        "title": "Godzilla x Kong: The New Empire",
+        "year": 2024,
+        "overview": "Following their explosive showdown, Godzilla and Kong must reunite against a colossal undiscovered threat hidden within our world, challenging their very existence – and our own.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 115,
+        "vote_average": 7.051,
+        "director": "Adam Wingard",
+        "similarity": 1.12960020393632,
+        "curation_tier": "core",
+        "match_reason": "Matches: monster"
+      },
+      {
+        "id": "9343c672-62a8-497c-807b-9aaeacc96aa3",
+        "tmdb_id": 9421,
+        "title": "The Dinner Game",
+        "year": 1998,
+        "overview": "For Pierre Brochant and his friends, Wednesday is “Idiots' Day”. The idea is simple: each person has to bring along an idiot. The one who brings the most spectacular idiot wins the prize. Tonight, Brochant is ecstatic. He has found a gem. The ultimate idiot, “A world champion idiot!”. What Brochant doesn’t know is that Pignon is a real jinx, a past master in the art of bringing on catastrophes...",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 80,
+        "vote_average": 7.8,
+        "director": "Francis Veber",
+        "similarity": 0.982027237172801,
+        "curation_tier": "extended",
+        "match_reason": "Matches: horror comedy"
+      },
+      {
+        "id": "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+        "tmdb_id": 578,
+        "title": "Jaws",
+        "year": 1975,
+        "overview": "When the seaside community of Amity finds itself under attack by a dangerous great white shark, the town's chief of police, a young marine biologist, and a grizzled shark hunter embark on a desperate quest to kill the beast before it strikes again.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 124,
+        "vote_average": 7.682,
+        "director": "Steven Spielberg",
+        "similarity": 1.12221437706228,
+        "curation_tier": "core",
+        "match_reason": "Matches: creature feature"
+      },
+      {
+        "id": "d1432789-e17b-4b3d-a0e2-866a21b4fa82",
+        "tmdb_id": 3034,
+        "title": "Young Frankenstein",
+        "year": 1974,
+        "overview": "A young neurosurgeon inherits the castle of his grandfather, the famous Dr. Victor von Frankenstein. In the castle he finds a funny hunchback, a pretty lab assistant and the elderly housekeeper. Young Frankenstein believes that the work of his grandfather was delusional, but when he discovers the book where the mad doctor described his reanimation experiment, he suddenly changes his mind.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 106,
+        "vote_average": 7.853,
+        "director": "Mel Brooks",
+        "similarity": 0.971775553438419,
+        "curation_tier": "extended",
+        "match_reason": "Matches: monster"
+      },
+      {
+        "id": "7e6f8666-5522-44b3-9019-a7c00bcafdbe",
+        "tmdb_id": 961323,
+        "title": "Nimona",
+        "year": 2023,
+        "overview": "A knight framed for a tragic crime teams with a scrappy, shape-shifting teen to prove his innocence.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Fantasy",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 99,
+        "vote_average": 7.85,
+        "director": "Nick Bruno",
+        "similarity": 1.1003774454636,
+        "curation_tier": "core",
+        "match_reason": "Matches: supernatural, monster"
+      },
+      {
+        "id": "1cf0dfa0-d44e-4895-b3f2-7c0a34766798",
+        "tmdb_id": 1357633,
+        "title": "Solo Leveling -ReAwakening-",
+        "year": 2024,
+        "overview": "Over a decade after 'gates' connecting worlds appeared, awakening 'hunters' with superpowers, weakest hunter Sung Jinwoo encounters a double dungeon and accepts a mysterious quest, becoming the only one able to level up, changing his fate. A catch-up recap of the first season coupled with an exclusive sneak peek of the first two episodes of the highly anticipated second season in one momentous theatrical fan experience.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 116,
+        "vote_average": 7.101,
+        "director": "Shunsuke Nakashige",
+        "similarity": 1.09094327161952,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, based on comic, compilation"
+      },
+      {
+        "id": "b508e4d1-af21-430d-b1bb-a2b34ad1039f",
+        "tmdb_id": 718930,
+        "title": "Bullet Train",
+        "year": 2022,
+        "overview": "Unlucky assassin Ladybug is determined to do his job peacefully after one too many gigs gone off the rails. Fate, however, may have other plans, as Ladybug's latest mission puts him on a collision course with lethal adversaries from around the globe—all with connected, yet conflicting, objectives—on the world's fastest train.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Thriller"
+        ],
+        "runtime": 126,
+        "vote_average": 7.414,
+        "director": "David Leitch",
+        "similarity": 0.954386264074348,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "1c0776ce-7ae0-49c0-a92d-40fd0896eeaa",
+        "tmdb_id": 56292,
+        "title": "Mission: Impossible - Ghost Protocol",
+        "year": 2011,
+        "overview": "Ethan Hunt and his team are racing against time to track down a dangerous terrorist named Hendricks, who has gained access to Russian nuclear launch codes and is planning a strike on the United States. An attempt to stop him ends in an explosion causing severe destruction to the Kremlin and the IMF to be implicated in the bombing, forcing the President to disavow them. No longer being aided by the government, Ethan and his team chase Hendricks around the globe, although they might still be too late to stop a disaster.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 133,
+        "vote_average": 7.1,
+        "director": "Brad Bird",
+        "similarity": 0.954133767446501,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "6ce86f8f-0199-46e1-8c80-7728de9a226d",
+        "tmdb_id": 154,
+        "title": "Star Trek II: The Wrath of Khan",
+        "year": 1982,
+        "overview": "The starship Enterprise and its crew is pulled back into action when old nemesis, Khan, steals a top secret device called Project Genesis.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.448,
+        "director": "Nicholas Meyer",
+        "similarity": 0.951872271971241,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "58e965db-c419-4a90-a183-7496ffe5e292",
+        "tmdb_id": 127585,
+        "title": "X-Men: Days of Future Past",
+        "year": 2014,
+        "overview": "The ultimate X-Men ensemble fights a war for the survival of the species across two time periods as they join forces with their younger selves in an epic battle that must change the past – to save our future.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 7.529,
+        "director": "Bryan Singer",
+        "similarity": 0.948808700163335,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "ab54bd73-7bd9-4ac9-918b-04b771b16687",
+        "tmdb_id": 845781,
+        "title": "Red One",
+        "year": 2024,
+        "overview": "After Santa Claus (codename: Red One) is kidnapped, the North Pole's Head of Security must team up with the world's most infamous tracker in a globe-trotting, action-packed mission to save Christmas.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 124,
+        "vote_average": 6.995,
+        "director": "Jake Kasdan",
+        "similarity": 0.94877489623802,
+        "curation_tier": "extended",
+        "match_reason": "rescue, bounty hunter, holiday"
+      },
+      {
+        "id": "98a56260-86b7-4e54-9fa0-de07bcea47b2",
+        "tmdb_id": 1071585,
+        "title": "M3GAN 2.0",
+        "year": 2025,
+        "overview": "After the underlying tech for M3GAN is stolen and misused by a powerful defense contractor to create a military-grade weapon known as Amelia, M3GAN's creator Gemma realizes that the only option is to resurrect M3GAN and give her a few upgrades, making her faster, stronger, and more lethal.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 120,
+        "vote_average": 7.251,
+        "director": "Gerard Johnstone",
+        "similarity": 0.948370339650069,
+        "curation_tier": "extended",
+        "match_reason": "android, artificial intelligence (a.i.), fight"
+      },
+      {
+        "id": "65ccbf40-4ab2-4c3b-8879-24630be7cb9f",
+        "tmdb_id": 24428,
+        "title": "The Avengers",
+        "year": 2012,
+        "overview": "When an unexpected enemy emerges and threatens global safety and security, Nick Fury, director of the international peacekeeping agency known as S.H.I.E.L.D., finds himself in need of a team to pull the world back from the brink of disaster. Spanning the globe, a daring recruitment effort begins!",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 143,
+        "vote_average": 8.03,
+        "director": "Joss Whedon",
+        "similarity": 1.08087299048292,
+        "curation_tier": "core",
+        "match_reason": "new york city, superhero, shield"
+      },
+      {
+        "id": "5bdbecde-7dc8-4c70-bd16-5c054a88afed",
+        "tmdb_id": 106,
+        "title": "Predator",
+        "year": 1987,
+        "overview": "A team of elite commandos on a secret mission in a Central American jungle come to find themselves hunted by an extraterrestrial warrior.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 7.552,
+        "director": "John McTiernan",
+        "similarity": 1.08056047954885,
+        "curation_tier": "core",
+        "match_reason": "Matches: group survival, creature feature"
+      },
+      {
+        "id": "efbadd0e-ee8e-488f-b39e-160e782fe41d",
+        "tmdb_id": 454626,
+        "title": "Sonic the Hedgehog",
+        "year": 2020,
+        "overview": "Powered with incredible speed, Sonic The Hedgehog embraces his new home on Earth. That is, until Sonic sparks the attention of super-uncool evil genius Dr. Robotnik. Now it’s super-villain vs. super-sonic in an all-out race across the globe to stop Robotnik from using Sonic’s unique power for world domination.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 99,
+        "vote_average": 7.288,
+        "director": "Jeff Fowler",
+        "similarity": 0.946811335738655,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "972dce82-4b63-4387-ae0c-02f6e27a13ba",
+        "tmdb_id": 122,
+        "title": "The Lord of the Rings: The Return of the King",
+        "year": 2003,
+        "overview": "As armies mass for a final battle that will decide the fate of the world--and powerful, ancient forces of Light and Dark compete to determine the outcome--one member of the Fellowship of the Ring is revealed as the noble heir to the throne of the Kings of Men. Yet, the sole hope for triumph over evil lies with a brave hobbit, Frodo, who, accompanied by his loyal friend Sam and the hideous, wretched Gollum, ventures deep into the very dark heart of Mordor on his seemingly impossible quest to destroy the Ring of Power.​",
+        "genres": [
+          "Adventure",
+          "Fantasy",
+          "Action"
+        ],
+        "runtime": 201,
+        "vote_average": 8.498,
+        "director": "Peter Jackson",
+        "similarity": 1.07930902306803,
+        "curation_tier": "core",
+        "match_reason": "army, based on novel or book, elves"
+      },
+      {
+        "id": "5da1968e-40b4-44df-a537-d158d6db3f35",
+        "tmdb_id": 315635,
+        "title": "Spider-Man: Homecoming",
+        "year": 2017,
+        "overview": "Following the events of Captain America: Civil War, Peter Parker, with the help of his mentor Tony Stark, tries to balance his life as an ordinary high school student in Queens, New York City, with fighting crime as his superhero alter ego Spider-Man as a new threat, the Vulture, emerges.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 133,
+        "vote_average": 7.33,
+        "director": "Jon Watts",
+        "similarity": 1.07489761808612,
+        "curation_tier": "core",
+        "match_reason": "high school, new york city, washington dc, usa"
+      },
+      {
+        "id": "39287721-db42-4bd5-bcad-2fdf42483cf1",
+        "tmdb_id": 1333100,
+        "title": "Attack on Titan: THE LAST ATTACK",
+        "year": 2024,
+        "overview": "A colossal-sized omnibus film bringing together the last two episodes of Attack on Titan in the franchise's first-ever theatrical experience. After venturing beyond the walls and separated from his comrades, Eren finds himself inspired by this new truth and plots the \"Rumbling,\" a terrifying plan to eradicate every living thing in the world. With the fate of the world hanging in the balance, a motley crew of Eren's former comrades and enemies scramble to halt his deadly mission. The only question is, can they stop him?",
+        "genres": [
+          "Animation",
+          "Action",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 145,
+        "vote_average": 8.705,
+        "director": "Yuichiro Hayashi",
+        "similarity": 1.07470315011911,
+        "curation_tier": "core",
+        "match_reason": "Matches: monster, suspense"
+      },
+      {
+        "id": "3de85234-93fd-40e9-9cee-d29e42e98762",
+        "tmdb_id": 1011477,
+        "title": "Karate Kid: Legends",
+        "year": 2025,
+        "overview": "After a family tragedy, kung fu prodigy Li Fong is uprooted from his home in Beijing and forced to move to New York City with his mother. When a new friend needs his help, Li enters a karate competition – but his skills alone aren't enough. Li's kung fu teacher Mr. Han enlists original Karate Kid Daniel LaRusso for help, and Li learns a new way to fight, merging their two styles into one for the ultimate martial arts showdown.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 94,
+        "vote_average": 7.017,
+        "director": "Jonathan Entwistle",
+        "similarity": 0.940528489899698,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "4c7a7f1d-0029-4b4d-a2d1-5170f709a871",
+        "tmdb_id": 980489,
+        "title": "Gran Turismo",
+        "year": 2023,
+        "overview": "The ultimate wish-fulfillment tale of a teenage Gran Turismo player whose gaming skills won him a series of Nissan competitions to become an actual professional racecar driver.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 135,
+        "vote_average": 7.708,
+        "director": "Neill Blomkamp",
+        "similarity": 1.07109192065536,
+        "curation_tier": "core",
+        "match_reason": "sports, based on true story, racing"
+      },
+      {
+        "id": "f71c0200-d25a-44ef-b3c9-fdd212bc3a5d",
+        "tmdb_id": 1892,
+        "title": "Return of the Jedi",
+        "year": 1983,
+        "overview": "Luke Skywalker leads a mission to rescue his friend Han Solo from the clutches of Jabba the Hutt, the Emperor prepares to crush the Rebellion with a more powerful Death Star, and the Rebel fleet mounts a massive attack on the space station. Luke Skywalker confronts Darth Vader in a final climactic duel before the evil Emperor.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 7.908,
+        "director": "Richard Marquand",
+        "similarity": 1.07035524596614,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, sibling relationship, rebel"
+      },
+      {
+        "id": "f400d8f6-4c15-42ef-bebc-ac473c52db8f",
+        "tmdb_id": 911430,
+        "title": "F1",
+        "year": 2025,
+        "overview": "Racing legend Sonny Hayes is coaxed out of retirement to lead a struggling Formula 1 team—and mentor a young hotshot driver—while chasing one more chance at glory.",
+        "genres": [
+          "Action",
+          "Drama"
+        ],
+        "runtime": 156,
+        "vote_average": 7.771,
+        "director": "Joseph Kosinski",
+        "similarity": 1.06964649442619,
+        "curation_tier": "core",
+        "match_reason": "sports, comeback, racing"
+      },
+      {
+        "id": "7e7bac90-e401-401b-9c3e-3e6e0875207a",
+        "tmdb_id": 8681,
+        "title": "Taken",
+        "year": 2008,
+        "overview": "Bryan Mills, a former government operative, is trying to reconnect with his teenage daughter Kim. After reluctantly agreeing with his ex-wife to let Kim go to Paris on vacation with a friend, his worst nightmare comes true. While on the phone with his daughter shortly after she arrives in Paris, she and her friend are abducted by a gang of human traffickers. Working against the clock, Bryan relies on his extensive training and skills to track down the ruthless gang that abducted her and launch a one-man war to rescue his daughter.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 94,
+        "vote_average": 7.402,
+        "director": "Pierre Morel",
+        "similarity": 0.939079088790106,
+        "curation_tier": "extended",
+        "match_reason": "rescue, paris, france, kidnapping"
+      },
+      {
+        "id": "b9e76f3b-0e3a-4bde-ac62-f57050fe436d",
+        "tmdb_id": 335787,
+        "title": "Uncharted",
+        "year": 2022,
+        "overview": "A young street-smart, Nathan Drake and his wisecracking partner Victor “Sully” Sullivan embark on a dangerous pursuit of “the greatest treasure never found” while also tracking clues that may lead to Nathan’s long-lost brother.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 6.885,
+        "director": "Ruben Fleischer",
+        "similarity": 0.9383507173313,
+        "curation_tier": "extended",
+        "match_reason": "lighter, treasure hunt, treasure map"
+      },
+      {
+        "id": "84e3455f-5034-453b-b7a4-553917c01988",
+        "tmdb_id": 783675,
+        "title": "The First Slam Dunk",
+        "year": 2022,
+        "overview": "Shohoku's “speedster” and point guard, Ryota Miyagi, always plays with brains and lightning speed, running circles around his opponents while feigning composure. In his second year of high school, Ryota plays with the Shohoku High School basketball team along with Sakuragi, Rukawa, Akagi, and Mitsui as they take the stage at the Inter-High School National Championship. And now, they are on the brink of challenging the reigning champions, Sannoh Kogyo High School.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 125,
+        "vote_average": 7.8,
+        "director": "Takehiko Inoue",
+        "similarity": 1.06608183934572,
+        "curation_tier": "core",
+        "match_reason": "high school, competition, basketball"
+      },
+      {
+        "id": "3b7eba47-3876-4dcb-a4a1-10ebf104444e",
+        "tmdb_id": 1368,
+        "title": "First Blood",
+        "year": 1982,
+        "overview": "When former Green Beret John Rambo is harassed by local law enforcement and arrested for vagrancy, he is forced to flee into the mountains and wage an escalating one-man war against his pursuers.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 93,
+        "vote_average": 7.502,
+        "director": "Ted Kotcheff",
+        "similarity": 0.935602531991975,
+        "curation_tier": "extended",
+        "match_reason": null
+      },
+      {
+        "id": "85be610a-bdb3-4952-ba0e-c7ef1c1c8c01",
+        "tmdb_id": 575265,
+        "title": "Mission: Impossible - The Final Reckoning",
+        "year": 2025,
+        "overview": "Ethan Hunt and team continue their search for the terrifying AI known as the Entity — which has infiltrated intelligence networks all over the globe — with the world's governments and a mysterious ghost from Hunt's past on their trail. Joined by new allies and armed with the means to shut the Entity down for good, Hunt is in a race against time to prevent the world as we know it from changing forever.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Adventure"
+        ],
+        "runtime": 170,
+        "vote_average": 7.16,
+        "director": "Christopher McQuarrie",
+        "similarity": 1.06408112298661,
+        "curation_tier": "core",
+        "match_reason": "mask, artificial intelligence (a.i.), diving"
+      },
+      {
+        "id": "888d3771-03f0-46dd-bae6-0ae88380a31b",
+        "tmdb_id": 567646,
+        "title": "Extreme Job",
+        "year": 2019,
+        "overview": "A drug squad attempts to take down a criminal organization and they must go undercover to do so, so they begin working at a chicken restaurant, that becomes famous for its delicious chicken. Due to the unexpected popularity, the detectives find themselves in a situation they never expected.",
+        "genres": [
+          "Action",
+          "Comedy",
+          "Crime"
+        ],
+        "runtime": 111,
+        "vote_average": 7.191,
+        "director": "Lee Byeong-heon",
+        "similarity": 0.934967234296974,
+        "curation_tier": "extended",
+        "match_reason": "drug crime, police, ambush"
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 1166,
+        "n_rows": 30
+      }
+    ],
+    "total_ms": 1166,
+    "params_first": {
+      "query_vector": "[384 boyut]",
+      "user_vector": null,
+      "mood_weight": 1,
+      "user_weight": 0,
+      "match_count": 30,
+      "min_similarity": 0.45,
+      "min_rating": 6.5,
+      "search_keywords": [
+        "horror comedy",
+        "group survival",
+        "supernatural",
+        "jump scares",
+        "monster",
+        "suspense",
+        "creature feature"
+      ],
+      "per_director_cap": 1,
+      "tier_boost": true,
+      "exclude_archive": true
+    }
+  },
+  "rerank": {
+    "payload_hash": "568b9d9609325937",
+    "cached": false,
+    "candidates_sent": 30,
+    "overview_max": 150,
+    "count": 8,
+    "ms": 2682,
+    "http_status": 200,
+    "reranked_ids": [
+      "11efc789-981e-4892-9dba-5793ccdefea5",
+      "b32c5ccc-3684-4cbc-8cbf-fc85107d5075",
+      "b508e4d1-af21-430d-b1bb-a2b34ad1039f",
+      "f8a49ceb-dc82-4bd9-8b05-ac47c277b771",
+      "5bdbecde-7dc8-4c70-bd16-5c054a88afed",
+      "d1432789-e17b-4b3d-a0e2-866a21b4fa82",
+      "ab54bd73-7bd9-4ac9-918b-04b771b16687",
+      "65ccbf40-4ab2-4c3b-8879-24630be7cb9f"
+    ],
+    "server_fallback": false,
+    "error_detail": null,
+    "exceeded_app_timeout": false
+  }
+}
