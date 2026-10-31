@@ -372,6 +372,133 @@ function guardBlock(table: string, expected: number): string[] {
   ];
 }
 
+// ── Faz 1C (Adım 1c): tutarsız oy filmleri, oy dosya (IMDb dataset) değeriyle ──────────────
+// `--1c` ile çalışır; yalnız phase1c-* dosyalarını yazar (1A/1B/CSV'ye dokunmaz). 1A canlıda
+// uygulandığı için normal kip artık 1A'yı yeniden üretmez; bu kipin kapsamı arşivde kalan filmlerdir.
+
+const PHASE_1C = process.argv.includes('--1c');
+const PHASE_1C_PART_SIZE = 30;
+
+interface Row1c {
+  c: Candidate;
+  fileRating: number;
+  fileVotes: number;
+  rating: number;
+  tier: string;
+}
+
+function writePhase1c(
+  inconsistent: { c: Candidate; b: BasicsRow | undefined; fileRow: { rating: number; votes: number } }[],
+  staleStayArchive: Candidate[],
+  keyCounts: Map<string, number>,
+): void {
+  const kept: Row1c[] = [];
+  const excluded: { c: Candidate; fileVotes: number; reasons: Flag[] }[] = [];
+  for (const { c, b, fileRow } of inconsistent) {
+    const f = c.film;
+    // A: DB rating kalır, oy dosya değeri. B: rating ve oy dosya değeri.
+    const rating = c.phase === 'A' ? (f.imdb_rating as number) : fileRow.rating;
+    const tier = newTier(f, rating, fileRow.votes);
+    const flags: Flag[] = [];
+    if (tier === 'archive') flags.push({ code: 'tierfloor', reason: `dosya oyu ${fileRow.votes} ile tier archive kalıyor` });
+    if (fileRow.votes < MIN_VOTES_PHASE1) flags.push({ code: 'votes', reason: `dosya oyu ${fileRow.votes} < ${MIN_VOTES_PHASE1}` });
+    flags.push(...screenContent(f, b));
+    if (c.imdbIdNew) {
+      if (!b || b.titleType !== 'movie') flags.push({ code: 'imdbid', reason: 'TMDb imdb_id doğrulanamadı' });
+      else {
+        if (b.startYear !== f.year) flags.push({ code: 'imdbid', reason: 'TMDb imdb_id yıl uyuşmuyor' });
+        if (b.runtimeMinutes === null || f.runtime === null || Math.abs(b.runtimeMinutes - f.runtime) > RUNTIME_TOLERANCE) {
+          flags.push({ code: 'imdbid', reason: 'TMDb imdb_id runtime uyuşmuyor' });
+        }
+        if ((keyCounts.get(`${normTitle(f.title)}|${f.year}`) ?? 0) !== 1) flags.push({ code: 'imdbid', reason: 'TMDb imdb_id (başlık,yıl) tekil değil' });
+      }
+    }
+    const concert = titleStartsWith(f.title, CONCERT_PREFIXES);
+    if (concert) flags.push({ code: 'concert', reason: `konser listesi ('${concert}')` });
+    const t079 = titleEquals(f.title, TRENDING_079_TITLES);
+    if (t079) flags.push({ code: 'trending079', reason: `079 listesi ('${t079}')` });
+    if (fileRow.votes < ARCHIVE_THRESHOLDS_STANDARD.minVotes) flags.push({ code: 'tierfloor', reason: 'oy tabanı altı' });
+    if (flags.length > 0) excluded.push({ c, fileVotes: fileRow.votes, reasons: flags });
+    else kept.push({ c, fileRating: fileRow.rating, fileVotes: fileRow.votes, rating, tier });
+  }
+  kept.sort((x, y) => x.c.film.id.localeCompare(y.c.film.id));
+
+  const parts: Row1c[][] = [];
+  for (let i = 0; i < kept.length; i += PHASE_1C_PART_SIZE) parts.push(kept.slice(i, i + PHASE_1C_PART_SIZE));
+
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  parts.forEach((rows, idx) => {
+    const n = idx + 1;
+    const label = `1C-${n}`;
+    const table = `films_phase1c${n}_backup_${STAMP}`;
+    const up: string[] = [
+      `-- MOOD-VEC-2b Faz ${label}: ${rows.length} arşiv filminin imdb_votes[/imdb_rating] + curation_tier'ı (oy: IMDb veri dosyası). HAZIRLANDI, ÇALIŞTIRILMADI.`,
+      "-- Her UPDATE filmin hâlâ archive olduğunu ve imdb_votes'un hazırlık anındaki değerde olduğunu doğrular (kayma varsa 0 satır).",
+      `-- Beklenen: ${rows.length} UPDATE × 1 satır. Geri alma: phase1c-${n}-rollback.sql.`,
+      '',
+      'BEGIN;',
+      '',
+      ...backupBlock(table, 'id, imdb_id, imdb_rating, imdb_votes, curation_tier', rows.map((r) => r.c.film.id)),
+    ];
+    const down: string[] = [
+      `-- MOOD-VEC-2b Faz ${label}: phase1c-${n}-apply.sql'in geri alması. HAZIRLANDI, ÇALIŞTIRILMADI.`,
+      "-- Her UPDATE yalnız uygulanan değerleri taşıyan satırı eski haline (eski oy, B'de rating NULL, tier archive) döndürür.",
+      '',
+      'BEGIN;',
+      '',
+    ];
+    for (const r of rows) {
+      const f = r.c.film;
+      const isB = r.c.phase === 'B';
+      const oldVotes = sqlNum(f.imdb_votes);
+      const setId = r.c.imdbIdNew ? `, imdb_id = '${r.c.imdbId}'` : '';
+      const lbl = `-- ${comment(f.title)} (${f.year}, ${isB ? 'B' : 'A'}, ${r.rating}/${r.fileVotes}; eski DB oyu ${oldVotes}) → ${r.tier}`;
+      up.push(
+        lbl,
+        `UPDATE films SET imdb_votes = ${r.fileVotes}${isB ? `, imdb_rating = ${r.rating}` : ''}${setId}, curation_tier = '${r.tier}' WHERE id = '${f.id}' AND curation_tier = 'archive' AND imdb_votes IS NOT DISTINCT FROM ${oldVotes}${isB ? ' AND imdb_rating IS NULL' : ''};`,
+      );
+      down.push(
+        lbl,
+        `UPDATE films SET imdb_votes = ${oldVotes}${isB ? ', imdb_rating = NULL' : ''}${r.c.imdbIdNew ? ', imdb_id = NULL' : ''}, curation_tier = 'archive' WHERE id = '${f.id}' AND curation_tier = '${r.tier}' AND imdb_votes = ${r.fileVotes}${isB ? ` AND imdb_rating = ${r.rating}` : ''};`,
+      );
+    }
+    up.push(...guardBlock(table, rows.length), '', 'COMMIT;', '');
+    down.push('', 'COMMIT;', '');
+    fs.writeFileSync(path.join(OUT_DIR, `phase1c-${n}-apply.sql`), up.join('\n'));
+    fs.writeFileSync(path.join(OUT_DIR, `phase1c-${n}-rollback.sql`), down.join('\n'));
+  });
+
+  fs.writeFileSync(
+    path.join(OUT_DIR, 'phase1c-rows.json'),
+    JSON.stringify(
+      kept.map((r) => ({
+        id: r.c.film.id,
+        title: r.c.film.title,
+        year: r.c.film.year,
+        phase: r.c.phase,
+        tier: r.tier,
+        rating: r.rating,
+        votes: r.fileVotes,
+        old_db_votes: r.c.film.imdb_votes,
+        db_rating: r.c.film.imdb_rating,
+        file_rating: r.fileRating,
+      })),
+      null,
+      2,
+    ) + '\n',
+  );
+
+  const count = (rows: Row1c[], phase: 'A' | 'B', tier?: string): number =>
+    rows.filter((r) => r.c.phase === phase && (tier === undefined || r.tier === tier)).length;
+  console.log(`Faz 1C kapsamı (eski tutarsız kural): ${inconsistent.length}; SQL'e giren: ${kept.length}; hariç: ${excluded.length}`);
+  console.log(`  A ${count(kept, 'A')} (core ${count(kept, 'A', 'core')}/extended ${count(kept, 'A', 'extended')}), B ${count(kept, 'B')} (core ${count(kept, 'B', 'core')}/extended ${count(kept, 'B', 'extended')})`);
+  console.log(`  parçalar: ${parts.map((p, i) => `1C-${i + 1}=${p.length}`).join(', ')}`);
+  for (const x of excluded) console.log(`  HARİÇ ${x.c.phase} ${x.c.film.title} (${x.c.film.year}) dosya oyu ${x.fileVotes}: ${x.reasons.map((r) => `[${r.code}] ${r.reason}`).join(' | ')}`);
+  console.log(`A, bayat DB oyu yüzünden tier'ı archive kalıp dosya oyu >= ${MIN_VOTES_PHASE1} olan (kapsam DIŞI, bilgi): ${staleStayArchive.length}`);
+  for (const c of staleStayArchive) console.log(`  stale ${c.film.title} (${c.film.year}) DB ${c.rating}/${c.votes}`);
+  for (const r of kept) console.log(`  KEPT ${r.c.phase} ${r.c.film.title} (${r.c.film.year}) ${r.rating}/${r.fileVotes} (DB ${r.c.film.imdb_rating}/${r.c.film.imdb_votes}) → ${r.tier}`);
+}
+
 async function main(): Promise<void> {
   const archive = await fetchArchive();
   const vectorIds = await fetchVectorIds();
@@ -431,6 +558,9 @@ async function main(): Promise<void> {
   const kept: { c: Candidate; tier: string }[] = [];
   const notInFile: Candidate[] = [];
   const stayArchive: Candidate[] = [];
+  // Faz 1C: eski tutarsız-oy kuralına takılanlar (DB ve dosya eşiğin farklı yanında) + A'da bayat DB oyu yüzünden arşivde kalıp dosya oyu >= eşik olanlar
+  const inconsistent: { c: Candidate; b: BasicsRow | undefined; fileRow: { rating: number; votes: number } }[] = [];
+  const staleStayArchive: Candidate[] = [];
 
   for (const c of candidates) {
     const f = c.film;
@@ -449,6 +579,7 @@ async function main(): Promise<void> {
     const tier = newTier(f, c.rating, c.votes);
     if (tier === 'archive') {
       stayArchive.push(c);
+      if (c.phase === 'A' && fileRow && fileRow.votes >= MIN_VOTES_PHASE1) staleStayArchive.push(c);
       continue;
     }
 
@@ -461,6 +592,7 @@ async function main(): Promise<void> {
     const other = c.phase === 'A' ? fileVotes : dbVotes;
     const where = `DB ${dbVotes ?? 'NULL'} / dosya ${fileVotes ?? 'yok'}`;
     if (other !== null && used >= MIN_VOTES_PHASE1 !== other >= MIN_VOTES_PHASE1) {
+      if (fileRow) inconsistent.push({ c, b, fileRow });
       flags.push({
         code: 'inconsistent',
         reason: `oy tutarsız: kullanılan ${used} (${used >= MIN_VOTES_PHASE1 ? '>=' : '<'} ${MIN_VOTES_PHASE1}), diğer kaynak ${other} (${where})`,
@@ -500,8 +632,13 @@ async function main(): Promise<void> {
     else kept.push({ c, tier });
   }
 
+  if (PHASE_1C) {
+    writePhase1c(inconsistent, staleStayArchive, keyCounts);
+    return;
+  }
+
   kept.sort((x, y) => x.c.film.id.localeCompare(y.c.film.id));
-  const keptA = kept.filter((k) => k.c.phase === 'A');
+  const keptA =kept.filter((k) => k.c.phase === 'A');
   const keptB = kept.filter((k) => k.c.phase === 'B');
 
   // ── Faz 1A SQL ────────────────────────────────────────────────────────────
