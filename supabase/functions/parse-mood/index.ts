@@ -13,7 +13,8 @@ import { sentryCapture } from '../_shared/sentry.ts'
 import { shouldRefundOnError } from '../_shared/refundPolicy.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
 import { isSchemaV2, normalizeV2Fields } from '../_shared/moodV2.ts'
-import { parseV2PromptFingerprint, runParseV2 } from '../_shared/moodParseTools.ts'
+import { limitWords, parseV2PromptFingerprint, runParseV2 } from '../_shared/moodParseTools.ts'
+import { createTiming, timingBreadcrumbs } from '../_shared/serverTiming.ts'
 import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 import {
   PARSE_CACHE_TTL_SECONDS,
@@ -110,14 +111,32 @@ async function logMoodSearch(params: {
 // ─── MOOD-VEC-2d: parse onbellegi + kisisel tekrar dislama (yalniz schema_version:2) ──
 
 /** Onbellek/kisisel-dislama hatasi arama akisini DUSURMEZ ama sessiz de kalmaz: Sentry warning. */
-async function reportV2Aux(code: string, detail: string, userId?: string): Promise<void> {
+async function reportV2Aux(
+  code: string,
+  detail: string,
+  userId?: string,
+  breadcrumbs?: Parameters<typeof sentryCapture>[0]['breadcrumbs'],
+): Promise<void> {
   console.error(`[parse-mood] ${code}:`, detail)
   await sentryCapture({
     message: `parse-mood ${code}: ${detail}`,
     level: 'warning',
     tags: { function: 'parse-mood', error_code: code },
     extra: userId ? { user_id: userId } : undefined,
+    breadcrumbs,
   })
+}
+
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void } | undefined
+
+/**
+ * Yanittan SONRA calisacak kritik olmayan is (yalniz v2). Supabase Edge'de EdgeRuntime.waitUntil
+ * isolate'i is bitene kadar canli tutar; yoksa (yerel) fire-and-forget. Gorevler kendi hatalarini
+ * raporlar; buradaki catch yalniz beklenmedik reddi loglar.
+ */
+function defer(task: Promise<unknown>): void {
+  const safe = task.catch((e: unknown) => console.error('[parse-mood] deferred task failed:', e))
+  if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime) EdgeRuntime.waitUntil(safe)
 }
 
 /** Isabet → parse ciktisi; iskalama (yok / TTL dolmus) → null. Hata/bozuk satir → Sentry + null (Haiku'ya duser). */
@@ -571,13 +590,16 @@ serve(async (req: Request): Promise<Response> => {
   // Onceki hal: header yoksa kota da rate limit de fiilen atlaniyor, istek
   // dogrudan ucretli Claude'a gidiyordu. Reddedilen sey ANONIM KULLANICI DEGIL,
   // kimliksiz istektir — `signInAnonymously()` oturumu imzali ve gecerlidir.
-  const auth = await requireUser(req)
+  const t0 = performance.now()
+  const timing = createTiming()
+  const deferred = createTiming() // yanittan sonra biten asamalar (Server-Timing'e girmez)
+  const auth = await timing.measure('auth', () => requireUser(req))
   if (!auth.ok) {
     return unauthorizedResponse(auth, CORS_HEADERS)
   }
 
   try {
-    await checkRateLimit(auth.authUserId, 'parse-mood')
+    await timing.measure('ratelimit', () => checkRateLimit(auth.authUserId, 'parse-mood'))
   } catch (err) {
     return rateLimitResponse(err, CORS_HEADERS)
   }
@@ -589,7 +611,7 @@ serve(async (req: Request): Promise<Response> => {
   // istek hakki yakardi. Ucretsiz hak gunde 1 oldugunda bu, tek bir hatali
   // istekle hakkin kaybi demek. Gecersiz girdi LLM'e de kotaya da ulasmaz.
   // Rate limit yukarida kalir: gecersiz istek spam'i yine sinirlanir.
-  const input = await readRawInput(req)
+  const input = await timing.measure('input', () => readRawInput(req))
   if (!input.ok) {
     if (auth.appUserId) {
       logMoodSearch({
@@ -611,6 +633,11 @@ serve(async (req: Request): Promise<Response> => {
   // Onbellek YALNIZ hizli mood karti istegi (v2 + gecerli quick_mood_id) icin; yoksa ne okuma ne yazma.
   const quickMoodId = schemaV2 ? input.quickMoodId : null
 
+  // MOOD-VEC-2d/2e (yalniz v2): kisisel dislama sorgusu kota/onbellek/LLM ile PARALEL, mumkun en erken baslar.
+  // Replay/kota reddi gibi erken donuslerde sonuc kullanilmaz; fetchRecentShown hic firlatmaz.
+  const recentShownTask =
+    schemaV2 && auth.appUserId ? timing.measure('recent', () => fetchRecentShown(auth.appUserId as string)) : null
+
   // Sunucu yapilandirma hatasi kotadan ONCE: eksik anahtar yuzunden hak yanmasin.
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
   if (!apiKey) {
@@ -628,7 +655,7 @@ serve(async (req: Request): Promise<Response> => {
   let claimed: { searchId: string; claimedAt: string } | null = null
   let quotaCheck: Awaited<ReturnType<typeof checkSearchQuota>>
   if (clientSearchId !== null && auth.appUserId) {
-    const claim = await claimSearch(auth.appUserId, clientSearchId, rawInput)
+    const claim = await timing.measure('claim', () => claimSearch(auth.appUserId as string, clientSearchId, rawInput))
 
     if (claim.kind === 'replay') {
       // Tamamlanmis arama: kayitli profil, kota ve LLM yok.
@@ -667,7 +694,7 @@ serve(async (req: Request): Promise<Response> => {
       quotaCheck = await failClosedQuota(auth.appUserId, 'QUOTA_CLAIM_FAILED', claim.detail)
     }
   } else {
-    quotaCheck = await checkSearchQuota(auth.appUserId)
+    quotaCheck = await timing.measure('quota', () => checkSearchQuota(auth.appUserId))
   }
   // Sahiplenme satiri zaten yazildi (claim/finish); legacy log satiri YAZILMAZ.
   const idempotent = clientSearchId !== null && !!auth.appUserId
@@ -739,9 +766,6 @@ serve(async (req: Request): Promise<Response> => {
   const quotaConsumed = quotaCheck.quotaResult !== undefined
 
   try {
-    // MOOD-VEC-2d (yalniz v2): kisisel dislama sorgusu onbellek/Haiku ile PARALEL baslar.
-    const recentShownTask = schemaV2 && auth.appUserId ? fetchRecentShown(auth.appUserId) : null
-
     // MOOD-VEC-2d (yalniz v2): ayni metin + schema + prompt surumu icin Haiku bir kez cagrilir.
     let cacheKey: string | null = null
     let promptVersion = ''
@@ -749,7 +773,8 @@ serve(async (req: Request): Promise<Response> => {
     if (schemaV2 && quickMoodId) {
       promptVersion = await promptVersionOf(parseV2PromptFingerprint(SYSTEM_PROMPT))
       cacheKey = await parseCacheKey(quickMoodId, rawInput, 2, promptVersion)
-      cachedParsed = await readParseCache(cacheKey)
+      const key = cacheKey
+      cachedParsed = await timing.measure('cache_get', () => readParseCache(key))
     }
     const cacheHit = cachedParsed !== null
 
@@ -776,6 +801,8 @@ serve(async (req: Request): Promise<Response> => {
           rawInput,
           ANTHROPIC_TIMEOUT_MS,
         )
+        timing.add('llm_a', r.a.ms)
+        timing.add('llm_b', r.b.ms)
         llmTokensIn = r.a.tokensIn + r.b.tokensIn
         llmTokensOut = r.a.tokensOut + r.b.tokensOut
         if (r.a.value === null) {
@@ -783,6 +810,7 @@ serve(async (req: Request): Promise<Response> => {
           throw new Error('Profile JSON schema validation failed after retry (tool_use)')
         }
         fresh = { ...r.a.value }
+        if (typeof fresh.profile_name === 'string') fresh.profile_name = limitWords(fresh.profile_name, 4)
         if (r.b.value !== null) {
           v2Fields = r.b.value
         } else {
@@ -791,6 +819,7 @@ serve(async (req: Request): Promise<Response> => {
             'V2_FIELDS_FAILED',
             r.b.error ?? `v2 alanlari ${r.b.attempts} denemede sema dogrulamasini gecemedi`,
             auth.appUserId ?? undefined,
+            timingBreadcrumbs(timing.entries()),
           )
         }
       } else {
@@ -828,30 +857,45 @@ serve(async (req: Request): Promise<Response> => {
       parsed = fresh
 
       // Yalniz normalize edilmis parse ciktisi onbellege girer (kullanici kimligi yok).
-      if (cacheKey && !v2Degraded) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
+      if (cacheKey && !v2Degraded) {
+        const key = cacheKey
+        const pv = promptVersion
+        const out = parsed
+        cacheWriteTask = deferred.measure('cache_put', () => writeParseCache(key, 2, pv, out))
+      }
     }
 
     const latencyMs = Date.now() - startTime
 
     // Async log — response'u beklemez
     let searchId: string | null = null
+    const deferredTasks: Promise<unknown>[] = []
     if (claimed && quotaCheck.userId) {
       // Idempotent yol: sahiplenilmis satir sonuclandirilir (sahiplik dogrulamali).
       // Basarisiz olsa da kullanici profilini alir; satir `pending` kalirsa bayat yoluyla kurtarilir.
-      await finishSearch({
-        userId: quotaCheck.userId,
-        searchId: claimed.searchId,
-        claimedAt: claimed.claimedAt,
-        status: 'completed',
-        profile: parsed,
-        errorCode: null,
-        refund: false,
-        latencyMs,
-        tokensIn: llmTokensIn,
-        tokensOut: llmTokensOut,
-      })
+      // v2: arama sonucu yazimi yanittan SONRA (search_id zaten claim'den biliniyor); v1: eski sira, yanittan once.
+      const userId = quotaCheck.userId
+      const claimedRow = claimed
+      const finishTask = async (): Promise<void> => {
+        await deferred.measure('finish', () =>
+          finishSearch({
+            userId,
+            searchId: claimedRow.searchId,
+            claimedAt: claimedRow.claimedAt,
+            status: 'completed',
+            profile: parsed,
+            errorCode: null,
+            refund: false,
+            latencyMs,
+            tokensIn: llmTokensIn,
+            tokensOut: llmTokensOut,
+          }),
+        )
+        if (cacheHit) await deferred.measure('cache_hit_mark', () => markCacheHit(claimedRow.searchId, userId))
+      }
       searchId = claimed.searchId
-      if (cacheHit) await markCacheHit(claimed.searchId, quotaCheck.userId)
+      if (schemaV2) deferredTasks.push(finishTask())
+      else await finishTask()
     } else if (quotaCheck.userId) {
       searchId = await logMoodSearch({
         userId: quotaCheck.userId,
@@ -865,9 +909,21 @@ serve(async (req: Request): Promise<Response> => {
       }).catch(() => null)
     }
 
-    // v2: onbellek yazimi ve kisisel dislama okumasi yanittan ONCE tamamlanir (isolate donmasin).
-    if (cacheWriteTask) await cacheWriteTask
+    // v2: onbellek yazimi yanittan SONRA (waitUntil); kisisel dislama okumasi yanitta oldugu icin ONCE beklenir.
+    if (cacheWriteTask) deferredTasks.push(cacheWriteTask)
     const recentShownIds = recentShownTask ? await recentShownTask : []
+
+    // Asama sureleri (yalniz v2): Server-Timing basligi + log; yanittan sonra biten asamalar ayri log satiri.
+    const headers: Record<string, string> = { ...CORS_HEADERS, 'Content-Type': 'application/json' }
+    if (schemaV2) {
+      timing.add('total', performance.now() - t0)
+      headers['Server-Timing'] = timing.header()
+      headers['Access-Control-Expose-Headers'] = 'Server-Timing'
+      console.log(`[parse-mood] timing ${timing.header()}`)
+      if (deferredTasks.length > 0) {
+        defer(Promise.all(deferredTasks).then(() => console.log(`[parse-mood] deferred ${deferred.header()}`)))
+      }
+    }
 
     // `remaining`/`limit` EN SONDA: LLM ciktisindaki ayni adli bir alan ezilir.
     return new Response(
@@ -878,7 +934,7 @@ serve(async (req: Request): Promise<Response> => {
         ...(schemaV2 ? { cache_hit: cacheHit, exclude_recent_ids: recentShownIds } : {}),
         ...quotaFields(quotaCheck.quotaResult),
       }),
-      { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      { status: 200, headers },
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
@@ -975,6 +1031,7 @@ serve(async (req: Request): Promise<Response> => {
       level: 'error',
       tags: { function: 'parse-mood', error_code: errorCode },
       extra: { mood_length: rawInput?.length, user_id: quotaCheck.userId },
+      breadcrumbs: timingBreadcrumbs(timing.entries()),
     })
 
     // Log parse failure

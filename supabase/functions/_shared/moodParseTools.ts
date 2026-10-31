@@ -52,14 +52,13 @@ export const PROFILE_TOOL = {
       narrative_style: { type: 'string', enum: [...NARRATIVE] },
       social_context: { type: 'string', enum: [...SOCIAL] },
       rewatch_tolerance: { type: 'boolean' },
-      profile_name: { type: 'string' },
-      profile_description: { type: 'string' },
+      profile_name: { type: 'string', description: 'Mood summary in English, at most 4 words' },
       search_keywords: { type: 'array', items: { type: 'string' } },
     },
     required: [
       'emotional_state', 'energy_level', 'pace_preference', 'visual_style', 'thematic_depth',
       'ending_preference', 'era_preference', 'cultural_context', 'avoid_signals', 'narrative_style',
-      'social_context', 'rewatch_tolerance', 'profile_name', 'profile_description', 'search_keywords',
+      'social_context', 'rewatch_tolerance', 'profile_name', 'search_keywords',
     ],
   },
 }
@@ -94,6 +93,27 @@ const isUnit = (v: unknown): boolean => isNum(v) && v >= 0 && v <= 1
 const inSet = (v: unknown, set: readonly string[]): boolean => typeof v === 'string' && set.includes(v)
 const isStrArr = (v: unknown): boolean => Array.isArray(v) && v.every((x) => typeof x === 'string')
 
+const DESCRIPTION_LINE = `
+  "profile_description": "One sentence explaining the mood and what kind of film experience this person needs",`
+const ENGLISH_RULE_OLD = '- profile_name and profile_description must always be in English'
+const ENGLISH_RULE_NEW = '- profile_name must always be in English (at most 4 words)'
+
+/**
+ * v2 çağrı A'nın prompt'u = v1 prompt'unun profile_description'sız kopyası (v1 dosyası değişmez).
+ * Beklenen satırlar bulunamazsa FIRLATIR: sessizce v1 prompt'una düşmek yerine yüksek sesle düşsün.
+ */
+export function trimProfilePrompt(systemA: string): string {
+  if (!systemA.includes(DESCRIPTION_LINE) || !systemA.includes(ENGLISH_RULE_OLD)) {
+    throw new Error("trimProfilePrompt: profile_description satiri v1 prompt'unda bulunamadi")
+  }
+  return systemA.replace(DESCRIPTION_LINE, () => '').replace(ENGLISH_RULE_OLD, () => ENGLISH_RULE_NEW)
+}
+
+/** İlk `max` kelime; boşluklar tek boşluğa iner. */
+export function limitWords(text: string, max: number): string {
+  return text.trim().split(/\s+/).filter(Boolean).slice(0, max).join(' ')
+}
+
 /** Çağrı A çıktısı geçerliyse kendisi, değilse null. */
 export function validateProfile(input: unknown): Record<string, unknown> | null {
   if (!isObj(input)) return null
@@ -107,7 +127,7 @@ export function validateProfile(input: unknown): Record<string, unknown> | null 
   if (!isObj(era) || !isNum(era.from) || !isNum(era.to)) return null
   if (!isStrArr(input.cultural_context) || !isStrArr(input.avoid_signals) || !isStrArr(input.search_keywords)) return null
   if (typeof input.rewatch_tolerance !== 'boolean') return null
-  if (typeof input.profile_name !== 'string' || typeof input.profile_description !== 'string') return null
+  if (typeof input.profile_name !== 'string') return null
   return input
 }
 
@@ -242,8 +262,9 @@ export async function runParseV2(
   deadlineMs = 25_000,
 ): Promise<ParseV2Result> {
   const t0 = Date.now()
+  const trimmedA = trimProfilePrompt(systemA)
   const [a, b] = await Promise.all([
-    timed(create, systemA, PROFILE_TOOL, PROFILE_TOOL, 1024, rawInput, validateProfile, deadlineMs),
+    timed(create, trimmedA, PROFILE_TOOL, PROFILE_TOOL, 1024, rawInput, validateProfile, deadlineMs),
     timed(create, V2_SYSTEM_PROMPT, V2_TOOL, V2_TOOL, 512, rawInput, validateV2Fields, deadlineMs).catch(
       (e: unknown): CallStats => ({
         value: null, attempts: 0, schemaFailures: 0, tokensIn: 0, tokensOut: 0, ms: Date.now() - t0,
@@ -256,5 +277,5 @@ export async function runParseV2(
 
 /** Önbellek anahtarı için prompt sürümü girdisi: iki prompt + iki araç şeması. */
 export function parseV2PromptFingerprint(systemA: string): string {
-  return [systemA, V2_SYSTEM_PROMPT, JSON.stringify(PROFILE_TOOL), JSON.stringify(V2_TOOL)].join('\n---\n')
+  return [trimProfilePrompt(systemA), V2_SYSTEM_PROMPT, JSON.stringify(PROFILE_TOOL), JSON.stringify(V2_TOOL)].join('\n---\n')
 }

@@ -17,6 +17,8 @@ interface SentryEventParams {
    * issue altında toplamak için.
    */
   fingerprint?: string[];
+  /** Olay öncesi iz kayıtları (ör. aşama süreleri); Sentry `breadcrumbs.values` biçimi. */
+  breadcrumbs?: { category: string; message: string; level?: string; data?: Record<string, unknown> }[];
 }
 
 /**
@@ -51,6 +53,7 @@ export async function sentryCapture(params: SentryEventParams): Promise<void> {
       },
       extra: params.extra || {},
       ...(params.fingerprint ? { fingerprint: params.fingerprint } : {}),
+      ...(params.breadcrumbs && params.breadcrumbs.length > 0 ? { breadcrumbs: { values: params.breadcrumbs } } : {}),
     };
 
     await fetch(endpoint, {
