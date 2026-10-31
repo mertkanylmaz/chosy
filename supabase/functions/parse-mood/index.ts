@@ -12,7 +12,8 @@ import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
 import { shouldRefundOnError } from '../_shared/refundPolicy.ts'
 import { validateRawInput } from '../_shared/moodInput.ts'
-import { isSchemaV2, normalizeV2Fields, V2_PROMPT_ADDENDUM } from '../_shared/moodV2.ts'
+import { isSchemaV2, normalizeV2Fields } from '../_shared/moodV2.ts'
+import { parseV2PromptFingerprint, runParseV2 } from '../_shared/moodParseTools.ts'
 import { classifyQuotaResult, quotaFields } from '../_shared/quotaFields.ts'
 import {
   PARSE_CACHE_TTL_SECONDS,
@@ -746,7 +747,7 @@ serve(async (req: Request): Promise<Response> => {
     let promptVersion = ''
     let cachedParsed: Record<string, unknown> | null = null
     if (schemaV2 && quickMoodId) {
-      promptVersion = await promptVersionOf(SYSTEM_PROMPT + V2_PROMPT_ADDENDUM)
+      promptVersion = await promptVersionOf(parseV2PromptFingerprint(SYSTEM_PROMPT))
       cacheKey = await parseCacheKey(quickMoodId, rawInput, 2, promptVersion)
       cachedParsed = await readParseCache(cacheKey)
     }
@@ -756,31 +757,62 @@ serve(async (req: Request): Promise<Response> => {
     let llmTokensIn = 0
     let llmTokensOut = 0
     let cacheWriteTask: Promise<void> | null = null
+    let v2Degraded = false // B basarisiz → bos v2 alanlari onbellege YAZILMAZ
 
     if (cachedParsed !== null) {
       parsed = cachedParsed
     } else {
       const client = new Anthropic({ apiKey, timeout: ANTHROPIC_TIMEOUT_MS, maxRetries: 0 })
 
-      const message = await client.messages.create({
-        model: 'claude-haiku-4-5',
-        // schema_version:2 ek alanlari (~250 token, 6 oneri) ekler; v1 yolu degismez.
-        max_tokens: schemaV2 ? 1280 : 1024,
-        system: schemaV2 ? SYSTEM_PROMPT + V2_PROMPT_ADDENDUM : SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: rawInput }],
-      })
+      let fresh: Record<string, unknown>
+      let v2Fields: Record<string, unknown> = {}
+      if (schemaV2) {
+        // MOOD-VEC-2e: iki paralel zorunlu tool_use cagrisi. A = v1 profil (hata = mevcut hata yolu),
+        // B = v2 ek alanlari (iki denemede de basarisizsa alanlar bos, akis v1 kalitesinde surer).
+        const r = await runParseV2(
+          (params, timeoutMs) =>
+            client.messages.create(params as unknown as Anthropic.MessageCreateParamsNonStreaming, { timeout: timeoutMs }),
+          SYSTEM_PROMPT,
+          rawInput,
+          ANTHROPIC_TIMEOUT_MS,
+        )
+        llmTokensIn = r.a.tokensIn + r.b.tokensIn
+        llmTokensOut = r.a.tokensOut + r.b.tokensOut
+        if (r.a.value === null) {
+          // Mesaj 'JSON' icerir → mevcut catch yolu PARSE_FAILED siniflar (iade yok, v1 ile ayni).
+          throw new Error('Profile JSON schema validation failed after retry (tool_use)')
+        }
+        fresh = { ...r.a.value }
+        if (r.b.value !== null) {
+          v2Fields = r.b.value
+        } else {
+          v2Degraded = true
+          await reportV2Aux(
+            'V2_FIELDS_FAILED',
+            r.b.error ?? `v2 alanlari ${r.b.attempts} denemede sema dogrulamasini gecemedi`,
+            auth.appUserId ?? undefined,
+          )
+        }
+      } else {
+        const message = await client.messages.create({
+          model: 'claude-haiku-4-5',
+          max_tokens: 1024,
+          system: SYSTEM_PROMPT,
+          messages: [{ role: 'user', content: rawInput }],
+        })
 
-      // Token usage tracking
-      llmTokensIn = message.usage?.input_tokens || 0
-      llmTokensOut = message.usage?.output_tokens || 0
+        // Token usage tracking
+        llmTokensIn = message.usage?.input_tokens || 0
+        llmTokensOut = message.usage?.output_tokens || 0
 
-      const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
+        const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
 
-      // Markdown code block varsa temizle
-      const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
-      const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
+        // Markdown code block varsa temizle
+        const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
+        const jsonString = jsonMatch ? jsonMatch[1] : rawText.trim()
 
-      const fresh = JSON.parse(jsonString)
+        fresh = JSON.parse(jsonString)
+      }
 
       // Normalize search_keywords: array of lowercase strings, max 8
       if (!Array.isArray(fresh.search_keywords)) {
@@ -792,11 +824,11 @@ serve(async (req: Request): Promise<Response> => {
           .slice(0, 8)
       }
 
-      if (schemaV2) Object.assign(fresh, normalizeV2Fields(fresh))
+      if (schemaV2) Object.assign(fresh, normalizeV2Fields(v2Fields))
       parsed = fresh
 
       // Yalniz normalize edilmis parse ciktisi onbellege girer (kullanici kimligi yok).
-      if (cacheKey) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
+      if (cacheKey && !v2Degraded) cacheWriteTask = writeParseCache(cacheKey, 2, promptVersion, parsed)
     }
 
     const latencyMs = Date.now() - startTime
