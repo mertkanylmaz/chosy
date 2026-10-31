@@ -4,11 +4,15 @@
  * Bu betik CANLI DB'YE YAZMAZ. Yalnız okur (anon) ve docs/investigations/mood-vec-2b/ altına yazar:
  *   c-tmdb-cache.json      — TMDb yanıtlarının kırpılmış hâli (tekrar çağrı gerekmesin)
  *   c-discovery.md         — kırılım, ilk 30, 8 ikonik film, gauntlet etkisi
- *   c-apply[-N].sql / c-rollback[-N].sql — UPDATE'ler (parça başına ≤ 10.000 bayt)
- *   c-needs-review.csv     — kurtarılabilir ama SQL'e girmeyen filmler
+ *   c-payload.tsv          — kurtarılan filmler (id, old_votes, new_votes, new_rating, imdb_id_to_set,
+ *                            release_date, director_to_set, new_tier); TAB ayrık, id'ye göre sıralı
+ *   c-needs-review.csv     — kurtarılabilir ama payload'a girmeyen filmler
  *
  * Kapsam: films WHERE curation_tier='archive' AND release_date IS NULL.
  *   - TMDb /movie/{tmdb_id}?append_to_response=external_ids → release_date + imdb_id
+ *   - TMDb /movie/{tmdb_id}/credits → director (yalnız kurtarılan + DB director NULL; crew job='Director' ilki,
+ *     add-missing-films/backfill-film-metadata ile aynı kural)
+ *   - imdb_id TMDb'den geldiyse IMDb startYear ile DB yılı arasında |fark| <= 1 kabul
  *   - oy/rating: data/imdb/title.ratings.tsv.gz (OMDb yok)
  *   - kurtarma eşiği: dosya oyu >= 10.000 VE release_date NOT NULL VE <= bugün
  *   - tier: scripts/assign-tiers.ts determineCurationTier (dosya rating + dosya oy; fonksiyon değişmedi)
@@ -31,11 +35,10 @@ import { ARCHIVE_THRESHOLDS_STANDARD, determineCurationTier } from './assign-tie
 
 const PAGE = 1000;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const STAMP = '20261031';
 const MIN_RUNTIME = 60;
 const RUNTIME_TOLERANCE = 5;
+const YEAR_TOLERANCE = 1;
 const MIN_VOTES = 10000;
-const MAX_FILE_BYTES = 10000;
 /** TMDb limiti: 35 istek / 10 sn → istekler arası en az 290 ms. */
 const TMDB_MIN_INTERVAL_MS = 290;
 const CACHE_FLUSH_EVERY = 25;
@@ -108,6 +111,8 @@ interface TmdbEntry {
   original_language: string | null;
   genres: string[];
   poster_path: string | null;
+  /** /credits sonucu (ilk crew job='Director'). undefined = hiç sorulmadı, null = sorulduğunda yok. */
+  director?: string | null;
 }
 
 type TmdbCache = Record<string, TmdbEntry>;
@@ -122,7 +127,8 @@ type ReasonCode =
   | 'concert'
   | 'trending079'
   | 'tierfloor'
-  | 'coretier';
+  | 'coretier'
+  | 'no_director';
 
 interface Flag {
   code: ReasonCode;
@@ -160,14 +166,6 @@ function normTitle(s: string): string {
     .toLowerCase()
     .replace(/&/g, 'and')
     .replace(/[^a-z0-9]+/g, '');
-}
-
-function sqlNum(value: number | null): string {
-  return value === null ? 'NULL' : String(value);
-}
-
-function comment(s: string): string {
-  return s.replace(/[\r\n]+/g, ' ');
 }
 
 function csvCell(value: string | number | null): string {
@@ -269,9 +267,11 @@ function saveCache(cache: TmdbCache): void {
 
 let lastCallAt = 0;
 
-async function tmdbGet(tmdbId: number): Promise<TmdbEntry> {
+/** Hız sınırı + retry/backoff ile TMDb GET. 404 → null. */
+async function tmdbRequest(tmdbId: number, pathAndQuery: string): Promise<unknown | null> {
   const key = requireEnv('EXPO_PUBLIC_TMDB_API_KEY');
-  const url = `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${key}&append_to_response=external_ids`;
+  const sep = pathAndQuery.includes('?') ? '&' : '?';
+  const url = `${TMDB_BASE_URL}/movie/${tmdbId}${pathAndQuery}${sep}api_key=${key}`;
   const MAX_ATTEMPTS = 6;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const wait = lastCallAt + TMDB_MIN_INTERVAL_MS - Date.now();
@@ -295,41 +295,53 @@ async function tmdbGet(tmdbId: number): Promise<TmdbEntry> {
       await sleep(1000 * 2 ** attempt);
       continue;
     }
-    if (res.status === 404) {
-      return {
-        status: 404, fetched_at: new Date().toISOString(), imdb_id: null, release_date: null, title: null,
-        original_title: null, runtime: null, tmdb_status: null, original_language: null, genres: [], poster_path: null,
-      };
-    }
+    if (res.status === 404) return null;
     if (!res.ok) throw new Error(`TMDb ${tmdbId}: HTTP ${res.status}`);
-    const b = (await res.json()) as {
-      imdb_id?: string | null;
-      release_date?: string | null;
-      title?: string;
-      original_title?: string;
-      runtime?: number | null;
-      status?: string;
-      original_language?: string;
-      genres?: { name: string }[];
-      poster_path?: string | null;
-      external_ids?: { imdb_id?: string | null };
-    };
-    const imdb = b.external_ids?.imdb_id || b.imdb_id || null;
-    return {
-      status: 200,
-      fetched_at: new Date().toISOString(),
-      imdb_id: imdb && imdb.length > 0 ? imdb : null,
-      release_date: b.release_date && b.release_date.length > 0 ? b.release_date : null,
-      title: b.title ?? null,
-      original_title: b.original_title ?? null,
-      runtime: b.runtime ?? null,
-      tmdb_status: b.status ?? null,
-      original_language: b.original_language ?? null,
-      genres: (b.genres ?? []).map((g) => g.name),
-      poster_path: b.poster_path ?? null,
-    };
+    return await res.json();
   }
   throw new Error(`TMDb ${tmdbId}: ${MAX_ATTEMPTS} denemede başarısız`);
+}
+
+async function tmdbGet(tmdbId: number): Promise<TmdbEntry> {
+  const b = (await tmdbRequest(tmdbId, '?append_to_response=external_ids')) as {
+    imdb_id?: string | null;
+    release_date?: string | null;
+    title?: string;
+    original_title?: string;
+    runtime?: number | null;
+    status?: string;
+    original_language?: string;
+    genres?: { name: string }[];
+    poster_path?: string | null;
+    external_ids?: { imdb_id?: string | null };
+  } | null;
+  if (b === null) {
+    return {
+      status: 404, fetched_at: new Date().toISOString(), imdb_id: null, release_date: null, title: null,
+      original_title: null, runtime: null, tmdb_status: null, original_language: null, genres: [], poster_path: null,
+    };
+  }
+  const imdb = b.external_ids?.imdb_id || b.imdb_id || null;
+  return {
+    status: 200,
+    fetched_at: new Date().toISOString(),
+    imdb_id: imdb && imdb.length > 0 ? imdb : null,
+    release_date: b.release_date && b.release_date.length > 0 ? b.release_date : null,
+    title: b.title ?? null,
+    original_title: b.original_title ?? null,
+    runtime: b.runtime ?? null,
+    tmdb_status: b.status ?? null,
+    original_language: b.original_language ?? null,
+    genres: (b.genres ?? []).map((g) => g.name),
+    poster_path: b.poster_path ?? null,
+  };
+}
+
+/** crew içinden ilk 'Director' (add-missing-films.ts / backfill-film-metadata.ts ile aynı kural, düz ad). */
+async function tmdbDirector(tmdbId: number): Promise<string | null> {
+  const b = (await tmdbRequest(tmdbId, '/credits')) as { crew?: { job?: string; name?: string }[] } | null;
+  const name = b?.crew?.find((m) => m.job === 'Director')?.name?.trim();
+  return name && name.length > 0 ? name : null;
 }
 
 async function fillCache(films: FilmRow[], cache: TmdbCache): Promise<number> {
@@ -545,11 +557,14 @@ function analyze(
       if (!b || b.titleType !== 'movie') {
         a.flags.push({ code: 'imdbid', reason: `TMDb imdb_id doğrulanamadı: basics movie değil (${b?.titleType ?? 'satır yok'})` });
       } else {
-        if (b.startYear !== film.year) a.flags.push({ code: 'imdbid', reason: `TMDb imdb_id: yıl tam uyuşmuyor (DB ${film.year} / IMDb ${b.startYear})` });
+        // TMDb external_ids kaynaklı imdb_id: yıl ±1 kabul (ülke/festival tarihi farkı)
+        if (film.year === null || b.startYear === null || Math.abs(b.startYear - film.year) > YEAR_TOLERANCE) {
+          a.flags.push({ code: 'imdbid', reason: `TMDb imdb_id: yıl ±${YEAR_TOLERANCE} dışı (DB ${film.year} / IMDb ${b.startYear})` });
+        }
         if (b.runtimeMinutes === null || film.runtime === null || Math.abs(b.runtimeMinutes - film.runtime) > RUNTIME_TOLERANCE) {
           a.flags.push({ code: 'imdbid', reason: `TMDb imdb_id: runtime ±${RUNTIME_TOLERANCE} dışı (DB ${film.runtime} / IMDb ${b?.runtimeMinutes})` });
         }
-        const n = keyCounts.get(`${normTitle(film.title)}|${film.year}`) ?? 0;
+        const n = keyCounts.get(`${normTitle(film.title)}|${b.startYear}`) ?? 0;
         if (n !== 1) a.flags.push({ code: 'imdbid', reason: `TMDb imdb_id: (başlık,yıl) tekil değil (${n} movie)` });
       }
     }
@@ -573,102 +588,38 @@ interface Rescue {
   /** DB imdb_rating NULL → yazılır. */
   setRating: boolean;
   setImdbId: boolean;
+  /** DB director NULL idi ve TMDb credits'ten bulundu → yazılır. */
+  setDirector: string | null;
 }
 
-function updateLine(r: Rescue): { up: string; down: string; label: string } {
-  const f = r.a.film;
-  const oldV = sqlNum(r.oldVotes);
-  const label = `-- ${comment(f.title)} (${f.year}) ${r.rating}/${r.votes} → ${r.tier}`;
-  const sets = [`release_date = '${r.releaseDate}'`];
-  if (r.setImdbId) sets.push(`imdb_id = '${r.a.imdbId}'`);
-  sets.push(`imdb_votes = ${r.votes}`);
-  if (r.setRating) sets.push(`imdb_rating = ${r.rating}`);
-  sets.push(`curation_tier = '${r.tier}'`);
-  const guards = [`id = '${f.id}'`, `curation_tier = 'archive'`, `release_date IS NULL`, `imdb_votes IS NOT DISTINCT FROM ${oldV}`];
-  if (r.setImdbId) guards.push('imdb_id IS NULL');
-  if (r.setRating) guards.push('imdb_rating IS NULL');
-  const up = `UPDATE films SET ${sets.join(', ')} WHERE ${guards.join(' AND ')};`;
+const TSV_HEADER = ['id', 'old_votes', 'new_votes', 'new_rating', 'imdb_id_to_set', 'release_date', 'director_to_set', 'new_tier'];
+const NULL_CELL = '\\N';
 
-  const dsets = [`release_date = NULL`];
-  if (r.setImdbId) dsets.push('imdb_id = NULL');
-  dsets.push(`imdb_votes = ${oldV}`);
-  if (r.setRating) dsets.push('imdb_rating = NULL');
-  dsets.push(`curation_tier = 'archive'`);
-  const dguards = [`id = '${f.id}'`, `curation_tier = '${r.tier}'`, `release_date = '${r.releaseDate}'`, `imdb_votes = ${r.votes}`];
-  if (r.setImdbId) dguards.push(`imdb_id = '${r.a.imdbId}'`);
-  if (r.setRating) dguards.push(`imdb_rating = ${r.rating}`);
-  const down = `UPDATE films SET ${dsets.join(', ')} WHERE ${dguards.join(' AND ')};`;
-  return { up, down, label };
+function tsvCell(value: string | number | null): string {
+  if (value === null) return NULL_CELL;
+  const text = String(value);
+  if (/[\t\r\n]/.test(text)) fail(`TSV hücresinde TAB/satır sonu: ${JSON.stringify(text)}`);
+  return text;
 }
 
-function buildApply(rows: Rescue[], table: string, n: number | null, total: number | null): string {
-  const part = n === null ? '' : ` (parça ${n}/${total})`;
-  const lines = [
-    `-- MOOD-VEC-2b Faz 2C${part}: ${rows.length} arşiv filminin release_date[/imdb_id] + imdb_votes[/imdb_rating] + curation_tier'ı. HAZIRLANDI, ÇALIŞTIRILMADI.`,
-    "-- Kaynak: TMDb (release_date, imdb_id) + IMDb veri dosyası (oy/rating). Her UPDATE filmin hâlâ archive + release_date NULL + oyun eski değerde olduğunu doğrular.",
-    `-- Beklenen: ${rows.length} UPDATE × 1 satır.`,
-    '',
-    'BEGIN;',
-    '',
-    `CREATE TABLE ${table} AS`,
-    `  SELECT id, imdb_id, imdb_rating, imdb_votes, release_date, curation_tier FROM films WHERE id IN (${rows.map((r) => `'${r.a.film.id}'`).join(', ')});`,
-    `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY;`,
-    '',
-  ];
+function buildPayload(rows: Rescue[]): string {
+  const lines = [TSV_HEADER.join('\t')];
   for (const r of rows) {
-    const u = updateLine(r);
-    lines.push(u.label, u.up);
+    const f = r.a.film;
+    lines.push(
+      [
+        f.id,
+        r.oldVotes,
+        r.votes,
+        r.rating.toFixed(1),
+        r.setImdbId ? r.a.imdbId : null,
+        r.releaseDate,
+        r.setDirector,
+        r.tier,
+      ].map(tsvCell).join('\t'),
+    );
   }
-  lines.push(
-    '',
-    `DO $$`,
-    'DECLARE _backup INT; _unchanged INT;',
-    'BEGIN',
-    `  SELECT count(*) INTO _backup FROM ${table};`,
-    `  SELECT count(*) INTO _unchanged FROM films f JOIN ${table} b ON b.id = f.id WHERE f.curation_tier = b.curation_tier;`,
-    `  IF _backup <> ${rows.length} THEN RAISE EXCEPTION 'ABORT: yedek % satir (beklenen ${rows.length})', _backup; END IF;`,
-    `  IF _unchanged <> 0 THEN RAISE EXCEPTION 'ABORT: % film degismedi (UPDATE 0 satir etkiledi)', _unchanged; END IF;`,
-    'END $$;',
-    '',
-    'COMMIT;',
-    '',
-  );
-  return lines.join('\n');
-}
-
-function buildRollback(rows: Rescue[], n: number | null, total: number | null): string {
-  const part = n === null ? '' : ` (parça ${n}/${total})`;
-  const lines = [
-    `-- MOOD-VEC-2b Faz 2C${part}: c-apply'ın geri alması. HAZIRLANDI, ÇALIŞTIRILMADI.`,
-    '-- Her UPDATE yalnız uygulanan değerleri taşıyan satırı eski haline (release_date NULL, tier archive) döndürür.',
-    '',
-    'BEGIN;',
-    '',
-  ];
-  for (const r of rows) {
-    const u = updateLine(r);
-    lines.push(u.label, u.down);
-  }
-  lines.push('', 'COMMIT;', '');
-  return lines.join('\n');
-}
-
-/** Parça başına hem apply hem rollback ≤ MAX_FILE_BYTES olacak şekilde açgözlü paketleme. */
-function pack(rescues: Rescue[]): Rescue[][] {
-  const chunks: Rescue[][] = [];
-  let cur: Rescue[] = [];
-  const fits = (rows: Rescue[]): boolean =>
-    Buffer.byteLength(buildApply(rows, `films_phase2c_backup_${STAMP}_99`, 99, 99)) <= MAX_FILE_BYTES &&
-    Buffer.byteLength(buildRollback(rows, 99, 99)) <= MAX_FILE_BYTES;
-  for (const r of rescues) {
-    if (cur.length > 0 && !fits([...cur, r])) {
-      chunks.push(cur);
-      cur = [];
-    }
-    cur.push(r);
-  }
-  if (cur.length > 0) chunks.push(cur);
-  return chunks;
+  return lines.join('\n') + '\n';
 }
 
 // ── Gauntlet etkisi ─────────────────────────────────────────────────────────
@@ -811,7 +762,9 @@ async function main(): Promise<void> {
     const id = f.imdb_id ?? t?.imdb_id ?? null;
     if (id) wanted.add(id);
     if (t?.imdb_id && t.imdb_id !== f.imdb_id) wanted.add(t.imdb_id);
-    if (!f.imdb_id && f.year !== null) wantedKeys.add(`${normTitle(f.title)}|${f.year}`);
+    if (!f.imdb_id && f.year !== null) {
+      for (let d = -YEAR_TOLERANCE; d <= YEAR_TOLERANCE; d++) wantedKeys.add(`${normTitle(f.title)}|${f.year + d}`);
+    }
   }
   console.log(`IMDb dosyaları taranıyor (${wanted.size} tconst)…`);
   const { rows: basics, keyCounts } = await readBasics(wanted, wantedKeys);
@@ -821,9 +774,32 @@ async function main(): Promise<void> {
     analyze(f, f.tmdb_id !== null ? cache[String(f.tmdb_id)] ?? null : null, basics, ratings, keyCounts, today),
   );
 
-  // Kurtarılanlar: bayrak yok (tier archive değil, oy >= 10k, tarih geçerli, içerik temiz)
-  const rescues: Rescue[] = analyses
-    .filter((a) => a.flags.length === 0 && a.tier !== null && a.tier !== 'archive' && a.releaseDate !== null)
+  // Kurtarma adayları: bayrak yok (tier archive değil, oy >= 10k, tarih geçerli, içerik temiz)
+  const candidates = analyses.filter((a) => a.flags.length === 0 && a.tier !== null && a.tier !== 'archive' && a.releaseDate !== null);
+
+  // Director: DB'de NULL olan adaylar için TMDb credits. Bulunamayan needs-review'a (no_director).
+  const needDirector = candidates.filter((a) => a.film.director === null && a.film.tmdb_id !== null);
+  const dirTodo = needDirector.filter((a) => cache[String(a.film.tmdb_id)].director === undefined);
+  console.log(`Director: ${needDirector.length} aday film DB'de NULL; credits çağrısı: ${dirTodo.length}`);
+  let dn = 0;
+  for (const a of dirTodo) {
+    cache[String(a.film.tmdb_id)].director = await tmdbDirector(a.film.tmdb_id as number);
+    dn++;
+    if (dn % CACHE_FLUSH_EVERY === 0) {
+      saveCache(cache);
+      console.log(`  credits ${dn}/${dirTodo.length}`);
+    }
+  }
+  saveCache(cache);
+  const directorFor = new Map<string, string | null>();
+  for (const a of needDirector) {
+    const d = cache[String(a.film.tmdb_id)].director ?? null;
+    directorFor.set(a.film.id, d);
+    if (d === null) a.flags.push({ code: 'no_director', reason: 'TMDb credits: crew job=Director yok' });
+  }
+
+  const rescues: Rescue[] = candidates
+    .filter((a) => a.flags.length === 0)
     .map((a) => ({
       a,
       tier: a.tier as string,
@@ -833,27 +809,17 @@ async function main(): Promise<void> {
       oldVotes: a.film.imdb_votes,
       setRating: a.film.imdb_rating === null,
       setImdbId: a.imdbIdNew,
+      setDirector: directorFor.get(a.film.id) ?? null,
     }))
-    .sort((x, y) => x.a.film.id.localeCompare(y.a.film.id));
+    .sort((x, y) => (x.a.film.id < y.a.film.id ? -1 : x.a.film.id > y.a.film.id ? 1 : 0));
   const rescuedIds = new Set(rescues.map((r) => r.a.film.id));
 
-  // ── SQL dosyaları ──
+  // ── payload TSV ──
   fs.mkdirSync(OUT_DIR, { recursive: true });
   for (const f of fs.readdirSync(OUT_DIR)) {
     if (/^c-(apply|rollback)(-\d+)?\.sql$/.test(f)) fs.unlinkSync(path.join(OUT_DIR, f));
   }
-  const chunks = pack(rescues);
-  const outFiles: string[] = [];
-  chunks.forEach((rows, i) => {
-    const single = chunks.length === 1;
-    const n = i + 1;
-    const table = single ? `films_phase2c_backup_${STAMP}` : `films_phase2c_backup_${STAMP}_${n}`;
-    const aName = single ? 'c-apply.sql' : `c-apply-${n}.sql`;
-    const rName = single ? 'c-rollback.sql' : `c-rollback-${n}.sql`;
-    fs.writeFileSync(path.join(OUT_DIR, aName), buildApply(rows, table, single ? null : n, chunks.length));
-    fs.writeFileSync(path.join(OUT_DIR, rName), buildRollback(rows, single ? null : n, chunks.length));
-    outFiles.push(aName, rName);
-  });
+  fs.writeFileSync(path.join(OUT_DIR, 'c-payload.tsv'), buildPayload(rescues));
 
   // ── needs-review.csv: kurtarılabilir olabilecek ama SQL'e girmeyenler ──
   const reviewable = analyses.filter((a) => {
@@ -922,7 +888,8 @@ async function main(): Promise<void> {
   const coreRescued = rescues.filter((r) => r.tier === 'core').length;
   const coreUnder10k = rescues.filter((r) => r.tier !== 'archive' && r.votes < MIN_VOTES).length;
   const trGenre = scope.filter((f) => f.tmdb_id !== null && cache[String(f.tmdb_id)]).length;
-  const noDirector = rescues.filter((r) => r.a.film.director === null).length;
+  const directorFilled = rescues.filter((r) => r.setDirector !== null).length;
+  const directorMissing = analyses.filter((a) => a.flags.some((f) => f.code === 'no_director')).length;
 
   const status = (a: Analysis): string => {
     if (rescuedIds.has(a.film.id)) return `KURTARILDI → ${a.tier}`;
@@ -968,7 +935,8 @@ async function main(): Promise<void> {
     `| — imdb_rating yazılan (DB NULL idi) | ${rescues.filter((r) => r.setRating).length} |`,
     `| — DB rating dolu ve dosyadan farklı (rating'e dokunulmaz, tier dosya değeriyle) | ${dbRatingDiff} |`,
     `| — havuz kapısını (poster/runtime/year/profile_vector + yeni date) geçen | ${rescuedPoolEligible} |`,
-    `| — director NULL (gauntlet "bilinmeyen yönetmen" kovası) | ${noDirector} |`,
+    `| — director DB'de NULL idi, TMDb credits'ten dolan | ${directorFilled} |`,
+    `| — director bulunamadı (needs-review, no_director) | ${directorMissing} |`,
     `| needs-review.csv satırı | ${reviewable.length} |`,
     '',
     '**core + oy < 10.000 (bilinen bug):** ' + (coreUnder10k === 0 ? 'yok (eşik zaten filtreliyor; kontrol bayrağı `coretier` çalıştırıldı)' : `${coreUnder10k} — needs-review'a atıldı`),
@@ -1019,15 +987,23 @@ async function main(): Promise<void> {
     }),
     '## 5. Çıktı dosyaları ve notlar',
     '',
-    `- SQL parçası: ${chunks.length} (${chunks.map((c) => c.length).join(' + ')} UPDATE); her parça ≤ ${MAX_FILE_BYTES} bayt.`,
-    `- Tür etiketi: bu SQL \`genres\`, \`director\`, \`original_language\`'e **dokunmuyor** (istenmedi). Faz 1 keşfi arşivde Türkçe tür etiketlerinin yaygın olduğunu gösterdi; gauntlet \`genres[0]\`'ı ham sayıyor (çeşitlilik kuralı). TMDb en-US tür adları cache'te (\`genres\`) duruyor, ayrı bir karar/SQL gerekir.`,
+    `- Payload: \`c-payload.tsv\` (${rescues.length} satır); SQL üretilmez.`,
+    `- Tür etiketi: payload \`genres\`, \`original_language\`'e **dokunmuyor** (istenmedi). Faz 1 keşfi arşivde Türkçe tür etiketlerinin yaygın olduğunu gösterdi; gauntlet \`genres[0]\`'ı ham sayıyor (çeşitlilik kuralı). TMDb en-US tür adları cache'te (\`genres\`) duruyor, ayrı bir karar/SQL gerekir.`,
     `- \`c-tmdb-cache.json\` kırpılmış alan kümesi tutar (id, imdb_id, release_date, title, runtime, status, language, genres, poster_path); ${trGenre} kayıt.`,
     '',
   ];
   fs.writeFileSync(path.join(OUT_DIR, 'c-discovery.md'), md.join('\n'));
 
-  console.log(`Kurtarılan: ${rescues.length} (core ${coreRescued}); parça: ${chunks.length}; needs-review: ${reviewable.length}`);
-  console.log(`Dosyalar: ${outFiles.join(', ')}`);
+  console.log(`Kurtarılan: ${rescues.length} (core ${coreRescued}); needs-review: ${reviewable.length}`);
+  console.log(`Director dolan: ${directorFilled}; bulunamayan: ${directorMissing}`);
+  const yearTol = rescues.filter((r) => {
+    const b = r.a.imdbIdNew && r.a.imdbId ? basics.get(r.a.imdbId) : undefined;
+    return !!b && b.startYear !== r.a.film.year;
+  }).length;
+  console.log(`Yıl toleransıyla eklenen (startYear != DB yılı): ${yearTol}`);
+  for (const { ic, a } of iconicRows) {
+    console.log(`İkonik ${ic.name}: ${a ? (rescuedIds.has(a.film.id) ? `LİSTEDE (${a.tier})` : 'LİSTEDE DEĞİL') : 'kapsamda yok'}`);
+  }
 }
 
 main().catch((err: unknown) => {

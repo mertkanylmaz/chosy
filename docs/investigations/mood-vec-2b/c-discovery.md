@@ -10,7 +10,7 @@
 | DB'de imdb_id dolu | 439 |
 | DB'de imdb_id NULL | 512 |
 | tmdb_id NULL | 0 |
-| TMDb çağrısı (yeni / cache'ten) | 951 / 0 |
+| TMDb çağrısı (yeni / cache'ten) | 0 / 951 |
 | TMDb 200 | 950 |
 | TMDb 404 | 1 |
 | TMDb'de release_date **dolu** | 950 |
@@ -23,27 +23,28 @@
 | Dosya oyu **>= 10.000** | 540 |
 | — bunlardan release_date dolu (TMDb) | 540 |
 | — bunlardan tier archive kalan (rating < taban) | 67 |
-| — bunlardan içerik/imdb_id/konser/079/tarih bayrağı yüzünden SQL dışı | 75 |
-| **KURTARILAN (SQL'e giren)** | **398** |
-| — core | 22 |
-| — extended | 376 |
-| — imdb_id yazılan (DB NULL idi) | 309 |
-| — imdb_rating yazılan (DB NULL idi) | 398 |
+| — bunlardan içerik/imdb_id/konser/079/tarih bayrağı yüzünden SQL dışı | 66 |
+| **KURTARILAN (SQL'e giren)** | **407** |
+| — core | 23 |
+| — extended | 384 |
+| — imdb_id yazılan (DB NULL idi) | 318 |
+| — imdb_rating yazılan (DB NULL idi) | 407 |
 | — DB rating dolu ve dosyadan farklı (rating'e dokunulmaz, tier dosya değeriyle) | 0 |
-| — havuz kapısını (poster/runtime/year/profile_vector + yeni date) geçen | 398 |
-| — director NULL (gauntlet "bilinmeyen yönetmen" kovası) | 308 |
-| needs-review.csv satırı | 234 |
+| — havuz kapısını (poster/runtime/year/profile_vector + yeni date) geçen | 407 |
+| — director DB'de NULL idi, TMDb credits'ten dolan | 317 |
+| — director bulunamadı (needs-review, no_director) | 0 |
+| needs-review.csv satırı | 221 |
 
 **core + oy < 10.000 (bilinen bug):** yok (eşik zaten filtreliyor; kontrol bayrağı `coretier` çalıştırıldı)
 · `coretier` bayrağı taşıyan: 15
 
 ### Birincil elenme nedeni (bir film birden çok bayrak taşıyabilir; sırayla ilk)
 
-- ok: 398
+- ok: 407
 - votes: 392
 - tierfloor: 67
 - content: 50
-- imdbid: 25
+- imdbid: 16
 - lookup: 14
 - nofile: 4
 - date: 1
@@ -53,7 +54,7 @@
 | # | film | yıl | tmdb | imdb_id | rating/oy | tier | durum |
 |---|---|---|---|---|---|---|---|
 | 1 | Captain America: The Winter Soldier | 2014 | 100402 | tt1843866* | 7.7/994.588 | extended | KURTARILDI → extended |
-| 2 | 300 | 2007 | 1271 | tt0416449* | 7.6/923.918 | extended | SQL'de yok ([imdbid] TMDb imdb_id: yıl tam uyuşmuyor (DB 2007 / IMDb 2006)) |
+| 2 | 300 | 2007 | 1271 | tt0416449* | 7.6/923.918 | extended | KURTARILDI → extended |
 | 3 | Get Out | 2017 | 419430 | tt5052448 | 7.8/843.625 | core | KURTARILDI → core |
 | 4 | Sin City | 2005 | 187 | tt0401792* | 8/825.225 | core | KURTARILDI → core |
 | 5 | Edge of Tomorrow | 2014 | 137113 | tt1631867* | 7.9/819.641 | extended | KURTARILDI → extended |
@@ -61,7 +62,7 @@
 | 7 | X-Men: Days of Future Past | 2014 | 127585 | tt1877832* | 7.9/800.595 | extended | KURTARILDI → extended |
 | 8 | Ant-Man | 2015 | 102899 | tt0478970 | 7.2/798.889 | extended | KURTARILDI → extended |
 | 9 | Thor: The Dark World | 2013 | 76338 | tt1981115* | 6.7/796.283 | extended | KURTARILDI → extended |
-| 10 | Kingsman: The Secret Service | 2015 | 207703 | tt2802144* | 7.7/786.641 | extended | SQL'de yok ([imdbid] TMDb imdb_id: yıl tam uyuşmuyor (DB 2015 / IMDb 2014) | [imdbid] TMDb imdb_id: (başlık,yıl) tekil değil (0 movie)) |
+| 10 | Kingsman: The Secret Service | 2015 | 207703 | tt2802144* | 7.7/786.641 | extended | KURTARILDI → extended |
 | 11 | The Hunger Games: Catching Fire | 2013 | 101299 | tt1951264* | 7.5/786.197 | extended | KURTARILDI → extended |
 | 12 | Skyfall | 2012 | 37724 | tt1074638* | 7.8/782.676 | extended | KURTARILDI → extended |
 | 13 | Now You See Me | 2013 | 75656 | tt1670345* | 7.2/780.991 | extended | KURTARILDI → extended |
@@ -101,7 +102,7 @@
 ## 4. Gauntlet etkisi (tahmin; yalnız hesap)
 
 Havuz tahmini: tier ∈ kümesi + release_date ≤ bugün + poster/runtime/year + profile_vector + imdb_votes > 0 (Faz 1 raporlarıyla aynı yöntem; `maxRuntime` ve `isDuelEligible` modellenmedi). Yüzdelik: `percentRanks` semantiği, bant p55–p80.
-Kurtarılan 398 filmin 398'i kapıyı geçer; kalanı poster/runtime/year/profile_vector eksiği yüzünden havuza girmez.
+Kurtarılan 407 filmin 407'i kapıyı geçer; kalanı poster/runtime/year/profile_vector eksiği yüzünden havuza girmez.
 
 ### A. Canlı DB → canlı + C
 
@@ -109,23 +110,23 @@ Kurtarılan 398 filmin 398'i kapıyı geçer; kalanı poster/runtime/year/profil
 
 | | önce | sonra |
 |---|---|---|
-| havuz (votes'lu) | 2.084 | 2.482 (+398: core 22, extended 376) |
-| p55 oy | 82.999 | 104.005 (25.3%) |
-| p80 oy | 306.399 | 340.955 (11.3%) |
-| medyan oy | 63.145 | 78.777 |
-| mevcut filmlerden banttan çıkan / giren | | 87 / 31 |
-| yeni filmlerden bantta | | 155 / 398 |
+| havuz (votes'lu) | 2.084 | 2.491 (+407: core 23, extended 384) |
+| p55 oy | 82.999 | 104.360 (25.7%) |
+| p80 oy | 306.399 | 341.505 (11.5%) |
+| medyan oy | 63.145 | 80.662 |
+| mevcut filmlerden banttan çıkan / giren | | 90 / 31 |
+| yeni filmlerden bantta | | 161 / 407 |
 
 **global slot (core+trending)**
 
 | | önce | sonra |
 |---|---|---|
-| havuz (votes'lu) | 915 | 937 (+22: core 22, extended 0) |
-| p55 oy | 285.703 | 283.295 (-0.8%) |
-| p80 oy | 682.408 | 683.262 (0.1%) |
-| medyan oy | 246.493 | 244.365 |
+| havuz (votes'lu) | 915 | 938 (+23: core 23, extended 0) |
+| p55 oy | 285.703 | 282.952 (-1.0%) |
+| p80 oy | 682.408 | 682.977 (0.1%) |
+| medyan oy | 246.493 | 244.021 |
 | mevcut filmlerden banttan çıkan / giren | | 0 / 4 |
-| yeni filmlerden bantta | | 1 / 22 |
+| yeni filmlerden bantta | | 1 / 23 |
 
 ### B. Canlı + bekleyen 1B/1C/1D → + C (bekleyen UPDATE uygulanan: 0)
 
@@ -133,26 +134,26 @@ Kurtarılan 398 filmin 398'i kapıyı geçer; kalanı poster/runtime/year/profil
 
 | | önce | sonra |
 |---|---|---|
-| havuz (votes'lu) | 2.084 | 2.482 (+398: core 22, extended 376) |
-| p55 oy | 82.999 | 104.005 (25.3%) |
-| p80 oy | 306.399 | 340.955 (11.3%) |
-| medyan oy | 63.145 | 78.777 |
-| mevcut filmlerden banttan çıkan / giren | | 87 / 31 |
-| yeni filmlerden bantta | | 155 / 398 |
+| havuz (votes'lu) | 2.084 | 2.491 (+407: core 23, extended 384) |
+| p55 oy | 82.999 | 104.360 (25.7%) |
+| p80 oy | 306.399 | 341.505 (11.5%) |
+| medyan oy | 63.145 | 80.662 |
+| mevcut filmlerden banttan çıkan / giren | | 90 / 31 |
+| yeni filmlerden bantta | | 161 / 407 |
 
 **global slot (core+trending)**
 
 | | önce | sonra |
 |---|---|---|
-| havuz (votes'lu) | 915 | 937 (+22: core 22, extended 0) |
-| p55 oy | 285.703 | 283.295 (-0.8%) |
-| p80 oy | 682.408 | 683.262 (0.1%) |
-| medyan oy | 246.493 | 244.365 |
+| havuz (votes'lu) | 915 | 938 (+23: core 23, extended 0) |
+| p55 oy | 285.703 | 282.952 (-1.0%) |
+| p80 oy | 682.408 | 682.977 (0.1%) |
+| medyan oy | 246.493 | 244.021 |
 | mevcut filmlerden banttan çıkan / giren | | 0 / 4 |
-| yeni filmlerden bantta | | 1 / 22 |
+| yeni filmlerden bantta | | 1 / 23 |
 
 ## 5. Çıktı dosyaları ve notlar
 
-- SQL parçası: 19 (21 + 21 + 21 + 21 + 22 + 21 + 22 + 21 + 22 + 22 + 21 + 22 + 21 + 21 + 22 + 21 + 21 + 21 + 14 UPDATE); her parça ≤ 10000 bayt.
-- Tür etiketi: bu SQL `genres`, `director`, `original_language`'e **dokunmuyor** (istenmedi). Faz 1 keşfi arşivde Türkçe tür etiketlerinin yaygın olduğunu gösterdi; gauntlet `genres[0]`'ı ham sayıyor (çeşitlilik kuralı). TMDb en-US tür adları cache'te (`genres`) duruyor, ayrı bir karar/SQL gerekir.
+- Payload: `c-payload.tsv` (407 satır); SQL üretilmez.
+- Tür etiketi: payload `genres`, `original_language`'e **dokunmuyor** (istenmedi). Faz 1 keşfi arşivde Türkçe tür etiketlerinin yaygın olduğunu gösterdi; gauntlet `genres[0]`'ı ham sayıyor (çeşitlilik kuralı). TMDb en-US tür adları cache'te (`genres`) duruyor, ayrı bir karar/SQL gerekir.
 - `c-tmdb-cache.json` kırpılmış alan kümesi tutar (id, imdb_id, release_date, title, runtime, status, language, genres, poster_path); 951 kayıt.
