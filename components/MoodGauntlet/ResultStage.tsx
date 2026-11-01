@@ -312,7 +312,7 @@ export function ResultStage({
       <Animated.View style={[styles.hero, posterStyle]}>
         {poster !== null && <Image source={{ uri: poster }} style={styles.heroImage} contentFit="cover" />}
       </Animated.View>
-      <Animated.Text style={[styles.resultTitle, titleStyle]} accessibilityRole="header">
+      <Animated.Text style={[styles.resultTitle, titleStyle]} numberOfLines={3} accessibilityRole="header">
         {champion.title}
       </Animated.Text>
       {meta.length > 0 && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}

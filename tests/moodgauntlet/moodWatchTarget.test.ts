@@ -174,3 +174,9 @@ Deno.test('film detayi (Faz 2-8): eski ProviderIcon FlatList yok; WatchProviders
   const section = read('components/gauntlet/WatchProviders/WatchProvidersSection.tsx')
   assertMatch(section, /useWatchProviders\(filmId, region\)/)
 })
+
+Deno.test('Faz 2-8 cila: sonuc basligi 3 satirla sinirli; logo sutunu TR etiketinde tasmaz (flexShrink + minWidth)', () => {
+  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /styles\.resultTitle, titleStyle\]\} numberOfLines=\{3\}/)
+  const st = read('components/gauntlet/WatchProviders/styles.ts')
+  assertMatch(st, /logoCol: \{[^}]*flexShrink: 1,[^}]*minWidth: ROW_LOGO_SIZE/)
+})

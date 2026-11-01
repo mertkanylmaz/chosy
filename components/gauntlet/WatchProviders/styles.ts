@@ -55,14 +55,23 @@ export const styles = StyleSheet.create({
     alignItems: 'flex-start',
     minHeight: ROW_LOGO_SIZE + OFFER_LABEL_HEIGHT,
   },
+  /**
+   * Faz 2-8: sütun etiket genişliğine göre büyür ama taşmaz — TR etiketleri EN'den uzun
+   * ("Kirala veya satın al", "Reklamlı ücretsiz"); 3 logo + "Tümü" 375pt'e sığmazsa etiket kırpılır,
+   * logo (minWidth) küçülmez.
+   */
   logoCol: {
     alignItems: 'center',
     gap: 2,
+    flexShrink: 1,
+    minWidth: ROW_LOGO_SIZE,
   },
   offerLabel: {
     ...type.caption,
     height: OFFER_LABEL_HEIGHT - 2,
     color: color.text.secondary,
+    textAlign: 'center',
+    alignSelf: 'stretch',
   },
   logo: {
     width: ROW_LOGO_SIZE,
