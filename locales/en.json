@@ -681,9 +681,6 @@
     "inputPlaceholder": "Describe tonight in a few words",
     "startCta": "Find my four",
     "quickLabel": "Quick moods",
-    "phaseReading": "Reading",
-    "phaseMatching": "Matching",
-    "phasePicking": "Picking",
     "moodChipLabel": "Tonight's mood: %{name}",
     "question": "Which one tonight?",
     "noneCta": "None of these",
@@ -754,6 +751,7 @@
       "shorterAll": "You picked the shorter film every time",
       "shorterTwo": "You leaned toward the shorter films"
     },
+    "loadingFinding": "Finding films that fit your mood…",
     "loadingAnother": "Picking another four…"
   },
   "aiConsent": {

@@ -102,9 +102,8 @@ Deno.test('"Why this fits you": desen saf fonksiyondan; desen yoksa satir yok; L
 
 Deno.test('yukleme: quick mood ADI kalir (profile_name yalniz serbest metin); another four tek satir', () => {
   assertMatch(hook, /e\.profileName && lastStart\.current\?\.entry !== 'quick'/)
-  assertMatch(hook, /setLoadingPhase\('another'\)/)
-  assertMatch(status, /another && <Text style=\{styles\.loadingAnother\}>/)
-  assertMatch(status, /\{!another && \(/) // Reading adimi satiri gizli
+  assertMatch(hook, /setLoadingKind\('another'\)/)
+  assertMatch(status, /kind === 'another' \? 'moodGauntlet\.loadingAnother' : 'moodGauntlet\.loadingFinding'/) // Faz 2-9a: tek satir
   assertEquals(en.moodGauntlet.loadingAnother, 'Picking another four…')
   assertEquals(tr.moodGauntlet.loadingAnother, 'Başka bir dörtlü seçiliyor…')
 })

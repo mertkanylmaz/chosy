@@ -13,6 +13,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { MOOD_MOTION } from '@/constants/design/motion';
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { fetchFilmDims } from '@/services/filmDims';
@@ -54,16 +55,18 @@ import {
 } from '@/utils/moodGauntletAnalytics';
 import { detectPickPattern, roundPicks, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { choose, currentPair, elapsedMs, initFlow, isComplete, type MoodFlow } from '@/utils/moodGauntletFlow';
+import { remainingLoadingHold } from '@/utils/moodLoadingHold';
 import { classifyMoodSearchError } from '@/utils/moodSearchRetry';
 import type { MoodFourServerMs } from '@/utils/serverTimingHeader';
 
 export type MoodStage = 'entry' | 'loading' | 'gauntlet' | 'result' | 'error' | 'exhausted';
 export type MoodErrorKind = 'quota' | 'busy' | 'unavailable' | 'network' | 'insufficient' | 'generic';
 /**
- * Yükleme ekranındaki üç aşama: Reading → Matching → Picking.
- * `another`: "Başka bir dörtlü" / "Hiçbiri" — parse yok, aşama satırı yok, tek metin.
+ * Yükleme ekranının tek durum satırı (Faz 2-9a): istemci gerçek aşama sınırlarını (okuma /
+ * eşleştirme / seçme) gözlemleyemez — birleşik `mood-four` yolu tek istektir — bu yüzden aşama
+ * satırı yoktur. `search`: "Finding films that fit your mood…"; `another`: "Başka bir dörtlü".
  */
-export type MoodLoadingPhase = 'reading' | 'matching' | 'picking' | 'another';
+export type MoodLoadingKind = 'search' | 'another';
 
 /** İlk kullanım ipucu ("Tap the one you'd rather watch") bir kez gösterilir. */
 const TAP_HINT_KEY = 'chosy_mood_tap_hint_seen_v1';
@@ -108,7 +111,7 @@ export function useMoodGauntlet() {
 
   const [stage, setStage] = useState<MoodStage>('entry');
   const [errorKind, setErrorKind] = useState<MoodErrorKind>('generic');
-  const [loadingPhase, setLoadingPhase] = useState<MoodLoadingPhase>('reading');
+  const [loadingKind, setLoadingKind] = useState<MoodLoadingKind>('search');
   const [moodLabel, setMoodLabel] = useState<string | null>(null);
   const [session, setSession] = useState<MoodSession | null>(null);
   const [set, setSet] = useState<MoodSet | null>(null);
@@ -126,6 +129,8 @@ export function useMoodGauntlet() {
   const mounted = useRef(true);
   const lastStart = useRef<StartInput | null>(null);
   const startedAt = useRef(0);
+  /** İskeletin ekrana girdiği an; minimum görünür süre için. */
+  const loadingShownAt = useRef(0);
   const gauntletStartedAt = useRef(0);
 
   useEffect(() => {
@@ -206,15 +211,29 @@ export function useMoodGauntlet() {
   const onStage = useCallback(
     (id: number) => (e: StageEvent) => {
       if (id !== runId.current || !mounted.current) return;
-      if (e.stage === 'parsed') {
-        setLoadingPhase('matching');
-        // Hızlı mood seçildiyse başlık hızlı mood adı kalır; profile_name yalnız serbest metinde.
-        if (e.profileName && lastStart.current?.entry !== 'quick') setMoodLabel(e.profileName);
-      } else {
-        setLoadingPhase('picking');
-      }
+      // Yalnız başlık: hızlı mood seçildiyse hızlı mood adı kalır; profile_name yalnız serbest metinde.
+      if (e.stage === 'parsed' && e.profileName && lastStart.current?.entry !== 'quick') setMoodLabel(e.profileName);
     },
     [],
+  );
+
+  /**
+   * Dörtlüyü gösterir; iskelet minimum süreden kısa görünmüşse kalan süreyi bekler. Bu sırada
+   * iptal / yeni arama olursa (runId değişir) eski sonuç uygulanmaz.
+   */
+  const revealSet = useCallback(
+    (id: number, sess: MoodSession, nextSet: MoodSet) => {
+      const wait = remainingLoadingHold(loadingShownAt.current, Date.now(), MOOD_MOTION.loadingMinVisible);
+      if (wait <= 0) {
+        applySet(sess, nextSet);
+        return;
+      }
+      setTimeout(() => {
+        if (id !== runId.current || !mounted.current) return;
+        applySet(sess, nextSet);
+      }, wait);
+    },
+    [applySet],
   );
 
   const fail = useCallback((err: unknown, code: string) => {
@@ -232,8 +251,9 @@ export function useMoodGauntlet() {
       const id = ++runId.current;
       lastStart.current = input;
       startedAt.current = Date.now();
-      setLoadingPhase('reading');
+      setLoadingKind('search');
       setMoodLabel(input.label ?? null);
+      loadingShownAt.current = Date.now();
       setStage('loading');
       trackMoodEvent(startedEvent(input.entry, input.quickMoodId));
       try {
@@ -260,13 +280,13 @@ export function useMoodGauntlet() {
             res.path ?? 'legacy',
           ),
         );
-        applySet(res.session, res.set);
+        revealSet(id, res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
         fail(err, 'MOOD_GAUNTLET_START_FAILED');
       }
     },
-    [deps, applySet, onStage, onTiming, fail],
+    [deps, revealSet, onStage, onTiming, fail],
   );
 
   const startFromEntry = useCallback((input: StartInput) => start(input, []), [start]);
@@ -274,7 +294,8 @@ export function useMoodGauntlet() {
   const loadAnother = useCallback(async () => {
     if (!session) return;
     const id = ++runId.current;
-    setLoadingPhase('another');
+    setLoadingKind('another');
+    loadingShownAt.current = Date.now();
     setStage('loading');
     try {
       const res = await nextFour(deps, session);
@@ -285,12 +306,12 @@ export function useMoodGauntlet() {
         return;
       }
       gauntletStartedAt.current = Date.now();
-      applySet(res.session, res.set);
+      revealSet(id, res.session, res.set);
     } catch (err) {
       if (id !== runId.current || !mounted.current) return;
       fail(err, 'MOOD_GAUNTLET_NEXT_FAILED');
     }
-  }, [deps, session, applySet, fail]);
+  }, [deps, session, revealSet, fail]);
 
   const record = useCallback(
     (round: 1 | 2 | 3, a: string, b: string, winner: string | null, outcome: 'choice' | 'neither') => {
@@ -384,7 +405,8 @@ export function useMoodGauntlet() {
       trackMoodEvent(intensityEvent(direction));
       const id = ++runId.current;
       startedAt.current = Date.now();
-      setLoadingPhase('matching');
+      setLoadingKind('search');
+      loadingShownAt.current = Date.now();
       setStage('loading');
       try {
         const res = await intensifyMoodGauntlet(deps, session, direction, {
@@ -398,13 +420,13 @@ export function useMoodGauntlet() {
           return;
         }
         gauntletStartedAt.current = Date.now();
-        applySet(res.session, res.set);
+        revealSet(id, res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
         fail(err, 'MOOD_GAUNTLET_INTENSITY_FAILED');
       }
     },
-    [deps, session, applySet, onStage, onTiming, fail],
+    [deps, session, revealSet, onStage, onTiming, fail],
   );
 
   const retry = useCallback(() => {
@@ -431,7 +453,7 @@ export function useMoodGauntlet() {
   return {
     stage,
     errorKind,
-    loadingPhase,
+    loadingKind,
     moodLabel,
     session,
     set,

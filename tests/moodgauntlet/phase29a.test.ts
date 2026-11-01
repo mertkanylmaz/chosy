@@ -82,3 +82,37 @@ Deno.test('Your four metinleri en+tr', () => {
   assertEquals(tr.moodGauntlet.fourIntroTitle, 'Dört film. Üç hızlı seçim. Bir kazanan.')
   assertEquals(tr.moodGauntlet.fourIntroCta, 'Seçmeye başla')
 })
+
+import { remainingLoadingHold } from '../../utils/moodLoadingHold.ts'
+
+Deno.test('yukleme: asama satiri yok, tek durum satiri; Reading/Matching/Picking anahtarlari silindi', () => {
+  const status = strip(read('components/MoodGauntlet/StatusStage.tsx'))
+  assert(!/PHASES|PHASE_KEYS|phaseRow|phaseDot/.test(status))
+  assertMatch(status, /moodGauntlet\.loadingFinding/)
+  assertEquals(en.moodGauntlet.loadingFinding, 'Finding films that fit your mood…')
+  assertEquals(tr.moodGauntlet.loadingFinding, 'Ruh haline uyan filmler bulunuyor…')
+  for (const k of ['phaseReading', 'phaseMatching', 'phasePicking']) {
+    assert(!(k in en.moodGauntlet) && !(k in tr.moodGauntlet), k)
+  }
+  // poster yer tutucular kalir
+  assertMatch(status, /SILHOUETTES\.map/)
+  // servis aşama sınırı gözlemlemiyor: hook yalnız başlığı günceller
+  const hook = strip(read('components/MoodGauntlet/useMoodGauntlet.ts'))
+  assert(!/setLoadingPhase|'picking'|'matching'/.test(hook))
+})
+
+Deno.test('yukleme minimum gorunur sure: kalan sure hesabi (saf)', () => {
+  assertEquals(remainingLoadingHold(1000, 1100, 400), 300) // 100 ms görüldü → 300 kaldı
+  assertEquals(remainingLoadingHold(1000, 1400, 400), 0)
+  assertEquals(remainingLoadingHold(1000, 5000, 400), 0) // yavaş yanıt: gecikme yok
+  assertEquals(remainingLoadingHold(0, 1000, 400), 0) // iskelet hiç gösterilmediyse bekletme yok
+  assertEquals(remainingLoadingHold(2000, 1900, 400), 400) // saat geriye kaçarsa tam süre, negatif değil
+})
+
+Deno.test('yukleme: reveal minimum sure tokenindan, iptalde eski sonuc uygulanmaz', () => {
+  const hook = strip(read('components/MoodGauntlet/useMoodGauntlet.ts'))
+  assertMatch(hook, /remainingLoadingHold\(loadingShownAt\.current, Date\.now\(\), MOOD_MOTION\.loadingMinVisible\)/)
+  assertMatch(hook, /setTimeout\(\(\) => \{\s*if \(id !== runId\.current \|\| !mounted\.current\) return;\s*applySet\(sess, nextSet\);/)
+  assertEquals((hook.match(/applySet\(res\./g) ?? []).length, 0, 'dogrudan applySet kalmadi, hepsi revealSet')
+  assertMatch(read('constants/design/motion.ts'), /loadingMinVisible: 400/)
+})

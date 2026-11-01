@@ -681,9 +681,6 @@
     "inputPlaceholder": "Bu akşamı birkaç kelimeyle anlat",
     "startCta": "Dörtlümü bul",
     "quickLabel": "Hızlı ruh halleri",
-    "phaseReading": "Okunuyor",
-    "phaseMatching": "Eşleşiyor",
-    "phasePicking": "Seçiliyor",
     "moodChipLabel": "Bu akşamın ruh hali: %{name}",
     "question": "Bu akşam hangisi?",
     "noneCta": "Hiçbiri",
@@ -754,6 +751,7 @@
       "shorterAll": "Her turda daha kısa olanı seçtin",
       "shorterTwo": "Daha kısa filmlere yöneldin"
     },
+    "loadingFinding": "Ruh haline uyan filmler bulunuyor…",
     "loadingAnother": "Başka bir dörtlü seçiliyor…"
   },
   "aiConsent": {

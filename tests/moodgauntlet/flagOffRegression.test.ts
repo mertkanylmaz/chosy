@@ -249,7 +249,7 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
   assertMatch(st, /providersSlot: \{ minHeight: 56/)
   const status = read('components/MoodGauntlet/StatusStage.tsx')
   assert(!/ActivityIndicator/.test(status), 'minik spinner kalkti')
-  assertMatch(status, /PHASE_KEYS/)
+  assert(!/PHASE_KEYS/.test(status), 'Faz 2-9a: asama satiri kalkti, tek durum satiri')
   const result = read('components/MoodGauntlet/ResultStage.tsx')
   assertMatch(result, /label=\{t\('moodGauntlet\.whereToWatch'\)\}\s+onPress=\{handleWatchNow\}\s+variant="gold"/)
   assertMatch(result, /disabled=\{!canLighter\}/)

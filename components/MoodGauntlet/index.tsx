@@ -49,7 +49,7 @@ export function MoodGauntletShell(): React.JSX.Element {
       </View>
 
       {g.stage === 'entry' && <EntryStage onStart={(input) => void g.startFromEntry(input)} />}
-      {g.stage === 'loading' && <LoadingStage label={g.moodLabel} phase={g.loadingPhase} />}
+      {g.stage === 'loading' && <LoadingStage label={g.moodLabel} kind={g.loadingKind} />}
       {g.stage === 'gauntlet' && g.set && g.flow && (
         <GauntletStage
           set={g.set}

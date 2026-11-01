@@ -110,4 +110,6 @@ export const MOOD_MOTION = {
   pickSettle: DISSOLVE_DURATION.remainingPoster,
   stageTransition: 300,
   posterStagger: 100,
+  /** Yükleme iskeleti bir kez görününce en az bu kadar kalır (parlayıp kaybolmasın). */
+  loadingMinVisible: 400,
 } as const;

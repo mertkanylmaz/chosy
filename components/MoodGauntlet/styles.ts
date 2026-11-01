@@ -57,17 +57,6 @@ export const styles = StyleSheet.create({
   loadingPosters: { flexDirection: 'row', gap: space.sm, width: '100%' },
   loadingPoster: { flex: 1, aspectRatio: 2 / 3, borderRadius: radius.poster, backgroundColor: color.surface.raised },
   loadingAnother: { ...type.body, color: color.text.secondary, textAlign: 'center' },
-  phaseRow: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  phaseItem: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
-  phaseDot: { width: 6, height: 6, borderRadius: 3 },
-  phaseDotDone: { backgroundColor: color.text.primary },
-  phaseDotActive: { backgroundColor: color.reward.primary },
-  phaseDotPending: { backgroundColor: color.surface.border },
-  phaseText: { ...type.caption },
-  phaseTextDone: { color: color.text.primary },
-  phaseTextActive: { color: color.reward.primary, fontWeight: '600' },
-  phaseTextPending: { color: color.text.secondary },
-  phaseSep: { width: space.sm, height: size.hairline, backgroundColor: color.surface.border },
 
   // Gauntlet
   gTop: { alignItems: 'center', gap: space.sm, marginTop: space.xs },

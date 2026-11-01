@@ -18,7 +18,7 @@ import { DISSOLVE_DURATION, EASE_OUT_QUART } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 import { styles } from './styles';
-import type { MoodErrorKind, MoodLoadingPhase } from './useMoodGauntlet';
+import type { MoodErrorKind, MoodLoadingKind } from './useMoodGauntlet';
 
 const ERROR_KEYS: Record<MoodErrorKind, string> = {
   quota: 'moodGauntlet.errorQuota',
@@ -29,15 +29,6 @@ const ERROR_KEYS: Record<MoodErrorKind, string> = {
   generic: 'moodGauntlet.errorGeneric',
 };
 
-/** Aşama satırında yalnız bu üçü görünür; `another` ayrı, tek satırlık metindir. */
-type StepPhase = Exclude<MoodLoadingPhase, 'another'>;
-const PHASES: readonly StepPhase[] = ['reading', 'matching', 'picking'];
-const PHASE_KEYS: Record<MoodLoadingPhase, string> = {
-  reading: 'moodGauntlet.phaseReading',
-  matching: 'moodGauntlet.phaseMatching',
-  picking: 'moodGauntlet.phasePicking',
-  another: 'moodGauntlet.loadingAnother',
-};
 const SILHOUETTES = [0, 1, 2, 3] as const;
 const PULSE_STAGGER_MS = 160;
 
@@ -69,19 +60,15 @@ function Silhouette({ index }: { index: number }): React.JSX.Element {
 interface LoadingStageProps {
   /** Mood adı: profile_name; gelene kadar hızlı mood başlığı ya da kullanıcının kendi metni. */
   label: string | null;
-  phase: MoodLoadingPhase;
+  kind: MoodLoadingKind;
 }
 
-export function LoadingStage({ label, phase }: LoadingStageProps): React.JSX.Element {
+/** Tek durum satırı (Faz 2-9a): aşama listesi yok — istemci gerçek aşama sınırlarını göremez. */
+export function LoadingStage({ label, kind }: LoadingStageProps): React.JSX.Element {
   const { t } = useLanguage();
-  const another = phase === 'another';
-  const active = another ? -1 : PHASES.indexOf(phase);
+  const line = t(kind === 'another' ? 'moodGauntlet.loadingAnother' : 'moodGauntlet.loadingFinding');
   return (
-    <View
-      style={styles.loadingRoot}
-      accessibilityLiveRegion="polite"
-      accessibilityLabel={t(PHASE_KEYS[phase])}
-    >
+    <View style={styles.loadingRoot} accessibilityLiveRegion="polite" accessibilityLabel={line}>
       {label !== null && label.length > 0 && (
         <Text style={styles.loadingName} numberOfLines={3} accessibilityRole="header">
           {label}
@@ -94,24 +81,7 @@ export function LoadingStage({ label, phase }: LoadingStageProps): React.JSX.Ele
         ))}
       </View>
 
-      {another && <Text style={styles.loadingAnother}>{t('moodGauntlet.loadingAnother')}</Text>}
-
-      {!another && (
-      <View style={styles.phaseRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        {PHASES.map((p, i) => {
-          const state = i < active ? 'Done' : i === active ? 'Active' : 'Pending';
-          return (
-            <React.Fragment key={p}>
-              {i > 0 && <View style={styles.phaseSep} />}
-              <View style={styles.phaseItem}>
-                <View style={[styles.phaseDot, styles[`phaseDot${state}`]]} />
-                <Text style={[styles.phaseText, styles[`phaseText${state}`]]}>{t(PHASE_KEYS[p])}</Text>
-              </View>
-            </React.Fragment>
-          );
-        })}
-      </View>
-      )}
+      <Text style={styles.loadingAnother}>{line}</Text>
     </View>
   );
 }
