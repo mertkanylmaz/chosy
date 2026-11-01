@@ -13,9 +13,10 @@ const REQUIRED = [
   'EXPO_PUBLIC_SENTRY_DSN',
   'EXPO_PUBLIC_RC_IOS_KEY',
   'EXPO_PUBLIC_TMDB_API_KEY',
-  'EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID',
-  'EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID',
 ];
+// GOOGLE_IOS/WEB_CLIENT_ID bilerek listede YOK: kodda yalnız yorum satırında geçiyor (Google girişi
+// WebBrowser OAuth ile, configureGoogleSignIn no-op) → hiçbir bundle onları içeremez. Kod bir ID'yi
+// `process.env.EXPO_PUBLIC_*` ile okumaya başlarsa buraya eklenmeli.
 
 const dir = process.argv[2];
 if (!dir) {

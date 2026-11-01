@@ -4426,5 +4426,5 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
 
 - **YASAK: `ota:prod` dışında OTA yok.** Ham `eas update` çağrılmaz.
 - **Neden:** `eas update` `--environment` olmadan EAS env'ini bundle'a vermiyor; Metro önbelleği değişmeyen dosyalara eski değerleri taşıyıp değişen dosyayı (örn. `services/tmdb.ts`) boş bırakıyor. `685df7d9` bu yüzden `EXPO_PUBLIC_TMDB_API_KEY` boş yayınlandı (geri alındı: `503d82b5`).
-- **Kalıp:** `npm run ota:prod -- "Mesaj"` → git temiz mi → `eas env:exec production` ile `expo export --clear` → `scripts/verify-bundle-env.mjs` (9 zorunlu değişken, yalnız AD → VAR/YOK) → aynı doğrulanmış klasör `eas update --environment production --skip-bundler --input-dir` ile yayınlanır. Biri YOK ise yayın yok. `OTA_DRY=1` yalnız export + doğrulama yapar.
+- **Kalıp:** `npm run ota:prod -- "Mesaj"` → git temiz mi → `eas env:exec production` ile `expo export --clear` → `scripts/verify-bundle-env.mjs` (7 zorunlu değişken; Google ID'leri kodda okunmadığı için listede değil, yalnız AD → VAR/YOK) → aynı doğrulanmış klasör `eas update --environment production --skip-bundler --input-dir` ile yayınlanır. Biri YOK ise yayın yok. `OTA_DRY=1` yalnız export + doğrulama yapar.
 - **Not:** zorunlu liste yeni bir `EXPO_PUBLIC_*` gerektiğinde `scripts/verify-bundle-env.mjs` içinde güncellenmeli.
