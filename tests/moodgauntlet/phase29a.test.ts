@@ -122,7 +122,7 @@ Deno.test('poster dokunusu: senkron kilit (hizli/cift dokunus), sari kontur anli
   assertMatch(g, /const pickLock = useRef\(false\)/)
   assertMatch(g, /if \(pickLock\.current\) return;[^\n]*\n\s*pickLock\.current = true;\s*hapticSelection\(\);\s*setPicked\(id\);/)
   // kilit yalniz yeni tur/set anahtarinda acilir
-  assertMatch(g, /pickLock\.current = false;\s*setPicked\(null\);\s*\}, \[roundKey\]\)/)
+  assertMatch(g, /pickLock\.current = false;\s*setPicked\(null\);[\s\S]*?\}, \[roundKey\]\)/)
   assertEquals((g.match(/pickLock\.current = false/g) ?? []).length, 1)
   // onay butonu YOK: poster dokunusu secimin kendisi
   assert(!/confirm|Choose \$\{|chooseFilmCta/i.test(g))
@@ -136,4 +136,32 @@ Deno.test('poster dokunusu: senkron kilit (hizli/cift dokunus), sari kontur anli
   assertMatch(g, /label=\{t\('moodGauntlet\.noneCta'\)\} onPress=\{onNone\} disabled=\{picked !== null\}/)
   // ilerleme gostergesi
   assertMatch(g, /<RoundIndicator current=\{pair\.round\} \/>/)
+})
+
+Deno.test('scroll: turdan tura sifirlanir (GauntletStage), yeni oturumda EntryStage en ustten; sonuc ekrani korunur', () => {
+  const g = strip(read('components/MoodGauntlet/GauntletStage.tsx'))
+  assertMatch(g, /const scrollRef = useRef<ScrollView>\(null\)/)
+  assertMatch(g, /scrollRef\.current\?\.scrollTo\(\{ y: 0, animated: false \}\);\s*\}, \[roundKey\]\)/)
+  assertMatch(g, /<ScrollView ref=\{scrollRef\}/)
+  const e = strip(read('components/MoodGauntlet/EntryStage.tsx'))
+  assertMatch(e, /scrollRef\.current\?\.scrollTo\(\{ y: 0, animated: false \}\);\s*\}, \[\]\)/)
+  assertMatch(e, /<ScrollView ref=\{scrollRef\}/)
+  // film detayindan donus: sonuc ekraninin Faz 2-6 davranisi degismedi (ayni sonuc -> konum korunur)
+  assertMatch(strip(read('components/MoodGauntlet/ResultStage.tsx')), /shouldScrollToTop\(lastResultKey\.current, resultKey\)/)
+})
+
+Deno.test('oturumlar arasi temiz durum: reset tum aday/oturum state\'ini siler ve uctaki istegi birakir; yeni aramada yarisan sonuc uygulanmaz', () => {
+  const hook = strip(read('components/MoodGauntlet/useMoodGauntlet.ts'))
+  const m = hook.match(/const reset = useCallback\(\(\) => \{[\s\S]*?\n  \}, \[\]\);/)
+  assert(m !== null, 'reset bulunamadi')
+  const body = m[0]
+  for (const re of [
+    /runId\.current \+= 1/, /reasonsRun\.current \+= 1/, /dimsRun\.current \+= 1/,
+    /setSession\(null\)/, /setSet\(null\)/, /setReasons\(\{\}\)/, /setReasonsLoading\(false\)/,
+    /setFlow\(null\)/, /setNotices\(\[\]\)/, /setDims\(\{\}\)/, /setMoodLabel\(null\)/, /setStage\('entry'\)/,
+  ]) assertMatch(body, re)
+  // her uzun islem runId ile korunur (iptal / yeni arama sonrasi eski sonuc uygulanmaz)
+  assert((hook.match(/id !== runId\.current \|\| !mounted\.current/g) ?? []).length >= 7)
+  // Your four tamamlanma isareti set kimligine bagli: yeni dortlu yeniden Your four ile baslar
+  assertMatch(strip(read('components/MoodGauntlet/GauntletStage.tsx')), /introDoneFor !== set\.setId/)
 })

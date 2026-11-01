@@ -90,9 +90,12 @@ export function GauntletStage({
 
   // Yeni tur / yeni dörtlü: seçim durumu sıfırlanır.
   const roundKey = pair ? `${set.setId}:${pair.round}` : set.setId;
+  // Turdan tura aynı ScrollView örneği yaşar: önceki turun kaydırması taşınmasın (Faz 2-9a).
+  const scrollRef = useRef<ScrollView>(null);
   useEffect(() => {
     pickLock.current = false;
     setPicked(null);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
   }, [roundKey]);
   useEffect(
     () => () => {
@@ -150,7 +153,7 @@ export function GauntletStage({
   const isFirstRound = pair.round === 1;
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Animated.View
         style={styles.gStage}
         entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}

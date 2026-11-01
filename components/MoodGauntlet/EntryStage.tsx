@@ -6,7 +6,7 @@
  * AI rızası: metin Anthropic'e gider → rıza yoksa satır içi blok gösterilir ve arama
  * ancak "Enable AI & Find Movies" ile (rıza kaydedildikten sonra) başlar.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, TextInput, View, Text, KeyboardAvoidingView, Platform } from 'react-native';
 
 import MoodCardGrid, { MOOD_CARDS } from '@/components/Home/MoodCardGrid';
@@ -27,6 +27,11 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
   const { t } = useLanguage();
   const [text, setText] = useState('');
   const [consented, setConsented] = useState<boolean | null>(null);
+  // Yeni oturum her zaman en üstten başlar: her mount'ta konum açıkça sıfırlanır (Faz 2-9a).
+  const scrollRef = useRef<ScrollView>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -79,7 +84,7 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.entryTitle} accessibilityRole="header">
           {t('moodGauntlet.entryTitle')}
         </Text>
