@@ -151,3 +151,8 @@ export function watchRegionName(code: string, language: WatchRegionLanguage): st
   const entry = WATCH_REGIONS[code];
   return entry ? entry[language] : code;
 }
+
+/** Arama takma adları (aksansız, küçük harf). Yalnız TR; başka ülkeye eklenmez. */
+export const WATCH_REGION_ALIASES: Readonly<Record<string, readonly string[]>> = {
+  TR: ['turkey', 'turkiye', 'türkiye'],
+};

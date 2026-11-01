@@ -722,7 +722,8 @@
     "findOn": "Şurada bul: %{provider}",
     "offerHint": {
       "subscription": "Abonelikte var",
-      "free": "Ücretsiz",
+      "free": "Ücretsiz izlenir",
+      "ads": "Reklamlı ücretsiz",
       "rent": "Kirala veya satın al",
       "buy": "Kirala veya satın al"
     },

@@ -199,7 +199,7 @@ export function ResultStage({
   /** CTA altında küçük teklif türü: Subscription / Free / Rent / Buy. */
   const offerHint =
     target.providerName !== null && target.offerType !== null
-      ? t(`moodGauntlet.offerHint.${offerLabelKind(target.offerType)}`)
+      ? t(`moodGauntlet.offerHint.${target.offerType === 'ads' ? 'ads' : offerLabelKind(target.offerType)}`)
       : null;
 
   /**

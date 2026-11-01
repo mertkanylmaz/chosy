@@ -7,6 +7,7 @@ import { assert, assertEquals, assertMatch, assertThrows } from 'https://deno.la
 import { appReturnedAfterProviderEvent, assertNoFreeText, providerClickedEvent } from '../../utils/moodGauntletAnalytics.ts'
 import { choose, initFlow, stripItems } from '../../utils/moodGauntletFlow.ts'
 import { resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
+import { WATCH_REGION_ALIASES } from '../../constants/watchRegions.ts'
 import { justWatchSearchUrl, tmdbWatchLink } from '../../utils/watchProviderLinks.ts'
 import { createProviderReturnTracker, PROVIDER_RETURN_WINDOW_MS } from '../../utils/providerReturn.ts'
 import { dedupeByBrand } from '../../utils/watchProviderBrands.ts'
@@ -171,4 +172,21 @@ Deno.test('CTA gizleme: kind=none iken ResultStage dugmeyi cizmez; provider_clic
 
 Deno.test('ulke adi: TR "Türkiye" (EN ve TR)', () => {
   assertMatch(read('constants/watchRegions.ts'), /TR: \{ en: "Türkiye", tr: "Türkiye" \}/)
+})
+
+Deno.test('ulke arama: takma ad + aksansiz/kucuk harf (Turkey, turk, türk, TURKIYE → TR); baska ulkeye takma ad yok', () => {
+  for (const q of ['Turkey', 'turk', 'türk', 'TURKIYE', 'Türkiye', 'tr']) {
+    for (const lang of ['en', 'tr'] as const) {
+      assert(listWatchRegions(lang, q).some((r) => r.code === 'TR'), `${lang}:${q}`)
+    }
+  }
+  assertEquals(listWatchRegions('tr', 'İstanbul'), [])
+  assertEquals(Object.keys(WATCH_REGION_ALIASES), ['TR'])
+})
+
+Deno.test('offerHint: free / ads ayri metin (TMDB ads kovasi ayri), ResultStage ads icin ayri anahtar', () => {
+  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /target\.offerType === 'ads' \? 'ads'/)
+  const en = JSON.parse(read('locales/en.json')).moodGauntlet.offerHint
+  const tr = JSON.parse(read('locales/tr.json')).moodGauntlet.offerHint
+  assertEquals([en.free, en.ads, tr.free, tr.ads], ['Free to watch', 'Free with ads', 'Ücretsiz izlenir', 'Reklamlı ücretsiz'])
 })

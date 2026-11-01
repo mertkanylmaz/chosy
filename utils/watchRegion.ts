@@ -13,7 +13,7 @@
  * Girdi alpha-2 ya da alpha-3 olabilir (iOS storefront "TUR" döner); çıktı hep alpha-2 BÜYÜK harf.
  */
 
-import { WATCH_REGIONS, type WatchRegionLanguage } from '../constants/watchRegions';
+import { WATCH_REGION_ALIASES, WATCH_REGIONS, type WatchRegionLanguage } from '../constants/watchRegions';
 
 export type WatchRegionSource = 'user' | 'storefront' | 'device' | 'none';
 
@@ -87,19 +87,32 @@ export interface WatchRegionOption {
   name: string;
 }
 
+/** Küçük harf + aksansız karşılaştırma anahtarı: "Türkiye" ↔ "turkiye", "İstanbul" ↔ "istanbul". */
+export function foldSearch(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/ı/g, 'i');
+}
+
 /** Ad (seçili dilde), İngilizce ad ya da kod içinde arar; ada göre sıralı döner. */
 export function listWatchRegions(language: WatchRegionLanguage, query: string): WatchRegionOption[] {
   const locale = language === 'tr' ? 'tr' : 'en';
-  const q = query.trim().toLocaleLowerCase(locale);
+  const q = foldSearch(query.trim());
+  const rank = (code: string): number =>
+    q.length > 0 && (WATCH_REGION_ALIASES[code] ?? []).some((al) => foldSearch(al).startsWith(q)) ? 0 : 1;
   return Object.entries(WATCH_REGIONS)
     .map(([code, names]) => ({ code, name: names[language], en: names.en }))
     .filter(
       (r) =>
         q.length === 0 ||
-        r.name.toLocaleLowerCase(locale).includes(q) ||
-        r.en.toLocaleLowerCase('en').includes(q) ||
-        r.code.toLocaleLowerCase('en') === q,
+        foldSearch(r.name).includes(q) ||
+        foldSearch(r.en).includes(q) ||
+        (WATCH_REGION_ALIASES[r.code] ?? []).some((a) => foldSearch(a).includes(q)) ||
+        r.code.toLowerCase() === q,
     )
-    .sort((a, b) => a.name.localeCompare(b.name, locale))
+    // Takma adla başlayan eşleşme önce ("turk" → Türkiye, Turks ve Caicos'tan önce), sonra ada göre.
+    .sort((a, b) => rank(a.code) - rank(b.code) || a.name.localeCompare(b.name, locale))
     .map(({ code, name }) => ({ code, name }));
 }

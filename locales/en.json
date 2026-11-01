@@ -722,7 +722,8 @@
     "findOn": "Find on %{provider}",
     "offerHint": {
       "subscription": "Included with subscription",
-      "free": "Free",
+      "free": "Free to watch",
+      "ads": "Free with ads",
       "rent": "Rent or buy",
       "buy": "Rent or buy"
     },

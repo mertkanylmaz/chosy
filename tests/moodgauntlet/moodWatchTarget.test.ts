@@ -148,8 +148,8 @@ Deno.test('locales: Find on CTA, teklif turu ipucu ve bolge notu en+tr', () => {
   const tr = JSON.parse(read('locales/tr.json'))
   assertEquals(en.moodGauntlet.findOn, 'Find on %{provider}')
   assertEquals(tr.moodGauntlet.findOn, 'Şurada bul: %{provider}')
-  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Included with subscription', free: 'Free', rent: 'Rent or buy', buy: 'Rent or buy' })
-  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelikte var', free: 'Ücretsiz', rent: 'Kirala veya satın al', buy: 'Kirala veya satın al' })
+  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Included with subscription', free: 'Free to watch', ads: 'Free with ads', rent: 'Rent or buy', buy: 'Rent or buy' })
+  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelikte var', free: 'Ücretsiz izlenir', ads: 'Reklamlı ücretsiz', rent: 'Kirala veya satın al', buy: 'Kirala veya satın al' })
   for (const k of ['watchOn', 'rentOn', 'buyOn', 'rentBuyOn']) {
     assert(!(k in en.moodGauntlet) && !(k in tr.moodGauntlet), 'eski CTA anahtari kalmamali: ' + k)
   }
