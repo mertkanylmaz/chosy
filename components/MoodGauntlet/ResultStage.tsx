@@ -43,7 +43,7 @@ import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, trailerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
-import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
+import { formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
 import { resultCtaMode } from '@/utils/moodResultCta';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
@@ -188,6 +188,8 @@ export function ResultStage({
   const track = useCallback((a: MoodPickAction) => trackMoodEvent(pickActionEvent(a)), []);
   const poster = normalizePosterUrl(champion.poster_url);
   const reason = reasonFor(reasons, champion.id);
+  // Faz 2-8: göreli içgörü, şampiyonun aynı eksendeki mutlak çipiyle çelişirse gösterilmez.
+  const insight = visibleInsight(pattern, dims);
   const year = champion.year ?? 0;
   const meta = [year > 0 ? String(year) : null, formatRuntime(champion.runtime)]
     .filter((x): x is string => x !== null)
@@ -327,7 +329,7 @@ export function ResultStage({
         {/* A3: süre başlık altı meta satırında varsa çip olarak TEKRARLANMAZ. */}
         <FilmChips dims={dims} runtimeMinutes={formatRuntime(champion.runtime) !== null ? null : champion.runtime} centered />
       </View>
-      {pattern !== null && <Text style={styles.insight}>{t(INSIGHT_KEYS[pattern])}</Text>}
+      {insight !== null && <Text style={styles.insight}>{t(INSIGHT_KEYS[insight])}</Text>}
       {notices.includes('max_runtime_dropped') && (
         <Text style={[styles.notice, styles.actions]}>{t('moodGauntlet.noticeRuntime')}</Text>
       )}

@@ -164,3 +164,23 @@ Deno.test('desen: birden cok aday — all, two\'dan guclu; esitlikte sakin > yog
   // ikisi de two → sakin
   assertEquals(detectPickPattern(picks, calmTwo, { a: 100, b: 130, c: 95, d: 130 }), 'calmer_two')
 })
+
+Deno.test('Faz 2-8: goreli icgoru mutlak cipla celisirse gizlenir (Fallout: slow + intense)', async () => {
+  const { insightContradictsChips, visibleInsight } = await import('../../utils/moodFilmFacts.ts')
+  // Mission: Impossible - Fallout: pace 'slow', energy 0.76 → 'intense'
+  const fallout = { pace: 'slow' as const, energy: 0.76 }
+  assertEquals(insightContradictsChips('calmer_all', fallout), true) // "quieter" ↔ Intense
+  assertEquals(insightContradictsChips('calmer_two', fallout), true)
+  assertEquals(insightContradictsChips('intense_all', fallout), true) // "more intense" ↔ Slow pace
+  assertEquals(visibleInsight('calmer_all', fallout), null)
+  // tutarli film: sakin + yavas → calmer kalir; yogun + hizli → intense kalir
+  assertEquals(visibleInsight('calmer_two', { pace: 'slow', energy: 0.3 }), 'calmer_two')
+  assertEquals(visibleInsight('intense_all', { pace: 'fast', energy: 0.85 }), 'intense_all')
+  // calmer ↔ fast tempo (enerji bilinmese de)
+  assertEquals(insightContradictsChips('calmer_all', { pace: 'fast', energy: null }), true)
+  // sure ekseni etkilenmez; veri yoksa / bilinmiyorsa kanitlanamaz → icgoru kalir
+  assertEquals(visibleInsight('shorter_all', fallout), 'shorter_all')
+  assertEquals(visibleInsight('calmer_all', undefined), 'calmer_all')
+  assertEquals(visibleInsight('calmer_all', { pace: null, energy: null }), 'calmer_all')
+  assertEquals(visibleInsight(null, fallout), null)
+})

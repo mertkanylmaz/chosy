@@ -170,3 +170,24 @@ export function detectPickPattern(
   const best = candidates.find((c) => c.level === 'all') ?? candidates[0];
   return best ? best.pattern : null;
 }
+
+/**
+ * Faz 2-8 sunum kuralı: göreli içgörü ("quieter films" / "more intense films"), şampiyonun AYNI
+ * eksendeki MUTLAK çipiyle çelişiyorsa gösterilmez. Film başına değil, genel kural.
+ *  - calmer_*  ← champion enerjisi 'intense' VEYA tempo 'fast' ise çelişir
+ *  - intense_* ← champion enerjisi 'gentle'  VEYA tempo 'slow' ise çelişir
+ *  - shorter_* süre ekseni: çip tempo/enerji ile aynı eksen değil → hiç gizlenmez
+ * Boyut verisi yoksa (null) çelişki kanıtlanamaz → içgörü kalır.
+ */
+export function insightContradictsChips(pattern: PickPattern, dims: FilmDims | undefined): boolean {
+  if (dims === undefined) return false;
+  const band = dims.energy !== null ? energyBand(dims.energy) : null;
+  if (pattern === 'calmer_all' || pattern === 'calmer_two') return band === 'intense' || dims.pace === 'fast';
+  if (pattern === 'intense_all' || pattern === 'intense_two') return band === 'gentle' || dims.pace === 'slow';
+  return false;
+}
+
+/** Çizilecek içgörü deseni: çelişiyorsa null (satır yok). */
+export function visibleInsight(pattern: PickPattern | null, dims: FilmDims | undefined): PickPattern | null {
+  return pattern !== null && !insightContradictsChips(pattern, dims) ? pattern : null;
+}

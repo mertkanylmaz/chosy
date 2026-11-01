@@ -86,7 +86,8 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
 })
 
 Deno.test('"Why this fits you": desen saf fonksiyondan; desen yoksa satir yok; LLM kullanilmaz', () => {
-  assertMatch(result, /pattern !== null && <Text style=\{styles\.insight\}>\{t\(INSIGHT_KEYS\[pattern\]\)\}<\/Text>/)
+  assertMatch(result, /insight !== null && <Text style=\{styles\.insight\}>\{t\(INSIGHT_KEYS\[insight\]\)\}<\/Text>/)
+  assertMatch(result, /visibleInsight\(pattern, dims\)/)
   assertMatch(hook, /detectPickPattern\(roundPicks\(flow\), dims, Object\.fromEntries/)
   assert(!/fetch\(|supabase\.functions|rerank/.test(read('utils/moodFilmFacts.ts')), 'desen hesabı ağ/LLM çağırmaz')
   assertEquals(en.moodGauntlet.insight.calmerAll, 'You picked the quieter film every time')
