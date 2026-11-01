@@ -65,9 +65,10 @@ export function justPickEvent(round: 1 | 2 | 3): MoodEvent {
 /**
  * Faz 2-9a: "Your four" ekranı. Film listesine `set_id` üzerinden ulaşılır (film_ids dizisi
  * GÖNDERİLMEZ — Props tipi genişletilmedi). `mood` yalnız hızlı mood kimliği ya da 'free_text'.
+ * `set_index`: oturum içi kaçıncı dörtlü (1, 2, 3…; "Hiçbiri" / "Başka dörtlü" sonrası artar).
  */
-export function fourViewedEvent(setId: string, mood: string): MoodEvent {
-  return { name: 'mood_four_viewed', props: { set_id: setId, mood, surface: 'your_four' } };
+export function fourViewedEvent(setId: string, mood: string, setIndex: number): MoodEvent {
+  return { name: 'mood_four_viewed', props: { set_id: setId, mood, surface: 'your_four', set_index: setIndex } };
 }
 
 /** "Start choosing" dokunuşu; `dwell_ms` = ekran açıldığından dokunuşa — kullanıcının dörtlüye baktığının tek kanıtı. */

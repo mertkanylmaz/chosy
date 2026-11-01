@@ -372,7 +372,7 @@ export function useMoodGauntlet() {
     return last && last.entry === 'quick' && last.quickMoodId ? last.quickMoodId : 'free_text';
   };
   const fourViewed = useCallback(() => {
-    if (set) trackMoodEvent(fourViewedEvent(set.setId, moodKey()));
+    if (set) trackMoodEvent(fourViewedEvent(set.setId, moodKey(), set.setIndex + 1));
   }, [set]);
   const fourStarted = useCallback(
     (dwellMs: number) => {

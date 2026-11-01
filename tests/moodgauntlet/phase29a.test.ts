@@ -13,16 +13,16 @@ const strip = (s: string) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\
 
 Deno.test('Your four olaylari: set_id + mood + surface; dwell_ms yuvarlanir; film_ids dizisi YOK; serbest metin guard', () => {
   const setId = '123e4567-e89b-12d3-a456-426614174000'
-  const v = fourViewedEvent(setId, 'cozy')
-  assertEquals(v, { name: 'mood_four_viewed', props: { set_id: setId, mood: 'cozy', surface: 'your_four' } })
+  const v = fourViewedEvent(setId, 'cozy', 2)
+  assertEquals(v, { name: 'mood_four_viewed', props: { set_id: setId, mood: 'cozy', surface: 'your_four', set_index: 2 } })
   assertNoFreeText(v)
-  assertNoFreeText(fourViewedEvent(setId, 'free_text'))
+  assertNoFreeText(fourViewedEvent(setId, 'free_text', 1))
   assertEquals(fourStartTappedEvent(setId, 2345.6).props, { set_id: setId, dwell_ms: 2346 })
   assertEquals(fourStartTappedEvent(setId, -5).props.dwell_ms, 0)
   assertNoFreeText(fourStartTappedEvent(setId, 100))
   let threw = false
   try {
-    assertNoFreeText(fourViewedEvent(setId, 'rainy sunday with my ex'))
+    assertNoFreeText(fourViewedEvent(setId, 'rainy sunday with my ex', 1))
   } catch {
     threw = true
   }
@@ -33,7 +33,7 @@ Deno.test('Your four olaylari: set_id + mood + surface; dwell_ms yuvarlanir; fil
 Deno.test('hook: Your four olaylari mood anahtari yalniz quick id ya da free_text', () => {
   const hook = strip(read('components/MoodGauntlet/useMoodGauntlet.ts'))
   assertMatch(hook, /last\.entry === 'quick' && last\.quickMoodId \? last\.quickMoodId : 'free_text'/)
-  assertMatch(hook, /fourViewedEvent\(set\.setId, moodKey\(\)\)/)
+  assertMatch(hook, /fourViewedEvent\(set\.setId, moodKey\(\), set\.setIndex \+ 1\)/)
   assertMatch(hook, /fourStartTappedEvent\(set\.setId, dwellMs\)/)
 })
 
@@ -164,4 +164,32 @@ Deno.test('oturumlar arasi temiz durum: reset tum aday/oturum state\'ini siler v
   assert((hook.match(/id !== runId\.current \|\| !mounted\.current/g) ?? []).length >= 7)
   // Your four tamamlanma isareti set kimligine bagli: yeni dortlu yeniden Your four ile baslar
   assertMatch(strip(read('components/MoodGauntlet/GauntletStage.tsx')), /introDoneFor !== set\.setId/)
+})
+
+Deno.test('UUID izni yalniz film_id/set_id anahtarina ve kati UUID regex\'ine bagli; baska alanda UUID bicimli metin reddedilir', () => {
+  const uuid = '123e4567-e89b-12d3-a456-426614174000'
+  const rejects = (props: Record<string, string>) => {
+    let threw = false
+    try {
+      assertNoFreeText({ name: 'x', props })
+    } catch {
+      threw = true
+    }
+    return threw
+  }
+  assert(!rejects({ set_id: uuid }) && !rejects({ film_id: uuid }))
+  assert(rejects({ mood: uuid }), 'mood alaninda UUID bicimli metin reddedilir')
+  assert(rejects({ surface: uuid }))
+  assert(rejects({ note: uuid }))
+  assert(rejects({ set_id: `${uuid} rainy sunday` }), 'UUID + metin (ankrajli regex) reddedilir')
+  assert(rejects({ set_id: 'serbest metin' }))
+  const src = strip(read('utils/moodGauntletAnalytics.ts'))
+  assertMatch(src, /\(k === 'film_id' \|\| k === 'set_id'\) && typeof v === 'string' && UUID_RE\.test\(v\)/)
+  assertMatch(src, /UUID_RE = \/\^\[0-9a-f\]\{8\}[^\n]*\$\/i/)
+})
+
+Deno.test('Another four / None sonrasi yeni dortlu: set_index artar, Your four yeniden acilir', () => {
+  assertEquals(fourViewedEvent('123e4567-e89b-12d3-a456-426614174000', 'cozy', 3).props.set_index, 3)
+  assertMatch(strip(read('components/MoodGauntlet/GauntletStage.tsx')), /introDoneFor !== set\.setId/)
+  assertMatch(strip(read('components/MoodGauntlet/useMoodGauntlet.ts')), /set\.setIndex \+ 1/)
 })
