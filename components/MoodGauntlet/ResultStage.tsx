@@ -5,7 +5,7 @@
  * Faz 2-3 hiyerarşi (yukarıdan aşağı):
  *   mood başlığı → poster + başlık + gerekçe + çipler (+ "Why this fits you" satırı)
  *   → birincil TEK CTA "Watch on {Provider}" (altında nerede-izlenir logoları)
- *   → ikincil TEK satır: Kaydet (durum düğmede: "✓ Saved") + Paylaş (ikon)
+ *   → ikincil TEK satır, tek stil: Kaydet (durum düğmede: "✓ Saved") · Fragman · Paylaş (ikon)
  *   → "Not quite right?": Lighter · More intense · Another four (üç çip)
  *   → "If not this one" yedekleri.
  */
@@ -424,20 +424,34 @@ export function ResultStage({
 
       <View style={styles.secondaryRow}>
         {ctaMode !== 'unavailable' && (
-        <TouchableOpacity
-          style={styles.saveBtn}
-          onPress={() => void handleSave()}
-          disabled={saveState !== 'idle'}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-          accessibilityLabel={saved ? t('moodGauntlet.saved') : t('moodGauntlet.save')}
-          accessibilityState={{ disabled: saveState !== 'idle', selected: saved }}
-        >
-          {!saved && <BookmarkSimple size={size.iconInline} color={color.text.primary} />}
-          <Text style={styles.saveBtnText} numberOfLines={1}>
-            {saved ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.saveBtn}
+            onPress={() => void handleSave()}
+            disabled={saveState !== 'idle'}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={saved ? t('moodGauntlet.saved') : t('moodGauntlet.save')}
+            accessibilityState={{ disabled: saveState !== 'idle', selected: saved }}
+          >
+            {!saved && <BookmarkSimple size={size.iconInline} color={color.text.primary} />}
+            <Text style={styles.saveBtnText} numberOfLines={1}>
+              {saved ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
+            </Text>
+          </TouchableOpacity>
+        )}
+        {trailerKey !== null && (
+          <TouchableOpacity
+            style={styles.saveBtn}
+            onPress={() => void handleTrailer()}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={t('moodGauntlet.trailer')}
+          >
+            <Play size={size.iconInline} color={color.text.primary} weight="fill" />
+            <Text style={styles.saveBtnText} numberOfLines={1}>
+              {t('moodGauntlet.trailer')}
+            </Text>
+          </TouchableOpacity>
         )}
         <TouchableOpacity
           style={styles.shareBtn}
@@ -449,22 +463,6 @@ export function ResultStage({
           <ShareNetwork size={size.iconInline} color={color.text.primary} />
         </TouchableOpacity>
       </View>
-      {trailerKey !== null && (
-        <View style={styles.secondaryRow}>
-          <TouchableOpacity
-            style={styles.saveBtn}
-            onPress={() => void handleTrailer()}
-            activeOpacity={0.7}
-            accessibilityRole="button"
-            accessibilityLabel={t('moodGauntlet.trailer')}
-          >
-            <Play size={size.iconInline} color={color.text.secondary} weight="fill" />
-            <Text style={styles.saveBtnText} numberOfLines={1}>
-              {t('moodGauntlet.trailer')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
       <View style={styles.noticeSlot}>
         {notice !== null && <Text style={styles.shareNotice}>{notice}</Text>}
       </View>

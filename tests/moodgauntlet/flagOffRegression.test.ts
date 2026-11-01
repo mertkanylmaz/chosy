@@ -268,7 +268,7 @@ Deno.test('gerekce satiri en fazla 2 satir (gauntlet + sonuc)', () => {
   assert(!/ellipsizeMode="clip"|adjustsFontSizeToFit/.test(g), 'gauntlet gerekçesi clip / küçültme kullanmamalı')
   const st = read('components/MoodGauntlet/styles.ts')
   assertMatch(st, /reason: \{[^}]*fontSize: 14/)
-  assertMatch(st, /reasonSlot: \{ height: 76 \}/) // 4 satır x 19pt: iki kartta eşit yükseklik
+  assertMatch(st, /reasonSlot: \{ minHeight: 76 \}/) // 4 satır x 19pt taban; Dynamic Type'ta büyür
   const r = read('components/MoodGauntlet/ResultStage.tsx')
   const reasonEl = r.slice(r.indexOf('style={styles.resultReason}'), r.indexOf('style={styles.resultReason}') + 120)
   assert(!/numberOfLines|ellipsizeMode/.test(reasonEl), 'sonuç gerekçesi kesilmemeli')

@@ -87,10 +87,10 @@ export const styles = StyleSheet.create({
   tapHint: { ...type.callout, color: color.text.secondary, textAlign: 'center' },
   pairRow: { flexDirection: 'row', gap: space.md, width: '100%', marginTop: space.base },
   pairCol: { flex: 1, gap: space.sm },
-  /** Gerekçe: 14pt, ≤3 satır, taşarsa kuyrukta "…". */
+  /** Gerekçe: 14pt/19, ≤4 satır, taşarsa kuyrukta "…". */
   reason: { fontFamily: type.callout.fontFamily, fontSize: 14, lineHeight: 19, color: color.text.primarySoft },
-  /** Eşit yükseklik: 4 satır × 19pt. Gerekçe yüklenirken / boş gelirken de aynı yer ayrılır. */
-  reasonSlot: { height: 76 },
+  /** 4 satır × 19pt taban; Dynamic Type büyüyünce slot da büyür (sabit height metni çipin üstüne taşırırdı). */
+  reasonSlot: { minHeight: 76 },
   reasonSkeleton: { gap: space.xs, paddingTop: 3 },
   skeletonLine: { height: 12, borderRadius: radius.pill, backgroundColor: color.surface.raised },
   skeletonLineShort: { width: '60%' },
