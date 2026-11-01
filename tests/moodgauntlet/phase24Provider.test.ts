@@ -173,7 +173,7 @@ Deno.test('bolge null: tmdb link ya da null — asla us', () => {
 
 Deno.test('CTA gizleme: kind=none iken ResultStage dugmeyi cizmez; provider_clicked region + provider_id tasir', () => {
   const src = read('components/MoodGauntlet/ResultStage.tsx')
-  assertMatch(src, /target\.kind !== 'none' && \(\s*<PrimaryAction/)
+  assertMatch(src, /ctaMode === 'loading' \|\| ctaMode === 'watch'\) && \(\s*<PrimaryAction/)
   assertMatch(src, /providerClickedEvent\(\{\s*filmId: champion\.id,\s*surface: 'mood_result',\s*providerId: target\.providerId,[\s\S]*?region,/)
   assertEquals(
     providerClickedEvent({ filmId: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'tmdb_watch' }).props,
@@ -197,7 +197,7 @@ Deno.test('ulke arama: takma ad + aksansiz/kucuk harf (Turkey, turk, türk, TURK
 })
 
 Deno.test('offerHint: free / ads ayri metin (TMDB ads kovasi ayri), ResultStage ads icin ayri anahtar', () => {
-  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /moodGauntlet\.offerHint\.\$\{target\.offerLabel\}/)
+  assertMatch(read('components/gauntlet/WatchProviders/index.tsx'), /moodGauntlet\.offerHint\.\$\{kind\}/) // Faz 2-6: etiketler yalniz logo altinda
   const en = JSON.parse(read('locales/en.json')).moodGauntlet.offerHint
   const tr = JSON.parse(read('locales/tr.json')).moodGauntlet.offerHint
   assertEquals([en.free, en.ads, tr.free, tr.ads], ['Free to watch', 'Free with ads', 'Ücretsiz izlenir', 'Reklamlı ücretsiz'])

@@ -27,6 +27,9 @@ import Animated, {
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
+import { RegionPickerSheet } from '@/components/gauntlet/WatchProviders/RegionPickerSheet';
+import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
+import { watchRegionName } from '@/constants/watchRegions';
 import { color, size } from '@/constants/design/semantic';
 import {
   BLACKOUT_SEQUENCE,
@@ -47,6 +50,8 @@ import {
   type WatchLinkKindProp,
 } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
+import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
+import { destinationCaptionKey, resultCtaMode } from '@/utils/moodResultCta';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { filmDetailHref } from '@/utils/filmDetailHref';
 import { normalizePosterUrl } from '@/utils/posterUrl';
@@ -137,6 +142,15 @@ export function ResultStage({
   const trailerKey = useTrailer(champion.id, language);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<string | null>(null);
+  const [regionOpen, setRegionOpen] = useState(false);
+  // Faz 2-6: yeni sonuç → en üst; film detayından dönüşte (aynı sonuç) konum korunur.
+  const scrollRef = useRef<ScrollView>(null);
+  const lastResultKey = useRef<string | null>(null);
+  const resultKey = resultScrollKey(champion.id, setIndex);
+  useEffect(() => {
+    if (shouldScrollToTop(lastResultKey.current, resultKey)) scrollRef.current?.scrollTo({ y: 0, animated: false });
+    lastResultKey.current = resultKey;
+  }, [resultKey]);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -214,11 +228,10 @@ export function ResultStage({
     target.kind === 'provider_direct' && target.providerName !== null
       ? t('moodGauntlet.openIn', { provider: target.providerName })
       : t('moodGauntlet.whereToWatch');
-  /** CTA altında küçük teklif türü: With subscription / Add-on / Free / Free with ads / Rent or buy. */
-  const offerHint =
-    target.providerName !== null && target.offerLabel !== null
-      ? t(`moodGauntlet.offerHint.${target.offerLabel}`)
-      : null;
+  // Faz 2-6: mod bölge/sağlayıcı verisinden her render'da türetilir → bölge değişince CTA, satır ve
+  // etiketler birlikte yeniden hesaplanır. Logo altı etiketler WatchProvidersRow'da kalır.
+  const ctaMode = resultCtaMode(providers.state, target);
+  const destinationKey = destinationCaptionKey(target.kind);
 
   /**
    * Watch now: sağlayıcının resmî arama bağlantısı (universal link — uygulama yüklüyse açar);
@@ -325,7 +338,7 @@ export function ResultStage({
   const saved = saveState === 'saved';
 
   return (
-    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       {moodLabel !== null && moodLabel.length > 0 && (
         <Text style={styles.resultMood} numberOfLines={2} accessibilityRole="header">
           {moodLabel}
@@ -358,31 +371,59 @@ export function ResultStage({
       )}
 
       <View style={styles.ctaBlock}>
-        {/* kind='none': sağlayıcı var ama güvenilir adres yok → CTA gizli (tahmini URL üretilmez). */}
-        {target.kind !== 'none' && (
+        {(ctaMode === 'loading' || ctaMode === 'watch') && (
           <PrimaryAction
             label={watchLabel}
             onPress={() => void handleWatchNow()}
             variant="gold"
-            disabled={providers.state === 'loading'}
-            busy={providers.state === 'loading'}
+            disabled={ctaMode === 'loading'}
+            busy={ctaMode === 'loading'}
             trailingIcon={<ArrowUpRight size={size.iconInline} color={color.surface.base} weight="bold" />}
           />
         )}
-        {target.kind !== 'none' && offerHint !== null && <Text style={styles.offerHint}>{offerHint}</Text>}
-        <View style={styles.providersSlot}>
-          <WatchProvidersRow
-            state={providers.state}
-            providers={providers.providers}
-            onRetry={providers.retry}
-            filmId={champion.id}
-            onSeeAll={() => track('where')}
-            showOfferLabels
-          />
-        </View>
+        {ctaMode === 'watch' && destinationKey !== null && <Text style={styles.offerHint}>{t(destinationKey)}</Text>}
+        {ctaMode === 'unavailable' && (
+          <>
+            <Text style={styles.offerHint}>
+              {t('moodGauntlet.notStreaming', { country: region !== null ? watchRegionName(region, language) : '' })}
+              {' · '}
+              <Text
+                style={styles.changeLink}
+                onPress={() => setRegionOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={t('gauntlet.watchProviders.changeA11y')}
+              >
+                {t('gauntlet.watchProviders.change')}
+              </Text>
+            </Text>
+            <ChampionActionButton
+              label={saved ? t('moodGauntlet.savedShort') : t('gauntlet.saveForLater.action')}
+              icon={BookmarkSimple}
+              variant="filled"
+              onPress={() => void handleSave()}
+              disabled={saveState !== 'idle'}
+              busy={saveState === 'saving'}
+              selected={saved}
+            />
+          </>
+        )}
+        {ctaMode !== 'unavailable' && (
+          <View style={styles.providersSlot}>
+            <WatchProvidersRow
+              state={providers.state}
+              providers={providers.providers}
+              onRetry={providers.retry}
+              filmId={champion.id}
+              onSeeAll={() => track('where')}
+              showOfferLabels
+            />
+          </View>
+        )}
+        <RegionPickerSheet visible={regionOpen} onClose={() => setRegionOpen(false)} />
       </View>
 
       <View style={styles.secondaryRow}>
+        {ctaMode !== 'unavailable' && (
         <TouchableOpacity
           style={styles.saveBtn}
           onPress={() => void handleSave()}
@@ -397,6 +438,7 @@ export function ResultStage({
             {saved ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
           </Text>
         </TouchableOpacity>
+        )}
         <TouchableOpacity
           style={styles.shareBtn}
           onPress={() => void handleShare()}

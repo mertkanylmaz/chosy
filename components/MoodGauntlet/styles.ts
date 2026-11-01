@@ -109,6 +109,7 @@ export const styles = StyleSheet.create({
   stripCellEliminated: { opacity: 0.35 },
   /** CTA altı teklif türü (Subscription / Rent / Buy). */
   offerHint: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
+  changeLink: { ...type.caption, color: color.text.primary, textDecorationLine: 'underline' },
   gBottom: { marginTop: 'auto', paddingTop: space.lg, gap: space.sm },
   noneSub: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
 

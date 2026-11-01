@@ -49,7 +49,7 @@ Deno.test('trailer_clicked: sabit prop seti, film_id UUID geçer, başlık/serbe
 Deno.test('düğme gizleme: anahtar null iken Trailer düğmesi çizilmez; 2-4b/c CTA mantığı korunur', () => {
   const src = read('components/MoodGauntlet/ResultStage.tsx')
   assert(/\{trailerKey !== null && \(\s*<View style=\{styles\.secondaryRow\}>/.test(src))
-  assert(src.includes("target.kind !== 'none' && ("))
+  assert(src.includes("ctaMode === 'loading' || ctaMode === 'watch'"))
   assert(src.includes('variant="gold"'))
   assert(/useProviderReturnTracking\(\)/.test(src) && /useTrailerReturnTracking\(\)/.test(src))
   assert(read('components/MoodGauntlet/useTrailer.ts').includes('useState<string | null>(memo.get(k) ?? null)'))

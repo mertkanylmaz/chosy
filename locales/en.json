@@ -725,6 +725,9 @@
     "findOn": "Find on %{provider}",
     "openIn": "Open in %{provider}",
     "whereToWatch": "Where to watch",
+    "opensJustWatch": "Opens JustWatch",
+    "opensTmdb": "Opens TMDB",
+    "notStreaming": "Not streaming in %{country} right now",
     "offerHint": {
       "subscription": "With subscription",
       "addon": "Add-on subscription",

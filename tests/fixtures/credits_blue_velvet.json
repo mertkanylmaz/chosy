@@ -1,0 +1,95 @@
+{
+ "tmdb_id": 793,
+ "cast": [
+  {
+   "id": 6588,
+   "name": "Isabella Rossellini",
+   "character": "Dorothy Vallens",
+   "profile_path": "/z0zojT6nwDxi35HMcXlVpBfuBAU.jpg",
+   "order": 0
+  },
+  {
+   "id": 6677,
+   "name": "Kyle MacLachlan",
+   "character": "Jeffrey Beaumont",
+   "profile_path": "/7gNyx8fYAUdOp2jpCEH3dyFbeV.jpg",
+   "order": 1
+  },
+  {
+   "id": 2778,
+   "name": "Dennis Hopper",
+   "character": "Frank Booth",
+   "profile_path": "/hfrzsJhkX7Vphe3pVYk8lA9BNfg.jpg",
+   "order": 2
+  },
+  {
+   "id": 4784,
+   "name": "Laura Dern",
+   "character": "Sandy Williams",
+   "profile_path": "/gB9PnGEvxKg33OSlcqptQwTBwPE.jpg",
+   "order": 3
+  },
+  {
+   "id": 3382,
+   "name": "Hope Lange",
+   "character": "Mrs. Williams",
+   "profile_path": "/tSI2AeouDffP0V3Qb5nd1cmN83X.jpg",
+   "order": 4
+  },
+  {
+   "id": 923,
+   "name": "Dean Stockwell",
+   "character": "Ben",
+   "profile_path": "/gdHo8LNElMf1XxoRYgi0UUzbJuB.jpg",
+   "order": 5
+  },
+  {
+   "id": 11792,
+   "name": "George Dickerson",
+   "character": "Detective Williams",
+   "profile_path": "/xw2ZqkQkd7p30yXro7UNCyRSv.jpg",
+   "order": 6
+  },
+  {
+   "id": 11793,
+   "name": "Priscilla Pointer",
+   "character": "Mrs. Beaumont",
+   "profile_path": "/sLuwocnvy9QmJ9AOG7QKbi0PN0N.jpg",
+   "order": 7
+  },
+  {
+   "id": 11794,
+   "name": "Frances Bay",
+   "character": "Aunt Barbara",
+   "profile_path": "/1mtcINBBbvb7E4ySgOr86u34XLJ.jpg",
+   "order": 8
+  },
+  {
+   "id": 1599429,
+   "name": "Jack Harvey",
+   "character": "Mr. Beaumont",
+   "profile_path": null,
+   "order": 9
+  }
+ ],
+ "crew": [
+  {
+   "id": 11789,
+   "name": "Fred C. Caruso",
+   "job": "Producer",
+   "profile_path": null
+  },
+  {
+   "id": 5602,
+   "name": "David Lynch",
+   "job": "Director",
+   "profile_path": "/wwBzRDoIW6Ld64h6OkQ6ImCZKsR.jpg"
+  },
+  {
+   "id": 5628,
+   "name": "Angelo Badalamenti",
+   "job": "Original Music Composer",
+   "profile_path": "/x80I3W87lIfuPn3A3smVrGSA8Bx.jpg"
+  }
+ ]
+}

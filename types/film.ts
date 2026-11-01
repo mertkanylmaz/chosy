@@ -27,7 +27,7 @@ export interface Film {
   /** Yönetmen adı */
   director?: string;
   /** Başrol oyuncuları listesi */
-  cast?: Array<{ name: string; avatarUrl?: string }>;
+  cast?: Array<{ name: string; character?: string; avatarUrl?: string }>;
   /** Sürpriz kart türü — her 5-7 filmde bir atanır */
   surpriseType?: 'hidden_gem' | 'ai_pick' | 'unexpected';
   /**

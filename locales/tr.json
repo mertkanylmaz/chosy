@@ -725,6 +725,9 @@
     "findOn": "Şurada bul: %{provider}",
     "openIn": "%{provider} ile aç",
     "whereToWatch": "Nerede izlenir",
+    "opensJustWatch": "JustWatch'ta açılır",
+    "opensTmdb": "TMDB'de açılır",
+    "notStreaming": "Şu an %{country} için yayında değil",
     "offerHint": {
       "subscription": "Abonelikle",
       "addon": "Ek abonelik",

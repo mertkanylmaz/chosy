@@ -63,6 +63,7 @@ import {
   type TmdbWatchProviders,
   type TmdbProvider,
 } from '@/services/tmdb';
+import { buildCrewDisplay, buildDisplayCast, mapDbCast, type DbCastEntry, type DisplayCastMember } from '@/utils/castDisplay';
 import { parseFilmPreview } from '@/utils/filmDetailHref';
 import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
 import { flattenProviders } from '@/utils/watchProviderList';
@@ -106,7 +107,7 @@ interface FilmDbRow {
   director: string | null;
   trailer_url: string | null;
   genres: string[] | null;
-  cast_json: Array<{ name: string; profile_path?: string | null }> | null;
+  cast_json: DbCastEntry[] | null;
 }
 
 /** film_profiles satırından okunan alan */
@@ -204,11 +205,7 @@ function CastCard({ name, character, avatarUrl }: CastCardProps) {
           contentFit="cover"
           cachePolicy="memory-disk"
         />
-      ) : (
-        <View style={[styles.personCardImg, styles.personCardPlaceholder]}>
-          <Ionicons name="person-outline" size={26} color={Colors.textTertiary} />
-        </View>
-      )}
+      ) : null}
       <Text style={styles.personCardName} numberOfLines={1}>
         {name}
       </Text>
@@ -242,11 +239,7 @@ function CrewCard({
           contentFit="cover"
           cachePolicy="memory-disk"
         />
-      ) : (
-        <View style={[styles.personCardImg, styles.personCardPlaceholder]}>
-          <Ionicons name="person-outline" size={26} color={Colors.textTertiary} />
-        </View>
-      )}
+      ) : null}
       <Text style={styles.personCardName} numberOfLines={1}>
         {name}
       </Text>
@@ -468,13 +461,9 @@ export default function FilmDetailScreen() {
       if (data) {
         const row = data as FilmDbRow;
 
-        const dbCast = (row.cast_json ?? []).map((a) => ({
-          name: a.name,
-          // profile_path "/xyz.jpg" formatinda; temel URL dogrudan ekleniyor
-          avatarUrl: a.profile_path
-            ? `https://image.tmdb.org/t/p/w185${a.profile_path}`
-            : undefined,
-        }));
+        // films.cast_json: { name, character, profile_url } — profile_url tam URL (Faz 2-6: eskiden
+        // yalniz profile_path okunuyordu, DB oyuncularinin fotografi hep bos kaliyordu).
+        const dbCast = mapDbCast(row.cast_json);
 
         // UX-POLISH 3: DB satiri gelir gelmez ekran cizilir; TMDB beklenmez.
         // Poster DB'den (normalizePosterUrl, deste ile ayni w780) — TMDB posteri
@@ -894,56 +883,17 @@ export default function FilmDetailScreen() {
     country ? country.toUpperCase() : null,
   ].filter(Boolean) as string[];
 
-  /** TMDB credits > DB cast_json fallback */
-  interface DisplayCastMember {
-    name: string;
-    character?: string;
-    avatarUrl?: string;
-  }
-
-  /**
-   * profile_path daima "/abc.jpg" formatinda gelir.
-   * toTmdbUrl yerine dogrudan URL insa edilerek edge-case'ler onleniyor.
-   */
-  const tmdbImgBase = 'https://image.tmdb.org/t/p/w185';
-
-  const displayCast: DisplayCastMember[] =
-    tmdbCredits && tmdbCredits.cast.length > 0
-      ? tmdbCredits.cast.slice(0, 10).map((c) => ({
-          name: c.name,
-          character: c.character,
-          avatarUrl: c.profile_path ? `${tmdbImgBase}${c.profile_path}` : undefined,
-        }))
-      : (film.cast ?? []).map((c) => ({ name: c.name, avatarUrl: c.avatarUrl }));
+  const displayCast: DisplayCastMember[] = buildDisplayCast(
+    tmdbCredits,
+    (film.cast ?? []).map((c) => ({ name: c.name, character: c.character, profile_url: c.avatarUrl })),
+  );
 
   /** Director / Producer / Composer — foto ile */
-  const crewDisplay: CrewDisplayItem[] = [];
-  if (tmdbCredits) {
-    const findCrew = (job: string) => tmdbCredits.crew.find((c) => c.job === job);
-    const director = findCrew('Director');
-    const producer = findCrew('Producer') ?? findCrew('Executive Producer');
-    const composer = findCrew('Original Music Composer');
-    if (director)
-      crewDisplay.push({
-        label: t('filmDetail.director'),
-        name: director.name,
-        avatarUrl: director.profile_path ? `${tmdbImgBase}${director.profile_path}` : undefined,
-      });
-    if (producer)
-      crewDisplay.push({
-        label: 'Producer',
-        name: producer.name,
-        avatarUrl: producer.profile_path ? `${tmdbImgBase}${producer.profile_path}` : undefined,
-      });
-    if (composer)
-      crewDisplay.push({
-        label: 'Music',
-        name: composer.name,
-        avatarUrl: composer.profile_path ? `${tmdbImgBase}${composer.profile_path}` : undefined,
-      });
-  } else if (film.director) {
-    crewDisplay.push({ label: t('filmDetail.director'), name: film.director });
-  }
+  const crewDisplay: CrewDisplayItem[] = tmdbCredits
+    ? buildCrewDisplay(tmdbCredits, { director: t('filmDetail.director'), producer: 'Producer', music: 'Music' })
+    : film.director
+      ? [{ label: t('filmDetail.director'), name: film.director }]
+      : [];
 
   /**
    * Flatrate > rent > buy siralamasiyla tekrarsiz provider listesi; kanal

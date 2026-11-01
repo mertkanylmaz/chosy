@@ -1,0 +1,113 @@
+{
+ "tmdb_id": 398818,
+ "cast": [
+  {
+   "id": 1190668,
+   "name": "Timothee Chalamet",
+   "character": "Elio",
+   "profile_path": "/dFxpwRpmzpVfP1zjluH68DeQhyj.jpg",
+   "order": 0
+  },
+  {
+   "id": 53807,
+   "name": "Armie Hammer",
+   "character": "Oliver",
+   "profile_path": "/4Z5nLW2biRjqstDMKqSaeQYAesK.jpg",
+   "order": 1
+  },
+  {
+   "id": 72873,
+   "name": "Michael Stuhlbarg",
+   "character": "Mr. Perlman",
+   "profile_path": "/aYB3SQm3h6ZyAdlbGyiNfakjx56.jpg",
+   "order": 2
+  },
+  {
+   "id": 20577,
+   "name": "Amira Casar",
+   "character": "Annella",
+   "profile_path": "/lTvuFkDI67DA68mLEjF8Tvrza6E.jpg",
+   "order": 3
+  },
+  {
+   "id": 935096,
+   "name": "Esther Garrel",
+   "character": "Marzia",
+   "profile_path": "/km79Neoe5tLwgbiBzq72pR7pdxY.jpg",
+   "order": 4
+  },
+  {
+   "id": 1592949,
+   "name": "Victoire du Bois",
+   "character": "Chiara",
+   "profile_path": "/eQm8pA8ahuPZysSsqxd9oqmEBUy.jpg",
+   "order": 5
+  },
+  {
+   "id": 1789600,
+   "name": "Vanda Capriolo",
+   "character": "Mafalda",
+   "profile_path": "/fg1XHgXBKnvtLzYu4V6zo49MtzU.jpg",
+   "order": 6
+  },
+  {
+   "id": 1789602,
+   "name": "Antonio Rimoldi",
+   "character": "Anchise",
+   "profile_path": null,
+   "order": 7
+  },
+  {
+   "id": 1526272,
+   "name": "Elena Bucci",
+   "character": "Bambi",
+   "profile_path": null,
+   "order": 8
+  },
+  {
+   "id": 1789603,
+   "name": "Marco Sgrosso",
+   "character": "Nico",
+   "profile_path": "/u9rVsh6hpHABwlIsCcsDE2U1nbZ.jpg",
+   "order": 9
+  }
+ ],
+ "crew": [
+  {
+   "id": 78160,
+   "name": "Luca Guadagnino",
+   "job": "Director",
+   "profile_path": "/A9n74Q8UvDZJkGo04KCC0oER6Qx.jpg"
+  },
+  {
+   "id": 1300796,
+   "name": "Rodrigo Teixeira",
+   "job": "Producer",
+   "profile_path": "/jCI3zbBuNV6aaR8KxLvYniNS8rg.jpg"
+  },
+  {
+   "id": 156483,
+   "name": "Peter Spears",
+   "job": "Producer",
+   "profile_path": "/6aCVFt5PyIz3MGqwy9jawm6FZS1.jpg"
+  },
+  {
+   "id": 78160,
+   "name": "Luca Guadagnino",
+   "job": "Producer",
+   "profile_path": "/A9n74Q8UvDZJkGo04KCC0oER6Qx.jpg"
+  },
+  {
+   "id": 1196264,
+   "name": "Emilie Georges",
+   "job": "Producer",
+   "profile_path": "/t0nisQcqvGR9LvTY4PWwZZj6UcJ.jpg"
+  },
+  {
+   "id": 1110466,
+   "name": "Marco Morabito",
+   "job": "Producer",
+   "profile_path": "/gLQusGPXo5gYmZlpQPxXCYRu1Xx.jpg"
+  }
+ ]
+}
