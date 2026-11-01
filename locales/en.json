@@ -713,12 +713,19 @@
     "exhaustedTitle": "That's every film for this mood",
     "exhaustedBody": "Start a new search to see more.",
     "newSearch": "New search",
+    "stripA11y": "Your four films",
     "yourFour": "Your four",
     "yourFourA11y": "Your four films for tonight",
     "tapHint": "Tap the one you'd rather watch",
     "justPick": "Just pick for me",
     "noneSub": "4 new films, same mood",
-    "watchOn": "Watch on %{provider}",
+    "findOn": "Find on %{provider}",
+    "offerHint": {
+      "subscription": "Subscription",
+      "free": "Free",
+      "rent": "Rent",
+      "buy": "Buy"
+    },
     "save": "Save",
     "savedShort": "✓ Saved",
     "shareA11y": "Share this film",
@@ -740,9 +747,7 @@
       "shorterAll": "You picked the shorter film every time",
       "shorterTwo": "You leaned toward the shorter films"
     },
-    "loadingAnother": "Picking another four…",
-    "rentOn": "Rent on %{provider}",
-    "buyOn": "Buy on %{provider}"
+    "loadingAnother": "Picking another four…"
   },
   "aiConsent": {
     "title": "Let Claude help you choose",
@@ -1730,6 +1735,14 @@
       "seeAll": "See all",
       "seeAllA11y": "See all %{count} watch options",
       "sheetTitle": "Where to watch",
+      "availabilityIn": "Availability in %{country}",
+      "change": "Change",
+      "changeA11y": "Change country",
+      "regionTitle": "Choose country",
+      "regionSearch": "Search country",
+      "regionNoMatch": "No country found",
+      "regionClose": "Close",
+      "regionCurrent": "Selected",
       "group": {
         "stream": "Stream",
         "rent": "Rent",

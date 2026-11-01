@@ -110,6 +110,8 @@ export function useMoodGauntlet() {
   const [session, setSession] = useState<MoodSession | null>(null);
   const [set, setSet] = useState<MoodSet | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  /** Gerekçe isteği uçuşta: kartlar iki satırlık iskelet çizer, boş gelirse alan boş (yükseklik eşit) kalır. */
+  const [reasonsLoading, setReasonsLoading] = useState(false);
   const [flow, setFlow] = useState<MoodFlow | null>(null);
   const [notices, setNotices] = useState<MoodNotice[]>([]);
   const [dims, setDims] = useState<Record<string, FilmDims>>({});
@@ -158,10 +160,12 @@ export function useMoodGauntlet() {
     (sess: MoodSession, nextSet: MoodSet) => {
       const rid = ++reasonsRun.current;
       const t0 = Date.now();
+      setReasonsLoading(true);
       void fetchReasons(deps, sess, nextSet).then((r) => {
         if (rid !== reasonsRun.current || !mounted.current) return;
         trackMoodEvent(pipelineTimingEvent('reasons', Date.now() - t0));
         setReasons(r);
+        setReasonsLoading(false);
       });
     },
     [deps],
@@ -397,6 +401,7 @@ export function useMoodGauntlet() {
     setSession(null);
     setSet(null);
     setReasons({});
+    setReasonsLoading(false);
     setFlow(null);
     setNotices([]);
     dimsRun.current += 1;
@@ -413,6 +418,7 @@ export function useMoodGauntlet() {
     session,
     set,
     reasons,
+    reasonsLoading,
     flow,
     notices,
     canLighter: session ? canShiftIntensity(session.intensityStep, 'lighter') : false,

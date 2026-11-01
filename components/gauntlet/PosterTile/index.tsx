@@ -79,6 +79,11 @@ interface PosterTileProps {
   titleLines?: PosterTitleLines;
   /** Başlığın doğal satır sayısı — her metin düzeninde bildirilir. */
   onTitleLines?: (lines: PosterTitleLines) => void;
+  /**
+   * Faz 2-4 (Mood Gauntlet): 'yearOnly' süreyi posterin altında yazmaz (süre çipte). Varsayılan
+   * 'yearRuntime' → günlük gauntlet DEĞİŞMEZ.
+   */
+  metaMode?: 'yearRuntime' | 'yearOnly';
 }
 
 export function PosterTile({
@@ -89,6 +94,7 @@ export function PosterTile({
   onPress,
   titleLines,
   onTitleLines,
+  metaMode = 'yearRuntime',
 }: PosterTileProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
@@ -254,7 +260,7 @@ export function PosterTile({
             {film.title}
           </Text>
           <Text style={styles.metaLine} numberOfLines={1}>
-            {t('gauntlet.tileMeta', { year: film.year, runtime: film.runtime })}
+            {metaMode === 'yearOnly' ? String(film.year) : t('gauntlet.tileMeta', { year: film.year, runtime: film.runtime })}
           </Text>
         </View>
       </TouchableOpacity>

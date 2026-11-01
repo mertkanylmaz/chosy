@@ -1,15 +1,18 @@
 /**
  * Mood Gauntlet "Watch now" hedefi (Faz 2-3). Saf, RN / ağ yok.
  *
- *  1. Bölgedeki sağlayıcılardan ilki (flatrate > free > ads > rent > buy, `orderProvidersWithOffer`).
- *  2. Sağlayıcı `watchProviderLinks` tablosunda varsa → sağlayıcının resmî arama URL'si (link_kind=provider).
- *  3. Tabloda yoksa → JustWatch film araması (link_kind=justwatch); bölge yoksa detay.
+ *  1. Bölgedeki sağlayıcılardan MARKA başına ilki (flatrate > free > ads > rent > buy,
+ *     `orderProvidersWithOffer` + marka gruplama: Netflix ≈ Netflix Standard with Ads).
+ *  2. Sağlayıcı `opensApp: 'verified'` ise → sağlayıcının resmî arama URL'si (link_kind=provider).
+ *  3. Aksi halde ('unverified' / tabloda yok) → JustWatch film araması (link_kind=justwatch);
+ *     bölge yoksa detay.
  *  4. Hiç sağlayıcı yok / veri hazır değil → uygulama içi /film/:id (link_kind=detail).
  *
- * Düğme etiketi: abonelik/ücretsiz → "Watch on X"; rent → "Rent on X"; buy → "Buy on X" (TR: ek yok, "İzle · X").
+ * Film sayfasına derin bağlantımız YOK → düğme "Watch on" demez: "Find on {Provider}" / "Şurada bul: {Provider}".
  */
+import { brandOf } from './watchProviderBrands';
 import { orderProvidersWithOffer, type OfferType, type ProviderBuckets, type RankedProviderLike } from './watchProviderList';
-import { providerDisplayName, providerSearchUrl } from './watchProviderLinks';
+import { opensAppOf, providerSearchUrl } from './watchProviderLinks';
 
 export type WatchLinkKind = 'provider' | 'justwatch' | 'detail';
 export type WatchLabelKind = 'watch' | 'rent' | 'buy';
@@ -63,17 +66,27 @@ const NONE: WatchTarget = {
 export function resolveWatchTarget(input: WatchTargetInput): WatchTarget {
   const { providers, providersReady, region, title } = input;
   if (!providersReady || providers === null) return NONE;
-  const first = orderProvidersWithOffer(providers)[0];
+  const seenBrands = new Set<string>();
+  const ordered = orderProvidersWithOffer(providers).filter((o) => {
+    const key = brandOf(o.provider).key;
+    if (seenBrands.has(key)) return false;
+    seenBrands.add(key);
+    return true;
+  });
+  const first = ordered[0];
   if (!first) return NONE;
 
   const base = {
     providerFound: true,
     providerId: first.provider.provider_id,
-    providerName: providerDisplayName(first.provider.provider_name),
+    providerName: brandOf(first.provider).name,
     offerType: first.offer,
     labelKind: labelKindOf(first.offer),
   };
-  const direct = providerSearchUrl(first.provider.provider_id, title);
+  const direct =
+    opensAppOf(first.provider.provider_id) === 'verified'
+      ? providerSearchUrl(first.provider.provider_id, title)
+      : null;
   if (direct !== null) return { ...base, kind: 'provider', url: direct };
   if (region !== null && region.trim().length === 2 && title.trim().length > 0) {
     return { ...base, kind: 'justwatch', url: justWatchSearchUrl(region, title) };

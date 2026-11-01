@@ -54,6 +54,7 @@ export function MoodGauntletShell(): React.JSX.Element {
         <GauntletStage
           set={g.set}
           reasons={g.reasons}
+          reasonsLoading={g.reasonsLoading}
           dims={g.dims}
           flow={g.flow}
           notices={g.notices}

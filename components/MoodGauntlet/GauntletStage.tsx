@@ -5,10 +5,13 @@
  *
  * Faz 2-3:
  *  - İlk turdan önce "Dörtlün": 4 poster ızgarada ~1 sn, sonra 1. eşleşmeye animasyonlu geçiş.
- *  - Soru posterlerin ÜSTÜNDE; gerekçe ≤3 satır, ≥13pt, "…" ile kesilmez (sığmazsa küçülür / kırpılır).
+ *  - Soru posterlerin ÜSTÜNDE; gerekçe ≤3 satır, taşarsa kuyrukta "…" (ellipsizeMode=tail). İki
+ *    kartın metin alanı eşit yükseklik; yüklenirken iki satırlık iskelet, boş gelirse alan boş.
  *  - Gerekçenin altında veriden çipler (tempo · yoğunluk · süre).
  *  - 1. turda ilk kullanım ipucu + ikincil "Sen seç" (rerank'ın 1. filmi şampiyon olur).
- *  - "Hiçbiri" görünür ikincil düğme, altında tek satır açıklama.
+ *  - "Hiçbiri" ve "Sen seç" aynı boyda ikincil düğmeler (OutlineAction), altında tek satır açıklama.
+ *  - Faz 2-4: turlar boyunca üstte 4 poster şeridi (kazanan vurgulu, elenen %35 opaklık);
+ *    "Dörtlün" girişi en az 1,5 sn (dokunarak geçilebilir).
  *
  * Seçim tepkisi: dokunulan poster `remaining`, diğeri `eliminated`; geçişin bitiminde tur ilerler.
  */
@@ -27,7 +30,7 @@ import { reasonFor, type MoodNotice, type MoodSet } from '@/services/moodGauntle
 import { hapticSelection } from '@/utils/haptics';
 import type { FilmDims } from '@/utils/moodFilmFacts';
 import { toGauntletFilm } from '@/utils/moodGauntletFilm';
-import { currentPair, type MoodFlow } from '@/utils/moodGauntletFlow';
+import { currentPair, stripItems, type MoodFlow } from '@/utils/moodGauntletFlow';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 
 import { FilmChips } from './FilmChips';
@@ -35,14 +38,16 @@ import { styles } from './styles';
 
 /** Seçim animasyonunun süresi: kalan posterin yayı (token), sonra tur ilerler. */
 const PICK_SETTLE_MS = DISSOLVE_DURATION.remainingPoster;
-/** "Dörtlün" ızgarasının ekranda kalma süresi (dokunuşla atlanabilir). */
-export const FOUR_INTRO_MS = 1000;
-export const FOUR_INTRO_REDUCED_MS = 600;
+/** "Dörtlün" ızgarasının ekranda kalma süresi: en az 1,5 sn (dokunuşla atlanabilir). */
+export const FOUR_INTRO_MS = 1500;
+export const FOUR_INTRO_REDUCED_MS = 1500;
 
 interface GauntletStageProps {
   set: MoodSet;
   /** film id → gerekçe (arkadan dolar). */
   reasons: Record<string, string>;
+  /** Gerekçe isteği uçuşta mı (iskelet çizilir). */
+  reasonsLoading: boolean;
   /** film id → boyutlar (arkadan dolar; gelmezse çip çizilmez). */
   dims: Record<string, FilmDims>;
   flow: MoodFlow;
@@ -59,6 +64,7 @@ interface GauntletStageProps {
 export function GauntletStage({
   set,
   reasons,
+  reasonsLoading,
   dims,
   flow,
   notices,
@@ -170,6 +176,24 @@ export function GauntletStage({
             </View>
           )}
           <RoundIndicator current={pair.round} />
+          <View style={styles.strip} accessibilityLabel={t('moodGauntlet.stripA11y')}>
+            {stripItems(flow).map((item) => {
+              const row = set.four.find((f) => f.id === item.id);
+              const uri = row ? normalizePosterUrl(row.poster_url) : null;
+              return (
+                <View
+                  key={item.id}
+                  style={[
+                    styles.stripCell,
+                    item.status === 'advanced' && styles.stripCellAdvanced,
+                    item.status === 'eliminated' && styles.stripCellEliminated,
+                  ]}
+                >
+                  {uri !== null && <Image source={{ uri }} style={styles.heroImage} contentFit="cover" />}
+                </View>
+              );
+            })}
+          </View>
         </View>
 
         <View style={styles.gQuestionBlock}>
@@ -191,19 +215,26 @@ export function GauntletStage({
                   disabled={picked !== null}
                   animationState={tileState(id)}
                   onPress={() => handlePick(id)}
+                  metaMode="yearOnly"
                 />
-                {reason !== null && (
-                  <Animated.Text
-                    style={styles.reason}
-                    numberOfLines={3}
-                    ellipsizeMode="clip"
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.93}
-                    entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
-                  >
-                    {reason}
-                  </Animated.Text>
-                )}
+                {/* Sabit yükseklikli alan: iki kartın metin bölgesi eşit, gerekçe gelince düzen zıplamaz. */}
+                <View style={styles.reasonSlot}>
+                  {reason !== null ? (
+                    <Animated.Text
+                      style={styles.reason}
+                      numberOfLines={3}
+                      ellipsizeMode="tail"
+                      entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
+                    >
+                      {reason}
+                    </Animated.Text>
+                  ) : reasonsLoading ? (
+                    <View style={styles.reasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
+                      <View style={styles.skeletonLine} />
+                      <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
+                    </View>
+                  ) : null}
+                </View>
                 <FilmChips dims={dims[id]} runtimeMinutes={runtimes.get(id)} />
               </View>
             );
@@ -215,17 +246,7 @@ export function GauntletStage({
             <Text style={styles.notice}>{t('moodGauntlet.noticeRuntime')}</Text>
           )}
           {isFirstRound && (
-            <TouchableOpacity
-              style={styles.justPick}
-              onPress={onJustPick}
-              disabled={picked !== null}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('moodGauntlet.justPick')}
-              accessibilityState={{ disabled: picked !== null }}
-            >
-              <Text style={styles.justPickText}>{t('moodGauntlet.justPick')}</Text>
-            </TouchableOpacity>
+            <OutlineAction label={t('moodGauntlet.justPick')} onPress={onJustPick} disabled={picked !== null} />
           )}
           <OutlineAction label={t('moodGauntlet.noneCta')} onPress={onNone} disabled={picked !== null} />
           <Text style={styles.noneSub}>{t('moodGauntlet.noneSub')}</Text>

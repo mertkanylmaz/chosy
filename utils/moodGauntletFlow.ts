@@ -71,3 +71,36 @@ export function isComplete(flow: MoodFlow): boolean {
 export function elapsedMs(startMs: number, nowMs: number): number {
   return Math.max(0, Math.round(nowMs - startMs));
 }
+
+/** Poster şeridi (Faz 2-4): dört filmin turlar boyunca durumu. */
+export type StripStatus = 'live' | 'advanced' | 'eliminated';
+
+export interface StripItem {
+  id: string;
+  status: StripStatus;
+}
+
+/**
+ * Dört film, dörtlü sırasıyla. Tamamlanan turun kazananı `advanced` (vurgulu), kaybeden
+ * `eliminated` (%35 opaklık); henüz oynanmamışlar `live`. Final bitince şampiyon `advanced`.
+ */
+export function stripItems(flow: MoodFlow): StripItem[] {
+  const [a, b, c, d] = flow.four;
+  const status: Record<string, StripStatus> = { [a]: 'live', [b]: 'live', [c]: 'live', [d]: 'live' };
+  if (flow.completed >= 1) {
+    const w = flow.winners[0];
+    status[w] = 'advanced';
+    status[w === a ? b : a] = 'eliminated';
+  }
+  if (flow.completed >= 2) {
+    const w = flow.winners[1];
+    status[w] = 'advanced';
+    status[w === c ? d : c] = 'eliminated';
+  }
+  if (flow.completed >= 3 && flow.champion !== null) {
+    const loser = flow.winners[0] === flow.champion ? flow.winners[1] : flow.winners[0];
+    status[flow.champion] = 'advanced';
+    status[loser] = 'eliminated';
+  }
+  return flow.four.map((id) => ({ id, status: status[id] }));
+}

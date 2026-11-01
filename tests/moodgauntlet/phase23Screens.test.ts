@@ -22,7 +22,8 @@ Deno.test('gauntlet: soru posterlerin USTUNDE; dortlu ilk turdan once; ipucu yal
   assert(q > 0 && posters > q, 'soru poster satırından önce gelmeli')
   assertMatch(gauntlet, /showIntro = pair !== null && pair\.round === 1 && introDoneFor !== set\.setId/)
   assertMatch(gauntlet, /t\('moodGauntlet\.yourFour'\)/)
-  assertMatch(gauntlet, /export const FOUR_INTRO_MS = 1000/)
+  assertMatch(gauntlet, /export const FOUR_INTRO_MS = 1500/) // Faz 2-4: en az 1,5 sn
+  assertMatch(gauntlet, /export const FOUR_INTRO_REDUCED_MS = 1500/)
   assertMatch(gauntlet, /isFirstRound && tapHint && <Text style=\{styles\.tapHint\}>/)
   // ipucu kalici isaretlenir (yalniz ilk kullanimda)
   assertMatch(hook, /TAP_HINT_KEY = 'chosy_mood_tap_hint_seen_v1'/)
@@ -31,7 +32,9 @@ Deno.test('gauntlet: soru posterlerin USTUNDE; dortlu ilk turdan once; ipucu yal
 })
 
 Deno.test('gauntlet: ikincil "Sen sec" yalniz 1. turda; "Hicbiri" + tek satir aciklama', () => {
-  assertMatch(gauntlet, /isFirstRound && \(\s*<TouchableOpacity\s+style=\{styles\.justPick\}/)
+  // Faz 2-4: "Sen seç" metin linki değil, "Hiçbiri" ile AYNI bileşen/boy (OutlineAction)
+  assertMatch(gauntlet, /isFirstRound && \(\s*<OutlineAction label=\{t\('moodGauntlet\.justPick'\)\}/)
+  assert(!/styles\.justPick/.test(gauntlet))
   assertMatch(gauntlet, /<OutlineAction label=\{t\('moodGauntlet\.noneCta'\)\}/)
   assertMatch(gauntlet, /t\('moodGauntlet\.noneSub'\)/)
   assertEquals(en.moodGauntlet.noneSub, '4 new films, same mood')

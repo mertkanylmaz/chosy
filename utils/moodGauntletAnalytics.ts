@@ -112,6 +112,29 @@ export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEve
   return { name: 'mood_pipeline_timing', props: { stage, ms: Math.max(0, Math.round(ms)) } };
 }
 
+/**
+ * Faz 2-4: CTA dış bağlantıyı açtığında. Yalnız kimlik / sabit etiket / ülke kodu — başlık YOK.
+ * `region` ISO alpha-2 (ya da bölge yoksa null).
+ */
+export const PROVIDER_EVENT_NAMES = ['provider_clicked', 'app_returned_after_provider'] as const;
+
+export function providerClickedEvent(p: {
+  providerId: number;
+  offerType: WatchOfferType | null;
+  region: string | null;
+  linkKind: WatchLinkKindProp;
+}): MoodEvent {
+  return {
+    name: 'provider_clicked',
+    props: { provider_id: p.providerId, offer_type: p.offerType, region: p.region, link_kind: p.linkKind },
+  };
+}
+
+/** Dış uygulamadan dönüş (30 dk penceresi içinde). */
+export function appReturnedAfterProviderEvent(secondsAway: number): MoodEvent {
+  return { name: 'app_returned_after_provider', props: { seconds_away: Math.max(0, Math.round(secondsAway)) } };
+}
+
 /** İzin verilen string değerler (serbest metin değil, sabit etiketler). */
 const ALLOWED_STRINGS = new Set<string>([
   'quick', 'free_text', 'watch_now', 'where', 'later', 'share', 'lighter', 'stronger',
@@ -127,6 +150,8 @@ const ALLOWED_STRINGS = new Set<string>([
 /** Gönderim öncesi savunma: serbest metin taşıyan string prop varsa hata (olay atılmaz). */
 export function assertNoFreeText(ev: MoodEvent): void {
   for (const [k, v] of Object.entries(ev.props)) {
+    // Ülke kodu: tam iki büyük harf (TR, US…). Başlık / metin bu kalıba giremez.
+    if (k === 'region' && typeof v === 'string' && /^[A-Z]{2}$/.test(v)) continue;
     if (typeof v === 'string' && !ALLOWED_STRINGS.has(v)) {
       throw new Error(`mood olayi ${ev.name}.${k} serbest metin tasiyor`);
     }

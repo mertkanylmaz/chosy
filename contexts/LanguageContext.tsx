@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
@@ -8,6 +8,14 @@ import * as Sentry from '@sentry/react-native';
 import { getLocales } from 'expo-localization';
 
 import { i18n, Locale } from '@/constants/i18n';
+import { posthogAnalytics } from '@/services/posthog';
+import { readStorefrontCountry } from '@/services/storefrontRegion';
+import {
+  normalizeCountryCode,
+  resolveWatchRegion,
+  WATCH_REGION_STORAGE_KEY,
+  type WatchRegionSource,
+} from '@/utils/watchRegion';
 
 // ─── Tipler ───────────────────────────────────────────────────────────────────
 
@@ -29,6 +37,14 @@ interface LanguageContextValue {
    * "bölge belirlenemedi" olarak AÇIKÇA çizer, başka bölgeyi sormaz.
    */
   region: string | null;
+  /**
+   * Faz 2-4: `region` hangi basamaktan geldi — user | storefront | device | none
+   * (`utils/watchRegion.resolveWatchRegion`). Öncelik: kullanıcı seçimi > App Store
+   * storefront > cihaz bölgesi > null. 'US' son çaresi YOK.
+   */
+  regionSource: WatchRegionSource;
+  /** Kullanıcı seçimini kaydeder (AsyncStorage) ve `watch_region_changed` olayını atar. */
+  setWatchRegion: (code: string) => Promise<void>;
 }
 
 // ─── Sabitler ─────────────────────────────────────────────────────────────────
@@ -36,22 +52,12 @@ interface LanguageContextValue {
 const LANGUAGE_KEY = 'moodflix_language';
 
 /**
- * Cihazın ülke kodunu okur (iOS: Ayarlar › Dil ve Bölge › Bölge; dil
- * seçiminden BAĞIMSIZ). Senkron — `getLocales()` ağ/depo gerektirmez.
- *
- * Geçerli ISO 3166-1 alpha-2 değilse (null, "419" gibi UN M.49 kodları)
- * `null` döner ve Sentry'ye yazılır — varsayılan bölgeye DÜŞÜLMEZ.
+ * Cihazın ham ülke kodunu okur (iOS: Ayarlar › Dil ve Bölge › Bölge; dil seçiminden
+ * BAĞIMSIZ). Senkron — `getLocales()` ağ/depo gerektirmez. Doğrulama ve öncelik
+ * `utils/watchRegion.resolveWatchRegion`'da; bu yalnız ham değeri verir.
  */
-function readDeviceRegion(): string | null {
-  const raw = getLocales()[0]?.regionCode ?? null;
-  const code = raw ? raw.toUpperCase() : null;
-  if (code && /^[A-Z]{2}$/.test(code)) return code;
-  Sentry.captureMessage('device region unavailable', {
-    level: 'warning',
-    tags: { component: 'LanguageContext', flow: 'device_region' },
-    extra: { raw_region_code: raw },
-  });
-  return null;
+function readDeviceRegionRaw(): string | null {
+  return getLocales()[0]?.regionCode ?? null;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -61,6 +67,8 @@ const LanguageContext = createContext<LanguageContextValue>({
   setLanguage: async () => {},
   t: (key) => key,
   region: null,
+  regionSource: 'none',
+  setWatchRegion: async () => {},
 });
 
 // ─── Provider ─────────────────────────────────────────────────────────────────
@@ -76,7 +84,87 @@ const LanguageContext = createContext<LanguageContextValue>({
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Locale>('en');
   // Cihaz bölgesi oturum boyunca değişmez — bir kez okunur.
-  const [region] = useState<string | null>(readDeviceRegion);
+  const [deviceRaw] = useState<string | null>(readDeviceRegionRaw);
+  const [chosenRaw, setChosenRaw] = useState<string | null>(null);
+  const [storefrontRaw, setStorefrontRaw] = useState<string | null>(null);
+  const [chosenLoaded, setChosenLoaded] = useState(false);
+  const [storefrontLoaded, setStorefrontLoaded] = useState(false);
+
+  const resolved = useMemo(
+    () => resolveWatchRegion({ chosen: chosenRaw, storefront: storefrontRaw, device: deviceRaw }),
+    [chosenRaw, storefrontRaw, deviceRaw],
+  );
+  const { region, source: regionSource } = resolved;
+
+  // Kullanıcının kayıtlı seçimi.
+  useEffect(() => {
+    AsyncStorage.getItem(WATCH_REGION_STORAGE_KEY)
+      .then((saved) => setChosenRaw(normalizeCountryCode(saved)))
+      .catch((err: unknown) => {
+        Sentry.captureException(err, { tags: { component: 'LanguageContext', flow: 'watch_region_read' } });
+      })
+      .finally(() => setChosenLoaded(true));
+  }, []);
+
+  // App Store storefront ülkesi (RC hazır olunca; başarısızsa cihaz bölgesine düşülür).
+  useEffect(() => {
+    let cancelled = false;
+    void readStorefrontCountry().then((code) => {
+      if (cancelled) return;
+      setStorefrontRaw(code);
+      setStorefrontLoaded(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Bölge çözülemedi → Sentry (bir kez). Çözüm tamamlanmadan uyarı verilmez.
+  const warnedNone = useRef(false);
+  const resolvedLogged = useRef(false);
+  useEffect(() => {
+    if (!chosenLoaded || !storefrontLoaded) return;
+    if (!resolvedLogged.current) {
+      resolvedLogged.current = true;
+      posthogAnalytics.track('watch_region_resolved', {
+        region,
+        source: regionSource,
+        device_region: normalizeCountryCode(deviceRaw),
+        storefront_region: normalizeCountryCode(storefrontRaw),
+      });
+    }
+    if (region === null && !warnedNone.current) {
+      warnedNone.current = true;
+      Sentry.captureMessage('device region unavailable', {
+        level: 'warning',
+        tags: { component: 'LanguageContext', flow: 'device_region' },
+        extra: { raw_device: deviceRaw, raw_storefront: storefrontRaw },
+      });
+    }
+  }, [chosenLoaded, storefrontLoaded, region, regionSource, deviceRaw, storefrontRaw]);
+
+  const setWatchRegion = useCallback(
+    async (code: string) => {
+      const next = normalizeCountryCode(code);
+      if (next === null || next.length !== 2) {
+        throw new Error(`setWatchRegion: gecersiz ulke kodu (${code})`);
+      }
+      if (next === region && regionSource === 'user') return;
+      posthogAnalytics.track('watch_region_changed', {
+        from: region,
+        to: next,
+        source_before: regionSource,
+      });
+      setChosenRaw(next);
+      try {
+        await AsyncStorage.setItem(WATCH_REGION_STORAGE_KEY, next);
+      } catch (err) {
+        // Seçim bu oturumda geçerli kalır; kalıcılaşamadığı görünür kayıt bırakır.
+        Sentry.captureException(err, { tags: { component: 'LanguageContext', flow: 'watch_region_write' } });
+      }
+    },
+    [region, regionSource],
+  );
 
   useEffect(() => {
     AsyncStorage.getItem(LANGUAGE_KEY)
@@ -112,7 +200,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t, region }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, region, regionSource, setWatchRegion }}>
       {children}
     </LanguageContext.Provider>
   );

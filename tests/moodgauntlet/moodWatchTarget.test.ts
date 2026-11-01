@@ -7,7 +7,7 @@ import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0
 
 import { pickActionEvent } from '../../utils/moodGauntletAnalytics.ts'
 import { justWatchCountry, justWatchSearchUrl, labelKindOf, resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
-import { mappedProviderIds, providerDisplayName, providerSearchUrl } from '../../utils/watchProviderLinks.ts'
+import { mappedProviderIds, opensAppOf, providerDisplayName, providerSearchUrl } from '../../utils/watchProviderLinks.ts'
 import { offerLabelKind, orderProvidersWithOffer } from '../../utils/watchProviderList.ts'
 
 const read = (p: string) =>
@@ -21,9 +21,12 @@ Deno.test('flatrate saglayici: sagalayicinin resmi arama URL\'si (baslik kodlu),
     ...base, providersReady: true,
     providers: { link: 'https://www.themoviedb.org/movie/1/watch?locale=TR', flatrate: [prov(8, 1, 'Netflix')] },
   })
-  assertEquals(r.kind, 'provider')
-  assertEquals(r.url, 'https://www.netflix.com/search?q=Perfect%20Days')
+  // Faz 2-4: hepsi opensApp='unverified' → JustWatch aramasi (kurucu cihaz testinden sonra verified olur)
+  assertEquals(r.kind, 'justwatch')
+  assertEquals(r.url, 'https://www.justwatch.com/tr/search?q=Perfect%20Days')
   assert(!r.url?.includes('themoviedb'))
+  assertEquals(providerSearchUrl(8, 'Perfect Days'), 'https://www.netflix.com/search?q=Perfect%20Days')
+  assertEquals(opensAppOf(8), 'unverified')
   assertEquals(r.providerId, 8)
   assertEquals(r.providerName, 'Netflix')
   assertEquals(r.offerType, 'flatrate')
@@ -44,7 +47,7 @@ Deno.test('oncelik: flatrate > free > ads > rent > buy (rent listede once olsa d
   assertEquals(orderProvidersWithOffer({ flatrate: [prov(8, 1)], rent: [prov(8, 1)] })[0].offer, 'flatrate')
 })
 
-Deno.test('yalniz rent/buy: "Rent on" / "Buy on" etiketi, Apple TV Store → Apple TV', () => {
+Deno.test('yalniz rent/buy: teklif turu rent, Apple TV Store → Apple TV marka adi', () => {
   const r = resolveWatchTarget({
     ...base, region: 'US', title: 'Heat', providersReady: true,
     providers: { rent: [prov(2, 1, 'Apple TV Store')], buy: [prov(3, 2, 'Google Play Movies')] },
@@ -52,7 +55,8 @@ Deno.test('yalniz rent/buy: "Rent on" / "Buy on" etiketi, Apple TV Store → App
   assertEquals(r.offerType, 'rent')
   assertEquals(r.labelKind, 'rent')
   assertEquals(r.providerName, 'Apple TV')
-  assertEquals(r.url, 'https://tv.apple.com/search?term=Heat')
+  assertEquals(r.kind, 'justwatch')
+  assertEquals(r.url, 'https://www.justwatch.com/us/search?q=Heat')
   assertEquals(labelKindOf('buy'), 'buy')
   assertEquals(labelKindOf('rent'), 'rent')
   assertEquals(labelKindOf('free'), 'watch')
@@ -97,9 +101,9 @@ Deno.test('hic saglayici yok / bos kovalar / veri hazir degil: /film/:id, provid
 Deno.test('bolge yok + tabloda olmayan saglayici: uydurma adres yok → detay (saglayici yine bulundu)', () => {
   const r = resolveWatchTarget({ ...base, region: null, providersReady: true, providers: { flatrate: [prov(1826, 1, 'TOD TV')] } })
   assertEquals([r.kind, r.url, r.providerFound], ['detail', null, true])
-  // tabloda olan saglayici bolgesiz de calisir (URL bolgeye bagli degil)
-  const direct = resolveWatchTarget({ ...base, region: null, providersReady: true, providers: { flatrate: [prov(8, 1)] } })
-  assertEquals(direct.kind, 'provider')
+  // Faz 2-4: unverified saglayici bolgesiz JustWatch'a gidemez → detay (uydurma adres yok)
+  const unverified = resolveWatchTarget({ ...base, region: null, providersReady: true, providers: { flatrate: [prov(8, 1)] } })
+  assertEquals([unverified.kind, unverified.url, unverified.providerFound], ['detail', null, true])
 })
 
 Deno.test('olay: watch_now provider_id + offer_type + link_kind tasir; diger eylemler eski bicimde', () => {
@@ -127,27 +131,34 @@ Deno.test('ResultStage baglantisi: hedef cozulur, universal link, hata sessiz de
   assertMatch(src, /MOOD_GAUNTLET_WATCH_OPEN_FAILED/)
   assertMatch(src, /openFilm\(champion\.id\)/)
   assertMatch(src, /disabled=\{providers\.state === 'loading'\}/)
-  // etiket: Watch on X / Rent on X / Buy on X (TR: ek yok)
-  assertMatch(src, /moodGauntlet\.rentOn/)
-  assertMatch(src, /moodGauntlet\.buyOn/)
-  assertMatch(src, /moodGauntlet\.watchOn/)
-  assert(!/rentBuyOn/.test(src))
+  // etiket: "Find on X" (TR: "Şurada bul: X"); film sayfasına derin bağlantı yok → "Watch on" yok
+  assertMatch(src, /moodGauntlet\.findOn/)
+  assert(!/moodGauntlet\.(watchOn|rentOn|buyOn)/.test(src))
+  assertMatch(src, /moodGauntlet\.offerHint\./)
+  // olaylar: provider_clicked + dönüşte app_returned_after_provider (30 dk)
+  assertMatch(src, /providerClickedEvent\(/)
+  assertMatch(src, /providerReturn\.markOpened\(Date\.now\(\)\)/)
+  assertMatch(src, /useProviderReturnTracking\(\)/)
   // logo altı tür etiketi YALNIZ mood sonucunda açık
   assertMatch(src, /showOfferLabels/)
   assert(!/showOfferLabels/.test(read('components/gauntlet/ChampionReveal/index.tsx')), 'günlük gauntlet etiketleri değişmemeli')
 })
 
-Deno.test('locales: Watch / Rent / Buy CTA ve tur etiketleri en+tr', () => {
+Deno.test('locales: Find on CTA, teklif turu ipucu ve bolge notu en+tr', () => {
   const en = JSON.parse(read('locales/en.json'))
   const tr = JSON.parse(read('locales/tr.json'))
-  assertEquals(en.moodGauntlet.watchOn, 'Watch on %{provider}')
-  assertEquals(en.moodGauntlet.rentOn, 'Rent on %{provider}')
-  assertEquals(en.moodGauntlet.buyOn, 'Buy on %{provider}')
-  assertEquals(tr.moodGauntlet.watchOn, 'İzle · %{provider}')
-  assertEquals(tr.moodGauntlet.rentOn, 'Kirala · %{provider}')
-  assertEquals(tr.moodGauntlet.buyOn, 'Satın al · %{provider}')
-  assert(!('rentBuyOn' in en.moodGauntlet) && !('rentBuyOn' in tr.moodGauntlet))
-  assert(!/'(da|de|ta|te|dan|den)\b/.test(tr.moodGauntlet.watchOn + tr.moodGauntlet.rentOn + tr.moodGauntlet.buyOn), 'TR CTA ek kullanmaz')
+  assertEquals(en.moodGauntlet.findOn, 'Find on %{provider}')
+  assertEquals(tr.moodGauntlet.findOn, 'Şurada bul: %{provider}')
+  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Subscription', free: 'Free', rent: 'Rent', buy: 'Buy' })
+  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelik', free: 'Ücretsiz', rent: 'Kiralık', buy: 'Satın alma' })
+  for (const k of ['watchOn', 'rentOn', 'buyOn', 'rentBuyOn']) {
+    assert(!(k in en.moodGauntlet) && !(k in tr.moodGauntlet), 'eski CTA anahtari kalmamali: ' + k)
+  }
+  assert(!/'(da|de|ta|te|dan|den)/.test(tr.moodGauntlet.findOn), 'TR CTA ek kullanmaz')
+  assertEquals(en.gauntlet.watchProviders.availabilityIn, 'Availability in %{country}')
+  assertEquals(tr.gauntlet.watchProviders.availabilityIn, '%{country} için')
+  assertEquals(en.gauntlet.watchProviders.change, 'Change')
+  assertEquals(tr.gauntlet.watchProviders.change, 'Değiştir')
   assertEquals(en.gauntlet.watchProviders.offer, { subscription: 'Subscription', free: 'Free', rent: 'Rent', buy: 'Buy' })
   assertEquals(tr.gauntlet.watchProviders.offer, { subscription: 'Abonelik', free: 'Ücretsiz', rent: 'Kirala', buy: 'Satın al' })
 })

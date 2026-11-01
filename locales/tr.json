@@ -713,12 +713,19 @@
     "exhaustedTitle": "Bu ruh hali için tüm filmleri gördün",
     "exhaustedBody": "Daha fazlası için yeni bir arama başlat.",
     "newSearch": "Yeni arama",
+    "stripA11y": "Dört filmin",
     "yourFour": "Dörtlün",
     "yourFourA11y": "Bu akşamın dört filmi",
     "tapHint": "İzlemeyi tercih ettiğine dokun",
     "justPick": "Sen seç",
     "noneSub": "Aynı mood, 4 yeni film",
-    "watchOn": "İzle · %{provider}",
+    "findOn": "Şurada bul: %{provider}",
+    "offerHint": {
+      "subscription": "Abonelik",
+      "free": "Ücretsiz",
+      "rent": "Kiralık",
+      "buy": "Satın alma"
+    },
     "save": "Kaydet",
     "savedShort": "✓ Kaydedildi",
     "shareA11y": "Bu filmi paylaş",
@@ -740,9 +747,7 @@
       "shorterAll": "Her turda daha kısa olanı seçtin",
       "shorterTwo": "Daha kısa filmlere yöneldin"
     },
-    "loadingAnother": "Başka bir dörtlü seçiliyor…",
-    "rentOn": "Kirala · %{provider}",
-    "buyOn": "Satın al · %{provider}"
+    "loadingAnother": "Başka bir dörtlü seçiliyor…"
   },
   "aiConsent": {
     "title": "Seçmene Claude yardım etsin",
@@ -1730,6 +1735,14 @@
       "seeAll": "Tümü",
       "seeAllA11y": "%{count} izleme seçeneğinin tümünü gör",
       "sheetTitle": "Nerede izlenir",
+      "availabilityIn": "%{country} için",
+      "change": "Değiştir",
+      "changeA11y": "Ülkeyi değiştir",
+      "regionTitle": "Ülke seç",
+      "regionSearch": "Ülke ara",
+      "regionNoMatch": "Ülke bulunamadı",
+      "regionClose": "Kapat",
+      "regionCurrent": "Seçili",
       "group": {
         "stream": "Akış",
         "rent": "Kirala",

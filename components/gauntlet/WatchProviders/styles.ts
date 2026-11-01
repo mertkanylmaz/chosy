@@ -174,3 +174,36 @@ export const sheetStyles = StyleSheet.create({
     flexShrink: 1,
   },
 });
+
+/** Ülke seçici sheet'i (Faz 2-4) — `sheetStyles` ile aynı zemin; liste sabit yükseklikte. */
+export const regionStyles = StyleSheet.create({
+  overlay: sheetStyles.overlay,
+  backdrop: sheetStyles.backdrop,
+  sheet: { ...sheetStyles.sheet, height: '75%' },
+  handle: sheetStyles.handle,
+  title: sheetStyles.title,
+  search: {
+    ...type.body,
+    minHeight: size.touchTarget,
+    paddingHorizontal: space.base,
+    borderRadius: radius.surface,
+    backgroundColor: color.surface.base,
+    color: color.text.primary,
+  },
+  row: {
+    minHeight: size.touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: space.md,
+  },
+  rowName: { ...type.body, color: color.text.primary, flexShrink: 1 },
+  rowNameSelected: { color: color.reward.primary, fontWeight: '600' },
+  rowCode: { ...type.caption, color: color.text.secondary },
+  empty: { ...type.caption, color: color.text.secondary, textAlign: 'center', marginTop: space.lg },
+  /** "Availability in X · Change" satırı (hairline altı çizgi yok; Değiştir dokunulur). */
+  noteRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' },
+  noteText: { ...type.caption, color: color.text.secondary },
+  changeBtn: { minHeight: size.touchTarget, justifyContent: 'center', paddingHorizontal: space.xs },
+  changeText: { ...type.caption, color: color.text.primary, textDecorationLine: 'underline' },
+});

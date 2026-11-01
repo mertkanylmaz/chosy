@@ -39,22 +39,19 @@ import { reasonFor, type IntensityDirection, type MatchRow, type MoodNotice } fr
 import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { pickActionEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
+import { pickActionEvent, providerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { normalizePosterUrl } from '@/utils/posterUrl';
+import { providerReturn } from '@/utils/providerReturn';
+import { offerLabelKind } from '@/utils/watchProviderList';
 
 import { FilmChips } from './FilmChips';
 import { styles } from './styles';
 import { trackMoodEvent } from './useMoodGauntlet';
+import { useProviderReturnTracking } from './useProviderReturn';
 
 type SaveState = 'idle' | 'saving' | 'saved';
-
-const WATCH_LABEL_KEYS = {
-  watch: 'moodGauntlet.watchOn',
-  rent: 'moodGauntlet.rentOn',
-  buy: 'moodGauntlet.buyOn',
-} as const;
 
 const INSIGHT_KEYS: Record<PickPattern, string> = {
   calmer_all: 'moodGauntlet.insight.calmerAll',
@@ -124,6 +121,7 @@ export function ResultStage({
   const router = useRouter();
   const reduced = useReducedMotion();
   const providers = useWatchProviders(champion.id, region);
+  useProviderReturnTracking();
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<string | null>(null);
   const mounted = useRef(true);
@@ -193,10 +191,16 @@ export function ResultStage({
     [champion.title, region, providers.state, providers.providers],
   );
 
+  // Film sayfasına derin bağlantımız yok → "Watch on" denmez: "Find on {Provider}" (TR: ek yok).
   const watchLabel =
     target.providerName === null
       ? t('moodGauntlet.watchNow')
-      : t(WATCH_LABEL_KEYS[target.labelKind], { provider: target.providerName });
+      : t('moodGauntlet.findOn', { provider: target.providerName });
+  /** CTA altında küçük teklif türü: Subscription / Free / Rent / Buy. */
+  const offerHint =
+    target.providerName !== null && target.offerType !== null
+      ? t(`moodGauntlet.offerHint.${offerLabelKind(target.offerType)}`)
+      : null;
 
   /**
    * Watch now: sağlayıcının resmî arama bağlantısı (universal link — uygulama yüklüyse açar);
@@ -211,18 +215,29 @@ export function ResultStage({
         linkKind: target.url === null ? 'detail' : target.kind,
       }),
     );
+    if (target.providerId !== null) {
+      trackMoodEvent(
+        providerClickedEvent({
+          providerId: target.providerId,
+          offerType: target.offerType,
+          region,
+          linkKind: target.url === null ? 'detail' : target.kind,
+        }),
+      );
+    }
     if (target.url === null) {
       openFilm(champion.id);
       return;
     }
     void hapticLight();
+    providerReturn.markOpened(Date.now());
     try {
       await Linking.openURL(target.url);
     } catch (err) {
       logger.error('[moodGauntlet] watch now baglantisi acilamadi', err, { code: 'MOOD_GAUNTLET_WATCH_OPEN_FAILED' });
       openFilm(champion.id);
     }
-  }, [champion.id, target, openFilm]);
+  }, [champion.id, target, region, openFilm]);
 
   /** MANUEL watchlist: yalnız bu dokunuşla yazılır (deste/swipe yolundaki otomatik yazım yok). */
   const handleSave = useCallback(async () => {
@@ -308,6 +323,7 @@ export function ResultStage({
           disabled={providers.state === 'loading'}
           busy={providers.state === 'loading'}
         />
+        {offerHint !== null && <Text style={styles.offerHint}>{offerHint}</Text>}
         <View style={styles.providersSlot}>
           <WatchProvidersRow
             state={providers.state}

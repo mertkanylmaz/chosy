@@ -38,11 +38,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import type { TmdbWatchProviders } from '@/services/tmdb';
 import { hapticLight } from '@/utils/haptics';
+import { watchRegionName } from '@/constants/watchRegions';
+import { dedupeByBrand } from '@/utils/watchProviderBrands';
 import { groupProviders, offerLabelKind, orderProviders, orderProvidersWithOffer } from '@/utils/watchProviderList';
 
 import { ProvidersSheet } from './ProvidersSheet';
+import { RegionPickerSheet } from './RegionPickerSheet';
 import type { WatchProvidersState } from './useWatchProviders';
-import { styles } from './styles';
+import { regionStyles, styles } from './styles';
 
 /**
  * V-3 Tur G2 (V3-D5): satırda en fazla 3 logo; fazlası "See all" sheet'inde.
@@ -74,13 +77,15 @@ export function WatchProvidersRow({
   onSeeAll,
   showOfferLabels = false,
 }: WatchProvidersRowProps): React.JSX.Element {
-  const { t, region } = useLanguage();
+  const { t, region, language } = useLanguage();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [regionOpen, setRegionOpen] = useState(false);
 
   // V-3 Tur G2: free/ads artık sayılır — yalnız free/ads olan film logo
   // gösterir (kurucu kararı), boş durum yalnız HİÇ sağlayıcı yokken.
   const ordered = useMemo(
-    () => (state === 'ok' && providers ? orderProviders(providers) : []),
+    // Faz 2-4: aynı markanın varyantları (Netflix + Netflix Standard with Ads…) tek logo.
+    () => (state === 'ok' && providers ? dedupeByBrand(orderProviders(providers)) : []),
     [state, providers],
   );
   const list = ordered.slice(0, MAX_PROVIDERS);
@@ -94,7 +99,11 @@ export function WatchProvidersRow({
     return map;
   }, [state, providers]);
   const groups = useMemo(
-    () => (providers ? groupProviders(providers) : { stream: [], rent: [], buy: [] }),
+    () => {
+      if (!providers) return { stream: [], rent: [], buy: [] };
+      const g = groupProviders(providers);
+      return { stream: dedupeByBrand(g.stream), rent: dedupeByBrand(g.rent), buy: dedupeByBrand(g.buy) };
+    },
     [providers],
   );
 
@@ -206,10 +215,38 @@ export function WatchProvidersRow({
     );
   };
 
+  const openRegionPicker = useCallback(() => {
+    void hapticLight();
+    setRegionOpen(true);
+  }, []);
+
+  /** Faz 2-4: hangi bölgenin kataloğu gösteriliyor + değiştirme. Bölge yoksa yalnız "Değiştir". */
+  const regionNote = (
+    <View style={regionStyles.noteRow}>
+      {region !== null && (
+        <Text style={regionStyles.noteText}>
+          {t('gauntlet.watchProviders.availabilityIn', { country: watchRegionName(region, language) })}
+          {' · '}
+        </Text>
+      )}
+      <TouchableOpacity
+        style={regionStyles.changeBtn}
+        onPress={openRegionPicker}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={t('gauntlet.watchProviders.changeA11y')}
+      >
+        <Text style={regionStyles.changeText}>{t('gauntlet.watchProviders.change')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.root}>
       <Text style={styles.label}>{t('gauntlet.watchProviders.label')}</Text>
+      {regionNote}
       {renderBody()}
+      <RegionPickerSheet visible={regionOpen} onClose={() => setRegionOpen(false)} />
     </View>
   );
 }

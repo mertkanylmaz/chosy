@@ -87,11 +87,29 @@ export const styles = StyleSheet.create({
   tapHint: { ...type.callout, color: color.text.secondary, textAlign: 'center' },
   pairRow: { flexDirection: 'row', gap: space.md, width: '100%', marginTop: space.base },
   pairCol: { flex: 1, gap: space.sm },
-  /** Gerekçe: 14pt (alt sınır ölçeklemeyle 13pt), yeterli kontrast, ≤3 satır, "…" yok. */
+  /** Gerekçe: 14pt, ≤3 satır, taşarsa kuyrukta "…". */
   reason: { fontFamily: type.callout.fontFamily, fontSize: 14, lineHeight: 19, color: color.text.primarySoft },
+  /** Eşit yükseklik: 3 satır × 19pt. Gerekçe yüklenirken / boş gelirken de aynı yer ayrılır. */
+  reasonSlot: { height: 57 },
+  reasonSkeleton: { gap: space.xs, paddingTop: 3 },
+  skeletonLine: { height: 12, borderRadius: radius.pill, backgroundColor: color.surface.raised },
+  skeletonLineShort: { width: '60%' },
+  /** Dört film şeridi (turlar boyunca üstte): kazanan altın kenarlı, elenen %35 opaklık. */
+  strip: { flexDirection: 'row', gap: space.xs, alignItems: 'center', justifyContent: 'center' },
+  stripCell: {
+    width: 36,
+    aspectRatio: 2 / 3,
+    borderRadius: radius.poster,
+    overflow: 'hidden',
+    backgroundColor: color.surface.raised,
+    borderWidth: size.hairline,
+    borderColor: color.surface.border,
+  },
+  stripCellAdvanced: { borderWidth: 2, borderColor: color.reward.primary },
+  stripCellEliminated: { opacity: 0.35 },
+  /** CTA altı teklif türü (Subscription / Rent / Buy). */
+  offerHint: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
   gBottom: { marginTop: 'auto', paddingTop: space.lg, gap: space.sm },
-  justPick: { minHeight: size.touchTarget, alignItems: 'center', justifyContent: 'center' },
-  justPickText: { ...type.callout, color: color.text.primary, textDecorationLine: 'underline' },
   noneSub: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
 
   // Dörtlün (ilk turdan önce)
