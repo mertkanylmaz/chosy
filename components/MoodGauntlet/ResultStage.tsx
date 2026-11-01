@@ -11,7 +11,7 @@
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { ArrowUpRight, BookmarkSimple, Play, ShareNetwork } from 'phosphor-react-native';
+import { BookmarkSimple, ListBullets, Play, ShareNetwork } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -42,20 +42,14 @@ import { reasonFor, type IntensityDirection, type MatchRow, type MoodNotice } fr
 import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import {
-  pickActionEvent,
-  providerClickedEvent,
-  trailerClickedEvent,
-  type MoodPickAction,
-  type WatchLinkKindProp,
-} from '@/utils/moodGauntletAnalytics';
+import { pickActionEvent, trailerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
-import { destinationCaptionKey, resultCtaMode } from '@/utils/moodResultCta';
+import { resultCtaMode } from '@/utils/moodResultCta';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { filmDetailHref } from '@/utils/filmDetailHref';
 import { normalizePosterUrl } from '@/utils/posterUrl';
-import { providerReturn, trailerReturn } from '@/utils/providerReturn';
+import { trailerReturn } from '@/utils/providerReturn';
 import { trailerUrl } from '@/utils/trailerPick';
 
 import { FilmChips } from './FilmChips';
@@ -143,6 +137,7 @@ export function ResultStage({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<string | null>(null);
   const [regionOpen, setRegionOpen] = useState(false);
+  const [whereOpen, setWhereOpen] = useState(false);
   // Faz 2-6: yeni sonuç → en üst; film detayından dönüşte (aynı sonuç) konum korunur.
   const scrollRef = useRef<ScrollView>(null);
   const lastResultKey = useRef<string | null>(null);
@@ -210,68 +205,35 @@ export function ResultStage({
     [router, champion],
   );
 
-  /** Sağlayıcı verisi yüklendiyse hedef (düğme etiketi + bağlantı); aksi hâlde null. */
+  /** Sağlayıcı verisi yüklendiyse ilk sağlayıcı bilgisi (yalnız olay özellikleri için). */
   const target = useMemo(
     () =>
       resolveWatchTarget({
-        title: champion.title,
-        region,
         providersReady: providers.state === 'ok',
         providers: providers.providers as Parameters<typeof resolveWatchTarget>[0]['providers'],
       }),
-    [champion.title, region, providers.state, providers.providers],
+    [providers.state, providers.providers],
   );
 
-  // CTA dürüstlüğü (Faz 2-5): sağlayıcı adı YALNIZ doğrudan bağlantıda ("Open in X").
-  // justwatch / tmdb_watch / detail → sağlayıcıya değil bir arama/liste sayfasına gidilir.
-  const watchLabel =
-    target.kind === 'provider_direct' && target.providerName !== null
-      ? t('moodGauntlet.openIn', { provider: target.providerName })
-      : t('moodGauntlet.whereToWatch');
   // Faz 2-6: mod bölge/sağlayıcı verisinden her render'da türetilir → bölge değişince CTA, satır ve
   // etiketler birlikte yeniden hesaplanır. Logo altı etiketler WatchProvidersRow'da kalır.
   const ctaMode = resultCtaMode(providers.state, target);
-  const destinationKey = destinationCaptionKey(target.kind);
 
   /**
-   * Watch now: sağlayıcının resmî arama bağlantısı (universal link — uygulama yüklüyse açar);
-   * tabloda yoksa JustWatch araması; hiç sağlayıcı yoksa film detay ekranı. Açılamazsa hata
-   * kaydedilir ve kullanıcı detay ekranına düşer (sessiz geçiş yok).
+   * Where to watch (Faz 2-8): CTA dışarı gitmez — uygulama içi native sheet'i açar. Sağlayıcı satırları
+   * yalnız allowlist'teki servisler için dışarı açılır (bkz. ProvidersSheet). `where_to_watch_opened`
+   * sheet açılışında üretilir; `watch_now` eski huni için korunur.
    */
-  const handleWatchNow = useCallback(async () => {
-    const linkKind: WatchLinkKindProp = target.url === null || target.kind === 'none' ? 'detail' : target.kind;
+  const handleWatchNow = useCallback(() => {
     trackMoodEvent(
       pickActionEvent('watch_now', target.providerFound, {
         providerId: target.providerId,
         offerType: target.offerType,
-        linkKind,
       }),
     );
-    if (target.providerId !== null) {
-      trackMoodEvent(
-        providerClickedEvent({
-          filmId: champion.id,
-          surface: 'mood_result',
-          providerId: target.providerId,
-          offerType: target.offerType,
-          region,
-          linkKind,
-        }),
-      );
-    }
-    if (target.url === null) {
-      openFilm(champion.id);
-      return;
-    }
     void hapticLight();
-    providerReturn.markOpened(Date.now());
-    try {
-      await Linking.openURL(target.url);
-    } catch (err) {
-      logger.error('[moodGauntlet] watch now baglantisi acilamadi', err, { code: 'MOOD_GAUNTLET_WATCH_OPEN_FAILED' });
-      openFilm(champion.id);
-    }
-  }, [champion.id, target, region, openFilm]);
+    setWhereOpen(true);
+  }, [target]);
 
   /** MANUEL watchlist: yalnız bu dokunuşla yazılır (deste/swipe yolundaki otomatik yazım yok). */
   const handleSave = useCallback(async () => {
@@ -373,15 +335,14 @@ export function ResultStage({
       <View style={styles.ctaBlock}>
         {(ctaMode === 'loading' || ctaMode === 'watch') && (
           <PrimaryAction
-            label={watchLabel}
-            onPress={() => void handleWatchNow()}
+            label={t('moodGauntlet.whereToWatch')}
+            onPress={handleWatchNow}
             variant="gold"
             disabled={ctaMode === 'loading'}
             busy={ctaMode === 'loading'}
-            trailingIcon={<ArrowUpRight size={size.iconInline} color={color.surface.base} weight="bold" />}
+            trailingIcon={<ListBullets size={size.iconInline} color={color.surface.base} weight="bold" />}
           />
         )}
-        {ctaMode === 'watch' && destinationKey !== null && <Text style={styles.offerHint}>{t(destinationKey)}</Text>}
         {ctaMode === 'unavailable' && (
           <>
             <Text style={styles.offerHint}>
@@ -414,6 +375,9 @@ export function ResultStage({
               providers={providers.providers}
               onRetry={providers.retry}
               filmId={champion.id}
+              surface="mood_result"
+              sheetOpen={whereOpen}
+              onSheetOpenChange={setWhereOpen}
               onSeeAll={() => track('where')}
               showOfferLabels
             />

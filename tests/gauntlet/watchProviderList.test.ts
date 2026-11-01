@@ -146,7 +146,7 @@ Deno.test('select: boş bölge → boş liste', () => {
   assertEquals(orderProviders({ flatrate: [], free: [], ads: [], rent: [], buy: [] }), [])
 })
 
-Deno.test('group: stream = flatrate+free+ads; rent/buy kendi içinde, mağaza iki grupta da kalır', () => {
+Deno.test('group: stream = yalnız flatrate, free = free+ads; rent/buy kendi içinde, mağaza iki grupta da kalır', () => {
   const apple = r('Apple TV Store', 2)
   const groups = groupProviders({
     flatrate: [r('Max', 3), r('Netflix', 1)],
@@ -154,7 +154,8 @@ Deno.test('group: stream = flatrate+free+ads; rent/buy kendi içinde, mağaza ik
     rent: [apple, r('Amazon Video', 1)],
     buy: [apple],
   })
-  assertEquals(names(groups.stream), ['Netflix', 'Max', 'Pluto TV'])
+  assertEquals(names(groups.stream), ['Netflix', 'Max'])
+  assertEquals(names(groups.free), ['Pluto TV'])
   assertEquals(names(groups.rent), ['Amazon Video', 'Apple TV Store'])
   assertEquals(names(groups.buy), ['Apple TV Store'])
 })

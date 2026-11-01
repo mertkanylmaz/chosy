@@ -40,7 +40,8 @@ import type { TmdbWatchProviders } from '@/services/tmdb';
 import { hapticLight } from '@/utils/haptics';
 import { watchRegionName } from '@/constants/watchRegions';
 import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
-import { groupProviders, offerLabelKind, orderProviders, orderProvidersWithOffer } from '@/utils/watchProviderList';
+import { offerLabelKind, orderProviders, orderProvidersWithOffer } from '@/utils/watchProviderList';
+import type { ProviderClickSurface } from '@/utils/moodGauntletAnalytics';
 
 import { ProvidersSheet } from './ProvidersSheet';
 import { RegionPickerSheet } from './RegionPickerSheet';
@@ -61,8 +62,16 @@ interface WatchProvidersRowProps {
   state: WatchProvidersState;
   providers: TmdbWatchProviders | null;
   onRetry: () => void;
-  /** `providers_see_all_opened` event'i için. */
+  /** `providers_see_all_opened` / `where_to_watch_opened` event'i için. */
   filmId: string;
+  /** Hangi ekran (Faz 2-8 `where_to_watch_opened.surface`). */
+  surface: ProviderClickSurface;
+  /**
+   * Faz 2-8: sheet'i dışarıdan açmak için (Mood sonucundaki sarı CTA). Verilmezse satır kendi
+   * durumunu tutar ("See all" karosu). İkisi birlikte verilir; sheet YİNE tek örnektir.
+   */
+  sheetOpen?: boolean;
+  onSheetOpenChange?: (open: boolean) => void;
   /** Opsiyonel: "See all" açıldığında çağrılır (Mood Gauntlet `mood_tonight_pick_action: where`). */
   onSeeAll?: () => void;
   /** Faz 2-3 (Mood Gauntlet): logo altında tür etiketi. Varsayılan kapalı — günlük gauntlet değişmez. */
@@ -74,11 +83,16 @@ export function WatchProvidersRow({
   providers,
   onRetry,
   filmId,
+  surface,
+  sheetOpen: sheetOpenProp,
+  onSheetOpenChange,
   onSeeAll,
   showOfferLabels = false,
 }: WatchProvidersRowProps): React.JSX.Element {
   const { t, region, language } = useLanguage();
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetOpenLocal, setSheetOpenLocal] = useState(false);
+  const sheetOpen = sheetOpenProp ?? sheetOpenLocal;
+  const setSheetOpen = onSheetOpenChange ?? setSheetOpenLocal;
   const [regionOpen, setRegionOpen] = useState(false);
 
   // V-3 Tur G2: free/ads artık sayılır — yalnız free/ads olan film logo
@@ -98,14 +112,6 @@ export function WatchProvidersRow({
     }
     return map;
   }, [state, providers]);
-  const groups = useMemo(
-    () => {
-      if (!providers) return { stream: [], rent: [], buy: [] };
-      const g = groupProviders(providers);
-      return { stream: dedupeByBrand(g.stream), rent: dedupeByBrand(g.rent), buy: dedupeByBrand(g.buy) };
-    },
-    [providers],
-  );
 
   const openSheet = useCallback(() => {
     void hapticLight();
@@ -116,7 +122,7 @@ export function WatchProvidersRow({
       region,
       provider_count: ordered.length,
     });
-  }, [filmId, region, ordered.length]);
+  }, [filmId, region, ordered.length, onSeeAll, setSheetOpen]);
 
   /*
     Atıf: sağlayıcı verisi TMDB'ye JustWatch'tan gelir ve TMDB kullanım
@@ -205,12 +211,6 @@ export function WatchProvidersRow({
           )}
         </View>
         {attribution}
-        <ProvidersSheet
-          visible={sheetOpen}
-          groups={groups}
-          onClose={() => setSheetOpen(false)}
-          attribution={attribution}
-        />
       </>
     );
   };
@@ -246,6 +246,17 @@ export function WatchProvidersRow({
       <Text style={styles.label}>{t('gauntlet.watchProviders.label')}</Text>
       {regionNote}
       {renderBody()}
+      {/* Faz 2-8: sheet her durumda (loading hariç tarafı sheet kendi çözer) tek örnek olarak burada. */}
+      <ProvidersSheet
+        visible={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        state={state}
+        providers={providers}
+        onRetry={onRetry}
+        filmId={filmId}
+        surface={surface}
+        attribution={attribution}
+      />
       <RegionPickerSheet visible={regionOpen} onClose={() => setRegionOpen(false)} />
     </View>
   );

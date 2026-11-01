@@ -68,7 +68,7 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
   }
   const order = [
     'styles.resultMood', 'styles.hero', 'styles.resultTitle', 'styles.resultReason', '<FilmChips', 'styles.insight',
-    'label={watchLabel}', '<WatchProvidersRow', 'styles.secondaryRow', "t('moodGauntlet.adjustTitle')", "t('moodGauntlet.backupsTitle')",
+    "label={t('moodGauntlet.whereToWatch')}", '<WatchProvidersRow', 'styles.secondaryRow', "t('moodGauntlet.adjustTitle')", "t('moodGauntlet.backupsTitle')",
   ].map(idx)
   assertEquals(order, [...order].sort((a, b) => a - b))
   // Another four ayri buyuk dugme degil, ucuncu cip; tek birincil CTA
@@ -138,7 +138,7 @@ Deno.test('analitik: first_four_visible entry+path, timing exclusions/four, mood
     a.pipelineTimingEvent('exclusions', 300),
     a.pipelineTimingEvent('four', 2500),
     a.pipelineFallbackEvent('mood_four'),
-    a.pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate', linkKind: 'justwatch' }),
+    a.pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate' }),
   ]) a.assertNoFreeText(e)
 })
 

@@ -723,10 +723,7 @@
     "justPick": "Sen seç",
     "noneSub": "Aynı mood, 4 yeni film",
     "findOn": "Şurada bul: %{provider}",
-    "openIn": "%{provider} ile aç",
     "whereToWatch": "Nerede izlenir",
-    "opensJustWatch": "JustWatch'ta açılır",
-    "opensTmdb": "TMDB'de açılır",
     "notStreaming": "Şu an %{country} için yayında değil",
     "offerHint": {
       "subscription": "Abonelikle",
@@ -1755,10 +1752,13 @@
       "regionNoMatch": "Ülke bulunamadı",
       "regionClose": "Kapat",
       "regionCurrent": "Seçili",
+      "withAds": "reklamlı",
+      "openApp": "%{provider}'i aç",
       "group": {
         "stream": "Akış",
         "rent": "Kirala",
-        "buy": "Satın al"
+        "buy": "Satın al",
+        "free": "Ücretsiz"
       }
     },
     "context": {

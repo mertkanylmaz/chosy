@@ -624,6 +624,7 @@ export function ChampionReveal({
             providers={providers}
             onRetry={retry}
             filmId={champion.id}
+            surface="champion"
           />
 
           {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}

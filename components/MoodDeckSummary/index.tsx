@@ -67,7 +67,7 @@ interface MoodDeckSummaryProps {
 function PickProviders({ filmId }: { filmId: string }): React.JSX.Element {
   const { region } = useLanguage();
   const { state, providers, retry } = useWatchProviders(filmId, region);
-  return <WatchProvidersRow state={state} providers={providers} onRetry={retry} filmId={filmId} />;
+  return <WatchProvidersRow state={state} providers={providers} onRetry={retry} filmId={filmId} surface="mood_deck" />;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────

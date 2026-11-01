@@ -221,22 +221,31 @@ export function selectTopProviders<T extends RankedProviderLike>(
 }
 
 export interface ProviderGroups<T extends RankedProviderLike> {
-  /** flatrate + free + ads */
+  /** yalnız flatrate (abonelik) */
   stream: T[];
   rent: T[];
   buy: T[];
+  /** Faz 2-8: TMDB `free` + `ads` tek grupta; reklamlı olanlar `adsOnlyIds` ile ayırt edilir. */
+  free: T[];
 }
 
 /**
- * "See all" sheet'inin grupları. Her grup KENDİ içinde tekilleştirilir: aynı
+ * Sağlayıcı sheet'inin grupları. Her grup KENDİ içinde tekilleştirilir: aynı
  * mağaza hem kiralık hem satın almada görünebilir, bu iki ayrı bilgidir.
  */
 export function groupProviders<T extends RankedProviderLike>(
   providers: ProviderBuckets<T>,
 ): ProviderGroups<T> {
   return {
-    stream: orderProviders({ flatrate: providers.flatrate, free: providers.free, ads: providers.ads }),
+    stream: orderProviders({ flatrate: providers.flatrate }),
     rent: orderProviders({ rent: providers.rent }),
     buy: orderProviders({ buy: providers.buy }),
+    free: orderProviders({ free: providers.free, ads: providers.ads }),
   };
+}
+
+/** Yalnız `ads` kovasında olan (reklamlı) kimlikler; `free` kovasında da varsa reklamsız sayılır. */
+export function adsOnlyIds(providers: ProviderBuckets<ProviderLike>): Set<number> {
+  const free = new Set((providers.free ?? []).map((p) => p.provider_id));
+  return new Set((providers.ads ?? []).map((p) => p.provider_id).filter((id) => !free.has(id)));
 }

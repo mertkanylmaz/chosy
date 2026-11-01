@@ -73,13 +73,11 @@ export function completedEvent(msTotal: number): MoodEvent {
 }
 
 export type WatchOfferType = 'flatrate' | 'free' | 'ads' | 'rent' | 'buy';
-export type WatchLinkKindProp = 'justwatch' | 'tmdb_watch' | 'provider_direct' | 'detail';
 
-/** Yalnız watch_now: seçilen sağlayıcı, teklif türü ve bağlantı türü. */
+/** Yalnız watch_now: sheet'in öne çıkardığı ilk sağlayıcı ve teklif türü (Faz 2-8: bağlantı türü YOK). */
 export interface WatchNowProps {
   providerId: number | null;
   offerType: WatchOfferType | null;
-  linkKind: WatchLinkKindProp;
 }
 
 /** `providerFound` yalnız watch_now için verilir: bölgede sağlayıcı bulundu mu. */
@@ -91,7 +89,7 @@ export function pickActionEvent(action: MoodPickAction, providerFound?: boolean,
       ...(providerFound === undefined ? {} : { provider_found: providerFound }),
       ...(watch === undefined
         ? {}
-        : { provider_id: watch.providerId, offer_type: watch.offerType, link_kind: watch.linkKind }),
+        : { provider_id: watch.providerId, offer_type: watch.offerType }),
     },
   };
 }
@@ -127,13 +125,19 @@ export function pipelineTimingEvent(
 }
 
 /**
- * Faz 2-4: CTA dış bağlantıyı açtığında. Yalnız kimlik / sabit etiket / ülke kodu — başlık YOK.
+ * Faz 2-4: sağlayıcı satırı dış bağlantıyı açtığında (Faz 2-8: yalnız allowlist `app_open`). Yalnız kimlik / sabit etiket / ülke kodu — başlık YOK.
  * `region` ISO alpha-2 (ya da bölge yoksa null).
  */
 export const PROVIDER_EVENT_NAMES = ['provider_clicked', 'app_returned_after_provider'] as const;
 
-/** provider_clicked'in geldiği yüzey (A7). */
-export type ProviderClickSurface = 'mood_result' | 'champion' | 'film_detail';
+/** provider_clicked / where_to_watch_opened'in geldiği yüzey (A7). */
+export type ProviderClickSurface = 'mood_result' | 'champion' | 'film_detail' | 'mood_deck';
+
+/**
+ * Dış açılışın türü (Faz 2-8): 'verified_deeplink' = veri kaynağından gelen film-özel URL,
+ * 'app_open' = allowlist'teki servisin ana sayfası. Allowlist boşken olay HİÇ tetiklenmez.
+ */
+export type ProviderOpenKind = 'verified_deeplink' | 'app_open';
 
 export function providerClickedEvent(p: {
   filmId: string;
@@ -141,11 +145,30 @@ export function providerClickedEvent(p: {
   providerId: number;
   offerType: WatchOfferType | null;
   region: string | null;
-  linkKind: WatchLinkKindProp;
+  kind: ProviderOpenKind;
 }): MoodEvent {
   return {
     name: 'provider_clicked',
-    props: { film_id: p.filmId, surface: p.surface, provider_id: p.providerId, offer_type: p.offerType, region: p.region, link_kind: p.linkKind },
+    props: { film_id: p.filmId, surface: p.surface, provider_id: p.providerId, offer_type: p.offerType, region: p.region, kind: p.kind },
+  };
+}
+
+/** Sheet'in hangi veri durumuyla açıldığı. */
+export type WhereToWatchState = 'loading' | 'ok' | 'empty' | 'error' | 'noRegion';
+
+/**
+ * "Where to watch" sheet'i açıldığında (Faz 2-8). Birincil dönüşüm ölçütü. Yalnız kimlik +
+ * sabit etiket + ülke kodu — başlık YOK.
+ */
+export function whereToWatchOpenedEvent(p: {
+  filmId: string;
+  surface: ProviderClickSurface;
+  region: string | null;
+  state: WhereToWatchState;
+}): MoodEvent {
+  return {
+    name: 'where_to_watch_opened',
+    props: { film_id: p.filmId, surface: p.surface, region: p.region, state: p.state },
   };
 }
 
@@ -183,9 +206,11 @@ const ALLOWED_STRINGS = new Set<string>([
   'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons', 'mood_four',
   'parse', 'v4', 'pick', 'exclusions', 'four',
   'combined', 'legacy',
-  'mood_result', 'champion', 'film_detail', 'en', 'tr',
-  // watch_now: offer_type + link_kind
-  'flatrate', 'free', 'ads', 'rent', 'buy', 'justwatch', 'tmdb_watch', 'provider_direct', 'detail',
+  'mood_result', 'champion', 'film_detail', 'mood_deck', 'en', 'tr',
+  // where_to_watch_opened.state + provider_clicked.kind
+  'loading', 'ok', 'empty', 'error', 'noRegion', 'verified_deeplink', 'app_open',
+  // watch_now: offer_type
+  'flatrate', 'free', 'ads', 'rent', 'buy',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
 ]);

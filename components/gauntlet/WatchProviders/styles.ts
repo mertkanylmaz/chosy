@@ -168,10 +168,35 @@ export const sheetStyles = StyleSheet.create({
     borderRadius: radius.poster,
     backgroundColor: color.surface.base,
   },
+  providerText: {
+    flexShrink: 1,
+    flexGrow: 1,
+  },
   providerName: {
     ...type.body,
     color: color.text.primary,
     flexShrink: 1,
+  },
+  /** "with ads" — satırın ikinci satırı. */
+  providerSub: {
+    ...type.caption,
+    color: color.text.secondary,
+  },
+  /** Yalnız allowlist'teki servisler: "Open Netflix". */
+  openApp: {
+    ...type.caption,
+    color: color.reward.primary,
+    flexShrink: 0,
+    maxWidth: '40%',
+  },
+  stateBlock: {
+    alignItems: 'center',
+    gap: space.sm,
+  },
+  stateText: {
+    ...type.caption,
+    color: color.text.secondary,
+    textAlign: 'center',
   },
 });
 
