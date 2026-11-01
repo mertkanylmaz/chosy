@@ -11,7 +11,7 @@
  *       Buyuk uppercase baslik (Theme.fonts.display — SF Pro Display 600)
  *       Genre chip'leri (yatay scroll)
  *       "Why this film?" AI karti (varsa)
- *       WATCH ON section (provider ikonlari + JustWatch atfi)
+ *       WHERE TO WATCH (WatchProvidersSection: logo satiri + native sheet + JustWatch atfi)
  *       SYNOPSIS
  *       CASTING (yatay FlatList, portrait foto)
  *       DIRECTOR & CREW (yatay FlatList, foto + rol)
@@ -56,17 +56,10 @@ import {
 } from '@/services/watchlist';
 import { explainBatch, type FilmForExplanation } from '@/services/matchExplanation';
 import { ensureAiConsent, hasAiConsent } from '@/services/aiConsent';
-import {
-  fetchMovieDetails,
-  fetchMovieWatchProviders,
-  type TmdbCredits,
-  type TmdbWatchProviders,
-  type TmdbProvider,
-} from '@/services/tmdb';
+import { fetchMovieDetails, type TmdbCredits } from '@/services/tmdb';
+import { WatchProvidersSection } from '@/components/gauntlet/WatchProviders/WatchProvidersSection';
 import { buildCrewDisplay, buildDisplayCast, mapDbCast, type DbCastEntry, type DisplayCastMember } from '@/utils/castDisplay';
 import { parseFilmPreview } from '@/utils/filmDetailHref';
-import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
-import { flattenProviders } from '@/utils/watchProviderList';
 import { localizeGenre } from '@/utils/filmFilters';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 import { Colors } from '@/constants/Colors';
@@ -250,25 +243,6 @@ function CrewCard({
   );
 }
 
-/** Streaming platform ikon karti */
-function ProviderIcon({ provider }: { provider: TmdbProvider }) {
-  const uri = toTmdbUrl(provider.logo_path, 'w92');
-  if (!uri) return null;
-  return (
-    <View style={styles.providerItem}>
-      <Image
-        source={{ uri }}
-        style={styles.providerLogo}
-        contentFit="cover"
-        cachePolicy="memory-disk"
-      />
-      <Text style={styles.providerName} numberOfLines={2}>
-        {brandOf(provider).name}
-      </Text>
-    </View>
-  );
-}
-
 /**
  * Resmi TMDB logo SVG'si — style class'lari inline fill'e donusturulmus,
  * react-native-svg SvgXml ile render edilir.
@@ -302,7 +276,7 @@ export default function FilmDetailScreen() {
     py?: string;
     pp?: string;
   }>();
-  const { t, language, region } = useLanguage();
+  const { t, language } = useLanguage();
   const { currentProfile, presetMoodText, currentSessionId } = useMood();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -333,7 +307,6 @@ export default function FilmDetailScreen() {
   // ── TMDB zengin veri ─────────────────────────────────────────────────────────
   const [youtubeKey, setYoutubeKey] = useState<string | null>(null);
   const [tmdbCredits, setTmdbCredits] = useState<TmdbCredits | null>(null);
-  const [watchProviders, setWatchProviders] = useState<TmdbWatchProviders | null>(null);
   const [country, setCountry] = useState<string | null>(null);
 
   // ── Watchlist & izleme ───────────────────────────────────────────────────────
@@ -374,13 +347,9 @@ export default function FilmDetailScreen() {
   const mergeTmdbDetails = useCallback(
     async (filmId: string, tmdbId: number, seq: number) => {
       try {
-        // V-2 Tur D: bölge cihazdan — eskiden bölgesiz çağrı 'US' demekti.
-        // Bölge okunamadıysa (Sentry'ye LanguageContext yazar) başka bir
-        // bölgenin katalogu SORULMAZ; WATCH ON bölümü boştaki gibi gizli kalır.
-        const [tmdbDetails, providers] = await Promise.all([
-          fetchMovieDetails(tmdbId),
-          region === null ? Promise.resolve(null) : fetchMovieWatchProviders(tmdbId, region),
-        ]);
+        // Faz 2-8: sağlayıcılar artık burada çekilmez — WatchProvidersSection (useWatchProviders)
+        // bölgeyi, dört durumu ve hata bildirimini kendisi yönetir.
+        const tmdbDetails = await fetchMovieDetails(tmdbId);
         if (seq !== loadSeqRef.current) return;
 
         if (tmdbDetails) {
@@ -408,7 +377,6 @@ export default function FilmDetailScreen() {
           });
         }
 
-        if (providers) setWatchProviders(providers);
       } catch (err) {
         Sentry.captureException(err, {
           tags: { component: 'FilmDetail', flow: 'loadFilmTmdb' },
@@ -416,7 +384,7 @@ export default function FilmDetailScreen() {
         });
       }
     },
-    [region],
+    [],
   );
 
   const loadFilm = useCallback(async () => {
@@ -895,14 +863,6 @@ export default function FilmDetailScreen() {
       ? [{ label: t('filmDetail.director'), name: film.director }]
       : [];
 
-  /**
-   * Flatrate > rent > buy siralamasiyla tekrarsiz provider listesi; kanal
-   * varyantlari ("MGM+ Amazon Channel") ana saglayici varken elenir
-   * (V-2 Tur D, sampiyon satiriyla ortak kural).
-   */
-  // Faz 2-5: şampiyon / Mood Gauntlet satırıyla AYNI katman sırası + marka tekilleştirmesi (ilk logo = sıralamanın ilki).
-  const allProviders: TmdbProvider[] = watchProviders ? dedupeByBrand(flattenProviders(watchProviders)) : [];
-
   // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
@@ -1122,23 +1082,10 @@ export default function FilmDetailScreen() {
               </Animated.View>
             )}
 
-            {/* ── WATCH ON ── */}
-            {allProviders.length > 0 && (
-              <View style={styles.section}>
-                <SectionHeader
-                  title={t('filmDetail.watchOn').toUpperCase()}
-                  right={<Text style={styles.justWatchText}>JustWatch</Text>}
-                />
-                <FlatList<TmdbProvider>
-                  data={allProviders}
-                  keyExtractor={(p) => String(p.provider_id)}
-                  renderItem={({ item }) => <ProviderIcon provider={item} />}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.horizontalListContent}
-                />
-              </View>
-            )}
+            {/* ── WHERE TO WATCH (Faz 2-8: şampiyon / Mood sonucu ile AYNI bileşen + sheet) ── */}
+            <View style={styles.section}>
+              <WatchProvidersSection filmId={film.id} surface="film_detail" />
+            </View>
 
             {/* ── SYNOPSIS ── */}
             {!!film.overview && (
@@ -1558,11 +1505,6 @@ const styles = StyleSheet.create({
     color: Colors.textWhite,
     letterSpacing: 1.8,
   },
-  justWatchText: {
-    fontSize: 11,
-    color: Colors.textTertiary,
-    fontWeight: '500',
-  },
 
   // ── Yatay FlatList ────────────────────────────────────────────────────────────
   horizontalListContent: {
@@ -1610,27 +1552,6 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontStyle: 'italic',
     width: CAST_CARD_WIDTH,
-  },
-
-  // ── Provider ikonlari ─────────────────────────────────────────────────────────
-  providerItem: {
-    alignItems: 'center',
-    gap: 6,
-    width: 70,
-  },
-  providerLogo: {
-    width: 60,
-    height: 60,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: Colors.white10,
-    backgroundColor: Colors.bgElevated,
-  },
-  providerName: {
-    fontSize: 10,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    fontWeight: '500',
   },
 
   // ── Remove from watchlist ─────────────────────────────────────────────────────

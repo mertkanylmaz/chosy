@@ -164,3 +164,13 @@ Deno.test('locales: Faz 2-8 anahtarlari en+tr, JustWatch/TMDB varis metni ve ope
   assertEquals(tr.gauntlet.watchProviders.change, 'Değiştir')
   assert(!('offer' in en.gauntlet.watchProviders) && !('offer' in tr.gauntlet.watchProviders))
 })
+
+Deno.test('film detayi (Faz 2-8): eski ProviderIcon FlatList yok; WatchProvidersSection + film_detail yuzeyi; Linking yalniz fragman', () => {
+  const src = read('app/film/[id].tsx')
+  assert(!/ProviderIcon|fetchMovieWatchProviders|flattenProviders|justWatchText/.test(src))
+  assertMatch(src, /<WatchProvidersSection filmId=\{film\.id\} surface="film_detail" \/>/)
+  assertEquals((src.match(/Linking\.openURL\(/g) ?? []).length, 1)
+  assertMatch(src, /openTrailer/)
+  const section = read('components/gauntlet/WatchProviders/WatchProvidersSection.tsx')
+  assertMatch(section, /useWatchProviders\(filmId, region\)/)
+})
