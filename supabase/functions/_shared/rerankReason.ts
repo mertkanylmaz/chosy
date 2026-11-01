@@ -15,11 +15,7 @@ export const REASON_MAX_WORDS = 12
 /** Sunucu tarafı sert sınır: prompt 12 ister, model aşarsa 16'ya kadar tolerans; üstü '' olur. */
 export const REASON_HARD_MAX_WORDS = 16
 
-/**
- * id-rerank ve gerekçe (TR + EN) tek model: Haiku. (TR için denenen claude-sonnet-4-20250514
- * Anthropic'te 404 verdi — emekli; Sonnet adımı kaldırıldı.)
- */
-export const REASON_DEFAULT_MODEL = 'claude-haiku-4-5'
+// Model id'leri: _shared/models.ts (reason yolu Haiku 5.5, thinking kapali; pick Haiku 4.5).
 
 export function countWords(text: string): number {
   return text.trim().split(/\s+/).filter((w) => w.length > 0).length

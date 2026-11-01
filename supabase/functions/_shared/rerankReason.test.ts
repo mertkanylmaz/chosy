@@ -2,10 +2,10 @@
  * rerank-films gerekçe prompt'u + ayrı günlük sayaç (Faz 2-1b).
  * Run: deno test --allow-read --unstable-sloppy-imports supabase/functions/_shared/rerankReason.test.ts
  */
+import { REASON_THINKING, RERANK_PICK_MODEL, RERANK_REASON_MODEL } from './models.ts'
 import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
-  REASON_DEFAULT_MODEL,
   REASON_HARD_MAX_WORDS,
   countWords,
   enforceNoDigits,
@@ -111,8 +111,10 @@ Deno.test('uzunluk korumasi: bos/bosluk dokunulmaz, sayim tek bosluga duyarsiz, 
 
 // ─── Model zinciri (TR gerekce: Sonnet → Haiku) ──────────────────────────────
 
-Deno.test('tek model: Haiku; Sonnet adimi kaldirildi', () => {
-  assertEquals(REASON_DEFAULT_MODEL, 'claude-haiku-4-5')
+Deno.test('modeller: tek sabit dosya; pick Haiku 4.5, reason Haiku 5.5 + thinking disabled; Sonnet yok', () => {
+  assertEquals(RERANK_PICK_MODEL, 'claude-haiku-4-5')
+  assertEquals(RERANK_REASON_MODEL, 'claude-haiku-5-5')
+  assertEquals(REASON_THINKING, { type: 'disabled' })
   const mod = Deno.readTextFileSync(new URL('./rerankReason.ts', import.meta.url))
   assert(!/sonnet/i.test(mod.replace(/\/\*[\s\S]*?\*\//g, '')), 'kodda Sonnet kalmamali')
 })
@@ -126,7 +128,12 @@ Deno.test('TR prompt: gunluk konusma kurali vurgulu + iki kotu ornek (yatislayic
 
 Deno.test('index.ts sozlesmesi: tek Haiku modeli, guard sirasi, reasons_dropped toplami', () => {
   const src = Deno.readTextFileSync(new URL('../rerank-films/index.ts', import.meta.url)).replaceAll('\r\n', '\n')
-  assertMatch(src, /const usedModel = REASON_DEFAULT_MODEL/)
+  assertMatch(src, /const usedModel = withReason \? RERANK_REASON_MODEL : RERANK_PICK_MODEL/)
+  // reason cagrisinda thinking disabled gider, pick cagrisinda gonderilmez
+  assertMatch(src, /\.\.\.\(withReason \? \{ thinking: REASON_THINKING \} : \{\}\)/)
+  // bos metin: Sentry uyarisi + bos sonuc
+  assertMatch(src, /REASON_EMPTY_TEXT/)
+  assert(!/claude-haiku/.test(src), 'index.ts model id yazmaz; _shared/models.ts okunur')
   assertMatch(src, /const parsed = await generate\(usedModel\)/)
   assert(!/reasonModelChain|REASON_MODEL_FALLBACK|sonnet/i.test(src))
   // reasonGuard once, uzunluk korumasi sonra; sayac toplanir

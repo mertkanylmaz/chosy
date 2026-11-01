@@ -22,9 +22,10 @@ import {
   lookupDailyLimit,
   rerankDailyLimitResponse,
 } from '../_shared/dailyLimit.ts'
+import { sentryCapture } from '../_shared/sentry.ts'
+import { REASON_THINKING, RERANK_PICK_MODEL, RERANK_REASON_MODEL } from '../_shared/models.ts'
 import { guardReasons } from '../_shared/reasonGuard.ts'
 import {
-  REASON_DEFAULT_MODEL,
   REASON_MAX_CANDIDATES,
   REASON_OVERVIEW_MAX,
   REASON_SYSTEM_PROMPT,
@@ -189,7 +190,7 @@ Candidate films:
 ${filmList}`
 
   // ── Claude call ───────────────────────────────────────────────────────────
-  // id-rerank ve gerekce (TR + EN): tek model, Haiku. Basarisiz olursa asagidaki catch
+  // id-rerank: Haiku 4.5; gerekce (TR + EN): Haiku 5.5 (thinking kapali) — _shared/models.ts. Basarisiz olursa asagidaki catch
   // gerekcesiz v4 sirasini doner (istemci satir cizmez).
   try {
     const client = new Anthropic({ apiKey })
@@ -201,9 +202,21 @@ ${filmList}`
         // reason: ~15 TR kelime ≈ 40 token + {"n","r"} sarmali ≈ 10 → 50/film.
         max_tokens: withReason ? 96 + count * 50 : 64 + count * 4,
         system: withReason ? REASON_SYSTEM_PROMPT : SYSTEM_PROMPT,
+        // Haiku 5.5 varsayilanda dusunur ve max_tokens'i tuketip bos metin doner: gerekce yolunda kapali.
+        ...(withReason ? { thinking: REASON_THINKING } : {}),
         messages: [{ role: 'user', content: userMessage }],
       })
       const rawText = message.content.find((b) => b.type === 'text')?.text ?? ''
+      if (withReason && rawText.trim().length === 0) {
+        // Bos metin: gerekce '' (UI satir cizmez), sessiz degil — Sentry uyarisi.
+        await sentryCapture({
+          message: `rerank-films ${model} bos metin dondu (stop_reason=${message.stop_reason ?? '?'})`,
+          level: 'warning',
+          tags: { function: 'rerank-films', error_code: 'REASON_EMPTY_TEXT' },
+          fingerprint: ['rerank-films', 'REASON_EMPTY_TEXT'],
+        })
+        return []
+      }
       // Parse JSON array from response (handle markdown code blocks)
       const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)\s*```/)
       const out = JSON.parse(jsonMatch ? jsonMatch[1] : rawText.trim())
@@ -211,7 +224,7 @@ ${filmList}`
       return out
     }
 
-    const usedModel = REASON_DEFAULT_MODEL
+    const usedModel = withReason ? RERANK_REASON_MODEL : RERANK_PICK_MODEL
     const parsed = await generate(usedModel)
 
     // Numaralari (1..N) aday id'lerine cevir; aralik disi / tekrar eden / sayi
