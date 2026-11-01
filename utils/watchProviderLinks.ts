@@ -82,6 +82,42 @@ export function opensAppOf(providerId: number): OpensApp {
   return TEMPLATES[providerId]?.opensApp ?? 'unverified';
 }
 
+/**
+ * JustWatch arama yolları — ülkeye göre YEREL ADLI (`/tr/search` 404 verir). Yalnız cihaz/
+ * kurucu tarafından doğrulanmış ülkeler; başka ülke EKLENMEZ, adres tahmin edilmez.
+ * GB'nin slug'ı "uk".
+ */
+const JUSTWATCH_SEARCH_PATH: Readonly<Record<string, string>> = {
+  US: 'us/search',
+  GB: 'uk/search',
+  CA: 'ca/search',
+  TR: 'tr/arama',
+  DE: 'de/Suche',
+  FR: 'fr/recherche',
+  ES: 'es/buscar',
+  MX: 'mx/buscar',
+  IT: 'it/cerca',
+  BR: 'br/busca',
+};
+
+/** Doğrulanmış ülke için JustWatch film araması; ülke listede yoksa / bölge null / başlık boşsa null. */
+export function justWatchSearchUrl(region: string | null, title: string): string | null {
+  const t = title.trim();
+  if (region === null || t.length === 0) return null;
+  const path = JUSTWATCH_SEARCH_PATH[region.trim().toUpperCase()];
+  if (path === undefined) return null;
+  return `https://www.justwatch.com/${path}?q=${encodeURIComponent(t)}`;
+}
+
+/**
+ * TMDB `watch/providers` yanıtındaki `results[region].link` (themoviedb.org/movie/{id}/watch?locale=XX).
+ * Yalnız themoviedb.org https adresi kabul edilir; yoksa / başka alan adıysa null.
+ */
+export function tmdbWatchLink(link: string | undefined | null): string | null {
+  if (typeof link !== 'string') return null;
+  return /^https:\/\/www\.themoviedb\.org\//.test(link) ? link : null;
+}
+
 /** Eşlemesi olan kimlikler (rapor / test). */
 export function mappedProviderIds(): number[] {
   return Object.keys(TEMPLATES).map(Number);

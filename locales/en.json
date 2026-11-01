@@ -721,10 +721,10 @@
     "noneSub": "4 new films, same mood",
     "findOn": "Find on %{provider}",
     "offerHint": {
-      "subscription": "Subscription",
+      "subscription": "Included with subscription",
       "free": "Free",
-      "rent": "Rent",
-      "buy": "Buy"
+      "rent": "Rent or buy",
+      "buy": "Rent or buy"
     },
     "save": "Save",
     "savedShort": "✓ Saved",

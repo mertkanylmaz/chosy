@@ -7,6 +7,7 @@ import { assert, assertEquals, assertMatch, assertThrows } from 'https://deno.la
 import { appReturnedAfterProviderEvent, assertNoFreeText, providerClickedEvent } from '../../utils/moodGauntletAnalytics.ts'
 import { choose, initFlow, stripItems } from '../../utils/moodGauntletFlow.ts'
 import { resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
+import { justWatchSearchUrl, tmdbWatchLink } from '../../utils/watchProviderLinks.ts'
 import { createProviderReturnTracker, PROVIDER_RETURN_WINDOW_MS } from '../../utils/providerReturn.ts'
 import { dedupeByBrand } from '../../utils/watchProviderBrands.ts'
 import { listWatchRegions, normalizeCountryCode, resolveWatchRegion } from '../../utils/watchRegion.ts'
@@ -38,7 +39,7 @@ Deno.test('ulke kodu: alpha-3 → alpha-2, gecersiz → null', () => {
 Deno.test('ulke listesi: 139 bolge, TR adiyla arama, kod ile arama', () => {
   assertEquals(listWatchRegions('en', '').length, 139)
   assertEquals(listWatchRegions('tr', 'türk')[0], { code: 'TR', name: 'Türkiye' })
-  assertEquals(listWatchRegions('en', 'turkey')[0].code, 'TR')
+  assertEquals(listWatchRegions('en', 'türkiye')[0], { code: 'TR', name: 'Türkiye' })
   assertEquals(listWatchRegions('en', 'zzzz'), [])
   assertEquals(listWatchRegions('en', 'de').some((r) => r.code === 'DE'), true)
 })
@@ -116,4 +117,58 @@ Deno.test('bolge kaynagi tek: LanguageContext cozumleyiciyi besler, olay + store
   const code = ctx.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
   assert(!/'US'/.test(code), 'US fallback yok')
   assertMatch(read('services/storefrontRegion.ts'), /Purchases\.getStorefront\(\)/)
+})
+
+const TMDB = 'https://www.themoviedb.org/movie/129/watch?locale=JP'
+const flat = (link?: string) => ({ link, flatrate: [prov(8, 1, 'Netflix')] })
+const target = (region: string | null, link?: string) =>
+  resolveWatchTarget({ title: 'My Neighbor Totoro', region, providersReady: true, providers: flat(link) })
+
+Deno.test('JustWatch: yerel adli yollar (404 duzeltmesi) — TR /tr/arama, GB /uk/search', () => {
+  assertEquals(target('TR').url, 'https://www.justwatch.com/tr/arama?q=My%20Neighbor%20Totoro')
+  assertEquals(target('TR').kind, 'justwatch')
+  assertEquals(target('GB').url, 'https://www.justwatch.com/uk/search?q=My%20Neighbor%20Totoro')
+  const slugs: Record<string, string> = {
+    US: 'us/search', CA: 'ca/search', DE: 'de/Suche', FR: 'fr/recherche', ES: 'es/buscar',
+    MX: 'mx/buscar', IT: 'it/cerca', BR: 'br/busca',
+  }
+  for (const [cc, path] of Object.entries(slugs)) {
+    assertEquals(justWatchSearchUrl(cc, 'A'), `https://www.justwatch.com/${path}?q=A`)
+  }
+  assert(!/\/tr\/search/.test(target('TR').url ?? ''))
+})
+
+Deno.test('listede olmayan ulke (JP): TMDB watch linki varsa tmdb_watch, yoksa null (CTA gizli)', () => {
+  assertEquals(justWatchSearchUrl('JP', 'A'), null)
+  const withLink = target('JP', TMDB)
+  assertEquals([withLink.kind, withLink.url], ['tmdb_watch', TMDB])
+  const noLink = target('JP')
+  assertEquals([noLink.kind, noLink.url, noLink.providerFound], ['none', null, true])
+  // themoviedb.org disi link kabul edilmez
+  assertEquals(tmdbWatchLink('https://evil.example/watch'), null)
+  assertEquals(target('JP', 'https://evil.example/watch').kind, 'none')
+})
+
+Deno.test('bolge null: tmdb link ya da null — asla us', () => {
+  assertEquals(justWatchSearchUrl(null, 'A'), null)
+  const withLink = target(null, TMDB)
+  assertEquals([withLink.kind, withLink.url], ['tmdb_watch', TMDB])
+  const noLink = target(null)
+  assertEquals([noLink.kind, noLink.url], ['none', null])
+  assert(!(withLink.url ?? '').includes('justwatch') && !(noLink.url ?? '').includes('/us/'))
+})
+
+Deno.test('CTA gizleme: kind=none iken ResultStage dugmeyi cizmez; provider_clicked region + provider_id tasir', () => {
+  const src = read('components/MoodGauntlet/ResultStage.tsx')
+  assertMatch(src, /target\.kind !== 'none' && \(\s*<PrimaryAction/)
+  assertMatch(src, /providerClickedEvent\(\{\s*providerId: target\.providerId,[\s\S]*?region,/)
+  assertEquals(
+    providerClickedEvent({ providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'tmdb_watch' }).props,
+    { provider_id: 8, offer_type: 'flatrate', region: 'TR', link_kind: 'tmdb_watch' },
+  )
+  assertNoFreeText(providerClickedEvent({ providerId: 8, offerType: 'flatrate', region: 'JP', linkKind: 'provider_direct' }))
+})
+
+Deno.test('ulke adi: TR "Türkiye" (EN ve TR)', () => {
+  assertMatch(read('constants/watchRegions.ts'), /TR: \{ en: "Türkiye", tr: "Türkiye" \}/)
 })

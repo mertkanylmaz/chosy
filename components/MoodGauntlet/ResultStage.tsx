@@ -39,7 +39,7 @@ import { reasonFor, type IntensityDirection, type MatchRow, type MoodNotice } fr
 import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { pickActionEvent, providerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
+import { pickActionEvent, providerClickedEvent, type MoodPickAction, type WatchLinkKindProp } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { normalizePosterUrl } from '@/utils/posterUrl';
@@ -208,11 +208,12 @@ export function ResultStage({
    * kaydedilir ve kullanıcı detay ekranına düşer (sessiz geçiş yok).
    */
   const handleWatchNow = useCallback(async () => {
+    const linkKind: WatchLinkKindProp = target.url === null || target.kind === 'none' ? 'detail' : target.kind;
     trackMoodEvent(
       pickActionEvent('watch_now', target.providerFound, {
         providerId: target.providerId,
         offerType: target.offerType,
-        linkKind: target.url === null ? 'detail' : target.kind,
+        linkKind,
       }),
     );
     if (target.providerId !== null) {
@@ -221,7 +222,7 @@ export function ResultStage({
           providerId: target.providerId,
           offerType: target.offerType,
           region,
-          linkKind: target.url === null ? 'detail' : target.kind,
+          linkKind,
         }),
       );
     }
@@ -316,14 +317,17 @@ export function ResultStage({
       )}
 
       <View style={styles.ctaBlock}>
-        <PrimaryAction
-          label={watchLabel}
-          onPress={() => void handleWatchNow()}
-          variant="gold"
-          disabled={providers.state === 'loading'}
-          busy={providers.state === 'loading'}
-        />
-        {offerHint !== null && <Text style={styles.offerHint}>{offerHint}</Text>}
+        {/* kind='none': sağlayıcı var ama güvenilir adres yok → CTA gizli (tahmini URL üretilmez). */}
+        {target.kind !== 'none' && (
+          <PrimaryAction
+            label={watchLabel}
+            onPress={() => void handleWatchNow()}
+            variant="gold"
+            disabled={providers.state === 'loading'}
+            busy={providers.state === 'loading'}
+          />
+        )}
+        {target.kind !== 'none' && offerHint !== null && <Text style={styles.offerHint}>{offerHint}</Text>}
         <View style={styles.providersSlot}>
           <WatchProvidersRow
             state={providers.state}

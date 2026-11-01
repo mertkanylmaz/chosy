@@ -138,7 +138,7 @@ Deno.test('analitik: first_four_visible entry+path, timing exclusions/four, mood
     a.pipelineTimingEvent('exclusions', 300),
     a.pipelineTimingEvent('four', 2500),
     a.pipelineFallbackEvent('mood_four'),
-    a.pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate', linkKind: 'provider' }),
+    a.pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate', linkKind: 'justwatch' }),
   ]) a.assertNoFreeText(e)
 })
 

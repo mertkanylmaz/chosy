@@ -71,7 +71,7 @@ export function completedEvent(msTotal: number): MoodEvent {
 }
 
 export type WatchOfferType = 'flatrate' | 'free' | 'ads' | 'rent' | 'buy';
-export type WatchLinkKindProp = 'provider' | 'justwatch' | 'detail';
+export type WatchLinkKindProp = 'justwatch' | 'tmdb_watch' | 'provider_direct' | 'detail';
 
 /** Yalnız watch_now: seçilen sağlayıcı, teklif türü ve bağlantı türü. */
 export interface WatchNowProps {
@@ -142,7 +142,7 @@ const ALLOWED_STRINGS = new Set<string>([
   'parse', 'v4', 'pick', 'exclusions', 'four',
   'combined', 'legacy',
   // watch_now: offer_type + link_kind
-  'flatrate', 'free', 'ads', 'rent', 'buy', 'provider', 'justwatch', 'detail',
+  'flatrate', 'free', 'ads', 'rent', 'buy', 'justwatch', 'tmdb_watch', 'provider_direct', 'detail',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
 ]);

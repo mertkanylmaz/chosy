@@ -3,18 +3,20 @@
  *
  *  1. Bölgedeki sağlayıcılardan MARKA başına ilki (flatrate > free > ads > rent > buy,
  *     `orderProvidersWithOffer` + marka gruplama: Netflix ≈ Netflix Standard with Ads).
- *  2. Sağlayıcı `opensApp: 'verified'` ise → sağlayıcının resmî arama URL'si (link_kind=provider).
- *  3. Aksi halde ('unverified' / tabloda yok) → JustWatch film araması (link_kind=justwatch);
- *     bölge yoksa detay.
+ *  2. Sağlayıcı `opensApp: 'verified'` ise → sağlayıcının resmî arama URL'si (link_kind=provider_direct).
+ *  3. Aksi halde → JustWatch film araması (link_kind=justwatch) YALNIZ doğrulanmış ülkelerde
+ *     (`watchProviderLinks.justWatchSearchUrl`); değilse TMDB watch sayfası (link_kind=tmdb_watch,
+ *     yanıttaki `link`); o da yoksa kind='none' → CTA GİZLENİR (tahmini URL üretilmez).
  *  4. Hiç sağlayıcı yok / veri hazır değil → uygulama içi /film/:id (link_kind=detail).
  *
  * Film sayfasına derin bağlantımız YOK → düğme "Watch on" demez: "Find on {Provider}" / "Şurada bul: {Provider}".
  */
 import { brandOf } from './watchProviderBrands';
 import { orderProvidersWithOffer, type OfferType, type ProviderBuckets, type RankedProviderLike } from './watchProviderList';
-import { opensAppOf, providerSearchUrl } from './watchProviderLinks';
+import { justWatchSearchUrl, opensAppOf, providerSearchUrl, tmdbWatchLink } from './watchProviderLinks';
 
-export type WatchLinkKind = 'provider' | 'justwatch' | 'detail';
+/** 'provider_direct' şimdilik kullanılmıyor (hiçbir sağlayıcı 'verified' değil). 'none' = CTA gizli. */
+export type WatchLinkKind = 'justwatch' | 'tmdb_watch' | 'provider_direct' | 'detail' | 'none';
 export type WatchLabelKind = 'watch' | 'rent' | 'buy';
 
 export interface WatchTarget {
@@ -37,16 +39,6 @@ export interface WatchTargetInput {
   /** `useWatchProviders().state === 'ok'` — veri başarıyla geldi mi. */
   providersReady: boolean;
   providers: (ProviderBuckets<RankedProviderLike> & { link?: string }) | null;
-}
-
-/** JustWatch ülke yolu: ISO-2 küçük harf; GB için 'uk'. */
-export function justWatchCountry(region: string): string {
-  const cc = region.trim().toLowerCase();
-  return cc === 'gb' ? 'uk' : cc;
-}
-
-export function justWatchSearchUrl(region: string, title: string): string {
-  return `https://www.justwatch.com/${justWatchCountry(region)}/search?q=${encodeURIComponent(title)}`;
 }
 
 export function labelKindOf(offer: OfferType | null): WatchLabelKind {
@@ -87,10 +79,11 @@ export function resolveWatchTarget(input: WatchTargetInput): WatchTarget {
     opensAppOf(first.provider.provider_id) === 'verified'
       ? providerSearchUrl(first.provider.provider_id, title)
       : null;
-  if (direct !== null) return { ...base, kind: 'provider', url: direct };
-  if (region !== null && region.trim().length === 2 && title.trim().length > 0) {
-    return { ...base, kind: 'justwatch', url: justWatchSearchUrl(region, title) };
-  }
-  // Sağlayıcı var ama açılacak güvenilir adres yok → uygulama içi detay (provider_found yine true).
-  return { ...base, kind: 'detail', url: null };
+  if (direct !== null) return { ...base, kind: 'provider_direct', url: direct };
+  const jw = justWatchSearchUrl(region, title);
+  if (jw !== null) return { ...base, kind: 'justwatch', url: jw };
+  const tmdb = tmdbWatchLink(providers.link);
+  if (tmdb !== null) return { ...base, kind: 'tmdb_watch', url: tmdb };
+  // Sağlayıcı var ama güvenilir adres yok → CTA gizlenir (provider_found yine true).
+  return { ...base, kind: 'none', url: null };
 }

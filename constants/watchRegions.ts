@@ -130,7 +130,7 @@ export const WATCH_REGIONS: Readonly<Record<string, { en: string; tr: string }>>
   TD: { en: "Chad", tr: "Çad" },
   TH: { en: "Thailand", tr: "Tayland" },
   TN: { en: "Tunisia", tr: "Tunus" },
-  TR: { en: "Turkey", tr: "Türkiye" },
+  TR: { en: "Türkiye", tr: "Türkiye" },
   TT: { en: "Trinidad and Tobago", tr: "Trinidad ve Tobago" },
   TW: { en: "Taiwan", tr: "Tayvan" },
   TZ: { en: "Tanzania", tr: "Tanzanya" },

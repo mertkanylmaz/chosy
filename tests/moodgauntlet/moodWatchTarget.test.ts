@@ -6,8 +6,8 @@
 import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import { pickActionEvent } from '../../utils/moodGauntletAnalytics.ts'
-import { justWatchCountry, justWatchSearchUrl, labelKindOf, resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
-import { mappedProviderIds, opensAppOf, providerDisplayName, providerSearchUrl } from '../../utils/watchProviderLinks.ts'
+import { labelKindOf, resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
+import { justWatchSearchUrl, mappedProviderIds, opensAppOf, providerDisplayName, providerSearchUrl } from '../../utils/watchProviderLinks.ts'
 import { offerLabelKind, orderProvidersWithOffer } from '../../utils/watchProviderList.ts'
 
 const read = (p: string) =>
@@ -23,7 +23,7 @@ Deno.test('flatrate saglayici: sagalayicinin resmi arama URL\'si (baslik kodlu),
   })
   // Faz 2-4: hepsi opensApp='unverified' → JustWatch aramasi (kurucu cihaz testinden sonra verified olur)
   assertEquals(r.kind, 'justwatch')
-  assertEquals(r.url, 'https://www.justwatch.com/tr/search?q=Perfect%20Days')
+  assertEquals(r.url, 'https://www.justwatch.com/tr/arama?q=Perfect%20Days')
   assert(!r.url?.includes('themoviedb'))
   assertEquals(providerSearchUrl(8, 'Perfect Days'), 'https://www.netflix.com/search?q=Perfect%20Days')
   assertEquals(opensAppOf(8), 'unverified')
@@ -81,12 +81,11 @@ Deno.test('eslesme tablosu: istenen saglayicilarin hepsi eslenmis, URL sablonu h
 Deno.test('tabloda olmayan saglayici (ör. TR TOD) → JustWatch film aramasi', () => {
   const r = resolveWatchTarget({ ...base, title: 'Amélie & Co', providersReady: true, providers: { flatrate: [prov(1826, 1, 'TOD TV')] } })
   assertEquals(r.kind, 'justwatch')
-  assertEquals(r.url, 'https://www.justwatch.com/tr/search?q=Am%C3%A9lie%20%26%20Co')
+  assertEquals(r.url, 'https://www.justwatch.com/tr/arama?q=Am%C3%A9lie%20%26%20Co')
   assertEquals(r.providerFound, true)
   assertEquals(r.providerName, 'TOD TV')
-  assertEquals(justWatchCountry('GB'), 'uk')
-  assertEquals(justWatchCountry(' us '), 'us')
   assertEquals(justWatchSearchUrl('US', 'A'), 'https://www.justwatch.com/us/search?q=A')
+  assertEquals(justWatchSearchUrl(' gb ', 'A'), 'https://www.justwatch.com/uk/search?q=A')
 })
 
 Deno.test('hic saglayici yok / bos kovalar / veri hazir degil: /film/:id, provider_found false', () => {
@@ -100,16 +99,16 @@ Deno.test('hic saglayici yok / bos kovalar / veri hazir degil: /film/:id, provid
 
 Deno.test('bolge yok + tabloda olmayan saglayici: uydurma adres yok → detay (saglayici yine bulundu)', () => {
   const r = resolveWatchTarget({ ...base, region: null, providersReady: true, providers: { flatrate: [prov(1826, 1, 'TOD TV')] } })
-  assertEquals([r.kind, r.url, r.providerFound], ['detail', null, true])
+  assertEquals([r.kind, r.url, r.providerFound], ['none', null, true])
   // Faz 2-4: unverified saglayici bolgesiz JustWatch'a gidemez → detay (uydurma adres yok)
   const unverified = resolveWatchTarget({ ...base, region: null, providersReady: true, providers: { flatrate: [prov(8, 1)] } })
-  assertEquals([unverified.kind, unverified.url, unverified.providerFound], ['detail', null, true])
+  assertEquals([unverified.kind, unverified.url, unverified.providerFound], ['none', null, true])
 })
 
 Deno.test('olay: watch_now provider_id + offer_type + link_kind tasir; diger eylemler eski bicimde', () => {
   assertEquals(
-    pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate', linkKind: 'provider' }),
-    { name: 'mood_tonight_pick_action', props: { action: 'watch_now', provider_found: true, provider_id: 8, offer_type: 'flatrate', link_kind: 'provider' } },
+    pickActionEvent('watch_now', true, { providerId: 8, offerType: 'flatrate', linkKind: 'justwatch' }),
+    { name: 'mood_tonight_pick_action', props: { action: 'watch_now', provider_found: true, provider_id: 8, offer_type: 'flatrate', link_kind: 'justwatch' } },
   )
   assertEquals(
     pickActionEvent('watch_now', false, { providerId: null, offerType: null, linkKind: 'detail' }).props,
@@ -124,7 +123,7 @@ Deno.test('ResultStage baglantisi: hedef cozulur, universal link, hata sessiz de
   const src = read('components/MoodGauntlet/ResultStage.tsx')
   assertMatch(src, /resolveWatchTarget\(\{/)
   assertMatch(src, /pickActionEvent\(\s*'watch_now',\s*target\.providerFound,/)
-  assertMatch(src, /linkKind: target\.url === null \? 'detail' : target\.kind/)
+  assertMatch(src, /linkKind: WatchLinkKindProp = target\.url === null \|\| target\.kind === 'none' \? 'detail' : target\.kind/)
   assertMatch(src, /Linking\.openURL\(target\.url\)/)
   assert(!/openBrowserAsync/.test(src), 'uygulama ici tarayici kalmamali (universal link uygulamayi acar)')
   // acilamazsa hata kaydi + detay ekrani (sessiz fallback degil)
@@ -149,8 +148,8 @@ Deno.test('locales: Find on CTA, teklif turu ipucu ve bolge notu en+tr', () => {
   const tr = JSON.parse(read('locales/tr.json'))
   assertEquals(en.moodGauntlet.findOn, 'Find on %{provider}')
   assertEquals(tr.moodGauntlet.findOn, 'Şurada bul: %{provider}')
-  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Subscription', free: 'Free', rent: 'Rent', buy: 'Buy' })
-  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelik', free: 'Ücretsiz', rent: 'Kiralık', buy: 'Satın alma' })
+  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Included with subscription', free: 'Free', rent: 'Rent or buy', buy: 'Rent or buy' })
+  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelikte var', free: 'Ücretsiz', rent: 'Kirala veya satın al', buy: 'Kirala veya satın al' })
   for (const k of ['watchOn', 'rentOn', 'buyOn', 'rentBuyOn']) {
     assert(!(k in en.moodGauntlet) && !(k in tr.moodGauntlet), 'eski CTA anahtari kalmamali: ' + k)
   }

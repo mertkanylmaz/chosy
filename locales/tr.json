@@ -721,10 +721,10 @@
     "noneSub": "Aynı mood, 4 yeni film",
     "findOn": "Şurada bul: %{provider}",
     "offerHint": {
-      "subscription": "Abonelik",
+      "subscription": "Abonelikte var",
       "free": "Ücretsiz",
-      "rent": "Kiralık",
-      "buy": "Satın alma"
+      "rent": "Kirala veya satın al",
+      "buy": "Kirala veya satın al"
     },
     "save": "Kaydet",
     "savedShort": "✓ Kaydedildi",
