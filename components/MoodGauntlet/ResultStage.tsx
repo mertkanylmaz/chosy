@@ -8,9 +8,9 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { Lightning, Wind } from 'phosphor-react-native';
+import { Lightning, Play, Wind } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AppState, Linking, Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -37,17 +37,26 @@ import { reasonFor, type IntensityDirection, type MatchRow, type MoodNotice } fr
 import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
-import { pickActionEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
+import {
+  pickActionEvent,
+  returnedAfterTrailerEvent,
+  trailerClickedEvent,
+  type MoodPickAction,
+} from '@/utils/moodGauntletAnalytics';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { normalizePosterUrl } from '@/utils/posterUrl';
+import { trailerUrl } from '@/utils/trailerPick';
 
 import { styles } from './styles';
 import { trackMoodEvent } from './useMoodGauntlet';
+import { useTrailer } from './useTrailer';
 
 type SaveState = 'idle' | 'saving' | 'saved';
 
 interface ResultStageProps {
   champion: MatchRow;
+  /** Dörtlü sayacı (trailer_clicked.set_index). */
+  setIndex: number;
   backups: MatchRow[];
   /** film id → gerekçe (arkadan dolar; yoksa satır çizilmez). */
   reasons: Record<string, string>;
@@ -86,6 +95,7 @@ function IntensityChip({ label, disabled, onPress, children }: ChipProps): React
 
 export function ResultStage({
   champion,
+  setIndex,
   backups,
   reasons,
   notices,
@@ -94,10 +104,13 @@ export function ResultStage({
   onAnotherFour,
   onIntensify,
 }: ResultStageProps): React.JSX.Element {
-  const { t, region } = useLanguage();
+  const { t, region, language } = useLanguage();
   const router = useRouter();
   const reduced = useReducedMotion();
   const providers = useWatchProviders(champion.id, region);
+  const trailerKey = useTrailer(champion.id, language);
+  /** Fragmana gidiş anı; dönüşte (AppState active) geçen saniye hesaplanır. */
+  const trailerLeftAt = useRef<number | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [notice, setNotice] = useState<string | null>(null);
   const mounted = useRef(true);
@@ -209,6 +222,38 @@ export function ResultStage({
     }
   }, [saveState, champion, year, poster, reason, t, track]);
 
+  // Fragmandan dönüş: yalnız fragman düğmesi açtıysa ölçülür (arka plan → ön plan).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || trailerLeftAt.current === null) return;
+      const away = (Date.now() - trailerLeftAt.current) / 1000;
+      trailerLeftAt.current = null;
+      trackMoodEvent(returnedAfterTrailerEvent(away));
+    });
+    return () => sub.remove();
+  }, []);
+
+  const handleTrailer = useCallback(async () => {
+    if (trailerKey === null) return;
+    trackMoodEvent(
+      trailerClickedEvent({
+        filmId: champion.id,
+        setIndex,
+        hasProviderCta: providers.state === 'ok',
+        lang: language,
+      }),
+    );
+    void hapticLight();
+    trailerLeftAt.current = Date.now();
+    try {
+      await Linking.openURL(trailerUrl(trailerKey));
+    } catch (err) {
+      trailerLeftAt.current = null;
+      logger.error('[moodGauntlet] fragman acilamadi', err, { code: 'MOOD_GAUNTLET_TRAILER_OPEN_FAILED' });
+      if (mounted.current) setNotice(t('errors.openLink'));
+    }
+  }, [trailerKey, champion.id, setIndex, providers.state, language, t]);
+
   const handleShare = useCallback(async () => {
     track('share');
     void hapticLight();
@@ -274,6 +319,15 @@ export function ResultStage({
           />
           <OutlineAction label={t('moodGauntlet.share')} onPress={() => void handleShare()} />
         </View>
+        {trailerKey !== null && (
+          <View style={styles.actionRow}>
+            <OutlineAction
+              label={t('moodGauntlet.trailer')}
+              onPress={() => void handleTrailer()}
+              icon={<Play size={size.iconInline} color={color.text.secondary} weight="fill" />}
+            />
+          </View>
+        )}
         {notice !== null && <Text style={styles.shareNotice}>{notice}</Text>}
       </View>
 

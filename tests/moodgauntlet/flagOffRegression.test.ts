@@ -16,6 +16,8 @@ import {
   matchChosenEvent,
   noneOfTheseEvent,
   pickActionEvent,
+  returnedAfterTrailerEvent,
+  trailerClickedEvent,
   pipelineFallbackEvent,
   pipelineTimingEvent,
   startedEvent,
@@ -101,7 +103,7 @@ Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon deg
 })
 
 Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
-  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 10)
+  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 12)
   const evs = [
     startedEvent('quick', 'cozy'),
     startedEvent('free_text', 'cozy'), // free_text'te quick_mood_id girmez
@@ -116,6 +118,8 @@ Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard
     pipelineFallbackEvent('reasons'),
     pipelineTimingEvent('parse', 4012.4),
     pipelineTimingEvent('reasons', 0),
+    trailerClickedEvent({ filmId: '123e4567-e89b-12d3-a456-426614174000', setIndex: 1, hasProviderCta: true, lang: 'tr' }),
+    returnedAfterTrailerEvent(42.4),
   ]
   for (const e of evs) {
     assert((MOOD_GAUNTLET_EVENT_NAMES as readonly string[]).includes(e.name), e.name)

@@ -19,9 +19,11 @@ interface OutlineActionProps {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  /** Etiketin solunda küçük ikon (ör. ▶). */
+  icon?: React.ReactNode;
 }
 
-export function OutlineAction({ label, onPress, disabled = false }: OutlineActionProps): React.JSX.Element {
+export function OutlineAction({ label, onPress, disabled = false, icon }: OutlineActionProps): React.JSX.Element {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -32,6 +34,7 @@ export function OutlineAction({ label, onPress, disabled = false }: OutlineActio
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
+      {icon}
       <Text style={styles.text} numberOfLines={1}>
         {label}
       </Text>

@@ -12,8 +12,10 @@ export const styles = StyleSheet.create({
   button: {
     flex: 1,
     minHeight: size.touchTarget,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: space.xs,
     paddingHorizontal: space.md,
     borderRadius: radius.pill,
     borderWidth: size.hairline,

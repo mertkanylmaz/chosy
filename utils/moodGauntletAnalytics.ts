@@ -31,6 +31,8 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_intensity_tapped',
   'mood_pipeline_fallback',
   'mood_pipeline_timing',
+  'trailer_clicked',
+  'app_returned_after_trailer',
 ] as const;
 
 export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null): MoodEvent {
@@ -82,19 +84,45 @@ export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEve
   return { name: 'mood_pipeline_timing', props: { stage, ms: Math.max(0, Math.round(ms)) } };
 }
 
+/** Fragman düğmesi (Faz 2-4d). film_id UUID'dir (serbest metin değil); başlık ASLA girmez. */
+export function trailerClickedEvent(a: {
+  filmId: string;
+  setIndex: number;
+  hasProviderCta: boolean;
+  lang: string;
+}): MoodEvent {
+  return {
+    name: 'trailer_clicked',
+    props: {
+      film_id: a.filmId,
+      surface: 'mood_result',
+      set_index: a.setIndex,
+      has_provider_cta: a.hasProviderCta,
+      lang: a.lang,
+    },
+  };
+}
+
+export function returnedAfterTrailerEvent(secondsAway: number): MoodEvent {
+  return { name: 'app_returned_after_trailer', props: { seconds_away: Math.max(0, Math.round(secondsAway)) } };
+}
+
 /** İzin verilen string değerler (serbest metin değil, sabit etiketler). */
 const ALLOWED_STRINGS = new Set<string>([
   'quick', 'free_text', 'watch_now', 'where', 'later', 'share', 'lighter', 'stronger',
   'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons',
   'parse', 'v4', 'pick',
+  'mood_result', 'en', 'tr',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
 ]);
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /** Gönderim öncesi savunma: serbest metin taşıyan string prop varsa hata (olay atılmaz). */
 export function assertNoFreeText(ev: MoodEvent): void {
   for (const [k, v] of Object.entries(ev.props)) {
-    if (typeof v === 'string' && !ALLOWED_STRINGS.has(v)) {
+    if (typeof v === 'string' && !ALLOWED_STRINGS.has(v) && !(k === 'film_id' && UUID_RE.test(v))) {
       throw new Error(`mood olayi ${ev.name}.${k} serbest metin tasiyor`);
     }
   }
