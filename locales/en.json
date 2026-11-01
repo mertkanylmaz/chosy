@@ -676,7 +676,7 @@
   },
   "moodGauntlet": {
     "entryTitle": "What's the mood tonight?",
-    "entrySubtitle": "Pick a mood or describe it. Four films, three choices, one pick.",
+    "entrySubtitle": "Tap a mood to start, or describe your night. We pick four, you choose one.",
     "inputPlaceholder": "Describe tonight in a few words",
     "startCta": "Find my four",
     "quickLabel": "Quick moods",
@@ -712,7 +712,34 @@
     "errorInsufficient": "We couldn't find four films for that. Try describing it differently.",
     "exhaustedTitle": "That's every film for this mood",
     "exhaustedBody": "Start a new search to see more.",
-    "newSearch": "New search"
+    "newSearch": "New search",
+    "yourFour": "Your four",
+    "yourFourA11y": "Your four films for tonight",
+    "tapHint": "Tap the one you'd rather watch",
+    "justPick": "Just pick for me",
+    "noneSub": "4 new films, same mood",
+    "watchOn": "Watch on %{provider}",
+    "rentBuyOn": "Rent or buy on %{provider}",
+    "save": "Save",
+    "savedShort": "✓ Saved",
+    "shareA11y": "Share this film",
+    "chipPace": {
+      "slow": "Slow pace",
+      "medium": "Steady pace",
+      "fast": "Fast pace"
+    },
+    "chipEnergy": {
+      "gentle": "Gentle",
+      "moderate": "Moderate",
+      "intense": "Intense"
+    },
+    "insight": {
+      "calmerAll": "You picked the quieter film every time",
+      "calmerTwo": "You picked the quieter film both times",
+      "livelierAll": "You picked the more intense film every time",
+      "livelierTwo": "You picked the more intense film both times"
+    },
+    "loadingAnother": "Picking another four…"
   },
   "aiConsent": {
     "title": "Let Claude help you choose",
@@ -1514,7 +1541,7 @@
   },
   "moodEntry": {
     "title": "Next four at %{time} · Can't wait?",
-    "subtitle": "Pick by mood — four films, three choices, one pick",
+    "subtitle": "4 films · 3 choices · 1 pick",
     "badge": "Pro"
   },
   "contextPaywall": {
@@ -1702,6 +1729,12 @@
       "sheetTitle": "Where to watch",
       "group": {
         "stream": "Stream",
+        "rent": "Rent",
+        "buy": "Buy"
+      },
+      "offer": {
+        "subscription": "Subscription",
+        "free": "Free",
         "rent": "Rent",
         "buy": "Buy"
       }

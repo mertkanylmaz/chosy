@@ -18,6 +18,7 @@
  *    Aday biterse `exhausted` döner (UI yeni arama önerir).
  *  - Ham mood metni analitiğe gitmez (bu dosya analitik atmaz).
  */
+import type { MoodFourPath } from '../utils/moodGauntletAnalytics';
 import { applyIntensity, clampIntensityStep, MAX_INTENSITY_STEPS } from '../utils/moodIntensity';
 import { buildRelaxationSteps } from '../utils/relaxationChain';
 
@@ -97,7 +98,30 @@ export type FallbackStage =
   | 'similarity_relaxed'
   | 'max_runtime_dropped'
   | 'record_ids'
-  | 'reasons';
+  | 'reasons'
+  | 'mood_four';
+
+/** `mood-four` çağrısı (Faz 2-3): v4 gevşetme zinciri + id-rerank TEK istekte. */
+export interface MoodFourInput {
+  moodText: string;
+  profile: unknown;
+  excludeIds: string[];
+  parsed: ParsedMoodV2;
+  attempts: AttemptPlan[];
+  matchCount: number;
+  rerankCandidates: number;
+}
+
+export type MoodFourOutcome =
+  | {
+      ok: true;
+      pool: MatchRow[];
+      /** Havuzu veren basamak (0 = gevşetme yok). */
+      attemptIndex: number;
+      /** null → rerank atlandı/başarısız: havuz sırasıyla ilk 4. */
+      rerankedIds: string[] | null;
+    }
+  | { ok: false; failure: string };
 
 export interface MoodGauntletDeps {
   parse(input: { text: string; quickMoodId?: string; clientSearchId: string }): Promise<ParsedMoodV2>;
@@ -111,6 +135,11 @@ export interface MoodGauntletDeps {
     /** parse'taki genres_exclude; dörtlü seçiminde (reason:false) sunucu prompt'una ihlal yasağı olarak gider. */
     genresExclude?: readonly string[];
   }): Promise<RerankOutcome>;
+  /**
+   * Opsiyonel: tek istekte v4 + dörtlü seçimi. Yoksa ya da `ok:false` / hata dönerse eski 2 çağrılı
+   * yola (matchV4 → rerank) düşülür (`onFallback('mood_four')`).
+   */
+  moodFour?(input: MoodFourInput): Promise<MoodFourOutcome>;
   /** watchlist + izlenen film kimlikleri. */
   loadExclusions(): Promise<string[]>;
   /** mood_searches.recommended_film_ids (four + backups, gösterim sırası). */
@@ -158,7 +187,7 @@ export interface MoodSet {
 }
 
 export type StartResult =
-  | { status: 'ok'; session: MoodSession; set: MoodSet }
+  | { status: 'ok'; session: MoodSession; set: MoodSet; path?: MoodFourPath }
   | { status: 'insufficient'; session: MoodSession };
 
 export type NextResult =
@@ -197,7 +226,7 @@ export function mergeExclusions(input: {
   return out;
 }
 
-interface AttemptPlan {
+export interface AttemptPlan {
   minSimilarity: number;
   minRating: number | null;
   includeGenres: boolean;
@@ -357,7 +386,7 @@ export async function fetchReasons(
 
 export type StageEvent = { stage: 'parsed'; profileName: string | null } | { stage: 'picking' };
 
-export type PipelineStageName = 'parse' | 'v4' | 'pick';
+export type PipelineStageName = 'parse' | 'exclusions' | 'v4' | 'pick' | 'four';
 export type TimingEvent = (stage: PipelineStageName, ms: number) => void;
 
 const clock = (deps: MoodGauntletDeps): number => (deps.now ? deps.now() : Date.now());
@@ -392,21 +421,37 @@ async function fetchPool(
     });
     pool = uniqueById(rows);
     if (pool.length >= FOUR) {
-      if (i > 0) {
-        if (!a.includeGenres && parsed.genresInclude.length > 0) deps.onFallback('genres_relaxed');
-        if (a.minSimilarity < attempts[0].minSimilarity) deps.onFallback('similarity_relaxed');
-        if (!a.keepRuntime) {
-          deps.onFallback('max_runtime_dropped');
-          notices.push('max_runtime_dropped');
-        }
-      }
+      notices.push(...noteRelaxation(deps, parsed, attempts, i));
       break;
     }
   }
   return { pool, notices };
 }
 
-/** Yeni arama: parse → v4 (gevşetme zinciri) → id-rerank → dörtlü. `carryShown` önceki aramalardan taşınan dışlamadır. */
+/** Gevşetme basamağı `i` (>0) kullanıldıysa telemetri + görünür not (max_runtime düştüyse). */
+function noteRelaxation(
+  deps: MoodGauntletDeps,
+  parsed: ParsedMoodV2,
+  attempts: readonly AttemptPlan[],
+  i: number,
+): MoodNotice[] {
+  const notices: MoodNotice[] = [];
+  if (i <= 0) return notices;
+  const a = attempts[i];
+  if (!a.includeGenres && parsed.genresInclude.length > 0) deps.onFallback('genres_relaxed');
+  if (a.minSimilarity < attempts[0].minSimilarity) deps.onFallback('similarity_relaxed');
+  if (!a.keepRuntime) {
+    deps.onFallback('max_runtime_dropped');
+    notices.push('max_runtime_dropped');
+  }
+  return notices;
+}
+
+/**
+ * Yeni arama: parse ∥ dışlama listesi (paralel) → dörtlü. Dörtlü önce tek istekte (`mood-four`: v4 +
+ * id-rerank); o yoksa/başarısızsa eski yol: v4 (gevşetme zinciri) → id-rerank. `carryShown` önceki
+ * aramalardan taşınan dışlamadır.
+ */
 export async function startMoodGauntlet(
   deps: MoodGauntletDeps,
   input: {
@@ -415,27 +460,28 @@ export async function startMoodGauntlet(
     carryShown?: readonly string[];
     /** Yükleme ekranı için aşama bildirimi (profile_name geldiğinde 'parsed'). */
     onStage?: (e: StageEvent) => void;
-    /** Aşama süreleri (parse, v4, pick) — metin taşımaz. */
+    /** Aşama süreleri (parse, exclusions, v4, pick, four) — metin taşımaz. */
     onTiming?: TimingEvent;
   },
 ): Promise<StartResult> {
-  let t0 = clock(deps);
-  const parsed = await deps.parse({
-    text: input.text,
-    quickMoodId: input.quickMoodId,
-    clientSearchId: deps.newId(),
-  });
-  input.onTiming?.('parse', clock(deps) - t0);
-  input.onStage?.({ stage: 'parsed', profileName: parsed.profileName });
-  const library = await deps.loadExclusions();
+  const t00 = clock(deps);
+  // Parse ve dışlama sorguları birbirine bağlı değil: aynı anda başlar (toplam = en yavaşı).
+  const parsePart = async (): Promise<ParsedMoodV2> => {
+    const p = await deps.parse({ text: input.text, quickMoodId: input.quickMoodId, clientSearchId: deps.newId() });
+    input.onTiming?.('parse', clock(deps) - t00);
+    input.onStage?.({ stage: 'parsed', profileName: p.profileName });
+    return p;
+  };
+  const exclusionsPart = async (): Promise<string[]> => {
+    const l = await deps.loadExclusions();
+    input.onTiming?.('exclusions', clock(deps) - t00);
+    return l;
+  };
+  const [parsed, library] = await Promise.all([parsePart(), exclusionsPart()]);
   const shown = [...(input.carryShown ?? [])];
   const excludeIds = mergeExclusions({ shown, recent: parsed.excludeRecentIds, library });
 
-  t0 = clock(deps);
-  const { pool, notices } = await fetchPool(deps, parsed, parsed.profile, excludeIds);
-  input.onTiming?.('v4', clock(deps) - t0);
-
-  const session: MoodSession = {
+  const baseSession = (pool: MatchRow[], notices: MoodNotice[]): MoodSession => ({
     moodText: input.text,
     parsed,
     profile: parsed.profile,
@@ -445,7 +491,50 @@ export async function startMoodGauntlet(
     setCount: 0,
     notices,
     recorded: [],
-  };
+  });
+
+  // ── Tek istek yolu ────────────────────────────────────────────────────────
+  if (deps.moodFour) {
+    const attempts = buildV4Attempts(parsed.genresInclude.length > 0, parsed.maxRuntime != null);
+    const tFour = clock(deps);
+    let out: MoodFourOutcome | null = null;
+    try {
+      out = await deps.moodFour({
+        moodText: input.text,
+        profile: parsed.profile,
+        excludeIds,
+        parsed,
+        attempts,
+        matchCount: V4_MATCH_COUNT,
+        rerankCandidates: RERANK_CANDIDATES,
+      });
+    } catch (err) {
+      // Sessiz değil: Sentry (deps.onError), sonra eski yol.
+      deps.onError('mood_four', err);
+    }
+    if (out && out.ok) {
+      input.onTiming?.('four', clock(deps) - tFour);
+      const pool = uniqueById(out.pool);
+      const notices = noteRelaxation(deps, parsed, attempts, out.attemptIndex);
+      const session = baseSession(pool, notices);
+      if (pool.length < FOUR) return { status: 'insufficient', session };
+      const pre: RerankOutcome | null =
+        out.rerankedIds && out.rerankedIds.length > 0 ? { ok: true, ids: out.rerankedIds, reasons: {} } : null;
+      if (pre === null) deps.onFallback('rerank');
+      const combined = await buildSet(deps, session, pre);
+      return combined.status === 'ok'
+        ? { ...combined, path: 'combined' }
+        : { status: 'insufficient', session: combined.session };
+    }
+    deps.onFallback('mood_four');
+  }
+
+  // ── Eski yol: v4 → rerank ─────────────────────────────────────────────────
+  let t0 = clock(deps);
+  const { pool, notices } = await fetchPool(deps, parsed, parsed.profile, excludeIds);
+  input.onTiming?.('v4', clock(deps) - t0);
+
+  const session = baseSession(pool, notices);
   if (pool.length < FOUR) return { status: 'insufficient', session };
   deps.prefetch?.(pool.slice(0, PREFETCH_POOL));
   input.onStage?.({ stage: 'picking' });
@@ -453,13 +542,20 @@ export async function startMoodGauntlet(
   const built = await buildSet(deps, session);
   input.onTiming?.('pick', clock(deps) - t0);
   // Taşınan dışlamalar havuzu 4'ün altına indirdiyse: yeni aramada da yeterli aday yok demektir.
-  return built.status === 'ok' ? built : { status: 'insufficient', session: built.session };
+  return built.status === 'ok' ? { ...built, path: 'legacy' } : { status: 'insufficient', session: built.session };
 }
 
-async function buildSet(deps: MoodGauntletDeps, session: MoodSession): Promise<NextResult> {
+/** `preRerank` verilirse (mood-four) dörtlü seçimi için ayrı çağrı yapılmaz; null = v4 sırası. */
+async function buildSet(
+  deps: MoodGauntletDeps,
+  session: MoodSession,
+  preRerank?: RerankOutcome | null,
+): Promise<NextResult> {
   const available = session.pool.filter((r) => !session.shown.includes(r.id));
   if (available.length < FOUR) return { status: 'exhausted', session };
-  const rerank = await rerankOrNull(deps, session.moodText, available, session.parsed.genresExclude);
+  const rerank = preRerank !== undefined
+    ? preRerank
+    : await rerankOrNull(deps, session.moodText, available, session.parsed.genresExclude);
   const picked = pickFour(available, rerank);
   const set: MoodSet = {
     setId: deps.newId(),

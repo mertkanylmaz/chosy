@@ -159,6 +159,9 @@ Deno.test('index.ts: aday satirinda runtime, genres_exclude yalniz pick yolunda,
   const src = Deno.readTextFileSync(new URL('../rerank-films/index.ts', import.meta.url)).replaceAll('\r\n', '\n')
   assertMatch(src, /\(\$\{c\.year \?\? '\?'\}\)\$\{runtime\} \| \$\{genres\} \| \$\{overview\}/)
   assertMatch(src, /const excluded = !withReason && Array\.isArray\(body\.genres_exclude\)/)
-  assertMatch(src, /Respect explicit constraints: if the mood says "not intense", "not scary"/)
-  assertMatch(src, /never select a film that has any of those genres/)
+  // Faz 2-3: pick prompt'u _shared/rerankPick.ts'e taşındı (mood-four ile ortak); rerank-films onu içe aktarır.
+  assertMatch(src, /import \{ PICK_SYSTEM_PROMPT \} from '\.\.\/_shared\/rerankPick\.ts'/)
+  const shared = Deno.readTextFileSync(new URL('./rerankPick.ts', import.meta.url)).replaceAll('\r\n', '\n')
+  assertMatch(shared, /Respect explicit constraints: if the mood says "not intense", "not scary"/)
+  assertMatch(shared, /never select a film that has any of those genres/)
 })

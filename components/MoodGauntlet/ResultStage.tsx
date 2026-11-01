@@ -1,16 +1,19 @@
 /**
  * Sonuç: "Bu akşamın filmi". ChampionReveal KULLANILMAZ (sunucu sahipli günlük gauntletId /
- * tarihe bağlı) — yalnız hareket dili ödünç alınır: poster belirir → başlık → meta, aynı
- * `BLACKOUT_SEQUENCE` gecikmeleri (kara boşluk YOK, kısa reveal). Watch now altın birincil;
- * Sonraya bırak (MANUEL watchlist) ve Paylaş (mood'a özel metin) ikincil; 3 yedek;
- * Başka bir dörtlü; Daha hafif / Daha yoğun belirgin çipler.
+ * tarihe bağlı) — yalnız hareket dili ödünç alınır: poster belirir → başlık → meta.
+ *
+ * Faz 2-3 hiyerarşi (yukarıdan aşağı):
+ *   mood başlığı → poster + başlık + gerekçe + çipler (+ "Why this fits you" satırı)
+ *   → birincil TEK CTA "Watch on {Provider}" (altında nerede-izlenir logoları)
+ *   → ikincil TEK satır: Kaydet (durum düğmede: "✓ Saved") + Paylaş (ikon)
+ *   → "Not quite right?": Lighter · More intense · Another four (üç çip)
+ *   → "If not this one" yedekleri.
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
-import { Lightning, Wind } from 'phosphor-react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { BookmarkSimple, ShareNetwork } from 'phosphor-react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Linking, Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 import Animated, {
   FadeIn,
@@ -21,7 +24,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
@@ -38,19 +40,34 @@ import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
+import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 
+import { FilmChips } from './FilmChips';
 import { styles } from './styles';
 import { trackMoodEvent } from './useMoodGauntlet';
 
 type SaveState = 'idle' | 'saving' | 'saved';
+
+const INSIGHT_KEYS: Record<PickPattern, string> = {
+  calmer_all: 'moodGauntlet.insight.calmerAll',
+  calmer_two: 'moodGauntlet.insight.calmerTwo',
+  livelier_all: 'moodGauntlet.insight.livelierAll',
+  livelier_two: 'moodGauntlet.insight.livelierTwo',
+};
 
 interface ResultStageProps {
   champion: MatchRow;
   backups: MatchRow[];
   /** film id → gerekçe (arkadan dolar; yoksa satır çizilmez). */
   reasons: Record<string, string>;
+  /** Şampiyonun boyutları (çipler); gelmezse çip çizilmez. */
+  dims: FilmDims | undefined;
+  /** Seçimlerden türeyen deterministik desen; yoksa satır yok. */
+  pattern: PickPattern | null;
+  /** Hızlı mood adı ya da profile_name / kullanıcı metni. */
+  moodLabel: string | null;
   notices: MoodNotice[];
   canLighter: boolean;
   canStronger: boolean;
@@ -60,12 +77,11 @@ interface ResultStageProps {
 
 interface ChipProps {
   label: string;
-  disabled: boolean;
+  disabled?: boolean;
   onPress: () => void;
-  children: React.ReactNode;
 }
 
-function IntensityChip({ label, disabled, onPress, children }: ChipProps): React.JSX.Element {
+function AdjustChip({ label, disabled = false, onPress }: ChipProps): React.JSX.Element {
   return (
     <TouchableOpacity
       style={[styles.chip, disabled && styles.chipDisabled]}
@@ -76,8 +92,7 @@ function IntensityChip({ label, disabled, onPress, children }: ChipProps): React
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
-      {children}
-      <Text style={styles.chipText} numberOfLines={1}>
+      <Text style={styles.chipText} numberOfLines={2}>
         {label}
       </Text>
     </TouchableOpacity>
@@ -88,6 +103,9 @@ export function ResultStage({
   champion,
   backups,
   reasons,
+  dims,
+  pattern,
+  moodLabel,
   notices,
   canLighter,
   canStronger,
@@ -143,7 +161,7 @@ export function ResultStage({
   const poster = normalizePosterUrl(champion.poster_url);
   const reason = reasonFor(reasons, champion.id);
   const year = champion.year ?? 0;
-  const meta = [year > 0 ? String(year) : null, champion.runtime ? `${champion.runtime} min` : null]
+  const meta = [year > 0 ? String(year) : null, formatRuntime(champion.runtime)]
     .filter((x): x is string => x !== null)
     .join(' · ');
 
@@ -155,37 +173,56 @@ export function ResultStage({
     [router],
   );
 
+  /** Sağlayıcı verisi yüklendiyse hedef (düğme etiketi + bağlantı); aksi hâlde null. */
+  const target = useMemo(
+    () =>
+      resolveWatchTarget({
+        title: champion.title,
+        region,
+        providersReady: providers.state === 'ok',
+        providers: providers.providers as Parameters<typeof resolveWatchTarget>[0]['providers'],
+      }),
+    [champion.title, region, providers.state, providers.providers],
+  );
+
+  const watchLabel =
+    target.providerName === null
+      ? t('moodGauntlet.watchNow')
+      : target.labelKind === 'rentbuy'
+        ? t('moodGauntlet.rentBuyOn', { provider: target.providerName })
+        : t('moodGauntlet.watchOn', { provider: target.providerName });
+
   /**
-   * Watch now: bölgedeki sağlayıcı bağlantısı (yoksa JustWatch araması) uygulama içi tarayıcıda;
-   * hiç sağlayıcı yoksa film detay ekranı. Olay provider_found taşır. Tarayıcı açılamazsa hata
+   * Watch now: sağlayıcının resmî arama bağlantısı (universal link — uygulama yüklüyse açar);
+   * tabloda yoksa JustWatch araması; hiç sağlayıcı yoksa film detay ekranı. Açılamazsa hata
    * kaydedilir ve kullanıcı detay ekranına düşer (sessiz geçiş yok).
    */
   const handleWatchNow = useCallback(async () => {
-    const target = resolveWatchTarget({
-      filmId: champion.id,
-      title: champion.title,
-      region,
-      providersReady: providers.state === 'ok',
-      providers: providers.providers as Parameters<typeof resolveWatchTarget>[0]['providers'],
-    });
-    trackMoodEvent(pickActionEvent('watch_now', target.providerFound));
+    trackMoodEvent(
+      pickActionEvent('watch_now', target.providerFound, {
+        providerId: target.providerId,
+        offerType: target.offerType,
+        linkKind: target.url === null ? 'detail' : target.kind,
+      }),
+    );
     if (target.url === null) {
       openFilm(champion.id);
       return;
     }
     void hapticLight();
     try {
-      await WebBrowser.openBrowserAsync(target.url);
+      await Linking.openURL(target.url);
     } catch (err) {
       logger.error('[moodGauntlet] watch now baglantisi acilamadi', err, { code: 'MOOD_GAUNTLET_WATCH_OPEN_FAILED' });
       openFilm(champion.id);
     }
-  }, [champion.id, champion.title, region, providers.state, providers.providers, openFilm]);
+  }, [champion.id, target, openFilm]);
 
   /** MANUEL watchlist: yalnız bu dokunuşla yazılır (deste/swipe yolundaki otomatik yazım yok). */
   const handleSave = useCallback(async () => {
     if (saveState !== 'idle') return;
     setSaveState('saving');
+    setNotice(null);
     void hapticLight();
     track('later');
     try {
@@ -200,7 +237,6 @@ export function ResultStage({
       });
       if (!mounted.current) return;
       setSaveState('saved');
-      setNotice(t('moodGauntlet.saved'));
     } catch (err) {
       logger.error('[moodGauntlet] watchlist kaydi basarisiz', err, { code: 'MOOD_GAUNTLET_SAVE_FAILED' });
       if (!mounted.current) return;
@@ -224,8 +260,15 @@ export function ResultStage({
     }
   }, [champion.title, year, t, track]);
 
+  const saved = saveState === 'saved';
+
   return (
     <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      {moodLabel !== null && moodLabel.length > 0 && (
+        <Text style={styles.resultMood} numberOfLines={2} accessibilityRole="header">
+          {moodLabel}
+        </Text>
+      )}
       <Text style={styles.kicker}>{t('moodGauntlet.resultKicker')}</Text>
       <Animated.View style={[styles.hero, posterStyle]}>
         {poster !== null && <Image source={{ uri: poster }} style={styles.heroImage} contentFit="cover" />}
@@ -238,18 +281,27 @@ export function ResultStage({
         <Animated.Text
           key={reason}
           style={styles.resultReason}
-          numberOfLines={2}
-          ellipsizeMode="tail"
           entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
         >
           {reason}
         </Animated.Text>
       )}
+      <View style={styles.resultChips}>
+        <FilmChips dims={dims} runtimeMinutes={champion.runtime} centered />
+      </View>
+      {pattern !== null && <Text style={styles.insight}>{t(INSIGHT_KEYS[pattern])}</Text>}
       {notices.includes('max_runtime_dropped') && (
         <Text style={[styles.notice, styles.actions]}>{t('moodGauntlet.noticeRuntime')}</Text>
       )}
 
-      <View style={styles.actions}>
+      <View style={styles.ctaBlock}>
+        <PrimaryAction
+          label={watchLabel}
+          onPress={() => void handleWatchNow()}
+          variant="gold"
+          disabled={providers.state === 'loading'}
+          busy={providers.state === 'loading'}
+        />
         <View style={styles.providersSlot}>
           <WatchProvidersRow
             state={providers.state}
@@ -257,34 +309,45 @@ export function ResultStage({
             onRetry={providers.retry}
             filmId={champion.id}
             onSeeAll={() => track('where')}
+            showOfferLabels
           />
         </View>
-        <PrimaryAction
-          label={t('moodGauntlet.watchNow')}
-          onPress={() => void handleWatchNow()}
-          variant="gold"
-          disabled={providers.state === 'loading'}
-          busy={providers.state === 'loading'}
-        />
-        <View style={styles.actionRow}>
-          <OutlineAction
-            label={saveState === 'saved' ? t('moodGauntlet.saved') : t('moodGauntlet.saveForLater')}
-            onPress={() => void handleSave()}
-            disabled={saveState !== 'idle'}
-          />
-          <OutlineAction label={t('moodGauntlet.share')} onPress={() => void handleShare()} />
-        </View>
+      </View>
+
+      <View style={styles.secondaryRow}>
+        <TouchableOpacity
+          style={styles.saveBtn}
+          onPress={() => void handleSave()}
+          disabled={saveState !== 'idle'}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={saved ? t('moodGauntlet.saved') : t('moodGauntlet.save')}
+          accessibilityState={{ disabled: saveState !== 'idle', selected: saved }}
+        >
+          {!saved && <BookmarkSimple size={size.iconInline} color={color.text.primary} />}
+          <Text style={styles.saveBtnText} numberOfLines={1}>
+            {saved ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.shareBtn}
+          onPress={() => void handleShare()}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+          accessibilityLabel={t('moodGauntlet.shareA11y')}
+        >
+          <ShareNetwork size={size.iconInline} color={color.text.primary} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.noticeSlot}>
         {notice !== null && <Text style={styles.shareNotice}>{notice}</Text>}
       </View>
 
       <Text style={styles.adjustTitle}>{t('moodGauntlet.adjustTitle')}</Text>
       <View style={styles.chipRow}>
-        <IntensityChip label={t('moodGauntlet.lighter')} disabled={!canLighter} onPress={() => onIntensify('lighter')}>
-          <Wind size={size.iconInline} color={color.text.primary} />
-        </IntensityChip>
-        <IntensityChip label={t('moodGauntlet.stronger')} disabled={!canStronger} onPress={() => onIntensify('stronger')}>
-          <Lightning size={size.iconInline} color={color.text.primary} />
-        </IntensityChip>
+        <AdjustChip label={t('moodGauntlet.lighter')} disabled={!canLighter} onPress={() => onIntensify('lighter')} />
+        <AdjustChip label={t('moodGauntlet.stronger')} disabled={!canStronger} onPress={() => onIntensify('stronger')} />
+        <AdjustChip label={t('moodGauntlet.anotherFour')} onPress={onAnotherFour} />
       </View>
 
       {backups.length > 0 && (
@@ -313,10 +376,6 @@ export function ResultStage({
           </View>
         </>
       )}
-
-      <View style={styles.actions}>
-        <OutlineAction label={t('moodGauntlet.anotherFour')} onPress={onAnotherFour} />
-      </View>
     </ScrollView>
   );
 }

@@ -54,11 +54,14 @@ export function MoodGauntletShell(): React.JSX.Element {
         <GauntletStage
           set={g.set}
           reasons={g.reasons}
+          dims={g.dims}
           flow={g.flow}
           notices={g.notices}
           moodLabel={g.moodLabel}
+          tapHint={g.tapHint}
           onChoose={g.chooseFilm}
           onNone={g.noneOfThese}
+          onJustPick={g.justPick}
         />
       )}
       {g.stage === 'result' && g.champion && g.set && (
@@ -66,6 +69,9 @@ export function MoodGauntletShell(): React.JSX.Element {
           champion={g.champion}
           backups={g.set.backups}
           reasons={g.reasons}
+          dims={g.dims[g.champion.id]}
+          pattern={g.pickPattern}
+          moodLabel={g.moodLabel}
           notices={g.notices}
           canLighter={g.canLighter}
           canStronger={g.canStronger}

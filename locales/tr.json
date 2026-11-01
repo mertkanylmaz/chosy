@@ -676,7 +676,7 @@
   },
   "moodGauntlet": {
     "entryTitle": "Bu akşam ruh halin ne?",
-    "entrySubtitle": "Bir ruh hali seç ya da anlat. Dört film, üç seçim, tek film.",
+    "entrySubtitle": "Başlamak için bir mood'a dokun ya da akşamını anlat. Biz dört film seçeriz, sen birini seçersin.",
     "inputPlaceholder": "Bu akşamı birkaç kelimeyle anlat",
     "startCta": "Dörtlümü bul",
     "quickLabel": "Hızlı ruh halleri",
@@ -712,7 +712,34 @@
     "errorInsufficient": "Buna uygun dört film bulamadık. Farklı anlatmayı dene.",
     "exhaustedTitle": "Bu ruh hali için tüm filmleri gördün",
     "exhaustedBody": "Daha fazlası için yeni bir arama başlat.",
-    "newSearch": "Yeni arama"
+    "newSearch": "Yeni arama",
+    "yourFour": "Dörtlün",
+    "yourFourA11y": "Bu akşamın dört filmi",
+    "tapHint": "İzlemeyi tercih ettiğine dokun",
+    "justPick": "Sen seç",
+    "noneSub": "Aynı mood, 4 yeni film",
+    "watchOn": "%{provider}'da izle",
+    "rentBuyOn": "%{provider}'dan kirala/satın al",
+    "save": "Kaydet",
+    "savedShort": "✓ Kaydedildi",
+    "shareA11y": "Bu filmi paylaş",
+    "chipPace": {
+      "slow": "Yavaş tempo",
+      "medium": "Dengeli tempo",
+      "fast": "Hızlı tempo"
+    },
+    "chipEnergy": {
+      "gentle": "Sakin",
+      "moderate": "Orta yoğunluk",
+      "intense": "Yoğun"
+    },
+    "insight": {
+      "calmerAll": "Üç turda da daha sakin olanı seçtin",
+      "calmerTwo": "İki turda da daha sakin olanı seçtin",
+      "livelierAll": "Üç turda da daha hareketli olanı seçtin",
+      "livelierTwo": "İki turda da daha hareketli olanı seçtin"
+    },
+    "loadingAnother": "Başka bir dörtlü seçiliyor…"
   },
   "aiConsent": {
     "title": "Seçmene Claude yardım etsin",
@@ -1514,7 +1541,7 @@
   },
   "moodEntry": {
     "title": "Sonraki dörtlü: %{time} · Beklemek istemiyor musun?",
-    "subtitle": "Mood'una göre seç — dört film, üç seçim, tek film",
+    "subtitle": "4 film · 3 seçim · 1 film",
     "badge": "Pro"
   },
   "contextPaywall": {
@@ -1702,6 +1729,12 @@
       "sheetTitle": "Nerede izlenir",
       "group": {
         "stream": "Akış",
+        "rent": "Kirala",
+        "buy": "Satın al"
+      },
+      "offer": {
+        "subscription": "Abonelik",
+        "free": "Ücretsiz",
         "rent": "Kirala",
         "buy": "Satın al"
       }

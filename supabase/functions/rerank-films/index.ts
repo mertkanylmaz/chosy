@@ -25,6 +25,7 @@ import {
 import { sentryCapture } from '../_shared/sentry.ts'
 import { REASON_THINKING, RERANK_PICK_MODEL, RERANK_REASON_MODEL } from '../_shared/models.ts'
 import { guardReasons } from '../_shared/reasonGuard.ts'
+import { PICK_SYSTEM_PROMPT } from '../_shared/rerankPick.ts'
 import {
   REASON_MAX_CANDIDATES,
   REASON_OVERVIEW_MAX,
@@ -69,21 +70,8 @@ interface RerankRequest {
 
 // ── System Prompt ────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a film recommendation re-ranker. Given a user's mood/intent description and a list of candidate films, select and rank the most relevant films.
-
-Rules:
-- Understand the user's INTENT, not just emotion. "thailand trip" means films about travel, Thailand, Southeast Asia, adventure, vacation — NOT just "happy adventure films"
-- "exam results came back great" means films about academic achievement, youth, coming-of-age, school success — NOT just "happy films"
-- Eliminate films with ZERO thematic connection to the user's intent
-- Respect explicit constraints: if the mood says "not intense", "not scary", "nothing heavy" or similar, never select a film that violates it (judge by genres, runtime and overview). If an "Excluded genres" line is given, never select a film that has any of those genres
-- Among thematically relevant films, prefer higher original similarity scores (they capture emotional tone better)
-- If no films are thematically connected, fall back to the best emotional matches (don't return empty)
-- Return ONLY a JSON array of the candidate NUMBERS (the integer before each film) in ranked order, nothing else
-- Never return titles, reasons or explanations
-- Accept both English and Turkish input equally
-
-Return format (ONLY valid JSON, no explanation):
-[3, 12, 1, ...]`
+// Prompt _shared/rerankPick.ts'te (mood-four ile ortak; metin birebir ayni).
+const SYSTEM_PROMPT = PICK_SYSTEM_PROMPT
 
 // ── Handler ──────────────────────────────────────────────────────────────────
 

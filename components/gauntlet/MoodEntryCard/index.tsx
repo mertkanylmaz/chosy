@@ -29,7 +29,7 @@ import {
 
 import { styles } from './styles';
 
-/** Oturum boyu yüzey başına bir `pro_entry_viewed` (remount'ta tekrarlanmaz). */
+/** Oturum boyu TEK `pro_entry_viewed` (yüzeyden bağımsız; remount'ta tekrarlanmaz). */
 export const entryViewed = createEntryViewedTracker();
 
 interface MoodEntryCardProps {
@@ -82,9 +82,11 @@ export function MoodEntryCard({ nextFourAt }: MoodEntryCardProps): React.JSX.Ele
       >
         <View style={styles.textBlock}>
           <Text style={styles.title} numberOfLines={2}>{title}</Text>
-          <Text style={styles.subtitle} numberOfLines={2}>{t('moodEntry.subtitle')}</Text>
+          <Text style={styles.subtitle} numberOfLines={1}>{t('moodEntry.subtitle')}</Text>
         </View>
-        <Text style={styles.badge}>{t('moodEntry.badge')}</Text>
+        <View style={styles.badgePill}>
+          <Text style={styles.badge} numberOfLines={1}>{t('moodEntry.badge')}</Text>
+        </View>
         <Text style={styles.chevron}>›</Text>
       </TouchableOpacity>
       <ContextualPaywall {...paywallProps} />

@@ -19,6 +19,8 @@ import {
   type FallbackStage,
   type MatchRow,
   type MatchV4Args,
+  type MoodFourInput,
+  type MoodFourOutcome,
   type MoodGauntletDeps,
   type ParsedMoodV2,
   type RerankOutcome,
@@ -33,6 +35,8 @@ import { getWatchedFilmIds, getWatchlistFilmIds } from './watchlist';
 const PARSE_TIMEOUT_MS = 15_000;
 const RERANK_IDS_TIMEOUT_MS = 8_000;
 const RERANK_REASONS_TIMEOUT_MS = 10_000;
+/** mood-four: v4 (gevşetme zinciri dahil) + id-rerank tek istekte. */
+const MOOD_FOUR_TIMEOUT_MS = 14_000;
 const RERANK_OVERVIEW_MAX = 120;
 
 type V2Response = EdgeResponse & {
@@ -154,6 +158,54 @@ async function matchV4(args: MatchV4Args): Promise<MatchRow[]> {
   return (data ?? []) as MatchRow[];
 }
 
+/**
+ * Tek istekte dörtlü: v4 gevşetme zinciri + id-rerank sunucuda (us-west-1, DB ile aynı bölge).
+ * Sorgu vektörü İSTEMCİDE üretilir (vectorEncoder tek kaynak). Başarısızlık `ok:false` döner;
+ * çağıran eski 2 çağrılı yola düşer (hata Sentry'ye servis katmanında yazılır).
+ */
+async function moodFour(input: MoodFourInput): Promise<MoodFourOutcome> {
+  if (!(await hasAiConsent())) return { ok: false, failure: 'no_consent' };
+  const vector = tasteProfileToVector(input.profile as Parameters<typeof tasteProfileToVector>[0]);
+  const { parsed } = input;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), MOOD_FOUR_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/mood-four?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
+      method: 'POST',
+      headers: { ...(await authHeaders()), 'x-region': GAUNTLET_EDGE_REGION },
+      body: JSON.stringify({
+        mood_text: input.moodText,
+        query_vector: `[${vector.join(',')}]`,
+        exclude_ids: input.excludeIds,
+        search_keywords: parsed.searchKeywords,
+        genres_exclude: parsed.genresExclude,
+        reference_titles: parsed.referenceTitles,
+        suggested_titles: parsed.suggestedTitles,
+        attempts: input.attempts.map((a) => ({
+          min_similarity: a.minSimilarity,
+          min_rating: a.minRating,
+          genres_include: a.includeGenres ? parsed.genresInclude : [],
+          max_runtime: a.keepRuntime ? parsed.maxRuntime : null,
+        })),
+        match_count: input.matchCount,
+        rerank_candidates: input.rerankCandidates,
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) return { ok: false, failure: `http_${res.status}` };
+    const data = (await res.json()) as { pool?: unknown; attempt_index?: unknown; reranked_ids?: unknown };
+    if (!Array.isArray(data.pool)) return { ok: false, failure: 'bad_body' };
+    const attemptIndex = typeof data.attempt_index === 'number' ? data.attempt_index : 0;
+    const ids = Array.isArray(data.reranked_ids) ? stringArray(data.reranked_ids) : null;
+    return { ok: true, pool: data.pool as MatchRow[], attemptIndex, rerankedIds: ids };
+  } catch (err) {
+    if (controller.signal.aborted) return { ok: false, failure: 'timeout' };
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function rerank(input: {
   moodText: string;
   candidates: MatchRow[];
@@ -244,6 +296,7 @@ export function createMoodGauntletDeps(): MoodGauntletDeps {
     parse: parseV2,
     matchV4,
     rerank,
+    moodFour,
     loadExclusions,
     recordRecommended,
     newId: () => ExpoCrypto.randomUUID(),

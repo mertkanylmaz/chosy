@@ -29,11 +29,14 @@ const ERROR_KEYS: Record<MoodErrorKind, string> = {
   generic: 'moodGauntlet.errorGeneric',
 };
 
-const PHASES: readonly MoodLoadingPhase[] = ['reading', 'matching', 'picking'];
+/** Aşama satırında yalnız bu üçü görünür; `another` ayrı, tek satırlık metindir. */
+type StepPhase = Exclude<MoodLoadingPhase, 'another'>;
+const PHASES: readonly StepPhase[] = ['reading', 'matching', 'picking'];
 const PHASE_KEYS: Record<MoodLoadingPhase, string> = {
   reading: 'moodGauntlet.phaseReading',
   matching: 'moodGauntlet.phaseMatching',
   picking: 'moodGauntlet.phasePicking',
+  another: 'moodGauntlet.loadingAnother',
 };
 const SILHOUETTES = [0, 1, 2, 3] as const;
 const PULSE_STAGGER_MS = 160;
@@ -71,7 +74,8 @@ interface LoadingStageProps {
 
 export function LoadingStage({ label, phase }: LoadingStageProps): React.JSX.Element {
   const { t } = useLanguage();
-  const active = PHASES.indexOf(phase);
+  const another = phase === 'another';
+  const active = another ? -1 : PHASES.indexOf(phase);
   return (
     <View
       style={styles.loadingRoot}
@@ -90,6 +94,9 @@ export function LoadingStage({ label, phase }: LoadingStageProps): React.JSX.Ele
         ))}
       </View>
 
+      {another && <Text style={styles.loadingAnother}>{t('moodGauntlet.loadingAnother')}</Text>}
+
+      {!another && (
       <View style={styles.phaseRow} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         {PHASES.map((p, i) => {
           const state = i < active ? 'Done' : i === active ? 'Active' : 'Pending';
@@ -104,6 +111,7 @@ export function LoadingStage({ label, phase }: LoadingStageProps): React.JSX.Ele
           );
         })}
       </View>
+      )}
     </View>
   );
 }

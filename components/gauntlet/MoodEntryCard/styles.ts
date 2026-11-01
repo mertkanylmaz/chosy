@@ -34,9 +34,19 @@ export const styles = StyleSheet.create({
     ...type.caption,
     color: color.text.secondary,
   },
+  /** Pro rozeti: okunur boy (callout 15pt, ana renk) ve pill; asla satır kırmaz / küçülmez. */
+  badgePill: {
+    flexShrink: 0,
+    paddingHorizontal: space.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: color.accent.edgeStrong,
+  },
   badge: {
-    ...type['label-caps'],
-    color: color.text.secondary,
+    ...type.callout,
+    fontWeight: '600',
+    color: color.text.primary,
   },
   chevron: {
     ...type.caption,

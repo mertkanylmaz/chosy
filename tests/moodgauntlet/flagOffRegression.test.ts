@@ -11,6 +11,7 @@ import {
   assertNoFreeText,
   completedEvent,
   firstFourVisibleEvent,
+  justPickEvent,
   intensityEvent,
   MOOD_GAUNTLET_EVENT_NAMES,
   matchChosenEvent,
@@ -90,8 +91,15 @@ Deno.test('Mood Gauntlet swipe / otomatik watchlist yazimi YOK; watchlist yalniz
 })
 
 Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon degiskenleri ayni', () => {
-  const en = JSON.parse(read('locales/en.json')).moodGauntlet as Record<string, string>
-  const tr = JSON.parse(read('locales/tr.json')).moodGauntlet as Record<string, string>
+  // Faz 2-3: iç içe gruplar (chipPace, chipEnergy, insight) düzleştirilir: 'chipPace.slow' gibi.
+  const flat = (o: Record<string, unknown>, p = ''): Record<string, string> =>
+    Object.entries(o).reduce<Record<string, string>>((acc, [k, v]) => {
+      if (v !== null && typeof v === 'object') Object.assign(acc, flat(v as Record<string, unknown>, `${p}${k}.`))
+      else acc[`${p}${k}`] = String(v)
+      return acc
+    }, {})
+  const en = flat(JSON.parse(read('locales/en.json')).moodGauntlet)
+  const tr = flat(JSON.parse(read('locales/tr.json')).moodGauntlet)
   assertEquals(Object.keys(en).sort(), Object.keys(tr).sort())
   for (const k of Object.keys(en)) {
     const vars = (s: string) => (s.match(/%\{(\w+)\}/g) ?? []).sort()
@@ -101,11 +109,12 @@ Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon deg
 })
 
 Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
-  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 10)
+  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 11) // Faz 2-3: + mood_just_pick_tapped
   const evs = [
     startedEvent('quick', 'cozy'),
     startedEvent('free_text', 'cozy'), // free_text'te quick_mood_id girmez
-    firstFourVisibleEvent(1234.6, true),
+    firstFourVisibleEvent(1234.6, true, 'quick', 'combined'),
+    justPickEvent(1),
     matchChosenEvent(2),
     noneOfTheseEvent(1),
     completedEvent(5000),
@@ -122,7 +131,11 @@ Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard
     assertNoFreeText(e)
   }
   assertEquals(startedEvent('free_text', 'cozy').props, { entry: 'free_text' })
-  assertEquals(firstFourVisibleEvent(1234.6, true).props, { ms: 1235, cache_hit: true })
+  assertEquals(firstFourVisibleEvent(1234.6, true, 'quick', 'combined').props, {
+    ms: 1235, cache_hit: true, entry: 'quick', path: 'combined',
+  })
+  assertEquals(firstFourVisibleEvent(900, false, 'free_text', 'legacy').props.entry, 'free_text')
+  assertEquals(justPickEvent(1), { name: 'mood_just_pick_tapped', props: { round: 1 } })
   let threw = false
   try {
     assertNoFreeText({ name: 'mood_gauntlet_started', props: { entry: 'quick', mood: 'rainy day with my cat' } })
@@ -234,7 +247,7 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
   assert(!/ActivityIndicator/.test(status), 'minik spinner kalkti')
   assertMatch(status, /PHASE_KEYS/)
   const result = read('components/MoodGauntlet/ResultStage.tsx')
-  assertMatch(result, /label=\{t\('moodGauntlet\.watchNow'\)\}\s+onPress=\{\(\) => void handleWatchNow\(\)\}\s+variant="gold"/)
+  assertMatch(result, /label=\{watchLabel\}\s+onPress=\{\(\) => void handleWatchNow\(\)\}\s+variant="gold"/)
   assertMatch(result, /disabled=\{!canLighter\}/)
   assertMatch(result, /disabled=\{!canStronger\}/)
   assertMatch(result, /<View style=\{styles\.providersSlot\}>/)
@@ -245,6 +258,13 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
 })
 
 Deno.test('gerekce satiri en fazla 2 satir (gauntlet + sonuc)', () => {
-  assertMatch(read('components/MoodGauntlet/GauntletStage.tsx'), /style=\{styles\.reason\}\s+numberOfLines=\{2\}\s+ellipsizeMode="tail"/)
-  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /style=\{styles\.resultReason\}\s+numberOfLines=\{2\}\s+ellipsizeMode="tail"/)
+  // Faz 2-3: gauntlet gerekçesi <=3 satır, "…" YOK (clip), 13pt altına inmez; sonuçta kesme yok.
+  const g = read('components/MoodGauntlet/GauntletStage.tsx')
+  assertMatch(g, /style=\{styles\.reason\}\s+numberOfLines=\{3\}\s+ellipsizeMode="clip"\s+adjustsFontSizeToFit\s+minimumFontScale=\{0\.93\}/)
+  assert(!/ellipsizeMode="tail"/.test(g), 'gauntlet gerekçesi "…" ile kesilmemeli')
+  const st = read('components/MoodGauntlet/styles.ts')
+  assertMatch(st, /reason: \{[^}]*fontSize: 14/)
+  const r = read('components/MoodGauntlet/ResultStage.tsx')
+  const reasonEl = r.slice(r.indexOf('style={styles.resultReason}'), r.indexOf('style={styles.resultReason}') + 120)
+  assert(!/numberOfLines|ellipsizeMode/.test(reasonEl), 'sonuç gerekçesi kesilmemeli')
 })

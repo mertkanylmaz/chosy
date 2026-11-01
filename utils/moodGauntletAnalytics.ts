@@ -31,6 +31,7 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_intensity_tapped',
   'mood_pipeline_fallback',
   'mood_pipeline_timing',
+  'mood_just_pick_tapped',
 ] as const;
 
 export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null): MoodEvent {
@@ -40,8 +41,21 @@ export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null):
   };
 }
 
-export function firstFourVisibleEvent(ms: number, cacheHit: boolean): MoodEvent {
-  return { name: 'mood_first_four_visible', props: { ms: Math.max(0, Math.round(ms)), cache_hit: cacheHit } };
+/** Dörtlü hangi yoldan geldi: tek istek (`mood-four`) ya da eski 2 çağrılı yol. */
+export type MoodFourPath = 'combined' | 'legacy';
+
+/** Faz 2-3: `entry` (quick | free_text) ve `path` ayrımı eklendi; ms/cache_hit aynen. */
+export function firstFourVisibleEvent(
+  ms: number,
+  cacheHit: boolean,
+  entry: MoodEntryKind,
+  path: MoodFourPath,
+): MoodEvent {
+  return { name: 'mood_first_four_visible', props: { ms: Math.max(0, Math.round(ms)), cache_hit: cacheHit, entry, path } };
+}
+
+export function justPickEvent(round: 1 | 2 | 3): MoodEvent {
+  return { name: 'mood_just_pick_tapped', props: { round } };
 }
 
 export function matchChosenEvent(round: 1 | 2 | 3): MoodEvent {
@@ -56,11 +70,27 @@ export function completedEvent(msTotal: number): MoodEvent {
   return { name: 'mood_gauntlet_completed', props: { ms_total: Math.max(0, Math.round(msTotal)) } };
 }
 
+export type WatchOfferType = 'flatrate' | 'free' | 'ads' | 'rent' | 'buy';
+export type WatchLinkKindProp = 'provider' | 'justwatch' | 'detail';
+
+/** Yalnız watch_now: seçilen sağlayıcı, teklif türü ve bağlantı türü. */
+export interface WatchNowProps {
+  providerId: number | null;
+  offerType: WatchOfferType | null;
+  linkKind: WatchLinkKindProp;
+}
+
 /** `providerFound` yalnız watch_now için verilir: bölgede sağlayıcı bulundu mu. */
-export function pickActionEvent(action: MoodPickAction, providerFound?: boolean): MoodEvent {
+export function pickActionEvent(action: MoodPickAction, providerFound?: boolean, watch?: WatchNowProps): MoodEvent {
   return {
     name: 'mood_tonight_pick_action',
-    props: { action, ...(providerFound === undefined ? {} : { provider_found: providerFound }) },
+    props: {
+      action,
+      ...(providerFound === undefined ? {} : { provider_found: providerFound }),
+      ...(watch === undefined
+        ? {}
+        : { provider_id: watch.providerId, offer_type: watch.offerType, link_kind: watch.linkKind }),
+    },
   };
 }
 
@@ -77,7 +107,7 @@ export function pipelineFallbackEvent(stage: string): MoodEvent {
 }
 
 /** Aşama süresi (parse | v4 | pick | reasons) — yalnız sabit etiket + ms, metin yok. */
-export type MoodTimingStage = 'parse' | 'v4' | 'pick' | 'reasons';
+export type MoodTimingStage = 'parse' | 'exclusions' | 'v4' | 'pick' | 'four' | 'reasons';
 export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEvent {
   return { name: 'mood_pipeline_timing', props: { stage, ms: Math.max(0, Math.round(ms)) } };
 }
@@ -85,8 +115,11 @@ export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEve
 /** İzin verilen string değerler (serbest metin değil, sabit etiketler). */
 const ALLOWED_STRINGS = new Set<string>([
   'quick', 'free_text', 'watch_now', 'where', 'later', 'share', 'lighter', 'stronger',
-  'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons',
-  'parse', 'v4', 'pick',
+  'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons', 'mood_four',
+  'parse', 'v4', 'pick', 'exclusions', 'four',
+  'combined', 'legacy',
+  // watch_now: offer_type + link_kind
+  'flatrate', 'free', 'ads', 'rent', 'buy', 'provider', 'justwatch', 'detail',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
 ]);

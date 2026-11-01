@@ -38,7 +38,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import type { TmdbWatchProviders } from '@/services/tmdb';
 import { hapticLight } from '@/utils/haptics';
-import { groupProviders, orderProviders } from '@/utils/watchProviderList';
+import { groupProviders, offerLabelKind, orderProviders, orderProvidersWithOffer } from '@/utils/watchProviderList';
 
 import { ProvidersSheet } from './ProvidersSheet';
 import type { WatchProvidersState } from './useWatchProviders';
@@ -62,6 +62,8 @@ interface WatchProvidersRowProps {
   filmId: string;
   /** Opsiyonel: "See all" açıldığında çağrılır (Mood Gauntlet `mood_tonight_pick_action: where`). */
   onSeeAll?: () => void;
+  /** Faz 2-3 (Mood Gauntlet): logo altında tür etiketi. Varsayılan kapalı — günlük gauntlet değişmez. */
+  showOfferLabels?: boolean;
 }
 
 export function WatchProvidersRow({
@@ -70,6 +72,7 @@ export function WatchProvidersRow({
   onRetry,
   filmId,
   onSeeAll,
+  showOfferLabels = false,
 }: WatchProvidersRowProps): React.JSX.Element {
   const { t, region } = useLanguage();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -81,6 +84,15 @@ export function WatchProvidersRow({
     [state, providers],
   );
   const list = ordered.slice(0, MAX_PROVIDERS);
+  const rowStyle = showOfferLabels ? [styles.row, styles.rowLabeled] : styles.row;
+  /** Faz 2-3: logo altı tür etiketi (Subscription / Rent / Buy / Free). */
+  const offerById = useMemo(() => {
+    const map = new Map<number, ReturnType<typeof offerLabelKind>>();
+    if (state === 'ok' && providers) {
+      for (const o of orderProvidersWithOffer(providers)) map.set(o.provider.provider_id, offerLabelKind(o.offer));
+    }
+    return map;
+  }, [state, providers]);
   const groups = useMemo(
     () => (providers ? groupProviders(providers) : { stream: [], rent: [], buy: [] }),
     [providers],
@@ -113,7 +125,7 @@ export function WatchProvidersRow({
 
   const renderBody = (): React.JSX.Element => {
     // Satırın yeri tutulur — pop-in yok (C2e).
-    if (state === 'loading') return <View style={styles.row} />;
+    if (state === 'loading') return <View style={rowStyle} />;
 
     // Bölge okunamadı — istek atılmadı, JustWatch'tan veri yok, atıf yok.
     if (state === 'noRegion') {
@@ -145,17 +157,27 @@ export function WatchProvidersRow({
       <>
         {/* F2.3: "See all" logoların SONUNA, aynı yükseklikte dördüncü öğe.
             En fazla 3 logo + See all; ≤ 3 sağlayıcıda See all yok. */}
-        <View style={styles.row}>
-          {list.map((provider) => (
-            <Image
-              key={provider.provider_id}
-              source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
-              style={styles.logo}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              accessibilityLabel={provider.provider_name}
-            />
-          ))}
+        <View style={rowStyle}>
+          {list.map((provider) => {
+            const kind = showOfferLabels ? offerById.get(provider.provider_id) : undefined;
+            const offerText = kind ? t(`gauntlet.watchProviders.offer.${kind}`) : null;
+            return (
+              <View key={provider.provider_id} style={styles.logoCol}>
+                <Image
+                  source={{ uri: `${TMDB_LOGO_BASE}${provider.logo_path}` }}
+                  style={styles.logo}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  accessibilityLabel={offerText ? `${provider.provider_name}, ${offerText}` : provider.provider_name}
+                />
+                {offerText !== null && (
+                  <Text style={styles.offerLabel} numberOfLines={1}>
+                    {offerText}
+                  </Text>
+                )}
+              </View>
+            );
+          })}
           {ordered.length > MAX_PROVIDERS && (
             <TouchableOpacity
               style={styles.seeAllTile}

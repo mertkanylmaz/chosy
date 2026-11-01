@@ -1,41 +1,39 @@
 /**
- * Mood Gauntlet "Watch now" hedefi (Faz 2-1b). Saf, RN / ağ yok.
+ * Mood Gauntlet "Watch now" hedefi (Faz 2-3). Saf, RN / ağ yok.
  *
- *  - Kullanıcının bölgesinde en az bir sağlayıcı varsa (flatrate öncelikli sıralama, bkz.
- *    `orderProviders`): TMDB'nin bölgeye özel "nerede izlenir" bağlantısı (`providers.link`).
- *    NOT: TMDB sağlayıcı BAŞINA derin bağlantı vermez; tek bağlantı bölge sayfasıdır.
- *  - Sağlayıcı var ama `link` yoksa: JustWatch arama sayfası (ülke yolu + film adı).
- *  - Hiç sağlayıcı yoksa (ya da veri hazır değil / bölge yok): uygulama içi /film/:id.
+ *  1. Bölgedeki sağlayıcılardan ilki (flatrate > free > ads > rent > buy, `orderProvidersWithOffer`).
+ *  2. Sağlayıcı `watchProviderLinks` tablosunda varsa → sağlayıcının resmî arama URL'si (link_kind=provider).
+ *  3. Tabloda yoksa → JustWatch film araması (link_kind=justwatch); bölge yoksa detay.
+ *  4. Hiç sağlayıcı yok / veri hazır değil → uygulama içi /film/:id (link_kind=detail).
+ *
+ * Düğme etiketi: abonelik/ücretsiz → "Watch on X"; yalnız rent/buy → "Rent or buy on X".
  */
-import { orderProviders, type RankedProviderLike } from './watchProviderList';
+import { orderProvidersWithOffer, type OfferType, type ProviderBuckets, type RankedProviderLike } from './watchProviderList';
+import { providerDisplayName, providerSearchUrl } from './watchProviderLinks';
 
-export type WatchTargetKind = 'provider_link' | 'justwatch' | 'detail';
+export type WatchLinkKind = 'provider' | 'justwatch' | 'detail';
+export type WatchLabelKind = 'watch' | 'rentbuy';
 
 export interface WatchTarget {
-  kind: WatchTargetKind;
+  kind: WatchLinkKind;
   /** 'detail' için null (çağıran /film/:id'ye gider). */
   url: string | null;
   /** Bölgede en az bir sağlayıcı bulundu mu (olay özelliği). */
   providerFound: boolean;
+  providerId: number | null;
+  /** Düğmede görünen sağlayıcı adı; sağlayıcı yoksa null. */
+  providerName: string | null;
+  offerType: OfferType | null;
+  labelKind: WatchLabelKind;
 }
 
 export interface WatchTargetInput {
-  filmId: string;
   title: string;
   /** Cihaz bölgesi (ISO-2) ya da null. */
   region: string | null;
   /** `useWatchProviders().state === 'ok'` — veri başarıyla geldi mi. */
   providersReady: boolean;
-  providers:
-    | {
-        link?: string;
-        flatrate?: RankedProviderLike[];
-        free?: RankedProviderLike[];
-        ads?: RankedProviderLike[];
-        rent?: RankedProviderLike[];
-        buy?: RankedProviderLike[];
-      }
-    | null;
+  providers: (ProviderBuckets<RankedProviderLike> & { link?: string }) | null;
 }
 
 /** JustWatch ülke yolu: ISO-2 küçük harf; GB için 'uk'. */
@@ -48,16 +46,38 @@ export function justWatchSearchUrl(region: string, title: string): string {
   return `https://www.justwatch.com/${justWatchCountry(region)}/search?q=${encodeURIComponent(title)}`;
 }
 
-const isHttpsUrl = (u: unknown): u is string => typeof u === 'string' && /^https:\/\/[^\s]+$/.test(u);
+export function labelKindOf(offer: OfferType | null): WatchLabelKind {
+  return offer === 'rent' || offer === 'buy' ? 'rentbuy' : 'watch';
+}
+
+const NONE: WatchTarget = {
+  kind: 'detail',
+  url: null,
+  providerFound: false,
+  providerId: null,
+  providerName: null,
+  offerType: null,
+  labelKind: 'watch',
+};
 
 export function resolveWatchTarget(input: WatchTargetInput): WatchTarget {
   const { providers, providersReady, region, title } = input;
-  const found = providersReady && providers !== null && orderProviders(providers).length > 0;
-  if (!found || providers === null) return { kind: 'detail', url: null, providerFound: false };
-  if (isHttpsUrl(providers.link)) return { kind: 'provider_link', url: providers.link, providerFound: true };
+  if (!providersReady || providers === null) return NONE;
+  const first = orderProvidersWithOffer(providers)[0];
+  if (!first) return NONE;
+
+  const base = {
+    providerFound: true,
+    providerId: first.provider.provider_id,
+    providerName: providerDisplayName(first.provider.provider_name),
+    offerType: first.offer,
+    labelKind: labelKindOf(first.offer),
+  };
+  const direct = providerSearchUrl(first.provider.provider_id, title);
+  if (direct !== null) return { ...base, kind: 'provider', url: direct };
   if (region !== null && region.trim().length === 2 && title.trim().length > 0) {
-    return { kind: 'justwatch', url: justWatchSearchUrl(region, title), providerFound: true };
+    return { ...base, kind: 'justwatch', url: justWatchSearchUrl(region, title) };
   }
   // Sağlayıcı var ama açılacak güvenilir adres yok → uygulama içi detay (provider_found yine true).
-  return { kind: 'detail', url: null, providerFound: true };
+  return { ...base, kind: 'detail', url: null };
 }

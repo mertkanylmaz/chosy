@@ -22,6 +22,9 @@ const ROW_LOGO_SIZE = 52;
 /** "See all" sheet'inin liste satırındaki logo — isimle yan yana, 36pt kalır. */
 const SHEET_LOGO_SIZE = 36;
 
+/** Logo altı tür etiketi satırı: caption satır yüksekliği (18) + boşluk (2). */
+const OFFER_LABEL_HEIGHT = 20;
+
 export const styles = StyleSheet.create({
   root: {
     alignItems: 'center',
@@ -42,6 +45,24 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: space.md,
     minHeight: ROW_LOGO_SIZE,
+  },
+  /**
+   * Faz 2-3 (YALNIZ Mood Gauntlet, `showOfferLabels`): logo altına tür etiketi girer; yükleme
+   * yer tutucusu aynı yüksekliği ayırır ki veri gelince düzen zıplamasın. Günlük gauntlet
+   * satırı (`row`) DEĞİŞMEDİ.
+   */
+  rowLabeled: {
+    alignItems: 'flex-start',
+    minHeight: ROW_LOGO_SIZE + OFFER_LABEL_HEIGHT,
+  },
+  logoCol: {
+    alignItems: 'center',
+    gap: 2,
+  },
+  offerLabel: {
+    ...type.caption,
+    height: OFFER_LABEL_HEIGHT - 2,
+    color: color.text.secondary,
   },
   logo: {
     width: ROW_LOGO_SIZE,

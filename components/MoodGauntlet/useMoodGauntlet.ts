@@ -10,10 +10,12 @@
  * dolar (`reasons`). Dörtlü gelince 4 filmin "nerede izlenir" verisi ön-çekilir.
  * YOĞUNLUK (2-1b): Daha hafif / Daha yoğun parse'ı tekrarlamaz (kota düşmez).
  */
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { prefetchWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { fetchFilmDims } from '@/services/filmDims';
 import { recordMoodChoice } from '@/services/moodChoiceApi';
 import {
   canShiftIntensity,
@@ -40,6 +42,7 @@ import {
   completedEvent,
   firstFourVisibleEvent,
   intensityEvent,
+  justPickEvent,
   matchChosenEvent,
   noneOfTheseEvent,
   pipelineTimingEvent,
@@ -47,13 +50,20 @@ import {
   type MoodEvent,
   type MoodEntryKind,
 } from '@/utils/moodGauntletAnalytics';
+import { detectPickPattern, roundPicks, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { choose, currentPair, elapsedMs, initFlow, isComplete, type MoodFlow } from '@/utils/moodGauntletFlow';
 import { classifyMoodSearchError } from '@/utils/moodSearchRetry';
 
 export type MoodStage = 'entry' | 'loading' | 'gauntlet' | 'result' | 'error' | 'exhausted';
 export type MoodErrorKind = 'quota' | 'busy' | 'unavailable' | 'network' | 'insufficient' | 'generic';
-/** Yükleme ekranındaki üç aşama: Reading → Matching → Picking. */
-export type MoodLoadingPhase = 'reading' | 'matching' | 'picking';
+/**
+ * Yükleme ekranındaki üç aşama: Reading → Matching → Picking.
+ * `another`: "Başka bir dörtlü" / "Hiçbiri" — parse yok, aşama satırı yok, tek metin.
+ */
+export type MoodLoadingPhase = 'reading' | 'matching' | 'picking' | 'another';
+
+/** İlk kullanım ipucu ("Tap the one you'd rather watch") bir kez gösterilir. */
+const TAP_HINT_KEY = 'chosy_mood_tap_hint_seen_v1';
 
 export interface StartInput {
   text: string;
@@ -102,6 +112,9 @@ export function useMoodGauntlet() {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [flow, setFlow] = useState<MoodFlow | null>(null);
   const [notices, setNotices] = useState<MoodNotice[]>([]);
+  const [dims, setDims] = useState<Record<string, FilmDims>>({});
+  const [tapHint, setTapHint] = useState(false);
+  const dimsRun = useRef(0);
 
   const runId = useRef(0);
   const reasonsRun = useRef(0);
@@ -112,11 +125,28 @@ export function useMoodGauntlet() {
 
   useEffect(() => {
     mounted.current = true;
+    // İlk kullanım ipucu: daha önce görülmediyse göster. Okuma hatası görünür kayıt bırakır, ipucu çizilmez.
+    AsyncStorage.getItem(TAP_HINT_KEY)
+      .then((v) => {
+        if (mounted.current && v === null) setTapHint(true);
+      })
+      .catch((err: unknown) => {
+        logger.error('[moodGauntlet] ipucu bayragi okunamadi', err, { code: 'MOOD_TAP_HINT_READ_FAILED' });
+      });
     return () => {
       mounted.current = false;
       runId.current += 1;
       reasonsRun.current += 1;
+      dimsRun.current += 1;
     };
+  }, []);
+
+  /** İpucu ilk seçimle kapanır ve kalıcı işaretlenir. */
+  const dismissTapHint = useCallback(() => {
+    setTapHint(false);
+    AsyncStorage.setItem(TAP_HINT_KEY, '1').catch((err: unknown) => {
+      logger.error('[moodGauntlet] ipucu bayragi yazilamadi', err, { code: 'MOOD_TAP_HINT_WRITE_FAILED' });
+    });
   }, []);
 
   const onTiming = useCallback((s: PipelineStageName, ms: number) => {
@@ -137,10 +167,24 @@ export function useMoodGauntlet() {
     [deps],
   );
 
+  /** Çip verisi (tempo / yoğunluk): arkadan; gelmezse çip çizilmez, hata Sentry'ye gider. */
+  const loadDims = useCallback((nextSet: MoodSet) => {
+    const rid = ++dimsRun.current;
+    void fetchFilmDims(nextSet.four.map((f) => f.id))
+      .then((d) => {
+        if (rid === dimsRun.current && mounted.current) setDims(d);
+      })
+      .catch((err: unknown) => {
+        logger.error('[moodGauntlet] film boyutlari okunamadi', err, { code: 'MOOD_FILM_DIMS_FAILED' });
+      });
+  }, []);
+
   const applySet = useCallback(
     (sess: MoodSession, nextSet: MoodSet) => {
       setSession(sess);
       setSet(nextSet);
+      setDims({});
+      loadDims(nextSet);
       setReasons({});
       setFlow(initFlow(nextSet.four.map((f) => f.id)));
       setNotices(sess.notices);
@@ -149,7 +193,7 @@ export function useMoodGauntlet() {
       for (const f of nextSet.four) void prefetchWatchProviders(f.id, region);
       loadReasons(sess, nextSet);
     },
-    [loadReasons, region],
+    [loadReasons, loadDims, region],
   );
 
   const onStage = useCallback(
@@ -157,7 +201,8 @@ export function useMoodGauntlet() {
       if (id !== runId.current || !mounted.current) return;
       if (e.stage === 'parsed') {
         setLoadingPhase('matching');
-        if (e.profileName) setMoodLabel(e.profileName);
+        // Hızlı mood seçildiyse başlık hızlı mood adı kalır; profile_name yalnız serbest metinde.
+        if (e.profileName && lastStart.current?.entry !== 'quick') setMoodLabel(e.profileName);
       } else {
         setLoadingPhase('picking');
       }
@@ -200,7 +245,14 @@ export function useMoodGauntlet() {
           return;
         }
         gauntletStartedAt.current = Date.now();
-        trackMoodEvent(firstFourVisibleEvent(elapsedMs(startedAt.current, Date.now()), res.session.parsed.cacheHit));
+        trackMoodEvent(
+          firstFourVisibleEvent(
+            elapsedMs(startedAt.current, Date.now()),
+            res.session.parsed.cacheHit,
+            input.entry,
+            res.path ?? 'legacy',
+          ),
+        );
         applySet(res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
@@ -215,7 +267,7 @@ export function useMoodGauntlet() {
   const loadAnother = useCallback(async () => {
     if (!session) return;
     const id = ++runId.current;
-    setLoadingPhase('picking');
+    setLoadingPhase('another');
     setStage('loading');
     try {
       const res = await nextFour(deps, session);
@@ -259,6 +311,7 @@ export function useMoodGauntlet() {
       const next = choose(flow, filmId);
       record(pair.round, pair.a, pair.b, filmId, 'choice');
       trackMoodEvent(matchChosenEvent(pair.round));
+      if (tapHint) dismissTapHint();
       setFlow(next);
       if (isComplete(next) && session && set) {
         trackMoodEvent(completedEvent(elapsedMs(gauntletStartedAt.current, Date.now())));
@@ -266,8 +319,24 @@ export function useMoodGauntlet() {
         setStage('result');
       }
     },
-    [flow, session, set, record],
+    [flow, session, set, record, tapHint, dismissTapHint],
   );
+
+  /**
+   * "Sen seç": yalnız 1. turda. Rerank'ın 1. sıradaki filmi şampiyon olur, sonuca gidilir.
+   * submit-mood-choice ÇAĞRILMAZ (kullanıcı seçim yapmadı); yalnız olay atılır.
+   */
+  const justPick = useCallback(() => {
+    if (!flow || !session || !set) return;
+    const pair = currentPair(flow);
+    if (!pair || pair.round !== 1) return;
+    trackMoodEvent(justPickEvent(1));
+    if (tapHint) dismissTapHint();
+    gauntletStartedAt.current = gauntletStartedAt.current || Date.now();
+    setFlow({ ...flow, winners: [], completed: 3, champion: flow.four[0] });
+    setSession(noteBackupsShown(session, set.backups));
+    setStage('result');
+  }, [flow, session, set, tapHint, dismissTapHint]);
 
   const noneOfThese = useCallback(() => {
     if (!flow) return;
@@ -330,6 +399,8 @@ export function useMoodGauntlet() {
     setReasons({});
     setFlow(null);
     setNotices([]);
+    dimsRun.current += 1;
+    setDims({});
     setMoodLabel(null);
     setStage('entry');
   }, []);
@@ -347,8 +418,13 @@ export function useMoodGauntlet() {
     canLighter: session ? canShiftIntensity(session.intensityStep, 'lighter') : false,
     canStronger: session ? canShiftIntensity(session.intensityStep, 'stronger') : false,
     champion: flow?.champion ? set?.four.find((f) => f.id === flow.champion) ?? null : null,
+    dims,
+    tapHint,
+    /** "Why this fits you": kullanıcının seçimlerinden deterministik desen; yoksa null. */
+    pickPattern: (flow ? detectPickPattern(roundPicks(flow), dims) : null) as PickPattern | null,
     startFromEntry,
     chooseFilm,
+    justPick,
     noneOfThese,
     anotherFour,
     intensify,

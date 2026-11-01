@@ -21,6 +21,8 @@ import {
   type FallbackStage,
   type MatchRow,
   type MatchV4Args,
+  type MoodFourInput,
+  type MoodFourOutcome,
   type MoodGauntletDeps,
   type ParsedMoodV2,
   type RerankOutcome,
@@ -61,6 +63,8 @@ function makeDeps(opts: {
   rerank?: (c: MatchRow[], withReasons: boolean) => RerankOutcome | Promise<RerankOutcome>
   library?: string[]
   recordThrows?: boolean
+  moodFour?: (i: MoodFourInput) => Promise<MoodFourOutcome>
+  loadExclusionsDelay?: () => Promise<void>
 }): { deps: MoodGauntletDeps; calls: Calls } {
   const calls: Calls = {
     parse: 0, match: [], rerank: 0, rerankFlags: [], rerankCandidates: [], rerankExclude: [], prefetched: [], timings: [],
@@ -91,7 +95,10 @@ function makeDeps(opts: {
     prefetch: (rs) => {
       calls.prefetched.push(rs.map((r) => r.id))
     },
-    loadExclusions: () => Promise.resolve(opts.library ?? []),
+    loadExclusions: async () => {
+      if (opts.loadExclusionsDelay) await opts.loadExclusionsDelay()
+      return opts.library ?? []
+    },
     recordRecommended: (_s, ids) => {
       if (opts.recordThrows) return Promise.reject(new Error('db'))
       calls.recorded.push(ids)
@@ -105,6 +112,7 @@ function makeDeps(opts: {
       calls.errors.push(s)
     },
   }
+  if (opts.moodFour) deps.moodFour = opts.moodFour
   return { deps, calls }
 }
 
@@ -382,7 +390,7 @@ Deno.test('olcum: parse / v4 / pick sureleri sirayla bildirilir (metin yok)', as
   const { deps } = makeDeps({ rerank: topFour })
   const seen: Array<[string, number]> = []
   await startMoodGauntlet(deps, { text: 'gizli metin', onTiming: (s, ms) => seen.push([s, ms]) })
-  assertEquals(seen.map(([s]) => s), ['parse', 'v4', 'pick'])
+  assertEquals(seen.map(([s]) => s), ['parse', 'exclusions', 'v4', 'pick'])
   assert(seen.every(([, ms]) => ms > 0))
 })
 
@@ -476,4 +484,110 @@ Deno.test('genres_exclude: yalniz dortlu secimi (reason:false) rerank icin tasin
   assertEquals(calls.rerankFlags, [false, true])
   assertEquals(calls.rerankExclude[0], ['Horror', 'Thriller'])
   assertEquals(calls.rerankExclude[1], undefined)
+})
+
+// ─── Faz 2-3: parse ∥ dışlama, mood-four tek istek yolu ──────────────────────
+
+Deno.test('parse ve dislama listesi PARALEL baslar (ikisi de baslamadan hicbiri bitmez)', async () => {
+  const order: string[] = []
+  let release: () => void = () => {}
+  const gate = new Promise<void>((r) => { release = r })
+  const { deps } = makeDeps({ rerank: topFour })
+  deps.parse = async () => { order.push('parse:start'); await gate; order.push('parse:end'); return parsed() }
+  deps.loadExclusions = async () => { order.push('excl:start'); release(); order.push('excl:end'); return [] }
+  await startMoodGauntlet(deps, { text: 'x' })
+  // loadExclusions, parse BITMEDEN baslamis olmali.
+  assert(order.indexOf('excl:start') < order.indexOf('parse:end'), order.join(','))
+  assertEquals(order[0], 'parse:start')
+})
+
+Deno.test('dislama listesi hatasi aramayi dusurur (sessiz bos liste yok)', async () => {
+  const { deps } = makeDeps({ rerank: topFour })
+  deps.loadExclusions = () => Promise.reject(new Error('watchlist'))
+  let threw = false
+  try { await startMoodGauntlet(deps, { text: 'x' }) } catch { threw = true }
+  assert(threw)
+})
+
+const fourOk = (ids: string[] | null, pool = rows(30), attemptIndex = 0): MoodFourOutcome =>
+  ({ ok: true, pool, attemptIndex, rerankedIds: ids })
+
+Deno.test('mood-four: tek istek — matchV4 ve rerank CAGRILMAZ, dortlu rerank sirasiyla, path=combined', async () => {
+  const seen: MoodFourInput[] = []
+  const { deps, calls } = makeDeps({
+    library: ['lib1'],
+    moodFour: (i) => { seen.push(i); return Promise.resolve(fourOk(['f9', 'f3', 'f1', 'f2'])) },
+  })
+  const timings: string[] = []
+  const r = await startMoodGauntlet(deps, { text: 'x', onTiming: (s) => timings.push(s) })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(r.path, 'combined')
+  assertEquals(r.set.four.map((f) => f.id), ['f9', 'f3', 'f1', 'f2'])
+  assertEquals(calls.match.length, 0)
+  assertEquals(calls.rerank, 0)
+  assertEquals(timings, ['parse', 'exclusions', 'four'])
+  assert(seen[0].excludeIds.includes('lib1'))
+  assertEquals(seen[0].matchCount, 40)
+  assertEquals(seen[0].rerankCandidates, 20)
+  assert(r.set.reranked)
+})
+
+Deno.test('mood-four: rerankedIds null → v4 sirasi + rerank yedek olayi (dortlu yine gelir)', async () => {
+  const { deps, calls } = makeDeps({ moodFour: () => Promise.resolve(fourOk(null)) })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(r.set.four.map((f) => f.id), ['f1', 'f2', 'f3', 'f4'])
+  assertEquals(r.set.reranked, false)
+  assertEquals(calls.fallbacks, ['rerank'])
+  assertEquals(calls.rerank, 0)
+})
+
+Deno.test('mood-four: ok:false → ESKI 2 cagrili yol (matchV4 + rerank), mood_four yedek olayi', async () => {
+  const { deps, calls } = makeDeps({
+    rerank: topFour,
+    moodFour: () => Promise.resolve({ ok: false, failure: 'http_502' }),
+  })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(r.path, 'legacy')
+  assertEquals(calls.match.length, 1)
+  assertEquals(calls.rerank, 1)
+  assertEquals(calls.fallbacks, ['mood_four'])
+})
+
+Deno.test('mood-four: istisna → Sentry (onError) + eski yol; sessiz degil', async () => {
+  const { deps, calls } = makeDeps({ rerank: topFour, moodFour: () => Promise.reject(new Error('net')) })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(r.path, 'legacy')
+  assertEquals(calls.errors, ['mood_four'])
+  assertEquals(calls.fallbacks, ['mood_four'])
+})
+
+Deno.test('mood-four: havuz < 4 → insufficient (eski yola gidilmez, ayni sonuc olurdu)', async () => {
+  const { deps, calls } = makeDeps({ moodFour: () => Promise.resolve(fourOk(null, rows(3), 3)) })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  assertEquals(r.status, 'insufficient')
+  assertEquals(calls.match.length, 0)
+})
+
+Deno.test('mood-four: gevsetme basamagi bildirimi (max_runtime dustu → gorunur not)', async () => {
+  const p = parsed({ maxRuntime: 90 })
+  const attempts = buildV4Attempts(false, true)
+  const last = attempts.length - 1
+  const { deps, calls } = makeDeps({ parsed: p, moodFour: () => Promise.resolve(fourOk(['f1', 'f2', 'f3', 'f4'], rows(30), last)) })
+  const r = await startMoodGauntlet(deps, { text: 'x' })
+  if (r.status !== 'ok') throw new Error('ok')
+  assertEquals(r.session.notices, ['max_runtime_dropped'])
+  assert(calls.fallbacks.includes('max_runtime_dropped'))
+})
+
+Deno.test('mood-four: "Hicbiri" sonrasi sonraki dortlu eski rerank-films yolunu kullanir (parse yok)', async () => {
+  const { deps, calls } = makeDeps({ rerank: topFour, moodFour: () => Promise.resolve(fourOk(['f1', 'f2', 'f3', 'f4'])) })
+  const first = await startMoodGauntlet(deps, { text: 'x' })
+  if (first.status !== 'ok') throw new Error('ok')
+  const next = await nextFour(deps, first.session)
+  assertEquals(next.status, 'ok')
+  assertEquals(calls.parse, 1)
+  assertEquals(calls.rerank, 1)
 })

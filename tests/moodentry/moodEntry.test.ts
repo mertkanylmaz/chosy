@@ -100,12 +100,18 @@ Deno.test('profil olayları yalnız bayrak açıkken; satır davranışı (route
 
 // ── Olaylar ─────────────────────────────────────────────────────────────────
 
-Deno.test('pro_entry_viewed: oturumda yüzey başına bir kez', () => {
+Deno.test('pro_entry_viewed: OTURUMDA BİR KEZ (yüzeyden bağımsız; Faz 2-3 çift gönderim düzeltmesi)', () => {
   const tr = createEntryViewedTracker()
   assert(tr.claim('champion'))
   assert(!tr.claim('champion'))
-  assert(tr.claim('profile'))
-  assert(!tr.claim('profile'))
+  assert(!tr.claim('profile'), 'ikinci yüzey de olay üretmemeli')
+  const other = createEntryViewedTracker()
+  assert(other.claim('profile'), 'yeni oturum (yeni izleyici) yine bir kez sayar')
+  assert(!other.claim('champion'))
+  // Her iki yüzey de AYNI paylaşılan izleyiciyi kullanır (iki ayrı izleyici = çift olay)
+  const profile = read('../../app/(tabs)/profile.tsx')
+  assertMatch(profile, /import \{[^}]*entryViewed[^}]*\} from '@\/components\/gauntlet\/MoodEntryCard'/)
+  assertMatch(profile, /entryViewed\.claim\('profile'\)/)
 })
 
 Deno.test('kart olayları: viewed {surface}, tapped {surface,is_pro}; paywall kaynağı etiketi', () => {
@@ -136,7 +142,8 @@ Deno.test('locales: moodEntry + paywallPro.gauntlet* en/tr parite, dolu, yer tut
   assert(!/Suffix/.test(read('../../utils/moodEntry.ts')), 'belirtme eki kodu silinmiş olmalı')
   assertEquals(en.paywallPro.gauntletBenefit3Title, 'Any mood, any night')
   assertEquals(tr.paywallPro.gauntletBenefit3Title, 'Her akşam, her mood')
-  assertEquals(en.moodEntry.subtitle, 'Pick by mood — four films, three choices, one pick')
+  assertEquals(en.moodEntry.subtitle, '4 films · 3 choices · 1 pick')
+  assertEquals(tr.moodEntry.subtitle, '4 film · 3 seçim · 1 film')
   const gk = Object.keys(en.paywallPro).filter((k) => k.startsWith('gauntlet')).sort()
   assertEquals(gk, Object.keys(tr.paywallPro).filter((k) => k.startsWith('gauntlet')).sort())
   assertEquals(gk.length, 9)

@@ -50,6 +50,7 @@
     "test:mood-choice": "cd supabase/functions && deno test --allow-read _shared/moodChoice.test.ts _shared/tasteVector.test.ts",
     "test:mood-entry": "deno test --allow-read --unstable-sloppy-imports tests/moodentry/",
     "test:mood-gauntlet": "deno test --allow-read --unstable-sloppy-imports tests/moodgauntlet/",
+    "test:mood-four": "cd supabase/functions && deno test --allow-read _shared/moodFour.test.ts",
     "test:mood-claim": "cd supabase/functions && deno test --allow-read _shared/moodClaim.test.ts",
     "test:mood-claim-concurrency": "cd supabase/functions && deno test --allow-net --allow-env _shared/moodClaim.concurrency.test.ts",
     "test:rc-webhook": "cd supabase/functions && deno test _shared/rcMissingUserSeverity.test.ts _shared/rcMissingUserDecision.test.ts _shared/rcTransfer.test.ts _shared/rcEnvironment.test.ts _shared/rcSubscriptionStatus.test.ts _shared/rcEntitlementSync.test.ts",

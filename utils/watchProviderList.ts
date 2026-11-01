@@ -147,6 +147,44 @@ export function orderProviders<T extends RankedProviderLike>(providers: Provider
   return uniqueProviders(RANKED_BUCKET_ORDER.flatMap((k) => byPriority(providers[k])));
 }
 
+// ─── Faz 2-3: sağlayıcı + teklif türü (Watch now / logo etiketi) ─────────────
+
+export type OfferType = (typeof RANKED_BUCKET_ORDER)[number];
+
+export interface OfferedProvider<T extends RankedProviderLike> {
+  provider: T;
+  /** Sağlayıcının İLK göründüğü kova (flatrate > free > ads > rent > buy). */
+  offer: OfferType;
+}
+
+/**
+ * `orderProviders` ile AYNI sıra ve tekilleştirme; her sağlayıcıya ilk göründüğü kovanın
+ * teklif türü eklenir.
+ */
+export function orderProvidersWithOffer<T extends RankedProviderLike>(
+  providers: ProviderBuckets<T>,
+): OfferedProvider<T>[] {
+  const offerById = new Map<number, OfferType>();
+  for (const k of RANKED_BUCKET_ORDER) {
+    for (const p of byPriority(providers[k])) {
+      if (!offerById.has(p.provider_id)) offerById.set(p.provider_id, k);
+    }
+  }
+  return orderProviders(providers).map((provider) => ({
+    provider,
+    offer: offerById.get(provider.provider_id) ?? 'buy',
+  }));
+}
+
+/** Logo altı etiket grubu: free/ads birlikte "Ücretsiz". */
+export type OfferLabelKind = 'subscription' | 'free' | 'rent' | 'buy';
+
+export function offerLabelKind(offer: OfferType): OfferLabelKind {
+  if (offer === 'flatrate') return 'subscription';
+  if (offer === 'free' || offer === 'ads') return 'free';
+  return offer;
+}
+
 /** Şampiyon ekranındaki logo satırı — en fazla `max` sağlayıcı (V3-D5). */
 export function selectTopProviders<T extends RankedProviderLike>(
   providers: ProviderBuckets<T>,
