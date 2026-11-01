@@ -85,6 +85,10 @@ export const styles = StyleSheet.create({
     color: color.text.secondary,
     textAlign: 'center',
   },
+  /** `loading` yer tutucusunda atıf satırının yüksekliği (type.caption.lineHeight). */
+  attributionSpacer: {
+    height: type.caption.lineHeight,
+  },
   /** TMDB attribution — kaynağın adı gösterilmeden veri kullanılmaz. */
   attribution: {
     ...type.caption,

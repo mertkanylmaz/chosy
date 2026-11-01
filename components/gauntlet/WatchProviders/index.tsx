@@ -140,7 +140,16 @@ export function WatchProvidersRow({
 
   const renderBody = (): React.JSX.Element => {
     // Satırın yeri tutulur — pop-in yok (C2e).
-    if (state === 'loading') return <View style={rowStyle} />;
+    // Faz 2-8: `ok` düzeni = logo satırı + atıf satırı. Atıf yüksekliği de ayrılır (içeriksiz),
+    // yoksa veri gelince blok bir caption satırı kadar (18pt) aşağı itilir.
+    if (state === 'loading') {
+      return (
+        <>
+          <View style={rowStyle} />
+          <View style={styles.attributionSpacer} />
+        </>
+      );
+    }
 
     // Bölge okunamadı — istek atılmadı, JustWatch'tan veri yok, atıf yok.
     if (state === 'noRegion') {

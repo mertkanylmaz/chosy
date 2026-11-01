@@ -180,3 +180,8 @@ Deno.test('Faz 2-8 cila: sonuc basligi 3 satirla sinirli; logo sutunu TR etiketi
   const st = read('components/gauntlet/WatchProviders/styles.ts')
   assertMatch(st, /logoCol: \{[^}]*flexShrink: 1,[^}]*minWidth: ROW_LOGO_SIZE/)
 })
+
+Deno.test('Faz 2-8: loading yer tutucusu = ok duzeni (logo satiri + atif yuksekligi) → veri gelince kayma yok', () => {
+  assertMatch(read('components/gauntlet/WatchProviders/index.tsx'), /state === 'loading'\) \{\s*return \(\s*<>\s*<View style=\{rowStyle\} \/>\s*<View style=\{styles\.attributionSpacer\} \/>/)
+  assertMatch(read('components/gauntlet/WatchProviders/styles.ts'), /attributionSpacer: \{\s*height: type\.caption\.lineHeight/)
+})
