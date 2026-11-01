@@ -3,7 +3,7 @@
  * paywall metni kaynak eşlemesi, TR saat eki, olay bir-kez kuralı.
  * Çalıştırma: npm run test:mood-entry
  */
-import { assert, assertEquals, assertMatch, assertThrows } from 'https://deno.land/std@0.208.0/assert/mod.ts'
+import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
 import {
   createEntryViewedTracker,
@@ -15,7 +15,6 @@ import {
   moodEntryFits,
   moodEntryTapTarget,
   paywallEntrySource,
-  trTimeAccusativeSuffix,
 } from '../../utils/moodEntry.ts'
 
 const read = (p: string): string => Deno.readTextFileSync(new URL(p, import.meta.url)).replaceAll('\r\n', '\n')
@@ -123,16 +122,6 @@ Deno.test('saat biçimi HH:MM iki haneli', () => {
   assertEquals(formatEntryTime(new Date(2026, 10, 1, 18, 0)), '18:00')
 })
 
-Deno.test('TR belirtme eki saat okunuşuna göre', () => {
-  const cases: Record<string, string> = {
-    '18:00': 'ı', '18:10': 'u', '18:20': 'yi', '18:30': 'u', '18:40': 'ı', '18:50': 'yi',
-    '18:01': 'i', '18:02': 'yi', '18:03': 'ü', '18:04': 'ü', '18:05': 'i', '18:06': 'yı',
-    '18:07': 'yi', '18:08': 'i', '18:09': 'u', '18:45': 'i', '18:59': 'u',
-  }
-  for (const [hhmm, suffix] of Object.entries(cases)) assertEquals(trTimeAccusativeSuffix(hhmm), suffix, hhmm)
-  assertThrows(() => trTimeAccusativeSuffix('6:00'))
-})
-
 Deno.test('locales: moodEntry + paywallPro.gauntlet* en/tr parite, dolu, yer tutucu doğru', () => {
   const en = JSON.parse(read('../../locales/en.json'))
   const tr = JSON.parse(read('../../locales/tr.json'))
@@ -140,8 +129,13 @@ Deno.test('locales: moodEntry + paywallPro.gauntlet* en/tr parite, dolu, yer tut
     for (const k of ['title', 'subtitle', 'badge']) assert(String(d.moodEntry[k]).length > 0, `${lang}.moodEntry.${k}`)
     assertMatch(d.moodEntry.title, /%\{time\}/)
   }
-  assertMatch(tr.moodEntry.title, /%\{time\}'%\{suffix\} bekleyemiyor musun\?/)
-  assertEquals(en.moodEntry.title, "Can't wait until %{time}?")
+  // TR başlık ek KULLANMAZ: saat, ek almayan bir kalıpta ("Sonraki dörtlü: HH:MM · ...")
+  assertEquals(tr.moodEntry.title, 'Sonraki dörtlü: %{time} · Beklemek istemiyor musun?')
+  assertEquals(en.moodEntry.title, "Next four at %{time} · Can't wait?")
+  assert(!/suffix/.test(JSON.stringify(tr.moodEntry)), 'tr.moodEntry yer tutucu olarak suffix içermemeli')
+  assert(!/Suffix/.test(read('../../utils/moodEntry.ts')), 'belirtme eki kodu silinmiş olmalı')
+  assertEquals(en.paywallPro.gauntletBenefit3Title, 'Any mood, any night')
+  assertEquals(tr.paywallPro.gauntletBenefit3Title, 'Her akşam, her mood')
   assertEquals(en.moodEntry.subtitle, 'Pick by mood — four films, three choices, one pick')
   const gk = Object.keys(en.paywallPro).filter((k) => k.startsWith('gauntlet')).sort()
   assertEquals(gk, Object.keys(tr.paywallPro).filter((k) => k.startsWith('gauntlet')).sort())

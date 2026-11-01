@@ -25,7 +25,6 @@ import {
   formatEntryTime,
   MOOD_GAUNTLET_ENTRY_SOURCE,
   moodEntryTapTarget,
-  trTimeAccusativeSuffix,
 } from '@/utils/moodEntry';
 
 import { styles } from './styles';
@@ -70,7 +69,7 @@ export function MoodEntryCard({ nextFourAt }: MoodEntryCardProps): React.JSX.Ele
   if (!visible) return null;
 
   const time = formatEntryTime(nextFourAt);
-  const title = t('moodEntry.title', { time, suffix: trTimeAccusativeSuffix(time) });
+  const title = t('moodEntry.title', { time });
 
   return (
     <View style={styles.slot}>
@@ -82,7 +81,7 @@ export function MoodEntryCard({ nextFourAt }: MoodEntryCardProps): React.JSX.Ele
         accessibilityLabel={title}
       >
         <View style={styles.textBlock}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <Text style={styles.title} numberOfLines={2}>{title}</Text>
           <Text style={styles.subtitle} numberOfLines={2}>{t('moodEntry.subtitle')}</Text>
         </View>
         <Text style={styles.badge}>{t('moodEntry.badge')}</Text>

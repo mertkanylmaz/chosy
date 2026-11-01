@@ -1509,11 +1509,11 @@
     "gauntletBenefit1Body": "Pick by mood and narrow it down to one.",
     "gauntletBenefit2Title": "Where to watch",
     "gauntletBenefit2Body": "See where each film is streaming.",
-    "gauntletBenefit3Title": "Unlimited moods",
-    "gauntletBenefit3Body": "Start a new mood whenever you like."
+    "gauntletBenefit3Title": "Any mood, any night",
+    "gauntletBenefit3Body": "A fresh mood for every evening."
   },
   "moodEntry": {
-    "title": "Can't wait until %{time}?",
+    "title": "Next four at %{time} · Can't wait?",
     "subtitle": "Pick by mood — four films, three choices, one pick",
     "badge": "Pro"
   },

@@ -1509,11 +1509,11 @@
     "gauntletBenefit1Body": "Mood'una göre seç, teke indir.",
     "gauntletBenefit2Title": "Nerede izlenir",
     "gauntletBenefit2Body": "Her filmin nerede izlendiğini gör.",
-    "gauntletBenefit3Title": "Sınırsız mood",
-    "gauntletBenefit3Body": "İstediğin an yeni bir mood başlat."
+    "gauntletBenefit3Title": "Her akşam, her mood",
+    "gauntletBenefit3Body": "Her akşam istediğin mood'u seç."
   },
   "moodEntry": {
-    "title": "%{time}'%{suffix} bekleyemiyor musun?",
+    "title": "Sonraki dörtlü: %{time} · Beklemek istemiyor musun?",
     "subtitle": "Mood'una göre seç — dört film, üç seçim, tek film",
     "badge": "Pro"
   },

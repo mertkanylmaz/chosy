@@ -13,7 +13,7 @@ export type MoodEntrySurface = 'champion' | 'profile';
 export const MOOD_GAUNTLET_ENTRY_SOURCE = 'mood_gauntlet_entry';
 
 /** Kart yüksekliği + üst boşluk (pt). `MoodEntryCard/styles.ts` aynı değerleri kullanır. */
-export const MOOD_ENTRY_CARD_HEIGHT = 72;
+export const MOOD_ENTRY_CARD_HEIGHT = 92;
 export const MOOD_ENTRY_MARGIN = 16;
 export const MOOD_ENTRY_RESERVE_HEIGHT = MOOD_ENTRY_CARD_HEIGHT + MOOD_ENTRY_MARGIN;
 
@@ -45,22 +45,6 @@ export function formatEntryTime(date: Date): string {
   const hh = String(date.getHours()).padStart(2, '0');
   const mm = String(date.getMinutes()).padStart(2, '0');
   return `${hh}:${mm}`;
-}
-
-/**
- * Türkçe belirtme (-i) eki, saat okunuşunun SON kelimesine göre ("18:00" → "sıfır" → "ı").
- * Dakika okunuşu: 00 sıfır(ı) · 10 on(u) · 20 yirmi(yi) · 30 otuz(u) · 40 kırk(ı) · 50 elli(yi);
- * diğerlerinde son rakam: 1 bir(i) 2 iki(yi) 3 üç(ü) 4 dört(ü) 5 beş(i) 6 altı(yı) 7 yedi(yi) 8 sekiz(i) 9 dokuz(u).
- */
-export function trTimeAccusativeSuffix(hhmm: string): string {
-  const m = /^\d{2}:(\d)(\d)$/.exec(hhmm);
-  if (!m) throw new Error(`trTimeAccusativeSuffix: HH:MM bekleniyordu, gelen: ${hhmm}`);
-  const tens = Number(m[1]);
-  const ones = Number(m[2]);
-  if (ones === 0) {
-    return ['ı', 'u', 'yi', 'u', 'ı', 'yi'][tens] ?? 'ı';
-  }
-  return ['ı', 'i', 'yi', 'ü', 'ü', 'i', 'yı', 'yi', 'i', 'u'][ones];
 }
 
 /** `pro_entry_viewed` oturumda YÜZEY BAŞINA bir kez (remount'ta tekrarlanmaz). */
