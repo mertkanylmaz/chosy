@@ -206,3 +206,62 @@ Deno.test('P0-1 etiket: free ve ads ayrı, flatrate abonelik', () => {
   assertEquals(offerLabelKind('flatrate', 1), 'subscription')
   assertEquals(offerLabelKind('buy'), 'buy')
 })
+
+// ─── Faz 2-8: çift Paramount+ ────────────────────────────────────────────────
+// Gerçek yanıt: TMDB /movie/361743/watch/providers (Top Gun: Maverick) US, 1 Kas 2026.
+// Kök neden: 582 "Paramount+ Amazon Channel" ve 633 "Paramount+ Roku Premium Channel" marka
+// tablosunda yok → ad anahtarı 'name:paramount+', id'li 2303/2616 ise 'paramount' → iki ayrı marka.
+
+const rp = (provider_id: number, provider_name: string, display_priority: number): RankedProviderLike => ({
+  provider_id,
+  provider_name,
+  display_priority,
+})
+
+const TOP_GUN_US = {
+  flatrate: [
+    rp(8, 'Netflix', 5),
+    rp(2303, 'Paramount Plus Premium', 8),
+    rp(2616, 'Paramount Plus Essential', 9),
+    rp(582, 'Paramount+ Amazon Channel', 10),
+    rp(2528, 'YouTube TV', 30),
+    rp(633, 'Paramount+ Roku Premium Channel', 41),
+    rp(1796, 'Netflix Standard with Ads', 3),
+  ],
+  rent: [rp(10, 'Amazon Video', 1), rp(2, 'Apple TV Store', 2)],
+}
+
+Deno.test('Faz 2-8 Top Gun US: Paramount+ TEK satır — dogrudan abonelik, kanal varyantlari gizli', async () => {
+  const { brandOf, dedupeByBrand } = await import('../../utils/watchProviderBrands.ts')
+  const ordered = dedupeByBrand(orderProviders(TOP_GUN_US))
+  const paramount = ordered.filter((x) => brandOf(x).key === 'paramount')
+  assertEquals(paramount.length, 1)
+  assertEquals(paramount[0].provider_id, 2303) // dogrudan abonelik, kanal degil
+  assertEquals(brandOf(paramount[0]).name, 'Paramount+')
+  // kanal varyantlari ham siralamada da elenir (ana streaming'de var)
+  assertEquals(orderProviders(TOP_GUN_US).some((x) => x.provider_id === 582 || x.provider_id === 633), false)
+  // Netflix + reklamli varyanti da tek
+  assertEquals(ordered.filter((x) => brandOf(x).key === 'netflix').length, 1)
+})
+
+Deno.test('Faz 2-8 Top Gun GB: yalniz kanal varyanti → yine TEK Paramount+ (eklenti etiketi)', async () => {
+  const { brandOf, dedupeByBrand } = await import('../../utils/watchProviderBrands.ts')
+  const gb = { flatrate: [rp(582, 'Paramount+ Amazon Channel', 10)] }
+  const ordered = dedupeByBrand(orderProviders(gb))
+  assertEquals(ordered.length, 1)
+  assertEquals(brandOf(ordered[0]).name, 'Paramount+')
+  assertEquals(orderProvidersWithOffer(gb)[0].tier, 4)
+})
+
+Deno.test('Faz 2-8 marka normalizasyonu genel: kanal/kademe/reklam sonekleri bilinen markaya iner, farkli marka birlesmez', async () => {
+  const { brandOf } = await import('../../utils/watchProviderBrands.ts')
+  const key = (id: number, name: string) => brandOf({ provider_id: id, provider_name: name }).key
+  assertEquals(key(9999, 'Peacock Premium Roku Premium Channel'), 'peacock')
+  assertEquals(key(9998, 'Disney Plus Amazon Channel'), 'disney')
+  assertEquals(key(9997, 'Netflix Basic with Ads'), 'netflix')
+  assertEquals(key(9996, 'Hulu Apple TV Channel'), 'hulu')
+  // bilinmeyen marka kendi anahtarinda kalir; baska markaya karismaz
+  assertEquals(key(9995, 'Starz Amazon Channel'), key(9994, 'Starz Roku Premium Channel'))
+  assertEquals(key(9993, 'Starz') === key(9992, 'AMC+'), false)
+  assertEquals(key(9991, 'Hallmark Channel') === key(9990, 'Hallmark+'), false) // genel " Channel" soyulmaz
+})

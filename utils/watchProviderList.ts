@@ -23,7 +23,7 @@
  * `flattenProviders` film detay ekranı için DEĞİŞMEDEN kalır.
  */
 
-import { isChannelAddonName, isMainBrand } from './watchProviderBrands';
+import { brandOf, isChannelAddonName, isMainBrand } from './watchProviderBrands';
 
 export interface ProviderLike {
   provider_id: number;
@@ -179,16 +179,18 @@ export function orderProvidersWithOffer<T extends RankedProviderLike>(
     (a, b) => a.tier - b.tier || a.provider.display_priority - b.provider.display_priority || a.idx - b.idx,
   );
   // Streaming'de (tier ≤ 4) ana sağlayıcısı bulunan kanal varyantı grupları.
+  // Faz 2-8: grup anahtarı MARKA anahtarı ("Paramount Plus Premium" kademesi ile "Paramount+ Amazon
+  // Channel" kanal varyantı aynı markaya iner); ham ad eşlemesi bunu kaçırıyordu.
   const streamingMains = new Set<string>();
   for (const o of all) {
-    if (variantBase(o.provider.provider_name) === null && o.tier <= 4) streamingMains.add(normalize(o.provider.provider_name));
+    if (variantBase(o.provider.provider_name) === null && o.tier <= 4) streamingMains.add(brandOf(o.provider).key);
   }
   const seenVariantGroup = new Set<string>();
   const out: OfferedProvider<T>[] = [];
   for (const o of all) {
     const base = variantBase(o.provider.provider_name);
     if (base !== null) {
-      const g = normalize(base);
+      const g = brandOf(o.provider).key;
       if (streamingMains.has(g) || seenVariantGroup.has(g)) continue;
       seenVariantGroup.add(g);
     }

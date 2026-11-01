@@ -56,12 +56,30 @@ function stripChannelSuffix(name: string): string {
   return name.trim().replace(CHANNEL_SUFFIX_RE, '').trim();
 }
 
+/**
+ * Kademe sonekleri (Faz 2-8): "Paramount Plus Premium / Essential" aynı markanın abonelik kademesidir.
+ * Yalnız ad SONUNDA ve kanal/reklam sonekleri atıldıktan SONRA uygulanır.
+ */
+const TIER_SUFFIX_RE = /\s+(?:premium|essential|basic|standard|ultimate)$/i;
+
+function stripTierSuffix(name: string): string {
+  return name.trim().replace(TIER_SUFFIX_RE, '').trim();
+}
+
 function normalizeKey(name: string): string {
-  return stripChannelSuffix(stripAdsSuffix(name))
+  return stripTierSuffix(stripChannelSuffix(stripAdsSuffix(name)))
     .toLowerCase()
     .replace(/\bplus\b/g, '+')
     .replace(/[^a-z0-9+]/g, '');
 }
+
+/**
+ * Bilinen markaların normalleştirilmiş AD anahtarı → marka. Tabloda kimliği olmayan kanal/kademe
+ * varyantları ("Paramount+ Amazon Channel", id 582) ada göre aynı markaya iner; böylece id'li
+ * ("Paramount Plus Premium", 2303) ve adlı varyant tek marka sayılır. Genel kural — marka başına
+ * ayrı kod yok: yeni marka BRANDS'a eklenince otomatik kapsanır.
+ */
+const BRAND_BY_NAME_KEY = new Map<string, Brand>(BRANDS.map((b) => [normalizeKey(b.name), b] as const));
 
 export interface BrandInfo {
   key: string;
@@ -71,8 +89,11 @@ export interface BrandInfo {
 export function brandOf(p: ProviderLike): BrandInfo {
   const known = BRAND_BY_ID.get(p.provider_id);
   if (known) return { key: known.key, name: known.name };
-  const stripped = stripChannelSuffix(stripAdsSuffix(p.provider_name));
-  return { key: `name:${normalizeKey(p.provider_name)}`, name: stripped.length > 0 ? stripped : p.provider_name };
+  const nameKey = normalizeKey(p.provider_name);
+  const byName = BRAND_BY_NAME_KEY.get(nameKey);
+  if (byName) return { key: byName.key, name: byName.name };
+  const stripped = stripTierSuffix(stripChannelSuffix(stripAdsSuffix(p.provider_name)));
+  return { key: `name:${nameKey}`, name: stripped.length > 0 ? stripped : p.provider_name };
 }
 
 /** Aynı markanın varyantlarından yalnız İLK görüleni tutar (sıra korunur). */
