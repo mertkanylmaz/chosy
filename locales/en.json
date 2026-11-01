@@ -329,7 +329,6 @@
     "watchTrailer": "Watch trailer",
     "director": "Director",
     "crew": "Crew",
-    "watchOn": "Watch On",
     "synopsis": "Synopsis",
     "directorAndCrew": "Director & Crew",
     "watchedBtn": "Watched",
@@ -722,7 +721,6 @@
     "tapHint": "Tap the one you'd rather watch",
     "justPick": "Just pick for me",
     "noneSub": "4 new films, same mood",
-    "findOn": "Find on %{provider}",
     "whereToWatch": "Where to watch",
     "notStreaming": "Not streaming in %{country} right now",
     "offerHint": {

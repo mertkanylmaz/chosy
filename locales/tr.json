@@ -329,7 +329,6 @@
     "watchTrailer": "Fragmanı izle",
     "director": "Yonetmen",
     "crew": "Ekip",
-    "watchOn": "Platformlar",
     "synopsis": "Konu",
     "directorAndCrew": "Yonetmen & Ekip",
     "watchedBtn": "Izledim",
@@ -722,7 +721,6 @@
     "tapHint": "İzlemeyi tercih ettiğine dokun",
     "justPick": "Sen seç",
     "noneSub": "Aynı mood, 4 yeni film",
-    "findOn": "Şurada bul: %{provider}",
     "whereToWatch": "Nerede izlenir",
     "notStreaming": "Şu an %{country} için yayında değil",
     "offerHint": {

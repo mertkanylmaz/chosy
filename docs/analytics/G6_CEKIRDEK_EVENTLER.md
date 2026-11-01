@@ -108,6 +108,12 @@ Watched-it Rate istatistiksel olarak yorumlanamaz ve **ürün kararı alınmaz.*
 `provider_clicked` aynı zamanda R-03'ün (streaming filtresi) karar verisidir:
 filtre ancak bu tıklamalar onu haklı çıkarırsa inşa edilir.
 
+**Faz 2-8 güncellemesi (2.2):**
+- `where_to_watch_opened` (`film_id`, `surface`: `mood_result` | `champion` | `film_detail` | `mood_deck`, `region`, `state`: `loading` | `ok` | `empty` | `error` | `noRegion`) = **birincil izleme niyeti olayı**. Native "Where to watch" sheet'i her görünür olduğunda bir kez gider.
+- `providers_see_all_opened` onunla **toplanmaz**: "See all" karosu sheet'i açınca ikisi birlikte gider; ayrı olaylardır.
+- `provider_clicked` artık yalnız allowlist'teki (`constants/watchAppOpen.ts`) servis satırı dışarı açıldığında gider; alan `kind` (`verified_deeplink` | `app_open`). Allowlist boşken ateşlenmez.
+- `link_kind` 2.2'den itibaren **üretilmiyor** (`provider_clicked` ve `mood_tonight_pick_action.watch_now` her ikisinde de kalktı). PostHog'da `link_kind` okuyan kayıtlı insight yok (CTO, Kas 2026).
+
 ### 1.4 Kimlik ve dönüş (3)
 
 | # | Event | Nerede | Not |
