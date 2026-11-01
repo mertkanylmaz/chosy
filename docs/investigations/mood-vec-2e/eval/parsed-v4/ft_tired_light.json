@@ -1,0 +1,144 @@
+{
+  "mood_id": "ft_tired_light",
+  "text": "I'm exhausted after work, want something light and short",
+  "ms": 4390,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Tired and light",
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "fear": 0.1,
+      "anger": 0.05,
+      "surprise": 0.2,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.3
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "minimalist",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "intense plot",
+      "dark themes",
+      "long runtime"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "comfort",
+      "feel-good",
+      "slice of life",
+      "light humor",
+      "easy watching"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [],
+    "max_runtime": 90,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Ferris Bueller's Day Off",
+        "year": 1986
+      },
+      {
+        "title": "Ghostbusters",
+        "year": 1984
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Tropic Thunder",
+        "year": 2008
+      },
+      {
+        "title": "When Harry Met Sally...",
+        "year": 1989
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      }
+    ],
+    "search_id": "1f9137e1-088d-46e2-a625-3cdf5fe56583",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "afeda364-266d-4ddd-97ac-81bccd70dffa",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+      "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+      "009e8450-e186-4e16-99c4-506fd981cda3",
+      "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+      "e30854c4-bfbe-4ba1-8d26-c41652ff03e0",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "d1877eba-ab49-423f-9255-f1d68cd78d6c",
+      "a89bc750-72c7-4e85-8507-31e20542de3a",
+      "1870075c-5206-4214-bc41-b6044555f9ae",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "d3c52089-4d58-4002-8fda-fc1acadb54e2",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.6,
+      "sadness": 0.2,
+      "anger": 0.05,
+      "fear": 0.1,
+      "surprise": 0.2,
+      "disgust": 0.05,
+      "anticipation": 0.3,
+      "trust": 0.7
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "minimalist",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "intense plot",
+      "dark themes",
+      "long runtime"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "1f9137e1-088d-46e2-a625-3cdf5fe56583",
+  "search_keywords": [
+    "comfort",
+    "feel-good",
+    "slice of life",
+    "light humor",
+    "easy watching"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

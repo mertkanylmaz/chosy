@@ -1,0 +1,906 @@
+{
+  "mood_id": "ft_tired_light",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.92887687342608,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "25d60d82-4e17-4869-9661-e7105fd85a1f",
+        "tmdb_id": 49964,
+        "title": "Where Is The Friend's House?",
+        "year": 1987,
+        "overview": "An 8-year-old boy must return his friend's notebook he took by mistake, lest his friend be punished by expulsion from school.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 83,
+        "vote_average": 7.892,
+        "director": "Abbas Kiarostami",
+        "similarity": 0.802151744794041,
+        "curation_tier": "core",
+        "match_reason": "village life, village, notebook",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.790582387433433,
+        "curation_tier": "extended",
+        "match_reason": "coming of age, survival, loneliness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.78941757954709,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+        "tmdb_id": 823219,
+        "title": "Flow",
+        "year": 2024,
+        "overview": "A solitary cat, displaced by a great flood, finds refuge on a boat with various species and must navigate the challenges of adapting to a transformed world together.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 85,
+        "vote_average": 8.085,
+        "director": "Gints Zilbalodis",
+        "similarity": 0.783294966966541,
+        "curation_tier": "core",
+        "match_reason": "ocean, cat, boat",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4026bb62-26ce-45cf-b17e-d1894271c106",
+        "tmdb_id": 130739,
+        "title": "A Coffee in Berlin",
+        "year": 2012,
+        "overview": "Niko, a twenty-something college dropout, lives for the moment as he drifts through the streets of Berlin, curiously observing everyone around him and oblivious to his growing status as an outsider. Then on one fateful day, through a series of absurdly amusing encounters, everything changes.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 7.19,
+        "director": "Jan Ole Gerster",
+        "similarity": 0.771133085308951,
+        "curation_tier": "extended",
+        "match_reason": "berlin, germany, coffee, girlfriend",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b72f066c-4511-4e94-8e00-dc240ffeaf51",
+        "tmdb_id": 31056,
+        "title": "A Short Film About Love",
+        "year": 1988,
+        "overview": "19-year-old Tomek whiles away his lonely life by spying on his opposite neighbour Magda through binoculars. She's an artist in her mid-thirties, and appears to have everything - not least a constant stream of men at her beck and call. But when the two finally meet, they discover that they have a lot more in common than appeared at first sight...",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 7.8,
+        "director": "Krzysztof Kieślowski",
+        "similarity": 0.741808253363254,
+        "curation_tier": "extended",
+        "match_reason": "love, wistful, hopeful",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "cd28b279-1cc8-4ef0-bbb3-5f144337a75a",
+        "tmdb_id": 440298,
+        "title": "Cold War",
+        "year": 2018,
+        "overview": "A man and a woman meet in the ruins of post-war Poland. With vastly different backgrounds and temperaments, they are fatally mismatched and yet drawn to each other.",
+        "genres": [
+          "Romance",
+          "Music",
+          "Drama"
+        ],
+        "runtime": 88,
+        "vote_average": 7.433,
+        "director": "Paweł Pawlikowski",
+        "similarity": 0.738307615264711,
+        "curation_tier": "core",
+        "match_reason": "berlin, germany, paris, france, cold war",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7680da4b-e06f-4ff8-827f-81c29f70ecbe",
+        "tmdb_id": 1280,
+        "title": "3-Iron",
+        "year": 2004,
+        "overview": "A drifter lives in people's houses while they are away and repays them by doing chores for them. His life changes when he meets a beautiful woman who wants to escape her unhappy marriage.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "Crime"
+        ],
+        "runtime": 88,
+        "vote_average": 7.825,
+        "director": "Kim Ki-duk",
+        "similarity": 0.733700603135908,
+        "curation_tier": "core",
+        "match_reason": "prison, jealousy, husband wife relationship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0d5d066d-db6c-41fc-93a8-3e914e42e68d",
+        "tmdb_id": 9023,
+        "title": "Spirit: Stallion of the Cimarron",
+        "year": 2002,
+        "overview": "A captured mustang remains determined to return to his herd no matter what.",
+        "genres": [
+          "Animation",
+          "Adventure",
+          "Family",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 83,
+        "vote_average": 7.69,
+        "director": "Kelly Asbury",
+        "similarity": 0.719010887787,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "121918a7-1ad4-4c7d-9086-9e62d12b16ed",
+        "tmdb_id": 5723,
+        "title": "Once",
+        "year": 2007,
+        "overview": "A vacuum repairman moonlights as a street musician and hopes for his big break. One day a Czech immigrant, who earns a living selling flowers, approaches him with the news that she is also an aspiring singer-songwriter. The pair decide to collaborate, and the songs that they compose reflect the story of their blossoming love.",
+        "genres": [
+          "Drama",
+          "Music",
+          "Romance"
+        ],
+        "runtime": 85,
+        "vote_average": 7.414,
+        "director": "John Carney",
+        "similarity": 0.716623809853529,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "35eed166-37c6-4ce0-b89b-f91c8887d02c",
+        "tmdb_id": 437586,
+        "title": "mid90s",
+        "year": 2018,
+        "overview": "In 1990s Los Angeles, a 13-year-old spends his summer navigating between a troubled home life and a crew of new friends he meets at a skate shop.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 86,
+        "vote_average": 7.478,
+        "director": "Jonah Hill",
+        "similarity": 0.715555833819766,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5a2a772d-206d-4402-a3ee-55dc1e83e9d3",
+        "tmdb_id": 690,
+        "title": "Pickpocket",
+        "year": 1959,
+        "overview": "Michel takes up pickpocketing on a lark and is arrested soon after. His mother dies shortly after his release, and despite the objections of his only friend, Jacques, and his mother's neighbor Jeanne, Michel teams up with a couple of petty thieves in order to improve his craft. With a police inspector keeping an eye on him, Michel also tries to get a straight job, but the temptation to steal is hard to resist.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 75,
+        "vote_average": 7.282,
+        "director": "Robert Bresson",
+        "similarity": 0.697712722830234,
+        "curation_tier": "extended",
+        "match_reason": "prison, france, unsociability",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d1f47acb-529c-49df-a0bb-38c3f5dd49ab",
+        "tmdb_id": 393559,
+        "title": "My Life as a Zucchini",
+        "year": 2016,
+        "overview": "After his mother’s death, Zucchini is befriended by a kind police officer, Raymond, who accompanies him to his new foster home filled with other orphans his age. There, with the help of his newfound friends, Zucchini eventually learns to trust and love as he searches for a new family of his own.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 66,
+        "vote_average": 7.8,
+        "director": "Claude Barras",
+        "similarity": 0.686194925469005,
+        "curation_tier": "extended",
+        "match_reason": "orphanage, thief, stop motion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "87498e85-ec86-49db-b497-82334dbb7f1b",
+        "tmdb_id": 869626,
+        "title": "Marcel the Shell with Shoes On",
+        "year": 2022,
+        "overview": "Marcel is an adorable one-inch-tall shell who ekes out a colorful existence with his grandmother Connie and their pet lint, Alan. Once part of a sprawling community of shells, they now live alone as the sole survivors of a mysterious tragedy. When a documentarian discovers them amongst the clutter of his Airbnb, his resulting short film brings Marcel millions of passionate fans, as well as unprecedented dangers and a new hope at finding his long-lost family.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Dean Fleischer Camp",
+        "similarity": 0.678198524961762,
+        "curation_tier": "extended",
+        "match_reason": "journalist, mockumentary, stop motion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dce3d1f0-1ac8-4c58-ac22-e25b0b562fc5",
+        "tmdb_id": 901,
+        "title": "City Lights",
+        "year": 1931,
+        "overview": "A tramp falls in love with a beautiful blind flower girl. His on-and-off friendship with a wealthy man allows him to be the girl's benefactor and suitor.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.251,
+        "director": "Charlie Chaplin",
+        "similarity": 0.65677535951525,
+        "curation_tier": "core",
+        "match_reason": "Matches: comfort",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "07decc56-a2fb-43ab-81d9-16584c336774",
+        "tmdb_id": 566213,
+        "title": "Honeyland",
+        "year": 2019,
+        "overview": "When nomadic beekeepers break Honeyland’s basic rule (take half of the honey, but leave half to the bees), the last female beehunter in Europe must save the bees and restore natural balance.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 89,
+        "vote_average": 7.88,
+        "director": "Ljubomir Stefanov",
+        "similarity": 0.656724139039324,
+        "curation_tier": "core",
+        "match_reason": "tradition, beehive, rural area",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "03ed440e-ccd5-4276-b620-b76324233fe4",
+        "tmdb_id": 80,
+        "title": "Before Sunset",
+        "year": 2004,
+        "overview": "Nine years later, Jesse travels across Europe giving readings from a book he wrote about the night he spent in Vienna with Celine. After his reading in Paris, Celine finds him, and they spend part of the day together before Jesse has to again leave for a flight. They are both in relationships now, and Jesse has a son, but as their strong feelings for each other start to return, both confess a longing for more.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 80,
+        "vote_average": 7.811,
+        "director": "Richard Linklater",
+        "similarity": 0.656472011986553,
+        "curation_tier": "core",
+        "match_reason": "journalist, talking, soulmates",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6c84c303-1996-43eb-9fb3-b4a4dadd0a4b",
+        "tmdb_id": 13363,
+        "title": "The Man from Earth",
+        "year": 2007,
+        "overview": "A departing professor gathers his closest colleagues for an intimate farewell, but the night takes an unexpected turn when he shares a stunning secret about his past. As the conversation unfolds, skepticism and curiosity collide, challenging everything they thought they knew about history, science, and belief.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 87,
+        "vote_average": 7.624,
+        "director": "Richard Schenkman",
+        "similarity": 0.637295849231296,
+        "curation_tier": "core",
+        "match_reason": "immortality, birthday, legend",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "19b99cc2-4d8f-410b-a9bc-b2394b46ebd9",
+        "tmdb_id": 9325,
+        "title": "The Jungle Book",
+        "year": 1967,
+        "overview": "The boy Mowgli makes his way to the man-village with Bagheera, the wise panther. Along the way he meets jazzy King Louie, the hypnotic snake Kaa and the lovable, happy-go-lucky bear Baloo, who teaches Mowgli \"The Bare Necessities\" of life and the true meaning of friendship.",
+        "genres": [
+          "Family",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 78,
+        "vote_average": 7.3,
+        "director": "Wolfgang Reitherman",
+        "similarity": 0.635724851367526,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, narration, human animal relationship",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5fb8070c-5878-47ac-8bac-7a67401acbb9",
+        "tmdb_id": 823754,
+        "title": "Bo Burnham: Inside",
+        "year": 2021,
+        "overview": "Stuck in COVID-19 lockdown, US comedian and musician Bo Burnham attempts to stay sane and happy by writing, shooting and performing a one-man comedy special.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 88,
+        "vote_average": 7.998,
+        "director": "Bo Burnham",
+        "similarity": 0.625246318054551,
+        "curation_tier": "core",
+        "match_reason": "quarantine, stand-up comedy, breaking the fourth wall",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8b59bf3a-6186-4ec1-94e6-d4df3fb25fcd",
+        "tmdb_id": 238628,
+        "title": "Tangerines",
+        "year": 2013,
+        "overview": "War in Abkhazia, 1992. An Estonian man Ivo has stayed behind to harvest his crops of tangerines. In a bloody conflict at his door, a wounded man is left behind, and Ivo is forced to take him in.",
+        "genres": [
+          "Drama",
+          "War"
+        ],
+        "runtime": 87,
+        "vote_average": 7.685,
+        "director": "Zaza Urushadze",
+        "similarity": 0.620621332448142,
+        "curation_tier": "core",
+        "match_reason": "gun, audio tape, head wound",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "dfcd6ef3-d036-4569-a409-0f62945482b9",
+        "tmdb_id": 499,
+        "title": "Cléo from 5 to 7",
+        "year": 1962,
+        "overview": "Agnès Varda eloquently captures Paris in the sixties with this real-time portrait of a singer set adrift in the city as she awaits test results of a biopsy. A chronicle of the minutes of one woman’s life, Cléo from 5 to 7 is a spirited mix of vivid vérité and melodrama, featuring a score by Michel Legrand and cameos by Jean-Luc Godard and Anna Karina.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 90,
+        "vote_average": 7.7,
+        "director": "Agnès Varda",
+        "similarity": 0.612023368278198,
+        "curation_tier": "extended",
+        "match_reason": "individual, paris, france, singer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c312e0b5-2d3f-44e6-b9b3-2ff3d4ffab3c",
+        "tmdb_id": 11049,
+        "title": "Interstella 5555: The 5tory of the 5ecret 5tar 5ystem",
+        "year": 2003,
+        "overview": "Four talented alien musicians are kidnapped by a record producer who disguises them as humans. Shep, a space pilot in love with bass player Stella, follows them to Earth. Reprogrammed to forget their real identities and renamed The Crescendolls, the group quickly becomes a huge success playing soulless corporate pop. At a concert, Shep manages to free all the musicians except Stella, and the band sets out to rediscover who they really are — and to rescue Stella.",
+        "genres": [
+          "Animation",
+          "Science Fiction",
+          "Music",
+          "Adventure"
+        ],
+        "runtime": 65,
+        "vote_average": 7.775,
+        "director": "Kazuhisa Takenouchi",
+        "similarity": 0.606959955110421,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7a2e5bc9-3693-4d0b-bab5-6ffe68aad3e4",
+        "tmdb_id": 3933,
+        "title": "Corpse Bride",
+        "year": 2005,
+        "overview": "In a 19th-century European village, a young man about to be married is whisked away to the underworld and wed to a mysterious corpse bride, while his real bride waits bereft in the land of the living.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 77,
+        "vote_average": 7.584,
+        "director": "Tim Burton",
+        "similarity": 0.605134544418966,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9c9ccbd2-e54e-4a87-b7f3-aeebd72b6098",
+        "tmdb_id": 223702,
+        "title": "Sosis Partisi",
+        "year": 2016,
+        "overview": "Bir sosisin kendi varlığı hakkındaki gerçekleri keşfetme hikayesi.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Fantasy"
+        ],
+        "runtime": 89,
+        "vote_average": 5.75,
+        "director": "Greg Tiernan",
+        "similarity": 0.528721844332608,
+        "curation_tier": "extended",
+        "match_reason": "supermarket, orgy, parody",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "d4ecf4c8-c80b-4de1-9aa0-3e5c47e60a7c",
+        "tmdb_id": 1624,
+        "title": "Liar Liar",
+        "year": 1997,
+        "overview": "Forced by his son's birthday wish, fast-talking attorney and habitual liar Fletcher Reede must tell the truth for the next 24 hours.",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 86,
+        "vote_average": 6.705,
+        "director": "Tom Shadyac",
+        "similarity": 0.522295552766956,
+        "curation_tier": "extended",
+        "match_reason": "california, workaholic, truth",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "84387156-ccb0-4b82-80e0-abab1a7e11dc",
+        "tmdb_id": 7512,
+        "title": "Idiocracy",
+        "year": 2006,
+        "overview": "To test its top-secret Human Hibernation Project, the Pentagon picks the most average Americans it can find - an Army private and a prostitute - and sends them to the year 2505 after a series of freak events. But when they arrive, they find a civilization so dumbed-down that they're the smartest people around.",
+        "genres": [
+          "Comedy",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 84,
+        "vote_average": 6.365,
+        "director": "Mike Judge",
+        "similarity": 0.516611833375602,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "faf04bbd-fbdc-45ca-8d3e-4b02b0918a1b",
+        "tmdb_id": 10555,
+        "title": "Shark Tale",
+        "year": 2004,
+        "overview": "Oscar is a small fish whose big aspirations often get him into trouble. Meanwhile, Lenny is a great white shark with a surprising secret that no sea creature would guess: He's a vegetarian. When a lie turns Oscar into an improbable hero and Lenny becomes an outcast, the two form an unlikely friendship.",
+        "genres": [
+          "Animation",
+          "Action",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 6.031,
+        "director": "Vicky Jenson",
+        "similarity": 0.515368747821756,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "2838ecc3-7733-4bb9-a486-b222bf3711d0",
+        "tmdb_id": 3082,
+        "title": "Modern Times",
+        "year": 1936,
+        "overview": "A bumbling tramp desires to build a home with a young woman, yet is thwarted time and time again by his lack of experience and habit of being in the wrong place at the wrong time..",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 87,
+        "vote_average": 8.278,
+        "director": "Charlie Chaplin",
+        "similarity": 0.513127834445663,
+        "curation_tier": "core",
+        "match_reason": "factory, ambulance, invention",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "beba7a17-264c-4138-86e4-95aa0ce96f60",
+        "tmdb_id": 246741,
+        "title": "What We Do in the Shadows",
+        "year": 2014,
+        "overview": "Vampire housemates try to cope with the complexities of modern life and show a newly turned hipster some of the perks of being undead.",
+        "genres": [
+          "Comedy",
+          "Horror"
+        ],
+        "runtime": 86,
+        "vote_average": 7.55,
+        "director": "Jemaine Clement",
+        "similarity": 0.488558254586022,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb1b9f27-1caa-4391-b77a-20eeda5367b1",
+        "tmdb_id": 9502,
+        "title": "Kung Fu Panda",
+        "year": 2008,
+        "overview": "Chosen by prophecy but doubted by all, Po is an unlikely choice for the mystical title of the Dragon Warrior—a clumsy panda thrust into the world of kung fu as a deadly enemy threatens the Valley of Peace. Under reluctant guidance by Master Shifu and the Furious Five, Po must embrace who he is to unlock the power that no scroll can teach.",
+        "genres": [
+          "Action",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.321,
+        "director": "Mark Osborne",
+        "similarity": 0.480079799553332,
+        "curation_tier": "core",
+        "match_reason": "martial arts, kung fu, strong woman",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e2a8030c-9898-4e61-a74e-5d935e421f57",
+        "tmdb_id": 10315,
+        "title": "Fantastic Mr. Fox",
+        "year": 2009,
+        "overview": "The Fantastic Mr. Fox, bored with his current life, plans a heist against the three local farmers. The farmers, tired of sharing their chickens with the sly fox, seek revenge against him and his family.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 87,
+        "vote_average": 7.824,
+        "director": "Wes Anderson",
+        "similarity": 0.480055375131226,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, tree, peasant",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "3b7f7c4c-2e77-4eae-b5d6-bf9d609a71b0",
+        "tmdb_id": 425,
+        "title": "Ice Age",
+        "year": 2002,
+        "overview": "Manny the mammoth, Sid the loquacious sloth, and Diego the sabre-toothed tiger go on a comical quest to return a human baby back to his father, across a world on the brink of an ice age.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Adventure"
+        ],
+        "runtime": 82,
+        "vote_average": 7.375,
+        "director": "Chris Wedge",
+        "similarity": 0.47852584945608,
+        "curation_tier": "core",
+        "match_reason": "dying and death, human evolution, parent child relationship",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "060ed67f-4fd2-4de1-96f5-a64c7920a853",
+        "tmdb_id": 808,
+        "title": "Shrek",
+        "year": 2001,
+        "overview": "It ain't easy bein' green -- especially if you're a likable (albeit smelly) ogre named Shrek. On a mission to retrieve a gorgeous princess from the clutches of a fire-breathing dragon, Shrek teams up with an unlikely compatriot -- a wisecracking donkey.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Fantasy",
+          "Adventure",
+          "Family"
+        ],
+        "runtime": 90,
+        "vote_average": 7.762,
+        "director": "Andrew Adamson",
+        "similarity": 0.476830076161952,
+        "curation_tier": "core",
+        "match_reason": "princess, based on novel or book, magic",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "40b7f12b-2535-41a8-b1e0-98132f4956ea",
+        "tmdb_id": 862,
+        "title": "Toy Story",
+        "year": 1995,
+        "overview": "Led by Woody, Andy's toys live happily in his room until Andy's birthday brings Buzz Lightyear onto the scene. Afraid of losing his place in Andy's heart, Woody plots against Buzz. But when circumstances separate Buzz and Woody from their owner, the duo eventually learns to put aside their differences.",
+        "genres": [
+          "Family",
+          "Comedy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 81,
+        "vote_average": 7.974,
+        "director": "John Lasseter",
+        "similarity": 0.475370664111978,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, mission",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "a1c3e42f-bd3c-49b4-9b4e-b30348865c04",
+        "tmdb_id": 953,
+        "title": "Madagascar",
+        "year": 2005,
+        "overview": "Four animal friends get a taste of the wild life when they break out of captivity at the Central Park Zoo and wash ashore on the island of Madagascar.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 6.922,
+        "director": "Eric Darnell",
+        "similarity": 0.474794853982618,
+        "curation_tier": "core",
+        "match_reason": "friendship, island, escape",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "1d6879d5-f75f-4587-ab39-49a412dcd812",
+        "tmdb_id": 11688,
+        "title": "The Emperor's New Groove",
+        "year": 2000,
+        "overview": "When the self‑absorbed Emperor Kuzco is accidentally transformed into a llama, he must rely on a humble villager to survive the jungle and reclaim his throne.",
+        "genres": [
+          "Adventure",
+          "Animation",
+          "Comedy",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 78,
+        "vote_average": 7.56,
+        "director": "Mark Dindal",
+        "similarity": 0.474297981788075,
+        "curation_tier": "core",
+        "match_reason": "central and south america, emperor, cartoon",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bb60df7d-8867-4efd-bc1c-f2890df557d1",
+        "tmdb_id": 4247,
+        "title": "Scary Movie",
+        "year": 2000,
+        "overview": "A familiar-looking group of teenagers find themselves being stalked by a more-than-vaguely recognizable masked killer! As the victims begin to pile up and the laughs pile on, none of your favorite scary movies escape the razor-sharp satire of this outrageously funny parody!",
+        "genres": [
+          "Comedy"
+        ],
+        "runtime": 88,
+        "vote_average": 6.393,
+        "director": "Keenen Ivory Wayans",
+        "similarity": 0.444027067430944,
+        "curation_tier": "core",
+        "match_reason": "high school, psychopath, garage",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 521,
+        "n_rows": 39
+      }
+    ],
+    "total_ms": 521,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 4396,
+      "v4": 523,
+      "pick": 1703,
+      "reasons": 2655
+    },
+    "visible_ms": 6622,
+    "parse_cache_hit": false,
+    "four": [
+      "29537a74-92e4-43b3-8605-2db82b11c894",
+      "87498e85-ec86-49db-b497-82334dbb7f1b",
+      "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82"
+    ],
+    "reranked": true,
+    "reasons": {
+      "29537a74-92e4-43b3-8605-2db82b11c894": "Dialogue-free fantasy that's visually calming; your brain can switch off without missing anything.",
+      "87498e85-ec86-49db-b497-82334dbb7f1b": "Bite-sized comedy that's gentle enough for tired eyes but charming enough to keep you engaged.",
+      "dc73a263-b307-42b7-a3bb-1c081bc3dd1c": "Wordless adventure that won't demand mental effort; just float through it with minimal talking.",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82": "Meditative and soothing—real footage of ocean life lets your mind rest while you watch."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1464,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "29537a74-92e4-43b3-8605-2db82b11c894",
+          "87498e85-ec86-49db-b497-82334dbb7f1b",
+          "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+          "ec2fff86-bb4b-40bb-b170-20890b263e82"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 2650,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "87498e85-ec86-49db-b497-82334dbb7f1b",
+          "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+          "ec2fff86-bb4b-40bb-b170-20890b263e82",
+          "29537a74-92e4-43b3-8605-2db82b11c894"
+        ],
+        "reasons": {
+          "87498e85-ec86-49db-b497-82334dbb7f1b": "Bite-sized comedy that's gentle enough for tired eyes but charming enough to keep you engaged.",
+          "dc73a263-b307-42b7-a3bb-1c081bc3dd1c": "Wordless adventure that won't demand mental effort; just float through it with minimal talking.",
+          "ec2fff86-bb4b-40bb-b170-20890b263e82": "Meditative and soothing—real footage of ocean life lets your mind rest while you watch.",
+          "29537a74-92e4-43b3-8605-2db82b11c894": "Dialogue-free fantasy that's visually calming; your brain can switch off without missing anything."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

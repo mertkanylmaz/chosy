@@ -1,0 +1,141 @@
+{
+  "mood_id": "qm_mindbending",
+  "text": "A deep and thought-provoking philosophical film, mind-bending and complex, not comedy, not lighthearted",
+  "ms": 4819,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Deep Philosophical Contemplation",
+    "emotional_state": {
+      "joy": 0.3,
+      "sadness": 0.5,
+      "fear": 0.4,
+      "anger": 0.2,
+      "surprise": 0.6,
+      "disgust": 0.2,
+      "trust": 0.4,
+      "anticipation": 0.5
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.95,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "lighthearted",
+      "slapstick",
+      "romance focus",
+      "action spectacle"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "philosophical",
+      "mind-bending",
+      "complex narrative",
+      "existential",
+      "metaphysical",
+      "psychological thriller",
+      "cerebral"
+    ],
+    "genres_include": [
+      "Drama",
+      "Mystery",
+      "Science Fiction"
+    ],
+    "genres_exclude": [
+      "Comedy",
+      "Action"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "Mulholland Drive",
+        "year": 2001
+      },
+      {
+        "title": "Arrival",
+        "year": 2016
+      },
+      {
+        "title": "The Matrix",
+        "year": 1999
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "Donnie Darko",
+        "year": 2001
+      }
+    ],
+    "search_id": "d1cc1661-b1c9-4e7f-8496-7238aeda58f3",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.3,
+      "sadness": 0.5,
+      "anger": 0.2,
+      "fear": 0.4,
+      "surprise": 0.6,
+      "disgust": 0.2,
+      "anticipation": 0.5,
+      "trust": 0.4
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.95,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "lighthearted",
+      "slapstick",
+      "romance focus",
+      "action spectacle"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "d1cc1661-b1c9-4e7f-8496-7238aeda58f3",
+  "search_keywords": [
+    "philosophical",
+    "mind-bending",
+    "complex narrative",
+    "existential",
+    "metaphysical",
+    "psychological thriller",
+    "cerebral"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

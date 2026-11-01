@@ -1,0 +1,153 @@
+{
+  "mood_id": "ft_date_first",
+  "text": "First date at home, something romantic but not cheesy",
+  "ms": 5003,
+  "http_status": 200,
+  "response": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "fear": 0.15,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.85,
+      "anticipation": 0.7
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "saccharine dialogue",
+      "forced sentimentality",
+      "clichéd romance tropes",
+      "over-the-top declarations"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true,
+    "profile_name": "Intimate First Connection",
+    "search_keywords": [
+      "romance",
+      "chemistry",
+      "intimate",
+      "dialogue-driven",
+      "realistic relationships",
+      "emotional connection",
+      "subtle romance"
+    ],
+    "genres_include": [
+      "Romance",
+      "Drama"
+    ],
+    "genres_exclude": [
+      "Comedy"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Before Sunrise",
+        "year": 1995
+      },
+      {
+        "title": "Moonlight",
+        "year": 2016
+      },
+      {
+        "title": "The Farewell",
+        "year": 2019
+      },
+      {
+        "title": "Call Me By Your Name",
+        "year": 2017
+      },
+      {
+        "title": "Lost in Translation",
+        "year": 2003
+      },
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      }
+    ],
+    "search_id": "9949b375-8fdf-4c75-aa31-b65e63374fe8",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "29537a74-92e4-43b3-8605-2db82b11c894",
+      "87498e85-ec86-49db-b497-82334dbb7f1b",
+      "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82",
+      "afeda364-266d-4ddd-97ac-81bccd70dffa",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+      "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+      "009e8450-e186-4e16-99c4-506fd981cda3",
+      "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+      "e30854c4-bfbe-4ba1-8d26-c41652ff03e0",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "d1877eba-ab49-423f-9255-f1d68cd78d6c",
+      "a89bc750-72c7-4e85-8507-31e20542de3a",
+      "1870075c-5206-4214-bc41-b6044555f9ae",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.15,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.7,
+      "trust": 0.85
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.65,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1990,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "saccharine dialogue",
+      "forced sentimentality",
+      "clichéd romance tropes",
+      "over-the-top declarations"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true
+  },
+  "search_id": "9949b375-8fdf-4c75-aa31-b65e63374fe8",
+  "search_keywords": [
+    "romance",
+    "chemistry",
+    "intimate",
+    "dialogue-driven",
+    "realistic relationships",
+    "emotional connection",
+    "subtle romance"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

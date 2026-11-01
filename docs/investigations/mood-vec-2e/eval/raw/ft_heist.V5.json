@@ -1,0 +1,927 @@
+{
+  "mood_id": "ft_heist",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "ac6c2730-4e84-42fe-adee-2af938779580",
+        "tmdb_id": 546554,
+        "title": "Knives Out",
+        "year": 2019,
+        "overview": "When renowned crime novelist Harlan Thrombey is found dead at his estate just after his 85th birthday, the inquisitive and debonair Detective Benoit Blanc is mysteriously enlisted to investigate. From Harlan's dysfunctional family to his devoted staff, Blanc sifts through a web of red herrings and self-serving lies to uncover the truth behind Harlan's untimely death.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Mystery"
+        ],
+        "runtime": 131,
+        "vote_average": 7.84,
+        "director": "Rian Johnson",
+        "similarity": 0.821090107281327,
+        "curation_tier": "core",
+        "match_reason": "immigrant, detective, massachusetts",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c1ad63f5-17dc-41de-acd2-dde9448b0c44",
+        "tmdb_id": 75656,
+        "title": "Now You See Me",
+        "year": 2013,
+        "overview": "An FBI agent and an Interpol detective track a team of illusionists who pull off bank heists during their performances and reward their audiences with the money.",
+        "genres": [
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 116,
+        "vote_average": 7.332,
+        "director": "Louis Leterrier",
+        "similarity": 0.745273442979175,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "44097c7b-d993-4627-9615-0783cd92a687",
+        "tmdb_id": 9654,
+        "title": "The Italian Job",
+        "year": 2003,
+        "overview": "Charlie Croker pulled off the crime of a lifetime. The one thing that he didn't plan on was being double-crossed. Along with a drop-dead gorgeous safecracker, Croker and his team take off to re-steal the loot and end up in a pulse-pounding, pedal-to-the-metal chase that careens up, down, above and below the streets of Los Angeles.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 110,
+        "vote_average": 6.8,
+        "director": "F. Gary Gray",
+        "similarity": 0.723749974669197,
+        "curation_tier": "extended",
+        "match_reason": "Matches: heist",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+        "tmdb_id": 388,
+        "title": "Inside Man",
+        "year": 2006,
+        "overview": "When an armed, masked gang enter a Manhattan bank, lock the doors and take hostages, the detective assigned to effect their release enters negotiations preoccupied with corruption charges he is facing.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 129,
+        "vote_average": 7.404,
+        "director": "Spike Lee",
+        "similarity": 0.631564164477977,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, robbery",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "043911e2-307b-4092-b4df-8f062b5df800",
+        "tmdb_id": 2503,
+        "title": "The Bourne Ultimatum",
+        "year": 2007,
+        "overview": "Bourne is brought out of hiding once again by reporter Simon Ross who is trying to unveil Operation Blackbriar, an upgrade to Project Treadstone, in a series of newspaper columns. Information from the reporter stirs a new set of memories, and Bourne must finally uncover his dark past while dodging The Company's best efforts to eradicate him.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 115,
+        "vote_average": 7.435,
+        "director": "Paul Greengrass",
+        "similarity": 1.07777944304045,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "426992d1-4970-4076-ac0f-614085908df3",
+        "tmdb_id": 9277,
+        "title": "The Sting",
+        "year": 1973,
+        "overview": "A novice con man teams up with an acknowledged master to avenge the murder of a mutual friend by pulling off the ultimate big con and swindling a fortune from a big-time mobster.",
+        "genres": [
+          "Comedy",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 8.014,
+        "director": "George Roy Hill",
+        "similarity": 1.07062601708845,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "90b19326-b1f7-491f-a4ac-c8fd387addad",
+        "tmdb_id": 629,
+        "title": "The Usual Suspects",
+        "year": 1995,
+        "overview": "Held in an L.A. interrogation room, Verbal Kint attempts to convince the feds that a mythic crime lord, Keyser Soze, not only exists, but was also responsible for drawing him and his four partners into a multi-million dollar heist that ended with an explosion in San Pedro harbor – leaving few survivors. Verbal lures his interrogators with an incredible story of the crime lord's almost supernatural prowess.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 106,
+        "vote_average": 8.17,
+        "director": "Bryan Singer",
+        "similarity": 1.05048854353109,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, robbery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c69ae96b-e7dc-4949-8eeb-fe0f875be784",
+        "tmdb_id": 954,
+        "title": "Mission: Impossible",
+        "year": 1996,
+        "overview": "When Ethan Hunt, the leader of a crack espionage team whose perilous operation has gone awry with no explanation, discovers that a mole has penetrated the CIA, he's surprised to learn that he's the prime suspect. To clear his name, Hunt now must ferret out the real double agent and, in the process, even the score.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 111,
+        "vote_average": 7.025,
+        "director": "Brian De Palma",
+        "similarity": 1.03857601133764,
+        "curation_tier": "core",
+        "match_reason": "mask, mission, london, england",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7d44ef5e-9917-4369-87a8-bca4b10772d7",
+        "tmdb_id": 949,
+        "title": "Heat",
+        "year": 1995,
+        "overview": "Obsessive master thief Neil McCauley leads a top-notch crew on various daring heists throughout Los Angeles while determined detective Vincent Hanna pursues him without rest. Each man recognizes and respects the ability and the dedication of the other even though they are aware their cat-and-mouse game may end in violence.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 170,
+        "vote_average": 7.934,
+        "director": "Michael Mann",
+        "similarity": 1.03789295620269,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist, crime, con, robbery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6b7a96ee-7101-42b8-95b5-833951e368a2",
+        "tmdb_id": 637649,
+        "title": "Wrath of Man",
+        "year": 2021,
+        "overview": "A cold and mysterious new security guard for a Los Angeles cash truck company surprises his co-workers when he unleashes precision skills during a heist. The crew is left wondering who he is and where he came from. Soon, the marksman's ultimate motive becomes clear as he takes dramatic and irrevocable steps to settle a score.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 7.574,
+        "director": "Guy Ritchie",
+        "similarity": 1.03605459156996,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime, robbery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "930b5f82-0ed8-4aa0-bf7c-3dc7aaaa7a20",
+        "tmdb_id": 24,
+        "title": "Kill Bill: Vol. 1",
+        "year": 2003,
+        "overview": "An assassin is shot by her ruthless employer, Bill, and other members of their assassination circle – but she lives to plot her vengeance.",
+        "genres": [
+          "Action",
+          "Crime"
+        ],
+        "runtime": 111,
+        "vote_average": 7.972,
+        "director": "Quentin Tarantino",
+        "similarity": 1.02096032067542,
+        "curation_tier": "core",
+        "match_reason": "martial arts, japan, kung fu",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "48e22cab-ae9d-4b99-ac91-0b3f7bebc665",
+        "tmdb_id": 379170,
+        "title": "Sherlock: The Abominable Bride",
+        "year": 2016,
+        "overview": "Sherlock Holmes and Dr. Watson find themselves in 1890s London in this holiday special.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Mystery",
+          "Thriller",
+          "TV Movie"
+        ],
+        "runtime": 90,
+        "vote_average": 7.834,
+        "director": "Douglas Mackinnon",
+        "similarity": 1.01412661898286,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "69fbe583-7af4-420e-8a6f-67946715fcbb",
+        "tmdb_id": 44896,
+        "title": "Rango",
+        "year": 2011,
+        "overview": "When Rango, a lost family pet, accidentally winds up in the gritty, gun-slinging Western town of Dirt, the theater-loving lizard suddenly finds himself the newly appointed sheriff. Welcomed as the last hope the town has been waiting for, Rango is forced to play his new role to the hilt and uncover the truth behind a looming water crisis—before his act catches up with him.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Family",
+          "Western",
+          "Adventure"
+        ],
+        "runtime": 107,
+        "vote_average": 6.896,
+        "director": "Gore Verbinski",
+        "similarity": 1.01179404332765,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6425c973-9d85-4f0e-bb06-e48b4180e777",
+        "tmdb_id": 726759,
+        "title": "Tetris",
+        "year": 2023,
+        "overview": "In 1988, American video game salesman Henk Rogers discovers the video game Tetris. When he sets out to bring the game to the world, he enters a dangerous web of lies and corruption behind the Iron Curtain.",
+        "genres": [
+          "Thriller",
+          "History",
+          "Drama"
+        ],
+        "runtime": 118,
+        "vote_average": 7.674,
+        "director": "Jon S. Baird",
+        "similarity": 1.01133586080331,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7eab97d1-1707-4777-b3a3-1a394b63b742",
+        "tmdb_id": 562,
+        "title": "Die Hard",
+        "year": 1988,
+        "overview": "High above the city of L.A. a team of terrorists has seized a building, taken hostages, and declared war. One man has manages to escape... An off-duty cop hiding somewhere inside. He's alone, tired... and the only chance anyone has got.",
+        "genres": [
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 132,
+        "vote_average": 7.811,
+        "director": "John McTiernan",
+        "similarity": 1.00145643407346,
+        "curation_tier": "core",
+        "match_reason": "Matches: heist",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6ecbdf49-6c04-44bb-b650-6d2b2e9b1b00",
+        "tmdb_id": 18079,
+        "title": "Nine Queens",
+        "year": 2000,
+        "overview": "Two con artists try to swindle a stamp collector by selling him a sheet of counterfeit rare stamps, the \"nine queens\".",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 114,
+        "vote_average": 7.766,
+        "director": "Fabián Bielinsky",
+        "similarity": 0.99223788058695,
+        "curation_tier": "core",
+        "match_reason": "Matches: twist ending, con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.987792110535506,
+        "curation_tier": "core",
+        "match_reason": "Matches: twist ending",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e2d73840-53ad-4c1e-9369-fceb339aa1c4",
+        "tmdb_id": 7944,
+        "title": "Shine a Light",
+        "year": 2008,
+        "overview": "Martin Scorsese’s electrifying concert documentary captures The Rolling Stones live at New York’s Beacon Theatre during their A Bigger Bang tour. Filmed over two nights in 2006 with an all-star team of cinematographers, the film combines dynamic performances with archival footage and rare glimpses behind the scenes, offering a vibrant portrait of the band’s enduring energy and legacy.",
+        "genres": [
+          "Documentary",
+          "Music"
+        ],
+        "runtime": 122,
+        "vote_average": 6.831,
+        "director": "Martin Scorsese",
+        "similarity": 0.98283696945238,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "765d56fd-ac31-4c69-a94f-f4539c92e2ee",
+        "tmdb_id": 986056,
+        "title": "Thunderbolts*",
+        "year": 2025,
+        "overview": "After finding themselves ensnared in a death trap, seven disillusioned castoffs must embark on a dangerous mission that will force them to confront the darkest corners of their pasts.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 127,
+        "vote_average": 7.288,
+        "director": "Jake Schreier",
+        "similarity": 0.980102302001879,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2831f834-425b-4fc4-9fdc-3bc22575cadf",
+        "tmdb_id": 539,
+        "title": "Psycho",
+        "year": 1960,
+        "overview": "When larcenous real estate clerk Marion Crane goes on the lam with a wad of cash and hopes of starting a new life, she ends up at the notorious Bates Motel, where manager Norman Bates cares for his housebound mother.",
+        "genres": [
+          "Horror",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 109,
+        "vote_average": 8.414,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.971914919738261,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b078038-b6b8-44be-9dcd-4eafdddcf6a1",
+        "tmdb_id": 110415,
+        "title": "Snowpiercer",
+        "year": 2013,
+        "overview": "In a future where a failed global-warming experiment kills off most life on the planet, a class system evolves aboard the Snowpiercer; a train that travels around the globe via a perpetual-motion engine.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 6.908,
+        "director": "Bong Joon Ho",
+        "similarity": 0.970098523319462,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "14644090-ff36-4f77-8ec8-2327baa4163f",
+        "tmdb_id": 244786,
+        "title": "Whiplash",
+        "year": 2014,
+        "overview": "Under the direction of a ruthless instructor, a talented young drummer begins to pursue perfection at any cost, even his humanity.",
+        "genres": [
+          "Drama",
+          "Music",
+          "Thriller"
+        ],
+        "runtime": 107,
+        "vote_average": 8.4,
+        "director": "Damien Chazelle",
+        "similarity": 0.967493378710465,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4a6f4dd1-3939-467c-9c3a-26e6ded3ccd2",
+        "tmdb_id": 598,
+        "title": "City of God",
+        "year": 2002,
+        "overview": "In the poverty-stricken favelas of Rio de Janeiro in the 1970s, two young men choose different paths. Rocket is a budding photographer who documents the increasing drug-related violence of his neighborhood, while José “Zé” Pequeno is an ambitious drug dealer diving into a dangerous life of crime.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 129,
+        "vote_average": 8.43,
+        "director": "Fernando Meirelles",
+        "similarity": 0.961828337563717,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.948358766411669,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e8dd7d11-f3de-49ea-ad23-704d3b1d5f38",
+        "tmdb_id": 273481,
+        "title": "Sicario",
+        "year": 2015,
+        "overview": "An idealistic FBI agent is enlisted by a government task force to aid in the escalating war against drugs at the border area between the U.S. and Mexico.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 122,
+        "vote_average": 7.419,
+        "director": "Denis Villeneuve",
+        "similarity": 0.947739861710588,
+        "curation_tier": "core",
+        "match_reason": "mission, assassin, central intelligence agency (cia)",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1bf8311e-7290-4f63-b5c1-b9392134d1ee",
+        "tmdb_id": 116745,
+        "title": "The Secret Life of Walter Mitty",
+        "year": 2013,
+        "overview": "A timid magazine photo manager who lives life vicariously through daydreams embarks on a true-life adventure when a negative goes missing.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 114,
+        "vote_average": 7.23,
+        "director": "Ben Stiller",
+        "similarity": 0.907916278569021,
+        "curation_tier": "extended",
+        "match_reason": "himalaya mountain range, photographer, iceland",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c5d5e777-0e4a-4d31-8ab1-249807ee8fb0",
+        "tmdb_id": 11934,
+        "title": "The Hudsucker Proxy",
+        "year": 1994,
+        "overview": "A naive business graduate is installed as president of a manufacturing company as part of a stock scam.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 111,
+        "vote_average": 7.073,
+        "director": "Joel Coen",
+        "similarity": 0.860761510323496,
+        "curation_tier": "extended",
+        "match_reason": "Matches: planning",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4dfaef83-9d19-4a05-ad92-b0d44e8bd411",
+        "tmdb_id": 1236153,
+        "title": "Mercy",
+        "year": 2026,
+        "overview": "In the near future, a detective stands on trial accused of murdering his wife. He has ninety minutes to prove his innocence to the advanced AI Judge he once championed, before it determines his fate.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 99,
+        "vote_average": 7,
+        "director": "Timur Bekmambetov",
+        "similarity": 0.860296886027897,
+        "curation_tier": "extended",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e3dafe24-b3c1-4ff5-bf0e-9d08e8e0773a",
+        "tmdb_id": 180,
+        "title": "Minority Report",
+        "year": 2002,
+        "overview": "John Anderton is a top 'Precrime' cop in the late-21st century, when technology can predict crimes before they're committed. But Anderton becomes the quarry when another investigator targets him for a murder charge.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Thriller"
+        ],
+        "runtime": 145,
+        "vote_average": 7.355,
+        "director": "Steven Spielberg",
+        "similarity": 0.860274759673237,
+        "curation_tier": "extended",
+        "match_reason": "Matches: con",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.863994684085185,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.794783418671361,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e5b48c97-a614-45d7-9fd7-1d4b66abec40",
+        "tmdb_id": 155,
+        "title": "The Dark Knight",
+        "year": 2008,
+        "overview": "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets. The partnership proves to be effective, but they soon find themselves prey to a reign of chaos unleashed by a rising criminal mastermind known to the terrified citizens of Gotham as the Joker.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Thriller"
+        ],
+        "runtime": 152,
+        "vote_average": 8.531,
+        "director": "Christopher Nolan",
+        "similarity": 0.790420725705795,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "66631a31-b05b-45c7-91f8-ab4c5a6dfb1c",
+        "tmdb_id": 680,
+        "title": "Pulp Fiction",
+        "year": 1994,
+        "overview": "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper. Their adventures unfurl in three stories that ingeniously trip back and forth in time.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Comedy"
+        ],
+        "runtime": 154,
+        "vote_average": 8.484,
+        "director": "Quentin Tarantino",
+        "similarity": 0.722898569175946,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ce27faee-2d2a-4c93-becb-ea6b0579a101",
+        "tmdb_id": 106646,
+        "title": "The Wolf of Wall Street",
+        "year": 2013,
+        "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 180,
+        "vote_average": 8.028,
+        "director": "Martin Scorsese",
+        "similarity": 0.631532446041123,
+        "curation_tier": "core",
+        "match_reason": "Matches: con",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.618413663408873,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "bd2bb802-caa2-4a30-99bf-aa7cd8578443",
+        "tmdb_id": 807,
+        "title": "Se7en",
+        "year": 1995,
+        "overview": "Two homicide detectives are on a desperate hunt for a serial killer whose crimes are based on the \"seven deadly sins\" in this dark and haunting film that takes viewers from the tortured remains of one victim to the next. The seasoned Det. Somerset researches each sin in an effort to get inside the killer's mind, while his novice partner, Mills, scoffs at his efforts to unravel the case.",
+        "genres": [
+          "Crime",
+          "Mystery",
+          "Thriller"
+        ],
+        "runtime": 127,
+        "vote_average": 8.381,
+        "director": "David Fincher",
+        "similarity": 0.613464417520716,
+        "curation_tier": "core",
+        "match_reason": "rage and hate, police, s.w.a.t.",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c8319a4-498b-4cc8-b040-e598753b95ba",
+        "tmdb_id": 272,
+        "title": "Batman Begins",
+        "year": 2005,
+        "overview": "Driven by tragedy, billionaire Bruce Wayne dedicates his life to uncovering and defeating the corruption that plagues his home, Gotham City.  Unable to work within the system, he instead creates a new identity, a symbol of fear for the criminal underworld - The Batman.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Action"
+        ],
+        "runtime": 140,
+        "vote_average": 7.725,
+        "director": "Christopher Nolan",
+        "similarity": 0.604821666594333,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.589716143971833,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.489757637184847,
+        "curation_tier": "core",
+        "match_reason": "Matches: crime",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "70b9c9c2-dea1-4ed5-b9cf-cccc73197ec8",
+        "tmdb_id": 475557,
+        "title": "Joker",
+        "year": 2019,
+        "overview": "During the 1980s, a failed stand-up comedian is driven insane and turns to a life of crime and chaos in Gotham City while becoming an infamous psychopathic crime figure.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8.125,
+        "director": "Todd Phillips",
+        "similarity": 0.438213317253763,
+        "curation_tier": "core",
+        "match_reason": "society, based on comic, social commentary",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 817,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 817,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 3836,
+      "v4": 829,
+      "pick": 1487,
+      "reasons": 2456
+    },
+    "visible_ms": 6152,
+    "parse_cache_hit": false,
+    "four": [
+      "ac6c2730-4e84-42fe-adee-2af938779580",
+      "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+      "426992d1-4970-4076-ac0f-614085908df3",
+      "90b19326-b1f7-491f-a4ac-c8fd387addad"
+    ],
+    "reranked": true,
+    "reasons": {
+      "ac6c2730-4e84-42fe-adee-2af938779580": "A mystery built on misdirection with a final reveal that reframes everything you've seen.",
+      "90b19326-b1f7-491f-a4ac-c8fd387addad": "A crime story where the twist isn't just the ending—it's who's been playing you all along."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1236,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "ac6c2730-4e84-42fe-adee-2af938779580",
+          "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+          "426992d1-4970-4076-ac0f-614085908df3",
+          "90b19326-b1f7-491f-a4ac-c8fd387addad"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 2452,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "ac6c2730-4e84-42fe-adee-2af938779580",
+          "90b19326-b1f7-491f-a4ac-c8fd387addad",
+          "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+          "426992d1-4970-4076-ac0f-614085908df3"
+        ],
+        "reasons": {
+          "ac6c2730-4e84-42fe-adee-2af938779580": "A mystery built on misdirection with a final reveal that reframes everything you've seen.",
+          "90b19326-b1f7-491f-a4ac-c8fd387addad": "A crime story where the twist isn't just the ending—it's who's been playing you all along.",
+          "854765fc-8cde-4d81-a1e2-2887fcfb52f6": "",
+          "426992d1-4970-4076-ac0f-614085908df3": ""
+        },
+        "reasons_dropped": 2,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

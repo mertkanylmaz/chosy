@@ -1,0 +1,142 @@
+{
+  "mood_id": "ft_physics",
+  "text": "Physics",
+  "ms": 4570,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Intellectual Curiosity",
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.2,
+      "anger": 0.05,
+      "surprise": 0.6,
+      "disgust": 0.05,
+      "trust": 0.75,
+      "anticipation": 0.8
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "physics",
+      "science",
+      "discovery",
+      "innovation",
+      "experiment",
+      "theoretical",
+      "knowledge",
+      "breakthrough"
+    ],
+    "genres_include": [
+      "Science Fiction"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Interstellar",
+        "year": 2014
+      },
+      {
+        "title": "The Theory of Everything",
+        "year": 2014
+      },
+      {
+        "title": "A Brief History of Time",
+        "year": 1991
+      },
+      {
+        "title": "The Martian",
+        "year": 2015
+      },
+      {
+        "title": "Oppenheimer",
+        "year": 2023
+      },
+      {
+        "title": "Tenet",
+        "year": 2020
+      }
+    ],
+    "search_id": "e4c155c5-9daa-4cdc-b111-1fcece8eb189",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "009e8450-e186-4e16-99c4-506fd981cda3",
+      "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+      "e30854c4-bfbe-4ba1-8d26-c41652ff03e0",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "d1877eba-ab49-423f-9255-f1d68cd78d6c",
+      "a89bc750-72c7-4e85-8507-31e20542de3a",
+      "1870075c-5206-4214-bc41-b6044555f9ae",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9",
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "d3c52089-4d58-4002-8fda-fc1acadb54e2",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79",
+      "0e53f958-2581-46d0-a5db-51ae0c81542b",
+      "3cad714d-b789-4eba-91b2-502c4931bd86",
+      "7eab97d1-1707-4777-b3a3-1a394b63b742",
+      "19dbad8f-7faa-4c48-98d7-19e6c2934669"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.2,
+      "surprise": 0.6,
+      "disgust": 0.05,
+      "anticipation": 0.8,
+      "trust": 0.75
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.85,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "e4c155c5-9daa-4cdc-b111-1fcece8eb189",
+  "search_keywords": [
+    "physics",
+    "science",
+    "discovery",
+    "innovation",
+    "experiment",
+    "theoretical",
+    "knowledge",
+    "breakthrough"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

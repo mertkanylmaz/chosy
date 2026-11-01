@@ -1,0 +1,150 @@
+{
+  "mood_id": "qm_adrenaline",
+  "text": "Adrenaline-fueled action, thrilling and exciting, fast-paced and intense, not comedy, not drama",
+  "ms": 756,
+  "http_status": 200,
+  "response": {
+    "max_runtime": null,
+    "energy_level": 0.9,
+    "profile_name": "Adrenaline Rush Action",
+    "visual_style": "cinematic",
+    "avoid_signals": [
+      "comedy",
+      "humor",
+      "drama",
+      "slowburn",
+      "emotional depth"
+    ],
+    "era_preference": {
+      "to": 2025,
+      "from": 1980
+    },
+    "genres_exclude": [
+      "Comedy",
+      "Drama"
+    ],
+    "genres_include": [
+      "Action",
+      "Thriller"
+    ],
+    "social_context": "alone",
+    "thematic_depth": 0.3,
+    "emotional_state": {
+      "joy": 0.55,
+      "fear": 0.6,
+      "anger": 0.4,
+      "trust": 0.5,
+      "disgust": 0.15,
+      "sadness": 0.1,
+      "surprise": 0.7,
+      "anticipation": 0.85
+    },
+    "narrative_style": "linear",
+    "pace_preference": "fast",
+    "search_keywords": [
+      "action",
+      "thriller",
+      "adventure",
+      "heist",
+      "combat",
+      "chase",
+      "suspense",
+      "explosions"
+    ],
+    "cultural_context": [],
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "year": 2015,
+        "title": "Mad Max: Fury Road"
+      },
+      {
+        "year": 2014,
+        "title": "John Wick"
+      },
+      {
+        "year": 2018,
+        "title": "Mission: Impossible - Fallout"
+      },
+      {
+        "year": 2008,
+        "title": "The Dark Knight"
+      },
+      {
+        "year": 1988,
+        "title": "Die Hard"
+      },
+      {
+        "year": 2022,
+        "title": "Top Gun: Maverick"
+      }
+    ],
+    "ending_preference": "triumphant",
+    "rewatch_tolerance": true,
+    "search_id": "937af931-5ffd-489a-933c-ef8aab91f830",
+    "cache_hit": true,
+    "exclude_recent_ids": [
+      "e17982bc-5158-498e-bdb5-8352ff8a65b8",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "c4bce06b-a2c7-48d4-bc6a-fa103addb645",
+      "337234a3-a00b-4649-89d8-578aeb71cef5",
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+      "aa02f15c-94df-4213-a625-946ed17ed06a",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.55,
+      "sadness": 0.1,
+      "anger": 0.4,
+      "fear": 0.6,
+      "surprise": 0.7,
+      "disgust": 0.15,
+      "anticipation": 0.85,
+      "trust": 0.5
+    },
+    "energy_level": 0.9,
+    "pace_preference": "fast",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.3,
+    "ending_preference": "triumphant",
+    "era_preference": {
+      "from": 1980,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "comedy",
+      "humor",
+      "drama",
+      "slowburn",
+      "emotional depth"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "937af931-5ffd-489a-933c-ef8aab91f830",
+  "search_keywords": [
+    "action",
+    "thriller",
+    "adventure",
+    "heist",
+    "combat",
+    "chase",
+    "suspense",
+    "explosions"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": true
+}

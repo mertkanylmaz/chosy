@@ -1,0 +1,138 @@
+{
+  "mood_id": "qm_rainy",
+  "text": "A cozy, warm and peaceful evening, calm and contemplative, slow-paced and quiet, not action, not thriller",
+  "ms": 1100,
+  "http_status": 200,
+  "response": {
+    "max_runtime": null,
+    "energy_level": 0.25,
+    "profile_name": "Cozy Evening Contemplation",
+    "visual_style": "lush",
+    "avoid_signals": [
+      "action",
+      "thriller",
+      "horror",
+      "violence",
+      "high stakes",
+      "fast paced"
+    ],
+    "era_preference": {
+      "to": 2025,
+      "from": 1970
+    },
+    "genres_exclude": [
+      "Action",
+      "Thriller"
+    ],
+    "genres_include": [
+      "Drama"
+    ],
+    "social_context": "alone",
+    "thematic_depth": 0.7,
+    "emotional_state": {
+      "joy": 0.65,
+      "fear": 0.05,
+      "anger": 0.05,
+      "trust": 0.8,
+      "disgust": 0.05,
+      "sadness": 0.25,
+      "surprise": 0.1,
+      "anticipation": 0.2
+    },
+    "narrative_style": "linear",
+    "pace_preference": "slow",
+    "search_keywords": [
+      "slice of life",
+      "drama",
+      "peaceful",
+      "intimate",
+      "quiet",
+      "contemplative",
+      "comfort",
+      "introspection"
+    ],
+    "cultural_context": [],
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "year": 2003,
+        "title": "Lost in Translation"
+      },
+      {
+        "year": 2016,
+        "title": "Moonlight"
+      },
+      {
+        "year": 2017,
+        "title": "A Ghost Story"
+      },
+      {
+        "year": 1995,
+        "title": "Before Sunrise"
+      },
+      {
+        "year": 2014,
+        "title": "Boyhood"
+      },
+      {
+        "year": 2019,
+        "title": "The Farewell"
+      }
+    ],
+    "ending_preference": "hopeful",
+    "rewatch_tolerance": true,
+    "search_id": "f2e75d91-1f0f-4570-b4e6-b04ec8556d06",
+    "cache_hit": true,
+    "exclude_recent_ids": [],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.25,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.1,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.8
+    },
+    "energy_level": 0.25,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action",
+      "thriller",
+      "horror",
+      "violence",
+      "high stakes",
+      "fast paced"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "f2e75d91-1f0f-4570-b4e6-b04ec8556d06",
+  "search_keywords": [
+    "slice of life",
+    "drama",
+    "peaceful",
+    "intimate",
+    "quiet",
+    "contemplative",
+    "comfort",
+    "introspection"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": true
+}

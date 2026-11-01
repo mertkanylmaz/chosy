@@ -1,0 +1,160 @@
+{
+  "mood_id": "qm_cozy",
+  "text": "Light, fun and entertaining, relaxing and easy, chill and cozy, no heavy thinking, not scary, not sad",
+  "ms": 1476,
+  "http_status": 200,
+  "response": {
+    "max_runtime": null,
+    "energy_level": 0.4,
+    "profile_name": "Light Fun Cozy",
+    "visual_style": "lush",
+    "avoid_signals": [
+      "horror",
+      "thriller",
+      "tragic",
+      "heavy drama",
+      "depressing"
+    ],
+    "era_preference": {
+      "to": 2025,
+      "from": 1970
+    },
+    "genres_exclude": [
+      "Horror",
+      "Drama",
+      "Thriller"
+    ],
+    "genres_include": [
+      "Comedy",
+      "Family",
+      "Animation"
+    ],
+    "social_context": "alone",
+    "thematic_depth": 0.2,
+    "emotional_state": {
+      "joy": 0.85,
+      "fear": 0.05,
+      "anger": 0.05,
+      "trust": 0.75,
+      "disgust": 0.05,
+      "sadness": 0.05,
+      "surprise": 0.3,
+      "anticipation": 0.2
+    },
+    "narrative_style": "linear",
+    "pace_preference": "medium",
+    "search_keywords": [
+      "comedy",
+      "feel-good",
+      "lighthearted",
+      "adventure",
+      "animation",
+      "comfort",
+      "humor",
+      "family friendly"
+    ],
+    "cultural_context": [],
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "year": 2017,
+        "title": "Paddington 2"
+      },
+      {
+        "year": 2014,
+        "title": "The Grand Budapest Hotel"
+      },
+      {
+        "year": 2016,
+        "title": "Hunt for the Wilderpeople"
+      },
+      {
+        "year": 2019,
+        "title": "Knives Out"
+      },
+      {
+        "year": 1995,
+        "title": "Clueless"
+      },
+      {
+        "year": 2019,
+        "title": "Toy Story 4"
+      }
+    ],
+    "ending_preference": "hopeful",
+    "rewatch_tolerance": true,
+    "search_id": "038772eb-2bc3-4c24-95f6-13eb9019ff79",
+    "cache_hit": true,
+    "exclude_recent_ids": [
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+      "9688fcab-7307-43e7-8c30-4a8d316b15fe",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "d3c52089-4d58-4002-8fda-fc1acadb54e2",
+      "6304ffc3-d437-4fda-9305-81b05f44cb79",
+      "0e53f958-2581-46d0-a5db-51ae0c81542b",
+      "3cad714d-b789-4eba-91b2-502c4931bd86",
+      "7eab97d1-1707-4777-b3a3-1a394b63b742",
+      "19dbad8f-7faa-4c48-98d7-19e6c2934669",
+      "e17982bc-5158-498e-bdb5-8352ff8a65b8",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "c4bce06b-a2c7-48d4-bc6a-fa103addb645",
+      "337234a3-a00b-4649-89d8-578aeb71cef5",
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+      "aa02f15c-94df-4213-a625-946ed17ed06a"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.75
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "thriller",
+      "tragic",
+      "heavy drama",
+      "depressing"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "038772eb-2bc3-4c24-95f6-13eb9019ff79",
+  "search_keywords": [
+    "comedy",
+    "feel-good",
+    "lighthearted",
+    "adventure",
+    "animation",
+    "comfort",
+    "humor",
+    "family friendly"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": true
+}

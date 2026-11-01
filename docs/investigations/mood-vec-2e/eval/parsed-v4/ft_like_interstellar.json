@@ -1,0 +1,160 @@
+{
+  "mood_id": "ft_like_interstellar",
+  "text": "Something like Interstellar",
+  "ms": 4669,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Epic Space Wonder",
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.45,
+      "fear": 0.5,
+      "anger": 0.1,
+      "surprise": 0.7,
+      "disgust": 0.05,
+      "trust": 0.75,
+      "anticipation": 0.8
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 2000,
+      "to": 2025
+    },
+    "cultural_context": [
+      "USA",
+      "international"
+    ],
+    "avoid_signals": [
+      "comedy",
+      "low budget",
+      "parody"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "space exploration",
+      "science fiction",
+      "time travel",
+      "parallel dimensions",
+      "epic",
+      "humanity survival",
+      "profound themes"
+    ],
+    "genres_include": [
+      "Science Fiction",
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [
+      {
+        "title": "Interstellar",
+        "year": 2014
+      }
+    ],
+    "suggested_titles": [
+      {
+        "title": "Inception",
+        "year": 2010
+      },
+      {
+        "title": "The Martian",
+        "year": 2015
+      },
+      {
+        "title": "Dune",
+        "year": 2021
+      },
+      {
+        "title": "Gravity",
+        "year": 2013
+      },
+      {
+        "title": "Arrival",
+        "year": 2016
+      },
+      {
+        "title": "Oppenheimer",
+        "year": 2023
+      }
+    ],
+    "search_id": "3565c85b-1c70-4d9d-a963-49f31acba875",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "aa78c71c-98e5-4edf-b813-2ce8da6a0fac",
+      "beba7a17-264c-4138-86e4-95aa0ce96f60",
+      "d1432789-e17b-4b3d-a0e2-866a21b4fa82",
+      "b508e4d1-af21-430d-b1bb-a2b34ad1039f",
+      "fe09cb19-0162-4fe4-bde8-299f2c806d2a",
+      "2cdcc9e2-acdf-4244-83e4-621e540a687d",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "7415f32f-4f8a-4845-94cc-f24c7f97eca7",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "7eedead6-a5b1-4786-9224-d402ce932586",
+      "4b603686-2cce-4f1f-8138-e277e4f139d0",
+      "29537a74-92e4-43b3-8605-2db82b11c894",
+      "87498e85-ec86-49db-b497-82334dbb7f1b",
+      "dc73a263-b307-42b7-a3bb-1c081bc3dd1c",
+      "ec2fff86-bb4b-40bb-b170-20890b263e82",
+      "afeda364-266d-4ddd-97ac-81bccd70dffa",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+      "fb9c1dff-ff45-4e74-93cb-f9409be39ac1"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.65,
+      "sadness": 0.45,
+      "anger": 0.1,
+      "fear": 0.5,
+      "surprise": 0.7,
+      "disgust": 0.05,
+      "anticipation": 0.8,
+      "trust": 0.75
+    },
+    "energy_level": 0.75,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.9,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 2000,
+      "to": 2025
+    },
+    "cultural_context": [
+      "USA",
+      "international"
+    ],
+    "avoid_signals": [
+      "comedy",
+      "low budget",
+      "parody"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "3565c85b-1c70-4d9d-a963-49f31acba875",
+  "search_keywords": [
+    "space exploration",
+    "science fiction",
+    "time travel",
+    "parallel dimensions",
+    "epic",
+    "humanity survival",
+    "profound themes"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

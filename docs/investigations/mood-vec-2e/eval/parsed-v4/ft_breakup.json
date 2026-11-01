@@ -1,0 +1,152 @@
+{
+  "mood_id": "ft_breakup",
+  "text": "Just went through a breakup",
+  "ms": 4538,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Heartbroken recovery",
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.85,
+      "fear": 0.3,
+      "anger": 0.4,
+      "surprise": 0.1,
+      "disgust": 0.2,
+      "trust": 0.25,
+      "anticipation": 0.35
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "happy ending",
+      "overly cheerful",
+      "toxic relationships",
+      "infidelity"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "heartbreak",
+      "breakup",
+      "romance",
+      "loss",
+      "relationships",
+      "melancholy",
+      "emotional journey",
+      "recovery"
+    ],
+    "genres_include": [
+      "Drama"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004
+      },
+      {
+        "title": "Forgetting Sarah Marshall",
+        "year": 2008
+      },
+      {
+        "title": "Blue Valentine",
+        "year": 2010
+      },
+      {
+        "title": "500 Days of Summer",
+        "year": 2009
+      },
+      {
+        "title": "Begin Again",
+        "year": 2013
+      },
+      {
+        "title": "Punch-Drunk Love",
+        "year": 2002
+      }
+    ],
+    "search_id": "f06a4ae2-41aa-464c-aa9c-c371a61cca76",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+      "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+      "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d",
+      "5656036c-0b1a-4fbf-9388-90a01ce7ba88",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812",
+      "4b42f33e-44c6-41b6-8e62-09630142d9bd",
+      "34d989b0-6e83-4507-af1d-961240dd21c0",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9",
+      "ac6c2730-4e84-42fe-adee-2af938779580",
+      "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+      "426992d1-4970-4076-ac0f-614085908df3",
+      "90b19326-b1f7-491f-a4ac-c8fd387addad",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "b9489777-1c66-40fe-bf26-202cbde61e00",
+      "18035914-aa4e-4880-8213-703a2373e208",
+      "82327826-46c2-474b-8c6e-216ce4595a74"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.2,
+      "sadness": 0.85,
+      "anger": 0.4,
+      "fear": 0.3,
+      "surprise": 0.1,
+      "disgust": 0.2,
+      "anticipation": 0.35,
+      "trust": 0.25
+    },
+    "energy_level": 0.2,
+    "pace_preference": "slow",
+    "visual_style": "raw",
+    "thematic_depth": 0.85,
+    "ending_preference": "bittersweet",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "happy ending",
+      "overly cheerful",
+      "toxic relationships",
+      "infidelity"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "f06a4ae2-41aa-464c-aa9c-c371a61cca76",
+  "search_keywords": [
+    "heartbreak",
+    "breakup",
+    "romance",
+    "loss",
+    "relationships",
+    "melancholy",
+    "emotional journey",
+    "recovery"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

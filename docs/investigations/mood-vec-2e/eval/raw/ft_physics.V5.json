@@ -1,0 +1,922 @@
+{
+  "mood_id": "ft_physics",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+        "tmdb_id": 286217,
+        "title": "The Martian",
+        "year": 2015,
+        "overview": "During a manned mission to Mars, Astronaut Mark Watney is presumed dead after a fierce storm and left behind by his crew. But Watney has survived and finds himself stranded and alone on the hostile planet. With only meager supplies, he must draw upon his ingenuity, wit and spirit to subsist and find a way to signal to Earth that he is alive.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 141,
+        "vote_average": 7.698,
+        "director": "Ridley Scott",
+        "similarity": 0.751708610639109,
+        "curation_tier": "core",
+        "match_reason": "spacecraft, planet mars, based on novel or book",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.663244081158254,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+        "tmdb_id": 266856,
+        "title": "The Theory of Everything",
+        "year": 2014,
+        "overview": "The Theory of Everything is the extraordinary story of one of the world’s greatest living minds, the renowned astrophysicist Stephen Hawking, who falls deeply in love with fellow Cambridge student Jane Wilde.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 123,
+        "vote_average": 7.83,
+        "director": "James Marsh",
+        "similarity": 0.624066886428369,
+        "curation_tier": "core",
+        "match_reason": "husband wife relationship, biography, based on true story",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "afeda364-266d-4ddd-97ac-81bccd70dffa",
+        "tmdb_id": 872585,
+        "title": "Oppenheimer",
+        "year": 2023,
+        "overview": "The story of J. Robert Oppenheimer's role in the development of the atomic bomb during World War II.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 181,
+        "vote_average": 8.032,
+        "director": "Christopher Nolan",
+        "similarity": 0.622134437566348,
+        "curation_tier": "core",
+        "match_reason": "Matches: physics",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "0e7987a9-efa3-488a-bbed-817f188eeb38",
+        "tmdb_id": 577922,
+        "title": "Tenet",
+        "year": 2020,
+        "overview": "Armed with only one word - Tenet - and fighting for the survival of the entire world, the Protagonist journeys through a twilight world of international espionage on a mission that will unfold in something beyond real time.",
+        "genres": [
+          "Action",
+          "Thriller",
+          "Science Fiction"
+        ],
+        "runtime": 150,
+        "vote_average": 7.176,
+        "director": "Christopher Nolan",
+        "similarity": 0.475000671653036,
+        "curation_tier": "core",
+        "match_reason": "assassin, espionage, spy",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 1.03299822187848,
+        "curation_tier": "core",
+        "match_reason": "Matches: discovery",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c30e864f-5463-4902-9128-c772cbbc5ac5",
+        "tmdb_id": 793,
+        "title": "Blue Velvet",
+        "year": 1986,
+        "overview": "The discovery of a severed human ear found in a field leads a young man on an investigation related to a beautiful, mysterious nightclub singer and a group of psychopathic criminals who have kidnapped her child.",
+        "genres": [
+          "Mystery",
+          "Thriller",
+          "Crime"
+        ],
+        "runtime": 120,
+        "vote_average": 7.607,
+        "director": "David Lynch",
+        "similarity": 0.982188859329591,
+        "curation_tier": "core",
+        "match_reason": "drug dealer, small town, sexual obsession",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+        "tmdb_id": 63,
+        "title": "Twelve Monkeys",
+        "year": 1995,
+        "overview": "In the year 2035, convict James Cole reluctantly volunteers to be sent back in time to discover the origin of a deadly virus that wiped out nearly all of the earth's population and forced the survivors into underground communities. But when Cole is mistakenly sent to 1990 instead of 1996, he's arrested and locked up in a mental hospital. There he meets psychiatrist Dr. Kathryn Railly and the son of a famous virus expert who may hold the key to the Army of the 12 Monkeys; thought to be responsible for unleashing the killer disease.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 129,
+        "vote_average": 7.603,
+        "director": "Terry Gilliam",
+        "similarity": 0.979900393693471,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 0.976435732180166,
+        "curation_tier": "core",
+        "match_reason": "utah, new zealand, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e3f7fb5f-9764-43dc-957f-a04777769afa",
+        "tmdb_id": 537996,
+        "title": "The Ballad of Buster Scruggs",
+        "year": 2018,
+        "overview": "Vignettes weaving together the stories of six individuals in the old West at the end of the Civil War. Following the tales of a sharp-shooting songster, a wannabe bank robber, two weary traveling performers, a lone gold prospector, a woman traveling the West to an uncertain future, and a motley crew of strangers undertaking a carriage ride.",
+        "genres": [
+          "Western",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 7.133,
+        "director": "Joel Coen",
+        "similarity": 0.975169740939064,
+        "curation_tier": "core",
+        "match_reason": "prostitute, native american, parody",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "422c986c-e309-4ce9-b63d-21c8e69eb0da",
+        "tmdb_id": 18438,
+        "title": "Castaway on the Moon",
+        "year": 2009,
+        "overview": "Mr. Kim is jobless, lost in debt and has been dumped by his girlfriend. He decides to end it all by jumping into the Han River – only to find himself washed up on a small, mid-river island. He soon abandons thoughts of suicide or rescue and begins a new life as a castaway. His antics catch the attention of a young woman whose apartment overlooks the river. Her discovery changes both their lives.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.913,
+        "director": "Lee Hae-jun",
+        "similarity": 0.969048136020193,
+        "curation_tier": "core",
+        "match_reason": "isolation, suicide attempt, loneliness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.96704295928878,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 0.956874000645404,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "523c4862-e8f8-4f4b-856d-18a6c507610e",
+        "tmdb_id": 206487,
+        "title": "Predestination",
+        "year": 2014,
+        "overview": "Predestination chronicles the life of a Temporal Agent sent on an intricate series of time-travel journeys designed to prevent future killers from committing their crimes. Now, on his final assignment, the Agent must stop the one criminal that has eluded him throughout time and prevent a devastating attack in which thousands of lives will be lost.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 98,
+        "vote_average": 7.416,
+        "director": "Michael Spierig",
+        "similarity": 0.937672852199208,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "22caba6c-df42-49fc-a6c0-6ebc21dc7f05",
+        "tmdb_id": 567,
+        "title": "Rear Window",
+        "year": 1954,
+        "overview": "A wheelchair-bound photographer spies on his neighbors from his apartment window and becomes convinced one of them has committed murder.",
+        "genres": [
+          "Thriller",
+          "Mystery",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 8.339,
+        "director": "Alfred Hitchcock",
+        "similarity": 0.934043437559603,
+        "curation_tier": "core",
+        "match_reason": "nurse, isolation, photographer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0c750f1b-425a-4da5-b2cd-b0482e9ddc36",
+        "tmdb_id": 284,
+        "title": "The Apartment",
+        "year": 1960,
+        "overview": "Bud Baxter is a minor clerk in a huge New York insurance company, until he discovers a quick way to climb the corporate ladder. He lends out his apartment to the executives as a place to take their mistresses. Although he often has to deal with the aftermath of their visits, one night he's left with a major problem to solve.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 126,
+        "vote_average": 8.189,
+        "director": "Billy Wilder",
+        "similarity": 0.933229339300658,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, new york city, lovesickness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ac4c8787-aee7-487b-9307-6b94f5e08565",
+        "tmdb_id": 11005,
+        "title": "Awakenings",
+        "year": 1990,
+        "overview": "Dr. Malcolm Sayer, a shy research physician, uses an experimental drug to \"awaken\" the catatonic victims of a rare disease. Leonard is the first patient to receive the controversial treatment. His awakening, filled with awe and enthusiasm, proves a rebirth for Sayer too, as the exuberant patient reveals life's simple but unutterably sweet pleasures to the introverted doctor.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.773,
+        "director": "Penny Marshall",
+        "similarity": 0.928964432448876,
+        "curation_tier": "core",
+        "match_reason": "Matches: experiment",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ea4ad9a0-7cba-47f8-8305-9600c03e79e4",
+        "tmdb_id": 70981,
+        "title": "Prometheus",
+        "year": 2012,
+        "overview": "A team of explorers discover a clue to the origins of mankind on Earth, leading them on a journey to the darkest corners of the universe. There, they must fight a terrifying battle to save the future of the human race.",
+        "genres": [
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 124,
+        "vote_average": 6.592,
+        "director": "Ridley Scott",
+        "similarity": 0.913849828142829,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "92955d8e-1f7e-475c-8805-119b41a39445",
+        "tmdb_id": 601,
+        "title": "E.T. the Extra-Terrestrial",
+        "year": 1982,
+        "overview": "An alien is left behind on Earth and saved by the 10-year-old Elliott who decides to keep him hidden in his home. While a task force hunts for the extra-terrestrial, Elliott, his brother, and his little sister Gertie form an emotional bond with their new friend, and try to help him find his way home.",
+        "genres": [
+          "Science Fiction",
+          "Adventure",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 115,
+        "vote_average": 7.512,
+        "director": "Steven Spielberg",
+        "similarity": 0.879004575876707,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d59969b7-24cd-49cf-9aeb-9e6debc095ec",
+        "tmdb_id": 9016,
+        "title": "Treasure Planet",
+        "year": 2002,
+        "overview": "When space galleon cabin boy Jim Hawkins discovers a map to an intergalactic \"loot of a thousand worlds,\" a cyborg cook named John Silver teaches him to battle supernovas and space storms on their journey to find treasure.",
+        "genres": [
+          "Science Fiction",
+          "Adventure",
+          "Animation",
+          "Family",
+          "Fantasy"
+        ],
+        "runtime": 96,
+        "vote_average": 7.561,
+        "director": "Ron Clements",
+        "similarity": 0.875933115614553,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0bba7a5f-db1e-4c07-8408-4ce63fe1e943",
+        "tmdb_id": 17654,
+        "title": "District 9",
+        "year": 2009,
+        "overview": "Thirty years ago, aliens arrive on Earth. Not to conquer or give aid, but to find refuge from their dying planet. Separated from humans in a South African area called District 9, the aliens are managed by Multi-National United, which is unconcerned with the aliens' welfare but will do anything to master their advanced technology. When a company field agent contracts a mysterious virus that begins to alter his DNA, there is only one place he can hide: District 9.",
+        "genres": [
+          "Science Fiction"
+        ],
+        "runtime": 112,
+        "vote_average": 7.462,
+        "director": "Neill Blomkamp",
+        "similarity": 0.870283332048988,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "39e89fac-6172-4826-80a6-4d2b2fcd08af",
+        "tmdb_id": 470878,
+        "title": "I Can Only Imagine",
+        "year": 2018,
+        "overview": "Growing up in Greenville, Texas, Bart Millard suffers physical and emotional abuse at the hands of his father, Arthur. When Arthur becomes terminally ill, he finds redemption by embracing his faith and rediscovering his love for his son. Years later, Bart's troubled childhood and mended relationship with his dad inspires him to write the hit song \"I Can Only Imagine\" as singer of the Christian band MercyMe.",
+        "genres": [
+          "Music",
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.526,
+        "director": "Jon Erwin",
+        "similarity": 0.865322060052317,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "da9f43d4-93ba-42bc-abd2-73cb94e5f0cb",
+        "tmdb_id": 1954,
+        "title": "The Butterfly Effect",
+        "year": 2004,
+        "overview": "A young man struggles to access sublimated childhood memories. He finds a technique that allows him to travel back into the past, to occupy his childhood body and change history. However, he soon finds that every change he makes has unexpected consequences.",
+        "genres": [
+          "Science Fiction",
+          "Thriller"
+        ],
+        "runtime": 113,
+        "vote_average": 7.571,
+        "director": "J. Mackye Gruber",
+        "similarity": 0.86141117215025,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8b75b450-8f43-40c7-aa88-49f5063cae26",
+        "tmdb_id": 9693,
+        "title": "Children of Men",
+        "year": 2006,
+        "overview": "In 2027, in a chaotic world in which humans can no longer procreate, a former activist agrees to help transport a miraculously pregnant woman to a sanctuary at sea, where her child's birth may help scientists save the future of humankind.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Action"
+        ],
+        "runtime": 109,
+        "vote_average": 7.6,
+        "director": "Alfonso Cuarón",
+        "similarity": 0.860786803972602,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "506deb6a-2e79-4e92-b6ec-d3c539910719",
+        "tmdb_id": 102899,
+        "title": "Ant-Man",
+        "year": 2015,
+        "overview": "Armed with the astonishing ability to shrink in scale but increase in strength, master thief Scott Lang must embrace his inner-hero and help his mentor, Doctor Hank Pym, protect the secret behind his spectacular Ant-Man suit from a new generation of towering threats. Against seemingly insurmountable obstacles, Pym and Lang must plan and pull off a heist that will save the world.",
+        "genres": [
+          "Science Fiction",
+          "Adventure",
+          "Action"
+        ],
+        "runtime": 117,
+        "vote_average": 7.066,
+        "director": "Peyton Reed",
+        "similarity": 0.859228252611813,
+        "curation_tier": "extended",
+        "match_reason": "superhero, ant, master thief",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "76b143d7-eb75-4f1a-a2ce-c9a72dc27d9f",
+        "tmdb_id": 13475,
+        "title": "Star Trek",
+        "year": 2009,
+        "overview": "The fate of the galaxy rests in the hands of bitter rivals. One, James Kirk, is a delinquent, thrill-seeking Iowa farm boy. The other, Spock, a Vulcan, was raised in a logic-based society that rejects all emotion. As fiery instinct clashes with calm reason, their unlikely but powerful partnership is the only thing capable of leading their crew through unimaginable danger, boldly going where no one has gone before. The human adventure has begun again.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 127,
+        "vote_average": 7.43,
+        "director": "J.J. Abrams",
+        "similarity": 0.856196780541923,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9b94ab5-f63a-43a0-aeb2-1e3a048c5980",
+        "tmdb_id": 670292,
+        "title": "The Creator",
+        "year": 2023,
+        "overview": "Amid a future war between the human race and the forces of artificial intelligence, a hardened ex-special forces agent grieving the disappearance of his wife, is recruited to hunt down and kill the Creator, the elusive architect of advanced AI who has developed a mysterious weapon with the power to end the war—and mankind itself.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 134,
+        "vote_average": 7.008,
+        "director": "Gareth Edwards",
+        "similarity": 0.842357033690537,
+        "curation_tier": "extended",
+        "match_reason": "artificial intelligence (a.i.), asia, cyberpunk",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "985ea621-126b-406a-bb8e-62834540c2bd",
+        "tmdb_id": 520763,
+        "title": "A Quiet Place Part II",
+        "year": 2021,
+        "overview": "Following the events at home, the Abbott family now face the terrors of the outside world. Forced to venture into the unknown, they realize that the creatures that hunt by sound are not the only threats that lurk beyond the sand path.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Horror"
+        ],
+        "runtime": 96,
+        "vote_average": 7.439,
+        "director": "John Krasinski",
+        "similarity": 0.839405719430158,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e2b093ea-d1ff-47ba-af57-c562bf67f5f3",
+        "tmdb_id": 1288069,
+        "title": "Tenzing",
+        "year": 2026,
+        "overview": "A determined man embarks on a high-stakes quest—and defies seemingly impossible odds—to fulfill his dream of being the first to reach the summit of Mount Everest.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 126,
+        "vote_average": 8.174,
+        "director": "Jennifer Peedom",
+        "similarity": 0.837931159455671,
+        "curation_tier": "trending",
+        "match_reason": "nepal, based on true story, mountaineering",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8e5108f4-d6fd-465d-999d-92adaedbc442",
+        "tmdb_id": 558,
+        "title": "Spider-Man 2",
+        "year": 2004,
+        "overview": "Peter Parker is going through a major identity crisis. Burned out from being Spider-Man, he decides to shelve his superhero alter ego, which leaves the city suffering in the wake of carnage left by the evil Doc Ock. In the meantime, Parker still can't act on his feelings for Mary Jane Watson, a girl he's loved since childhood. A certain anger begins to brew in his best friend Harry Osborn as well...",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 127,
+        "vote_average": 7.332,
+        "director": "Sam Raimi",
+        "similarity": 0.83194056976567,
+        "curation_tier": "extended",
+        "match_reason": "new york city, dual identity, love of one's life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.734009108546146,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "6a39f080-c163-4ca1-aa86-91f7fa6d16fb",
+        "tmdb_id": 1891,
+        "title": "The Empire Strikes Back",
+        "year": 1980,
+        "overview": "The epic saga continues as Luke Skywalker, in hopes of defeating the evil Galactic Empire, learns the ways of the Jedi from aging master Yoda. But Darth Vader is more determined than ever to capture Luke. Meanwhile, rebel leader Princess Leia, cocky Han Solo, Chewbacca, and droids C-3PO and R2-D2 are thrown into various stages of capture, betrayal and despair.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 124,
+        "vote_average": 8.393,
+        "director": "Irvin Kershner",
+        "similarity": 0.732405068255642,
+        "curation_tier": "core",
+        "match_reason": "rebellion, android, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "b11c44d8-9513-4385-83d7-3fc3e217cee8",
+        "tmdb_id": 11,
+        "title": "Star Wars",
+        "year": 1977,
+        "overview": "Princess Leia is captured and held hostage by the evil Imperial forces in their effort to take over the galactic Empire. Venturesome Luke Skywalker and dashing captain Han Solo team together with the loveable robot duo R2-D2 and C-3PO to rescue the beautiful princess and restore peace and justice in the Empire.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 121,
+        "vote_average": 8.205,
+        "director": "George Lucas",
+        "similarity": 0.667883620084885,
+        "curation_tier": "core",
+        "match_reason": "empire, galaxy, rebellion",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "65ccbf40-4ab2-4c3b-8879-24630be7cb9f",
+        "tmdb_id": 24428,
+        "title": "The Avengers",
+        "year": 2012,
+        "overview": "When an unexpected enemy emerges and threatens global safety and security, Nick Fury, director of the international peacekeeping agency known as S.H.I.E.L.D., finds himself in need of a team to pull the world back from the brink of disaster. Spanning the globe, a daring recruitment effort begins!",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 143,
+        "vote_average": 8.03,
+        "director": "Joss Whedon",
+        "similarity": 0.659724329116503,
+        "curation_tier": "core",
+        "match_reason": "new york city, superhero, shield",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.646417035421338,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "6994d1bd-aee5-45bf-b4d0-952d3ebfcb09",
+        "tmdb_id": 299536,
+        "title": "Avengers: Infinity War",
+        "year": 2018,
+        "overview": "As the Avengers and their allies have continued to protect the world from threats too large for any one hero to handle, a new danger has emerged from the cosmic shadows: Thanos. A despot of intergalactic infamy, his goal is to collect all six Infinity Stones, artifacts of unimaginable power, and use them to inflict his twisted will on all of reality. Everything the Avengers have fought for has led up to this moment - the fate of Earth and existence itself has never been more uncertain.",
+        "genres": [
+          "Adventure",
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 149,
+        "vote_average": 8.235,
+        "director": "Joe Russo",
+        "similarity": 0.645777443421359,
+        "curation_tier": "core",
+        "match_reason": "sacrifice, magic, superhero",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "1bcffd15-5987-43b5-822f-393ec803a8a0",
+        "tmdb_id": 105,
+        "title": "Back to the Future",
+        "year": 1985,
+        "overview": "Eighties teenager Marty McFly is accidentally sent back in time to 1955, inadvertently disrupting his parents' first meeting and attracting his mother's romantic interest. Marty must repair the damage to history by rekindling his parents' romance and - with the help of his eccentric inventor friend Doc Brown - return to 1985.",
+        "genres": [
+          "Adventure",
+          "Comedy",
+          "Science Fiction"
+        ],
+        "runtime": 116,
+        "vote_average": 8.326,
+        "director": "Robert Zemeckis",
+        "similarity": 0.644437519037128,
+        "curation_tier": "core",
+        "match_reason": "flying car, race against time, clock tower",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.625552643480586,
+        "curation_tier": "core",
+        "match_reason": "dying and death, suicide, class society",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "e289c8e4-9255-4b5a-a156-c2d77b31d6c0",
+        "tmdb_id": 299534,
+        "title": "Avengers: Endgame",
+        "year": 2019,
+        "overview": "After the devastating events of Avengers: Infinity War, the universe is in ruins due to the efforts of the Mad Titan, Thanos. With the help of remaining allies, the Avengers must assemble once more in order to undo Thanos' actions and restore order to the universe once and for all, no matter what consequences may be in store.",
+        "genres": [
+          "Adventure",
+          "Science Fiction",
+          "Action"
+        ],
+        "runtime": 181,
+        "vote_average": 8.235,
+        "director": "Anthony Russo",
+        "similarity": 0.586841829782011,
+        "curation_tier": "core",
+        "match_reason": "superhero, time travel, space travel",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f4f6f64b-c4e3-4a4c-bad8-47b3fc0edf74",
+        "tmdb_id": 19995,
+        "title": "Avatar",
+        "year": 2009,
+        "overview": "In the 22nd century, a paraplegic Marine is dispatched to the moon Pandora on a unique mission, but becomes torn between following orders and protecting an alien civilization.",
+        "genres": [
+          "Science Fiction",
+          "Action",
+          "Adventure"
+        ],
+        "runtime": 162,
+        "vote_average": 7.604,
+        "director": "James Cameron",
+        "similarity": 0.555293530599662,
+        "curation_tier": "core",
+        "match_reason": "paraplegic, attachment to nature, culture clash",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 2207,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 2207,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 4575,
+      "v4": 2211,
+      "pick": 1414,
+      "reasons": 1816
+    },
+    "visible_ms": 8200,
+    "parse_cache_hit": false,
+    "four": [
+      "afeda364-266d-4ddd-97ac-81bccd70dffa",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+      "fb9c1dff-ff45-4e74-93cb-f9409be39ac1"
+    ],
+    "reranked": true,
+    "reasons": {
+      "afeda364-266d-4ddd-97ac-81bccd70dffa": "Chronicles the physics revolution that defined the atomic age.",
+      "de6f6bb0-883d-4409-8765-2dcf98b3f611": "Portrait of a mind that transformed our understanding of physics.",
+      "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d": "Survival through applied physics and problem-solving on another planet.",
+      "fb9c1dff-ff45-4e74-93cb-f9409be39ac1": "Explores gravity, relativity, and spacetime through epic visual storytelling."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1148,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "afeda364-266d-4ddd-97ac-81bccd70dffa",
+          "de6f6bb0-883d-4409-8765-2dcf98b3f611",
+          "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+          "fb9c1dff-ff45-4e74-93cb-f9409be39ac1"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 1801,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+          "afeda364-266d-4ddd-97ac-81bccd70dffa",
+          "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d",
+          "de6f6bb0-883d-4409-8765-2dcf98b3f611"
+        ],
+        "reasons": {
+          "fb9c1dff-ff45-4e74-93cb-f9409be39ac1": "Explores gravity, relativity, and spacetime through epic visual storytelling.",
+          "afeda364-266d-4ddd-97ac-81bccd70dffa": "Chronicles the physics revolution that defined the atomic age.",
+          "f25b16ea-019d-40c7-bdca-6e8c4ebe3e9d": "Survival through applied physics and problem-solving on another planet.",
+          "de6f6bb0-883d-4409-8765-2dcf98b3f611": "Portrait of a mind that transformed our understanding of physics."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

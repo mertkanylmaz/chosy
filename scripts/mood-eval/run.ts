@@ -14,12 +14,15 @@
  *   npx tsx scripts/mood-eval/run.ts --report                        (yalnız rapor)
  * Bayraklar: --reparse (parse'ı zorla), --limit N, --mood <id>, --variant, --stage rpc|rerank|all.
  *
- * 2d (V4 = V3 + önbellekli parse, 6 öneri, rerank 20 aday/15 kelime; DEPLOY SONRASI koşulur):
+ * V5 (istemci hattı, DEPLOY SONRASI koşulur): services/moodGauntlet.ts'in saf hattı DOĞRUDAN kullanılır
+ *   (parse v2 + quick_mood_id → match_films_v4 → id-rerank {count:4, reason:false, ilk 20} → reasons {reason:true, yalnız 4 film});
+ *   aşama süreleri parse / v4 / pick / reasons ayrı ölçülür (eval pacing sanal saatle düşülür).
  *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2e/eval npx tsx scripts/mood-eval/run.ts --variant V5
- *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/run.ts --cached-pass
- *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2d/eval npx tsx scripts/mood-eval/summary-2d.ts
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2e/eval npx tsx scripts/mood-eval/run.ts --cached-pass
+ *   MOOD_EVAL_OUT=docs/investigations/mood-vec-2e/eval npx tsx scripts/mood-eval/summary-2d.ts
  *   --cached-pass: yalnız 8 quick mood; parse-mood'u AYNI metinle ikinci kez çağırır (cache_hit şart),
- *   RPC + rerank'i (yerel rerank önbelleği KAPALI) yeniden ölçer. Her çağrı arama kotası tüketir.
+ *   tüm V5 hattını yeniden ölçer. Kotalar AYRI sayaçlarla: id-rerank 25+8, reasons 25+8 (günlük sınır 60 altında).
+ *   Yoğunluk ve "Başka bir dörtlü" eval'de yoktur.
  *
  * Kimlik: kalıcı anonim eval hesabı (session.ts, .session.json — repoya girmez).
  * Gizli bilgi loglanmaz. Service role kullanılmaz.
@@ -46,15 +49,21 @@ import { GAUNTLET_EDGE_REGION } from '../../constants/edgeRegion';
 import { FINAL_CAP, RELATIVE_QUALITY_FLOOR } from '../../utils/moodQualityGate';
 import { DEFAULT_BASE_RATING, buildRelaxationSteps } from '../../utils/relaxationChain';
 import { VECTOR_DIM, VECTOR_LAYOUT, tasteProfileToVector, type TasteProfile } from '../../services/vectorEncoder';
+// V5 hattı: istemcinin SAF orkestrasyonu doğrudan kullanılır (RN/ağ yok; bağımlılıklar aşağıda enjekte edilir).
+import {
+  FOUR, RERANK_CANDIDATES, V4_MATCH_COUNT, fetchReasons, startMoodGauntlet,
+  type FallbackStage, type MatchRow, type MatchV4Args, type MoodGauntletDeps, type ParsedMoodV2,
+  type PipelineStageName, type RerankOutcome, type TitleRef,
+} from '../../services/moodGauntlet';
 
 import {
   ALL_VARIANTS, CACHED_PASS_DIR, CACHE_DIR, LEDGER_FILE, LEGACY_PARSED_DIR, PARSED_DIR, PARSED_V2_DIR,
   PARSED_V4_DIR, RAW_DIR, VARIANTS,
   loadMoods, rawFile, readJson, writeJson,
   type CachedPassRecord, type Ledger, type Mood, type ParsedFile, type RawRecord, type RerankRecord, type Row,
-  type Variant,
+  type RpcAttempt, type V5Block, type V5Call, type Variant,
 } from './common';
-import { buildReports } from './report';
+import { buildReports, loadMeta } from './report';
 import { envOrThrow, openEvalSession, type EvalSession } from './session';
 
 // ─── Betik sabitleri (parityCheck uygulamayla karşılaştırır) ─────────────────
@@ -76,6 +85,17 @@ const C = {
   CAP_PARSE_CACHED_TOTAL: 10,
   CAP_RERANK_TOTAL: 50,
   CAP_RERANK_PER_UTC_DAY: 55,
+  // V5 (istemci hattı): iki AYRI sunucu sayacı (rerank-films-daily / rerank-films-reasons-daily),
+  // her biri 25 mood + 8 önbellekli geçiş = 33; günlük sınır (premium/legacy 60) altında kalır.
+  CAP_IDS_TOTAL: 33,
+  CAP_REASONS_TOTAL: 33,
+  CAP_IDS_PER_UTC_DAY: 55,
+  CAP_REASONS_PER_UTC_DAY: 55,
+  // services/moodGauntletDeps.ts sabitleri (parityCheck kaynaktan doğrular)
+  CLIENT_PARSE_TIMEOUT_MS: 15_000,
+  CLIENT_RERANK_IDS_TIMEOUT_MS: 8_000,
+  CLIENT_RERANK_REASONS_TIMEOUT_MS: 10_000,
+  CLIENT_RERANK_OVERVIEW_MAX: 120,
   HTTP_TIMEOUT_MS: 40_000,
   TOKEN_MAX_AGE_MS: 40 * 60_000,
 } as const;
@@ -134,6 +154,10 @@ async function parityCheck(moods: Mood[], session: EvalSession): Promise<void> {
   const rec = read('services/recommendations.ts');
   const parser = read('services/tasteParser.ts');
   const rerankFn = read('supabase/functions/rerank-films/index.ts');
+  // 2-1b: reason sabitleri ve sayaç adları saf modüle taşındı (index.ts yalnız içe aktarır).
+  const reasonMod = read('supabase/functions/_shared/rerankReason.ts');
+  const clientDeps = read('services/moodGauntletDeps.ts');
+  const clientPipe = read('services/moodGauntlet.ts');
   const blend = read('services/userVectorRefresh.ts');
   const screen = read('components/Home/MoodSearchScreen/index.tsx');
   const v3Start = rec.indexOf('async function callMatchFilmsV3');
@@ -170,9 +194,36 @@ async function parityCheck(moods: Mood[], session: EvalSession): Promise<void> {
     rec.indexOf('await callRerankFilms(') > 0 && rec.indexOf('applyQualityGate(data)') > rec.indexOf('await callRerankFilms(') ? 'doğru' : 'YANLIŞ');
   add('rerank edge aday üst sınırı', 50, firstMatch(rerankFn, /body\.candidates\.slice\(0, (\d+)\)/));
   add('rerank edge overview kırpma (v1 yolu)', C.RERANK_OVERVIEW_MAX, firstMatch(rerankFn, /const overviewMax = withReason \? REASON_OVERVIEW_MAX : (\d+)/));
-  add('rerank edge overview kırpma (reason yolu)', C.V2_OVERVIEW_MAX, firstMatch(rerankFn, /const REASON_OVERVIEW_MAX = (\d+)/));
-  add('rerank edge reason aday sınırı', C.V2_RERANK_CANDIDATES, firstMatch(rerankFn, /const REASON_MAX_CANDIDATES = (\d+)/));
-  add('rerank edge reason kelime sınırı', 15, firstMatch(rerankFn, /const REASON_MAX_WORDS = (\d+)/));
+  add('rerank edge overview kırpma (reason yolu)', C.V2_OVERVIEW_MAX, firstMatch(reasonMod, /export const REASON_OVERVIEW_MAX = (\d+)/));
+  add('rerank edge reason aday sınırı', C.V2_RERANK_CANDIDATES, firstMatch(reasonMod, /export const REASON_MAX_CANDIDATES = (\d+)/));
+  add('rerank edge reason kelime sınırı', 12, firstMatch(reasonMod, /export const REASON_MAX_WORDS = (\d+)/));
+  // V5 sayaçları: id-rerank ve gerekçe AYRI sayaç; ikisi de index.ts'te dailyCounterKey(withReason) ile seçilir.
+  add('sayaç adı: id-rerank (pick)', 'rerank-films-daily', firstMatch(reasonMod, /export const RERANK_IDS_DAILY_KEY = '([^']+)'/));
+  add('sayaç adı: gerekçe (reasons)', 'rerank-films-reasons-daily', firstMatch(reasonMod, /export const RERANK_REASONS_DAILY_KEY = '([^']+)'/));
+  add('sayaç seçimi index.ts (dailyCounterKey(withReason))', 'var',
+    /checkDailyLimit\(auth\.authUserId, dailyCounterKey\(withReason\), maxPerDay\)/.test(rerankFn) ? 'var' : 'YOK');
+  // V5 istemci hattı: sabitler kaynaktan, çağrı biçimi regex ile doğrulanır.
+  add('istemci RERANK_CANDIDATES (id-rerank adayları)', C.V2_RERANK_CANDIDATES, RERANK_CANDIDATES);
+  add('istemci V4_MATCH_COUNT', C.V3_MATCH_COUNT, V4_MATCH_COUNT);
+  add('istemci FOUR', C.V3_RERANK_COUNT, FOUR);
+  add('istemci rerank overview kırpma', C.CLIENT_RERANK_OVERVIEW_MAX, firstMatch(clientDeps, /const RERANK_OVERVIEW_MAX = (\d+)/));
+  add('istemci parse zaman aşımı', C.CLIENT_PARSE_TIMEOUT_MS, firstMatch(clientDeps, /const PARSE_TIMEOUT_MS = ([\d_]+)/).replace(/_/g, ''));
+  add('istemci id-rerank zaman aşımı', C.CLIENT_RERANK_IDS_TIMEOUT_MS, firstMatch(clientDeps, /const RERANK_IDS_TIMEOUT_MS = ([\d_]+)/).replace(/_/g, ''));
+  add('istemci gerekçe zaman aşımı', C.CLIENT_RERANK_REASONS_TIMEOUT_MS, firstMatch(clientDeps, /const RERANK_REASONS_TIMEOUT_MS = ([\d_]+)/).replace(/_/g, ''));
+  add('istemci pick: id-rerank reason:false', 'var',
+    /count: FOUR, withReasons: false \}/.test(clientPipe) ? 'var' : 'YOK');
+  add('istemci reasons: yalnız dörtlü, reason:true', 'var',
+    /candidates: set\.four, count: FOUR, withReasons: true \}/.test(clientPipe) ? 'var' : 'YOK');
+  add('istemci rerank gövdesi (reason: input.withReasons, count)', 'var',
+    /count: input\.count,\s*reason: input\.withReasons,/.test(clientDeps) ? 'var' : 'YOK');
+  add('istemci rerank bölge sabitleme (forceFunctionRegion + x-region)', 'var',
+    /rerank-films\?forceFunctionRegion=\$\{GAUNTLET_EDGE_REGION\}[\s\S]{0,200}'x-region': GAUNTLET_EDGE_REGION/.test(clientDeps) ? 'var' : 'YOK');
+  add('istemci parse gövdesi (schema_version:2, client_search_id, quick_mood_id)', 'var',
+    /schema_version: 2,\s*client_search_id: input\.clientSearchId,[\s\S]{0,80}quick_mood_id: input\.quickMoodId/.test(clientDeps) ? 'var' : 'YOK');
+  add('istemci match_films_v4 argüman anahtarları', 'tamam',
+    ['query_vector', 'user_vector', 'match_count', 'min_similarity', 'exclude_ids', 'per_director_cap', 'tier_boost',
+      'exclude_archive', 'genres_include', 'genres_exclude', 'max_runtime', 'reference_titles', 'suggested_titles']
+      .every((k) => clientDeps.includes(k)) ? 'tamam' : 'EKSİK');
   {
     const idsSrc = firstMatch(read('supabase/functions/_shared/moodParseCache.ts'), /QUICK_MOOD_IDS[^=]*=\s*\[([^\]]*)\]/);
     const ids = [...idsSrc.matchAll(/'([a-z]+)'/g)].map((m) => m[1]).sort().join(',');
@@ -243,6 +294,13 @@ interface Ctx {
   ledger: Ledger;
   calls: number;
   failures: number;
+  /** V5 sanal saat: eval'in kendi bekleme süreleri (pacing) toplamı; aşama süreleri bunu düşer. */
+  slept: number;
+  /**
+   * V5: istemci hattı rerank hatalarını yutar (yedek yola düşer). 429/tavan gibi DUR koşulları bu yüzden
+   * burada işaretlenir; hat bitince çağıran StopError fırlatır.
+   */
+  stopMsg: string | null;
 }
 
 async function token(ctx: Ctx): Promise<string> {
@@ -255,7 +313,10 @@ async function token(ctx: Ctx): Promise<string> {
 
 async function llmGate(ctx: Ctx): Promise<void> {
   const wait = ctx.ledger.last_llm_at + C.MIN_LLM_GAP_MS - Date.now();
-  if (wait > 0) await sleep(wait);
+  if (wait > 0) {
+    await sleep(wait);
+    ctx.slept += wait;
+  }
   ctx.ledger.last_llm_at = Date.now();
   writeJson(LEDGER_FILE, ctx.ledger);
 }
@@ -579,9 +640,8 @@ async function runRerank(
   return rec;
 }
 
-// ─── V4 önbellekli geçiş (2d) ────────────────────────────────────────────────
+// ─── Yardımcılar (V3/V4 parse gövdesi) ───────────────────────────────────────
 
-/** parse-mood v2'yi bir kez çağırır; yanıt gövdesini ve süreyi döner (önbellek isabeti çağıranda denetlenir). */
 /** moods.json qm_* kimlikleri → istemci MOOD_CARDS id'leri (= sunucu QUICK_MOOD_IDS). */
 const QUICK_MOOD_CLIENT_ID: Record<string, string> = {
   qm_rainy: 'rainy', qm_mindbending: 'mindbending', qm_date: 'datenight', qm_adrenaline: 'adrenaline',
@@ -594,46 +654,398 @@ function parseV2Body(mood: Mood): Record<string, unknown> {
   return { raw_input: mood.text, schema_version: 2, ...(quickId ? { quick_mood_id: quickId } : {}) };
 }
 
-async function callParseV2(ctx: Ctx, mood: Mood): Promise<{ body: Record<string, unknown>; ms: number }> {
-  const url = envOrThrow('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
-  const anon = envOrThrow('SUPABASE_ANON_KEY', 'EXPO_PUBLIC_SUPABASE_ANON_KEY');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), C.HTTP_TIMEOUT_MS);
-  const t0 = Date.now();
-  let res: Response;
-  try {
-    res = await fetch(`${url}/functions/v1/parse-mood?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
-      method: 'POST',
-      headers: {
-        'x-region': GAUNTLET_EDGE_REGION,
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${await token(ctx)}`,
-        apikey: anon,
-      },
-      body: JSON.stringify(parseV2Body(mood)),
-      signal: controller.signal,
-    });
-  } catch (e) {
-    clearTimeout(timer);
-    noteFailure(ctx, `cached-pass parse ${mood.id}: ${String(e)}`);
-    throw new StopError(`cached-pass parse ${mood.id} ağ hatası: ${String(e)}`);
-  }
-  clearTimeout(timer);
-  const ms = Date.now() - t0;
-  const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
-  httpStop(res.status, `cached-pass parse ${mood.id}`);
-  if (!res.ok) {
-    noteFailure(ctx, `cached-pass parse ${mood.id}: HTTP ${res.status} ${JSON.stringify(body).slice(0, 200)}`);
-    throw new StopError(`cached-pass parse ${mood.id} başarısız (HTTP ${res.status}).`);
-  }
-  return { body, ms };
-}
+// ─── V5: istemci hattı (services/moodGauntlet.ts DOĞRUDAN) ───────────────────
 
 /**
- * Quick mood'lar için ikinci geçiş: aynı metin → parse-mood önbellekten (0 Haiku), sonra RPC + rerank.
+ * Hat kopyalanmaz: `startMoodGauntlet` + `fetchReasons` uygulamadakiyle AYNI koddur. Yalnız
+ * `MoodGauntletDeps` (ağ bağlaması) burada Node için yeniden yazıldı; kaynak karşılığı
+ * services/moodGauntletDeps.ts (parityCheck sabitleri ve çağrı biçimini kaynaktan doğrular).
+ * Eval farkları (bilinçli): yoğunluk / "Başka bir dörtlü" yok; loadExclusions soğuk hesapta boş
+ * (V3 ile aynı); poster prefetch yok (bloklamaz). Eval'in kendi bekleme süreleri (pacing) sanal
+ * saatle aşama sürelerinden düşülür.
+ */
+
+interface V5Capture {
+  calls: V5Call[];
+  fallbacks: string[];
+  errors: string[];
+  attempts: RpcAttempt[];
+  searchId: string | null;
+  parseMs: number;
+  parseCacheHit: boolean;
+  parsedBody: Record<string, unknown> | null;
+}
+
+const stringArr = (v: unknown): string[] =>
+  Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+
+const titleRefsOf = (v: unknown): TitleRef[] =>
+  Array.isArray(v)
+    ? v
+        .map((x) => {
+          const t = (x as { title?: unknown } | null)?.title;
+          const y = (x as { year?: unknown } | null)?.year;
+          return typeof t === 'string' && t.length > 0 ? { title: t, year: typeof y === 'number' ? y : null } : null;
+        })
+        .filter((x): x is TitleRef => x !== null)
+    : [];
+
+function bump(map: Record<string, number> | undefined, day: string): Record<string, number> {
+  const out = { ...(map ?? {}) };
+  out[day] = (out[day] ?? 0) + 1;
+  return out;
+}
+
+function makeEvalDeps(
+  ctx: Ctx, mood: Mood, cap: V5Capture, opts: { cached: boolean; savePrimary: boolean },
+): MoodGauntletDeps {
+  const url = envOrThrow('SUPABASE_URL', 'EXPO_PUBLIC_SUPABASE_URL');
+  const anon = envOrThrow('SUPABASE_ANON_KEY', 'EXPO_PUBLIC_SUPABASE_ANON_KEY');
+
+  const parse = async (input: { text: string; quickMoodId?: string; clientSearchId: string }): Promise<ParsedMoodV2> => {
+    if (opts.cached) {
+      if ((ctx.ledger.parse_cached_total ?? 0) + 1 > C.CAP_PARSE_CACHED_TOTAL) {
+        throw new StopError(`cached-pass parse tavanı (${C.CAP_PARSE_CACHED_TOTAL}) aşılacak; durduruldu.`);
+      }
+    } else if (ctx.ledger.parse_total + 1 > C.CAP_PARSE_TOTAL) {
+      throw new StopError(`parse tavanı (${C.CAP_PARSE_TOTAL}) aşılacak; durduruldu.`);
+    }
+    await llmGate(ctx);
+    ctx.calls += 1;
+    if (opts.cached) ctx.ledger.parse_cached_total = (ctx.ledger.parse_cached_total ?? 0) + 1;
+    else ctx.ledger.parse_total += 1;
+    writeJson(LEDGER_FILE, ctx.ledger);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), C.CLIENT_PARSE_TIMEOUT_MS);
+    const t0 = Date.now();
+    let res: Response;
+    try {
+      res = await fetch(`${url}/functions/v1/parse-mood?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
+        method: 'POST',
+        headers: {
+          'x-region': GAUNTLET_EDGE_REGION,
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await token(ctx)}`,
+          apikey: anon,
+        },
+        body: JSON.stringify({
+          raw_input: input.text,
+          schema_version: 2,
+          client_search_id: input.clientSearchId,
+          ...(input.quickMoodId ? { quick_mood_id: input.quickMoodId } : {}),
+        }),
+        signal: controller.signal,
+      });
+    } catch (e) {
+      clearTimeout(timer);
+      noteFailure(ctx, `parse ${mood.id}: ${String(e)}`);
+      throw new StopError(`parse ${mood.id} ağ hatası/zaman aşımı: ${String(e)}`);
+    }
+    clearTimeout(timer);
+    cap.parseMs = Date.now() - t0;
+    ctx.ledger.last_llm_at = Date.now();
+    const body = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    httpStop(res.status, `parse ${mood.id}`);
+    if (!res.ok) {
+      noteFailure(ctx, `parse ${mood.id}: HTTP ${res.status} ${JSON.stringify(body).slice(0, 200)}`);
+      throw new StopError(`parse ${mood.id} başarısız (HTTP ${res.status}).`);
+    }
+    cap.parsedBody = body;
+    cap.parseCacheHit = body.cache_hit === true;
+    cap.searchId = typeof body.search_id === 'string' ? body.search_id : null;
+    if (cap.searchId) ctx.ledger.mood_searches_rows.push(cap.searchId);
+    if (opts.cached && !cap.parseCacheHit) {
+      ctx.ledger.parse_total += 1; // Haiku çağrıldı
+      writeJson(LEDGER_FILE, ctx.ledger);
+      throw new StopError(`${mood.id}: parse-mood önbellek isabet etmedi (cache_hit=${String(body.cache_hit)}); durduruldu.`);
+    }
+    if (opts.savePrimary) {
+      const parsedFile: ParsedFile = {
+        mood_id: mood.id, text: mood.text, ms: cap.parseMs, http_status: res.status, response: body,
+        profile: validateAndNormalize(body) as unknown as Record<string, unknown>,
+        search_id: cap.searchId,
+        search_keywords: stringArr(body.search_keywords),
+        limit: typeof body.limit === 'number' ? body.limit : null,
+        remaining: typeof body.remaining === 'number' ? body.remaining : null,
+        ...(typeof body.cache_hit === 'boolean' ? { cache_hit: body.cache_hit } : {}),
+      };
+      writeJson(path.join(PARSED_V4_DIR, `${mood.id}.json`), parsedFile);
+    }
+    writeJson(LEDGER_FILE, ctx.ledger);
+    return {
+      profile: validateAndNormalize(body),
+      searchId: cap.searchId,
+      searchKeywords: stringArr(body.search_keywords),
+      profileName: typeof body.profile_name === 'string' && body.profile_name.trim() ? body.profile_name.trim() : null,
+      genresInclude: stringArr(body.genres_include),
+      genresExclude: stringArr(body.genres_exclude),
+      maxRuntime: typeof body.max_runtime === 'number' ? body.max_runtime : null,
+      referenceTitles: titleRefsOf(body.reference_titles),
+      suggestedTitles: titleRefsOf(body.suggested_titles),
+      excludeRecentIds: stringArr(body.exclude_recent_ids),
+      cacheHit: cap.parseCacheHit,
+    };
+  };
+
+  const matchV4 = async (args: MatchV4Args): Promise<MatchRow[]> => {
+    await sleep(C.RPC_GAP_MS);
+    ctx.slept += C.RPC_GAP_MS;
+    const vector = tasteProfileToVector(args.profile as TasteProfile);
+    const t0 = Date.now();
+    const { data, error } = await ctx.session.supabase.rpc('match_films_v4', {
+      query_vector: `[${vector.join(',')}]`,
+      user_vector: null,
+      mood_weight: 1.0,
+      user_weight: 0.0,
+      match_count: args.matchCount,
+      min_similarity: args.minSimilarity,
+      ...(args.minRating != null ? { min_rating: args.minRating } : {}),
+      ...(args.searchKeywords.length > 0 ? { search_keywords: args.searchKeywords } : {}),
+      ...(args.excludeIds.length > 0 ? { exclude_ids: args.excludeIds } : {}),
+      per_director_cap: C.PER_DIRECTOR_CAP,
+      tier_boost: true,
+      exclude_archive: true,
+      genres_include: args.genresInclude,
+      genres_exclude: args.genresExclude,
+      max_runtime: args.maxRuntime,
+      reference_titles: args.referenceTitles,
+      suggested_titles: args.suggestedTitles,
+    });
+    const ms = Date.now() - t0;
+    ctx.calls += 1;
+    if (error) throw new Error(`match_films_v4: ${error.message}`);
+    const rows = (data ?? []) as MatchRow[];
+    cap.attempts.push({ min_similarity: args.minSimilarity, min_rating: args.minRating, ms, n_rows: rows.length });
+    return rows;
+  };
+
+  const rerank = async (input: {
+    moodText: string; candidates: MatchRow[]; count: number; withReasons: boolean;
+  }): Promise<RerankOutcome> => {
+    const withReasons = input.withReasons;
+    const call: V5Call = {
+      with_reasons: withReasons, ms: 0, http_status: null, timeout: false, failure: null,
+      server_fallback: false, error_detail: null, reranked_ids: [], reasons: {}, reasons_dropped: null, reason_model: null,
+    };
+    if (ctx.stopMsg) return { ok: false, failure: 'eval_stopped' };
+
+    // Sayaçlar AYRI ve sunucuyla aynı ayrım: id-rerank → rerank-films-daily, gerekçe → rerank-films-reasons-daily.
+    const day = utcDay();
+    const total = withReasons ? (ctx.ledger.rerank_reasons_total ?? 0) : (ctx.ledger.rerank_ids_total ?? 0);
+    const today = (withReasons ? ctx.ledger.rerank_reasons_by_day : ctx.ledger.rerank_ids_by_day)?.[day] ?? 0;
+    const capTotal = withReasons ? C.CAP_REASONS_TOTAL : C.CAP_IDS_TOTAL;
+    const capDay = withReasons ? C.CAP_REASONS_PER_UTC_DAY : C.CAP_IDS_PER_UTC_DAY;
+    const label = withReasons ? 'reasons' : 'id-rerank';
+    if (total + 1 > capTotal) {
+      ctx.stopMsg = `${label} toplam tavanı (${capTotal}) aşılacak; durduruldu.`;
+      return { ok: false, failure: 'eval_cap' };
+    }
+    if (today + 1 > capDay) {
+      ctx.stopMsg = `UTC ${day} ${label} tavanı (${capDay}) aşılacak; durduruldu.`;
+      return { ok: false, failure: 'eval_cap' };
+    }
+    await llmGate(ctx);
+    if (withReasons) {
+      ctx.ledger.rerank_reasons_total = total + 1;
+      ctx.ledger.rerank_reasons_by_day = bump(ctx.ledger.rerank_reasons_by_day, day);
+    } else {
+      ctx.ledger.rerank_ids_total = total + 1;
+      ctx.ledger.rerank_ids_by_day = bump(ctx.ledger.rerank_ids_by_day, day);
+    }
+    ctx.ledger.rerank_total += 1;
+    writeJson(LEDGER_FILE, ctx.ledger);
+    ctx.calls += 1;
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      withReasons ? C.CLIENT_RERANK_REASONS_TIMEOUT_MS : C.CLIENT_RERANK_IDS_TIMEOUT_MS,
+    );
+    const t0 = Date.now();
+    try {
+      const res = await fetch(`${url}/functions/v1/rerank-films?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${await token(ctx)}`,
+          apikey: anon,
+          'x-region': GAUNTLET_EDGE_REGION,
+        },
+        body: JSON.stringify({
+          mood_text: input.moodText,
+          candidates: input.candidates.map((c) => ({
+            id: c.id,
+            title: c.title,
+            overview: (c.overview ?? '').slice(0, C.CLIENT_RERANK_OVERVIEW_MAX),
+            genres: c.genres,
+            year: c.year,
+            similarity: c.similarity,
+          })),
+          count: input.count,
+          reason: withReasons,
+        }),
+        signal: controller.signal,
+      });
+      call.ms = Date.now() - t0;
+      call.http_status = res.status;
+      ctx.ledger.last_llm_at = Date.now();
+      const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      if (res.status === 429 || res.status === 401) {
+        ctx.stopMsg = `${label} ${mood.id}: HTTP ${res.status} — durduruldu, kısmi sonuçlar saklandı.`;
+        call.failure = `http_${res.status}`;
+        return { ok: false, failure: call.failure };
+      }
+      call.error_detail = typeof json.error_detail === 'string' ? json.error_detail : null;
+      call.server_fallback = json.fallback === true;
+      call.reason_model = typeof json.reason_model === 'string' ? json.reason_model : null;
+      call.reasons_dropped = typeof json.reasons_dropped === 'number' ? json.reasons_dropped : null;
+      if (!res.ok) {
+        call.failure = `http_${res.status}`;
+        return { ok: false, failure: call.failure };
+      }
+      if (!Array.isArray(json.reranked_ids)) {
+        call.failure = 'bad_body';
+        return { ok: false, failure: 'bad_body' };
+      }
+      if (call.server_fallback) {
+        call.failure = 'server_fallback';
+        return { ok: false, failure: 'server_fallback' };
+      }
+      const reasons: Record<string, string> = {};
+      if (json.reasons && typeof json.reasons === 'object') {
+        for (const [k, v] of Object.entries(json.reasons as Record<string, unknown>)) {
+          if (typeof v === 'string') reasons[k] = v;
+        }
+      }
+      call.reranked_ids = stringArr(json.reranked_ids);
+      call.reasons = reasons;
+      return { ok: true, ids: call.reranked_ids, reasons };
+    } catch (err) {
+      call.ms = Date.now() - t0;
+      if (controller.signal.aborted) {
+        call.timeout = true;
+        call.failure = 'timeout';
+        return { ok: false, failure: 'timeout' };
+      }
+      call.failure = 'network';
+      throw err; // istemci gibi: hat onError + yedek yol; hata cap.errors'a düşer
+    } finally {
+      clearTimeout(timer);
+      cap.calls.push(call);
+    }
+  };
+
+  return {
+    parse,
+    matchV4,
+    rerank,
+    // Soğuk eval hesabı: watchlist/izlenen yok (V3 ölçümüyle aynı); istemcide bu iki liste hesaba bağlı.
+    loadExclusions: async () => [],
+    recordRecommended: async (searchId: string, ids: string[]): Promise<void> => {
+      const { error } = await ctx.session.supabase
+        .from('mood_searches')
+        .update({ recommended_film_ids: ids, rpc_version: 'v4' })
+        .eq('id', searchId);
+      if (error) throw new Error(`mood_searches update: ${error.message}`);
+    },
+    newId: () => crypto.randomUUID(),
+    now: () => Date.now() - ctx.slept,
+    onFallback: (stage: FallbackStage) => {
+      cap.fallbacks.push(stage);
+      console.log(`  yedek yol: ${stage}`);
+    },
+    onError: (stage: FallbackStage, err: unknown) => {
+      cap.errors.push(`${stage}: ${err instanceof Error ? err.message : String(err)}`);
+      console.error(`  hat hatası (${stage}): ${err instanceof Error ? err.message : String(err)}`);
+    },
+  };
+}
+
+/** Tek mood için istemci hattının tamamı: parse → v4 → pick (id-rerank) → [dörtlü görünür] → reasons. */
+async function runV5Mood(
+  ctx: Ctx, mood: Mood, opts: { cached: boolean },
+): Promise<RawRecord> {
+  const cap: V5Capture = {
+    calls: [], fallbacks: [], errors: [], attempts: [], searchId: null, parseMs: 0, parseCacheHit: false, parsedBody: null,
+  };
+  const deps = makeEvalDeps(ctx, mood, cap, { cached: opts.cached, savePrimary: !opts.cached });
+  const stages: Partial<Record<PipelineStageName, number>> = {};
+  const quickId = mood.kind === 'quick' ? QUICK_MOOD_CLIENT_ID[mood.id] : undefined;
+
+  const start = await startMoodGauntlet(deps, {
+    text: mood.text,
+    ...(quickId ? { quickMoodId: quickId } : {}),
+    onTiming: (stage, ms) => {
+      stages[stage] = ms;
+    },
+  });
+  if (ctx.stopMsg) throw new StopError(ctx.stopMsg);
+
+  let reasons: Record<string, string> = {};
+  let reasonsMs: number | null = null;
+  let four: MatchRow[] = [];
+  let reranked = false;
+  if (start.status === 'ok') {
+    four = start.set.four;
+    reranked = start.set.reranked;
+    const t0 = deps.now ? deps.now() : Date.now();
+    reasons = await fetchReasons(deps, start.session, start.set);
+    reasonsMs = (deps.now ? deps.now() : Date.now()) - t0;
+    if (ctx.stopMsg) throw new StopError(ctx.stopMsg);
+    // reranked=false → fetchReasons çağrı yapmaz; süre anlamsız
+    if (!reranked) reasonsMs = null;
+  }
+
+  // Hata oranı muhasebesi (hat içinde yutulanlar dahil): StopError hat dışında, burada.
+  for (const c of cap.calls) if (c.failure !== null) noteFailure(ctx, `${mood.id} ${c.with_reasons ? 'reasons' : 'id-rerank'}: ${c.failure}`);
+
+  const pool = start.session.pool;
+  const rpcMs = cap.attempts.reduce((s, a) => s + a.ms, 0);
+  const parse = stages.parse ?? 0;
+  const v4 = stages.v4 ?? 0;
+  const pick = stages.pick ?? 0;
+  const v5: V5Block = {
+    status: start.status === 'ok' ? 'ok' : 'insufficient',
+    stages_ms: { parse, v4, pick, reasons: reasonsMs },
+    visible_ms: parse + v4 + pick,
+    parse_cache_hit: cap.parseCacheHit,
+    four: four.map((r) => r.id),
+    reranked,
+    reasons,
+    fallbacks: cap.fallbacks,
+    errors: cap.errors,
+    notices: start.session.notices,
+    calls: cap.calls,
+  };
+  return {
+    mood_id: mood.id,
+    variant: 'V5',
+    rpc: {
+      rows: pool.map((r) => trimRow(r as unknown as Record<string, unknown>)),
+      attempts: cap.attempts,
+      total_ms: rpcMs,
+      params_first: { match_count: V4_MATCH_COUNT, note: 'istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts' },
+    },
+    v5,
+  };
+}
+
+/** V5 çıktısında geçen dörtlü film kimlikleri için imdb_votes/imdb_rating meta'sını OUT_DIR'a yazar. */
+async function ensureFourMeta(ctx: Ctx, recs: RawRecord[]): Promise<void> {
+  const ids = new Set<string>();
+  for (const r of recs) for (const id of r.v5?.four ?? []) ids.add(id);
+  if (ids.size > 0) await loadMeta(ctx.session, [...ids]);
+}
+
+// ─── Önbellekli ikinci geçiş (quick mood'lar) ────────────────────────────────
+
+/**
+ * Quick mood'lar için ikinci geçiş: aynı metin → parse-mood önbellekten (cache_hit şart), sonra tüm V5 hattı.
  * Önbellek isabet ETMEZSE Haiku harcanmıştır: deftere işlenir ve koşu durur (sessiz devam yok).
  */
 async function runCachedPass(ctx: Ctx, quick: Mood[]): Promise<void> {
+  const done: RawRecord[] = [];
   for (const mood of quick) {
     const out = path.join(CACHED_PASS_DIR, `${mood.id}.json`);
     if (fs.existsSync(out)) {
@@ -643,39 +1055,14 @@ async function runCachedPass(ctx: Ctx, quick: Mood[]): Promise<void> {
     if (!fs.existsSync(path.join(PARSED_V4_DIR, `${mood.id}.json`))) {
       throw new StopError(`${mood.id}: önce --variant V5 koşulmalı (önbellek dolmadı).`);
     }
-    if ((ctx.ledger.parse_cached_total ?? 0) + 1 > C.CAP_PARSE_CACHED_TOTAL) {
-      throw new StopError(`cached-pass parse tavanı (${C.CAP_PARSE_CACHED_TOTAL}) aşılacak; durduruldu.`);
-    }
-    await sleep(C.RPC_GAP_MS);
-    ctx.calls += 1;
-    ctx.ledger.parse_cached_total = (ctx.ledger.parse_cached_total ?? 0) + 1;
-    const { body, ms } = await callParseV2(ctx, mood);
-    const hit = body.cache_hit === true;
-    if (!hit) ctx.ledger.parse_total += 1; // Haiku çağrıldı
-    writeJson(LEDGER_FILE, ctx.ledger);
-    console.log(`  parse(2.) ${mood.id}: ${ms} ms, cache_hit=${String(body.cache_hit)}`);
-    if (!hit) {
-      throw new StopError(`${mood.id}: parse-mood önbellek isabet etmedi (cache_hit=${String(body.cache_hit)}); durduruldu.`);
-    }
-
-    const parsed: ParsedFile = {
-      mood_id: mood.id, text: mood.text, ms, http_status: 200, response: body,
-      profile: validateAndNormalize(body) as unknown as Record<string, unknown>,
-      search_id: typeof body.search_id === 'string' ? body.search_id : null,
-      search_keywords: Array.isArray(body.search_keywords) ? (body.search_keywords as string[]) : [],
-      limit: typeof body.limit === 'number' ? body.limit : null,
-      remaining: typeof body.remaining === 'number' ? body.remaining : null,
-      cache_hit: true,
-    };
-    if (parsed.search_id) ctx.ledger.mood_searches_rows.push(parsed.search_id);
-
-    await sleep(C.RPC_GAP_MS);
-    const rpc = await runRpcV4(ctx, parsed);
-    const rerank = await runRerank(ctx, mood, 'V4', rpc.rows, true);
-    const rec: CachedPassRecord = { mood_id: mood.id, parse_ms: ms, parse_cache_hit: true, rpc, rerank };
+    const rec = await runV5Mood(ctx, mood, { cached: true });
     writeJson(out, rec);
-    console.log(`  cached-pass ${mood.id}: parse ${ms} + rpc ${rpc.total_ms} + rerank ${rerank?.ms ?? 'yok'} ms`);
+    writeJson(LEDGER_FILE, ctx.ledger);
+    done.push(rec);
+    const s = rec.v5?.stages_ms;
+    console.log(`  cached-pass ${mood.id}: parse ${s?.parse} + v4 ${s?.v4} + pick ${s?.pick} = görünür ${rec.v5?.visible_ms} ms; reasons ${s?.reasons ?? 'yok'} ms`);
   }
+  await ensureFourMeta(ctx, done);
 }
 
 // ─── Ana akış ────────────────────────────────────────────────────────────────
@@ -696,10 +1083,11 @@ async function main(): Promise<void> {
   console.log('Parite kontrolü:');
   await parityCheck(moods, session);
 
-  const ctx: Ctx = { session, sessionOpenedAt: Date.now(), ledger: loadLedger(), calls: 0, failures: 0 };
+  const ctx: Ctx = { session, sessionOpenedAt: Date.now(), ledger: loadLedger(), calls: 0, failures: 0, slept: 0, stopMsg: null };
   const doRpc = args.stage !== 'rerank';
   const doRerank = args.stage !== 'rpc';
   const t0 = Date.now();
+  const v5Done: RawRecord[] = [];
 
   try {
     if (args.cachedPass) {
@@ -714,11 +1102,25 @@ async function main(): Promise<void> {
 
       for (const v of args.variants) {
         const f = rawFile(mood.id, v);
+        if (v === 'V5') {
+          // V5 = istemci hattının tamamı (parse → v4 → pick → reasons); aşamalı (--stage) çalışmaz.
+          if (args.stage !== 'all') throw new StopError('V5 --stage desteklemez (hat bütündür).');
+          if (fs.existsSync(f) && !args.reparse) {
+            console.log(`  ${mood.id}/V5: kayıt var, atlandı`);
+            continue;
+          }
+          const rec5 = await runV5Mood(ctx, mood, { cached: false });
+          writeJson(f, rec5);
+          v5Done.push(rec5);
+          const st = rec5.v5?.stages_ms;
+          console.log(`  V5 ${mood.id}: parse ${st?.parse} + v4 ${st?.v4} + pick ${st?.pick} = görünür ${rec5.v5?.visible_ms} ms; reasons ${st?.reasons ?? 'yok'} ms; ${Object.keys(rec5.v5?.reasons ?? {}).length}/4 gerekçe`);
+          continue;
+        }
         let rec: RawRecord | null = fs.existsSync(f) ? readJson<RawRecord>(f) : null;
         if (doRpc && (!rec || args.reparse)) {
           if (v === 'V3') {
             if (!parsedV2) parsedV2 = await ensureParsed(ctx, mood, args.reparse, true);
-          } else if (v === 'V4' || v === 'V5') {
+          } else if (v === 'V4') {
             if (!parsedV4) parsedV4 = await ensureParsed(ctx, mood, args.reparse, true, PARSED_V4_DIR);
           } else if (!parsed) {
             parsed = await ensureParsed(ctx, mood, args.reparse);
@@ -726,7 +1128,7 @@ async function main(): Promise<void> {
           await sleep(C.RPC_GAP_MS);
           const rpc = v === 'V3' && parsedV2
             ? await runRpcV4(ctx, parsedV2)
-            : (v === 'V4' || v === 'V5') && parsedV4
+            : v === 'V4' && parsedV4
               ? await runRpcV4(ctx, parsedV4)
               : await runRpc(ctx, parsed as ParsedFile, v);
           rec = { mood_id: mood.id, variant: v, rpc };
@@ -745,11 +1147,23 @@ async function main(): Promise<void> {
         }
       }
     }
+    // V5: dörtlü filmlerin imdb_votes meta'sı (summary-2d okur). Mevcut kayıtlar atlanmışsa da hepsi taranır.
+    if (args.variants.includes('V5')) {
+      const all: RawRecord[] = [...v5Done];
+      for (const mood of moods) {
+        const f = rawFile(mood.id, 'V5');
+        if (fs.existsSync(f) && !v5Done.some((r) => r.mood_id === mood.id)) all.push(readJson<RawRecord>(f));
+      }
+      await ensureFourMeta(ctx, all);
+    }
   } finally {
     writeJson(LEDGER_FILE, ctx.ledger);
     console.log(`Çağrı: ${ctx.calls}, hata: ${ctx.failures}, süre: ${((Date.now() - t0) / 1000).toFixed(1)} sn`);
     console.log(`Defter: parse=${ctx.ledger.parse_total}/${C.CAP_PARSE_TOTAL}, rerank=${ctx.ledger.rerank_total}/${C.CAP_RERANK_TOTAL}, bugün(${utcDay()})=${ctx.ledger.rerank_by_day[utcDay()] ?? 0}/${C.CAP_RERANK_PER_UTC_DAY}`);
+    console.log(`V5 sayaçlar: id-rerank=${ctx.ledger.rerank_ids_total ?? 0}/${C.CAP_IDS_TOTAL}, reasons=${ctx.ledger.rerank_reasons_total ?? 0}/${C.CAP_REASONS_TOTAL}, parse-önbellek=${ctx.ledger.parse_cached_total ?? 0}/${C.CAP_PARSE_CACHED_TOTAL}`);
   }
+  // V4/V5 koşuları MOOD-VEC-1 raporlarını (V0-V3) üretmez; V5 özeti summary-2d.ts'tedir.
+  if (args.variants.every((v) => v === 'V4' || v === 'V5')) return;
   await buildReports(ctx.session);
 }
 

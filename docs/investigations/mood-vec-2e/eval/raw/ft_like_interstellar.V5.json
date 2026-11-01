@@ -1,0 +1,915 @@
+{
+  "mood_id": "ft_like_interstellar",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "aa02f15c-94df-4213-a625-946ed17ed06a",
+        "tmdb_id": 329865,
+        "title": "Arrival",
+        "year": 2016,
+        "overview": "Taking place after alien crafts land around the world, an expert linguist is recruited by the military to determine whether they come in peace or are a threat.",
+        "genres": [
+          "Drama",
+          "Science Fiction",
+          "Mystery"
+        ],
+        "runtime": 116,
+        "vote_average": 7.626,
+        "director": "Denis Villeneuve",
+        "similarity": 0.666731474528843,
+        "curation_tier": "core",
+        "match_reason": "Matches: science fiction, time travel",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "3e2949a5-ed35-4881-911e-764e61428537",
+        "tmdb_id": 49047,
+        "title": "Gravity",
+        "year": 2013,
+        "overview": "Dr Ryan Stone, an engineer on her first space mission, and Matt Kowalski, an astronaut on his final expedition, have to survive in space after they are hit by debris while spacewalking.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 91,
+        "vote_average": 7.172,
+        "director": "Alfonso Cuarón",
+        "similarity": 0.657164971892303,
+        "curation_tier": "extended",
+        "match_reason": "Matches: space exploration",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "257a669b-bcd8-46db-8317-dfff9f20e3ad",
+        "tmdb_id": 438631,
+        "title": "Dune",
+        "year": 2021,
+        "overview": "Paul Atreides, a brilliant and gifted young man born into a great destiny beyond his understanding, must travel to the most dangerous planet in the universe to ensure the future of his family and his people. As malevolent forces explode into conflict over the planet's exclusive supply of the most precious resource in existence-a commodity capable of unlocking humanity's greatest potential-only those who can conquer their fear will survive.",
+        "genres": [
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 7.781,
+        "director": "Denis Villeneuve",
+        "similarity": 0.646302448203582,
+        "curation_tier": "core",
+        "match_reason": "Matches: space exploration",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+        "tmdb_id": 27205,
+        "title": "Inception",
+        "year": 2010,
+        "overview": "Cobb, a skilled thief who commits corporate espionage by infiltrating the subconscious of his targets is offered a chance to regain his old life as payment for a task considered to be impossible: \"inception\", the implantation of another person's idea into a target's subconscious.",
+        "genres": [
+          "Action",
+          "Science Fiction",
+          "Adventure"
+        ],
+        "runtime": 148,
+        "vote_average": 8.372,
+        "director": "Christopher Nolan",
+        "similarity": 0.645013885362328,
+        "curation_tier": "core",
+        "match_reason": "mission, dreams, kidnapping",
+        "channels": [
+          "a",
+          "c"
+        ]
+      },
+      {
+        "id": "422c986c-e309-4ce9-b63d-21c8e69eb0da",
+        "tmdb_id": 18438,
+        "title": "Castaway on the Moon",
+        "year": 2009,
+        "overview": "Mr. Kim is jobless, lost in debt and has been dumped by his girlfriend. He decides to end it all by jumping into the Han River – only to find himself washed up on a small, mid-river island. He soon abandons thoughts of suicide or rescue and begins a new life as a castaway. His antics catch the attention of a young woman whose apartment overlooks the river. Her discovery changes both their lives.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 119,
+        "vote_average": 7.913,
+        "director": "Lee Hae-jun",
+        "similarity": 1.03892863123935,
+        "curation_tier": "core",
+        "match_reason": "isolation, suicide attempt, loneliness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f5827430-f616-496f-b58e-246945bf36ac",
+        "tmdb_id": 1208348,
+        "title": "Rental Family",
+        "year": 2025,
+        "overview": "An American actor in Tokyo struggles to find purpose until he lands an unusual gig: working for a Japanese 'rental family' agency, playing stand-in roles for strangers. As he immerses himself in his clients' worlds, he begins to form genuine bonds that blur the lines between performance and reality.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 110,
+        "vote_average": 7.749,
+        "director": "Hikari",
+        "similarity": 1.03297137951293,
+        "curation_tier": "core",
+        "match_reason": "self-discovery, tokyo, japan, candid",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 1.03117272477986,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f719ad81-e751-49dc-b37b-ed7827c61142",
+        "tmdb_id": 8358,
+        "title": "Cast Away",
+        "year": 2000,
+        "overview": "Chuck Noland, a top international manager for FedEx, and Kelly, a Ph.D. student, are in love and heading towards marriage. Then Chuck's plane to Malaysia crashes at sea during a terrible storm. He's the only survivor, and finds himself marooned on a desolate island. With no way to escape, Chuck must find ways to survive in his new home.",
+        "genres": [
+          "Adventure",
+          "Drama"
+        ],
+        "runtime": 143,
+        "vote_average": 7.661,
+        "director": "Robert Zemeckis",
+        "similarity": 0.995873178594573,
+        "curation_tier": "core",
+        "match_reason": "Matches: humanity survival",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "67f90128-4ed3-41bc-8099-3966ff9b50a7",
+        "tmdb_id": 37165,
+        "title": "The Truman Show",
+        "year": 1998,
+        "overview": "In a picture-perfect seaside town, an insurance salesman begins to realize that his entire existence may be staged and observed by a vast unseen audience as part of a long-running real-time reality TV show.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 8.152,
+        "director": "Peter Weir",
+        "similarity": 0.963707676525142,
+        "curation_tier": "core",
+        "match_reason": "escape, paranoia, dystopia",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "71161415-4341-4462-8a18-432aa53fb0e7",
+        "tmdb_id": 914,
+        "title": "The Great Dictator",
+        "year": 1940,
+        "overview": "Dictator Adenoid Hynkel tries to expand his empire while a poor Jewish barber tries to avoid persecution from Hynkel's regime.",
+        "genres": [
+          "Comedy",
+          "War"
+        ],
+        "runtime": 125,
+        "vote_average": 8.3,
+        "director": "Charlie Chaplin",
+        "similarity": 0.958904355022319,
+        "curation_tier": "core",
+        "match_reason": "amnesia, nazi, hairdresser",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c268c65d-959b-4679-8270-2c081f8c4e02",
+        "tmdb_id": 290,
+        "title": "Barton Fink",
+        "year": 1991,
+        "overview": "A renowned New York playwright is enticed to California to write for the movies and discovers the hellish truth of Hollywood.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 117,
+        "vote_average": 7.464,
+        "director": "Joel Coen",
+        "similarity": 0.958566476501981,
+        "curation_tier": "core",
+        "match_reason": "hotel, screenplay, mass murder",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+        "tmdb_id": 63,
+        "title": "Twelve Monkeys",
+        "year": 1995,
+        "overview": "In the year 2035, convict James Cole reluctantly volunteers to be sent back in time to discover the origin of a deadly virus that wiped out nearly all of the earth's population and forced the survivors into underground communities. But when Cole is mistakenly sent to 1990 instead of 1996, he's arrested and locked up in a mental hospital. There he meets psychiatrist Dr. Kathryn Railly and the son of a famous virus expert who may hold the key to the Army of the 12 Monkeys; thought to be responsible for unleashing the killer disease.",
+        "genres": [
+          "Science Fiction",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 129,
+        "vote_average": 7.603,
+        "director": "Terry Gilliam",
+        "similarity": 0.954682603643362,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2d157d4b-87f5-4c0c-a989-e040de97e9b6",
+        "tmdb_id": 515001,
+        "title": "Jojo Rabbit",
+        "year": 2019,
+        "overview": "Jojo, a lonely German boy during World War II has his world shaken when he learns that his single mother is hiding a Jewish girl in their home. Influenced by a buffoonish imaginary version of Adolf Hitler, he begins to question his beliefs and confront the conflict between propaganda and his own humanity.",
+        "genres": [
+          "Comedy",
+          "War",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.986,
+        "director": "Taika Waititi",
+        "similarity": 0.949790542790486,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, world war ii, jew persecution",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f8f1de36-bf5a-459b-8a83-9dffbfd4c1d0",
+        "tmdb_id": 9912,
+        "title": "The World's Fastest Indian",
+        "year": 2005,
+        "overview": "The life story of New Zealander Burt Munro, who spent years building a 1920 Indian motorcycle—a bike which helped him set the land-speed world record at Utah's Bonneville Salt Flats in 1967.",
+        "genres": [
+          "Drama",
+          "Adventure",
+          "History"
+        ],
+        "runtime": 127,
+        "vote_average": 7.682,
+        "director": "Roger Donaldson",
+        "similarity": 0.949303038449812,
+        "curation_tier": "core",
+        "match_reason": "utah, new zealand, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2afd611f-190e-4b9d-a5fc-2e940aba2c83",
+        "tmdb_id": 673,
+        "title": "Harry Potter and the Prisoner of Azkaban",
+        "year": 2004,
+        "overview": "Harry Potter's life is in danger once more as dangerous wizard Sirius Black has escaped from Azkaban Prison and is heading to Hogwarts.",
+        "genres": [
+          "Adventure",
+          "Fantasy"
+        ],
+        "runtime": 141,
+        "vote_average": 8.008,
+        "director": "Alfonso Cuarón",
+        "similarity": 0.943681858964272,
+        "curation_tier": "core",
+        "match_reason": "Matches: time travel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "625c6e23-9faf-4b27-bc53-2b223c072a92",
+        "tmdb_id": 5528,
+        "title": "The Chorus",
+        "year": 2004,
+        "overview": "In 1940s France, a new teacher at a school for disruptive boys gives hope and inspiration.",
+        "genres": [
+          "Drama",
+          "Comedy",
+          "Music"
+        ],
+        "runtime": 97,
+        "vote_average": 7.74,
+        "director": "Christophe Barratier",
+        "similarity": 0.937521988620887,
+        "curation_tier": "core",
+        "match_reason": "penalty, boarding school, choir",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9a1182d0-b1ce-44a7-878c-03ce2cc1d404",
+        "tmdb_id": 400928,
+        "title": "Gifted",
+        "year": 2017,
+        "overview": "Frank, a single man raising his child prodigy niece Mary, is drawn into a custody battle with his mother.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 101,
+        "vote_average": 7.998,
+        "director": "Marc Webb",
+        "similarity": 0.936068743702782,
+        "curation_tier": "core",
+        "match_reason": "cat, mathematics, intellectually gifted",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5c37028c-d2f0-46a4-91b5-648599b0724d",
+        "tmdb_id": 840,
+        "title": "Close Encounters of the Third Kind",
+        "year": 1977,
+        "overview": "After an encounter with UFOs, an electricity linesman feels undeniably drawn to an isolated area in the wilderness where something spectacular is about to happen.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 137,
+        "vote_average": 7.349,
+        "director": "Steven Spielberg",
+        "similarity": 0.935961478922093,
+        "curation_tier": "core",
+        "match_reason": "wyoming, usa, indiana, usa, flying saucer",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0c750f1b-425a-4da5-b2cd-b0482e9ddc36",
+        "tmdb_id": 284,
+        "title": "The Apartment",
+        "year": 1960,
+        "overview": "Bud Baxter is a minor clerk in a huge New York insurance company, until he discovers a quick way to climb the corporate ladder. He lends out his apartment to the executives as a place to take their mistresses. Although he often has to deal with the aftermath of their visits, one night he's left with a major problem to solve.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 126,
+        "vote_average": 8.189,
+        "director": "Billy Wilder",
+        "similarity": 0.93049088231643,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, new york city, lovesickness",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f1bac13b-09a5-4c8b-95bb-a6d102df4903",
+        "tmdb_id": 4935,
+        "title": "Howl's Moving Castle",
+        "year": 2004,
+        "overview": "Sophie, a young milliner, is turned into an elderly woman by a witch who enters her shop and curses her. She encounters a wizard named Howl and gets caught up in his resistance to fighting for the king.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Adventure"
+        ],
+        "runtime": 119,
+        "vote_average": 8.387,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.929544046919884,
+        "curation_tier": "core",
+        "match_reason": "witch, flying, rain",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5350cac7-0d11-4461-9289-1e609045961c",
+        "tmdb_id": 234200,
+        "title": "Pride",
+        "year": 2014,
+        "overview": "In 1984, a group of LGBT activists decide to raise money to support the National Union of Mineworkers during their lengthy strike. There is only one problem: the Union seems embarrassed to receive their support.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 120,
+        "vote_average": 7.68,
+        "director": "Matthew Warchus",
+        "similarity": 0.927689917973935,
+        "curation_tier": "core",
+        "match_reason": "wales, london, england, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2e811fbd-d246-433b-ba90-43f0647b65ab",
+        "tmdb_id": 77338,
+        "title": "The Intouchables",
+        "year": 2011,
+        "overview": "A true story of two men who should never have met – a quadriplegic aristocrat who was injured in a paragliding accident and a young man from the projects.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 113,
+        "vote_average": 8.269,
+        "director": "Éric Toledano",
+        "similarity": 0.927413883460783,
+        "curation_tier": "core",
+        "match_reason": "friendship, male friendship, based on true story",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "39e89fac-6172-4826-80a6-4d2b2fcd08af",
+        "tmdb_id": 470878,
+        "title": "I Can Only Imagine",
+        "year": 2018,
+        "overview": "Growing up in Greenville, Texas, Bart Millard suffers physical and emotional abuse at the hands of his father, Arthur. When Arthur becomes terminally ill, he finds redemption by embracing his faith and rediscovering his love for his son. Years later, Bart's troubled childhood and mended relationship with his dad inspires him to write the hit song \"I Can Only Imagine\" as singer of the Christian band MercyMe.",
+        "genres": [
+          "Music",
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.526,
+        "director": "Jon Erwin",
+        "similarity": 0.915193877542351,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a6f80c91-a2a7-408e-9cf3-ae82c3c4803b",
+        "tmdb_id": 198277,
+        "title": "Begin Again",
+        "year": 2013,
+        "overview": "Gretta, a budding songwriter, finds herself alone after her boyfriend Dave ditches her. Her life gains purpose when Dan, a record label executive, notices her talent.",
+        "genres": [
+          "Comedy",
+          "Music",
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 104,
+        "vote_average": 7.2,
+        "director": "John Carney",
+        "similarity": 0.889546763912066,
+        "curation_tier": "extended",
+        "match_reason": "new york city, cheating, divorcee",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "18bb4233-f4a5-4eb6-ab93-8eeb0a4209d6",
+        "tmdb_id": 11943,
+        "title": "Jeremiah Johnson",
+        "year": 1972,
+        "overview": "A mountain man who wishes to live the life of a hermit becomes the unwilling object of a long vendetta by Indians when he proves to be the match of their warriors in one-on-one combat on the early frontier.",
+        "genres": [
+          "Adventure",
+          "Western",
+          "Drama",
+          "Action"
+        ],
+        "runtime": 108,
+        "vote_average": 7.3,
+        "director": "Sydney Pollack",
+        "similarity": 0.873084638416472,
+        "curation_tier": "extended",
+        "match_reason": "Matches: humanity survival",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0bba7a5f-db1e-4c07-8408-4ce63fe1e943",
+        "tmdb_id": 17654,
+        "title": "District 9",
+        "year": 2009,
+        "overview": "Thirty years ago, aliens arrive on Earth. Not to conquer or give aid, but to find refuge from their dying planet. Separated from humans in a South African area called District 9, the aliens are managed by Multi-National United, which is unconcerned with the aliens' welfare but will do anything to master their advanced technology. When a company field agent contracts a mysterious virus that begins to alter his DNA, there is only one place he can hide: District 9.",
+        "genres": [
+          "Science Fiction"
+        ],
+        "runtime": 112,
+        "vote_average": 7.462,
+        "director": "Neill Blomkamp",
+        "similarity": 0.843090828591124,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "e2b093ea-d1ff-47ba-af57-c562bf67f5f3",
+        "tmdb_id": 1288069,
+        "title": "Tenzing",
+        "year": 2026,
+        "overview": "A determined man embarks on a high-stakes quest—and defies seemingly impossible odds—to fulfill his dream of being the first to reach the summit of Mount Everest.",
+        "genres": [
+          "Drama",
+          "History"
+        ],
+        "runtime": 126,
+        "vote_average": 8.174,
+        "director": "Jennifer Peedom",
+        "similarity": 0.837197193537425,
+        "curation_tier": "trending",
+        "match_reason": "nepal, based on true story, mountaineering",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d34d031e-b6fa-4739-bfe1-e8f0b5ce1ae8",
+        "tmdb_id": 552,
+        "title": "Bread and Tulips",
+        "year": 2000,
+        "overview": "An endearing light comedy about a woman who spontaneously becomes a resident of Venice after her family left her behind. While enjoying the wonderful people she meets she achieves a new life and the first time independent of her family.",
+        "genres": [
+          "Comedy",
+          "Romance"
+        ],
+        "runtime": 114,
+        "vote_average": 7.151,
+        "director": "Silvio Soldini",
+        "similarity": 0.835101489289783,
+        "curation_tier": "extended",
+        "match_reason": "depression, dancing, suicide",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "76968536-b9b0-41a5-8fac-ace61541c12f",
+        "tmdb_id": 1228710,
+        "title": "The Mandalorian and Grogu",
+        "year": 2026,
+        "overview": "The evil Empire has fallen, and Imperial warlords remain scattered throughout the galaxy. As the fledgling New Republic works to protect everything the Rebellion fought for, they have enlisted the help of legendary Mandalorian bounty hunter Din Djarin and his young apprentice Grogu.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 132,
+        "vote_average": 6.731,
+        "director": "Jon Favreau",
+        "similarity": 0.832403154956731,
+        "curation_tier": "extended",
+        "match_reason": "galaxy, bounty hunter, spin off",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.791185714865288,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.786321811819258,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.781988731302728,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f39292c9-3291-4583-95d2-9296aab6043b",
+        "tmdb_id": 603,
+        "title": "The Matrix",
+        "year": 1999,
+        "overview": "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        "genres": [
+          "Action",
+          "Science Fiction"
+        ],
+        "runtime": 136,
+        "vote_average": 8.246,
+        "director": "Lana Wachowski",
+        "similarity": 0.73287836734324,
+        "curation_tier": "core",
+        "match_reason": "man vs machine, martial arts, kung fu",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.700914199492836,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.69084912621119,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.628492663425573,
+        "curation_tier": "core",
+        "match_reason": "new year's eve, vietnam war, vietnam veteran",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.620164986213916,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.59758018573639,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.572562693743508,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ce27faee-2d2a-4c93-becb-ea6b0579a101",
+        "tmdb_id": 106646,
+        "title": "The Wolf of Wall Street",
+        "year": 2013,
+        "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 180,
+        "vote_average": 8.028,
+        "director": "Martin Scorsese",
+        "similarity": 0.466446649062022,
+        "curation_tier": "core",
+        "match_reason": "corruption, based on novel or book, drug addiction",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 794,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 794,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 4754,
+      "v4": 798,
+      "pick": 1388,
+      "reasons": 2482
+    },
+    "visible_ms": 6940,
+    "parse_cache_hit": false,
+    "four": [
+      "aa02f15c-94df-4213-a625-946ed17ed06a",
+      "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+      "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+      "5c37028c-d2f0-46a4-91b5-648599b0724d"
+    ],
+    "reranked": true,
+    "reasons": {
+      "aa02f15c-94df-4213-a625-946ed17ed06a": "Epic sci-fi that builds wonder through communication and stakes as high as the cosmos.",
+      "9ee7f6ee-051c-4f8e-856a-2805d949e7fe": "Mind-bending spectacle with stunning visuals and a story that demands your full attention.",
+      "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb": "Ambitious time-travel concept that challenges you intellectually across its entire runtime.",
+      "5c37028c-d2f0-46a4-91b5-648599b0724d": "A classic sense-of-awe sci-fi that explores humanity's place in something far greater."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1140,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "aa02f15c-94df-4213-a625-946ed17ed06a",
+          "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+          "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+          "5c37028c-d2f0-46a4-91b5-648599b0724d"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 2470,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "aa02f15c-94df-4213-a625-946ed17ed06a",
+          "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+          "5c37028c-d2f0-46a4-91b5-648599b0724d",
+          "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb"
+        ],
+        "reasons": {
+          "aa02f15c-94df-4213-a625-946ed17ed06a": "Epic sci-fi that builds wonder through communication and stakes as high as the cosmos.",
+          "9ee7f6ee-051c-4f8e-856a-2805d949e7fe": "Mind-bending spectacle with stunning visuals and a story that demands your full attention.",
+          "5c37028c-d2f0-46a4-91b5-648599b0724d": "A classic sense-of-awe sci-fi that explores humanity's place in something far greater.",
+          "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb": "Ambitious time-travel concept that challenges you intellectually across its entire runtime."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

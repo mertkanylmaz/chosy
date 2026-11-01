@@ -1,0 +1,130 @@
+mood_id,geçiş,dil,sıra,başlık,gerekçe,kelime
+qm_rainy,ilk,en,1,Perfect Days,"A gentle portrait of quiet contentment—meditative routine and Tokyo serenity, perfect for your calm evening.",15
+qm_rainy,ilk,en,2,Lost in Translation,"Languid Tokyo wandering between two quiet souls—atmospheric and introspective, no rush or noise.",13
+qm_rainy,ilk,en,3,Before Sunrise,"Intimate nighttime conversation through Vienna's streets; tender and talky, asks nothing but attention.",13
+qm_rainy,ilk,en,4,The Straight Story,Unhurried rural journey that honors slowness; a widower's peaceful quest matches your contemplative mood.,14
+qm_mindbending,ilk,en,1,Eternal Sunshine of the Spotless Mind,Memory and identity collapse into themselves; demands your full engagement with its philosophical puzzle.,14
+qm_mindbending,ilk,en,2,2001: A Space Odyssey,Vast and mysterious meditation on human existence and cosmic purpose; rewards deep contemplation.,13
+qm_mindbending,ilk,en,3,Mulholland Drive,Reality fractures across layers; a labyrinth that challenges what you think you're watching.,13
+qm_mindbending,ilk,en,4,Arrival,Language and time reshape meaning itself; profound questions emerge through linguistic and temporal complexity.,14
+qm_date,ilk,en,1,The Notebook,"Deeply tender intimacy between two people; perfect for an evening of quiet, heartfelt connection.",14
+qm_date,ilk,en,2,Call Me by Your Name,Sensual summer romance suffused with longing and genuine tenderness between two people.,12
+qm_date,ilk,en,3,Titanic,Sweeping love story told across time; epic yet intimate in its devotion and memory.,14
+qm_date,ilk,en,4,Portrait of a Lady on Fire,Slow-burn romance with painterly beauty; intimate and emotionally rich without sentimentality.,11
+qm_adrenaline,ilk,en,1,Mad Max: Fury Road,Relentless desert chase with non-stop vehicular mayhem and no breathing room.,11
+qm_adrenaline,ilk,en,2,John Wick,"Stylish, explosive revenge rampage that never lets intensity drop for a second.",12
+qm_adrenaline,ilk,en,3,Die Hard,High-stakes hostage siege with constant tension and inventive action sequences throughout.,11
+qm_adrenaline,ilk,en,4,Furious 7,"Fast-paced revenge thriller packed with car chases, stunts, and adrenaline rushes.",11
+qm_comedy,ilk,en,1,Paddington 2,"Warm, clever comedy with genuine heart—perfect for lifting spirits without intensity.",11
+qm_comedy,ilk,en,2,Klaus,Charming and uplifting with a cozy vibe and unexpected friendship at its core.,13
+qm_comedy,ilk,en,3,Bridesmaids,Hilarious and messy in the best way; pure comedy that hits different tonight.,13
+qm_comedy,ilk,en,4,Sing,"Colorful, fun musical comedy with heart; lighthearted entertainment that cheers you up.",12
+qm_nostalgia,ilk,en,1,My Neighbor Totoro,"Childhood wonder and gentle magic: exactly the warm, bittersweet nostalgia you need tonight.",13
+qm_nostalgia,ilk,en,2,Life Is Beautiful,Sweetly sentimental without being heavy; a cozy fable that wraps around you like memory.,14
+qm_nostalgia,ilk,en,3,Mary and Max,A quietly touching friendship story that feels like rediscovering something precious from long ago.,14
+qm_nostalgia,ilk,en,4,The Holdovers,Lonely souls finding unexpected warmth during the holidays; bittersweet and deeply comforting.,12
+qm_cozy,ilk,en,1,Toy Story 4,Heartwarming adventure that's purely fun—perfect for unwinding without mental strain.,10
+qm_cozy,ilk,en,2,Kiki's Delivery Service,"Dreamy, gentle animation that relaxes you while keeping you lightly entertained throughout.",12
+qm_cozy,ilk,en,3,Mary Poppins,Whimsical and magical with zero darkness—pure cozy entertainment from start to finish.,12
+qm_cozy,ilk,en,4,Lilo & Stitch,"Colorful, chaotic comedy that's impossible to take seriously: exactly chill vibes.",11
+qm_emotional,ilk,en,1,Manchester by the Sea,Intimate grief and loss that cuts deep—exactly the emotional weight you're seeking tonight.,13
+qm_emotional,ilk,en,2,Memoirs of a Geisha,"A woman's heartbreaking journey through beauty and cruelty, melancholic and emotionally rich.",12
+qm_emotional,ilk,en,3,12 Years a Slave,A harrowing true story of injustice and suffering that will move you profoundly.,13
+qm_emotional,ilk,en,4,Schindler's List,"Historical tragedy on a massive scale, devastating yet deeply human and unforgettable.",12
+ft_physics,ilk,en,1,Oppenheimer,Chronicles the physics revolution that defined the atomic age.,9
+ft_physics,ilk,en,2,The Theory of Everything,Portrait of a mind that transformed our understanding of physics.,10
+ft_physics,ilk,en,3,The Martian,Survival through applied physics and problem-solving on another planet.,9
+ft_physics,ilk,en,4,Interstellar,"Explores gravity, relativity, and spacetime through epic visual storytelling.",9
+ft_tired_light,ilk,en,1,The Red Turtle,Dialogue-free fantasy that's visually calming; your brain can switch off without missing anything.,13
+ft_tired_light,ilk,en,2,Marcel the Shell with Shoes On,Bite-sized comedy that's gentle enough for tired eyes but charming enough to keep you engaged.,15
+ft_tired_light,ilk,en,3,Flow,Wordless adventure that won't demand mental effort; just float through it with minimal talking.,14
+ft_tired_light,ilk,en,4,My Octopus Teacher,Meditative and soothing—real footage of ocean life lets your mind rest while you watch.,14
+ft_date_first,ilk,en,1,Before Sunrise,Two people talking all night in a beautiful city—intimate without trying too hard.,13
+ft_date_first,ilk,en,2,Call Me by Your Name,Slow-burn romance with real chemistry; beautiful but demands patience and emotional openness.,12
+ft_date_first,ilk,en,3,Paris Je T'aime,Romantic vignettes across Paris offer variety without heavy commitment or saccharine moments.,12
+ft_date_first,ilk,en,4,"Josee, the Tiger and the Fish",Sweet and genuine connection that builds naturally; animation keeps it fresh and unpretentious.,13
+ft_family_kids,ilk,en,1,The Super Mario Bros. Movie,Colorful adventure with relatable brothers; perfect for both kids to enjoy together.,12
+ft_family_kids,ilk,en,2,How to Train Your Dragon,Epic fantasy quest with humor and heart; engaging for the whole age range.,13
+ft_family_kids,ilk,en,3,Klaus,Heartwarming tale with humor and unexpected friendship; cozy for a family evening.,12
+ft_family_kids,ilk,en,4,Coco,"Vibrant, musical story about family that speaks to kids and adults alike.",12
+ft_friends_scary,ilk,en,1,Shaun of the Dead,Horror-comedy gold: genuinely scary zombies but played for laughs with friends.,11
+ft_friends_scary,ilk,en,2,What We Do in the Shadows,Vampires and comedy collide; hilarious and spooky without ever getting too dark.,12
+ft_friends_scary,ilk,en,3,Young Frankenstein,Classic monster movie fun that's more silly than scary; perfect group watch.,12
+ft_friends_scary,ilk,en,4,Bullet Train,"Action-packed chaos and laughs, though less horror-focused than the others here.",11
+ft_like_interstellar,ilk,en,1,Arrival,Epic sci-fi that builds wonder through communication and stakes as high as the cosmos.,14
+ft_like_interstellar,ilk,en,2,Inception,Mind-bending spectacle with stunning visuals and a story that demands your full attention.,13
+ft_like_interstellar,ilk,en,3,Twelve Monkeys,Ambitious time-travel concept that challenges you intellectually across its entire runtime.,11
+ft_like_interstellar,ilk,en,4,Close Encounters of the Third Kind,A classic sense-of-awe sci-fi that explores humanity's place in something far greater.,12
+ft_sad_cry,ilk,en,1,Life Is Beautiful,A story of love and sacrifice that builds to an overwhelming emotional crescendo.,13
+ft_sad_cry,ilk,en,2,The Pursuit of Happyness,A father's determination to give his son a better life hits deep.,12
+ft_sad_cry,ilk,en,3,About Time,"Tender family moments and life's fragility create genuine, earned tears.",10
+ft_sad_cry,ilk,en,4,The Shawshank Redemption,Quiet dignity and hope in darkness—devastating and ultimately cathartic.,9
+ft_heist,ilk,en,1,Knives Out,A mystery built on misdirection with a final reveal that reframes everything you've seen.,14
+ft_heist,ilk,en,4,The Usual Suspects,A crime story where the twist isn't just the ending—it's who's been playing you all along.,16
+ft_90min,ilk,en,1,The Emperor's New Groove,"Hilarious transformation chaos under 90 minutes, pure comedy fuel.",9
+ft_90min,ilk,en,2,The Muppet Christmas Carol,"Festive comedy with Muppet jokes, though slightly longer at 121 min.",11
+ft_90min,ilk,en,3,Ernest & Celestine,"Charming odd-couple story with consistent humor, quick pacing.",8
+ft_90min,ilk,en,4,Lilo & Stitch,Fast-paced alien comedy that's relentlessly funny and snappy.,8
+ft_slow_beautiful,ilk,en,1,The Tree of Life,Impressionistic and meditative; long stretches of visual storytelling with minimal words.,11
+ft_slow_beautiful,ilk,en,2,Perfect Days,Peaceful routines and silence; a contemplative study of one man's quiet contentment.,12
+ft_slow_beautiful,ilk,en,3,Wings of Desire,"Angels observing quietly; dialogue sparse, beauty found in floating through scenes.",11
+ft_slow_beautiful,ilk,en,4,Loving Vincent,Painterly frames and hushed moments; dialogue yields to the visual conversation.,11
+ft_true_story,ilk,en,1,Hidden Figures,Brilliant women breaking barriers: the exact inspiration you're seeking tonight.,10
+ft_true_story,ilk,en,2,October Sky,A young dreamer defies odds through passion and determination—purely uplifting.,10
+ft_true_story,ilk,en,3,Schindler's List,Humanity's darkest hour redeemed by one man's moral choice and action.,11
+ft_true_story,ilk,en,4,Just Mercy,One lawyer's courage dismantles injustice: deeply moving and morally inspiring.,10
+ft_breakup,ilk,en,1,Eternal Sunshine of the Spotless Mind,Directly confronts heartbreak and memory loss—cathartic for processing what you've lost.,11
+ft_breakup,ilk,en,2,Begin Again,A woman rebuilds herself after abandonment through music and unexpected connection.,11
+ft_breakup,ilk,en,3,Her,Explores loneliness and artificial intimacy; helps you sit with those feelings tonight.,12
+ft_breakup,ilk,en,4,Inside Llewyn Davis,Melancholic but honest about struggle; solace in shared human vulnerability and pain.,12
+ft_nostalgia_80s,ilk,en,1,Raiders of the Lost Ark,"Classic 80s adventure with fedora, whip, and ancient mysteries—pure escapism.",10
+ft_nostalgia_80s,ilk,en,2,The Goonies,"Teen treasure hunt with heart, humor, and that iconic 80s friendship energy.",12
+ft_nostalgia_80s,ilk,en,3,Back to the Future,Time-travel adventure that captures 80s spirit and teenage thrills perfectly.,10
+ft_nostalgia_80s,ilk,en,4,Top Gun,"High-octane 80s action with jets, rivalry, and that decade's swagger.",10
+ft_dark_thriller,ilk,en,1,Shutter Island,Unreliable reality and shocking reveals keep you questioning everything you've seen.,11
+ft_dark_thriller,ilk,en,2,The Prestige,"Dual obsession and deception layered so cunningly, you'll unravel it all night.",12
+ft_dark_thriller,ilk,en,3,Memento,"Fragmented mind, fractured truth: a puzzle that makes you work for answers.",12
+ft_dark_thriller,ilk,en,4,Gone Girl,A twisting psychological game where nothing is what it seems; perfect for guessing.,13
+ft_tr_hafif,ilk,tr,1,Paddington 2,"Sıcak, komik ve hiç stres yapmayan bir akşam için ideal.",10
+ft_tr_hafif,ilk,tr,2,Kiki's Delivery Service,"Sakin paced, güzel bir hikâye, dinlenirken keyif alırsın.",8
+ft_tr_hafif,ilk,tr,3,Klaus,"Hafif, neşeli ve kafa yormadan rahatlıkla izlenebilir.",7
+ft_tr_hafif,ilk,tr,4,Monsters University,"Eğlenceli arkadaşlık hikâyesi, hiç karmaşık değil.",6
+ft_tr_aile,ilk,tr,1,Coco,"Aile için mükemmel: sevgi, müzik ve sıcak duygular baştan sona.",10
+ft_tr_aile,ilk,tr,2,The Wild Robot,"Ön yargısız bir robot ve yeni arkadaşlar: sıcak, eğlenceli, düşün başında.",11
+ft_tr_aile,ilk,tr,3,Flow,"Sevimli hayvanlar, dostluk hikâyesi; çocuklar da büyükler de severler.",9
+ft_tr_aile,ilk,tr,4,Up,"Güzel bir macera; her yaştan birini gülümseten, kalbı ısıtan bir film.",11
+ft_tr_gerilim,ilk,tr,2,The Invisible Guest,"Gerilimli bir gece, her sahnede yeni ipuçları ve beklenmedik bir son.",11
+ft_tr_gerilim,ilk,tr,3,Se7en,Koyu ve sürükleyici; cinayetlerin peşinde ilerlerken sonunda çarpıcı bir açılım.,10
+ft_tr_gerilim,ilk,tr,4,Identity,"Yabancıların arasında gerilim tırmanıyor, sonu tamamen farklı bir yere gidiyor.",10
+qm_rainy,önbellekli,en,1,Perfect Days,"A gentle portrait of routine and contentment; perfect for a contemplative, peaceful evening.",13
+qm_rainy,önbellekli,en,2,Lost in Translation,"Melancholic wandering through Tokyo; slow, introspective, and emotionally warm.",9
+qm_rainy,önbellekli,en,3,Before Sunrise,Intimate conversation over an evening walk; thoughtful and gently romantic without urgency.,12
+qm_rainy,önbellekli,en,4,The Straight Story,"Quiet, unhurried journey through small-town America; deeply calm and reflective.",10
+qm_mindbending,önbellekli,en,1,Eternal Sunshine of the Spotless Mind,"A layered exploration of memory, identity, and love that demands your full attention and reflection.",15
+qm_mindbending,önbellekli,en,2,2001: A Space Odyssey,"An ambitious cosmic mystery that unfolds slowly, rewarding deep thought with profound existential questions.",14
+qm_mindbending,önbellekli,en,3,Arrival,A cerebral sci-fi drama where language and understanding shape reality itself—genuinely mind-bending.,12
+qm_mindbending,önbellekli,en,4,Donnie Darko,"A complex puzzle of time, fate, and mental breakdown that reveals new meanings on reflection.",15
+qm_date,önbellekli,en,1,The Notebook,"Tender and devoted, a lifetime of love told through quiet, intimate moments together.",13
+qm_date,önbellekli,en,2,Call Me by Your Name,"Passionate and sensual, an unforgettable summer romance full of longing and connection.",12
+qm_date,önbellekli,en,3,Portrait of a Lady on Fire,"Artistic and deeply intimate, two women's love blooms in isolation and beauty.",12
+qm_date,önbellekli,en,4,About Time,"Warm and heartfelt, romance woven through family bonds and precious time shared.",12
+qm_adrenaline,önbellekli,en,1,John Wick,"Sleek revenge thriller that builds intensity through precise, brutal action sequences.",11
+qm_adrenaline,önbellekli,en,2,Die Hard,"Confined, escalating siege that grips you with smart tactical action and urgency.",12
+qm_adrenaline,önbellekli,en,3,Mad Max: Fury Road,Relentless desert chase with zero downtime; pure adrenaline from start to finish.,12
+qm_adrenaline,önbellekli,en,4,Mission: Impossible - Fallout,High-stakes globe-trotting espionage with jaw-dropping set pieces and constant tension.,10
+qm_comedy,önbellekli,en,1,Paddington 2,"Charming, genuinely funny, and pure comfort—exactly what lifts spirits tonight.",10
+qm_comedy,önbellekli,en,2,Klaus,"Warmly funny and heartfelt, with humor that feels good rather than mean.",12
+qm_comedy,önbellekli,en,3,Bridesmaids,Hilarious and messy in the best way; laughter guaranteed without heavy stakes.,12
+qm_comedy,önbellekli,en,4,Bread and Tulips,"Light, romantic comedy that charms without demanding anything but a smile.",11
+qm_nostalgia,önbellekli,en,1,My Neighbor Totoro,"Childhood wonder and gentle magic wrapped in a cozy, bittersweet embrace of family.",13
+qm_nostalgia,önbellekli,en,2,Life Is Beautiful,"A father's love transforms hardship into wonder, bittersweet yet ultimately life-affirming.",11
+qm_nostalgia,önbellekli,en,3,The Holdovers,Holiday coziness and gruff tenderness emerge from isolation and unexpected human connection.,12
+qm_nostalgia,önbellekli,en,4,Mary and Max,"An unlikely friendship story tinged with loneliness and warmth, beautifully nostalgic.",11
+qm_cozy,önbellekli,en,1,Kiki's Delivery Service,"Cozy fantasy with gentle pacing; a young witch finding her way, no stress.",13
+qm_cozy,önbellekli,en,2,Toy Story 4,"Warm, funny, and heartfelt without heavy emotional weight—comfort viewing at its best.",12
+qm_cozy,önbellekli,en,3,Elio,"Colorful space adventure, silly and imaginative, demands nothing but smiles from you.",12
+qm_cozy,önbellekli,en,4,Sing,Upbeat musical comedy with zero darkness—pure fun and charm for a chill evening.,13
+qm_emotional,önbellekli,en,1,Manchester by the Sea,"Intimate grief and loss that cuts deep; a quiet, devastating portrait of heartbreak.",13
+qm_emotional,önbellekli,en,2,Memoirs of a Geisha,"A woman's struggle and sacrifice across decades; melancholic, romantic, and heartbreaking.",11
+qm_emotional,önbellekli,en,3,12 Years a Slave,A harrowing true story of injustice and resilience; profoundly moving and emotionally raw.,13
+qm_emotional,önbellekli,en,4,Schindler's List,Historical tragedy transformed into profound human dignity; deeply moving and morally complex.,12

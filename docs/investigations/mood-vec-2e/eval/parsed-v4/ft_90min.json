@@ -1,0 +1,146 @@
+{
+  "mood_id": "ft_90min",
+  "text": "Under 90 minutes, funny",
+  "ms": 3696,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Quick Laugh",
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "trust": 0.6,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "dark humor",
+      "disturbing",
+      "heavy themes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "funny",
+      "short runtime",
+      "lighthearted",
+      "entertainment"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [],
+    "max_runtime": 90,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Superbad",
+        "year": 2007
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "What We Do in the Shadows",
+        "year": 2014
+      },
+      {
+        "title": "Tropic Thunder",
+        "year": 2008
+      },
+      {
+        "title": "Juno",
+        "year": 2007
+      },
+      {
+        "title": "Hunt for the Wilderpeople",
+        "year": 2016
+      }
+    ],
+    "search_id": "19700ef4-4445-4cb0-938e-9dd2f41c9175",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "ac6c2730-4e84-42fe-adee-2af938779580",
+      "854765fc-8cde-4d81-a1e2-2887fcfb52f6",
+      "426992d1-4970-4076-ac0f-614085908df3",
+      "90b19326-b1f7-491f-a4ac-c8fd387addad",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "b9489777-1c66-40fe-bf26-202cbde61e00",
+      "18035914-aa4e-4880-8213-703a2373e208",
+      "82327826-46c2-474b-8c6e-216ce4595a74",
+      "aa02f15c-94df-4213-a625-946ed17ed06a",
+      "9ee7f6ee-051c-4f8e-856a-2805d949e7fe",
+      "74ebfc5e-10a8-48d4-9b33-9da6c03dadeb",
+      "5c37028c-d2f0-46a4-91b5-648599b0724d",
+      "aa78c71c-98e5-4edf-b813-2ce8da6a0fac",
+      "beba7a17-264c-4138-86e4-95aa0ce96f60",
+      "d1432789-e17b-4b3d-a0e2-866a21b4fa82",
+      "b508e4d1-af21-430d-b1bb-a2b34ad1039f",
+      "fe09cb19-0162-4fe4-bde8-299f2c806d2a",
+      "2cdcc9e2-acdf-4244-83e4-621e540a687d",
+      "613e3659-1a59-46b1-b26e-d58da7c0fc0e",
+      "7415f32f-4f8a-4845-94cc-f24c7f97eca7"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.4,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.6
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "cinematic",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "dark humor",
+      "disturbing",
+      "heavy themes"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "19700ef4-4445-4cb0-938e-9dd2f41c9175",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "funny",
+    "short runtime",
+    "lighthearted",
+    "entertainment"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

@@ -1,0 +1,151 @@
+{
+  "mood_id": "ft_dark_thriller",
+  "text": "Dark psychological thriller that keeps me guessing",
+  "ms": 4594,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Dark Psychological Suspense",
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.55,
+      "fear": 0.75,
+      "anger": 0.35,
+      "surprise": 0.8,
+      "disgust": 0.4,
+      "trust": 0.2,
+      "anticipation": 0.85
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "raw",
+    "thematic_depth": 0.9,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "happy ending",
+      "romance",
+      "light tone"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "psychological thriller",
+      "mystery",
+      "twist ending",
+      "unreliable narrator",
+      "suspense",
+      "dark",
+      "mind games",
+      "deception"
+    ],
+    "genres_include": [
+      "Thriller",
+      "Mystery"
+    ],
+    "genres_exclude": [],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Gone Girl",
+        "year": 2014
+      },
+      {
+        "title": "The Prestige",
+        "year": 2006
+      },
+      {
+        "title": "Shutter Island",
+        "year": 2010
+      },
+      {
+        "title": "Prisoners",
+        "year": 2013
+      },
+      {
+        "title": "Zodiac",
+        "year": 2007
+      },
+      {
+        "title": "The Usual Suspects",
+        "year": 1995
+      }
+    ],
+    "search_id": "80b65384-1121-437f-982b-162026bd31c3",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+      "3bcbf6b1-9f5f-4937-8603-743f9bc7f2a5",
+      "1bcffd15-5987-43b5-822f-393ec803a8a0",
+      "cda0a032-6a38-4a46-a2bf-babfa3f8576c",
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "a6f80c91-a2a7-408e-9cf3-ae82c3c4803b",
+      "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+      "dbaea249-6333-42c8-9462-fe5f51cba11f",
+      "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+      "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+      "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d",
+      "5656036c-0b1a-4fbf-9388-90a01ce7ba88",
+      "1d6879d5-f75f-4587-ab39-49a412dcd812",
+      "4b42f33e-44c6-41b6-8e62-09630142d9bd",
+      "34d989b0-6e83-4507-af1d-961240dd21c0",
+      "682860b5-c196-4fe0-a128-3b8c24787ab9"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.15,
+      "sadness": 0.55,
+      "anger": 0.35,
+      "fear": 0.75,
+      "surprise": 0.8,
+      "disgust": 0.4,
+      "anticipation": 0.85,
+      "trust": 0.2
+    },
+    "energy_level": 0.65,
+    "pace_preference": "medium",
+    "visual_style": "raw",
+    "thematic_depth": 0.9,
+    "ending_preference": "open",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "happy ending",
+      "romance",
+      "light tone"
+    ],
+    "narrative_style": "nonlinear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "80b65384-1121-437f-982b-162026bd31c3",
+  "search_keywords": [
+    "psychological thriller",
+    "mystery",
+    "twist ending",
+    "unreliable narrator",
+    "suspense",
+    "dark",
+    "mind games",
+    "deception"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

@@ -1,0 +1,144 @@
+{
+  "mood_id": "qm_date",
+  "text": "Romantic and heartfelt, a tender love story for a couple, intimate and warm, not horror, not scary",
+  "ms": 4611,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Romantic and Heartfelt",
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "trust": 0.85,
+      "anticipation": 0.4
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "scary",
+      "violence",
+      "gore"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "romance",
+      "love story",
+      "intimate",
+      "relationships",
+      "emotional connection",
+      "tender moments",
+      "heartfelt",
+      "warmth"
+    ],
+    "genres_include": [
+      "Romance",
+      "Drama"
+    ],
+    "genres_exclude": [
+      "Horror",
+      "Thriller"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "The Notebook",
+        "year": 2004
+      },
+      {
+        "title": "Before Sunrise",
+        "year": 1995
+      },
+      {
+        "title": "About Time",
+        "year": 2013
+      },
+      {
+        "title": "La La Land",
+        "year": 2016
+      },
+      {
+        "title": "Midnight in Paris",
+        "year": 2011
+      },
+      {
+        "title": "When Harry Met Sally",
+        "year": 1989
+      }
+    ],
+    "search_id": "c2d684b2-f398-46f9-a231-288079384916",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+      "aa02f15c-94df-4213-a625-946ed17ed06a",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.75,
+      "sadness": 0.2,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0,
+      "anticipation": 0.4,
+      "trust": 0.85
+    },
+    "energy_level": 0.35,
+    "pace_preference": "slow",
+    "visual_style": "lush",
+    "thematic_depth": 0.7,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "horror",
+      "scary",
+      "violence",
+      "gore"
+    ],
+    "narrative_style": "linear",
+    "social_context": "couple",
+    "rewatch_tolerance": true
+  },
+  "search_id": "c2d684b2-f398-46f9-a231-288079384916",
+  "search_keywords": [
+    "romance",
+    "love story",
+    "intimate",
+    "relationships",
+    "emotional connection",
+    "tender moments",
+    "heartfelt",
+    "warmth"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

@@ -1,0 +1,155 @@
+{
+  "mood_id": "qm_comedy",
+  "text": "Something genuinely funny and lighthearted, a comedy to lift my spirits, not action, not thriller",
+  "ms": 4793,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Lighthearted Comedy Lift",
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.2
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action",
+      "thriller",
+      "suspense",
+      "dark",
+      "violent",
+      "intense"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "comedy",
+      "humor",
+      "funny",
+      "lighthearted",
+      "feel-good",
+      "satire",
+      "witty dialogue",
+      "laugh"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [
+      "Action",
+      "Thriller"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Bridesmaids",
+        "year": 2011
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      },
+      {
+        "title": "What We Do in the Shadows",
+        "year": 2014
+      },
+      {
+        "title": "Paddington 2",
+        "year": 2017
+      },
+      {
+        "title": "Juno",
+        "year": 2007
+      }
+    ],
+    "search_id": "b26173ed-7525-490d-9b43-5b2cf65fb6d5",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "0e53f958-2581-46d0-a5db-51ae0c81542b",
+      "3cad714d-b789-4eba-91b2-502c4931bd86",
+      "7eab97d1-1707-4777-b3a3-1a394b63b742",
+      "19dbad8f-7faa-4c48-98d7-19e6c2934669",
+      "e17982bc-5158-498e-bdb5-8352ff8a65b8",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "c4bce06b-a2c7-48d4-bc6a-fa103addb645",
+      "337234a3-a00b-4649-89d8-578aeb71cef5",
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "eb3b9cd7-e354-4947-90d6-8553e1087a64",
+      "2b977c2b-20be-4411-b018-9e1ce479ee1a",
+      "aa02f15c-94df-4213-a625-946ed17ed06a",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "2403581d-d8b8-4aa6-a306-42c948061e7e",
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "d296d000-6276-4650-8e6b-bd28cbf587a5"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.85,
+      "sadness": 0.05,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.2,
+      "trust": 0.7
+    },
+    "energy_level": 0.4,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.15,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "action",
+      "thriller",
+      "suspense",
+      "dark",
+      "violent",
+      "intense"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "b26173ed-7525-490d-9b43-5b2cf65fb6d5",
+  "search_keywords": [
+    "comedy",
+    "humor",
+    "funny",
+    "lighthearted",
+    "feel-good",
+    "satire",
+    "witty dialogue",
+    "laugh"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

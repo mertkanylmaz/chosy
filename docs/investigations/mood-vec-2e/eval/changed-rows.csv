@@ -1,0 +1,71 @@
+mood_id,rank,title,year,imdb_votes,channels,reason
+qm_rainy,1,Perfect Days,2023,103770,v,"A gentle portrait of quiet contentment—meditative routine and Tokyo serenity, perfect for your calm evening."
+qm_rainy,4,The Straight Story,1999,106340,v,Unhurried rural journey that honors slowness; a widower's peaceful quest matches your contemplative mood.
+qm_mindbending,1,Eternal Sunshine of the Spotless Mind,2004,1166070,c,Memory and identity collapse into themselves; demands your full engagement with its philosophical puzzle.
+qm_mindbending,3,Mulholland Drive,2001,415244,c,Reality fractures across layers; a labyrinth that challenges what you think you're watching.
+qm_mindbending,4,Arrival,2016,852057,c+v,Language and time reshape meaning itself; profound questions emerge through linguistic and temporal complexity.
+qm_date,2,Call Me by Your Name,2017,351228,v,Sensual summer romance suffused with longing and genuine tenderness between two people.
+qm_date,3,Titanic,1997,1389357,a+v,Sweeping love story told across time; epic yet intimate in its devotion and memory.
+qm_date,4,Portrait of a Lady on Fire,2019,126866,v,Slow-burn romance with painterly beauty; intimate and emotionally rich without sentimentality.
+qm_adrenaline,3,Die Hard,1988,1021784,c+v,High-stakes hostage siege with constant tension and inventive action sequences throughout.
+qm_adrenaline,4,Furious 7,2015,437204,v,"Fast-paced revenge thriller packed with car chases, stunts, and adrenaline rushes."
+qm_comedy,3,Bridesmaids,2011,329238,c,Hilarious and messy in the best way; pure comedy that hits different tonight.
+qm_comedy,4,Sing,2016,218051,v,"Colorful, fun musical comedy with heart; lighthearted entertainment that cheers you up."
+qm_nostalgia,1,My Neighbor Totoro,1988,425325,c,"Childhood wonder and gentle magic: exactly the warm, bittersweet nostalgia you need tonight."
+qm_nostalgia,2,Life Is Beautiful,1997,811130,c,Sweetly sentimental without being heavy; a cozy fable that wraps around you like memory.
+qm_nostalgia,3,Mary and Max,2009,199582,v,A quietly touching friendship story that feels like rediscovering something precious from long ago.
+qm_nostalgia,4,The Holdovers,2023,247029,v,Lonely souls finding unexpected warmth during the holidays; bittersweet and deeply comforting.
+qm_cozy,1,Toy Story 4,2019,310352,c,Heartwarming adventure that's purely fun—perfect for unwinding without mental strain.
+qm_cozy,2,Kiki's Delivery Service,1989,185670,v,"Dreamy, gentle animation that relaxes you while keeping you lightly entertained throughout."
+qm_cozy,3,Mary Poppins,1964,197040,v,Whimsical and magical with zero darkness—pure cozy entertainment from start to finish.
+qm_cozy,4,Lilo & Stitch,2002,248109,v,"Colorful, chaotic comedy that's impossible to take seriously: exactly chill vibes."
+qm_emotional,2,Memoirs of a Geisha,2005,171577,v,"A woman's heartbreaking journey through beauty and cruelty, melancholic and emotionally rich."
+qm_emotional,3,12 Years a Slave,2013,785552,v,A harrowing true story of injustice and suffering that will move you profoundly.
+qm_emotional,4,Schindler's List,1993,1582378,a+v,"Historical tragedy on a massive scale, devastating yet deeply human and unforgettable."
+ft_physics,1,Oppenheimer,2023,1024033,c,Chronicles the physics revolution that defined the atomic age.
+ft_physics,2,The Theory of Everything,2014,505970,c,Portrait of a mind that transformed our understanding of physics.
+ft_physics,3,The Martian,2015,999128,c,Survival through applied physics and problem-solving on another planet.
+ft_physics,4,Interstellar,2014,2516752,a+c,"Explores gravity, relativity, and spacetime through epic visual storytelling."
+ft_tired_light,1,The Red Turtle,2016,41710,v,Dialogue-free fantasy that's visually calming; your brain can switch off without missing anything.
+ft_tired_light,2,Marcel the Shell with Shoes On,2022,33460,v,Bite-sized comedy that's gentle enough for tired eyes but charming enough to keep you engaged.
+ft_tired_light,3,Flow,2024,121667,v,Wordless adventure that won't demand mental effort; just float through it with minimal talking.
+ft_tired_light,4,My Octopus Teacher,2020,68778,v,Meditative and soothing—real footage of ocean life lets your mind rest while you watch.
+ft_date_first,2,Call Me by Your Name,2017,351228,c,Slow-burn romance with real chemistry; beautiful but demands patience and emotional openness.
+ft_date_first,3,Paris Je T'aime,2006,76051,v,Romantic vignettes across Paris offer variety without heavy commitment or saccharine moments.
+ft_date_first,4,"Josee, the Tiger and the Fish",2020,11296,v,Sweet and genuine connection that builds naturally; animation keeps it fresh and unpretentious.
+ft_family_kids,1,The Super Mario Bros. Movie,2023,292599,c,Colorful adventure with relatable brothers; perfect for both kids to enjoy together.
+ft_family_kids,3,Klaus,2019,232782,v,Heartwarming tale with humor and unexpected friendship; cozy for a family evening.
+ft_family_kids,4,Coco,2017,704092,c,"Vibrant, musical story about family that speaks to kids and adults alike."
+ft_friends_scary,1,Shaun of the Dead,2004,647067,c,Horror-comedy gold: genuinely scary zombies but played for laughs with friends.
+ft_friends_scary,3,Young Frankenstein,1974,179473,v,Classic monster movie fun that's more silly than scary; perfect group watch.
+ft_like_interstellar,2,Inception,2010,2811614,a+c,Mind-bending spectacle with stunning visuals and a story that demands your full attention.
+ft_like_interstellar,3,Twelve Monkeys,1995,686259,v,Ambitious time-travel concept that challenges you intellectually across its entire runtime.
+ft_like_interstellar,4,Close Encounters of the Third Kind,1977,229698,v,A classic sense-of-awe sci-fi that explores humanity's place in something far greater.
+ft_sad_cry,1,Life Is Beautiful,1997,811130,c,A story of love and sacrifice that builds to an overwhelming emotional crescendo.
+ft_sad_cry,2,The Pursuit of Happyness,2006,614482,c,A father's determination to give his son a better life hits deep.
+ft_sad_cry,3,About Time,2013,429483,c,"Tender family moments and life's fragility create genuine, earned tears."
+ft_sad_cry,4,The Shawshank Redemption,1994,3182645,a+c,Quiet dignity and hope in darkness—devastating and ultimately cathartic.
+ft_heist,1,Knives Out,2019,875016,c,A mystery built on misdirection with a final reveal that reframes everything you've seen.
+ft_heist,3,The Sting,1973,298899,v,
+ft_90min,2,The Muppet Christmas Carol,1992,82947,v,"Festive comedy with Muppet jokes, though slightly longer at 121 min."
+ft_90min,3,Ernest & Celestine,2012,23596,v,"Charming odd-couple story with consistent humor, quick pacing."
+ft_90min,4,Lilo & Stitch,2002,248109,a+v,Fast-paced alien comedy that's relentlessly funny and snappy.
+ft_slow_beautiful,1,The Tree of Life,2011,193844,c,Impressionistic and meditative; long stretches of visual storytelling with minimal words.
+ft_slow_beautiful,2,Perfect Days,2023,103770,v,Peaceful routines and silence; a contemplative study of one man's quiet contentment.
+ft_slow_beautiful,4,Loving Vincent,2017,66467,v,Painterly frames and hushed moments; dialogue yields to the visual conversation.
+ft_true_story,3,Schindler's List,1993,1582378,c,Humanity's darkest hour redeemed by one man's moral choice and action.
+ft_true_story,4,Just Mercy,2019,81584,v,One lawyer's courage dismantles injustice: deeply moving and morally inspiring.
+ft_breakup,2,Begin Again,2013,178830,c,A woman rebuilds herself after abandonment through music and unexpected connection.
+ft_breakup,3,Her,2013,725639,v,Explores loneliness and artificial intimacy; helps you sit with those feelings tonight.
+ft_nostalgia_80s,2,The Goonies,1985,331797,c,"Teen treasure hunt with heart, humor, and that iconic 80s friendship energy."
+ft_nostalgia_80s,4,Top Gun,1986,550107,c,"High-octane 80s action with jets, rivalry, and that decade's swagger."
+ft_dark_thriller,2,The Prestige,2006,1583310,a+c,"Dual obsession and deception layered so cunningly, you'll unravel it all night."
+ft_tr_hafif,1,Paddington 2,2017,117092,c,"Sıcak, komik ve hiç stres yapmayan bir akşam için ideal."
+ft_tr_hafif,2,Kiki's Delivery Service,1989,185670,v,"Sakin paced, güzel bir hikâye, dinlenirken keyif alırsın."
+ft_tr_hafif,4,Monsters University,2013,432884,v,"Eğlenceli arkadaşlık hikâyesi, hiç karmaşık değil."
+ft_tr_aile,1,Coco,2017,704092,c,"Aile için mükemmel: sevgi, müzik ve sıcak duygular baştan sona."
+ft_tr_aile,2,The Wild Robot,2024,216281,v,"Ön yargısız bir robot ve yeni arkadaşlar: sıcak, eğlenceli, düşün başında."
+ft_tr_aile,3,Flow,2024,121667,v,"Sevimli hayvanlar, dostluk hikâyesi; çocuklar da büyükler de severler."
+ft_tr_aile,4,Up,2009,1225827,a+v,"Güzel bir macera; her yaştan birini gülümseten, kalbı ısıtan bir film."
+ft_tr_gerilim,3,Se7en,1995,2017106,a+c,Koyu ve sürükleyici; cinayetlerin peşinde ilerlerken sonunda çarpıcı bir açılım.
+ft_tr_gerilim,4,Identity,2003,299358,v,"Yabancıların arasında gerilim tırmanıyor, sonu tamamen farklı bir yere gidiyor."

@@ -1,0 +1,918 @@
+{
+  "mood_id": "ft_date_first",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "fc8ee875-9934-4b6e-834f-aff0cb526231",
+        "tmdb_id": 398818,
+        "title": "Call Me by Your Name",
+        "year": 2017,
+        "overview": "In the summer of 1983, a 17-year-old Elio spends his days in his family's villa in Italy. One day Oliver, a graduate student, arrives to assist Elio's father, a professor of Greco-Roman culture. Soon, Elio and Oliver discover a summer that will alter their lives forever.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 132,
+        "vote_average": 8.1,
+        "director": "Luca Guadagnino",
+        "similarity": 0.620712160516353,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, upper class, italy",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+        "tmdb_id": 76,
+        "title": "Before Sunrise",
+        "year": 1995,
+        "overview": "An unexpected meeting on a train leads two travelers to spend an evening wandering through Vienna. As the night unfolds, they share stories and conversations about life and love, exploring new ideas while a quiet intimacy grows between them, knowing it may be their only night together.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 101,
+        "vote_average": 7.973,
+        "director": "Richard Linklater",
+        "similarity": 0.529445418630596,
+        "curation_tier": "core",
+        "match_reason": "talking, soulmates, walking",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "b643db72-26cd-40c4-81c7-dff0f02749e1",
+        "tmdb_id": 38,
+        "title": "Eternal Sunshine of the Spotless Mind",
+        "year": 2004,
+        "overview": "Joel Barish, heartbroken that his girlfriend underwent a procedure to erase him from her memory, decides to do the same. However, as he watches his memories of her fade away, he realises that he still loves her, and may be too late to correct his mistake.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 108,
+        "vote_average": 8.1,
+        "director": "Michel Gondry",
+        "similarity": 0.486323189034743,
+        "curation_tier": "core",
+        "match_reason": "Matches: realistic relationships",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.390825068087952,
+        "curation_tier": "extended",
+        "match_reason": "drug dealer, high school, florida",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "74b852c1-dd85-4a91-ab44-4d22ec4150d4",
+        "tmdb_id": 83389,
+        "title": "From Up on Poppy Hill",
+        "year": 2011,
+        "overview": "Yokohama, 1963. Japan is picking itself up from the devastation of World War II and preparing to host the 1964 Olympics—and the mood is one of both optimism and conflict as the young generation struggles to throw off the shackles of a troubled past. Against this backdrop of hope and change, a friendship begins to blossom between high school students Umi and Shun—but a buried secret from their past emerges to cast a shadow on the future and pull them apart.",
+        "genres": [
+          "Animation",
+          "Drama"
+        ],
+        "runtime": 91,
+        "vote_average": 7.523,
+        "director": "Goro Miyazaki",
+        "similarity": 0.96400453350139,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "358f5325-68c6-4e8d-ad97-fa39e0df8028",
+        "tmdb_id": 568160,
+        "title": "Weathering with You",
+        "year": 2019,
+        "overview": "The summer of his high school freshman year, Hodaka runs away from his remote island home to Tokyo, and quickly finds himself pushed to his financial and personal limits. The weather is unusually gloomy and rainy every day, as if taking its cue from his life. After many days of solitude, he finally finds work as a freelance writer for a mysterious occult magazine. Then, one day, Hodaka meets Hina on a busy street corner. This bright and strong-willed girl possesses a strange and wonderful ability: the power to stop the rain and clear the sky.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 112,
+        "vote_average": 7.978,
+        "director": "Makoto Shinkai",
+        "similarity": 0.963541184401341,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7eedead6-a5b1-4786-9224-d402ce932586",
+        "tmdb_id": 2266,
+        "title": "Paris Je T'aime",
+        "year": 2006,
+        "overview": "Olivier Assayas, Gus Van Sant, Wes Craven and Alfonso Cuaron are among the 20 distinguished directors who contribute to this collection of 18 stories, each exploring a different aspect of Parisian life. The colourful characters in this drama include a pair of mimes, a husband trying to choose between his wife and his lover, and a married man who turns to a prostitute for advice.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 120,
+        "vote_average": 6.754,
+        "director": "Olivier Assayas",
+        "similarity": 0.955491901062042,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "91f8b3da-f83d-47ff-a304-e64516bf2b93",
+        "tmdb_id": 10681,
+        "title": "WALL·E",
+        "year": 2008,
+        "overview": "After hundreds of years doing what he was built for, WALL•E— a robot designed to clean up the earth—discovers a new purpose in life when he meets a sleek search robot named EVE. EVE comes to realize that WALL•E has inadvertently stumbled upon the key to the planet's future, and races back to space to report to the humans. Meanwhile, WALL•E chases EVE across the galaxy and sets into motion one of the most imaginative adventures ever brought to the big screen.",
+        "genres": [
+          "Animation",
+          "Family",
+          "Science Fiction"
+        ],
+        "runtime": 98,
+        "vote_average": 8.112,
+        "director": "Andrew Stanton",
+        "similarity": 0.927905328774931,
+        "curation_tier": "core",
+        "match_reason": "garbage, dystopia, space travel",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ac4c8787-aee7-487b-9307-6b94f5e08565",
+        "tmdb_id": 11005,
+        "title": "Awakenings",
+        "year": 1990,
+        "overview": "Dr. Malcolm Sayer, a shy research physician, uses an experimental drug to \"awaken\" the catatonic victims of a rare disease. Leonard is the first patient to receive the controversial treatment. His awakening, filled with awe and enthusiasm, proves a rebirth for Sayer too, as the exuberant patient reveals life's simple but unutterably sweet pleasures to the introverted doctor.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 120,
+        "vote_average": 7.773,
+        "director": "Penny Marshall",
+        "similarity": 0.918694723225556,
+        "curation_tier": "core",
+        "match_reason": "coma, experiment, based on novel or book",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "af6fc138-a638-4b4c-860d-201cc0d9ea65",
+        "tmdb_id": 527641,
+        "title": "Five Feet Apart",
+        "year": 2019,
+        "overview": "Seventeen-year-old Stella spends most of her time in the hospital as a cystic fibrosis patient. Her life is full of routines, boundaries and self-control — all of which get put to the test when she meets Will, an impossibly charming teen who has the same illness. There's an instant flirtation, though restrictions dictate that they must maintain a safe distance between them. As their connection intensifies, so does the temptation to throw the rules out the window and embrace that attraction.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 8.215,
+        "director": "Justin Baldoni",
+        "similarity": 0.916866584747054,
+        "curation_tier": "core",
+        "match_reason": "forbidden love, terminal illness, hospital",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "45d72f5a-3a41-489f-ae3d-16d528914bb1",
+        "tmdb_id": 585244,
+        "title": "I Still Believe",
+        "year": 2020,
+        "overview": "The true-life story of Christian music star Jeremy Camp and his journey of love and loss that looks to prove there is always hope.",
+        "genres": [
+          "Music",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 115,
+        "vote_average": 7.568,
+        "director": "Andrew Erwin",
+        "similarity": 0.915929345067759,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c4bce06b-a2c7-48d4-bc6a-fa103addb645",
+        "tmdb_id": 597,
+        "title": "Titanic",
+        "year": 1997,
+        "overview": "101-year-old Rose DeWitt Bukater tells the story of her life aboard the Titanic, 84 years later. A young Rose boards the ship with her mother and fiancé. Meanwhile, Jack Dawson and Fabrizio De Rossi win third-class tickets aboard the ship. Rose tells the whole story from Titanic's departure through to its death—on its first and last voyage—on April 15, 1912.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 194,
+        "vote_average": 7.902,
+        "director": "James Cameron",
+        "similarity": 0.914659419648146,
+        "curation_tier": "core",
+        "match_reason": "Matches: romance, realistic relationships",
+        "channels": [
+          "a",
+          "v"
+        ]
+      },
+      {
+        "id": "3396dd09-2867-4b73-8b83-2452f4e969fb",
+        "tmdb_id": 86000,
+        "title": "Always",
+        "year": 2011,
+        "overview": "A former boxer turned parking lot attendant finds hope in the love of the blind telemarketer who walks into his booth one day.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.818,
+        "director": "Song Il-gon",
+        "similarity": 0.902436955644436,
+        "curation_tier": "extended",
+        "match_reason": "attraction, blind woman, dramatic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "289cab7d-e354-472d-8fc5-d0d2e8303afc",
+        "tmdb_id": 1340206,
+        "title": "Tuner",
+        "year": 2026,
+        "overview": "A gifted piano tuner's meticulous skills for tuning pianos lead him to discover an unexpected aptitude for cracking safes, turning his life upside down.",
+        "genres": [
+          "Thriller",
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7,
+        "director": "Daniel Roher",
+        "similarity": 0.894843265245065,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4b603686-2cce-4f1f-8138-e277e4f139d0",
+        "tmdb_id": 652837,
+        "title": "Josee, the Tiger and the Fish",
+        "year": 2020,
+        "overview": "With dreams of diving abroad, Tsuneo gets a job assisting Josee, an artist whose imagination takes her far beyond her wheelchair. But when the tide turns against them, they push each other to places they never thought possible, and inspire a love fit for a storybook.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 98,
+        "vote_average": 8.267,
+        "director": "Kotaro Tamura",
+        "similarity": 0.876677488013642,
+        "curation_tier": "extended",
+        "match_reason": "Matches: realistic relationships",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "22a64f00-e5f6-4814-9639-273f22a0a41f",
+        "tmdb_id": 698508,
+        "title": "Redeeming Love",
+        "year": 2022,
+        "overview": "A young couple's relationship clashes with the harsh realities of the California Gold Rush of 1850. Angel, experiencing love for the first time and facing demons unsurmountable, runs from the new life she doesn't believe she deserves. When Michael sets out to find her, Angel discovers that she indeed has the power to choose the life she wants.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "Western"
+        ],
+        "runtime": 134,
+        "vote_average": 7.8,
+        "director": "D.J. Caruso",
+        "similarity": 0.857855704609118,
+        "curation_tier": "extended",
+        "match_reason": "pedophilia, child abuse, california",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b5ed1c5f-ecdf-4da2-a694-b6dd79c73b6d",
+        "tmdb_id": 1327862,
+        "title": "Regretting You",
+        "year": 2025,
+        "overview": "Morgan Grant and her daughter Clara explore what's left behind after a devastating accident reveals a shocking betrayal and forces them to confront family secrets, redefine love, and rediscover each other.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 6.913,
+        "director": "Josh Boone",
+        "similarity": 0.851540165438415,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "666a71b4-dfce-4dc1-864a-7b6dc0262348",
+        "tmdb_id": 332562,
+        "title": "A Star Is Born",
+        "year": 2018,
+        "overview": "Seasoned musician Jackson Maine discovers — and falls in love with — struggling artist Ally. She has just about given up on her dream to make it big as a singer — until Jack coaxes her into the spotlight. But even as Ally's career takes off, the personal side of their relationship is breaking down, as Jack fights an ongoing battle with his own internal demons.",
+        "genres": [
+          "Music",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 136,
+        "vote_average": 7.493,
+        "director": "Bradley Cooper",
+        "similarity": 0.848665720529557,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "39e89fac-6172-4826-80a6-4d2b2fcd08af",
+        "tmdb_id": 470878,
+        "title": "I Can Only Imagine",
+        "year": 2018,
+        "overview": "Growing up in Greenville, Texas, Bart Millard suffers physical and emotional abuse at the hands of his father, Arthur. When Arthur becomes terminally ill, he finds redemption by embracing his faith and rediscovering his love for his son. Years later, Bart's troubled childhood and mended relationship with his dad inspires him to write the hit song \"I Can Only Imagine\" as singer of the Christian band MercyMe.",
+        "genres": [
+          "Music",
+          "Drama"
+        ],
+        "runtime": 110,
+        "vote_average": 7.526,
+        "director": "Jon Erwin",
+        "similarity": 0.847496404067641,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "09e64246-d6d0-4bda-9555-9559f970081b",
+        "tmdb_id": 1371185,
+        "title": "Song Sung Blue",
+        "year": 2025,
+        "overview": "Based on a true story, two down-on-their-luck musicians form a joyous Neil Diamond tribute band, proving it's never too late to find love and follow your dreams.",
+        "genres": [
+          "Music",
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.393,
+        "director": "Craig Brewer",
+        "similarity": 0.844261675521288,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "24c35e04-5730-4562-aa3d-3281d27254bf",
+        "tmdb_id": 132344,
+        "title": "Before Midnight",
+        "year": 2013,
+        "overview": "It has been nine years since we last met Jesse and Celine, the French-American couple who once met on a train in Vienna. They now live in Paris with twin daughters but have spent a summer in Greece at the invitation of an author colleague of Jesse's. When the vacation is over and Jesse must send his teenage son off to the States, he begins to question his life decisions, and his relationship with Celine is at risk.",
+        "genres": [
+          "Romance",
+          "Drama"
+        ],
+        "runtime": 109,
+        "vote_average": 7.498,
+        "director": "Richard Linklater",
+        "similarity": 0.840004168526105,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0c3b6122-6352-4948-b7fa-24ab921cead9",
+        "tmdb_id": 293863,
+        "title": "The Age of Adaline",
+        "year": 2015,
+        "overview": "After 29-year-old Adaline recovers from a nearly lethal accident, she inexplicably stops growing older. As the years stretch on and on, Adaline keeps her secret to herself  until she meets a man who changes her life.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.467,
+        "director": "Lee Toland Krieger",
+        "similarity": 0.839946009230911,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b94f1b33-2ae5-49a2-8551-b8c3cb3090ed",
+        "tmdb_id": 451480,
+        "title": "The Guernsey Literary & Potato Peel Pie Society",
+        "year": 2018,
+        "overview": "Free-spirited writer Juliet Ashton forms a life-changing bond with the delightful and eccentric Guernsey Literary and Potato Peel Pie Society, when she decides to write about the book club they formed during the occupation of Guernsey in WWII.",
+        "genres": [
+          "Romance",
+          "Drama",
+          "History"
+        ],
+        "runtime": 124,
+        "vote_average": 7.404,
+        "director": "Mike Newell",
+        "similarity": 0.839107420290323,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "7a2e5bc9-3693-4d0b-bab5-6ffe68aad3e4",
+        "tmdb_id": 3933,
+        "title": "Corpse Bride",
+        "year": 2005,
+        "overview": "In a 19th-century European village, a young man about to be married is whisked away to the underworld and wed to a mysterious corpse bride, while his real bride waits bereft in the land of the living.",
+        "genres": [
+          "Romance",
+          "Fantasy",
+          "Animation"
+        ],
+        "runtime": 77,
+        "vote_average": 7.584,
+        "director": "Tim Burton",
+        "similarity": 0.836867001400633,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8e5108f4-d6fd-465d-999d-92adaedbc442",
+        "tmdb_id": 558,
+        "title": "Spider-Man 2",
+        "year": 2004,
+        "overview": "Peter Parker is going through a major identity crisis. Burned out from being Spider-Man, he decides to shelve his superhero alter ego, which leaves the city suffering in the wake of carnage left by the evil Doc Ock. In the meantime, Parker still can't act on his feelings for Mary Jane Watson, a girl he's loved since childhood. A certain anger begins to brew in his best friend Harry Osborn as well...",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Science Fiction"
+        ],
+        "runtime": 127,
+        "vote_average": 7.332,
+        "director": "Sam Raimi",
+        "similarity": 0.825131179637652,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6f323ed8-68f0-43db-9786-323251de50ac",
+        "tmdb_id": 672322,
+        "title": "Rurouni Kenshin: The Beginning",
+        "year": 2021,
+        "overview": "Before he was a protector, Kenshin was a fearsome assassin known as Battosai. But when he meets gentle Tomoe Yukishiro, a beautiful young woman who carries a huge burden in her heart, his life will change forever.",
+        "genres": [
+          "Action",
+          "Adventure",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 138,
+        "vote_average": 7.6,
+        "director": "Keishi Otomo",
+        "similarity": 0.823556754984411,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "089b5b52-bbf7-4224-911e-e9cf1311e2db",
+        "tmdb_id": 102651,
+        "title": "Maleficent",
+        "year": 2014,
+        "overview": "A beautiful, pure-hearted young woman, Maleficent has an idyllic life growing up in a peaceable forest kingdom, until one day when an invading army threatens the harmony of the land. She rises to be the land's fiercest protector, but she ultimately suffers a ruthless betrayal – an act that begins to turn her heart into stone. Bent on revenge, Maleficent faces an epic battle with the invading King's successor and, as a result, places a curse upon his newborn infant Aurora. As the child grows, Maleficent realizes that Aurora holds the key to peace in the kingdom – and to Maleficent's true happiness as well.",
+        "genres": [
+          "Fantasy",
+          "Adventure",
+          "Action",
+          "Family",
+          "Romance"
+        ],
+        "runtime": 97,
+        "vote_average": 7.086,
+        "director": "Robert Stromberg",
+        "similarity": 0.821088302630921,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29bc311c-4948-431c-9071-2f398c61a210",
+        "tmdb_id": 42726,
+        "title": "A Man and a Woman",
+        "year": 1966,
+        "overview": "A man and a woman meet by accident on a Sunday evening at their childrens' boarding school. Slowly, they reveal themselves to each other, finding that they have something deeply in common.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.4,
+        "director": "Claude Lelouch",
+        "similarity": 0.817297604668588,
+        "curation_tier": "extended",
+        "match_reason": "Matches: romance, subtle romance",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "58539589-4d8f-4efa-879a-7329f4e37ad1",
+        "tmdb_id": 37797,
+        "title": "Whisper of the Heart",
+        "year": 1995,
+        "overview": "Shizuku lives a simple life, dominated by her love for stories and writing. One day she notices that all the library books she has have been previously checked out by the same person: \"Seiji Amasawa.\"",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 111,
+        "vote_average": 7.9,
+        "director": "Yoshifumi Kondo",
+        "similarity": 0.814575336162434,
+        "curation_tier": "extended",
+        "match_reason": "dreams, library, italy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.772881694167022,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ae45caac-58d8-468a-a862-560226b60e77",
+        "tmdb_id": 49026,
+        "title": "The Dark Knight Rises",
+        "year": 2012,
+        "overview": "Following the death of District Attorney Harvey Dent, Batman assumes responsibility for Dent's crimes to protect the late attorney's reputation and is subsequently hunted by the Gotham City Police Department. Eight years later, Batman encounters the mysterious Selina Kyle and the villainous Bane, a new terrorist leader who overwhelms Gotham's finest. The Dark Knight resurfaces to protect a city that has branded him an enemy.",
+        "genres": [
+          "Action",
+          "Crime",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 165,
+        "vote_average": 7.795,
+        "director": "Christopher Nolan",
+        "similarity": 0.660433003518411,
+        "curation_tier": "core",
+        "match_reason": "airplane, fight, burglar",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c8319a4-498b-4cc8-b040-e598753b95ba",
+        "tmdb_id": 272,
+        "title": "Batman Begins",
+        "year": 2005,
+        "overview": "Driven by tragedy, billionaire Bruce Wayne dedicates his life to uncovering and defeating the corruption that plagues his home, Gotham City.  Unable to work within the system, he instead creates a new identity, a symbol of fear for the criminal underworld - The Batman.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Action"
+        ],
+        "runtime": 140,
+        "vote_average": 7.725,
+        "director": "Christopher Nolan",
+        "similarity": 0.652687432985896,
+        "curation_tier": "core",
+        "match_reason": "martial arts, undercover, loss of loved one",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.642138506844452,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.634559977879765,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.561022704012301,
+        "curation_tier": "core",
+        "match_reason": "island, based on novel or book, concentration camp",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.557869017239764,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "59cc2a64-f674-4855-afc2-c999526a7983",
+        "tmdb_id": 857,
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "overview": "As U.S. troops storm the beaches of Normandy, three brothers lie dead on the battlefield, with a fourth trapped behind enemy lines. Ranger captain John Miller and seven men are tasked with penetrating German-held territory and bringing the boy home.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 169,
+        "vote_average": 8.224,
+        "director": "Steven Spielberg",
+        "similarity": 0.536572649749619,
+        "curation_tier": "core",
+        "match_reason": "dying and death, self sacrifice, bravery",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "4324466f-9658-480c-9a12-a6e610d45176",
+        "tmdb_id": 68718,
+        "title": "Django Unchained",
+        "year": 2012,
+        "overview": "With the help of a German bounty hunter, a freed slave sets out to rescue his wife from a brutal Mississippi plantation owner.",
+        "genres": [
+          "Drama",
+          "Western"
+        ],
+        "runtime": 165,
+        "vote_average": 8.191,
+        "director": "Quentin Tarantino",
+        "similarity": 0.51673461905524,
+        "curation_tier": "core",
+        "match_reason": "rescue, friendship, bounty hunter",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.473577565710847,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.437021771204478,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 937,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 937,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 5019,
+      "v4": 948,
+      "pick": 1420,
+      "reasons": 2579
+    },
+    "visible_ms": 7387,
+    "parse_cache_hit": false,
+    "four": [
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231",
+      "7eedead6-a5b1-4786-9224-d402ce932586",
+      "4b603686-2cce-4f1f-8138-e277e4f139d0"
+    ],
+    "reranked": true,
+    "reasons": {
+      "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Two people talking all night in a beautiful city—intimate without trying too hard.",
+      "fc8ee875-9934-4b6e-834f-aff0cb526231": "Slow-burn romance with real chemistry; beautiful but demands patience and emotional openness.",
+      "7eedead6-a5b1-4786-9224-d402ce932586": "Romantic vignettes across Paris offer variety without heavy commitment or saccharine moments.",
+      "4b603686-2cce-4f1f-8138-e277e4f139d0": "Sweet and genuine connection that builds naturally; animation keeps it fresh and unpretentious."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1174,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+          "fc8ee875-9934-4b6e-834f-aff0cb526231",
+          "7eedead6-a5b1-4786-9224-d402ce932586",
+          "4b603686-2cce-4f1f-8138-e277e4f139d0"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 2572,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "c9b7863a-f79d-4f81-8021-eeac01364d9c",
+          "4b603686-2cce-4f1f-8138-e277e4f139d0",
+          "fc8ee875-9934-4b6e-834f-aff0cb526231",
+          "7eedead6-a5b1-4786-9224-d402ce932586"
+        ],
+        "reasons": {
+          "c9b7863a-f79d-4f81-8021-eeac01364d9c": "Two people talking all night in a beautiful city—intimate without trying too hard.",
+          "4b603686-2cce-4f1f-8138-e277e4f139d0": "Sweet and genuine connection that builds naturally; animation keeps it fresh and unpretentious.",
+          "fc8ee875-9934-4b6e-834f-aff0cb526231": "Slow-burn romance with real chemistry; beautiful but demands patience and emotional openness.",
+          "7eedead6-a5b1-4786-9224-d402ce932586": "Romantic vignettes across Paris offer variety without heavy commitment or saccharine moments."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

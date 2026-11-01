@@ -34,7 +34,7 @@ function table(headers: string[], rows: string[][]): string {
 
 // ─── Film meta (imdb_rating / imdb_votes) ────────────────────────────────────
 
-async function loadMeta(session: EvalSession, ids: string[]): Promise<Record<string, FilmMeta>> {
+export async function loadMeta(session: EvalSession, ids: string[]): Promise<Record<string, FilmMeta>> {
   const meta: Record<string, FilmMeta> = fs.existsSync(META_FILE) ? readJson<Record<string, FilmMeta>>(META_FILE) : {};
   const missing = ids.filter((id) => !(id in meta));
   for (let i = 0; i < missing.length; i += 100) {

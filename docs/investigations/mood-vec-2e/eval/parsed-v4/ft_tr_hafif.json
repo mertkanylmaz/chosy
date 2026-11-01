@@ -1,0 +1,156 @@
+{
+  "mood_id": "ft_tr_hafif",
+  "text": "Hafif bir şey olsun, kafa yormayayım",
+  "ms": 4585,
+  "http_status": 200,
+  "response": {
+    "profile_name": "Lightweight Entertainment",
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "fear": 0.05,
+      "anger": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "trust": 0.7,
+      "anticipation": 0.4
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "complex plot",
+      "heavy themes",
+      "philosophical",
+      "intense drama",
+      "slow burn"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true,
+    "search_keywords": [
+      "comedy",
+      "feel-good",
+      "lighthearted",
+      "humor",
+      "entertainment",
+      "fun",
+      "casual viewing"
+    ],
+    "genres_include": [
+      "Comedy"
+    ],
+    "genres_exclude": [
+      "Horror",
+      "Thriller",
+      "Drama"
+    ],
+    "max_runtime": null,
+    "reference_titles": [],
+    "suggested_titles": [
+      {
+        "title": "Forrest Gump",
+        "year": 1994
+      },
+      {
+        "title": "The Grand Budapest Hotel",
+        "year": 2014
+      },
+      {
+        "title": "Paddington 2",
+        "year": 2017
+      },
+      {
+        "title": "Mrs. Doubtfire",
+        "year": 1993
+      },
+      {
+        "title": "Amélie",
+        "year": 2001
+      },
+      {
+        "title": "Knives Out",
+        "year": 2019
+      }
+    ],
+    "search_id": "331e1073-8197-4311-b531-bc2fe1df2494",
+    "cache_hit": false,
+    "exclude_recent_ids": [
+      "785e8d55-410b-48c9-b895-0623159cac82",
+      "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+      "c1b42f15-b09f-44f2-b339-73fc0e9f5338",
+      "798a524a-e52d-4b66-9812-f2cf2111a3da",
+      "9faf30ea-f8fd-4b64-a008-b986d1d284d3",
+      "3bcbf6b1-9f5f-4937-8603-743f9bc7f2a5",
+      "1bcffd15-5987-43b5-822f-393ec803a8a0",
+      "cda0a032-6a38-4a46-a2bf-babfa3f8576c",
+      "b643db72-26cd-40c4-81c7-dff0f02749e1",
+      "a6f80c91-a2a7-408e-9cf3-ae82c3c4803b",
+      "512c3a99-ce6e-4178-8d51-9ee84bca48da",
+      "dbaea249-6333-42c8-9462-fe5f51cba11f",
+      "b3a0bfc7-8d91-4d4a-86c0-5796c3eb0d5a",
+      "c2dc7858-3ae7-4f06-ad73-c84357810ee4",
+      "9d3ae03e-99de-482c-b560-29558cd76c1f",
+      "f6eaa6d1-9e37-4c86-badd-7ce16d839cfc",
+      "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d",
+      "5656036c-0b1a-4fbf-9388-90a01ce7ba88"
+    ],
+    "remaining": null,
+    "limit": null,
+    "resets_at": null
+  },
+  "profile": {
+    "emotional_state": {
+      "joy": 0.7,
+      "sadness": 0.1,
+      "anger": 0.05,
+      "fear": 0.05,
+      "surprise": 0.3,
+      "disgust": 0.05,
+      "anticipation": 0.4,
+      "trust": 0.7
+    },
+    "energy_level": 0.5,
+    "pace_preference": "medium",
+    "visual_style": "lush",
+    "thematic_depth": 0.2,
+    "ending_preference": "hopeful",
+    "era_preference": {
+      "from": 1970,
+      "to": 2025
+    },
+    "cultural_context": [],
+    "avoid_signals": [
+      "complex plot",
+      "heavy themes",
+      "philosophical",
+      "intense drama",
+      "slow burn"
+    ],
+    "narrative_style": "linear",
+    "social_context": "alone",
+    "rewatch_tolerance": true
+  },
+  "search_id": "331e1073-8197-4311-b531-bc2fe1df2494",
+  "search_keywords": [
+    "comedy",
+    "feel-good",
+    "lighthearted",
+    "humor",
+    "entertainment",
+    "fun",
+    "casual viewing"
+  ],
+  "limit": null,
+  "remaining": null,
+  "cache_hit": false
+}

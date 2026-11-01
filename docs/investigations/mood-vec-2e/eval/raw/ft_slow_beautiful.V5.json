@@ -1,0 +1,899 @@
+{
+  "mood_id": "ft_slow_beautiful",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c294c9b2-7bbb-4d1e-b806-ecf5fb70311f",
+        "tmdb_id": 85350,
+        "title": "Boyhood",
+        "year": 2014,
+        "overview": "The film tells a story of a divorced couple trying to raise their young son. The story follows the boy for twelve years, from first grade at age 6 through 12th grade at age 17-18, and examines his relationship with his parents as he grows.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 165,
+        "vote_average": 7.492,
+        "director": "Richard Linklater",
+        "similarity": 0.735229737859061,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "e472a8d4-f98d-437b-ab07-320fbeb07517",
+        "tmdb_id": 1398,
+        "title": "Stalker",
+        "year": 1979,
+        "overview": "Near a gray and unnamed city is the Zone, a place guarded by barbed wire and soldiers, and where the normal laws of physics are victim to frequent anomalies. A stalker guides two men into the Zone, specifically to an area in which deep-seated desires are granted.",
+        "genres": [
+          "Science Fiction",
+          "Drama"
+        ],
+        "runtime": 162,
+        "vote_average": 8.094,
+        "director": "Andrei Tarkovsky",
+        "similarity": 0.655623475047015,
+        "curation_tier": "extended",
+        "match_reason": "based on novel or book, guard, wish",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "de28cf5c-001c-4844-b591-4f2f29c7079d",
+        "tmdb_id": 144,
+        "title": "Wings of Desire",
+        "year": 1987,
+        "overview": "Two angels, Damiel and Cassiel, glide through the streets of Berlin, observing the bustling population, providing invisible rays of hope to the distressed but never interacting with them. When Damiel falls in love with lonely trapeze artist Marion, the angel longs to experience life in the physical world, and finds — with some words of wisdom from actor Peter Falk — that it might be possible for him to take human form.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 128,
+        "vote_average": 7.8,
+        "director": "Wim Wenders",
+        "similarity": 0.58474766124234,
+        "curation_tier": "extended",
+        "match_reason": "berlin, germany, dreams, library",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+        "tmdb_id": 8967,
+        "title": "The Tree of Life",
+        "year": 2011,
+        "overview": "The impressionistic story of a Texas family in the 1950s. The film follows the life journey of the eldest son, Jack, through the innocence of childhood to his disillusioned adult years as he tries to reconcile a complicated relationship with his father. Jack finds himself a lost soul in the modern world, seeking answers to the origins and meaning of life while questioning the existence of faith.",
+        "genres": [
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 139,
+        "vote_average": 6.7,
+        "director": "Terrence Malick",
+        "similarity": 0.575645314764901,
+        "curation_tier": "extended",
+        "match_reason": "sibling relationship, parent child relationship, afterlife",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "f740206a-e426-401c-b1e5-64301b58dbcd",
+        "tmdb_id": 843,
+        "title": "In the Mood for Love",
+        "year": 2000,
+        "overview": "In 1960s Hong Kong, two neighbors form an intimate bond after making a discovery about their spouses in this visually stunning tale of unrequited love.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 99,
+        "vote_average": 8.091,
+        "director": "Wong Kar-Wai",
+        "similarity": 0.56274326374849,
+        "curation_tier": "core",
+        "match_reason": "adultery, newspaper, secret love",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 0.918831795007346,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 0.916453586872832,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c772f0ee-d349-402c-806e-981dcc84229c",
+        "tmdb_id": 37799,
+        "title": "The Social Network",
+        "year": 2010,
+        "overview": "In 2003, Harvard undergrad and computer programmer Mark Zuckerberg begins work on a new concept that eventually turns into the global social network known as Facebook. Six years later, Mark is one of the youngest billionaires ever, but his unprecedented success leads to both personal and legal complications when he ends up on the receiving end of two lawsuits, one involving his former friend.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 7.373,
+        "director": "David Fincher",
+        "similarity": 0.913248223266489,
+        "curation_tier": "core",
+        "match_reason": "Matches: meditative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.867444286973443,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4e034c19-a1c9-45e2-a1a1-d022a971f6f2",
+        "tmdb_id": 10867,
+        "title": "Malena",
+        "year": 2000,
+        "overview": "12-year-old Renato experiences three significant events on the same day: the beginning of the Second World War, getting a bike, and witnessing the arrival of the gorgeous Malèna. Through his eyes, we see the curse of beauty and loneliness of Malena, whose husband is presumed dead, and, through his soul, we see his love for her.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 108,
+        "vote_average": 7.468,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.860049671884206,
+        "curation_tier": "core",
+        "match_reason": "prostitute, jealousy, sicily, italy",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "71be062c-5a82-47fb-950f-ba0cede9169d",
+        "tmdb_id": 3175,
+        "title": "Barry Lyndon",
+        "year": 1975,
+        "overview": "An Irish rogue uses his cunning and wit to work his way up the social classes of 18th century England, transforming himself from the humble Redmond Barry into the noble Barry Lyndon.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 188,
+        "vote_average": 8,
+        "director": "Stanley Kubrick",
+        "similarity": 0.85935811766935,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, gambling, desertion",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.855915421730787,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f995a0e0-ca65-4036-a590-fbc15974496d",
+        "tmdb_id": 179144,
+        "title": "The Great Beauty",
+        "year": 2013,
+        "overview": "Jep Gambardella has seduced his way through the lavish nightlife of Rome for decades, but after his 65th birthday and a shock from the past, Jep looks past the nightclubs and parties to find a timeless landscape of absurd, exquisite beauty.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 142,
+        "vote_average": 7.511,
+        "director": "Paolo Sorrentino",
+        "similarity": 0.849663182756298,
+        "curation_tier": "core",
+        "match_reason": "Matches: artistic composition",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.848071687494208,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f779894b-2ec0-4282-9eaa-31cb786580aa",
+        "tmdb_id": 78,
+        "title": "Blade Runner",
+        "year": 1982,
+        "overview": "In the smog-choked dystopian Los Angeles of 2019, blade runner Rick Deckard is called out of retirement to terminate a quartet of replicants who have escaped to Earth seeking their creator for a way to extend their short life spans.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 118,
+        "vote_average": 7.937,
+        "director": "Ridley Scott",
+        "similarity": 0.845951183710807,
+        "curation_tier": "core",
+        "match_reason": "android, flying car, bounty hunter",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "5656036c-0b1a-4fbf-9388-90a01ce7ba88",
+        "tmdb_id": 339877,
+        "title": "Loving Vincent",
+        "year": 2017,
+        "overview": "A young man arrives at the last hometown of painter Vincent van Gogh to deliver the troubled artist's final letter and ends up investigating his final days there.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "History"
+        ],
+        "runtime": 95,
+        "vote_average": 7.985,
+        "director": "DK Welchman",
+        "similarity": 0.845632839887608,
+        "curation_tier": "core",
+        "match_reason": "Matches: artistic composition",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f187fd0b-0cc6-4686-bd81-be4cf9c47ad1",
+        "tmdb_id": 12498,
+        "title": "Sling Blade",
+        "year": 1996,
+        "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.544,
+        "director": "Billy Bob Thornton",
+        "similarity": 0.835463257260656,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+        "tmdb_id": 976893,
+        "title": "Perfect Days",
+        "year": 2023,
+        "overview": "Hirayama is content with his life as a toilet cleaner in Tokyo. Outside of his structured routine, he cherishes music on cassette tapes, books, and taking photos of trees. Through unexpected encounters, he reflects on finding beauty in the world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 124,
+        "vote_average": 7.795,
+        "director": "Wim Wenders",
+        "similarity": 0.832357027968128,
+        "curation_tier": "core",
+        "match_reason": "tree, routine, slice of life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b9fc8c9a-9339-47a7-bab4-8417a7652384",
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab",
+        "year": 2025,
+        "overview": "January 29, 2024. Red Crescent volunteers receive an emergency call. A five-year old girl is trapped in a car under fire in Gaza, pleading for rescue. While trying to keep her on the line, they do everything they can to get an ambulance to her. Her name was Hind Rajab.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 8.107,
+        "director": "Kaouther Ben Hania",
+        "similarity": 0.830856331754033,
+        "curation_tier": "core",
+        "match_reason": "palestinian-israeli conflict, palestine, war crimes",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "6d9bcb13-0959-4f1e-a850-5c57ceb1e717",
+        "tmdb_id": 62320,
+        "title": "Home",
+        "year": 2009,
+        "overview": "In 200,000 years of existence, man has upset the balance on which the Earth had lived for 4 billion years. Global warming, resource depletion, species extinction: man has endangered his own home. But it is too late to be pessimistic: humanity has barely ten years left to reverse the trend, become aware of its excessive exploitation of the Earth's riches, and change its consumption pattern.",
+        "genres": [
+          "Documentary",
+          "Drama",
+          "Family"
+        ],
+        "runtime": 95,
+        "vote_average": 7.814,
+        "director": "Yann Arthus-Bertrand",
+        "similarity": 0.818891277650996,
+        "curation_tier": "core",
+        "match_reason": "Matches: landscape",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "337234a3-a00b-4649-89d8-578aeb71cef5",
+        "tmdb_id": 531428,
+        "title": "Portrait of a Lady on Fire",
+        "year": 2019,
+        "overview": "On an isolated island in Brittany at the end of the eighteenth century, a female painter is obliged to paint a wedding portrait of a young woman.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 121,
+        "vote_average": 8.095,
+        "director": "Céline Sciamma",
+        "similarity": 0.814118049617967,
+        "curation_tier": "core",
+        "match_reason": "island, fire, beach",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8fbe115b-2aea-4b89-8b92-5e25267b0289",
+        "tmdb_id": 522402,
+        "title": "Finch",
+        "year": 2021,
+        "overview": "On a post-apocalyptic Earth, a robot, built to protect the life of his dying creator's beloved dog, learns about life, love, friendship, and what it means to be human.",
+        "genres": [
+          "Science Fiction",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 116,
+        "vote_average": 7.806,
+        "director": "Miguel Sapochnik",
+        "similarity": 0.809992310504718,
+        "curation_tier": "core",
+        "match_reason": "post-apocalyptic future, survival, robot",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9284792c-9e1d-4068-b639-2cf26987af92",
+        "tmdb_id": 9305,
+        "title": "Microcosmos",
+        "year": 1996,
+        "overview": "A documentary of insect life in meadows and ponds, using incredible close-ups, slow motion, and time-lapse photography. It includes bees collecting nectar, ladybugs eating mites, snails mating, spiders wrapping their catch, a scarab beetle relentlessly pushing its ball of dung uphill, endless lines of caterpillars, an underwater spider creating an air bubble to live in, and a mosquito hatching.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 80,
+        "vote_average": 7.59,
+        "director": "Claude Nuridsany",
+        "similarity": 0.793219296311092,
+        "curation_tier": "extended",
+        "match_reason": "insect, biology, narration",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a516f40f-c34d-46a7-8e70-b21e66a740ed",
+        "tmdb_id": 54898,
+        "title": "The Green Ray",
+        "year": 1986,
+        "overview": "A lonely Parisian woman comes to terms with her isolation and anxieties during a long summer vacation.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 99,
+        "vote_average": 7.5,
+        "director": "Éric Rohmer",
+        "similarity": 0.782698616473001,
+        "curation_tier": "extended",
+        "match_reason": "paris, france, jules verne, vacation",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.773971722271108,
+        "curation_tier": "extended",
+        "match_reason": "Matches: meditative",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "cebb3fab-8f9d-4046-9ead-e03a4d0d4209",
+        "tmdb_id": 43231,
+        "title": "Le Notti Bianche",
+        "year": 1957,
+        "overview": "A middle-aged man meets a young woman who is waiting on a canal bridge for her lover's return.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 101,
+        "vote_average": 7.4,
+        "director": "Luchino Visconti",
+        "similarity": 0.76437671925541,
+        "curation_tier": "extended",
+        "match_reason": "dance, italy, love",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "acd79642-a022-44e9-a346-e43a7aea330e",
+        "tmdb_id": 9343,
+        "title": "Fitzcarraldo",
+        "year": 1982,
+        "overview": "Fitzcarraldo is a dreamer who plans to build an opera house in Iquitos, in the Peruvian Amazon, so, in order to finance his project, he embarks on an epic adventure to collect rubber, a very profitable product, in a remote and unexplored region of the rainforest.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 157,
+        "vote_average": 7.623,
+        "director": "Werner Herzog",
+        "similarity": 0.746993794261244,
+        "curation_tier": "extended",
+        "match_reason": "peru, plantation, ambition",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1603a0d0-d23f-4d0c-8a40-f34c42600622",
+        "tmdb_id": 306819,
+        "title": "The Danish Girl",
+        "year": 2015,
+        "overview": "When Gerda Wegener asks her husband Einar to fill in as a portrait model, Einar discovers the person she's meant to be and begins living her life as Lili Elbe. Having realized her true self and with Gerda's love and support, Lili embarks on a groundbreaking journey as a transgender pioneer.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 7.552,
+        "director": "Tom Hooper",
+        "similarity": 0.741813147414184,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "c0d68936-2bb8-4aef-80a3-addbbaeed656",
+        "tmdb_id": 72213,
+        "title": "Courageous",
+        "year": 2011,
+        "overview": "Law enforcement officers Adam Mitchell, Nathan Hayes, and their partners stand up to the worst the streets have to offer with confidence and focus. Yet at the end of the day, they face a challenge that none of them are truly prepared to tackle: fatherhood. They know that God desires to turn the hearts of fathers to their children, but their children are beginning to drift further and further away from them. When tragedy hits home, these men are left wrestling with their hopes, their fears, their faith, and their fathering. Can a newfound urgency help these dads draw closer to God... and to their children?",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 129,
+        "vote_average": 7.608,
+        "director": "Alex Kendrick",
+        "similarity": 0.741765730344142,
+        "curation_tier": "extended",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8f71ca3e-f71f-4f20-a995-a208d504de71",
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value",
+        "year": 2025,
+        "overview": "Sisters Nora and Agnes reunite with their estranged father, the charismatic Gustav, a once-renowned director who offers stage actress Nora a role in what he hopes will be his comeback film. When Nora turns it down, she soon discovers he has given her part to an eager young Hollywood star.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.5,
+        "director": "Joachim Trier",
+        "similarity": 0.741549549804239,
+        "curation_tier": "extended",
+        "match_reason": "dysfunctional family, filmmaking, generational",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "70b9c9c2-dea1-4ed5-b9cf-cccc73197ec8",
+        "tmdb_id": 475557,
+        "title": "Joker",
+        "year": 2019,
+        "overview": "During the 1980s, a failed stand-up comedian is driven insane and turns to a life of crime and chaos in Gotham City while becoming an infamous psychopathic crime figure.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 122,
+        "vote_average": 8.125,
+        "director": "Todd Phillips",
+        "similarity": 0.549075139442013,
+        "curation_tier": "core",
+        "match_reason": "society, based on comic, social commentary",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "9d3ae03e-99de-482c-b560-29558cd76c1f",
+        "tmdb_id": 424,
+        "title": "Schindler's List",
+        "year": 1993,
+        "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 195,
+        "vote_average": 8.569,
+        "director": "Steven Spielberg",
+        "similarity": 0.5488453119581,
+        "curation_tier": "core",
+        "match_reason": "factory, hero, nazi",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "01f86717-7953-48c9-b1db-037db8aa4378",
+        "tmdb_id": 274,
+        "title": "The Silence of the Lambs",
+        "year": 1991,
+        "overview": "Clarice Starling is a top student at the FBI's training academy.  Jack Crawford wants Clarice to interview Dr. Hannibal Lecter, a brilliant psychiatrist who is also a violent psychopath, serving life behind bars for various acts of murder and cannibalism.  Crawford believes that Lecter may have insight into a case and that Starling, as an attractive young woman, may be just the bait to draw him out.",
+        "genres": [
+          "Crime",
+          "Thriller",
+          "Drama"
+        ],
+        "runtime": 119,
+        "vote_average": 8.345,
+        "director": "Jonathan Demme",
+        "similarity": 0.535380558353847,
+        "curation_tier": "core",
+        "match_reason": "prison, based on novel or book, kidnapping",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "59cc2a64-f674-4855-afc2-c999526a7983",
+        "tmdb_id": 857,
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "overview": "As U.S. troops storm the beaches of Normandy, three brothers lie dead on the battlefield, with a fourth trapped behind enemy lines. Ranger captain John Miller and seven men are tasked with penetrating German-held territory and bringing the boy home.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 169,
+        "vote_average": 8.224,
+        "director": "Steven Spielberg",
+        "similarity": 0.529961778409227,
+        "curation_tier": "core",
+        "match_reason": "dying and death, self sacrifice, bravery",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.46185000083672,
+        "curation_tier": "core",
+        "match_reason": "dying and death, suicide, class society",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "785e8d55-410b-48c9-b895-0623159cac82",
+        "tmdb_id": 11324,
+        "title": "Shutter Island",
+        "year": 2010,
+        "overview": "World War II soldier-turned-U.S. Marshal Teddy Daniels investigates the disappearance of a patient from a hospital for the criminally insane, but his efforts are compromised by troubling visions and a mysterious doctor.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "Mystery"
+        ],
+        "runtime": 138,
+        "vote_average": 8.199,
+        "director": "Martin Scorsese",
+        "similarity": 0.456729821908324,
+        "curation_tier": "core",
+        "match_reason": "island, based on novel or book, concentration camp",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "847e5106-3a13-40de-bd03-e7e7bb1c04a1",
+        "tmdb_id": 550,
+        "title": "Fight Club",
+        "year": 1999,
+        "overview": "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
+        "genres": [
+          "Drama",
+          "Thriller"
+        ],
+        "runtime": 139,
+        "vote_average": 8.4,
+        "director": "David Fincher",
+        "similarity": 0.447218245298002,
+        "curation_tier": "core",
+        "match_reason": "dual identity, rage and hate, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.437249577947438,
+        "curation_tier": "core",
+        "match_reason": "based on novel or book, loss of loved one, love at first sight",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.414253957936436,
+        "curation_tier": "core",
+        "match_reason": "rescue, future, spacecraft",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "28c36842-977f-47bf-989e-fb4175f48764",
+        "tmdb_id": 16869,
+        "title": "Inglourious Basterds",
+        "year": 2009,
+        "overview": "In Nazi-occupied France during World War II, a group of Jewish-American soldiers known as \"The Basterds\" are chosen specifically to spread fear throughout the Third Reich by scalping and brutally killing Nazis. The Basterds, lead by Lt. Aldo Raine soon cross paths with a French-Jewish teenage girl who runs a movie theater in Paris which is targeted by the soldiers.",
+        "genres": [
+          "Drama",
+          "Thriller",
+          "War"
+        ],
+        "runtime": 153,
+        "vote_average": 8.217,
+        "director": "Quentin Tarantino",
+        "similarity": 0.407958085412027,
+        "curation_tier": "core",
+        "match_reason": "guerrilla warfare, paris, france, self sacrifice",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 825,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 825,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 4642,
+      "v4": 828,
+      "pick": 1395,
+      "reasons": 2162
+    },
+    "visible_ms": 6865,
+    "parse_cache_hit": false,
+    "four": [
+      "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d",
+      "5656036c-0b1a-4fbf-9388-90a01ce7ba88"
+    ],
+    "reranked": true,
+    "reasons": {
+      "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc": "Impressionistic and meditative; long stretches of visual storytelling with minimal words.",
+      "fff6432a-81ea-46e5-8321-02bf3da30b5d": "Peaceful routines and silence; a contemplative study of one man's quiet contentment.",
+      "de28cf5c-001c-4844-b591-4f2f29c7079d": "Angels observing quietly; dialogue sparse, beauty found in floating through scenes.",
+      "5656036c-0b1a-4fbf-9388-90a01ce7ba88": "Painterly frames and hushed moments; dialogue yields to the visual conversation."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1146,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+          "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+          "de28cf5c-001c-4844-b591-4f2f29c7079d",
+          "5656036c-0b1a-4fbf-9388-90a01ce7ba88"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 2152,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc",
+          "de28cf5c-001c-4844-b591-4f2f29c7079d",
+          "fff6432a-81ea-46e5-8321-02bf3da30b5d",
+          "5656036c-0b1a-4fbf-9388-90a01ce7ba88"
+        ],
+        "reasons": {
+          "fcea9e2c-830a-4fa8-aed4-f1fe7e42bcbc": "Impressionistic and meditative; long stretches of visual storytelling with minimal words.",
+          "de28cf5c-001c-4844-b591-4f2f29c7079d": "Angels observing quietly; dialogue sparse, beauty found in floating through scenes.",
+          "fff6432a-81ea-46e5-8321-02bf3da30b5d": "Peaceful routines and silence; a contemplative study of one man's quiet contentment.",
+          "5656036c-0b1a-4fbf-9388-90a01ce7ba88": "Painterly frames and hushed moments; dialogue yields to the visual conversation."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}

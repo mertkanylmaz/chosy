@@ -88,14 +88,44 @@ export interface RerankRecord {
   reasons_dropped?: number;
 }
 
-/** V4 önbellekli geçiş kaydı: tek mood için ikinci parse + RPC + rerank ölçümü. */
-export interface CachedPassRecord {
-  mood_id: string;
-  parse_ms: number;
-  /** parse-mood yanıtındaki cache_hit (true olmak zorunda; değilse koşu durur). */
+/** Önbellekli geçiş kaydı: aynı metinle ikinci parse (cache_hit şart) + tüm V5 hattı. `v5` her zaman dolu. */
+export type CachedPassRecord = RawRecord;
+
+/** V5: istemci hattında (services/moodGauntlet.ts) yapılan tek rerank-films çağrısı. */
+export interface V5Call {
+  /** false = id-rerank (reason:false), true = gerekçe çağrısı (reason:true). */
+  with_reasons: boolean;
+  /** Yalnız fetch süresi (eval bekleme/pacing hariç). */
+  ms: number;
+  http_status: number | null;
+  /** Yerel zaman aşımı (istemci ile aynı: id 8 sn, gerekçe 10 sn). */
+  timeout: boolean;
+  failure: string | null;
+  server_fallback: boolean;
+  error_detail: string | null;
+  reranked_ids: string[];
+  reasons: Record<string, string>;
+  reasons_dropped: number | null;
+  reason_model: string | null;
+}
+
+/** V5 ölçüm bloğu: istemci hattının aşama süreleri ve çıktısı. */
+export interface V5Block {
+  status: 'ok' | 'insufficient' | 'exhausted';
+  /** Sanal saat (eval bekleme süreleri düşülmüş) ms. reasons: dörtlü gösterildikten sonra gelen çağrı. */
+  stages_ms: { parse: number; v4: number; pick: number; reasons: number | null };
+  /** Dörtlü-görünür = parse + v4 + pick. */
+  visible_ms: number;
   parse_cache_hit: boolean;
-  rpc: RpcRecord;
-  rerank: RerankRecord | null;
+  /** Gösterilen dörtlü (sıralı film id). */
+  four: string[];
+  reranked: boolean;
+  /** fetchReasons çıktısı: yalnız dörtlüdeki, boş olmayan gerekçeler. */
+  reasons: Record<string, string>;
+  fallbacks: string[];
+  errors: string[];
+  notices: string[];
+  calls: V5Call[];
 }
 
 export interface RawRecord {
@@ -103,6 +133,7 @@ export interface RawRecord {
   variant: Variant;
   rpc: RpcRecord;
   rerank?: RerankRecord;
+  v5?: V5Block;
 }
 
 export interface ParsedFile {
@@ -126,6 +157,11 @@ export interface Ledger {
   rerank_by_day: Record<string, number>;
   /** V4 önbellekli geçişte yapılan parse-mood HTTP çağrıları (Haiku harcamaz; isabet şartı). */
   parse_cached_total?: number;
+  /** V5 (istemci hattı): id-rerank (rerank-films-daily) ve gerekçe (rerank-films-reasons-daily) AYRI sayaçlar. */
+  rerank_ids_total?: number;
+  rerank_reasons_total?: number;
+  rerank_ids_by_day?: Record<string, number>;
+  rerank_reasons_by_day?: Record<string, number>;
   last_llm_at: number;
   mood_searches_rows: string[];
 }

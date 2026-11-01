@@ -1,0 +1,905 @@
+{
+  "mood_id": "qm_nostalgia",
+  "variant": "V5",
+  "rpc": {
+    "rows": [
+      {
+        "id": "c63a51f3-231b-4712-a1b1-ea41844557a8",
+        "tmdb_id": 376867,
+        "title": "Moonlight",
+        "year": 2016,
+        "overview": "The tender, heartbreaking story of a young man’s struggle to find himself, told across three defining chapters in his life as he experiences the ecstasy, pain, and beauty of falling in love, while grappling with his own sexuality.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 112,
+        "vote_average": 7.355,
+        "director": "Barry Jenkins",
+        "similarity": 0.766677972108403,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+        "tmdb_id": 8392,
+        "title": "My Neighbor Totoro",
+        "year": 1988,
+        "overview": "Two sisters move to the country with their father in order to be closer to their hospitalized mother, and discover the surrounding trees are inhabited by Totoros, magical spirits of the forest. When the youngest runs away from home, the older sister seeks help from the spirits to find her.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 86,
+        "vote_average": 8.061,
+        "director": "Hayao Miyazaki",
+        "similarity": 0.690275084607315,
+        "curation_tier": "core",
+        "match_reason": "mother, sibling relationship, village",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "8b1241f3-6071-4e09-9b1e-608b637f553a",
+        "tmdb_id": 235,
+        "title": "Stand by Me",
+        "year": 1986,
+        "overview": "After learning that a boy their age has been accidentally killed near their rural homes, four boys decide to go see the body. Gordie, Vern, Chris, and Teddy encounter a mean junk man and a marsh full of leeches, but they also learn more about one another and their very different home lives. Just a lark at first, the boys' adventure evolves into a defining event in their lives.",
+        "genres": [
+          "Crime",
+          "Drama"
+        ],
+        "runtime": 89,
+        "vote_average": 7.836,
+        "director": "Rob Reiner",
+        "similarity": 0.578425309661283,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "0dd15432-e797-4e23-919c-5a6250193309",
+        "tmdb_id": 637,
+        "title": "Life Is Beautiful",
+        "year": 1997,
+        "overview": "A touching story of an Italian book seller of Jewish ancestry who lives in his own little fairy tale. His creative and happy life would come to an abrupt halt when his entire family is deported to a concentration camp during World War II. While locked up he tries to convince his son that the whole thing is just a game.",
+        "genres": [
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 116,
+        "vote_average": 8.438,
+        "director": "Roberto Benigni",
+        "similarity": 0.558509460276984,
+        "curation_tier": "core",
+        "match_reason": "Matches: warmth",
+        "channels": [
+          "c"
+        ]
+      },
+      {
+        "id": "af01c8dc-4a4d-4922-a285-d41ae3139fc9",
+        "tmdb_id": 533514,
+        "title": "Violet Evergarden: The Movie",
+        "year": 2020,
+        "overview": "As the world moves on from the war and technological advances bring changes to her life, Violet still hopes to see her lost commanding officer again.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 140,
+        "vote_average": 8.288,
+        "director": "Taichi Ishidate",
+        "similarity": 1.01244226392116,
+        "curation_tier": "core",
+        "match_reason": "letter, sequel, slice of life",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "ec2fff86-bb4b-40bb-b170-20890b263e82",
+        "tmdb_id": 682110,
+        "title": "My Octopus Teacher",
+        "year": 2020,
+        "overview": "After years of swimming every day in the freezing ocean at the tip of Africa, Craig Foster meets an unlikely teacher: a young octopus who displays remarkable curiosity. Visiting her den and tracking her movements for months on end he eventually wins the animal’s trust and they develop a never-before-seen bond between human and wild animal.",
+        "genres": [
+          "Documentary"
+        ],
+        "runtime": 85,
+        "vote_average": 7.871,
+        "director": "Pippa Ehrlich",
+        "similarity": 1.00601650224713,
+        "curation_tier": "core",
+        "match_reason": "diving, octopus, intelligence",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d7efacd2-8271-4774-a517-5f4091eb1175",
+        "tmdb_id": 10229,
+        "title": "A Walk to Remember",
+        "year": 2002,
+        "overview": "When the popular, restless Landon Carter is forced to participate in the school drama production, he falls in love with Jamie Sullivan, the daughter of the town's minister. Jamie has a \"to-do\" list for her life, as well as a very big secret she must keep from Landon.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 102,
+        "vote_average": 7.751,
+        "director": "Adam Shankman",
+        "similarity": 1.00339129306985,
+        "curation_tier": "core",
+        "match_reason": "Matches: nostalgic, coming of age, sentimentality",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "119a37e8-be86-43f1-9a15-eb13ac06c4a3",
+        "tmdb_id": 804095,
+        "title": "The Fabelmans",
+        "year": 2022,
+        "overview": "Growing up in post-World War II era Arizona, young Sammy Fabelman aspires to become a filmmaker as he reaches adolescence, but soon discovers a shattering family secret and explores how the power of films can help him see the truth.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 151,
+        "vote_average": 7.57,
+        "director": "Steven Spielberg",
+        "similarity": 0.992878111922041,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age, childhood memories, family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d771d0ec-47cd-4077-9d2f-8f16cabc39a8",
+        "tmdb_id": 315846,
+        "title": "Our Little Sister",
+        "year": 2015,
+        "overview": "After the death of their estranged father, 3 adult sisters invite their teenaged half-sister to live with them.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 127,
+        "vote_average": 7.573,
+        "director": "Hirokazu Kore-eda",
+        "similarity": 0.972665250135883,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+        "tmdb_id": 840430,
+        "title": "The Holdovers",
+        "year": 2023,
+        "overview": "A curmudgeonly instructor at a New England prep school is forced to remain on campus during Christmas break to babysit the handful of students with nowhere to go. Eventually, he forms an unlikely bond with one of them — a damaged, brainy troublemaker — and with the school’s head cook, who has just lost a son in Vietnam.",
+        "genres": [
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 133,
+        "vote_average": 7.646,
+        "director": "Alexander Payne",
+        "similarity": 0.970740001495528,
+        "curation_tier": "core",
+        "match_reason": "Matches: sentimentality",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f43567c8-978f-468b-a5cc-a40d1d1de9a3",
+        "tmdb_id": 4922,
+        "title": "The Curious Case of Benjamin Button",
+        "year": 2008,
+        "overview": "Born under unusual circumstances, Benjamin Button springs into being as an elderly man in a New Orleans nursing home and ages in reverse. Twelve years after his birth, he meets Daisy, a child who flits in and out of his life as she grows up to be a dancer. Though he has all sorts of unusual adventures over the course of his life, it is his relationship with Daisy, and the hope that they will come together at the right time, that drives Benjamin forward.",
+        "genres": [
+          "Drama",
+          "Fantasy",
+          "Romance"
+        ],
+        "runtime": 166,
+        "vote_average": 7.6,
+        "director": "David Fincher",
+        "similarity": 0.966436302517909,
+        "curation_tier": "core",
+        "match_reason": "Matches: warmth",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "918e15f9-28d5-47b2-bf92-e424dc74690e",
+        "tmdb_id": 378064,
+        "title": "A Silent Voice: The Movie",
+        "year": 2016,
+        "overview": "Shouya Ishida starts bullying the new girl in class, Shouko Nishimiya, because she is deaf. But as the teasing continues, the rest of the class starts to turn on Shouya for his lack of compassion. When they leave elementary school, Shouko and Shouya do not speak to each other again... until an older, wiser Shouya, tormented by his past behaviour, decides he must see Shouko once more. He wants to atone for his sins, but is it already too late...?",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 129,
+        "vote_average": 8.386,
+        "director": "Naoko Yamada",
+        "similarity": 0.965082229934235,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "4e3d85d2-df43-4691-840b-b6ca7294ee39",
+        "tmdb_id": 51739,
+        "title": "The Secret World of Arrietty",
+        "year": 2010,
+        "overview": "14-year-old Arrietty and the rest of the Clock family live in peaceful anonymity as they make their own home from items \"borrowed\" from the house's human inhabitants. However, life changes for the Clocks when a human boy discovers Arrietty.",
+        "genres": [
+          "Fantasy",
+          "Animation",
+          "Family"
+        ],
+        "runtime": 94,
+        "vote_average": 7.666,
+        "director": "Hiromasa Yonebayashi",
+        "similarity": 0.963613892172282,
+        "curation_tier": "core",
+        "match_reason": "Matches: nostalgic",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+        "tmdb_id": 24238,
+        "title": "Mary and Max",
+        "year": 2009,
+        "overview": "A tale of friendship between two unlikely pen pals: Mary, a lonely, eight-year-old girl living in the suburbs of Melbourne, and Max, a forty-four-year old, severely obese man living in New York.",
+        "genres": [
+          "Animation",
+          "Comedy",
+          "Drama"
+        ],
+        "runtime": 92,
+        "vote_average": 7.873,
+        "director": "Adam Elliot",
+        "similarity": 0.962500501953416,
+        "curation_tier": "core",
+        "match_reason": "Matches: sentimentality",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "a964d785-8bb3-4cbc-82bc-1146ceed2ee2",
+        "tmdb_id": 1904,
+        "title": "Memoirs of a Geisha",
+        "year": 2005,
+        "overview": "In the years before World War II, a penniless Japanese child is torn from her family to work as a maid in a geisha house.",
+        "genres": [
+          "Drama",
+          "Romance",
+          "History"
+        ],
+        "runtime": 146,
+        "vote_average": 7.639,
+        "director": "Rob Marshall",
+        "similarity": 0.961540284286958,
+        "curation_tier": "core",
+        "match_reason": "secret love, japan, prostitute",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "1b164a05-bb92-49ff-9b08-d3711fdf7edc",
+        "tmdb_id": 84892,
+        "title": "The Perks of Being a Wallflower",
+        "year": 2012,
+        "overview": "Pittsburgh, Pennsylvania, 1991. High school freshman Charlie is a wallflower, always watching life from the sidelines, until two senior students, Sam and her stepbrother Patrick, become his mentors, helping him discover the joys of friendship, music and love.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 103,
+        "vote_average": 7.804,
+        "director": "Stephen Chbosky",
+        "similarity": 0.958552935037313,
+        "curation_tier": "core",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2b5f4db2-76fb-4ed5-876f-af16ba7dd345",
+        "tmdb_id": 947,
+        "title": "Lawrence of Arabia",
+        "year": 1962,
+        "overview": "During World War I, English officer Thomas Edward 'T.E.' Lawrence sets out to unite and lead the diverse, often warring, Arab tribes to fight the Turks.",
+        "genres": [
+          "Adventure",
+          "History",
+          "War"
+        ],
+        "runtime": 228,
+        "vote_average": 8,
+        "director": "David Lean",
+        "similarity": 0.952210454338092,
+        "curation_tier": "core",
+        "match_reason": "cairo, world war i, arabian",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "d75cb3c5-bc77-449e-8af6-92ba107cae41",
+        "tmdb_id": 1317149,
+        "title": "I Swear",
+        "year": 2025,
+        "overview": "Diagnosed with Tourette Syndrome at 15, John Davidson navigates his way against the odds through troubled teenage years and into adulthood, finding inspiration in the kindness of others to discover his true purpose in life.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 121,
+        "vote_average": 8.3,
+        "director": "Kirk Jones",
+        "similarity": 0.947987736024725,
+        "curation_tier": "core",
+        "match_reason": "scotland, dark comedy, biography",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "25d60d82-4e17-4869-9661-e7105fd85a1f",
+        "tmdb_id": 49964,
+        "title": "Where Is The Friend's House?",
+        "year": 1987,
+        "overview": "An 8-year-old boy must return his friend's notebook he took by mistake, lest his friend be punished by expulsion from school.",
+        "genres": [
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 83,
+        "vote_average": 7.892,
+        "director": "Abbas Kiarostami",
+        "similarity": 0.947890070739207,
+        "curation_tier": "core",
+        "match_reason": "Matches: childhood memories, family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "f187fd0b-0cc6-4686-bd81-be4cf9c47ad1",
+        "tmdb_id": 12498,
+        "title": "Sling Blade",
+        "year": 1996,
+        "overview": "Karl Childers, a mentally disabled man, has been in the custody of the state mental hospital since the age of 12 for killing his mother and her lover. Although thoroughly institutionalized, he is deemed fit to be released into the outside world.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 135,
+        "vote_average": 7.544,
+        "director": "Billy Bob Thornton",
+        "similarity": 0.940145381103407,
+        "curation_tier": "core",
+        "match_reason": null,
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "bc518ff2-a633-4366-aae4-7786773b3b44",
+        "tmdb_id": 11216,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "overview": "A filmmaker recalls his childhood, when he fell in love with the movies at his village's theater and formed a deep friendship with the theater's projectionist.",
+        "genres": [
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 124,
+        "vote_average": 8.4,
+        "director": "Giuseppe Tornatore",
+        "similarity": 0.938317811329497,
+        "curation_tier": "core",
+        "match_reason": "Matches: nostalgic, coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "cc0baaa8-5c3f-4913-bde2-db8a110984bd",
+        "tmdb_id": 476292,
+        "title": "Maquia: When the Promised Flower Blooms",
+        "year": 2018,
+        "overview": "Fleeing the war, the immortal Machia, graced with eternal youth, finds a baby abandoned in the forest and decides to raise it as her own child, sparking a moving story between a mortal and a being who does not age.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy"
+        ],
+        "runtime": 115,
+        "vote_average": 8.1,
+        "director": "Mari Okada",
+        "similarity": 0.911531552148185,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age, family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "105b7ebe-7aef-4841-953e-313103e560a3",
+        "tmdb_id": 1103621,
+        "title": "How to Make Millions Before Grandma Dies",
+        "year": 2024,
+        "overview": "M, a university dropout low on money and luck, volunteers to take care of his terminally ill grandmother, in the hope of pocketing an inheritance.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 126,
+        "vote_average": 8.106,
+        "director": "Pat Boonnitipat",
+        "similarity": 0.906220003122386,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age, family, sentimentality",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "561ba3fe-dc0f-42d8-8c83-74cc36804435",
+        "tmdb_id": 11832,
+        "title": "Babette's Feast",
+        "year": 1987,
+        "overview": "A French housekeeper with a mysterious past brings quiet revolution in the form of one exquisite meal to a circle of starkly pious villagers in late 19th century Denmark.",
+        "genres": [
+          "Drama",
+          "History",
+          "Comedy"
+        ],
+        "runtime": 104,
+        "vote_average": 7.209,
+        "director": "Gabriel Axel",
+        "similarity": 0.875258837664067,
+        "curation_tier": "extended",
+        "match_reason": "servant, charity, community service",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "0164e409-786f-456b-97f3-739960d2b010",
+        "tmdb_id": 23160,
+        "title": "Werckmeister Harmonies",
+        "year": 2001,
+        "overview": "A naive young man witnesses an escalation of violence in his small hometown following the arrival of a mysterious circus attraction.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 139,
+        "vote_average": 7.8,
+        "director": "Béla Tarr",
+        "similarity": 0.873084684895958,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "29537a74-92e4-43b3-8605-2db82b11c894",
+        "tmdb_id": 337703,
+        "title": "The Red Turtle",
+        "year": 2016,
+        "overview": "The dialogue-less film follows the major life stages of a castaway on a deserted tropical island populated by turtles, crabs and birds.",
+        "genres": [
+          "Animation",
+          "Drama",
+          "Fantasy",
+          "Family"
+        ],
+        "runtime": 81,
+        "vote_average": 7.4,
+        "director": "Michael Dudok de Wit",
+        "similarity": 0.856973105311203,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "8f71ca3e-f71f-4f20-a995-a208d504de71",
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value",
+        "year": 2025,
+        "overview": "Sisters Nora and Agnes reunite with their estranged father, the charismatic Gustav, a once-renowned director who offers stage actress Nora a role in what he hopes will be his comeback film. When Nora turns it down, she soon discovers he has given her part to an eager young Hollywood star.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 133,
+        "vote_average": 7.5,
+        "director": "Joachim Trier",
+        "similarity": 0.850687935354763,
+        "curation_tier": "extended",
+        "match_reason": "Matches: childhood memories, family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "b594aac3-ca53-4995-9add-75ce9d15cefa",
+        "tmdb_id": 378108,
+        "title": "In This Corner of the World",
+        "year": 2016,
+        "overview": "Japan, 1943, during World War II. Young Suzu leaves her village near Hiroshima to marry and live with her in-laws in Kure, a military harbor. Her creativity to overcome deprivation quickly makes her indispensable at home. Inhabited by an ancestral wisdom, Suzu impregnates the simple gestures of everyday life with poetry and beauty. The many hardships, the loss of loved ones, the frequent air raids of the enemy, nothing alters her enthusiasm…",
+        "genres": [
+          "Drama",
+          "Animation",
+          "Romance",
+          "War",
+          "History"
+        ],
+        "runtime": 130,
+        "vote_average": 7.914,
+        "director": "Sunao Katabuchi",
+        "similarity": 0.844184982293861,
+        "curation_tier": "extended",
+        "match_reason": "Matches: family",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "2f6a38c8-2189-404c-8ba5-8f89164c55b0",
+        "tmdb_id": 65229,
+        "title": "Tomboy",
+        "year": 2011,
+        "overview": "Ten-year-old Laure isn't like most girls. She prefers football to dolls and sweaters to dresses. When Laure and her family move to a new neighbourhood, local girl Lisa mistakes Laure for a boy. Indulging in this exciting new identity, Laure becomes Mickaël, and so begins a summer of long sunny afternoons, playground games and first kisses. Yet with the school term fast approaching, and with suspicions arising amongst friends and family, Laure must face up to an uncertain future.",
+        "genres": [
+          "Drama"
+        ],
+        "runtime": 82,
+        "vote_average": 7.296,
+        "director": "Céline Sciamma",
+        "similarity": 0.839809579113094,
+        "curation_tier": "extended",
+        "match_reason": "Matches: coming of age",
+        "channels": [
+          "v"
+        ]
+      },
+      {
+        "id": "9d3ae03e-99de-482c-b560-29558cd76c1f",
+        "tmdb_id": 424,
+        "title": "Schindler's List",
+        "year": 1993,
+        "overview": "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis while they worked as slaves in his factory during World War II.",
+        "genres": [
+          "Drama",
+          "History",
+          "War"
+        ],
+        "runtime": 195,
+        "vote_average": 8.569,
+        "director": "Steven Spielberg",
+        "similarity": 0.644772600491679,
+        "curation_tier": "core",
+        "match_reason": "factory, hero, nazi",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "2daade33-adef-476c-9456-e6a0379d10cb",
+        "tmdb_id": 497,
+        "title": "The Green Mile",
+        "year": 1999,
+        "overview": "A supernatural tale set on death row in a Southern prison, where gentle giant John Coffey possesses the mysterious power to heal people's ailments. When the cell block's head guard, Paul Edgecomb, recognizes Coffey's miraculous gift, he tries desperately to help stave off the condemned man's execution.",
+        "genres": [
+          "Fantasy",
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 189,
+        "vote_average": 8.506,
+        "director": "Frank Darabont",
+        "similarity": 0.643990684978396,
+        "curation_tier": "core",
+        "match_reason": "mentally disabled, death penalty, based on novel or book",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "0c8319a4-498b-4cc8-b040-e598753b95ba",
+        "tmdb_id": 272,
+        "title": "Batman Begins",
+        "year": 2005,
+        "overview": "Driven by tragedy, billionaire Bruce Wayne dedicates his life to uncovering and defeating the corruption that plagues his home, Gotham City.  Unable to work within the system, he instead creates a new identity, a symbol of fear for the criminal underworld - The Batman.",
+        "genres": [
+          "Drama",
+          "Crime",
+          "Action"
+        ],
+        "runtime": 140,
+        "vote_average": 7.725,
+        "director": "Christopher Nolan",
+        "similarity": 0.625628534849338,
+        "curation_tier": "core",
+        "match_reason": "martial arts, undercover, loss of loved one",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "59cc2a64-f674-4855-afc2-c999526a7983",
+        "tmdb_id": 857,
+        "title": "Saving Private Ryan",
+        "year": 1998,
+        "overview": "As U.S. troops storm the beaches of Normandy, three brothers lie dead on the battlefield, with a fourth trapped behind enemy lines. Ranger captain John Miller and seven men are tasked with penetrating German-held territory and bringing the boy home.",
+        "genres": [
+          "War",
+          "Drama",
+          "History"
+        ],
+        "runtime": 169,
+        "vote_average": 8.224,
+        "director": "Steven Spielberg",
+        "similarity": 0.621247851060742,
+        "curation_tier": "core",
+        "match_reason": "dying and death, self sacrifice, bravery",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "ce27faee-2d2a-4c93-becb-ea6b0579a101",
+        "tmdb_id": 106646,
+        "title": "The Wolf of Wall Street",
+        "year": 2013,
+        "overview": "A New York stockbroker refuses to cooperate in a large securities fraud case involving corruption on Wall Street, corporate banking world and mob infiltration. Based on Jordan Belfort's autobiography.",
+        "genres": [
+          "Crime",
+          "Drama",
+          "Comedy"
+        ],
+        "runtime": 180,
+        "vote_average": 8.028,
+        "director": "Martin Scorsese",
+        "similarity": 0.557378542600678,
+        "curation_tier": "core",
+        "match_reason": "corruption, based on novel or book, drug addiction",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "f2f0d295-7cbc-4eca-bfc5-1a410ff23b48",
+        "tmdb_id": 98,
+        "title": "Gladiator",
+        "year": 2000,
+        "overview": "After the death of Emperor Marcus Aurelius, his devious son takes power and demotes Maximus, one of Rome's most capable generals who Marcus preferred. Eventually, Maximus is forced to become a gladiator and battle to the death against other men for the amusement of paying audiences.",
+        "genres": [
+          "Action",
+          "Drama",
+          "Adventure"
+        ],
+        "runtime": 155,
+        "vote_average": 8.226,
+        "director": "Ridley Scott",
+        "similarity": 0.543015975361277,
+        "curation_tier": "core",
+        "match_reason": "gladiator, rome, italy, arena",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "fb9c1dff-ff45-4e74-93cb-f9409be39ac1",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+        "overview": "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        "genres": [
+          "Adventure",
+          "Drama",
+          "Science Fiction"
+        ],
+        "runtime": 169,
+        "vote_average": 8.474,
+        "director": "Christopher Nolan",
+        "similarity": 0.503613787394249,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "63a57fff-a3b2-4b38-b64b-6b1ad38210a9",
+        "tmdb_id": 13,
+        "title": "Forrest Gump",
+        "year": 1994,
+        "overview": "A man with a low IQ has accomplished great things in his life and been present during significant historic events—in each case, far exceeding what anyone imagined he could do. But despite all he has achieved, his one true love eludes him.",
+        "genres": [
+          "Comedy",
+          "Drama",
+          "Romance"
+        ],
+        "runtime": 142,
+        "vote_average": 8.465,
+        "director": "Robert Zemeckis",
+        "similarity": 0.495847909605855,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "82327826-46c2-474b-8c6e-216ce4595a74",
+        "tmdb_id": 278,
+        "title": "The Shawshank Redemption",
+        "year": 1994,
+        "overview": "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison, where he puts his accounting skills to work for an amoral warden. During his long stretch in prison, Dufresne comes to be admired by the other inmates -- including an older prisoner named Red -- for his integrity and unquenchable sense of hope.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 142,
+        "vote_average": 8.721,
+        "director": "Frank Darabont",
+        "similarity": 0.470289871416933,
+        "curation_tier": "core",
+        "match_reason": "prison, friendship, police brutality",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "877a88f1-69c0-4f7d-aae1-2076cc06269d",
+        "tmdb_id": 1124,
+        "title": "The Prestige",
+        "year": 2006,
+        "overview": "A mysterious story of two magicians whose intense rivalry leads them on a life-long battle for supremacy -- full of obsession, deceit and jealousy with dangerous and deadly consequences.",
+        "genres": [
+          "Drama",
+          "Mystery",
+          "Science Fiction"
+        ],
+        "runtime": 130,
+        "vote_average": 8.208,
+        "director": "Christopher Nolan",
+        "similarity": 0.457235428721291,
+        "curation_tier": "core",
+        "match_reason": "Matches: bittersweet",
+        "channels": [
+          "a"
+        ]
+      },
+      {
+        "id": "7b391754-486f-47eb-8e88-dba5fff8b44e",
+        "tmdb_id": 238,
+        "title": "The Godfather",
+        "year": 1972,
+        "overview": "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family. When organized crime family patriarch, Vito Corleone barely survives an attempt on his life, his youngest son, Michael steps in to take care of the would-be killers, launching a campaign of bloody revenge.",
+        "genres": [
+          "Drama",
+          "Crime"
+        ],
+        "runtime": 175,
+        "vote_average": 8.686,
+        "director": "Francis Ford Coppola",
+        "similarity": 0.432369877899787,
+        "curation_tier": "core",
+        "match_reason": "Matches: family",
+        "channels": [
+          "a"
+        ]
+      }
+    ],
+    "attempts": [
+      {
+        "min_similarity": 0.45,
+        "min_rating": 6.5,
+        "ms": 994,
+        "n_rows": 40
+      }
+    ],
+    "total_ms": 994,
+    "params_first": {
+      "match_count": 40,
+      "note": "istemci hattı (fetchPool) — bkz. services/moodGauntlet.ts"
+    }
+  },
+  "v5": {
+    "status": "ok",
+    "stages_ms": {
+      "parse": 924,
+      "v4": 1002,
+      "pick": 1400,
+      "reasons": 3291
+    },
+    "visible_ms": 3326,
+    "parse_cache_hit": true,
+    "four": [
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+      "0dd15432-e797-4e23-919c-5a6250193309",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1"
+    ],
+    "reranked": true,
+    "reasons": {
+      "2edd4775-e05f-4c9e-a0a2-5631151801e2": "Childhood wonder and gentle magic wrapped in a cozy, bittersweet embrace of family.",
+      "0dd15432-e797-4e23-919c-5a6250193309": "A father's love transforms hardship into wonder, bittersweet yet ultimately life-affirming.",
+      "585e0c60-4b09-4b00-8fa5-ca1e0d932365": "Holiday coziness and gruff tenderness emerge from isolation and unexpected human connection.",
+      "31d4f79b-899f-40ca-be99-0a9bf5bbcef1": "An unlikely friendship story tinged with loneliness and warmth, beautifully nostalgic."
+    },
+    "fallbacks": [],
+    "errors": [],
+    "notices": [],
+    "calls": [
+      {
+        "with_reasons": false,
+        "ms": 1071,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+          "0dd15432-e797-4e23-919c-5a6250193309",
+          "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+          "31d4f79b-899f-40ca-be99-0a9bf5bbcef1"
+        ],
+        "reasons": {},
+        "reasons_dropped": null,
+        "reason_model": null
+      },
+      {
+        "with_reasons": true,
+        "ms": 3286,
+        "http_status": 200,
+        "timeout": false,
+        "failure": null,
+        "server_fallback": false,
+        "error_detail": null,
+        "reranked_ids": [
+          "2edd4775-e05f-4c9e-a0a2-5631151801e2",
+          "31d4f79b-899f-40ca-be99-0a9bf5bbcef1",
+          "585e0c60-4b09-4b00-8fa5-ca1e0d932365",
+          "0dd15432-e797-4e23-919c-5a6250193309"
+        ],
+        "reasons": {
+          "2edd4775-e05f-4c9e-a0a2-5631151801e2": "Childhood wonder and gentle magic wrapped in a cozy, bittersweet embrace of family.",
+          "31d4f79b-899f-40ca-be99-0a9bf5bbcef1": "An unlikely friendship story tinged with loneliness and warmth, beautifully nostalgic.",
+          "585e0c60-4b09-4b00-8fa5-ca1e0d932365": "Holiday coziness and gruff tenderness emerge from isolation and unexpected human connection.",
+          "0dd15432-e797-4e23-919c-5a6250193309": "A father's love transforms hardship into wonder, bittersweet yet ultimately life-affirming."
+        },
+        "reasons_dropped": 0,
+        "reason_model": "claude-haiku-4-5"
+      }
+    ]
+  }
+}
