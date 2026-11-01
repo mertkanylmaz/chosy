@@ -59,6 +59,10 @@ export interface GateFailure {
   elapsedMs: number;
   /** Yalnız `gate_decision_error`: yakalanan hata. */
   error?: unknown;
+  /** Kaçıncı düşüş (1 = ilk, 2 = sessiz yeniden denemeden sonra). Yoksa 1. */
+  attempt?: 1 | 2;
+  /** true: kullanıcıya HATA GÖSTERİLMEDİ, sessiz yeniden deneme başladı (yalnız attempt 1). */
+  silentRetry?: boolean;
 }
 
 export interface GateFailureDeps {
@@ -66,6 +70,35 @@ export interface GateFailureDeps {
   report: (failure: GateFailure) => void;
   /** Görünür hata durumunu açar. */
   showError: (reason: GateFailureReason) => void;
+}
+
+export interface SessionRaceOutcome<T> {
+  result: RaceResult<T>;
+  /** 1: ilk denemede çözüldü / ilk deneme reddetti. 2: sessiz yeniden deneme yapıldı. */
+  attempts: 1 | 2;
+}
+
+/**
+ * COLD-START-4: ilk `auth_timeout`'ta kullanıcıya hata göstermeden BİR kez sessiz yeniden dener
+ * (aynı bütçe: `ms`). Cihaz bulgusu (build 914/915): ilk açılışta getSession ~6.9 sn'de döndü,
+ * eşik 6 sn olduğu için ~1 sn "Couldn't connect" göründü, "Tekrar dene" hemen başarılı oldu.
+ *
+ * `start` her denemede çağrılır (auth-js aynı `initializePromise`'i paylaştığı için ikinci çağrı
+ * yeni istek açmaz, süren refresh'i bekler). İlk timeout'ta `onSilentRetry` ÇAĞRILIR (raporlama
+ * bunun işi: sessiz değil, yalnız kullanıcıdan gizli). İkinci deneme de düşerse `timeout` döner
+ * ve çağıran hata ekranını açar. Red (reject) her iki denemede olduğu gibi geçer.
+ */
+export async function raceSessionWithSilentRetry<T>(
+  start: () => Promise<T>,
+  ms: number,
+  onSilentRetry: () => void,
+  schedule: Schedule = defaultSchedule,
+): Promise<SessionRaceOutcome<T>> {
+  const first = await raceWithTimeout(start(), ms, schedule);
+  if (first.status === 'resolved') return { result: first, attempts: 1 };
+  onSilentRetry();
+  const second = await raceWithTimeout(start(), ms, schedule);
+  return { result: second, attempts: 2 };
 }
 
 /** Hata ÖNCE raporlanır, sonra gösterilir; ikisi de her zaman çağrılır. */

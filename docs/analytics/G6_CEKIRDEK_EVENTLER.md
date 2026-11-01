@@ -305,7 +305,7 @@ PII yok: yalnız süre (ms) ve sabit etiketler.
 | `app_boot_started` | `app/_layout.tsx` kök mount (`app_launched` ile birlikte) | — |
 | `auth_refresh_ms` | `app/_layout.tsx` `onAuthStateChange` `INITIAL_SESSION` (süreç başına bir kez) | `ms`, `had_session` |
 | `boot_ready_ms` | `app/gate.tsx` `finishExit` (gate yönlendirme kararını verdi) | `ms` |
-| `boot_failed` | gate hata görünümü (her gösterimde) / `GauntletShell` `showLoadError` (yalnız kartlar hiç görünmediyse) | `reason`, `elapsed_ms` |
+| `boot_failed` | gate hata görünümü (her gösterimde) / `GauntletShell` `showLoadError` (yalnız kartlar hiç görünmediyse) | `reason`, `elapsed_ms`, `attempt` (1\|2), `silent_retry` (bool) |
 | `boot_recovered` | `app/gate.tsx` `finishExit`, hata görünümü gösterilmişse (otomatik devam ya da "tekrar dene") | `elapsed_ms` |
 | `first_cards_visible` | `GauntletShell` — ilk poster çifti (ya da biten günde şampiyon) render edilince, süreç başına bir kez | `ms_since_boot_start`, `state` |
 
@@ -316,6 +316,10 @@ PII yok: yalnız süre (ms) ve sabit etiketler.
 Notlar:
 - `auth_refresh_ms` refresh olmayan açılışta da gelir (küçük değer); takılan
   refresh büyük değer üretir. `had_session` oturumsuz ilk kurulumu ayırır.
+- `auth_timeout` ilk düşüşte kullanıcıya GÖSTERİLMEZ: `boot_failed {attempt:1, silent_retry:true}` atılır ve
+  aynı bütçeyle (6 sn) **sessiz yeniden deneme** yapılır (COLD-START-4; splash sürer). Hata görünümü yalnız
+  ikinci deneme de düşerse açılır: `boot_failed {attempt:2, silent_retry:false}`. `boot_recovered` yalnız
+  görünür hata gösterildiyse gelir.
 - `auth_timeout` yalnız bir **UI eşiğidir** (6 sn): refresh isteği iptal edilmez,
   geç çözülürse gate otomatik devam eder ve `boot_recovered` gelir.
 - `first_cards_visible` bileşenin render'ını ölçer; poster görselinin ağdan

@@ -8,6 +8,7 @@ import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.t
 import {
   GATE_SESSION_TIMEOUT_MS,
   handleGateFailure,
+  raceSessionWithSilentRetry,
   raceWithTimeout,
   type GateFailure,
   type GateFailureReason,
@@ -218,4 +219,82 @@ Deno.test('locales: en/tr tüm anahtar yolları birebir aynı', async () => {
   const tr = paths(await read('tr')).sort()
   assertEquals(en.length, tr.length)
   assertEquals(en, tr)
+})
+
+// ── COLD-START-4: sessiz yeniden deneme ─────────────────────────────────────
+
+Deno.test('COLD-START-4: ilk timeout + başarılı retry → hata ekranı YOK (yalnız sessiz rapor)', async () => {
+  const clock = fakeClock()
+  const d = deferred<string>()
+  let starts = 0
+  let silent = 0
+  const p = raceSessionWithSilentRetry(
+    () => {
+      starts++
+      return d.promise // auth-js initializePromise: aynı promise, ikinci çağrı yeni istek açmaz
+    },
+    GATE_SESSION_TIMEOUT_MS,
+    () => silent++,
+    clock.schedule,
+  )
+  clock.advance(GATE_SESSION_TIMEOUT_MS) // ilk eşik düştü
+  await flush()
+  assertEquals(silent, 1) // sessiz rapor atıldı, kullanıcıya gösterilecek bir şey yok
+  clock.advance(900) // ~6.9 sn: cihaz bulgusundaki gecikme
+  d.resolve('session')
+  const out = await p
+  assertEquals(starts, 2)
+  assertEquals(out.attempts, 2)
+  assertEquals(out.result.status, 'resolved') // timeout değil → gate hata ekranını AÇMAZ
+})
+
+Deno.test('COLD-START-4: ilk denemede çözülürse yeniden deneme yok, rapor yok', async () => {
+  const clock = fakeClock()
+  let silent = 0
+  const out = await raceSessionWithSilentRetry(() => Promise.resolve('ok'), GATE_SESSION_TIMEOUT_MS, () => silent++, clock.schedule)
+  assertEquals(out.attempts, 1)
+  assertEquals(out.result.status, 'resolved')
+  assertEquals(silent, 0)
+})
+
+Deno.test('COLD-START-4: iki deneme de düşerse timeout döner (hata ekranı yalnız o zaman)', async () => {
+  const clock = fakeClock()
+  const d = deferred<string>()
+  let silent = 0
+  const p = raceSessionWithSilentRetry(() => d.promise, GATE_SESSION_TIMEOUT_MS, () => silent++, clock.schedule)
+  clock.advance(GATE_SESSION_TIMEOUT_MS)
+  await flush()
+  clock.advance(GATE_SESSION_TIMEOUT_MS)
+  const out = await p
+  assertEquals(silent, 1) // sessiz rapor TEK kez
+  assertEquals(out.attempts, 2)
+  assertEquals(out.result.status, 'timeout')
+  if (out.result.status === 'timeout') {
+    d.resolve('geç')
+    assertEquals(await out.result.late, 'geç') // late AYNI promise: sonradan çözülürse gate devam eder
+  }
+})
+
+Deno.test('COLD-START-4: ilk denemede red → olduğu gibi geçer, yeniden deneme yok', async () => {
+  const clock = fakeClock()
+  let starts = 0
+  let msg = ''
+  try {
+    await raceSessionWithSilentRetry(() => { starts++; return Promise.reject(new Error('boom')) }, GATE_SESSION_TIMEOUT_MS, () => {}, clock.schedule)
+  } catch (e) {
+    msg = (e as Error).message
+  }
+  assertEquals(msg, 'boom')
+  assertEquals(starts, 1)
+})
+
+Deno.test('COLD-START-4: gate.tsx akışı — ilk düşüş sessiz (attempt:1, silent_retry:true), hata ekranı attempt:2', async () => {
+  const src = await Deno.readTextFile(new URL('../../app/gate.tsx', import.meta.url))
+  assert(/raceSessionWithSilentRetry\(\s*\(\) => supabase\.auth\.getSession\(\),\s*GATE_SESSION_TIMEOUT_MS/.test(src))
+  assert(/attempt: 1,\s*silentRetry: true,/.test(src), 'ilk düşüş sessiz raporlanmalı (showError YOK)')
+  assert(/failGate\('auth_timeout', undefined, 2\)/.test(src), 'hata ekranı yalnız ikinci düşüşte, attempt:2')
+  assert(/silent_retry: silentRetry,/.test(src) && /attempt,/.test(src), 'boot_failed attempt + silent_retry taşır')
+  // sessiz yol hata ekranını açan failGate'i / setFailure'ı çağırmaz
+  const silentBlock = src.slice(src.indexOf('raceSessionWithSilentRetry('), src.indexOf('if (race.status ==='))
+  assert(!/failGate|setFailure/.test(silentBlock))
 })

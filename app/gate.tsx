@@ -56,7 +56,7 @@ import { isGateReadyToNavigate } from '@/utils/gateDecision';
 import {
   GATE_SESSION_TIMEOUT_MS,
   handleGateFailure,
-  raceWithTimeout,
+  raceSessionWithSilentRetry,
   type GateFailure,
   type GateFailureReason,
 } from '@/utils/gateBoot';
@@ -86,16 +86,25 @@ const localStyles = StyleSheet.create({
 /** Sessiz değil: zaman aşımı uyarı, karar hatası exception olarak Sentry'ye gider. */
 function reportGateFailure(failure: GateFailure): void {
   // PII yok: yalnız sabit neden etiketi ve süre. Her gösterimde bir olay.
+  const attempt = failure.attempt ?? 1;
+  const silentRetry = failure.silentRetry === true;
   posthogAnalytics.track('boot_failed', {
     reason: failure.reason,
     elapsed_ms: bootClock.elapsedMs(),
+    attempt,
+    silent_retry: silentRetry,
   });
   if (failure.reason === 'auth_timeout') {
-    Sentry.captureMessage('gate: getSession zaman eşiğini aştı — hata durumu gösterildi', {
-      level: 'warning',
-      tags: { flow: 'gate', error_code: 'GATE_AUTH_TIMEOUT' },
-      extra: { gate_elapsed_ms: failure.elapsedMs, threshold_ms: GATE_SESSION_TIMEOUT_MS },
-    });
+    Sentry.captureMessage(
+      silentRetry
+        ? 'gate: getSession zaman eşiğini aştı — sessiz yeniden deneme (hata gösterilmedi)'
+        : 'gate: getSession zaman eşiğini aştı — hata durumu gösterildi',
+      {
+        level: 'warning',
+        tags: { flow: 'gate', error_code: silentRetry ? 'GATE_AUTH_TIMEOUT_SILENT_RETRY' : 'GATE_AUTH_TIMEOUT' },
+        extra: { gate_elapsed_ms: failure.elapsedMs, threshold_ms: GATE_SESSION_TIMEOUT_MS, attempt },
+      },
+    );
     return;
   }
   Sentry.captureException(failure.error ?? new Error('gate decision error (hata nesnesi yok)'), {
@@ -217,10 +226,10 @@ export default function Gate() {
   /** Bu koşu hâlâ güncel mi (yeni koşu başlamadı, yönlendirme yapılmadı). */
   const isCurrentRun = useCallback((id: number) => runId.current === id && !navigated.current, []);
 
-  const failGate = useCallback((reason: GateFailureReason, error?: unknown) => {
+  const failGate = useCallback((reason: GateFailureReason, error?: unknown, attempt: 1 | 2 = 1) => {
     hadFailure.current = true;
     handleGateFailure(
-      { reason, elapsedMs: Date.now() - mountedAt.current, error },
+      { reason, elapsedMs: Date.now() - mountedAt.current, error, attempt, silentRetry: false },
       { report: reportGateFailure, showError: setFailure },
     );
   }, []);
@@ -246,11 +255,24 @@ export default function Gate() {
       try {
         // getSession auth-js initializePromise'ini (token refresh) bekler. Süre dolarsa
         // istek iptal edilmez: görünür hata açılır, çözülünce karar yeniden çalışır.
-        const race = await raceWithTimeout(supabase.auth.getSession(), GATE_SESSION_TIMEOUT_MS);
+        // COLD-START-4: ilk timeout'ta hata GÖSTERİLMEZ (splash sürer), aynı bütçeyle bir kez daha beklenir;
+        // ilk düşüş boot_failed {attempt:1, silent_retry:true} ile raporlanır. Hata ekranı yalnız ikinci
+        // deneme de düşerse (attempt:2).
+        const { result: race } = await raceSessionWithSilentRetry(
+          () => supabase.auth.getSession(),
+          GATE_SESSION_TIMEOUT_MS,
+          () =>
+            reportGateFailure({
+              reason: 'auth_timeout',
+              elapsedMs: Date.now() - mountedAt.current,
+              attempt: 1,
+              silentRetry: true,
+            }),
+        );
         if (!isCurrentRun(id)) return;
 
         if (race.status === 'timeout') {
-          failGate('auth_timeout');
+          failGate('auth_timeout', undefined, 2);
           race.late.then(
             () => {
               if (!isCurrentRun(id)) return;

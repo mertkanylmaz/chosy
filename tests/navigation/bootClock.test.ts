@@ -90,3 +90,15 @@ Deno.test('olay özellikleri PII taşımıyor: yalnız ms/etiket alanları', asy
     }
   }
 })
+
+Deno.test('COLD-START-4: boot_failed attempt + silent_retry taşır; ilk düşüş sessiz, boot_recovered yalnız gösterilen hatada', async () => {
+  const gate = await read('app/gate.tsx')
+  const doc = await read('docs/analytics/G6_CEKIRDEK_EVENTLER.md')
+  const call = gate.match(/track\('boot_failed', \{[^}]*\}/)?.[0] ?? ''
+  for (const k of ['reason', 'elapsed_ms', 'attempt', 'silent_retry']) assert(call.includes(k), `boot_failed ${k} yok`)
+  assert(!/user|email|auth_?id|film|title|token/i.test(call), 'PII yok')
+  // sessiz yol hadFailure'ı işaretlemez (kullanıcı hata görmedi → boot_recovered atılmaz); failGate işaretler
+  assert(/hadFailure\.current = true;[\s\S]{0,40}handleGateFailure/.test(gate), 'failGate hadFailure işaretler')
+  assert(doc.includes('`attempt`') && doc.includes('`silent_retry`'), 'G6 dokümanı attempt/silent_retry tanımlamalı')
+  assert(doc.includes('sessiz yeniden deneme'), 'G6 dokümanı sessiz yeniden denemeyi anlatmalı')
+})
