@@ -69,6 +69,7 @@ import * as Sentry from '@sentry/react-native';
 
 import { logger } from '@/utils/logger';
 import { posthogAnalytics } from '@/services/posthog';
+import { entryViewed } from '@/components/gauntlet/MoodEntryCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 // V-4 Tur C: yalniz `Colors.error` — Design OS'ta tehlike token'i yok; yikici
 // eylemlerin (listeyi temizle, hesabi sil) bilinen istisnasi (kurucu karari).
@@ -782,6 +783,12 @@ function ProfileScreenContent() {
   const proAccess = useProModeAccess();
   // Faz 2-1b: Pro Mode satırının alt metni yalnız Mood Gauntlet bayrağı AÇIKKEN yeni; kapalıyken eski.
   const moodGauntletOn = useMoodGauntletEnabled();
+  // Pro Mode Faz 2-2: giris olaylari yalniz bayrak ACIKKEN (kapaliyken olay seti degismez).
+  const proEntryReady = moodGauntletOn && !proAccess.loading && !proAccess.error;
+  useEffect(() => {
+    if (!proEntryReady || !entryViewed.claim('profile')) return;
+    posthogAnalytics.track('pro_entry_viewed', { surface: 'profile' });
+  }, [proEntryReady]);
 
   // ── Plan bilgisi (B-1 / Fix 7) ──
   // Rozet entitlement'tan (`premiumStatus`), plan adi `tier`'dan gelir.
@@ -2029,7 +2036,13 @@ function ProfileScreenContent() {
                 degildir — tek dogruluk kaynagi `useProModeAccess`. */}
             <TouchableOpacity
               style={styles.proModeRow}
-              onPress={() => { hapticLight(); router.push('/pro-mode' as never); }}
+              onPress={() => {
+                hapticLight();
+                if (proEntryReady) {
+                  posthogAnalytics.track('pro_entry_tapped', { surface: 'profile', is_pro: proAccess.allowed });
+                }
+                router.push('/pro-mode' as never);
+              }}
               activeOpacity={0.7}
             >
               <MagicWand size={18} color={color.text.secondary} />

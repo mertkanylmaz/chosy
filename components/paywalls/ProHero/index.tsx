@@ -19,7 +19,7 @@ import React from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 
-import { ChatCircleText, Waveform } from 'phosphor-react-native';
+import { ChatCircleText, FilmStrip, InfinityIcon, MonitorPlay, Waveform } from 'phosphor-react-native';
 import type { IconProps } from 'phosphor-react-native';
 
 import { color, radius, size, space, type } from '@/constants/design/semantic';
@@ -43,7 +43,17 @@ const BENEFITS: { Icon: React.ComponentType<IconProps>; titleKey: string; bodyKe
   { Icon: Waveform, titleKey: 'paywallPro.benefit2Title', bodyKey: 'paywallPro.benefit2Body' },
 ];
 
+/** Metin seti: 'search' = Mood Search (varsayılan, değişmez); 'gauntlet' = Mood Gauntlet girişi. */
+export type ProCopy = 'search' | 'gauntlet';
+
+const GAUNTLET_BENEFITS: typeof BENEFITS = [
+  { Icon: FilmStrip, titleKey: 'paywallPro.gauntletBenefit1Title', bodyKey: 'paywallPro.gauntletBenefit1Body' },
+  { Icon: MonitorPlay, titleKey: 'paywallPro.gauntletBenefit2Title', bodyKey: 'paywallPro.gauntletBenefit2Body' },
+  { Icon: InfinityIcon, titleKey: 'paywallPro.gauntletBenefit3Title', bodyKey: 'paywallPro.gauntletBenefit3Body' },
+];
+
 interface ProHeroProps {
+  copy?: ProCopy;
   /**
    * Alt metni gizle. YALNIZ deneme-uygun durumda true gelir: açıklama 3
    * satıra çıkıp iki plan kartını ilk ekrandan itiyordu (R-5 fit). Başka
@@ -52,10 +62,11 @@ interface ProHeroProps {
   hideSubhead?: boolean;
 }
 
-export function ProHero({ hideSubhead = false }: ProHeroProps): React.JSX.Element {
+export function ProHero({ hideSubhead = false, copy = 'search' }: ProHeroProps): React.JSX.Element {
   const { t } = useLanguage();
   const { height } = useWindowDimensions();
   const compact = height <= COMPACT_HEIGHT;
+  const gauntlet = copy === 'gauntlet';
   const lightHeight = compact ? LIGHT_HEIGHT_COMPACT : LIGHT_HEIGHT_REGULAR;
   // Üst şerit (PAYWALL_TOP_INSET) ışığın tepesini örter; tepe noktası şeridin
   // hemen altına denk gelsin diye elips merkezi aşağı alınır (viewBox birimi).
@@ -92,14 +103,19 @@ export function ProHero({ hideSubhead = false }: ProHeroProps): React.JSX.Elemen
         {t('paywallPro.titleLead')} <Text style={styles.brandAccent}>{t('paywallPro.titleAccent')}</Text>
       </Text>
 
-      <Text style={styles.eyebrow}>{t('paywallPro.eyebrow')}</Text>
-      <Text style={styles.headline}>{t('paywallPro.headline')}</Text>
-      {!hideSubhead && <Text style={styles.subhead}>{t('paywallPro.subhead')}</Text>}
+      <Text style={styles.eyebrow}>{t(gauntlet ? 'paywallPro.gauntletEyebrow' : 'paywallPro.eyebrow')}</Text>
+      <Text style={styles.headline}>{t(gauntlet ? 'paywallPro.gauntletHeadline' : 'paywallPro.headline')}</Text>
+      {!hideSubhead && (
+        <Text style={styles.subhead}>{t(gauntlet ? 'paywallPro.gauntletSubhead' : 'paywallPro.subhead')}</Text>
+      )}
 
-      <View style={[styles.example, compact && styles.exampleCompact]}>
-        <Text style={styles.exampleLabel}>{t('paywallPro.exampleLabel')}</Text>
-        <Text style={styles.exampleText}>{t('paywallPro.exampleText')}</Text>
-      </View>
+      {/* Mood Search örnek kartı arama anlatımına aittir; Gauntlet metninde yok (3 madde plan kartlarının altında). */}
+      {!gauntlet && (
+        <View style={[styles.example, compact && styles.exampleCompact]}>
+          <Text style={styles.exampleLabel}>{t('paywallPro.exampleLabel')}</Text>
+          <Text style={styles.exampleText}>{t('paywallPro.exampleText')}</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -108,12 +124,13 @@ export function ProHero({ hideSubhead = false }: ProHeroProps): React.JSX.Elemen
  * İki fayda satırı — plan kartlarının ALTINDA gösterilir (`renderBelowPlans`).
  * Kartlar ilk ekranda tam görünsün diye hero'dan ayrıldı (R-5 fit).
  */
-export function ProBenefits(): React.JSX.Element {
+export function ProBenefits({ copy = 'search' }: { copy?: ProCopy }): React.JSX.Element {
   const { t } = useLanguage();
+  const items = copy === 'gauntlet' ? GAUNTLET_BENEFITS : BENEFITS;
 
   return (
     <View style={styles.benefits}>
-      {BENEFITS.map(({ Icon, titleKey, bodyKey }) => (
+      {items.map(({ Icon, titleKey, bodyKey }) => (
         <View key={titleKey} style={styles.benefitRow}>
           <Icon size={size.iconAction} color={color.reward.primary} weight="duotone" />
           <View style={styles.benefitText}>

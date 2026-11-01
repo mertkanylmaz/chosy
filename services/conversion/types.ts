@@ -35,7 +35,8 @@ export type TriggerType =
  * ve PostHog olaylarında aynı değer taşınır.
  */
 /** `profile_upgrade` paywall'ının girişi (analitik `source`). */
-export type ProfileUpgradeEntry = 'profile_tab' | 'pro_mode_locked';
+/** `mood_gauntlet_entry`: Home şampiyon kartı (Pro Mode Faz 2-2) — paywall metni Mood Gauntlet'i anlatır. */
+export type ProfileUpgradeEntry = 'profile_tab' | 'pro_mode_locked' | 'mood_gauntlet_entry';
 
 export type MoodOfferEntry =
   | 'champion_card'

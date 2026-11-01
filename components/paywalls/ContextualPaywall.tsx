@@ -14,6 +14,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { getSearchAnalyticsContext } from '@/services/moodSearchState';
 import { posthogAnalytics } from '@/services/posthog';
 import { paywallMoodCore } from '@/utils/moodAnalytics';
+import { paywallEntrySource } from '@/utils/moodEntry';
 import type { PaywallVariant } from '@/services/conversion';
 
 import PaywallQuotaExhausted from './PaywallQuotaExhausted';
@@ -52,6 +53,7 @@ export default function ContextualPaywall({
       // MONEY-1C: mood_offer varyantinda ortak cekirdek (diger varyantlarda sekil ayni).
       posthogAnalytics.track('paywall_viewed', {
         variant: variant.name,
+        ...paywallEntrySource(variant.trigger),
         ...paywallMoodCore(variant.trigger, {
           isPro: premiumStatus === 'premium',
           consent: getSearchAnalyticsContext().consent,

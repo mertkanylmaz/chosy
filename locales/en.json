@@ -1501,7 +1501,21 @@
     "benefit1Title": "Describe it naturally",
     "benefit1Body": "Search in your own words, not filters.",
     "benefit2Title": "Beyond just genre",
-    "benefit2Body": "Discover by tone, pace and atmosphere."
+    "benefit2Body": "Discover by tone, pace and atmosphere.",
+    "gauntletEyebrow": "The Mood Gauntlet",
+    "gauntletHeadline": "Your mood, your four — anytime",
+    "gauntletSubhead": "Pick a mood. Get four films, narrow them to one for tonight.",
+    "gauntletBenefit1Title": "4 films → 3 choices → tonight's film",
+    "gauntletBenefit1Body": "Pick by mood and narrow it down to one.",
+    "gauntletBenefit2Title": "Where to watch",
+    "gauntletBenefit2Body": "See where each film is streaming.",
+    "gauntletBenefit3Title": "Unlimited moods",
+    "gauntletBenefit3Body": "Start a new mood whenever you like."
+  },
+  "moodEntry": {
+    "title": "Can't wait until %{time}?",
+    "subtitle": "Pick by mood — four films, three choices, one pick",
+    "badge": "Pro"
   },
   "contextPaywall": {
     "quotaTitle": "Your discoveries are done for today",

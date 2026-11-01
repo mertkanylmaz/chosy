@@ -130,6 +130,8 @@ import { MoodInviteCard } from '@/components/gauntlet/MoodInviteCard';
 import { useMoodGauntletEnabled } from '@/hooks/useMoodGauntletEnabled';
 import { useMoodOfferEnabled } from '@/hooks/useMoodOfferEnabled';
 import { championInviteFits } from '@/utils/moodInvite';
+import { moodEntryFits } from '@/utils/moodEntry';
+import { MoodEntryCard } from '@/components/gauntlet/MoodEntryCard';
 import { useBelowHeight } from './useBelowHeight';
 import { useChampionAsk } from './useChampionAsk';
 import { useSpotlightVisible } from './useSpotlightVisible';
@@ -265,7 +267,7 @@ function GauntletShellContent(): React.JSX.Element {
   const isReducedMotion = useReducedMotion();
   const insets = useSafeAreaInsets();
   // V-2 Tur C: tur göstergesi → poster arası boşluk ekran yüksekliğine bağlı.
-  const { height: windowHeight } = useWindowDimensions();
+  const { height: windowHeight, fontScale } = useWindowDimensions();
   /** V-2 Tur B: tab bar + home indicator — TÜM dalların alt payı buradan. */
   const tabBarInset = useTabBarInset();
 
@@ -1578,6 +1580,7 @@ function GauntletShellContent(): React.JSX.Element {
     cycle: true,
     archive: true,
     invite: false,
+    entry: false,
   });
   const showMoodInvite =
     moodOfferEnabled &&
@@ -1587,11 +1590,32 @@ function GauntletShellContent(): React.JSX.Element {
       belowWithoutInvite: moodInviteBelowWithout,
       tabInset: tabBarInset,
     });
+  // Pro Mode Faz 2-2: Mood Gauntlet giriş kartı (Spotlight ile geri sayım arası). Bayrak kapaliyken
+  // `showMoodEntry` daima false → hero hesabi ve duzen oncesiyle ayni. Peek daveti bayrak aciksa
+  // zaten gizli (`moodOfferEnabled`), yani ikisi ayni anda gorunmez.
+  const showMoodEntry =
+    moodGauntletOn &&
+    countdownTarget !== null &&
+    showsCycleRow(shellState) &&
+    (spotlightUnavailable || bonusCardMounted) &&
+    moodEntryFits({
+      screenH: windowHeight,
+      belowWithoutEntry: below.total({
+        card: !spotlightUnavailable,
+        cycle: true,
+        archive: true,
+        invite: false,
+        entry: false,
+      }),
+      tabInset: tabBarInset,
+      fontScale,
+    });
   const belowHeight = below.total({
     card: !spotlightUnavailable,
     cycle: true,
     archive: true,
     invite: showMoodInvite,
+    entry: showMoodEntry,
   });
   const spotlightVisible = useSpotlightVisible({
     active: championActive,
@@ -1843,6 +1867,14 @@ function GauntletShellContent(): React.JSX.Element {
             {showMoodInvite && (
               <View onLayout={below.onLayoutOf('invite')}>
                 <MoodInviteCard surface="champion_card" />
+              </View>
+            )}
+
+            {/* Pro Mode Faz 2-2: Mood Gauntlet girişi — Spotlight kartı ile sayaç arası.
+                Sarmalayıcı ölçüm içindir; yetki okunmadıysa kart null döner (yükseklik 0). */}
+            {showMoodEntry && countdownTarget !== null && (
+              <View onLayout={below.onLayoutOf('entry')}>
+                <MoodEntryCard nextFourAt={countdownTarget} />
               </View>
             )}
 

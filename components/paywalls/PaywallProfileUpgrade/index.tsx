@@ -12,6 +12,7 @@ import React, { useCallback } from 'react';
 import type { PlanId } from '@/constants/subscriptionPlans';
 import type { PaywallVariant } from '@/services/conversion';
 import PaywallBase, { type PaywallHeaderContext } from '../PaywallBase';
+import { isMoodGauntletEntryTrigger } from '@/utils/moodEntry';
 import { ProBenefits, ProHero } from '../ProHero';
 
 // ─── Props ──────────────────────────────────────────────────────────────────
@@ -32,11 +33,13 @@ export default function PaywallProfileUpgrade({
   onConvert,
   onDismiss,
 }: Props) {
+  // Kaynak 'mood_gauntlet_entry' ise metin Mood Gauntlet'i anlatır; fiyat/plan/deneme aynı.
+  const copy = isMoodGauntletEntryTrigger(variant.trigger) ? 'gauntlet' : 'search';
   const renderHeader = useCallback(
-    (_pricing: unknown, ctx: PaywallHeaderContext) => <ProHero hideSubhead={ctx.trialShown} />,
-    [],
+    (_pricing: unknown, ctx: PaywallHeaderContext) => <ProHero hideSubhead={ctx.trialShown} copy={copy} />,
+    [copy],
   );
-  const renderBelowPlans = useCallback(() => <ProBenefits />, []);
+  const renderBelowPlans = useCallback(() => <ProBenefits copy={copy} />, [copy]);
 
   return (
     <PaywallBase

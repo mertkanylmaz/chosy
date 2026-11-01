@@ -23,6 +23,7 @@
     "tests/games",
     "tests/identity",
     "tests/moodgauntlet",
+    "tests/moodentry",
     "tests/moodoffer",
     "tests/navigation",
     "tests/net",

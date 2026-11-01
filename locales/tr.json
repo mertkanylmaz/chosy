@@ -1501,7 +1501,21 @@
     "benefit1Title": "Doğal şekilde anlat",
     "benefit1Body": "Filtrelerle değil, kendi cümlelerinle ara.",
     "benefit2Title": "Türün ötesinde",
-    "benefit2Body": "Ton, tempo ve atmosfere göre keşfet."
+    "benefit2Body": "Ton, tempo ve atmosfere göre keşfet.",
+    "gauntletEyebrow": "Mood Gauntlet",
+    "gauntletHeadline": "Mood'una göre dörtlü, istediğin an",
+    "gauntletSubhead": "Bir mood seç. Dört film gelsin, bu akşam için teke indir.",
+    "gauntletBenefit1Title": "4 film → 3 seçim → bu akşamın filmi",
+    "gauntletBenefit1Body": "Mood'una göre seç, teke indir.",
+    "gauntletBenefit2Title": "Nerede izlenir",
+    "gauntletBenefit2Body": "Her filmin nerede izlendiğini gör.",
+    "gauntletBenefit3Title": "Sınırsız mood",
+    "gauntletBenefit3Body": "İstediğin an yeni bir mood başlat."
+  },
+  "moodEntry": {
+    "title": "%{time}'%{suffix} bekleyemiyor musun?",
+    "subtitle": "Mood'una göre seç — dört film, üç seçim, tek film",
+    "badge": "Pro"
   },
   "contextPaywall": {
     "quotaTitle": "Bugünkü keşiflerin bitti",
