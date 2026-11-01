@@ -184,3 +184,20 @@ Deno.test('Faz 2-8: goreli icgoru mutlak cipla celisirse gizlenir (Fallout: slow
   assertEquals(visibleInsight('calmer_all', { pace: null, energy: null }), 'calmer_all')
   assertEquals(visibleInsight(null, fallout), null)
 })
+
+Deno.test('Faz 2-8: celiskili tempo cipi gizlenir (M:I - Fallout: slow + 0.76); esikler sabitlerden', async () => {
+  const { buildChips, paceContradictsEnergy, ENERGY_MODERATE_MAX, ENERGY_GENTLE_MAX } = await import('../../utils/moodFilmFacts.ts')
+  const fallout = { pace: 'slow' as const, energy: 0.76 }
+  const c = buildChips(fallout, 147)
+  assertEquals([c.pace, c.energy, c.runtime], [null, 'intense', '2h 27m'])
+  // esik: tam 0.70 slow → gizli; 0.69 → kalir (esik sabitten)
+  assertEquals(paceContradictsEnergy('slow', ENERGY_MODERATE_MAX), true)
+  assertEquals(paceContradictsEnergy('slow', ENERGY_MODERATE_MAX - 0.01), false)
+  assertEquals(paceContradictsEnergy('fast', ENERGY_GENTLE_MAX - 0.01), true)
+  assertEquals(paceContradictsEnergy('fast', ENERGY_GENTLE_MAX), false)
+  assertEquals(paceContradictsEnergy('medium', 0.9), false)
+  assertEquals(paceContradictsEnergy('slow', null), false)
+  assertEquals(buildChips({ pace: 'slow', energy: 0.3 }, null).pace, 'slow')
+  assertEquals(buildChips({ pace: 'fast', energy: null }, null).pace, 'fast')
+  assertEquals(buildChips(undefined, 90).pace, null)
+})

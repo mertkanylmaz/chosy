@@ -71,9 +71,19 @@ export interface FilmChips {
   runtime: string | null;
 }
 
+/**
+ * Faz 2-8: tempo ve enerji birbiriyle çelişiyorsa tempo çipi gizlenir (tempo verisi bazı profillerde
+ * süre vekili; bkz. rapor). slow + enerji ≥ ENERGY_MODERATE_MAX (0.70) ya da fast + enerji < ENERGY_GENTLE_MAX (0.45).
+ * Genel kural, film başına kod yok; enerji bilinmiyorsa çelişki kanıtlanamaz → çip kalır.
+ */
+export function paceContradictsEnergy(pace: Pace | null, energy: number | null): boolean {
+  if (pace === null || energy === null) return false;
+  return (pace === 'slow' && energy >= ENERGY_MODERATE_MAX) || (pace === 'fast' && energy < ENERGY_GENTLE_MAX);
+}
+
 export function buildChips(dims: FilmDims | undefined, runtimeMinutes: number | null | undefined): FilmChips {
   return {
-    pace: dims?.pace ?? null,
+    pace: dims && !paceContradictsEnergy(dims.pace, dims.energy) ? dims.pace : null,
     energy: dims?.energy != null ? energyBand(dims.energy) : null,
     runtime: formatRuntime(runtimeMinutes),
   };
