@@ -113,20 +113,15 @@ export const styles = StyleSheet.create({
   gBottom: { marginTop: 'auto', paddingTop: space.lg, gap: space.sm },
   noneSub: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
 
-  // Dörtlün (ilk turdan önce)
-  introRoot: { flex: 1, paddingHorizontal: space.base, justifyContent: 'center' },
-  introInner: { gap: space.base, alignItems: 'center' },
+  // Your four (kalıcı durak): üst metin · ölçülen ızgara kutusu · alta sabit CTA
+  introRoot: { flex: 1, paddingHorizontal: space.base },
+  introHead: { alignItems: 'center', gap: space.xs, paddingTop: space.sm },
   introMood: { ...type['label-caps'], color: color.text.secondary },
-  introTitle: { ...type['display-l'], color: color.text.primary, textAlign: 'center' },
-  introGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm, width: '100%' },
-  introCell: {
-    width: '48%',
-    flexGrow: 1,
-    aspectRatio: 2 / 3,
-    borderRadius: radius.poster,
-    overflow: 'hidden',
-    backgroundColor: color.surface.raised,
-  },
+  introKicker: { ...type['label-caps'], color: color.text.secondary },
+  introTitle: { ...type.title, color: color.text.primary, textAlign: 'center' },
+  introGridBox: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: space.md },
+  introGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: space.md },
+  introFooter: { paddingTop: space.sm },
 
   // Film çipleri (tempo · yoğunluk · süre)
   filmChips: { flexDirection: 'row', flexWrap: 'wrap', gap: space.xs },

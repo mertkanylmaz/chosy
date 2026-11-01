@@ -84,6 +84,11 @@ interface PosterTileProps {
    * 'yearRuntime' → günlük gauntlet DEĞİŞMEZ.
    */
   metaMode?: 'yearRuntime' | 'yearOnly';
+  /**
+   * Faz 2-9a: `false` = yalnız gösterim (Your four ızgarası). Dokunulamaz, düğme rolü yok;
+   * poster yükleme/yeniden deneme/yer tutucu davranışı aynen kalır. Varsayılan `true`.
+   */
+  interactive?: boolean;
 }
 
 export function PosterTile({
@@ -95,6 +100,7 @@ export function PosterTile({
   titleLines,
   onTitleLines,
   metaMode = 'yearRuntime',
+  interactive = true,
 }: PosterTileProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
@@ -201,10 +207,10 @@ export function PosterTile({
     <Animated.View style={[styles.container, animatedStyle]}>
       <TouchableOpacity
         activeOpacity={0.85}
-        disabled={disabled}
+        disabled={disabled || !interactive}
         onPress={handlePress}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        accessibilityRole="button"
+        hitSlop={interactive ? { top: 8, bottom: 8, left: 8, right: 8 } : undefined}
+        accessibilityRole={interactive ? 'button' : 'image'}
         accessibilityLabel={t('gauntlet.posterAccessibilityLabel', {
           title: film.title,
           year: film.year,

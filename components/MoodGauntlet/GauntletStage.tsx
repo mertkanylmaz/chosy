@@ -10,16 +10,17 @@
  *  - Gerekçenin altında veriden çipler (tempo · yoğunluk · süre).
  *  - 1. turda ilk kullanım ipucu + ikincil "Sen seç" (rerank'ın 1. filmi şampiyon olur).
  *  - "Hiçbiri" ve "Sen seç" aynı boyda ikincil düğmeler (OutlineAction), altında tek satır açıklama.
- *  - Faz 2-4: turlar boyunca üstte 4 poster şeridi (kazanan vurgulu, elenen %35 opaklık);
- *    "Dörtlün" girişi en az 1,5 sn (dokunarak geçilebilir).
+ *  - Faz 2-4: turlar boyunca üstte 4 poster şeridi (kazanan vurgulu, elenen %35 opaklık).
+ *  - Faz 2-9a: "Your four" KALICI durak (`FourIntro`): otomatik geçiş yok, Round 1 yalnız
+ *    "Start choosing" dokunuşuyla açılır.
  *
  * Seçim tepkisi: dokunulan poster `remaining`, diğeri `eliminated`; geçişin bitiminde tur ilerler.
  */
 import { Image } from 'expo-image';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
-import Animated, { FadeIn, FadeOut, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
@@ -34,14 +35,11 @@ import { currentPair, stripItems, type MoodFlow } from '@/utils/moodGauntletFlow
 import { normalizePosterUrl } from '@/utils/posterUrl';
 
 import { FilmChips } from './FilmChips';
+import { FourIntro } from './FourIntro';
 import { styles } from './styles';
 
 /** Seçim animasyonunun süresi: kalan posterin yayı (token), sonra tur ilerler. */
 const PICK_SETTLE_MS = DISSOLVE_DURATION.remainingPoster;
-/** "Dörtlün" ızgarasının ekranda kalma süresi: en az 1,5 sn (dokunuşla atlanabilir). */
-export const FOUR_INTRO_MS = 1500;
-export const FOUR_INTRO_REDUCED_MS = 1500;
-
 interface GauntletStageProps {
   set: MoodSet;
   /** film id → gerekçe (arkadan dolar). */
@@ -57,6 +55,10 @@ interface GauntletStageProps {
   /** İlk kullanım ipucu görünsün mü (yalnız 1. turda çizilir). */
   tapHint: boolean;
   onChoose: (filmId: string) => void;
+  /** "Your four" gösterildi (set başına bir kez). */
+  onFourViewed: () => void;
+  /** "Start choosing" dokunuşu; `dwellMs` = Your four'un açık kaldığı süre. */
+  onFourStart: (dwellMs: number) => void;
   onNone: () => void;
   onJustPick: () => void;
 }
@@ -71,6 +73,8 @@ export function GauntletStage({
   moodLabel,
   tapHint,
   onChoose,
+  onFourViewed,
+  onFourStart,
   onNone,
   onJustPick,
 }: GauntletStageProps): React.JSX.Element | null {
@@ -93,12 +97,15 @@ export function GauntletStage({
     [],
   );
 
+  // Your four: Round 1 YALNIZ CTA ile açılır — zamanlayıcı / effect ile kapanmaz.
   const showIntro = pair !== null && pair.round === 1 && introDoneFor !== set.setId;
-  useEffect(() => {
-    if (!showIntro) return;
-    const id = setTimeout(() => setIntroDoneFor(set.setId), reduced ? FOUR_INTRO_REDUCED_MS : FOUR_INTRO_MS);
-    return () => clearTimeout(id);
-  }, [showIntro, set.setId, reduced]);
+  const handleFourStart = useCallback(
+    (dwellMs: number) => {
+      onFourStart(dwellMs);
+      setIntroDoneFor(set.setId);
+    },
+    [onFourStart, set.setId],
+  );
 
   const films = useMemo(() => {
     const map = new Map<string, ReturnType<typeof toGauntletFilm>>();
@@ -121,38 +128,13 @@ export function GauntletStage({
 
   if (showIntro) {
     return (
-      <TouchableOpacity
-        activeOpacity={1}
-        style={styles.introRoot}
-        onPress={() => setIntroDoneFor(set.setId)}
-        accessibilityRole="button"
-        accessibilityLabel={t('moodGauntlet.yourFourA11y')}
-      >
-        <Animated.View
-          style={styles.introInner}
-          entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
-          exiting={reduced ? undefined : FadeOut.duration(DISSOLVE_DURATION.newContender)}
-        >
-          {moodLabel !== null && moodLabel.length > 0 && (
-            <Text style={styles.introMood} numberOfLines={1}>
-              {moodLabel}
-            </Text>
-          )}
-          <Text style={styles.introTitle} accessibilityRole="header">
-            {t('moodGauntlet.yourFour')}
-          </Text>
-          <View style={styles.introGrid}>
-            {set.four.map((row) => {
-              const uri = normalizePosterUrl(row.poster_url);
-              return (
-                <View key={row.id} style={styles.introCell}>
-                  {uri !== null && <Image source={{ uri }} style={styles.heroImage} contentFit="cover" />}
-                </View>
-              );
-            })}
-          </View>
-        </Animated.View>
-      </TouchableOpacity>
+      <FourIntro
+        key={set.setId}
+        films={set.four.map((row) => films.get(row.id)).filter((f): f is NonNullable<typeof f> => f !== undefined)}
+        moodLabel={moodLabel}
+        onStart={handleFourStart}
+        onViewed={onFourViewed}
+      />
     );
   }
 

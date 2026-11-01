@@ -61,6 +61,8 @@ export function MoodGauntletShell(): React.JSX.Element {
           moodLabel={g.moodLabel}
           tapHint={g.tapHint}
           onChoose={g.chooseFilm}
+          onFourViewed={g.fourViewed}
+          onFourStart={g.fourStarted}
           onNone={g.noneOfThese}
           onJustPick={g.justPick}
         />

@@ -97,3 +97,17 @@ export const REDUCED_MOTION_DURATION = {
  * `impactHeavy`. Süre bileşene hardcode edilmez, buradan okunur.
  */
 export const CHAMPION_HAPTIC_DELAY = 300;
+
+/**
+ * Pro Mode (Mood Gauntlet) süreleri — Faz 2-9a. Hardcode süre yok, buradan okunur.
+ * - `pickSettle`: seçilen posterin görülme süresi (kalan poster yayı), sonra tur ilerler.
+ *   Dokunma ANI geri bildirimi (sarı kontur) Kesme'dir (0ms); bu süre ondan ayrıdır.
+ * - `stageTransition`: aşama geçişi (Your four girişi/çıkışı).
+ * - `posterStagger`: Your four'da posterlerin kademeli belirmesi (poster başına).
+ * Reduce Motion açıkken üçü de uygulanmaz (çağıran `useReducedMotion` ile eler).
+ */
+export const MOOD_MOTION = {
+  pickSettle: DISSOLVE_DURATION.remainingPoster,
+  stageTransition: 300,
+  posterStagger: 100,
+} as const;

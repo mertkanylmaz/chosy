@@ -36,3 +36,49 @@ Deno.test('hook: Your four olaylari mood anahtari yalniz quick id ya da free_tex
   assertMatch(hook, /fourViewedEvent\(set\.setId, moodKey\(\)\)/)
   assertMatch(hook, /fourStartTappedEvent\(set\.setId, dwellMs\)/)
 })
+
+const gauntlet = strip(read('components/MoodGauntlet/GauntletStage.tsx'))
+const intro = strip(read('components/MoodGauntlet/FourIntro.tsx'))
+const en = JSON.parse(read('locales/en.json'))
+const tr = JSON.parse(read('locales/tr.json'))
+
+Deno.test('Your four: otomatik gecis YOK (timer/effect/animasyon callback), Round 1 yalniz CTA ile', () => {
+  assert(!/setTimeout|setInterval|runOnJS|withTiming|withDelay/.test(intro), 'FourIntro zamanlayici/animasyon callbacki tasimaz')
+  // setIntroDoneFor yalniz CTA handler'inda cagrilir
+  const calls = gauntlet.match(/setIntroDoneFor\(/g) ?? []
+  assertEquals(calls.length, 1)
+  assertMatch(gauntlet, /const handleFourStart = useCallback\(\s*\(dwellMs: number\) => \{\s*onFourStart\(dwellMs\);\s*setIntroDoneFor\(set\.setId\);/)
+  assert(!/useEffect\([^)]*setIntroDoneFor/.test(gauntlet))
+  // tum ekran dokunusu kalkti: kok TouchableOpacity yok
+  assert(!/TouchableOpacity/.test(gauntlet) && !/TouchableOpacity/.test(intro))
+  assertMatch(intro, /label=\{t\('moodGauntlet\.fourIntroCta'\)\}\s+onPress=\{handleStart\}/)
+})
+
+Deno.test('Your four: CTA cift dokunusta tek acilis/tek olay; yapay gecikme yok; poster etiketli', () => {
+  assertMatch(intro, /if \(started\.current\) return/)
+  assertMatch(intro, /started\.current = true;\s*hapticSelection\(\);\s*onStart\(Date\.now\(\) - shownAt\.current\)/)
+  assertMatch(intro, /interactive=\{false\}/)
+  assertMatch(read('components/gauntlet/PosterTile/index.tsx'), /accessibilityRole=\{interactive \? 'button' : 'image'\}/)
+  assertMatch(read('components/gauntlet/PosterTile/index.tsx'), /gauntlet\.posterAccessibilityLabel/)
+  assertMatch(intro, /accessibilityLabel=\{t\('moodGauntlet\.yourFourA11y'\)\}/)
+  // CTA alt guvenli alana sabit, posterler olculen kutuya gore kuculur
+  assertMatch(intro, /paddingBottom: Math\.max\(insets\.bottom, space\.base\)/)
+  assertMatch(intro, /fourCellWidth\(box\.w, box\.h\)/)
+})
+
+Deno.test('Your four: sureler token; Reduce Motion hareketi kaldirir', () => {
+  assertMatch(intro, /MOOD_MOTION\.posterStagger/)
+  assertMatch(intro, /MOOD_MOTION\.stageTransition/)
+  assertMatch(intro, /entering=\{reduced \? undefined :/)
+  assert(!/duration\(\s*\d/.test(intro) && !/delay\(\s*\d/.test(intro), 'hardcode sure yok')
+  const m = read('constants/design/motion.ts')
+  assertMatch(m, /stageTransition: 300/)
+  assertMatch(m, /posterStagger: 100/)
+})
+
+Deno.test('Your four metinleri en+tr', () => {
+  assertEquals(en.moodGauntlet.fourIntroTitle, 'Four films. Three quick choices. One winner.')
+  assertEquals(en.moodGauntlet.fourIntroCta, 'Start choosing')
+  assertEquals(tr.moodGauntlet.fourIntroTitle, 'Dört film. Üç hızlı seçim. Bir kazanan.')
+  assertEquals(tr.moodGauntlet.fourIntroCta, 'Seçmeye başla')
+})
