@@ -8,6 +8,7 @@ import {
   REASON_DEFAULT_MODEL,
   REASON_HARD_MAX_WORDS,
   countWords,
+  enforceNoDigits,
   enforceReasonLength,
   REASON_MAX_WORDS,
   REASON_SYSTEM_PROMPT,
@@ -130,7 +131,27 @@ Deno.test('index.ts sozlesmesi: tek Haiku modeli, guard sirasi, reasons_dropped 
   assert(!/reasonModelChain|REASON_MODEL_FALLBACK|sonnet/i.test(src))
   // reasonGuard once, uzunluk korumasi sonra; sayac toplanir
   assert(src.indexOf('guardReasons(reasons, moodText, titlesById)') < src.indexOf('enforceReasonLength(guarded.reasons)'))
-  assertMatch(src, /reasons_dropped: guarded\.dropped\.length \+ lengthChecked\.dropped\.length/)
+  assert(src.indexOf('enforceReasonLength(guarded.reasons)') < src.indexOf('enforceNoDigits(lengthPass.reasons)'))
+  assertMatch(src, /reasons_dropped: guarded\.dropped\.length \+ \(lengthPass\?\.dropped\.length \?\? 0\) \+ lengthChecked\.dropped\.length/)
   // model adi sabit degil, zincirden gelir
   assert(!/model: 'claude-haiku-4-5'/.test(src))
+})
+
+Deno.test('enforceNoDigits: rakam iceren gerekce "" olur, anahtar korunur, rakamsiz aynen', () => {
+  const r = enforceNoDigits({ a: 'Sadece 90 dakika, hafif.', b: 'A 2019 classic.', c: 'Sakin ve hafif bir akşam.', d: '' })
+  assertEquals(r.reasons, { a: '', b: '', c: 'Sakin ve hafif bir akşam.', d: '' })
+  assertEquals(r.dropped.sort(), ['a', 'b'])
+})
+
+Deno.test('reason prompt: olgusal iddia/sayi yasagi + olduğundan hafif/agir gosterme + temkinli uyum', () => {
+  assertMatch(REASON_SYSTEM_PROMPT, /Never write factual claims or numbers: no runtime, year, cast, awards or counts/)
+  assertMatch(REASON_SYSTEM_PROMPT, /Do not make a film sound lighter or heavier than it is; if the fit is weak, say so more cautiously/)
+})
+
+Deno.test('index.ts: aday satirinda runtime, genres_exclude yalniz pick yolunda, pick prompt kisit kurali', () => {
+  const src = Deno.readTextFileSync(new URL('../rerank-films/index.ts', import.meta.url)).replaceAll('\r\n', '\n')
+  assertMatch(src, /\(\$\{c\.year \?\? '\?'\}\)\$\{runtime\} \| \$\{genres\} \| \$\{overview\}/)
+  assertMatch(src, /const excluded = !withReason && Array\.isArray\(body\.genres_exclude\)/)
+  assertMatch(src, /Respect explicit constraints: if the mood says "not intense", "not scary"/)
+  assertMatch(src, /never select a film that has any of those genres/)
 })

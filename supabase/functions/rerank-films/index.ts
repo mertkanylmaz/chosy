@@ -29,6 +29,7 @@ import {
   REASON_OVERVIEW_MAX,
   REASON_SYSTEM_PROMPT,
   dailyCounterKey,
+  enforceNoDigits,
   enforceReasonLength,
 } from '../_shared/rerankReason.ts'
 
@@ -50,6 +51,8 @@ interface CandidateFilm {
   overview: string | null
   genres: string[] | null
   year: number | null
+  /** Dakika; yoksa aday satirinda gosterilmez. */
+  runtime?: number | null
   similarity: number
 }
 
@@ -59,6 +62,8 @@ interface RerankRequest {
   count?: number
   /** true: her secilen film icin tek cumle gerekce de doner (MOOD-VEC-2c). Yoksa yanit degismez. */
   reason?: boolean
+  /** parse'taki genres_exclude: dortlu secimde (reason:false) bu turlerden film secilmez. */
+  genres_exclude?: string[]
 }
 
 // ── System Prompt ────────────────────────────────────────────────────────────
@@ -69,6 +74,7 @@ Rules:
 - Understand the user's INTENT, not just emotion. "thailand trip" means films about travel, Thailand, Southeast Asia, adventure, vacation — NOT just "happy adventure films"
 - "exam results came back great" means films about academic achievement, youth, coming-of-age, school success — NOT just "happy films"
 - Eliminate films with ZERO thematic connection to the user's intent
+- Respect explicit constraints: if the mood says "not intense", "not scary", "nothing heavy" or similar, never select a film that violates it (judge by genres, runtime and overview). If an "Excluded genres" line is given, never select a film that has any of those genres
 - Among thematically relevant films, prefer higher original similarity scores (they capture emotional tone better)
 - If no films are thematically connected, fall back to the best emotional matches (don't return empty)
 - Return ONLY a JSON array of the candidate NUMBERS (the integer before each film) in ranked order, nothing else
@@ -165,12 +171,18 @@ serve(async (req: Request): Promise<Response> => {
     .map((c, i) => {
       const overview = (c.overview ?? '').slice(0, overviewMax)
       const genres = (c.genres ?? []).join(', ')
-      return `${i + 1}. "${c.title}" (${c.year ?? '?'}) | ${genres} | ${overview}`
+      const runtime = typeof c.runtime === 'number' && c.runtime > 0 ? ` | ${Math.round(c.runtime)} min` : ''
+      return `${i + 1}. "${c.title}" (${c.year ?? '?'})${runtime} | ${genres} | ${overview}`
     })
     .join('\n')
 
-  const userMessage = `User mood: "${moodText}"
+  const excluded = !withReason && Array.isArray(body.genres_exclude)
+    ? body.genres_exclude.filter((g) => typeof g === 'string' && g.trim().length > 0).slice(0, 10).map((g) => g.trim().slice(0, 40))
+    : []
+  const excludedLine = excluded.length > 0 ? `\nExcluded genres (never select a film with any of these): ${excluded.join(', ')}\n` : ''
 
+  const userMessage = `User mood: "${moodText}"
+${excludedLine}
 Select the ${count} most relevant films from these candidates. Return their numbers in ranked order.
 
 Candidate films:
@@ -234,9 +246,14 @@ ${filmList}`
       console.warn(`[rerank-films] REASON_DROPPED: ${guarded.dropped.length}/${Object.keys(reasons).length} gerekce TR sizinti denetiminde bosaltildi`)
     }
     // Uzunluk korumasi: >16 kelime '' olur (reasons_dropped artar); <=16 kabul. reasonGuard aynen kalir.
-    const lengthChecked = guarded ? enforceReasonLength(guarded.reasons) : null
+    const lengthPass = guarded ? enforceReasonLength(guarded.reasons) : null
+    if (lengthPass && lengthPass.dropped.length > 0) {
+      console.warn(`[rerank-films] REASON_TOO_LONG: ${lengthPass.dropped.length} gerekce 16 kelimeyi astigi icin bosaltildi`)
+    }
+    // Olgusal iddia korumasi: gerekcede rakam (sure, yil, sayi) varsa '' olur.
+    const lengthChecked = lengthPass ? enforceNoDigits(lengthPass.reasons) : null
     if (lengthChecked && lengthChecked.dropped.length > 0) {
-      console.warn(`[rerank-films] REASON_TOO_LONG: ${lengthChecked.dropped.length} gerekce 16 kelimeyi astigi icin bosaltildi`)
+      console.warn(`[rerank-films] REASON_HAS_DIGIT: ${lengthChecked.dropped.length} gerekce rakam icerdigi icin bosaltildi`)
     }
 
     return new Response(
@@ -247,7 +264,7 @@ ${filmList}`
         ...(guarded && lengthChecked
           ? {
             reasons: lengthChecked.reasons,
-            reasons_dropped: guarded.dropped.length + lengthChecked.dropped.length,
+            reasons_dropped: guarded.dropped.length + (lengthPass?.dropped.length ?? 0) + lengthChecked.dropped.length,
             reason_model: usedModel,
           }
           : {}),

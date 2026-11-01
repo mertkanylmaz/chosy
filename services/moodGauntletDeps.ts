@@ -159,6 +159,7 @@ async function rerank(input: {
   candidates: MatchRow[];
   count: number;
   withReasons: boolean;
+  genresExclude?: readonly string[];
 }): Promise<RerankOutcome> {
   if (!(await hasAiConsent())) return { ok: false, failure: 'no_consent' };
   const controller = new AbortController();
@@ -179,10 +180,12 @@ async function rerank(input: {
           overview: (c.overview ?? '').slice(0, RERANK_OVERVIEW_MAX),
           genres: c.genres,
           year: c.year,
+          runtime: c.runtime,
           similarity: c.similarity,
         })),
         count: input.count,
         reason: input.withReasons,
+        ...(input.genresExclude && input.genresExclude.length > 0 ? { genres_exclude: input.genresExclude } : {}),
       }),
       signal: controller.signal,
     });

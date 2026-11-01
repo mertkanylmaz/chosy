@@ -108,6 +108,8 @@ export interface MoodGauntletDeps {
     candidates: MatchRow[];
     count: number;
     withReasons: boolean;
+    /** parse'taki genres_exclude; dörtlü seçiminde (reason:false) sunucu prompt'una ihlal yasağı olarak gider. */
+    genresExclude?: readonly string[];
   }): Promise<RerankOutcome>;
   /** watchlist + izlenen film kimlikleri. */
   loadExclusions(): Promise<string[]>;
@@ -305,10 +307,11 @@ async function rerankOrNull(
   deps: MoodGauntletDeps,
   moodText: string,
   pool: readonly MatchRow[],
+  genresExclude: readonly string[],
 ): Promise<RerankOutcome | null> {
   const candidates = pool.slice(0, RERANK_CANDIDATES) as MatchRow[];
   try {
-    const out = await deps.rerank({ moodText, candidates, count: FOUR, withReasons: false });
+    const out = await deps.rerank({ moodText, candidates, count: FOUR, withReasons: false, genresExclude });
     if (!out.ok || out.ids.length === 0) {
       deps.onFallback('rerank');
       return null;
@@ -456,7 +459,7 @@ export async function startMoodGauntlet(
 async function buildSet(deps: MoodGauntletDeps, session: MoodSession): Promise<NextResult> {
   const available = session.pool.filter((r) => !session.shown.includes(r.id));
   if (available.length < FOUR) return { status: 'exhausted', session };
-  const rerank = await rerankOrNull(deps, session.moodText, available);
+  const rerank = await rerankOrNull(deps, session.moodText, available, session.parsed.genresExclude);
   const picked = pickFour(available, rerank);
   const set: MoodSet = {
     setId: deps.newId(),

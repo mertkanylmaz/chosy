@@ -211,7 +211,7 @@ async function parityCheck(moods: Mood[], session: EvalSession): Promise<void> {
   add('istemci id-rerank zaman aşımı', C.CLIENT_RERANK_IDS_TIMEOUT_MS, firstMatch(clientDeps, /const RERANK_IDS_TIMEOUT_MS = ([\d_]+)/).replace(/_/g, ''));
   add('istemci gerekçe zaman aşımı', C.CLIENT_RERANK_REASONS_TIMEOUT_MS, firstMatch(clientDeps, /const RERANK_REASONS_TIMEOUT_MS = ([\d_]+)/).replace(/_/g, ''));
   add('istemci pick: id-rerank reason:false', 'var',
-    /count: FOUR, withReasons: false \}/.test(clientPipe) ? 'var' : 'YOK');
+    /count: FOUR, withReasons: false(?:, genresExclude)? \}/.test(clientPipe) ? 'var' : 'YOK');
   add('istemci reasons: yalnız dörtlü, reason:true', 'var',
     /candidates: set\.four, count: FOUR, withReasons: true \}/.test(clientPipe) ? 'var' : 'YOK');
   add('istemci rerank gövdesi (reason: input.withReasons, count)', 'var',
@@ -821,7 +821,7 @@ function makeEvalDeps(
   };
 
   const rerank = async (input: {
-    moodText: string; candidates: MatchRow[]; count: number; withReasons: boolean;
+    moodText: string; candidates: MatchRow[]; count: number; withReasons: boolean; genresExclude?: readonly string[];
   }): Promise<RerankOutcome> => {
     const withReasons = input.withReasons;
     const call: V5Call = {
@@ -880,10 +880,12 @@ function makeEvalDeps(
             overview: (c.overview ?? '').slice(0, C.CLIENT_RERANK_OVERVIEW_MAX),
             genres: c.genres,
             year: c.year,
+            runtime: c.runtime,
             similarity: c.similarity,
           })),
           count: input.count,
           reason: withReasons,
+          ...(input.genresExclude && input.genresExclude.length > 0 ? { genres_exclude: input.genresExclude } : {}),
         }),
         signal: controller.signal,
       });

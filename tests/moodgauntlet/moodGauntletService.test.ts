@@ -46,6 +46,8 @@ interface Calls {
   rerankFlags: boolean[]
   /** Her rerank çağrısına giden aday id'leri. */
   rerankCandidates: string[][]
+  /** Her rerank çağrısına giden genresExclude (sırayla). */
+  rerankExclude: (readonly string[] | undefined)[]
   prefetched: string[][]
   timings: Array<[string, number]>
   recorded: string[][]
@@ -61,7 +63,7 @@ function makeDeps(opts: {
   recordThrows?: boolean
 }): { deps: MoodGauntletDeps; calls: Calls } {
   const calls: Calls = {
-    parse: 0, match: [], rerank: 0, rerankFlags: [], rerankCandidates: [], prefetched: [], timings: [],
+    parse: 0, match: [], rerank: 0, rerankFlags: [], rerankCandidates: [], rerankExclude: [], prefetched: [], timings: [],
     recorded: [], fallbacks: [], errors: [],
   }
   let id = 0
@@ -78,8 +80,9 @@ function makeDeps(opts: {
       m++
       return Promise.resolve(r)
     },
-    rerank: async ({ candidates, withReasons }) => {
+    rerank: async ({ candidates, withReasons, genresExclude }) => {
       calls.rerank++
+      calls.rerankExclude.push(genresExclude)
       calls.rerankFlags.push(withReasons)
       calls.rerankCandidates.push(candidates.map((c) => c.id))
       return opts.rerank ? await opts.rerank(candidates, withReasons) : { ok: false, failure: 'http_error' }
@@ -459,4 +462,18 @@ Deno.test('yogunluk: v4 gevsetme zinciri kaydirilmis profille de calisir; genres
   const hot = await intensifyMoodGauntlet(deps, first.session, 'stronger')
   assertEquals(hot.status, 'ok')
   for (const c of calls.match.slice(1)) assertEquals(c.genresExclude, ['Horror'])
+})
+
+Deno.test('genres_exclude: yalniz dortlu secimi (reason:false) rerank icin tasinir, gerekce cagrisinda yok', async () => {
+  const { deps, calls } = makeDeps({
+    parsed: parsed({ genresExclude: ['Horror', 'Thriller'] }),
+    rerank: (c, withReasons) => withReasons ? { ok: true, ids: [], reasons: {} } : topFour(c),
+  })
+  const r = await startMoodGauntlet(deps, { text: 'sakin bir aksam' })
+  assert(r.status === 'ok')
+  if (r.status !== 'ok') return
+  await fetchReasons(deps, r.session, r.set)
+  assertEquals(calls.rerankFlags, [false, true])
+  assertEquals(calls.rerankExclude[0], ['Horror', 'Thriller'])
+  assertEquals(calls.rerankExclude[1], undefined)
 })

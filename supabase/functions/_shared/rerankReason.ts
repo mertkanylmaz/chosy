@@ -49,6 +49,21 @@ export function enforceReasonLength(
   return { reasons: out, dropped }
 }
 
+/** Gerekçede rakam (\d) varsa '' olur: süre/yıl/sayı gibi olgusal iddia yazılmasın. Anahtar korunur. */
+export function enforceNoDigits(reasons: Record<string, string>): LengthGuardResult {
+  const out: Record<string, string> = {}
+  const dropped: string[] = []
+  for (const [id, text] of Object.entries(reasons)) {
+    if (/\d/.test(text)) {
+      out[id] = ''
+      dropped.push(id)
+    } else {
+      out[id] = text
+    }
+  }
+  return { reasons: out, dropped }
+}
+
 /** id-rerank (reason:false) mevcut sayacı kullanır. */
 export const RERANK_IDS_DAILY_KEY = 'rerank-films-daily'
 /** Gerekçe çağrısı (reason:true) AYRI sayaç kullanır; limitler aynıdır (lookupDailyLimit). */
@@ -67,6 +82,7 @@ Rules:
 - If no films are thematically connected, fall back to the best emotional matches (don't return empty)
 - Each reason says why this film suits THIS mood tonight, not what the film is about. ONE sentence, at most ${REASON_MAX_WORDS} words. Do not repeat the film title and do not summarize the plot. Speak to the viewer's evening. Write it in the same language as the user's mood text (Turkish mood text → Turkish reason, otherwise English)
 - Use only facts visible in the candidate line; never invent plot details
+- Never write factual claims or numbers: no runtime, year, cast, awards or counts. Do not make a film sound lighter or heavier than it is; if the fit is weak, say so more cautiously (e.g. "a bit more serious than usual, but ...")
 - "n" is the integer before the film in the candidate list
 
 English reasons (good examples, for the mood "tired Friday, something warm and clever"):
