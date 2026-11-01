@@ -692,6 +692,7 @@
     "saved": "Saved to your list",
     "saveError": "Couldn't save. Try again.",
     "share": "Share",
+    "trailer": "Trailer",
     "shareText": "%{title} (%{year}) — tonight's film, picked with Chosy.",
     "shareTextNoYear": "%{title} — tonight's film, picked with Chosy.",
     "shareError": "Couldn't share. Try again.",

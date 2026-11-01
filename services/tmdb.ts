@@ -203,6 +203,9 @@ export interface TmdbVideo {
   site: string;
   type: string;
   official: boolean;
+  /** Dil kodu ('en', 'tr'); TMDB bazı videolarda vermez. */
+  iso_639_1?: string | null;
+  published_at?: string;
 }
 
 // ─── Watch Providers ──────────────────────────────────────────────────────────
@@ -304,27 +307,34 @@ export async function fetchMovieCredits(tmdbId: number): Promise<TmdbCredits | n
  * Film video listesini (fragmanlar, klipler) TMDB'den çeker.
  *
  * @param tmdbId - TMDb film ID'si
- * @returns Video listesi (boş dizi = veri yok)
+ * @returns Video listesi (200 + boş dizi = gerçekten video yok); `null` = ağ hatası / non-2xx / istisna
  */
-export async function fetchMovieVideos(tmdbId: number): Promise<TmdbVideo[]> {
+export async function fetchMovieVideos(
+  tmdbId: number,
+  /** Uygulama dili ('tr' ...): verilirse o dilin videoları da (en/null yanında) tek istekte gelir. */
+  extraVideoLanguage?: string,
+): Promise<TmdbVideo[] | null> {
   if (!tmdbId) return [];
   try {
     // İngilizce video yoksa null döner; fallback TR/diğer dil trailerları da yüklenir
+    const langs = extraVideoLanguage && extraVideoLanguage !== 'en'
+      ? `${extraVideoLanguage},en,null`
+      : 'en,null';
     const url =
       `${TMDB_BASE_URL}/movie/${tmdbId}/videos` +
       `?api_key=${TMDB_API_KEY}` +
       `&language=${tmdbLanguage()}` +
-      `&include_video_language=en,null`;
+      `&include_video_language=${langs}`;
     const res = await fetchWithTimeout(url, 'movie/videos');
     if (!res.ok) {
       reportTmdbFailure('movie/videos', { status: res.status });
-      return [];
+      return null;
     }
     const data = (await res.json()) as { results: TmdbVideo[] };
     return data.results ?? [];
   } catch (err) {
     reportTmdbFailure('movie/videos', { error: err });
-    return [];
+    return null;
   }
 }
 

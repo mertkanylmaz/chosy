@@ -31,3 +31,6 @@ export function createProviderReturnTracker(windowMs: number = PROVIDER_RETURN_W
 
 /** Süreç genelinde tek izleyici — ekran yeniden kurulsa da bekleyen geçiş kaybolmaz. */
 export const providerReturn = createProviderReturnTracker();
+
+/** Fragman düğmesi için ayrı izleyici (Faz 2-4d): aynı mekanizma, bağımsız bekleyen kayıt. */
+export const trailerReturn = createProviderReturnTracker();

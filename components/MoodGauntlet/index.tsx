@@ -68,6 +68,7 @@ export function MoodGauntletShell(): React.JSX.Element {
       {g.stage === 'result' && g.champion && g.set && (
         <ResultStage
           champion={g.champion}
+          setIndex={g.set.setIndex}
           backups={g.set.backups}
           reasons={g.reasons}
           dims={g.dims[g.champion.id]}

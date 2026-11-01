@@ -60,7 +60,7 @@ const RESULTS: LoadDeps<WatchProvidersResult>['results'] = {
  * `films.tmdb_id` okur. Hata sessizce yutulmaz — bu bizim tablomuz.
  * `none` (filmin tmdb_id'si gerçekten yok) ile `error` (okuma başarısız) AYRIdır.
  */
-async function readTmdbId(filmId: string): Promise<TmdbIdLookup> {
+export async function readTmdbId(filmId: string): Promise<TmdbIdLookup> {
   const { data, error } = await supabase
     .from('films')
     .select('tmdb_id')
