@@ -32,6 +32,8 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_pipeline_fallback',
   'mood_pipeline_timing',
   'mood_just_pick_tapped',
+  'mood_four_viewed',
+  'mood_four_start_tapped',
   'trailer_clicked',
   'app_returned_after_trailer',
 ] as const;
@@ -58,6 +60,19 @@ export function firstFourVisibleEvent(
 
 export function justPickEvent(round: 1 | 2 | 3): MoodEvent {
   return { name: 'mood_just_pick_tapped', props: { round } };
+}
+
+/**
+ * Faz 2-9a: "Your four" ekranı. Film listesine `set_id` üzerinden ulaşılır (film_ids dizisi
+ * GÖNDERİLMEZ — Props tipi genişletilmedi). `mood` yalnız hızlı mood kimliği ya da 'free_text'.
+ */
+export function fourViewedEvent(setId: string, mood: string): MoodEvent {
+  return { name: 'mood_four_viewed', props: { set_id: setId, mood, surface: 'your_four' } };
+}
+
+/** "Start choosing" dokunuşu; `dwell_ms` = ekran açıldığından dokunuşa — kullanıcının dörtlüye baktığının tek kanıtı. */
+export function fourStartTappedEvent(setId: string, dwellMs: number): MoodEvent {
+  return { name: 'mood_four_start_tapped', props: { set_id: setId, dwell_ms: Math.max(0, Math.round(dwellMs)) } };
 }
 
 export function matchChosenEvent(round: 1 | 2 | 3): MoodEvent {
@@ -206,7 +221,7 @@ const ALLOWED_STRINGS = new Set<string>([
   'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons', 'mood_four',
   'parse', 'v4', 'pick', 'exclusions', 'four',
   'combined', 'legacy',
-  'mood_result', 'champion', 'film_detail', 'mood_deck', 'en', 'tr',
+  'mood_result', 'champion', 'film_detail', 'mood_deck', 'your_four', 'en', 'tr',
   // where_to_watch_opened.state + provider_clicked.kind
   'loading', 'ok', 'empty', 'error', 'noRegion', 'verified_deeplink', 'app_open',
   // watch_now: offer_type
@@ -222,7 +237,7 @@ export function assertNoFreeText(ev: MoodEvent): void {
   for (const [k, v] of Object.entries(ev.props)) {
     // Ülke kodu: tam iki büyük harf (TR, US…). Başlık / metin bu kalıba giremez.
     if (k === 'region' && typeof v === 'string' && /^[A-Z]{2}$/.test(v)) continue;
-    if (k === 'film_id' && typeof v === 'string' && UUID_RE.test(v)) continue;
+    if ((k === 'film_id' || k === 'set_id') && typeof v === 'string' && UUID_RE.test(v)) continue;
     if (typeof v === 'string' && !ALLOWED_STRINGS.has(v)) {
       throw new Error(`mood olayi ${ev.name}.${k} serbest metin tasiyor`);
     }

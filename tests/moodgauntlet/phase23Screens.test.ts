@@ -21,9 +21,9 @@ Deno.test('gauntlet: soru posterlerin USTUNDE; dortlu ilk turdan once; ipucu yal
   const posters = gauntlet.indexOf('<PosterTile')
   assert(q > 0 && posters > q, 'soru poster satırından önce gelmeli')
   assertMatch(gauntlet, /showIntro = pair !== null && pair\.round === 1 && introDoneFor !== set\.setId/)
-  assertMatch(gauntlet, /t\('moodGauntlet\.yourFour'\)/)
-  assertMatch(gauntlet, /export const FOUR_INTRO_MS = 1500/) // Faz 2-4: en az 1,5 sn
-  assertMatch(gauntlet, /export const FOUR_INTRO_REDUCED_MS = 1500/)
+  // Faz 2-9a: Your four kalıcı durak (FourIntro); zamanlayıcı kalktı — bkz. phase29a.test.ts
+  assertMatch(read('components/MoodGauntlet/FourIntro.tsx'), /t\('moodGauntlet\.yourFour'\)/)
+  assert(!/FOUR_INTRO_MS/.test(gauntlet))
   assertMatch(gauntlet, /isFirstRound && tapHint && <Text style=\{styles\.tapHint\}>/)
   // ipucu kalici isaretlenir (yalniz ilk kullanimda)
   assertMatch(hook, /TAP_HINT_KEY = 'chosy_mood_tap_hint_seen_v1'/)

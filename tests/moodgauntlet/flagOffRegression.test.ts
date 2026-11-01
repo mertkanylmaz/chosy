@@ -111,7 +111,7 @@ Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon deg
 })
 
 Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
-  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 13) // Faz 2-3: + mood_just_pick_tapped; 2-4d: + trailer_clicked, app_returned_after_trailer
+  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 15) // Faz 2-9a: + mood_four_viewed, mood_four_start_tapped; Faz 2-3: + mood_just_pick_tapped; 2-4d: + trailer_clicked, app_returned_after_trailer
   const evs = [
     startedEvent('quick', 'cozy'),
     startedEvent('free_text', 'cozy'), // free_text'te quick_mood_id girmez

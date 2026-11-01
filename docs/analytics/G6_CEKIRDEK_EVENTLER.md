@@ -114,6 +114,11 @@ filtre ancak bu tıklamalar onu haklı çıkarırsa inşa edilir.
 - `provider_clicked` artık yalnız allowlist'teki (`constants/watchAppOpen.ts`) servis satırı dışarı açıldığında gider; alan `kind` (`verified_deeplink` | `app_open`). Allowlist boşken ateşlenmez.
 - `link_kind` 2.2'den itibaren **üretilmiyor** (`provider_clicked` ve `mood_tonight_pick_action.watch_now` her ikisinde de kalktı). PostHog'da `link_kind` okuyan kayıtlı insight yok (CTO, Kas 2026).
 
+**Faz 2-9a güncellemesi (2.2.0 → 2.2.1 OTA):**
+- `mood_four_viewed` (`set_id`, `mood`: hızlı mood kimliği | `free_text`, `surface`: `your_four`) = "Your four" ekranı gösterildiğinde, dörtlü başına bir kez.
+- `mood_four_start_tapped` (`set_id`, `dwell_ms`) = "Start choosing" dokunuşu. `dwell_ms` kullanıcıların dörtlüye gerçekten bakıp bakmadığının tek kanıtıdır.
+- Film listesine `set_id` üzerinden ulaşılır (`record-ids` ile kayda geçen dörtlü); `film_ids` dizisi gönderilmez (olay `Props` tipi genişletilmedi).
+
 ### 1.4 Kimlik ve dönüş (3)
 
 | # | Event | Nerede | Not |

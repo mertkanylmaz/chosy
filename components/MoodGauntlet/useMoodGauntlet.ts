@@ -41,6 +41,8 @@ import {
   assertNoFreeText,
   completedEvent,
   firstFourVisibleEvent,
+  fourStartTappedEvent,
+  fourViewedEvent,
   intensityEvent,
   justPickEvent,
   matchChosenEvent,
@@ -343,6 +345,21 @@ export function useMoodGauntlet() {
     setStage('result');
   }, [flow, session, set, tapHint, dismissTapHint]);
 
+  /** Your four olayları: `mood` = hızlı mood kimliği ya da 'free_text' (ham metin ASLA). */
+  const moodKey = (): string => {
+    const last = lastStart.current;
+    return last && last.entry === 'quick' && last.quickMoodId ? last.quickMoodId : 'free_text';
+  };
+  const fourViewed = useCallback(() => {
+    if (set) trackMoodEvent(fourViewedEvent(set.setId, moodKey()));
+  }, [set]);
+  const fourStarted = useCallback(
+    (dwellMs: number) => {
+      if (set) trackMoodEvent(fourStartTappedEvent(set.setId, dwellMs));
+    },
+    [set],
+  );
+
   const noneOfThese = useCallback(() => {
     if (!flow) return;
     const pair = currentPair(flow);
@@ -433,6 +450,8 @@ export function useMoodGauntlet() {
       : null) as PickPattern | null,
     startFromEntry,
     chooseFilm,
+    fourViewed,
+    fourStarted,
     justPick,
     noneOfThese,
     anotherFour,
