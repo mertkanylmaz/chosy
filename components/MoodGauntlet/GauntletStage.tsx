@@ -25,7 +25,7 @@ import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet/PosterTile';
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
-import { DISSOLVE_DURATION } from '@/constants/design/motion';
+import { DISSOLVE_DURATION, MOOD_MOTION } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { reasonFor, type MoodNotice, type MoodSet } from '@/services/moodGauntlet';
 import { hapticSelection } from '@/utils/haptics';
@@ -38,8 +38,6 @@ import { FilmChips } from './FilmChips';
 import { FourIntro } from './FourIntro';
 import { styles } from './styles';
 
-/** Seçim animasyonunun süresi: kalan posterin yayı (token), sonra tur ilerler. */
-const PICK_SETTLE_MS = DISSOLVE_DURATION.remainingPoster;
 interface GauntletStageProps {
   set: MoodSet;
   /** film id → gerekçe (arkadan dolar). */
@@ -84,10 +82,16 @@ export function GauntletStage({
   const [picked, setPicked] = useState<string | null>(null);
   const [introDoneFor, setIntroDoneFor] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /**
+   * Senkron kilit: `picked` state'i bir sonraki render'a kadar eski kalır, aynı karedeki ikinci
+   * dokunuş onu `null` görürdü. Ref anında değişir → hızlı / çift dokunuşta tek seçim, tek zamanlayıcı.
+   */
+  const pickLock = useRef(false);
 
   // Yeni tur / yeni dörtlü: seçim durumu sıfırlanır.
   const roundKey = pair ? `${set.setId}:${pair.round}` : set.setId;
   useEffect(() => {
+    pickLock.current = false;
     setPicked(null);
   }, [roundKey]);
   useEffect(
@@ -116,12 +120,14 @@ export function GauntletStage({
 
   const handlePick = useCallback(
     (id: string) => {
-      if (picked !== null) return;
+      if (pickLock.current) return; // geçiş sürerken gelen dokunuşlar yok sayılır
+      pickLock.current = true;
       hapticSelection();
       setPicked(id);
-      timer.current = setTimeout(() => onChoose(id), reduced ? 0 : PICK_SETTLE_MS);
+      // Seçilen posterin görülme süresi (token); sonra tur ilerler. Reduce Motion'da bekleme yok.
+      timer.current = setTimeout(() => onChoose(id), reduced ? 0 : MOOD_MOTION.pickSettle);
     },
-    [picked, onChoose, reduced],
+    [onChoose, reduced],
   );
 
   if (!pair) return null;
@@ -195,6 +201,7 @@ export function GauntletStage({
                 <PosterTile
                   film={film}
                   disabled={picked !== null}
+                  selected={id === picked}
                   animationState={tileState(id)}
                   onPress={() => handlePick(id)}
                   metaMode="yearOnly"

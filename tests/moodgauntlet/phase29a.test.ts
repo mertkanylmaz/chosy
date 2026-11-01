@@ -116,3 +116,24 @@ Deno.test('yukleme: reveal minimum sure tokenindan, iptalde eski sonuc uygulanma
   assertEquals((hook.match(/applySet\(res\./g) ?? []).length, 0, 'dogrudan applySet kalmadi, hepsi revealSet')
   assertMatch(read('constants/design/motion.ts'), /loadingMinVisible: 400/)
 })
+
+Deno.test('poster dokunusu: senkron kilit (hizli/cift dokunus), sari kontur anlik, sure token', () => {
+  const g = strip(read('components/MoodGauntlet/GauntletStage.tsx'))
+  assertMatch(g, /const pickLock = useRef\(false\)/)
+  assertMatch(g, /if \(pickLock\.current\) return;[^\n]*\n\s*pickLock\.current = true;\s*hapticSelection\(\);\s*setPicked\(id\);/)
+  // kilit yalniz yeni tur/set anahtarinda acilir
+  assertMatch(g, /pickLock\.current = false;\s*setPicked\(null\);\s*\}, \[roundKey\]\)/)
+  assertEquals((g.match(/pickLock\.current = false/g) ?? []).length, 1)
+  // onay butonu YOK: poster dokunusu secimin kendisi
+  assert(!/confirm|Choose \$\{|chooseFilmCta/i.test(g))
+  assertMatch(g, /selected=\{id === picked\}/)
+  assertMatch(g, /MOOD_MOTION\.pickSettle/)
+  assert(!/PICK_SETTLE_MS/.test(g))
+  assertMatch(g, /reduced \? 0 : MOOD_MOTION\.pickSettle/) // Reduce Motion'da bekleme yok
+  assertMatch(read('constants/design/motion.ts'), /pickSettle: DISSOLVE_DURATION\.remainingPoster/)
+  assertEquals(read('constants/design/motion.ts').match(/remainingPoster: (\d+)/)![1], '280')
+  // gecis sirasinda diger eylemler de kapali
+  assertMatch(g, /label=\{t\('moodGauntlet\.noneCta'\)\} onPress=\{onNone\} disabled=\{picked !== null\}/)
+  // ilerleme gostergesi
+  assertMatch(g, /<RoundIndicator current=\{pair\.round\} \/>/)
+})
