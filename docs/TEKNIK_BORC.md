@@ -4419,3 +4419,12 @@ yetkilerini kaldırır. Aşağıdakiler bilinçli ERTELENDİ:
 - **Model id'leri tek sabitte toplanmalı (`supabase/functions/_shared/models.ts`):** şu an 7 yerde iki farklı Haiku yazımı var (`claude-haiku-4-5` ve `claude-haiku-4-5-20251001`).
 - **`_shared/models.ts` kuruldu (1 Kas 2026):** yalnız `rerank-films` okuyor (pick `claude-haiku-4-5`, reason `claude-haiku-5-5` + `thinking:{type:"disabled"}`). Diğer fonksiyonlar hâlâ kendi literal id'lerini taşıyor; taşıma yukarıdaki maddenin devamı.
 - **parse ve pick için `claude-haiku-5-5` değerlendirmesi:** V6 eval ile (kalite + süre). Şart: `thinking:{type:"disabled"}`; varsayılanda model düşünüp `max_tokens`'i tüketerek boş metin dönüyor (1 Kas 2026 ölçümü, `max_tokens` 296'da 4/4 boş).
+
+---
+
+## OTA güvenliği (1 Kas 2026)
+
+- **YASAK: `ota:prod` dışında OTA yok.** Ham `eas update` çağrılmaz.
+- **Neden:** `eas update` `--environment` olmadan EAS env'ini bundle'a vermiyor; Metro önbelleği değişmeyen dosyalara eski değerleri taşıyıp değişen dosyayı (örn. `services/tmdb.ts`) boş bırakıyor. `685df7d9` bu yüzden `EXPO_PUBLIC_TMDB_API_KEY` boş yayınlandı (geri alındı: `503d82b5`).
+- **Kalıp:** `npm run ota:prod -- "Mesaj"` → git temiz mi → `eas env:exec production` ile `expo export --clear` → `scripts/verify-bundle-env.mjs` (9 zorunlu değişken, yalnız AD → VAR/YOK) → aynı doğrulanmış klasör `eas update --environment production --skip-bundler --input-dir` ile yayınlanır. Biri YOK ise yayın yok. `OTA_DRY=1` yalnız export + doğrulama yapar.
+- **Not:** zorunlu liste yeni bir `EXPO_PUBLIC_*` gerektiğinde `scripts/verify-bundle-env.mjs` içinde güncellenmeli.
