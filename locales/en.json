@@ -719,7 +719,6 @@
     "justPick": "Just pick for me",
     "noneSub": "4 new films, same mood",
     "watchOn": "Watch on %{provider}",
-    "rentBuyOn": "Rent or buy on %{provider}",
     "save": "Save",
     "savedShort": "✓ Saved",
     "shareA11y": "Share this film",
@@ -735,11 +734,15 @@
     },
     "insight": {
       "calmerAll": "You picked the quieter film every time",
-      "calmerTwo": "You picked the quieter film both times",
-      "livelierAll": "You picked the more intense film every time",
-      "livelierTwo": "You picked the more intense film both times"
+      "calmerTwo": "You leaned toward the quieter films",
+      "intenseAll": "You picked the more intense film every time",
+      "intenseTwo": "You leaned toward the more intense films",
+      "shorterAll": "You picked the shorter film every time",
+      "shorterTwo": "You leaned toward the shorter films"
     },
-    "loadingAnother": "Picking another four…"
+    "loadingAnother": "Picking another four…",
+    "rentOn": "Rent on %{provider}",
+    "buyOn": "Buy on %{provider}"
   },
   "aiConsent": {
     "title": "Let Claude help you choose",

@@ -48,21 +48,20 @@ export function formatEntryTime(date: Date): string {
 }
 
 /**
- * `pro_entry_viewed` OTURUMDA BİR KEZ (Faz 2-3). Önceden yüzey başınaydı: aynı oturumda hem şampiyon
- * kartı hem Profil satırı görününce olay iki kez gidiyordu (PostHog, 1 Kas 2026). Artık ilk görülen
- * yüzey sayılır; ikinci yüzey ve remount'lar olay üretmez. Dokunuş olayları (`pro_entry_tapped`)
- * yüzey bilgisini taşımaya devam eder.
+ * `pro_entry_viewed` oturumda YÜZEY BAŞINA bir kez (remount'ta tekrarlanmaz). CTO (2 Kas 2026):
+ * PostHog'daki iki olay FARKLI yüzeylerdendi (profile + champion) — çift gönderim değildi; Faz 2-3'te
+ * eklenen "oturumda tek olay" kuralı geri alındı.
  */
 export interface EntryViewedTracker {
   claim: (surface: MoodEntrySurface) => boolean;
 }
 
 export function createEntryViewedTracker(): EntryViewedTracker {
-  let claimed = false;
+  const seen = new Set<MoodEntrySurface>();
   return {
-    claim() {
-      if (claimed) return false;
-      claimed = true;
+    claim(surface) {
+      if (seen.has(surface)) return false;
+      seen.add(surface);
       return true;
     },
   };

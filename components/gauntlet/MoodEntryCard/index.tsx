@@ -29,7 +29,7 @@ import {
 
 import { styles } from './styles';
 
-/** Oturum boyu TEK `pro_entry_viewed` (yüzeyden bağımsız; remount'ta tekrarlanmaz). */
+/** Oturum boyu yüzey başına bir `pro_entry_viewed` (remount'ta tekrarlanmaz). */
 export const entryViewed = createEntryViewedTracker();
 
 interface MoodEntryCardProps {

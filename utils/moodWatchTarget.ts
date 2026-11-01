@@ -6,13 +6,13 @@
  *  3. Tabloda yoksa → JustWatch film araması (link_kind=justwatch); bölge yoksa detay.
  *  4. Hiç sağlayıcı yok / veri hazır değil → uygulama içi /film/:id (link_kind=detail).
  *
- * Düğme etiketi: abonelik/ücretsiz → "Watch on X"; yalnız rent/buy → "Rent or buy on X".
+ * Düğme etiketi: abonelik/ücretsiz → "Watch on X"; rent → "Rent on X"; buy → "Buy on X" (TR: ek yok, "İzle · X").
  */
 import { orderProvidersWithOffer, type OfferType, type ProviderBuckets, type RankedProviderLike } from './watchProviderList';
 import { providerDisplayName, providerSearchUrl } from './watchProviderLinks';
 
 export type WatchLinkKind = 'provider' | 'justwatch' | 'detail';
-export type WatchLabelKind = 'watch' | 'rentbuy';
+export type WatchLabelKind = 'watch' | 'rent' | 'buy';
 
 export interface WatchTarget {
   kind: WatchLinkKind;
@@ -47,7 +47,7 @@ export function justWatchSearchUrl(region: string, title: string): string {
 }
 
 export function labelKindOf(offer: OfferType | null): WatchLabelKind {
-  return offer === 'rent' || offer === 'buy' ? 'rentbuy' : 'watch';
+  return offer === 'rent' ? 'rent' : offer === 'buy' ? 'buy' : 'watch';
 }
 
 const NONE: WatchTarget = {

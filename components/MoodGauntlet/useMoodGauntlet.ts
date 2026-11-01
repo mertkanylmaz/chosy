@@ -421,7 +421,9 @@ export function useMoodGauntlet() {
     dims,
     tapHint,
     /** "Why this fits you": kullanıcının seçimlerinden deterministik desen; yoksa null. */
-    pickPattern: (flow ? detectPickPattern(roundPicks(flow), dims) : null) as PickPattern | null,
+    pickPattern: (flow
+      ? detectPickPattern(roundPicks(flow), dims, Object.fromEntries((set?.four ?? []).map((f) => [f.id, f.runtime])))
+      : null) as PickPattern | null,
     startFromEntry,
     chooseFilm,
     justPick,

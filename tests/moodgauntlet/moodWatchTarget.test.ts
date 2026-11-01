@@ -44,16 +44,17 @@ Deno.test('oncelik: flatrate > free > ads > rent > buy (rent listede once olsa d
   assertEquals(orderProvidersWithOffer({ flatrate: [prov(8, 1)], rent: [prov(8, 1)] })[0].offer, 'flatrate')
 })
 
-Deno.test('yalniz rent/buy: "Rent or buy on" etiketi, Apple TV Store → Apple TV', () => {
+Deno.test('yalniz rent/buy: "Rent on" / "Buy on" etiketi, Apple TV Store → Apple TV', () => {
   const r = resolveWatchTarget({
     ...base, region: 'US', title: 'Heat', providersReady: true,
     providers: { rent: [prov(2, 1, 'Apple TV Store')], buy: [prov(3, 2, 'Google Play Movies')] },
   })
   assertEquals(r.offerType, 'rent')
-  assertEquals(r.labelKind, 'rentbuy')
+  assertEquals(r.labelKind, 'rent')
   assertEquals(r.providerName, 'Apple TV')
   assertEquals(r.url, 'https://tv.apple.com/search?term=Heat')
-  assertEquals(labelKindOf('buy'), 'rentbuy')
+  assertEquals(labelKindOf('buy'), 'buy')
+  assertEquals(labelKindOf('rent'), 'rent')
   assertEquals(labelKindOf('free'), 'watch')
   assertEquals(labelKindOf(null), 'watch')
 })
@@ -126,21 +127,27 @@ Deno.test('ResultStage baglantisi: hedef cozulur, universal link, hata sessiz de
   assertMatch(src, /MOOD_GAUNTLET_WATCH_OPEN_FAILED/)
   assertMatch(src, /openFilm\(champion\.id\)/)
   assertMatch(src, /disabled=\{providers\.state === 'loading'\}/)
-  // etiket: Watch on X / Rent or buy on X
-  assertMatch(src, /moodGauntlet\.rentBuyOn/)
+  // etiket: Watch on X / Rent on X / Buy on X (TR: ek yok)
+  assertMatch(src, /moodGauntlet\.rentOn/)
+  assertMatch(src, /moodGauntlet\.buyOn/)
   assertMatch(src, /moodGauntlet\.watchOn/)
+  assert(!/rentBuyOn/.test(src))
   // logo altı tür etiketi YALNIZ mood sonucunda açık
   assertMatch(src, /showOfferLabels/)
   assert(!/showOfferLabels/.test(read('components/gauntlet/ChampionReveal/index.tsx')), 'günlük gauntlet etiketleri değişmemeli')
 })
 
-Deno.test('locales: Watch on / Rent or buy on / tur etiketleri en+tr', () => {
+Deno.test('locales: Watch / Rent / Buy CTA ve tur etiketleri en+tr', () => {
   const en = JSON.parse(read('locales/en.json'))
   const tr = JSON.parse(read('locales/tr.json'))
   assertEquals(en.moodGauntlet.watchOn, 'Watch on %{provider}')
-  assertEquals(en.moodGauntlet.rentBuyOn, 'Rent or buy on %{provider}')
-  assertEquals(tr.moodGauntlet.watchOn, "%{provider}'da izle")
-  assertEquals(tr.moodGauntlet.rentBuyOn, "%{provider}'dan kirala/satın al")
+  assertEquals(en.moodGauntlet.rentOn, 'Rent on %{provider}')
+  assertEquals(en.moodGauntlet.buyOn, 'Buy on %{provider}')
+  assertEquals(tr.moodGauntlet.watchOn, 'İzle · %{provider}')
+  assertEquals(tr.moodGauntlet.rentOn, 'Kirala · %{provider}')
+  assertEquals(tr.moodGauntlet.buyOn, 'Satın al · %{provider}')
+  assert(!('rentBuyOn' in en.moodGauntlet) && !('rentBuyOn' in tr.moodGauntlet))
+  assert(!/'(da|de|ta|te|dan|den)\b/.test(tr.moodGauntlet.watchOn + tr.moodGauntlet.rentOn + tr.moodGauntlet.buyOn), 'TR CTA ek kullanmaz')
   assertEquals(en.gauntlet.watchProviders.offer, { subscription: 'Subscription', free: 'Free', rent: 'Rent', buy: 'Buy' })
   assertEquals(tr.gauntlet.watchProviders.offer, { subscription: 'Abonelik', free: 'Ücretsiz', rent: 'Kirala', buy: 'Satın al' })
 })

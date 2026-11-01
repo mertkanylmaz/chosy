@@ -14,6 +14,7 @@ import {
   parseDims,
   roundPicks,
   roundVote,
+  runtimeVote,
   type FilmDims,
 } from '../../utils/moodFilmFacts.ts'
 import { choose, initFlow } from '../../utils/moodGauntletFlow.ts'
@@ -100,12 +101,12 @@ Deno.test('desen: uc turda da sakin → calmer_all; ikisinde (3. belirsiz) → c
   assertEquals(detectPickPattern(roundPicks(g), wide), 'calmer_all')
 })
 
-Deno.test('desen: hareketli taraf → livelier_*; karisik / yetersiz veri → null (satir yok)', () => {
+Deno.test('desen: yogun taraf → intense_*; karisik / yetersiz veri → null (satir yok)', () => {
   let f = initFlow(['a', 'b', 'c', 'd'])
   f = choose(f, 'b')
   f = choose(f, 'd')
   f = choose(f, 'b') // b(fast .8) vs d(fast .85): fark esik alti → 0
-  assertEquals(detectPickPattern(roundPicks(f), dims), 'livelier_two')
+  assertEquals(detectPickPattern(roundPicks(f), dims), 'intense_two')
 
   // karisik: tur1 sakin, tur2 hareketli → null
   let m = initFlow(['a', 'b', 'c', 'd'])
@@ -119,4 +120,47 @@ Deno.test('desen: hareketli taraf → livelier_*; karisik / yetersiz veri → nu
   // tek tur → null (esik: en az 2 tur)
   assertEquals(detectPickPattern([{ winner: 'a', loser: 'b' }], dims), null)
   assert(detectPickPattern([], dims) === null)
+})
+
+Deno.test('sure oyu: kazanan belirgin kisa → +1, uzun → -1, esik alti / veri yok → 0', () => {
+  assertEquals(runtimeVote(90, 105), 1)
+  assertEquals(runtimeVote(90, 104), 0)
+  assertEquals(runtimeVote(120, 100), -1)
+  assertEquals(runtimeVote(null, 100), 0)
+  assertEquals(runtimeVote(0, 100), 0)
+  assertEquals(runtimeVote(90, undefined), 0)
+})
+
+Deno.test('desen: daha kisa — 3/3 → shorter_all, 2/3 karsit yok → shorter_two, karsit tur varsa null', () => {
+  const flat = {} // mood boyutu nötr
+  let f = initFlow(['a', 'b', 'c', 'd'])
+  f = choose(f, 'a')
+  f = choose(f, 'c')
+  f = choose(f, 'a')
+  const picks = roundPicks(f) // a>b, c>d, a>c
+  assertEquals(detectPickPattern(picks, flat, { a: 80, b: 120, c: 100, d: 130 }), 'shorter_all')
+  // son tur belirsiz (a 80 vs c 90): 2 tur kisa, karsit yok
+  assertEquals(detectPickPattern(picks, flat, { a: 80, b: 120, c: 90, d: 130 }), 'shorter_two')
+  // son tur uzunu secti (a 120 vs c 90) → karsit tur → null
+  assertEquals(detectPickPattern(picks, flat, { a: 120, b: 150, c: 90, d: 130 }), null)
+  // sure bilgisi yok → null
+  assertEquals(detectPickPattern(picks, flat), null)
+})
+
+Deno.test('desen: birden cok aday — all, two\'dan guclu; esitlikte sakin > yogun > kisa', () => {
+  let f = initFlow(['a', 'b', 'c', 'd'])
+  f = choose(f, 'a')
+  f = choose(f, 'c')
+  f = choose(f, 'c')
+  const picks = roundPicks(f) // a>b, c>d, c>a
+  const calmDims = {
+    a: d('medium', 0.5), b: d('fast', 0.9), c: d('slow', 0.2), d: d('fast', 0.8),
+  }
+  // sakin: 3/3 (all). kisa: yalniz 2 tur (two) → sakin kazanir
+  assertEquals(detectPickPattern(picks, calmDims, { a: 100, b: 130, c: 95, d: 130 }), 'calmer_all')
+  // sakin 2 tur (two), kisa 3/3 (all) → daha guclu olan kisa
+  const calmTwo = { ...calmDims, c: d('medium', 0.5) } // final c vs a esit → sakin 2/3
+  assertEquals(detectPickPattern(picks, calmTwo, { a: 100, b: 130, c: 60, d: 130 }), 'shorter_all')
+  // ikisi de two → sakin
+  assertEquals(detectPickPattern(picks, calmTwo, { a: 100, b: 130, c: 95, d: 130 }), 'calmer_two')
 })

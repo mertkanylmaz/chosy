@@ -718,8 +718,7 @@
     "tapHint": "İzlemeyi tercih ettiğine dokun",
     "justPick": "Sen seç",
     "noneSub": "Aynı mood, 4 yeni film",
-    "watchOn": "%{provider}'da izle",
-    "rentBuyOn": "%{provider}'dan kirala/satın al",
+    "watchOn": "İzle · %{provider}",
     "save": "Kaydet",
     "savedShort": "✓ Kaydedildi",
     "shareA11y": "Bu filmi paylaş",
@@ -734,12 +733,16 @@
       "intense": "Yoğun"
     },
     "insight": {
-      "calmerAll": "Üç turda da daha sakin olanı seçtin",
-      "calmerTwo": "İki turda da daha sakin olanı seçtin",
-      "livelierAll": "Üç turda da daha hareketli olanı seçtin",
-      "livelierTwo": "İki turda da daha hareketli olanı seçtin"
+      "calmerAll": "Her turda daha sakin olanı seçtin",
+      "calmerTwo": "Daha sakin filmlere yöneldin",
+      "intenseAll": "Her turda daha yoğun olanı seçtin",
+      "intenseTwo": "Daha yoğun filmlere yöneldin",
+      "shorterAll": "Her turda daha kısa olanı seçtin",
+      "shorterTwo": "Daha kısa filmlere yöneldin"
     },
-    "loadingAnother": "Başka bir dörtlü seçiliyor…"
+    "loadingAnother": "Başka bir dörtlü seçiliyor…",
+    "rentOn": "Kirala · %{provider}",
+    "buyOn": "Satın al · %{provider}"
   },
   "aiConsent": {
     "title": "Seçmene Claude yardım etsin",

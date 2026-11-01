@@ -84,10 +84,16 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
 
 Deno.test('"Why this fits you": desen saf fonksiyondan; desen yoksa satir yok; LLM kullanilmaz', () => {
   assertMatch(result, /pattern !== null && <Text style=\{styles\.insight\}>\{t\(INSIGHT_KEYS\[pattern\]\)\}<\/Text>/)
-  assertMatch(hook, /detectPickPattern\(roundPicks\(flow\), dims\)/)
+  assertMatch(hook, /detectPickPattern\(roundPicks\(flow\), dims, Object\.fromEntries/)
   assert(!/fetch\(|supabase\.functions|rerank/.test(read('utils/moodFilmFacts.ts')), 'desen hesabı ağ/LLM çağırmaz')
-  assertEquals(en.moodGauntlet.insight.calmerTwo, 'You picked the quieter film both times')
-  assertEquals(tr.moodGauntlet.insight.calmerTwo, 'İki turda da daha sakin olanı seçtin')
+  assertEquals(en.moodGauntlet.insight.calmerAll, 'You picked the quieter film every time')
+  assertEquals(tr.moodGauntlet.insight.calmerAll, 'Her turda daha sakin olanı seçtin')
+  assertEquals(en.moodGauntlet.insight.calmerTwo, 'You leaned toward the quieter films')
+  assertEquals(tr.moodGauntlet.insight.calmerTwo, 'Daha sakin filmlere yöneldin')
+  assertEquals(en.moodGauntlet.insight.shorterAll, 'You picked the shorter film every time')
+  assertEquals(tr.moodGauntlet.insight.shorterTwo, 'Daha kısa filmlere yöneldin')
+  assertEquals(en.moodGauntlet.insight.intenseTwo, 'You leaned toward the more intense films')
+  assertEquals(tr.moodGauntlet.insight.intenseAll, 'Her turda daha yoğun olanı seçtin')
 })
 
 Deno.test('yukleme: quick mood ADI kalir (profile_name yalniz serbest metin); another four tek satir', () => {

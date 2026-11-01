@@ -50,11 +50,19 @@ import { trackMoodEvent } from './useMoodGauntlet';
 
 type SaveState = 'idle' | 'saving' | 'saved';
 
+const WATCH_LABEL_KEYS = {
+  watch: 'moodGauntlet.watchOn',
+  rent: 'moodGauntlet.rentOn',
+  buy: 'moodGauntlet.buyOn',
+} as const;
+
 const INSIGHT_KEYS: Record<PickPattern, string> = {
   calmer_all: 'moodGauntlet.insight.calmerAll',
   calmer_two: 'moodGauntlet.insight.calmerTwo',
-  livelier_all: 'moodGauntlet.insight.livelierAll',
-  livelier_two: 'moodGauntlet.insight.livelierTwo',
+  intense_all: 'moodGauntlet.insight.intenseAll',
+  intense_two: 'moodGauntlet.insight.intenseTwo',
+  shorter_all: 'moodGauntlet.insight.shorterAll',
+  shorter_two: 'moodGauntlet.insight.shorterTwo',
 };
 
 interface ResultStageProps {
@@ -188,9 +196,7 @@ export function ResultStage({
   const watchLabel =
     target.providerName === null
       ? t('moodGauntlet.watchNow')
-      : target.labelKind === 'rentbuy'
-        ? t('moodGauntlet.rentBuyOn', { provider: target.providerName })
-        : t('moodGauntlet.watchOn', { provider: target.providerName });
+      : t(WATCH_LABEL_KEYS[target.labelKind], { provider: target.providerName });
 
   /**
    * Watch now: sağlayıcının resmî arama bağlantısı (universal link — uygulama yüklüyse açar);

@@ -100,14 +100,15 @@ Deno.test('profil olayları yalnız bayrak açıkken; satır davranışı (route
 
 // ── Olaylar ─────────────────────────────────────────────────────────────────
 
-Deno.test('pro_entry_viewed: OTURUMDA BİR KEZ (yüzeyden bağımsız; Faz 2-3 çift gönderim düzeltmesi)', () => {
+Deno.test('pro_entry_viewed: oturumda YÜZEY BAŞINA bir kez (CTO: profile + champion iki ayrı yüzey, çift değil)', () => {
   const tr = createEntryViewedTracker()
   assert(tr.claim('champion'))
   assert(!tr.claim('champion'))
-  assert(!tr.claim('profile'), 'ikinci yüzey de olay üretmemeli')
+  assert(tr.claim('profile'), 'ikinci yüzey kendi olayını üretir')
+  assert(!tr.claim('profile'))
   const other = createEntryViewedTracker()
-  assert(other.claim('profile'), 'yeni oturum (yeni izleyici) yine bir kez sayar')
-  assert(!other.claim('champion'))
+  assert(other.claim('profile'), 'yeni oturum (yeni izleyici) yine sayar')
+  assert(other.claim('champion'))
   // Her iki yüzey de AYNI paylaşılan izleyiciyi kullanır (iki ayrı izleyici = çift olay)
   const profile = read('../../app/(tabs)/profile.tsx')
   assertMatch(profile, /import \{[^}]*entryViewed[^}]*\} from '@\/components\/gauntlet\/MoodEntryCard'/)
