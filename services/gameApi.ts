@@ -146,6 +146,7 @@ export async function getDailyChest(
 
   const { data, error } = await supabase.functions.invoke('get-daily-chest', {
     body: { puzzle_date: puzzleDate, claim },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -285,6 +286,7 @@ export async function getDailyTheme(puzzleDate: string): Promise<DailyThemeState
 
   const { data, error } = await supabase.functions.invoke('get-daily-theme', {
     body: { puzzle_date: puzzleDate },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -312,6 +314,7 @@ export async function submitGuess(
 
   const { data, error } = await supabase.functions.invoke('submit-guess', {
     body: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -348,6 +351,7 @@ export async function submitImposterGuess(
       guess_actor_ids: guessActorIds,
       confidence,
     },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -376,6 +380,7 @@ export async function submitGameGuess(
 
   const { data, error } = await supabase.functions.invoke('submit-guess', {
     body: { puzzle_id: puzzleId, guess_film_id: guessFilmId },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -407,6 +412,7 @@ export async function revealHint(
 
   const { data, error } = await supabase.functions.invoke('submit-guess', {
     body: { puzzle_id: puzzleId, hint_order: hintOrder },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -439,6 +445,7 @@ export async function submitDetectiveGuess(
       puzzle_id: puzzleId,
       guess_film_id: guessFilmId,
     },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -554,6 +561,7 @@ export async function resetGameProgress(
 
   const { data, error } = await supabase.functions.invoke('dev-reset-games', {
     body: { puzzle_date: puzzleDate, game_id: gameId },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {

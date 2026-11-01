@@ -7,7 +7,7 @@ import { assert, assertEquals, assertMatch, assertThrows } from 'https://deno.la
 import { appReturnedAfterProviderEvent, assertNoFreeText, providerClickedEvent } from '../../utils/moodGauntletAnalytics.ts'
 import { choose, initFlow, stripItems } from '../../utils/moodGauntletFlow.ts'
 import { resolveWatchTarget } from '../../utils/moodWatchTarget.ts'
-import { WATCH_REGION_ALIASES } from '../../constants/watchRegions.ts'
+import { WATCH_REGION_ALIASES, watchRegionName } from '../../constants/watchRegions.ts'
 import { justWatchSearchUrl, tmdbWatchLink } from '../../utils/watchProviderLinks.ts'
 import { createProviderReturnTracker, PROVIDER_RETURN_WINDOW_MS } from '../../utils/providerReturn.ts'
 import { dedupeByBrand } from '../../utils/watchProviderBrands.ts'
@@ -45,6 +45,18 @@ Deno.test('ulke listesi: 139 bolge, TR adiyla arama, kod ile arama', () => {
   assertEquals(listWatchRegions('en', 'de').some((r) => r.code === 'DE'), true)
 })
 
+Deno.test('ulke listesi (Faz 2-5): kelime basi eslesme once, EN kisa adlar', () => {
+  assertEquals(watchRegionName('US', 'en'), 'United States')
+  assertEquals(watchRegionName('GB', 'en'), 'United Kingdom')
+  assertEquals(listWatchRegions('en', 'united').slice(0, 3).map((r) => r.code), ['AE', 'GB', 'US'])
+  assertEquals(listWatchRegions('en', 'states')[0].code, 'US')
+  // "ar": Argentina kelime basi; Bulgaria'da yalniz ortada geciyor → Argentina once (adla siralamada Bulgaria onde olurdu)
+  const ar = listWatchRegions('en', 'ar').map((r) => r.name)
+  assertEquals(ar.indexOf('Argentina') < ar.indexOf('Bulgaria'), true)
+  // "korea" → South Korea (kelime basi, ikinci kelime)
+  assertEquals(listWatchRegions('en', 'korea')[0].code, 'KR')
+})
+
 Deno.test('marka gruplama: Netflix + Netflix Standard with Ads, Prime Video + Amazon Video tek logo', () => {
   const list = [prov(8, 1, 'Netflix'), prov(1796, 2, 'Netflix Standard with Ads'), prov(119, 3, 'Amazon Prime Video'), prov(10, 4, 'Amazon Video'), prov(1826, 5, 'TOD TV')]
   assertEquals(dedupeByBrand(list).map((p) => p.provider_id), [8, 119, 1826])
@@ -66,10 +78,10 @@ Deno.test('CTA: marka basina en uygun teklif (flatrate > ads > rent > buy), mark
 })
 
 Deno.test('olaylar: provider_clicked / app_returned_after_provider metin tasimaz', () => {
-  const ev = providerClickedEvent({ providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'justwatch' })
-  assertEquals(ev, { name: 'provider_clicked', props: { provider_id: 8, offer_type: 'flatrate', region: 'TR', link_kind: 'justwatch' } })
+  const ev = providerClickedEvent({ filmId: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'justwatch' })
+  assertEquals(ev, { name: 'provider_clicked', props: { film_id: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', provider_id: 8, offer_type: 'flatrate', region: 'TR', link_kind: 'justwatch' } })
   assertNoFreeText(ev)
-  assertNoFreeText(providerClickedEvent({ providerId: 1, offerType: null, region: null, linkKind: 'detail' }))
+  assertNoFreeText(providerClickedEvent({ filmId: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', providerId: 1, offerType: null, region: null, linkKind: 'detail' }))
   assertEquals(appReturnedAfterProviderEvent(42.4), { name: 'app_returned_after_provider', props: { seconds_away: 42 } })
   // region alanina baslik sizamaz
   assertThrows(() => assertNoFreeText({ name: 'provider_clicked', props: { region: 'Parasite (2019)' } }))
@@ -162,12 +174,12 @@ Deno.test('bolge null: tmdb link ya da null — asla us', () => {
 Deno.test('CTA gizleme: kind=none iken ResultStage dugmeyi cizmez; provider_clicked region + provider_id tasir', () => {
   const src = read('components/MoodGauntlet/ResultStage.tsx')
   assertMatch(src, /target\.kind !== 'none' && \(\s*<PrimaryAction/)
-  assertMatch(src, /providerClickedEvent\(\{\s*providerId: target\.providerId,[\s\S]*?region,/)
+  assertMatch(src, /providerClickedEvent\(\{\s*filmId: champion\.id,\s*surface: 'mood_result',\s*providerId: target\.providerId,[\s\S]*?region,/)
   assertEquals(
-    providerClickedEvent({ providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'tmdb_watch' }).props,
-    { provider_id: 8, offer_type: 'flatrate', region: 'TR', link_kind: 'tmdb_watch' },
+    providerClickedEvent({ filmId: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', providerId: 8, offerType: 'flatrate', region: 'TR', linkKind: 'tmdb_watch' }).props,
+    { film_id: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', provider_id: 8, offer_type: 'flatrate', region: 'TR', link_kind: 'tmdb_watch' },
   )
-  assertNoFreeText(providerClickedEvent({ providerId: 8, offerType: 'flatrate', region: 'JP', linkKind: 'provider_direct' }))
+  assertNoFreeText(providerClickedEvent({ filmId: '0b1c2d3e-0000-4000-8000-000000000001', surface: 'mood_result', providerId: 8, offerType: 'flatrate', region: 'JP', linkKind: 'provider_direct' }))
 })
 
 Deno.test('ulke adi: TR "Türkiye" (EN ve TR)', () => {
@@ -185,7 +197,7 @@ Deno.test('ulke arama: takma ad + aksansiz/kucuk harf (Turkey, turk, türk, TURK
 })
 
 Deno.test('offerHint: free / ads ayri metin (TMDB ads kovasi ayri), ResultStage ads icin ayri anahtar', () => {
-  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /target\.offerType === 'ads' \? 'ads'/)
+  assertMatch(read('components/MoodGauntlet/ResultStage.tsx'), /moodGauntlet\.offerHint\.\$\{target\.offerLabel\}/)
   const en = JSON.parse(read('locales/en.json')).moodGauntlet.offerHint
   const tr = JSON.parse(read('locales/tr.json')).moodGauntlet.offerHint
   assertEquals([en.free, en.ads, tr.free, tr.ads], ['Free to watch', 'Free with ads', 'Ücretsiz izlenir', 'Reklamlı ücretsiz'])

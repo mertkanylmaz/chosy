@@ -89,8 +89,8 @@ export const styles = StyleSheet.create({
   pairCol: { flex: 1, gap: space.sm },
   /** Gerekçe: 14pt, ≤3 satır, taşarsa kuyrukta "…". */
   reason: { fontFamily: type.callout.fontFamily, fontSize: 14, lineHeight: 19, color: color.text.primarySoft },
-  /** Eşit yükseklik: 3 satır × 19pt. Gerekçe yüklenirken / boş gelirken de aynı yer ayrılır. */
-  reasonSlot: { height: 57 },
+  /** Eşit yükseklik: 4 satır × 19pt. Gerekçe yüklenirken / boş gelirken de aynı yer ayrılır. */
+  reasonSlot: { height: 76 },
   reasonSkeleton: { gap: space.xs, paddingTop: 3 },
   skeletonLine: { height: 12, borderRadius: radius.pill, backgroundColor: color.surface.raised },
   skeletonLineShort: { width: '60%' },

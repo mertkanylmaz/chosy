@@ -11,7 +11,9 @@
  * Haptik bu bileşenin sorumluluğu değil, çağıran yer tetikler (§8).
  */
 import React from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+
+import { color } from '@/constants/design/semantic';
 
 import { styles } from './styles';
 
@@ -36,6 +38,10 @@ interface PrimaryActionProps {
    * (ör. sayfa kapanınca CTA'ya dön). Verilmezse hiçbir şey değişmez.
    */
   buttonRef?: React.Ref<React.ElementRef<typeof TouchableOpacity>>;
+  /** Etiketin sağında dekoratif ikon (ör. dışa-ok: bağlantı uygulama dışına çıkar). */
+  trailingIcon?: React.ReactNode;
+  /** Etiketin solunda dönen gösterge (ör. giriş sürüyor). `busy` ayrıca verilmelidir. */
+  spinner?: boolean;
 }
 
 export function PrimaryAction({
@@ -45,6 +51,8 @@ export function PrimaryAction({
   busy = false,
   variant = 'default',
   buttonRef,
+  trailingIcon,
+  spinner = false,
 }: PrimaryActionProps): React.JSX.Element {
   return (
     <TouchableOpacity
@@ -61,7 +69,16 @@ export function PrimaryAction({
       accessibilityLabel={label}
       accessibilityState={{ disabled, busy }}
     >
-      <Text style={[styles.label, variant === 'gold' && styles.labelGold]}>{label}</Text>
+      <View style={styles.content}>
+        {spinner && (
+          <ActivityIndicator
+            size="small"
+            color={variant === 'gold' ? color.surface.base : color.text.primary}
+          />
+        )}
+        <Text style={[styles.label, variant === 'gold' && styles.labelGold]}>{label}</Text>
+        {trailingIcon}
+      </View>
     </TouchableOpacity>
   );
 }

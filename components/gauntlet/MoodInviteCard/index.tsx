@@ -50,6 +50,9 @@ export function MoodInviteCard({ surface }: MoodInviteCardProps): React.JSX.Elem
 
   if (access === null) return null;
 
+  // A5: şampiyon ekranındaki kartın alt satırı yeni metin; Spotlight kartı eskisini korur.
+  const titleText = t(surface === 'champion_card' ? 'moodOffer.inviteTitleChampion' : 'moodOffer.inviteTitle');
+
   return (
     <View style={styles.slot}>
       <TouchableOpacity
@@ -57,11 +60,11 @@ export function MoodInviteCard({ surface }: MoodInviteCardProps): React.JSX.Elem
         onPress={handlePress}
         activeOpacity={0.8}
         accessibilityRole="button"
-        accessibilityLabel={t('moodOffer.inviteTitle')}
+        accessibilityLabel={titleText}
       >
         <View style={styles.textBlock}>
           <Text style={styles.kicker}>{t('proMode.title')}</Text>
-          <Text style={styles.title}>{t('moodOffer.inviteTitle')}</Text>
+          <Text style={styles.title}>{titleText}</Text>
         </View>
         <Text style={styles.chevron}>›</Text>
       </TouchableOpacity>

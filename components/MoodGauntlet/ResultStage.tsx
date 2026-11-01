@@ -11,7 +11,7 @@
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { BookmarkSimple, Play, ShareNetwork } from 'phosphor-react-native';
+import { ArrowUpRight, BookmarkSimple, Play, ShareNetwork } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -48,10 +48,10 @@ import {
 } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
+import { filmDetailHref } from '@/utils/filmDetailHref';
 import { normalizePosterUrl } from '@/utils/posterUrl';
 import { providerReturn, trailerReturn } from '@/utils/providerReturn';
 import { trailerUrl } from '@/utils/trailerPick';
-import { offerLabelKind } from '@/utils/watchProviderList';
 
 import { FilmChips } from './FilmChips';
 import { styles } from './styles';
@@ -185,11 +185,15 @@ export function ResultStage({
     .join(' · ');
 
   const openFilm = useCallback(
-    (id: string) => {
+    (id: string, row?: MatchRow) => {
       void hapticLight();
-      router.push(`/film/${id}`);
+      // P1-6: başlık / yıl / poster eldeki kayıttan taşınır → film detayı iskeletsiz açılır.
+      const r = row ?? (id === champion.id ? champion : undefined);
+      router.push(
+        filmDetailHref(id, r ? { title: r.title, year: r.year, posterUrl: normalizePosterUrl(r.poster_url) } : null) as never,
+      );
     },
-    [router],
+    [router, champion],
   );
 
   /** Sağlayıcı verisi yüklendiyse hedef (düğme etiketi + bağlantı); aksi hâlde null. */
@@ -204,15 +208,16 @@ export function ResultStage({
     [champion.title, region, providers.state, providers.providers],
   );
 
-  // Film sayfasına derin bağlantımız yok → "Watch on" denmez: "Find on {Provider}" (TR: ek yok).
+  // CTA dürüstlüğü (Faz 2-5): sağlayıcı adı YALNIZ doğrudan bağlantıda ("Open in X").
+  // justwatch / tmdb_watch / detail → sağlayıcıya değil bir arama/liste sayfasına gidilir.
   const watchLabel =
-    target.providerName === null
-      ? t('moodGauntlet.watchNow')
-      : t('moodGauntlet.findOn', { provider: target.providerName });
-  /** CTA altında küçük teklif türü: Subscription / Free / Rent / Buy. */
+    target.kind === 'provider_direct' && target.providerName !== null
+      ? t('moodGauntlet.openIn', { provider: target.providerName })
+      : t('moodGauntlet.whereToWatch');
+  /** CTA altında küçük teklif türü: With subscription / Add-on / Free / Free with ads / Rent or buy. */
   const offerHint =
-    target.providerName !== null && target.offerType !== null
-      ? t(`moodGauntlet.offerHint.${target.offerType === 'ads' ? 'ads' : offerLabelKind(target.offerType)}`)
+    target.providerName !== null && target.offerLabel !== null
+      ? t(`moodGauntlet.offerHint.${target.offerLabel}`)
       : null;
 
   /**
@@ -232,6 +237,8 @@ export function ResultStage({
     if (target.providerId !== null) {
       trackMoodEvent(
         providerClickedEvent({
+          filmId: champion.id,
+          surface: 'mood_result',
           providerId: target.providerId,
           offerType: target.offerType,
           region,
@@ -342,7 +349,8 @@ export function ResultStage({
         </Animated.Text>
       )}
       <View style={styles.resultChips}>
-        <FilmChips dims={dims} runtimeMinutes={champion.runtime} centered />
+        {/* A3: süre başlık altı meta satırında varsa çip olarak TEKRARLANMAZ. */}
+        <FilmChips dims={dims} runtimeMinutes={formatRuntime(champion.runtime) !== null ? null : champion.runtime} centered />
       </View>
       {pattern !== null && <Text style={styles.insight}>{t(INSIGHT_KEYS[pattern])}</Text>}
       {notices.includes('max_runtime_dropped') && (
@@ -358,6 +366,7 @@ export function ResultStage({
             variant="gold"
             disabled={providers.state === 'loading'}
             busy={providers.state === 'loading'}
+            trailingIcon={<ArrowUpRight size={size.iconInline} color={color.surface.base} weight="bold" />}
           />
         )}
         {target.kind !== 'none' && offerHint !== null && <Text style={styles.offerHint}>{offerHint}</Text>}
@@ -435,7 +444,7 @@ export function ResultStage({
                 <TouchableOpacity
                   key={b.id}
                   style={styles.backupItem}
-                  onPress={() => openFilm(b.id)}
+                  onPress={() => openFilm(b.id, b)}
                   accessibilityRole="button"
                   accessibilityLabel={b.title}
                 >

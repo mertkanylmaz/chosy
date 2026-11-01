@@ -9,6 +9,7 @@
 import * as Sentry from '@sentry/react-native';
 
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants/config';
+import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 import { isFunctionNotDeployed } from '../utils/moodChoicePolicy';
 import { getFreshSession } from './authSession';
 
@@ -28,9 +29,11 @@ export type MoodChoiceResult = 'recorded' | 'idempotent' | 'not_deployed' | 'fai
 export async function recordMoodChoice(ev: MoodChoiceEvent): Promise<MoodChoiceResult> {
   try {
     const session = await getFreshSession();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-mood-choice`, {
+    // Bölge sabitleme (Faz 2-5, P0-4): başlık + forceFunctionRegion sorgusu — invoke()'un yaptığının aynısı.
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/submit-mood-choice?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
       method: 'POST',
       headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session?.access_token ?? SUPABASE_ANON_KEY}`,
         apikey: SUPABASE_ANON_KEY,

@@ -222,7 +222,7 @@ export function GauntletStage({
                   {reason !== null ? (
                     <Animated.Text
                       style={styles.reason}
-                      numberOfLines={3}
+                      numberOfLines={4}
                       ellipsizeMode="tail"
                       entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
                     >

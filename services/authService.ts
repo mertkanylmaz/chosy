@@ -391,7 +391,10 @@ async function generateAppleNonce(): Promise<{ rawNonce: string; hashedNonce: st
  *
  * @returns AuthResult — başarı veya hata detayı
  */
-export async function signInWithApple(): Promise<AuthResult> {
+export async function signInWithApple(opts?: {
+  /** Yerel Apple ekranı kimlik bilgisiyle döndü; ağ adımları (Supabase) başlamak üzere (Faz 2-5, A8). */
+  onCredentialReceived?: () => void;
+}): Promise<AuthResult> {
   try {
     // iOS cihazda Apple Sign-In kullanılabilir mi?
     const isAvailable = await AppleAuthentication.isAvailableAsync();
@@ -413,6 +416,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     if (!credential.identityToken) {
       return { outcome: 'failed', message: 'identityToken alinamadi' };
     }
+    opts?.onCredentialReceived?.();
 
     // Yerel oturumdan okunur (ağ yok). Oturum yoksa ya da kalıcı hesapsa
     // klasik giriş; yalnızca anonim oturum bağlanır.
@@ -928,11 +932,12 @@ export async function deleteAccount(
     }
 
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-    const functionUrl = `${supabaseUrl}/functions/v1/delete-account`;
+    const functionUrl = `${supabaseUrl}/functions/v1/delete-account?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`;
 
     const response = await fetch(functionUrl, {
       method: 'POST',
       headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
         'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',

@@ -13,7 +13,7 @@
  */
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Text, useWindowDimensions, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { BookmarkSimple, FilmReel, ShareNetwork } from 'phosphor-react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 
@@ -37,6 +37,8 @@ import {
 import { SpotlightShareCard } from '@/components/ShareCards/SpotlightShareCard';
 import { styles as shareStyles } from '@/components/ShareCards/styles';
 import { useShareCapture } from '@/components/ShareCards/useShareCapture';
+import { filmDetailHref } from '@/utils/filmDetailHref';
+import { getWatchlistFilmIds, removeFromWatchlist } from '@/services/watchlist';
 import type { RevealedFilm } from '@/types/game';
 
 import { playSpotlightHaptic } from './playHaptic';
@@ -48,8 +50,9 @@ import type { createStyles } from './styles';
 import { useScreenReaderEnabled } from './useScreenReaderEnabled';
 
 /**
- * Kaydet durumları. `idle` "kayıtlı değil" iddiası DEĞİL, "bilinmiyor"dur:
- * watchlist üyeliği okunmaz (okuma yolu yok); yazma başarısı doğru kabul edilir.
+ * Kaydet durumları (Faz 2-5, P0-3): ekran odak kazandığında watchlist üyeliği OKUNUR
+ * (`getWatchlistFilmIds`); kayıtlıysa `saved`. `saved` iken basış = kaldırma. Okuma başarısız
+ * olursa `idle` kalır (Sentry'ye `getWatchlistFilmIds` yazar) ve yazma başarısı doğru kabul edilir.
  */
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -103,8 +106,28 @@ export function SpotlightResult({
   const [saveState, setSaveState] = useState<SaveState>('idle');
   /** Senkron kilit — hızlı çift dokunuş ikinci yazmayı başlatmasın */
   const saveLockRef = useRef(false);
+  const [removeFailed, setRemoveFailed] = useState(false);
 
   const filmId = film?.film_id ?? null;
+
+  // Odak dönünce (ör. film detayında kaydedip/kaldırıp geri gelince) gerçek durumu yeniden oku.
+  useFocusEffect(
+    useCallback(() => {
+      if (!filmId) return undefined;
+      let cancelled = false;
+      getWatchlistFilmIds()
+        .then((ids) => {
+          if (cancelled || saveLockRef.current) return;
+          setSaveState(ids.has(filmId) ? 'saved' : 'idle');
+        })
+        .catch(() => {
+          // Hata getWatchlistFilmIds içinde Sentry'ye yazıldı (WATCHLIST_IDS_READ_FAILED); durum değişmez.
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [filmId]),
+  );
 
   const variant = result.ok ? result.variant : won ? 'found' : 'lost';
   const isLost = variant === 'lost';
@@ -143,13 +166,35 @@ export function SpotlightResult({
     if (!filmId) return;
     playSpotlightHaptic({ type: 'cta_press' });
     trackSpotlightWhereToWatchTapped(puzzleId);
-    router.push(`/film/${filmId}`);
-  }, [filmId, puzzleId, router]);
+    router.push(
+      filmDetailHref(filmId, film ? { title: film.title, year: film.year, posterUrl: film.poster_url ?? null } : null) as never,
+    );
+  }, [filmId, film, puzzleId, router]);
 
   const handleSave = useCallback(async () => {
-    if (!film || !filmId || saveLockRef.current || saveState === 'saved') return;
+    if (!film || !filmId || saveLockRef.current) return;
     saveLockRef.current = true;
     playSpotlightHaptic({ type: 'cta_press' });
+    setRemoveFailed(false);
+    if (saveState === 'saved') {
+      // Kayıtlıyken basış = kaldırma. Çift film_added_to_watchlist üretmez.
+      setSaveState('saving');
+      try {
+        const removed = await removeFromWatchlist(filmId);
+        if (removed) {
+          setSaveState('idle');
+          announce(t('games.spotlight.action_save_removed'));
+        } else {
+          // removeFromWatchlist hatayı kaynağında Sentry'ye yazdı (WATCHLIST_REMOVE_FAILED)
+          setSaveState('saved');
+          setRemoveFailed(true);
+          announce(t('games.spotlight.action_remove_error'));
+        }
+      } finally {
+        saveLockRef.current = false;
+      }
+      return;
+    }
     trackSpotlightSaveForLaterTapped(puzzleId);
     setSaveState('saving');
     try {
@@ -234,7 +279,7 @@ export function SpotlightResult({
       icon={BookmarkSimple}
       variant="outline"
       onPress={handleSave}
-      disabled={saveState === 'saving' || saved}
+      disabled={saveState === 'saving'}
       busy={saveState === 'saving'}
       selected={saved}
     />
@@ -250,8 +295,10 @@ export function SpotlightResult({
     />
   ) : null;
   const saveErrorText =
-    saveState === 'error' ? (
-      <Text style={styles.saveError}>{t('games.spotlight.action_save_error')}</Text>
+    saveState === 'error' || removeFailed ? (
+      <Text style={styles.saveError}>
+        {t(removeFailed ? 'games.spotlight.action_remove_error' : 'games.spotlight.action_save_error')}
+      </Text>
     ) : null;
   const shareErrorText = shareFailed ? (
     <Text style={styles.saveError}>{t('games.spotlight.share_error')}</Text>

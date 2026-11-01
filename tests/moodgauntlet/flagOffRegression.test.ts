@@ -262,13 +262,13 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
 })
 
 Deno.test('gerekce satiri en fazla 2 satir (gauntlet + sonuc)', () => {
-  // Faz 2-4: gauntlet gerekçesi <=3 satır, taşarsa kuyrukta "…" (tail); kelime ortasında kesme (clip) yok.
+  // Faz 2-4: gauntlet gerekçesi <=4 satır, taşarsa kuyrukta "…" (tail); kelime ortasında kesme (clip) yok.
   const g = read('components/MoodGauntlet/GauntletStage.tsx')
-  assertMatch(g, /style=\{styles\.reason\}\s+numberOfLines=\{3\}\s+ellipsizeMode="tail"/)
+  assertMatch(g, /style=\{styles\.reason\}\s+numberOfLines=\{4\}\s+ellipsizeMode="tail"/)
   assert(!/ellipsizeMode="clip"|adjustsFontSizeToFit/.test(g), 'gauntlet gerekçesi clip / küçültme kullanmamalı')
   const st = read('components/MoodGauntlet/styles.ts')
   assertMatch(st, /reason: \{[^}]*fontSize: 14/)
-  assertMatch(st, /reasonSlot: \{ height: 57 \}/) // 3 satır x 19pt: iki kartta eşit yükseklik
+  assertMatch(st, /reasonSlot: \{ height: 76 \}/) // 4 satır x 19pt: iki kartta eşit yükseklik
   const r = read('components/MoodGauntlet/ResultStage.tsx')
   const reasonEl = r.slice(r.indexOf('style={styles.resultReason}'), r.indexOf('style={styles.resultReason}') + 120)
   assert(!/numberOfLines|ellipsizeMode/.test(reasonEl), 'sonuç gerekçesi kesilmemeli')

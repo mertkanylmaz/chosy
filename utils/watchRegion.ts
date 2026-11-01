@@ -100,8 +100,15 @@ export function foldSearch(s: string): string {
 export function listWatchRegions(language: WatchRegionLanguage, query: string): WatchRegionOption[] {
   const locale = language === 'tr' ? 'tr' : 'en';
   const q = foldSearch(query.trim());
-  const rank = (code: string): number =>
-    q.length > 0 && (WATCH_REGION_ALIASES[code] ?? []).some((al) => foldSearch(al).startsWith(q)) ? 0 : 1;
+  // Sıra (Faz 2-5): 0 takma ad başı → 1 ADIN bir KELİMESİ sorguyla başlıyor ("states" → United States,
+  // "ar" → Argentina'dan önce Saudi Arabia DEĞİL; ama "arab" → Saudi Arabia) → 2 ortada geçen / kod.
+  const wordStart = (name: string): boolean =>
+    foldSearch(name).split(/[\s\-.',()]+/).some((w) => w.startsWith(q));
+  const rank = (r: { code: string; name: string; en: string }): number => {
+    if (q.length === 0) return 1;
+    if ((WATCH_REGION_ALIASES[r.code] ?? []).some((al) => foldSearch(al).startsWith(q))) return 0;
+    return wordStart(r.name) || wordStart(r.en) ? 1 : 2;
+  };
   return Object.entries(WATCH_REGIONS)
     .map(([code, names]) => ({ code, name: names[language], en: names.en }))
     .filter(
@@ -112,7 +119,8 @@ export function listWatchRegions(language: WatchRegionLanguage, query: string): 
         (WATCH_REGION_ALIASES[r.code] ?? []).some((a) => foldSearch(a).includes(q)) ||
         r.code.toLowerCase() === q,
     )
-    // Takma adla başlayan eşleşme önce ("turk" → Türkiye, Turks ve Caicos'tan önce), sonra ada göre.
-    .sort((a, b) => rank(a.code) - rank(b.code) || a.name.localeCompare(b.name, locale))
+    // Takma adla başlayan, sonra kelime başı eşleşmeler ("turk" → Türkiye, Turks ve Caicos'tan önce;
+    // "uni" → United…), sonra içeren eşleşmeler; her grupta ada göre.
+    .sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name, locale))
     .map(({ code, name }) => ({ code, name }));
 }

@@ -5,6 +5,7 @@
  * Mood Filtered: premium, mood bazli weighted random
  * Triple: premium, 3 filtreli slot
  */
+import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 import { supabase } from './supabase';
 import { ensureAiConsent } from './aiConsent';
 import { logger } from '../utils/logger';
@@ -125,6 +126,7 @@ export async function spinPureRandom(): Promise<SlotResult> {
 
   const { data, error } = await supabase.functions.invoke('slot-pure-random', {
     body: { user_id: user?.id },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   logger.log('[slot] spinPureRandom response — data:', JSON.stringify(data)?.substring(0, 200));
@@ -155,6 +157,7 @@ export async function spinMoodFiltered(mood: string): Promise<SlotResult> {
   const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase.functions.invoke('slot-mood-filtered', {
     body: { mood, user_id: user?.id },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {
@@ -186,6 +189,7 @@ export async function spinTriple(
       era_filter: eraFilter ?? 'any',
       user_id: user?.id,
     },
+    region: GAUNTLET_EDGE_REGION,
   });
 
   if (error) {

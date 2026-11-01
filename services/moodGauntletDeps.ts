@@ -27,6 +27,7 @@ import {
   type TitleRef,
 } from './moodGauntlet';
 import { posthogAnalytics } from './posthog';
+import { parseMoodFourServerTiming } from '../utils/serverTimingHeader';
 import { supabase } from './supabase';
 import { MoodParseError, validateAndNormalize, type EdgeResponse } from './tasteParser';
 import { tasteProfileToVector } from './vectorEncoder';
@@ -197,7 +198,13 @@ async function moodFour(input: MoodFourInput): Promise<MoodFourOutcome> {
     if (!Array.isArray(data.pool)) return { ok: false, failure: 'bad_body' };
     const attemptIndex = typeof data.attempt_index === 'number' ? data.attempt_index : 0;
     const ids = Array.isArray(data.reranked_ids) ? stringArray(data.reranked_ids) : null;
-    return { ok: true, pool: data.pool as MatchRow[], attemptIndex, rerankedIds: ids };
+    return {
+      ok: true,
+      pool: data.pool as MatchRow[],
+      attemptIndex,
+      rerankedIds: ids,
+      serverMs: parseMoodFourServerTiming(res.headers.get('server-timing')),
+    };
   } catch (err) {
     if (controller.signal.aborted) return { ok: false, failure: 'timeout' };
     throw err;

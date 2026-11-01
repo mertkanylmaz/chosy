@@ -33,9 +33,15 @@
  * `get-daily-challenge` da bu bölgeyle çağrılır (`getDailyChallenge`, 20 Eki
  * 2026): tek sarmalayıcı olduğu için Spotlight dışındaki oyun ekranları da
  * (quoted, logline, imposter, fadein, Detective, CineMetrics) kapsanır; koşullu
- * pin yok. Bilerek BIRAKILAN: `submit-guess`'in diğer oyun sarmalayıcıları
- * (donmuş oyunlar). Film arama (`searchFilms*`) Edge Function
- * değil, doğrudan PostgREST — bölge kavramı yok.
+ * pin yok. Film arama (`searchFilms*`) Edge Function değil, doğrudan PostgREST —
+ * bölge kavramı yok.
+ *
+ * ── Faz 2-5 (P0-4, 1 Kas 2026) ────────────────────────────────────────────
+ * Bölgesiz çağrı KALMADI: submit-mood-choice, rerank-films (eski mood yolu) ve
+ * delete-account (ham fetch: başlık + sorgu) ile sync-entitlement, get-daily-chest,
+ * get-daily-theme, submit-guess (donmuş oyun sarmalayıcıları dahil), dev-reset-games
+ * ve slot-* (invoke `region`) de bu bölgeyle çağrılır. Eskiden "bilerek bırakılan"
+ * submit-guess sarmalayıcıları da artık kapsamda.
  */
 import { FunctionRegion } from '@supabase/supabase-js';
 

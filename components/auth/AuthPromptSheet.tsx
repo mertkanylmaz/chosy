@@ -20,6 +20,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Modal,
   Platform,
@@ -54,6 +55,11 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
   const { t } = useLanguage();
   const [appleBusy, setAppleBusy] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  /**
+   * A8: yerel Apple ekranı döndükten SONRA (ağ adımları sürerken) CTA spinner + "Signing in…" gösterir.
+   * Yerel Apple düğmesi içine spinner konamaz → bu aşamada aynı ölçüde düz bir düğmeyle değiştirilir.
+   */
+  const [signingIn, setSigningIn] = useState(false);
   /**
    * Apple girişi tamamlandı → sheet ANINDA kapanır (çıkış animasyonu yok).
    * `auth_prompt_completed` zaten tüm ağ zincirinden sonra atılıyor; ardından
@@ -92,6 +98,7 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
     }
     if (instantClose === null || closeFiredRef.current) return;
     closeFiredRef.current = true;
+    posthogAnalytics.track('auth_prompt_closed', { surface: 'champion_sheet', reason: 'success' });
     onClose(true);
     if (instantClose === 'existing') Alert.alert(t('auth.existingAccountSignedIn'));
   }, [visible, instantClose, onClose, t]);
@@ -103,7 +110,11 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
     setAppleBusy(true);
 
     try {
-      const result = await signInWithApple();
+      const result = await signInWithApple({
+        onCredentialReceived: () => {
+          if (mountedRef.current) setSigningIn(true);
+        },
+      });
 
       switch (result.outcome) {
         case 'signed_in':
@@ -112,7 +123,10 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
             surface: 'champion_sheet',
           });
           if (mountedRef.current) setInstantClose('signed_in');
-          else onClose(true);
+          else {
+            posthogAnalytics.track('auth_prompt_closed', { surface: 'champion_sheet', reason: 'success' });
+            onClose(true);
+          }
           return;
         case 'identity_already_exists':
           // Apple kimliği başka hesapta — o hesaba girildi. Taşıma sonucu
@@ -124,6 +138,7 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
           if (mountedRef.current) {
             setInstantClose('existing');
           } else {
+            posthogAnalytics.track('auth_prompt_closed', { surface: 'champion_sheet', reason: 'success' });
             onClose(true);
             Alert.alert(t('auth.existingAccountSignedIn'));
           }
@@ -149,15 +164,24 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
       logger.error('[AuthPromptSheet] Apple handler hatası:', err);
       setErrorMsg(t('auth.errorGeneral'));
     } finally {
+      if (mountedRef.current) setSigningIn(false);
       setAppleBusy(false);
     }
   }, [appleBusy, onClose, t]);
 
+  // Başarıda sheet kapanana dek spinner kalır (yerel düğmeye geri dönüp yanıp sönmesin).
+  const showSigningIn = signingIn || instantClose !== null;
+
   const handleDismiss = useCallback(() => {
     void hapticLight();
     posthogAnalytics.track('auth_prompt_dismissed', { surface: 'champion_sheet' });
+    // Hata gösterildikten sonra kapatıldıysa 'error', kullanıcı vazgeçtiyse 'cancel'.
+    posthogAnalytics.track('auth_prompt_closed', {
+      surface: 'champion_sheet',
+      reason: errorMsg !== null ? 'error' : 'cancel',
+    });
     onClose(false);
-  }, [onClose]);
+  }, [onClose, errorMsg]);
 
   return (
     <Modal
@@ -179,7 +203,19 @@ export function AuthPromptSheet({ visible, onClose }: AuthPromptSheetProps) {
             <Text style={styles.title}>{t('authPrompt.title')}</Text>
             <Text style={styles.body}>{t('authPrompt.body')}</Text>
 
-            {Platform.OS === 'ios' && (
+            {Platform.OS === 'ios' && showSigningIn && (
+              <View
+                style={styles.signingInButton}
+                accessibilityRole="button"
+                accessibilityLabel={t('authPrompt.signingIn')}
+                accessibilityState={{ busy: true, disabled: true }}
+              >
+                <ActivityIndicator size="small" color={Colors.bgElevated} />
+                <Text style={styles.signingInText}>{t('authPrompt.signingIn')}</Text>
+              </View>
+            )}
+
+            {Platform.OS === 'ios' && !showSigningIn && (
               <AppleAuthentication.AppleAuthenticationButton
                 buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
                 buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
@@ -252,6 +288,20 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.5,
+  },
+  signingInButton: {
+    width: '100%',
+    height: 54,
+    borderRadius: Theme.borderRadius.lg,
+    backgroundColor: Colors.textWhite,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Theme.spacing.sm,
+  },
+  signingInText: {
+    ...Theme.typography.h3,
+    color: Colors.bgElevated,
   },
   laterButton: {
     alignSelf: 'center',

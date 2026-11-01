@@ -702,6 +702,8 @@ export async function removeFromWatchlist(filmId: string): Promise<boolean> {
     }
 
     if (!error) {
+      // PostHog: film_removed_from_watchlist (film_added_to_watchlist'in karşılığı)
+      posthogAnalytics.track('film_removed_from_watchlist', { film_id: filmId });
       // Taste signal: watchlist remove (fire-and-forget, fail ana akışı etkilemez)
       tasteSignals.recordWatchlistRemove(filmId).catch(() => {});
     }

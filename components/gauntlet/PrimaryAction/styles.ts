@@ -24,6 +24,12 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: color.accent.edgeStrong,
   },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: space.sm,
+  },
   /**
    * Altın varyant — kenar dolguyla aynı renk (çift çizgi/halo yok). Marquee
    * değeri `color.reward.primary`'den okunur; Spotlight oynanış accent'i ile

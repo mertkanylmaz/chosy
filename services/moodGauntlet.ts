@@ -19,6 +19,7 @@
  *  - Ham mood metni analitiğe gitmez (bu dosya analitik atmaz).
  */
 import type { MoodFourPath } from '../utils/moodGauntletAnalytics';
+import type { MoodFourServerMs } from '../utils/serverTimingHeader';
 import { applyIntensity, clampIntensityStep, MAX_INTENSITY_STEPS } from '../utils/moodIntensity';
 import { buildRelaxationSteps } from '../utils/relaxationChain';
 
@@ -120,6 +121,8 @@ export type MoodFourOutcome =
       attemptIndex: number;
       /** null → rerank atlandı/başarısız: havuz sırasıyla ilk 4. */
       rerankedIds: string[] | null;
+      /** Sunucu aşama süreleri (Server-Timing: auth, v4_rpc, pick_llm, total; ms). */
+      serverMs?: MoodFourServerMs;
     }
   | { ok: false; failure: string };
 
@@ -250,6 +253,17 @@ export function buildV4Attempts(hasGenresInclude: boolean, hasMaxRuntime: boolea
     plans.push({ minSimilarity: last.minSimilarity, minRating: last.minRating, includeGenres: false, keepRuntime: false });
   }
   return plans;
+}
+
+/**
+ * genres_exclude ihlali (Faz 2-5, P0-2): film türlerinden biri dışlanan türlerle kesişiyorsa true.
+ * Sunucu (match_films_v4) zaten dışlar; bu istemci kapısı ikinci savunmadır — dörtlüye de
+ * "If not this one" yedeklerine de dışlanan türde film ASLA girmez. Büyük/küçük harf duyarsız.
+ */
+export function violatesGenresExclude(row: Pick<MatchRow, 'genres'>, genresExclude: readonly string[]): boolean {
+  if (genresExclude.length === 0 || !row.genres) return false;
+  const banned = new Set(genresExclude.map((g) => g.trim().toLowerCase()));
+  return row.genres.some((g) => banned.has(g.trim().toLowerCase()));
 }
 
 /** Aynı id'li tekrarları atar (ilk görülen kalır). */
@@ -387,7 +401,7 @@ export async function fetchReasons(
 export type StageEvent = { stage: 'parsed'; profileName: string | null } | { stage: 'picking' };
 
 export type PipelineStageName = 'parse' | 'exclusions' | 'v4' | 'pick' | 'four';
-export type TimingEvent = (stage: PipelineStageName, ms: number) => void;
+export type TimingEvent = (stage: PipelineStageName, ms: number, serverMs?: MoodFourServerMs) => void;
 
 const clock = (deps: MoodGauntletDeps): number => (deps.now ? deps.now() : Date.now());
 
@@ -513,7 +527,7 @@ export async function startMoodGauntlet(
       deps.onError('mood_four', err);
     }
     if (out && out.ok) {
-      input.onTiming?.('four', clock(deps) - tFour);
+      input.onTiming?.('four', clock(deps) - tFour, out.serverMs);
       const pool = uniqueById(out.pool);
       const notices = noteRelaxation(deps, parsed, attempts, out.attemptIndex);
       const session = baseSession(pool, notices);
@@ -551,7 +565,10 @@ async function buildSet(
   session: MoodSession,
   preRerank?: RerankOutcome | null,
 ): Promise<NextResult> {
-  const available = session.pool.filter((r) => !session.shown.includes(r.id));
+  // Yedekler (If not this one) ve dörtlü YALNIZ bu aramanın havuzundan gelir; dışlanan türdekiler elenir.
+  const available = session.pool.filter(
+    (r) => !session.shown.includes(r.id) && !violatesGenresExclude(r, session.parsed.genresExclude),
+  );
   if (available.length < FOUR) return { status: 'exhausted', session };
   const rerank = preRerank !== undefined
     ? preRerank

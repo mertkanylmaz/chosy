@@ -18,6 +18,7 @@ import {
   pickFour,
   reasonFor,
   startMoodGauntlet,
+  violatesGenresExclude,
   type FallbackStage,
   type MatchRow,
   type MatchV4Args,
@@ -300,6 +301,22 @@ Deno.test('pickFour: rerank null → havuz sirasi', () => {
   assertEquals(p.four.map((f) => f.id), ['f1', 'f2', 'f3', 'f4'])
   assertEquals(p.backups.map((f) => f.id), ['f5', 'f6'])
   assertEquals(p.reranked, false)
+})
+
+Deno.test('P0-2: genres_exclude ihlali (Tumbbad Fantasy/Horror) ne dortluye ne "If not this one" yedeklerine girer', async () => {
+  const tumbbad: MatchRow = { ...row(99), title: 'Tumbbad', genres: ['Fantasy', 'Horror'], similarity: 0.99 }
+  const shadows: MatchRow = { ...row(98), title: 'What We Do in the Shadows', genres: ['comedy', 'HORROR'], similarity: 0.98 }
+  const pool = [tumbbad, shadows, ...rows(8).map((r) => ({ ...r, genres: ['Comedy'] }))]
+  const { deps } = makeDeps({ parsed: parsed({ genresExclude: ['Horror'] }), matchResults: [pool], rerank: topFour })
+  const r = await startMoodGauntlet(deps, { text: 'comedy', quickMoodId: 'laugh' })
+  assertEquals(r.status, 'ok')
+  if (r.status !== 'ok') return
+  const ids = [...r.set.four, ...r.set.backups].map((f) => f.id)
+  assert(!ids.includes('f99') && !ids.includes('f98'), 'dislanan turdeki film gorunmemeli')
+  assert(r.set.backups.length > 0, 'yedekler bu aramanin havuzundan gelir')
+  assertEquals(violatesGenresExclude(tumbbad, ['horror']), true)
+  assertEquals(violatesGenresExclude(tumbbad, []), false)
+  assertEquals(violatesGenresExclude({ genres: null }, ['Horror']), false)
 })
 
 Deno.test('v4 deneme plani: kisit yoksa 4 basamak; genres/runtime varsa ek basamaklar', () => {

@@ -60,7 +60,7 @@ import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { BookmarkSimple, FilmSlate, Play, ShareNetwork } from 'phosphor-react-native';
+import { ArrowUpRight, BookmarkSimple, FilmSlate, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -89,6 +89,7 @@ import type { GauntletFilm } from '@/types/gauntlet';
 import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareText';
 import { upgradePosterUrl } from '@/utils/posterUrl';
 import { hapticLight } from '@/utils/haptics';
+import { filmDetailHref } from '@/utils/filmDetailHref';
 import { orderProviders } from '@/utils/watchProviderList';
 
 import { heroHeight as computeHeroHeight } from './heroHeight';
@@ -346,8 +347,10 @@ export function ChampionReveal({
    */
   const handleOpenFilm = useCallback(() => {
     void hapticLight();
-    router.push(`/film/${champion.id}`);
-  }, [router, champion.id]);
+    router.push(
+      filmDetailHref(champion.id, { title: champion.title, year: champion.year, posterUrl: champion.posterUrl || null }) as never,
+    );
+  }, [router, champion.id, champion.title, champion.year, champion.posterUrl]);
 
   /**
    * Watch Now — film detay ekranına gider (dış link yok). Sağlayıcı yoksa
@@ -380,8 +383,10 @@ export function ChampionReveal({
       region,
       provider_count: providerCount,
     });
-    router.push(`/film/${champion.id}`);
-  }, [router, champion.id, region, providerCount]);
+    router.push(
+      filmDetailHref(champion.id, { title: champion.title, year: champion.year, posterUrl: champion.posterUrl || null }) as never,
+    );
+  }, [router, champion.id, champion.title, champion.year, champion.posterUrl, region, providerCount]);
 
   /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
@@ -631,7 +636,7 @@ export function ChampionReveal({
               <View style={styles.primarySlot}>
                 <ChampionActionButton
                   label={t('gauntlet.watchProviders.sheetTitle')}
-                  icon={Play}
+                  icon={ArrowUpRight}
                   variant="marquee"
                   onPress={handleWatchNow}
                   disabled={!showWatchNow}

@@ -110,8 +110,20 @@ export function pipelineFallbackEvent(stage: string): MoodEvent {
 
 /** Aşama süresi (parse | v4 | pick | reasons) — yalnız sabit etiket + ms, metin yok. */
 export type MoodTimingStage = 'parse' | 'exclusions' | 'v4' | 'pick' | 'four' | 'reasons';
-export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEvent {
-  return { name: 'mood_pipeline_timing', props: { stage, ms: Math.max(0, Math.round(ms)) } };
+export function pipelineTimingEvent(
+  stage: MoodTimingStage,
+  ms: number,
+  serverMs?: { auth?: number; v4_rpc?: number; pick_llm?: number; total?: number },
+): MoodEvent {
+  const props: MoodEvent['props'] = { stage, ms: Math.max(0, Math.round(ms)) };
+  // Faz 2-5 (P1-5c): mood-four Server-Timing — yalnız sayı alanları, metin yok.
+  if (serverMs) {
+    if (serverMs.auth !== undefined) props.server_auth_ms = serverMs.auth;
+    if (serverMs.v4_rpc !== undefined) props.server_v4_ms = serverMs.v4_rpc;
+    if (serverMs.pick_llm !== undefined) props.server_pick_ms = serverMs.pick_llm;
+    if (serverMs.total !== undefined) props.server_ms = serverMs.total;
+  }
+  return { name: 'mood_pipeline_timing', props };
 }
 
 /**
@@ -120,7 +132,12 @@ export function pipelineTimingEvent(stage: MoodTimingStage, ms: number): MoodEve
  */
 export const PROVIDER_EVENT_NAMES = ['provider_clicked', 'app_returned_after_provider'] as const;
 
+/** provider_clicked'in geldiği yüzey (A7). */
+export type ProviderClickSurface = 'mood_result' | 'champion' | 'film_detail';
+
 export function providerClickedEvent(p: {
+  filmId: string;
+  surface: ProviderClickSurface;
   providerId: number;
   offerType: WatchOfferType | null;
   region: string | null;
@@ -128,7 +145,7 @@ export function providerClickedEvent(p: {
 }): MoodEvent {
   return {
     name: 'provider_clicked',
-    props: { provider_id: p.providerId, offer_type: p.offerType, region: p.region, link_kind: p.linkKind },
+    props: { film_id: p.filmId, surface: p.surface, provider_id: p.providerId, offer_type: p.offerType, region: p.region, link_kind: p.linkKind },
   };
 }
 
@@ -166,7 +183,7 @@ const ALLOWED_STRINGS = new Set<string>([
   'rerank', 'genres_relaxed', 'similarity_relaxed', 'max_runtime_dropped', 'record_ids', 'reasons', 'mood_four',
   'parse', 'v4', 'pick', 'exclusions', 'four',
   'combined', 'legacy',
-  'mood_result', 'en', 'tr',
+  'mood_result', 'champion', 'film_detail', 'en', 'tr',
   // watch_now: offer_type + link_kind
   'flatrate', 'free', 'ads', 'rent', 'buy', 'justwatch', 'tmdb_watch', 'provider_direct', 'detail',
   // quick_mood_id'ler (QUICK_MOOD_IDS)

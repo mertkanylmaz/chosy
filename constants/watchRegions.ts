@@ -136,7 +136,7 @@ export const WATCH_REGIONS: Readonly<Record<string, { en: string; tr: string }>>
   TZ: { en: "Tanzania", tr: "Tanzanya" },
   UA: { en: "Ukraine", tr: "Ukrayna" },
   UG: { en: "Uganda", tr: "Uganda" },
-  US: { en: "United States of America", tr: "ABD" },
+  US: { en: "United States", tr: "ABD" },
   UY: { en: "Uruguay", tr: "Uruguay" },
   VA: { en: "Holy See", tr: "Vatikan" },
   VE: { en: "Venezuela", tr: "Venezuela" },

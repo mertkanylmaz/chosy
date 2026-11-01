@@ -622,6 +622,7 @@
     "activating": "Pro etkinleştiriliyor…",
     "activatingTimeout": "Pro'nun etkinleşmesi biraz sürüyor. Aramanı birazdan tekrar dene.",
     "errorInProgress": "Aramanın hazırlanması sürüyor. Birazdan tekrar dene.",
+    "inviteTitleChampion": "Moduna göre şimdi dört yeni film",
     "inviteTitle": "Mood'una uyan bir film ister misin?",
     "paywallTitleDeck": "Bu ruh halini keşfetmeye devam et.",
     "paywallTitleQuota": "Bir arama daha ister misin?",
@@ -672,6 +673,7 @@
   "authPrompt": {
     "title": "Bu geceki seçimini kaybetme",
     "body": "Her gecenin seçimi ve izleme listen burada kayıtlı — ücretsiz, abonelik gerekmez.",
+    "signingIn": "Giriş yapılıyor…",
     "notNow": "Şimdi değil"
   },
   "moodGauntlet": {
@@ -721,8 +723,11 @@
     "justPick": "Sen seç",
     "noneSub": "Aynı mood, 4 yeni film",
     "findOn": "Şurada bul: %{provider}",
+    "openIn": "%{provider} ile aç",
+    "whereToWatch": "Nerede izlenir",
     "offerHint": {
-      "subscription": "Abonelikte var",
+      "subscription": "Abonelikle",
+      "addon": "Ek abonelik",
       "free": "Ücretsiz izlenir",
       "ads": "Reklamlı ücretsiz",
       "rent": "Kirala veya satın al",
@@ -1325,6 +1330,8 @@
       "action_save_for_later": "Sonrası İçin Kaydet",
       "action_save_done": "Kaydedildi",
       "action_save_error": "Kaydedilemedi. Tekrar dene.",
+      "action_save_removed": "Kaydedilenlerden çıkarıldı",
+      "action_remove_error": "Çıkarılamadı. Tekrar dene.",
       "action_share": "Paylaş",
       "share_card_title": "SPOTLIGHT · FİLM %{n}",
       "share_card_title_no_n": "SPOTLIGHT",
@@ -1747,12 +1754,6 @@
       "regionCurrent": "Seçili",
       "group": {
         "stream": "Akış",
-        "rent": "Kirala",
-        "buy": "Satın al"
-      },
-      "offer": {
-        "subscription": "Abonelik",
-        "free": "Ücretsiz",
         "rent": "Kirala",
         "buy": "Satın al"
       }

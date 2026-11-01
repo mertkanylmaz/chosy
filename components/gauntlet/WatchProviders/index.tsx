@@ -39,7 +39,7 @@ import { posthogAnalytics } from '@/services/posthog';
 import type { TmdbWatchProviders } from '@/services/tmdb';
 import { hapticLight } from '@/utils/haptics';
 import { watchRegionName } from '@/constants/watchRegions';
-import { dedupeByBrand } from '@/utils/watchProviderBrands';
+import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
 import { groupProviders, offerLabelKind, orderProviders, orderProvidersWithOffer } from '@/utils/watchProviderList';
 
 import { ProvidersSheet } from './ProvidersSheet';
@@ -94,7 +94,7 @@ export function WatchProvidersRow({
   const offerById = useMemo(() => {
     const map = new Map<number, ReturnType<typeof offerLabelKind>>();
     if (state === 'ok' && providers) {
-      for (const o of orderProvidersWithOffer(providers)) map.set(o.provider.provider_id, offerLabelKind(o.offer));
+      for (const o of orderProvidersWithOffer(providers)) map.set(o.provider.provider_id, offerLabelKind(o.offer, o.tier));
     }
     return map;
   }, [state, providers]);
@@ -169,7 +169,7 @@ export function WatchProvidersRow({
         <View style={rowStyle}>
           {list.map((provider) => {
             const kind = showOfferLabels ? offerById.get(provider.provider_id) : undefined;
-            const offerText = kind ? t(`gauntlet.watchProviders.offer.${kind}`) : null;
+            const offerText = kind ? t(`moodGauntlet.offerHint.${kind}`) : null;
             return (
               <View key={provider.provider_id} style={styles.logoCol}>
                 <Image
@@ -177,7 +177,7 @@ export function WatchProvidersRow({
                   style={styles.logo}
                   contentFit="cover"
                   cachePolicy="memory-disk"
-                  accessibilityLabel={offerText ? `${provider.provider_name}, ${offerText}` : provider.provider_name}
+                  accessibilityLabel={offerText ? `${brandOf(provider).name}, ${offerText}` : brandOf(provider).name}
                 />
                 {offerText !== null && (
                   <Text style={styles.offerLabel} numberOfLines={1}>

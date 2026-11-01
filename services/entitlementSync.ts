@@ -13,6 +13,7 @@
  * Aynı anda tek istek uçar (çift tıklama / dinleyici+paywall çakışması).
  */
 
+import { GAUNTLET_EDGE_REGION } from '@/constants/edgeRegion';
 import { supabase } from './supabase';
 import { logger } from '@/utils/logger';
 import { shouldSyncFromListener, type ListenerSyncState } from '@/utils/entitlementSyncPolicy';
@@ -28,7 +29,7 @@ let inFlight: Promise<boolean> | null = null;
 const listenerState: ListenerSyncState = { lastSyncedKey: null, lastAttemptAtMs: null };
 
 async function invokeSync(reason: EntitlementSyncReason): Promise<boolean> {
-  const { data, error } = await supabase.functions.invoke('sync-entitlement', { method: 'POST' });
+  const { data, error } = await supabase.functions.invoke('sync-entitlement', { method: 'POST', region: GAUNTLET_EDGE_REGION });
 
   if (error) {
     logger.error('[entitlement-sync] sync-entitlement çağrısı başarısız:', error, {

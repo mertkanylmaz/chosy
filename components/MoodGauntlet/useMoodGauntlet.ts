@@ -53,6 +53,7 @@ import {
 import { detectPickPattern, roundPicks, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { choose, currentPair, elapsedMs, initFlow, isComplete, type MoodFlow } from '@/utils/moodGauntletFlow';
 import { classifyMoodSearchError } from '@/utils/moodSearchRetry';
+import type { MoodFourServerMs } from '@/utils/serverTimingHeader';
 
 export type MoodStage = 'entry' | 'loading' | 'gauntlet' | 'result' | 'error' | 'exhausted';
 export type MoodErrorKind = 'quota' | 'busy' | 'unavailable' | 'network' | 'insufficient' | 'generic';
@@ -151,8 +152,8 @@ export function useMoodGauntlet() {
     });
   }, []);
 
-  const onTiming = useCallback((s: PipelineStageName, ms: number) => {
-    trackMoodEvent(pipelineTimingEvent(s, ms));
+  const onTiming = useCallback((s: PipelineStageName, ms: number, serverMs?: MoodFourServerMs) => {
+    trackMoodEvent(pipelineTimingEvent(s, ms, serverMs));
   }, []);
 
   /** Gerekçeler: dörtlü ekrandayken arkadan; gelmezse (boş) satır çizilmez. Hata servis içinde Sentry'ye gider. */

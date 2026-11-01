@@ -13,7 +13,9 @@ import {
   dedupeChannelVariants,
   flattenProviders,
   groupProviders,
+  offerLabelKind,
   orderProviders,
+  orderProvidersWithOffer,
   selectTopProviders,
   type ProviderLike,
   type RankedProviderLike,
@@ -80,7 +82,7 @@ Deno.test('flatten: aynı provider_id kovalar arası tekrarlanmaz, limit tekille
     rent: [amazon],
     buy: [amazon, p('Apple TV Store')],
   }
-  assertEquals(names(flattenProviders(buckets, 3)), ['MGM+ Amazon Channel', 'fuboTV', 'Amazon Video'])
+  assertEquals(names(flattenProviders(buckets, 3)), ['fuboTV', 'MGM+ Amazon Channel', 'Amazon Video']) // K3 → K4 → K5
 })
 
 // ─── V-3 Tur G2 (C5): selectTopProviders ─────────────────────────────────────
@@ -119,7 +121,8 @@ Deno.test('select: yalnız rent/buy → rent önce, aynı mağaza iki kez sayıl
     rent: [r('Google Play Movies', 5), apple],
     buy: [apple, r('Amazon Video', 1)],
   }
-  assertEquals(names(selectTopProviders(buckets)), ['Apple TV Store', 'Google Play Movies', 'Amazon Video'])
+  // rent/buy aynı katman (K5) → yalnız display_priority: Amazon Video(1) < Apple(2) < Google(5)
+  assertEquals(names(selectTopProviders(buckets)), ['Amazon Video', 'Apple TV Store', 'Google Play Movies'])
   assertEquals(orderProviders(buckets).length, 3)
 })
 
@@ -133,7 +136,8 @@ Deno.test('select: tekilleştirme kesmeden ÖNCE — varyantlar yer kaplamaz, gr
     ],
     rent: [r('Amazon Video', 1)],
   }
-  assertEquals(names(selectTopProviders(buckets)), ['MGM Plus', 'fuboTV', 'Amazon Video'])
+  // Ana sağlayıcı (MGM Plus) abonelikte VAR → varyantlar elenir; ikisi de K3, display_priority: fuboTV(3) < MGM Plus(9).
+  assertEquals(names(selectTopProviders(buckets)), ['fuboTV', 'MGM Plus', 'Amazon Video'])
   assertEquals(orderProviders(buckets).length, 3)
 })
 
@@ -153,4 +157,51 @@ Deno.test('group: stream = flatrate+free+ads; rent/buy kendi içinde, mağaza ik
   assertEquals(names(groups.stream), ['Netflix', 'Max', 'Pluto TV'])
   assertEquals(names(groups.rent), ['Amazon Video', 'Apple TV Store'])
   assertEquals(names(groups.buy), ['Apple TV Store'])
+})
+
+// ─── Faz 2-5 (P0-1): katmanlı sıralama ───────────────────────────────────────
+
+Deno.test('P0-1 Midnight in Paris US: Sony Core kanalı + YouTube ücretsiz + Tubi reklamlı → ilk K2', () => {
+  const buckets = {
+    flatrate: [r('Sony Pictures Core Amazon Channel', 1)],
+    free: [r('YouTube', 5)],
+    ads: [r('Tubi TV', 3)],
+    rent: [r('Apple TV Store', 1)],
+  }
+  const o = orderProvidersWithOffer(buckets)
+  assertEquals(names(o.map((x) => x.provider)), ['Tubi TV', 'YouTube', 'Sony Pictures Core Amazon Channel', 'Apple TV Store'])
+  assertEquals(o.map((x) => x.tier), [2, 2, 4, 5])
+})
+
+Deno.test('P0-1 Knives Out US: Lionsgate+ Amazon Channel + Amazon Video kiralık → ilk Lionsgate+ (K4)', () => {
+  const o = orderProvidersWithOffer({
+    flatrate: [r('Lionsgate+ Amazon Channel', 1)],
+    rent: [r('Amazon Video', 1)],
+  })
+  assertEquals(o[0].provider.provider_name, 'Lionsgate+ Amazon Channel')
+  assertEquals(o[0].tier, 4)
+  assertEquals(offerLabelKind(o[0].offer, o[0].tier), 'addon')
+})
+
+Deno.test('P0-1 Amour TR: TV+, HBO Max (flatrate), Apple TV kiralık → ilk K1', () => {
+  const o = orderProvidersWithOffer({
+    flatrate: [{ provider_id: 9001, provider_name: 'TV+', display_priority: 7 }, { provider_id: 1899, provider_name: 'HBO Max', display_priority: 2 }],
+    rent: [{ provider_id: 2, provider_name: 'Apple TV Store', display_priority: 1 }],
+  })
+  assertEquals(names(o.map((x) => x.provider)), ['HBO Max', 'TV+', 'Apple TV Store'])
+  assertEquals(o.map((x) => x.tier), [1, 1, 5])
+})
+
+Deno.test('P0-1 K1: Amazon Video (mağaza) flatrate olsa bile ana marka sayılmaz; Netflix reklamlı K1', () => {
+  const o = orderProvidersWithOffer({
+    flatrate: [{ provider_id: 10, provider_name: 'Amazon Video', display_priority: 1 }, { provider_id: 1796, provider_name: 'Netflix Standard with Ads', display_priority: 9 }],
+  })
+  assertEquals(o.map((x) => x.provider.provider_id), [1796, 10])
+})
+
+Deno.test('P0-1 etiket: free ve ads ayrı, flatrate abonelik', () => {
+  assertEquals(offerLabelKind('free'), 'free')
+  assertEquals(offerLabelKind('ads'), 'ads')
+  assertEquals(offerLabelKind('flatrate', 1), 'subscription')
+  assertEquals(offerLabelKind('buy'), 'buy')
 })

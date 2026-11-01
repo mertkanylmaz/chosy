@@ -30,6 +30,8 @@ const BRANDS: readonly Brand[] = [
   { key: 'paramount', name: 'Paramount+', ids: [531, 2303, 2616, 2304] },
   { key: 'peacock', name: 'Peacock', ids: [386, 387] },
   { key: 'mubi', name: 'MUBI', ids: [11] },
+  { key: 'tod', name: 'TOD', ids: [1826] },
+  { key: 'tabii', name: 'tabii', ids: [2235] },
 ];
 
 const BRAND_BY_ID = new Map<number, Brand>(BRANDS.flatMap((b) => b.ids.map((id) => [id, b] as const)));
@@ -39,8 +41,23 @@ function stripAdsSuffix(name: string): string {
   return name.trim().replace(/\s+(?:standard\s+|basic\s+)?with\s+ads$/i, '').trim();
 }
 
+/**
+ * Kanal eklentisi sonekleri (Faz 2-5, K4): Amazon / Apple / Roku üzerinden satılan alt abonelik.
+ * `watchProviderList.CHANNEL_SUFFIXES` ile aynı kuralın görünen-ad tarafı; uzun olan önce.
+ */
+const CHANNEL_SUFFIX_RE = /\s+(?:roku premium channel|roku channel|amazon channel|apple tv channel|prime video channel)$/i;
+
+/** Ad bir kanal eklentisi mi ("Lionsgate+ Amazon Channel")? */
+export function isChannelAddonName(name: string): boolean {
+  return CHANNEL_SUFFIX_RE.test(name.trim());
+}
+
+function stripChannelSuffix(name: string): string {
+  return name.trim().replace(CHANNEL_SUFFIX_RE, '').trim();
+}
+
 function normalizeKey(name: string): string {
-  return stripAdsSuffix(name)
+  return stripChannelSuffix(stripAdsSuffix(name))
     .toLowerCase()
     .replace(/\bplus\b/g, '+')
     .replace(/[^a-z0-9+]/g, '');
@@ -54,7 +71,7 @@ export interface BrandInfo {
 export function brandOf(p: ProviderLike): BrandInfo {
   const known = BRAND_BY_ID.get(p.provider_id);
   if (known) return { key: known.key, name: known.name };
-  const stripped = stripAdsSuffix(p.provider_name);
+  const stripped = stripChannelSuffix(stripAdsSuffix(p.provider_name));
   return { key: `name:${normalizeKey(p.provider_name)}`, name: stripped.length > 0 ? stripped : p.provider_name };
 }
 
@@ -69,4 +86,48 @@ export function dedupeByBrand<T extends ProviderLike>(list: readonly T[]): T[] {
     out.push(p);
   }
   return out;
+}
+
+/**
+ * K1 — "ana marka": flatrate'te listenin en üstüne çıkan servisler. Anahtarlar `brandOf().key`.
+ * TR servisleri (TV+, Exxen, Gain) TMDB'de kimlikle eşlenmediği için ad anahtarıyla gelir.
+ */
+const MAIN_BRAND_KEYS: ReadonlySet<string> = new Set([
+  'netflix',
+  'prime',
+  'disney',
+  'hbomax',
+  'apple',
+  'hulu',
+  'paramount',
+  'peacock',
+  'mubi',
+  'tod',
+  'tabii',
+  // Kimliği tanınmayan eski/alternatif adlar (TMDB adları dönemsel değişir).
+  'name:netflix',
+  'name:primevideo',
+  'name:amazonprimevideo',
+  'name:disney+',
+  'name:hbomax',
+  'name:max',
+  'name:appletv+',
+  'name:hulu',
+  'name:paramount+',
+  'name:peacock',
+  'name:peacockpremium',
+  'name:mubi',
+  'name:tv+',
+  'name:exxen',
+  'name:gain',
+]);
+
+/** "Amazon Video" (10) bir mağazadır, abonelik markası değil; K1 yalnız Prime Video + reklamlı varyantı. */
+const PRIME_STORE_IDS: ReadonlySet<number> = new Set([10]);
+
+/** Kanal eklentisi OLMAYAN ana marka mı (K1 adayı)? Kova kararı çağıranındır. */
+export function isMainBrand(p: ProviderLike): boolean {
+  if (isChannelAddonName(p.provider_name)) return false;
+  if (PRIME_STORE_IDS.has(p.provider_id)) return false;
+  return MAIN_BRAND_KEYS.has(brandOf(p).key);
 }

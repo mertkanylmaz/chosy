@@ -18,7 +18,7 @@
  *       Remove watchlist linki (varsa)
  *       TMDB attribution footer
  */
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   AppState,
@@ -63,6 +63,8 @@ import {
   type TmdbWatchProviders,
   type TmdbProvider,
 } from '@/services/tmdb';
+import { parseFilmPreview } from '@/utils/filmDetailHref';
+import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
 import { flattenProviders } from '@/utils/watchProviderList';
 import { localizeGenre } from '@/utils/filmFilters';
 import { normalizePosterUrl } from '@/utils/posterUrl';
@@ -268,7 +270,7 @@ function ProviderIcon({ provider }: { provider: TmdbProvider }) {
         cachePolicy="memory-disk"
       />
       <Text style={styles.providerName} numberOfLines={2}>
-        {provider.provider_name}
+        {brandOf(provider).name}
       </Text>
     </View>
   );
@@ -300,15 +302,39 @@ function TmdbFooter({ text }: { text: string }) {
  * route param: id → Supabase films.id (UUID)
  */
 export default function FilmDetailScreen() {
-  const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
+  const { id, source, pt, py, pp } = useLocalSearchParams<{
+    id: string;
+    source?: string;
+    pt?: string;
+    py?: string;
+    pp?: string;
+  }>();
   const { t, language, region } = useLanguage();
   const { currentProfile, presetMoodText, currentSessionId } = useMood();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   // ── Temel film verisi ────────────────────────────────────────────────────────
-  const [film, setFilm] = useState<Film | null>(null);
-  const [loading, setLoading] = useState(true);
+  // P1-6: çağıran eldeki kayıttan başlık/yıl/poster taşıdıysa ekran iskelet yerine ANINDA çizilir;
+  // DB satırı gelince film tamamen ondan değiştirilir (ön-izleme yalnız görüntü).
+  const preview = useMemo(() => parseFilmPreview({ pt, py, pp }), [pt, py, pp]);
+  const previewFilm = useMemo<Film | null>(
+    () =>
+      preview && id
+        ? {
+            id,
+            title: preview.title,
+            year: preview.year ?? 0,
+            posterUrl: preview.posterUrl ?? '',
+            matchScore: 0,
+            moodTags: [],
+            whyThisFilm: '',
+          }
+        : null,
+    [preview, id],
+  );
+  const [film, setFilm] = useState<Film | null>(previewFilm);
+  const [loading, setLoading] = useState(previewFilm === null);
   const [loadError, setLoadError] = useState(false);
 
   // ── TMDB zengin veri ─────────────────────────────────────────────────────────
@@ -407,37 +433,34 @@ export default function FilmDetailScreen() {
       return;
     }
 
-    setLoading(true);
+    // Ön-izleme varsa iskelet açılmaz (ilk çizim eldeki kayıttan).
+    setLoading(previewFilm === null);
     setLoadError(false);
     setThumbnailFallbackLevel(0);
 
     try {
-      const [{ data, error }, profileRes] = await Promise.all([
-        supabase
-          .from('films')
-          .select(
-            'id, tmdb_id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, director, trailer_url, genres, cast_json',
-          )
-          .eq('id', id)
-          .single(),
-        // "Neden bu film?" yalnızca film profilinden beslenir; yoksa bölüm gizli kalır.
-        supabase.from('film_profiles').select('dimensions_json').eq('film_id', id).maybeSingle(),
-      ]);
+      // "Neden bu film?" profili (yalnız dimensions_json) ilk çizimi BEKLETMEZ: film satırı gelince
+      // çizilir, profil paralel sürer ve gelince birleştirilir. Yoksa bölüm gizli kalır.
+      const profilePromise = supabase
+        .from('film_profiles')
+        .select('dimensions_json')
+        .eq('film_id', id)
+        .maybeSingle();
+      const { data, error } = await supabase
+        .from('films')
+        .select(
+          'id, tmdb_id, title, year, poster_url, backdrop_url, overview, runtime, vote_average, director, trailer_url, genres, cast_json',
+        )
+        .eq('id', id)
+        .single();
 
       // Daha yeni bir yukleme / unmount: bu sonuc yazilmaz.
       if (seq !== loadSeqRef.current) return;
 
-      if (profileRes.error) {
-        Sentry.captureException(profileRes.error, {
-          tags: { component: 'FilmDetail', flow: 'loadFilmProfile' },
-          extra: { film_id: id },
-        });
-      }
-      const profileRow = profileRes.data as FilmProfileRow | null;
-      const dimensions = profileRow?.dimensions_json ?? undefined;
-
       if (error) {
         if (error.code !== 'PGRST116') setLoadError(true);
+        // Ön-izlemeyle çizilmiş ama DB'de olmayan film: "bulunamadı" durumuna dön.
+        else setFilm(null);
         setLoading(false);
         return;
       }
@@ -471,9 +494,23 @@ export default function FilmDetailScreen() {
           moodTags: row.genres?.slice(0, 4) ?? [],
           whyThisFilm: '',
           cast: dbCast.length > 0 ? dbCast : undefined,
-          dimensions,
         });
         setLoading(false);
+
+        // Profil (dimensions) paralel yoldan gelince birleşir; hata Sentry'ye gider, ekranı bozmaz.
+        void profilePromise.then((profileRes) => {
+          if (seq !== loadSeqRef.current) return;
+          if (profileRes.error) {
+            Sentry.captureException(profileRes.error, {
+              tags: { component: 'FilmDetail', flow: 'loadFilmProfile' },
+              extra: { film_id: id },
+            });
+            return;
+          }
+          const dims = (profileRes.data as FilmProfileRow | null)?.dimensions_json ?? undefined;
+          if (!dims) return;
+          setFilm((prev) => (prev && prev.id === row.id ? { ...prev, dimensions: dims } : prev));
+        });
 
         if (row.tmdb_id) {
           await mergeTmdbDetails(row.id, row.tmdb_id, seq);
@@ -490,7 +527,7 @@ export default function FilmDetailScreen() {
       // Eski (iptal edilmis) yukleme, yenisinin iskeletini kapatmasin.
       if (seq === loadSeqRef.current) setLoading(false);
     }
-  }, [id, mergeTmdbDetails]);
+  }, [id, mergeTmdbDetails, previewFilm]);
 
   useEffect(() => {
     loadFilm();
@@ -913,7 +950,8 @@ export default function FilmDetailScreen() {
    * varyantlari ("MGM+ Amazon Channel") ana saglayici varken elenir
    * (V-2 Tur D, sampiyon satiriyla ortak kural).
    */
-  const allProviders: TmdbProvider[] = watchProviders ? flattenProviders(watchProviders) : [];
+  // Faz 2-5: şampiyon / Mood Gauntlet satırıyla AYNI katman sırası + marka tekilleştirmesi (ilk logo = sıralamanın ilki).
+  const allProviders: TmdbProvider[] = watchProviders ? dedupeByBrand(flattenProviders(watchProviders)) : [];
 
   // ── Render ────────────────────────────────────────────────────────────────────
 

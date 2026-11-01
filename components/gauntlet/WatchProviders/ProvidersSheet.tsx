@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { space } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { TmdbProvider } from '@/services/tmdb';
+import { brandOf } from '@/utils/watchProviderBrands';
 import type { ProviderGroups } from '@/utils/watchProviderList';
 
 import { sheetStyles as styles } from './styles';
@@ -85,7 +86,7 @@ export function ProvidersSheet({
                         importantForAccessibility="no"
                       />
                       <Text style={styles.providerName} numberOfLines={1}>
-                        {provider.provider_name}
+                        {brandOf(provider).name}
                       </Text>
                     </View>
                   ))}

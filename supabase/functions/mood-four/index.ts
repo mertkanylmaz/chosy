@@ -20,6 +20,9 @@
  * ('rerank-films-daily'); aşılırsa/okunamazsa havuz yine döner (rerank_skipped), kullanıcı bloklanmaz.
  * Hata: Sentry + kodlu yanıt.
  *
+ * Server-Timing (Faz 2-5, P1-5c): `auth`, `v4_rpc`, `pick_llm`, `total` (ms) başarılı yanıtlarda
+ * başlık olarak döner; istemci `mood_pipeline_timing` (stage=four) olayına server_*_ms olarak ekler.
+ *
  * Deploy: supabase functions deploy mood-four
  */
 import Anthropic from 'npm:@anthropic-ai/sdk'
@@ -27,6 +30,7 @@ import { requireUser, unauthorizedResponse } from '../_shared/auth.ts'
 import { checkRateLimit, rateLimitResponse } from '../_shared/rateLimit.ts'
 import { checkDailyLimit, DailyLimitError, lookupDailyLimit } from '../_shared/dailyLimit.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import { createTiming } from '../_shared/serverTiming.ts'
 import { RERANK_PICK_MODEL } from '../_shared/models.ts'
 import { dailyCounterKey } from '../_shared/rerankReason.ts'
 import {
@@ -42,6 +46,15 @@ import { errorResponse, getUserClient, handleCors, jsonResponse } from '../_shar
 
 const FN = 'mood-four'
 const FOUR = 4
+
+/** Başarılı yanıt + Server-Timing (total yanıt oluşturulurken kapatılır). */
+function timedJson(timing: ReturnType<typeof createTiming>, t0: number, body: unknown): Response {
+  timing.add('total', performance.now() - t0)
+  return jsonResponse(body, 200, {
+    'Server-Timing': timing.header(),
+    'Access-Control-Expose-Headers': 'Server-Timing',
+  })
+}
 const PICK_OVERVIEW_MAX = 150
 const PICK_TIMEOUT_MS = 7_000
 
@@ -54,7 +67,9 @@ Deno.serve(async (req: Request): Promise<Response> => {
   if (cors) return cors
   if (req.method !== 'POST') return errorResponse('METHOD_NOT_ALLOWED', 'POST bekleniyor', 405)
 
-  const auth = await requireUser(req)
+  const t0 = performance.now()
+  const timing = createTiming()
+  const auth = await timing.measure('auth', () => requireUser(req))
   if (!auth.ok) return unauthorizedResponse(auth, {})
 
   try {
@@ -97,10 +112,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return errorResponse('V4_FAILED', 'Aday aramasi basarisiz', 502)
   }
   const v4Ms = Date.now() - tV4
+  timing.add('v4_rpc', v4Ms)
 
   // Yeterli aday yok: rerank anlamsız; istemci "insufficient" akışına gider.
   if (pool.length < FOUR) {
-    return jsonResponse({
+    return timedJson(timing, t0, {
       pool,
       attempt_index: attemptIndex,
       reranked_ids: null,
@@ -170,11 +186,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
   }
 
-  return jsonResponse({
+  const pickMs = Date.now() - tPick
+  timing.add('pick_llm', pickMs)
+  return timedJson(timing, t0, {
     pool,
     attempt_index: attemptIndex,
     reranked_ids: rerankedIds,
     ...(skipped ? { rerank_skipped: skipped } : {}),
-    timings: { v4_ms: v4Ms, pick_ms: Date.now() - tPick },
+    timings: { v4_ms: v4Ms, pick_ms: pickMs },
   })
 })

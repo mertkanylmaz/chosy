@@ -23,6 +23,8 @@
  * `flattenProviders` film detay ekranı için DEĞİŞMEDEN kalır.
  */
 
+import { isChannelAddonName, isMainBrand } from './watchProviderBrands';
+
 export interface ProviderLike {
   provider_id: number;
   provider_name: string;
@@ -96,29 +98,29 @@ export function dedupeChannelVariants<T extends ProviderLike>(list: readonly T[]
 }
 
 /**
- * flatrate > rent > buy sırasıyla `provider_id` tekrarsız + kanal varyantı
- * tekilleştirilmiş liste. `limit` verilirse tekilleştirmeden SONRA kesilir.
+ * Film detay ekranı listesi: şampiyon / Mood Gauntlet ile AYNI katman sıralaması
+ * (`orderProvidersWithOffer`, Faz 2-5). `display_priority` olmayan girdi 0 sayılır (girdi sırası korunur).
+ * `limit` verilirse tekilleştirmeden SONRA kesilir.
  */
 export function flattenProviders<T extends ProviderLike>(
   providers: ProviderBuckets<T>,
   limit?: number,
 ): T[] {
-  const out: T[] = [];
-  const seen = new Set<number>();
-  for (const bucket of [providers.flatrate, providers.rent, providers.buy]) {
-    for (const p of bucket ?? []) {
-      if (seen.has(p.provider_id)) continue;
-      seen.add(p.provider_id);
-      out.push(p);
-    }
-  }
-  const deduped = dedupeChannelVariants(out);
-  return limit === undefined ? deduped : deduped.slice(0, limit);
+  const withPriority = (list: readonly T[] | undefined): (T & RankedProviderLike)[] =>
+    (list ?? []).map((p, i) => ({ display_priority: (p as Partial<RankedProviderLike>).display_priority ?? i, ...p }));
+  const ordered = orderProviders<T & RankedProviderLike>({
+    flatrate: withPriority(providers.flatrate),
+    free: withPriority(providers.free),
+    ads: withPriority(providers.ads),
+    rent: withPriority(providers.rent),
+    buy: withPriority(providers.buy),
+  });
+  return limit === undefined ? ordered : ordered.slice(0, limit);
 }
 
 // ─── V-3 Tur G2 (C5): şampiyon ekranının ilk-N seçimi ────────────────────────
 
-/** Kova sırası: akış → ücretsiz → reklamlı → kiralık → satın alma. */
+/** Kova sırası (kova içi okuma sırası; SIRALAMA artık katmanlarla — bkz. `ProviderTier`). */
 const RANKED_BUCKET_ORDER = ['flatrate', 'free', 'ads', 'rent', 'buy'] as const;
 
 /** Kova içi TMDB `display_priority` sırası; kopya döner, girdi değişmez. */
@@ -126,62 +128,87 @@ function byPriority<T extends RankedProviderLike>(bucket: readonly T[] | undefin
   return [...(bucket ?? [])].sort((a, b) => a.display_priority - b.display_priority);
 }
 
-/** `provider_id` tekrarsız (ilk görülen kalır) + kanal varyantı tekilleştirmesi. */
-function uniqueProviders<T extends RankedProviderLike>(list: readonly T[]): T[] {
-  const seen = new Set<number>();
-  const out: T[] = [];
-  for (const p of list) {
-    if (seen.has(p.provider_id)) continue;
-    seen.add(p.provider_id);
-    out.push(p);
-  }
-  return dedupeChannelVariants(out);
-}
+export type OfferType = (typeof RANKED_BUCKET_ORDER)[number];
 
 /**
- * Tam sıralı liste: flatrate → free → ads → rent → buy, kova içinde
- * `display_priority`. Tekilleştirme (id + kanal varyantı) kesmeden ÖNCE
- * uygulanır — "See all" sayacı ve Watch Now görünürlüğü bu uzunluğu okur.
+ * Faz 2-5 (P0-1) sağlayıcı katmanı — TEK sıralama kuralı (şampiyon, Mood Gauntlet, film detayı):
+ *   1 = flatrate + ana marka (Netflix, Prime Video, Disney+, Max/HBO Max, Apple TV+, Hulu,
+ *       Paramount+, Peacock; TR: TOD, TV+, tabii, Exxen, Gain, MUBI)
+ *   2 = free / ads (hepsi)
+ *   3 = diğer flatrate (kanal eklentileri hariç)
+ *   4 = kanal eklentileri (flatrate'te "… Amazon Channel" / "… Apple TV Channel" / "… Roku Premium Channel")
+ *   5 = rent / buy
+ * Katman içinde TMDB `display_priority` artan.
  */
-export function orderProviders<T extends RankedProviderLike>(providers: ProviderBuckets<T>): T[] {
-  return uniqueProviders(RANKED_BUCKET_ORDER.flatMap((k) => byPriority(providers[k])));
+export type ProviderTier = 1 | 2 | 3 | 4 | 5;
+
+function tierOf(offer: OfferType, p: ProviderLike): ProviderTier {
+  if (offer === 'free' || offer === 'ads') return 2;
+  if (offer === 'rent' || offer === 'buy') return 5;
+  if (isChannelAddonName(p.provider_name)) return 4;
+  return isMainBrand(p) ? 1 : 3;
 }
-
-// ─── Faz 2-3: sağlayıcı + teklif türü (Watch now / logo etiketi) ─────────────
-
-export type OfferType = (typeof RANKED_BUCKET_ORDER)[number];
 
 export interface OfferedProvider<T extends RankedProviderLike> {
   provider: T;
-  /** Sağlayıcının İLK göründüğü kova (flatrate > free > ads > rent > buy). */
+  /** Sağlayıcının EN İYİ katmanı veren kovası. */
   offer: OfferType;
+  tier: ProviderTier;
 }
 
 /**
- * `orderProviders` ile AYNI sıra ve tekilleştirme; her sağlayıcıya ilk göründüğü kovanın
- * teklif türü eklenir.
+ * Tam sıralı liste (katman → display_priority → girdi sırası) + teklif türü.
+ * Tekilleştirme kesmeden ÖNCE: `provider_id`; ana sağlayıcı abonelik/ücretsizde VARKEN kanal
+ * varyantları elenir; ana yoksa grubun ilk (en iyi sıralı) varyantı kalır. Ana yalnız
+ * kiralık/satın almada ise varyant (flatrate) elenmez — gerçek bir abonelik yolunu gizlemeyiz.
  */
 export function orderProvidersWithOffer<T extends RankedProviderLike>(
   providers: ProviderBuckets<T>,
 ): OfferedProvider<T>[] {
-  const offerById = new Map<number, OfferType>();
-  for (const k of RANKED_BUCKET_ORDER) {
-    for (const p of byPriority(providers[k])) {
-      if (!offerById.has(p.provider_id)) offerById.set(p.provider_id, k);
+  const best = new Map<number, OfferedProvider<T> & { idx: number }>();
+  let idx = 0;
+  for (const offer of RANKED_BUCKET_ORDER) {
+    for (const provider of byPriority(providers[offer])) {
+      const tier = tierOf(offer, provider);
+      const cur = best.get(provider.provider_id);
+      if (!cur || tier < cur.tier) best.set(provider.provider_id, { provider, offer, tier, idx: cur ? cur.idx : idx });
+      idx += 1;
     }
   }
-  return orderProviders(providers).map((provider) => ({
-    provider,
-    offer: offerById.get(provider.provider_id) ?? 'buy',
-  }));
+  const all = [...best.values()].sort(
+    (a, b) => a.tier - b.tier || a.provider.display_priority - b.provider.display_priority || a.idx - b.idx,
+  );
+  // Streaming'de (tier ≤ 4) ana sağlayıcısı bulunan kanal varyantı grupları.
+  const streamingMains = new Set<string>();
+  for (const o of all) {
+    if (variantBase(o.provider.provider_name) === null && o.tier <= 4) streamingMains.add(normalize(o.provider.provider_name));
+  }
+  const seenVariantGroup = new Set<string>();
+  const out: OfferedProvider<T>[] = [];
+  for (const o of all) {
+    const base = variantBase(o.provider.provider_name);
+    if (base !== null) {
+      const g = normalize(base);
+      if (streamingMains.has(g) || seenVariantGroup.has(g)) continue;
+      seenVariantGroup.add(g);
+    }
+    out.push({ provider: o.provider, offer: o.offer, tier: o.tier });
+  }
+  return out;
 }
 
-/** Logo altı etiket grubu: free/ads birlikte "Ücretsiz". */
-export type OfferLabelKind = 'subscription' | 'free' | 'rent' | 'buy';
+/** Tam sıralı liste — `orderProvidersWithOffer`'ın sağlayıcı kısmı. */
+export function orderProviders<T extends RankedProviderLike>(providers: ProviderBuckets<T>): T[] {
+  return orderProvidersWithOffer(providers).map((o) => o.provider);
+}
 
-export function offerLabelKind(offer: OfferType): OfferLabelKind {
-  if (offer === 'flatrate') return 'subscription';
-  if (offer === 'free' || offer === 'ads') return 'free';
+/**
+ * Logo altı / CTA altı etiket grubu (A2). free ve ads AYRI; kanal eklentisi (K4) "addon".
+ */
+export type OfferLabelKind = 'subscription' | 'addon' | 'free' | 'ads' | 'rent' | 'buy';
+
+export function offerLabelKind(offer: OfferType, tier?: ProviderTier): OfferLabelKind {
+  if (offer === 'flatrate') return tier === 4 ? 'addon' : 'subscription';
   return offer;
 }
 
@@ -208,12 +235,8 @@ export function groupProviders<T extends RankedProviderLike>(
   providers: ProviderBuckets<T>,
 ): ProviderGroups<T> {
   return {
-    stream: uniqueProviders([
-      ...byPriority(providers.flatrate),
-      ...byPriority(providers.free),
-      ...byPriority(providers.ads),
-    ]),
-    rent: uniqueProviders(byPriority(providers.rent)),
-    buy: uniqueProviders(byPriority(providers.buy)),
+    stream: orderProviders({ flatrate: providers.flatrate, free: providers.free, ads: providers.ads }),
+    rent: orderProviders({ rent: providers.rent }),
+    buy: orderProviders({ buy: providers.buy }),
   };
 }

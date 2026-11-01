@@ -163,7 +163,7 @@
     "moodCardAdrenalineTitle": "Adrenaline",
     "moodCardAdrenalineSubtitle": "Get your heart racing",
     "moodCardLaughTitle": "Comedy",
-    "moodCardLaughSubtitle": "Guaranteed laughs",
+    "moodCardLaughSubtitle": "Easy laughs",
     "moodCardNostalgiaTitle": "Nostalgia",
     "moodCardNostalgiaSubtitle": "A trip to the good old days",
     "moodCardCozyTitle": "Cozy Night",
@@ -623,6 +623,7 @@
     "activatingTimeout": "Pro is taking a moment to activate. Try your search again shortly.",
     "errorInProgress": "Your search is still being prepared. Try again in a moment.",
     "inviteTitle": "Want a pick that matches your mood?",
+    "inviteTitleChampion": "Pick a mood, get four new films now",
     "paywallTitleDeck": "Keep exploring this mood.",
     "paywallTitleQuota": "Ready for another search?",
     "paywallBenefit1": "Every pick in every search",
@@ -672,6 +673,7 @@
   "authPrompt": {
     "title": "Don't lose tonight's pick",
     "body": "Every night's pick and your watchlist stay saved here — free, no subscription needed.",
+    "signingIn": "Signing in…",
     "notNow": "Not now"
   },
   "moodGauntlet": {
@@ -721,8 +723,11 @@
     "justPick": "Just pick for me",
     "noneSub": "4 new films, same mood",
     "findOn": "Find on %{provider}",
+    "openIn": "Open in %{provider}",
+    "whereToWatch": "Where to watch",
     "offerHint": {
-      "subscription": "Included with subscription",
+      "subscription": "With subscription",
+      "addon": "Add-on subscription",
       "free": "Free to watch",
       "ads": "Free with ads",
       "rent": "Rent or buy",
@@ -1325,6 +1330,8 @@
       "action_save_for_later": "Save for Later",
       "action_save_done": "Saved",
       "action_save_error": "Couldn't save. Try again.",
+      "action_save_removed": "Removed from Saved",
+      "action_remove_error": "Couldn't remove. Try again.",
       "action_share": "Share",
       "share_card_title": "SPOTLIGHT · FILM %{n}",
       "share_card_title_no_n": "SPOTLIGHT",
@@ -1747,12 +1754,6 @@
       "regionCurrent": "Selected",
       "group": {
         "stream": "Stream",
-        "rent": "Rent",
-        "buy": "Buy"
-      },
-      "offer": {
-        "subscription": "Subscription",
-        "free": "Free",
         "rent": "Rent",
         "buy": "Buy"
       }

@@ -9,6 +9,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Sentry from '@sentry/react-native';
 
+import { GAUNTLET_EDGE_REGION } from '../constants/edgeRegion';
 import { TasteProfile, FilmFilters } from '../types';
 import { Film } from '../types/film';
 import { minRatingThreshold, regionsToCulturalContext, yearRangeToEra } from '../utils/filmFilters';
@@ -819,9 +820,10 @@ async function callRerankFilms(
       count,
     };
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/rerank-films`, {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/rerank-films?forceFunctionRegion=${GAUNTLET_EDGE_REGION}`, {
       method: 'POST',
       headers: {
+        'x-region': GAUNTLET_EDGE_REGION,
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
         apikey: SUPABASE_ANON_KEY,

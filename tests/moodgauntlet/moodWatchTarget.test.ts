@@ -34,13 +34,13 @@ Deno.test('flatrate saglayici: sagalayicinin resmi arama URL\'si (baslik kodlu),
   assertEquals(r.providerFound, true)
 })
 
-Deno.test('oncelik: flatrate > free > ads > rent > buy (rent listede once olsa da)', () => {
+Deno.test('oncelik (Faz 2-5 katmanlari): K1 ana marka flatrate > free > ads > rent > buy (rent listede once olsa da)', () => {
   const order = orderProvidersWithOffer({
-    buy: [prov(1, 1)], rent: [prov(2, 1)], ads: [prov(3, 1)], free: [prov(4, 1)], flatrate: [prov(5, 1)],
+    buy: [prov(1, 1)], rent: [prov(2, 1)], ads: [prov(3, 1)], free: [prov(4, 1)], flatrate: [prov(5, 1, 'Netflix')],
   }).map((o) => `${o.provider.provider_id}:${o.offer}`)
   assertEquals(order, ['5:flatrate', '4:free', '3:ads', '2:rent', '1:buy'])
   assertEquals(offerLabelKind('flatrate'), 'subscription')
-  assertEquals(offerLabelKind('ads'), 'free')
+  assertEquals(offerLabelKind('ads'), 'ads')
   assertEquals(offerLabelKind('free'), 'free')
   assertEquals(offerLabelKind('rent'), 'rent')
   // ayni saglayici hem flatrate hem rent: ilk (flatrate) kova sayilir
@@ -83,7 +83,7 @@ Deno.test('tabloda olmayan saglayici (ör. TR TOD) → JustWatch film aramasi', 
   assertEquals(r.kind, 'justwatch')
   assertEquals(r.url, 'https://www.justwatch.com/tr/arama?q=Am%C3%A9lie%20%26%20Co')
   assertEquals(r.providerFound, true)
-  assertEquals(r.providerName, 'TOD TV')
+  assertEquals(r.providerName, 'TOD')
   assertEquals(justWatchSearchUrl('US', 'A'), 'https://www.justwatch.com/us/search?q=A')
   assertEquals(justWatchSearchUrl(' gb ', 'A'), 'https://www.justwatch.com/uk/search?q=A')
 })
@@ -131,7 +131,9 @@ Deno.test('ResultStage baglantisi: hedef cozulur, universal link, hata sessiz de
   assertMatch(src, /openFilm\(champion\.id\)/)
   assertMatch(src, /disabled=\{providers\.state === 'loading'\}/)
   // etiket: "Find on X" (TR: "Şurada bul: X"); film sayfasına derin bağlantı yok → "Watch on" yok
-  assertMatch(src, /moodGauntlet\.findOn/)
+  assertMatch(src, /moodGauntlet\.openIn/)
+  assertMatch(src, /moodGauntlet\.whereToWatch/)
+  assertMatch(src, /target\.kind === 'provider_direct'/)
   assert(!/moodGauntlet\.(watchOn|rentOn|buyOn)/.test(src))
   assertMatch(src, /moodGauntlet\.offerHint\./)
   // olaylar: provider_clicked + dönüşte app_returned_after_provider (30 dk)
@@ -148,8 +150,12 @@ Deno.test('locales: Find on CTA, teklif turu ipucu ve bolge notu en+tr', () => {
   const tr = JSON.parse(read('locales/tr.json'))
   assertEquals(en.moodGauntlet.findOn, 'Find on %{provider}')
   assertEquals(tr.moodGauntlet.findOn, 'Şurada bul: %{provider}')
-  assertEquals(en.moodGauntlet.offerHint, { subscription: 'Included with subscription', free: 'Free to watch', ads: 'Free with ads', rent: 'Rent or buy', buy: 'Rent or buy' })
-  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelikte var', free: 'Ücretsiz izlenir', ads: 'Reklamlı ücretsiz', rent: 'Kirala veya satın al', buy: 'Kirala veya satın al' })
+  assertEquals(en.moodGauntlet.openIn, 'Open in %{provider}')
+  assertEquals(tr.moodGauntlet.openIn, '%{provider} ile aç')
+  assertEquals(en.moodGauntlet.whereToWatch, 'Where to watch')
+  assertEquals(tr.moodGauntlet.whereToWatch, 'Nerede izlenir')
+  assertEquals(en.moodGauntlet.offerHint, { subscription: 'With subscription', addon: 'Add-on subscription', free: 'Free to watch', ads: 'Free with ads', rent: 'Rent or buy', buy: 'Rent or buy' })
+  assertEquals(tr.moodGauntlet.offerHint, { subscription: 'Abonelikle', addon: 'Ek abonelik', free: 'Ücretsiz izlenir', ads: 'Reklamlı ücretsiz', rent: 'Kirala veya satın al', buy: 'Kirala veya satın al' })
   for (const k of ['watchOn', 'rentOn', 'buyOn', 'rentBuyOn']) {
     assert(!(k in en.moodGauntlet) && !(k in tr.moodGauntlet), 'eski CTA anahtari kalmamali: ' + k)
   }
@@ -158,6 +164,6 @@ Deno.test('locales: Find on CTA, teklif turu ipucu ve bolge notu en+tr', () => {
   assertEquals(tr.gauntlet.watchProviders.availabilityIn, '%{country} için')
   assertEquals(en.gauntlet.watchProviders.change, 'Change')
   assertEquals(tr.gauntlet.watchProviders.change, 'Değiştir')
-  assertEquals(en.gauntlet.watchProviders.offer, { subscription: 'Subscription', free: 'Free', rent: 'Rent', buy: 'Buy' })
-  assertEquals(tr.gauntlet.watchProviders.offer, { subscription: 'Abonelik', free: 'Ücretsiz', rent: 'Kirala', buy: 'Satın al' })
+  // A2: logo altı etiketler tek sözlükten (moodGauntlet.offerHint) okunur
+  assert(!('offer' in en.gauntlet.watchProviders) && !('offer' in tr.gauntlet.watchProviders))
 })
