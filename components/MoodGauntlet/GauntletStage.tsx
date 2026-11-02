@@ -27,7 +27,7 @@ import { PosterTile, type PosterTileAnimationState } from '@/components/gauntlet
 import { RoundIndicator } from '@/components/gauntlet/RoundIndicator';
 import { DISSOLVE_DURATION, MOOD_MOTION } from '@/constants/design/motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { reasonFor, type MoodNotice, type MoodSet } from '@/services/moodGauntlet';
+import { descriptionFor, reasonFor, type MoodNotice, type MoodSet } from '@/services/moodGauntlet';
 import { hapticSelection } from '@/utils/haptics';
 import type { FilmDims } from '@/utils/moodFilmFacts';
 import { toGauntletFilm } from '@/utils/moodGauntletFilm';
@@ -170,7 +170,15 @@ export function GauntletStage({
               </Text>
             </View>
           )}
-          <RoundIndicator current={pair.round} />
+          <RoundIndicator current={pair.round} showLabel={false} />
+          {/* Açık tur metni; RoundIndicator kendi tam a11y etiketini taşır, burada tekrar okunmaz. */}
+          <Text
+            style={styles.roundText}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            {t('moodGauntlet.roundOf', { current: pair.round, total: 3 })}
+          </Text>
           <View style={styles.strip} accessibilityLabel={t('moodGauntlet.stripA11y')}>
             {stripItems(flow).map((item) => {
               const row = set.four.find((f) => f.id === item.id);
@@ -202,7 +210,11 @@ export function GauntletStage({
           {sides.map((id) => {
             const film = films.get(id);
             if (!film) return null;
-            const reason = reasonFor(reasons, id);
+            // Gerekçe yoksa filmin kendi özeti: iki kart da dolu, boş alan yok (yükleme bitince).
+            // Yüklenirken özet gösterilmez (gerekçe gelince metin değişip titrerdi): iskelet çizilir.
+            const reason = reasonsLoading
+              ? reasonFor(reasons, id)
+              : descriptionFor(reasons, id, set.four.find((r) => r.id === id)?.overview);
             return (
               <View key={id} style={styles.pairCol}>
                 <PosterTile
@@ -226,8 +238,7 @@ export function GauntletStage({
                     >
                       {reason}
                     </Animated.Text>
-                  ) : reasonsLoading ? (
-                    <View style={styles.reasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
+                  ) : reasonsLoading ? (                    <View style={styles.reasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
                       <View style={styles.skeletonLine} />
                       <View style={[styles.skeletonLine, styles.skeletonLineShort]} />
                     </View>

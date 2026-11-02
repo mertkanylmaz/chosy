@@ -135,7 +135,8 @@ Deno.test('poster dokunusu: senkron kilit (hizli/cift dokunus), sari kontur anli
   // gecis sirasinda diger eylemler de kapali
   assertMatch(g, /label=\{t\('moodGauntlet\.noneCta'\)\} onPress=\{onNone\} disabled=\{picked !== null\}/)
   // ilerleme gostergesi
-  assertMatch(g, /<RoundIndicator current=\{pair\.round\} \/>/)
+  // Faz 2-10a: sayaç etiketi kapalı, yerine açık "Round N of 3" metni
+  assertMatch(g, /<RoundIndicator current=\{pair\.round\} showLabel=\{false\} \/>/)
 })
 
 Deno.test('scroll: turdan tura sifirlanir (GauntletStage), yeni oturumda EntryStage en ustten; sonuc ekrani korunur', () => {

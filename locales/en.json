@@ -719,6 +719,7 @@
     "fourIntroCta": "Start choosing",
     "tapHint": "Tap the one you'd rather watch",
     "justPick": "Just pick for me",
+    "roundOf": "Round %{current} of %{total}",
     "noneSub": "4 new films, same mood",
     "whereToWatch": "Where to watch",
     "notStreaming": "Not streaming in %{country} right now",

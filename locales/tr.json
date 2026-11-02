@@ -719,6 +719,7 @@
     "fourIntroCta": "Seçmeye başla",
     "tapHint": "İzlemeyi tercih ettiğine dokun",
     "justPick": "Sen seç",
+    "roundOf": "Tur %{current} / %{total}",
     "noneSub": "Aynı mood, 4 yeni film",
     "whereToWatch": "Nerede izlenir",
     "notStreaming": "Şu an %{country} için yayında değil",

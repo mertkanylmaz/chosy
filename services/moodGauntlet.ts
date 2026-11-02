@@ -208,6 +208,21 @@ export function reasonFor(reasons: Record<string, string> | undefined, id: strin
 }
 
 /**
+ * Kart açıklaması: LLM gerekçesi varsa o; yoksa (sunucu koruması boşalttı / rerank düştü) filmin kendi
+ * `overview` metni. Uydurma yok — yalnız veritabanındaki özet. İkisi de yoksa null.
+ */
+export function descriptionFor(
+  reasons: Record<string, string> | undefined,
+  id: string,
+  overview: string | null | undefined,
+): string | null {
+  const reason = reasonFor(reasons, id);
+  if (reason !== null) return reason;
+  const o = typeof overview === 'string' ? overview.trim() : '';
+  return o.length > 0 ? o : null;
+}
+
+/**
  * Dışlama birleşimi. Öncelik (500 sınırı aşılırsa sondan kesilir): oturumda gösterilenler →
  * kişisel tekrar dışlama → watchlist/izlenenler. Tekrarsız, sıra korunur.
  */

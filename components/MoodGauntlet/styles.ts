@@ -76,6 +76,7 @@ export const styles = StyleSheet.create({
   tapHint: { ...type.callout, color: color.text.secondary, textAlign: 'center' },
   pairRow: { flexDirection: 'row', gap: space.md, width: '100%', marginTop: space.base },
   pairCol: { flex: 1, gap: space.sm },
+  roundText: { ...type['label-caps'], color: color.text.secondary },
   /** Gerekçe: 14pt/19, ≤4 satır, taşarsa kuyrukta "…". */
   reason: { fontFamily: type.callout.fontFamily, fontSize: 14, lineHeight: 19, color: color.text.primarySoft },
   /** 4 satır × 19pt taban; Dynamic Type büyüyünce slot da büyür (sabit height metni çipin üstüne taşırırdı). */
