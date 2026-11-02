@@ -11,7 +11,7 @@
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { BookmarkSimple, ListBullets, Play, ShareNetwork } from 'phosphor-react-native';
+import { BookmarkSimple, Play, ShareNetwork } from 'phosphor-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Linking, Share, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -24,9 +24,14 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { PrimaryAction } from '@/components/gauntlet/PrimaryAction';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
+import { ProvidersSheet } from '@/components/gauntlet/WatchProviders/ProvidersSheet';
+import {
+  WatchOptionsAttribution,
+  WatchOptionsCard,
+  type WatchOptionsCardState,
+} from '@/components/gauntlet/WatchProviders/WatchOptionsCard';
 import { RegionPickerSheet } from '@/components/gauntlet/WatchProviders/RegionPickerSheet';
 import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
 import { watchRegionName } from '@/constants/watchRegions';
@@ -220,6 +225,7 @@ export function ResultStage({
   // Faz 2-6: mod bölge/sağlayıcı verisinden her render'da türetilir → bölge değişince CTA, satır ve
   // etiketler birlikte yeniden hesaplanır. Logo altı etiketler WatchProvidersRow'da kalır.
   const ctaMode = resultCtaMode(providers.state, target);
+  const showCard = ctaMode === 'loading' || ctaMode === 'watch';
 
   /**
    * Where to watch (Faz 2-8): CTA dışarı gitmez — uygulama içi native sheet'i açar. Sağlayıcı satırları
@@ -335,14 +341,12 @@ export function ResultStage({
       )}
 
       <View style={styles.ctaBlock}>
-        {(ctaMode === 'loading' || ctaMode === 'watch') && (
-          <PrimaryAction
-            label={t('moodGauntlet.whereToWatch')}
+        {/* Faz 2-10a: loading/ok/error -> TEK kart (sarı CTA, "WHERE TO WATCH" başlığı, "See all" yok). */}
+        {showCard && (
+          <WatchOptionsCard
+            state={providers.state as WatchOptionsCardState}
+            providers={providers.providers}
             onPress={handleWatchNow}
-            variant="gold"
-            disabled={ctaMode === 'loading'}
-            busy={ctaMode === 'loading'}
-            trailingIcon={<ListBullets size={size.iconInline} color={color.surface.base} weight="bold" />}
           />
         )}
         {ctaMode === 'unavailable' && (
@@ -370,7 +374,7 @@ export function ResultStage({
             />
           </>
         )}
-        {ctaMode !== 'unavailable' && (
+        {ctaMode === 'hidden' && (
           <View style={styles.providersSlot}>
             <WatchProvidersRow
               state={providers.state}
@@ -384,6 +388,19 @@ export function ResultStage({
               showOfferLabels
             />
           </View>
+        )}
+        {/* TEK ProvidersSheet örneği (where_to_watch_opened çift tetiklenmez); ülke seçici sheet'in İÇİNDE. */}
+        {showCard && (
+          <ProvidersSheet
+            visible={whereOpen}
+            onClose={() => setWhereOpen(false)}
+            state={providers.state}
+            providers={providers.providers}
+            onRetry={providers.retry}
+            filmId={champion.id}
+            surface="mood_result"
+            attribution={<WatchOptionsAttribution />}
+          />
         )}
         <RegionPickerSheet visible={regionOpen} onClose={() => setRegionOpen(false)} />
       </View>

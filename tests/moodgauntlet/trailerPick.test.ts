@@ -50,7 +50,7 @@ Deno.test('düğme gizleme: anahtar null iken Trailer düğmesi çizilmez; 2-4b/
   const src = read('components/MoodGauntlet/ResultStage.tsx')
   assert(/\{trailerKey !== null && \(\s*<TouchableOpacity/.test(src)) // Faz 2-7: Save · Trailer · Share tek satırda
   assert(src.includes("ctaMode === 'loading' || ctaMode === 'watch'"))
-  assert(src.includes('variant="gold"'))
+  assert(src.includes('<WatchOptionsCard')) // Faz 2-10a: sari CTA yerine tek kart
   assert(/useProviderReturnTracking\(\)/.test(src) && /useTrailerReturnTracking\(\)/.test(src))
   assert(read('components/MoodGauntlet/useTrailer.ts').includes('useState<string | null>(memo.get(k) ?? null)'))
 })

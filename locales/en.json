@@ -1742,6 +1742,11 @@
       "seeAll": "See all",
       "seeAllA11y": "See all %{count} watch options",
       "sheetTitle": "Where to watch",
+      "watchOptions": {
+        "title": "Watch options",
+        "a11y": "Watch options, %{region}, %{count} services",
+        "errorTitle": "Couldn't load watch options"
+      },
       "availabilityIn": "Availability in %{country}",
       "change": "Change",
       "changeA11y": "Change country",

@@ -57,7 +57,7 @@ Deno.test('Mary and Max: unavailable modunda sarı CTA yok + Save for later; var
   const src = read('components/MoodGauntlet/ResultStage.tsx')
   assert(!/moodGauntlet\.offerHint/.test(src), 'CTA altındaki eski ipucu kalmamalı')
   assertMatch(src, /ctaMode === 'unavailable'/)
-  assertMatch(src, /\(ctaMode === 'loading' \|\| ctaMode === 'watch'\) && \(\s*<PrimaryAction/)
+  assertMatch(src, /showCard && \(\s*<WatchOptionsCard/) // Faz 2-10a: sari CTA yerine tek kart
   assertMatch(src, /variant="filled"/) // beyaz Save for later
   assertMatch(src, /gauntlet\.saveForLater\.action/)
   assertMatch(src, /RegionPickerSheet/)

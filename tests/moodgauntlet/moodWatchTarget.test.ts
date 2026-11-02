@@ -109,9 +109,8 @@ Deno.test('ResultStage: CTA sheet acar, dis baglanti uretmez; yukleniyorken pasi
   assertMatch(src, /resolveWatchTarget\(\{/)
   assertMatch(src, /pickActionEvent\(\s*'watch_now',\s*target\.providerFound,/)
   assertMatch(src, /setWhereOpen\(true\)/)
-  assertMatch(src, /sheetOpen=\{whereOpen\}/)
-  assertMatch(src, /disabled=\{ctaMode === 'loading'\}/)
-  assertMatch(src, /moodGauntlet\.whereToWatch/)
+  assertMatch(src, /visible=\{whereOpen\}/) // Faz 2-10a: sheet dogrudan ResultStage'de, tek ornek
+  assertMatch(src, /showCard = ctaMode === 'loading' \|\| ctaMode === 'watch'/) // loading: kart iskeleti, dokunulmaz
   // yalniz fragman Linking kullanir (Karar 10); saglayici/JustWatch/TMDB adresi yok
   assertEquals((src.match(/Linking\.openURL\(/g) ?? []).length, 1)
   assertMatch(src, /Linking\.openURL\(trailerUrl\(trailerKey\)\)/)

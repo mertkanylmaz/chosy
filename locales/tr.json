@@ -1742,6 +1742,11 @@
       "seeAll": "Tümü",
       "seeAllA11y": "%{count} izleme seçeneğinin tümünü gör",
       "sheetTitle": "Nerede izlenir",
+      "watchOptions": {
+        "title": "İzleme seçenekleri",
+        "a11y": "İzleme seçenekleri, %{region}, %{count} servis",
+        "errorTitle": "İzleme seçenekleri yüklenemedi"
+      },
       "availabilityIn": "%{country} için",
       "change": "Değiştir",
       "changeA11y": "Ülkeyi değiştir",

@@ -251,7 +251,7 @@ Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinner
   assert(!/ActivityIndicator/.test(status), 'minik spinner kalkti')
   assert(!/PHASE_KEYS/.test(status), 'Faz 2-9a: asama satiri kalkti, tek durum satiri')
   const result = read('components/MoodGauntlet/ResultStage.tsx')
-  assertMatch(result, /label=\{t\('moodGauntlet\.whereToWatch'\)\}\s+onPress=\{handleWatchNow\}\s+variant="gold"/)
+  assertMatch(result, /<WatchOptionsCard[\s\S]*?onPress=\{handleWatchNow\}/) // Faz 2-10a: sari CTA yerine tek kart
   assertMatch(result, /disabled=\{!canLighter\}/)
   assertMatch(result, /disabled=\{!canStronger\}/)
   assertMatch(result, /<View style=\{styles\.providersSlot\}>/)

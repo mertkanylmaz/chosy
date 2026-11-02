@@ -68,13 +68,13 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
   }
   const order = [
     'styles.resultMood', 'styles.hero', 'styles.resultTitle', 'styles.resultReason', '<FilmChips', 'styles.insight',
-    "label={t('moodGauntlet.whereToWatch')}", '<WatchProvidersRow', 'styles.secondaryRow', "t('moodGauntlet.adjustTitle')", "t('moodGauntlet.backupsTitle')",
+    '<WatchOptionsCard', '<WatchProvidersRow', 'styles.secondaryRow', "t('moodGauntlet.adjustTitle')", "t('moodGauntlet.backupsTitle')",
   ].map(idx)
   assertEquals(order, [...order].sort((a, b) => a - b))
   // Another four ayri buyuk dugme degil, ucuncu cip; tek birincil CTA
   assertMatch(result, /<AdjustChip label=\{t\('moodGauntlet\.anotherFour'\)\} onPress=\{onAnotherFour\} \/>/)
   assert(!/OutlineAction/.test(result), 'ayrı Another four / outline dugmesi kalmamali')
-  assertEquals((result.match(/<PrimaryAction/g) ?? []).length, 1)
+  assertEquals((result.match(/<PrimaryAction/g) ?? []).length, 0) // Faz 2-10a: sari CTA yerine WatchOptionsCard
   // Save durumu dugmede: "✓ Saved", ek satir yok; hata icin sabit yer
   assertMatch(result, /saved \? t\('moodGauntlet\.savedShort'\) : t\('moodGauntlet\.save'\)/)
   assertMatch(result, /<View style=\{styles\.noticeSlot\}>/)
