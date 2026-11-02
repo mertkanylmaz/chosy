@@ -47,13 +47,29 @@ function stripAdsSuffix(name: string): string {
  */
 const CHANNEL_SUFFIX_RE = /\s+(?:roku premium channel|roku channel|amazon channel|apple tv channel|prime video channel)$/i;
 
+const ARTICLES: ReadonlySet<string> = new Set(['the', 'a', 'an']);
+
+/**
+ * Kanal eklentisi soneki atılmış TABAN adı; ad eklenti değilse null.
+ * Sonek yalnız kalan taban en az bir artikel OLMAYAN sözcük içeriyorsa atılır: "The Roku Channel"
+ * bağımsız bir servistir (taban "The" olurdu), "Lionsgate+ Roku Premium Channel" ise eklentidir.
+ * `watchProviderList.variantBase` da bunu kullanır — iki yerde farklı davranış olmasın.
+ */
+export function channelAddonBase(name: string): string | null {
+  const trimmed = name.trim();
+  if (!CHANNEL_SUFFIX_RE.test(trimmed)) return null;
+  const base = trimmed.replace(CHANNEL_SUFFIX_RE, '').trim();
+  const hasRealWord = base.split(/\s+/).some((w) => w.length > 0 && !ARTICLES.has(w.toLowerCase()));
+  return hasRealWord ? base : null;
+}
+
 /** Ad bir kanal eklentisi mi ("Lionsgate+ Amazon Channel")? */
 export function isChannelAddonName(name: string): boolean {
-  return CHANNEL_SUFFIX_RE.test(name.trim());
+  return channelAddonBase(name) !== null;
 }
 
 function stripChannelSuffix(name: string): string {
-  return name.trim().replace(CHANNEL_SUFFIX_RE, '').trim();
+  return channelAddonBase(name) ?? name.trim();
 }
 
 /**

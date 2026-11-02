@@ -23,7 +23,7 @@
  * `flattenProviders` film detay ekranı için DEĞİŞMEDEN kalır.
  */
 
-import { brandOf, dedupeByBrand, isChannelAddonName, isMainBrand } from './watchProviderBrands';
+import { brandOf, channelAddonBase, dedupeByBrand, isChannelAddonName, isMainBrand } from './watchProviderBrands';
 
 export interface ProviderLike {
   provider_id: number;
@@ -44,15 +44,6 @@ export interface RankedProviderLike extends ProviderLike {
   display_priority: number;
 }
 
-/** Küçük harfle karşılaştırılır; uzun olan önce (Roku Premium > Roku). */
-const CHANNEL_SUFFIXES = [
-  'roku premium channel',
-  'roku channel',
-  'amazon channel',
-  'apple tv channel',
-  'prime video channel',
-] as const;
-
 /** "MGM Plus" ve "MGM+" aynı anahtara iner. */
 function normalize(name: string): string {
   return name
@@ -61,15 +52,9 @@ function normalize(name: string): string {
     .replace(/[^a-z0-9+]/g, '');
 }
 
-/** Ad bir kanal varyantıysa ana sağlayıcı adını, değilse null döner. */
+/** Ad bir kanal varyantıysa ana sağlayıcı adını, değilse null döner (kural: `channelAddonBase`). */
 function variantBase(name: string): string | null {
-  const lower = name.trim().toLowerCase();
-  for (const suffix of CHANNEL_SUFFIXES) {
-    if (lower.endsWith(` ${suffix}`)) {
-      return name.trim().slice(0, lower.length - suffix.length).trim();
-    }
-  }
-  return null;
+  return channelAddonBase(name);
 }
 
 export function dedupeChannelVariants<T extends ProviderLike>(list: readonly T[]): T[] {
