@@ -19,6 +19,14 @@ export interface FilmDims {
   energy: number | null;
 }
 
+/**
+ * Faz 2-12a: `energy_level` DUYGUSAL yoğunluk değil, filmin ENERJİ (hareketlilik / uyarılma) eksenidir —
+ * profil prompt'u: "Manchester by the Sea … energy very low", "Whiplash … energy high"
+ * (services/filmProfilePrompt.ts). Ağır bir dram düşük, neşeli bir spor komedisi yüksek enerji çıkar.
+ * Duygusal ağırlık ayrı alanlarda (`emotional_state`, `thematic_depth`) durur ve çipe KARIŞTIRILMAZ.
+ * Çip etiketleri bu yüzden "Low / Mid / High energy" (Gentle / Intense duygusal ton iddia ederdi).
+ * Band anahtarları (gentle/moderate/intense) kararlılık için aynen kalır.
+ */
 /** Yoğunluk bantları (energy_level): < 0.45 sakin, < 0.70 orta, ≥ 0.70 yoğun. */
 export const ENERGY_GENTLE_MAX = 0.45;
 export const ENERGY_MODERATE_MAX = 0.7;

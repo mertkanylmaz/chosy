@@ -740,9 +740,9 @@
       "fast": "Fast pace"
     },
     "chipEnergy": {
-      "gentle": "Gentle",
-      "moderate": "Moderate",
-      "intense": "Intense"
+      "gentle": "Low energy",
+      "moderate": "Mid energy",
+      "intense": "High energy"
     },
     "insight": {
       "calmerAll": "You picked the quieter film every time",
