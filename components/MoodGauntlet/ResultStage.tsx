@@ -49,6 +49,7 @@ import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, trailerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
 import { formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
+import { revealDelays } from '@/utils/resultReveal';
 import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
 import { resultCtaMode } from '@/utils/moodResultCta';
 import { resolveWatchTarget } from '@/utils/moodWatchTarget';
@@ -164,23 +165,29 @@ export function ResultStage({
   const posterScale = useSharedValue(reduced ? 1 : 1.04);
   const titleOpacity = useSharedValue(0);
   const metaOpacity = useSharedValue(0);
+  // Gerekçe, çipler, CTA ve altı: meta'dan sonra belirir. Yalnız opaklık — dokunuş hiç engellenmez.
+  const detailsOpacity = useSharedValue(0);
   useEffect(() => {
     if (reduced) {
       const fade = { duration: REDUCED_MOTION_DURATION.crossFade };
       posterOpacity.value = withTiming(1, fade);
       titleOpacity.value = withTiming(1, fade);
       metaOpacity.value = withTiming(1, fade);
+      detailsOpacity.value = withTiming(1, fade);
       return;
     }
+    const delays = revealDelays(BLACKOUT_SEQUENCE.titleDelay, BLACKOUT_SEQUENCE.metaDelay, false);
     const fade = { duration: DISSOLVE_DURATION.newContender, easing: EASE_OUT_QUART };
     posterOpacity.value = 0;
     titleOpacity.value = 0;
     metaOpacity.value = 0;
+    detailsOpacity.value = 0;
     posterScale.value = 1.04;
     posterOpacity.value = withTiming(1, fade);
     posterScale.value = withTiming(1, fade);
-    titleOpacity.value = withDelay(BLACKOUT_SEQUENCE.titleDelay, withTiming(1, fade));
-    metaOpacity.value = withDelay(BLACKOUT_SEQUENCE.titleDelay + BLACKOUT_SEQUENCE.metaDelay, withTiming(1, fade));
+    titleOpacity.value = withDelay(delays.title, withTiming(1, fade));
+    metaOpacity.value = withDelay(delays.meta, withTiming(1, fade));
+    detailsOpacity.value = withDelay(delays.details, withTiming(1, fade));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [champion.id, reduced]);
   const posterStyle = useAnimatedStyle(() => ({
@@ -189,6 +196,7 @@ export function ResultStage({
   }));
   const titleStyle = useAnimatedStyle(() => ({ opacity: titleOpacity.value }));
   const metaStyle = useAnimatedStyle(() => ({ opacity: metaOpacity.value }));
+  const detailsStyle = useAnimatedStyle(() => ({ opacity: detailsOpacity.value }));
 
   const track = useCallback((a: MoodPickAction) => trackMoodEvent(pickActionEvent(a)), []);
   const poster = normalizePosterUrl(champion.poster_url);
@@ -322,6 +330,7 @@ export function ResultStage({
         {champion.title}
       </Animated.Text>
       {meta.length > 0 && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}
+      <Animated.View style={detailsStyle}>
       {reason !== null && (
         <Animated.Text
           key={reason}
@@ -483,6 +492,7 @@ export function ResultStage({
           </View>
         </>
       )}
+      </Animated.View>
     </ScrollView>
   );
 }

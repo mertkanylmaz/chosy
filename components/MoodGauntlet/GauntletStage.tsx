@@ -136,6 +136,18 @@ export function GauntletStage({
     [onChoose, reduced],
   );
 
+  /**
+   * Seçim geçişi sürerken (poster dokunuşu ile zamanlayıcı arasında) "Hiçbiri" / "Sen seç" aynı karede
+   * gelirse `disabled` (state) henüz yansımamıştır: ref kilidi ikinci akışı keser → tek ilerleme.
+   * Kilidi KURMAZ (neither aynı turda kalır; kilit yalnız poster seçiminde kurulur).
+   */
+  const guardedNone = (): void => {
+    if (!pickLock.current) onNone();
+  };
+  const guardedJustPick = (): void => {
+    if (!pickLock.current) onJustPick();
+  };
+
   if (!pair) return null;
 
   if (showIntro) {
@@ -256,9 +268,9 @@ export function GauntletStage({
           )}
           {/* 1. sıradakini şampiyon yapar, sonraki turlarda elenen film olur */}
           {isFirstRound && (
-            <OutlineAction label={t('moodGauntlet.justPick')} onPress={onJustPick} disabled={picked !== null} />
+            <OutlineAction label={t('moodGauntlet.justPick')} onPress={guardedJustPick} disabled={picked !== null} />
           )}
-          <OutlineAction label={t('moodGauntlet.noneCta')} onPress={onNone} disabled={picked !== null} />
+          <OutlineAction label={t('moodGauntlet.noneCta')} onPress={guardedNone} disabled={picked !== null} />
           <Text style={styles.noneSub}>{t('moodGauntlet.noneSub')}</Text>
         </View>
       </Animated.View>

@@ -133,7 +133,7 @@ Deno.test('poster dokunusu: senkron kilit (hizli/cift dokunus), sari kontur anli
   assertMatch(read('constants/design/motion.ts'), /pickSettle: DISSOLVE_DURATION\.remainingPoster/)
   assertEquals(read('constants/design/motion.ts').match(/remainingPoster: (\d+)/)![1], '280')
   // gecis sirasinda diger eylemler de kapali
-  assertMatch(g, /label=\{t\('moodGauntlet\.noneCta'\)\} onPress=\{onNone\} disabled=\{picked !== null\}/)
+  assertMatch(g, /label=\{t\('moodGauntlet\.noneCta'\)\} onPress=\{guardedNone\} disabled=\{picked !== null\}/)
   // ilerleme gostergesi
   // Faz 2-10a: sayaç etiketi kapalı, yerine açık "Round N of 3" metni
   assertMatch(g, /<RoundIndicator current=\{pair\.round\} showLabel=\{false\} \/>/)
