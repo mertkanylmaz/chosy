@@ -161,3 +161,15 @@ Deno.test('gunluk gauntlet\'e dokunulmadi: types/gauntlet.ts ve ChampionReveal d
   const film = read('utils/moodGauntletFilm.ts')
   assertMatch(film, /import type \{ GauntletFilm \} from '\.\.\/types\/gauntlet'/)
 })
+
+Deno.test('Faz 2-9c: karsilastirma kartlarinda baslik 2 satirlik sabit yukseklik, erisilebilirlik etiketi tam baslik', () => {
+  const pairBlock = gauntlet.slice(gauntlet.indexOf('styles.pairRow'), gauntlet.indexOf('styles.gBottom'))
+  assertMatch(pairBlock, /<PosterTile[\s\S]*?metaMode="yearOnly"\s*titleLines=\{2\}/)
+  const tile = read('components/gauntlet/PosterTile/index.tsx')
+  assertMatch(tile, /numberOfLines=\{2\}\s*ellipsizeMode="tail"/)
+  assertMatch(tile, /titleLines === 2 && styles\.titleTwoLines/)
+  // a11y etiketi kesilmemis film.title'dan kurulur (kesme yalniz gorsel)
+  assertMatch(tile, /accessibilityLabel=\{t\('gauntlet\.posterAccessibilityLabel', \{\s*title: film\.title,/)
+  // Just pick yalniz 1. tur: gerekce yorumu kayitta
+  assertMatch(gauntlet, /sonraki turlarda elenen film olur \*\/\}\n\s*\{isFirstRound && \(/)
+})

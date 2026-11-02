@@ -208,7 +208,9 @@ export function GauntletStage({
                   animationState={tileState(id)}
                   onPress={() => handlePick(id)}
                   metaMode="yearOnly"
+                  titleLines={2}
                 />
+                {/* Faz 2-9c: başlık bloğu iki satırlık sabit yükseklik (`titleLines={2}`, en fazla 2 satır + "…"); uzun başlık yıl/gerekçe/çipleri kaydırmaz. */}
                 {/* Sabit yükseklikli alan: iki kartın metin bölgesi eşit, gerekçe gelince düzen zıplamaz. */}
                 <View style={styles.reasonSlot}>
                   {reason !== null ? (
@@ -237,6 +239,7 @@ export function GauntletStage({
           {notices.includes('max_runtime_dropped') && (
             <Text style={styles.notice}>{t('moodGauntlet.noticeRuntime')}</Text>
           )}
+          {/* 1. sıradakini şampiyon yapar, sonraki turlarda elenen film olur */}
           {isFirstRound && (
             <OutlineAction label={t('moodGauntlet.justPick')} onPress={onJustPick} disabled={picked !== null} />
           )}
