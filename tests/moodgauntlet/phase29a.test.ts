@@ -5,7 +5,7 @@
  */
 import { assert, assertEquals, assertMatch } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
-import { assertNoFreeText, fourStartTappedEvent, fourViewedEvent } from '../../utils/moodGauntletAnalytics.ts'
+import { assertNoFreeText, fourPosterTappedEvent, fourStartTappedEvent, fourViewedEvent } from '../../utils/moodGauntletAnalytics.ts'
 
 const read = (p: string) =>
   Deno.readTextFileSync(new URL(`../../${p}`, import.meta.url)).replaceAll('\r\n', '\n')
@@ -192,4 +192,19 @@ Deno.test('Another four / None sonrasi yeni dortlu: set_index artar, Your four y
   assertEquals(fourViewedEvent('123e4567-e89b-12d3-a456-426614174000', 'cozy', 3).props.set_index, 3)
   assertMatch(strip(read('components/MoodGauntlet/GauntletStage.tsx')), /introDoneFor !== set\.setId/)
   assertMatch(strip(read('components/MoodGauntlet/useMoodGauntlet.ts')), /set\.setIndex \+ 1/)
+})
+
+Deno.test('Faz 2-9c: mood_four_poster_tapped - alanlar, serbest metin guard, pozisyon tekrari olay degil, davranis degismez', () => {
+  const setId = '123e4567-e89b-12d3-a456-426614174000'
+  const e = fourPosterTappedEvent(setId, 2, 3)
+  assertEquals(e, { name: 'mood_four_poster_tapped', props: { set_id: setId, set_index: 2, position: 3 } })
+  assertNoFreeText(e)
+  assert(!('film_ids' in e.props) && !('film_id' in e.props))
+  const hook = strip(read('components/MoodGauntlet/useMoodGauntlet.ts'))
+  assertMatch(hook, /const key = `\$\{set\.setId\}:\$\{position\}`;\s*if \(tappedPositions\.current\.has\(key\)\) return;/)
+  assertMatch(hook, /fourPosterTappedEvent\(set\.setId, set\.setIndex \+ 1, position\)/)
+  const intro = strip(read('components/MoodGauntlet/FourIntro.tsx'))
+  assertMatch(intro, /<Pressable accessible=\{false\} onPress=\{\(\) => onPosterTapped\(i\)\}>\s*<PosterTile film=\{film\} interactive=\{false\}/)
+  assert(!/onStart\(/.test(intro.slice(intro.indexOf('onPosterTapped(i)'), intro.indexOf('</Pressable>'))), 'poster dokunusu Round 1 acmaz')
+  assertMatch(read('docs/analytics/G6_CEKIRDEK_EVENTLER.md'), /`mood_four_poster_tapped` \(`set_id`, `set_index`:[^)]*`position`: 0–3/)
 })

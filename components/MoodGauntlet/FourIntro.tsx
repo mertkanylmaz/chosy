@@ -8,7 +8,7 @@
  * Yapay gecikme YOK; posterler 100 ms aralıkla belirir (Reduce Motion'da hepsi anında).
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Text, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, Text, View, type LayoutChangeEvent } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -39,9 +39,11 @@ interface FourIntroProps {
   onStart: (dwellMs: number) => void;
   /** Ekran gösterildiğinde bir kez. */
   onViewed: () => void;
+  /** Dokunulamaz posterlere dokunuş (yalnız ölçüm; hiçbir şey açılmaz). `position` 0–3. */
+  onPosterTapped: (position: number) => void;
 }
 
-export function FourIntro({ films, moodLabel, onStart, onViewed }: FourIntroProps): React.JSX.Element {
+export function FourIntro({ films, moodLabel, onStart, onViewed, onPosterTapped }: FourIntroProps): React.JSX.Element {
   const { t } = useLanguage();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
@@ -96,7 +98,11 @@ export function FourIntro({ films, moodLabel, onStart, onViewed }: FourIntroProp
                 style={{ width: cell }}
                 entering={reduced ? undefined : FadeIn.delay(i * MOOD_MOTION.posterStagger).duration(MOOD_MOTION.stageTransition)}
               >
-                <PosterTile film={film} interactive={false} metaMode="yearOnly" />
+                {/* Faz 2-9c ölçüm: devre dışı PosterTile dokunuşu yutmaz, ata Pressable alır. Erişilebilirlik
+                    ağacına girmez (accessible=false); görsel geri bildirim ve eylem YOK. */}
+                <Pressable accessible={false} onPress={() => onPosterTapped(i)}>
+                  <PosterTile film={film} interactive={false} metaMode="yearOnly" />
+                </Pressable>
               </Animated.View>
             ))}
           </View>

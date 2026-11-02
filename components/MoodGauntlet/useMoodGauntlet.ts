@@ -43,6 +43,7 @@ import {
   completedEvent,
   firstFourVisibleEvent,
   fourStartTappedEvent,
+  fourPosterTappedEvent,
   fourViewedEvent,
   intensityEvent,
   justPickEvent,
@@ -374,6 +375,18 @@ export function useMoodGauntlet() {
   const fourViewed = useCallback(() => {
     if (set) trackMoodEvent(fourViewedEvent(set.setId, moodKey(), set.setIndex + 1));
   }, [set]);
+  // Aynı dörtlü + aynı pozisyon için tekrar dokunuş ayrı olay değildir (set_id oturumda tekil).
+  const tappedPositions = useRef<Set<string>>(new Set());
+  const fourPosterTapped = useCallback(
+    (position: number) => {
+      if (!set) return;
+      const key = `${set.setId}:${position}`;
+      if (tappedPositions.current.has(key)) return;
+      tappedPositions.current.add(key);
+      trackMoodEvent(fourPosterTappedEvent(set.setId, set.setIndex + 1, position));
+    },
+    [set],
+  );
   const fourStarted = useCallback(
     (dwellMs: number) => {
       if (set) trackMoodEvent(fourStartTappedEvent(set.setId, dwellMs));
@@ -473,6 +486,7 @@ export function useMoodGauntlet() {
     startFromEntry,
     chooseFilm,
     fourViewed,
+    fourPosterTapped,
     fourStarted,
     justPick,
     noneOfThese,

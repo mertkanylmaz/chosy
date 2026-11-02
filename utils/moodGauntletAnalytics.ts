@@ -34,6 +34,7 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_just_pick_tapped',
   'mood_four_viewed',
   'mood_four_start_tapped',
+  'mood_four_poster_tapped',
   'trailer_clicked',
   'app_returned_after_trailer',
 ] as const;
@@ -74,6 +75,15 @@ export function fourViewedEvent(setId: string, mood: string, setIndex: number): 
 /** "Start choosing" dokunuşu; `dwell_ms` = ekran açıldığından dokunuşa — kullanıcının dörtlüye baktığının tek kanıtı. */
 export function fourStartTappedEvent(setId: string, dwellMs: number): MoodEvent {
   return { name: 'mood_four_start_tapped', props: { set_id: setId, dwell_ms: Math.max(0, Math.round(dwellMs)) } };
+}
+
+/**
+ * Faz 2-9c ölçümü: Your four'da (dokunulamaz) posterlere dokunuş. Davranış değişmez; amaç
+ * "dört film + doğrudan seçim" önerisinin kanıtı (karar ≥300 Pro oturumunda). `position` 0–3 =
+ * ızgara okuma sırası. Film kimliği/başlığı GÖNDERİLMEZ; `set_id` üzerinden ulaşılır.
+ */
+export function fourPosterTappedEvent(setId: string, setIndex: number, position: number): MoodEvent {
+  return { name: 'mood_four_poster_tapped', props: { set_id: setId, set_index: setIndex, position } };
 }
 
 export function matchChosenEvent(round: 1 | 2 | 3): MoodEvent {

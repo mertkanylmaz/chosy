@@ -55,6 +55,8 @@ interface GauntletStageProps {
   onChoose: (filmId: string) => void;
   /** "Your four" gösterildi (set başına bir kez). */
   onFourViewed: () => void;
+  /** Your four'da dokunulamaz posterlere dokunuş (yalnız ölçüm; `position` 0–3). */
+  onFourPosterTapped: (position: number) => void;
   /** "Start choosing" dokunuşu; `dwellMs` = Your four'un açık kaldığı süre. */
   onFourStart: (dwellMs: number) => void;
   onNone: () => void;
@@ -72,6 +74,7 @@ export function GauntletStage({
   tapHint,
   onChoose,
   onFourViewed,
+  onFourPosterTapped,
   onFourStart,
   onNone,
   onJustPick,
@@ -143,6 +146,7 @@ export function GauntletStage({
         moodLabel={moodLabel}
         onStart={handleFourStart}
         onViewed={onFourViewed}
+        onPosterTapped={onFourPosterTapped}
       />
     );
   }

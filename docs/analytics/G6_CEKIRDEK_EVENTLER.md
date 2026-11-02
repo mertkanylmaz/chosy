@@ -119,6 +119,9 @@ filtre ancak bu tıklamalar onu haklı çıkarırsa inşa edilir.
 - `mood_four_start_tapped` (`set_id`, `dwell_ms`) = "Start choosing" dokunuşu. `dwell_ms` kullanıcıların dörtlüye gerçekten bakıp bakmadığının tek kanıtıdır.
 - Film listesine `set_id` üzerinden ulaşılır (`record-ids` ile kayda geçen dörtlü); `film_ids` dizisi gönderilmez (olay `Props` tipi genişletilmedi).
 
+**Faz 2-9c güncellemesi (ölçüm):**
+- `mood_four_poster_tapped` (`set_id`, `set_index`: `mood_four_viewed` ile aynı sayım, `position`: 0–3 ızgara okuma sırası) = Your four'da dokunulamaz bir posterin dokunulması. **Davranış değişmez**: dokunuş hiçbir şey açmaz. Aynı dörtlü + aynı pozisyon için tekrar dokunuş ayrı olay üretmez. Amaç: "dört film + doğrudan seçim" önerisinin tek kanıtı; karar ≥300 Pro oturumunda verilir. Film kimliği/başlığı gönderilmez.
+
 ### 1.4 Kimlik ve dönüş (3)
 
 | # | Event | Nerede | Not |
