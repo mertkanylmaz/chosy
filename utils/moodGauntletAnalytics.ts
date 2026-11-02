@@ -35,6 +35,7 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_four_viewed',
   'mood_four_start_tapped',
   'mood_four_poster_tapped',
+  'mood_four_desc_resolved',
   'trailer_clicked',
   'app_returned_after_trailer',
 ] as const;
@@ -84,6 +85,16 @@ export function fourStartTappedEvent(setId: string, dwellMs: number): MoodEvent 
  */
 export function fourPosterTappedEvent(setId: string, setIndex: number, position: number): MoodEvent {
   return { name: 'mood_four_poster_tapped', props: { set_id: setId, set_index: setIndex, position } };
+}
+
+/**
+ * Faz 2-11a: kart açıklaması yedeği. Gerekçe isteği bitince, dörtlü başına bir kez. Yalnız sayılar:
+ * `desc_fallback` = açıklaması filmin `overview`'ından gelen film (0–4), `desc_empty` = hiç açıklaması
+ * olmayan film (0–4). Film kimliği / başlığı / metin GÖNDERİLMEZ.
+ */
+export function descResolvedEvent(descFallback: number, descEmpty: number): MoodEvent {
+  const clamp = (n: number): number => Math.min(4, Math.max(0, Math.round(n)));
+  return { name: 'mood_four_desc_resolved', props: { desc_fallback: clamp(descFallback), desc_empty: clamp(descEmpty) } };
 }
 
 export function matchChosenEvent(round: 1 | 2 | 3): MoodEvent {

@@ -10,6 +10,7 @@ import { isFunctionNotDeployed } from '../../utils/moodChoicePolicy.ts'
 import {
   assertNoFreeText,
   completedEvent,
+  descResolvedEvent,
   firstFourVisibleEvent,
   justPickEvent,
   intensityEvent,
@@ -111,12 +112,13 @@ Deno.test('locales: moodGauntlet anahtarlari en/tr tam parite, interpolasyon deg
 })
 
 Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard atar', () => {
-  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 16) // Faz 2-9c: + mood_four_poster_tapped; Faz 2-9a: + mood_four_viewed, mood_four_start_tapped; Faz 2-3: + mood_just_pick_tapped; 2-4d: + trailer_clicked, app_returned_after_trailer
+  assertEquals(MOOD_GAUNTLET_EVENT_NAMES.length, 17) // Faz 2-11a: + mood_four_desc_resolved; Faz 2-9c: + mood_four_poster_tapped; Faz 2-9a: + mood_four_viewed, mood_four_start_tapped; Faz 2-3: + mood_just_pick_tapped; 2-4d: + trailer_clicked, app_returned_after_trailer
   const evs = [
     startedEvent('quick', 'cozy'),
     startedEvent('free_text', 'cozy'), // free_text'te quick_mood_id girmez
     firstFourVisibleEvent(1234.6, true, 'quick', 'combined'),
     justPickEvent(1),
+    descResolvedEvent(1, 0),
     matchChosenEvent(2),
     noneOfTheseEvent(1),
     completedEvent(5000),

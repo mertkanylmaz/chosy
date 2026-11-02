@@ -222,6 +222,21 @@ export function descriptionFor(
   return o.length > 0 ? o : null;
 }
 
+/** Dörtlüdeki açıklama kaynağı sayımı (telemetri): özetten gelen / hiç olmayan. Metin taşımaz. */
+export function countDescriptionSources(
+  four: ReadonlyArray<Pick<MatchRow, 'id' | 'overview'>>,
+  reasons: Record<string, string> | undefined,
+): { fallback: number; empty: number } {
+  let fallback = 0;
+  let empty = 0;
+  for (const f of four) {
+    if (reasonFor(reasons, f.id) !== null) continue;
+    if (descriptionFor(reasons, f.id, f.overview) !== null) fallback += 1;
+    else empty += 1;
+  }
+  return { fallback, empty };
+}
+
 /**
  * Dışlama birleşimi. Öncelik (500 sınırı aşılırsa sondan kesilir): oturumda gösterilenler →
  * kişisel tekrar dışlama → watchlist/izlenenler. Tekrarsız, sıra korunur.

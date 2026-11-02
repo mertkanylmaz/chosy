@@ -122,6 +122,9 @@ filtre ancak bu tıklamalar onu haklı çıkarırsa inşa edilir.
 **Faz 2-9c güncellemesi (ölçüm):**
 - `mood_four_poster_tapped` (`set_id`, `set_index`: `mood_four_viewed` ile aynı sayım, `position`: 0–3 ızgara okuma sırası) = Your four'da dokunulamaz bir posterin dokunulması. **Davranış değişmez**: dokunuş hiçbir şey açmaz. Aynı dörtlü + aynı pozisyon için tekrar dokunuş ayrı olay üretmez. Amaç: "dört film + doğrudan seçim" önerisinin tek kanıtı; karar ≥300 Pro oturumunda verilir. Film kimliği/başlığı gönderilmez.
 
+**Faz 2-11a güncellemesi (ölçüm):**
+- `mood_four_desc_resolved` (`desc_fallback`: açıklaması filmin `overview`'ından gelen film sayısı, 0–4; `desc_empty`: hiç açıklaması olmayan film sayısı, 0–4) = karşılaştırma kartlarındaki açıklama kaynağı. Gerekçe (LLM) isteği bitince, dörtlü başına bir kez atılır; `mood_first_four_visible` dörtlüyle aynı anda gittiği için gerekçe sonucunu bilemez ve **değişmedi**. Gerekçe isteği hiç çalışmazsa (rerank düştü) `desc_fallback` 4'e yakın çıkar — beklenen davranış. Film kimliği, başlığı ya da metni gönderilmez; sayılar `set_id` ile eşlenmez (set_id bilerek yok). Kapı şartı değil, 20/20 sözleşmesi değişmez.
+
 ### 1.4 Kimlik ve dönüş (3)
 
 | # | Event | Nerede | Not |

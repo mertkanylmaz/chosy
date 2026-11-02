@@ -20,6 +20,7 @@ import { fetchFilmDims } from '@/services/filmDims';
 import { recordMoodChoice } from '@/services/moodChoiceApi';
 import {
   canShiftIntensity,
+  countDescriptionSources,
   fetchReasons,
   intensifyMoodGauntlet,
   nextFour,
@@ -41,6 +42,7 @@ import {
   anotherFourEvent,
   assertNoFreeText,
   completedEvent,
+  descResolvedEvent,
   firstFourVisibleEvent,
   fourStartTappedEvent,
   fourPosterTappedEvent,
@@ -175,6 +177,8 @@ export function useMoodGauntlet() {
         trackMoodEvent(pipelineTimingEvent('reasons', Date.now() - t0));
         setReasons(r);
         setReasonsLoading(false);
+        const src = countDescriptionSources(nextSet.four, r);
+        trackMoodEvent(descResolvedEvent(src.fallback, src.empty));
       });
     },
     [deps],
