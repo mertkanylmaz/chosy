@@ -1,7 +1,7 @@
 /**
  * ProvidersSheet — uygulama içi native "Where to watch" sunumu (Faz 2-8).
  *
- * Seçili ülke için Stream / Rent / Buy / Free grupları. Şampiyon, Spotlight (film detayı üzerinden),
+ * Seçili ülke için Stream / Free / Rent or buy grupları (sıra: `SHEET_GROUP_ORDER`). Şampiyon, Spotlight (film detayı üzerinden),
  * Mood sonucu ve film detayı AYNI bileşeni kullanır (`WatchProvidersRow` sahibidir).
  *
  * Satır davranışı (Faz 2-8 kilitli kararlar):
@@ -35,8 +35,14 @@ import {
   type WatchOfferType,
 } from '@/utils/moodGauntletAnalytics';
 import { providerReturn } from '@/utils/providerReturn';
-import { brandOf, dedupeByBrand } from '@/utils/watchProviderBrands';
-import { adsOnlyIds, groupProviders, type ProviderGroups } from '@/utils/watchProviderList';
+import { brandOf } from '@/utils/watchProviderBrands';
+import {
+  SHEET_GROUP_ORDER,
+  adsOnlyIds,
+  groupProvidersForSheet,
+  type RentBuyKind,
+  type SheetGroupKey,
+} from '@/utils/watchProviderList';
 
 import { RegionPickerSheet } from './RegionPickerSheet';
 import { regionStyles, sheetStyles as styles } from './styles';
@@ -45,10 +51,7 @@ import type { WatchProvidersState } from './useWatchProviders';
 
 const TMDB_LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
 
-type GroupKey = keyof ProviderGroups<TmdbProvider>;
-
-/** Sheet'teki grup sırası (kilitli karar: Stream / Rent / Buy / Free). */
-const GROUP_ORDER: readonly GroupKey[] = ['stream', 'rent', 'buy', 'free'];
+type GroupKey = SheetGroupKey;
 
 interface ProvidersSheetProps {
   visible: boolean;
@@ -62,10 +65,10 @@ interface ProvidersSheetProps {
   attribution: React.JSX.Element;
 }
 
-function offerOf(group: GroupKey, ads: boolean): WatchOfferType {
+function offerOf(group: GroupKey, ads: boolean, rentBuy: RentBuyKind | undefined): WatchOfferType {
   if (group === 'stream') return 'flatrate';
   if (group === 'free') return ads ? 'ads' : 'free';
-  return group;
+  return rentBuy === 'buy' ? 'buy' : 'rent';
 }
 
 export function ProvidersSheet({
@@ -85,13 +88,7 @@ export function ProvidersSheet({
 
   const groups = useMemo(() => {
     if (state !== 'ok' || providers === null) return null;
-    const g = groupProviders(providers);
-    return {
-      stream: dedupeByBrand(g.stream),
-      rent: dedupeByBrand(g.rent),
-      buy: dedupeByBrand(g.buy),
-      free: dedupeByBrand(g.free),
-    };
+    return groupProvidersForSheet(providers);
   }, [state, providers]);
   const adsIds = useMemo(() => (providers === null ? new Set<number>() : adsOnlyIds(providers)), [providers]);
 
@@ -125,8 +122,14 @@ export function ProvidersSheet({
     }
   };
 
-  const sectionTitle = (key: GroupKey): string => t(`gauntlet.watchProviders.group.${key}`);
-  const hasAnyGroup = groups !== null && GROUP_ORDER.some((k) => groups[k].length > 0);
+  // "Rent or buy" mevcut anahtar (`moodGauntlet.offerHint.rent`); Stream/Free başlıkları group.* altında.
+  const sectionTitle = (key: GroupKey): string =>
+    key === 'rentBuy' ? t('moodGauntlet.offerHint.rent') : t(`gauntlet.watchProviders.group.${key}`);
+  const rentBuyLabel = (kind: RentBuyKind): string =>
+    kind === 'both'
+      ? t('gauntlet.watchProviders.offerRentBuy')
+      : t(`gauntlet.watchProviders.group.${kind}`);
+  const hasAnyGroup = groups !== null && SHEET_GROUP_ORDER.some((k) => groups[k].length > 0);
 
   const renderStateBody = (): React.JSX.Element | null => {
     if (state === 'error') {
@@ -194,7 +197,7 @@ export function ProvidersSheet({
           <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
             {renderStateBody()}
             {groups !== null &&
-              GROUP_ORDER.map((key) => {
+              SHEET_GROUP_ORDER.map((key) => {
                 const list = groups[key];
                 // Boş grup çizilmez — başlığın altında hiçbir şey olmaması gürültü.
                 if (list.length === 0) return null;
@@ -206,7 +209,9 @@ export function ProvidersSheet({
                     {list.map((provider) => {
                       const brand = brandOf(provider);
                       const ads = key === 'free' && adsIds.has(provider.provider_id);
-                      const offer = offerOf(key, ads);
+                      const rentBuy = key === 'rentBuy' ? groups.rentBuyKind.get(provider.provider_id) : undefined;
+                      const sub = ads ? t('gauntlet.watchProviders.withAds') : rentBuy !== undefined ? rentBuyLabel(rentBuy) : null;
+                      const offer = offerOf(key, ads, rentBuy);
                       const app = appOpenFor(brand.key);
                       const body = (
                         <>
@@ -222,7 +227,7 @@ export function ProvidersSheet({
                             <Text style={styles.providerName} numberOfLines={1}>
                               {brand.name}
                             </Text>
-                            {ads && <Text style={styles.providerSub}>{t('gauntlet.watchProviders.withAds')}</Text>}
+                            {sub !== null && <Text style={styles.providerSub}>{sub}</Text>}
                           </View>
                           {app !== null && (
                             <Text style={styles.openApp} numberOfLines={1}>
@@ -237,7 +242,7 @@ export function ProvidersSheet({
                             key={provider.provider_id}
                             style={styles.providerRow}
                             accessible
-                            accessibilityLabel={ads ? `${brand.name}, ${t('gauntlet.watchProviders.withAds')}` : brand.name}
+                            accessibilityLabel={sub !== null ? `${brand.name}, ${sub}` : brand.name}
                           >
                             {body}
                           </View>

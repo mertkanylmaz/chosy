@@ -7,12 +7,15 @@
  * Run: deno test tests/gauntlet/watchProviderList.test.ts
  */
 
-import { assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
+import { assert, assertEquals } from 'https://deno.land/std@0.208.0/assert/mod.ts'
 
+import beforeSunrise from '../fixtures/tmdbWatchProviders.beforeSunrise76.json' with { type: 'json' }
 import {
   dedupeChannelVariants,
   flattenProviders,
   groupProviders,
+  groupProvidersForSheet,
+  SHEET_GROUP_ORDER,
   offerLabelKind,
   orderProviders,
   orderProvidersWithOffer,
@@ -264,4 +267,44 @@ Deno.test('Faz 2-8 marka normalizasyonu genel: kanal/kademe/reklam sonekleri bil
   assertEquals(key(9995, 'Starz Amazon Channel'), key(9994, 'Starz Roku Premium Channel'))
   assertEquals(key(9993, 'Starz') === key(9992, 'AMC+'), false)
   assertEquals(key(9991, 'Hallmark Channel') === key(9990, 'Hallmark+'), false) // genel " Channel" soyulmaz
+})
+
+// ─── Faz 2-9c: Before Sunrise (TMDB 76) US — satır ve sheet tutarlılığı ───────
+const BEFORE_SUNRISE_US = beforeSunrise.results.US
+
+Deno.test('Before Sunrise US: sheet grup sirasi tek sabitten, Free Rent or buy oncesinde', () => {
+  assertEquals([...SHEET_GROUP_ORDER], ['stream', 'free', 'rentBuy'])
+  const g = groupProvidersForSheet(BEFORE_SUNRISE_US)
+  const nonEmpty = SHEET_GROUP_ORDER.filter((k) => g[k].length > 0)
+  assertEquals(nonEmpty, ['free', 'rentBuy'])
+  assert(nonEmpty.indexOf('free') < nonEmpty.indexOf('rentBuy'))
+})
+
+Deno.test('Before Sunrise US: ads+free birlesimi, rent+buy birlesiminde 5 tekil saglayici', () => {
+  const g = groupProvidersForSheet(BEFORE_SUNRISE_US)
+  assertEquals(names(g.free), ['The Roku Channel', 'Tubi TV'])
+  assertEquals(g.rentBuy.length, 5)
+  assertEquals(new Set(g.rentBuy.map((x) => x.provider_id)).size, 5)
+  for (const x of g.rentBuy) assertEquals(g.rentBuyKind.get(x.provider_id), 'both')
+})
+
+Deno.test('Before Sunrise US: satirdaki saglayici kumesi sheet grup kumesinin icinde, ilk iki logo Free', () => {
+  const row = selectTopProviders(BEFORE_SUNRISE_US, 3)
+  const g = groupProvidersForSheet(BEFORE_SUNRISE_US)
+  const sheetIds = new Set(SHEET_GROUP_ORDER.flatMap((k) => g[k].map((x) => x.provider_id)))
+  for (const x of row) assert(sheetIds.has(x.provider_id), 'satirdaki saglayici sheet te yok: ' + x.provider_name)
+  assertEquals(names(row).slice(0, 2), ['The Roku Channel', 'Tubi TV'])
+})
+
+Deno.test('rentBuyKind: yalniz kiralik / yalniz satin alma / ikisi', () => {
+  const mk = (id: number, n: string): RankedProviderLike => ({ provider_id: id, provider_name: n, display_priority: id })
+  const g = groupProvidersForSheet({
+    rent: [mk(901, 'Alpha'), mk(902, 'Beta')],
+    buy: [mk(902, 'Beta'), mk(903, 'Gamma')],
+  })
+  assertEquals(names(g.rentBuy), ['Alpha', 'Beta', 'Gamma'])
+  assertEquals(
+    [901, 902, 903].map((id) => g.rentBuyKind.get(id)),
+    ['rent', 'both', 'buy'],
+  )
 })

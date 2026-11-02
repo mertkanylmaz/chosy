@@ -1751,6 +1751,7 @@
       "regionClose": "Close",
       "regionCurrent": "Selected",
       "withAds": "with ads",
+      "offerRentBuy": "Rent · Buy",
       "openApp": "Open %{provider}",
       "group": {
         "stream": "Stream",

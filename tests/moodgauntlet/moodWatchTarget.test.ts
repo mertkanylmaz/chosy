@@ -124,9 +124,10 @@ Deno.test('ResultStage: CTA sheet acar, dis baglanti uretmez; yukleniyorken pasi
   assert(!/showOfferLabels/.test(read('components/gauntlet/ChampionReveal/index.tsx')), 'günlük gauntlet etiketleri değişmemeli')
 })
 
-Deno.test('ProvidersSheet: uc durum ayri, grup sirasi Stream/Rent/Buy/Free, allowlist disinda satir dokunulmaz, tek olay', () => {
+Deno.test('ProvidersSheet: uc durum ayri, grup sirasi Stream/Free/Rent or buy (tek sabit), allowlist disinda satir dokunulmaz, tek olay', () => {
   const src = read('components/gauntlet/WatchProviders/ProvidersSheet.tsx')
-  assertMatch(src, /GROUP_ORDER: readonly GroupKey\[\] = \['stream', 'rent', 'buy', 'free'\]/)
+  assertMatch(src, /SHEET_GROUP_ORDER\.map\(/)
+  assert(!/const GROUP_ORDER/.test(src), 'sheet kendi grup sirasi kopyasini tutmaz')
   assertMatch(src, /state === 'error'[\s\S]*?gauntlet\.watchProviders\.error[\s\S]*?onPress=\{onRetry\}/)
   assertMatch(src, /moodGauntlet\.notStreaming/)
   // 'yayinda degil' yalniz empty / bos ok icin — error dalinda gecmez

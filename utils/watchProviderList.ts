@@ -23,7 +23,7 @@
  * `flattenProviders` film detay ekranı için DEĞİŞMEDEN kalır.
  */
 
-import { brandOf, isChannelAddonName, isMainBrand } from './watchProviderBrands';
+import { brandOf, dedupeByBrand, isChannelAddonName, isMainBrand } from './watchProviderBrands';
 
 export interface ProviderLike {
   provider_id: number;
@@ -243,6 +243,54 @@ export function groupProviders<T extends RankedProviderLike>(
     rent: orderProviders({ rent: providers.rent }),
     buy: orderProviders({ buy: providers.buy }),
     free: orderProviders({ free: providers.free, ads: providers.ads }),
+  };
+}
+
+/**
+ * Faz 2-9c: "Where to watch" sheet'inin TEK grup sırası — Stream → Free → Rent or buy.
+ * Sheet bu sabiti import eder, kendi kopyasını tutmaz. Sıra `orderProviders` katman mantığıyla
+ * uyumludur (abonelik → free/ads → kiralık/satın alma); `orderProviders` / `tierOf` değişmez.
+ */
+export const SHEET_GROUP_ORDER = ['stream', 'free', 'rentBuy'] as const;
+export type SheetGroupKey = (typeof SHEET_GROUP_ORDER)[number];
+
+/** Rent or buy satırının alt etiketi: yalnız kiralık, yalnız satın alma ya da ikisi. */
+export type RentBuyKind = 'rent' | 'buy' | 'both';
+
+export interface SheetGroups<T extends RankedProviderLike> {
+  stream: T[];
+  /** TMDB `free` + `ads`; reklamlı olanlar `adsOnlyIds` ile ayırt edilir. */
+  free: T[];
+  /** `rent` + `buy` birleşik; her marka bir kez. */
+  rentBuy: T[];
+  /** `rentBuy` içindeki sağlayıcının hangi kovalarda olduğu (provider_id → tür, marka bazlı). */
+  rentBuyKind: Map<number, RentBuyKind>;
+}
+
+/**
+ * Sheet grupları: her grup marka bazında tekilleştirilir, boş grup çağıranda çizilmez.
+ * Rent ve Buy tek grupta birleşir; alt etiket marka bazlı hesaplanır (Apple TV Store hem rent
+ * hem buy ise "both").
+ */
+export function groupProvidersForSheet<T extends RankedProviderLike>(
+  providers: ProviderBuckets<T>,
+): SheetGroups<T> {
+  const g = groupProviders(providers);
+  const rentKeys = new Set(g.rent.map((p) => brandOf(p).key));
+  const buyKeys = new Set(g.buy.map((p) => brandOf(p).key));
+  const rentBuy = dedupeByBrand(orderProviders({ rent: providers.rent, buy: providers.buy }));
+  const rentBuyKind = new Map<number, RentBuyKind>();
+  for (const p of rentBuy) {
+    const key = brandOf(p).key;
+    const r = rentKeys.has(key);
+    const b = buyKeys.has(key);
+    rentBuyKind.set(p.provider_id, r && b ? 'both' : b ? 'buy' : 'rent');
+  }
+  return {
+    stream: dedupeByBrand(g.stream),
+    free: dedupeByBrand(g.free),
+    rentBuy,
+    rentBuyKind,
   };
 }
 
