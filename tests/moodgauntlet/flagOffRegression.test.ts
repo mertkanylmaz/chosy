@@ -243,7 +243,7 @@ Deno.test('hiz: dortlu gosterilince 4 filmin nerede-izlenir verisi on-cekilir, g
 Deno.test('gorsel: giris izgarasi tasar, CTA metin varken altin; yukleme spinnersiz; sonuc altin + sabit slot + cipler', () => {
   const entry = read('components/MoodGauntlet/EntryStage.tsx')
   assertMatch(entry, /<View style=\{styles\.gridBleed\}>/)
-  assertMatch(entry, /variant=\{canSubmit \? 'gold' : 'default'\}/)
+  assertMatch(entry, /\{canSubmit && \(\s*<View style=\{styles\.ctaSlot\}>[\s\S]*?variant="gold"/)
   const st = read('components/MoodGauntlet/styles.ts')
   assertMatch(st, /gridBleed: \{ marginHorizontal: -space\.base \}/)
   assertMatch(st, /providersSlot: \{ minHeight: 56/)

@@ -97,22 +97,25 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
           placeholder={t('moodGauntlet.inputPlaceholder')}
           multiline
           maxLength={300}
-          returnKeyType="done"
+          returnKeyType="go"
           blurOnSubmit
+          onSubmitEditing={() => void submitFreeText()}
           accessibilityLabel={t('moodGauntlet.inputPlaceholder')}
         />
 
         {consented === false && <Text style={styles.consentBody}>{t('aiConsent.inlineBody')}</Text>}
 
-        <View style={styles.ctaSlot}>
-          {/* Metin varken altın/aktif, boşken pasif (yerinde kalır, yalnız söner). */}
-          <PrimaryAction
-            label={consented === false ? t('aiConsent.inlineEnableAndFind') : t('moodGauntlet.startCta')}
-            onPress={() => void submitFreeText()}
-            disabled={!canSubmit}
-            variant={canSubmit ? 'gold' : 'default'}
-          />
-        </View>
+        {/* Faz 2-9c: CTA yalnız gönderilebilir metin varken görünür; boşken yer kaplamaz, hızlı mood
+            kartları yukarıda kalır. Return tuşu (`returnKeyType="go"`) aynı yolu çalıştırır. */}
+        {canSubmit && (
+          <View style={styles.ctaSlot}>
+            <PrimaryAction
+              label={consented === false ? t('aiConsent.inlineEnableAndFind') : t('moodGauntlet.startCta')}
+              onPress={() => void submitFreeText()}
+              variant="gold"
+            />
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.gridCaption}>{t('moodGauntlet.quickLabel')}</Text>

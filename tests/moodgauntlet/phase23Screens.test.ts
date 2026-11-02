@@ -173,3 +173,15 @@ Deno.test('Faz 2-9c: karsilastirma kartlarinda baslik 2 satirlik sabit yukseklik
   // Just pick yalniz 1. tur: gerekce yorumu kayitta
   assertMatch(gauntlet, /sonraki turlarda elenen film olur \*\/\}\n\s*\{isFirstRound && \(/)
 })
+
+Deno.test('Faz 2-9c: bos metinde CTA yok; return tuşu go ve ayni gonderim yolu; bos gonderim yok', () => {
+  const entry = read('components/MoodGauntlet/EntryStage.tsx')
+  assertMatch(entry, /returnKeyType="go"/)
+  assertMatch(entry, /onSubmitEditing=\{\(\) => void submitFreeText\(\)\}/)
+  assertMatch(entry, /\{canSubmit && \(\s*<View style=\{styles\.ctaSlot\}>/)
+  assert(!/disabled=\{!canSubmit\}/.test(entry), 'pasif CTA kalmamali')
+  // submitFreeText kirpilmis metni dogrular -> bos / cok kisa metin ne return ile ne CTA ile gider
+  assertMatch(entry, /const trimmed = text\.trim\(\);\s*if \(!isMoodInputSubmittable\(trimmed\)\) return;/)
+  // CTA etiketi (erisilebilirlik adi) mevcut anahtarlardan
+  assertMatch(entry, /t\('moodGauntlet\.startCta'\)/)
+})
