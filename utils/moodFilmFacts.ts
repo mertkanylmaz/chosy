@@ -84,6 +84,14 @@ export function buildMetaLine(year: number | null | undefined, runtimeMinutes: n
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
+/**
+ * Sonuç ekranı üst satırı: "<KICKER> · <MOOD>". Mood boş / yalnız boşluk ise yalnız kicker; ayraç boşta kalmaz.
+ */
+export function buildKickerLine(kicker: string, moodLabel: string | null | undefined): string {
+  const mood = typeof moodLabel === 'string' ? moodLabel.trim() : '';
+  return mood.length > 0 ? `${kicker} · ${mood}` : kicker;
+}
+
 export interface FilmChips {
   /** i18n anahtarı son eki; null = çizilmez. */
   pace: Pace | null;

@@ -67,7 +67,7 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
     return i
   }
   const order = [
-    'styles.resultMood', 'styles.hero', 'styles.resultTitle', 'styles.resultReason', '<FilmChips', 'styles.insight',
+    'styles.kicker', 'styles.hero', 'styles.resultTitle', 'styles.resultReason', '<FilmChips', 'styles.insight',
     '<WatchOptionsCard', '<WatchProvidersRow', 'styles.secondaryRow', "t('moodGauntlet.adjustTitle')", "t('moodGauntlet.backupsTitle')",
   ].map(idx)
   assertEquals(order, [...order].sort((a, b) => a - b))
@@ -113,7 +113,7 @@ Deno.test('kopya sozlugu en/tr (tek yer: locales)', () => {
   const t = tr.moodGauntlet
   assertEquals(
     [m.startCta, m.yourFour, m.question, m.justPick, m.noneCta, m.resultKicker, m.anotherFour, m.lighter, m.stronger],
-    ['Find my four', 'Your four', 'Which one tonight?', 'Just pick for me', 'None of these', "TONIGHT'S FILM", 'Another four', 'Lighter', 'More intense'],
+    ['Find my four', 'Your four', 'Which one tonight?', 'Just pick for me', 'None of these', 'YOUR PICK', 'Another four', 'Lighter', 'More intense'],
   )
   assertEquals(t.yourFour, 'Dörtlün')
   assertEquals(t.question, 'Bu akşam hangisi?')

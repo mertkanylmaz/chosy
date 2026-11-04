@@ -48,7 +48,7 @@ import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, trailerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
-import { buildMetaLine, formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
+import { buildKickerLine, buildMetaLine, formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { revealDelays } from '@/utils/resultReveal';
 import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
 import { resultCtaMode } from '@/utils/moodResultCta';
@@ -321,12 +321,9 @@ export function ResultStage({
 
   return (
     <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-      {moodLabel !== null && moodLabel.length > 0 && (
-        <Text style={styles.resultMood} numberOfLines={2} accessibilityRole="header">
-          {moodLabel}
-        </Text>
-      )}
-      <Text style={styles.kicker}>{t('moodGauntlet.resultKicker')}</Text>
+      <Text style={styles.kicker} numberOfLines={1} ellipsizeMode="tail" accessibilityRole="header">
+        {buildKickerLine(t('moodGauntlet.resultKicker'), moodLabel)}
+      </Text>
       <Animated.View style={[styles.hero, posterStyle]}>
         {poster !== null && <Image source={{ uri: poster }} style={styles.heroImage} contentFit="cover" />}
       </Animated.View>

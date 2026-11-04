@@ -49,3 +49,31 @@ Deno.test('i18n: resultWhyTitle en+tr', () => {
   assertEquals(en.moodGauntlet.resultWhyTitle, 'Why this fits tonight')
   assertEquals(tr.moodGauntlet.resultWhyTitle, 'Bu akşama neden uygun')
 })
+
+import { buildKickerLine } from '../../utils/moodFilmFacts.ts'
+
+Deno.test('buildKickerLine: mood varsa "KICKER · mood", boşsa yalnız kicker', () => {
+  assertEquals(buildKickerLine('YOUR PICK', 'Rainy Day'), 'YOUR PICK · Rainy Day')
+  assertEquals(buildKickerLine('YOUR PICK', '  Rainy Day '), 'YOUR PICK · Rainy Day')
+  assertEquals(buildKickerLine('YOUR PICK', ''), 'YOUR PICK')
+  assertEquals(buildKickerLine('YOUR PICK', '   '), 'YOUR PICK')
+  assertEquals(buildKickerLine('YOUR PICK', null), 'YOUR PICK')
+  assertEquals(buildKickerLine('SENİN SEÇİMİN', undefined), 'SENİN SEÇİMİN')
+})
+
+Deno.test('üst satır tek satır; poster gerçek 2:3 sabit yükseklik; hiyerarşi sırası', () => {
+  assertMatch(stage, /<Text style=\{styles\.kicker\} numberOfLines=\{1\} ellipsizeMode="tail"/)
+  assert(!/styles\.resultMood/.test(stage), 'ayrı mood başlığı kalktı')
+  const st = read('components/MoodGauntlet/styles.ts')
+  assertMatch(st, /const RESULT_POSTER_HEIGHT = 280/)
+  assertMatch(st, /hero: \{ height: RESULT_POSTER_HEIGHT, aspectRatio: 2 \/ 3,/)
+  assert(!/hero: \{[^}]*maxHeight/.test(st), 'maxHeight kırpması kalktı')
+  const order = ['styles.kicker', 'styles.hero', 'styles.resultTitle', 'styles.resultMeta', 'styles.resultWhyTitle', 'styles.resultChips', 'styles.insight', '<WatchOptionsCard']
+    .map((s) => stage.indexOf(s))
+  assert(order.every((i) => i >= 0))
+  assertEquals(order, [...order].sort((a, b) => a - b))
+  const en = JSON.parse(read('locales/en.json'))
+  const tr = JSON.parse(read('locales/tr.json'))
+  assertEquals(en.moodGauntlet.resultKicker, 'YOUR PICK')
+  assertEquals(tr.moodGauntlet.resultKicker, 'SENİN SEÇİMİN')
+})

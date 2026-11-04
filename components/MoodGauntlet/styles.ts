@@ -6,6 +6,9 @@ import { StyleSheet } from 'react-native';
 
 import { color, radius, size, space, type } from '@/constants/design/semantic';
 
+/** Sonuç posteri yüksekliği (pt). 375×667'de kartın ilk ekrana girmesi için 360'tan indirildi. */
+const RESULT_POSTER_HEIGHT = 280;
+
 export const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.surface.base },
   header: {
@@ -23,7 +26,8 @@ export const styles = StyleSheet.create({
   title: { ...type.title, color: color.text.primary, textAlign: 'center' },
   body: { ...type.body, color: color.text.secondary, textAlign: 'center' },
   caption: { ...type.caption, color: color.text.secondary },
-  kicker: { ...type['label-caps'], color: color.text.secondary, textAlign: 'center' },
+  /** Sonuç üst satırı: "YOUR PICK · <mood>" tek satır; poster ile arası sm. */
+  kicker: { ...type['label-caps'], color: color.text.secondary, textAlign: 'center', marginBottom: space.sm },
   actions: { gap: space.sm, marginTop: space.base },
 
   // Giriş
@@ -132,7 +136,8 @@ export const styles = StyleSheet.create({
   },
 
   // Sonuç
-  hero: { width: '100%', aspectRatio: 2 / 3, maxHeight: 360, borderRadius: radius.surface, overflow: 'hidden', backgroundColor: color.surface.raised, alignSelf: 'center' },
+  /** Gerçek 2:3 poster: sabit yükseklik, genişlik orandan (280 → ~187), yatayda ortalı; kırpma yok. */
+  hero: { height: RESULT_POSTER_HEIGHT, aspectRatio: 2 / 3, borderRadius: radius.surface, overflow: 'hidden', backgroundColor: color.surface.raised, alignSelf: 'center' },
   heroImage: { width: '100%', height: '100%' },
   resultTitle: { ...type.title, color: color.text.primary, textAlign: 'center', marginTop: space.base },
   resultMeta: { ...type.caption, color: color.text.secondary, textAlign: 'center', marginTop: space.xs },
@@ -145,8 +150,6 @@ export const styles = StyleSheet.create({
   resultChips: { marginTop: space.sm },
   /** "Why this fits you": gerekçe + çiplerin altında tek satır; veri yoksa hiç çizilmez. */
   insight: { ...type.callout, color: color.text.secondary, textAlign: 'center', marginTop: space.sm },
-  /** Mood başlığı (sonuç ekranının üstü). */
-  resultMood: { ...type['display-m'], color: color.text.primary, textAlign: 'center', marginBottom: space.xs },
   /** Birincil CTA bloğu: tek CTA, altında nerede-izlenir satırı. */
   ctaBlock: { gap: space.sm, marginTop: space.base },
   /** İkincil satır: Kaydet (durum düğmede) + Paylaş (ikon). Durum değişince yükseklik/konum sabit. */
