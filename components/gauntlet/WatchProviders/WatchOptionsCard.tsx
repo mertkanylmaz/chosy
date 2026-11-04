@@ -5,14 +5,14 @@
  * `WatchProvidersRow` DEĞİŞMEDİ (şampiyon, MoodDeckSummary, film detayı onu kullanır).
  *
  *  loading → aynı yükseklikte iskelet (dokunulmaz)
- *  ok      → başlık, bölge, ≤3 logo, özet satırı, atıf, chevron
+ *  ok      → başlık, chevron, ≤3 logo, tek satır "Ülke · Özet", atıf (sola)
  *  error   → "yüklenemedi" kartı; dokununca sheet açılır (tekrar dene sheet'te). "Yayında değil" ASLA denmez.
  *
  * Kartın TAMAMI tek `Pressable`; içinde iç içe dokunulabilir öğe YOK. Ülke değişimi sheet'in içinde.
  * Atıf (JustWatch / TMDB) lisans şartıdır, kartta KALIR. Hiçbir satır dışarı açmaz.
  */
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type StyleProp, type TextStyle } from 'react-native';
 
 import { Image } from 'expo-image';
 import { CaretRight } from 'phosphor-react-native';
@@ -34,10 +34,10 @@ const SUMMARY_SEPARATOR = ' · ';
 export type WatchOptionsCardState = 'loading' | 'ok' | 'error';
 
 /** Atıf satırı: kart ve sheet AYNI öğeyi kullanır (marka adı çevrilmez). */
-export function WatchOptionsAttribution(): React.JSX.Element {
+export function WatchOptionsAttribution({ style }: { style?: StyleProp<TextStyle> } = {}): React.JSX.Element {
   const { t } = useLanguage();
   return (
-    <Text style={rowStyles.attribution}>
+    <Text style={[rowStyles.attribution, style]}>
       {t('gauntlet.watchProviders.attribution')}
       {' · '}
       <Text style={rowStyles.justWatchText}>JustWatch</Text>
@@ -64,7 +64,6 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
         importantForAccessibility="no-hide-descendants"
       >
         <View style={cardStyles.skelTitle} />
-        <View style={cardStyles.skelLine} />
         <View style={cardStyles.logoRow} />
         <View style={cardStyles.skelLine} />
         <View style={cardStyles.skelLine} />
@@ -93,7 +92,9 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
   const logos = watchOptionLogos(providers);
   const groupLabel = (key: SheetGroupKey): string =>
     key === 'rentBuy' ? t('moodGauntlet.offerHint.rent') : t(`gauntlet.watchProviders.group.${key}`);
-  const summary = watchOptionGroups(providers).map(groupLabel).join(SUMMARY_SEPARATOR);
+  const categories = watchOptionGroups(providers).map(groupLabel).join(SUMMARY_SEPARATOR);
+  // Ülke satırın başında: 2 satıra sığmayan uzun metinde kesilen kuyruk (kategori) olur, ülke değil.
+  const summary = [regionName, categories].filter((part) => part !== '').join(SUMMARY_SEPARATOR);
 
   return (
     <Pressable
@@ -111,9 +112,6 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
         </Text>
         <CaretRight size={size.iconInline} color={color.text.secondary} weight="bold" />
       </View>
-      <Text style={cardStyles.region} numberOfLines={1}>
-        {regionName}
-      </Text>
       <View style={cardStyles.logoRow}>
         {logos.map((provider) => (
           <Image
@@ -128,10 +126,12 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
           />
         ))}
       </View>
-      <Text style={cardStyles.summary} numberOfLines={2}>
-        {summary}
-      </Text>
-      <WatchOptionsAttribution />
+      {summary !== '' && (
+        <Text style={cardStyles.summary} numberOfLines={2}>
+          {summary}
+        </Text>
+      )}
+      <WatchOptionsAttribution style={cardStyles.attributionLeft} />
     </Pressable>
   );
 }
@@ -149,10 +149,10 @@ const cardStyles = StyleSheet.create({
   skeleton: { opacity: 0.6 },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm },
   title: { ...type.body, fontWeight: '600', color: color.text.primary, flexShrink: 1 },
-  region: { ...type.caption, color: color.text.secondary },
   logoRow: { flexDirection: 'row', gap: space.sm, minHeight: LOGO, alignItems: 'center' },
   logo: { width: LOGO, height: LOGO, borderRadius: radius.poster, backgroundColor: color.surface.base },
   summary: { ...type.caption, color: color.text.primary },
+  attributionLeft: { textAlign: 'left' },
   skelTitle: { height: type.body.lineHeight, borderRadius: radius.poster, backgroundColor: color.surface.border },
   skelLine: { height: type.caption.lineHeight, borderRadius: radius.poster, backgroundColor: color.surface.border },
 });
