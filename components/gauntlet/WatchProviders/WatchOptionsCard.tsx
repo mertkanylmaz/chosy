@@ -5,7 +5,7 @@
  * `WatchProvidersRow` DEĞİŞMEDİ (şampiyon, MoodDeckSummary, film detayı onu kullanır).
  *
  *  loading → aynı yükseklikte iskelet (dokunulmaz)
- *  ok      → başlık, chevron, ≤3 logo, tek satır "Ülke · Özet", atıf (sola)
+ *  ok      → başlık, chevron, ≤5 öğe (fazlası 4 logo + "+N"), tek satır "Ülke · Özet", atıf (sola)
  *  error   → "yüklenemedi" kartı; dokununca sheet açılır (tekrar dene sheet'te). "Yayında değil" ASLA denmez.
  *
  * Kartın TAMAMI tek `Pressable`; içinde iç içe dokunulabilir öğe YOK. Ülke değişimi sheet'in içinde.
@@ -22,7 +22,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { watchRegionName } from '@/constants/watchRegions';
 import type { TmdbWatchProviders } from '@/services/tmdb';
 import { brandOf } from '@/utils/watchProviderBrands';
-import { watchOptionCount, watchOptionGroups, watchOptionLogos } from '@/utils/watchOptionsSummary';
+import { watchOptionCount, watchOptionGroups, watchOptionStrip } from '@/utils/watchOptionsSummary';
 import type { SheetGroupKey } from '@/utils/watchProviderList';
 
 import { styles as rowStyles } from './styles';
@@ -89,7 +89,7 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
     );
   }
 
-  const logos = watchOptionLogos(providers);
+  const { logos, overflow } = watchOptionStrip(providers);
   const groupLabel = (key: SheetGroupKey): string =>
     key === 'rentBuy' ? t('moodGauntlet.offerHint.rent') : t(`gauntlet.watchProviders.group.${key}`);
   const categories = watchOptionGroups(providers).map(groupLabel).join(SUMMARY_SEPARATOR);
@@ -125,6 +125,15 @@ export function WatchOptionsCard({ state, providers, onPress }: WatchOptionsCard
             accessibilityLabel={brandOf(provider).name}
           />
         ))}
+        {overflow > 0 && (
+          <View
+            style={cardStyles.more}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Text style={cardStyles.moreText} numberOfLines={1}>{`+${overflow}`}</Text>
+          </View>
+        )}
       </View>
       {summary !== '' && (
         <Text style={cardStyles.summary} numberOfLines={2}>
@@ -151,6 +160,15 @@ const cardStyles = StyleSheet.create({
   title: { ...type.body, fontWeight: '600', color: color.text.primary, flexShrink: 1 },
   logoRow: { flexDirection: 'row', gap: space.sm, minHeight: LOGO, alignItems: 'center' },
   logo: { width: LOGO, height: LOGO, borderRadius: radius.poster, backgroundColor: color.surface.base },
+  more: {
+    width: LOGO,
+    height: LOGO,
+    borderRadius: radius.poster,
+    backgroundColor: color.surface.base,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreText: { ...type.caption, color: color.text.secondary, textAlign: 'center' },
   summary: { ...type.caption, color: color.text.primary },
   attributionLeft: { textAlign: 'left' },
   skelTitle: { height: type.body.lineHeight, borderRadius: radius.poster, backgroundColor: color.surface.border },
