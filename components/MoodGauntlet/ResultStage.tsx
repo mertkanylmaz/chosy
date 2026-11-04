@@ -5,7 +5,7 @@
  * Faz 2-3 hiyerarşi (yukarıdan aşağı):
  *   mood başlığı → poster + başlık + gerekçe + çipler (+ "Why this fits you" satırı)
  *   → birincil TEK CTA "Watch on {Provider}" (altında nerede-izlenir logoları)
- *   → ikincil TEK satır, tek stil: Kaydet (durum düğmede: "✓ Saved") · Fragman · Paylaş (ikon)
+ *   → ikincil TEK satır, tek stil: Kaydet (durum düğmede: "Saved", dolu ikon) · Fragman · Paylaş (ikon)
  *   → "Not quite right?": Lighter · More intense · Another four (üç çip)
  *   → "If not this one" yedekleri.
  */
@@ -445,7 +445,7 @@ export function ResultStage({
             accessibilityLabel={saved ? t('moodGauntlet.saved') : t('moodGauntlet.save')}
             accessibilityState={{ disabled: saveState !== 'idle', selected: saved }}
           >
-            {!saved && <BookmarkSimple size={size.iconInline} color={color.text.primary} />}
+            <BookmarkSimple size={size.iconInline} color={color.text.primary} weight={saved ? 'fill' : 'regular'} />
             <Text style={styles.saveBtnText} numberOfLines={1}>
               {saved ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
             </Text>
@@ -459,7 +459,7 @@ export function ResultStage({
             accessibilityRole="button"
             accessibilityLabel={t('moodGauntlet.trailer')}
           >
-            <Play size={size.iconInline} color={color.text.primary} weight="fill" />
+            <Play size={size.iconInline} color={color.text.primary} weight="regular" />
             <Text style={styles.saveBtnText} numberOfLines={1}>
               {t('moodGauntlet.trailer')}
             </Text>

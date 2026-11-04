@@ -75,11 +75,11 @@ Deno.test('sonuc ekrani hiyerarsisi: CTA → saglayicilar → Kaydet+Paylas(ikon
   assertMatch(result, /<AdjustChip label=\{t\('moodGauntlet\.anotherFour'\)\} onPress=\{onAnotherFour\} \/>/)
   assert(!/OutlineAction/.test(result), 'ayrı Another four / outline dugmesi kalmamali')
   assertEquals((result.match(/<PrimaryAction/g) ?? []).length, 0) // Faz 2-10a: sari CTA yerine WatchOptionsCard
-  // Save durumu dugmede: "✓ Saved", ek satir yok; hata icin sabit yer
+  // Save durumu dugmede: "Saved", ek satir yok; hata icin sabit yer
   assertMatch(result, /saved \? t\('moodGauntlet\.savedShort'\) : t\('moodGauntlet\.save'\)/)
   assertMatch(result, /<View style=\{styles\.noticeSlot\}>/)
   assert(!/setNotice\(t\('moodGauntlet\.saved'\)\)/.test(result), 'basari bildirimi ek satir olarak eklenmemeli')
-  assertEquals(en.moodGauntlet.savedShort, '✓ Saved')
+  assertEquals(en.moodGauntlet.savedShort, 'Saved')
   // Share ikon dugmesi
   assertMatch(result, /<ShareNetwork /)
   assert(!/Wind|Lightning/.test(result), 'cip ikonlari kalkti')
