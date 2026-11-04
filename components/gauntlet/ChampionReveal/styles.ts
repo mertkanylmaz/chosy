@@ -105,10 +105,11 @@ export const styles = StyleSheet.create({
     color: color.text.secondary,
     textAlign: 'center',
   },
+  /** Home-A1: kart ↔ Save/Share satırı boşluğu Pro Result ile aynı token (MoodGauntlet/styles.ts:158,160 → space.sm). */
   actionsWrapper: {
     alignSelf: 'stretch',
     alignItems: 'center',
-    gap: space.base,
+    gap: space.sm,
   },
   /** F2.3: Watch now + kaydet + paylaş tek satırda; ikonlar 44pt (K-54). */
   actionsRow: {

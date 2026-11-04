@@ -46,13 +46,17 @@
  * paylaşım ve Watch Now mantığı DEĞİŞMEDİ. `onRevealSettled` sekansın görsel
  * bitişini bildirir (kartın giriş zamanlaması GauntletShell'de).
  *
+ * Home-A1: sarı "Where to watch ↗" CTA ve `WatchProvidersRow` bloğu kalktı; tek izleme girişi
+ * `ChampionWatchOptions` (Pro Result'ın Watch options kartı + ProvidersSheet). `watch_now_tapped`
+ * emekli; birincil niyet `where_to_watch_opened{surface:'champion'}`. Hero ve reveal DEĞİŞMEDİ.
+ *
  * F2.3: tek düzen (canlı = dönüş). Hero yüksekliği dinamik (`heroHeight.ts`:
  * pencere − altındaki içerik − tab bar payı, [160pt, %42]); Watch now + kaydet
  * + paylaş tek satır; "See all" logo satırının sonunda (WatchProviders);
  * sıra Watch now → Spotlight → sayaç (GauntletShell). Reveal animasyonu,
  * başlık tipografisi ve renkler DEĞİŞMEDİ.
  */
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { LayoutChangeEvent, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 
 import * as Clipboard from 'expo-clipboard';
@@ -60,7 +64,7 @@ import * as Sentry from '@sentry/react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { ArrowUpRight, BookmarkSimple, FilmSlate, ShareNetwork } from 'phosphor-react-native';
+import { BookmarkSimple, FilmSlate, ShareNetwork } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -70,7 +74,6 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { ChampionActionButton } from '@/components/gauntlet/ChampionActionButton';
-import { WatchProvidersRow } from '@/components/gauntlet/WatchProviders';
 import { useWatchProviders } from '@/components/gauntlet/WatchProviders/useWatchProviders';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -90,8 +93,8 @@ import { buildGauntletShareText, type ShareRound } from '@/utils/gauntletShareTe
 import { upgradePosterUrl } from '@/utils/posterUrl';
 import { hapticLight } from '@/utils/haptics';
 import { filmDetailHref } from '@/utils/filmDetailHref';
-import { orderProviders } from '@/utils/watchProviderList';
 
+import { ChampionWatchOptions } from './ChampionWatchOptions';
 import { heroHeight as computeHeroHeight } from './heroHeight';
 import {
   HERO_HEIGHT_RATIO,
@@ -102,6 +105,7 @@ import {
   TOP_SCRIM_STOPS,
 } from './heroScrim';
 import { styles } from './styles';
+import { championWatchMode } from './watchMode';
 
 /**
  * C1 geçişi: renk SABİT `ink`, yalnız alfa değişir (heroScrim.ts). Tuple
@@ -353,40 +357,13 @@ export function ChampionReveal({
   }, [router, champion.id, champion.title, champion.year, champion.posterUrl]);
 
   /**
-   * Watch Now — film detay ekranına gider (dış link yok). Sağlayıcı yoksa
-   * buton HİÇ render edilmez (devre dışı değil). Sayı `orderProviders` uzunluğudur —
-   * logo satırındaki "See all" ile aynı tekilleştirilmiş kaynak.
+   * Home-A1: izleme modu `resultCtaMode` ile (Result'la aynı). loading/watch → kart birincil,
+   * Save ikincil satırda; unavailable/hidden → dolgulu "Sonraya bırak" birincil.
    */
-  const providerCount = useMemo(
-    () => (providersState === 'ok' && providers ? orderProviders(providers).length : 0),
-    [providersState, providers],
-  );
-  const showWatchNow = providerCount > 0;
-  /**
-   * HOME-2: sağlayıcılar yüklenirken birincil slot NİHAİ (ok) düzenle aynı
-   * durur — "Where to watch" devre dışı, "Sonraya bırak" ikon yerinde. Aksi
-   * halde ilk karede beyaz "Save" birincilken veri gelince sarıya dönüp
-   * düzen zıplıyordu. empty/error/noRegion'da davranış aynı (filled Save).
-   */
-  const providersLoading = providersState === 'loading';
-  const showWatchSlot = showWatchNow || providersLoading;
-  /** S-2: Watch Now birincilse "Sonraya bırak" ikon satırına iner. */
-  const showSaveIcon = showWatchSlot && gauntletId !== undefined;
+  const watchMode = championWatchMode(providersState, providers);
+  const saveIsPrimary = watchMode === 'unavailable' || watchMode === 'hidden';
   const saveLabel =
     saveState === 'saved' ? t('gauntlet.saveForLater.saved') : t('gauntlet.saveForLater.action');
-
-  /** Kullanıcı uygulamada kalır: Watch now film detay ekranına gider. */
-  const handleWatchNow = useCallback(() => {
-    void hapticLight();
-    posthogAnalytics.track('watch_now_tapped', {
-      film_id: champion.id,
-      region,
-      provider_count: providerCount,
-    });
-    router.push(
-      filmDetailHref(champion.id, { title: champion.title, year: champion.year, posterUrl: champion.posterUrl || null }) as never,
-    );
-  }, [router, champion.id, champion.title, champion.year, champion.posterUrl, region, providerCount]);
 
   /**
    * C7: Champion posteri w780. Sunucu w500 veriyor (gauntletCore), bu ekran
@@ -614,72 +591,54 @@ export function ChampionReveal({
 
         {/* Eylemler — meta ile aynı vuruşta belirir (§10.2 sırası bozulmaz). */}
         <Animated.View style={[styles.actionsWrapper, metaStyle]}>
-          {/*
-            "Nerede izlenir" — en fazla 3 logo + "See all" sheet'i (C5).
-            Dört durumu `WatchProvidersRow` çizer; hata durumundaki
-            "Tekrar dene" bloğun içinde, sessiz eylem olarak.
-          */}
-          <WatchProvidersRow
+          <ChampionWatchOptions
+            mode={watchMode}
             state={providersState}
             providers={providers}
             onRetry={retry}
             filmId={champion.id}
-            surface="champion"
           />
 
           {shareNotice !== null && <Text style={styles.shareNotice}>{shareNotice}</Text>}
 
-          {/* F2.3 — tek satır: [Watch now (flex:1)] [kaydet] [paylaş]. Watch now
-              yoksa dolgulu "Sonraya bırak" birincil olur (L9 davranışı). İkonlar
-              44pt kare (K-54). Kaydetme, paylaşım ve Watch now mantığı DEĞİŞMEDİ. */}
+          {/* Home-A1: unavailable/noRegion'da dolgulu "Sonraya bırak" birincil; aksi halde Save
+              ikincil satırda. Kaydetme ve paylaşım mantığı DEĞİŞMEDİ, yalnız görünüm. */}
+          {saveIsPrimary && gauntletId !== undefined && (
+            <ChampionActionButton
+              label={saveLabel}
+              icon={BookmarkSimple}
+              variant="filled"
+              onPress={() => void handleSaveForLater()}
+              // 'saving' → çift yazma denemesi engellenir; 'saved' → tekrar basılacak bir şey yok.
+              disabled={saveState !== 'idle'}
+              busy={saveState === 'saving'}
+            />
+          )}
+
           <View style={styles.actionsRow}>
-            {showWatchSlot ? (
+            {!saveIsPrimary && gauntletId !== undefined && (
               <View style={styles.primarySlot}>
                 <ChampionActionButton
-                  label={t('gauntlet.watchProviders.sheetTitle')}
-                  icon={ArrowUpRight}
-                  variant="marquee"
-                  onPress={handleWatchNow}
-                  disabled={!showWatchNow}
+                  label={saveState === 'saved' ? t('moodGauntlet.savedShort') : t('moodGauntlet.save')}
+                  accessibilityLabel={saveLabel}
+                  icon={BookmarkSimple}
+                  variant="outline"
+                  selected={saveState === 'saved'}
+                  onPress={() => void handleSaveForLater()}
+                  disabled={saveState !== 'idle'}
+                  busy={saveState === 'saving'}
                 />
               </View>
-            ) : (
-              gauntletId !== undefined && (
-                <View style={styles.primarySlot}>
-                  <ChampionActionButton
-                    label={saveLabel}
-                    icon={BookmarkSimple}
-                    variant="filled"
-                    onPress={() => void handleSaveForLater()}
-                    // 'saving' → çift yazma denemesi engellenir; 'saved' → eylem
-                    // tamamlandı, tekrar basılacak bir şey yok.
-                    disabled={saveState !== 'idle'}
-                    busy={saveState === 'saving'}
-                  />
-                </View>
-              )
-            )}
-
-            {showSaveIcon && (
-              <ChampionActionButton
-                label={saveLabel}
-                icon={BookmarkSimple}
-                variant="outline"
-                iconOnly
-                selected={saveState === 'saved'}
-                onPress={() => void handleSaveForLater()}
-                disabled={saveState !== 'idle'}
-                busy={saveState === 'saving'}
-              />
             )}
             {date !== undefined && (
-              <ChampionActionButton
-                label={t('gauntlet.share.action')}
-                icon={ShareNetwork}
-                variant="outline"
-                iconOnly
-                onPress={() => void handleShare()}
-              />
+              <View style={styles.primarySlot}>
+                <ChampionActionButton
+                  label={t('gauntlet.share.action')}
+                  icon={ShareNetwork}
+                  variant="outline"
+                  onPress={() => void handleShare()}
+                />
+              </View>
             )}
           </View>
         </Animated.View>
