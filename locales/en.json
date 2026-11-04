@@ -684,6 +684,7 @@
     "moodChipLabel": "Tonight's mood: %{name}",
     "question": "Which one tonight?",
     "noneCta": "None of these",
+    "resultWhyTitle": "Why this fits tonight",
     "resultKicker": "TONIGHT'S FILM",
     "watchNow": "Watch now",
     "saveForLater": "Save for later",

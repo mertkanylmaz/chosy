@@ -684,6 +684,7 @@
     "moodChipLabel": "Bu akşamın ruh hali: %{name}",
     "question": "Bu akşam hangisi?",
     "noneCta": "Hiçbiri",
+    "resultWhyTitle": "Bu akşama neden uygun",
     "resultKicker": "BU AKŞAMIN FİLMİ",
     "watchNow": "Şimdi izle",
     "saveForLater": "Sonraya bırak",

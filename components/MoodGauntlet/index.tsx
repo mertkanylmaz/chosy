@@ -74,6 +74,7 @@ export function MoodGauntletShell(): React.JSX.Element {
           setIndex={g.set.setIndex}
           backups={g.set.backups}
           reasons={g.reasons}
+          reasonsLoading={g.reasonsLoading}
           dims={g.dims[g.champion.id]}
           pattern={g.pickPattern}
           moodLabel={g.moodLabel}

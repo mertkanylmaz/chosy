@@ -136,7 +136,12 @@ export const styles = StyleSheet.create({
   heroImage: { width: '100%', height: '100%' },
   resultTitle: { ...type.title, color: color.text.primary, textAlign: 'center', marginTop: space.base },
   resultMeta: { ...type.caption, color: color.text.secondary, textAlign: 'center', marginTop: space.xs },
-  resultReason: { ...type.body, color: color.text.primary, textAlign: 'center', marginTop: space.sm },
+  /** Gerekçe bölümü: başlık + metin (ya da iskelet). Yalnız gerekçe varken / yüklenirken çizilir. */
+  resultWhy: { marginTop: space.sm },
+  resultWhyTitle: { ...type['label-caps'], color: color.text.secondary, textAlign: 'center' },
+  resultReasonSkeleton: { gap: space.xs, paddingTop: space.xs, alignItems: 'center' },
+  skeletonLineFull: { width: '100%' },
+  resultReason: { ...type.body, color: color.text.primary, textAlign: 'center', marginTop: space.xs },
   resultChips: { marginTop: space.sm },
   /** "Why this fits you": gerekçe + çiplerin altında tek satır; veri yoksa hiç çizilmez. */
   insight: { ...type.callout, color: color.text.secondary, textAlign: 'center', marginTop: space.sm },

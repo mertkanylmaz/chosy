@@ -82,6 +82,8 @@ interface ResultStageProps {
   backups: MatchRow[];
   /** film id → gerekçe (arkadan dolar; yoksa satır çizilmez). */
   reasons: Record<string, string>;
+  /** Gerekçeler arkadan yükleniyor mu (başlık + iskelet için). */
+  reasonsLoading: boolean;
   /** Şampiyonun boyutları (çipler); gelmezse çip çizilmez. */
   dims: FilmDims | undefined;
   /** Seçimlerden türeyen deterministik desen; yoksa satır yok. */
@@ -124,6 +126,7 @@ export function ResultStage({
   setIndex,
   backups,
   reasons,
+  reasonsLoading,
   dims,
   pattern,
   moodLabel,
@@ -201,6 +204,9 @@ export function ResultStage({
   const track = useCallback((a: MoodPickAction) => trackMoodEvent(pickActionEvent(a)), []);
   const poster = normalizePosterUrl(champion.poster_url);
   const reason = reasonFor(reasons, champion.id);
+  // "Why this fits tonight" yalnız filmin neden uyduğunu söyleyen LLM gerekçesi için; özet metni yedeği YOK.
+  // Yüklenirken başlık + iskelet; gerekçe boş / hata ile bitince ikisi birlikte kalkar.
+  const showWhy = reason !== null || reasonsLoading;
   // Faz 2-8: göreli içgörü, şampiyonun aynı eksendeki mutlak çipiyle çelişirse gösterilmez.
   const insight = visibleInsight(pattern, dims);
   const year = champion.year ?? 0;
@@ -329,14 +335,26 @@ export function ResultStage({
       </Animated.Text>
       {meta !== null && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}
       <Animated.View style={detailsStyle}>
-      {reason !== null && (
-        <Animated.Text
-          key={reason}
-          style={styles.resultReason}
-          entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
-        >
-          {reason}
-        </Animated.Text>
+      {showWhy && (
+        <View style={styles.resultWhy}>
+          <Text style={styles.resultWhyTitle} accessibilityRole="header">
+            {t('moodGauntlet.resultWhyTitle')}
+          </Text>
+          {reason !== null ? (
+            <Animated.Text
+              key={reason}
+              style={styles.resultReason}
+              entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
+            >
+              {reason}
+            </Animated.Text>
+          ) : (
+            <View style={styles.resultReasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
+              <View style={[styles.skeletonLine, styles.skeletonLineFull]} />
+              <View style={styles.skeletonLine} />
+            </View>
+          )}
+        </View>
       )}
       <View style={styles.resultChips}>
         {/* A3: süre başlık altı meta satırında varsa çip olarak TEKRARLANMAZ. */}
