@@ -206,6 +206,7 @@ export function ResultStage({
   const reason = reasonFor(reasons, champion.id);
   // "Why this fits tonight" yalnız filmin neden uyduğunu söyleyen LLM gerekçesi için; özet metni yedeği YOK.
   // Yüklenirken başlık + iskelet; gerekçe boş / hata ile bitince ikisi birlikte kalkar.
+  const kickerLine = buildKickerLine(t('moodGauntlet.resultKicker'), moodLabel);
   const showWhy = reason !== null || reasonsLoading;
   // Faz 2-8: göreli içgörü, şampiyonun aynı eksendeki mutlak çipiyle çelişirse gösterilmez.
   const insight = visibleInsight(pattern, dims);
@@ -322,7 +323,8 @@ export function ResultStage({
   return (
     <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
       <Text style={styles.kicker} numberOfLines={1} ellipsizeMode="tail" accessibilityRole="header">
-        {buildKickerLine(t('moodGauntlet.resultKicker'), moodLabel)}
+        {kickerLine.kicker}
+        {kickerLine.mood !== null && <Text style={styles.kickerMood}>{kickerLine.mood}</Text>}
       </Text>
       <Animated.View style={[styles.hero, posterStyle]}>
         {poster !== null && <Image source={{ uri: poster }} style={styles.heroImage} contentFit="cover" />}
@@ -337,20 +339,23 @@ export function ResultStage({
           <Text style={styles.resultWhyTitle} accessibilityRole="header">
             {t('moodGauntlet.resultWhyTitle')}
           </Text>
-          {reason !== null ? (
-            <Animated.Text
-              key={reason}
-              style={styles.resultReason}
-              entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
-            >
-              {reason}
-            </Animated.Text>
-          ) : (
-            <View style={styles.resultReasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
-              <View style={[styles.skeletonLine, styles.skeletonLineFull]} />
-              <View style={styles.skeletonLine} />
-            </View>
-          )}
+          <View style={styles.resultReasonBlock}>
+            {reason !== null ? (
+              <Animated.Text
+                key={reason}
+                style={styles.resultReason}
+                entering={reduced ? undefined : FadeIn.duration(DISSOLVE_DURATION.newContender)}
+              >
+                {reason}
+              </Animated.Text>
+            ) : (
+              <View style={styles.resultReasonSkeleton} accessibilityElementsHidden importantForAccessibility="no">
+                <View style={[styles.skeletonLine, styles.skeletonLineFull]} />
+                <View style={[styles.skeletonLine, styles.skeletonLineFull]} />
+                <View style={styles.skeletonLine} />
+              </View>
+            )}
+          </View>
         </View>
       )}
       <View style={styles.resultChips}>

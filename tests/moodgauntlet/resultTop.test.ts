@@ -52,13 +52,26 @@ Deno.test('i18n: resultWhyTitle en+tr', () => {
 
 import { buildKickerLine } from '../../utils/moodFilmFacts.ts'
 
-Deno.test('buildKickerLine: mood varsa "KICKER · mood", boşsa yalnız kicker', () => {
-  assertEquals(buildKickerLine('YOUR PICK', 'Rainy Day'), 'YOUR PICK · Rainy Day')
-  assertEquals(buildKickerLine('YOUR PICK', '  Rainy Day '), 'YOUR PICK · Rainy Day')
-  assertEquals(buildKickerLine('YOUR PICK', ''), 'YOUR PICK')
-  assertEquals(buildKickerLine('YOUR PICK', '   '), 'YOUR PICK')
-  assertEquals(buildKickerLine('YOUR PICK', null), 'YOUR PICK')
-  assertEquals(buildKickerLine('SENİN SEÇİMİN', undefined), 'SENİN SEÇİMİN')
+Deno.test('buildKickerLine: iki parça; mood varsa " · mood", boşsa null', () => {
+  assertEquals(buildKickerLine('YOUR PICK', 'Rainy Day'), { kicker: 'YOUR PICK', mood: ' · Rainy Day' })
+  assertEquals(buildKickerLine('YOUR PICK', '  Rainy Day '), { kicker: 'YOUR PICK', mood: ' · Rainy Day' })
+  assertEquals(buildKickerLine('YOUR PICK', ''), { kicker: 'YOUR PICK', mood: null })
+  assertEquals(buildKickerLine('YOUR PICK', '   '), { kicker: 'YOUR PICK', mood: null })
+  assertEquals(buildKickerLine('YOUR PICK', null), { kicker: 'YOUR PICK', mood: null })
+  assertEquals(buildKickerLine('SENİN SEÇİMİN', undefined), { kicker: 'SENİN SEÇİMİN', mood: null })
+})
+
+Deno.test('kicker: mood parçası iç içe Text, büyük harf dönüşümü yok; gerekçe iskelet+metin aynı minHeight kutusunda', () => {
+  assertMatch(stage, /\{kickerLine\.mood !== null && <Text style=\{styles\.kickerMood\}>/)
+  const st = read('components/MoodGauntlet/styles.ts')
+  assertMatch(st, /kickerMood: \{ fontWeight: '400', letterSpacing: 0, color: color\.text\.secondary \}/)
+  assert(!/textTransform|toUpperCase|toLocaleUpperCase/.test(stage + st), 'büyük harf dönüşümü yok')
+  assertMatch(st, /resultReasonBlock: \{ minHeight: type\.body\.lineHeight \* 3 \}/)
+  const block = stage.slice(stage.indexOf('styles.resultReasonBlock'), stage.indexOf('styles.resultChips'))
+  assertMatch(block, /styles\.resultReason\}/)
+  assertMatch(block, /styles\.resultReasonSkeleton\}/)
+  assertEquals((block.match(/styles\.skeletonLine\b/g) ?? []).length, 3, 'iskelet 3 çizgi')
+  assertEquals((stage.match(/styles\.resultReasonBlock/g) ?? []).length, 1, 'tek kutu hem iskelet hem metin')
 })
 
 Deno.test('üst satır tek satır; poster gerçek 2:3 sabit yükseklik; hiyerarşi sırası', () => {

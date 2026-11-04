@@ -85,11 +85,12 @@ export function buildMetaLine(year: number | null | undefined, runtimeMinutes: n
 }
 
 /**
- * Sonuç ekranı üst satırı: "<KICKER> · <MOOD>". Mood boş / yalnız boşluk ise yalnız kicker; ayraç boşta kalmaz.
+ * Sonuç ekranı üst satırı iki parça: kicker (label-caps) + " · <mood>" (normal harf, sönük renk).
+ * Mood boşsa / yalnız boşluksa `mood` null; ayraç boşta kalmaz.
  */
-export function buildKickerLine(kicker: string, moodLabel: string | null | undefined): string {
+export function buildKickerLine(kicker: string, moodLabel: string | null | undefined): { kicker: string; mood: string | null } {
   const mood = typeof moodLabel === 'string' ? moodLabel.trim() : '';
-  return mood.length > 0 ? `${kicker} · ${mood}` : kicker;
+  return { kicker, mood: mood.length > 0 ? ` · ${mood}` : null };
 }
 
 export interface FilmChips {

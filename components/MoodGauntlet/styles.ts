@@ -26,6 +26,8 @@ export const styles = StyleSheet.create({
   title: { ...type.title, color: color.text.primary, textAlign: 'center' },
   body: { ...type.body, color: color.text.secondary, textAlign: 'center' },
   caption: { ...type.caption, color: color.text.secondary },
+  /** " · <mood>" parçası: normal harf, sönük renk; satır yüksekliği kicker ile aynı (iç içe Text). */
+  kickerMood: { fontWeight: '400', letterSpacing: 0, color: color.text.secondary },
   /** Sonuç üst satırı: "YOUR PICK · <mood>" tek satır; poster ile arası sm. */
   kicker: { ...type['label-caps'], color: color.text.secondary, textAlign: 'center', marginBottom: space.sm },
   actions: { gap: space.sm, marginTop: space.base },
@@ -144,6 +146,8 @@ export const styles = StyleSheet.create({
   /** Gerekçe bölümü: başlık + metin (ya da iskelet). Yalnız gerekçe varken / yüklenirken çizilir. */
   resultWhy: { marginTop: space.sm },
   resultWhyTitle: { ...type['label-caps'], color: color.text.secondary, textAlign: 'center' },
+  /** Gerekçe metni ve iskeleti aynı kutuda: 3 satır (body lineHeight × 3) → yükleme→metin geçişinde yükseklik değişmez. */
+  resultReasonBlock: { minHeight: type.body.lineHeight * 3 },
   resultReasonSkeleton: { gap: space.xs, paddingTop: space.xs, alignItems: 'center' },
   skeletonLineFull: { width: '100%' },
   resultReason: { ...type.body, color: color.text.primary, textAlign: 'center', marginTop: space.xs },
