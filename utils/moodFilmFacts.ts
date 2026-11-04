@@ -72,6 +72,18 @@ export function formatRuntime(minutes: number | null | undefined): string | null
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/**
+ * Sonuç ekranı meta satırı: "yıl · süre". Eksik alan atlanır, ayraç yalnız iki dolu parça arasına girer;
+ * hiçbiri yoksa null (satır çizilmez). Tür bu fazda yok.
+ */
+export function buildMetaLine(year: number | null | undefined, runtimeMinutes: number | null | undefined): string | null {
+  const parts: string[] = [];
+  if (typeof year === 'number' && Number.isFinite(year) && year > 0) parts.push(String(year));
+  const rt = formatRuntime(runtimeMinutes);
+  if (rt !== null) parts.push(rt);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 export interface FilmChips {
   /** i18n anahtarı son eki; null = çizilmez. */
   pace: Pace | null;

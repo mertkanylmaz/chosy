@@ -48,7 +48,7 @@ import { addToWatchlist } from '@/services/watchlist';
 import { hapticLight } from '@/utils/haptics';
 import { logger } from '@/utils/logger';
 import { pickActionEvent, trailerClickedEvent, type MoodPickAction } from '@/utils/moodGauntletAnalytics';
-import { formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
+import { buildMetaLine, formatRuntime, visibleInsight, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
 import { revealDelays } from '@/utils/resultReveal';
 import { resultScrollKey, shouldScrollToTop } from '@/utils/resultScroll';
 import { resultCtaMode } from '@/utils/moodResultCta';
@@ -204,9 +204,7 @@ export function ResultStage({
   // Faz 2-8: göreli içgörü, şampiyonun aynı eksendeki mutlak çipiyle çelişirse gösterilmez.
   const insight = visibleInsight(pattern, dims);
   const year = champion.year ?? 0;
-  const meta = [year > 0 ? String(year) : null, formatRuntime(champion.runtime)]
-    .filter((x): x is string => x !== null)
-    .join(' · ');
+  const meta = buildMetaLine(champion.year, champion.runtime);
 
   const openFilm = useCallback(
     (id: string, row?: MatchRow) => {
@@ -329,7 +327,7 @@ export function ResultStage({
       <Animated.Text style={[styles.resultTitle, titleStyle]} numberOfLines={3} accessibilityRole="header">
         {champion.title}
       </Animated.Text>
-      {meta.length > 0 && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}
+      {meta !== null && <Animated.Text style={[styles.resultMeta, metaStyle]}>{meta}</Animated.Text>}
       <Animated.View style={detailsStyle}>
       {reason !== null && (
         <Animated.Text
