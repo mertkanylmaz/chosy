@@ -66,10 +66,10 @@ Deno.test('Your four: CTA cift dokunusta tek acilis/tek olay; yapay gecikme yok;
   assertMatch(intro, /fourCellWidth\(box\.w, box\.h\)/)
 })
 
-Deno.test('Your four: sureler token; Reduce Motion hareketi kaldirir', () => {
+Deno.test('Your four: sureler token; Reduce Motion ~100 ms capraz gecis', () => {
   assertMatch(intro, /MOOD_MOTION\.posterStagger/)
   assertMatch(intro, /MOOD_MOTION\.stageTransition/)
-  assertMatch(intro, /entering=\{reduced \? undefined :/)
+  assertMatch(intro, /reduced\s*\?\s*FadeIn\.duration\(REDUCED_MOTION_DURATION\.crossFade\)/)
   assert(!/duration\(\s*\d/.test(intro) && !/delay\(\s*\d/.test(intro), 'hardcode sure yok')
   const m = read('constants/design/motion.ts')
   assertMatch(m, /stageTransition: 300/)
