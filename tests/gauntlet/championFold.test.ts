@@ -44,11 +44,11 @@ const LAYOUT = {
   bodyGap: 12,
   /** `metaLine` meta lineHeight */
   meta: 16,
-  /** WatchProvidersRow: etiket 16 + gap 8 + logo satırı 52 + gap 8 + atıf 18 ("See all" satırın içinde) */
-  providers: 16 + 8 + 52 + 8 + 18,
-  /** `actionsWrapper.gap` space.base */
-  wrapperGap: 16,
-  /** Watch now satırı: size.actionHeight */
+  /** Home-A1 WatchOptionsCard: padding 2×16 + başlık 24 + bölge 18 + logo 40 + özet 18 + atıf 18 + 4 boşluk × 4 */
+  providers: 32 + 24 + 18 + 40 + 18 + 18 + 16,
+  /** `actionsWrapper.gap` space.sm (Home-A1: Pro Result ile aynı token) */
+  wrapperGap: 8,
+  /** Save · Share satırı (ikon + metin): size.actionHeight */
   actionsRow: 48,
   /** `bonusCardInline.marginTop` space.lg */
   cardMargin: 24,
