@@ -113,7 +113,7 @@ Deno.test('kopya sozlugu en/tr (tek yer: locales)', () => {
   const t = tr.moodGauntlet
   assertEquals(
     [m.startCta, m.yourFour, m.question, m.justPick, m.noneCta, m.resultKicker, m.anotherFour, m.lighter, m.stronger],
-    ['Find my four', 'Your four', 'Which one tonight?', 'Just pick for me', 'None of these', 'YOUR PICK', 'Another four', 'Lighter', 'More intense'],
+    ['Find my four', 'Your four', 'Which one tonight?', 'Just pick for me', 'None of these', 'YOUR PICK', 'Another four', 'Calmer', 'More intense'],
   )
   assertEquals(t.yourFour, 'Dörtlün')
   assertEquals(t.question, 'Bu akşam hangisi?')

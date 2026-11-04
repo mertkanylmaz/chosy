@@ -499,6 +499,7 @@ export function ResultStage({
                   onPress={() => openFilm(b.id, b)}
                   accessibilityRole="button"
                   accessibilityLabel={b.title}
+                  accessibilityHint={t('moodGauntlet.backupHint')}
                 >
                   <View style={styles.backupPoster}>
                     {uri !== null && <Image source={{ uri }} style={styles.heroImage} contentFit="cover" />}
