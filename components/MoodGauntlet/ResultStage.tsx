@@ -392,6 +392,7 @@ export function ResultStage({
             </Text>
             <ChampionActionButton
               label={saved ? t('moodGauntlet.savedShort') : t('gauntlet.saveForLater.action')}
+              accessibilityLabel={saved ? t('moodGauntlet.saved') : t('gauntlet.saveForLater.action')}
               icon={BookmarkSimple}
               variant="filled"
               onPress={() => void handleSave()}
@@ -432,7 +433,8 @@ export function ResultStage({
         <RegionPickerSheet visible={regionOpen} onClose={() => setRegionOpen(false)} />
       </View>
 
-      <View style={styles.secondaryRow}>
+      {/* Yalnız Share kaldıysa (yayında değil + fragman yok) ortalanır; diğer modların yerleşimi aynı. */}
+      <View style={[styles.secondaryRow, ctaMode === 'unavailable' && trailerKey === null && styles.secondaryRowSolo]}>
         {ctaMode !== 'unavailable' && (
           <TouchableOpacity
             style={styles.saveBtn}

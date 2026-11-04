@@ -158,6 +158,7 @@ export const styles = StyleSheet.create({
   ctaBlock: { gap: space.sm, marginTop: space.base },
   /** İkincil satır: Kaydet (durum düğmede) + Paylaş (ikon). Durum değişince yükseklik/konum sabit. */
   secondaryRow: { flexDirection: 'row', gap: space.sm, marginTop: space.sm },
+  secondaryRowSolo: { justifyContent: 'center' },
   saveBtn: {
     flex: 1,
     minHeight: size.touchTarget,

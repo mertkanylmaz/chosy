@@ -39,6 +39,8 @@ interface ChampionActionButtonProps {
   iconOnly?: boolean;
   /** S-2: eylem tamamlandı — ikon dolu, sönükleştirme yok. */
   selected?: boolean;
+  /** Görünen etiketten farklı sesli okuyucu etiketi gerekirse; verilmezse `label` kullanılır. */
+  accessibilityLabel?: string;
 }
 
 export function ChampionActionButton({
@@ -50,6 +52,7 @@ export function ChampionActionButton({
   busy = false,
   iconOnly = false,
   selected = false,
+  accessibilityLabel,
 }: ChampionActionButtonProps): React.JSX.Element {
   const onDark = variant === 'outline';
   const contentColor = onDark ? color.text.primary : color.surface.base;
@@ -64,7 +67,7 @@ export function ChampionActionButton({
         disabled && !selected && styles.disabled,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ disabled, busy, selected }}
     >
       <IconComponent
