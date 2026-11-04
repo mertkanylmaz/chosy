@@ -137,3 +137,22 @@ Deno.test('i18n: watchOptions anahtarları en + tr birlikte', () => {
     assert(w.title && w.a11y && w.errorTitle, lang)
   }
 })
+
+Deno.test('kart (Home-A1.1): ülke · özet TEK satır, bölge satırı yok, atıf sola, sheet atfı ortalı kalır', () => {
+  const src = read(CARD).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+  assert(!/cardStyles\.region/.test(src))
+  assertEquals(count(src, 'cardStyles.summary'), 1)
+  assert(/\[regionName, categories\]\.filter\(\(part\) => part !== ''\)\.join\(SUMMARY_SEPARATOR\)/.test(src))
+  assert(/SUMMARY_SEPARATOR = ' · '/.test(src))
+  assert(/<WatchOptionsAttribution style=\{cardStyles\.attributionLeft\} \/>/.test(src))
+  assert(/attributionLeft: \{ textAlign: 'left' \}/.test(src))
+  // iskelet: başlık + logo + 2 satır (özet, atıf) = ok hâlinin 4 çocuğu → düzen zıplamaz
+  assertEquals(count(src, '<View style={cardStyles.skelLine} />'), 2)
+  // vurgu/gölge/büyüyen başlık eklenmedi
+  assert(!/shadow|elevation/i.test(src))
+  assert(/title: \{ \.\.\.type\.body, fontWeight: '600'/.test(src))
+  // sheet içi atıf varsayılan (ortalı) stilde: `style` verilmeyen çağrılar
+  const wrapper = read('components/gauntlet/ChampionReveal/ChampionWatchOptions.tsx')
+  assert(wrapper.includes('attribution={<WatchOptionsAttribution />}'))
+  assert(read(STAGE).includes('attribution={<WatchOptionsAttribution />}'))
+})

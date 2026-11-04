@@ -86,3 +86,16 @@ Deno.test('Hero kilitli: heroHeight formülü ve hero bloğu aynı', () => {
   assertMatch(hh, /HERO_MIN_HEIGHT = 160/)
   assertMatch(hh, /HERO_MAX_RATIO = 0\.42/)
 })
+
+Deno.test('Home-A1.1: kart + Save/Share Spotlight/Pro ile aynı 16 pt kenarda; gövdede yatay dolgu yok', () => {
+  const styles = read('components/gauntlet/ChampionReveal/styles.ts')
+  const block = (name: string) => styles.match(new RegExp(`  ${name}: \{[^}]*\}`))?.[0] ?? ''
+  assert(!/paddingHorizontal/.test(block('body')), 'body yatay dolgu taşımaz')
+  assertMatch(block('actionsWrapper'), /paddingHorizontal: space\.base/)
+  assertMatch(block('textBlock'), /paddingHorizontal: space\.lg/)
+  assertMatch(block('metaLine'), /paddingHorizontal: space\.lg/)
+  assert(!/marginHorizontal\s*:\s*-|margin\w*:\s*-/.test(styles.replace(/TITLE_OVERLAP/g, '')), 'negatif margin yok')
+  assertMatch(read('components/gauntlet/SpotlightBonusCard/styles.ts'), /marginHorizontal: space\.base/)
+  assertMatch(read('components/gauntlet/MoodEntryCard/styles.ts'), /marginHorizontal: space\.base/)
+  assertMatch(reveal, /style=\{\[styles\.textBlock, titleStyle\]\}/)
+})

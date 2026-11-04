@@ -44,8 +44,8 @@ const LAYOUT = {
   bodyGap: 12,
   /** `metaLine` meta lineHeight */
   meta: 16,
-  /** Home-A1 WatchOptionsCard: padding 2×16 + başlık 24 + bölge 18 + logo 40 + özet 18 + atıf 18 + 4 boşluk × 4 */
-  providers: 32 + 24 + 18 + 40 + 18 + 18 + 16,
+  /** Home-A1.1 WatchOptionsCard: padding 2×16 + başlık 24 + logo 40 + "Ülke · Özet" 18 + atıf 18 + 3 boşluk × 4 (bölge satırı kalktı: 166 → 144) */
+  providers: 32 + 24 + 40 + 18 + 18 + 12,
   /** `actionsWrapper.gap` space.sm (Home-A1: Pro Result ile aynı token) */
   wrapperGap: 8,
   /** Save · Share satırı (ikon + metin): size.actionHeight */
