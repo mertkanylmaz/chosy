@@ -745,10 +745,10 @@
       "intense": "Yüksek enerji"
     },
     "insight": {
-      "calmerAll": "Her turda daha sakin olanı seçtin",
-      "calmerTwo": "Daha sakin filmlere yöneldin",
-      "intenseAll": "Her turda daha yoğun olanı seçtin",
-      "intenseTwo": "Daha yoğun filmlere yöneldin",
+      "calmerAll": "Her turda daha düşük enerjili olanı seçtin",
+      "calmerTwo": "Daha düşük enerjili filmlere yöneldin",
+      "intenseAll": "Her turda daha yüksek enerjili olanı seçtin",
+      "intenseTwo": "Daha yüksek enerjili filmlere yöneldin",
       "shorterAll": "Her turda daha kısa olanı seçtin",
       "shorterTwo": "Daha kısa filmlere yöneldin"
     },

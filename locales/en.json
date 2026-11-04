@@ -745,10 +745,10 @@
       "intense": "High energy"
     },
     "insight": {
-      "calmerAll": "You picked the quieter film every time",
-      "calmerTwo": "You leaned toward the quieter films",
-      "intenseAll": "You picked the more intense film every time",
-      "intenseTwo": "You leaned toward the more intense films",
+      "calmerAll": "You picked the lower-energy film every time",
+      "calmerTwo": "You leaned toward lower-energy films",
+      "intenseAll": "You picked the higher-energy film every time",
+      "intenseTwo": "You leaned toward higher-energy films",
       "shorterAll": "You picked the shorter film every time",
       "shorterTwo": "You leaned toward the shorter films"
     },
