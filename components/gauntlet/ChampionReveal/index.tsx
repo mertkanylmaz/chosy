@@ -562,7 +562,7 @@ export function ChampionReveal({
       {/* C3: blok geçişin üstüne biner (kontrast ölçümü heroScrim.ts). Reduce
           Transparency'de geçiş yok — blok posterin ALTINDA, düz ink üstünde. */}
       <View style={[styles.body, { marginTop: bodyMarginTop }]} onLayout={handleBodyLayout}>
-        <Animated.View style={titleStyle}>
+        <Animated.View style={[styles.textBlock, titleStyle]}>
           {/* V-4 Tur A (V4-D2): etiket HER ZAMAN burada, serif başlığın hemen
               üstünde — posterin basılı başlığına binmez (TestFlight 906). */}
           <Text style={[styles.kicker, styles.kickerInBody]} accessibilityLabel={kickerText}>

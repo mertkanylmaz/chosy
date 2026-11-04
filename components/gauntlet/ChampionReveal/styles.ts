@@ -61,8 +61,16 @@ export const styles = StyleSheet.create({
    */
   body: {
     alignItems: 'center',
-    paddingHorizontal: space.lg,
     gap: space.md,
+  },
+  /**
+   * Home-A1.1: yatay dolgu gövdede DEĞİL, çocuklarda. Metin bloğu (etiket, başlık, meta) 24 pt
+   * (satır kırılması eskisiyle aynı); eylem bloğu (`actionsWrapper`) Spotlight/Pro kartlarıyla
+   * aynı 16 pt (`space.base`) kenara oturur. Negatif margin yok.
+   */
+  textBlock: {
+    alignSelf: 'stretch',
+    paddingHorizontal: space.lg,
   },
   /**
    * C2: büyük harf JS'te (`toLocaleUpperCase`) — TR i → İ. Renk `bone@80%`:
@@ -104,11 +112,14 @@ export const styles = StyleSheet.create({
     ...type.meta,
     color: color.text.secondary,
     textAlign: 'center',
+    alignSelf: 'stretch',
+    paddingHorizontal: space.lg,
   },
   /** Home-A1: kart ↔ Save/Share satırı boşluğu Pro Result ile aynı token (MoodGauntlet/styles.ts:158,160 → space.sm). */
   actionsWrapper: {
     alignSelf: 'stretch',
     alignItems: 'center',
+    paddingHorizontal: space.base,
     gap: space.sm,
   },
   /** F2.3: Watch now + kaydet + paylaş tek satırda; ikonlar 44pt (K-54). */
