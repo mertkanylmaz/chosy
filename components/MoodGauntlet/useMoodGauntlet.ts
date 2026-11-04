@@ -37,6 +37,9 @@ import {
 import { createMoodGauntletDeps } from '@/services/moodGauntletDeps';
 import { posthogAnalytics } from '@/services/posthog';
 import { MoodParseError } from '@/services/tasteParser';
+import * as Sentry from '@sentry/react-native';
+
+import { createInFlightGuard } from '@/utils/inFlightGuard';
 import { logger } from '@/utils/logger';
 import {
   anotherFourEvent,
@@ -128,6 +131,8 @@ export function useMoodGauntlet() {
   const dimsRun = useRef(0);
 
   const runId = useRef(0);
+  /** Another four + Calmer / More intense aynı kilidi paylaşır; sahibi runId (çift dokunuş → tek istek). */
+  const inFlight = useRef(createInFlightGuard());
   const reasonsRun = useRef(0);
   const mounted = useRef(true);
   const lastStart = useRef<StartInput | null>(null);
@@ -253,6 +258,7 @@ export function useMoodGauntlet() {
 
   const start = useCallback(
     async (input: StartInput, carryShown: readonly string[] = []) => {
+      inFlight.current.clear(); // yeni arama: iptal edilen eski isteğin kilidi yeni oturumu bloke etmez
       const id = ++runId.current;
       lastStart.current = input;
       startedAt.current = Date.now();
@@ -296,9 +302,24 @@ export function useMoodGauntlet() {
 
   const startFromEntry = useCallback((input: StartInput) => start(input, []), [start]);
 
-  const loadAnother = useCallback(async () => {
+  /** Kilit alınamazsa (çift dokunuş) istek, olay ve yükleme AÇILMAZ; görünür iz: breadcrumb. */
+  const acquireOrTrace = useCallback((id: number, action: 'another_four' | 'intensity'): boolean => {
+    if (inFlight.current.tryAcquire(id)) return true;
+    Sentry.addBreadcrumb({
+      category: 'mood_gauntlet',
+      level: 'info',
+      message: 'duplicate_tap_ignored',
+      data: { action },
+    });
+    return false;
+  }, []);
+
+  const loadAnother = useCallback(async (onAcquired?: () => void) => {
     if (!session) return;
-    const id = ++runId.current;
+    const id = runId.current + 1;
+    if (!acquireOrTrace(id, 'another_four')) return;
+    runId.current = id;
+    onAcquired?.(); // analitik olay kilit alındıktan SONRA
     setLoadingKind('another');
     loadingShownAt.current = Date.now();
     setStage('loading');
@@ -315,8 +336,10 @@ export function useMoodGauntlet() {
     } catch (err) {
       if (id !== runId.current || !mounted.current) return;
       fail(err, 'MOOD_GAUNTLET_NEXT_FAILED');
+    } finally {
+      inFlight.current.release(id);
     }
-  }, [deps, session, revealSet, fail]);
+  }, [deps, session, revealSet, fail, acquireOrTrace]);
 
   const record = useCallback(
     (round: 1 | 2 | 3, a: string, b: string, winner: string | null, outcome: 'choice' | 'neither') => {
@@ -408,8 +431,7 @@ export function useMoodGauntlet() {
   }, [flow, record, loadAnother]);
 
   const anotherFour = useCallback(() => {
-    trackMoodEvent(anotherFourEvent());
-    void loadAnother();
+    void loadAnother(() => trackMoodEvent(anotherFourEvent()));
   }, [loadAnother]);
 
   /**
@@ -419,8 +441,10 @@ export function useMoodGauntlet() {
   const intensify = useCallback(
     async (direction: IntensityDirection) => {
       if (!session || !canShiftIntensity(session.intensityStep, direction)) return;
-      trackMoodEvent(intensityEvent(direction));
-      const id = ++runId.current;
+      const id = runId.current + 1;
+      if (!acquireOrTrace(id, 'intensity')) return;
+      runId.current = id;
+      trackMoodEvent(intensityEvent(direction)); // kilit alındıktan SONRA
       startedAt.current = Date.now();
       setLoadingKind('search');
       loadingShownAt.current = Date.now();
@@ -441,9 +465,11 @@ export function useMoodGauntlet() {
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
         fail(err, 'MOOD_GAUNTLET_INTENSITY_FAILED');
+      } finally {
+        inFlight.current.release(id);
       }
     },
-    [deps, session, revealSet, onStage, onTiming, fail],
+    [deps, session, revealSet, onStage, onTiming, fail, acquireOrTrace],
   );
 
   const retry = useCallback(() => {
@@ -453,6 +479,7 @@ export function useMoodGauntlet() {
 
   /** X / yeni arama: uçuştaki isteği bırakır ve Giriş'e döner. */
   const reset = useCallback(() => {
+    inFlight.current.clear();
     runId.current += 1;
     reasonsRun.current += 1;
     setSession(null);
