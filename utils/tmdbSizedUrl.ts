@@ -20,8 +20,8 @@ export const SPOTLIGHT_IMAGE_SIZE = {
   resultStill: 'w1280',
   /** Teaser karesi: 160pt → ~480px */
   teaser: 'w780',
-  /** Bonus kartı: 56pt kare, 16:9 kaynak cover → ~300px */
-  bonusCard: 'w300',
+  /** Bonus kartı (Home-B1.2 B+): kart genişliğini kaplar, ~361pt × 3 ≈ 1083px → w1280 */
+  bonusCard: 'w1280',
 } as const;
 
 /** Yalnız `https://image.tmdb.org/t/p/<boyut>/<dosya>` — sorgu/parça korunur. */

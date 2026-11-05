@@ -258,24 +258,28 @@ Deno.test('durum etiketi: viewed ve visible ile aynı değer kümesi', () => {
 const read = (p: string) => Deno.readTextFileSync(new URL(`../../${p}`, import.meta.url)).replaceAll('\r\n', '\n')
 const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
-Deno.test('kart stilleri: altın yalnız verbGold (marquee token), gölge/cam yok, yükseklikler 72/56', () => {
+Deno.test('kart stilleri: altın yalnız marquee token (hap kenarı + fiil + ✓ FOUND IT), gölge/cam yok, tek yükseklik 72', () => {
   const styles = stripComments(read('components/gauntlet/SpotlightBonusCard/styles.ts'))
-  assertEquals((styles.match(/color\.reward\.primary/g) ?? []).length, 1)
-  assert(/verbGold: \{\s*color: color\.reward\.primary/.test(styles))
+  assertEquals((styles.match(/color\.reward\.primary/g) ?? []).length, 3)
+  assert(/kickerGold: \{\s*color: color\.reward\.primary/.test(styles))
+  assert(/verb: \{[^}]*color: color\.reward\.primary/.test(styles))
+  assert(/borderColor: color\.reward\.primary/.test(styles))
   assert(!/shadow|elevation|BlurView|#[0-9a-fA-F]{3,8}/.test(styles), 'gölge/cam/hardcoded renk yok')
-  assert(/cardTall: \{\s*minHeight: FRAME_SIZE \+ space\.sm \* 2/.test(styles))
-  assert(/cardCompact: \{\s*minHeight: FRAME_SIZE/.test(styles))
-  assert(/FRAME_SIZE = size\.touchTarget \+ space\.md/.test(styles))
+  // B+ karar 1: bitmiş dahil TÜM durumlar 72pt; kısa (compact) varyant yok
+  assert(/cardTall: \{\s*minHeight: CONTENT_HEIGHT \+ space\.sm \* 2/.test(styles))
+  assert(/CONTENT_HEIGHT = size\.touchTarget \+ space\.md/.test(styles))
+  assert(!styles.includes('cardCompact'), 'bitmiş kart artık 56pt değil')
+  // Metin bloğu gradyanın koyu bölgesinde kalır
+  assert(styles.includes('maxWidth: TEXT_BLOCK_MAX_WIDTH'))
 })
 
 Deno.test('kart bileşeni: eyebrow sarılabilir, görsel gizli, chevron Phosphor, ipucu duruma göre', () => {
   const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
-  assert(/<Text style=\{styles\.kicker\}>/.test(src), 'kicker numberOfLines yok')
+  assert(/<Text style=\{\[styles\.kicker, goldEyebrow && styles\.kickerGold\]\}>/.test(src), 'kicker numberOfLines yok')
   assert(src.includes('accessible={false}'))
   assert(src.includes("from 'phosphor-react-native'") && !src.includes('Ionicons'))
   assert(src.includes('accessibilityHint={presentation.hintKey !== null ? t(presentation.hintKey) : undefined}'))
-  assert(src.includes("presentation.gold === 'cta' && styles.verbGold"))
-  assert(!/gauntlet\.bonus\.(subtitle|solvedHint|failedHint|continueHint)/.test(src))
+  assert(!/gauntlet\.bonus\.(subtitle|solvedHint|failedHint|continueHint|nameTheFilm|doneEyebrow)/.test(src))
 })
 
 Deno.test('kart dokunma: loading pasif, error yalnız onRetry (oyuna gitmez, pressed atılmaz), oyun/sonuç aynı rota', () => {
