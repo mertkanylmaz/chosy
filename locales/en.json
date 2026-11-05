@@ -1720,7 +1720,11 @@
       "failedHint": "Not this time. A new frame tomorrow.",
       "play": "Play",
       "continue": "Continue",
-      "a11yHint": "Opens today's Spotlight puzzle"
+      "a11yHint": "Opens today's Spotlight puzzle",
+      "nameTheFilm": "Name the film",
+      "chancesFromFrame": "%{count} chances · one blurred frame",
+      "doneEyebrow": "Done",
+      "loadError": "Couldn't load"
     },
     "share": {
       "action": "Share",

@@ -1720,7 +1720,11 @@
       "failedHint": "Bu sefer olmadı. Yarın yeni bir kare.",
       "play": "Oyna",
       "continue": "Devam et",
-      "a11yHint": "Bugünün Spotlight bulmacasını açar"
+      "a11yHint": "Bugünün Spotlight bulmacasını açar",
+      "nameTheFilm": "Filmi bul",
+      "chancesFromFrame": "%{count} hak · tek bulanık kare",
+      "doneEyebrow": "Tamamlandı",
+      "loadError": "Yüklenemedi"
     },
     "share": {
       "action": "Paylaş",
