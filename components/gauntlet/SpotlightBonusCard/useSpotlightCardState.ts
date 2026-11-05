@@ -33,23 +33,10 @@ import { useFocusEffect } from 'expo-router';
 import { getDailyChallenge } from '@/services/gameApi';
 import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
-import { isSpotlightPlayable, spotlightCardStateFrom, type SpotlightCardState } from './cardState';
+import type { SpotlightCardData } from './cardPresentation';
+import { isSpotlightPlayable, spotlightCardStateFrom } from './cardState';
 
-export type SpotlightCardData =
-  | {
-      status: 'loading';
-      /** Yenileme sırasında aynı günün önceki karesi — çerçeve boş kalıp titremesin. */
-      backdropUrl?: string;
-    }
-  | { status: 'error' }
-  | { status: 'unavailable' }
-  | {
-      status: 'ready';
-      state: SpotlightCardState;
-      /** Bugünün karesi — kart onu MAX_BLUR'da gösterir; boş olabilir. */
-      backdropUrl: string;
-      maxAttempts: number;
-    };
+export type { SpotlightCardData };
 
 export function useSpotlightCardState(enabled: boolean, cycleDate: string | undefined): SpotlightCardData {
   const [data, setData] = useState<SpotlightCardData>({ status: 'loading' });
