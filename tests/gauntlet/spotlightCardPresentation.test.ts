@@ -253,6 +253,30 @@ Deno.test("hook: ön plana dönüşte (AppState active) yalnız odaktayken, tek 
   assert(src.includes('if (inFlightRef.current === date) return'))
 })
 
+Deno.test('sentenceCase: dil duyarlı — gerçek locale değerleri, aktif dil ile; yanlış dil farklı sonuç verir', () => {
+  const en = JSON.parse(read('locales/en.json')).games.spotlight
+  const tr = JSON.parse(read('locales/tr.json')).games.spotlight
+  // EN değerleri değişmez kurala göre: yalnız harf boyu
+  assertEquals(
+    ['result_found', 'result_out_of_chances', 'result_next_film'].map((k) => sentenceCase(en[k], 'en')),
+    ['Found it', 'Out of chances', 'A new film tomorrow'],
+  )
+  // TR: i/İ doğru (yerelleştirilmiş küçük harf)
+  assertEquals(
+    ['result_found', 'result_out_of_chances', 'result_next_film'].map((k) => sentenceCase(tr[k], 'tr')),
+    ['Buldun', 'Hakların bitti', 'Yarın yeni bir film'],
+  )
+  // dil duyarlılığının kanıtı: TR metni EN kuralıyla dönüşse "i̇" (birleşik nokta) çıkar
+  assert(sentenceCase(tr.result_out_of_chances, 'en') !== sentenceCase(tr.result_out_of_chances, 'tr'))
+})
+
+Deno.test("sentenceCase: bileşen aktif arayüz dilini (useLanguage().language) geçirir, sabit locale yok", () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(src.includes('const { t, language } = useLanguage()'))
+  assert(src.includes('sentenceCase(raw, language)'))
+  assert(!/sentenceCase\([^)]*['"](en|tr)['"]/.test(src), 'hardcoded locale yok')
+})
+
 Deno.test('analitik: visible state taşır, viewed durum değişiminde tekrar atılır, yeni olay adı yok', () => {
   const visible = stripComments(read('components/gauntlet/GauntletShell/useSpotlightVisible.ts'))
   assert(visible.includes("posthogAnalytics.track('spotlight_card_visible', { source: now.source, state: now.state })"))
