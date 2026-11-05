@@ -31,6 +31,7 @@
  * gün için okuma sürerken ikinci istek atılmaz.
  */
 import { useCallback, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import * as Sentry from '@sentry/react-native';
 import { useFocusEffect } from 'expo-router';
@@ -140,7 +141,14 @@ export function useSpotlightCardState(enabled: boolean, cycleDate: string | unde
       // Tarih yoksa (gauntlet henüz yüklenmedi) ağa çıkılmaz; yerel tarihe düşülmez.
       if (!enabled || !cycleDate) return undefined;
       load(cycleDate);
+      // Arka plandan dönüş: ekran odakta kaldıysa odak yenilemesi tetiklenmez → bayat durum
+      // (başka cihazda biten oyun, gün sınırı) kalırdı. Aynı tek-uçuş korumasından geçer:
+      // odak yenilemesi sürerken ikinci istek atılmaz. Yalnız odaktayken dinlenir.
+      const appStateSub = AppState.addEventListener('change', (next) => {
+        if (next === 'active') load(cycleDate);
+      });
       return () => {
+        appStateSub.remove();
         // Odak kaybı / gün değişimi: sürmekte olan okumanın sonucu uygulanmaz.
         tokenRef.current += 1;
         inFlightRef.current = null;

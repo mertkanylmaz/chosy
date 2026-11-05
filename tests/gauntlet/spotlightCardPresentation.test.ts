@@ -242,6 +242,17 @@ Deno.test('hook: doğrulanmış bulmaca kapısı, tek uçuş, error → loading,
   assert(!/catch\s*(\([^)]*\))?\s*\{\s*\}/.test(src))
 })
 
+Deno.test("hook: ön plana dönüşte (AppState active) yalnız odaktayken, tek uçuş korumasıyla yeniden okur", () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/useSpotlightCardState.ts'))
+  const focusBlock = src.slice(src.indexOf('useFocusEffect('), src.indexOf('const refresh'))
+  assert(focusBlock.includes("AppState.addEventListener('change'"))
+  assert(focusBlock.includes("if (next === 'active') load(cycleDate)"))
+  assert(focusBlock.includes('appStateSub.remove()'))
+  // dinleme yalnız odak efektinin içinde; tek `load` girişi (tek uçuş) paylaşılır
+  assertEquals((src.match(/AppState\.addEventListener/g) ?? []).length, 1)
+  assert(src.includes('if (inFlightRef.current === date) return'))
+})
+
 Deno.test('analitik: visible state taşır, viewed durum değişiminde tekrar atılır, yeni olay adı yok', () => {
   const visible = stripComments(read('components/gauntlet/GauntletShell/useSpotlightVisible.ts'))
   assert(visible.includes("posthogAnalytics.track('spotlight_card_visible', { source: now.source, state: now.state })"))
