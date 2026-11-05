@@ -1721,8 +1721,10 @@
       "play": "Oyna",
       "continue": "Devam et",
       "a11yHint": "Bugünün Spotlight bulmacasını açar",
-      "nameTheFilm": "Filmi bul",
-      "chancesFromFrame": "%{count} hak · tek bulanık kare",
+      "spotlightEyebrow": "GÜNÜN KARESİ",
+      "guessTheFilm": "Filmi tahmin et",
+      "chancesFromFrame": "Tek kare · %{count} hak",
+      "revealedEyebrow": "AÇIKLANDI",
       "doneEyebrow": "Tamamlandı",
       "loadError": "Yüklenemedi"
     },

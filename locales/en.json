@@ -1721,8 +1721,10 @@
       "play": "Play",
       "continue": "Continue",
       "a11yHint": "Opens today's Spotlight puzzle",
-      "nameTheFilm": "Name the film",
-      "chancesFromFrame": "%{count} chances · one blurred frame",
+      "spotlightEyebrow": "TODAY'S SPOTLIGHT",
+      "guessTheFilm": "Guess the film",
+      "chancesFromFrame": "One frame · %{count} chances",
+      "revealedEyebrow": "REVEALED",
       "doneEyebrow": "Done",
       "loadError": "Couldn't load"
     },
