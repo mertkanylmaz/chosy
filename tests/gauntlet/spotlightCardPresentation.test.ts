@@ -14,63 +14,94 @@ import {
   type SpotlightChallengeShape,
 } from '../../components/gauntlet/SpotlightBonusCard/cardPresentation.ts'
 
-const ready = (state: 'not_started' | 'in_progress' | 'solved' | 'failed', max = 6): SpotlightCardData => ({
+const ready = (
+  state: 'not_started' | 'in_progress' | 'solved' | 'failed',
+  max = 6,
+  title: string | null = state === 'solved' || state === 'failed' ? 'Minari' : null,
+): SpotlightCardData => ({
   status: 'ready',
   state,
   backdropUrl: 'https://image.tmdb.org/t/p/w1280/x.jpg',
   maxAttempts: max,
+  title,
 })
 
 const keys = (segs: { key: string }[] | null) => (segs ?? []).map((s) => s.key)
 
-Deno.test('oynanabilir: kare + PLAY (altın), oyun ekranı, ipucu var, 72pt', () => {
+Deno.test('oynanabilir: bulanık kare + PLAY hapı (altın), oyun ekranı, ipucu var, 72pt', () => {
   const p = spotlightCardPresentation(ready('not_started'))
   assertEquals(p.kind, 'playable')
-  assertEquals(keys(p.main), ['gauntlet.bonus.title', 'gauntlet.bonus.nameTheFilm'])
+  assertEquals(p.eyebrow, { key: 'gauntlet.bonus.spotlightEyebrow', check: false })
+  assertEquals(keys(p.main), ['gauntlet.bonus.guessTheFilm'])
   assertEquals(p.secondary, [{ key: 'gauntlet.bonus.chancesFromFrame', count: 6 }])
-  assertEquals([p.image, p.cta, p.gold, p.target, p.chevron, p.height], ['frame', 'play', true, 'game', false, 'tall'])
+  assertEquals(
+    [p.image, p.blur, p.cta, p.gold, p.target, p.chevron, p.height],
+    ['frame', true, 'play', 'cta', 'game', false, 'tall'],
+  )
   assertEquals(p.hintKey, 'gauntlet.bonus.a11yHint')
-  assertEquals(p.eyebrowDone, false)
 })
 
-Deno.test('devam: kare + CONTINUE (altın), oyun ekranı', () => {
+Deno.test('devam: aynı kart, hapta CONTINUE', () => {
   const p = spotlightCardPresentation(ready('in_progress'))
-  assertEquals([p.kind, p.image, p.cta, p.gold, p.target, p.height], ['continue', 'frame', 'continue', true, 'game', 'tall'])
+  assertEquals(
+    [p.kind, p.image, p.blur, p.cta, p.gold, p.target, p.height],
+    ['continue', 'frame', true, 'continue', 'cta', 'game', 'tall'],
+  )
+  assertEquals(keys(p.main), ['gauntlet.bonus.guessTheFilm'])
   assertEquals(p.hintKey, 'gauntlet.bonus.a11yHint')
 })
 
-Deno.test('bulundu / haklar bitti: görsel yok, CTA yok, altın yok, sonuç ekranı, chevron, 56pt, ipucu yok', () => {
-  for (const [state, key] of [
-    ['solved', 'games.spotlight.result_found'],
-    ['failed', 'games.spotlight.result_out_of_chances'],
-  ] as const) {
-    const p = spotlightCardPresentation(ready(state))
-    assertEquals(p.kind, state)
-    assertEquals(keys(p.main), [key, 'games.spotlight.result_next_film'])
-    assert(p.main.every((s) => s.sentence === true))
-    assertEquals(
-      [p.image, p.cta, p.gold, p.target, p.chevron, p.height, p.eyebrowDone],
-      ['none', null, false, 'result', true, 'compact', true],
-    )
-    assertEquals(p.hintKey, null)
-    assertEquals(p.secondary, null)
-  }
+Deno.test('bulundu: NET kare, ✓ FOUND IT (altın eyebrow), film adı, yarın yeni film, chevron, 72pt, ipucu yok', () => {
+  const p = spotlightCardPresentation(ready('solved'))
+  assertEquals(p.kind, 'solved')
+  assertEquals(p.eyebrow, { key: 'games.spotlight.result_found', check: true })
+  assertEquals(p.main, [{ key: '', literal: 'Minari' }])
+  assertEquals(p.secondary, [{ key: 'games.spotlight.result_next_film', sentence: true }])
+  assertEquals(
+    [p.image, p.blur, p.cta, p.gold, p.target, p.chevron, p.height, p.titleMissing],
+    ['frame', false, null, 'eyebrow', 'result', true, 'tall', false],
+  )
+  assertEquals(p.hintKey, null)
 })
 
-Deno.test('loading: dokunulamaz, oynanabilir yükseklikte, altın yok, nötr kutu', () => {
+Deno.test('haklar bitti: NET kare, REVEALED (altın YOK, ikon yok), film adı, chevron, 72pt', () => {
+  const p = spotlightCardPresentation(ready('failed'))
+  assertEquals(p.kind, 'failed')
+  assertEquals(p.eyebrow, { key: 'gauntlet.bonus.revealedEyebrow', check: false })
+  assertEquals(p.main, [{ key: '', literal: 'Minari' }])
+  assertEquals(p.secondary, [{ key: 'games.spotlight.result_next_film', sentence: true }])
+  assertEquals(
+    [p.image, p.blur, p.cta, p.gold, p.target, p.chevron, p.height],
+    ['frame', false, null, null, 'result', true, 'tall'],
+  )
+  assertEquals(p.hintKey, null)
+})
+
+Deno.test('eksik veri: bitmişte title yoksa B1 metni (sentenceCase) + titleMissing', () => {
+  const solved = spotlightCardPresentation(ready('solved', 6, null))
+  assertEquals(solved.main, [{ key: 'games.spotlight.result_found', sentence: true }])
+  assertEquals(solved.titleMissing, true)
+  const failed = spotlightCardPresentation(ready('failed', 6, null))
+  assertEquals(failed.main, [{ key: 'games.spotlight.result_out_of_chances', sentence: true }])
+  assertEquals(failed.titleMissing, true)
+})
+
+Deno.test('loading: dokunulamaz, 72pt, altın yok, yenilemede bulanık kare, ilk okumada iskelet (ikincil satır yok)', () => {
   const p = spotlightCardPresentation({ status: 'loading', backdropUrl: 'https://x/y.jpg' })
   assertEquals(
-    [p.kind, p.target, p.height, p.gold, p.cta, p.image, p.chevron],
-    ['loading', null, 'tall', false, null, 'placeholder', false],
+    [p.kind, p.target, p.height, p.gold, p.cta, p.image, p.blur, p.chevron],
+    ['loading', null, 'tall', null, null, 'placeholder', true, false],
   )
+  assertEquals(p.eyebrow, { key: 'gauntlet.bonus.spotlightEyebrow', check: false })
+  assertEquals(p.main, [])
   assertEquals(p.secondary, null)
 })
 
-Deno.test("error: yüklenemedi + tekrar dene, dokununca yalnız yeniden okuma, altın yok", () => {
+Deno.test('error: koyu zemin, yüklenemedi + tekrar dene, dokununca yalnız yeniden okuma, altın yok', () => {
   const p = spotlightCardPresentation({ status: 'error' })
   assertEquals(p.kind, 'error')
-  assertEquals(keys(p.secondary), ['gauntlet.bonus.loadError', 'gauntlet.retry'])
-  assertEquals([p.target, p.gold, p.cta, p.image, p.height, p.hintKey], ['retry', false, null, 'none', 'tall', null])
+  assertEquals(keys(p.main), ['gauntlet.bonus.loadError', 'gauntlet.retry'])
+  assertEquals([p.target, p.gold, p.cta, p.image, p.height, p.hintKey], ['retry', null, null, 'none', 'tall', null])
 })
 
 Deno.test('unavailable: kart gizli', () => {
@@ -78,7 +109,7 @@ Deno.test('unavailable: kart gizli', () => {
   assertEquals([p.kind, p.target, p.cta], ['hidden', null, null])
 })
 
-Deno.test('altın yalnız CTA ile birlikte; CTA yalnız oyun hedefiyle; kare yalnız oynanabilir/devam', () => {
+Deno.test("altın: PLAY/CONTINUE hapında ya da yalnız ✓ FOUND IT eyebrow'unda; haklar bitti/loading/error'da yok", () => {
   const all: SpotlightCardData[] = [
     { status: 'loading' },
     { status: 'error' },
@@ -90,13 +121,25 @@ Deno.test('altın yalnız CTA ile birlikte; CTA yalnız oyun hedefiyle; kare yal
   ]
   for (const d of all) {
     const p = spotlightCardPresentation(d)
-    assertEquals(p.gold, p.cta !== null, p.kind)
+    assertEquals(p.gold === 'cta', p.cta !== null, p.kind)
+    assertEquals(p.gold === 'eyebrow', p.kind === 'solved', p.kind)
     if (p.cta !== null) assertEquals(p.target, 'game', p.kind)
-    if (p.image === 'frame') assert(p.cta !== null, `${p.kind}: kare yalnız oynanabilir/devam`)
+    // Net kare yalnız bitmişte; bulanık kare yalnız oynanabilir/devam/loading'de.
+    assertEquals(p.image === 'frame' && !p.blur, p.kind === 'solved' || p.kind === 'failed', p.kind)
+    // Kart hiçbir durumda 72 pt dışına çıkmaz (zıplama yok).
+    assertEquals(p.height, 'tall', p.kind)
   }
 })
 
-Deno.test('kilitli sözlük: eski "tries"/"frame"/"Not this time" anahtarları kartta kullanılmaz', () => {
+Deno.test('cevap sızmaz: oynanabilir/devamda title kartta yok (veri title taşısa bile)', () => {
+  for (const state of ['not_started', 'in_progress'] as const) {
+    const p = spotlightCardPresentation(ready(state, 6, 'Minari'))
+    const all = JSON.stringify([p.main, p.secondary, p.eyebrow])
+    assert(!all.includes('Minari'), state)
+  }
+})
+
+Deno.test('kilitli sözlük: eski anahtarlar kartta kullanılmaz (nameTheFilm, doneEyebrow kullanım dışı)', () => {
   const all: SpotlightCardData[] = [
     ready('not_started'),
     ready('in_progress'),
@@ -107,9 +150,9 @@ Deno.test('kilitli sözlük: eski "tries"/"frame"/"Not this time" anahtarları k
   ]
   const used = all.flatMap((d) => {
     const p = spotlightCardPresentation(d)
-    return [...keys(p.main), ...keys(p.secondary)]
+    return [p.eyebrow.key, ...keys(p.main), ...keys(p.secondary)]
   })
-  for (const banned of ['subtitle', 'subtitleNeutral', 'solvedHint', 'failedHint', 'continueHint']) {
+  for (const banned of ['subtitle', 'subtitleNeutral', 'solvedHint', 'failedHint', 'continueHint', 'nameTheFilm', 'doneEyebrow', 'title', 'label']) {
     assert(!used.includes(`gauntlet.bonus.${banned}`), banned)
   }
 })
@@ -143,7 +186,22 @@ const challenge = (
 Deno.test('doğrulama: geçerli taze bulmaca → ok, not_started', () => {
   const v = spotlightPuzzleVerified(challenge())
   assertEquals(v.ok, true)
-  if (v.ok) assertEquals([v.state, v.maxAttempts, v.backdropUrl], ['not_started', 6, 'https://x/y.jpg'])
+  if (v.ok) assertEquals([v.state, v.maxAttempts, v.backdropUrl, v.title], ['not_started', 6, 'https://x/y.jpg', null])
+})
+
+Deno.test('doğrulama: bitmişte revealed_solution.title taşınır; oynanabilirde gelse bile null; boş/yanlış tip → null', () => {
+  const done = { completed: true, won: true, attempts: 2, spotlight_letters: ['a'], spotlight_revealed: [{ pos: 0, ch: 'a' }] }
+  const withTitle = (t: unknown) => ({ ...challenge({}, done), revealed_solution: { title: t } })
+  const ok = spotlightPuzzleVerified(withTitle('  Minari '))
+  assert(ok.ok && ok.title === 'Minari')
+  for (const bad of ['', '   ', 5, null, undefined]) {
+    const v = spotlightPuzzleVerified(withTitle(bad))
+    assert(v.ok && v.title === null, String(bad))
+  }
+  const noSolution = spotlightPuzzleVerified(challenge({}, done))
+  assert(noSolution.ok && noSolution.title === null)
+  const fresh = spotlightPuzzleVerified({ ...challenge(), revealed_solution: { title: 'Minari' } })
+  assert(fresh.ok && fresh.title === null, 'oynanabilirde cevap taşınmaz')
 })
 
 Deno.test('doğrulama: kimlik yok / V3 öncesi / hak geçersiz / letter_count / kare yok → ok:false + kod', () => {
@@ -216,7 +274,7 @@ Deno.test('kart bileşeni: eyebrow sarılabilir, görsel gizli, chevron Phosphor
   assert(src.includes('accessible={false}'))
   assert(src.includes("from 'phosphor-react-native'") && !src.includes('Ionicons'))
   assert(src.includes('accessibilityHint={presentation.hintKey !== null ? t(presentation.hintKey) : undefined}'))
-  assert(src.includes('presentation.gold && styles.verbGold'))
+  assert(src.includes("presentation.gold === 'cta' && styles.verbGold"))
   assert(!/gauntlet\.bonus\.(subtitle|solvedHint|failedHint|continueHint)/.test(src))
 })
 

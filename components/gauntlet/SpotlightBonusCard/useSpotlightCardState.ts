@@ -104,7 +104,16 @@ export function useSpotlightCardState(enabled: boolean, cycleDate: string | unde
           state: verified.state,
           backdropUrl: verified.backdropUrl,
           maxAttempts: verified.maxAttempts,
+          title: verified.title,
         };
+        // Bitmiş oyunda film adı gelmediyse kart B1 metnine düşer — sessiz değil (Kural 1).
+        if (!isSpotlightPlayable(verified.state) && verified.title === null) {
+          Sentry.captureMessage('spotlight kartı: bitmiş oyunda revealed_solution.title yok', {
+            level: 'warning',
+            tags: { component: 'SpotlightBonusCard', state: verified.state },
+            extra: { puzzle_id: challenge.puzzle.id },
+          });
+        }
         lastReadyRef.current = { date, data: ready };
         setData(ready);
       } catch (err) {

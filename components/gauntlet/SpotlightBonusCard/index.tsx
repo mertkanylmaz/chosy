@@ -155,14 +155,12 @@ export function SpotlightBonusCard({
   const resolve = (segments: Segment[]): string =>
     segments
       .map((seg) => {
+        if (seg.literal !== undefined) return seg.literal;
         const raw = t(seg.key, seg.count !== undefined ? { count: seg.count } : undefined);
         return seg.sentence ? sentenceCase(raw, language) : raw;
       })
       .join(' · ');
-  const eyebrow = [
-    t('gauntlet.bonus.label').toLocaleUpperCase(language),
-    ...(presentation.eyebrowDone ? [t('gauntlet.bonus.doneEyebrow').toLocaleUpperCase(language)] : []),
-  ].join(' · ');
+  const eyebrow = t(presentation.eyebrow.key).toLocaleUpperCase(language);
   const mainText = resolve(presentation.main);
   const secondaryText = presentation.secondary !== null ? resolve(presentation.secondary) : null;
   const verb =
@@ -180,7 +178,7 @@ export function SpotlightBonusCard({
   return (
     <Animated.View style={entryStyle}>
       <TouchableOpacity
-        style={[styles.card, presentation.height === 'compact' ? styles.cardCompact : styles.cardTall]}
+        style={[styles.card, styles.cardTall]}
         onPress={handlePress}
         disabled={target === null}
         activeOpacity={0.85}
@@ -219,7 +217,7 @@ export function SpotlightBonusCard({
         </View>
         {/* Altın YALNIZ PLAY / CONTINUE metninde. */}
         {verb !== null && (
-          <Text style={[styles.verb, presentation.gold && styles.verbGold]}>{verb}</Text>
+          <Text style={[styles.verb, presentation.gold === 'cta' && styles.verbGold]}>{verb}</Text>
         )}
         {presentation.chevron && (
           <CaretRight size={size.iconInline} color={color.text.secondary} weight="bold" />
