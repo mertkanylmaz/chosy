@@ -21,9 +21,14 @@
  *   (oyundan dönüşte "Play" görünürdü): bitmiş (solved/failed) durum geri dönmez,
  *   o yüzden aynı gün için korunur; oynanabilir durum (Play/Continue) yenileme
  *   bitene kadar nötr çizilir (çerçeve görseli kalır).
- * - `error` — gerçek hata (`gameApi` Sentry'ye yazdı). Önceki okuma varsa kart
- *   onu göstermeye devam eder (breadcrumb ile iz); yoksa kart nötr çizilir,
- *   dokunuş oyun ekranına gider ve hatayı o ekran gösterir.
+ * - `error` — gerçek hata (`gameApi` Sentry'ye yazdı) ya da bulmaca DOĞRULANAMADI
+ *   (`spotlightPuzzleVerified`, `logger.error` + kod). Önceki okuma varsa kart onu
+ *   göstermeye devam eder (breadcrumb ile iz; yalnız ağ hatasında); yoksa kart
+ *   "yüklenemedi" çizer ve dokunuş YALNIZ yeniden okur — oyuna gitmez.
+ *
+ * Home-B1: oynanabilir/devam/bitmiş durum yalnız doğrulanmış bulmacayla üretilir.
+ * `refresh()` (kartın "tekrar dene"si) ile odak yenilemesi TEK uçuşta birleşir: aynı
+ * gün için okuma sürerken ikinci istek atılmaz.
  */
 import { useCallback, useRef, useState } from 'react';
 
@@ -31,79 +36,123 @@ import * as Sentry from '@sentry/react-native';
 import { useFocusEffect } from 'expo-router';
 
 import { getDailyChallenge } from '@/services/gameApi';
+import { logger } from '@/utils/logger';
 import { isPuzzleUnavailableError } from '@/utils/puzzleAvailability';
 
-import type { SpotlightCardData } from './cardPresentation';
-import { isSpotlightPlayable, spotlightCardStateFrom } from './cardState';
+import { spotlightPuzzleVerified, type SpotlightCardData } from './cardPresentation';
+import { isSpotlightPlayable } from './cardState';
 
 export type { SpotlightCardData };
 
-export function useSpotlightCardState(enabled: boolean, cycleDate: string | undefined): SpotlightCardData {
+export interface SpotlightCardHook {
+  data: SpotlightCardData;
+  /** Kartın "tekrar dene"si: aynı gün için okuma sürmüyorsa yeniden okur. */
+  refresh: () => void;
+}
+
+export function useSpotlightCardState(enabled: boolean, cycleDate: string | undefined): SpotlightCardHook {
   const [data, setData] = useState<SpotlightCardData>({ status: 'loading' });
   const dataRef = useRef(data);
   dataRef.current = data;
   /** Son başarılı okuma ve hangi gün (cycleDate) için olduğu. */
   const lastReadyRef = useRef<{ date: string; data: Extract<SpotlightCardData, { status: 'ready' }> } | null>(null);
+  /** Tek uçuş: şu an okunan gün; token odak/gün değişiminde eski sonucu geçersiz kılar. */
+  const inFlightRef = useRef<string | null>(null);
+  const tokenRef = useRef(0);
+  /** `refresh()` için son girdiler. */
+  const inputsRef = useRef({ enabled, cycleDate });
+  inputsRef.current = { enabled, cycleDate };
+
+  const load = useCallback((date: string) => {
+    if (inFlightRef.current === date) return; // aynı gün için okuma sürüyor
+    const token = ++tokenRef.current;
+    inFlightRef.current = date;
+
+    // Yenileme başlarken önceki `ready` bayat olabilir. Aynı gün + bitmiş durum
+    // geri dönmez → korunur. Aksi halde nötr (aynı günse çerçeve görseliyle).
+    // `error`'dan yeniden okumada kart "loading"e döner (dokunma kilitlenir, çift istek yok).
+    const prev = dataRef.current;
+    if (prev.status === 'ready') {
+      const sameDay = lastReadyRef.current?.date === date;
+      if (!(sameDay && !isSpotlightPlayable(prev.state))) {
+        setData({ status: 'loading', backdropUrl: sameDay ? prev.backdropUrl : undefined });
+      }
+    } else if (prev.status === 'error') {
+      setData({ status: 'loading' });
+    }
+
+    const stale = (): boolean => tokenRef.current !== token;
+
+    void (async () => {
+      try {
+        const challenge = await getDailyChallenge('spotlight', date);
+        if (stale()) return;
+        const verified = spotlightPuzzleVerified(challenge);
+        if (!verified.ok) {
+          // Doğrulanamayan bulmaca oyuna/sonuca GİTMEZ: kart "yüklenemedi". Sessiz değil.
+          logger.error(
+            `[spotlight_card] bulmaca doğrulanamadı: ${verified.detail}`,
+            new Error(verified.code),
+            { code: verified.code, extra: { detail: verified.detail, puzzle_id: challenge.puzzle.id } },
+          );
+          setData({ status: 'error' });
+          return;
+        }
+        const ready: Extract<SpotlightCardData, { status: 'ready' }> = {
+          status: 'ready',
+          state: verified.state,
+          backdropUrl: verified.backdropUrl,
+          maxAttempts: verified.maxAttempts,
+        };
+        lastReadyRef.current = { date, data: ready };
+        setData(ready);
+      } catch (err) {
+        if (stale()) return;
+        if (isPuzzleUnavailableError(err)) {
+          // Veri durumu: bugün bulmaca yok. Önceki `ready` de geçersizdir
+          // (gün değişti ya da bulmaca kalktı) — tutulmaz.
+          setData({ status: 'unavailable' });
+          return;
+        }
+        // gameApi.getDailyChallenge hatayı Sentry'ye yazdı; burada çift
+        // capture yok, yalnız kartın hangi dala düştüğünün izi.
+        // Yenileme başarısızsa aynı günün son başarılı okuması (bayat olabilir) geri
+        // konur — eski davranış; hata servis katmanında Sentry'ye yazıldı.
+        const lastReady = lastReadyRef.current?.date === date ? lastReadyRef.current.data : null;
+        const keepPrevious = lastReady !== null;
+        Sentry.addBreadcrumb({
+          category: 'gauntlet.spotlight_card',
+          message: keepPrevious
+            ? 'spotlight durumu yenilenemedi — önceki durum gösteriliyor'
+            : 'spotlight durumu okunamadı — kart "yüklenemedi"',
+          level: 'warning',
+          data: { error: err instanceof Error ? err.message : String(err) },
+        });
+        setData(lastReady ?? { status: 'error' });
+      } finally {
+        if (!stale()) inFlightRef.current = null;
+      }
+    })();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       // Tarih yoksa (gauntlet henüz yüklenmedi) ağa çıkılmaz; yerel tarihe düşülmez.
       if (!enabled || !cycleDate) return undefined;
-      let cancelled = false;
-
-      // Yenileme başlarken önceki `ready` bayat olabilir. Aynı gün + bitmiş durum
-      // geri dönmez → korunur. Aksi halde nötr (aynı günse çerçeve görseliyle).
-      const prev = dataRef.current;
-      if (prev.status === 'ready') {
-        const sameDay = lastReadyRef.current?.date === cycleDate;
-        if (!(sameDay && !isSpotlightPlayable(prev.state))) {
-          setData({ status: 'loading', backdropUrl: sameDay ? prev.backdropUrl : undefined });
-        }
-      }
-
-      void (async () => {
-        try {
-          const challenge = await getDailyChallenge('spotlight', cycleDate);
-          if (cancelled) return;
-          const backdrop = challenge.puzzle.puzzle_data.backdrop_url;
-          const ready: Extract<SpotlightCardData, { status: 'ready' }> = {
-            status: 'ready',
-            state: spotlightCardStateFrom(challenge.progress),
-            backdropUrl: typeof backdrop === 'string' ? backdrop : '',
-            maxAttempts: challenge.puzzle.max_attempts,
-          };
-          lastReadyRef.current = { date: cycleDate, data: ready };
-          setData(ready);
-        } catch (err) {
-          if (cancelled) return;
-          if (isPuzzleUnavailableError(err)) {
-            // Veri durumu: bugün bulmaca yok. Önceki `ready` de geçersizdir
-            // (gün değişti ya da bulmaca kalktı) — tutulmaz.
-            setData({ status: 'unavailable' });
-            return;
-          }
-          // gameApi.getDailyChallenge hatayı Sentry'ye yazdı; burada çift
-          // capture yok, yalnız kartın hangi dala düştüğünün izi.
-          // Yenileme başarısızsa aynı günün son başarılı okuması (bayat olabilir) geri
-          // konur — eski davranış; hata servis katmanında Sentry'ye yazıldı.
-          const lastReady = lastReadyRef.current?.date === cycleDate ? lastReadyRef.current.data : null;
-          const keepPrevious = lastReady !== null;
-          Sentry.addBreadcrumb({
-            category: 'gauntlet.spotlight_card',
-            message: keepPrevious
-              ? 'spotlight durumu yenilenemedi — önceki durum gösteriliyor'
-              : 'spotlight durumu okunamadı — kart nötr',
-            level: 'warning',
-            data: { error: err instanceof Error ? err.message : String(err) },
-          });
-          setData(lastReady ?? { status: 'error' });
-        }
-      })();
+      load(cycleDate);
       return () => {
-        cancelled = true;
+        // Odak kaybı / gün değişimi: sürmekte olan okumanın sonucu uygulanmaz.
+        tokenRef.current += 1;
+        inFlightRef.current = null;
       };
-    }, [enabled, cycleDate]),
+    }, [enabled, cycleDate, load]),
   );
 
-  return data;
+  const refresh = useCallback(() => {
+    const { enabled: on, cycleDate: date } = inputsRef.current;
+    if (!on || !date) return;
+    load(date);
+  }, [load]);
+
+  return { data, refresh };
 }

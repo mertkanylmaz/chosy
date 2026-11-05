@@ -1557,7 +1557,10 @@ function GauntletShellContent(): React.JSX.Element {
   // P-1c E: Spotlight durumu kartın içinde değil burada okunur — bugün bulmaca
   // yoksa (`unavailable`, sunucu NO_PUZZLE) kart hiç mount edilmez ve ask
   // dwell'i reveal bitişine çapalanır. Yalnız champion dalında ağa çıkar.
-  const spotlightCard = useSpotlightCardState(championActive, gauntlet?.date);
+  const { data: spotlightCard, refresh: refreshSpotlightCard } = useSpotlightCardState(
+    championActive,
+    gauntlet?.date,
+  );
   const spotlightUnavailable = spotlightCard.status === 'unavailable';
 
   const championAsk = useChampionAsk({
@@ -1853,6 +1856,7 @@ function GauntletShellContent(): React.JSX.Element {
                   <SpotlightBonusCard
                     gameType="spotlight"
                     data={spotlightCard}
+                    onRetry={refreshSpotlightCard}
                     entry={animateReveal ? 'reveal' : 'resume'}
                     cycleDate={gauntlet?.date ?? ''}
                     onPress={championAsk.onSpotlightPress}

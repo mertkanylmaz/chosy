@@ -86,6 +86,8 @@ interface SpotlightBonusCardProps {
   cycleDate: string;
   /** Navigasyondan hemen önce — champion ask'inin Spotlight dönüşü tetiği. */
   onPress?: () => void;
+  /** Hata kartına dokunuş: yalnız yeniden okuma (oyuna gitmez). */
+  onRetry?: () => void;
 }
 
 /** Analytics etiketi: durum okunamadıysa ya da yükleniyorsa `unknown`. */
@@ -97,6 +99,7 @@ export function SpotlightBonusCard({
   entry,
   cycleDate,
   onPress,
+  onRetry,
 }: SpotlightBonusCardProps): React.JSX.Element | null {
   const { t, language } = useLanguage();
   const router = useRouter();
@@ -130,12 +133,20 @@ export function SpotlightBonusCard({
     });
   }, [data.status, stateLabel, entry, gameType, windowHeight]);
 
+  const target = presentation.target;
   const handlePress = useCallback(() => {
+    if (target === null) return; // loading: pasif
     void hapticLight();
+    if (target === 'retry') {
+      // Yalnız yeniden okuma — oyuna gitmez, `spotlight_card_pressed` (oynama niyeti) atılmaz.
+      onRetry?.();
+      return;
+    }
     posthogAnalytics.track('spotlight_card_pressed', { game_id: gameType, state: stateLabel });
     onPress?.();
+    // 'game' ve 'result' aynı rota: oyun ekranı tamamlanmış bulmacada sonuç ekranını açar (K-22).
     router.push({ pathname: '/games/spotlight', params: { date: cycleDate } });
-  }, [router, onPress, gameType, stateLabel, cycleDate]);
+  }, [target, router, onPress, onRetry, gameType, stateLabel, cycleDate]);
 
   // ── Metin (içerik kararı `cardPresentation.ts`'te; burada yalnız t() çözülür) ──
   const resolve = (segments: Segment[]): string =>
@@ -168,8 +179,10 @@ export function SpotlightBonusCard({
       <TouchableOpacity
         style={[styles.card, presentation.height === 'compact' ? styles.cardCompact : styles.cardTall]}
         onPress={handlePress}
+        disabled={target === null}
         activeOpacity={0.85}
         accessibilityRole="button"
+        accessibilityState={{ disabled: target === null }}
         accessibilityLabel={[eyebrow, mainText, secondaryText, verb].filter((p) => p !== null).join('. ')}
         accessibilityHint={presentation.hintKey !== null ? t(presentation.hintKey) : undefined}
       >

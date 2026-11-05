@@ -219,3 +219,25 @@ Deno.test('kart bileşeni: eyebrow sarılabilir, görsel gizli, chevron Phosphor
   assert(src.includes('presentation.gold && styles.verbGold'))
   assert(!/gauntlet\.bonus\.(subtitle|solvedHint|failedHint|continueHint)/.test(src))
 })
+
+Deno.test('kart dokunma: loading pasif, error yalnız onRetry (oyuna gitmez, pressed atılmaz), oyun/sonuç aynı rota', () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(src.includes('disabled={target === null}'))
+  const press = src.slice(src.indexOf('const handlePress'), src.indexOf('// ── Metin'))
+  const retryBranch = press.slice(press.indexOf("target === 'retry'"), press.indexOf("posthogAnalytics.track('spotlight_card_pressed'"))
+  assert(retryBranch.includes('onRetry?.()') && retryBranch.includes('return;'))
+  assert(!retryBranch.includes('router.push'))
+  assertEquals((press.match(/router\.push/g) ?? []).length, 1)
+})
+
+Deno.test('hook: doğrulanmış bulmaca kapısı, tek uçuş, error → loading, doğrulama hatası Sentry\'ye', () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/useSpotlightCardState.ts'))
+  assert(src.includes('spotlightPuzzleVerified(challenge)'))
+  assert(/if \(!verified\.ok\) \{[\s\S]*logger\.error\([\s\S]*setData\(\{ status: 'error' \}\)/.test(src))
+  assert(src.includes('if (inFlightRef.current === date) return'))
+  assert(/prev\.status === 'error'[\s\S]{0,40}setData\(\{ status: 'loading' \}\)/.test(src))
+  // gün/odak değişiminde eski sonuç uygulanmaz
+  assert(src.includes('tokenRef.current += 1'))
+  // boş catch yok
+  assert(!/catch\s*(\([^)]*\))?\s*\{\s*\}/.test(src))
+})
