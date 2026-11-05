@@ -17,6 +17,7 @@ import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 
 
 import { useFocusEffect } from 'expo-router';
 
+import type { SpotlightStateLabel } from '@/components/gauntlet/SpotlightBonusCard/cardPresentation';
 import { isCardVisible, VISIBLE_DWELL_MS } from '@/components/gauntlet/SpotlightBonusCard/visibility';
 import { posthogAnalytics } from '@/services/posthog';
 
@@ -31,6 +32,8 @@ interface Options {
   source: 'live' | 'resume';
   /** Kaydırma içeriğini alttan örten pay (tab bar). */
   bottomInset: number;
+  /** Kartın o anki durumu — `spotlight_card_viewed` ile aynı değer kümesi; olay anında okunur. */
+  state: SpotlightStateLabel;
 }
 
 export interface SpotlightVisibleBindings {
@@ -44,12 +47,13 @@ export function useSpotlightVisible({
   cycleKey,
   source,
   bottomInset,
+  state,
 }: Options): SpotlightVisibleBindings {
   const metricsRef = useRef({ cardY: 0, cardHeight: 0, scrollY: 0, viewportHeight: 0 });
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const focusedRef = useRef(false);
-  const optionsRef = useRef({ active, cycleKey, source, bottomInset });
-  optionsRef.current = { active, cycleKey, source, bottomInset };
+  const optionsRef = useRef({ active, cycleKey, source, bottomInset, state });
+  optionsRef.current = { active, cycleKey, source, bottomInset, state };
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -76,7 +80,7 @@ export function useSpotlightVisible({
       const now = optionsRef.current;
       if (now.cycleKey === undefined || reportedCycles.has(now.cycleKey)) return;
       reportedCycles.add(now.cycleKey);
-      posthogAnalytics.track('spotlight_card_visible', { source: now.source });
+      posthogAnalytics.track('spotlight_card_visible', { source: now.source, state: now.state });
     }, VISIBLE_DWELL_MS);
   }, [clearTimer]);
 

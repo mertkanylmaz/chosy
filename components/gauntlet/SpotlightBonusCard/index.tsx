@@ -67,6 +67,7 @@ import { SPOTLIGHT_IMAGE_SIZE, tmdbSizedUrl } from '@/utils/tmdbSizedUrl';
 
 import {
   sentenceCase,
+  shouldTrackViewed,
   spotlightCardPresentation,
   spotlightStateLabel,
   type Segment,
@@ -120,18 +121,20 @@ export function SpotlightBonusCard({
   }, []);
   const entryStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  // ── spotlight_card_viewed — durum çözülünce, mount başına bir kez ─────────
-  const viewedTrackedRef = useRef(false);
+  // ── spotlight_card_viewed — durum çözülünce; durum DEĞİŞİRSE yeni etiketle tekrar ──
+  // (oyundan dönüşte not_started → solved gibi). Aynı etiket tekrar atılmaz (`shouldTrackViewed`).
+  const lastViewedRef = useRef<SpotlightStateLabel | null>(null);
   useEffect(() => {
-    if (viewedTrackedRef.current || data.status === 'loading' || data.status === 'unavailable') return;
-    viewedTrackedRef.current = true;
+    if (!shouldTrackViewed(lastViewedRef.current, data)) return;
+    lastViewedRef.current = stateLabel;
     posthogAnalytics.track('spotlight_card_viewed', {
       game_id: gameType,
       state: stateLabel,
       resumed: entry === 'resume',
       window_height: Math.round(windowHeight),
     });
-  }, [data.status, stateLabel, entry, gameType, windowHeight]);
+    // `data` tüm durum değişimlerini kapsar; etiket aynıysa `shouldTrackViewed` false döner.
+  }, [data, stateLabel, entry, gameType, windowHeight]);
 
   const target = presentation.target;
   const handlePress = useCallback(() => {

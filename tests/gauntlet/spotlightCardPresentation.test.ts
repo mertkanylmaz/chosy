@@ -241,3 +241,16 @@ Deno.test('hook: doğrulanmış bulmaca kapısı, tek uçuş, error → loading,
   // boş catch yok
   assert(!/catch\s*(\([^)]*\))?\s*\{\s*\}/.test(src))
 })
+
+Deno.test('analitik: visible state taşır, viewed durum değişiminde tekrar atılır, yeni olay adı yok', () => {
+  const visible = stripComments(read('components/gauntlet/GauntletShell/useSpotlightVisible.ts'))
+  assert(visible.includes("posthogAnalytics.track('spotlight_card_visible', { source: now.source, state: now.state })"))
+  const shell = stripComments(read('components/gauntlet/GauntletShell/index.tsx'))
+  assert(shell.includes('state: spotlightStateLabel(spotlightCard)'))
+  const card = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(card.includes('if (!shouldTrackViewed(lastViewedRef.current, data)) return'))
+  assert(card.includes('lastViewedRef.current = stateLabel'))
+  assert(!card.includes('viewedTrackedRef'))
+  const events = [...(card + visible).matchAll(/track\('([a-z_]+)'/g)].map((m) => m[1]).sort()
+  assertEquals(events, ['spotlight_card_pressed', 'spotlight_card_viewed', 'spotlight_card_visible'])
+})

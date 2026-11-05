@@ -57,6 +57,7 @@ import {
 import { OutlineAction } from '@/components/gauntlet/OutlineAction';
 import { QuietAction } from '@/components/gauntlet/QuietAction';
 import { SpotlightBonusCard } from '@/components/gauntlet/SpotlightBonusCard';
+import { spotlightStateLabel } from '@/components/gauntlet/SpotlightBonusCard/cardPresentation';
 import { useSpotlightCardState } from '@/components/gauntlet/SpotlightBonusCard/useSpotlightCardState';
 import { TabBarInsetTelemetry } from '@/components/gauntlet/TabBarInsetTelemetry';
 import { CycleRow } from '@/components/gauntlet/CycleRow';
@@ -1625,6 +1626,7 @@ function GauntletShellContent(): React.JSX.Element {
     cycleKey: gauntlet?.gauntletId,
     source: animateReveal ? 'live' : 'resume',
     bottomInset: tabBarInset,
+    state: spotlightStateLabel(spotlightCard),
   });
   const handleCardLayout = (e: LayoutChangeEvent): void => {
     championAsk.onCardLayout(e);
