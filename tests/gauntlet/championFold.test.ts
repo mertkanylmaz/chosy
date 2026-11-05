@@ -52,8 +52,10 @@ const LAYOUT = {
   actionsRow: 48,
   /** `bonusCardInline.marginTop` space.lg */
   cardMargin: 24,
-  /** SpotlightBonusCard: 2 × space.sm + 56pt kare */
+  /** SpotlightBonusCard oynanabilir/devam/loading/error (Home-B1 `cardTall`): 2 × space.sm + 56pt kare */
   card: 8 + 56 + 8,
+  /** SpotlightBonusCard bitmiş, görselsiz (Home-B1 `cardCompact`): minHeight FRAME_SIZE = 56 */
+  cardCompact: 56,
   /** CycleRow: marginTop space.base + caption 18 */
   cycle: 16 + 18,
   /** CycleRow + "Remind me" 44pt satırı */
@@ -71,6 +73,8 @@ interface Scenario {
   archive?: boolean
   /** Dynamic Type ile gövdenin eklenen yüksekliği */
   extraBody?: number
+  /** Spotlight kartı yüksekliği; varsayılan oynanabilir (72), bitmiş 56. */
+  card?: number
 }
 
 /** ScrollView içerik koordinatları: hero + Watch now satırı + kart. */
@@ -87,7 +91,7 @@ function geometry(s: Scenario) {
     (s.extraBody ?? 0)
   const below =
     LAYOUT.cardMargin +
-    LAYOUT.card +
+    (s.card ?? LAYOUT.card) +
     (s.remind ? LAYOUT.cycleRemind : LAYOUT.cycle) +
     (s.archive ? LAYOUT.archive : 0)
   const contentH = body - TITLE_OVERLAP + below
@@ -98,7 +102,7 @@ function geometry(s: Scenario) {
     contentH,
     watchNowBottom: bodyTop + body,
     cardY: bodyTop + body + LAYOUT.cardMargin,
-    cardHeight: LAYOUT.card,
+    cardHeight: s.card ?? LAYOUT.card,
     viewportHeight: s.windowHeight,
     bottomInset: s.tabBar,
     totalContent: hero + contentH + s.tabBar + SCROLL_GAP,
@@ -186,4 +190,39 @@ Deno.test('bitmiş oyun yeniden oynatılabilir görünmez (K-22)', () => {
   assertEquals(isSpotlightPlayable('in_progress'), true)
   assertEquals(isSpotlightPlayable('solved'), false)
   assertEquals(isSpotlightPlayable('failed'), false)
+})
+
+// ── Home-B1: bitmiş kart 56pt, oynanabilir 72pt — ikisi de ilk ekranda ──────
+
+Deno.test('Home-B1: bitmiş kart (56pt) ≥812pt ve SE (667pt) için kaydırmasız TAMAMEN görünür', () => {
+  for (const h of [667, 812, 852, 932]) {
+    const s = { windowHeight: h, tabBar: h === 667 ? T_SE : T_FACE_ID, card: LAYOUT.cardCompact }
+    const g = geometry(s)
+    assertEquals(fraction(s), 1, `${h}pt bitmiş kart`)
+    assert(g.cardY + g.cardHeight <= h - s.tabBar, `${h}pt: kart tab bar'ın üstünde`)
+  }
+})
+
+Deno.test('Home-B1: oynanabilir kart (72pt) SE ve iPhone 15 ilk ekranında; en kötü durumda üst 24pt görünür', () => {
+  for (const [h, tab] of [
+    [667, T_SE],
+    [852, T_FACE_ID],
+  ] as const) {
+    const s = { windowHeight: h, tabBar: tab }
+    const g = geometry(s)
+    assertEquals(fraction(s), 1, `${h}pt oynanabilir kart`)
+    assert(g.cardY + g.cardHeight <= h - tab)
+  }
+  const worst = { windowHeight: 667, tabBar: T_SE, titleLines: 3, remind: true, archive: true, extraBody: 60 }
+  assert(fraction(worst) * LAYOUT.card >= 24, "SE en kötü: kartın üst 24pt'si")
+})
+
+Deno.test('Home-B1: bitmiş kart oynanabilirden kısa; hero hiçbir durumda [160, %42] dışına çıkmaz', () => {
+  for (const h of [667, 852]) {
+    const tab = h === 667 ? T_SE : T_FACE_ID
+    const tall = geometry({ windowHeight: h, tabBar: tab })
+    const compact = geometry({ windowHeight: h, tabBar: tab, card: LAYOUT.cardCompact })
+    assert(compact.hero >= tall.hero, `${h}pt: bitmiş kartta hero küçülmez`)
+    assert(compact.hero >= 160 && compact.hero <= Math.round(h * 0.42))
+  }
 })

@@ -12,11 +12,12 @@
  * Paywall kapısı yok.
  *
  * ── S-2 (3 Eki 2026) ────────────────────────────────────────────────────────
- * Görsel: bugünün karesi `SPOTLIGHT_MAX_BLUR`'da — oyunun başladığı görüntü.
+ * Görsel: bugünün karesi `SPOTLIGHT_MAX_BLUR`'da — oyunun başladığı görüntü; YALNIZ
+ * oynanacak / devam eden durumda (Home-B1: bitmişte görsel yok, kart ≈56pt).
  * Kare `backdrop_url`'den gelir ve paylaşım görseli DEĞİLDİR (Spotlight
- * kuralı 5 yalnız paylaşımı yasaklar). Üç durum (`cardState.ts`):
- * Play / Continue / Solved|Failed özeti. Bitmiş oyun yeniden oynatılmaz —
- * dokunuş sonuç ekranını açar (sunucu kapalı tutar, K-22).
+ * kuralı 5 yalnız paylaşımı yasaklar). Durum → içerik eşlemesi saf modülde
+ * (`cardPresentation.ts`); bu dosya yalnız çizer. Bitmiş oyun yeniden
+ * oynatılmaz — dokunuş sonuç ekranını açar (sunucu kapalı tutar, K-22).
  *
  * Giriş: `entry === 'reveal'` ise opaklıkla belirir (`BONUS_CARD_ENTRY`,
  * K-19 Geçiş). Resume'da ve Reduce Motion'da anında. Giriş GECİKMESİ
@@ -48,6 +49,7 @@ import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
+import { CaretRight } from 'phosphor-react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -57,14 +59,21 @@ import Animated, {
 
 import { SPOTLIGHT_MAX_BLUR } from '@/components/games/Spotlight/constants';
 import { BONUS_CARD_ENTRY, EASE_OUT_QUART } from '@/constants/design/motion';
+import { color, size } from '@/constants/design/semantic';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { posthogAnalytics } from '@/services/posthog';
 import { hapticLight } from '@/utils/haptics';
 import { SPOTLIGHT_IMAGE_SIZE, tmdbSizedUrl } from '@/utils/tmdbSizedUrl';
 
-import { isSpotlightPlayable, type SpotlightCardState } from './cardState';
+import {
+  sentenceCase,
+  spotlightCardPresentation,
+  spotlightStateLabel,
+  type Segment,
+  type SpotlightCardData,
+  type SpotlightStateLabel,
+} from './cardPresentation';
 import { styles } from './styles';
-import type { SpotlightCardData } from './useSpotlightCardState';
 
 interface SpotlightBonusCardProps {
   /** Oyun kimliği — analytics `game_id` (kural 8: zorunlu). */
@@ -80,7 +89,7 @@ interface SpotlightBonusCardProps {
 }
 
 /** Analytics etiketi: durum okunamadıysa ya da yükleniyorsa `unknown`. */
-type CardStateLabel = SpotlightCardState | 'unknown';
+type CardStateLabel = SpotlightStateLabel;
 
 export function SpotlightBonusCard({
   gameType,
@@ -94,7 +103,8 @@ export function SpotlightBonusCard({
   const isReducedMotion = useReducedMotion();
   const { height: windowHeight } = useWindowDimensions();
 
-  const stateLabel: CardStateLabel = data.status === 'ready' ? data.state : 'unknown';
+  const stateLabel: CardStateLabel = spotlightStateLabel(data);
+  const presentation = spotlightCardPresentation(data);
 
   // ── Giriş geçişi ─────────────────────────────────────────────────────────
   const animateEntry = entry === 'reveal' && !isReducedMotion;
@@ -127,60 +137,77 @@ export function SpotlightBonusCard({
     router.push({ pathname: '/games/spotlight', params: { date: cycleDate } });
   }, [router, onPress, gameType, stateLabel, cycleDate]);
 
-  // ── Metin ────────────────────────────────────────────────────────────────
-  const kicker = `${t('gauntlet.bonus.label').toLocaleUpperCase(language)} · ${t('gauntlet.bonus.title')}`;
-  let subtitle: string;
-  let verb: string | null = null;
-  if (data.status !== 'ready') {
-    subtitle = t('gauntlet.bonus.subtitleNeutral');
-  } else if (data.state === 'not_started') {
-    subtitle = t('gauntlet.bonus.subtitle', { count: data.maxAttempts });
-    verb = t('gauntlet.bonus.play');
-  } else if (data.state === 'in_progress') {
-    subtitle = t('gauntlet.bonus.continueHint');
-    verb = t('gauntlet.bonus.continue');
-  } else {
-    subtitle = t(data.state === 'solved' ? 'gauntlet.bonus.solvedHint' : 'gauntlet.bonus.failedHint');
-  }
-  const showVerb = verb !== null && data.status === 'ready' && isSpotlightPlayable(data.state);
+  // ── Metin (içerik kararı `cardPresentation.ts`'te; burada yalnız t() çözülür) ──
+  const resolve = (segments: Segment[]): string =>
+    segments
+      .map((seg) => {
+        const raw = t(seg.key, seg.count !== undefined ? { count: seg.count } : undefined);
+        return seg.sentence ? sentenceCase(raw, language) : raw;
+      })
+      .join(' · ');
+  const eyebrow = [
+    t('gauntlet.bonus.label').toLocaleUpperCase(language),
+    ...(presentation.eyebrowDone ? [t('gauntlet.bonus.doneEyebrow').toLocaleUpperCase(language)] : []),
+  ].join(' · ');
+  const mainText = resolve(presentation.main);
+  const secondaryText = presentation.secondary !== null ? resolve(presentation.secondary) : null;
+  const verb =
+    presentation.cta === null
+      ? null
+      : t(presentation.cta === 'play' ? 'gauntlet.bonus.play' : 'gauntlet.bonus.continue').toLocaleUpperCase(language);
   const backdropUrl =
     data.status === 'ready' ? data.backdropUrl : data.status === 'loading' ? (data.backdropUrl ?? '') : '';
+  // Loading yenilemesinde aynı günün karesi kalır (titreme yok); bitmişte görsel YOK.
+  const showFrame = presentation.image !== 'none';
 
   // P-1c E: bugün bulmaca yok — kart yok (Shell zaten mount etmez; savunma).
-  if (data.status === 'unavailable') return null;
+  if (presentation.kind === 'hidden') return null;
 
   return (
     <Animated.View style={entryStyle}>
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, presentation.height === 'compact' ? styles.cardCompact : styles.cardTall]}
         onPress={handlePress}
         activeOpacity={0.85}
         accessibilityRole="button"
-        accessibilityLabel={`${kicker}. ${subtitle}${showVerb ? `. ${verb}` : ''}`}
-        accessibilityHint={t('gauntlet.bonus.a11yHint')}
+        accessibilityLabel={[eyebrow, mainText, secondaryText, verb].filter((p) => p !== null).join('. ')}
+        accessibilityHint={presentation.hintKey !== null ? t(presentation.hintKey) : undefined}
       >
-        {/* Bugünün karesi, oyunun başladığı bulanıklıkta. Kenar nötr hairline:
-            kart renksiz, altın yalnız oyun ekranında (Spotlight, 07.10.2026). */}
-        <View style={styles.frame}>
-          {backdropUrl !== '' && (
-            <Image
-              source={{ uri: tmdbSizedUrl(backdropUrl, SPOTLIGHT_IMAGE_SIZE.bonusCard) }}
-              style={styles.frameImage}
-              contentFit="cover"
-              blurRadius={SPOTLIGHT_MAX_BLUR}
-              accessible={false}
-            />
-          )}
-        </View>
+        {/* Bugünün karesi, oyunun başladığı bulanıklıkta — yalnız oynanacak/devam eden durumda
+            (ve loading yenilemesinde). Kenar nötr hairline. VoiceOver'dan gizli. */}
+        {showFrame && (
+          <View style={styles.frame}>
+            {backdropUrl !== '' && (
+              <Image
+                source={{ uri: tmdbSizedUrl(backdropUrl, SPOTLIGHT_IMAGE_SIZE.bonusCard) }}
+                style={styles.frameImage}
+                contentFit="cover"
+                blurRadius={SPOTLIGHT_MAX_BLUR}
+                accessible={false}
+              />
+            )}
+          </View>
+        )}
         <View style={styles.textBlock}>
-          <Text style={styles.kicker} numberOfLines={1}>
-            {kicker}
+          <Text style={styles.kicker}>{eyebrow}</Text>
+          <Text style={styles.main} numberOfLines={2}>
+            {mainText}
           </Text>
-          <Text style={styles.subtitle} numberOfLines={2}>
-            {subtitle}
-          </Text>
+          {secondaryText !== null ? (
+            <Text style={styles.secondary} numberOfLines={2}>
+              {secondaryText}
+            </Text>
+          ) : presentation.kind === 'loading' ? (
+            <View style={styles.skeletonLine} accessibilityElementsHidden importantForAccessibility="no" />
+          ) : null}
         </View>
-        {showVerb && <Text style={styles.verb}>{verb?.toLocaleUpperCase(language)}</Text>}
+        {/* Altın YALNIZ PLAY / CONTINUE metninde. */}
+        {verb !== null && (
+          <Text style={[styles.verb, presentation.gold && styles.verbGold]}>{verb}</Text>
+        )}
+        {presentation.chevron && (
+          <CaretRight size={size.iconInline} color={color.text.secondary} weight="bold" />
+        )}
       </TouchableOpacity>
     </Animated.View>
   );

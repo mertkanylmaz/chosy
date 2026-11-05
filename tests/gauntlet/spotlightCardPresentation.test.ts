@@ -194,3 +194,28 @@ Deno.test('durum etiketi: viewed ve visible ile aynı değer kümesi', () => {
   assertEquals(spotlightStateLabel({ status: 'error' }), 'unknown')
   assertEquals(spotlightStateLabel({ status: 'loading' }), 'unknown')
 })
+
+// ── Kaynak kilitleri (Home-B1 A tasarımı) ───────────────────────────────────
+
+const read = (p: string) => Deno.readTextFileSync(new URL(`../../${p}`, import.meta.url)).replaceAll('\r\n', '\n')
+const stripComments = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+
+Deno.test('kart stilleri: altın yalnız verbGold (marquee token), gölge/cam yok, yükseklikler 72/56', () => {
+  const styles = stripComments(read('components/gauntlet/SpotlightBonusCard/styles.ts'))
+  assertEquals((styles.match(/color\.reward\.primary/g) ?? []).length, 1)
+  assert(/verbGold: \{\s*color: color\.reward\.primary/.test(styles))
+  assert(!/shadow|elevation|BlurView|#[0-9a-fA-F]{3,8}/.test(styles), 'gölge/cam/hardcoded renk yok')
+  assert(/cardTall: \{\s*minHeight: FRAME_SIZE \+ space\.sm \* 2/.test(styles))
+  assert(/cardCompact: \{\s*minHeight: FRAME_SIZE/.test(styles))
+  assert(/FRAME_SIZE = size\.touchTarget \+ space\.md/.test(styles))
+})
+
+Deno.test('kart bileşeni: eyebrow sarılabilir, görsel gizli, chevron Phosphor, ipucu duruma göre', () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(/<Text style=\{styles\.kicker\}>/.test(src), 'kicker numberOfLines yok')
+  assert(src.includes('accessible={false}'))
+  assert(src.includes("from 'phosphor-react-native'") && !src.includes('Ionicons'))
+  assert(src.includes('accessibilityHint={presentation.hintKey !== null ? t(presentation.hintKey) : undefined}'))
+  assert(src.includes('presentation.gold && styles.verbGold'))
+  assert(!/gauntlet\.bonus\.(subtitle|solvedHint|failedHint|continueHint)/.test(src))
+})

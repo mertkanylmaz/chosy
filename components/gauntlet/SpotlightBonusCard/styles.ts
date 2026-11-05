@@ -27,6 +27,14 @@ export const styles = StyleSheet.create({
     borderRadius: radius.surface,
     backgroundColor: color.surface.raised,
   },
+  /** Oynanabilir/devam/loading/error: 72pt (kare 56 + 2×space.sm). */
+  cardTall: {
+    minHeight: FRAME_SIZE + space.sm * 2,
+  },
+  /** Bitmiş (görselsiz): ≈56pt — eyebrow + tek satır, kare yok. */
+  cardCompact: {
+    minHeight: FRAME_SIZE,
+  },
   /**
    * Nötr hairline (graphite). Oyun teması bu karta sızmaz (07.10.2026):
    * Gauntlet'in şampiyon ekranında oyunun altın oynanış rengi bilgi taşımaz.
@@ -48,17 +56,35 @@ export const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
+  /** Eyebrow sarılabilir (Daha Büyük Metin'de kesilmez): `numberOfLines` verilmez. */
   kicker: {
     ...type['label-caps'],
     color: color.text.secondary,
   },
-  subtitle: {
+  /** Ana satır: 16 + 2 + 18 + 2 + 18 = 56 → kare yüksekliğine sığar. */
+  main: {
     ...type.caption,
+    fontWeight: '600',
     color: color.text.primary,
+  },
+  secondary: {
+    ...type.caption,
+    color: color.text.secondary,
+  },
+  /** Loading: ikincil satır yerinde iskelet çubuğu (satırla aynı yükseklik). */
+  skeletonLine: {
+    height: type.caption.lineHeight,
+    width: '60%',
+    borderRadius: radius.poster,
+    backgroundColor: color.surface.border,
   },
   /** Eylem fiili (PLAY / CONTINUE) — yalnız oynanabilir durumda. */
   verb: {
     ...type['meta-strong'],
     color: color.text.primary,
+  },
+  /** Kartın TEK vurgusu: marquee token'ı, yalnız fiil metni. */
+  verbGold: {
+    color: color.reward.primary,
   },
 });
