@@ -52,10 +52,8 @@ const LAYOUT = {
   actionsRow: 48,
   /** `bonusCardInline.marginTop` space.lg */
   cardMargin: 24,
-  /** SpotlightBonusCard oynanabilir/devam/loading/error (Home-B1 `cardTall`): 2 × space.sm + 56pt kare */
+  /** SpotlightBonusCard TÜM durumlar (Home-B1.2 B+ `cardTall`): 2 × space.sm + 56pt içerik — bitmiş artık kısalmaz */
   card: 8 + 56 + 8,
-  /** SpotlightBonusCard bitmiş, görselsiz (Home-B1 `cardCompact`): minHeight FRAME_SIZE = 56 */
-  cardCompact: 56,
   /** CycleRow: marginTop space.base + caption 18 */
   cycle: 16 + 18,
   /** CycleRow + "Remind me" 44pt satırı */
@@ -73,7 +71,7 @@ interface Scenario {
   archive?: boolean
   /** Dynamic Type ile gövdenin eklenen yüksekliği */
   extraBody?: number
-  /** Spotlight kartı yüksekliği; varsayılan oynanabilir (72), bitmiş 56. */
+  /** Spotlight kartı yüksekliği; B+ ile tüm durumlarda 72 (varsayılan). */
   card?: number
 }
 
@@ -192,12 +190,13 @@ Deno.test('bitmiş oyun yeniden oynatılabilir görünmez (K-22)', () => {
   assertEquals(isSpotlightPlayable('failed'), false)
 })
 
-// ── Home-B1: bitmiş kart 56pt, oynanabilir 72pt — ikisi de ilk ekranda ──────
+// ── Home-B1.2 (B+): kart TÜM durumlarda 72pt — bitmiş dahil ilk ekranda ────────
 
-Deno.test('Home-B1: bitmiş kart (56pt) ≥812pt ve SE (667pt) için kaydırmasız TAMAMEN görünür', () => {
+Deno.test('Home-B1.2: bitmiş kart da 72pt; ≥812pt ve SE (667pt) için kaydırmasız TAMAMEN görünür', () => {
   for (const h of [667, 812, 852, 932]) {
-    const s = { windowHeight: h, tabBar: h === 667 ? T_SE : T_FACE_ID, card: LAYOUT.cardCompact }
+    const s = { windowHeight: h, tabBar: h === 667 ? T_SE : T_FACE_ID }
     const g = geometry(s)
+    assertEquals(g.cardHeight, 72, `${h}pt bitmiş kart yüksekliği`)
     assertEquals(fraction(s), 1, `${h}pt bitmiş kart`)
     assert(g.cardY + g.cardHeight <= h - s.tabBar, `${h}pt: kart tab bar'ın üstünde`)
   }
@@ -217,12 +216,11 @@ Deno.test('Home-B1: oynanabilir kart (72pt) SE ve iPhone 15 ilk ekranında; en k
   assert(fraction(worst) * LAYOUT.card >= 24, "SE en kötü: kartın üst 24pt'si")
 })
 
-Deno.test('Home-B1: bitmiş kart oynanabilirden kısa; hero hiçbir durumda [160, %42] dışına çıkmaz', () => {
+Deno.test('Home-B1.2: durum değişince düzen kaymaz — kart yüksekliği sabit 72, hero [160, %42] içinde', () => {
+  assertEquals(LAYOUT.card, 72)
   for (const h of [667, 852]) {
     const tab = h === 667 ? T_SE : T_FACE_ID
-    const tall = geometry({ windowHeight: h, tabBar: tab })
-    const compact = geometry({ windowHeight: h, tabBar: tab, card: LAYOUT.cardCompact })
-    assert(compact.hero >= tall.hero, `${h}pt: bitmiş kartta hero küçülmez`)
-    assert(compact.hero >= 160 && compact.hero <= Math.round(h * 0.42))
+    const g = geometry({ windowHeight: h, tabBar: tab })
+    assert(g.hero >= 160 && g.hero <= Math.round(h * 0.42))
   }
 })

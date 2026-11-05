@@ -13,6 +13,15 @@ import {
   type SpotlightCardData,
   type SpotlightChallengeShape,
 } from '../../components/gauntlet/SpotlightBonusCard/cardPresentation.ts'
+import {
+  FRAME_DIM_ALPHA,
+  FRAME_FOCUS_TOP,
+  TEXT_BLOCK_MAX_WIDTH,
+  TEXT_MAX_FRACTION,
+  scrimAlphaAtX,
+} from '../../components/gauntlet/SpotlightBonusCard/cardScrim.ts'
+import { palette } from '../../constants/design/primitives.ts'
+import { compositeOver, contrastRatio } from '../../utils/oklch.ts'
 
 const ready = (
   state: 'not_started' | 'in_progress' | 'solved' | 'failed',
@@ -350,4 +359,95 @@ Deno.test('analitik: visible state taşır, viewed durum değişiminde tekrar at
   assert(!card.includes('viewedTrackedRef'))
   const events = [...(card + visible).matchAll(/track\('([a-z_]+)'/g)].map((m) => m[1]).sort()
   assertEquals(events, ['spotlight_card_pressed', 'spotlight_card_viewed', 'spotlight_card_visible'])
+})
+
+// ── Home-B1.2: katman geometrisi ve kontrast (en kötü durum: saf beyaz kare) ─────
+
+const WHITE = '#FFFFFF'
+const BONE_SOFT_ALPHA = 0.8 // color.text.primarySoft = bone@80%
+
+/** Metnin arkasındaki kompozit: beyaz kare → (bulanıkta karartma) → x konumundaki gradyan. */
+function backdropAt(x: number, dimmed: boolean): string {
+  const dim = dimmed ? compositeOver(WHITE, palette.charcoal, FRAME_DIM_ALPHA) : WHITE
+  return compositeOver(dim, palette.charcoal, scrimAlphaAtX(x))
+}
+
+Deno.test('katman: gradyan metin bölgesinde tavanda (%88), sağ kenarda ~%15; karartma ~%20; odak üst-orta', () => {
+  assertEquals(scrimAlphaAtX(0), 0.88)
+  assertEquals(scrimAlphaAtX(TEXT_MAX_FRACTION), 0.88)
+  assertEquals(scrimAlphaAtX(1), 0.15)
+  assert(scrimAlphaAtX(0.75) < 0.88 && scrimAlphaAtX(0.75) > 0.15, 'ara değer doğrusal iner')
+  assertEquals(FRAME_DIM_ALPHA, 0.2)
+  assertEquals(FRAME_FOCUS_TOP, '40%')
+  assertEquals(TEXT_BLOCK_MAX_WIDTH, '50%')
+})
+
+for (const dimmed of [true, false]) {
+  Deno.test(`kontrast (saf beyaz kare, metin bloğunun sağ ucu, ${dimmed ? 'bulanık+karartma' : 'net'}): başlık ≥ 3, eyebrow/alt satır ≥ 4.5`, () => {
+    const bg = backdropAt(TEXT_MAX_FRACTION, dimmed)
+    const title = contrastRatio(palette.bone, bg)
+    const soft = compositeOver(bg, palette.bone, BONE_SOFT_ALPHA)
+    const sub = contrastRatio(soft, bg)
+    const gold = contrastRatio(palette.marquee, bg)
+    console.log(`  ${dimmed ? 'bulanık' : 'net'}: zemin ${bg} · başlık ${title.toFixed(2)}:1 · eyebrow/alt satır ${sub.toFixed(2)}:1 · altın ${gold.toFixed(2)}:1`)
+    assert(title >= 3, `başlık ${title}`)
+    assert(sub >= 4.5, `alt satır ${sub}`)
+    assert(gold >= 4.5, `altın eyebrow ${gold}`) // ✓ FOUND IT, yalnız net durumda ama ikisinde de sağlanır
+  })
+}
+
+Deno.test('kontrast: eski gri (smoke) AA\'yı tutmaz — bu yüzden eyebrow/alt satır bone@80%', () => {
+  const bg = backdropAt(TEXT_MAX_FRACTION, false)
+  assert(contrastRatio(palette.smoke, bg) < 4.5)
+})
+
+Deno.test('kart stilleri: eyebrow ve alt satır text.primarySoft (secondary/smoke değil)', () => {
+  const styles = stripComments(read('components/gauntlet/SpotlightBonusCard/styles.ts'))
+  assert(/kicker: \{[^}]*color: color\.text\.primarySoft/.test(styles))
+  assert(/secondary: \{[^}]*color: color\.text\.primarySoft/.test(styles))
+  assert(!styles.includes('color.text.secondary'))
+})
+
+Deno.test('kart bileşeni: tam kart görsel (cover, odak), blur yalnız bulanık durumda, gradyan token, hata Sentry\'ye', () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(src.includes('contentFit="cover"') && src.includes('contentPosition={{ top: FRAME_FOCUS_TOP }}'))
+  assert(src.includes('blurRadius={presentation.blur ? SPOTLIGHT_MAX_BLUR : 0}'))
+  assert(src.includes('{presentation.blur && ('), 'karartma yalnız bulanık durumda')
+  assert(src.includes("from 'expo-linear-gradient'"))
+  assert(!/BlurView|expo-blur/.test(src), 'cam/BlurView yok')
+  assert(!/#[0-9a-fA-F]{3,8}|rgba?\(/.test(src), 'hardcoded renk yok')
+  assert(src.includes('SPOTLIGHT_IMAGE_SIZE.bonusCard'))
+  assert(/onError=\{handleFrameError\}/.test(src) && src.includes('Sentry.captureMessage('))
+  // hap ve chevron ayrı dokunma hedefi değil (View, Pressable/Touchable içinde değil)
+  assertEquals((src.match(/<TouchableOpacity/g) ?? []).length, 1)
+  assert(!/Pressable/.test(src))
+})
+
+Deno.test('kart bileşeni: bitmişte a11y etiketi film adını içerir; hap/chevron metni etikette tekrar etmez', () => {
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx'))
+  assert(src.includes('`${sentenceCase(eyebrowRaw, language)}, ${mainText}. ${secondaryText ?? \'\'}.`'))
+})
+
+Deno.test('bonusCard görsel boyutu kart genişliği @3x için w1280', () => {
+  const src = read('utils/tmdbSizedUrl.ts')
+  assert(/bonusCard: 'w1280'/.test(src))
+})
+
+Deno.test('kullanım dışı anahtarlar: doneEyebrow ve label kartta çağrılmaz (silinmedi); nameTheFilm artık sözlükte yok', () => {
+  const en = JSON.parse(read('locales/en.json')).gauntlet.bonus
+  const tr = JSON.parse(read('locales/tr.json')).gauntlet.bonus
+  for (const bonus of [en, tr]) {
+    assert('doneEyebrow' in bonus && 'label' in bonus, 'kullanım dışı ama silinmedi')
+    assert(!('nameTheFilm' in bonus), 'yeniden adlandırıldı')
+  }
+  const src = stripComments(read('components/gauntlet/SpotlightBonusCard/index.tsx') + read('components/gauntlet/SpotlightBonusCard/cardPresentation.ts'))
+  assert(!/doneEyebrow|bonus\.label|nameTheFilm/.test(src))
+  assertEquals(
+    [en.spotlightEyebrow, en.guessTheFilm, en.revealedEyebrow, en.chancesFromFrame],
+    ["TODAY'S SPOTLIGHT", 'Guess the film', 'REVEALED', 'One frame · %{count} chances'],
+  )
+  assertEquals(
+    [tr.spotlightEyebrow, tr.guessTheFilm, tr.revealedEyebrow, tr.chancesFromFrame],
+    ['GÜNÜN KARESİ', 'Filmi tahmin et', 'AÇIKLANDI', 'Tek kare · %{count} hak'],
+  )
 })
