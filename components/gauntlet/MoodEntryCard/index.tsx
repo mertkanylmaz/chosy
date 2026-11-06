@@ -44,13 +44,19 @@ export function MoodEntryCard(): React.JSX.Element | null {
 
   useEffect(() => {
     if (!visible || !entryViewed.claim('champion')) return;
-    posthogAnalytics.track('pro_entry_viewed', { surface: 'champion' });
+    posthogAnalytics.track('pro_entry_viewed', { surface: 'champion', variant: moodEntryVariant(allowed) });
+    // `allowed` yalnız görünür olunca (yükleme bitti) okunur; tekrar tetik `claim` ile engelli.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   const handlePress = useCallback(async () => {
     if (!visible) return;
     void hapticLight();
-    posthogAnalytics.track('pro_entry_tapped', { surface: 'champion', is_pro: allowed });
+    posthogAnalytics.track('pro_entry_tapped', {
+      surface: 'champion',
+      is_pro: allowed,
+      variant: moodEntryVariant(allowed),
+    });
     if (moodEntryTapTarget(allowed) === 'pro_mode') {
       router.push({ pathname: '/pro-mode', params: { entry: 'champion' } });
       return;

@@ -139,10 +139,14 @@ Deno.test('pro_entry_viewed: oturumda YÜZEY BAŞINA bir kez (CTO: profile + cha
   assertMatch(profile, /entryViewed\.claim\('profile'\)/)
 })
 
-Deno.test('kart olayları: viewed {surface}, tapped {surface,is_pro}; paywall kaynağı etiketi', () => {
+Deno.test('kart olayları: viewed {surface,variant}, tapped {surface,is_pro,variant}; paywall kaynağı etiketi', () => {
   const card = read('../../components/gauntlet/MoodEntryCard/index.tsx')
-  assertMatch(card, /track\('pro_entry_viewed', \{ surface: 'champion' \}\)/)
-  assertMatch(card, /track\('pro_entry_tapped', \{ surface: 'champion', is_pro: allowed \}\)/)
+  assertMatch(card, /track\('pro_entry_viewed', \{ surface: 'champion', variant: moodEntryVariant\(allowed\) \}\)/)
+  assertMatch(card, /track\('pro_entry_tapped', \{\n\s+surface: 'champion',\n\s+is_pro: allowed,\n\s+variant: moodEntryVariant\(allowed\),\n\s+\}\)/)
+  // Profil yüzeyine dokunulmadı: variant yok, yeni olay adı yok
+  const profile = read('../../app/(tabs)/profile.tsx')
+  assert(!/variant: moodEntryVariant/.test(profile))
+  assertMatch(profile, /track\('pro_entry_viewed', \{ surface: 'profile' \}\)/)
   assertMatch(card, /type: 'profile_upgrade', entry: MOOD_GAUNTLET_ENTRY_SOURCE/)
 })
 
