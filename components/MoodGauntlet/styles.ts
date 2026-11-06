@@ -55,6 +55,15 @@ export const styles = StyleSheet.create({
   gridCaption: { ...type.caption, color: color.text.secondary, paddingHorizontal: space.xs },
   consentBody: { ...type.caption, color: color.text.secondary, marginTop: space.sm },
   ctaSlot: { marginTop: space.base },
+  /** Rıza adımı (kart dokunuşu, rıza yok): kaydırma alanının dışında, altta sabit. */
+  consentDock: {
+    paddingHorizontal: space.base,
+    paddingTop: space.sm,
+    paddingBottom: space.base,
+    gap: space.sm,
+    backgroundColor: color.surface.base,
+  },
+  consentDockBody: { ...type.caption, color: color.text.secondary },
 
   // Yükleme
   loadingRoot: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.xl, gap: space.xl },

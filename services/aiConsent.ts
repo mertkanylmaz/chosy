@@ -100,14 +100,17 @@ function isGranted(row: { ai_consent_at: string | null; ai_consent_version: numb
   );
 }
 
+/** `readAiConsentState` sonucu: `unknown` = okunamadı (oturum yok, hata ya da users satırı yok). */
+export type AiConsentReadState = 'granted' | 'denied' | 'unknown';
+
 /**
- * Sessiz okuma — sheet AÇMAZ. Okunamazsa `false` (fail-closed: rıza
- * doğrulanamadan LLM'e veri gitmez) ve hata Sentry'ye yazılır.
+ * Sessiz okuma — sheet AÇMAZ. "Rıza yok" ile "okunamadı"yı AYIRIR: çağıran okunamadığında
+ * kullanıcıya görünür bir adım açabilir. Okuma hataları Sentry'ye yazılır.
  */
-export async function hasAiConsent(): Promise<boolean> {
+export async function readAiConsentState(): Promise<AiConsentReadState> {
   const authId = await currentAuthId();
-  if (authId === null) return false;
-  if (cache !== null && cache.authId === authId) return cache.granted;
+  if (authId === null) return 'unknown';
+  if (cache !== null && cache.authId === authId) return cache.granted ? 'granted' : 'denied';
 
   try {
     const { data, error } = await supabase
@@ -118,7 +121,7 @@ export async function hasAiConsent(): Promise<boolean> {
 
     if (error) {
       Sentry.captureException(error, { tags: { component: 'aiConsent', flow: 'read' } });
-      return false;
+      return 'unknown';
     }
     if (data === null) {
       // public.users satırı yok (APP_USER_MISSING ile aynı durum) — rıza yok.
@@ -126,16 +129,24 @@ export async function hasAiConsent(): Promise<boolean> {
         level: 'warning',
         tags: { component: 'aiConsent', flow: 'read' },
       });
-      return false;
+      return 'unknown';
     }
 
     const granted = isGranted(data as { ai_consent_at: string | null; ai_consent_version: number | null });
     cache = { authId, granted };
-    return granted;
+    return granted ? 'granted' : 'denied';
   } catch (err) {
     Sentry.captureException(err, { tags: { component: 'aiConsent', flow: 'read' } });
-    return false;
+    return 'unknown';
   }
+}
+
+/**
+ * Sessiz okuma — sheet AÇMAZ. Okunamazsa `false` (fail-closed: rıza
+ * doğrulanamadan LLM'e veri gitmez) ve hata Sentry'ye yazılır.
+ */
+export async function hasAiConsent(): Promise<boolean> {
+  return (await readAiConsentState()) === 'granted';
 }
 
 /**
