@@ -2077,6 +2077,14 @@ function ProfileScreenContent() {
                   <Ionicons name="bug-outline" size={16} color={color.text.secondary} />
                   <Text style={styles.devSentryBtnText}>Test Sentry</Text>
                 </TouchableOpacity>
+                {/* PROTOTİP (proto/cinematic-loading): yalnız dev build'de görünür. */}
+                <TouchableOpacity
+                  style={styles.devSentryBtn}
+                  onPress={() => router.push('/dev-cinematic-loading' as never)}
+                  activeOpacity={0.7}>
+                  <Ionicons name="film-outline" size={16} color={color.text.secondary} />
+                  <Text style={styles.devSentryBtnText}>{t('devProto.cinematic.profileEntry')}</Text>
+                </TouchableOpacity>
               </View>
             )}
 

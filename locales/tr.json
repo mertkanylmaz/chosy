@@ -1850,5 +1850,43 @@
   "gate": {
     "loadError": "Bağlanamadı. Bağlantını kontrol edip tekrar dene.",
     "retry": "Tekrar dene"
+  },
+  "devProto": {
+    "cinematic": {
+      "title": "Sinematik yükleme · prototip",
+      "profileEntry": "Sinematik yükleme prototipi",
+      "close": "Kapat",
+      "showPanel": "Kontroller",
+      "hidePanel": "Gizle",
+      "speed": "Veri zamanlaması",
+      "speed_fast": "Hızlı (300 ms)",
+      "speed_normal": "Normal (3 sn)",
+      "speed_slow": "Yavaş (9 sn)",
+      "speed_hang": "Hiç gelmez",
+      "outcome": "Sonuç",
+      "outcome_ok": "Dört film",
+      "outcome_error": "Hata",
+      "posters": "Poster görselleri",
+      "posters_none": "Hepsi yüklenir",
+      "posters_one": "Biri yüklenmez",
+      "posters_all": "Hiçbiri yüklenmez",
+      "motion": "Hareketi Azalt",
+      "motion_system": "Sistem",
+      "motion_on": "Zorla açık",
+      "motion_off": "Zorla kapalı",
+      "blur": "Bulanık → net",
+      "on": "Açık",
+      "off": "Kapalı",
+      "start": "Başlat",
+      "another": "Another four",
+      "clearCache": "Görsel önbelleğini temizle",
+      "cacheCleared": "Görsel önbelleği temizlendi.",
+      "cacheError": "Görsel önbelleği temizlenemedi: %{message}",
+      "metrics": "veri %{data} ms · sahne +%{scene} ms · son görsel +%{image} ms (%{loaded} tamam, %{failed} hatalı)",
+      "pending": "—",
+      "hint": "Kontrolleri seç, sonra Başlat’a dokun.",
+      "started": "Start choosing’e dokunuldu (prototip: tur açılmaz).",
+      "moodLabel": "Yağmurlu Pazar"
+    }
   }
 }

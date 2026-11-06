@@ -1850,5 +1850,43 @@
   "gate": {
     "loadError": "Couldn't connect. Check your connection and try again.",
     "retry": "Try again"
+  },
+  "devProto": {
+    "cinematic": {
+      "title": "Cinematic loading · prototype",
+      "profileEntry": "Cinematic loading prototype",
+      "close": "Close",
+      "showPanel": "Controls",
+      "hidePanel": "Hide",
+      "speed": "Data timing",
+      "speed_fast": "Fast (300 ms)",
+      "speed_normal": "Normal (3 s)",
+      "speed_slow": "Slow (9 s)",
+      "speed_hang": "Never arrives",
+      "outcome": "Result",
+      "outcome_ok": "Four films",
+      "outcome_error": "Error",
+      "posters": "Poster images",
+      "posters_none": "All load",
+      "posters_one": "One fails",
+      "posters_all": "All fail",
+      "motion": "Reduce Motion",
+      "motion_system": "System",
+      "motion_on": "Force on",
+      "motion_off": "Force off",
+      "blur": "Blur → sharp",
+      "on": "On",
+      "off": "Off",
+      "start": "Start",
+      "another": "Another four",
+      "clearCache": "Clear image cache",
+      "cacheCleared": "Image cache cleared.",
+      "cacheError": "Couldn't clear image cache: %{message}",
+      "metrics": "data %{data} ms · scene +%{scene} ms · last image +%{image} ms (%{loaded} ok, %{failed} failed)",
+      "pending": "—",
+      "hint": "Pick the controls, then tap Start.",
+      "started": "Start choosing tapped (prototype: no round opens).",
+      "moodLabel": "Rainy Sunday"
+    }
   }
 }
