@@ -1560,7 +1560,13 @@
   "moodEntry": {
     "title": "Next four at %{time} · Can't wait?",
     "subtitle": "4 films · 3 choices · 1 pick",
-    "badge": "Pro"
+    "badge": "Pro",
+    "cardTitle": "Pick a film for your mood",
+    "subtitleExplore": "Four personalized picks, matched to how you feel",
+    "subtitleOpen": "Open Pro Mode",
+    "chipExplore": "Explore Pro",
+    "hintExplore": "Shows Chosy Pro plans",
+    "hintOpen": "Opens Pro Mode"
   },
   "contextPaywall": {
     "quotaTitle": "Your discoveries are done for today",

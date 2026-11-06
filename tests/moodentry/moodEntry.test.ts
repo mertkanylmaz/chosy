@@ -147,6 +147,34 @@ Deno.test('kart olayları: viewed {surface}, tapped {surface,is_pro}; paywall ka
 
 // ── Metin ───────────────────────────────────────────────────────────────────
 
+Deno.test('Home-B2 locales: eşlemedeki her anahtar en/tr dolu; "free" vaadi yok; eski anahtarlar yerinde', () => {
+  const en = JSON.parse(read('../../locales/en.json'))
+  const tr = JSON.parse(read('../../locales/tr.json'))
+  const pick = (d: Record<string, Record<string, string>>, key: string): string => d.moodEntry[key.replace('moodEntry.', '')]
+  for (const variant of ['explore', 'open'] as const) {
+    const c = moodEntryContent(variant)
+    const keys = [c.titleKey, c.subtitleKey, c.hintKey, ...(c.chipKey ? [c.chipKey] : [])]
+    for (const k of keys) {
+      for (const [lang, d] of [['en', en], ['tr', tr]] as const) {
+        const v = pick(d, k)
+        assert(typeof v === 'string' && v.length > 0, `${lang}.${k}`)
+        assert(!/free|ücretsiz|bedava/i.test(v), `${lang}.${k} "free" vaadi içermemeli`)
+      }
+    }
+  }
+  assertEquals(en.moodEntry.cardTitle, 'Pick a film for your mood')
+  assertEquals(tr.moodEntry.cardTitle, 'Ruh hâline göre film seç')
+  assertEquals(en.moodEntry.chipExplore, 'Explore Pro')
+  assertEquals(tr.moodEntry.chipExplore, "Pro'yu keşfet")
+  assertEquals(en.moodEntry.subtitleOpen, 'Open Pro Mode')
+  assertEquals(tr.moodEntry.subtitleOpen, "Pro Mode'u aç")
+  assertEquals(Object.keys(en.moodEntry).sort(), Object.keys(tr.moodEntry).sort())
+  // Eski anahtarlar SİLİNMEZ (karar); kullanım dışı — kart onlara başvurmaz (görünüm commit'inde kilitli).
+  for (const k of ['title', 'subtitle', 'badge']) {
+    assert(String(en.moodEntry[k]).length > 0 && String(tr.moodEntry[k]).length > 0, `eski moodEntry.${k}`)
+  }
+})
+
 Deno.test('saat biçimi HH:MM iki haneli', () => {
   assertEquals(formatEntryTime(new Date(2026, 10, 1, 8, 5)), '08:05')
   assertEquals(formatEntryTime(new Date(2026, 10, 1, 18, 0)), '18:00')

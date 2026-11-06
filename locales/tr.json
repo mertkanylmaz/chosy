@@ -1560,7 +1560,13 @@
   "moodEntry": {
     "title": "Sonraki dörtlü: %{time} · Beklemek istemiyor musun?",
     "subtitle": "4 film · 3 seçim · 1 film",
-    "badge": "Pro"
+    "badge": "Pro",
+    "cardTitle": "Ruh hâline göre film seç",
+    "subtitleExplore": "Nasıl hissettiğine göre dört kişisel öneri",
+    "subtitleOpen": "Pro Mode'u aç",
+    "chipExplore": "Pro'yu keşfet",
+    "hintExplore": "Chosy Pro planlarını gösterir",
+    "hintOpen": "Pro Mode'u açar"
   },
   "contextPaywall": {
     "quotaTitle": "Bugünkü keşiflerin bitti",
