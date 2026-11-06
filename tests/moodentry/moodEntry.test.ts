@@ -9,6 +9,7 @@ import {
   createEntryViewedTracker,
   formatEntryTime,
   isMoodGauntletEntryTrigger,
+  MOOD_ENTRY_CARD_HEIGHT,
   MOOD_ENTRY_MAX_FONT_SCALE,
   MOOD_ENTRY_RESERVE_HEIGHT,
   MOOD_GAUNTLET_ENTRY_SOURCE,
@@ -143,6 +144,30 @@ Deno.test('kart olayları: viewed {surface}, tapped {surface,is_pro}; paywall ka
   assertMatch(card, /track\('pro_entry_viewed', \{ surface: 'champion' \}\)/)
   assertMatch(card, /track\('pro_entry_tapped', \{ surface: 'champion', is_pro: allowed \}\)/)
   assertMatch(card, /type: 'profile_upgrade', entry: MOOD_GAUNTLET_ENTRY_SOURCE/)
+})
+
+// ── Görünüm (Home-B2) ────────────────────────────────────────────────────────
+
+Deno.test('Home-B2 kart: mutlak saat yok, eski anahtarlar kullanılmıyor, a11y etiket+ipucu, çip koşullu', () => {
+  const card = read('../../components/gauntlet/MoodEntryCard/index.tsx')
+  assert(!/formatEntryTime|nextFourAt/.test(card), 'mutlak saat karttan kalktı')
+  assert(!/moodEntry\.(title|subtitle|badge)\b/.test(card), 'eski anahtarlar kullanım dışı')
+  assertMatch(card, /accessibilityLabel=\{`\$\{title\}\. \$\{subtitle\}`\}/)
+  assertMatch(card, /accessibilityHint=\{t\(content\.hintKey\)\}/)
+  assertMatch(card, /content\.chipKey !== null && \(/)
+  assertMatch(card, /moodEntryContent\(moodEntryVariant\(allowed\)\)/)
+  const shell = read('../../components/gauntlet/GauntletShell/index.tsx')
+  assertMatch(shell, /<MoodEntryCard \/>/)
+  // Rota / tetikleyici / kota: değişmez
+  assertMatch(card, /router\.push\(\{ pathname: '\/pro-mode', params: \{ entry: 'champion' \} \}\)/)
+  assertMatch(card, /type: 'profile_upgrade', entry: MOOD_GAUNTLET_ENTRY_SOURCE/)
+  assert(!/withQuota|fetchSearchQuota|get_quota_status/.test(card), 'kart kota okumaz (yeni RPC yok)')
+})
+
+Deno.test('Home-B2 stil: yükseklik 92 kalır, altın/marquee yok', () => {
+  assertEquals(MOOD_ENTRY_CARD_HEIGHT, 92)
+  const styles = read('../../components/gauntlet/MoodEntryCard/styles.ts')
+  assert(!/marquee|gold/i.test(styles))
 })
 
 // ── Metin ───────────────────────────────────────────────────────────────────

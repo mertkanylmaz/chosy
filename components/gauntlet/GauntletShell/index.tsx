@@ -1880,7 +1880,7 @@ function GauntletShellContent(): React.JSX.Element {
                 Sarmalayıcı ölçüm içindir; yetki okunmadıysa kart null döner (yükseklik 0). */}
             {showMoodEntry && countdownTarget !== null && (
               <View onLayout={below.onLayoutOf('entry')}>
-                <MoodEntryCard nextFourAt={countdownTarget} />
+                <MoodEntryCard />
               </View>
             )}
 
