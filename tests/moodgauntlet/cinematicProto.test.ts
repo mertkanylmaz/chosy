@@ -16,6 +16,7 @@ import {
   stripMetrics,
   stripPose,
 } from '../../components/MoodGauntlet/proto/CinematicLoading/geometry.ts'
+import { isProtoAccessible } from '../../utils/protoAccessDecision.ts'
 
 const read = (p: string) =>
   Deno.readTextFileSync(new URL(`../../${p}`, import.meta.url)).replaceAll('\r\n', '\n')
@@ -34,11 +35,29 @@ function walk(dir: string): string[] {
   return out
 }
 
-Deno.test('rota: prod kilidi — __DEV__ degilse Redirect, laboratuvar yalniz __DEV__ dalinda require edilir', () => {
+Deno.test('erisim karari: production kanalinda kapali, yalniz __DEV__ ya da preview acik', () => {
+  assertEquals(isProtoAccessible(false, 'production'), false)
+  assertEquals(isProtoAccessible(false, null), false)
+  assertEquals(isProtoAccessible(false, undefined), false)
+  assertEquals(isProtoAccessible(false, ''), false)
+  assertEquals(isProtoAccessible(false, 'Preview'), false)
+  assertEquals(isProtoAccessible(false, 'development'), false)
+  assertEquals(isProtoAccessible(false, 'preview'), true)
+  assertEquals(isProtoAccessible(true, 'production'), true)
+  assertEquals(isProtoAccessible(true, null), true)
+  // Uygulama getter'i kanali calisma zamaninda okur ve bu saf karari kullanir (modul seviyesi sabit yok).
+  const acc = strip(read('utils/protoAccess.ts'))
+  assert(/import \{ isProtoAccessible \} from '@\/utils\/protoAccessDecision';/.test(acc))
+  assert(/return isProtoAccessible\(__DEV__, Updates\.channel\);/.test(acc))
+  assert(!/^(export )?const /m.test(acc), 'modul seviyesi sabit YOK')
+})
+
+Deno.test('rota: prod kilidi — erisim yoksa Redirect, laboratuvar yalniz erisim dalinda require edilir', () => {
   const src = strip(read(ROUTE))
-  assert(/const Lab = __DEV__\s*\?\s*\(require\('@\/components\/MoodGauntlet\/proto\/CinematicLoadingLab'\)/.test(src))
+  assert(/import \{ canAccessProto \} from '@\/utils\/protoAccess';/.test(src))
+  assert(/const Lab = canAccessProto\(\)\s*\?\s*\(require\('@\/components\/MoodGauntlet\/proto\/CinematicLoadingLab'\)/.test(src))
   assert(/if \(Lab === null\) return <Redirect href="\/" \/>/.test(src))
-  assert(!/^import .*proto\//m.test(src), 'statik import YOK (bundle grafigine girerdi)')
+  assert(!/^import .*proto\//m.test(src), 'statik import YOK (production kanalinda degerlendirilmez)')
 })
 
 Deno.test('production akisi prototipe baglanmaz: proto/ yalniz rota + proto klasoru icinden referanslanir', () => {
@@ -50,12 +69,14 @@ Deno.test('production akisi prototipe baglanmaz: proto/ yalniz rota + proto klas
     }
   }
   assertEquals(offenders, [])
-  // Profil girisi yalniz bir __DEV__ blogu icinde rota adini iter, modulu import etmez.
+  // Profil girisi yalniz canAccessProto() blogu icinde rota adini iter, modulu import etmez.
   const profile = read('app/(tabs)/profile.tsx')
   const i = profile.indexOf("'/dev-cinematic-loading'")
   assert(i > 0)
-  const devBlock = profile.lastIndexOf('{__DEV__ && (', i)
-  assert(devBlock > 0 && i - devBlock < 1500, 'giris __DEV__ blogunun icinde')
+  assertEquals(profile.indexOf("'/dev-cinematic-loading'", i + 1), -1, 'tek giris noktasi')
+  const gate = profile.lastIndexOf('{canAccessProto() && (', i)
+  assert(gate > 0 && i - gate < 600, 'giris canAccessProto() blogunun icinde')
+  assert(!profile.slice(gate, i).includes(')}'), 'giris ile kapi arasinda blok kapanmaz')
 })
 
 Deno.test('sahte ilerleme yok: sahnede gorunur metin yalniz Your four basligi; yuzde / asama metni yok', () => {

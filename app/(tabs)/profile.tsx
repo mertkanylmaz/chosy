@@ -68,6 +68,7 @@ import { normalizePosterUrl, SAVED_THUMB_POSTER_SIZE } from '@/utils/posterUrl';
 import * as Sentry from '@sentry/react-native';
 
 import { logger } from '@/utils/logger';
+import { canAccessProto } from '@/utils/protoAccess';
 import { posthogAnalytics } from '@/services/posthog';
 import { entryViewed } from '@/components/gauntlet/MoodEntryCard';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -2077,7 +2078,12 @@ function ProfileScreenContent() {
                   <Ionicons name="bug-outline" size={16} color={color.text.secondary} />
                   <Text style={styles.devSentryBtnText}>Test Sentry</Text>
                 </TouchableOpacity>
-                {/* PROTOTİP (proto/cinematic-loading): yalnız dev build'de görünür. */}
+              </View>
+            )}
+
+            {/* PROTOTİP (proto/cinematic-loading): dev build ya da preview kanalı; production'da gizli. */}
+            {canAccessProto() && (
+              <View style={styles.devSection}>
                 <TouchableOpacity
                   style={styles.devSentryBtn}
                   onPress={() => router.push('/dev-cinematic-loading' as never)}
