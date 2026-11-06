@@ -12,8 +12,10 @@ import {
   MOOD_ENTRY_MAX_FONT_SCALE,
   MOOD_ENTRY_RESERVE_HEIGHT,
   MOOD_GAUNTLET_ENTRY_SOURCE,
+  moodEntryContent,
   moodEntryFits,
   moodEntryTapTarget,
+  moodEntryVariant,
   paywallEntrySource,
 } from '../../utils/moodEntry.ts'
 
@@ -46,6 +48,27 @@ Deno.test('moodEntryFits: hero tabanı korunur — tam eşikte sığar, 1pt alt�
 Deno.test('dokunuş: Pro/legacy → /pro-mode; ücretsiz → paywall', () => {
   assertEquals(moodEntryTapTarget(true), 'pro_mode')
   assertEquals(moodEntryTapTarget(false), 'paywall')
+})
+
+Deno.test('Home-B2 varyant: yetki → open, yetkisiz → explore; dokunuş yönüyle tutarlı', () => {
+  assertEquals(moodEntryVariant(true), 'open')
+  assertEquals(moodEntryVariant(false), 'explore')
+  for (const allowed of [true, false]) {
+    assertEquals(moodEntryTapTarget(allowed) === 'pro_mode', moodEntryVariant(allowed) === 'open')
+  }
+})
+
+Deno.test('Home-B2 içerik eşlemesi: ortak başlık; explore çipli, open çipsiz (rozet/çip yok)', () => {
+  const explore = moodEntryContent('explore')
+  const open = moodEntryContent('open')
+  assertEquals(explore.titleKey, 'moodEntry.cardTitle')
+  assertEquals(open.titleKey, explore.titleKey)
+  assertEquals(explore.subtitleKey, 'moodEntry.subtitleExplore')
+  assertEquals(open.subtitleKey, 'moodEntry.subtitleOpen')
+  assertEquals(explore.chipKey, 'moodEntry.chipExplore')
+  assertEquals(open.chipKey, null)
+  assertEquals(explore.hintKey, 'moodEntry.hintExplore')
+  assertEquals(open.hintKey, 'moodEntry.hintOpen')
 })
 
 Deno.test('paywall metni kaynak eşlemesi: yalnız profile_upgrade + mood_gauntlet_entry', () => {

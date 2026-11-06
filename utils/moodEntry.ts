@@ -72,6 +72,45 @@ export function moodEntryTapTarget(allowed: boolean): 'pro_mode' | 'paywall' {
   return allowed ? 'pro_mode' : 'paywall';
 }
 
+/**
+ * Kartın iki görünümü (Home-B2). `explore`: Pro'su olmayan (free / trial / kota bilinmeyen) —
+ * dokunuş paywall'a gider, çip "Explore Pro". `open`: Pro veya legacy — dokunuş Pro Mode'a
+ * gider, çip ve rozet yok. Analitikte `variant` özelliği olarak da gider.
+ * Kart HİÇBİR durumda "free" vaat etmez ve kota okumaz.
+ */
+export type MoodEntryVariant = 'explore' | 'open';
+
+export function moodEntryVariant(allowed: boolean): MoodEntryVariant {
+  return allowed ? 'open' : 'explore';
+}
+
+export interface MoodEntryContent {
+  titleKey: string;
+  subtitleKey: string;
+  /** `null` → çip yok (chevron gösterilir). */
+  chipKey: string | null;
+  /** Erişilebilirlik ipucu: dokununca ne açılır. */
+  hintKey: string;
+}
+
+/** Varyant → i18n anahtarları (tek eşleme kaynağı; metinler locales'te). */
+export function moodEntryContent(variant: MoodEntryVariant): MoodEntryContent {
+  if (variant === 'open') {
+    return {
+      titleKey: 'moodEntry.cardTitle',
+      subtitleKey: 'moodEntry.subtitleOpen',
+      chipKey: null,
+      hintKey: 'moodEntry.hintOpen',
+    };
+  }
+  return {
+    titleKey: 'moodEntry.cardTitle',
+    subtitleKey: 'moodEntry.subtitleExplore',
+    chipKey: 'moodEntry.chipExplore',
+    hintKey: 'moodEntry.hintExplore',
+  };
+}
+
 /** Paywall varyantı Mood Gauntlet girişinden mi açıldı? (metin eşlemesi tek kaynağı) */
 export function isMoodGauntletEntryTrigger(trigger: { type: string; entry?: string }): boolean {
   return trigger.type === 'profile_upgrade' && trigger.entry === MOOD_GAUNTLET_ENTRY_SOURCE;
