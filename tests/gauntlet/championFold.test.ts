@@ -28,6 +28,12 @@ import {
 } from '../../components/gauntlet/SpotlightBonusCard/cardState.ts'
 import { cardVisibleFraction } from '../../components/gauntlet/SpotlightBonusCard/visibility.ts'
 import { isCardFullyVisible } from '../../utils/askDecision.ts'
+import {
+  MOOD_ENTRY_CARD_HEIGHT,
+  MOOD_ENTRY_MARGIN,
+  MOOD_ENTRY_RESERVE_HEIGHT,
+  moodEntryFits,
+} from '../../utils/moodEntry.ts'
 
 const T_FACE_ID = 83
 const T_SE = 49
@@ -60,6 +66,8 @@ const LAYOUT = {
   cycleRemind: 16 + 44,
   /** ArchiveTrigger: paddingTop 12 + caption 18 (yalnız missedCount > 0) */
   archive: 12 + 18,
+  /** Home-B2 MoodEntryCard: marginTop 16 + minHeight 92 (Spotlight kartı ile CycleRow arası; yalnız sığarsa) */
+  entry: MOOD_ENTRY_MARGIN + MOOD_ENTRY_CARD_HEIGHT,
 }
 
 interface Scenario {
@@ -73,6 +81,8 @@ interface Scenario {
   extraBody?: number
   /** Spotlight kartı yüksekliği; B+ ile tüm durumlarda 72 (varsayılan). */
   card?: number
+  /** Pro kartı (Home-B2) çiziliyor mu — çağıran `moodEntryFits` ile karar verir. */
+  entry?: boolean
 }
 
 /** ScrollView içerik koordinatları: hero + Watch now satırı + kart. */
@@ -91,7 +101,8 @@ function geometry(s: Scenario) {
     LAYOUT.cardMargin +
     (s.card ?? LAYOUT.card) +
     (s.remind ? LAYOUT.cycleRemind : LAYOUT.cycle) +
-    (s.archive ? LAYOUT.archive : 0)
+    (s.archive ? LAYOUT.archive : 0) +
+    (s.entry ? LAYOUT.entry : 0)
   const contentH = body - TITLE_OVERLAP + below
   const hero = heroHeight(s.windowHeight, contentH, s.tabBar + SCROLL_GAP)
   const bodyTop = hero - TITLE_OVERLAP
@@ -223,4 +234,61 @@ Deno.test('Home-B1.2: durum değişince düzen kaymaz — kart yüksekliği sabi
     const g = geometry({ windowHeight: h, tabBar: tab })
     assert(g.hero >= 160 && g.hero <= Math.round(h * 0.42))
   }
+})
+
+// ── Home-B2: Pro kartı (92 + 16) — iPhone 15'te görünür, SE'de gizli ──────────────
+
+/** Kabuğun `moodEntryFits` girdisi: kart HARİÇ alt içerik (Spotlight kartı + CycleRow + isteğe bağlı arşiv). */
+function entryFits(s: Scenario): boolean {
+  const belowWithoutEntry =
+    LAYOUT.cardMargin + (s.card ?? LAYOUT.card) + (s.remind ? LAYOUT.cycleRemind : LAYOUT.cycle) + (s.archive ? LAYOUT.archive : 0)
+  return moodEntryFits({ screenH: s.windowHeight, belowWithoutEntry, tabInset: s.tabBar, fontScale: 1 })
+}
+
+Deno.test('Home-B2: Pro kartı yeri 108pt (16 + 92)', () => {
+  assertEquals(LAYOUT.entry, 108)
+  assertEquals(MOOD_ENTRY_RESERVE_HEIGHT, 108)
+})
+
+Deno.test('Home-B2: iPhone 15 (852pt) — Pro kartı sığar; Watch now ve Spotlight kartı yine kaydırmasız tam görünür', () => {
+  const base = { windowHeight: 852, tabBar: T_FACE_ID }
+  assertEquals(entryFits(base), true)
+  const s = { ...base, entry: true }
+  const g = geometry(s)
+  assert(g.hero >= 160 && g.hero <= Math.round(852 * 0.42), 'hero sınırları')
+  assert(g.watchNowBottom <= 852 - T_FACE_ID, 'Watch now satırı')
+  assertEquals(fraction(s), 1, 'Spotlight kartı tam görünür')
+  assertEquals(isCardFullyVisible({ ...g, scrollY: 0 }), true, 'dwell ölçütü')
+})
+
+Deno.test('Home-B2: ≥812pt Face ID cihazlarda Pro kartı sığar ve Spotlight ilk ekranda kalır', () => {
+  for (const h of [812, 844, 852, 874, 932, 956]) {
+    const s = { windowHeight: h, tabBar: T_FACE_ID, entry: true }
+    assertEquals(entryFits(s), true, `${h}pt sığar`)
+    assertEquals(fraction(s), 1, `${h}pt Spotlight kartı`)
+  }
+})
+
+Deno.test('Home-B2: SE (667pt) — Pro kartı GİZLİ; düzen Home-B1.2 ile birebir (Spotlight tam görünür)', () => {
+  const se = { windowHeight: 667, tabBar: T_SE }
+  assertEquals(entryFits(se), false, 'moodEntryFits SE\'de false')
+  // Gizliyken `entry` eklenmez → B1.2 geometrisi korunur.
+  assertEquals(geometry(se).contentH, geometry({ ...se, entry: false }).contentH)
+  assertEquals(fraction(se), 1)
+  const g = geometry(se)
+  assert(g.cardY + g.cardHeight <= 667 - T_SE, "Spotlight kartı tab bar'ın üstünde")
+  // En kötü durum (3 satır başlık + Remind + arşiv) da gizli
+  assertEquals(entryFits({ ...se, remind: true, archive: true }), false)
+})
+
+Deno.test('Home-B2: büyük yazı ölçeğinde (>1.3) Pro kartı 852pt\'de bile gizlenir', () => {
+  assertEquals(
+    moodEntryFits({
+      screenH: 852,
+      belowWithoutEntry: LAYOUT.cardMargin + LAYOUT.card + LAYOUT.cycle,
+      tabInset: T_FACE_ID,
+      fontScale: 1.31,
+    }),
+    false,
+  )
 })
