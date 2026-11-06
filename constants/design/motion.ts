@@ -113,3 +113,43 @@ export const MOOD_MOTION = {
   /** Yükleme iskeleti bir kez görününce en az bu kadar kalır (parlayıp kaybolmasın). */
   loadingMinVisible: 400,
 } as const;
+
+/**
+ * PROTOTİP — Cinematic Discovery Loading (proto/cinematic-loading, CTO onayı 06.11.2026).
+ * Yalnız `components/MoodGauntlet/proto/` okur; production akışı bu bloğu KULLANMAZ.
+ *
+ * Kural: animasyon API zamanlamasını yönetmez. `intro*` ve döngüler yalnız veri yokken oynar;
+ * veri hazır olduğu an çıkış, o anki değerlerden başlar. Çıkış bütçesi ≤ 600 ms
+ * (bugünkü Your four zarfı: posterStagger·3 + stageTransition = 600):
+ *   çerçeveler  0 → exitFrames (300)
+ *   posterler   exitPosterDelay + i·exitPosterStagger → + stageTransition  (son: 150+150+300 = 600)
+ *   başlık/CTA  exitChromeDelay → + stageTransition                        (300+300 = 600)
+ */
+export const CINEMATIC_PROTO_MOTION = {
+  /** Giriş: projektör → huzme → şerit → şeritteki boş çerçeveler (yalnız veri yokken). */
+  introProjector: 300,
+  introBeamDelay: 150,
+  introStripDelay: 300,
+  introFramesDelay: 600,
+  introFrameStagger: 80,
+  /** Another four: projektör girişi kısalır, her şey tek fade ile gelir. */
+  introAnother: 300,
+  /** Bekleme döngüsü — düşük yoğunluk: şerit bir perforasyon aralığını bu sürede kat eder. */
+  stripFlowPeriod: 1600,
+  /** Huzme nabzı (yarım dönem) ve opaklık bandı. */
+  beamPulseHalf: 1200,
+  beamOpacityLow: 0.6,
+  beamOpacityHigh: 0.75,
+  /** Makara tam tur süresi. */
+  reelTurn: 4800,
+  /** Çıkış. */
+  exitFrames: MOOD_MOTION.stageTransition,
+  exitPosterDelay: 150,
+  exitPosterStagger: 50,
+  exitChromeDelay: 300,
+  /** Poster oturması: bulanık kat → net kat (görsel yüklenince). */
+  blurSettle: MOOD_MOTION.stageTransition,
+  blurRadius: 8,
+  /** Şeritteki çerçevenin son (ızgara) boyuna oranı. */
+  stripFrameScale: 0.42,
+} as const;
