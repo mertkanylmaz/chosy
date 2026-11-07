@@ -80,3 +80,6 @@ scripts/mood-eval/.session.json
 
 # MOOD-VEC-2: IMDb resmi veri dosyasi (yerel indirme, repoya girmez)
 data/imdb/
+
+# Tasarim referansi (storyboard vb.): ucuncu taraf poster icerir, repoya girmez
+design-ref/
