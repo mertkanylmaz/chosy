@@ -1886,7 +1886,13 @@
       "pending": "—",
       "hint": "Pick the controls, then tap Start.",
       "started": "Start choosing tapped (prototype: no round opens).",
-      "moodLabel": "Rainy Sunday"
+      "moodLabel": "Rainy Sunday",
+      "findingYourFour": "Finding your four",
+      "scene": "Scene",
+      "scene_waiting": "(a) Waiting",
+      "scene_final": "(b) Your four",
+      "scene_live": "Animation (rejected)",
+      "cellGuard": "Poster cell is %{cell} pt, below the %{min} pt minimum — grid not drawn (prototype guard)."
     }
   }
 }

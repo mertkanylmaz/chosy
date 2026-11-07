@@ -1886,7 +1886,13 @@
       "pending": "—",
       "hint": "Kontrolleri seç, sonra Başlat’a dokun.",
       "started": "Start choosing’e dokunuldu (prototip: tur açılmaz).",
-      "moodLabel": "Yağmurlu Pazar"
+      "moodLabel": "Yağmurlu Pazar",
+      "findingYourFour": "Dörtlünü buluyoruz",
+      "scene": "Sahne",
+      "scene_waiting": "(a) Bekleme",
+      "scene_final": "(b) Dörtlün",
+      "scene_live": "Animasyon (reddedildi)",
+      "cellGuard": "Poster hücresi %{cell} pt, %{min} pt asgarinin altında — ızgara çizilmedi (prototip koruması)."
     }
   }
 }
