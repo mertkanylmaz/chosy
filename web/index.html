@@ -3,128 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chosy — Movies that match your mood</title>
-  <meta name="description" content="Tell Chosy how you feel. Get the perfect film in seconds — powered by AI.">
+  <title>Chosy — Tonight's four. One winner.</title>
+  <meta name="description" content="Every evening Chosy shows you four films. Three quick choices, one champion. End choice paralysis — decide what to watch in under a minute.">
 
   <!-- Open Graph -->
-  <meta property="og:title" content="Chosy — Movies that match your mood">
-  <meta property="og:description" content="Tell Chosy how you feel. Get the perfect film in seconds — powered by AI.">
-  <meta property="og:image" content="/assets/og-image.png">
-  <meta property="og:url" content="https://chosy.ai">
+  <meta property="og:title" content="Chosy — Tonight's four. One winner.">
+  <meta property="og:description" content="Four films every evening. Three quick choices. One champion. The end of &ldquo;what should we watch?&rdquo;">
+  <meta property="og:image" content="https://chosy.vercel.app/assets/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://chosy.vercel.app/">
   <meta property="og:type" content="website">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Chosy — Movies that match your mood">
-  <meta name="twitter:description" content="Tell Chosy how you feel. Get the perfect film in seconds — powered by AI.">
-  <meta name="twitter:image" content="/assets/og-image.png">
+  <meta name="twitter:title" content="Chosy — Tonight's four. One winner.">
+  <meta name="twitter:description" content="Four films every evening. Three quick choices. One champion. The end of &ldquo;what should we watch?&rdquo;">
+  <meta name="twitter:image" content="https://chosy.vercel.app/assets/og-image.png">
 
-  <link rel="canonical" href="https://chosy.ai">
+  <link rel="canonical" href="https://chosy.vercel.app/">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <meta name="theme-color" content="#08090B">
 
-  <!-- Google Fonts: Inter 400 + 600 only -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
+  <link rel="preload" href="assets/fonts/ArchivoExpanded-Bold.ttf" as="font" type="font/ttf" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
   <!-- ═══ HERO ═══════════════════════════════════════════════════════ -->
-  <section class="hero">
-    <div class="container hero__content">
-      <span class="hero__badge">AI-Powered Film Matching</span>
-      <h1>Movies that match your&nbsp;mood.</h1>
+  <header class="hero">
+    <div class="container hero__inner">
+      <img class="hero__icon" src="assets/icon.png" width="84" height="84" alt="Chosy app icon">
+      <p class="kicker">A daily film ritual</p>
+      <h1>Tonight&rsquo;s four.<br><span class="gold">One winner.</span></h1>
       <p class="hero__sub">
-        Tell Chosy how you feel. Get the perfect film in
-        seconds&nbsp;&mdash;&nbsp;powered&nbsp;by&nbsp;AI.
+        Every evening Chosy shows you four films. Three quick choices
+        and you land on the one to watch. No endless scrolling.
       </p>
-      <a href="https://apps.apple.com/app/chosy/id6761782987?ct=landing_hero" class="cta" aria-label="Download on the App Store">
-        <!-- Apple logo SVG (official glyph) -->
+      <a href="https://apps.apple.com/app/chosy/id6761782987?ct=landing_hero" class="cta" aria-label="Download Chosy on the App Store">
         <svg viewBox="0 0 384 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-62.1 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
         </svg>
         Download on the App Store
       </a>
+      <p class="hero__note">A new lineup every evening</p>
+    </div>
+  </header>
+
+  <!-- ═══ GAUNTLET ═══════════════════════════════════════════════════ -->
+  <section class="gauntlet" id="how">
+    <div class="container">
+      <div class="section-header">
+        <p class="kicker">How it works</p>
+        <h2>From four films to one in three taps.</h2>
+      </div>
+
+      <ol class="rounds">
+        <li class="round">
+          <span class="round__num">4</span>
+          <div>
+            <h3>Four films arrive</h3>
+            <p>A fresh, hand-picked lineup lands every evening at 6&nbsp;PM, with posters, runtimes and where to stream them.</p>
+          </div>
+        </li>
+        <li class="round">
+          <span class="round__num">3</span>
+          <div>
+            <h3>Make three choices</h3>
+            <p>Pick one film from each head-to-head pair. Gut feeling is the whole point &mdash; no filters, no typing.</p>
+          </div>
+        </li>
+        <li class="round">
+          <span class="round__num round__num--win">1</span>
+          <div>
+            <h3>Meet your champion</h3>
+            <p>Your winner comes with where to stream it. Watch tonight, or save it for later.</p>
+          </div>
+        </li>
+      </ol>
     </div>
   </section>
 
-  <!-- ═══ ARCHETYPES ═════════════════════════════════════════════════ -->
-  <section class="archetypes" id="archetypes">
+  <!-- ═══ WHY ════════════════════════════════════════════════════════ -->
+  <section class="why">
     <div class="container">
-      <div class="section-header">
-        <h2>Which cinephile are you?</h2>
-        <p>Discover your movie personality from 12 archetypes.</p>
-      </div>
-      <div class="archetype-grid">
-        <div class="archetype-card" style="--accent-color: #EF4444; --glow-color: rgba(239,68,68,0.15); --border-color: rgba(239,68,68,0.25); color: #EF4444;">
-          The Adrenaline Junkie
+      <div class="why__grid">
+        <div class="why__card">
+          <h3>Built to end the scroll</h3>
+          <p>Choice paralysis costs more evenings than a bad movie ever will. Chosy turns &ldquo;what should we watch?&rdquo; into a one-minute game.</p>
         </div>
-        <div class="archetype-card" style="--accent-color: #6366F1; --glow-color: rgba(99,102,241,0.15); --border-color: rgba(99,102,241,0.25); color: #6366F1;">
-          The Mind-Bender
+        <div class="why__card">
+          <h3>Gets to know your taste</h3>
+          <p>Every choice teaches Chosy what you reach for &mdash; quietly, with no quiz and no setup.</p>
         </div>
-        <div class="archetype-card" style="--accent-color: #60A5FA; --glow-color: rgba(96,165,250,0.15); --border-color: rgba(96,165,250,0.25); color: #60A5FA;">
-          The Melancholy Soul
-        </div>
-        <div class="archetype-card" style="--accent-color: #FBBF24; --glow-color: rgba(251,191,36,0.15); --border-color: rgba(251,191,36,0.25); color: #FBBF24;">
-          The Joy Seeker
-        </div>
-        <div class="archetype-card" style="--accent-color: #F472B6; --glow-color: rgba(244,114,182,0.15); --border-color: rgba(244,114,182,0.25); color: #F472B6;">
-          The Hopeless Romantic
-        </div>
-        <div class="archetype-card" style="--accent-color: #DC2626; --glow-color: rgba(220,38,38,0.15); --border-color: rgba(220,38,38,0.25); color: #DC2626;">
-          The Dark Passenger
-        </div>
-        <div class="archetype-card" style="--accent-color: #2DD4BF; --glow-color: rgba(45,212,191,0.15); --border-color: rgba(45,212,191,0.25); color: #2DD4BF;">
-          The Visual Poet
-        </div>
-        <div class="archetype-card" style="--accent-color: #D4A843; --glow-color: rgba(212,168,67,0.15); --border-color: rgba(212,168,67,0.25); color: #D4A843;">
-          The Nostalgia Keeper
-        </div>
-        <div class="archetype-card" style="--accent-color: #FB923C; --glow-color: rgba(251,146,60,0.15); --border-color: rgba(251,146,60,0.25); color: #FB923C;">
-          The Chaos Agent
-        </div>
-        <div class="archetype-card" style="--accent-color: #4ADE80; --glow-color: rgba(74,222,128,0.15); --border-color: rgba(74,222,128,0.25); color: #4ADE80;">
-          The Zen Wanderer
-        </div>
-        <div class="archetype-card" style="--accent-color: #94A3B8; --glow-color: rgba(148,163,184,0.15); --border-color: rgba(148,163,184,0.25); color: #94A3B8;">
-          The Truth Seeker
-        </div>
-        <div class="archetype-card" style="--accent-color: #EADBC6; --glow-color: rgba(234,219,198,0.15); --border-color: rgba(234,219,198,0.25); color: #EADBC6;">
-          The Escapist
+        <div class="why__card">
+          <h3>A ritual, not a feed</h3>
+          <p>One lineup a day. When you&rsquo;re done, you&rsquo;re done &mdash; come back tomorrow for a new four.</p>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- ═══ HOW IT WORKS ═══════════════════════════════════════════════ -->
-  <section class="how-it-works" id="how">
-    <div class="container">
-      <div class="section-header">
-        <h2>How it works</h2>
-      </div>
-      <div class="steps">
-        <div class="step">
-          <div class="step__num">1</div>
-          <div class="step__text">
-            <h3>Describe your mood</h3>
-            <p>Type how you're feeling, or pick from curated moods.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step__num">2</div>
-          <div class="step__text">
-            <h3>AI finds your match</h3>
-            <p>Our model maps your emotion to the perfect film.</p>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step__num">3</div>
-          <div class="step__text">
-            <h3>Swipe, save, watch</h3>
-            <p>Build your watchlist. Never wonder what to watch again.</p>
-          </div>
-        </div>
+      <div class="why__cta">
+        <a href="https://apps.apple.com/app/chosy/id6761782987?ct=landing_why" class="cta" aria-label="Download Chosy on the App Store">
+          <svg viewBox="0 0 384 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-62.1 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
+          </svg>
+          Get tonight&rsquo;s four
+        </a>
       </div>
     </div>
   </section>
@@ -136,13 +120,9 @@
       <div class="footer__links">
         <a href="mailto:support@chosy.ai">support@chosy.ai</a>
         <a href="https://abalone-dracopelta-382.notion.site/Chosy-ai-Privacy-Policy-34a00bffbfbe80af9f5fd996fa7ab55b" target="_blank" rel="noopener">Privacy Policy</a>
-        <a href="https://apps.apple.com/app/chosy/id6761782987?ct=landing_hero" class="cta cta--small" aria-label="Download on the App Store">
-          <svg viewBox="0 0 384 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5c0 26.2 4.8 53.3 14.4 81.2 12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-62.1 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/>
-          </svg>
-          App Store
-        </a>
+        <a href="https://apps.apple.com/app/chosy/id6761782987?ct=landing_footer">App Store</a>
       </div>
+      <p class="footer__credit">Film data provided by TMDB. Streaming availability by JustWatch. Chosy is not endorsed or certified by TMDB.</p>
     </div>
   </footer>
 
