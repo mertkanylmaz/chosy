@@ -1,0 +1,10 @@
+{
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "chosy.vercel.app" }],
+      "destination": "https://chosyapp.com/:path*",
+      "permanent": true
+    }
+  ]
+}
