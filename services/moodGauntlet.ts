@@ -21,6 +21,7 @@
 import type { MoodFourPath } from '../utils/moodGauntletAnalytics';
 import type { MoodFourServerMs } from '../utils/serverTimingHeader';
 import { applyIntensity, clampIntensityStep, MAX_INTENSITY_STEPS } from '../utils/moodIntensity';
+import { inProgressRetryDelayMs } from '../utils/moodSearchRetry';
 import { buildRelaxationSteps } from '../utils/relaxationChain';
 
 export const FOUR = 4;
@@ -55,7 +56,27 @@ export interface ParsedMoodV2 {
   referenceTitles: TitleRef[];
   suggestedTitles: TitleRef[];
   excludeRecentIds: string[];
+  /**
+   * Loading L1: yanıtta `exclude_recent_ids` alanı HİÇ yoktu (parse-mood replay yanıtı kayıtlı
+   * profili döner, kişisel dışlamayı taşımaz). true ise `excludeRecentIds` boş dizidir ve hat
+   * önceki denemenin değerine başvurur (`MoodSearchAttempt.recentIds`).
+   */
+  excludeRecentIdsMissing?: boolean;
   cacheHit: boolean;
+}
+
+/**
+ * Loading L1: bir aramanın `client_search_id`si ve ilk denemede gelen kişisel dışlama listesi.
+ * "Try again" AYNI nesneyi yeniden verir: sunucu tamamlanmış aramayı hak düşürmeden replay eder.
+ * `recentIds` hat tarafından doldurulur (yanıtta alan varsa); replay'de alan yoksa buradan okunur.
+ */
+export interface MoodSearchAttempt {
+  readonly id: string;
+  recentIds: string[] | null;
+}
+
+export function newSearchAttempt(makeId: () => string): MoodSearchAttempt {
+  return { id: makeId(), recentIds: null };
 }
 
 export interface MatchRow {
@@ -156,6 +177,10 @@ export interface MoodGauntletDeps {
   onFallback(stage: FallbackStage): void;
   /** Yutulan (hattı durdurmayan) hata — gerçek bağlama Sentry'ye yazar. */
   onError(stage: FallbackStage, err: unknown): void;
+  /** Hata olmayan ama sessiz de geçmemesi gereken durum — gerçek bağlama Sentry breadcrumb. */
+  trace?(message: string, data?: Record<string, string | number | boolean>): void;
+  /** Bekleme (409 retry_after); yoksa setTimeout. Testte enjekte edilir. */
+  sleep?(ms: number): Promise<void>;
 }
 
 export type MoodNotice = 'max_runtime_dropped';
@@ -357,19 +382,53 @@ export function pickFour(
 
 // ─── Hat ─────────────────────────────────────────────────────────────────────
 
-async function recordIds(deps: MoodGauntletDeps, session: MoodSession, set: MoodSet): Promise<MoodSession> {
+/**
+ * Loading L1: `mood_searches.recommended_film_ids` yazımları ARKA PLANDA, aynı searchId için
+ * SIRAYLA. Her yazım BİRİKMİŞ listeyi taşır (dörtlü 1 ⊂ dörtlü 2 …); sıra bozulursa geç biten
+ * eski yazım yeni listeyi ezerdi. Zincir deps örneği başına tutulur (bir ekran = bir deps).
+ * Her halka kendi hatasını yakalar → zincir hiçbir zaman reddedilmez, yakalanmamış red kalmaz.
+ */
+const recordChains = new WeakMap<MoodGauntletDeps, Map<string, Promise<void>>>();
+
+function enqueueRecord(deps: MoodGauntletDeps, searchId: string, ids: string[]): void {
+  let chains = recordChains.get(deps);
+  if (!chains) {
+    chains = new Map();
+    recordChains.set(deps, chains);
+  }
+  const write = (): Promise<void> => {
+    try {
+      return deps.recordRecommended(searchId, ids);
+    } catch (err) {
+      return Promise.reject(err);
+    }
+  };
+  const prev = chains.get(searchId);
+  // Önceki yazım yoksa HEMEN başlar (gecikme yok); varsa onun bitmesini bekler.
+  const link = (prev ? prev.then(write) : write()).catch((err: unknown) => {
+    // Dörtlüyü engellemez ama sessiz değil: hata deps üzerinden Sentry'ye gider.
+    deps.onError('record_ids', err);
+    deps.onFallback('record_ids');
+  });
+  chains.set(searchId, link);
+  const owned = chains;
+  void link.then(() => {
+    if (owned.get(searchId) === link) owned.delete(searchId);
+  });
+}
+
+/** Bekleyen tüm recommended_film_ids yazımları bittiğinde çözülür (hiç reddedilmez). */
+export async function recordWritesSettled(deps: MoodGauntletDeps): Promise<void> {
+  const chains = recordChains.get(deps);
+  if (!chains) return;
+  while (chains.size > 0) await Promise.all([...chains.values()]);
+}
+
+function recordIds(deps: MoodGauntletDeps, session: MoodSession, set: MoodSet): MoodSession {
   const merged = [...session.recorded];
   for (const r of [...set.four, ...set.backups]) if (!merged.includes(r.id)) merged.push(r.id);
   const next = { ...session, recorded: merged };
-  if (session.parsed.searchId) {
-    try {
-      await deps.recordRecommended(session.parsed.searchId, merged);
-    } catch (err) {
-      // Sonuç ekranını engellemez ama sessiz değil: hata deps üzerinden Sentry'ye gider.
-      deps.onError('record_ids', err);
-      deps.onFallback('record_ids');
-    }
-  }
+  if (session.parsed.searchId) enqueueRecord(deps, session.parsed.searchId, merged);
   return next;
 }
 
@@ -506,12 +565,44 @@ export async function startMoodGauntlet(
     onStage?: (e: StageEvent) => void;
     /** Aşama süreleri (parse, exclusions, v4, pick, four) — metin taşımaz. */
     onTiming?: TimingEvent;
+    /**
+     * Loading L1: aramanın kimliği. Yoksa yeni kimlik üretilir. "Try again" önceki denemenin
+     * AYNI nesnesini verir (`isRetry: true`); yeni giriş / New search her zaman yeni nesne.
+     */
+    attempt?: MoodSearchAttempt;
+    /** true = kullanıcının "Try again"i: 409 IN_PROGRESS'te bir kez beklenip yeniden denenir. */
+    isRetry?: boolean;
   },
 ): Promise<StartResult> {
   const t00 = clock(deps);
+  const attempt = input.attempt ?? newSearchAttempt(() => deps.newId());
+  const parseOnce = (): Promise<ParsedMoodV2> =>
+    deps.parse({ text: input.text, quickMoodId: input.quickMoodId, clientSearchId: attempt.id });
   // Parse ve dışlama sorguları birbirine bağlı değil: aynı anda başlar (toplam = en yavaşı).
   const parsePart = async (): Promise<ParsedMoodV2> => {
-    const p = await deps.parse({ text: input.text, quickMoodId: input.quickMoodId, clientSearchId: deps.newId() });
+    let p: ParsedMoodV2;
+    try {
+      p = await parseOnce();
+    } catch (err) {
+      const waitMs = input.isRetry ? inProgressRetryDelayMs(err) : null;
+      if (waitMs === null) throw err;
+      // Yapay bekleme DEĞİL: aynı kimlik sunucuda hâlâ sürüyor ve sunucu `retry_after` ile
+      // beklemeyi istedi (üst sınır 5 sn). Yükleme ekranı açık kalır; BİR kez yeniden denenir,
+      // ikinci 409 olduğu gibi fırlar (UI: mevcut "busy" hatası).
+      deps.trace?.('mood_parse_in_progress_wait', { wait_ms: waitMs });
+      await (deps.sleep ? deps.sleep(waitMs) : new Promise<void>((r) => setTimeout(r, waitMs)));
+      p = await parseOnce();
+    }
+    if (p.excludeRecentIdsMissing) {
+      // Replay yanıtı kişisel dışlamayı taşımaz: ilk denemenin listesi varsa o, yoksa [] (iz bırakır).
+      if (attempt.recentIds !== null) {
+        p = { ...p, excludeRecentIds: [...attempt.recentIds] };
+      } else {
+        deps.trace?.('mood_parse_recent_ids_missing', { search_id_present: p.searchId !== null });
+      }
+    } else {
+      attempt.recentIds = [...p.excludeRecentIds];
+    }
     input.onTiming?.('parse', clock(deps) - t00);
     input.onStage?.({ stage: 'parsed', profileName: p.profileName });
     return p;
@@ -616,7 +707,7 @@ async function buildSet(
   const shown = [...session.shown];
   for (const r of set.four) if (!shown.includes(r.id)) shown.push(r.id);
   let next: MoodSession = { ...session, shown, setCount: session.setCount + 1 };
-  next = await recordIds(deps, next, set);
+  next = recordIds(deps, next, set); // yazım beklenmez (Loading L1)
   return { status: 'ok', session: next, set };
 }
 

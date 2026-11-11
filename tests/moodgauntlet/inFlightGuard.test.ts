@@ -49,7 +49,8 @@ Deno.test('kaynak sözleşmesi: loadAnother ve intensify başında tryAcquire, s
   // finally’de yalnız sahip bırakır
   assertEquals((hook.match(/inFlight\.current\.release\(id\)/g) ?? []).length, 2)
   // start ve reset kilidi düşürür
-  assertMatch(hook, /const start = useCallback\(\s*async \(input: StartInput, carryShown: readonly string\[\] = \[\]\) => \{\s*inFlight\.current\.clear\(\);/)
+  // Loading L1: isteğe bağlı 3. parametre (arama kimliği / isRetry) eklendi; güvence aynı — ilk satır clear().
+  assertMatch(hook, /const start = useCallback\(\s*async \(\s*input: StartInput,\s*carryShown: readonly string\[\] = \[\],(?:[^{}]|\{[^{}]*\})*?\) => \{\s*inFlight\.current\.clear\(\);/)
   assertMatch(hook, /const reset = useCallback\(\(\) => \{\s*inFlight\.current\.clear\(\);/)
   // Sessiz çıkış yok: breadcrumb
   assertMatch(hook, /message: 'duplicate_tap_ignored'/)

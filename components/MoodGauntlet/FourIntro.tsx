@@ -41,9 +41,18 @@ interface FourIntroProps {
   onViewed: () => void;
   /** Dokunulamaz posterlere dokunuş (yalnız ölçüm; hiçbir şey açılmaz). `position` 0–3. */
   onPosterTapped: (position: number) => void;
+  /** Loading L1 (yalnız ölçüm): herhangi bir poster görseli yüklendi; tekilleştirme üst bileşende. */
+  onPosterLoaded?: () => void;
 }
 
-export function FourIntro({ films, moodLabel, onStart, onViewed, onPosterTapped }: FourIntroProps): React.JSX.Element {
+export function FourIntro({
+  films,
+  moodLabel,
+  onStart,
+  onViewed,
+  onPosterTapped,
+  onPosterLoaded,
+}: FourIntroProps): React.JSX.Element {
   const { t } = useLanguage();
   const reduced = useReducedMotion();
   const insets = useSafeAreaInsets();
@@ -105,7 +114,7 @@ export function FourIntro({ films, moodLabel, onStart, onViewed, onPosterTapped 
                 {/* Faz 2-9c ölçüm: devre dışı PosterTile dokunuşu yutmaz, ata Pressable alır. Erişilebilirlik
                     ağacına girmez (accessible=false); görsel geri bildirim ve eylem YOK. */}
                 <Pressable accessible={false} onPress={() => onPosterTapped(i)}>
-                  <PosterTile film={film} interactive={false} metaMode="yearOnly" />
+                  <PosterTile film={film} interactive={false} metaMode="yearOnly" onLoad={onPosterLoaded} />
                 </Pressable>
               </Animated.View>
             ))}

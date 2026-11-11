@@ -38,6 +38,7 @@ export const MOOD_GAUNTLET_EVENT_NAMES = [
   'mood_four_desc_resolved',
   'trailer_clicked',
   'app_returned_after_trailer',
+  'mood_first_poster_visible',
 ] as const;
 
 export function startedEvent(entry: MoodEntryKind, quickMoodId?: string | null): MoodEvent {
@@ -58,6 +59,36 @@ export function firstFourVisibleEvent(
   path: MoodFourPath,
 ): MoodEvent {
   return { name: 'mood_first_four_visible', props: { ms: Math.max(0, Math.round(ms)), cache_hit: cacheHit, entry, path } };
+}
+
+/** Loading L1: ilk posterin ölçüldüğü dörtlüyü ne başlattı. */
+export type MoodPosterTrigger = 'start' | 'another_four' | 'intensify';
+/** `unified` = tek istek (`mood-four`), `legacy` = v4 → rerank (another_four / intensify hep legacy). */
+export type MoodPosterPath = 'unified' | 'legacy';
+
+/**
+ * Loading L1: dokunuştan (start: rıza geçildikten sonra `onStart`; another_four / intensify: kendi
+ * dokunuşları) dörtlünün İLK poster görselinin `onLoad` anına kadar geçen süre. Dörtlü başına bir kez.
+ */
+export function firstPosterVisibleEvent(input: {
+  ms: number;
+  entry: MoodEntryKind;
+  quickMoodId: string | null;
+  path: MoodPosterPath;
+  trigger: MoodPosterTrigger;
+  consentShown: boolean;
+}): MoodEvent {
+  return {
+    name: 'mood_first_poster_visible',
+    props: {
+      ms: Math.max(0, Math.round(input.ms)),
+      entry: input.entry,
+      quick_mood_id: input.entry === 'quick' && input.quickMoodId ? input.quickMoodId : null,
+      path: input.path,
+      trigger: input.trigger,
+      consent_shown: input.consentShown,
+    },
+  };
 }
 
 export function justPickEvent(round: 1 | 2 | 3): MoodEvent {

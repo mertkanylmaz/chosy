@@ -64,6 +64,7 @@ export function MoodGauntletShell(): React.JSX.Element {
           onFourViewed={g.fourViewed}
           onFourPosterTapped={g.fourPosterTapped}
           onFourStart={g.fourStarted}
+          onFourPosterLoaded={g.fourPosterLoaded}
           onNone={g.noneOfThese}
           onJustPick={g.justPick}
         />

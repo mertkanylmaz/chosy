@@ -59,6 +59,8 @@ interface GauntletStageProps {
   onFourPosterTapped: (position: number) => void;
   /** "Start choosing" dokunuşu; `dwellMs` = Your four'un açık kaldığı süre. */
   onFourStart: (dwellMs: number) => void;
+  /** Loading L1 (yalnız ölçüm): Your four'da bir poster görseli yüklendi (`setId` ile). */
+  onFourPosterLoaded?: (setId: string) => void;
   onNone: () => void;
   onJustPick: () => void;
 }
@@ -76,6 +78,7 @@ export function GauntletStage({
   onFourViewed,
   onFourPosterTapped,
   onFourStart,
+  onFourPosterLoaded,
   onNone,
   onJustPick,
 }: GauntletStageProps): React.JSX.Element | null {
@@ -116,6 +119,9 @@ export function GauntletStage({
     },
     [onFourStart, set.setId],
   );
+  const handleFourPosterLoaded = useCallback(() => {
+    onFourPosterLoaded?.(set.setId);
+  }, [onFourPosterLoaded, set.setId]);
 
   const films = useMemo(() => {
     const map = new Map<string, ReturnType<typeof toGauntletFilm>>();
@@ -159,6 +165,7 @@ export function GauntletStage({
         onStart={handleFourStart}
         onViewed={onFourViewed}
         onPosterTapped={onFourPosterTapped}
+        onPosterLoaded={handleFourPosterLoaded}
       />
     );
   }

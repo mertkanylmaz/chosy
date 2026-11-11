@@ -89,6 +89,11 @@ interface PosterTileProps {
    * poster yükleme/yeniden deneme/yer tutucu davranışı aynen kalır. Varsayılan `true`.
    */
   interactive?: boolean;
+  /**
+   * Loading L1 (yalnız ölçüm): poster görseli yüklendiğinde (yeniden denemeden sonra da) çağrılır.
+   * İsteğe bağlı; verilmezse davranış ve görünüm aynıdır (günlük gauntlet vermez).
+   */
+  onLoad?: () => void;
 }
 
 export function PosterTile({
@@ -101,6 +106,7 @@ export function PosterTile({
   onTitleLines,
   metaMode = 'yearRuntime',
   interactive = true,
+  onLoad,
 }: PosterTileProps): React.JSX.Element {
   const { t } = useLanguage();
   const isReducedMotion = useReducedMotion();
@@ -238,7 +244,10 @@ export function PosterTile({
                 style={styles.poster}
                 contentFit="cover"
                 onError={handlePosterError}
-                onLoad={() => setPosterLoaded(true)}
+                onLoad={() => {
+                  setPosterLoaded(true);
+                  onLoad?.();
+                }}
               />
               {!posterLoaded && (
                 <SkeletonLoader

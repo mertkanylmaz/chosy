@@ -37,6 +37,25 @@ export function classifyMoodSearchError(code: string): MoodErrorClass {
   }
 }
 
+// ── 409 IN_PROGRESS: sunucunun istediği bekleme (Loading L1) ─────────────────
+
+/** Mood Gauntlet "Try again": sunucunun `retry_after`ı ne derse desin beklenen üst sınır (eski tasteParser yolu: IN_PROGRESS_MAX_WAIT_MS = 8 sn, ayrı). */
+export const GAUNTLET_RETRY_MAX_WAIT_MS = 5_000
+
+/**
+ * Hata 409 `IN_PROGRESS` ise beklenecek süre (ms), değilse null. Süre sunucunun `retry_after`
+ * (saniye) alanından gelir, `GAUNTLET_RETRY_MAX_WAIT_MS` ile sınırlanır; alan yoksa / bozuksa üst
+ * sınır beklenir. Hata şekli duck-typed: `{ code, originalError: { retry_after } }` (MoodParseError).
+ */
+export function inProgressRetryDelayMs(err: unknown): number | null {
+  if (typeof err !== 'object' || err === null) return null
+  if ((err as { code?: unknown }).code !== 'IN_PROGRESS') return null
+  const body = (err as { originalError?: unknown }).originalError
+  const raw = typeof body === 'object' && body !== null ? (body as { retry_after?: unknown }).retry_after : undefined
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0) return GAUNTLET_RETRY_MAX_WAIT_MS
+  return Math.min(Math.round(raw * 1000), GAUNTLET_RETRY_MAX_WAIT_MS)
+}
+
 // ── client_search_id ────────────────────────────────────────────────────────
 
 export interface SearchAttempts {

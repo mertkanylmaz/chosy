@@ -97,7 +97,8 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
     () => ({
       readConsent: readAiConsentState,
       recordConsent: recordAiConsent,
-      start: (input) => onStart(input),
+      // Loading L1: bekleyen kart varsa arama rıza adımından (CTA) başladı → rıza ekranı gösterildi.
+      start: (input) => onStart({ ...input, consentShown: pendingRef.current !== null }),
       trace: traceConsent,
     }),
     [onStart],
@@ -129,7 +130,8 @@ export function EntryStage({ onStart }: EntryStageProps): React.JSX.Element {
     if (outcome === 'failed') return;
     if (outcome === 'recorded') trackConsent('ai_consent_granted', 'free_text');
     setPendingBoth(null);
-    onStart({ text: trimmed, entry: 'free_text', label: trimmed });
+    // Loading L1: rıza bu dokunuşta yazıldıysa CTA "Enable AI & Find Movies" olarak görünmüştü.
+    onStart({ text: trimmed, entry: 'free_text', label: trimmed, consentShown: outcome === 'recorded' });
   }, [text, ensureConsent, onStart, setPendingBoth]);
 
   const handleQuick = useCallback(

@@ -124,6 +124,8 @@ async function parseV2(input: {
     referenceTitles: titleRefs(raw.reference_titles),
     suggestedTitles: titleRefs(raw.suggested_titles),
     excludeRecentIds: stringArray(raw.exclude_recent_ids),
+    // Replay yanıtında alan hiç yok (parse-mood claim replay): hat önceki denemenin listesine bakar.
+    ...(raw.exclude_recent_ids === undefined ? { excludeRecentIdsMissing: true } : {}),
     cacheHit: raw.cache_hit === true,
   };
 }
@@ -317,6 +319,9 @@ export function createMoodGauntletDeps(): MoodGauntletDeps {
         level: 'warning',
         tags: { flow: 'mood_gauntlet', step: stage },
       });
+    },
+    trace: (message: string, data?: Record<string, string | number | boolean>) => {
+      Sentry.addBreadcrumb({ category: 'mood_gauntlet', level: 'info', message, data });
     },
   };
 }

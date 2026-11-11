@@ -23,12 +23,14 @@ import {
   countDescriptionSources,
   fetchReasons,
   intensifyMoodGauntlet,
+  newSearchAttempt,
   nextFour,
   noteBackupsShown,
   startMoodGauntlet,
   type IntensityDirection,
   type MoodGauntletDeps,
   type MoodNotice,
+  type MoodSearchAttempt,
   type MoodSession,
   type MoodSet,
   type PipelineStageName,
@@ -40,6 +42,7 @@ import { MoodParseError } from '@/services/tasteParser';
 import * as Sentry from '@sentry/react-native';
 
 import { createInFlightGuard } from '@/utils/inFlightGuard';
+import { createFirstPosterTracker } from '@/utils/moodFirstPoster';
 import { logger } from '@/utils/logger';
 import {
   anotherFourEvent,
@@ -83,6 +86,8 @@ export interface StartInput {
   entry: MoodEntryKind;
   /** Yükleme ekranında gösterilen ad: hızlı mood başlığı ya da kullanıcının kendi metni (ekranda kalır, olaya girmez). */
   label?: string;
+  /** Loading L1: bu akışta AI rıza adımı gösterildi mi (`mood_first_poster_visible.consent_shown`). */
+  consentShown?: boolean;
 }
 
 function errorKindOf(err: unknown): MoodErrorKind {
@@ -136,6 +141,13 @@ export function useMoodGauntlet() {
   const reasonsRun = useRef(0);
   const mounted = useRef(true);
   const lastStart = useRef<StartInput | null>(null);
+  /**
+   * Loading L1: son aramanın kimliği. YALNIZ "Try again" (`retry`) yeniden kullanır; yeni giriş /
+   * New search yeni kimlik alır, another_four / intensify parse çağırmaz.
+   */
+  const lastAttempt = useRef<MoodSearchAttempt | null>(null);
+  /** Loading L1: `mood_first_poster_visible` (dörtlü başına bir kez). */
+  const posterTracker = useRef(createFirstPosterTracker());
   const startedAt = useRef(0);
   /** İskeletin ekrana girdiği an; minimum görünür süre için. */
   const loadingShownAt = useRef(0);
@@ -257,11 +269,26 @@ export function useMoodGauntlet() {
   }, []);
 
   const start = useCallback(
-    async (input: StartInput, carryShown: readonly string[] = []) => {
+    async (
+      input: StartInput,
+      carryShown: readonly string[] = [],
+      search: { attempt: MoodSearchAttempt; isRetry: boolean } = {
+        attempt: newSearchAttempt(() => deps.newId()),
+        isRetry: false,
+      },
+    ) => {
       inFlight.current.clear(); // yeni arama: iptal edilen eski isteğin kilidi yeni oturumu bloke etmez
       const id = ++runId.current;
       lastStart.current = input;
+      lastAttempt.current = search.attempt;
       startedAt.current = Date.now();
+      posterTracker.current.arm({
+        startedAt: startedAt.current,
+        trigger: 'start',
+        entry: input.entry,
+        quickMoodId: input.quickMoodId ?? null,
+        consentShown: input.consentShown === true,
+      });
       setLoadingKind('search');
       setMoodLabel(input.label ?? null);
       loadingShownAt.current = Date.now();
@@ -274,6 +301,8 @@ export function useMoodGauntlet() {
           carryShown,
           onStage: onStage(id),
           onTiming,
+          attempt: search.attempt,
+          isRetry: search.isRetry,
         });
         if (id !== runId.current || !mounted.current) return;
         if (res.status === 'insufficient') {
@@ -291,6 +320,7 @@ export function useMoodGauntlet() {
             res.path ?? 'legacy',
           ),
         );
+        posterTracker.current.bind(res.set.setId, res.path === 'combined' ? 'unified' : 'legacy');
         revealSet(id, res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
@@ -300,6 +330,7 @@ export function useMoodGauntlet() {
     [deps, revealSet, onStage, onTiming, fail],
   );
 
+  // Yeni giriş: her zaman yeni kimlik (aynı metin olsa da) — `start`ın varsayılanı.
   const startFromEntry = useCallback((input: StartInput) => start(input, []), [start]);
 
   /** Kilit alınamazsa (çift dokunuş) istek, olay ve yükleme AÇILMAZ; görünür iz: breadcrumb. */
@@ -320,6 +351,13 @@ export function useMoodGauntlet() {
     if (!acquireOrTrace(id, 'another_four')) return;
     runId.current = id;
     onAcquired?.(); // analitik olay kilit alındıktan SONRA
+    posterTracker.current.arm({
+      startedAt: Date.now(),
+      trigger: 'another_four',
+      entry: lastStart.current?.entry ?? 'free_text',
+      quickMoodId: lastStart.current?.quickMoodId ?? null,
+      consentShown: false,
+    });
     setLoadingKind('another');
     loadingShownAt.current = Date.now();
     setStage('loading');
@@ -332,6 +370,7 @@ export function useMoodGauntlet() {
         return;
       }
       gauntletStartedAt.current = Date.now();
+      posterTracker.current.bind(res.set.setId, 'legacy'); // nextFour: rerank-films yolu
       revealSet(id, res.session, res.set);
     } catch (err) {
       if (id !== runId.current || !mounted.current) return;
@@ -446,6 +485,13 @@ export function useMoodGauntlet() {
       runId.current = id;
       trackMoodEvent(intensityEvent(direction)); // kilit alındıktan SONRA
       startedAt.current = Date.now();
+      posterTracker.current.arm({
+        startedAt: startedAt.current,
+        trigger: 'intensify',
+        entry: lastStart.current?.entry ?? 'free_text',
+        quickMoodId: lastStart.current?.quickMoodId ?? null,
+        consentShown: false,
+      });
       setLoadingKind('search');
       loadingShownAt.current = Date.now();
       setStage('loading');
@@ -461,6 +507,7 @@ export function useMoodGauntlet() {
           return;
         }
         gauntletStartedAt.current = Date.now();
+        posterTracker.current.bind(res.set.setId, 'legacy'); // intensify: v4 → rerank yolu
         revealSet(id, res.session, res.set);
       } catch (err) {
         if (id !== runId.current || !mounted.current) return;
@@ -472,14 +519,33 @@ export function useMoodGauntlet() {
     [deps, session, revealSet, onStage, onTiming, fail, acquireOrTrace],
   );
 
+  /**
+   * "Try again": AYNI arama kimliği (Loading L1) → sunucu tamamlanmış parse'ı hak düşürmeden replay
+   * eder, süren isteğe 409 verir (hat bir kez bekleyip yeniden dener). Bu akışta rıza adımı yok.
+   */
   const retry = useCallback(() => {
-    if (lastStart.current) void start(lastStart.current, session?.shown ?? []);
-    else setStage('entry');
-  }, [start, session]);
+    const last = lastStart.current;
+    if (!last) {
+      setStage('entry');
+      return;
+    }
+    void start({ ...last, consentShown: false }, session?.shown ?? [], {
+      attempt: lastAttempt.current ?? newSearchAttempt(() => deps.newId()),
+      isRetry: true,
+    });
+  }, [start, session, deps]);
+
+  /** Loading L1: Your four'da poster görseli yüklendi → dörtlü başına ilk seferde olay. */
+  const fourPosterLoaded = useCallback((setId: string) => {
+    const ev = posterTracker.current.posterLoaded(setId, Date.now());
+    if (ev) trackMoodEvent(ev);
+  }, []);
 
   /** X / yeni arama: uçuştaki isteği bırakır ve Giriş'e döner. */
   const reset = useCallback(() => {
     inFlight.current.clear();
+    posterTracker.current.clear();
+    lastAttempt.current = null; // New search: sonraki giriş yeni kimlik alır
     runId.current += 1;
     reasonsRun.current += 1;
     setSession(null);
@@ -519,6 +585,7 @@ export function useMoodGauntlet() {
     fourViewed,
     fourPosterTapped,
     fourStarted,
+    fourPosterLoaded,
     justPick,
     noneOfThese,
     anotherFour,
