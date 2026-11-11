@@ -125,6 +125,24 @@ filtre ancak bu tıklamalar onu haklı çıkarırsa inşa edilir.
 **Faz 2-11a güncellemesi (ölçüm):**
 - `mood_four_desc_resolved` (`desc_fallback`: açıklaması filmin `overview`'ından gelen film sayısı, 0–4; `desc_empty`: hiç açıklaması olmayan film sayısı, 0–4) = karşılaştırma kartlarındaki açıklama kaynağı. Gerekçe (LLM) isteği bitince, dörtlü başına bir kez atılır; `mood_first_four_visible` dörtlüyle aynı anda gittiği için gerekçe sonucunu bilemez ve **değişmedi**. Gerekçe isteği hiç çalışmazsa (rerank düştü) `desc_fallback` 4'e yakın çıkar — beklenen davranış. Film kimliği, başlığı ya da metni gönderilmez; sayılar `set_id` ile eşlenmez (set_id bilerek yok). Kapı şartı değil, 20/20 sözleşmesi değişmez.
 
+**Loading L1 güncellemesi (ölçüm, Kas 2026):**
+- `mood_first_poster_visible` = dokunuştan Your four'daki **ilk posterin yüklendiği ana** (`PosterTile` görselinin `onLoad`'u) geçen süre. Dörtlü başına en fazla bir kez gider (`utils/moodFirstPoster.ts`). Görsel davranış değişmez; günlük gauntlet bu ölçümü kullanmaz.
+- Özellikler:
+  - `ms`: tam sayı milisaniye, ≥ 0.
+  - `entry`: `quick` | `free_text`.
+  - `quick_mood_id`: hızlı mood kimliği; `entry = free_text` ise `null`.
+  - `path`: `unified` (tek istek, `mood-four`) | `legacy` (v4 → rerank). `another_four` ve `intensify` her zaman `legacy`.
+  - `trigger`: `start` | `another_four` | `intensify`.
+  - `consent_shown`: bu aramada AI rıza ekranı gösterildiyse `true`. "Try again" ile tekrar denemede `false`.
+- **Başlangıç noktası:**
+  - `start`: rıza geçildikten SONRA `onStart` anı. Rıza ekranında geçen süre ölçüme girmez; `consent_shown` yalnız ayırt etmek içindir.
+  - `another_four` / `intensify`: kendi dokunuşları.
+  - "Try again" yeni bir `start` ölçümü başlatır.
+- **Kör noktalar:**
+  - Dört posterin hiçbiri yüklenmezse (ağ hatası, eksik `poster_url`) o dörtlü için olay **gitmez**. Olay sayısı `mood_four_viewed` sayısından az çıkabilir; fark bu kayıptır, süre değildir.
+  - Posterler yüklenirken "Another four" (ya da Calmer / More intense) dokunulursa önceki ölçüm **düşer** ve yeni dokunuştan yeni ölçüm başlar. Yavaş dörtlüler bu yüzden hafifçe eksik temsil edilir.
+- Kapı şartı değil, 20/20 sözleşmesi değişmez.
+
 ### 1.4 Kimlik ve dönüş (3)
 
 | # | Event | Nerede | Not |
