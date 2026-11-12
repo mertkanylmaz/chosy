@@ -46,7 +46,6 @@ import { createFirstPosterTracker } from '@/utils/moodFirstPoster';
 import { logger } from '@/utils/logger';
 import {
   anotherFourEvent,
-  assertNoFreeText,
   completedEvent,
   descResolvedEvent,
   firstFourVisibleEvent,
@@ -58,8 +57,10 @@ import {
   matchChosenEvent,
   noneOfTheseEvent,
   pipelineTimingEvent,
+  sendMoodEvent,
   startedEvent,
   type MoodEvent,
+  type MoodEventSink,
   type MoodEntryKind,
 } from '@/utils/moodGauntletAnalytics';
 import { detectPickPattern, roundPicks, type FilmDims, type PickPattern } from '@/utils/moodFilmFacts';
@@ -103,15 +104,15 @@ function errorKindOf(err: unknown): MoodErrorKind {
   return 'generic';
 }
 
+const moodEventSink: MoodEventSink = {
+  track: (name, props) => posthogAnalytics.track(name, props),
+  // Serbest metin sızıntısı kodlama hatasıdır: olay ATILMAZ, Sentry'ye gider.
+  reportLeak: (err) =>
+    logger.error('[moodGauntlet] analitik olayi serbest metin tasiyor', err, { code: 'MOOD_EVENT_FREE_TEXT' }),
+};
+
 export function trackMoodEvent(ev: MoodEvent): void {
-  try {
-    assertNoFreeText(ev);
-  } catch (err) {
-    // Serbest metin sızıntısı kodlama hatasıdır: olay ATILMAZ, Sentry'ye gider.
-    logger.error('[moodGauntlet] analitik olayi serbest metin tasiyor', err, { code: 'MOOD_EVENT_FREE_TEXT' });
-    return;
-  }
-  posthogAnalytics.track(ev.name, ev.props);
+  sendMoodEvent(ev, moodEventSink);
 }
 
 export function useMoodGauntlet() {
@@ -147,7 +148,16 @@ export function useMoodGauntlet() {
    */
   const lastAttempt = useRef<MoodSearchAttempt | null>(null);
   /** Loading L1: `mood_first_poster_visible` (dörtlü başına bir kez). */
-  const posterTracker = useRef(createFirstPosterTracker());
+  const posterTracker = useRef(
+    createFirstPosterTracker((reason) =>
+      Sentry.addBreadcrumb({
+        category: 'mood_gauntlet',
+        level: 'info',
+        message: 'mood_first_poster_unmatched',
+        data: { reason },
+      }),
+    ),
+  );
   const startedAt = useRef(0);
   /** İskeletin ekrana girdiği an; minimum görünür süre için. */
   const loadingShownAt = useRef(0);

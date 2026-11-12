@@ -19,8 +19,16 @@ import {
   type MoodGauntletDeps,
   type ParsedMoodV2,
 } from '../../services/moodGauntlet.ts'
-import { createFirstPosterTracker } from '../../utils/moodFirstPoster.ts'
-import { firstPosterVisibleEvent, MOOD_GAUNTLET_EVENT_NAMES } from '../../utils/moodGauntletAnalytics.ts'
+import { QUICK_MOOD_IDS } from '../../supabase/functions/_shared/moodParseCache.ts'
+import { createFirstPosterTracker, type PosterUnmatchedReason } from '../../utils/moodFirstPoster.ts'
+import {
+  assertNoFreeText,
+  FIRST_POSTER_TRIGGERS,
+  firstPosterVisibleEvent,
+  MOOD_GAUNTLET_EVENT_NAMES,
+  MOOD_POSTER_PATHS,
+  sendMoodEvent,
+} from '../../utils/moodGauntletAnalytics.ts'
 import { classifyMoodSearchError, GAUNTLET_RETRY_MAX_WAIT_MS, inProgressRetryDelayMs } from '../../utils/moodSearchRetry.ts'
 
 const read = (p: string): string =>
@@ -281,7 +289,8 @@ Deno.test('L1-2 deps: yanıtta exclude_recent_ids alanı yoksa excludeRecentIdsM
 // ─── (3) mood_first_poster_visible ───────────────────────────────────────────
 
 Deno.test('L1-3: olay dörtlü başına BİR kez; başka dörtlünün onLoad’u ve yeniden kurulum eskiyi geçersiz kılar', () => {
-  const tr = createFirstPosterTracker()
+  const unmatched: PosterUnmatchedReason[] = []
+  const tr = createFirstPosterTracker((r) => unmatched.push(r))
   tr.arm({ startedAt: 1000, trigger: 'start', entry: 'quick', quickMoodId: 'cozy', consentShown: true })
   assertEquals(tr.posterLoaded('set-1', 1100), null) // henüz bağlanmadı
   tr.bind('set-1', 'unified')
@@ -309,6 +318,66 @@ Deno.test('L1-3: olay dörtlü başına BİR kez; başka dörtlünün onLoad’u
   tr.clear()
   tr.bind('set-3', 'legacy')
   assertEquals(tr.posterLoaded('set-3', 9500), null)
+
+  // Düşen her ölçüm sessiz değil: nedeniyle bildirilir (hook → Sentry breadcrumb)
+  assertEquals(unmatched, ['unbound', 'other_set', 'already_fired', 'already_fired', 'already_fired', 'unbound'])
+})
+
+Deno.test('L1-3 fix (REACT-NATIVE-1P): trigger × path × entry × tüm quick mood id → assertNoFreeText geçer', () => {
+  const quickIds = [...QUICK_MOOD_IDS]
+  assert(quickIds.length >= 8)
+  let n = 0
+  for (const trigger of FIRST_POSTER_TRIGGERS) {
+    for (const path of MOOD_POSTER_PATHS) {
+      for (const entry of ['quick', 'free_text'] as const) {
+        for (const quickMoodId of [...quickIds, null]) {
+          const ev = firstPosterVisibleEvent({ ms: 1234, entry, quickMoodId, path, trigger, consentShown: n % 2 === 0 })
+          assertNoFreeText(ev)
+          n++
+        }
+      }
+    }
+  }
+  assertEquals(n, 3 * 2 * 2 * (quickIds.length + 1))
+  // Diziler tip ile aynı değerleri taşır (tek kaynak)
+  assertEquals([...FIRST_POSTER_TRIGGERS], ['start', 'another_four', 'intensify'])
+  assertEquals([...MOOD_POSTER_PATHS], ['unified', 'legacy'])
+  // ALLOWED_STRINGS bu değerleri dizilerden alır; elle yazılmış kopya yok
+  const src = read('utils/moodGauntletAnalytics.ts')
+  const allowed = src.slice(src.indexOf('const ALLOWED_STRINGS'), src.indexOf(']);', src.indexOf('const ALLOWED_STRINGS')))
+  assertMatch(allowed, /\.\.\.FIRST_POSTER_TRIGGERS,\s*\.\.\.MOOD_POSTER_PATHS,/)
+  for (const v of ["'start'", "'another_four'", "'intensify'", "'unified'"]) assert(!allowed.includes(v), `${v} elle yazılmamalı`)
+})
+
+Deno.test('L1-3 fix: gerçek gönderim yolu — sendMoodEvent olayı PostHog mock’una iletir; sızıntı gönderilmez', () => {
+  const sent: { name: string; props: Record<string, unknown> }[] = []
+  const leaks: unknown[] = []
+  const sink = { track: (name: string, props: Record<string, string | number | boolean | null>) => sent.push({ name, props }), reportLeak: (e: unknown) => leaks.push(e) }
+
+  // Cihazdaki iki aramanın aynısı: Date Night, unified yol, start
+  const tr = createFirstPosterTracker(() => undefined)
+  tr.arm({ startedAt: 0, trigger: 'start', entry: 'quick', quickMoodId: 'datenight', consentShown: false })
+  tr.bind('set-a', 'unified')
+  const ev = tr.posterLoaded('set-a', 2900)
+  assert(ev !== null)
+  sendMoodEvent(ev, sink)
+  assertEquals(leaks, [])
+  assertEquals(sent, [{
+    name: 'mood_first_poster_visible',
+    props: { ms: 2900, entry: 'quick', quick_mood_id: 'datenight', path: 'unified', trigger: 'start', consent_shown: false },
+  }])
+
+  // Guard hâlâ çalışır: serbest metin gönderilmez, raporlanır
+  sendMoodEvent({ name: 'mood_first_poster_visible', props: { trigger: 'rainy day with my ex' } }, sink)
+  assertEquals(sent.length, 1)
+  assertEquals(leaks.length, 1)
+
+  // Hook gönderimi bu saf yoldan yapar; breadcrumb mesajı kayıtlı
+  const hook = read('components/MoodGauntlet/useMoodGauntlet.ts')
+  assertMatch(hook, /export function trackMoodEvent\(ev: MoodEvent\): void \{\s*sendMoodEvent\(ev, moodEventSink\);\s*\}/)
+  assertMatch(hook, /track: \(name, props\) => posthogAnalytics\.track\(name, props\),/)
+  assertMatch(hook, /code: 'MOOD_EVENT_FREE_TEXT'/)
+  assertMatch(hook, /message: 'mood_first_poster_unmatched',\s*data: \{ reason \},/)
 })
 
 Deno.test('L1-3: olay yapısı — serbest metinde quick_mood_id null, ms negatif olmaz, ad kayıtlı', () => {

@@ -12,6 +12,7 @@ import {
   completedEvent,
   descResolvedEvent,
   firstFourVisibleEvent,
+  firstPosterVisibleEvent,
   justPickEvent,
   intensityEvent,
   MOOD_GAUNTLET_EVENT_NAMES,
@@ -131,6 +132,7 @@ Deno.test('analitik: on olay adi, hicbiri ham metin tasimaz, serbest metin guard
     pipelineTimingEvent('reasons', 0),
     trailerClickedEvent({ filmId: '123e4567-e89b-12d3-a456-426614174000', setIndex: 1, hasProviderCta: true, lang: 'tr' }),
     returnedAfterTrailerEvent(42.4),
+    firstPosterVisibleEvent({ ms: 2794, entry: 'quick', quickMoodId: 'datenight', path: 'unified', trigger: 'start', consentShown: false }),
   ]
   for (const e of evs) {
     assert((MOOD_GAUNTLET_EVENT_NAMES as readonly string[]).includes(e.name), e.name)

@@ -61,10 +61,15 @@ export function firstFourVisibleEvent(
   return { name: 'mood_first_four_visible', props: { ms: Math.max(0, Math.round(ms)), cache_hit: cacheHit, entry, path } };
 }
 
-/** Loading L1: ilk posterin ölçüldüğü dörtlüyü ne başlattı. */
-export type MoodPosterTrigger = 'start' | 'another_four' | 'intensify';
+/**
+ * Loading L1: ilk posterin ölçüldüğü dörtlüyü ne başlattı. Tip ve `ALLOWED_STRINGS` bu diziden
+ * türer: yeni değer tek yerde eklenir, gizlilik guard'ı onu ayrıca beklemez (REACT-NATIVE-1P).
+ */
+export const FIRST_POSTER_TRIGGERS = ['start', 'another_four', 'intensify'] as const;
+export type MoodPosterTrigger = (typeof FIRST_POSTER_TRIGGERS)[number];
 /** `unified` = tek istek (`mood-four`), `legacy` = v4 → rerank (another_four / intensify hep legacy). */
-export type MoodPosterPath = 'unified' | 'legacy';
+export const MOOD_POSTER_PATHS = ['unified', 'legacy'] as const;
+export type MoodPosterPath = (typeof MOOD_POSTER_PATHS)[number];
 
 /**
  * Loading L1: dokunuştan (start: rıza geçildikten sonra `onStart`; another_four / intensify: kendi
@@ -281,6 +286,9 @@ const ALLOWED_STRINGS = new Set<string>([
   'flatrate', 'free', 'ads', 'rent', 'buy',
   // quick_mood_id'ler (QUICK_MOOD_IDS)
   'rainy', 'mindbending', 'datenight', 'adrenaline', 'laugh', 'nostalgia', 'cozy', 'emotional',
+  // mood_first_poster_visible.trigger / .path (Loading L1) — dizilerden türer, elle yazılmaz
+  ...FIRST_POSTER_TRIGGERS,
+  ...MOOD_POSTER_PATHS,
 ]);
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -295,4 +303,21 @@ export function assertNoFreeText(ev: MoodEvent): void {
       throw new Error(`mood olayi ${ev.name}.${k} serbest metin tasiyor`);
     }
   }
+}
+
+export interface MoodEventSink {
+  track(name: string, props: Props): void;
+  /** Guard'a takılan olay: gönderilmez, Sentry'ye (kodlama hatası). */
+  reportLeak(err: unknown): void;
+}
+
+/** `trackMoodEvent`'in saf gövdesi: guard → gönderim. Hook dışında (Deno) test edilebilir. */
+export function sendMoodEvent(ev: MoodEvent, sink: MoodEventSink): void {
+  try {
+    assertNoFreeText(ev);
+  } catch (err) {
+    sink.reportLeak(err);
+    return;
+  }
+  sink.track(ev.name, ev.props);
 }

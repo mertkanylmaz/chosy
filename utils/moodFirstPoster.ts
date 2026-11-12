@@ -33,7 +33,12 @@ export interface FirstPosterTracker {
   clear(): void;
 }
 
-export function createFirstPosterTracker(): FirstPosterTracker {
+/** Olay üretmeyen `posterLoaded` neden düştü (sessiz değil: hook Sentry breadcrumb'ı yazar). */
+export type PosterUnmatchedReason = 'unbound' | 'other_set' | 'already_fired';
+
+export function createFirstPosterTracker(
+  onUnmatched: (reason: PosterUnmatchedReason) => void,
+): FirstPosterTracker {
   let armed: PosterArm | null = null;
   let bound: { setId: string; path: MoodPosterPath; arm: PosterArm } | null = null;
   const fired = new Set<string>();
@@ -49,7 +54,19 @@ export function createFirstPosterTracker(): FirstPosterTracker {
       armed = null;
     },
     posterLoaded(setId, now) {
-      if (bound === null || bound.setId !== setId || fired.has(setId)) return null;
+      // Sıra önemli: aynı dörtlünün sonraki posterleri (`bound` boşaldı) `already_fired` sayılır.
+      if (fired.has(setId)) {
+        onUnmatched('already_fired');
+        return null;
+      }
+      if (bound === null) {
+        onUnmatched('unbound');
+        return null;
+      }
+      if (bound.setId !== setId) {
+        onUnmatched('other_set');
+        return null;
+      }
       fired.add(setId);
       const { arm, path } = bound;
       bound = null;
