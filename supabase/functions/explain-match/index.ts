@@ -17,6 +17,13 @@ import {
   sanitizeExplanations,
 } from '../_shared/explanationOutput.ts'
 import { sentryCapture } from '../_shared/sentry.ts'
+import {
+  clientIp,
+  enforceExplainLimits,
+  ExplainDailyLimitError,
+  explainDailyLimitResponse,
+  explainLimitLog,
+} from '../_shared/explainLimit.ts'
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -74,6 +81,31 @@ serve(async (req: Request): Promise<Response> => {
     await checkRateLimit(auth.authUserId, 'explain-match')
   } catch (err) {
     // Her hata ele alınır — eski kodun boş `else` dalı isteği LLM'e geçiriyordu.
+    return rateLimitResponse(err, CORS_HEADERS)
+  }
+
+  // ── 145: günlük tavan + IP kovaları (LLM'den önce) ────────────────────────
+  // Kullanıcı başı günlük tavan tek başına dolanılabilir (yeni anonim oturum = yeni
+  // kimlik); IP kovaları bunu kapatır. Tavan aşımı beklenen durumdur: 429 döner,
+  // istemci şablon açıklamaya düşer; Sentry'ye yazılmaz, log satırı düşer.
+  const ipInfo = clientIp(req.headers)
+  try {
+    await enforceExplainLimits(auth.authUserId, ipInfo?.ip ?? null, {
+      onIpMissing: async () => {
+        console.warn('[explain-match] istemci IP başlığı yok — yalnız kullanıcı kovaları uygulandı')
+        await sentryCapture({
+          message: 'explain-match: istemci IP başlığı yok — IP kovaları uygulanamadı',
+          level: 'warning',
+          tags: { function: 'explain-match', error_code: 'CLIENT_IP_MISSING' },
+          fingerprint: ['explain-match', 'CLIENT_IP_MISSING'],
+        })
+      },
+    })
+  } catch (err) {
+    if (err instanceof ExplainDailyLimitError) {
+      console.warn(JSON.stringify(explainLimitLog(err)))
+      return explainDailyLimitResponse(err, CORS_HEADERS)
+    }
     return rateLimitResponse(err, CORS_HEADERS)
   }
 

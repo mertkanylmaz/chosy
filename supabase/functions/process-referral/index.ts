@@ -4,16 +4,23 @@
  *
  * POST /functions/v1/process-referral
  * Body: { action: 'apply' | 'check_activations', invite_code?: string }
- * Auth: Supabase JWT
+ * Auth (fonksiyon içinde; gateway'de `verify_jwt = false`, bkz. config.toml):
+ *   - apply: kullanıcı JWT'si (`auth.getUser`)
+ *   - check_activations: service-role anahtarı (`requireServiceRole`)
  *
  * Actions:
  *   - apply: Signup with invite code (referee calls)
  *   - check_activations: Cron job to activate 7-day-old pending referrals
  *
- * Deploy: supabase functions deploy process-referral
+ * 145 (güvenlik P0): `check_activations` 14 Kas 2026'ya kadar HİÇBİR kimlik kontrolü
+ * yapmıyordu — anon key ile çağrılabiliyor ve 5. aktivasyonda `claim_lifetime_spot`
+ * ile bedava lifetime veriyordu. Artık yalnız service role çağırabilir.
+ *
+ * Deploy: supabase functions deploy process-referral --no-verify-jwt
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { requireServiceRole, unauthorizedResponse } from '../_shared/auth.ts'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -107,6 +114,10 @@ serve(async (req: Request) => {
 
     // ── Check activations (cron) ──────────────────────────────────────────
     if (body.action === 'check_activations') {
+      // 145: sistem işi — çağıran kullanıcı değil. Sabit zamanlı anahtar karşılaştırması.
+      const svc = await requireServiceRole(req)
+      if (!svc.ok) return unauthorizedResponse(svc, CORS_HEADERS)
+
       // Find pending referrals older than 7 days where referee has been active
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
 
@@ -140,6 +151,10 @@ serve(async (req: Request) => {
           .from('mood_searches')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', referral.referee_id)
+          // 145: yalnız sunucunun tamamladığı aramalar sayılır. İstemci `mood_searches`'e
+          // satır EKLEYEBİLİR (INSERT policy + `user_id` kolon grant'ı) ama `status`
+          // yazamaz; filtresiz hâl "3 arama" şartının boş satırlarla uydurulmasına açıktı.
+          .eq('status', 'completed')
           .gte('created_at', sevenDaysAgo)
 
         if (countError) {

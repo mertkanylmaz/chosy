@@ -114,3 +114,19 @@ verify_jwt = false
 
 [functions.generate-puzzles]
 verify_jwt = false
+
+# ─── Karma auth: kullanıcı JWT'si + service role (145, güvenlik P0) ──────────
+# 14 Kas 2026: `check_activations` dalı hiçbir kimlik kontrolü yapmıyordu;
+# gateway'in `verify_jwt = true` şartı tek kapıydı ve anon key (uygulama
+# binary'sinde gömülü) o kapıdan geçiyordu. Artık doğrulama fonksiyonun içinde:
+#   - `apply`             → `auth.getUser(token)` (kullanıcı JWT'si)
+#   - `check_activations` → `requireServiceRole()` (sabit zamanlı anahtar karşılaştırması)
+#
+# verify_jwt = false ZORUNLU: service-role anahtarı `sb_secret_…` biçimindeyse JWT
+# değildir ve gateway'de reddedilir (bkz. "Cron ile tetiklenenler" notu) —
+# `check_activations` hiç ulaşılamaz olurdu. Bu satırı `true` yapmak koruma EKLEMEZ.
+# Bugün bu fonksiyonun çağıranı yok (istemci `apply_invite_code` RPC'sini doğrudan
+# çağırıyor, cron kurulmamış); beyan ileride kurulacak cron içindir.
+
+[functions.process-referral]
+verify_jwt = false

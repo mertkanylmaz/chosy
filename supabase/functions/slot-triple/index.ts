@@ -4,8 +4,8 @@
  * SADECE paid tier (monthly, annual, lifetime).
  *
  * POST /functions/v1/slot-triple
- * Body: { duration_filter?, mood_filter?, era_filter?, user_id? }
- * Auth: Supabase JWT (fallback: body.user_id)
+ * Body: { duration_filter?, mood_filter?, era_filter? }
+ * Auth: Supabase JWT (zorunlu)
  *
  * Deploy: supabase functions deploy slot-triple --no-verify-jwt
  */
@@ -45,12 +45,11 @@ function json(body: unknown, status = 200): Response {
 }
 
 /**
- * Resolve user — JWT first, fallback to body.user_id
+ * Resolve user — yalniz dogrulanmis JWT
  * Returns app user UUID + tier
  */
 async function resolveUser(
   req: Request,
-  body: Record<string, unknown>,
 ): Promise<{ userId: string; tier: string; error?: string }> {
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -89,31 +88,9 @@ async function resolveUser(
     }
   }
 
-  // Strategy 2: body.user_id fallback
-  const bodyUserId = body.user_id as string | undefined
-  if (bodyUserId) {
-    console.log('[auth] Fallback to body.user_id')
-    const { data } = await admin
-      .from('users')
-      .select('id, subscription_tier')
-      .eq('id', bodyUserId)
-      .single()
-
-    if (data) {
-      return { userId: data.id, tier: data.subscription_tier ?? 'free' }
-    }
-
-    const { data: d2 } = await admin
-      .from('users')
-      .select('id, subscription_tier')
-      .eq('auth_id', bodyUserId)
-      .single()
-
-    if (d2) {
-      return { userId: d2.id, tier: d2.subscription_tier ?? 'free' }
-    }
-  }
-
+  // 145 (guvenlik P0): `body.user_id` yedek yolu KALDIRILDI. Fonksiyon `verify_jwt = false` ile
+  // yayinda; yedek yol kimliksiz cagiranin herhangi bir kullanici adina islem yapmasina izin
+  // veriyordu. Kimlik yalniz dogrulanmis JWT'den gelir; yoksa 401.
   return { userId: '', tier: '', error: 'NO_USER_CONTEXT' }
 }
 
@@ -137,7 +114,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     body = {}
   }
 
-  const { userId, tier, error: authError } = await resolveUser(req, body)
+  const { userId, tier, error: authError } = await resolveUser(req)
   if (authError || !userId) {
     return json({ error: 'Auth required', code: authError }, 401)
   }

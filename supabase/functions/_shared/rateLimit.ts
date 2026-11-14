@@ -52,6 +52,9 @@ const LIMITS: Record<string, { maxRequests: number; windowMs: number }> = {
   'merge-anonymous-user': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
   'sync-entitlement': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika
   'submit-mood-choice': { maxRequests: 30, windowMs: 60_000 },  // 30/dakika
+  'slot-mood-filtered': { maxRequests: 5, windowMs: 60_000 },  // 5/dakika (145)
+  // IP basi (anahtar `ip:<adres>`): anonim oturum acarak kullanici basi sayaci dolanmaya karsi (145).
+  'explain-match-ip': { maxRequests: 60, windowMs: 60_000 },  // 60/dakika
 }
 
 /** Limit aşıldı — istemci beklemeli (429) */

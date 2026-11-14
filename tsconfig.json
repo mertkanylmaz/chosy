@@ -29,6 +29,7 @@
     "tests/net",
     "tests/gauntlet",
     "tests/profile",
+    "tests/security",
     "tests/subscription",
     "components/paywalls/_archive"
   ]

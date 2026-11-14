@@ -32,7 +32,8 @@ export function rerankDailyLimit(tier: string | null | undefined, legacyMoodAcce
 
 /** Günlük sınır aşıldı → 429 RERANK_DAILY_LIMIT */
 export class DailyLimitError extends Error {
-  constructor(public limit: number, public resetsAt: string) {
+  /** `count`: bu istekle birlikte sayacın ulaştığı değer (limit aşımını loglamak için). */
+  constructor(public limit: number, public resetsAt: string, public count?: number) {
     super('Daily limit exceeded')
     this.name = 'DailyLimitError'
   }
@@ -100,7 +101,7 @@ export async function checkDailyLimit(
   }
 
   if (count > maxPerDay) {
-    throw new DailyLimitError(maxPerDay, nextUtcMidnight(now))
+    throw new DailyLimitError(maxPerDay, nextUtcMidnight(now), count)
   }
 }
 

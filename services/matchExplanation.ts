@@ -16,6 +16,7 @@ import { i18n } from '@/constants/i18n';
 import { TasteProfile } from '../types';
 import { supabase } from './supabase';
 import { hasAiConsent } from './aiConsent';
+import { isExpectedExplainThrottle } from './explainThrottle';
 
 /** explain-match istek zaman aşımı */
 const EXPLAIN_TIMEOUT_MS = 10_000;
@@ -177,13 +178,25 @@ export async function explainBatch(
     if (error) {
       // invoke HTTP hatasında fırlatmaz, `error` döndürür — catch'e düşmez.
       const context: unknown = (error as { context?: unknown }).context;
-      Sentry.captureException(error, {
-        tags: { component: 'matchExplanation', flow: 'explain-match' },
-        extra: {
-          http_status: context instanceof Response ? context.status : null,
-          film_count: toFetch.length,
-        },
-      });
+      const httpStatus = context instanceof Response ? context.status : null;
+      if (isExpectedExplainThrottle(httpStatus)) {
+        // 429 = sunucu sınırı (günlük tavan / dakikalık limit, migration 145). Beklenen iş
+        // kuralı: şablona düşülür. Exception DEĞİL — iz kaydı yeterli (sunucu aşımı loglar).
+        Sentry.addBreadcrumb({
+          category: 'explain_match',
+          level: 'info',
+          message: 'explain-match sınırı (429) — şablon açıklamaya düşüldü',
+          data: { film_count: toFetch.length },
+        });
+      } else {
+        Sentry.captureException(error, {
+          tags: { component: 'matchExplanation', flow: 'explain-match' },
+          extra: {
+            http_status: httpStatus,
+            film_count: toFetch.length,
+          },
+        });
+      }
     } else if (data?.explanations && typeof data.explanations === 'object') {
       const explanations = data.explanations as Record<string, string | null>;
 
